@@ -1338,9 +1338,9 @@ public class ST {
 		try {
 			if (aLoot.startsWith("twilightforest:")) {
 				if (!TF_TREASURE) return F;
-				// PORT-TODO(scope, TwilightTreasureReplacer): тот же AbstractContainerMenu/Container-баг живёт в
-				// gregtech.worldgen.TwilightTreasureReplacer (вне границ этого шва) — мост через checked cast, пока
-				// сосед не починен отдельным заходом.
+				// Twilight Forest вне сборки: гейт TF_TREASURE (ST.java:81 = F, взводится только при загруженном
+				// моде, :95) — ветка недостижима. Тот же AbstractContainerMenu/Container-шов живёт в
+				// gregtech.worldgen.TwilightTreasureReplacer; здесь мост через checked cast.
 				TwilightTreasureReplacer.generate((net.minecraft.world.Container)aInv, aLoot);
 			} else if (!LOOT_TABLES_VANILLA.contains(aLoot)) {
 				// BUG-039 (F-loot): GT6-категории (gt.gems/gt.misc/...) — содержимое целиком в буфере shim-ChestGenHooks
@@ -1379,7 +1379,8 @@ public class ST {
 						set(tStack, IL.TC_Gold_Coin.get(tStack.getCount() * 9L));
 					}
 				}
-				// PORT-TODO(этап10, mobeffect-nbt): 1.7.10 Potion-эффекты как сырой NBT-список ("EffectId"/"EffectDuration"
+				// Мод EtFu вне сборки: ветка целиком под гейтом IL.EtFu_Sus_Stew.exists() (LoaderItemList.java:1444)
+				// — недостижима. 1.7.10 Potion-эффекты как сырой NBT-список ("EffectId"/"EffectDuration"
 				// с числовым .id) — в neo эффекты registry-объекты (MobEffects.<ИМЯ>, Holder<MobEffect>, без .id), а
 				// формат хранения эффектов на стаке — DataComponents (не произвольный "Effects" ListTag). Оригинал:
 				// if (IL.EtFu_Sus_Stew.exists() && item_(tStack) == Items.MUSHROOM_STEW) {

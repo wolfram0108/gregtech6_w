@@ -1468,7 +1468,9 @@ public class UT {
 		/** estebes helped with the code for this one, and yes that cast down there is fucking necessary... */
 		public static short[] color(ItemStack aStack) {
 			if (ST.invalid(aStack)) return UNCOLOURED;
-			// PORT-TODO(F3, baked-рендер клиента, Фаза C): 1.7.10 читал средний цвет из атлас-спрайта предмета
+			// F3 (baked-рендер клиента), деградация без потери функции — единственный вызыватель этого метода —
+			// служебный лог «Outputting Colors of unknown Materials» (gregtech/GT6_Main.java:547), в игре не виден:
+			// 1.7.10 читал средний цвет из атлас-спрайта предмета
 			// (ItemStack.getIconIndex():IIcon + IIcon.getIconName() + Item.getColorFromItemStack) — весь этот
 			// immediate-mode/IIcon стек удалён в 26.1.2 (см. decisions/F3-render.md). Атлас-спрайт на клиенте
 			// станет TextureAtlasSprite/Material при Фазе C; тинт предмета — ItemColors. До неё деградируем до
@@ -3204,7 +3206,10 @@ public class UT {
 			if (aID < 0) return F;
 			// vanilla id (1-20,22,23) → реальный Holder<MobEffect> из VANILLA_POTION_IDS выше, полный
 			// аудит по факту использования (см. javadoc карты) — деградации для них НЕТ.
-			// PORT-TODO(custom-potion-registration): деградируют ТОЛЬКО незарегистрированные кастом-зелья
+			// 1:1 с оригиналом (не долг): ID этих эффектов и в 1.7.10 приходили ИЗ ЧУЖИХ МОДОВ на postInit —
+			// gregtech6/src/main/java/gregapi/GT_API.java:776-783 (ic2.api.info.Info.POTION_RADIATION.id,
+			// enviromine.EnviroPotion.dehydration/frostbite/heatstroke/hypothermia/insanity.id); без этих модов
+			// значения оставались отрицательными и оригинал так же тихо пропускал эффект. Речь о кастом-зельях
 			// чужих модов PotionsGT.ID_RADIATION/ID_HYPOTHERMIA/ID_HEATSTROKE/ID_FROSTBITE/ID_DEHYDRATION/
 			// ID_INSANITY/ID_FLAMMABLE/ID_SLIPPERY/ID_CONDUCTIVE/ID_STICKY (`gregapi/data/CS.java`, класс
 			// PotionsGT, IC2/EnviroMine/Immersive Engineering) — сейчас raw int-плейсхолдеры (не

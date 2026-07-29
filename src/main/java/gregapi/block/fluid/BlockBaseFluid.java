@@ -435,7 +435,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	public int getRenderBlockPass() {return 1;}
 
 	// F3-render (флюид-блок ВИДИМ): было мёртвый getRenderType()=RendererBlockFluid.RENDER_ID (1.7.10) + getIcon/getRenderColor
-	// кидали PORT-TODO → флюид-блок (нефть/газ/гео-вода worldgen'а) НЕ рисовался (прозрачный). Канал IRenderedBlock (та же
+	// без реализации → флюид-блок (нефть/газ/гео-вода worldgen'а) НЕ рисовался (прозрачный). Канал IRenderedBlock (та же
 	// централизованная модель GT6BlockModel, что у всех грег-блоков) объявлен ОДИН РАЗ в общем предке BlockFluidBaseGT —
 	// как в 1.7.10 один RendererBlockFluid обслуживал обе жидкостные иерархии. Здесь остаётся только СВОЁ:
 	// Текстура+цвет флюида — из центра F5 (BlockTextureFluid → FluidGT.of(mFluid): still-иконка + mRGBa + свечение). Одна текстура

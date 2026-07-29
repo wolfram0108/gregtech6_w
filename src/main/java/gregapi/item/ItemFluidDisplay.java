@@ -349,7 +349,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 			if (UT.Code.stringValid(tName)) aName = tName;
 			Fluid tFluid = FL.fluid_(aName);
 			// F5: 1.7.10 Fluid.getID() удалён -> FL.id(Fluid) (FL.java:673, тот же центр-хелпер уже
-			// используется по всему дереву; PORT-TODO там же про нестабильность id между запусками — 1:1 наследуется).
+			// используется по всему дереву; про нестабильность registry-id между запусками — FL.java:736, 1:1 наследуется).
 			if (tFluid != null) ST.meta_(aStack, FL.id(tFluid));
 			return;
 		}

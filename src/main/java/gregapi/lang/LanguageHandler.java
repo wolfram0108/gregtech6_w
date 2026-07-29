@@ -257,7 +257,8 @@ public class LanguageHandler {
 				return tName;
 			}
 		}
-		// PORT-TODO(F1, item-unlocalized-name-per-stack): 1.7.10 ItemStack.getUnlocalizedName()
+		// Не долг: метод не вызывается ни в порте, ни в оригинале (в обоих деревьях единственное вхождение —
+		// это объявление), поэтому per-stack вариация ниже никого не задевает. 1.7.10 ItemStack.getUnlocalizedName()
 		// делегировал в переопределяемый Item.getUnlocalizedName(ItemStack) — per-metadata вариация
 		// подтипов (та же развилка модели предмета, что и decisions/F1-item-metadata-model.md).
 		// В neo Item.getDescriptionId() финальный и без параметра ItemStack; per-stack вариация не

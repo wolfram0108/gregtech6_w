@@ -755,8 +755,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	
 	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent}
 	 *  с полем {@code phase}/сравнением {@code == ServerTickEvent.END} (тип+поле удалены, F10-зеркало
-	 *  `compat-mirror/java/cpw/mods/fml/common/gameevent/TickEvent.java` явным PORT-TODO уступает это
-	 *  движко-шов сюда) — neo раздельно шлёт {@code ClientTickEvent.Pre}/{@code .Post}
+	 *  `compat-mirror/java/cpw/mods/fml/common/gameevent/TickEvent.java` — тип-пустышка, поведение живёт
+	 *  здесь) — neo раздельно шлёт {@code ClientTickEvent.Pre}/{@code .Post}
 	 *  (`neoforge-decompiled/net/neoforged/neoforge/client/event/ClientTickEvent.java:24-38`);
 	 *  {@code .Post} = "после тика" 1:1 равно старому {@code END}-фазе — сигнатура ретипирована,
 	 *  условие-обёртка снята (уже подразумевается типом события), тело БЕЗ ИЗМЕНЕНИЙ. */

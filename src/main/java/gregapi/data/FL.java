@@ -1048,8 +1048,10 @@ public enum FL {
 		return rStacks;
 	}
 	
-	/** PORT-TODO(F5, поверхность B): пока не заполняется — мировые water-блоки (Ocean/River/Swamp) вне
-	 *  области этого переходника (decisions/F5-fluids.md §5). */
+	/** 1:1 с оригиналом: карту заполняет ТОЛЬКО {@code BlockBaseFluid} (порт — BlockBaseFluid.java:110,
+	 *  оригинал — gregtech6/.../BlockBaseFluid.java:90). Мировые water-блоки (Ocean/River/Swamp) себя сюда
+	 *  не кладут и в 1.7.10; потребитель (родник, MultiTileEntityFluidSpring:114) на этот случай имеет
+	 *  фолбэк на блок самой жидкости — как и оригинал (:110-111). */
 	public static final Map<String, Block> BLOCKS = new HashMap<>();
 
 	// F5, oredict-fluid-container-registry: bookkeeping-реестр (кто какой FluidContainerData зарегистрировал)

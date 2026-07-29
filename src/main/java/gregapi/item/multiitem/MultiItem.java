@@ -321,7 +321,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		
 		ItemStack tStack = FL.fill(aFluid, aStack, F, F, F, F);
 		if (tStack != null) {
-			ST.set(aStack, tStack); // F-itemstack-mutation: 1.7.10 setItemDamage+func_150996_a(смена Item in-place) -> центр ST.set (item в neo final: копирует count/meta/NBT, PORT-TODO item-final в ST.set).
+			ST.set(aStack, tStack); // F-itemstack-mutation: 1.7.10 setItemDamage+func_150996_a(смена Item in-place) -> центр ST.set (item в neo final: копирует count/meta/NBT; центр F-item-final — ST.java:449).
 			return FL.getFluid(tStack, F).getAmount();
 		}
 		

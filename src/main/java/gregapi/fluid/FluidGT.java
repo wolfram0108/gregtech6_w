@@ -149,8 +149,10 @@ public class FluidGT {
 	// mTemperature под ногами) → сама угроза устранена движком, защитный ре-апплай не нужен (осознанно не воспроизведён).
 
 	private BaseFlowingFluid.Properties fluidProperties() {
-		// PORT-TODO(F5, поверхность B): .block()/.bucket() (decisions/F5-fluids.md §3,5)
-		// намеренно не заданы для content-fluid'ов; мировые water-блоки — отдельная форсированная замена.
+		// 1:1 с оригиналом: .block()/.bucket() у контент-жидкостей не задаются — в 1.7.10 Fluid.setBlock не
+		// вызывался НИ РАЗУ во всём моде (греп gregapi/data/FL.java + gregapi/fluid/* оригинала — 0 совпадений),
+		// у контент-жидкостей GT6 не было ни блока, ни ведра. Мировые water-блоки — отдельная иерархия
+		// (decisions/F5-fluids.md §5).
 		return new BaseFlowingFluid.Properties(() -> mType, mSourceHolder::value, mFlowingHolder::value);
 	}
 

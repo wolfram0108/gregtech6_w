@@ -1705,9 +1705,10 @@ public class CS {
 		oreSmall , oreSmallSandstone , oreSmallNetherrack , oreSmallEndstone , oreSmallAtumLimestone , oreSmallAtumSand, oreSmallGravel, oreSmallMud, oreSmallSand, oreSmallRedSand, oreSmallBedrock;
 		
 		public static BlockBaseFluid OilLight, OilMedium, OilHeavy, OilExtraHeavy, GasNatural, WaterGeothermal;
-		// PORT-TODO(F5, surface-B water-блоки): оригинал был BlockFluidClassic Ocean/Swamp/River/RiverAdvanced;
-		// BlockFluidClassic удалён в neo, замена — кастомный Block/LiquidBlock с финитной текучестью 1:1
-		// (decisions/F5-fluids.md §5). До реализации surface-B держим только общий Block-тип.
+		// F5 поверхность B РЕАЛИЗОВАНА (решение decisions/F5-fluids.md §5, принято 2026-07-19): оригинал был
+		// BlockFluidClassic Ocean/Swamp/River/RiverAdvanced; BlockFluidClassic удалён в neo, выбран кастомный
+		// BlockWaterlike extends BlockFluidBaseGT (quanta-текучесть GT6 != ванильный FlowingFluid), поэтому
+		// тип поля — общий Block, а не LiquidBlock.
 		public static Block Ocean, Swamp, River, RiverAdvanced;
 		
 		public static BlockBase Sands, Diggables, Grass, Paths, RockOres, CrystalOres, VanillaOresA;

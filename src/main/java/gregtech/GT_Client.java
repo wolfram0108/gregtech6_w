@@ -84,7 +84,7 @@ public class GT_Client extends GT_Proxy {
 	private boolean FIRST_CLIENT_PLAYER_TICK = T;
 	
 	/**
-	 * PORT-TODO(F3, baked-рендер клиента, частично): было {@code cpw.mods.fml.common.gameevent.TickEvent.PlayerTickEvent}
+	 * F3 (baked-рендер клиента), шов закрыт: было {@code cpw.mods.fml.common.gameevent.TickEvent.PlayerTickEvent}
 	 * с публичными полями {@code player}/{@code phase}/{@code side} — neo {@code PlayerTickEvent.Post}
 	 * (`neoforge-decompiled/net/neoforged/neoforge/event/tick/PlayerTickEvent.java:38-46`, "после тика" = старый
 	 * {@code END}) с геттером {@code getEntity()}; фильтр стороны — {@code getEntity().level().isClientSide()}
