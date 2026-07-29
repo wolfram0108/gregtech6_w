@@ -35,10 +35,12 @@ import net.minecraft.world.item.ItemStack;
  * добавляет/удаляет/итерирует плавки в рантайме (RM.add_smelting/rem_smelting/get_smelting/RecipeMapFurnace) —
  * воспроизводим прежний API 1:1 поверх GT6-собственного мутабельного хранилища.
  *
- * <p>PORT-TODO(F11-smelting, decisions/F11-crafting-recipe.md): ИНТЕГРАЦИЯ с ванильной печью neo (чтобы
- * neo-{@code FurnaceBlockEntity} реально использовал добавленные сюда рецепты) требует recipe-provider/датаген
- * или mixin в {@code RecipeManager} — отдельный ADR, ещё не разработан (не выдумываю). Здесь — GT6-реестр плавок,
- * self-consistent для внутренней логики RM (add/remove/query/iterate), но пока не проброшенный в neo-печь.
+ * <p>ИНТЕГРАЦИЯ с ванильной печью neo ЗАКРЫТА (BUG-023, подтверждён живым тестом игрока): её делает
+ * {@link GT6SmeltingDispatcher} — единственная точка входа GT6-плавок в печь, рецепт типа
+ * {@code RecipeType.SMELTING} перебирает ЭТОТ реестр в {@code matches}/{@code assemble}, и печь находит
+ * плавки штатно ({@code AbstractFurnaceBlockEntity.serverTick} → {@code quickCheck.getRecipeFor}).
+ * Ни recipe-provider/датаген, ни mixin в {@code RecipeManager} не понадобились. Здесь — сам GT6-реестр плавок
+ * (add/remove/query/iterate), 1:1 с 1.7.10.
  * Тот же приём, что F12-config (gregapi.config.ModConfigSpec) — воссоздание удалённого движкового API как GT6-класса.
  */
 public class FurnaceRecipes {

@@ -262,11 +262,11 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 		try {
 			Block tBlock = aState.getBlock();
 			Identifier tIcon = null;
-			if (tBlock instanceof gregapi.block.BlockBase tB) {
-				try {tIcon = tB.getIcon(0, gregapi.util.WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()));} catch (Throwable e) {/* defensive-throw getIcon → фолбэк */}
-			} else if (tBlock instanceof gregapi.block.fluid.BlockBaseFluid tF && tF.renderTexture() instanceof BlockTextureFluid tT) {
-				tIcon = tT.icon();
-			}
+			// Один вопрос по КОНТРАКТУ вместо двух веток по иерархиям: канал getIcon есть у BlockBase-иерархии,
+			// у ОБЕИХ жидкостных (BlockBaseFluid — своя текстура, BlockWaterlike — ванильная вода) и у MTE.
+			// Прежняя развилка покрывала BlockBase и BlockBaseFluid, а водоподобные (река/океан/болото) не
+			// покрывала ни одной — их крошка падала в фолбэк CFoam вместо воды.
+			if (tBlock instanceof gregapi.block.IBlock tGT6) tIcon = tGT6.getIcon(0, gregapi.util.WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()));
 			// 1:1-дефолт 1.7.10 (BlockBase.getIcon:103 и MultiTileEntityBlock.getIcon:293 оба → CFOAM_HARDENED):
 			// партиклы MTE/безыконных блоков — серая CFoam-крошка, НЕ error-текстура.
 			if (tIcon == null) tIcon = gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);

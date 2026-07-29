@@ -422,9 +422,15 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	public final String getUnlocalizedName() {return FL.name(mFluid, F);} // было mFluid.getUnlocalizedName() (Forge Fluid) — FL.name(Fluid,boolean) центр (F5, см. BlockWaterlike)
 	public String getLocalizedName() {return FL.name(mFluid, T);} // было LH.get(mFluid.getUnlocalizedName()) — FL.name(...,T) уже включает LH-локализацию (FL.java:952)
 	public void registerBlockIcons(Object aIconRegister) {/**/}
-	public net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было mFluid.getStillIcon()/getFlowingIcon() — 1.7.10 IIcon-атлас мёртв, реальный рендер RegisterFluidModelsEvent; crash-only per /goal");}
-	public int getRenderColor(int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): было mFluid.getColor() — neo-тинт FluidTintSources.constant на FluidType; crash-only per /goal");}
-	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): см. getRenderColor; crash-only per /goal");}
+	/** 1:1 оригинала (:362): было {@code SIDES_VERTICAL[aSide]?mFluid.getStillIcon():mFluid.getFlowingIcon()}.
+	 *  У GT6-жидкости still==flowing — одна текстура на жидкость (FL.create → CustomIcon("fluids/имя"),
+	 *  зафиксировано в центре {@link gregapi.render.BlockTextureFluid#icon()}), поэтому развилка по стороне
+	 *  вырождается; спрашиваем центр, чтобы «какая текстура» осталось в одном месте. */
+	@Override public net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {return renderTexture() instanceof gregapi.render.BlockTextureFluid tTex ? tTex.icon() : null;}
+	/** 1:1 оригинала (:363-364): оба тинта = {@code mFluid.getColor()}. Цвет берём из ТОГО ЖЕ центра,
+	 *  который красит блок в рендере ({@link gregapi.render.BlockTextureFluid#mRGBa}) — не заводя второй источник. */
+	@Override public int getRenderColor(int aMeta) {return renderTexture() instanceof gregapi.render.BlockTextureFluid tTex && tTex.mRGBa != null ? gregapi.util.UT.Code.getRGBInt(tTex.mRGBa) : 0x00ffffff;}
+	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return getRenderColor(0);}
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}
 

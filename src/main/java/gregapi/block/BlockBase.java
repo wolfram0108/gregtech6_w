@@ -328,7 +328,12 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// целиком вместе со всем IIcon-атласом) — GT6 полагался на полиморфную диспетчеризацию к этому методу движка.
 	// Восстановлено локально (тот же приём, что уже принят в BlockBaseMeta.getIcon), чтобы вызов выше и переопределения
 	// в наследниках (BlockBaseSpike/BlockBaseBars/...) имели общую точку. Держатель ссылки — Identifier (см. IIconContainer).
-	public Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("F3 dead-interface: 1.7.10 Block.getIcon(side,meta) удалён из neo (НЕ @Override, движок его не зовёт; GT6-код зовёт лишь IIconContainer.getIcon(int)). Рендер — через GT6BlockModel (IRenderedBlock.getTexture). Defensive throw.");}
+	/** Дефолт корня иерархии: в оригинале собственного тела у BlockBase НЕТ — {@code getIcon(side,meta)} приходил
+	 *  от ванильного Block ({@code blockIcon}), которого в neo не существует. Отдаём {@code null} = «канал иконки
+	 *  не заведён» (контракт {@link gregapi.block.IBlock#getIcon}); потребитель уходит на штатный baked-путь.
+	 *  Потомки со своими спрайтами (BlockBaseMeta/Log/Beam/Leaves/Sapling/Flower/LilyPad/Bale/Rail/Grass/Path)
+	 *  перекрывают его, как перекрывали в 1.7.10. */
+	public Identifier getIcon(int aSide, int aMeta) {return null;}
 	
 	@Override public String name(byte aMeta) {return aMeta == W ? mNameInternal : mNameInternal + "." + aMeta;}
 	@Override public boolean useGravity(byte aMeta) {return F;}

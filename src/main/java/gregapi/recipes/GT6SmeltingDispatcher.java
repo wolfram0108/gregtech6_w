@@ -42,7 +42,7 @@ import static gregapi.data.CS.F;
 /**
  * @author Gregorius Techneticies
  *
- * F11-smelting (BUG-023) — закрытие PORT-TODO из {@link FurnaceRecipes}: ЕДИНСТВЕННАЯ точка входа
+ * F11-smelting (BUG-023) — этим классом закрыт прежний долг {@link FurnaceRecipes}: ЕДИНСТВЕННАЯ точка входа
  * GT6-плавок в ванильную печь neo. Тот же приём, что {@link GT6CraftingDispatcher} (верстак):
  * neo наполняет {@code RecipeManager} только из датапак-JSON, рантайм-add удалён — GT6 же
  * добавляет/удаляет плавки процедурно ({@code RM.add_smelting} → {@link FurnaceRecipes}, мутабельный

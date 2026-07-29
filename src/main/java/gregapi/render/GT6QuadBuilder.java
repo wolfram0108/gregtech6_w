@@ -145,10 +145,13 @@ public final class GT6QuadBuilder {
 		// → baked-путь ниже падал в particle = system/error (жёлто-красный X у камешков на GT6-породах). Родной 1.7.10-канал
 		// Block.getIcon(side,meta) сохранён на BlockBase-иерархии (BlockBaseMeta/Log/Beam/Grass/...) — спрашиваем его напрямую;
 		// defensive-throw/null у классов без канала → штатный baked-путь ниже.
-		if (aBlock instanceof gregapi.block.BlockBase tGT6) try {
+		// Отбор по КОНТРАКТУ (gregapi.block.IBlock#getIcon), а не по иерархии: общего Block-предка у GT6 нет,
+		// а канал иконки есть у всех — BlockBase, обеих жидкостных иерархий и MTE. Носитель обязан ОТВЕЧАТЬ
+		// (null = «канала нет» → baked-путь ниже), поэтому глушилка catch(Throwable) здесь больше не нужна.
+		if (aBlock instanceof gregapi.block.IBlock tGT6) {
 			Identifier tIcon = tGT6.getIcon(aSide, aMeta);
 			if (tIcon != null) return tIcon;
-		} catch (Throwable e) {/* классы с defensive-throw getIcon → baked-путь */}
+		}
 		net.minecraft.world.level.block.Block tVariant = flattenVariant(aBlock, aMeta);
 		net.minecraft.world.level.block.state.BlockState tState = (tVariant != null ? tVariant : aBlock).defaultBlockState();
 		net.minecraft.client.renderer.block.BlockStateModelSet tSet = Minecraft.getInstance().getModelManager().getBlockStateModelSet();

@@ -83,16 +83,13 @@ public class WorldgenBlackSand extends WorldgenObject {
 						continue;
 					}
 				}
-				// F6: было `aWorld.setBlock(x,y,z,Block,int meta,int flags)` (1.7.10-сигнатура, удалена движком).
-				// Реальный neo — `Level.setBlock(BlockPos,BlockState,int flags)` (`Level.java:217`). PORT-TODO(F6,
-				// block-material: BlockBaseMeta→BlockState): `BlocksGT.Sands` — метаданные-блок (`BlockSands
-				// extends BlockBaseMeta`, 3 варианта: Magnetite/BasalticMineralSand/GraniticMineralSand по мете
-				// 0/1/2), но meta→BlockState-Property шим для `BlockBaseMeta` в дереве ещё не существует (grep
-				// `IntegerProperty`/`BlockStateProperties` по `gregapi/block` = 0 совпадений) — не выдумываю.
-				// Временно `defaultBlockState()` (вариант меты 0 = Magnetite) вместо `aMeta`-варианта — теряется
-				// выбор конкретного варианта чёрного песка (честно отложено; сам факт размещения BlocksGT.Sands и
-				// алгоритм формы/высоты пита не тронуты).
-				aWorld.setBlock(new BlockPos(tX+i, tY, tZ+j), BlocksGT.Sands.defaultBlockState(), 3);
+				// F6 (1:1 оригинала :72 `aWorld.setBlock(tX+i, tY, tZ+j, BlocksGT.Sands, aMeta, 3)`): ставим ЧЕРЕЗ ЦЕНТР
+				// WD.set(...,Block,meta,flags) — он и доставляет мету в BlockState (BlockBaseMeta несёт её свойством
+				// META, BlockBaseMeta:47-48, и реализует IBlockExtendedMetaData). Тем же вызовом ставит этот же блок
+				// сосед по ворлдгену — WorldgenCenterBiomes:91. Прежний прямой setBlock(defaultBlockState()) шёл мимо
+				// центра и ронял мету в 0: из трёх вариантов (0 Magnetite / 1 BasalticMineralSand / 2 GraniticMineralSand)
+				// генерировался только первый, хотя aMeta считается шумом выше (:57) и читается при сверке (:63).
+				WD.set(aWorld, tX+i, tY, tZ+j, BlocksGT.Sands, aMeta, 3);
 				tGenerated++;
 			}
 		}

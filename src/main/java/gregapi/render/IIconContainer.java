@@ -25,12 +25,12 @@ import net.minecraft.resources.Identifier;
 /**
  * @author Gregorius Techneticies
  *
- * PORT-TODO(F3, серверная поверхность): 1.7.10 {@code IIcon}/{@code IIconRegister} (immediate-mode
- * атлас-стежка) удалены в 26.1.2 целиком, замены не существует до фазы baked-рендера клиента —
- * см. {@code decisions/F3-render.md} §2.3 (реальный держатель текстуры на клиенте будет
- * {@code net.minecraft.client.resources.model.Material}, разрешаемый через {@code ModelBaker.materials()}).
- * До той фазы этот интерфейс отдаёт нейтральный держатель ссылки на текстуру ({@link Identifier}),
- * достаточный чтобы весь мод (141+ мест) компилировался против ОДНОЙ центральной поверхности.
+ * F3 (держатель текстуры): 1.7.10 {@code IIcon}/{@code IIconRegister} (immediate-mode атлас-стежка) удалены
+ * в 26.1.2 целиком. Фаза baked-рендера ПРОЙДЕНА — держателем стал {@link Identifier}, а резолв в
+ * {@code TextureAtlasSprite} централизован в {@code GT6QuadBuilder.resolveSprite}; на этом канале работают
+ * {@code GT6BlockModel}/{@code GT6ItemModel} (текстуры мультиблоков — BUG-061, item-модели — BUG-068, оба
+ * приняты живым тестом игрока). Долгом это больше не является: интерфейс — и есть neo-поверхность,
+ * одна на весь мод (141+ мест).
  */
 public interface IIconContainer {
 	/**

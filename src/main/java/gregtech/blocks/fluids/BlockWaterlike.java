@@ -282,9 +282,14 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}
 	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
-	public net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было Blocks.water.getIcon — 1.7.10 IIcon-атлас мёртв, реальный рендер RegisterFluidModelsEvent; crash-only per /goal");}
-	public int getRenderColor(int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): neo-тинт FluidTintSources; crash-only per /goal");}
-	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): neo-тинт FluidTintSources; crash-only per /goal");}
+	/** 1:1 оригинала (:200): {@code Blocks.water.getIcon(aSide, aMeta)} — водоподобные рисуются ВАНИЛЬНОЙ водой,
+	 *  не иконкой своей жидкости. Тот же спрайт уже держит центр {@link gregapi.render.BlockTextureFluid}
+	 *  (см. {@link #renderTexture()}) — спрашиваем его, чтобы «какая текстура» осталось в одном месте. */
+	@Override public net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {return renderTexture() instanceof gregapi.render.BlockTextureFluid tTex ? tTex.icon() : null;}
+	/** 1:1 оригинала (:201-202): {@code 0x00ffffff} — без собственного тинта. Потомки, у которых оттенок СВОЙ
+	 *  (Ocean 0x00c0c0c0, Swamp 0x0000ff00), перекрывают эти два метода своими значениями, как в оригинале. */
+	@Override public int getRenderColor(int aMeta) {return 0x00ffffff;}
+	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00ffffff;}
 	
 	// BUG-068 (F3-render, item-форма): предмет реки/океана/болота показывался пурпурной заглушкой — у него не было НИКАКОЙ
 	// модели. Канал item-модели GT6 инжектится только блокам-IRenderedBlock (GT_API_Proxy_Client:258), а JSON-моделей в моде

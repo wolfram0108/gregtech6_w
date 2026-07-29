@@ -195,7 +195,8 @@ public class BlockSwamp extends BlockWaterlike {
 	
 	// @Override
 	public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {if (WD.block(aWorld, aX, aY+1, aZ) != this || WD.meta(aWorld, aX, aY, aZ) > 0) return LIGHT_OPACITY_WATER; return LIGHT_OPACITY_MAX;}
-	@Override public net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было Blocks.water.getIcon — neo BakedModel-рендер, crash-only per /goal");} // см. BlockWaterlike.getIcon
+	// getIcon НЕ переопределяем: тело оригинала (:199) ДОСЛОВНО совпадает с базовым (BlockWaterlike:200).
+	// Своё у болота только тинт: getRenderColor 1:1 :200, позиционный colorMultiplier 1:1 :202-210.
 	@Override public int getRenderColor(int aMeta) {return 0x0000ff00;}
 	
 	@Override

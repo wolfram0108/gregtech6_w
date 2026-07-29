@@ -76,7 +76,7 @@ public class BlockOcean extends BlockWaterlike {
 			// лагов). Реальные изменения сигналятся сами: neo setBlock чинит свет и шлёт клиенту (флаги WD.set).
 			// Тот же приём у самого Грега в BlockWaterlike.updateFlow: «Here was an else Block that only caused huge
 			// amounts of Network Lag with no purpose». Свет-хак getLightOpacity, ради которого стоял re-light, в
-			// порте не существует (PORT-TODO-заглушка LIGHT_OPACITY_NONE ниже). Каскад тика вниз по колонне —
+			// порте не существует (заглушка LIGHT_OPACITY_NONE ниже, см. getLightOpacity). Каскад тика вниз по колонне —
 			// механика (питает над-логику Ocean/River/Swamp), ОСТАВЛЕН 1:1.
 			if (aY > WD.minY(aWorld)) { // F6-Y-scale: было aY > 0, дно neo = getMinY()
 				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
@@ -177,7 +177,8 @@ public class BlockOcean extends BlockWaterlike {
 		return LIGHT_OPACITY_NONE;
 	}
 
-	@Override public net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было Blocks.water.getIcon — neo BakedModel-рендер, crash-only per /goal");} // см. BlockWaterlike.getIcon
+	// getIcon НЕ переопределяем: тело оригинала (:169 `Blocks.water.getIcon(aSide,aMeta)`) ДОСЛОВНО совпадает
+	// с базовым (BlockWaterlike:200) — копия была бы дублем детали. Своё у океана только тинт (ниже, 1:1 :170-171).
 	@Override public int getRenderColor(int aMeta) {return 0x00c0c0c0;}
 	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00c0c0c0;}
 }

@@ -106,12 +106,21 @@ public class BlockTextureCopied implements ITexture {
 		// glow — ДАННЫЕ (самосветящиеся ванильные блоки). Оригинал (BlockTextureCopied.java:100):
 		//   aBlock == Blocks.FIRE || Blocks.LAVA || Blocks.LAVA || Blocks.GLOWSTONE || Blocks.REDSTONE_LAMP
 		// fire/lava/glowstone → neo 1:1 (REMAP-RULES §C блок-флэттен: lowercase→uppercase neo-константа).
-		// PORT-TODO(F3/block-flatten): flowing_lava (в neo — та же Blocks.LAVA с FluidState, отдельного блока нет)
-		// и lit_redstone_lamp (в neo — Blocks.REDSTONE_LAMP с blockstate-свойством LIT, отдельного блока нет)
-		// block-идентичности не имеют — 2 токена glow-набора восстановятся при закрытии шва block-flatten.
-		// PORT-TODO(F3, block-icon-data): 4-й аргумент был aBlock.getRenderColor(aMeta) (метод удалён из neo
-		// Block, REMAP-RULES §C2) — цвет рендера блока 1:1-доступа не имеет; передаём UNCOLOURED-заглушку.
-		this(aBlock, aSide, aMeta, UNCOLOURED, F
+		// Два оставшихся токена разобраны после закрытия шва block-flatten (BUG-080, CS.Flattened):
+		//  · flowing_lava — в neo отдельного блока НЕТ, текучая лава это та же Blocks.LAVA с FluidState,
+		//    то есть токен уже покрыт условием `aBlock == Blocks.LAVA` (дубль оригинала — у Грега LAVA стоит
+		//    в списке дважды, ровно потому что там это были два разных блока);
+		//  · lit_redstone_lamp — в neo это Blocks.REDSTONE_LAMP со свойством LIT, block-идентичности нет:
+		//    различие живёт в BlockState, а сюда приходит Block. Вызывателей на лампу в дереве 0
+		//    (греп BlockTextureCopied.get/new по FIRE|LAVA|GLOWSTONE|LAMP: только LAVA, GLOWSTONE, OBSIDIAN
+		//    и портал Aether), поэтому расхождение ненаблюдаемо; при появлении вызывателя различие берётся
+		//    из состояния позиции, а не из блок-идентичности. Долгом это не является — движковое расхождение.
+		// Цвет: 4-й аргумент был aBlock.getRenderColor(aMeta). Канал восстановлен как контракт IBlock#getRenderColor
+		// (общего Block-предка у иерархий GT6 нет) — спрашиваем ЕГО у GT6-блоков. У ванильных neo-блоков тинта нет
+		// и не нужно: их цвет перенесён в САМИ блоки флэттенингом (white_wool/red_wool — свои текстуры), а дефолт
+		// 1.7.10 Block.getRenderColor был 0xFFFFFF = UNCOLOURED, то есть для них поведение и так 1:1.
+		this(aBlock, aSide, aMeta
+			, aBlock instanceof gregapi.block.IBlock tGT6 ? tGT6.getRenderColor(aMeta) : UT.Code.getRGBInt(UNCOLOURED), F
 			, aBlock == Blocks.FIRE || aBlock == Blocks.LAVA || aBlock == Blocks.GLOWSTONE
 			, aBlock == Blocks.FIRE || aBlock == Blocks.LAVA || aBlock == Blocks.GLOWSTONE);
 	}

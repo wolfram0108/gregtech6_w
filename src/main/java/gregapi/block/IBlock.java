@@ -34,6 +34,24 @@ public interface IBlock {
 	 *  Единый контракт для ВСЕХ Block-иерархий GT6 (BlockBase/флюиды/MTE/rail/prefix — общего предка нет);
 	 *  читает GT6BlockModel.applyBounds (1.7.10 RenderBlocks.setRenderBoundsFromBlock) — под-боксы render-пассов. */
 	public float[] getRenderBounds();
+	/** F3 block-icon-data (читают ЦЕНТРЫ {@link gregapi.render.GT6QuadBuilder#resolveBlockFaceIcon} — лицо блока,
+	 *  и {@code GT6BlockModel.particleMaterial} — крошка разрушения): 1.7.10 держал {@code Block.getIcon(side, meta)}
+	 *  на САМОМ ванильном Block, поэтому канал был у каждого блока по определению движка и каждая GT6-иерархия просто
+	 *  перекрывала его своим (BlockBaseMeta/Log/Beam/Leaves/Rail/Grass/Path — свои спрайты, PrefixBlock — по материалу,
+	 *  MultiTileEntityBlock — CFOAM_HARDENED, жидкости — текстура жидкости). neo этот метод удалил вместе с {@code IIcon},
+	 *  и контракт восстановлен здесь — по той же причине, что {@link #getRenderBounds()} и {@link #getHarvestTool(int)}:
+	 *  общего Block-предка у иерархий GT6 нет.
+	 *  <p>Дефолт — {@code null} = «канал иконки у этой иерархии не заведён» (в 1.7.10 ему соответствовал
+	 *  унаследованный от ваниль-Block {@code blockIcon}, которого в neo нет); потребитель уходит на штатный baked-путь.
+	 *  ⛔ Носитель канала обязан ОТВЕЧАТЬ, а не бросать: до 2026-07-29 шесть классов бросали здесь
+	 *  {@code UnsupportedOperationException}, и оба центра-потребителя были обвешаны {@code catch (Throwable)} —
+	 *  исключение в живом канале, замазанное на стороне читателя. */
+	default net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {return null;}
+	/** F3 block-render-color (пара к {@link #getIcon}): 1.7.10 {@code Block.getRenderColor(meta)} — тинт блока,
+	 *  и {@code colorMultiplier(world,x,y,z)} — тинт per-позиция. Оба удалены из neo Block. Дефолт — белый
+	 *  ({@code 0x00ffffff} = «без собственного тинта», ровно как отдавал ванильный Block). */
+	default int getRenderColor(int aMeta) {return 0x00ffffff;}
+	default int colorMultiplier(net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {return getRenderColor(gregapi.util.WD.meta(aWorld, aX, aY, aZ));}
 	/** F-tool (читают ЦЕНТРЫ WD.harvestTool/WD.harvestLevel): 1.7.10 Forge держал getHarvestTool(int)/getHarvestLevel(int)
 	 *  на САМОМ Block — каждая GT6-иерархия отвечала своими полями (BlockBase.mTool, MTE-Block.mTool, PrefixBlock.mTool,
 	 *  Rail=crowbar). neo эту точку удалил; контракт восстанавливает её на едином IBlock (общего Block-предка у иерархий
