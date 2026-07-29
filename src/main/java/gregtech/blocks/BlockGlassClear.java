@@ -74,9 +74,16 @@ public class BlockGlassClear extends BlockColored {
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(OP.scrapGt.mat(MT.Glass, mBlock == this ? 80 : 40));}
 	
 	
-	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
+	/** 1:1 с оригиналом (`gregtech6/.../BlockGlassClear.java:76-80`): грань к соседу-стеклу ТОГО ЖЕ блока
+	 *  рисуется только при РАЗНОЙ мете (разные цвета) либо при несовпадении сторон половинок; одинаковые
+	 *  стёкла сливаются в сплошной объём. Правило переехало на контракт по СОСТОЯНИЯМ: движковый канал
+	 *  neo (skipRendering) мира не даёт, а прежняя 1.7.10-сигнатура осталась без вызывателей — из-за чего
+	 *  между блоками стекла рисовалась стенка (найдено игроком сверкой с 1.7.10). Центр — BlockMetaType. */
+	@Override public boolean shouldSideBeRendered(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.block.state.BlockState aNeighbor, byte aSide) {
 		if (aSide == OPOS[mSide]) return T;
-		Block aBlock = WD.block(aWorld, aX, aY, aZ);
-		return aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mBlock == mBlock ? WD.meta(aWorld, aX, aY, aZ) != WD.meta(aWorld, aX - OFFX[aSide], aY - OFFY[aSide], aZ - OFFZ[aSide]) || ((((BlockMetaType)aBlock).mSide != mSide || aSide == mSide) && ((BlockMetaType)aBlock).mSide != OPOS[aSide] && ((BlockMetaType)aBlock).mSide != SIDE_ANY) : T /* база GT6 не несёт shouldSideBeRendered (F-render отложен core-wide); дефолт=рендерить сторону */;
+		Block aBlock = aNeighbor.getBlock();
+		if (!(aBlock instanceof BlockMetaType tNeighbor) || tNeighbor.mBlock != mBlock) return T;
+		return tNeighbor.getExtendedMetaData(aNeighbor) != getExtendedMetaData(aState)
+			|| ((tNeighbor.mSide != mSide || aSide == mSide) && tNeighbor.mSide != OPOS[aSide] && tNeighbor.mSide != SIDE_ANY);
 	}
 }

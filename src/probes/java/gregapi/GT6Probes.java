@@ -250,6 +250,10 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6archery.flag")) gt6ArcheryTick(aEvent.getServer());
 	// [GT6-LIGHTYARD] ПЛОЩАДКА ПРИЁМКИ: двор света (колодцы GT6/ваниль + навесы) — снять после приёмки
 		if (gregapi.data.CS.probeFlag("gt6lightyard.flag")) gt6LightYardTick(aEvent.getServer());
+	// [GT6-OVENYARD] ПЛОЩАДКА ПРИЁМКИ: печь GT6 и ванильная рядом — снять после приёмки
+		if (gregapi.data.CS.probeFlag("gt6ovenyard.flag")) gt6OvenYardTick(aEvent.getServer());
+	// [GT6-BLOCKLIGHT] ПЛОЩАДКА ПРИЁМКИ: свет под блоками GT6 (класс 684/684) — снять после приёмки
+		if (gregapi.data.CS.probeFlag("gt6blocklight.flag")) gt6BlockLightTick(aEvent.getServer());
 	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска в Соковыжималке» — снять при уборке фазы
@@ -10256,5 +10260,221 @@ public final class GT6Probes {
 			tCan.append("§7").append(tC[1]).append("§r ").append(tLevel.getBrightness(net.minecraft.world.level.LightLayer.SKY, tBase)).append("  ");
 		}
 		gt6LYardSay(aPlayer, "под навесами (свет на полу): " + tCan);
+	}
+
+	// ==========================================================================================================
+	// gt6ovenyard — ПЛОЩАДКА ПРИЁМКИ №3: печь GT6 (Oven). Плавит ИГРОК, справку даёт стенд.
+	//
+	// Проверяются два разных утверждения:
+	//   1) печь GT6 плавит ванильное сырьё (до правки — 1 из 8: только песок, эту плавку GT6 клал себе сам);
+	//   2) в JEI у печи появились рецепты (витрина RM.Furnace была пуста).
+	// Рядом ставится ВАНИЛЬНАЯ печь — чтобы сравнивать бок о бок, а не по памяти.
+	//
+	// Стенд ничего не судит: он строит площадку, выдаёт печь, топку, топливо и сырьё, и печатает справку —
+	// что реестр GT6 отвечает на каждый образец. Совпадает ли это с тем, что выйдет из печи, смотрит человек.
+	// ==========================================================================================================
+	private static final String OYARD_M = "GT6-OVENYARD";
+	private static int sOYardTick = -1;
+	private static boolean sOYardBuilt = F;
+
+	public static void gt6OvenYardTick(net.minecraft.server.MinecraftServer aServer) {
+		sOYardTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (!sOYardBuilt && sOYardTick > 60) gt6OvenYardBuild(tPlayer);
+	}
+
+	private static void gt6OYardSay(ServerPlayer aPlayer, String aText) {
+		aPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal(aText));
+		gregapi.data.CS.OUT.println("[" + OYARD_M + "] " + aText);
+	}
+
+	/** Первый ID из реестра, чьё имя содержит образец (печь/топку ищем по имени, а не по числу — номера меняются). */
+	private static int gt6OYardFindID(gregapi.block.multitileentity.MultiTileEntityRegistry aReg, String aNamePart) {
+		for (int tID = 1; tID < 32000; tID++) {
+			gregapi.block.multitileentity.MultiTileEntityClassContainer tC = aReg.getClassContainer(tID);
+			if (tC == null) continue;
+			net.minecraft.world.item.ItemStack tStack = aReg.getItem(tID);
+			if (gregapi.util.ST.invalid(tStack)) continue;
+			String tName = tStack.getHoverName().getString();
+			if (tName != null && tName.toLowerCase().contains(aNamePart.toLowerCase())) return tID;
+		}
+		return -1;
+	}
+
+	private static void gt6OvenYardBuild(ServerPlayer aPlayer) {
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition();
+		net.minecraft.world.level.block.state.BlockState tFloor = net.minecraft.world.level.block.Blocks.SMOOTH_STONE.defaultBlockState();
+		for (int dx = -2; dx <= 10; dx++) for (int dz = -4; dz <= 4; dz++) {
+			tLevel.setBlock(tO.offset(dx, -1, dz), tFloor, 3);
+			for (int dy = 0; dy <= 4; dy++) tLevel.setBlock(tO.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		}
+		// ВАНИЛЬНАЯ печь рядом — эталон для сравнения бок о бок
+		tLevel.setBlock(tO.offset(6, 0, 3), net.minecraft.world.level.block.Blocks.FURNACE.defaultBlockState(), 3);
+
+		aPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+		aPlayer.getInventory().clearContent();
+		int tSlot = 0;
+
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		int tOvenID = tReg == null ? -1 : gt6OYardFindID(tReg, "Oven (");
+		int tBoxID  = tReg == null ? -1 : gt6OYardFindID(tReg, "Burning Box");
+		if (tOvenID > 0) {net.minecraft.world.item.ItemStack tOven = tReg.getItem(tOvenID); tOven.setCount(4); aPlayer.getInventory().setItem(tSlot++, tOven);}
+		if (tBoxID  > 0) {net.minecraft.world.item.ItemStack tBox  = tReg.getItem(tBoxID);  tBox.setCount(4);  aPlayer.getInventory().setItem(tSlot++, tBox);}
+		aPlayer.getInventory().setItem(tSlot++, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.FURNACE, 4));
+		aPlayer.getInventory().setItem(tSlot++, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COAL, 64));
+
+		// СЫРЬЁ: те же восемь образцов, на которых мерился дефект
+		net.minecraft.world.item.Item[] tSamples = {
+			net.minecraft.world.item.Items.RAW_IRON, net.minecraft.world.item.Items.RAW_COPPER,
+			net.minecraft.world.item.Items.RAW_GOLD, net.minecraft.world.item.Items.SAND,
+			net.minecraft.world.item.Items.POTATO,   net.minecraft.world.item.Items.BEEF,
+			net.minecraft.world.item.Items.COBBLESTONE, net.minecraft.world.item.Items.CLAY_BALL};
+		for (net.minecraft.world.item.Item tItem : tSamples) if (tSlot < 36) aPlayer.getInventory().setItem(tSlot++, new net.minecraft.world.item.ItemStack(tItem, 16));
+
+		sOYardBuilt = T;
+		gt6OYardSay(aPlayer, "§e=== ПЛОЩАДКА ПЕЧИ ГОТОВА ===");
+		gt6OYardSay(aPlayer, "В инвентаре: §bпечь GT6 (Oven)§r ×4, §bтопка (Burning Box)§r ×4, ванильная печь ×4, уголь, и 8 видов сырья.");
+		gt6OYardSay(aPlayer, "Ванильная печь уже стоит на площадке — рядом, для сравнения бок о бок.");
+		gt6OYardSay(aPlayer, "§7Печь GT6 греется от топки снизу: поставьте Burning Box, сверху Oven, в топку — уголь.");
+		gt6OYardSay(aPlayer, "§eСПРАВКА — что реестр GT6 отвечает на каждый образец (это НЕ результат печи, а то, что она должна выдать):");
+		for (net.minecraft.world.item.Item tItem : tSamples) {
+			net.minecraft.world.item.ItemStack tOut = gregapi.data.RM.get_smelting(new net.minecraft.world.item.ItemStack(tItem));
+			String tName = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem).getPath();
+			gt6OYardSay(aPlayer, "  §f" + tName + "§r → " + (gregapi.util.ST.invalid(tOut) ? "§cПУСТО" : "§a" + tOut.getHoverName().getString()));
+		}
+		gt6OYardSay(aPlayer, "§eВИТРИНА JEI: в карте печи сейчас §f" + gregapi.data.RM.Furnace.mRecipeListSize + "§e рецептов (было 0 — категория пустовала).");
+		gt6OYardSay(aPlayer, "§7Проверить: наведитесь на любой образец и нажмите §fU§7 (что из него делают) — в списке должна быть категория печи GT6.");
+	}
+
+	// ==========================================================================================================
+	// gt6blocklight — ПЛОЩАДКА ПРИЁМКИ №4: свет под БЛОКАМИ GT6 (класс, закрытый мостами в 4 корнях иерархий).
+	//
+	// Метка №2 чинила воду. Но getLightOpacity() объявлен ещё у полусотни блоков, и мосты поставлены в
+	// BlockBase / PrefixBlock / BlockBaseFlower / BlockBaseRail — обход реестра дал 684 из 684. Здесь то же
+	// самое отдаётся ГЛАЗАМ: ряд одинаковых ячеек, каждая накрыта своим блоком, рядом ванильные эталоны.
+	//
+	// Читать так: под НЕПРОЗРАЧНЫМ (руда, камень) должно быть темно; под стеклом — светло как на улице;
+	// под листвой — чуть темнее улицы; рельсы/цветы света не держат вовсе.
+	// ==========================================================================================================
+	private static final String BL_M = "GT6-BLOCKLIGHT";
+	private static int sBLTick = -1;
+	private static boolean sBLBuilt = F;
+	private static final java.util.List<Object[]> sBLCells = new java.util.ArrayList<>();
+
+	public static void gt6BlockLightTick(net.minecraft.server.MinecraftServer aServer) {
+		sBLTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (!sBLBuilt) {if (sBLTick > 60) gt6BlockLightBuild(tPlayer); return;}
+		if (sBLTick % 60 == 0) gt6BlockLightMeasure(tPlayer);
+	}
+
+	private static void gt6BLSay(ServerPlayer aPlayer, String aText) {
+		aPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal(aText));
+		gregapi.data.CS.OUT.println("[" + BL_M + "] " + aText);
+	}
+
+	/** Ячейка 3x3: пол, стены по бокам, крыша из испытуемого блока, вход открыт с юга. */
+	private static void gt6BLCell(ServerLevel aLevel, BlockPos aBase, net.minecraft.world.level.block.Block aBlock, String aName, int aDeclared, int aMeta) {
+		if (aBlock == null) return;
+		net.minecraft.world.level.block.state.BlockState tStone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+		net.minecraft.world.level.block.state.BlockState tAir   = net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+		for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+			aLevel.setBlock(aBase.offset(dx, -1, dz), tStone, 3);                       // пол
+			for (int dy = 0; dy <= 2; dy++) {
+				boolean tWall = (dx == -1 || dx == 1 || dz == -1);                      // стены, юг открыт
+				aLevel.setBlock(aBase.offset(dx, dy, dz), tWall ? tStone : tAir, 3);
+			}
+			// ⛔ КРЫША ставится ЦЕНТРОМ МОДА, а не setBlock: блок GT6 без TileEntity роняет сервер при
+			// обновлении соседей (NPE «aMaterial is null», PrefixBlock:384-385 — проверки нет и у Грега;
+			// записано в журнале BUG-087). WD.set создаёт TE там, где он нужен.
+			BlockPos tRoof = aBase.offset(dx, 3, dz);
+			if (aMeta >= 0) gregapi.util.WD.set(aLevel, tRoof.getX(), tRoof.getY(), tRoof.getZ(), aBlock, aMeta, 3);
+			else aLevel.setBlock(tRoof, aBlock.defaultBlockState(), 3);
+			for (int dy = 4; dy <= 18; dy++) aLevel.setBlock(aBase.offset(dx, dy, dz), tAir, 3);
+		}
+		sBLCells.add(new Object[]{aBase, aName, aBlock, aDeclared});
+	}
+
+	private static int gt6BLDeclared(net.minecraft.world.level.block.Block aBlock) {
+		try {return (Integer) aBlock.getClass().getMethod("getLightOpacity").invoke(aBlock);} catch (Throwable e) {return -1;}
+	}
+
+	private static void gt6BLAdd(ServerLevel aLevel, BlockPos aO, int aIndex, Object aBlock, String aName) {
+		if (!(aBlock instanceof net.minecraft.world.level.block.Block tBlock)) return;
+		// у мета-блоков GT6 берём ПЕРВЫЙ валидный подтип: у руды это материал, иначе блок встанет «пустым»
+		int tMeta = 0;
+		if (aBlock instanceof gregapi.block.prefixblock.PrefixBlock tPrefix) {
+			tMeta = -1;
+			for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+				if (tMat == null) continue;
+				try {if (!tPrefix.mPrefix.isGeneratingItem(tMat)) continue;} catch (Throwable e) {continue;}
+				tMeta = tMat.mID; break;
+			}
+			if (tMeta < 0) return;
+		}
+		gt6BLCell(aLevel, aO.offset(aIndex * 4, 0, 0), tBlock, aName, gt6BLDeclared(tBlock), tMeta);
+	}
+
+	private static void gt6BlockLightBuild(ServerPlayer aPlayer) {
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition().offset(3, 0, 3);
+		sBLCells.clear();
+		int i = 0;
+		// ── блоки GT6: по одному из КАЖДОЙ иерархии, куда ставился мост
+		// ⛔ РУДА (PrefixBlock) из площадки ИСКЛЮЧЕНА осознанно. Поставленная стендом, она роняет сервер:
+		// PrefixBlock.scheduleUpdateIfNeeded:434-435 зовёт aMaterial.containsAny(...), а getMetaMaterial:814-816
+		// штатно отдаёт null, когда мета не из списка материалов — защиты нет ни в порте, ни в оригинале
+		// (gregtech6/.../PrefixBlock.java:373-383). Подгонять код мода под стенд НЕЛЬЗЯ (указание игрока
+		// 2026-07-29), поэтому ветка PrefixBlock проверяется не здесь, а машинным обходом реестра
+		// (gt6lightaudit, 684/684). Сам краш остаётся отдельным наблюдением, не поводом к правке.
+		gt6BLAdd(tLevel, tO, i++, gregapi.data.CS.BlocksGT.Glass,      "стекло GT6 (BlockBase)");
+		gt6BLAdd(tLevel, tO, i++, gregapi.data.CS.BlocksGT.Leaves_AB,  "листва GT6 (BlockBase)");
+		gt6BLAdd(tLevel, tO, i++, gregapi.data.CS.BlocksGT.Paths,      "дорожка GT6 (BlockBase)");
+		gt6BLAdd(tLevel, tO, i++, gregapi.data.CS.BlocksGT.Sands,      "песок GT6 (BlockBase)");
+		gt6BLAdd(tLevel, tO, i++, gregapi.data.CS.BlocksGT.Bars_Steel, "решётка GT6 (BlockBase)");
+		gt6BLAdd(tLevel, tO, i++, gregapi.data.CS.BlocksGT.RailRoad,   "рельсы GT6 (BaseRailBlock)");
+		gt6BLAdd(tLevel, tO, i++, gregapi.data.CS.BlocksGT.FlowersA,   "цветок GT6 (FlowerBlock)");
+		// ── ванильные эталоны рядом
+		gt6BLCell(tLevel, tO.offset(i++ * 4, 0, 0), net.minecraft.world.level.block.Blocks.STONE,     "ЭТАЛОН камень", -1, -1);
+		gt6BLCell(tLevel, tO.offset(i++ * 4, 0, 0), net.minecraft.world.level.block.Blocks.GLASS,     "ЭТАЛОН стекло", -1, -1);
+		gt6BLCell(tLevel, tO.offset(i++ * 4, 0, 0), net.minecraft.world.level.block.Blocks.OAK_LEAVES,"ЭТАЛОН листва", -1, -1);
+
+		// ── СТЕНА ИЗ СТЁКОЛ: проверка граней между соседними блоками (находка игрока — в 1.7.10 они сливаются)
+		net.minecraft.world.level.block.Block tGlass = (net.minecraft.world.level.block.Block) gregapi.data.CS.BlocksGT.Glass;
+		net.minecraft.world.level.block.Block tGlow  = (net.minecraft.world.level.block.Block) gregapi.data.CS.BlocksGT.GlowGlass;
+		BlockPos tWall = aPlayer.blockPosition().offset(2, 0, -6);
+		for (int dx = 0; dx < 4; dx++) for (int dy = 0; dy < 3; dy++) {
+			// одинаковая мета: грань между блоками должна ИСЧЕЗНУТЬ (стёкла сливаются)
+			if (tGlass != null) gregapi.util.WD.set(tLevel, tWall.getX()+dx, tWall.getY()+dy, tWall.getZ(), tGlass, 0, 3);
+			// соседний ряд — ДРУГАЯ мета (другой цвет): грань между рядами должна ОСТАТЬСЯ
+			if (tGlass != null) gregapi.util.WD.set(tLevel, tWall.getX()+dx, tWall.getY()+dy, tWall.getZ()+2, tGlass, 4, 3);
+			// ванильное стекло для сравнения
+			tLevel.setBlock(tWall.offset(dx, dy, 4), net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState(), 3);
+			if (tGlow != null) gregapi.util.WD.set(tLevel, tWall.getX()+dx, tWall.getY()+dy, tWall.getZ()+6, tGlow, 0, 3);
+		}
+
+		sBLBuilt = T;
+		gt6BLSay(aPlayer, "§e=== ПЛОЩАДКА СВЕТА ПОД БЛОКАМИ ГОТОВА ===");
+		gt6BLSay(aPlayer, "§bСТЕНЫ ИЗ СТЁКОЛ (сбоку): 1) стекло GT6 одной меты — грани между блоками БЫТЬ НЕ ДОЛЖНО;");
+		gt6BLSay(aPlayer, "§b2) стекло GT6 другой меты — с первым рядом грань ОСТАЁТСЯ; 3) ванильное стекло — эталон; 4) светящееся стекло GT6.");
+		gt6BLSay(aPlayer, "Ряд одинаковых ячеек, у каждой крыша из своего блока; вход с южной стороны. Последние три — ванильные эталоны.");
+		gt6BLSay(aPlayer, "§7Ожидание: под рудой/песком темно (непрозрачные), под стеклом светло как на улице, под листвой чуть темнее, рельсы и цветы свет не держат.");
+		gt6BLSay(aPlayer, "§7Числа печатаю каждые 3 секунды: «объявлено модом» — то, что GT6 просит; «в состоянии» — то, что реально знает движок.");
+	}
+
+	private static void gt6BlockLightMeasure(ServerPlayer aPlayer) {
+		ServerLevel tLevel = aPlayer.level();
+		for (Object[] tC : sBLCells) {
+			BlockPos tBase = (BlockPos) tC[0];
+			net.minecraft.world.level.block.Block tBlock = (net.minecraft.world.level.block.Block) tC[2];
+			int tDeclared = (Integer) tC[3];
+			int tState = tBlock.defaultBlockState().getLightDampening();
+			int tFloor = tLevel.getBrightness(net.minecraft.world.level.LightLayer.SKY, tBase);
+			gt6BLSay(aPlayer, String.format("§f%-28s§r свет на полу §e%2d§r · в состоянии §f%2d§r%s",
+				tC[1], tFloor, tState, tDeclared >= 0 ? " · объявлено модом §7" + tDeclared : ""));
+		}
 	}
 }

@@ -242,7 +242,21 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering) И новая сигнатура не
 	// передаёт World/BlockPos - для isOpaqueCube()==true ветка (константный результат от THIS-блока, позиция
 	// не нужна) переносится напрямую с инверсией; для else-ветки используем ванильный дефолт (position-lost).
-	@Override protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return isOpaqueCube() ? WD.visOpq(aNeighbor.getBlock()) : super.skipRendering(aState, aNeighbor, aDir);}
+	/**
+	 * ЦЕНТР «рисовать ли грань к соседу» — то, чем в 1.7.10 был {@code shouldSideBeRendered(world,x,y,z,side)}.
+	 *
+	 * <p><b>Почему контракт по СОСТОЯНИЯМ.</b> neo спрашивает видимость грани через
+	 * {@code BlockBehaviour.skipRendering(BlockState, BlockState, Direction)} — мира и координат там нет.
+	 * Потомки, у которых правило осталось в 1.7.10-сигнатуре, вызывателей не имели, и их логика выпадала.
+	 * Живой случай (найден игроком сверкой с 1.7.10): два блока стекла GT6 рядом рисовали между собой
+	 * стенку, хотя одинаковые стёкла должны сливаться.
+	 *
+	 * <p>Вопрос задаётся здесь, в КОРНЕ иерархии, и оттуда его получают обе ветки — и {@code BlockMetaType}
+	 * (стёкла), и прямые наследники {@code BlockBaseMeta} (дорожка). Возврат как в 1.7.10: {@code true} = рисовать.
+	 */
+	public boolean shouldSideBeRendered(BlockState aState, BlockState aNeighbor, byte aSide) {return T;}
+
+	@Override protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {if (!shouldSideBeRendered(aState, aNeighbor, UT.Code.side(aDir))) return T; return isOpaqueCube() ? WD.visOpq(aNeighbor.getBlock()) : super.skipRendering(aState, aNeighbor, aDir);}
 	public int damageDropped(int aMeta) {return aMeta;}
 	public int quantityDropped(int aMeta, int aFortune, Random aRandom) {return 1;}
 	public ItemStack createStackedBlock(int aMeta) {return ST.make(this, 1, damageDropped(aMeta));}

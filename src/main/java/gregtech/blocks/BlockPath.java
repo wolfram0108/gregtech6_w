@@ -87,9 +87,12 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 		}
 	}
 	
-	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) { // GT6 render-хук (мост neo=skipRendering в BlockBase); F-shape/render отложены core-wide
+	/** 1:1 с оригиналом: сверху грань рисуется всегда, вбок — только если сосед не грядка и не непрозрачный
+	 *  (дорожка утоплена, к сплошному соседу грань не нужна). Контракт по состояниям — движковый канал neo
+	 *  (skipRendering) мира не даёт, прежняя 1.7.10-сигнатура вызывателей не имела. Центр — BlockMetaType. */
+	@Override public boolean shouldSideBeRendered(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.block.state.BlockState aNeighbor, byte aSide) {
 		if (SIDES_TOP[aSide]) return T;
-		Block tBlock = WD.block(aWorld, aX, aY, aZ);
+		Block tBlock = aNeighbor.getBlock();
 		return tBlock != Blocks.FARMLAND && !WD.visOpq(tBlock);
 	}
 	

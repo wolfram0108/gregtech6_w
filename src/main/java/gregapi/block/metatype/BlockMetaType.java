@@ -259,9 +259,27 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering). Позиция(aX,aY,aZ) в исходнике
 	// была позицией СОСЕДА (стандартная 1.7.10-семантика shouldSideBeRendered) -> aNeighbor.getBlock() эквивалентен
 	// WD.block(aWorld,aX,aY,aZ) без потерь, доп. world/pos не требовались.
+	/**
+	 * ЦЕНТР «рисовать ли грань к соседу» — то, чем в 1.7.10 был {@code shouldSideBeRendered(world,x,y,z,side)}.
+	 *
+	 * <p><b>Почему контракт переведён на СОСТОЯНИЯ.</b> neo спрашивает видимость грани через
+	 * {@code BlockBehaviour.skipRendering(BlockState, BlockState, Direction)} — мира и координат там нет.
+	 * Потомки, переопределившие 1.7.10-сигнатуру, остались без вызывателей: их правило просто выпадало.
+	 * Живой случай (найден игроком сверкой с 1.7.10): два блока стекла GT6 рядом рисовали между собой
+	 * стенку, тогда как в оригинале одинаковые стёкла сливаются — правило жило в
+	 * {@code BlockGlassClear.shouldSideBeRendered}, которое движок не звал.
+	 *
+	 * <p>Поэтому вопрос задаётся ЗДЕСЬ, в общем предке семейства, и ровно один раз; потомки переопределяют
+	 * этот метод, а не мёртвую сигнатуру. Возврат — как в 1.7.10: {@code true} = грань рисовать.
+	 *
+	 * <p>Само объявление контракта — в корне иерархии ({@link gregapi.block.BlockBase}); здесь только вызов,
+	 * потому что этот мост переопределяет предковый.
+	 */
 	@Override
 	protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
 		byte aSide = UT.Code.side(aDir);
+		// сперва — правило семьи (стёкла/дорожка): «не рисовать» у них выражается через контракт выше
+		if (!shouldSideBeRendered(aState, aNeighbor, aSide)) return T;
 		if (aSide == OPOS[mSide]) return F;
 		if (aSide != mSide && SIDES_VALID[mSide]) {
 			Block aBlock = aNeighbor.getBlock();

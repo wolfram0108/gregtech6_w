@@ -77,9 +77,13 @@ public class BlockGlassGlow extends BlockColored {
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(OP.scrapGt.mat(MT.Glass, mBlock == this ? 80 : 40));}
 	
 	
-	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
+	/** То же правило, что у прозрачного стекла (1:1 оригинала): одинаковые светящиеся стёкла сливаются,
+	 *  разные меты/стороны — грань рисуется. Контракт по состояниям, центр — BlockMetaType. */
+	@Override public boolean shouldSideBeRendered(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.block.state.BlockState aNeighbor, byte aSide) {
 		if (aSide == OPOS[mSide]) return T;
-		Block aBlock = WD.block(aWorld, aX, aY, aZ);
-		return aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mBlock == mBlock ? WD.meta(aWorld, aX, aY, aZ) != WD.meta(aWorld, aX - OFFX[aSide], aY - OFFY[aSide], aZ - OFFZ[aSide]) || ((((BlockMetaType)aBlock).mSide != mSide || aSide == mSide) && ((BlockMetaType)aBlock).mSide != OPOS[aSide] && ((BlockMetaType)aBlock).mSide != SIDE_ANY) : T /* база GT6 не несёт shouldSideBeRendered (F-render отложен core-wide); дефолт=рендерить сторону */;
+		Block aBlock = aNeighbor.getBlock();
+		if (!(aBlock instanceof BlockMetaType tNeighbor) || tNeighbor.mBlock != mBlock) return T;
+		return tNeighbor.getExtendedMetaData(aNeighbor) != getExtendedMetaData(aState)
+			|| ((tNeighbor.mSide != mSide || aSide == mSide) && tNeighbor.mSide != OPOS[aSide] && tNeighbor.mSide != SIDE_ANY);
 	}
 }
