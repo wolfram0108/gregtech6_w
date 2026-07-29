@@ -133,6 +133,9 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	public int quantityDropped(Random par1Random) {return 1;}
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
 	public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
+
+	// F3 light-opacity МОСТ (цветы наследуют ванильный FlowerBlock, а не BlockBase — свой мост, см. разбор там).
+	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
 	public Item getItemDropped(int par1, Random aRandom, int par3) {return Item.byBlock(this);}
 	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
 	public void registerBlockIcons(Object aIconRegister) {/**/}

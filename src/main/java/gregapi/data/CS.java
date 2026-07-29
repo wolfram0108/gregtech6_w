@@ -248,6 +248,23 @@ public class CS {
 
 	/** A few Default Values for Light Opacity. */
 	public static final int LIGHT_OPACITY_NONE = 0, LIGHT_OPACITY_LEAVES = 1, LIGHT_OPACITY_WATER = 3, LIGHT_OPACITY_MAX = 255;
+
+	/**
+	 * F3 light-opacity ЦЕНТР ПЕРЕВОДА ШКАЛЫ: значение 1.7.10 {@code getLightOpacity()} → neo
+	 * {@code getLightDampening(BlockState)}.
+	 *
+	 * <p>В 1.7.10 непрозрачность вычиталась из уровня света (0..15), а {@code 255} был сентинелом «гасит
+	 * полностью»; в neo тот же смысл несёт значение шкалы 0..15 ({@code LightEngine.getOpacity:85-87} берёт
+	 * {@code state.getLightDampening()} и вычитает его). Поэтому величины до 15 переносятся КАК ЕСТЬ
+	 * (вода 3, листва 1, прозрачное 0), а всё, что 15 и выше — включая 255 — становится 15.
+	 *
+	 * <p>Перевод живёт здесь, рядом с самими константами, чтобы у него было ОДНО место на весь мод:
+	 * мосты в {@code BlockBase}/{@code PrefixBlock}/{@code BlockBaseFlower}/{@code BlockBaseRail}/
+	 * {@code BlockFluidBaseGT} зовут его, а не повторяют арифметику.
+	 */
+	public static int lightDampening(int aOpacity1710) {
+		return aOpacity1710 >= 15 ? 15 : Math.max(0, aOpacity1710);
+	}
 	
 	/**
 	 * F6: {@code BiomeGenBase.xxx}-статики (1.7.10) заменены на {@code Biomes.XXX} — {@code ResourceKey<Biome>}

@@ -215,6 +215,9 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public int quantityDropped(Random par1Random) {return 1;}
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return 0;}
 	public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
+
+	// F3 light-opacity МОСТ (рельсы наследуют ванильный BaseRailBlock, а не BlockBase — свой мост, см. разбор там).
+	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
 	public Item getItemDropped(int par1, Random par2Random, int par3) {return Item.byBlock(this);}
 	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
 	public void registerBlockIcons(Object aIconRegister) {/**/}

@@ -244,6 +244,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6lightprobe.flag")) gt6LightProbeTick(aEvent.getServer());
 	// [GT6-OVENPROBE] стенд «PORT-TODO №4: печь GT6 — витрина в JEI и ванильные плавки» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6ovenprobe.flag")) gt6OvenProbeTick(aEvent.getServer());
+	// [GT6-LIGHTAUDIT] обход реестра: доходят ли значения getLightOpacity() до движка — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6lightaudit.flag")) gt6LightAuditTick(aEvent.getServer());
 	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска в Соковыжималке» — снять при уборке фазы
@@ -9880,5 +9882,65 @@ public final class GT6Probes {
 		O.println("[" + OVEN_M + "] записей в карте RM.Furnace (это и увидит JEI): " + tShowcase);
 		sOvenSeq.judge("витрина печи в JEI не пуста (1.7.10 наполнял её фейковыми рецептами при входе в мир)", tShowcase > 0, "> 0", tShowcase);
 		sOvenSeq.done();
+	}
+
+	// ==========================================================================================================
+	// gt6lightaudit — ПОЛНОТА класса «затухание света GT6 не доходит до движка».
+	//
+	// Метка №2 чинила жидкости. Но getLightOpacity() объявлен ещё у полусотни блоков, и проверять их
+	// рассуждением нельзя — обходим ВЕСЬ реестр и сравниваем объявленное значение GT6 с тем, что реально
+	// лежит в состоянии (state.getLightDampening() — то, что читает LightEngine.getOpacity:85).
+	//
+	// ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильный камень обязан дать 15, ванильное стекло 0 — иначе судья меряет не тот канал.
+	// ==========================================================================================================
+	private static final String LAUDIT_M = "GT6-LIGHTAUDIT";
+	private static int sLAuditTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sLAuditSeq;
+
+	public static void gt6LightAuditTick(net.minecraft.server.MinecraftServer aServer) {
+		sLAuditTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		if (sLAuditSeq == null) sLAuditSeq = new gregapi.probe.GT6ProbeStand.Seq(LAUDIT_M).at(60, () -> gt6LightAudit());
+		sLAuditSeq.tick(sLAuditTick);
+	}
+
+	/** Объявленное GT6-значение блока, если у него вообще есть 1.7.10-метод. */
+	private static Integer gt6LightDeclared(net.minecraft.world.level.block.Block aBlock) {
+		try {
+			java.lang.reflect.Method tM = aBlock.getClass().getMethod("getLightOpacity");
+			return (Integer) tM.invoke(aBlock);
+		} catch (Throwable e) {return null;}
+	}
+
+	private static void gt6LightAudit() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		int tChecked = 0, tOk = 0, tMismatch = 0, tMTE = 0;
+		java.util.List<String> tBad = new java.util.ArrayList<>();
+
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			if (tID == null || !(tID.getNamespace().equals(gregapi.data.CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
+			Integer tDeclared = gt6LightDeclared(tBlock);
+			if (tDeclared == null) continue;
+			// MTE: значение живёт у TileEntity, канал по состоянию его не видит — считаем отдельно, не как дефект
+			if (tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) {tMTE++; continue;}
+			int tExpect = gregapi.data.CS.lightDampening(tDeclared);
+			int tActual = tBlock.defaultBlockState().getLightDampening();
+			tChecked++;
+			if (tExpect == tActual) {tOk++; continue;}
+			tMismatch++;
+			if (tBad.size() < 12) tBad.add(tID + ": объявлено " + tDeclared + " (ожидалось " + tExpect + "), в состоянии " + tActual);
+		}
+
+		for (String s : tBad) O.println("[" + LAUDIT_M + "] расхождение — " + s);
+		O.println("[" + LAUDIT_M + "] блоков GT6 с объявленным значением: " + tChecked + "; совпало " + tOk + "; расходится " + tMismatch + "; MTE (канал недоступен) " + tMTE);
+
+		// ПОЗИТИВНЫЙ КОНТРОЛЬ: движковый канал вообще отвечает осмысленно
+		int tStone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState().getLightDampening();
+		int tGlass = net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState().getLightDampening();
+		O.println("[" + LAUDIT_M + "] контроль: ванильный камень " + tStone + ", стекло " + tGlass);
+		sLAuditSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: канал жив (камень 15, стекло 0)", tStone == 15 && tGlass == 0, "15/0", tStone + "/" + tGlass);
+		sLAuditSeq.judge("значения GT6 доходят до движка у ВСЕХ блоков с объявленным getLightOpacity()", tMismatch == 0, 0, tMismatch);
+		sLAuditSeq.done();
 	}
 }

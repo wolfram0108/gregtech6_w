@@ -770,6 +770,11 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public int tickRate(Level aWorld) {return 2;}
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return getRenderColor(getMetaDataValue(aWorld, aX, aY, aZ));}
 	public int getLightOpacity() {return mOpaque?255:0;}
+
+	// F3 light-opacity МОСТ (иерархия руд/дроблёнки — отдельная от BlockBase, наследует Block напрямую):
+	// значение GT6 доводится до движкового канала затухания, см. разбор в BlockBase. Поле mOpaque читать
+	// безопасно — initCache вызывается после регистрации блоков (neo-decompiled/.../Blocks.java:7221-7228).
+	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
 	public boolean isBeaconBase(BlockGetter aWorld, int aX, int aY, int aZ, int aBeaconX, int aBeaconY, int aBeaconZ) {return mBeaconBase;}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return mOpaque;}
 	public boolean canBeReplacedByLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}

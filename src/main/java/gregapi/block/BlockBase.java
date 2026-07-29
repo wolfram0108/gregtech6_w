@@ -262,6 +262,16 @@ public abstract class BlockBase extends Block implements IBlockBase {
 
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
 	public int getLightOpacity() {return LIGHT_OPACITY_MAX;}
+
+	// F3 light-opacity МОСТ (корень иерархии BlockBase — сюда сходятся BlockBaseSealable/Meta/Tree/MetaType,
+	// стекло, листва, саженцы, решётки, шипы, кувшинки, дорожки). В 1.7.10 движок спрашивал getLightOpacity()
+	// у блока; в neo затухание берётся из состояния — LightEngine.getOpacity:85-87 читает
+	// state.getLightDampening(). Без моста значения GT6 до движка не доходили: он подставлял свой дефолт
+	// (BlockBehaviour:290-295), из-за чего листва гасила 0 вместо 1, дорожка 0/1 вместо 3 и т.д.
+	// Значение НЕ дублируется — берётся из того же getLightOpacity(), перевод шкалы 1.7.10→neo в одном месте
+	// (CS.lightDampening). Момент вызова безопасен: initCache идёт ПОСЛЕ регистрации блоков
+	// (neo-decompiled/.../Blocks.java:7221-7228), поэтому поля потомков уже заполнены.
+	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
 	public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.byBlock(this);}
 
 	// BUG-006: GT6 simple-блоки (логи/камни/листва/руды/трава/стекло/путь/cfoam) НЕ имеют loot-table → neo-дефолт
