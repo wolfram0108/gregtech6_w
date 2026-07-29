@@ -9015,7 +9015,13 @@ public final class GT6Probes {
 			gregapi.oredict.OreDictMaterial tMat = (gregapi.oredict.OreDictMaterial)tIt[1];
 			boolean tHot = (Boolean)tIt[2];
 			BlockPos tP = sSweepOrigin.offset(k, 0, 0);
-			gregapi.util.WD.set(tLevel, tP.getX(), tP.getY(), tP.getZ(), tBl, tMat.mID, 3);
+			// Ставим МЕТОДОМ САМОГО БЛОКА, а не WD.set: он создаёт TileEntity и кладёт в неё материал.
+			// Прежняя редакция ставила напрямую — у части блоков материал в TE не оказывался, и обновление
+			// соседей падало NPE в scheduleUpdateIfNeeded (aMaterial.containsAny у null). Код там 1:1 с
+			// оригиналом (PrefixBlock:384-385, проверки на null нет и у Грега) — падал стенд, не мод.
+			if (tBl instanceof gregapi.block.prefixblock.PrefixBlock tPB)
+				tPB.placeBlock(tLevel, tP.getX(), tP.getY(), tP.getZ(), (byte)gregapi.data.CS.SIDE_TOP, (short)tMat.mID, null, F, T);
+			else gregapi.util.WD.set(tLevel, tP.getX(), tP.getY(), tP.getZ(), tBl, tMat.mID, 3);
 			tLevel.setBlock(sSweepOrigin.offset(k, 0, 1), tHot ? net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState()
 			                                                  : net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
 			tLevel.scheduleTick(tP, tBl, 2);
