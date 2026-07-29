@@ -56,18 +56,27 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	protected CompoundTag mBlockNBT;
 
 	/**
-	 * F12-entity: РЕАЛЬНЫЙ блок, который падает — то, что 1.7.10 держал в приватном поле базы
-	 * {@code EntityFallingBlock.field_145811_e} (ставилось конструктором {@code super(aWorld,aX,aY,aZ,(Block)aBlock,0)}).
-	 * В neo одноимённое поле {@code FallingBlockEntity.blockState} тоже приватно, но конструктор, который его
-	 * задаёт, закрыт (FallingBlockEntity.java:64,79) — поэтому своё поле берёт на себя ту же роль.
-	 * <p>Оригинал обращался к нему через {@code super.func_145805_f()} (PrefixBlockFallingEntity.java:87,98,116-118),
-	 * а ПУБЛИЧНЫЙ геттер переопределял на гравий (:120-122) — то есть движку и рендеру намеренно показывался
-	 * не сам блок. Здесь разделение то же: логика читает это поле, движок — {@link #getBlockState()}.
+	 * F12-entity: РЕАЛЬНЫЙ падающий блок для собственной логики — точный аналог {@code super.func_145805_f()}
+	 * оригинала (PrefixBlockFallingEntity.java:87,98,116-118).
+	 * <p>Хранилище то же, что у 1.7.10 — приватное поле базы ({@code FallingBlockEntity.blockState}); своей копии
+	 * состояния не заводим. Задаётся оно в конструкторе через штатное чтение NBT базы (единственный путь: поле
+	 * приватно, конструктор с ним закрыт, сеттера нет — FallingBlockEntity.java:64,79), поэтому и сохранение с
+	 * загрузкой работают базовым механизмом, без собственного ключа.
+	 * <p>ПУБЛИЧНЫЙ геттер при этом переопределён на гравий (:120-122 оригинала) — движку и рендеру автор намеренно
+	 * показывал не сам блок. Разделение ровно то же: логика зовёт этот метод, движок — {@link #getBlockState()}.
 	 */
-	protected net.minecraft.world.level.block.state.BlockState mBlockState = null;
+	protected Block fallingBlock() {return super.getBlockState().getBlock();}
 
-	/** Реальный падающий блок для собственной логики — точный аналог {@code super.func_145805_f()} оригинала. */
-	protected Block fallingBlock() {return mBlockState != null ? mBlockState.getBlock() : super.getBlockState().getBlock();}
+	/** Записать реальный падающий блок в приватное поле базы штатным путём — её же чтением NBT.
+	 *  {@code readAdditionalSaveData} базы (FallingBlockEntity.java:305-314) — чистые присваивания с дефолтами:
+	 *  Time=0, DropItem=true, остальное по умолчанию, побочных эффектов нет. */
+	private void initFallingBlock(Level aWorld, net.minecraft.world.level.block.state.BlockState aState) {
+		net.minecraft.util.ProblemReporter.Collector tRep = new net.minecraft.util.ProblemReporter.Collector();
+		net.minecraft.world.level.storage.TagValueOutput tOut =
+			net.minecraft.world.level.storage.TagValueOutput.createWithContext(tRep, aWorld.registryAccess());
+		tOut.store("BlockState", net.minecraft.world.level.block.state.BlockState.CODEC, aState);
+		super.readAdditionalSaveData(net.minecraft.world.level.storage.TagValueInput.create(tRep, aWorld.registryAccess(), tOut.buildResult()));
+	}
 
 	/** Фабрика движка ({@code EntityType.EntityFactory}): вызывается при спавне на клиенте и при загрузке с диска. */
 	public PrefixBlockFallingEntity(EntityType<? extends PrefixBlockFallingEntity> aType, Level aWorld) {
@@ -85,7 +94,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 		mBlock = aBlock;
 		mStack = aStack;
 		mBlockNBT = ItemNBT.get(aStack);
-		mBlockState = ((Block)aBlock).defaultBlockState(); // 1:1 оригинала: (Block)aBlock, мета 0
+		initFallingBlock(aWorld, ((Block)aBlock).defaultBlockState()); // 1:1 оригинала: (Block)aBlock, мета 0
 	}
 
 	/**
@@ -169,20 +178,17 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 		aNBT.putShort("MetaData", ST.meta_(mStack));
 		if (mBlockNBT != null) aNBT.put("TileEntityData", mBlockNBT);
 		output.store(aNBT);
-		// F12-entity: РЕАЛЬНЫЙ падающий блок. 1.7.10 его сохранял базовый writeEntityToNBT (поле field_145811_e),
-		// а neo-база пишет своё приватное поле — у нас там визуал-гравий (см. getBlockState). Поэтому настоящий
-		// блок кладём своим ключом, иначе после перезахода сущность не знает, что именно она несёт.
-		if (mBlockState != null) output.store("gt.fallingblock", net.minecraft.world.level.block.state.BlockState.CODEC, mBlockState);
+		// Реальный падающий блок сохраняет САМА база (пишет своё приватное поле, куда его положил конструктор
+		// через initFallingBlock) — ровно как 1.7.10 сохранял его базовым writeEntityToNBT. Своего ключа не нужно.
 	}
 
 	@Override
 	protected void readAdditionalSaveData(ValueInput input) {
 		super.readAdditionalSaveData(input);
 		CompoundTag aNBT = input.read(MapCodec.assumeMapUnsafe(CompoundTag.CODEC)).orElseGet(UT.NBT::make);
-		mBlockState = input.read("gt.fallingblock", net.minecraft.world.level.block.state.BlockState.CODEC).orElse(null);
-		// 1:1 оригинала (:115-118): блок и стек восстанавливаются из РЕАЛЬНОГО блока (там — super.func_145805_f()).
-		// Страховка на не-GT6 блок (сейв, записанный до появления ключа выше): mBlock остаётся null, и сущность
-		// при приземлении уходит в ветку дропа предметом вместо постановки — вместо ClassCastException на загрузке.
+		// 1:1 оригинала (:115-118): блок и стек восстанавливаются из РЕАЛЬНОГО блока (там — super.func_145805_f()),
+		// который база уже подняла из NBT строкой выше. Страховка на не-GT6 блок (чужой или повреждённый сейв):
+		// mBlock остаётся null, и сущность при приземлении уходит в ветку дропа предметом — вместо краха приведения.
 		mBlock = fallingBlock() instanceof IBlockPlacable tPlacable ? tPlacable : null;
 		mStack = ST.make(fallingBlock(), 1, aNBT.getShortOr("MetaData", (short)0));
 		mBlockNBT = aNBT.getCompound("TileEntityData").orElse(null);

@@ -9026,18 +9026,21 @@ public final class GT6Probes {
 			gregapi.GT_API.METABLOCK_FALLING.get(), tLevel);
 		tBack.load(net.minecraft.world.level.storage.TagValueInput.create(tRep, tLevel.registryAccess(), tTag));
 
+		// Реальный блок теперь живёт там же, где у 1.7.10 — в приватном поле базы; своей копии в сущности нет.
+		// Читаем его тем же способом, что и сама сущность: через защищённый fallingBlock() (рефлексия по МЕТОДУ,
+		// а не по полю — поля больше не существует), плюс восстановленный стек как источник подтипа.
 		net.minecraft.world.level.block.Block tRestored = null;
 		int tRestoredSub = -1;
 		try {
-			java.lang.reflect.Field tF = gregapi.block.prefixblock.PrefixBlockFallingEntity.class.getDeclaredField("mBlockState");
-			tF.setAccessible(true);
-			Object tSt = tF.get(tBack);
-			if (tSt instanceof net.minecraft.world.level.block.state.BlockState tBS) tRestored = tBS.getBlock();
+			java.lang.reflect.Method tM = gregapi.block.prefixblock.PrefixBlockFallingEntity.class.getDeclaredMethod("fallingBlock");
+			tM.setAccessible(true);
+			Object tB = tM.invoke(tBack);
+			if (tB instanceof net.minecraft.world.level.block.Block tBl2) tRestored = tBl2;
 			java.lang.reflect.Field tS = gregapi.block.prefixblock.PrefixBlockFallingEntity.class.getDeclaredField("mStack");
 			tS.setAccessible(true);
 			Object tStk = tS.get(tBack);
 			if (tStk instanceof net.minecraft.world.item.ItemStack tIS) tRestoredSub = gregapi.util.ST.meta_(tIS);
-		} catch (Throwable e) {O.println("[" + GRAV_M + "] save/load: поле недоступно — " + e);}
+		} catch (Throwable e) {O.println("[" + GRAV_M + "] save/load: доступ не получен — " + e);}
 
 		O.println("[" + GRAV_M + "] save/load сущности: несла " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tC.mBlock)
 			+ " подтип " + tC.mSub + " → восстановлено " + (tRestored == null ? "НИЧЕГО" : String.valueOf(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tRestored)))
