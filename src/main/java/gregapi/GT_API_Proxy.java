@@ -1922,13 +1922,23 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 			if (tSpeed >= 1.0F) tArrowEntity.setCritArrow(T); // было setIsCritical(boolean) (1.7.10) — neo AbstractArrow: setCritArrow(boolean) (сверено, AbstractArrow.java:540)
 
-			// PORT-TODO(F-entity-construction, arrow-weapon-enchants): neo сменил МОДЕЛЬ — POWER/PUNCH/FLAME больше не применяются
-			// вручную (getDamage/setKnockbackStrength/setFire сняты; baseDamage private без getter, knockback — не публичный сеттер).
-			// Движок применяет их АВТОМАТИЧЕСКИ из firedFromWeapon (AbstractArrow.java:98/422/511: EnchantmentHelper.modifyDamage +
-			// doKnockback по firedFromWeapon). neo-путь 1:1 = протащить лук как firedFromWeapon в ctor снаряда — но EntityProjectile
-			// строится с ItemStack.EMPTY (см. IItemProjectile:EntityProjectile), а его EntityType — плейсхолдер ARROW: обе завязки —
-			// на отложенную F-entity-construction (реальная регистрация EntityType + проброс лука в конструкцию снаряда). Enchant'ы
-			// (Enchantments.POWER/PUNCH/FLAME) в neo = ResourceKey, НЕ удалены — блокирует именно конструкция снаряда, не сами чары.
+			// F-arrow-enchants: 1:1 оригинала (gregtech6/src/main/java/gregapi/GT_API_Proxy.java:1563-1569) — Power/Punch/Flame
+			// применяются к снаряду ВРУЧНУЮ здесь, как делал автор, а не отдаются движку. Движковый путь (протащить лук как
+			// AbstractArrow.firedFromWeapon, тогда EnchantmentHelper.modifyDamage/doKnockback отработают сами) снарядам GT6
+			// недоступен: поле private, задаётся только конструктором Arrow(Level,…,weapon), а тот хардкодит EntityType.ARROW
+			// (neo-decompiled Arrow.java:34), тогда как у снарядов GT6 свой EntityType (EntitiesGT.ARROW_*).
+			// Эквиваленты сверены по ПОВЕДЕНИЮ, а не по имени:
+			//   Power  1.7.10 setDamage(getDamage()+lvl*0.5+0.5)  -> setBaseDamage(getBaseDamageGT()+…), AbstractArrow.java:671;
+			//   Punch  1.7.10 setKnockbackStrength(lvl)           -> центр EntityProjectile (величина применяется при попадании
+			//                                                        тем же расчётом, что в 1.7.10 — EntityArrow_Material:250-253);
+			//   Flame  1.7.10 setFire(lvl*100) в СЕКУНДАХ         -> igniteForSeconds(lvl*100), Entity.java:630 — ставит огонь
+			//                                                        только если дольше текущего, семантика setFire сохранена.
+			int tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.POWER, aEvent.getBow());
+			if (tLevel > 0) tArrowEntity.setBaseDamage(tArrowEntity.getBaseDamageGT() + tLevel * 0.5D + 0.5D);
+			tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.PUNCH, aEvent.getBow());
+			if (tLevel > 0) tArrowEntity.setKnockbackStrength(tLevel);
+			tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FLAME, aEvent.getBow());
+			if (tLevel > 0) tArrowEntity.igniteForSeconds(tLevel * 100);
 
 			aEvent.getBow().hurtAndBreak(1, aPlayer, InteractionHand.MAIN_HAND); // было damageItem(int,EntityLivingBase) (1.7.10) — neo: hurtAndBreak(int,LivingEntity,InteractionHand) (сверено, ItemStack.java:524)
 			aEvent.getBow().getItem();

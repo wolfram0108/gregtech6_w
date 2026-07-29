@@ -59,6 +59,28 @@ public interface IItemProjectile {
 			shootFromRotation(aShootingEntity, aShootingEntity.getXRot(), aShootingEntity.getYRot(), 0.0F, aSpeed * 1.5F, 1.0F);
 		}
 
+		// F-arrow-enchants ЦЕНТР: в 1.7.10 оба метода жили на ДВИЖКОВОМ предке EntityArrow
+		// (setKnockbackStrength(int) / getDamage()), поэтому обработчик выстрела применял чары лука к любому
+		// снаряду GT6 без различения типа. neo AbstractArrow оставил только setBaseDamage: своего knockback у
+		// стрелы нет вовсе (движок считает его из приватного firedFromWeapon, задаваемого лишь конструктором
+		// Arrow(Level,…,weapon), который хардкодит EntityType.ARROW — снарядам GT6 со своим EntityType недоступен),
+		// а baseDamage private без геттера. Держим оба здесь, на общем предке снарядов GT6 — том же уровне,
+		// на котором их держал оригинал, чтобы приём не расползался по подклассам.
+		protected int mKnockback = 0;
+
+		/** 1.7.10 {@code EntityArrow.setKnockbackStrength(int)}: величина отбрасывания, применяется при попадании. */
+		public void setKnockbackStrength(int aKnockback) {mKnockback = aKnockback;}
+
+		/** 1.7.10 {@code EntityArrow.getDamage()}: neo {@code AbstractArrow.baseDamage} private и без геттера
+		 *  (есть только сеттер, AbstractArrow.java:671) — единственное место чтения на весь мод. */
+		public double getBaseDamageGT() {
+			try {
+				java.lang.reflect.Field tField = net.minecraft.world.entity.projectile.arrow.AbstractArrow.class.getDeclaredField("baseDamage");
+				tField.setAccessible(true);
+				return tField.getDouble(this);
+			} catch (Throwable e) {return 2.0;}
+		}
+
 		public abstract void setProjectileStack(ItemStack aStack);
 	}
 }

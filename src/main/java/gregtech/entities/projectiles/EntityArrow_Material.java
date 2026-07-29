@@ -74,7 +74,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	private boolean inGround = F;
 	private int mTicksAlive = 0;
 	private int ticksInAir = 0;
-	private int mKnockback = 0;
+	// mKnockback — в общем предке EntityProjectile (F-arrow-enchants ЦЕНТР), там же, где его держал 1.7.10-предок.
 
 	private ItemStack mArrow = null;
 
@@ -197,7 +197,7 @@ public class EntityArrow_Material extends EntityProjectile {
 
 					float
 					tMagicDamage = tHitEntity instanceof LivingEntity?UT.Enchantments.getDamageBonusVsCreature(mArrow, tHitEntity):0,
-					tDamage = UT.Code.roundUp((float)Math.sqrt(WD.motionX(this)*WD.motionX(this) + WD.motionY(this)*WD.motionY(this) + WD.motionZ(this)*WD.motionZ(this)) * (mBaseDamage() + Math.max(0, tData != null && tData.validMaterial() ? tData.mMaterial.mMaterial.mToolQuality-1 : 0)));
+					tDamage = UT.Code.roundUp((float)Math.sqrt(WD.motionX(this)*WD.motionX(this) + WD.motionY(this)*WD.motionY(this) + WD.motionZ(this)*WD.motionZ(this)) * (getBaseDamageGT() + Math.max(0, tData != null && tData.validMaterial() ? tData.mMaterial.mMaterial.mToolQuality-1 : 0)));
 
 					if (isCritArrow()) tDamage += getRandom().nextInt((int)(tDamage / 2.0 + 2.0));
 
@@ -344,7 +344,7 @@ public class EntityArrow_Material extends EntityProjectile {
 		aNBT.putByte("shake", (byte)shakeTime);
 		aNBT.putByte("inGround", (byte)(inGround ? 1 : 0));
 		aNBT.putByte("pickup", (byte)pickup.ordinal());
-		aNBT.putDouble("damage", mBaseDamage());
+		aNBT.putDouble("damage", getBaseDamageGT());
 		if (ST.valid(mArrow)) aNBT.store("mArrow", ItemStack.CODEC, mArrow);
 	}
 
@@ -400,14 +400,6 @@ public class EntityArrow_Material extends EntityProjectile {
 		return false;
 	}
 
-	// F-arrow-knockback: 1.7.10 AbstractArrow.setKnockbackStrength(int) — GT6 хранит собственный mKnockback (используется в tick при расчёте урона). neo AbstractArrow.setKnockback(int) отдельный; это GT6-метод, не @Override.
-	public void setKnockbackStrength(int aKnockback) {
-		mKnockback = aKnockback;
-	}
-
-	/** F-arrow-damage: neo AbstractArrow.baseDamage private, публичного геттера нет (только setBaseDamage). 1.7.10 getDamage()
-	 *  читал урон — reflection на baseDamage (единственный 1:1-read; super сам сохраняет "damage" в NBT). */
-	private double mBaseDamage() {
-		try {java.lang.reflect.Field f = net.minecraft.world.entity.projectile.arrow.AbstractArrow.class.getDeclaredField("baseDamage"); f.setAccessible(true); return f.getDouble(this);} catch (Throwable e) {return 2.0;}
-	}
+	// setKnockbackStrength(int) и getBaseDamageGT() — в общем предке EntityProjectile (F-arrow-enchants ЦЕНТР):
+	// в 1.7.10 оба жили на движковом предке EntityArrow, а не в этом классе. Копии здесь сняты как дубль.
 }

@@ -209,6 +209,11 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		// Та же датаген-точка, отдельного события не заводим (gregapi/data/GT6HarvestTags.java).
 		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6HarvestTags>) aOutput ->
 			new gregapi.data.GT6HarvestTags(aOutput, aEvent.getLookupProvider()));
+		// F12-ammo: перенос GT6-данных о боеприпасе (контракт IItemProjectile — тот же, которым предмет
+		// спрашивают при выстреле) в ванильный minecraft:arrows. В neo лук отбирает боеприпас ТОЛЬКО тегом
+		// (ProjectileWeaponItem.java:20) и без него не постит событие выстрела вовсе — gregapi/data/GT6ItemTags.java.
+		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6ItemTags>) aOutput ->
+			new gregapi.data.GT6ItemTags(aOutput, aEvent.getLookupProvider()));
 	}
 
 	/** F6: центральная точка подписки, вызывается ОДИН раз из {@code GT_API}-конструктора (тот же мод-бас,

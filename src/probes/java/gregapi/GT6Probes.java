@@ -238,6 +238,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6gravityprobe.flag")) gt6GravityProbeTick(aEvent.getServer());
 		// F12-hook: ожили ли восстановленные приёмники движковых каналов (доение, присед)
 		if (gregapi.data.CS.probeFlag("gt6hookprobe.flag")) gt6HookProbeTick(aEvent.getServer());
+	// [GT6-ARROWPROBE] стенд «PORT-TODO №1: чары лука (Power/Punch/Flame) на стрелах GT6» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6arrowprobe.flag")) gt6ArrowProbeTick(aEvent.getServer());
 	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска в Соковыжималке» — снять при уборке фазы
@@ -9525,5 +9527,161 @@ public final class GT6Probes {
 		sHookSeq.judge("ПРИСЕД: дисплей-предмет пропускает клик к блоку (канал doesSneakBypassUse восстановлен)", tOurs, "true", String.valueOf(tOurs));
 		sHookSeq.judge("ХОЛОДНЫЙ КОНТРОЛЬ: обычный предмет клик НЕ пропускает", !tVanilla, "false", String.valueOf(tVanilla));
 		sHookSeq.done();
+	}
+
+	// ==========================================================================================================
+	// gt6arrowprobe — PORT-TODO №1: доходят ли чары ЛУКА до стрелы GT6.
+	//
+	// 1.7.10 применял их вручную в обработчике выстрела (gregtech6/.../GT_API_Proxy.java:1563-1569:
+	// setDamage/setKnockbackStrength/setFire). В порте эти три строки отсутствовали — лук с Силой/Отбрасыванием/
+	// Пламенем стрелял ровно так же, как лук без чар.
+	//
+	// Судится СЛЕДСТВИЕ у реально заспавненного снаряда, а не формула: игрок держит ванильный лук, в инвентаре
+	// стрела GT6, выстрел идёт движковым путём BowItem.releaseUsing -> EventHooks.onArrowLoose -> шина ->
+	// обработчик мода. Что получилось у снаряда — то и меряем.
+	//
+	// ПОЗИТИВНЫЙ КОНТРОЛЬ: чистый лук обязан дать снаряд GT6 (иначе весь путь мёртв и «нет чар» ничего не значит).
+	// ХОЛОДНЫЙ КОНТРОЛЬ: у снаряда из чистого лука огонь 0 и урон базовый — судья обязан уметь краснеть.
+	// ==========================================================================================================
+	private static final String ARROW_M = "GT6-ARROWPROBE";
+	private static int sArrowTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sArrowSeq;
+	private static double sArrowBaseDamage = -1;
+
+	public static void gt6ArrowProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sArrowTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sArrowSeq == null) sArrowSeq = new gregapi.probe.GT6ProbeStand.Seq(ARROW_M)
+			.at(60,  () -> gt6ArrowPrepare(tPlayer))
+			.at(80,  () -> gt6ArrowShotClean(tPlayer))
+			.at(100, () -> gt6ArrowShotPower(tPlayer))
+			.at(120, () -> gt6ArrowShotFlame(tPlayer))
+			.at(140, () -> gt6ArrowShotPunch(tPlayer));
+		sArrowSeq.tick(sArrowTick);
+	}
+
+	/** Стрела GT6 ищется В РЕЕСТРЕ по контракту (кто умеет отдать снаряд типа ARROW), а не по номеру предмета. */
+	private static net.minecraft.world.item.ItemStack gt6ArrowFindArrow() {
+		for (net.minecraft.world.item.Item tIt : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			if (!(tIt instanceof gregapi.item.IItemProjectile)) continue;
+			for (int tMeta = 0; tMeta < 64; tMeta++) {
+				net.minecraft.world.item.ItemStack tStack = gregapi.util.ST.make(tIt, 1, tMeta);
+				if (gregapi.util.ST.invalid(tStack)) continue;
+				try {
+					if (((gregapi.item.IItemProjectile)tIt).hasProjectile(gregapi.data.TD.Projectiles.ARROW, tStack)) return tStack;
+				} catch (Throwable e) {/* предмет не отвечает на этот вопрос — не наш */}
+			}
+		}
+		return null;
+	}
+
+	private static void gt6ArrowPrepare(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition();
+		for (int dx = -2; dx <= 24; dx++) for (int dz = -3; dz <= 3; dz++)
+			tLevel.setBlock(tO.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+		net.minecraft.world.item.ItemStack tArrow = gt6ArrowFindArrow();
+		sArrowSeq.judge("стрела GT6 найдена в реестре по контракту IItemProjectile", tArrow != null, "найдена", tArrow == null ? "нет" : gregapi.util.ST.names(tArrow));
+		if (tArrow != null) O.println("[" + ARROW_M + "] стрела GT6: " + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tArrow.getItem()) + " мета " + gregapi.util.ST.meta_(tArrow));
+
+		// ПРЕДУСЛОВИЕ ВСЕГО ПУТИ. В 1.7.10 ItemBow постил ArrowLooseEvent ПЕРВЫМ (recompSrc/.../ItemBow.java:39-40),
+		// до проверки боеприпаса, поэтому GT6 перехватывал выстрел любой своей стрелой. neo BowItem:30-33 выходит
+		// РАНЬШЕ события, если player.getProjectile(лук) пуст, а отбор там — ARROW_ONLY = is(ItemTags.ARROWS)
+		// (ProjectileWeaponItem.java:20). Меряем факт: видит ли ванильный лук стрелу GT6 боеприпасом.
+		if (tArrow != null) {
+			aPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+			aPlayer.getInventory().clearContent();
+			net.minecraft.world.item.ItemStack tBow = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BOW);
+			aPlayer.getInventory().setItem(0, tBow); aPlayer.getInventory().setSelectedSlot(0);
+			aPlayer.getInventory().setItem(1, gregapi.util.ST.amount(64, tArrow));
+			net.minecraft.world.item.ItemStack tAmmo = aPlayer.getProjectile(tBow);
+			boolean tInTag = tArrow.is(net.minecraft.tags.ItemTags.ARROWS);
+			O.println("[" + ARROW_M + "] лук ищет боеприпас: getProjectile -> " + (tAmmo.isEmpty() ? "ПУСТО" : gregapi.util.ST.names(tAmmo)) + "; стрела GT6 в теге minecraft:arrows: " + tInTag);
+			sArrowSeq.judge("ПРЕДУСЛОВИЕ: ванильный лук признаёт стрелу GT6 боеприпасом (иначе событие выстрела не постится вовсе)", !tAmmo.isEmpty(), "боеприпас найден", tAmmo.isEmpty() ? "ПУСТО" : "найден");
+			// ПОЗИТИВНЫЙ КОНТРОЛЬ самого замера: ванильная стрела обязана находиться — иначе замер меряет не то
+			aPlayer.getInventory().setItem(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW, 64));
+			boolean tVanillaFound = !aPlayer.getProjectile(tBow).isEmpty();
+			sArrowSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ замера: ванильная стрела луком находится", tVanillaFound, "найдена", tVanillaFound ? "найдена" : "ПУСТО");
+		}
+	}
+
+	/** Один выстрел движковым путём. Возвращает заспавненный снаряд GT6 (или null). */
+	private static gregapi.item.IItemProjectile.EntityProjectile gt6ArrowShoot(ServerPlayer aPlayer, java.util.Map<net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>, Integer> aEnchants, String aWhat) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		// прежние снаряды убираем, иначе следующий замер поймает чужой
+		for (net.minecraft.world.entity.Entity tE : tLevel.getEntities(aPlayer, aPlayer.getBoundingBox().inflate(40)))
+			if (tE instanceof gregapi.item.IItemProjectile.EntityProjectile) tE.discard();
+
+		net.minecraft.world.item.ItemStack tArrow = gt6ArrowFindArrow();
+		if (tArrow == null) return null;
+		tArrow.setCount(64);
+
+		net.minecraft.world.item.ItemStack tBow = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BOW);
+		net.minecraft.core.HolderLookup.RegistryLookup<net.minecraft.world.item.enchantment.Enchantment> tLookup =
+			tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+		for (java.util.Map.Entry<net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>, Integer> e : aEnchants.entrySet())
+			tBow.enchant(tLookup.getOrThrow(e.getKey()), e.getValue());
+
+		aPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+		aPlayer.getInventory().setItem(0, tBow); aPlayer.getInventory().setSelectedSlot(0);
+		aPlayer.getInventory().setItem(1, tArrow);
+		aPlayer.setXRot(0.0F); aPlayer.setYRot(90.0F); // строго вдоль +X, чтобы полёт был предсказуем
+
+		aPlayer.startUsingItem(net.minecraft.world.InteractionHand.MAIN_HAND);
+		// timeHeld = getUseDuration - remainingTime; 20 тиков натяга = полный заряд (pow = 1.0)
+		tBow.getItem().releaseUsing(tBow, tLevel, aPlayer, tBow.getItem().getUseDuration(tBow, aPlayer) - 20);
+
+		gregapi.item.IItemProjectile.EntityProjectile rArrow = null;
+		for (net.minecraft.world.entity.Entity tE : tLevel.getEntities(aPlayer, aPlayer.getBoundingBox().inflate(12)))
+			if (tE instanceof gregapi.item.IItemProjectile.EntityProjectile tP) rArrow = tP;
+		O.println("[" + ARROW_M + "] выстрел «" + aWhat + "»: снаряд " + (rArrow == null ? "НЕ появился" : rArrow.getClass().getSimpleName()));
+		return rArrow;
+	}
+
+	private static void gt6ArrowShotClean(ServerPlayer aPlayer) {
+		gregapi.item.IItemProjectile.EntityProjectile tArrow = gt6ArrowShoot(aPlayer, java.util.Collections.emptyMap(), "чистый лук");
+		sArrowSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: чистый лук со стрелой GT6 рождает снаряд GT6", tArrow != null, "снаряд есть", tArrow == null ? "нет" : "есть");
+		if (tArrow == null) return;
+		sArrowBaseDamage = tArrow.getBaseDamageGT();
+		gregapi.data.CS.OUT.println("[" + ARROW_M + "] база: урон " + sArrowBaseDamage + ", огонь " + tArrow.getRemainingFireTicks() + " тиков");
+		sArrowSeq.judge("ХОЛОДНЫЙ КОНТРОЛЬ: без чар снаряд НЕ горит", tArrow.getRemainingFireTicks() <= 0, "0", tArrow.getRemainingFireTicks());
+	}
+
+	private static void gt6ArrowShotPower(ServerPlayer aPlayer) {
+		if (sArrowBaseDamage < 0) return;
+		int tLvl = 3;
+		gregapi.item.IItemProjectile.EntityProjectile tArrow = gt6ArrowShoot(aPlayer,
+			java.util.Map.of(net.minecraft.world.item.enchantment.Enchantments.POWER, tLvl), "лук с Силой " + tLvl);
+		if (tArrow == null) {sArrowSeq.judge("СИЛА: снаряд появился", false, "есть", "нет"); return;}
+		double tExpect = sArrowBaseDamage + tLvl * 0.5D + 0.5D; // 1.7.10: getDamage() + lvl*0.5 + 0.5
+		double tGot = tArrow.getBaseDamageGT();
+		sArrowSeq.judge("СИЛА " + tLvl + ": урон снаряда вырос ровно на lvl*0.5+0.5 (1:1 с 1.7.10)", Math.abs(tGot - tExpect) < 1.0E-6, tExpect, tGot);
+	}
+
+	private static void gt6ArrowShotFlame(ServerPlayer aPlayer) {
+		gregapi.item.IItemProjectile.EntityProjectile tArrow = gt6ArrowShoot(aPlayer,
+			java.util.Map.of(net.minecraft.world.item.enchantment.Enchantments.FLAME, 1), "лук с Пламенем 1");
+		if (tArrow == null) {sArrowSeq.judge("ПЛАМЯ: снаряд появился", false, "есть", "нет"); return;}
+		int tFire = tArrow.getRemainingFireTicks();
+		// 1.7.10 setFire(lvl*100) — СЕКУНДЫ; движковый эквивалент igniteForSeconds(100) = 2000 тиков
+		sArrowSeq.judge("ПЛАМЯ: снаряд горит 100 секунд (2000 тиков), как setFire(100) в 1.7.10", tFire == 2000, 2000, tFire);
+	}
+
+	private static void gt6ArrowShotPunch(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		int tLvl = 2;
+		gregapi.item.IItemProjectile.EntityProjectile tArrow = gt6ArrowShoot(aPlayer,
+			java.util.Map.of(net.minecraft.world.item.enchantment.Enchantments.PUNCH, tLvl), "лук с Отбрасыванием " + tLvl);
+		if (tArrow == null) {sArrowSeq.judge("ОТБРАСЫВАНИЕ: снаряд появился", false, "есть", "нет"); return;}
+		int tKnockback = -1;
+		try {
+			java.lang.reflect.Field tF = gregapi.item.IItemProjectile.EntityProjectile.class.getDeclaredField("mKnockback");
+			tF.setAccessible(true); tKnockback = tF.getInt(tArrow);
+		} catch (Throwable e) {O.println("[" + ARROW_M + "] чтение mKnockback: " + e);}
+		sArrowSeq.judge("ОТБРАСЫВАНИЕ " + tLvl + ": величина дошла до снаряда (её применяет попадание, EntityArrow_Material:250-253)", tKnockback == tLvl, tLvl, tKnockback);
+		sArrowSeq.done();
 	}
 }
