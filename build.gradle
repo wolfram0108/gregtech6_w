@@ -332,6 +332,37 @@ dependencies {
 // JUnit Platform для задачи test.
 test {
     useJUnitPlatform()
+    // Тесты поднимают ВЕСЬ мод (тысячи предметов и рецептов). На дефолтном heap процесс падает
+    // OutOfMemoryError уже во время загрузки, и тогда краснеют все проверки разом — не потому, что
+    // код неверен, а потому, что мод не догрузился. Столько же памяти давно даётся режиму -PparityFull.
+    maxHeapSize = '6G'
+}
+
+// JPMS split-package для ОБЫЧНОГО `gradlew test` (без -PcoreOnly/-PparityFull).
+// compat-mirror кладёт crutch-классы в net.minecraft.*/cpw.* — те же пакеты, что экспортируют модули
+// minecraft/jei, поэтому тест-раннер не стартовал вовсе: «Modules minecraft and gregtech6 export package
+// net.minecraft.client.renderer.texture to module testframework». Под флагами эта же проблема давно решена
+// задачами stripMcMirror/stripMcMirrorFull, но обычный прогон их не включал — и главный регресс-гейт проекта
+// молча не запускался. Тот же приём, третьей копии механизма не заводим: одна задача, общая для всех режимов.
+if (!project.hasProperty('coreOnly') && !project.hasProperty('parityFull')) {
+    tasks.named('compileJava').configure { options.incremental = false }
+    // Пути берём НА КОНФИГУРАЦИИ: обращение к file()/project внутри doLast несовместимо с configuration cache
+    // («references a Gradle script object from a Groovy closure at execution time»).
+    def mirrorDirs = ['net/minecraft', 'cpw'].collect { file("build/classes/java/main/$it") }
+    def stripMirrorTest = tasks.register('stripMcMirrorTest') {
+        doLast {
+            int removed = 0
+            mirrorDirs.each { d ->
+                if (d.exists()) {
+                    d.eachFileRecurse { if (it.isFile()) removed++ }
+                    d.deleteDir()
+                }
+            }
+            println("[test] stripMcMirrorTest: удалено ${removed} crutch-.class из рантайм-модуля")
+        }
+    }
+    tasks.named('stripMcMirrorTest').configure { mustRunAfter tasks.named('classes') }
+    tasks.named('test').configure { dependsOn stripMirrorTest }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
