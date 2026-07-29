@@ -615,6 +615,15 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return F;
 	}
 	
+	// F12-tick (тот же обрыв и тот же мост, что закрыт у семьи BlockBase под BUG-005, BlockBase.java:368-373):
+	// neo-канал запланированного тика — tick(BlockState,ServerLevel,BlockPos,RandomSource); 1.7.10-сигнатура
+	// updateTick ничего не переопределяет («// @Override» ниже) и движком не зовётся. Без моста три ветки
+	// scheduleUpdateIfNeeded (:423-438) били в пустоту: ГРАВИТАЦИЯ мета-блоков, самовозгорание пыли и
+	// взрыв горючих/щелочных материалов при нагреве. Конвертер RandomSource→java.util.Random — центр UT.Code.random.
+	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), UT.Code.random(aRandom));
+	}
+
 	// @Override
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (aWorld.isClientSide() || checkGravity(aWorld, aX, aY, aZ)) return;

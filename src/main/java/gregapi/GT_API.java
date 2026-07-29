@@ -199,6 +199,22 @@ public class GT_API extends Abstract_Mod {
 	public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(net.minecraft.core.registries.Registries.BLOCK_ENTITY_TYPE, ModIDs.GAPI);
 	public static final Object MTE_TYPE_HOLDER = BLOCK_ENTITIES.register("mte", gregapi.tileentity.base.TileEntityBase01Root::createType);
 
+	/** F12-entity: центральный реестр EntityType контента gregapi — тот же приём, что ITEMS/BLOCKS/BLOCK_ENTITIES выше
+	 *  (и что gregtech.entities.EntitiesGT у своих стрел). Заменяет удалённый 1.7.10
+	 *  {@code EntityRegistry.registerModEntity} (оригинал GT_API.java:722). */
+	public static final DeferredRegister<net.minecraft.world.entity.EntityType<?>> ENTITIES = DeferredRegister.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, ModIDs.GAPI);
+
+	/** F12-entity: падающий мета-блок. Параметры 1:1 из оригинала
+	 *  {@code registerModEntity(PrefixBlockFallingEntity.class, "gt.MetaBlockFallingEntity", 0, this, 160, 1, T)}:
+	 *  trackingRange 160 блоков = 10 чанков ({@code clientTrackingRange}), updateFrequency 1 ({@code updateInterval}).
+	 *  Габарит — как у ванильного FALLING_BLOCK (0.98×0.98, {@code EntityType.java:492}), от которого 1.7.10-класс
+	 *  наследовался. Имя реестра из «gt.MetaBlockFallingEntity» приведено к lowercase (neo Identifier запрещает
+	 *  заглавные) — тот же приём, что у {@code EntitiesGT}. */
+	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<gregapi.block.prefixblock.PrefixBlockFallingEntity>> METABLOCK_FALLING =
+		ENTITIES.register("gt_metablockfallingentity", rl -> net.minecraft.world.entity.EntityType.Builder.<gregapi.block.prefixblock.PrefixBlockFallingEntity>of(gregapi.block.prefixblock.PrefixBlockFallingEntity::new, net.minecraft.world.entity.MobCategory.MISC)
+			.noLootTable().sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(1)
+			.build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, rl)));
+
 	public static final DeferredRegister<net.minecraft.core.component.DataComponentType<?>> COMPONENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE, ModIDs.GAPI);
 	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<Integer>> SUBTYPE =
 		COMPONENTS.register("subtype", () -> net.minecraft.core.component.DataComponentType.<Integer>builder()
@@ -461,6 +477,7 @@ public class GT_API extends Abstract_Mod {
 		BLOCKS.register(aModBus);
 		COMPONENTS.register(aModBus); // F12-followup (subtype-meta): регистрация компонента подтипа на mod-bus (RegisterEvent<DataComponentType>)
 		BLOCK_ENTITIES.register(aModBus); // F12-followup (MTE-type-timing): placeholder MTE_TYPE на RegisterEvent<BlockEntityType> (до freeze)
+		ENTITIES.register(aModBus); // F12-entity: EntityType падающего мета-блока (замена EntityRegistry.registerModEntity, оригинал GT_API.java:722)
 		// F12-followup (block-split, MTE): слив DEFERRED_BLOCK_INIT на RegisterEvent<Block> (реестр разморожен) — единая
 		// точка для подсистем, чьё конструирование блока нельзя выразить одним registerBlockLazy (см. deferBlockInit).
 		aModBus.addListener(GT_API::onRegisterEvent);
@@ -1095,11 +1112,11 @@ public class GT_API extends Abstract_Mod {
 		, new PacketSyncDataByteArrayAndCoverVisuals    ( 0), new PacketSyncDataByteArrayAndCoverVisuals    ( 1), new PacketSyncDataByteArrayAndCoverVisuals    ( 2), new PacketSyncDataByteArrayAndCoverVisuals    ( 3), new PacketSyncDataByteArrayAndCoverVisuals    ( 4), new PacketSyncDataByteArrayAndCoverVisuals    ( 5), new PacketSyncDataByteArrayAndCoverVisuals    ( 6), new PacketSyncDataByteArrayAndCoverVisuals    ( 7)
 		);
 		// Registering the TileEntity used for Meta-Generated Blocks to store the 32000 variations.
-		// PORT-TODO(F12-entity, decisions/F12-registration-lifecycle.md): нет ADR на TILEENTITY-TYPE
-		// адаптер (BlockEntityType.Builder требует реальный BlockEntitySupplier + набор valid-блоков,
-		// которых PrefixBlockTileEntity в текущем виде не предоставляет). Прежний вызов
-		// (`DeferredRegister.registerTileEntity(Class, String)`) — выдуманный API, такого метода в
-		// NeoForge DeferredRegister нет (сверено с neoforge-decompiled). Не выдумываю замену без ADR.
+		// F12-entity (СДЕЛАНО ВЫШЕ, здесь звать нечего): оригинал регистрировал класс
+		// (`GameRegistry.registerTileEntity(PrefixBlockTileEntity.class, "gt.MetaBlockTileEntity")`), neo регистрирует
+		// BlockEntityType. Он заведён один на всю GT6-TE-иерархию — MTE_TYPE_HOLDER (:200), а его supplier сам отдаёт
+		// PrefixBlockTileEntity для PrefixBlock-блоков (TileEntityBase01Root.createType:164) и isValid()→true, поэтому
+		// отдельного типа под мета-блоки не нужно: реконструкция из NBT и постановка в мир уже идут через него.
 		// Creating and loading the Lang File.
 		if (CODE_CLIENT) {
 			tFile = new File(DirectoriesGT.MINECRAFT, "GregTech.lang");
@@ -1117,12 +1134,9 @@ public class GT_API extends Abstract_Mod {
 		// Initialising the Re-Registrations.
 		new LoaderOreDictReRegistrations().run();
 		// Register the Falling MetaBlock Entity.
-		// PORT-TODO(F12-entity, decisions/F12-registration-lifecycle.md): та же граница, что и
-		// registerTileEntity выше — ENTITY-TYPE адаптер (DeferredRegister.Entities.registerEntityType
-		// требует EntityType.EntityFactory, совместимый с реальным конструктором PrefixBlockFallingEntity)
-		// не разработан отдельным ADR. Прежний вызов (`DeferredRegister.registerModEntity(...)`) —
-		// выдуманный API (1.7.10 GameRegistry.registerModEntity механически переименован в
-		// DeferredRegister, которого там никогда не было).
+		// F12-entity (СДЕЛАНО ВЫШЕ, здесь звать нечего): 1.7.10 регистрировал класс сущности прямо в этой точке
+		// (`EntityRegistry.registerModEntity`, оригинал :722), neo требует EntityType в реестре ДО этой фазы —
+		// поэтому регистрация переехала в центральный ENTITIES/METABLOCK_FALLING (:203-214), параметры 1:1.
 		// Initialise Enchantments.
 		new Enchantment_WerewolfDamage();
 		new Enchantment_EnderDamage();

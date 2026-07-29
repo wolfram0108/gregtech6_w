@@ -167,6 +167,10 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	private void onRegisterBlockEntityRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers aEvent) {
 		if (gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE != null)
 			aEvent.registerBlockEntityRenderer(gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE, gregapi.render.MultiTileEntityBER::new);
+		// F12-entity: рендерер падающего мета-блока — 1:1 оригинала (:126 registerEntityRenderingHandler(
+		// PrefixBlockFallingEntity.class, new RenderFallingBlock())): тот же ванильный рендерер падающего блока,
+		// он рисует то, что отдаёт getBlockState() (у нас — гравий, как и задумал автор, см. PrefixBlockFallingEntity).
+		aEvent.registerEntityRenderer(GT_API.METABLOCK_FALLING.get(), net.minecraft.client.renderer.entity.FallingBlockRenderer::new);
 	}
 
 	// Приёмочный скан рендера (гейт ②): на первом client-tick, когда атлас стежен И DataComponents ПРИВЯЗАНЫ (на
