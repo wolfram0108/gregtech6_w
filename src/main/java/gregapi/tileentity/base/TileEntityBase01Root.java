@@ -1186,12 +1186,18 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	 *  сохранены. */
 	public final boolean onDrawBlockHighlight(ExtractBlockOutlineRenderStateEvent aEvent) {
 		FORCE_FULL_SELECTION_BOXES = F;
-		// 1:1 с оригиналом (TileEntityBase01Root:995-1005): предмет в руке — через Minecraft (1.7.10-событие несло
-		// currentItem, neo-событие нет; тот же приём, что GT_API_Proxy_Client.onDrawBlockHighlight). Метод зовётся
-		// ТОЛЬКО из клиент-обработчика события — Minecraft здесь резолвится лениво, серверная верификация не трогает.
+		// 1:1 с оригиналом (TileEntityBase01Root:995-1005): предмет в руке — 1.7.10-событие несло currentItem,
+		// neo-событие не несёт, поэтому игрок берётся у мода.
+		//
+		// BUG-084: игрок берётся ЧЕРЕЗ ЦЕНТР side-разделения (GT_API_Proxy.getThePlayer — сервер отдаёт null,
+		// клиентский прокси Minecraft.getInstance().player), а НЕ прямым обращением к Minecraft. Прежняя строка
+		// звала клиентский класс из ОБЩЕГО кода под пометкой «резолвится лениво, серверная верификация не трогает» —
+		// это неверно: в dev-режиме класс проверяется целиком при трансформации (NeoForgeDevDistCleaner.handlesClass),
+		// и весь TileEntityBase01Root на выделенном сервере не грузился → падал GT_API.<clinit> → мод не стартовал
+		// вовсе. Центр для этого в моде уже был (GT_API_Proxy:230 / GT_API_Proxy_Client:299), здесь он и используется.
 		byte tSide = (byte)aEvent.getHitResult().getDirection().ordinal();
 		if (!SIDES_VALID[tSide] || onDrawBlockHighlight2(aEvent)) return T;
-		net.minecraft.world.entity.player.Player tPlayer = net.minecraft.client.Minecraft.getInstance().player;
+		net.minecraft.world.entity.player.Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
 		ItemStack tHeld = tPlayer == null ? null : tPlayer.getMainHandItem();
 		if (ST.valid(tHeld) && isUsingWrenchingOverlay(tHeld, tSide)) {
 			// BUG-029: 1:1 с оригиналом (TileEntityBase01Root:999) — при держании ключа/кусачек тонкий коннектор
