@@ -167,7 +167,15 @@ public class EntityArrow_Material extends EntityProjectile {
 			for (int i = 0; i < tAllPotentiallyHitEntities.size(); ++i) {
 				Entity entity1 = tAllPotentiallyHitEntities.get(i);
 
-				if (entity1.canBeCollidedWith(this) && (entity1 != tShootingEntity || ticksInAir >= 5)) {
+				// ⛔ КОНТРАКТ-ШОВ (найден живой стрельбой игрока: стрелы GT6 пролетали СКВОЗЬ мобов).
+				// 1.7.10 спрашивал `entity.canBeCollidedWith()` — «можно ли в него попасть», и у живых это было
+				// `!isDead` (recompSrc/net/minecraft/entity/EntityLivingBase.java:2232-2235).
+				// В neo имя сохранилось, но СМЫСЛ другой: `canBeCollidedWith(Entity)` — про физическое сталкивание
+				// (лодки/шалкеры), дефолт `false` (Entity.java:2305) и у LivingEntity НЕ переопределён — то есть
+				// перебор целей всегда получал false. Прямой эквивалент старого вопроса — `canBeHitByProjectile()`
+				// = `isAlive() && isPickable()` (Entity.java:1916-1918), где у живых `isPickable()` = `!isRemoved()`
+				// (LivingEntity.java:3386-3388), что и есть 1.7.10-шное `!isDead`.
+				if (entity1.canBeHitByProjectile() && (entity1 != tShootingEntity || ticksInAir >= 5)) {
 					AABB axisalignedbb1 = entity1.getBoundingBox().inflate(0.3, 0.3, 0.3);
 					java.util.Optional<Vec3> movingobjectposition1 = axisalignedbb1.clip(vec31, vec3);
 

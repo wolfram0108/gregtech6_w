@@ -246,6 +246,10 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6ovenprobe.flag")) gt6OvenProbeTick(aEvent.getServer());
 	// [GT6-LIGHTAUDIT] обход реестра: доходят ли значения getLightOpacity() до движка — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6lightaudit.flag")) gt6LightAuditTick(aEvent.getServer());
+	// [GT6-ARCHERY] ПЛОЩАДКА ПРИЁМКИ: тир для проверки лука и стрел GT6 игроком — снять после приёмки
+		if (gregapi.data.CS.probeFlag("gt6archery.flag")) gt6ArcheryTick(aEvent.getServer());
+	// [GT6-LIGHTYARD] ПЛОЩАДКА ПРИЁМКИ: двор света (колодцы GT6/ваниль + навесы) — снять после приёмки
+		if (gregapi.data.CS.probeFlag("gt6lightyard.flag")) gt6LightYardTick(aEvent.getServer());
 	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска в Соковыжималке» — снять при уборке фазы
@@ -9942,5 +9946,315 @@ public final class GT6Probes {
 		sLAuditSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: канал жив (камень 15, стекло 0)", tStone == 15 && tGlass == 0, "15/0", tStone + "/" + tGlass);
 		sLAuditSeq.judge("значения GT6 доходят до движка у ВСЕХ блоков с объявленным getLightOpacity()", tMismatch == 0, 0, tMismatch);
 		sLAuditSeq.done();
+	}
+
+	// ==========================================================================================================
+	// gt6archery — ПЛОЩАДКА ПРИЁМКИ №1: лук + стрелы GT6. Стреляет ИГРОК, метрики снимает стенд.
+	//
+	// Стенд ничего не судит сам: он строит тир, выдаёт четыре подписанных лука и стрелы GT6, а дальше
+	// молча наблюдает и печатает В ЧАТ то, что произошло по факту — какой снаряд родился, с какими
+	// величинами, и что случилось с мишенью (урон, поджог, отброс). Вердикт выносит человек.
+	// Клиент НЕ гасится (done() не вызывается) — площадка живёт, пока игрок не закроет игру.
+	// ==========================================================================================================
+	private static final String ARCHERY_M = "GT6-ARCHERY";
+	private static int sArcheryTick = -1;
+	private static boolean sArcheryBuilt = F;
+	private static net.minecraft.world.entity.animal.pig.Pig sArcheryTarget = null;
+	private static BlockPos sArcheryPen = null;
+	private static float sArcheryHP = -1;
+	private static double sArcheryX = 0, sArcheryZ = 0;
+	private static int sArcheryFire = 0, sArcheryShots = 0, sArcheryCool = 0, sArcheryPending = 0;
+	private static Runnable sArcheryPendingSay = null;
+	private static final java.util.Set<Integer> sArcherySeen = new java.util.HashSet<>();
+
+	public static void gt6ArcheryTick(net.minecraft.server.MinecraftServer aServer) {
+		sArcheryTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (!sArcheryBuilt) {if (sArcheryTick > 60) gt6ArcheryBuild(tPlayer); return;}
+		gt6ArcheryWatchShot(tPlayer);
+		gt6ArcheryWatchTarget(tPlayer);
+	}
+
+	private static void gt6ArcherySay(ServerPlayer aPlayer, String aText) {
+		aPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal(aText));
+		gregapi.data.CS.OUT.println("[" + ARCHERY_M + "] " + aText);
+	}
+
+	/** Лук с подписью в названии — чтобы в инвентаре было видно, какой из них какой. */
+	private static net.minecraft.world.item.ItemStack gt6ArcheryBow(ServerLevel aLevel, String aName, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> aEnchant, int aLevelOf) {
+		net.minecraft.world.item.ItemStack tBow = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BOW);
+		if (aEnchant != null) tBow.enchant(aLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(aEnchant), aLevelOf);
+		tBow.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal(aName));
+		return tBow;
+	}
+
+	private static void gt6ArcheryBuild(ServerPlayer aPlayer) {
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition();
+		net.minecraft.world.level.block.state.BlockState tFloor = net.minecraft.world.level.block.Blocks.SMOOTH_STONE.defaultBlockState();
+		net.minecraft.world.level.block.state.BlockState tWall  = net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState();
+
+		// пол тира: от ног игрока на 16 блоков вперёд (+X), 7 в ширину
+		for (int dx = -2; dx <= 16; dx++) for (int dz = -3; dz <= 3; dz++) {
+			tLevel.setBlock(tO.offset(dx, -1, dz), tFloor, 3);
+			for (int dy = 0; dy <= 4; dy++) tLevel.setBlock(tO.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		}
+		// загон 5x5 со стеклянными стенами в 12 блоках от стрелка — мишень видно, но она не убежит
+		sArcheryPen = tO.offset(12, 0, 0);
+		for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
+			boolean tEdge = (dx == -2 || dx == 2 || dz == -2 || dz == 2);
+			if (!tEdge) continue;
+			// ⛔ ПЕРЕДНЮЮ стену (со стороны стрелка) НЕ ставим: первая редакция обнесла загон стеклом кругом,
+			// и все пять выстрелов игрока ушли в стекло — ни одного попадания по мишени. Мишень с noAi
+			// никуда не уйдёт и без стены, а линия огня должна быть открыта.
+			if (dx == -2) continue;
+			for (int dy = 0; dy <= 2; dy++) tLevel.setBlock(sArcheryPen.offset(dx, dy, dz), tWall, 3);
+		}
+		// стрелку — выживание: в креативе поджог и урон мишени ведут себя иначе
+		aPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+		aPlayer.getInventory().clearContent();
+		aPlayer.getInventory().setItem(0, gt6ArcheryBow(tLevel, "Лук БЕЗ чар (эталон)", null, 0));
+		aPlayer.getInventory().setItem(1, gt6ArcheryBow(tLevel, "Лук: Сила V", net.minecraft.world.item.enchantment.Enchantments.POWER, 5));
+		aPlayer.getInventory().setItem(2, gt6ArcheryBow(tLevel, "Лук: Пламя I", net.minecraft.world.item.enchantment.Enchantments.FLAME, 1));
+		aPlayer.getInventory().setItem(3, gt6ArcheryBow(tLevel, "Лук: Отбрасывание II", net.minecraft.world.item.enchantment.Enchantments.PUNCH, 2));
+		// ⛔ Первая редакция брала ПЕРВУЮ попавшуюся мету — ей оказался экзотический материал Photon
+		// (игрок: «положил какие-то странные стрелы»). Стрелы для приёмки надо давать обычные, поэтому
+		// перебираем меты и выдаём НЕСКОЛЬКО разных, а их имена печатаем — сырое имя вида «oredict.*»
+		// сразу видно в списке, и это уже замер локализации, а не догадка.
+		int tSlot = 4, tGiven = 0;
+		java.util.List<String> tNames = new java.util.ArrayList<>();
+		net.minecraft.world.item.Item tArrowItem = null;
+		for (net.minecraft.world.item.Item tIt : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			if (tIt instanceof gregapi.item.IItemProjectile) {
+				net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tIt);
+				if (tKey != null && tKey.getPath().contains("arrowgtwood")) {tArrowItem = tIt; break;}
+			}
+		}
+		// Перебираем ВСЕ меты: считаем, у скольких стрел имя сырое, и выдаём игроку те, у кого имя НОРМАЛЬНОЕ.
+		// Первые меты у GT6 — элементарные частицы (Photon/Neutrino/Neutron), стрелять ими бессмысленно.
+		int tTotal = 0, tRaw = 0;
+		java.util.List<net.minecraft.world.item.ItemStack> tGood = new java.util.ArrayList<>();
+		java.util.List<String> tRawNames = new java.util.ArrayList<>();
+		if (tArrowItem != null) for (int tMeta = 0; tMeta < 1024; tMeta++) {
+			net.minecraft.world.item.ItemStack tTry = gregapi.util.ST.make(tArrowItem, 64, tMeta);
+			if (gregapi.util.ST.invalid(tTry)) continue;
+			try {if (!((gregapi.item.IItemProjectile)tArrowItem).hasProjectile(gregapi.data.TD.Projectiles.ARROW, tTry)) continue;} catch (Throwable e) {continue;}
+			tTotal++;
+			String tName = tTry.getHoverName().getString();
+			if (tName.startsWith("oredict.")) {tRaw++; if (tRawNames.size() < 5) tRawNames.add("мета " + tMeta + " → «" + tName + "»");}
+			else if (tGood.size() < 3) {tGood.add(tTry); tNames.add("мета " + tMeta + " → «" + tName + "»");}
+		}
+		for (net.minecraft.world.item.ItemStack tStack : tGood) {aPlayer.getInventory().setItem(tSlot++, tStack); tGiven++;}
+		gt6ArcherySay(aPlayer, "§eЗАМЕР ИМЁН: стрел GT6 всего §f" + tTotal + "§e, из них с СЫРЫМ именем §c" + tRaw
+			+ "§e, с нормальным §a" + (tTotal - tRaw));
+		for (String s : tRawNames) gt6ArcherySay(aPlayer, "§c  сырое: " + s);
+		aPlayer.getInventory().setItem(7, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW, 64));
+		aPlayer.getInventory().setSelectedSlot(0);
+		for (String s : tNames) gt6ArcherySay(aPlayer, "§7стрела GT6: " + s);
+
+		gt6ArcherySpawnTarget(tLevel);
+		sArcheryBuilt = T;
+
+		gt6ArcherySay(aPlayer, "§e=== ТИР ГОТОВ ===");
+		gt6ArcherySay(aPlayer, "В инвентаре: 4 лука (без чар / Сила V / Пламя I / Отбрасывание II), до трёх видов стрел GT6 (слоты 5-7) и ванильные стрелы (слот 8).");
+		gt6ArcherySay(aPlayer, "Мишень — свинья в стеклянном загоне в 12 блоках. Стреляйте любым луком; метрики появятся здесь сами.");
+		gt6ArcherySay(aPlayer, "Ванильные стрелы — для сравнения: переложите их в слот перед стрелами GT6, чтобы лук взял именно их.");
+	}
+
+	private static void gt6ArcherySpawnTarget(ServerLevel aLevel) {
+		if (sArcheryTarget != null && sArcheryTarget.isAlive()) return;
+		sArcheryTarget = net.minecraft.world.entity.EntityType.PIG.create(aLevel, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+		if (sArcheryTarget == null) return;
+		sArcheryTarget.snapTo(sArcheryPen.getX() + 0.5, sArcheryPen.getY(), sArcheryPen.getZ() + 0.5);
+		// ⛔ ИИ НЕ отключаем: setNoAi гасит не только поведение, но и обработку перемещения — импульс от
+		// отбрасывания тогда не превращается в движение, и замер показывает «не сдвинулась» на рабочем коде.
+		// Собственная ходьба свиньи даёт шум ~0.2 блока, поэтому порог смещения ниже поднят до 0.6.
+		sArcheryTarget.setPersistenceRequired();
+		// ⛔ ЖИВУЧЕСТЬ. Обычная свинья (10 HP) умирает от ПЕРВОГО попадания стрелой GT6 — у неё урон растёт
+		// от материала наконечника (EntityArrow_Material:200 добавляет mToolQuality). Из-за этого не видно
+		// ни поджога от Пламени, ни отброса от Отбрасывания: мишень исчезает раньше, чем эффект проявится.
+		// Поднимаем предел здоровья, чтобы мишень ДЕРЖАЛА попадание и эффект можно было увидеть глазами.
+		net.minecraft.world.entity.ai.attributes.AttributeInstance tMaxHP = sArcheryTarget.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH);
+		if (tMaxHP != null) tMaxHP.setBaseValue(400.0D);
+		sArcheryTarget.setHealth(400.0F);
+		aLevel.addFreshEntity(sArcheryTarget);
+		sArcheryHP = sArcheryTarget.getHealth();
+		sArcheryX = sArcheryTarget.getX(); sArcheryZ = sArcheryTarget.getZ();
+		sArcheryFire = 0;
+	}
+
+	/** Новый снаряд в воздухе — печатаем его паспорт: чем он стал от чар лука. */
+	private static void gt6ArcheryWatchShot(ServerPlayer aPlayer) {
+		ServerLevel tLevel = aPlayer.level();
+		for (net.minecraft.world.entity.Entity tE : tLevel.getEntities(aPlayer, aPlayer.getBoundingBox().inflate(24))) {
+			if (!(tE instanceof net.minecraft.world.entity.projectile.arrow.AbstractArrow tArrow)) continue;
+			if (!sArcherySeen.add(tE.getId())) continue;
+			sArcheryShots++;
+			boolean tOurs = tE instanceof gregapi.item.IItemProjectile.EntityProjectile;
+			double tDamage = tOurs ? ((gregapi.item.IItemProjectile.EntityProjectile)tE).getBaseDamageGT() : -1;
+			int tKnock = -1;
+			if (tOurs) try {
+				java.lang.reflect.Field tF = gregapi.item.IItemProjectile.EntityProjectile.class.getDeclaredField("mKnockback");
+				tF.setAccessible(true); tKnock = tF.getInt(tE);
+			} catch (Throwable e) {/**/}
+			gt6ArcherySay(aPlayer, "§b— выстрел #" + sArcheryShots + ": " + (tOurs ? "§aснаряд GT6" : "§7ванильная стрела")
+				+ "§r · урон " + (tDamage < 0 ? "?" : String.format("%.1f", tDamage))
+				+ " · огонь " + tE.getRemainingFireTicks() + " тиков"
+				+ (tKnock >= 0 ? " · отбрасывание " + tKnock : ""));
+		}
+	}
+
+	/** Что случилось с мишенью: урон, поджог, смещение. Через 3 секунды после попадания мишень восстанавливается. */
+	private static void gt6ArcheryWatchTarget(ServerPlayer aPlayer) {
+		ServerLevel tLevel = aPlayer.level();
+		if (sArcheryTarget == null || !sArcheryTarget.isAlive()) {
+			if (sArcheryTarget != null) {gt6ArcherySay(aPlayer, "§cмишень убита — ставлю новую"); sArcheryTarget = null;}
+			gt6ArcherySpawnTarget(tLevel);
+			return;
+		}
+		if (sArcheryPending > 0) {
+			if (--sArcheryPending == 0 && sArcheryPendingSay != null) {sArcheryPendingSay.run(); sArcheryPendingSay = null;}
+			return;
+		}
+		if (sArcheryCool > 0) {
+			if (--sArcheryCool == 0) {
+				sArcheryTarget.setHealth(sArcheryTarget.getMaxHealth());  // мишень живучая (400 HP), см. спавн
+				sArcheryTarget.clearFire();
+				sArcheryTarget.snapTo(sArcheryPen.getX() + 0.5, sArcheryPen.getY(), sArcheryPen.getZ() + 0.5);
+				sArcheryHP = sArcheryTarget.getHealth();
+				sArcheryX = sArcheryTarget.getX(); sArcheryZ = sArcheryTarget.getZ();
+				sArcheryFire = 0;
+				gt6ArcherySay(aPlayer, "§8мишень восстановлена, можно стрелять дальше");
+			}
+			return;
+		}
+		float tHP = sArcheryTarget.getHealth();
+		int tFire = sArcheryTarget.getRemainingFireTicks();
+		double tShift = Math.sqrt(Math.pow(sArcheryTarget.getX() - sArcheryX, 2) + Math.pow(sArcheryTarget.getZ() - sArcheryZ, 2));
+		boolean tHurt = tHP < sArcheryHP - 0.01, tBurn = tFire > sArcheryFire + 1;
+		if (!tHurt && !tBurn) return;
+		// ⛔ СМЕЩЕНИЕ МЕРЯЕМ НЕ СЕЙЧАС. push() задаёт импульс, а перемещение случится в следующих тиках —
+		// замер в тик попадания всегда показывал «не сдвинулась» даже при рабочем отбрасывании.
+		final double tFromX = sArcheryX, tFromZ = sArcheryZ;
+		final float  tLostHP = sArcheryHP - tHP;
+		final int    tBurnTicks = tFire;
+		final boolean tWasHurt = tHurt, tWasBurn = tBurn;
+		sArcheryPending = 12;                      // ждём 12 тиков и только потом меряем отброс
+		sArcheryPendingSay = () -> {
+			double tMoved = Math.sqrt(Math.pow(sArcheryTarget.getX() - tFromX, 2) + Math.pow(sArcheryTarget.getZ() - tFromZ, 2));
+			gt6ArcherySay(aPlayer, "§6→ по мишени: "
+				+ (tWasHurt ? "§cурон " + String.format("%.1f", tLostHP) + "§r " : "§7урона нет§r ")
+				+ (tWasBurn ? "§6горит " + tBurnTicks + " тиков§r " : "§7не горит§r ")
+				+ (tMoved > 0.6 ? "§eотброшена на " + String.format("%.2f", tMoved) + " блока (замер через 12 тиков)"
+				               : "§7смещение " + String.format("%.2f", tMoved) + " блока — в пределах собственной ходьбы"));
+			sArcheryCool = 60;
+		};
+	}
+
+	// ==========================================================================================================
+	// gt6lightyard — ПЛОЩАДКА ПРИЁМКИ №2: затухание света. Смотрит ИГРОК, числа снимает стенд.
+	//
+	// Два одинаковых колодца рядом: в одном вода GT6, в другом ванильная. Глубина одна, небо открыто —
+	// разницу видно глазами, а стенд печатает уровень света на каждой глубине, чтобы было чем подпереть.
+	// Рядом три навеса из блоков GT6 (листва / стекло / дорожка) — под ними свет тоже меряется.
+	//
+	// ⛔ Вода GT6 ставится только со взведённым PLACEMENT_ALLOWED: иначе onBlockAdded стирает блок сам
+	// (защита GT6, 1:1 с оригиналом). Урок оплачен прошлым стендом.
+	// ==========================================================================================================
+	private static final String LYARD_M = "GT6-LIGHTYARD";
+	private static int sLYardTick = -1;
+	private static boolean sLYardBuilt = F;
+	private static BlockPos sLYardGT = null, sLYardVanilla = null;
+	private static final int LYARD_DEPTH = 8;
+	private static java.util.List<Object[]> sLYardCanopies = new java.util.ArrayList<>();
+
+	public static void gt6LightYardTick(net.minecraft.server.MinecraftServer aServer) {
+		sLYardTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (!sLYardBuilt) {if (sLYardTick > 60) gt6LightYardBuild(tPlayer); return;}
+		if (sLYardTick % 60 == 0) gt6LightYardMeasure(tPlayer);
+	}
+
+	private static void gt6LYardSay(ServerPlayer aPlayer, String aText) {
+		aPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal(aText));
+		gregapi.data.CS.OUT.println("[" + LYARD_M + "] " + aText);
+	}
+
+	/** Колодец 3x3 глубиной LYARD_DEPTH: каменные стенки, внутри столб испытуемой жидкости, сверху открыто. */
+	private static void gt6LYardWell(ServerLevel aLevel, BlockPos aTop, net.minecraft.world.level.block.state.BlockState aLiquid, String aWhat) {
+		net.minecraft.world.level.block.state.BlockState tStone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+		// обойма: стенки и дно, чтобы свет шёл только сверху и жидкость никуда не ушла
+		for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) for (int dy = -LYARD_DEPTH - 1; dy <= 0; dy++) {
+			boolean tShell = (dx <= -2 || dx >= 2 || dz <= -2 || dz >= 2 || dy == -LYARD_DEPTH - 1);
+			aLevel.setBlock(aTop.offset(dx, dy, dz), tShell ? tStone : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		}
+		// столб жидкости 1x1 по центру (узкий — чтобы не растекалась и была видна с края)
+		for (int dy = -LYARD_DEPTH; dy <= 0; dy++) aLevel.setBlock(aTop.offset(0, dy, 0), aLiquid, 3);
+		// небо над колодцем расчищено
+		for (int dy = 1; dy <= 20; dy++) for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++)
+			aLevel.setBlock(aTop.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		gregapi.data.CS.OUT.println("[" + LYARD_M + "] колодец «" + aWhat + "» построен на " + aTop);
+	}
+
+	/** Навес: крыша 3x3 из испытуемого блока на столбиках, под ней замеряем свет. */
+	private static void gt6LYardCanopy(ServerLevel aLevel, BlockPos aBase, net.minecraft.world.level.block.Block aBlock, String aName) {
+		if (aBlock == null) return;
+		net.minecraft.world.level.block.state.BlockState tStone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+		for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+			aLevel.setBlock(aBase.offset(dx, -1, dz), tStone, 3);                       // пол
+			for (int dy = 0; dy <= 2; dy++) aLevel.setBlock(aBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			aLevel.setBlock(aBase.offset(dx, 3, dz), aBlock.defaultBlockState(), 3);    // крыша из блока GT6
+			for (int dy = 4; dy <= 20; dy++) aLevel.setBlock(aBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		}
+		sLYardCanopies.add(new Object[]{aBase, aName, aBlock});
+	}
+
+	private static void gt6LightYardBuild(ServerPlayer aPlayer) {
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition();
+		// взводим гейт постановки водоподобных — как это делает генератор мира
+		gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = T;
+		gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = T;
+		gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = T;
+
+		sLYardGT      = tO.offset(4, 0, -3);
+		sLYardVanilla = tO.offset(4, 0,  3);
+		net.minecraft.world.level.block.Block tRiver = (net.minecraft.world.level.block.Block) gregapi.data.CS.BlocksGT.River;
+		gt6LYardWell(tLevel, sLYardGT,      tRiver.defaultBlockState(), "вода GT6 (река)");
+		gt6LYardWell(tLevel, sLYardVanilla, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), "ванильная вода");
+
+		// навесы из блоков GT6: листва, стекло, дорожка — под ними свет должен вести себя по-разному
+		sLYardCanopies.clear();
+		gt6LYardCanopy(tLevel, tO.offset(12, 0, -4), (net.minecraft.world.level.block.Block) gregapi.data.CS.BlocksGT.Leaves_AB, "листва GT6");
+		gt6LYardCanopy(tLevel, tO.offset(12, 0,  0), (net.minecraft.world.level.block.Block) gregapi.data.CS.BlocksGT.Glass,     "стекло GT6");
+		gt6LYardCanopy(tLevel, tO.offset(12, 0,  4), net.minecraft.world.level.block.Blocks.OAK_LEAVES,                          "ванильная листва (эталон)");
+
+		// проверяем, что жидкости РЕАЛЬНО встали (иначе замер ничего не значит)
+		String tGot = String.valueOf(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tLevel.getBlockState(sLYardGT).getBlock()));
+		sLYardBuilt = T;
+		gt6LYardSay(aPlayer, "§e=== ДВОР СВЕТА ГОТОВ ===");
+		gt6LYardSay(aPlayer, "Два колодца глубиной " + LYARD_DEPTH + " рядом: §bслева вода GT6§r, §fсправа ванильная§r. Небо над обоими открыто.");
+		gt6LYardSay(aPlayer, "В колодце GT6 стоит: " + tGot + (tGot.contains("river") ? " §a(встала)" : " §c(НЕ встала — замер недействителен)"));
+		gt6LYardSay(aPlayer, "Дальше три навеса: листва GT6 · стекло GT6 · ванильная листва для сравнения.");
+		gt6LYardSay(aPlayer, "Загляните в оба колодца сверху и спуститесь — числа я печатаю каждые 3 секунды.");
+	}
+
+	private static void gt6LightYardMeasure(ServerPlayer aPlayer) {
+		ServerLevel tLevel = aPlayer.level();
+		StringBuilder tGT = new StringBuilder(), tVA = new StringBuilder();
+		for (int dy = 0; dy >= -LYARD_DEPTH; dy -= 2) {
+			tGT.append(dy == 0 ? "" : " ").append(tLevel.getBrightness(net.minecraft.world.level.LightLayer.SKY, sLYardGT.offset(0, dy, 0)));
+			tVA.append(dy == 0 ? "" : " ").append(tLevel.getBrightness(net.minecraft.world.level.LightLayer.SKY, sLYardVanilla.offset(0, dy, 0)));
+		}
+		gt6LYardSay(aPlayer, "§bвода GT6§r  по глубине 0,2,4,6,8: §f" + tGT + "§r   §7(в 1.7.10 гасила по 3 за блок)");
+		gt6LYardSay(aPlayer, "§fваниль§r    по глубине 0,2,4,6,8: §f" + tVA + "§r   §7(гасит по 1 за блок)");
+		StringBuilder tCan = new StringBuilder();
+		for (Object[] tC : sLYardCanopies) {
+			BlockPos tBase = (BlockPos) tC[0];
+			tCan.append("§7").append(tC[1]).append("§r ").append(tLevel.getBrightness(net.minecraft.world.level.LightLayer.SKY, tBase)).append("  ");
+		}
+		gt6LYardSay(aPlayer, "под навесами (свет на полу): " + tCan);
 	}
 }
