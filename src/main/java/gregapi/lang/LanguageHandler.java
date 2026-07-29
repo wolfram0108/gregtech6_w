@@ -29,6 +29,7 @@ import gregapi.oredict.OreDictPrefix;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.locale.Language;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import gregapi.config.ConfigValue;
@@ -48,7 +49,109 @@ public class LanguageHandler {
 	
 	private static final HashMap<String, String> BUFFERMAP = new HashMap<>(), BACKUPMAP = new HashMap<>();
 	private static boolean mWritingEnabled = F;
-	
+
+	/** Наша надстройка над таблицей движка (см. {@link #injectIntoEngine()}); пересоздаётся при каждой загрузке ресурсов. */
+	private static GT6Language mEngineOverlay = null;
+
+	/**
+	 * ЦЕНТР ЛОКАЛИЗАЦИИ (BUG-082): GT6 отдаёт свои имена ДВИЖКУ, а не только себе.
+	 *
+	 * <p>Оригинал 1.7.10 на каждое имя звал {@code LanguageRegistry.instance().injectLanguage("en_US", TEMPMAP)}
+	 * ({@code gregtech6/…/LanguageHandler.java:59-64, 84-95}) — строка попадала в ЖИВУЮ таблицу переводов движка,
+	 * поэтому её видел кто угодно: ваниль, NEI, Waila, любой сторонний мод. Порт этот впрыск снял, и имена GT6
+	 * остались только во внутренней {@code BACKUPMAP}; наружу они пробивались лишь точечными мостами
+	 * {@code getName(ItemStack)} у предметов и блоков. Всё, что спрашивает имя движковым способом, получало сырой
+	 * ключ — отсюда {@code fluid.steam} и {@code fluid.ic2distilledwater} в витрине Jade. Замер: в
+	 * {@code assets/gregtech6/lang/en_us.json} лежит 6 ключей, ни одного имени GT6.
+	 *
+	 * <p><b>Как именно.</b> Дописать в готовую таблицу нельзя: клиентская собирается неизменяемой копией
+	 * ({@code ClientLanguage.loadFrom:58} — {@code new ClientLanguage(Map.copyOf(translations), …)}; замер это и
+	 * показал — {@code UnsupportedOperationException} на {@code putIfAbsent}). Мутируемой движок держит ДРУГУЮ,
+	 * серверную ({@code Language.java:39-40}). Штатная точка расширения одна и она публичная —
+	 * {@link Language#inject(Language)}: подменяем действующую таблицу НАДСТРОЙКОЙ над ней ({@link GT6Language}).
+	 * Надстройка ничего не заслоняет — она отвечает лишь на те ключи, которых движок не знает, поэтому язык
+	 * игрока и ресурспаки остаются главнее; всё остальное уходит делегату один в один.
+	 *
+	 * <p>Обе формы ключа ({@code key} и {@code key + ".name"}) — как в оригинале ({@code …:60-64}).
+	 *
+	 * <p>Зовётся: целиком из {@code ClientResourceLoadFinishedEvent} (перезагрузка ресурсов создаёт таблицу
+	 * заново, вместе с ней исчезает и надстройка) и точечно из {@link #add}/{@link #set} — имена GT6
+	 * регистрируются и после загрузки ресурсов.
+	 *
+	 * @return сколько ключей мода движок до этого не знал.
+	 */
+	public static synchronized int injectIntoEngine() {
+		if (BACKUPMAP.isEmpty()) return 0;
+		try {
+			Language tCurrent = Language.getInstance();
+			// Надстройку на надстройку не громоздим: работаем поверх настоящей таблицы движка.
+			if (tCurrent instanceof GT6Language tOurs) tCurrent = tOurs.mDelegate;
+			GT6Language tOverlay = new GT6Language(tCurrent);
+			int rInjected = 0;
+			for (Entry<String, String> tEntry : BACKUPMAP.entrySet()) rInjected += tOverlay.own(tEntry.getKey(), tEntry.getValue());
+			mEngineOverlay = tOverlay;
+			Language.inject(tOverlay);
+			return rInjected;
+		} catch (Throwable e) {
+			mEngineOverlay = null;
+			ERR.println("GT6 localization: не удалось отдать имена GT6 движку — у сторонних модов они останутся сырыми.");
+			e.printStackTrace(ERR);
+			return 0;
+		}
+	}
+
+	/** Один ключ — в уже поставленную надстройку. Пока её нет (мод грузится раньше ресурсов), ключ ждёт в BACKUPMAP. */
+	private static int injectKey(String aKey, String aEnglish) {
+		GT6Language tOverlay = mEngineOverlay;
+		if (tOverlay == null || aKey == null || aEnglish == null) return 0;
+		try {return tOverlay.own(aKey, aEnglish);} catch (Throwable e) {return 0;}
+	}
+
+	/**
+	 * НАДСТРОЙКА над таблицей переводов движка: сначала спрашиваем движок, и только если он ключа не знает —
+	 * отвечаем именем GT6. Прямой аналог того, что делал {@code LanguageRegistry.injectLanguage} в 1.7.10.
+	 */
+	private static final class GT6Language extends Language {
+		private final Language mDelegate;
+		private final java.util.concurrent.ConcurrentHashMap<String, String> mOwn = new java.util.concurrent.ConcurrentHashMap<>();
+
+		GT6Language(Language aDelegate) {mDelegate = aDelegate;}
+
+		/** @return сколько форм ключа добавлено (движок их не знал). */
+		int own(String aKey, String aEnglish) {
+			int rAdded = 0;
+			if (!mDelegate.has(aKey           ) && mOwn.putIfAbsent(aKey           , aEnglish) == null) rAdded++;
+			if (!mDelegate.has(aKey + ".name" ) && mOwn.putIfAbsent(aKey + ".name" , aEnglish) == null) rAdded++;
+			if (rAdded > 0) mMerged = null; // состав изменился — объединённая карта пересоберётся при следующем запросе
+			return rAdded;
+		}
+
+		@Override public String getOrDefault(String aKey, String aDefault) {
+			if (mDelegate.has(aKey)) return mDelegate.getOrDefault(aKey, aDefault);
+			String rOwn = mOwn.get(aKey);
+			return rOwn == null ? aDefault : rOwn;
+		}
+		@Override public boolean has(String aKey) {return mDelegate.has(aKey) || mOwn.containsKey(aKey);}
+		@Override public boolean isDefaultRightToLeft() {return mDelegate.isDefaultRightToLeft();}
+		@Override public net.minecraft.util.FormattedCharSequence getVisualOrder(net.minecraft.network.chat.FormattedText aText) {return mDelegate.getVisualOrder(aText);}
+		@Override public net.minecraft.network.chat.Component getComponent(String aKey) {return mDelegate.getComponent(aKey);}
+
+		/** Объединённая карта строится ОДИН раз на состав и переиспользуется: её просит {@code I18n} при смене языка
+		 *  ({@code neo-decompiled/…/I18n.java:18} — {@code injectTranslations(locale.getLanguageData())}), а ключей
+		 *  здесь под сотню тысяч — пересобирать на каждый вызов недопустимо. Сбрасывается при добавлении ключа. */
+		private volatile java.util.Map<String, String> mMerged = null;
+
+		@Override public java.util.Map<String, String> getLanguageData() {
+			java.util.Map<String, String> rMerged = mMerged;
+			if (rMerged == null) {
+				java.util.Map<String, String> tData = new HashMap<>(mOwn);
+				tData.putAll(mDelegate.getLanguageData()); // движок главнее — его значения перекрывают наши
+				mMerged = rMerged = java.util.Collections.unmodifiableMap(tData);
+			}
+			return rMerged;
+		}
+	}
+
 	public static void save() {
 		if (sLangFile != null) {
 			mWritingEnabled = T;
@@ -58,13 +161,9 @@ public class LanguageHandler {
 	
 	public static synchronized void set(String aKey, String aEnglish) {
 		BACKUPMAP.put(aKey, aEnglish);
-		// F-localization IMPOSSIBLE-1:1 (не заглушка): 1.7.10 LanguageRegistry.instance().injectLanguage(locale, Map)
-		// вписывал строку в ЖИВУЮ ванильную таблицу переводов — рантайм-инъекции нет ни в одном из 3 корней neo
-		// (LanguageProvider — datagen-only ДО запуска; I18nManager — внутренний loader FML; Language.inject заменяет
-		// синглтон ЦЕЛИКОМ, не аддитивно). И не нужна: BACKUPMAP — источник истины для translate()/LH.get на обеих
-		// сторонах, а имена GT6 видны в ванильных путях через переопределённый getName(ItemStack) (ItemBase:146/
-		// PrefixItem:210 → getItemStackDisplayName → LH.get). Свой текст GT6 берёт через LH.get(BACKUPMAP), НЕ через
-		// Component.translatable по GT6-ключу (сверено: 5 vanilla-translatable/I18n vs 355 LH.get). Файл-экспорт lang — в add() ниже.
+		// 1:1 с оригиналом (`gregtech6/…/LanguageHandler.java:59-64`): строка уходит и в ТАБЛИЦУ ДВИЖКА —
+		// см. injectIntoEngine() выше. BACKUPMAP при этом остаётся источником истины для translate()/LH.get.
+		injectKey(aKey, aEnglish);
 	}
 
 	public static synchronized void add(String aKey, String aEnglish) {
@@ -73,14 +172,14 @@ public class LanguageHandler {
 		if (aKey.length() <= 0) return;
 		boolean tSave = F;
 		BACKUPMAP.put(aKey, aEnglish);
+		injectKey(aKey, aEnglish); // 1:1 с оригиналом (`…/LanguageHandler.java:84-95`): строка уходит и в таблицу движка
 		if (sLangFile == null) {
 			BUFFERMAP.put(aKey, aEnglish);
 		} else {
 			if (!BUFFERMAP.isEmpty()) {
 				tSave = T;
-				// F-localization IMPOSSIBLE-1:1: см. set() выше — 1.7.10 injectLanguage("en_US", TEMPMAP) в живую ванильную
-				// таблицу, аналога нет в neo и не нужен (имена GT6 идут через getName-override + LH.get(BACKUPMAP)). Ниже —
 				// F12 file round-trip: каждый буферизованный ключ пишется в sLangFile, иначе он никогда не попадёт в файл.
+				// (Впрыск в движок для них уже сделан выше — он идёт по КАЖДОМУ ключу сразу, не через этот буфер.)
 				for (Entry<String, String> tEntry : BUFFERMAP.entrySet()) {
 					sLangFile.get("LanguageFile", tEntry.getKey(), tEntry.getValue());
 				}

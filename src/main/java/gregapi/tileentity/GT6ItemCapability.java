@@ -85,10 +85,80 @@ public class GT6ItemCapability {
 		try {
 			// Пустой инвентарь — не то же самое, что его отсутствие: null означает «канала здесь нет».
 			if (aBlockEntity instanceof Container tContainer && tContainer.getContainerSize() > 0) {
-				if (aSide != null && aBlockEntity instanceof WorldlyContainer tWorldly) return new WorldlyContainerWrapper(tWorldly, aSide);
+				if (aBlockEntity instanceof WorldlyContainer tWorldly) {
+					WorldlyContainerWrapper tWrapper = new WorldlyContainerWrapper(tWorldly, aSide);
+					return aSide == null ? new SidelessView(tWrapper, tWorldly) : tWrapper;
+				}
 				return VanillaContainerWrapper.of(tContainer);
 			}
 		} catch (Throwable e) {/* логика конкретного TE не должна ронять чужой мод, который просто спросил капу */}
 		return null;
+	}
+
+	/**
+	 * ЗАПРОС БЕЗ СТОРОНЫ — ТОЖЕ ПО ПРАВИЛАМ GT6 (BUG-082).
+	 *
+	 * <p><b>Что было.</b> При {@code side == null} канал отдавал {@code VanillaContainerWrapper.of(...)} — ВЕСЬ
+	 * массив инвентаря, мимо фильтра мода. Наружу утекали служебные слоты, которые GT6 предметами не считает:
+	 * дисплеи жидкостей ({@code MultiTileEntityBasicMachine:470-471} — {@code FL.display(...)}) и слот схемы.
+	 * Отсюда витрина Jade, где содержимое машины показано дважды: сперва «предметами» (на деле дисплеи, в вёдрах),
+	 * затем настоящим списком жидкостей. Jade спрашивает именно без стороны — {@code Jade/CommonProxy.java:290-297}.
+	 *
+	 * <p><b>Почему это дефект порта, а не движка.</b> У GT6 нет «инвентаря без стороны»: сторону 6 он называет
+	 * {@code SIDE_ANY} и отвечает на неё сам ({@code MultiTileEntityBasicMachine.updateAccessibleSlots} заполняет
+	 * {@code ACCESSIBLE[6]}, маски по умолчанию {@code 127} включают бит {@code SBIT_A=64} — {@code CS.java:646}).
+	 * neo-{@code null} и есть эта сторона: {@code FORGE_DIR[6] = null} ({@code CS.java:687}), {@code UT.Code.side(null)=6}.
+	 * Соседний канал ЖИДКОСТЕЙ так и сделан — {@code TileEntityBase01Root.getFluidTanksForCapability:766}. Предметный
+	 * канал из этой пары выпадал: одна и та же задача решалась в моде двумя разными способами.
+	 *
+	 * <p><b>Что здесь есть и чего нет.</b> Здесь ТОЛЬКО выбор слотов — он берётся у самого мода
+	 * ({@code getSlotsForFace(null)} → {@code TileEntityBase06Covers:322} → {@code getAccessibleSlotsFromSide2(6)},
+	 * с учётом каверов). Перекладывание, транзакции и стек-лимиты остаются штатным {@link WorldlyContainerWrapper}
+	 * — своей копии движковой механики тут нет. Форма класса — как у движкового {@code RangedResourceHandler}
+	 * ({@code size}/{@code convertIndex} + оба безындексных метода перебором), только множество индексов не
+	 * диапазон, а ответ мода.
+	 */
+	private static final class SidelessView extends net.neoforged.neoforge.transfer.DelegatingResourceHandler<ItemResource> {
+		private final WorldlyContainer mContainer;
+
+		SidelessView(WorldlyContainerWrapper aDelegate, WorldlyContainer aContainer) {super(aDelegate); mContainer = aContainer;}
+
+		/** Каждый раз заново: набор доступного меняется живьём (поворот машины, надетый кавер). */
+		private int[] slots() {
+			int[] rSlots = mContainer.getSlotsForFace(null);
+			return rSlots == null ? new int[0] : rSlots;
+		}
+
+		@Override public int size() {return slots().length;}
+
+		@Override protected int convertIndex(int aIndex) {
+			int[] tSlots = slots();
+			java.util.Objects.checkIndex(aIndex, tSlots.length);
+			return tSlots[aIndex];
+		}
+
+		/**
+		 * Движковая обёртка при {@code side == null} свой {@code canTakeItemThroughFace} НЕ спрашивает
+		 * ({@code WorldlyContainerWrapper:84-89} — проверка стоит под {@code side != null}), а GT6 её требует и для
+		 * стороны 6: там же живёт запрет отдавать наружу служебные предметы ({@code TileEntityBase06Covers:341} —
+		 * {@code ST.debug(aStack) → F}). Спрашиваем контракт самого мода, чужой политики не копируем.
+		 */
+		@Override public int extract(int aIndex, ItemResource aResource, int aAmount, net.neoforged.neoforge.transfer.transaction.TransactionContext aTransaction) {
+			int tSlot = convertIndex(aIndex);
+			if (!mContainer.canTakeItemThroughFace(tSlot, aResource.toStack(), null)) return 0;
+			return super.extract(aIndex, aResource, aAmount, aTransaction);
+		}
+
+		@Override public int insert(ItemResource aResource, int aAmount, net.neoforged.neoforge.transfer.transaction.TransactionContext aTransaction) {
+			int rInserted = 0;
+			for (int i = 0, j = size(); i < j && rInserted < aAmount; i++) rInserted += insert(i, aResource, aAmount - rInserted, aTransaction);
+			return rInserted;
+		}
+
+		@Override public int extract(ItemResource aResource, int aAmount, net.neoforged.neoforge.transfer.transaction.TransactionContext aTransaction) {
+			int rExtracted = 0;
+			for (int i = 0, j = size(); i < j && rExtracted < aAmount; i++) rExtracted += extract(i, aResource, aAmount - rExtracted, aTransaction);
+			return rExtracted;
+		}
 	}
 }

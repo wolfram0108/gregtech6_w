@@ -55,10 +55,22 @@ public class Slot_Holo extends Slot_Base {
 		return mMaxStacksize;
 	}
 
-	@Override
-	public boolean hasItem() {
-		return F;
-	}
+	// F-GUI ЦЕНТР ГОЛО-СЛОТА (BUG-082). Оригинал глушил getHasStack() (`Slot_Holo.java:53` → F) — в 1.7.10 это был
+	// единственный рычаг, гасивший ванильный тултип содержимого (`GuiContainer.drawScreen:183` — тултип рисуется
+	// ТОЛЬКО при theSlot.getHasStack()). Защитой этот рычаг не был и там: взятие запрещает mayPickup (:70, безусловно,
+	// включая креатив), вставку — mayPlace (:49), а клики и перекладывание отсекаются ЯВНО по типу слота —
+	// ContainerCommon.clicked:498, quickMoveStack:521, merge :561/:582 (все четыре 1:1 с оригиналом :350/:505/:538/:559).
+	//
+	// В neo hasItem() — не рычаг, а ФАКТ, на который движок опирается в девяти местах (тултип, подсветка-контракты,
+	// quick-craft, PICKUP_ALL, CLONE, scroll-действия). Ложь здесь ломала показ и ничего не защищала: до всех клик-путей
+	// движка голо-слот попросту не доходит (отсечка выше). Поэтому факт возвращается движку честным (Slot_Base:118 —
+	// "есть ли стек"), и тултип содержимого собирает САМ движок своей политикой (AbstractContainerScreen:199-208:
+	// getTooltipFromContainerItem + tooltip-image + TOOLTIP_STYLE + проверка предмета на курсоре) — вместо урезанной
+	// копии этой политики в экране. Роль GT6-довеска в ContainerClient сузилась обратно до 1.7.10-й: подсказка ПУСТОГО
+	// слота (оригинал ContainerClient.drawScreen:81 — ST.invalid(tSlot.getStack())).
+	//
+	// Отличие от 1.7.10 намеренное и точечное: там содержимое голо-слота показывал внешний слой (NEI, он читал
+	// slot.getStack() мимо getHasStack) — в порте такого слоя нет, а функция у игрока была и подтверждена им.
 
 	@Override
 	public ItemStack remove(int par1) {

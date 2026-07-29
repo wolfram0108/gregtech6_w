@@ -215,6 +215,29 @@ public class FluidGT {
 		@Override public int getDensity()     {return mDensity;}
 		@Override public int getViscosity()   {return mViscosity;}
 		@Override public int getLightLevel()  {return mLuminosity;}
+
+		/**
+		 * ИМЯ ЖИДКОСТИ ЧЕРЕЗ ДВИЖКОВЫЙ КАНАЛ (BUG-082) — 1:1 приём оригинала: там сам носитель отдавал GT6-имя
+		 * движку, {@code FluidGT.getLocalizedName(FluidStack) → LH.get(getUnlocalizedName())}
+		 * ({@code gregtech6/…/FluidGT.java:71-72}). В neo носитель имени — {@link FluidType}, а движковый вопрос
+		 * «как называется эта жидкость» приходит сюда: {@code FluidStack.getHoverName():453-454} →
+		 * {@code FluidType.getDescription(stack)}. Тем же путём имя берут сторонние моды (витрина Jade).
+		 *
+		 * <p>Пара к центру {@link gregapi.lang.LanguageHandler#injectIntoEngine()}, а не замена ему: центр чинит
+		 * общий случай (движок узнаёт ВСЕ ключи GT6), носитель гарантирует свой — у Грегориуса были ОБА.
+		 * Берём {@code LH.get} напрямую, а НЕ {@code FL.name}: тот для чужих жидкостей сам зовёт
+		 * {@code getDescription} ({@code FL.java:1029}) — вышла бы рекурсия.
+		 *
+		 * <p>Если перевода нет вовсе, {@code LH.get} возвращает сам ключ — тогда отдаём движку его штатный
+		 * {@code translatable}, чтобы не подменять сырым текстом работу ресурспаков.
+		 */
+		@Override public net.minecraft.network.chat.Component getDescription() {return described();}
+		@Override public net.minecraft.network.chat.Component getDescription(net.neoforged.neoforge.fluids.FluidStack aStack) {return described();}
+
+		private net.minecraft.network.chat.Component described() {
+			String tKey = getUnlocalizedName(), tName = LH.get(tKey);
+			return tName == null || tName.isEmpty() || tName.equals(tKey) ? super.getDescription() : net.minecraft.network.chat.Component.literal(tName);
+		}
 	}
 
 	/**

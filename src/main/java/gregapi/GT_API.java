@@ -650,7 +650,15 @@ public class GT_API extends Abstract_Mod {
 	@Override public Abstract_Proxy getProxy() {return api_proxy;}
 
 	// Серверные фазы — подписаны в конструкторе на NeoForge.EVENT_BUS (игровая шина), не на мод-шину.
-	public void onServerStarting  (ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
+	public void onServerStarting  (ServerStartingEvent aEvent) {
+		// ЦЕНТР ЛОКАЛИЗАЦИИ (BUG-082), СЕРВЕРНОЕ ПЛЕЧО. В 1.7.10 впрыск имён жил в общем коде
+		// (LanguageRegistry.injectLanguage — обе стороны), поэтому серверные строки тоже были человеческими.
+		// Клиентское плечо висит на загрузке ресурсов (GT_API_Proxy_Client), которой на выделенном сервере нет —
+		// здесь та же надстройка ставится над серверной таблицей. Подробности — LanguageHandler.injectIntoEngine().
+		int tInjected = gregapi.lang.LanguageHandler.injectIntoEngine();
+		if (tInjected > 0) OUT.println("GT6 localization: имён GT6 дописано в таблицу движка (сервер): " + tInjected);
+		onModServerStarting(aEvent);
+	}
 	public void onServerStarted   (ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
 	public void onServerStopping  (ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
 	public void onServerStopped   (ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}

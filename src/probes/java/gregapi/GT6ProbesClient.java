@@ -1085,6 +1085,142 @@ public final class GT6ProbesClient {
 		return null;
 	}
 
+	// ==========================================================================================================
+	// [GT6-LOCALE] BUG-082 — СУДЬЯ ПОТОКА ИМЁН GT6 НАРУЖУ (в движок и в чужие моды).
+	//
+	// Дефект: имена GT6 жили только во внутренней карте мода (LanguageHandler.BACKUPMAP), движок о них не знал —
+	// в assets/gregtech6/lang/en_us.json лежит 6 ключей. Всё, что спрашивает имя движковым способом, получало сырой
+	// ключ: отсюда «fluid.steam» и «fluid.ic2distilledwater» в витрине Jade.
+	//
+	// Судятся ДВА независимых плеча, каждое со своим контролем:
+	//  A. ЦЕНТР — сколько ключей мода движок знает (Language.has). Контроль: заведомо несуществующий ключ движок
+	//     знать НЕ должен, иначе судья врёт (has всегда true) и его «зелено» ничего не стоит.
+	//  B. НОСИТЕЛЬ — для КАЖДОЙ жидкости GT6 движковый вопрос об имени (FluidStack.getHoverName, тот же путь, что
+	//     у стороннего мода) сверяется с именем от самого мода (FL.name). Контроль: ванильная вода — имя должно
+	//     быть человеческим и там; сырым считается ответ, начинающийся с «fluid.» или равный ключу локализации.
+	// ==========================================================================================================
+	private static boolean mLocaleDone = false;
+	private static int mLocaleWaited = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onLocaleProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mLocaleDone || !gregapi.data.CS.probeFlag("gt6localeprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null) {if (++mLocaleWaited > 24000) {mLocaleDone = true; gregapi.data.CS.OUT.println("[GT6-LOCALE] мир не загрузился — ЗАМЕР НЕ СОСТОЯЛСЯ");} return;}
+		mLocaleDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-LOCALE] BUG-082: доходят ли имена GT6 до движка ==========");
+		try {
+			// --- A. ЦЕНТР: знает ли движок ключи мода -----------------------------------------------------
+			java.lang.reflect.Field tField = gregapi.lang.LanguageHandler.class.getDeclaredField("BACKUPMAP");
+			tField.setAccessible(true);
+			@SuppressWarnings("unchecked")
+			java.util.Map<String, String> tBackup = (java.util.Map<String, String>)tField.get(null);
+
+			int tTotal = tBackup.size(), tKnown = 0, tUnknown = 0;
+			java.util.List<String> tUnknownSample = new java.util.ArrayList<>();
+			for (java.util.Map.Entry<String, String> tEntry : tBackup.entrySet()) {
+				if (net.minecraft.locale.Language.getInstance().has(tEntry.getKey())) tKnown++;
+				else {tUnknown++; if (tUnknownSample.size() < 15) tUnknownSample.add(tEntry.getKey());}
+			}
+			final String tFakeKey = "gt6.locale.probe.key.that.must.not.exist";
+			boolean tControlOk = !net.minecraft.locale.Language.getInstance().has(tFakeKey);
+
+			O.println("[GT6-LOCALE] A. ключей у мода: " + tTotal + " · движок знает: " + tKnown + " · НЕ знает: " + tUnknown);
+			for (String tKey : tUnknownSample) O.println("[GT6-LOCALE]    не знает: " + tKey);
+			O.println("[GT6-LOCALE] A. КОНТРОЛЬ (несуществующий ключ движку неизвестен): " + (tControlOk ? "рабочий" : "СУДЬЯ СЛЕП — has() отвечает true на что угодно"));
+
+			// --- B. НОСИТЕЛЬ: имя каждой жидкости движковым путём ------------------------------------------
+			int tFluids = 0, tRaw = 0, tMismatch = 0;
+			java.util.List<String> tRawSample = new java.util.ArrayList<>(), tMismatchSample = new java.util.ArrayList<>();
+			for (gregapi.fluid.FluidGT tGT : gregapi.fluid.FluidGT.BY_NAME.values()) {
+				net.minecraft.world.level.material.Fluid tFluid;
+				try {tFluid = tGT.getFluid();} catch (Throwable e) {continue;}
+				if (tFluid == null) continue;
+				tFluids++;
+				String tEngine = new net.neoforged.neoforge.fluids.FluidStack(tFluid, 1).getHoverName().getString();
+				String tMod    = gregapi.data.FL.name(tFluid, true);
+				if (tEngine.startsWith("fluid.") || tEngine.equals(tGT.getUnlocalizedName())) {tRaw++; if (tRawSample.size() < 15) tRawSample.add(tGT.mName + " → «" + tEngine + "»");}
+				else if (!tEngine.equals(tMod)) {tMismatch++; if (tMismatchSample.size() < 10) tMismatchSample.add(tGT.mName + ": движок «" + tEngine + "» ≠ мод «" + tMod + "»");}
+			}
+			String tWater = new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 1).getHoverName().getString();
+			boolean tWaterOk = tWater != null && !tWater.isEmpty() && !tWater.startsWith("fluid.") && !tWater.startsWith("block.");
+
+			O.println("[GT6-LOCALE] B. жидкостей GT6: " + tFluids + " · СЫРЫХ имён у движка: " + tRaw + " · расходится с модом: " + tMismatch);
+			for (String tLine : tRawSample     ) O.println("[GT6-LOCALE]    сырое: " + tLine);
+			for (String tLine : tMismatchSample) O.println("[GT6-LOCALE]    расход: " + tLine);
+			O.println("[GT6-LOCALE] B. КОНТРОЛЬ (ванильная вода): «" + tWater + "» — " + (tWaterOk ? "рабочий" : "СУДЬЯ СЛЕП"));
+
+			// --- C. ИНКРЕМЕНТАЛЬНЫЙ ПУТЬ: имя, зарегистрированное ПОСЛЕ загрузки ресурсов ------------------
+			// Полный долив идёт на загрузке ресурсов, но GT6 заводит имена и позже (LH.get(key, default) сам зовёт
+			// add). Судим именно этот путь: ключа заведомо не было ни у движка, ни у мода до этой строки.
+			final String tLateKey = "gt6.locale.probe.late.key";
+			boolean tLateBefore = net.minecraft.locale.Language.getInstance().has(tLateKey);
+			gregapi.data.LH.add(tLateKey, "Late Registered Name");
+			boolean tLateAfter = net.minecraft.locale.Language.getInstance().has(tLateKey);
+			String tLateValue = net.minecraft.network.chat.Component.translatable(tLateKey).getString();
+			O.println("[GT6-LOCALE] C. поздний ключ: до регистрации движок знал=" + tLateBefore + " · после=" + tLateAfter + " · перевод «" + tLateValue + "»");
+			boolean tLateOk = !tLateBefore && tLateAfter && "Late Registered Name".equals(tLateValue);
+			O.println("[GT6-LOCALE] C. " + (tLateOk ? "PASS — поздние имена доходят до движка без перезагрузки ресурсов" : "FAIL — поздние имена движку не доходят"));
+
+			boolean tPass = tControlOk && tWaterOk && tRaw == 0 && tUnknown == 0 && tLateOk;
+			O.println("[GT6-LOCALE] ВЕРДИКТ: " + (tPass ? "PASS" : "FAIL")
+				+ " (условие: контроли рабочие, сырых имён 0, ключей мимо движка 0, поздний ключ дошёл)");
+
+			// --- D. ПЕРЕЖИВАЕТ ЛИ НАДСТРОЙКА ПЕРЕЗАГРУЗКУ РЕСУРСОВ --------------------------------------
+			// Смена языка и смена ресурспака пересоздают таблицу движка целиком (LanguageManager:67 сам зовёт
+			// Language.inject) — если бы надстройка не ставилась заново, имена бы пропали. Проверяем не рассуждением:
+			// заказываем настоящую перезагрузку и по её завершении спрашиваем те же ключи снова.
+			// ⛔ МОМЕНТ ЗАМЕРА. Мерить в thenRun НЕЛЬЗЯ: движок завершает future РАНЬШЕ, чем шлёт событие —
+			// `Minecraft.java:1077-1078`: сначала result.complete(null), и только потом onResourceLoadFinished(...)
+			// (оно и постит ClientResourceLoadFinishedEvent). Первый заход этого стенда так и дал ложный FAIL.
+			// Поэтому замер идёт не по future, а строго ПОСЛЕ события: его ловит onLocaleReloadMark ниже, а сверка —
+			// на следующем клиентском тике (onLocaleAfterReload).
+			O.println("[GT6-LOCALE] D. заказана перезагрузка ресурсов — сверка будет ПОСЛЕ движкового события, не по future...");
+			mLocaleCheckKey = tBackup.keySet().iterator().next();
+			mLocaleLateKey  = tLateKey;
+			mLocaleReloadRequested = true;
+			tMC.reloadResourcePacks();
+			return;
+		} catch (Throwable e) {
+			O.println("[GT6-LOCALE] ЗАМЕР НЕ СОСТОЯЛСЯ: " + e);
+			e.printStackTrace(O);
+		}
+		O.println("========== [GT6-LOCALE] конец ==========");
+	}
+
+	// --- [GT6-LOCALE] стадия D: сверка ПОСЛЕ движкового события, а не по future (см. комментарий выше) ---------
+	private static volatile boolean mLocaleReloadRequested = false, mLocaleReloadHappened = false, mLocaleDDone = false;
+	private static volatile String mLocaleCheckKey = null, mLocaleLateKey = null;
+
+	/** Отметка «движок закончил перезагрузку и разослал событие». Наш production-обработчик сидит на том же
+	 *  событии, а порядок слушателей не гарантирован — поэтому здесь только отметка, сверка на следующем тике. */
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onLocaleReloadMark(net.neoforged.neoforge.client.event.ClientResourceLoadFinishedEvent aEvent) {
+		if (mLocaleReloadRequested) mLocaleReloadHappened = true;
+	}
+
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onLocaleAfterReload(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mLocaleDDone || !mLocaleReloadHappened) return;
+		mLocaleDDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		boolean tAliveOwn  = mLocaleCheckKey != null && net.minecraft.locale.Language.getInstance().has(mLocaleCheckKey);
+		boolean tAliveLate = mLocaleLateKey  != null && net.minecraft.locale.Language.getInstance().has(mLocaleLateKey);
+		int tRawAfter = 0;
+		for (gregapi.fluid.FluidGT tGT : gregapi.fluid.FluidGT.BY_NAME.values()) {
+			net.minecraft.world.level.material.Fluid tF;
+			try {tF = tGT.getFluid();} catch (Throwable e) {continue;}
+			if (tF == null) continue;
+			if (new net.neoforged.neoforge.fluids.FluidStack(tF, 1).getHoverName().getString().startsWith("fluid.")) tRawAfter++;
+		}
+		O.println("[GT6-LOCALE] D. ПОСЛЕ перезагрузки (замер на тике, следующем за движковым событием): ключ мода известен="
+			+ tAliveOwn + " · поздний ключ известен=" + tAliveLate + " · сырых имён у жидкостей=" + tRawAfter);
+		O.println("[GT6-LOCALE] D. " + (tAliveOwn && tAliveLate && tRawAfter == 0
+			? "PASS — надстройка восстановлена движковым событием, поздние ключи тоже уцелели"
+			: "FAIL — после перезагрузки имена GT6 потеряны"));
+		O.println("========== [GT6-LOCALE] конец ==========");
+	}
+
 	/** Сколько рецептов витрина отдаст на «покажи крафты» этого предмета: наша GT6-категория + ванильный верстак. */
 	private static int countRecipes(mezz.jei.api.recipe.IRecipeManager aRM, mezz.jei.api.recipe.IFocusFactory aFF, net.minecraft.world.item.ItemStack aStack) {
 		int r = 0;

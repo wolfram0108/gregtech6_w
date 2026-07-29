@@ -146,23 +146,14 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 	// 1.7.10 drawScreen поверх стандартных тултипов показывал тултип ПУСТОГО Slot_Base (getTooltip) — сам drawScreen
 	// (цикл кадра) теперь у движка, GT6-довесок переносится в его tooltip-хук.
 	//
-	// BUG-082: РЕШАЕТ ФАКТИЧЕСКИЙ СТЕК, А НЕ hasItem(). Голо-слоты (Slot_Holo, куда кладутся дисплеи жидкостей
-	// машины — MultiTileEntityBasicMachine:470-471) объявляют hasItem()==false ВСЕГДА, как и в 1.7.10
-	// (Slot_Holo.getHasStack:53). Из-за этого движок не рисует тултип содержимого, а прежнее условие
-	// `!hasItem()` показывало подсказку слота ПОВЕРХ непустого слота: на жидкости было видно только
-	// «Extract using a Tap or Nozzle», без имени, объёма и свойств. В 1.7.10 условие стояло на СТЕКЕ
-	// (`ContainerClient.drawScreen:81` — `ST.invalid(tSlot.getStack())`): подсказка только у пустого слота,
-	// у заполненного — обычный тултип содержимого. Восстановлено: пусто → подсказка, есть стек → его тултип
-	// (тот же, что показывает JEI: имя, Amount с ФАКТИЧЕСКИМ объёмом танка, температура, состояние).
+	// BUG-082: УСЛОВИЕ СТОИТ НА СТЕКЕ, как в 1.7.10 (`ContainerClient.drawScreen:81` — `ST.invalid(tSlot.getStack())`),
+	// а не на hasItem(). Роль этого довеска ровно одна и та же, что была: подсказка ПУСТОГО слота. Тултип СОДЕРЖИМОГО
+	// (в т.ч. голо-слотов с дисплеями жидкостей) собирает сам движок в super — его политикой целиком
+	// (AbstractContainerScreen:199-208), после того как Slot_Holo перестал лгать движку про hasItem() (см. Slot_Holo).
 	@Override protected void extractTooltip(GuiGraphicsExtractor aGraphics, int aMouseX, int aMouseY) {
 		super.extractTooltip(aGraphics, aMouseX, aMouseY);
 		if (!(hoveredSlot instanceof Slot_Base tSlot)) return;
-		net.minecraft.world.item.ItemStack tStack = gregapi.util.ST.n(hoveredSlot.getItem());   // F15-граница: EMPTY -> null
-		if (tStack != null) {
-			// движок сам соберёт полный тултип предмета — для голо-слота он это не делает (hasItem()==false)
-			if (!hoveredSlot.hasItem()) aGraphics.setTooltipForNextFrame(font, tStack, aMouseX, aMouseY);
-			return;
-		}
+		if (gregapi.util.ST.n(hoveredSlot.getItem()) != null) return;   // F15-граница: EMPTY -> null; непустой слот — дело движка
 		java.util.List<String> tTip = tSlot.getTooltip(minecraft.player, minecraft.options.advancedItemTooltips);
 		if (tTip != null && !tTip.isEmpty()) {
 			java.util.List<Component> tComps = new java.util.ArrayList<>();

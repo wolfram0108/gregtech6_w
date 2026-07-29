@@ -252,6 +252,273 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6toolyard.flag")) gt6ToolYardTick(aEvent.getServer());
 	// [GT6-JADELEVEL] BUG-070: СЕРВЕРНАЯ половина судьи витрины — снимает ЭТАЛОН уровней на серверном потоке
 		if (gregapi.data.CS.probeFlag("gt6jadelevelprobe.flag")) gt6JadeLevelServerTick(aEvent.getServer());
+	// [GT6-SIDELESS] BUG-082: судья sideless-канала инвентаря (что мод отдаёт наружу БЕЗ стороны) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6sidelessprobe.flag")) gt6SidelessProbeTick(aEvent.getServer());
+	// [GT6-SLOTGUARD] BUG-082: попытка ВЫНУТЬ служебный дисплей всеми путями движка (GUI-клики + капа) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6slotguardprobe.flag")) gt6SlotGuardProbeTick(aEvent.getServer());
+	}
+
+	// ==========================================================================================================
+	// [GT6-SLOTGUARD] BUG-082 — ДОКАЗАТЕЛЬСТВО, ЧТО ПРАВДА В hasItem() НИЧЕГО НЕ ОТКРЫЛА.
+	//
+	// Slot_Holo раньше объявлял движку hasItem()==false всегда (1.7.10-рычаг). Теперь он говорит правду, и одного
+	// чтения кода мало: движок опирается на hasItem() в девяти местах, включая CLONE, который mayPickup НЕ
+	// спрашивает. Поэтому здесь не рассуждение, а ПОПЫТКА: по слоту с дисплеем жидкости прогоняются ВСЕ типы
+	// кликов настоящим движковым путём (AbstractContainerMenu.clicked — тот же вызов, что приходит от клиента),
+	// и после каждого сверяется, не изменились ли курсор, инвентарь игрока и сам слот.
+	//
+	// Вторая половина — та же попытка через КАПУ без стороны (путь стороннего мода): извлечь дисплей и вставить
+	// предмет. Контроли: рядом с дисплеем берётся обычный слот (клик по нему обязан РАБОТАТЬ) — иначе стенд
+	// «зелен» просто потому, что в нём ничего не работает вообще.
+	// ==========================================================================================================
+	private static boolean mSlotGuardDone = false;
+	private static int mSlotGuardWaited = 0;
+	private static void gt6SlotGuardProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (mSlotGuardDone) return;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		BlockPos tPos = new BlockPos(1000, 70, 1000);
+		// Ждём, пока полигон поставит машину и НАЛЬЁТ жидкости — без дисплеев проверять нечего.
+		boolean tReady = tLevel.getBlockEntity(tPos) instanceof net.minecraft.world.Container tC0 && hasDisplay(tC0);
+		if (!tReady) {if (++mSlotGuardWaited > 2400) {mSlotGuardDone = true; gregapi.data.CS.OUT.println("[GT6-SLOTGUARD] машины с жидкостями на 1000/70/1000 нет — СТЕНД НЕ СОСТОЯЛСЯ");} return;}
+		mSlotGuardDone = true;
+
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-SLOTGUARD] BUG-082: пробуем вынуть служебный дисплей ==========");
+		int tPass = 0, tFail = 0;
+		try {
+			net.minecraft.world.level.block.entity.BlockEntity tTE = tLevel.getBlockEntity(tPos);
+			net.minecraft.world.Container tInv = (net.minecraft.world.Container)tTE;
+
+			// --- ЧАСТЬ 1: GUI. Открываем меню машины ТЕМ ЖЕ путём, которым его открывает игрок. ---------------
+			((gregapi.tileentity.base.TileEntityBase01Root)tTE).openGUI(tPlayer, (byte)0);
+			net.minecraft.world.inventory.AbstractContainerMenu tMenu = tPlayer.containerMenu;
+			if (tMenu == null || tMenu == tPlayer.inventoryMenu) {
+				O.println("[GT6-SLOTGUARD] ⛔ GUI машины не открылся — часть 1 НЕ СОСТОЯЛАСЬ");
+				tFail++;
+			} else {
+				int tHoloIndex = -1, tNormalIndex = -1;
+				for (int i = 0; i < tMenu.slots.size(); i++) {
+					net.minecraft.world.inventory.Slot tSlot = tMenu.slots.get(i);
+					if (tSlot instanceof gregapi.gui.Slot_Holo && tSlot.getItem().getItem() instanceof gregapi.item.ItemFluidDisplay) {if (tHoloIndex < 0) tHoloIndex = i;}
+					else if (tSlot instanceof gregapi.gui.Slot_Base && !(tSlot instanceof gregapi.gui.Slot_Holo) && tNormalIndex < 0) tNormalIndex = i;
+				}
+				O.println("[GT6-SLOTGUARD] меню " + tMenu.getClass().getSimpleName() + " · слотов " + tMenu.slots.size()
+					+ " · голо-слот с дисплеем #" + tHoloIndex + " · обычный слот машины #" + tNormalIndex);
+
+				if (tHoloIndex < 0) {O.println("[GT6-SLOTGUARD] ⛔ голо-слота с дисплеем в меню нет — судить нечего"); tFail++;}
+				else {
+					// ПРАВДА В hasItem(): без неё движок не рисовал тултип. Здесь же убеждаемся, что она — правда.
+					O.println("[GT6-SLOTGUARD] hasItem() голо-слота: " + tMenu.slots.get(tHoloIndex).hasItem() + " (ожидается true — это и включает тултип движка)");
+
+					net.minecraft.world.item.ItemStack tBefore = tMenu.slots.get(tHoloIndex).getItem().copy();
+					for (net.minecraft.world.inventory.ContainerInput tType : net.minecraft.world.inventory.ContainerInput.values()) {
+						for (int tButton = 0; tButton <= 1; tButton++) {
+							tPlayer.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
+							int tInvBefore = countPlayerItems(tPlayer);
+							try {tPlayer.containerMenu.clicked(tHoloIndex, tButton, tType, tPlayer);} catch (Throwable e) {/* движок отверг — тоже отказ */}
+							net.minecraft.world.item.ItemStack tCarried = tPlayer.containerMenu.getCarried();
+							net.minecraft.world.item.ItemStack tNow = tMenu.slots.get(tHoloIndex).getItem();
+							boolean tLeaked = !tCarried.isEmpty() || countPlayerItems(tPlayer) != tInvBefore || !net.minecraft.world.item.ItemStack.isSameItemSameComponents(tBefore, tNow);
+							if (tLeaked) {tFail++; O.println("[GT6-SLOTGUARD] FAIL: " + tType + " кнопка " + tButton + " — дисплей УТЁК (курсор «" + tCarried + "», слот «" + tNow + "»)");}
+							else tPass++;
+						}
+					}
+					tPlayer.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
+					O.println("[GT6-SLOTGUARD] ЧАСТЬ 1 (GUI): попыток " + (tPass + tFail) + " · отказано " + tPass + " · утечек " + tFail);
+
+					// ПОЗИТИВНЫЙ КОНТРОЛЬ: обычный слот той же машины обязан отдавать предмет — иначе стенд слеп.
+					if (tNormalIndex >= 0) {
+						net.minecraft.world.inventory.Slot tNormal = tMenu.slots.get(tNormalIndex);
+						tNormal.set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_INGOT, 3));
+						tPlayer.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
+						tPlayer.containerMenu.clicked(tNormalIndex, 0, net.minecraft.world.inventory.ContainerInput.PICKUP, tPlayer);
+						boolean tControlOk = !tPlayer.containerMenu.getCarried().isEmpty();
+						O.println("[GT6-SLOTGUARD] ПОЗИТИВНЫЙ КОНТРОЛЬ (обычный слот отдаёт предмет): " + (tControlOk ? "рабочий" : "СТЕНД СЛЕП — не работает ничего"));
+						if (!tControlOk) tFail++;
+						tPlayer.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
+						tNormal.set(net.minecraft.world.item.ItemStack.EMPTY);
+					}
+				}
+				tPlayer.closeContainer();
+			}
+
+			// --- ЧАСТЬ 2: КАПА без стороны (путь стороннего мода) --------------------------------------------
+			net.neoforged.neoforge.transfer.ResourceHandler<net.neoforged.neoforge.transfer.item.ItemResource> tCap =
+				tLevel.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, tPos, null);
+			if (tCap == null) {O.println("[GT6-SLOTGUARD] ⛔ капы предметов нет — часть 2 НЕ СОСТОЯЛАСЬ"); tFail++;}
+			else {
+				// (а) дисплей не должен быть виден вообще — значит и извлечь его нельзя
+				int tCapDisplays = 0;
+				for (int i = 0; i < tCap.size(); i++) if (tCap.getResource(i).toStack().getItem() instanceof gregapi.item.ItemFluidDisplay) tCapDisplays++;
+				if (tCapDisplays == 0) tPass++; else {tFail++; O.println("[GT6-SLOTGUARD] FAIL: дисплей виден в капе (" + tCapDisplays + ")");}
+
+				// (б) прямая попытка извлечь ИМЕННО дисплей по его ресурсу — движок не должен ничего отдать
+				net.minecraft.world.item.ItemStack tDisplay = net.minecraft.world.item.ItemStack.EMPTY;
+				for (int i = 0; i < tInv.getContainerSize(); i++) if (tInv.getItem(i).getItem() instanceof gregapi.item.ItemFluidDisplay) {tDisplay = tInv.getItem(i); break;}
+				int tGot = -1;
+				try (net.neoforged.neoforge.transfer.transaction.Transaction tTx = net.neoforged.neoforge.transfer.transaction.Transaction.open(null)) {
+					tGot = tCap.extract(net.neoforged.neoforge.transfer.item.ItemResource.of(tDisplay), 1, tTx);
+					// не commit — транзакция закрывается откатом, машина остаётся нетронутой
+				} catch (Throwable e) {tGot = 0;}
+				if (tGot == 0) tPass++; else {tFail++; O.println("[GT6-SLOTGUARD] FAIL: капа отдала дисплей (" + tGot + " шт)");}
+
+				// (в) ПОЗИТИВНЫЙ КОНТРОЛЬ капы: канал обязан РАБОТАТЬ, иначе «отказ дисплею» ничего не доказывает.
+				// Вставлять надо не что попало: GT6 пускает во вход только то, что есть во входе рецептов этой
+				// машины (MultiTileEntityBasicMachine.canInsertItem2:547 → mRecipes.containsInput). Первый заход
+				// стенда клал железный слиток — центрифуга его не принимает, и отказ был ЗАКОННЫМ, а контроль
+				// бессмысленным. Берём настоящий вход из карты рецептов самой машины.
+				net.minecraft.world.item.ItemStack tRealInput = net.minecraft.world.item.ItemStack.EMPTY;
+				if (tTE instanceof gregapi.tileentity.machines.MultiTileEntityBasicMachine tBM && tBM.mRecipes != null) {
+					for (gregapi.recipes.Recipe tRecipe : tBM.mRecipes.mRecipeList) {
+						if (tRecipe == null || !tRecipe.mEnabled || tRecipe.mInputs == null) continue;
+						for (net.minecraft.world.item.ItemStack tIn : tRecipe.mInputs) if (tIn != null && !tIn.isEmpty()) {tRealInput = tIn.copy(); break;}
+						if (!tRealInput.isEmpty()) break;
+					}
+				}
+				int tPut = -1;
+				if (!tRealInput.isEmpty()) try (net.neoforged.neoforge.transfer.transaction.Transaction tTx = net.neoforged.neoforge.transfer.transaction.Transaction.open(null)) {
+					tPut = tCap.insert(net.neoforged.neoforge.transfer.item.ItemResource.of(tRealInput), 1, tTx);
+					// не commit — откат при закрытии: проверяем ПРАВО вставки, а не меняем машину
+				} catch (Throwable e) {tPut = -1;}
+				O.println("[GT6-SLOTGUARD] ЧАСТЬ 2 (капа): дисплеев видно " + tCapDisplays + " · извлечено дисплея " + tGot + " шт · КОНТРОЛЬ вставки НАСТОЯЩЕГО входа рецепта («"
+					+ (tRealInput.isEmpty() ? "не найден" : tRealInput.getHoverName().getString()) + "»): " + (tPut > 0 ? "рабочий (" + tPut + " шт)" : "вставка не прошла (" + tPut + ")"));
+				if (tPut <= 0) {tFail++; O.println("[GT6-SLOTGUARD] FAIL: канал вставки не работает — отказ дисплею ничего не доказывает");} else tPass++;
+			}
+		} catch (Throwable e) {
+			O.println("[GT6-SLOTGUARD] СТЕНД УПАЛ: " + e);
+			e.printStackTrace(O);
+			tFail++;
+		}
+		O.println("[GT6-SLOTGUARD] ВЕРДИКТ: " + (tFail == 0 ? "PASS" : "FAIL") + " (pass=" + tPass + " fail=" + tFail + ")");
+		O.println("========== [GT6-SLOTGUARD] конец ==========");
+	}
+
+	private static boolean hasDisplay(net.minecraft.world.Container aContainer) {
+		for (int i = 0; i < aContainer.getContainerSize(); i++) if (aContainer.getItem(i).getItem() instanceof gregapi.item.ItemFluidDisplay) return true;
+		return false;
+	}
+
+	private static int countPlayerItems(ServerPlayer aPlayer) {
+		int r = 0;
+		for (int i = 0; i < aPlayer.getInventory().getContainerSize(); i++) r += aPlayer.getInventory().getItem(i).getCount();
+		return r;
+	}
+
+	// ==========================================================================================================
+	// [GT6-SIDELESS] BUG-082 — СУДЬЯ ПО ОПРЕДЕЛЕНИЮ ДЕФЕКТА, НЕ ПО СИМПТОМУ.
+	//
+	// Дефект: капа предметов при запросе БЕЗ СТОРОНЫ отдавала весь массив инвентаря мимо фильтра мода, из-за чего
+	// наружу (витрина Jade) утекали служебные слоты — дисплеи жидкостей (ItemFluidDisplay) и слот схемы.
+	// Судится не «машина из репорта», а ВЕСЬ реестр MTE: для каждого зарегистрированного класса строится экземпляр
+	// (MultiTileEntityRegistry.getNewTileEntity(id) — без мира) и сравнивается ДВА числа: сколько слотов у него
+	// всего и сколько мод объявляет доступными снаружи для стороны SIDE_ANY (getSlotsForFace(null)).
+	//
+	// Контроли (без них судья не судья):
+	//  · НЕГАТИВНЫЙ — печатается, сколько слотов дала бы прежняя схема (весь контейнер): если разницы нет нигде,
+	//    судья слеп либо фикс не работает;
+	//  · ПОЛНОТА — считаются классы, у которых доступ БЕЗ стороны пуст (доступ сузился до нуля): их список важен,
+	//    чтобы сужение нигде не отняло то, что мод раньше отдавал законно.
+	// ==========================================================================================================
+	private static boolean mSidelessDone = false;
+	private static int mSidelessWaited = 0;
+	private static void gt6SidelessProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (mSidelessDone) return;
+		// Живая половина судит машину полигона gt6fluidyard — ждём, пока полигон её поставит и НАЛЬЁТ жидкости
+		// (без залитых танков дисплеев в инвентаре нет, и позитивный контроль не сработал бы).
+		net.minecraft.server.level.ServerLevel tWait = aServer.getLevel(net.minecraft.world.level.Level.OVERWORLD);
+		boolean tReady = false;
+		if (tWait != null && tWait.getBlockEntity(new net.minecraft.core.BlockPos(1000, 70, 1000)) instanceof net.minecraft.world.Container tC) {
+			for (int i = 0; i < tC.getContainerSize(); i++) if (tC.getItem(i).getItem() instanceof gregapi.item.ItemFluidDisplay) {tReady = true; break;}
+		}
+		if (!tReady && ++mSidelessWaited < 2400) return;
+		mSidelessDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-SIDELESS] BUG-082: что мод отдаёт наружу БЕЗ стороны (SIDE_ANY) ==========");
+		try {
+			java.lang.reflect.Field tField = gregapi.block.multitileentity.MultiTileEntityRegistry.class.getDeclaredField("NAMED_REGISTRIES");
+			tField.setAccessible(true);
+			@SuppressWarnings("unchecked")
+			java.util.Map<String, gregapi.block.multitileentity.MultiTileEntityRegistry> tRegistries =
+				(java.util.Map<String, gregapi.block.multitileentity.MultiTileEntityRegistry>)tField.get(null);
+
+			int tClasses = 0, tInventoried = 0, tNarrowed = 0, tEmptyAccess = 0, tDisplaysOutside = 0, tFailed = 0;
+			java.util.List<String> tLeakList = new java.util.ArrayList<>();
+			java.util.Map<String, Integer> tEmptyByType = new java.util.TreeMap<>();
+
+			for (java.util.Map.Entry<String, gregapi.block.multitileentity.MultiTileEntityRegistry> tReg : new java.util.TreeMap<>(tRegistries).entrySet()) {
+				for (java.util.Map.Entry<Short, gregapi.block.multitileentity.MultiTileEntityClassContainer> tCls : new java.util.TreeMap<>(tReg.getValue().mRegistry).entrySet()) {
+					tClasses++;
+					net.minecraft.world.level.block.entity.BlockEntity tTE;
+					try {tTE = tReg.getValue().getNewTileEntity(tCls.getKey());} catch (Throwable e) {tFailed++; continue;}
+					if (!(tTE instanceof net.minecraft.world.Container tContainer) || tContainer.getContainerSize() <= 0) continue;
+					tInventoried++;
+					int tAll = tContainer.getContainerSize(), tAccess = tAll;
+					if (tTE instanceof net.minecraft.world.WorldlyContainer tWorldly) {
+						int[] tSlots;
+						try {tSlots = tWorldly.getSlotsForFace(null);} catch (Throwable e) {tFailed++; continue;}
+						tAccess = tSlots == null ? 0 : tSlots.length;
+						// Течёт ли наружу служебный дисплей: слот доступен снаружи И в нём лежит предмет-дисплей.
+						for (int tSlot : tSlots == null ? new int[0] : tSlots) {
+							net.minecraft.world.item.ItemStack tStack = tContainer.getItem(tSlot);
+							if (!tStack.isEmpty() && tStack.getItem() instanceof gregapi.item.ItemFluidDisplay) {tDisplaysOutside++; tLeakList.add(tReg.getKey()+"#"+tCls.getKey()+" слот "+tSlot); break;}
+						}
+					}
+					if (tAccess <  tAll) tNarrowed++;
+					if (tAccess == 0 && tAll > 0) {tEmptyAccess++; tEmptyByType.merge(tTE.getClass().getSimpleName(), 1, Integer::sum);}
+				}
+			}
+
+			O.println("[GT6-SIDELESS] классов MTE в реестре: " + tClasses + " · из них с инвентарём: " + tInventoried + " · не удалось построить: " + tFailed);
+			O.println("[GT6-SIDELESS] НЕГАТИВНЫЙ КОНТРОЛЬ (прежняя схема отдавала ВЕСЬ контейнер): классов, где доступ БЕЗ стороны уже́ полного инвентаря = " + tNarrowed);
+			O.println("[GT6-SIDELESS] классов, где доступ без стороны ПУСТ (наружу не отдаётся ничего): " + tEmptyAccess);
+			for (java.util.Map.Entry<String, Integer> tEntry : tEmptyByType.entrySet()) O.println("[GT6-SIDELESS]   пусто: " + tEntry.getKey() + " × " + tEntry.getValue());
+			O.println("[GT6-SIDELESS] дисплеев наружу у ПРОТОТИПОВ: " + tDisplaysOutside + " (внимание: прототипы пусты — судит только живая часть ниже)");
+			for (String tLine : tLeakList) O.println("[GT6-SIDELESS]   течёт: " + tLine);
+
+			// --- ЖИВАЯ ЧАСТЬ: та самая машина с жидкостями, а не пустой прототип -----------------------------
+			// Прототип не содержит предметов вовсе, поэтому «дисплеев 0» на нём — ложное зелёное. Судим настоящую
+			// машину полигона gt6fluidyard (координаты его же: 1000/70/1000) тем самым вызовом, которым её
+			// спрашивает Jade: level.getCapability(Capabilities.Item.BLOCK, pos, …, null).
+			net.minecraft.server.level.ServerLevel tLevel = aServer.getLevel(net.minecraft.world.level.Level.OVERWORLD);
+			net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(1000, 70, 1000);
+			net.minecraft.world.level.block.entity.BlockEntity tLive = tLevel == null ? null : tLevel.getBlockEntity(tPos);
+			if (!(tLive instanceof net.minecraft.world.Container tLiveInv)) {
+				O.println("[GT6-SIDELESS] ЖИВАЯ ЧАСТЬ: машины на 1000/70/1000 нет — взведи флаг gt6fluidyard.flag. ЖИВОГО ВЕРДИКТА НЕТ.");
+				O.println("[GT6-SIDELESS] ВЕРДИКТ: НЕПОЛНЫЙ — статическая часть " + (tNarrowed > 0 ? "PASS" : "FAIL") + ", живая не состоялась");
+			} else {
+				int tLiveAll = tLiveInv.getContainerSize(), tLiveDisplaysInside = 0;
+				for (int i = 0; i < tLiveAll; i++) if (tLiveInv.getItem(i).getItem() instanceof gregapi.item.ItemFluidDisplay) tLiveDisplaysInside++;
+
+				net.neoforged.neoforge.transfer.ResourceHandler<net.neoforged.neoforge.transfer.item.ItemResource> tCap =
+					tLevel.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, tPos, null);
+				int tCapSize = tCap == null ? -1 : tCap.size(), tCapDisplays = 0, tCapItems = 0;
+				java.util.List<String> tCapContent = new java.util.ArrayList<>();
+				for (int i = 0; i < tCapSize; i++) {
+					net.minecraft.world.item.ItemStack tStack = tCap.getResource(i).toStack(Math.max(1, (int)tCap.getAmountAsLong(i)));
+					if (tStack.getItem() instanceof gregapi.item.ItemFluidDisplay) tCapDisplays++;
+					if (!tStack.isEmpty()) {tCapItems++; tCapContent.add(tStack.getCount() + "× " + tStack.getItem());}
+				}
+				O.println("[GT6-SIDELESS] ЖИВАЯ ЧАСТЬ: машина " + tLive.getClass().getSimpleName() + " · слотов ВСЕГО " + tLiveAll
+					+ " · из них служебных дисплеев ВНУТРИ " + tLiveDisplaysInside + " · капа БЕЗ стороны отдаёт слотов " + tCapSize);
+				for (String tLine : tCapContent) O.println("[GT6-SIDELESS]   снаружи видно: " + tLine);
+				O.println("[GT6-SIDELESS] ПОЗИТИВНЫЙ КОНТРОЛЬ (дисплеи в машине ЕСТЬ, значит утечке было бы чем проявиться): "
+					+ (tLiveDisplaysInside > 0 ? "рабочий, дисплеев внутри " + tLiveDisplaysInside : "НЕ РАБОТАЕТ — в машине нет ни одного дисплея, судить нечего"));
+				O.println("[GT6-SIDELESS] НЕГАТИВНЫЙ КОНТРОЛЬ (прежняя схема отдала бы весь контейнер): было бы " + tLiveAll + " слотов против " + tCapSize + " сейчас");
+				O.println("[GT6-SIDELESS] дисплеев, видимых СНАРУЖИ: " + tCapDisplays + (tCapDisplays == 0 ? "  <= ОЖИДАЕТСЯ 0" : "  <= ТЕЧЁТ"));
+
+				boolean tLivePass = tLiveDisplaysInside > 0 && tCapDisplays == 0 && tCapSize >= 0 && tCapSize < tLiveAll;
+				O.println("[GT6-SIDELESS] ВЕРДИКТ: " + (tNarrowed > 0 && tLivePass ? "PASS (фильтр мода применяется; служебное наружу не выходит при рабочем позитивном контроле)"
+					: tNarrowed == 0 ? "FAIL — сужения нет нигде: фильтр не применяется либо судья слеп"
+					: tLiveDisplaysInside == 0 ? "НЕПОЛНЫЙ — позитивный контроль не сработал (в машине нет дисплеев)"
+					: "FAIL — служебные дисплеи видны снаружи"));
+			}
+		} catch (Throwable e) {
+			O.println("[GT6-SIDELESS] ЗАМЕР НЕ СОСТОЯЛСЯ: " + e);
+			e.printStackTrace(O);
+		}
+		O.println("========== [GT6-SIDELESS] конец ==========");
 	}
 
 	// [GT6-JADELEVEL] BUG-070, СЕРВЕРНАЯ половина. Клиентский судья сверяет показанный уровень с эталоном — но снимать

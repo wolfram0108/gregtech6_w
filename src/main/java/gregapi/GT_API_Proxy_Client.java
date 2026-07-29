@@ -191,6 +191,16 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		gregapi.network.NetworkHandler.processPending(Minecraft.getInstance().level);
 	}
 
+	// ЦЕНТР ЛОКАЛИЗАЦИИ (BUG-082), клиентское плечо. Таблица переводов движка пересоздаётся ПРИ КАЖДОЙ загрузке
+	// ресурсов (ClientLanguage.loadFrom) — вместе с ней исчезают имена GT6, дописанные ранее. Здесь центр доливается
+	// целиком: событие приходит и на первой загрузке, и на каждой перезагрузке (F3+T, смена ресурспака, смена языка).
+	// Сам долив и его обоснование — gregapi.lang.LanguageHandler.injectIntoEngine().
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onClientResourcesLoaded(net.neoforged.neoforge.client.event.ClientResourceLoadFinishedEvent aEvent) {
+		int tInjected = gregapi.lang.LanguageHandler.injectIntoEngine();
+		if (tInjected > 0) gregapi.data.CS.OUT.println("GT6 localization: имён GT6 дописано в таблицу движка: " + tInjected + (aEvent.isInitial() ? " (первая загрузка ресурсов)" : " (перезагрузка ресурсов)"));
+	}
+
 	// F-tileentity-construction (КЛИЕНТ-реконструкция MTE-BE): neo подменяет не-PrefixBlock GT6-MTE общим MTE_TYPE →
 	// TileEntityLoaderStub при десериализации BE чанка НА КЛИЕНТЕ. Стаб — не IRenderedBlockObject → passRenderingToObject=null
 	// → getRenderPasses=0 → MTE-блок НЕ рисуется (прозрачный: камни/палки/флюид-источники/машины). Серверная реконструкция
