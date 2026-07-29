@@ -75,4 +75,52 @@ public class FurnaceRecipes {
 		for (Map.Entry<ItemStack, Float> tEntry : mExperienceList.entrySet()) if (ST.equal(aOutput, tEntry.getKey(), T)) return tEntry.getValue();
 		return 0.0F;
 	}
+
+	/**
+	 * ВОЗВРАТ ВАНИЛЬНОЙ ЧАСТИ СПИСКА — то, чем этот список БЫЛ в 1.7.10.
+	 *
+	 * <p>Там {@code FurnaceRecipes.smelting()} был ВАНИЛЬНЫМ singleton'ом: ванильные плавки лежали в нём
+	 * изначально, GT6 доливал свои через {@code RM.add_smelting}, и печь GT6 (Oven), спрашивая
+	 * {@code RM.get_smelting} → {@code getSmeltingResult}, видела и то и другое. Порт воссоздал класс как
+	 * GT6-собственное хранилище (шов F11-smelting), а ванильные рецепты в neo — data-driven и живут в
+	 * {@code RecipeManager}. Список остался наполовину пустым, и Oven переставал плавить руду, еду, глину:
+	 * замер gt6ovenprobe — 1 из 8 ванильных сырьевых предметов (проходил только песок, эту плавку GT6
+	 * добавляет себе сам), при 74 ванильных рецептах в мире.
+	 *
+	 * <p>Здесь список приводится к прежнему содержимому. ПРИОРИТЕТ GT6: если вход уже знаком (GT6 задал свою
+	 * плавку для этого предмета), ванильная пропускается — в 1.7.10 тот же порядок обеспечивался тем, что GT6
+	 * доливал СВОЁ поверх ванильного и перекрывал его при поиске.
+	 *
+	 * @return сколько ванильных плавок добавлено.
+	 */
+	public int importVanilla(net.minecraft.server.MinecraftServer aServer) {
+		if (aServer == null) return 0;
+		int rAdded = 0;
+		try {
+			net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
+			if (tLevel == null) return 0;
+			// ⛔ Обходим как RecipeHolder<?> и фильтруем instanceof: в реестре типа SMELTING лежит НЕ ТОЛЬКО
+			// ванильный SmeltingRecipe, но и собственный мост GT6 — GT6SmeltingDispatcher (BUG-023), который
+			// отдаёт GT6-плавки ванильной печи. Типизированный обход ронял ClassCastException прямо на нём,
+			// цикл обрывался на середине (перенеслось 149 из всех, булыжник и прочее за ним — нет).
+			// Диспетчер здесь пропускаем осознанно: он не носитель данных, а переходник в ЭТОТ же реестр.
+			for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder
+				: tLevel.recipeAccess().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.SMELTING)) {
+				if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.SmeltingRecipe tRecipe)) continue;
+				for (net.minecraft.core.Holder<net.minecraft.world.item.Item> tItem : tRecipe.input().items().toList()) {
+					ItemStack tIn = new ItemStack(tItem);
+					if (ST.invalid(tIn)) continue;
+					// GT6 приоритетнее: свою плавку не перекрываем
+					if (ST.valid(getSmeltingResult(tIn))) continue;
+					ItemStack tOut = tRecipe.assemble(new net.minecraft.world.item.crafting.SingleRecipeInput(tIn));
+					if (ST.invalid(tOut)) continue;
+					func_151394_a(tIn, ST.copy(tOut), tRecipe.experience());
+					rAdded++;
+				}
+			}
+		} catch (Throwable e) {
+			e.printStackTrace(gregapi.data.CS.ERR);
+		}
+		return rAdded;
+	}
 }

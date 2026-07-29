@@ -675,7 +675,32 @@ public class GT6_Main extends Abstract_Mod {
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
 	
-	@Override public void onModServerStarted2(net.neoforged.neoforge.event.server.ServerStartedEvent aEvent) {/**/}
+	@Override public void onModServerStarted2(net.neoforged.neoforge.event.server.ServerStartedEvent aEvent) {
+		// F11-smelting, ВОЗВРАТ 1.7.10-СОСТОЯНИЯ СПИСКА ПЛАВОК.
+		// Оригинал (gregtech6/.../GT_API_Proxy_Client.java:525-529) делал это при входе в мир: список плавок там
+		// был ВАНИЛЬНЫМ singleton'ом, то есть уже содержал ванильные рецепты, а GT6 доливал свои — и печь GT6
+		// (Oven) плавила и руду, и еду. В neo ванильные рецепты data-driven и приходят с датапаком, поэтому
+		// момент тот же (мир загружен, RecipeManager наполнен), а сторона — серверная: список общий для обеих.
+		int tImported = gregapi.recipes.FurnaceRecipes.smelting().importVanilla(aEvent.getServer());
+
+		// ВИТРИНА (1:1 :527-529): сама печь список не читает — RecipeMapFurnace.findRecipe вычисляет плавку на
+		// лету, а список нужен NEI/JEI, чтобы игрок ВИДЕЛ, что в печь класть. Оригинал наполнял его фейковыми
+		// рецептами, найденными той же findRecipe. Замер до правки: 0 записей = пустая категория в JEI.
+		// ⚠️ Итог считаем по ПРИРОСТУ размера карты, а не по возврату addFakeRecipe: у этой карты
+		// add(...) заканчивается вызовом addToItemMap, который в RecipeMapNonGTRecipes:47 переопределён как
+		// null (1:1 с оригиналом) — рецепт при этом в список попадает. Возврат null здесь означает
+		// «не индексирован», а не «не добавлен».
+		int tBefore = RM.Furnace.mRecipeListSize;
+		for (java.util.Map.Entry<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tEntry
+			: new java.util.ArrayList<>(gregapi.recipes.FurnaceRecipes.smelting().getSmeltingList().entrySet())) {
+			if (ST.invalid(tEntry.getKey())) continue;
+			gregapi.recipes.Recipe tRecipe = RM.Furnace.findRecipe(null, null, F, Long.MAX_VALUE, NI, ZL_FS, ST.array(ST.copy(tEntry.getKey())));
+			if (tRecipe != null) RM.Furnace.addFakeRecipe(F, tRecipe);
+		}
+		int tShown = RM.Furnace.mRecipeListSize - tBefore;
+		OUT.println("[GT6] F11-smelting: ванильных плавок перенесено в реестр GT6: " + tImported
+			+ "; витрина печи (JEI) наполнена: " + tShown + " рецептов");
+	}
 	@Override public void onModServerStopped2(net.neoforged.neoforge.event.server.ServerStoppedEvent aEvent) {/**/}
 
 	@Override public String getModID() {return MD.GT.mID;}

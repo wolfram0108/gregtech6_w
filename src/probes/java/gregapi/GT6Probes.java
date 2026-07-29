@@ -242,6 +242,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6arrowprobe.flag")) gt6ArrowProbeTick(aEvent.getServer());
 	// [GT6-LIGHTPROBE] стенд «PORT-TODO №2: затухание света в воде GT6» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6lightprobe.flag")) gt6LightProbeTick(aEvent.getServer());
+	// [GT6-OVENPROBE] стенд «PORT-TODO №4: печь GT6 — витрина в JEI и ванильные плавки» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6ovenprobe.flag")) gt6OvenProbeTick(aEvent.getServer());
 	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска в Соковыжималке» — снять при уборке фазы
@@ -9796,5 +9798,87 @@ public final class GT6Probes {
 		// БОЛОТО: источник гасит насмерть (оригинал :198 отдавал LIGHT_OPACITY_MAX в толще)
 		sLightSeq.judge("БОЛОТО GT6 (источник) гасит свет насмерть", tSwamp == 0, 0, tSwamp);
 		sLightSeq.done();
+	}
+
+	// ==========================================================================================================
+	// gt6ovenprobe — PORT-TODO №4, части Б и В: печь GT6 (Oven) — витрина и сами плавки.
+	//
+	// Б (витрина). 1.7.10 при входе в мир наполнял карту RM.Furnace ФЕЙКОВЫМИ рецептами ради показа в NEI
+	// (gregtech6/.../GT_API_Proxy_Client.java:527-529). Сама печь список не использует — RecipeMapFurnace.findRecipe:54
+	// вычисляет плавку на лету через RM.get_smelting. Пустой список = пустая категория в JEI.
+	//
+	// В (сами плавки). RM.get_smelting:787 ищет ТОЛЬКО в GT6-реестре FurnaceRecipes.smelting(). В 1.7.10 этот
+	// singleton был ВАНИЛЬНЫМ и содержал заодно все ванильные плавки, поэтому печь GT6 плавила руду и еду.
+	// Здесь это GT6-собственное хранилище — проверяем ФАКТОМ, доходят ли туда ванильные рецепты.
+	//
+	// ПОЗИТИВНЫЙ КОНТРОЛЬ: заведомо GT6-плавка (берём первую пару прямо из реестра) обязана находиться —
+	// иначе замер меряет не тот канал и «ванильное не плавится» ничего не значит.
+	// ХОЛОДНЫЙ КОНТРОЛЬ: заведомо неплавимый предмет (палка) обязан дать пусто.
+	// ==========================================================================================================
+	private static final String OVEN_M = "GT6-OVENPROBE";
+	private static int sOvenTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sOvenSeq;
+
+	public static void gt6OvenProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sOvenTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sOvenSeq == null) sOvenSeq = new gregapi.probe.GT6ProbeStand.Seq(OVEN_M)
+			.at(60, () -> gt6OvenCheck(tPlayer));
+		sOvenSeq.tick(sOvenTick);
+	}
+
+	private static String gt6OvenSmelt(net.minecraft.world.item.Item aItem) {
+		net.minecraft.world.item.ItemStack tOut = gregapi.data.RM.get_smelting(new net.minecraft.world.item.ItemStack(aItem));
+		return gregapi.util.ST.invalid(tOut) ? null : gregapi.util.ST.names(tOut);
+	}
+
+	private static void gt6OvenCheck(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+
+		// ---- В: сколько плавок знает GT6-реестр и что в нём лежит
+		java.util.Map<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tGT6 = gregapi.recipes.FurnaceRecipes.smelting().getSmeltingList();
+		O.println("[" + OVEN_M + "] плавок в реестре GT6: " + tGT6.size());
+
+		// ПОЗИТИВНЫЙ КОНТРОЛЬ: первая пара из самого реестра обязана находиться через RM.get_smelting
+		String tCtrlName = "нет записей", tCtrlGot = null;
+		for (java.util.Map.Entry<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> e : tGT6.entrySet()) {
+			if (gregapi.util.ST.invalid(e.getKey())) continue;
+			tCtrlName = gregapi.util.ST.names(e.getKey());
+			net.minecraft.world.item.ItemStack tOut = gregapi.data.RM.get_smelting(gregapi.util.ST.copy(e.getKey()));
+			tCtrlGot = gregapi.util.ST.invalid(tOut) ? null : gregapi.util.ST.names(tOut);
+			break;
+		}
+		O.println("[" + OVEN_M + "] позитивный контроль: «" + tCtrlName + "» -> " + (tCtrlGot == null ? "ПУСТО" : tCtrlGot));
+		sOvenSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: плавка ИЗ САМОГО реестра GT6 находится", tCtrlGot != null, "найдена", tCtrlGot == null ? "ПУСТО" : tCtrlGot);
+
+		// ХОЛОДНЫЙ КОНТРОЛЬ: палка не плавится ни в какой печи
+		String tStick = gt6OvenSmelt(net.minecraft.world.item.Items.STICK);
+		sOvenSeq.judge("ХОЛОДНЫЙ КОНТРОЛЬ: палка не плавится", tStick == null, "ПУСТО", tStick == null ? "ПУСТО" : tStick);
+
+		// ИСПЫТУЕМОЕ: ванильное сырьё, которое печь GT6 плавила в 1.7.10 (ванильный singleton)
+		net.minecraft.world.item.Item[] tVanilla = {
+			net.minecraft.world.item.Items.RAW_IRON, net.minecraft.world.item.Items.RAW_COPPER,
+			net.minecraft.world.item.Items.RAW_GOLD, net.minecraft.world.item.Items.SAND,
+			net.minecraft.world.item.Items.POTATO,   net.minecraft.world.item.Items.BEEF,
+			net.minecraft.world.item.Items.COBBLESTONE, net.minecraft.world.item.Items.CLAY_BALL};
+		int tFound = 0;
+		for (net.minecraft.world.item.Item tItem : tVanilla) {
+			String tOut = gt6OvenSmelt(tItem);
+			if (tOut != null) tFound++;
+			O.println("[" + OVEN_M + "]   " + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem) + " -> " + (tOut == null ? "ПУСТО" : tOut));
+		}
+		sOvenSeq.judge("печь GT6 плавит ванильное сырьё (в 1.7.10 плавила: singleton был ванильным)", tFound == tVanilla.length, tVanilla.length + " из " + tVanilla.length, tFound + " из " + tVanilla.length);
+
+		// Для сверки: сколько ванильных плавок вообще есть в мире
+		int tVanillaTotal = tLevel.recipeAccess().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.SMELTING).size();
+		O.println("[" + OVEN_M + "] ванильных рецептов SMELTING в мире: " + tVanillaTotal);
+
+		// ---- Б: витрина JEI — сколько рецептов отдаст категория печи
+		int tShowcase = gregapi.data.RM.Furnace.mRecipeListSize;
+		O.println("[" + OVEN_M + "] записей в карте RM.Furnace (это и увидит JEI): " + tShowcase);
+		sOvenSeq.judge("витрина печи в JEI не пуста (1.7.10 наполнял её фейковыми рецептами при входе в мир)", tShowcase > 0, "> 0", tShowcase);
+		sOvenSeq.done();
 	}
 }
