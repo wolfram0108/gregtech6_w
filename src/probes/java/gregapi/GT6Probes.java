@@ -248,6 +248,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6lightaudit.flag")) gt6LightAuditTick(aEvent.getServer());
 	// [GT6-SHADEAUDIT] полнота класса «затенение соседей GT6 не доходит до движка» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6shadeaudit.flag")) gt6ShadeAuditTick(aEvent.getServer());
+	// [GT6-FIRECHANNEL] подключение каналов огня/разрушаемости у PrefixBlock — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6firechannel.flag")) gt6FireChannelTick(aEvent.getServer());
 	// [GT6-ARCHERY] ПЛОЩАДКА ПРИЁМКИ: тир для проверки лука и стрел GT6 игроком — снять после приёмки
 		if (gregapi.data.CS.probeFlag("gt6archery.flag")) gt6ArcheryTick(aEvent.getServer());
 	// [GT6-LIGHTYARD] ПЛОЩАДКА ПРИЁМКИ: двор света (колодцы GT6/ваниль + навесы) — снять после приёмки
@@ -10037,6 +10039,70 @@ public final class GT6Probes {
 		sSAuditSeq.judge("КОНТРОЛЬ ОСМЫСЛЕННОСТИ: мост реально что-то меняет (иначе судья тавтологичен)", tFixed > 0, "> 0", tFixed);
 		sSAuditSeq.judge("1.7.10-затенение доходит до движка у ВСЕХ блоков GT6 с признаком", tMismatch == 0, 0, tMismatch);
 		sSAuditSeq.done();
+	}
+
+	// ==========================================================================================================
+	// gt6firechannel — подключение 1.7.10-каналов огня и разрушаемости у PrefixBlock (руды, дроблёнка).
+	//
+	// Каналы были объявлены с 1.7.10-именами и вызывателей не имели: движок спрашивает их через
+	// IBlockExtension, а не по старым именам. Судим ДВИЖКОВЫМ путём — тем самым, которым ходит FireBlock и
+	// дракон: BlockState.getFlammability/canEntityDestroy (IBlockStateExtension:516,581), и сверяем с тем,
+	// что отвечает сам GT6-блок по материалу.
+	//
+	// КОНТРОЛЬ ОСМЫСЛЕННОСТИ: обязаны найтись блоки, где GT6-ответ ОТЛИЧАЕТСЯ от ванильного дефолта —
+	// иначе судья ничего не проверяет. ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильные доски горят, обсидиан дракону не по зубам.
+	// ==========================================================================================================
+	private static final String FIRE_M = "GT6-FIRECHANNEL";
+	private static int sFireTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sFireSeq;
+
+	public static void gt6FireChannelTick(net.minecraft.server.MinecraftServer aServer) {
+		sFireTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		if (sFireSeq == null) sFireSeq = new gregapi.probe.GT6ProbeStand.Seq(FIRE_M).at(60, () -> gt6FireChannel(aServer));
+		sFireSeq.tick(sFireTick);
+	}
+
+	private static void gt6FireChannel(net.minecraft.server.MinecraftServer aServer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		final net.minecraft.core.Direction UP = net.minecraft.core.Direction.UP;
+		ServerLevel tLevel = aServer.overworld();
+		BlockPos tPos = aServer.getPlayerList().getPlayers().get(0).blockPosition().above(4);
+		net.minecraft.world.entity.boss.enderdragon.EnderDragon tDragon = new net.minecraft.world.entity.boss.enderdragon.EnderDragon(net.minecraft.world.entity.EntityType.ENDER_DRAGON, tLevel);
+
+		int tChecked = 0, tFlamOk = 0, tFlamBad = 0, tDragOk = 0, tDragBad = 0, tDiffer = 0;
+		java.util.List<String> tBad = new java.util.ArrayList<>(), tDiff = new java.util.ArrayList<>();
+
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			if (!(tBlock instanceof gregapi.block.prefixblock.PrefixBlock tPrefix)) continue;
+			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			net.minecraft.world.level.block.state.BlockState tState = tBlock.defaultBlockState();
+			tChecked++;
+			// ЧТО ОТДАЁТ ДВИЖКУ канал (путь FireBlock) против того, что говорит сам GT6-блок
+			int tEngine = tState.getFlammability(tLevel, tPos, UP);
+			int tGT6 = tPrefix.getFlammability(tLevel, tPos.getX(), tPos.getY(), tPos.getZ(), UP);
+			if (tEngine == tGT6) tFlamOk++; else {tFlamBad++; if (tBad.size() < 8) tBad.add(tID + " огонь: движок " + tEngine + ", GT6 " + tGT6);}
+			boolean tEngineD = tState.canEntityDestroy(tLevel, tPos, tDragon);
+			boolean tGT6D = tPrefix.canEntityDestroy(tLevel, tPos.getX(), tPos.getY(), tPos.getZ(), tDragon);
+			if (tEngineD == tGT6D) tDragOk++; else {tDragBad++; if (tBad.size() < 8) tBad.add(tID + " дракон: движок " + tEngineD + ", GT6 " + tGT6D);}
+			// отличается ли ответ GT6 от ванильного дефолта (иначе подключать было бы нечего)
+			boolean tVanillaD = !tState.is(net.minecraft.tags.BlockTags.DRAGON_IMMUNE);
+			if (tGT6 != 0 || tGT6D != tVanillaD) {tDiffer++; if (tDiff.size() < 6) tDiff.add(tID + " (огонь " + tGT6 + ", дракон GT6 " + tGT6D + " против ванили " + tVanillaD + ")");}
+		}
+
+		for (String s : tBad) O.println("[" + FIRE_M + "] расхождение — " + s);
+		for (String s : tDiff) O.println("[" + FIRE_M + "] GT6 решает иначе ванили — " + s);
+		O.println("[" + FIRE_M + "] блоков PrefixBlock: " + tChecked + "; огонь совпал " + tFlamOk + "/разошёлся " + tFlamBad
+			+ "; дракон совпал " + tDragOk + "/разошёлся " + tDragBad + "; GT6 отвечает НЕ по-ванильному у " + tDiffer);
+
+		int tPlanks = net.minecraft.world.level.block.Blocks.OAK_PLANKS.defaultBlockState().getFlammability(tLevel, tPos, UP);
+		boolean tObsidian = net.minecraft.world.level.block.Blocks.OBSIDIAN.defaultBlockState().canEntityDestroy(tLevel, tPos, tDragon);
+		O.println("[" + FIRE_M + "] контроль: ванильные доски горят на " + tPlanks + ", обсидиан ломается драконом: " + tObsidian);
+		sFireSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: каналы живы (доски горят, обсидиан дракону не по зубам)", tPlanks > 0 && !tObsidian, "> 0 / false", tPlanks + " / " + tObsidian);
+		sFireSeq.judge("КОНТРОЛЬ ОСМЫСЛЕННОСТИ: у GT6 есть СВОЙ ответ, отличный от ванильного", tDiffer > 0, "> 0", tDiffer);
+		sFireSeq.judge("движок получает GT6-горючесть у ВСЕХ блоков PrefixBlock", tFlamBad == 0, 0, tFlamBad);
+		sFireSeq.judge("движок получает GT6-правило разрушаемости драконом", tDragBad == 0, 0, tDragBad);
+		sFireSeq.done();
 	}
 
 	// ==========================================================================================================
