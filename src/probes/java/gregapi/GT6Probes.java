@@ -9058,7 +9058,29 @@ public final class GT6Probes {
 		java.io.PrintStream O = gregapi.data.CS.OUT;
 		ServerLevel tLevel = aPlayer.level();
 		if (!(gregapi.data.CS.BlocksGT.oreBroken instanceof gregapi.block.prefixblock.PrefixBlock tBroken)) return;
-		BlockPos tO = aPlayer.blockPosition().offset(0, 0, 14);
+
+		// УБОРКА ЗА СОБОЙ. Стенд строится от текущей позиции игрока, а прогонов было много — площадки наложились
+		// друг на друга, и игрок не мог понять, что тут его. Перед постройкой сносим ВСЁ, что настроили прошлые
+		// прогоны (широкий короб вокруг игрока), и только потом ставим одну чистую площадку.
+		// ⚠️ Только ВЫШЕ уровня ног игрока: ниже идёт естественная земля, и «снести весь камень» изуродовало бы
+		// ландшафт вокруг. Полы прошлых площадок лежат на уровне ног — их и захватываем, глубже не лезем.
+		BlockPos tMe = aPlayer.blockPosition();
+		for (int dx = -40; dx <= 40; dx++) for (int dz = -40; dz <= 40; dz++) for (int dy = -1; dy <= 10; dy++) {
+			BlockPos tP = tMe.offset(dx, dy, dz);
+			net.minecraft.world.level.block.Block tB = tLevel.getBlockState(tP).getBlock();
+			boolean tOurs = tB instanceof gregapi.block.prefixblock.PrefixBlock || tB instanceof gregapi.block.IBlockBase
+			             || tB == net.minecraft.world.level.block.Blocks.BEDROCK || tB == net.minecraft.world.level.block.Blocks.LAVA
+			             || tB == net.minecraft.world.level.block.Blocks.FIRE;
+			// камень/песок/вода бывают и природными — сносим их только НАД землёй (dy >= 0), где они точно наши
+			boolean tMaybe = dy >= 0 && (tB == net.minecraft.world.level.block.Blocks.STONE
+			              || tB == net.minecraft.world.level.block.Blocks.SAND || tB == net.minecraft.world.level.block.Blocks.WATER);
+			if (tOurs || tMaybe) tLevel.setBlock(tP, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+		}
+		for (net.minecraft.world.entity.item.ItemEntity tIt : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+			net.minecraft.world.phys.AABB.encapsulatingFullBlocks(tMe.offset(-40, -3, -40), tMe.offset(40, 10, 40)))) tIt.discard();
+		O.println("[" + GRAV_M + "] прежние постройки стенда снесены (короб 80×80 вокруг игрока), мусор-предметы убраны");
+
+		BlockPos tO = tMe.offset(0, 0, 10);
 		for (int dx = -3; dx <= 11; dx++) for (int dz = -3; dz <= 3; dz++) {
 			tLevel.setBlock(tO.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
 			for (int dy = 0; dy <= 7; dy++) tLevel.setBlock(tO.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
