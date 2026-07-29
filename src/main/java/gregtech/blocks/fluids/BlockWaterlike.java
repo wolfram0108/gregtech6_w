@@ -263,6 +263,18 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		aLevel.setBlockAndUpdate(aPos, net.minecraft.world.level.block.Blocks.ICE.defaultBlockState());
 	}
 
+	// ⚠️ КАНАЛ РАЗОБРАН, НЕ ПОДКЛЮЧЁН — эквивалент найден, правка отдельным шагом (реестр мёртвых каналов, 2026-07-30).
+	// Правило живо и вызывателей не имеет. Путь рендера подтверждён: у водоподобных getFluidState (ниже) есть,
+	// значит их рисует ванильный FluidRenderer, и грань он решает через shouldHideAdjacentFluidFace
+	// (FluidRenderer.java:39,70 -> IBlockStateExtension:811 -> IBlockExtension:1077).
+	// ОТВЕТСТВЕННОСТЬ ПЕРЕВЁРНУТА: в 1.7.10 вопрос «рисовать ли мою грань» задавала САМА вода (метод ниже),
+	// в neo его решает СОСЕД — «скрыть ли грань жидкости рядом со мной». Поэтому прямой делегат не годится:
+	// правило надо перенести на сторону соседа, в корни блоков GT6, с общим центром на весь мод.
+	// Ванильный дефолт (IBlockExtension:1077) скрывает грань только если сосед — ТА ЖЕ жидкость, поэтому сейчас
+	// теряются три ветки 1.7.10: (1) сосед — любая вода по МАТЕРИАЛУ (океан GT6 рядом с рекой GT6 = разные
+	// жидкости, но обе water -> в оригинале грани нет, сейчас будет стенка — тот же симптом, что игрок нашёл
+	// на стёклах); (2) визуально непрозрачный сосед (WD.visOpq); (3) MTE с непрозрачной поверхностью
+	// (ITileEntitySurface.isSurfaceOpaque). Живым тестом не проверялось.
 	// @Override
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
