@@ -315,6 +315,15 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	public final Item setUnlocalizedName(String aName) {return this;}
 	public final String getUnlocalizedName() {return mName;}
 	
+	// F12-hook (потерянный приёмник): neo-канал — IItemExtension.doesSneakBypassUse(ItemStack,LevelReader,
+	// BlockPos,Player) (IItemExtension.java:251). 1.7.10-сигнатура ниже ничего не переопределяла и движком
+	// не звалась → присед с дисплей-предметом в руке НЕ пропускал клик к блоку (сундук/машина не открывались,
+	// пока в руке дисплей). Тело 1:1 — всегда T.
+	@Override
+	public boolean doesSneakBypassUse(ItemStack aStack, net.minecraft.world.level.LevelReader aWorld, net.minecraft.core.BlockPos aPos, Player aPlayer) {
+		return T;
+	}
+
 	// @Override
 	public boolean doesSneakBypassUse(Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
 		return T;

@@ -236,6 +236,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6fluidheight.flag")) gt6FluidHeightTick(aEvent.getServer());
 		// F12-tick: падают ли гравитационные блоки GT6 (дроблёные руды) — судья положения, не формулы
 		if (gregapi.data.CS.probeFlag("gt6gravityprobe.flag")) gt6GravityProbeTick(aEvent.getServer());
+		// F12-hook: ожили ли восстановленные приёмники движковых каналов (доение, присед)
+		if (gregapi.data.CS.probeFlag("gt6hookprobe.flag")) gt6HookProbeTick(aEvent.getServer());
 	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска в Соковыжималке» — снять при уборке фазы
@@ -9403,5 +9405,125 @@ public final class GT6Probes {
 		sGravSeq.judge("иерархия BlockBase (пески/копаемое/шипы) — НЕ трогалась, работает своим мостом", tBaseFell == tBaseAll,
 			tBaseAll + " из " + tBaseAll, tBaseFell + " из " + tBaseAll);
 		// done() НЕ здесь: он закрывает последовательность, и шаг постройки двора приёмки (тик 200) не отработал бы.
+	}
+
+	// ==========================================================================================================
+	// gt6hookprobe — F12-hook: ожили ли ВОССТАНОВЛЕННЫЕ приёмники движковых каналов.
+	//
+	// Класс дефекта тот же, что у потерянного тика: метод несёт 1.7.10-сигнатуру, приёмника в neo нет, движок
+	// его не зовёт — механика мертва молча. Здесь судятся два восстановленных канала:
+	//   1) правый клик предметом по существу (interactLivingEntity): доение коровы ведром GT6 — путь игрока
+	//      через Player.interactOn, не прямой вызов поведения;
+	//   2) присед пропускает клик к блоку (doesSneakBypassUse): контракт спрашивается тем же вызовом,
+	//      которым его спрашивает движок.
+	// Носители поведений ищутся В РЕЕСТРЕ по самому поведению, а не по номеру предмета: номера меняются.
+	// ==========================================================================================================
+	private static final String HOOK_M = "GT6-HOOKPROBE";
+	private static int sHookTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sHookSeq;
+
+	public static void gt6HookProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sHookTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sHookSeq == null) sHookSeq = new gregapi.probe.GT6ProbeStand.Seq(HOOK_M)
+			.at(60, () -> gt6HookSpawn(tPlayer))
+			.at(90, () -> gt6HookMilk(tPlayer))
+			.at(120, () -> gt6HookSneak(tPlayer));
+		sHookSeq.tick(sHookTick);
+	}
+
+	/** Ищем в реестре предмет-носитель поведения по КЛАССУ поведения: (item, meta). */
+	private static Object[] gt6HookFindBehavior(Class<?> aBehavior) {
+		for (net.minecraft.world.item.Item tIt : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			if (!(tIt instanceof gregapi.item.multiitem.MultiItem tMI)) continue;
+			for (java.util.Map.Entry<Short, java.util.ArrayList<gregapi.item.multiitem.behaviors.IBehavior<gregapi.item.multiitem.MultiItem>>> e : tMI.mItemBehaviors.entrySet())
+				for (Object tB : e.getValue()) if (aBehavior.isInstance(tB)) return new Object[]{tIt, (int)e.getKey()};
+		}
+		return null;
+	}
+
+	private static net.minecraft.world.entity.animal.cow.Cow sHookCow = null;
+	private static net.minecraft.world.entity.animal.chicken.Chicken sHookHen = null;
+
+	/** Спавн отдельным шагом: кликать по существу в тот же тик, когда его добавили, нельзя — движок
+	 *  ещё не провёл его через свой цикл, и взаимодействие не проходит даже у ВАНИЛЬНОГО ведра
+	 *  (позитивный контроль краснел, и вердикт по испытуемому не значил ничего). */
+	private static void gt6HookSpawn(ServerPlayer aPlayer) {
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition().offset(3, 0, 3);
+		for (int dx = -1; dx <= 4; dx++) for (int dz = -1; dz <= 2; dz++)
+			tLevel.setBlock(tO.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+		sHookCow = net.minecraft.world.entity.EntityType.COW.create(tLevel, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+		sHookHen = net.minecraft.world.entity.EntityType.CHICKEN.create(tLevel, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+		if (sHookCow != null) {sHookCow.snapTo(tO.getX() + 0.5, tO.getY(), tO.getZ() + 0.5); tLevel.addFreshEntity(sHookCow);}
+		if (sHookHen != null) {sHookHen.snapTo(tO.getX() + 2.5, tO.getY(), tO.getZ() + 0.5); tLevel.addFreshEntity(sHookHen);}
+		gregapi.data.CS.OUT.println("[" + HOOK_M + "] подопытные заспавнены, клик — через 30 тиков");
+	}
+
+	/** ДОЕНИЕ: пустое ведро GT6 + корова -> в ведре молоко. Путь игрока: Player.interactOn (движковый). */
+	private static void gt6HookMilk(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		Object[] tFound = gt6HookFindBehavior(gregapi.item.multiitem.behaviors.Behavior_Bucket_Simple.class);
+		if (tFound == null) {sHookSeq.judge("носитель поведения «ведро» найден в реестре", false, "найден", "нет"); return;}
+		net.minecraft.world.item.Item tItem = (net.minecraft.world.item.Item)tFound[0];
+		int tMeta = (Integer)tFound[1];
+		O.println("[" + HOOK_M + "] ведро GT6: " + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem) + " мета " + tMeta);
+		net.minecraft.world.entity.animal.cow.Cow tCow = sHookCow;
+		net.minecraft.world.entity.animal.chicken.Chicken tHen = sHookHen;
+		if (tCow == null || tHen == null) {sHookSeq.judge("подопытные животные созданы", false, "созданы", "null"); return;}
+		// игрок должен быть РЯДОМ: interactOn проверяет досягаемость
+		aPlayer.teleportTo(tCow.getX() + 1.0, tCow.getY(), tCow.getZ());
+		// ⛔ И ОБЯЗАТЕЛЬНО ВЫЖИВАНИЕ. Мир стенда креативный, а в креативе результат взаимодействия в руку
+		// не кладётся (ItemUtils.createFilledResult не меняет стек при hasInfiniteMaterials) — ванильное ведро
+		// остаётся ведром, позитивный контроль краснеет, и вердикт по испытуемому не значит ничего.
+		// Тот же класс ошибки, что уже был с тултипами: проверять надо в ВЫЖИВАНИИ.
+		net.minecraft.world.level.GameType tWasMode = aPlayer.gameMode.getGameModeForPlayer();
+		aPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+
+		// ИСПЫТУЕМЫЙ: ведро GT6 по корове
+		net.minecraft.world.item.ItemStack tBucket = gregapi.util.ST.make(tItem, 1, tMeta);
+		aPlayer.getInventory().setItem(0, tBucket); aPlayer.getInventory().setSelectedSlot(0);
+		aPlayer.interactOn(tCow, net.minecraft.world.InteractionHand.MAIN_HAND, tCow.position());
+		net.minecraft.world.item.ItemStack tAfter = aPlayer.getInventory().getItem(0);
+		net.neoforged.neoforge.fluids.FluidStack tMilk = gregapi.data.FL.getFluid(tAfter, T);
+		String tGot = tMilk == null ? "пусто" : gregapi.data.FL.regName(tMilk.getFluid()) + " " + tMilk.getAmount() + "mB";
+		O.println("[" + HOOK_M + "] после клика по КОРОВЕ в ведре: " + tGot);
+
+		// ХОЛОДНЫЙ КОНТРОЛЬ: то же ведро по курице — доиться нечему
+		net.minecraft.world.item.ItemStack tBucket2 = gregapi.util.ST.make(tItem, 1, tMeta);
+		aPlayer.getInventory().setItem(0, tBucket2); aPlayer.getInventory().setSelectedSlot(0);
+		aPlayer.interactOn(tHen, net.minecraft.world.InteractionHand.MAIN_HAND, tHen.position());
+		net.neoforged.neoforge.fluids.FluidStack tHenFluid = gregapi.data.FL.getFluid(aPlayer.getInventory().getItem(0), T);
+		O.println("[" + HOOK_M + "] после клика по КУРИЦЕ в ведре: " + (tHenFluid == null ? "пусто" : "" + tHenFluid.getAmount() + "mB"));
+
+		// ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильное ведро по корове — путь взаимодействия вообще работает
+		aPlayer.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BUCKET));
+		aPlayer.getInventory().setSelectedSlot(0);
+		aPlayer.interactOn(tCow, net.minecraft.world.InteractionHand.MAIN_HAND, tCow.position());
+		boolean tVanillaOK = aPlayer.getInventory().getItem(0).getItem() == net.minecraft.world.item.Items.MILK_BUCKET;
+		O.println("[" + HOOK_M + "] ванильное ведро после клика по корове: " + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aPlayer.getInventory().getItem(0).getItem()));
+
+		sHookSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильное ведро доит корову (путь взаимодействия жив)", tVanillaOK, "milk_bucket", tVanillaOK ? "milk_bucket" : "не подоилось");
+		sHookSeq.judge("ДОЕНИЕ ведром GT6 работает (канал interactLivingEntity восстановлен)", tMilk != null && tMilk.getAmount() > 0, "молоко в ведре", tGot);
+		sHookSeq.judge("ХОЛОДНЫЙ КОНТРОЛЬ: курица ведро не наполняет", tHenFluid == null, "пусто", tHenFluid == null ? "пусто" : "" + tHenFluid.getAmount() + "mB");
+		aPlayer.setGameMode(tWasMode);
+		tCow.discard(); tHen.discard();
+	}
+
+	/** ПРИСЕД: контракт doesSneakBypassUse спрашивается тем же вызовом, которым его спрашивает движок. */
+	private static void gt6HookSneak(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tPos = aPlayer.blockPosition().offset(2, 0, 0);
+		net.minecraft.world.item.ItemStack tDisplay = gregapi.data.IL.Display_Fluid.get(1);
+		if (tDisplay == null || tDisplay.isEmpty()) {sHookSeq.judge("дисплей-предмет жидкости существует", false, "есть", "нет"); sHookSeq.done(); return;}
+		boolean tOurs   = tDisplay.doesSneakBypassUse(tLevel, tPos, aPlayer);
+		boolean tVanilla = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STONE).doesSneakBypassUse(tLevel, tPos, aPlayer);
+		O.println("[" + HOOK_M + "] doesSneakBypassUse: дисплей=" + tOurs + " | ванильный камень (холодный контроль)=" + tVanilla);
+		sHookSeq.judge("ПРИСЕД: дисплей-предмет пропускает клик к блоку (канал doesSneakBypassUse восстановлен)", tOurs, "true", String.valueOf(tOurs));
+		sHookSeq.judge("ХОЛОДНЫЙ КОНТРОЛЬ: обычный предмет клик НЕ пропускает", !tVanilla, "false", String.valueOf(tVanilla));
+		sHookSeq.done();
 	}
 }

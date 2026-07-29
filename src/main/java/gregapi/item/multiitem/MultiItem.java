@@ -140,6 +140,20 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		return super.isItemStackUsable(aStack);
 	}
 	
+	// F12-hook (потерянный приёмник, тот же класс, что мост tick→updateTick у PrefixBlock): neo-канал
+	// правого клика предметом по существу — interactLivingEntity(ItemStack,Player,LivingEntity,InteractionHand)
+	// (Item.java:292). 1.7.10-сигнатура itemInteractionForEntity ниже ничего не переопределяла («// @Override»)
+	// и движком не звалась → МЁРТВЫ были все поведения onRightClickEntity: доение коровы ведром GT6
+	// (Behavior_Bucket_Simple), стрижка овец (Behavior_Shears), лечение зомби-жителя (Behavior_CureZombie),
+	// кормление и приручение животных (Behavior_FeedCat/Dog/Pig/Grass/Chocolate). Соседний onLeftClickEntity
+	// приёмник имел — осиротел только правый клик.
+	@Override
+	public net.minecraft.world.InteractionResult interactLivingEntity(ItemStack aStack, Player aPlayer, LivingEntity aEntity, net.minecraft.world.InteractionHand aHand) {
+		return itemInteractionForEntity(aStack, aPlayer, aEntity)
+			? net.minecraft.world.InteractionResult.SUCCESS
+			: super.interactLivingEntity(aStack, aPlayer, aEntity, aHand);
+	}
+
 	// @Override
 	public boolean itemInteractionForEntity(ItemStack aStack, Player aPlayer, LivingEntity aEntity) {
 		if (!aPlayer.level().isClientSide()) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
