@@ -228,6 +228,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6uvprobe.flag")) gt6UVProbeTick(aEvent.getServer());
 	// [GT6-MAPCOLORPROBE] стенд «MODCOMPAT-002: блоки GT6 невидимы на карте» (Ф4, на каркасе GT6ProbeStand) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6mapcolorprobe.flag")) gt6MapColorProbeTick(aEvent.getServer());
+	// [GT6-MAPPROBE] MODCOMPAT-002: прогон АЛГОРИТМА ВАНИЛЬНОЙ КАРТЫ (MapItem) на блоках GT6 — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6mapprobe.flag")) gt6MapProbeTick(aEvent.getServer());
 	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска в Соковыжималке» — снять при уборке фазы
@@ -8431,5 +8433,145 @@ public final class GT6Probes {
 		sJuiceSeq.judge("ПОЛНОТА " + aName + ": цветочных рецептов найдено", tTotal > 0, "> 0", tTotal);
 		sJuiceSeq.judge("ПОЛНОТА " + aName + ": все находятся поиском (" + tTotal + ")", tNotFound == 0, 0, tNotFound + (tFirstBad == null ? "" : " · пример: " + tFirstBad));
 		sJuiceSeq.judge("ПОЛНОТА " + aName + ": у всех непустой жидкостный выход", tEmptyOut == 0, 0, tEmptyOut + (tFirstBad == null ? "" : " · пример: " + tFirstBad));
+	}
+
+	// ==========================================================================================================
+	// [GT6-MAPPROBE] MODCOMPAT-002 — РАЗДЕЛЯЮЩИЙ СУДЬЯ: показывает ли блоки GT6 ВАНИЛЬНАЯ карта.
+	//
+	// Симптом игрока: «вообще нет воды на карте, на карте показывается дно под водой», и то же со всеми
+	// породами/машинами GT6. Прежний стенд gt6mapcolorprobe спрашивал у блока getMapColor и получал непустой
+	// цвет, но КАРТУ он не судил: между блоком и пикселем стоит АЛГОРИТМ (MapItem.update), и симптом
+	// «показано дно» рождается именно в нём.
+	//
+	// Здесь алгоритм движка воспроизведён 1:1 (neo-decompiled/net/minecraft/world/item/MapItem.java:128-155):
+	//   columnY = heightmap(WORLD_SURFACE) + 1;
+	//   do {--columnY; state = getBlockState;} while (state.getMapColor(...) == NONE && columnY > minY);
+	//   if (!state.getFluidState().isEmpty()) state = getCorrectStateForFluidBlock(...);   // :138-149, :196-197
+	//   colour = state.getMapColor(...);                                                    // :155
+	// Судится ИДЕНТИЧНОСТЬ: цвет пикселя над столбом обязан отличаться от цвета ДНА этого столба. Совпал с
+	// дном — значит алгоритм проскочил блок GT6 и нарисовал то, что под ним, то есть ровно симптом игрока.
+	//
+	// Контроли обязательны: (1) ПОЗИТИВНЫЙ — тот же столб с ВАНИЛЬНОЙ водой, судья обязан дать PASS;
+	// (2) ХОЛОДНЫЙ — голый столб без верхнего блока, судья обязан показать дно (иначе он зелёный всегда).
+	// ==========================================================================================================
+	private static final String MAPP_M = "GT6-MAPPROBE";
+	private static int sMapPTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sMapPSeq;
+	private static BlockPos sMapPOrigin = null;
+	private static final java.util.List<Object[]> sMapPCases = new java.util.ArrayList<>();
+
+	public static void gt6MapProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sMapPTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sMapPSeq == null) sMapPSeq = new gregapi.probe.GT6ProbeStand.Seq(MAPP_M)
+			.at(100, () -> gt6MapProbeBuild(tPlayer))
+			.at(160, () -> gt6MapProbeJudge(tPlayer));
+		sMapPSeq.tick(sMapPTick);
+	}
+
+	/**
+	 * Столбы: КАМЕННАЯ ЧАША (дно + бортики) и один испытуемый блок внутри.
+	 * ⚠️ Правило уже оплачено прошлым заходом (BUG-067, сектор 4 демо-площадки): жидкость, положенная одним
+	 * setBlock без чаши и с flags=3, растекается ПРЯМО в момент постройки и исчезает — прогон с flags=3 дал
+	 * River/Ocean/Swamp = 0 из 9. Поэтому: чаша + мета 0 (полный источник) + flags=2 (без обновления соседей),
+	 * и сразу проверка «что реально стоит» — судья обязан знать, что он вообще судит.
+	 * Колонна над блоком расчищается на 24 вверх: heightmap(WORLD_SURFACE) обязан указывать на испытуемый блок,
+	 * иначе алгоритм карты стартует выше и меряет не то (в первом прогоне холодный контроль дал чужой цвет 8).
+	 */
+	private static void gt6MapProbeBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		sMapPOrigin = aPlayer.blockPosition().offset(4, 0, 4);
+		sMapPCases.clear();
+
+		java.util.List<Object[]> tWanted = new java.util.ArrayList<>();
+		tWanted.add(new Object[]{"ВАНИЛЬНАЯ вода (позитивный контроль)", net.minecraft.world.level.block.Blocks.WATER});
+		if (gregapi.data.CS.BlocksGT.River != null) tWanted.add(new Object[]{"вода GT6: River", gregapi.data.CS.BlocksGT.River});
+		if (gregapi.data.CS.BlocksGT.Ocean != null) tWanted.add(new Object[]{"вода GT6: Ocean", gregapi.data.CS.BlocksGT.Ocean});
+		if (gregapi.data.CS.BlocksGT.Swamp != null) tWanted.add(new Object[]{"вода GT6: Swamp", gregapi.data.CS.BlocksGT.Swamp});
+		if (gregapi.data.CS.BlocksGT.OilHeavy != null) tWanted.add(new Object[]{"жидкость GT6: OilHeavy", gregapi.data.CS.BlocksGT.OilHeavy});
+		if (gregapi.data.CS.BlocksGT.Sands != null) tWanted.add(new Object[]{"порода GT6: Sands", gregapi.data.CS.BlocksGT.Sands});
+		tWanted.add(new Object[]{"ХОЛОДНЫЙ контроль (ничего сверху)", null});
+
+		int tX = sMapPOrigin.getX(), tY = sMapPOrigin.getY(), tZ = sMapPOrigin.getZ();
+		for (int i = 0; i < tWanted.size(); i++) {
+			int tCX = tX + i * 5;
+			Object tTop = tWanted.get(i)[1];
+			// чаша 3x3: дно на tY-1, бортики на уровне tY по периметру; центр (tCX,tY,tZ) — место испытуемого
+			for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+				tLevel.setBlock(new BlockPos(tCX + dx, tY - 1, tZ + dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+				boolean tRim = (dx != 0 || dz != 0);
+				tLevel.setBlock(new BlockPos(tCX + dx, tY, tZ + dz), tRim ? net.minecraft.world.level.block.Blocks.STONE.defaultBlockState() : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+			}
+			// колонна над чашей — в воздух, чтобы heightmap упал ровно на испытуемый блок
+			for (int dy = 1; dy <= 24; dy++) for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+				tLevel.setBlock(new BlockPos(tCX + dx, tY + dy, tZ + dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+			// испытуемый — через ЦЕНТР WD.set с метой 0 (источник), flags=2 (см. правило BUG-067 выше)
+			if (tTop instanceof net.minecraft.world.level.block.Block tB) gregapi.util.WD.set(tLevel, tCX, tY, tZ, tB, 0, 2, F);
+			sMapPCases.add(new Object[]{tWanted.get(i)[0], new BlockPos(tCX, tY, tZ), tTop});
+		}
+		// проверка СВОЕЙ работы: что реально встало в каждой позиции
+		StringBuilder tReport = new StringBuilder();
+		for (Object[] tCase : sMapPCases) {
+			BlockPos tPos = (BlockPos) tCase[1];
+			tReport.append(tReport.length() == 0 ? "" : " | ").append(tCase[0]).append(" -> ")
+				.append(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tLevel.getBlockState(tPos).getBlock()));
+		}
+		O.println("[" + MAPP_M + "] столбы построены (чаша+flags=2): " + tReport);
+	}
+
+	/** 1:1 с MapItem.getCorrectStateForFluidBlock (:196-197). */
+	private static net.minecraft.world.level.block.state.BlockState gt6MapProbeFluidState(ServerLevel aLevel, net.minecraft.world.level.block.state.BlockState aState, BlockPos aPos) {
+		net.minecraft.world.level.material.FluidState tFS = aState.getFluidState();
+		return !tFS.isEmpty() && !aState.isFaceSturdy(aLevel, aPos, net.minecraft.core.Direction.UP) ? tFS.createLegacyBlock() : aState;
+	}
+
+	/** 1:1 с MapItem.update (:128-155): от heightmap вниз, пока цвет NONE; затем fluid-подмена; итог — цвет пикселя. */
+	private static net.minecraft.world.level.material.MapColor gt6MapProbePixel(ServerLevel aLevel, int aX, int aZ) {
+		net.minecraft.world.level.chunk.LevelChunk tChunk = aLevel.getChunk(net.minecraft.core.SectionPos.blockToSectionCoord(aX), net.minecraft.core.SectionPos.blockToSectionCoord(aZ));
+		BlockPos.MutableBlockPos tPos = new BlockPos.MutableBlockPos(aX, 0, aZ);
+		int tY = tChunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, aX, aZ) + 1;
+		net.minecraft.world.level.block.state.BlockState tState;
+		if (tY <= aLevel.getMinY()) return net.minecraft.world.level.block.Blocks.BEDROCK.defaultBlockState().getMapColor(aLevel, tPos);
+		do {
+			tPos.setY(--tY);
+			tState = tChunk.getBlockState(tPos);
+		} while (tState.getMapColor(aLevel, tPos) == net.minecraft.world.level.material.MapColor.NONE && tY > aLevel.getMinY());
+		if (tY > aLevel.getMinY() && !tState.getFluidState().isEmpty()) tState = gt6MapProbeFluidState(aLevel, tState, tPos);
+		return tState.getMapColor(aLevel, tPos);
+	}
+
+	private static void gt6MapProbeJudge(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		O.println("========== [" + MAPP_M + "] MODCOMPAT-002: алгоритм ВАНИЛЬНОЙ карты на блоках GT6 ==========");
+		net.minecraft.world.level.material.MapColor tStoneColor = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState().getMapColor(tLevel, sMapPOrigin);
+		O.println("[" + MAPP_M + "] цвет ДНА (STONE) = " + tStoneColor.id);
+
+		for (Object[] tCase : sMapPCases) {
+			String tName = (String) tCase[0];
+			BlockPos tPos = (BlockPos) tCase[1];
+			Object tTop = tCase[2];
+			net.minecraft.world.level.block.state.BlockState tActual = tLevel.getBlockState(tPos);
+			net.minecraft.world.level.material.MapColor tOwn = tActual.getMapColor(tLevel, tPos);
+			net.minecraft.world.level.material.MapColor tPixel = gt6MapProbePixel(tLevel, tPos.getX(), tPos.getZ());
+			boolean tIsCold = (tTop == null);
+			boolean tShowsBottom = (tPixel == tStoneColor);
+			O.println("[" + MAPP_M + "] " + tName
+				+ " | реально стоит: " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tActual.getBlock())
+				+ " | СВОЙ цвет блока: " + tOwn.id
+				+ " | ПИКСЕЛЬ карты: " + tPixel.id
+				+ (tShowsBottom ? "  <-- ПОКАЗАНО ДНО" : ""));
+			if (tIsCold) {
+				sMapPSeq.judge("ХОЛОДНЫЙ контроль: пустой столб показывает дно", tShowsBottom, "цвет дна " + tStoneColor.id, "пиксель " + tPixel.id);
+			} else if (tActual.getBlock() != tTop) {
+				// вердикт по карте недействителен, если испытуемый блок не встал: судим ПОСТАНОВКУ, а не карту
+				sMapPSeq.judge(tName + ": блок реально встал в мире (предусловие судьи)", false, tTop.toString(), String.valueOf(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tActual.getBlock())));
+			} else {
+				sMapPSeq.judge(tName + ": карта показывает САМ блок, а не дно под ним", !tShowsBottom, "пиксель != цвета дна", "пиксель " + tPixel.id + ", дно " + tStoneColor.id);
+			}
+		}
+		sMapPSeq.done();
 	}
 }
