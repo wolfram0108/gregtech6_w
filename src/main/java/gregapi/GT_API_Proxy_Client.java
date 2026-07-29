@@ -764,14 +764,16 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	public void onClientTickEvent(ClientTickEvent.Post aEvent) {
 		{
 			if (CLIENT_TIME == 10) {
-				// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было "Initializing the Fake Furnace Recipe Map" через
-				// {@code RecipeManager.smelting().getSmeltingList()} — 1.7.10-статика {@code RecipeManager.smelting()}
-				// удалена целиком (neo {@code RecipeManager} инстанс-ориентирован, читается из {@code Level});
-				// фейковая furnace-recipe-карта не заполняется до отдельного захода (не render).
-				// PORT-TODO(NEI/JEI-интеграция, вне рендер-объёма): было "hiding stuff from NEI" через
-				// {@code Item.getSubItems(Item,CreativeModeTab,List)} (метод удалён) + {@code CreativeModeTab.tabAllSearch}
-				// (константа удалена, замена {@code CreativeModeTabs.SEARCH} — {@code ResourceKey}, другой контракт) —
-				// see память миссии "JEI (аналог NEI) — рано, для приёмки визуала", отдельный заход, не F3.
+				// ЗАКРЫТО, тело переехало на серверную сторону — {@code gregtech.GT6_Main.onModServerStarted2}:
+				// «Fake Furnace Recipe Map» (наполнение витрины RM.Furnace) и перенос ванильных плавок в реестр
+				// GT6 ({@code FurnaceRecipes.importVanilla}). В 1.7.10 это делалось здесь, потому что ванильный
+				// список плавок был статикой и существовал уже к клиентскому тику; в neo рецепты data-driven и
+				// приходят с датапаком, поэтому момент тот же (мир загружен), а сторона — серверная.
+				//
+				// Вторая половина 1.7.10-тела — «hiding stuff from NEI» ({@code Item.getSubItems} +
+				// {@code CreativeTabs.tabAllSearch}) — ДОЛГА НЕ НЕСЁТ: оригинал (:530-536) прятал микроблоки
+				// ЧУЖИХ модов (Forge Microblocks, Extra Utilities, Extra Simple, фасады AE2). Ни один из них не
+				// в сборке, {@code ST.item(MD.FMB, "microblock")} = null, цикл был бы пустым.
 			}
 
 			// Countdown the Timeout of Sounds that play in rapid succession.
