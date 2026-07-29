@@ -246,6 +246,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6ovenprobe.flag")) gt6OvenProbeTick(aEvent.getServer());
 	// [GT6-LIGHTAUDIT] обход реестра: доходят ли значения getLightOpacity() до движка — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6lightaudit.flag")) gt6LightAuditTick(aEvent.getServer());
+	// [GT6-SHADEAUDIT] полнота класса «затенение соседей GT6 не доходит до движка» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6shadeaudit.flag")) gt6ShadeAuditTick(aEvent.getServer());
 	// [GT6-ARCHERY] ПЛОЩАДКА ПРИЁМКИ: тир для проверки лука и стрел GT6 игроком — снять после приёмки
 		if (gregapi.data.CS.probeFlag("gt6archery.flag")) gt6ArcheryTick(aEvent.getServer());
 	// [GT6-LIGHTYARD] ПЛОЩАДКА ПРИЁМКИ: двор света (колодцы GT6/ваниль + навесы) — снять после приёмки
@@ -9953,6 +9955,91 @@ public final class GT6Probes {
 	}
 
 	// ==========================================================================================================
+	// gt6shadeaudit — ПОЛНОТА класса «затенение соседей GT6 не доходит до движка».
+	//
+	// Репорт игрока: камень ПОД стеклом GT6 заметно темнеет, в 1.7.10 стекло на камне почти незаметно.
+	// В 1.7.10 значение задавал getAmbientOcclusionLightValue() = isBlockNormalCube() ? 0.2 : 1.0
+	// (Block.java:1334-1337), в neo — getShadeBrightness, и признак там ДРУГОЙ: не «нормальный куб», а
+	// «коллизия есть полный куб» (BlockBehaviour:306-308). Проверять рассуждением нельзя — обходим ВЕСЬ
+	// реестр и сравниваем 1.7.10-признак блока с тем, что реально отдаёт движок из состояния.
+	//
+	// ВЕЛИЧИНА КЛАССА считается независимо: сколько блоков neo-дефолт рассудил бы ИНАЧЕ, чем 1.7.10. Это же
+	// и позитивный контроль моста — на этих блоках без него судья был бы красным.
+	// ПОЗИТИВНЫЙ КОНТРОЛЬ канала: ванильный камень обязан дать 0.2, ванильное стекло 1.0.
+	// ==========================================================================================================
+	private static final String SAUDIT_M = "GT6-SHADEAUDIT";
+	private static int sSAuditTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sSAuditSeq;
+
+	public static void gt6ShadeAuditTick(net.minecraft.server.MinecraftServer aServer) {
+		sSAuditTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		if (sSAuditSeq == null) sSAuditSeq = new gregapi.probe.GT6ProbeStand.Seq(SAUDIT_M).at(60, () -> gt6ShadeAudit(aServer));
+		sSAuditSeq.tick(sSAuditTick);
+	}
+
+	/** 1.7.10-признак «нормальный куб» блока, если у него вообще есть портированный метод. */
+	private static Boolean gt6NormalCubeDeclared(net.minecraft.world.level.block.Block aBlock) {
+		try {
+			java.lang.reflect.Method tM = aBlock.getClass().getMethod("isBlockNormalCube");
+			return (Boolean) tM.invoke(aBlock);
+		} catch (Throwable e) {return null;}
+	}
+
+	private static void gt6ShadeAudit(net.minecraft.server.MinecraftServer aServer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aServer.overworld();
+		// Позиция реальная, а не ZERO: neo-дефолт судит по КОЛЛИЗИИ, а она у части блоков зависит от мира.
+		BlockPos tPos = aServer.getPlayerList().getPlayers().get(0).blockPosition().above(4);
+		int tChecked = 0, tOk = 0, tMismatch = 0, tFixed = 0, tNoMethod = 0;
+		java.util.List<String> tBad = new java.util.ArrayList<>(), tFixedNames = new java.util.ArrayList<>();
+
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			if (tID == null || !(tID.getNamespace().equals(gregapi.data.CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
+			Boolean tDeclared = gt6NormalCubeDeclared(tBlock);
+			if (tDeclared == null) {tNoMethod++; continue;}
+			net.minecraft.world.level.block.state.BlockState tState = tBlock.defaultBlockState();
+			float tExpect = gregapi.data.CS.shadeBrightness(tDeclared);
+			float tActual = tState.getShadeBrightness(tLevel, tPos);
+			// то, что отдал бы движок БЕЗ моста — независимая величина класса
+			float tVanilla = tState.isCollisionShapeFullBlock(tLevel, tPos) ? 0.2F : 1.0F;
+			if (tVanilla != tExpect) {tFixed++; if (tFixedNames.size() < 40) tFixedNames.add(tID + " (1.7.10 " + tExpect + ", neo-дефолт дал бы " + tVanilla + ")");}
+			tChecked++;
+			if (tExpect == tActual) {tOk++; continue;}
+			tMismatch++;
+			if (tBad.size() < 12) tBad.add(tID + ": 1.7.10-признак normalCube=" + tDeclared + " (ожидалось " + tExpect + "), движок отдаёт " + tActual);
+		}
+
+		for (String s : tBad) O.println("[" + SAUDIT_M + "] расхождение — " + s);
+		for (String s : tFixedNames) O.println("[" + SAUDIT_M + "] класс — " + s);
+		O.println("[" + SAUDIT_M + "] блоков GT6 с 1.7.10-признаком: " + tChecked + "; совпало " + tOk + "; расходится " + tMismatch
+			+ "; ЧИНИТ МОСТ (neo-дефолт судил бы иначе): " + tFixed + "; без портированного признака " + tNoMethod);
+
+		// ⛔ ПРИЦЕЛЬНО ПО СИМПТОМУ ИГРОКА: стекло GT6 на камне. Зелёный по всему реестру ещё не значит, что
+		// починено ИМЕННО то, на что жаловались, — судью надо ставить на сам симптом, а не рядом с ним.
+		net.minecraft.world.level.block.Block tGT6Glass = (net.minecraft.world.level.block.Block) gregapi.data.CS.BlocksGT.Glass;
+		if (tGT6Glass != null) {
+			net.minecraft.world.level.block.state.BlockState tGS = tGT6Glass.defaultBlockState();
+			float tGShade = tGS.getShadeBrightness(tLevel, tPos);
+			float tGWas = tGS.isCollisionShapeFullBlock(tLevel, tPos) ? 0.2F : 1.0F;
+			O.println("[" + SAUDIT_M + "] СИМПТОМ: стекло GT6 затенение сейчас " + tGShade + ", было бы без моста " + tGWas
+				+ " (эталон 1.7.10 = 1.0, ванильное стекло neo = " + net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState().getShadeBrightness(tLevel, tPos) + ")");
+			sSAuditSeq.judge("СИМПТОМ ИГРОКА: стекло GT6 не затемняет соседей (как в 1.7.10)", tGShade == 1.0F, 1.0F, tGShade);
+			sSAuditSeq.judge("СИМПТОМ был реален: без моста стекло GT6 затемняло бы", tGWas == 0.2F, 0.2F, tGWas);
+		} else O.println("[" + SAUDIT_M + "] СИМПТОМ: блок стекла GT6 не найден в BlocksGT — прицельная проверка НЕ выполнена");
+
+		// ПОЗИТИВНЫЙ КОНТРОЛЬ: движковый канал вообще отвечает осмысленно и различает случаи
+		float tStone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState().getShadeBrightness(tLevel, tPos);
+		float tGlass = net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState().getShadeBrightness(tLevel, tPos);
+		O.println("[" + SAUDIT_M + "] контроль: ванильный камень " + tStone + ", ванильное стекло " + tGlass);
+		sSAuditSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: канал жив и различает (камень 0.2, стекло 1.0)", tStone == 0.2F && tGlass == 1.0F, "0.2/1.0", tStone + "/" + tGlass);
+		sSAuditSeq.judge("КОНТРОЛЬ ОСМЫСЛЕННОСТИ: мост реально что-то меняет (иначе судья тавтологичен)", tFixed > 0, "> 0", tFixed);
+		sSAuditSeq.judge("1.7.10-затенение доходит до движка у ВСЕХ блоков GT6 с признаком", tMismatch == 0, 0, tMismatch);
+		sSAuditSeq.done();
+	}
+
+	// ==========================================================================================================
 	// gt6archery — ПЛОЩАДКА ПРИЁМКИ №1: лук + стрелы GT6. Стреляет ИГРОК, метрики снимает стенд.
 	//
 	// Стенд ничего не судит сам: он строит тир, выдаёт четыре подписанных лука и стрелы GT6, а дальше
@@ -10456,7 +10543,25 @@ public final class GT6Probes {
 			if (tGlow != null) gregapi.util.WD.set(tLevel, tWall.getX()+dx, tWall.getY()+dy, tWall.getZ()+6, tGlow, 0, 3);
 		}
 
+		// ── ВИТРИНА ЗАТЕНЕНИЯ: ровно то, на что жаловался игрок — камень ПОД стеклом против камня без стекла.
+		// Три одинаковые площадки камня 3x3 в ряд, открытые сверху: без крышки · крышка стекло GT6 ·
+		// крышка ванильное стекло. Смотреть сбоку/сверху и сравнивать яркость камня под ними.
+		BlockPos tShade = aPlayer.blockPosition().offset(-10, 0, 3);
+		for (int tCase = 0; tCase < 3; tCase++) {
+			BlockPos tBase = tShade.offset(0, 0, tCase * 5);
+			for (int dx = 0; dx < 3; dx++) for (int dz = 0; dz < 3; dz++) {
+				tLevel.setBlock(tBase.offset(dx, 0, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				// над камнем чисто на 3 блока — чтобы ничего постороннего не затеняло
+				for (int dy = 1; dy <= 3; dy++) tLevel.setBlock(tBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				if (tCase == 1 && tGlass != null) gregapi.util.WD.set(tLevel, tBase.getX()+dx, tBase.getY()+1, tBase.getZ()+dz, tGlass, 0, 3);
+				if (tCase == 2) tLevel.setBlock(tBase.offset(dx, 1, dz), net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState(), 3);
+			}
+		}
+
 		sBLBuilt = T;
+		gt6BLSay(aPlayer, "§e=== ВИТРИНА ЗАТЕНЕНИЯ (слева от вас, три площадки камня в ряд) ===");
+		gt6BLSay(aPlayer, "§bБлижняя — камень БЕЗ крышки. Средняя — камень под стеклом GT6. Дальняя — камень под ванильным стеклом.");
+		gt6BLSay(aPlayer, "§bОжидание: все три площадки камня выглядят ОДИНАКОВО светлыми. Если камень под стеклом GT6 темнее — дефект остался.");
 		gt6BLSay(aPlayer, "§e=== ПЛОЩАДКА СВЕТА ПОД БЛОКАМИ ГОТОВА ===");
 		gt6BLSay(aPlayer, "§bСТЕНЫ ИЗ СТЁКОЛ (сбоку): 1) стекло GT6 одной меты — грани между блоками БЫТЬ НЕ ДОЛЖНО;");
 		gt6BLSay(aPlayer, "§b2) стекло GT6 другой меты — с первым рядом грань ОСТАЁТСЯ; 3) ванильное стекло — эталон; 4) светящееся стекло GT6.");

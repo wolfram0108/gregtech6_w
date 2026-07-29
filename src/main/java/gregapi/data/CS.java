@@ -265,7 +265,40 @@ public class CS {
 	public static int lightDampening(int aOpacity1710) {
 		return aOpacity1710 >= 15 ? 15 : Math.max(0, aOpacity1710);
 	}
-	
+
+	/** Значения затенения соседних граней (ambient occlusion) 1.7.10: нормальный куб тушит до 0.2, всё
+	 *  остальное не тушит вовсе. Величины дословно из {@code Block.getAmbientOcclusionLightValue}
+	 *  (1.7.10 {@code Block.java:1334-1337}). */
+	public static final float SHADE_NORMAL_CUBE = 0.2F, SHADE_NONE = 1.0F;
+
+	/**
+	 * F3 shade ЦЕНТР ПЕРЕВОДА ПРИЗНАКА: правило 1.7.10 {@code getAmbientOcclusionLightValue()} → neo
+	 * {@code getShadeBrightness(BlockState, BlockGetter, BlockPos)}.
+	 *
+	 * <p>Значение отвечает за то, насколько блок затемняет грани СОСЕДЕЙ (в 1.7.10 его читал собственный
+	 * AO-рендер GT6 у всех шести соседей — {@code gregapi/render/ITexture.java:386-527}; в neo то же делает
+	 * {@code BlockModelLighter:50-128}). Числа в обеих версиях одинаковы (0.2 и 1.0), сменился ПРИЗНАК, по
+	 * которому они выбираются:
+	 * <ul>
+	 * <li>1.7.10 — «нормальный куб»: {@code blockMaterial.blocksMovement() && renderAsNormalBlock()}
+	 *     ({@code Block.java:502-504});</li>
+	 * <li>neo — «коллизия есть полный куб»: {@code state.isCollisionShapeFullBlock(...)}
+	 *     ({@code BlockBehaviour.java:306-308}).</li>
+	 * </ul>
+	 * Признаки не совпадают: блок с полной коллизией, но с {@code renderAsNormalBlock()==F} (стёкла, пути,
+	 * половинки, MTE без {@code mOpaque}) в 1.7.10 не затемнял ничего, а neo-дефолт заставляет его тушить
+	 * соседей до 0.2. Ваниль обеих версий ведёт себя одинаково ({@code BlockGlass.java:39} ↔
+	 * {@code TransparentBlock.java:30}), то есть расхождение вносил порт, а не движок.
+	 *
+	 * <p>Перевод живёт здесь, рядом с {@link #lightDampening}, тем же приёмом: мосты в корнях
+	 * ({@code BlockBase}/{@code PrefixBlock}/{@code MultiTileEntityBlock}/{@code BlockFluidBaseGT}/
+	 * {@code BlockBaseRail}/{@code BlockBaseFlower}) зовут его и передают СВОЙ 1.7.10-признак, а величины
+	 * не повторяют.
+	 */
+	public static float shadeBrightness(boolean aNormalCube1710) {
+		return aNormalCube1710 ? SHADE_NORMAL_CUBE : SHADE_NONE;
+	}
+
 	/**
 	 * F6: {@code BiomeGenBase.xxx}-статики (1.7.10) заменены на {@code Biomes.XXX} — {@code ResourceKey<Biome>}
 	 * датаген-константы (`net.minecraft.world.level.biome.Biomes`), которые {@code BiomeNameSet}

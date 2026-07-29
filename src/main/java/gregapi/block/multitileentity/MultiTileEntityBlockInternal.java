@@ -71,6 +71,23 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	}
 	@Override public float[] getRenderBounds() {return mRenderBounds;}
 
+	/** F9 4-bis (тот же приём, что {@code BlockBaseRail}/{@code BlockBaseFlower}): собственное поле вместо
+	 *  удалённого ванильного {@code Block.blockMaterial}. Значение — из {@code super(Material.anvil)} оригинала
+	 *  ({@code gregtech6/.../MultiTileEntityBlockInternal.java:53}), тот же материал уже передан в mapColorOf выше. */
+	protected final gregapi.block.Material mMaterial = gregapi.block.Material.anvil;
+	public gregapi.block.Material getMaterial() {return mMaterial;}
+
+	// F3 shade МОСТ (внутренний MTE-блок — восьмая точка канала, наследует Block напрямую; разбор — в BlockBase).
+	// В 1.7.10 он был нормальным кубом (материал anvil + ванильный дефолт renderAsNormalBlock()==T) и затемнял
+	// соседей; в neo форма динамическая (dynamicShape, из BE), поэтому neo-дефолт по коллизии дал бы 1.0.
+	@Override protected float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+
+	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
+	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
+
+	/** Оригинал метод не переопределял — значение ванильного дефолта 1.7.10 ({@code Block.java:515-518}), перенесено явно. */
+	public boolean renderAsNormalBlock() {return T;}
+
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override public boolean setBlockBounds(int aRenderPass, ItemStack aStack) {return F;}

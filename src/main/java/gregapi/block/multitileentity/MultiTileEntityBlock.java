@@ -570,6 +570,14 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final boolean isOpaqueCube() {return mOpaque;}
 	public final boolean func_149730_j() {return mOpaque;}
 	public final boolean renderAsNormalBlock() {return mOpaque || mNormalCube;}
+
+	// F3 shade МОСТ (иерархия MTE — отдельная от BlockBase, наследует Block напрямую; разбор канала — в BlockBase).
+	// Машины/трубы/каверы без mOpaque и без mNormalCube в 1.7.10 соседей не затемняли, а neo-дефолт судит по
+	// коллизии и тушил бы ими всё вокруг до 0.2.
+	@Override protected float getShadeBrightness(BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+
+	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
+	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
 	public final boolean isNormalCube()  {return mNormalCube;}
 	// было canProvidePower() -> BlockBehaviour.isSignalSource(BlockState) [BlockBehaviour.java:218]
 	@Override protected final boolean isSignalSource(BlockState aState) {return !mNormalCube;}

@@ -309,6 +309,20 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 	/** Затухание света для конкретного состояния. Общее значение обеих иерархий 1.7.10 — {@code LIGHT_OPACITY_WATER}. */
 	public int getLightOpacity(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.LIGHT_OPACITY_WATER;}
 
+	// ================= F3 shade ЦЕНТР: насколько жидкость затемняет соседей =================================
+	// Тот же приём и та же причина, что у light-opacity выше: правило 1.7.10 у ОБЕИХ иерархий одинаково —
+	// renderAsNormalBlock()==F (gregtech6/.../BlockBaseFluid.java:379 и .../BlockWaterlike.java:214), значит
+	// нормальным кубом жидкость не считалась и соседей не тушила (Block.java:1334-1337, 502-504). В neo признак
+	// сменился на коллизию (BlockBehaviour:306-308), поэтому значение доводится мостом; объявлено ОДИН РАЗ здесь,
+	// в общем предке, копии из обоих потомков сняты. Разбор канала — BlockBase.
+	@Override protected float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+
+	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
+	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
+
+	/** 1.7.10-правило обеих иерархий жидкостей, сведённое в общий предок (копии в потомках были дублем). */
+	public boolean renderAsNormalBlock() {return gregapi.data.CS.F;}
+
 	/** Текстура жидкости для обеих веток рендера (мир + item-форма). Клиент-only: {@code BlockTextureFluid.get} под {@code CODE_CLIENT}. */
 	public abstract gregapi.render.ITexture renderTexture();
 

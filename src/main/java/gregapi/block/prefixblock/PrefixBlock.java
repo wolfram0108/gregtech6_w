@@ -92,6 +92,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public boolean mRegisterToOreDict = T, mHidden = F;
 	
 	public final float mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ;
+	/** F9 4-bis: тот же приём, что в {@code BlockBaseRail}/{@code BlockBaseFlower}/{@code MultiTileEntityBlock} —
+	 *  собственное поле вместо удалённого ванильного {@code Block.blockMaterial}, не новая абстракция. В 1.7.10
+	 *  материал приходил в {@code super(aVanillaMaterial)} (оригинал {@code PrefixBlock.java:168}) и участвовал в
+	 *  правилах блока; здесь он нужен признаку «нормальный куб» ({@link #isBlockNormalCube}). */
+	protected final Material mMaterial;
+	public Material getMaterial() {return mMaterial;}
 	/** F-bounds (тот же приём, что BlockBase.java/MultiTileEntityBlock.java): последние заданные bounds (через
 	 *  setBlockBoundsBasedOnState -> setBlockBounds), neo bounds immutable -> храним сами отдельно от mMinX..mMaxZ
 	 *  (те final, интринсик-геометрия материала), рендер-использование отложено на F3-клиент-проход. */
@@ -196,6 +202,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		// получают .noOcclusion() при ctor (иначе рендерятся solid + блокируют свет). aOpaque — ctor-param. mkProps ниже.
 		super(mkProps(aModIDOwner, aNameInternal, aSoundType, aOpaque, aTool, aVanillaMaterial));
 		mPrefix = aPrefix;
+		mMaterial = aVanillaMaterial;
 		mNameInternal = aNameInternal;
 		mMaterialList = (aMaterialList.length > 0 ? aMaterialList : OreDictMaterial.MATERIAL_ARRAY);
 		if (mMaterialList[0] != MT.Empty) throw new IllegalArgumentException("The first element of the custom Material List has to be MT.Empty for technical reasons!");
@@ -775,6 +782,14 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// значение GT6 доводится до движкового канала затухания, см. разбор в BlockBase. Поле mOpaque читать
 	// безопасно — initCache вызывается после регистрации блоков (neo-decompiled/.../Blocks.java:7221-7228).
 	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
+
+	// F3 shade МОСТ (иерархия руд/дроблёнки — отдельная от BlockBase, наследует Block напрямую; разбор канала —
+	// в BlockBase). В 1.7.10 признак не зависел от размера бокса, поэтому руда с урезанной геометрией
+	// (mMinX..mMaxZ) затемняла соседей наравне с полным кубом, а neo-дефолт по коллизии её бы уже не считал.
+	@Override protected float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+
+	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
+	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
 	public boolean isBeaconBase(BlockGetter aWorld, int aX, int aY, int aZ, int aBeaconX, int aBeaconY, int aBeaconZ) {return mBeaconBase;}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return mOpaque;}
 	public boolean canBeReplacedByLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}

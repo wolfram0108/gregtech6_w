@@ -218,6 +218,12 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 
 	// F3 light-opacity МОСТ (рельсы наследуют ванильный BaseRailBlock, а не BlockBase — свой мост, см. разбор там).
 	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
+
+	// F3 shade МОСТ (рельсы наследуют ванильный BaseRailBlock, а не BlockBase — свой мост, см. разбор там).
+	@Override protected float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+
+	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
+	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
 	public Item getItemDropped(int par1, Random par2Random, int par3) {return Item.byBlock(this);}
 	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
 	public void registerBlockIcons(Object aIconRegister) {/**/}

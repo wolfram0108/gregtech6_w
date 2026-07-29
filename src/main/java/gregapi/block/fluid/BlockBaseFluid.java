@@ -482,7 +482,8 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	public boolean isOpaqueCube() {return F;}
 	public boolean func_149730_j() {return F;}
 	public boolean getTickRandomly() {return F;}
-	public boolean renderAsNormalBlock() {return F;}
+	// renderAsNormalBlock() — в общем предке BlockFluidBaseGT (F3 shade ЦЕНТР): значение 1.7.10 у обеих
+	// иерархий одинаково, копия здесь была дублем; движок спрашивает его через getShadeBrightness.
 	public boolean isAir(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
 	

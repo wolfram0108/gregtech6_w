@@ -286,6 +286,21 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// (CS.lightDampening). Момент вызова безопасен: initCache идёт ПОСЛЕ регистрации блоков
 	// (neo-decompiled/.../Blocks.java:7221-7228), поэтому поля потомков уже заполнены.
 	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
+
+	// F3 shade МОСТ (репорт игрока сверкой с 1.7.10: камень ПОД стеклом GT6 заметно темнеет, в оригинале
+	// стекло на камне почти незаметно). Затенение соседних граней в 1.7.10 задавал getAmbientOcclusionLightValue()
+	// = isBlockNormalCube() ? 0.2 : 1.0 (Block.java:1334-1337, 502-504), и GT6 читал его у всех шести соседей
+	// собственным AO-рендером (gregapi/render/ITexture.java:386-527). В neo то же значение спрашивается каналом
+	// getShadeBrightness (BlockModelLighter:50-128), но ПРИЗНАК другой — isCollisionShapeFullBlock
+	// (BlockBehaviour:306-308). Признаки расходятся ровно на блоках GT6 с полной коллизией и
+	// renderAsNormalBlock()==F: стёкла, дорожки, половинки — в 1.7.10 они не затемняли ничего, а neo-дефолт
+	// тушил ими соседей до 0.2. Мост задаёт 1.7.10-признак; величины не дублируются — перевод в CS.shadeBrightness.
+	@Override protected float getShadeBrightness(BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+
+	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — признак «нормальный куб» для
+	 *  затенения соседей. Тело 1:1; {@code renderAsNormalBlock()} виртуален, поэтому переопределения потомков
+	 *  (стёкла, листва, дорожки, половинки {@code BlockMetaType}) учитываются так же, как в оригинале. */
+	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
 	public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.byBlock(this);}
 
 	// BUG-006: GT6 simple-блоки (логи/камни/листва/руды/трава/стекло/путь/cfoam) НЕ имеют loot-table → neo-дефолт

@@ -136,6 +136,16 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 
 	// F3 light-opacity МОСТ (цветы наследуют ванильный FlowerBlock, а не BlockBase — свой мост, см. разбор там).
 	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
+
+	// F3 shade МОСТ (цветы наследуют ванильный FlowerBlock, а не BlockBase — свой мост, см. разбор там).
+	@Override protected float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+
+	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
+	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
+
+	/** 1.7.10-значение приходило от ванильного предка {@code BlockBush.renderAsNormalBlock()} = false
+	 *  ({@code BlockBush.java:108-111}); в neo этого метода у предка нет — переносим явно, 1:1. */
+	public boolean renderAsNormalBlock() {return F;}
 	public Item getItemDropped(int par1, Random aRandom, int par3) {return Item.byBlock(this);}
 	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
 	public void registerBlockIcons(Object aIconRegister) {/**/}
