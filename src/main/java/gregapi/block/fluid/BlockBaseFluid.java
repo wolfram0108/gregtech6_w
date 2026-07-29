@@ -466,7 +466,8 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		setBlockBounds(0, 0, 0, 1, tHeight, 1);
 		return T;
 	}
-	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
+	// getLightOpacity() — в общем предке BlockFluidBaseGT (F3 light-opacity ЦЕНТР): значение 1.7.10 у обеих
+	// иерархий одинаково, копия здесь была дублем; движок спрашивает его через getLightDampening(BlockState).
 	
 	// F-fire мост: было Forge Block.getFlammability/getFireSpreadSpeed(IBlockAccess,x,y,z,side) — в neo канал огня
 	// живёт в IBlockExtension.getFlammability/getFireSpreadSpeed(BlockState,BlockGetter,BlockPos,Direction)

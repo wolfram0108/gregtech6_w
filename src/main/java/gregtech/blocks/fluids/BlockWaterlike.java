@@ -281,7 +281,8 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	public void registerBlockIcons(Object aIconRegister) {/**/}
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}
-	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
+	// getLightOpacity() — в общем предке BlockFluidBaseGT (F3 light-opacity ЦЕНТР): значение 1.7.10 у обеих
+	// иерархий одинаково, копия здесь была дублем; движок спрашивает его через getLightDampening(BlockState).
 	/** 1:1 оригинала (:200): {@code Blocks.water.getIcon(aSide, aMeta)} — водоподобные рисуются ВАНИЛЬНОЙ водой,
 	 *  не иконкой своей жидкости. Тот же спрайт уже держит центр {@link gregapi.render.BlockTextureFluid}
 	 *  (см. {@link #renderTexture()}) — спрашиваем его, чтобы «какая текстура» осталось в одном месте. */

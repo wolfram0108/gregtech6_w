@@ -240,6 +240,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6hookprobe.flag")) gt6HookProbeTick(aEvent.getServer());
 	// [GT6-ARROWPROBE] стенд «PORT-TODO №1: чары лука (Power/Punch/Flame) на стрелах GT6» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6arrowprobe.flag")) gt6ArrowProbeTick(aEvent.getServer());
+	// [GT6-LIGHTPROBE] стенд «PORT-TODO №2: затухание света в воде GT6» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6lightprobe.flag")) gt6LightProbeTick(aEvent.getServer());
 	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска в Соковыжималке» — снять при уборке фазы
@@ -9683,5 +9685,116 @@ public final class GT6Probes {
 		} catch (Throwable e) {O.println("[" + ARROW_M + "] чтение mKnockback: " + e);}
 		sArrowSeq.judge("ОТБРАСЫВАНИЕ " + tLvl + ": величина дошла до снаряда (её применяет попадание, EntityArrow_Material:250-253)", tKnockback == tLvl, tLvl, tKnockback);
 		sArrowSeq.done();
+	}
+
+	// ==========================================================================================================
+	// gt6lightprobe — PORT-TODO №2: гасит ли вода GT6 свет так, как гасила в 1.7.10.
+	//
+	// 1.7.10 спрашивал у блока getLightOpacity() и получал LIGHT_OPACITY_WATER=3 у ОБЕИХ жидкостных иерархий
+	// (gregtech6/.../BlockWaterlike.java:199, .../BlockBaseFluid.java:367). neo считает затухание из состояния —
+	// LightEngine.getOpacity:85 -> state.getLightDampening(), поэтому методы 1.7.10-сигнатуры остались без
+	// вызывателей, и вода GT6 гасила свет на 1 (дефолт BlockBehaviour:290-295) вместо 3.
+	//
+	// Судится СЛЕДСТВИЕ: реальная освещённость под колонной воды в живом мире, а не значение поля.
+	// ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильная вода в такой же колонне обязана гасить ровно на 1 за блок.
+	// ХОЛОДНЫЙ КОНТРОЛЬ: колонна воздуха обязана не гасить вовсе (15 на дне) — иначе замер меряет не свет.
+	// ПРЕДУСЛОВИЕ: перед замером проверяем, что блок РЕАЛЬНО встал (урок M-25: водоподобные не встают через
+	// центр WD.set(Level,…) — ставим состоянием напрямую и убеждаемся).
+	// ==========================================================================================================
+	private static final String LIGHT_M = "GT6-LIGHTPROBE";
+	private static int sLightTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sLightSeq;
+	private static final int LIGHT_DEPTH = 5;
+
+	public static void gt6LightProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sLightTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sLightSeq == null) sLightSeq = new gregapi.probe.GT6ProbeStand.Seq(LIGHT_M)
+			.at(60, () -> gt6LightBuild(tPlayer))
+			.at(90, () -> gt6LightMeasure(tPlayer));
+		sLightSeq.tick(sLightTick);
+	}
+
+	private static BlockPos sLightOrigin = null;
+
+	/** Колонна в каменной ОБОЙМЕ: дно STONE, стенки STONE, внутри LIGHT_DEPTH блоков испытуемого, сверху открыто.
+	 *  <p>⛔ Обойма обязательна: без неё скайлайт затекает СБОКУ и холодный контроль даёт 14 вместо 15 — замер
+	 *  перестаёт мерить вертикальное затухание (первый прогон: воздух 14, ванильная вода 12 вместо 10).
+	 *  <p>⛔ {@code PLACEMENT_ALLOWED} обязателен для водоподобных: при взведённом флаге река/океан/болото
+	 *  планируют свой тик, при снятом — {@code onBlockAdded} СТИРАЕТ блок (BlockRiver.java:53-58,
+	 *  BlockOcean.java:54-59), это 1:1 защита GT6 «ставит только генератор» (оригинал :50). Так делает и
+	 *  worldgen (WorldgenRiver.java:81, WorldgenSwamp.java:76, WorldgenCenterBiomes.java:85). */
+	private static void gt6LightColumn(ServerLevel aLevel, BlockPos aBase, net.minecraft.world.level.block.state.BlockState aState) {
+		net.minecraft.world.level.block.state.BlockState tStone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+		aLevel.setBlock(aBase, tStone, 3);
+		for (int dy = 1; dy <= LIGHT_DEPTH; dy++) {
+			for (int[] tSide : new int[][]{{1,0},{-1,0},{0,1},{0,-1}})
+				aLevel.setBlock(aBase.offset(tSide[0], dy, tSide[1]), tStone, 3);
+			aLevel.setBlock(aBase.above(dy), aState, 3);
+		}
+		// над колонной — воздух до самого верха, иначе heightmap не даст скайлайту дойти
+		for (int dy = LIGHT_DEPTH + 1; dy <= LIGHT_DEPTH + 24; dy++) aLevel.setBlock(aBase.above(dy), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+	}
+
+	private static void gt6LightBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition().offset(4, 0, 4);
+		sLightOrigin = tO;
+		// расчистка площадки
+		for (int dx = -1; dx <= 10; dx++) for (int dz = -1; dz <= 3; dz++) for (int dy = 0; dy <= LIGHT_DEPTH + 25; dy++)
+			tLevel.setBlock(tO.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+
+		net.minecraft.world.level.block.Block tRiver   = (net.minecraft.world.level.block.Block) gregapi.data.CS.BlocksGT.River;
+		net.minecraft.world.level.block.Block tSwamp   = (net.minecraft.world.level.block.Block) gregapi.data.CS.BlocksGT.Swamp;
+		// взводим гейт постановки — ровно как генератор мира (WorldgenRiver.java:81 / WorldgenSwamp.java:76)
+		gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = T;
+		gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = T;
+		gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = T;
+
+		gt6LightColumn(tLevel, tO.offset(0, -1, 0), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());          // холодный контроль
+		gt6LightColumn(tLevel, tO.offset(3, -1, 0), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState());        // позитивный контроль
+		gt6LightColumn(tLevel, tO.offset(6, -1, 0), tRiver.defaultBlockState());                                             // испытуемый: река GT6
+		gt6LightColumn(tLevel, tO.offset(9, -1, 0), tSwamp.defaultBlockState());                                             // испытуемый: болото GT6
+
+		// ПРЕДУСЛОВИЕ: блоки реально встали (M-25: водоподобные не вставали через центр WD.set)
+		net.minecraft.world.level.block.Block tGotRiver = tLevel.getBlockState(tO.offset(6, 0, 0)).getBlock();
+		net.minecraft.world.level.block.Block tGotSwamp = tLevel.getBlockState(tO.offset(9, 0, 0)).getBlock();
+		O.println("[" + LIGHT_M + "] в колонне реки стоит: " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tGotRiver)
+			+ ", в колонне болота: " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tGotSwamp));
+		sLightSeq.judge("ПРЕДУСЛОВИЕ: река GT6 реально встала в мир", tGotRiver == tRiver, "gt.block.river", net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tGotRiver));
+		sLightSeq.judge("ПРЕДУСЛОВИЕ: болото GT6 реально встало в мир", tGotSwamp == tSwamp, "gt.block.swamp", net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tGotSwamp));
+	}
+
+	/** Освещённость НА ДНЕ колонны: сколько скайлайта дошло через LIGHT_DEPTH блоков испытуемого. */
+	private static int gt6LightAtBottom(ServerLevel aLevel, BlockPos aBase) {
+		return aLevel.getBrightness(net.minecraft.world.level.LightLayer.SKY, aBase.above(1));
+	}
+
+	private static void gt6LightMeasure(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = sLightOrigin;
+		if (tO == null) {sLightSeq.judge("площадка построена", false, "есть", "нет"); return;}
+
+		int tAir    = gt6LightAtBottom(tLevel, tO.offset(0, -1, 0));
+		int tVanilla= gt6LightAtBottom(tLevel, tO.offset(3, -1, 0));
+		int tRiver  = gt6LightAtBottom(tLevel, tO.offset(6, -1, 0));
+		int tSwamp  = gt6LightAtBottom(tLevel, tO.offset(9, -1, 0));
+		O.println("[" + LIGHT_M + "] скайлайт на дне колонны (" + LIGHT_DEPTH + " блоков): воздух " + tAir
+			+ " · ванильная вода " + tVanilla + " · река GT6 " + tRiver + " · болото GT6 " + tSwamp);
+
+		// ХОЛОДНЫЙ КОНТРОЛЬ: пустая колонна обязана пропустить весь свет
+		sLightSeq.judge("ХОЛОДНЫЙ КОНТРОЛЬ: колонна воздуха свет не гасит", tAir == 15, 15, tAir);
+		// ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильная вода гасит по 1 за блок (15 - глубина)
+		sLightSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильная вода гасит по 1 за блок", tVanilla == 15 - LIGHT_DEPTH, 15 - LIGHT_DEPTH, tVanilla);
+		// ИСПЫТУЕМЫЙ: вода GT6 гасит по 3 за блок (LIGHT_OPACITY_WATER оригинала)
+		int tExpectRiver = Math.max(0, 15 - LIGHT_DEPTH * gregapi.data.CS.LIGHT_OPACITY_WATER);
+		sLightSeq.judge("РЕКА GT6 гасит по " + gregapi.data.CS.LIGHT_OPACITY_WATER + " за блок, как getLightOpacity() в 1.7.10", tRiver == tExpectRiver, tExpectRiver, tRiver);
+		sLightSeq.judge("РЕКА GT6 темнее ванильной воды (было наоборот — гасила как ваниль)", tRiver < tVanilla, "< " + tVanilla, tRiver);
+		// БОЛОТО: источник гасит насмерть (оригинал :198 отдавал LIGHT_OPACITY_MAX в толще)
+		sLightSeq.judge("БОЛОТО GT6 (источник) гасит свет насмерть", tSwamp == 0, 0, tSwamp);
+		sLightSeq.done();
 	}
 }

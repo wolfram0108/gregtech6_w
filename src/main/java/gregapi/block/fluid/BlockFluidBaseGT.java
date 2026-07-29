@@ -291,6 +291,24 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 	// только для RenderShape.MODEL (SectionCompiler.java:106 декомпила) — вода как рисовалась vanilla FluidRenderer'ом по
 	// getFluidState (F5-B), так и рисуется. У BlockBaseFluid RenderShape дефолтный (MODEL) — его мировой рендер как был.
 
+	// ================= F3 light-opacity ЦЕНТР: сколько света гасит жидкость ==================================
+	// 1.7.10 спрашивал у блока getLightOpacity(), и ОБЕ жидкостные иерархии отвечали одинаково —
+	// LIGHT_OPACITY_WATER=3 (gregtech6/.../BlockWaterlike.java:199 и .../BlockBaseFluid.java:367). В порте это
+	// значение лежало КОПИЕЙ в обоих потомках, а движок его не спрашивал вовсе: neo считает затухание из
+	// BlockState — LightEngine.getOpacity:85-87 берёт state.getLightDampening(), а тот заполняется ОДИН раз при
+	// сборке состояния (BlockBehaviour.java:518) вызовом блочного getLightDampening(BlockState). Методы
+	// 1.7.10-сигнатуры остались без вызывателей => вода GT6 не затемняла глубину: дефолт давал 1 вместо 3
+	// (BlockBehaviour.java:290-295: не solid + propagatesSkylightDown=false → 1).
+	// Мост объявлен ОДИН РАЗ здесь, в общем предке обеих иерархий, обе копии значения сняты.
+	// ⚠️ Ограничение движка: getLightDampening видит ТОЛЬКО состояние. Контекстные версии оригинала
+	// (BlockOcean:164 — «источник, над ним два воздуха, снизу пропускает свет → 16»; BlockSwamp:198 — «сверху
+	// болото → 255») спрашивали СОСЕДЕЙ, чего в этом канале нет. Выразимое по состоянию переносим (BlockSwamp),
+	// невыразимое идёт в реестр отложенного, а не в тихую заглушку.
+	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return getLightOpacity(aState);}
+
+	/** Затухание света для конкретного состояния. Общее значение обеих иерархий 1.7.10 — {@code LIGHT_OPACITY_WATER}. */
+	public int getLightOpacity(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.LIGHT_OPACITY_WATER;}
+
 	/** Текстура жидкости для обеих веток рендера (мир + item-форма). Клиент-only: {@code BlockTextureFluid.get} под {@code CODE_CLIENT}. */
 	public abstract gregapi.render.ITexture renderTexture();
 

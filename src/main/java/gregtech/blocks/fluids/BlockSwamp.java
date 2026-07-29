@@ -193,8 +193,17 @@ public class BlockSwamp extends BlockWaterlike {
 		super.onHeadInside(aEntity, aWorld, aX, aY, aZ);
 	}
 	
-	// @Override
-	public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {if (WD.block(aWorld, aX, aY+1, aZ) != this || WD.meta(aWorld, aX, aY, aZ) > 0) return LIGHT_OPACITY_WATER; return LIGHT_OPACITY_MAX;}
+	/** Болото гасит свет НАСМЕРТЬ в толще и как вода — на поверхности (оригинал `:198`:
+	 *  {@code сверху НЕ болото || мета > 0 -> LIGHT_OPACITY_WATER; иначе LIGHT_OPACITY_MAX}).
+	 *  <p>Движок спрашивает затухание ТОЛЬКО по состоянию (LightEngine.getOpacity:85 → state.getLightDampening,
+	 *  заполняется при сборке состояния — BlockBehaviour.java:518), соседей в этом канале нет. Из двух условий
+	 *  оригинала по состоянию выразимо одно — уровень: поток (мета > 0) гасит как вода, источник (мета 0) —
+	 *  насмерть. ⚠️ Отличие от 1.7.10 ровно в один блок глубины: там верхний слой (над ним воздух, а не болото)
+	 *  тоже гасил как вода, здесь он гасит насмерть. Условие «сверху болото» без соседей не проверить —
+	 *  занесено в реестр отложенного, а не спрятано. */
+	@Override public int getLightOpacity(net.minecraft.world.level.block.state.BlockState aState) {
+		return aState.getValue(FLUID_META) > 0 ? LIGHT_OPACITY_WATER : LIGHT_OPACITY_MAX;
+	}
 	// getIcon НЕ переопределяем: тело оригинала (:199) ДОСЛОВНО совпадает с базовым (BlockWaterlike:200).
 	// Своё у болота только тинт: getRenderColor 1:1 :200, позиционный colorMultiplier 1:1 :202-210.
 	@Override public int getRenderColor(int aMeta) {return 0x0000ff00;}

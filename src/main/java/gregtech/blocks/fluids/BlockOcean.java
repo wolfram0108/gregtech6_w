@@ -168,14 +168,16 @@ public class BlockOcean extends BlockWaterlike {
 		return;
 	}
 	
-	// @Override
-	public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {
-		// TODO FIX THIS SHIT
-		// PORT-TODO(F3, arbitrary-block light opacity): было WD.block(...).getLightOpacity(world,x,y,z) —
-		// 1.7.10 Forge-хук на ЛЮБОМ Block, у neo per-instance getLightOpacity(BlockGetter,pos) на произвольном
-		// Block нет (F9-центр WD не покрывает; см. decisions/F5-fluids.md). Дефолт вместо вычисления.
-		return LIGHT_OPACITY_NONE;
-	}
+	// F3 light-opacity: затухание света океан теперь получает из ЦЕНТРА (BlockFluidBaseGT.getLightDampening →
+	// getLightOpacity(BlockState) = LIGHT_OPACITY_WATER), как и остальные жидкости GT6 — вместо прежнего
+	// мёртвого метода, который движок не звал и который отдавал LIGHT_OPACITY_NONE (глубина не темнела вовсе).
+	//
+	// СОБСТВЕННЫЙ хак океана из 1.7.10 (:164-167, помечен самим автором «TODO FIX THIS SHIT») НЕ воспроизведён:
+	//   мета==0 && воздух сверху && воздух через один && блок снизу пропускает свет  ->  16, иначе 0.
+	// Все три условия — про СОСЕДЕЙ, а neo-канал затухания видит только состояние блока
+	// (LightEngine.getOpacity:85 → state.getLightDampening, заполняется при сборке состояния, BlockBehaviour:518).
+	// Перенести нечего без второго механизма (пересчёт по соседям) — отложено, см. details/DEFERRED-LEDGER.md.
+	// Разница для игрока: у поверхностного слоя океана нет добавочного затемнения; толща гаснет как вода (3).
 
 	// getIcon НЕ переопределяем: тело оригинала (:169 `Blocks.water.getIcon(aSide,aMeta)`) ДОСЛОВНО совпадает
 	// с базовым (BlockWaterlike:200) — копия была бы дублем детали. Своё у океана только тинт (ниже, 1:1 :170-171).
