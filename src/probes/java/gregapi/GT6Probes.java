@@ -8888,8 +8888,113 @@ public final class GT6Probes {
 			.window(101, 140, () -> gt6GravCountEntities(tPlayer))
 			.at(160, () -> gt6GravMeasure(tPlayer))
 			.at(180, () -> gt6GravSaveLoad(tPlayer))   // переживает ли летящий блок выход из игры
-			.at(200, () -> gt6GravYard(tPlayer));   // двор для ГЛАЗ игрока — приёмку визуального судит он, не стенд
+			// Через ТОТ ЖЕ мост идут ещё две ветки updateTick — их тоже судим, чтобы не осталось пробелов
+			.at(220, () -> gt6BurnBuild(tPlayer))
+			.at(280, () -> gt6BurnMeasure(tPlayer))
+			.at(320, () -> gt6GravYard(tPlayer));   // двор для ГЛАЗ игрока — приёмку визуального судит он, не стенд
 		sGravSeq.tick(sGravTick);
+	}
+
+	// ---------------------------------------------------------------------------------------------------------
+	// Две оставшиеся ветки того же updateTick (PrefixBlock:633,639) — они ожили тем же мостом, что и гравитация,
+	// и без них класс закрыт не был бы:
+	//   A. горючая пыль/взрывчатка при нагреве > 100°C  -> блок исчезает, взрыв (температуру даёт лава: WD:861);
+	//   B. щелочной металл рядом с ВОДОЙ                -> исчезают и блок, и вода, взрыв.
+	// Судим следствие (блок пропал / вода пропала), контроли: те же блоки БЕЗ нагрева и БЕЗ воды обязаны уцелеть.
+	// ---------------------------------------------------------------------------------------------------------
+	private static final class BurnCase {
+		net.minecraft.world.level.block.Block mBlock; int mSub; String mName; boolean mHot; boolean mExpect;
+		BlockPos mPos; boolean mGone; BlockPos mWater; boolean mWaterGone;
+	}
+	private static final java.util.List<BurnCase> sBurnCases = new java.util.ArrayList<>();
+	private static BlockPos sBurnOrigin = null;
+	private static int sBurnPairsA = 0, sBurnPairsB = 0;
+
+	private static void gt6BurnBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		sBurnCases.clear();
+		sBurnOrigin = aPlayer.blockPosition().offset(24, 0, 0);
+
+		// Кандидаты СЧИТАЕМ ПОЛНОСТЬЮ (сколько пар «блок×материал» вообще подпадает под каждую ветку),
+		// а СТАВИМ по нескольку представителей: ветка кода одна на все пары, а взрывы разносят площадку.
+		java.util.List<Object[]> tA = new java.util.ArrayList<>(), tB = new java.util.ArrayList<>();
+		for (net.minecraft.world.level.block.Block tBl : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			if (!(tBl instanceof gregapi.block.prefixblock.PrefixBlock tP)) continue;
+			for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+				if (tMat == null) continue;
+				try {if (!tP.mPrefix.isGeneratingItem(tMat)) continue;} catch (Throwable e) {continue;}
+				boolean tDustish = tP.mPrefix.contains(gregapi.data.TD.Prefix.DUST_BASED)
+					|| (tP.mCanExplode && tMat.contains(gregapi.data.TD.Properties.EXPLOSIVE));
+				if (tP.mCanBurn && tDustish && tMat.contains(gregapi.data.TD.Properties.FLAMMABLE)) {sBurnPairsA++; if (tA.size() < 3) tA.add(new Object[]{tBl, tMat});}
+				if ((tP.mCanBurn || tP.mCanExplode) && tMat.contains(gregapi.data.TD.Atomic.ALKALI_METAL)) {sBurnPairsB++; if (tB.size() < 3) tB.add(new Object[]{tBl, tMat});}
+			}
+		}
+		O.println("[" + GRAV_M + "] ветка A (горючее при нагреве): подходящих пар блок×материал " + sBurnPairsA + ", на стенд взято " + tA.size());
+		O.println("[" + GRAV_M + "] ветка B (щелочной + вода): подходящих пар блок×материал " + sBurnPairsB + ", на стенд взято " + tB.size());
+
+		// площадка на бедроке — взрывы не должны выесть пол под соседями
+		for (int dx = -3; dx <= 40; dx++) for (int dz = -3; dz <= 6; dz++) {
+			tLevel.setBlock(sBurnOrigin.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.BEDROCK.defaultBlockState(), 3);
+			for (int dy = 0; dy <= 4; dy++) tLevel.setBlock(sBurnOrigin.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		}
+
+		int i = 0;
+		for (Object[] tPair : tA) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, T, T, F);}   // с нагревом — ждём исчезновения
+		for (Object[] tPair : tA) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, F, F, F);}   // ХОЛОДНЫЙ контроль: то же, но без лавы
+		for (Object[] tPair : tB) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, F, T, T);}   // с водой — ждём исчезновения
+		for (Object[] tPair : tB) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, F, F, F);}   // ХОЛОДНЫЙ контроль: то же, но без воды
+		O.println("[" + GRAV_M + "] площадка веток A/B построена @ " + sBurnOrigin + ", колонок " + sBurnCases.size());
+	}
+
+	private static int gt6BurnPlace(ServerLevel aLevel, ServerPlayer aPlayer, Object[] aPair, int aIndex, boolean aLava, boolean aExpectGone, boolean aWater) {
+		net.minecraft.world.level.block.Block tBl = (net.minecraft.world.level.block.Block)aPair[0];
+		gregapi.oredict.OreDictMaterial tMat = (gregapi.oredict.OreDictMaterial)aPair[1];
+		BlockPos tAnchor = sBurnOrigin.offset(aIndex * 3, 0, 0);
+		aLevel.setBlock(tAnchor, net.minecraft.world.level.block.Blocks.BEDROCK.defaultBlockState(), 3);
+		BurnCase tC = new BurnCase();
+		tC.mBlock = tBl; tC.mSub = tMat.mID; tC.mHot = aLava; tC.mExpect = aExpectGone;
+		tC.mName = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBl) + "/" + tMat.mNameInternal
+			+ (aLava ? " +лава" : aWater ? " +вода" : " (контроль: без нагрева и воды)");
+		BlockEntity tTE = gregapi.probe.GT6ProbeStand.place(aLevel, aPlayer, tAnchor, net.minecraft.core.Direction.UP,
+			gregapi.util.ST.make(tBl, 1, tMat.mID), BlockEntity.class, GRAV_M, tC.mName);
+		tC.mPos = tTE != null ? tTE.getBlockPos() : tAnchor.above();
+		if (aLava)  aLevel.setBlock(tC.mPos.east(), net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState(), 3);
+		if (aWater) {tC.mWater = tC.mPos.east(); aLevel.setBlock(tC.mWater, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);}
+		// разбудить блок так же, как это делает мир: постановка соседа уже шлёт уведомление, но подстрахуемся
+		aLevel.scheduleTick(tC.mPos, tC.mBlock, 2);
+		sBurnCases.add(tC);
+		return aIndex + 1;
+	}
+
+	private static void gt6BurnMeasure(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		if (sBurnCases.isEmpty()) {O.println("[" + GRAV_M + "] веток A/B: ни одной подходящей пары — судить нечего"); return;}
+		int tHotOK = 0, tHotBad = 0, tColdOK = 0, tColdBad = 0, tWaterGone = 0, tWaterTotal = 0;
+		StringBuilder tRows = new StringBuilder();
+		for (BurnCase tC : sBurnCases) {
+			tC.mGone = gregapi.util.WD.block(tLevel, tC.mPos.getX(), tC.mPos.getY(), tC.mPos.getZ()) != tC.mBlock;
+			if (tC.mWater != null) {
+				tWaterTotal++;
+				tC.mWaterGone = gregapi.util.WD.block(tLevel, tC.mWater.getX(), tC.mWater.getY(), tC.mWater.getZ()) != net.minecraft.world.level.block.Blocks.WATER;
+				if (tC.mWaterGone) tWaterGone++;
+			}
+			if (tC.mExpect) {if (tC.mGone) tHotOK++; else tHotBad++;} else {if (tC.mGone) tColdBad++; else tColdOK++;}
+			tRows.append(String.format("  %-64s %s (ожидалось %s)%n", tC.mName,
+				tC.mGone ? "СРАБОТАЛО (блок исчез)" : "цел", tC.mExpect ? "срабатывание" : "цел"));
+		}
+		O.println("========== [" + GRAV_M + "] замер: ветки A (нагрев) и B (щелочной+вода) ==========");
+		O.print(tRows);
+		O.println("  сработали как должны: " + tHotOK + ", не сработали: " + tHotBad
+			+ " | контроли уцелели: " + tColdOK + ", ложно сработали: " + tColdBad
+			+ " | вода поглощена: " + tWaterGone + " из " + tWaterTotal);
+		sGravSeq.judge("ВЕТКА A/B: сработали все, где условие выполнено (мост доставляет тик и до них)", tHotBad == 0,
+			"0 несработавших", tHotBad + " несработавших");
+		sGravSeq.judge("ХОЛОДНЫЙ КОНТРОЛЬ веток A/B: без нагрева и без воды блок цел", tColdBad == 0,
+			"0 ложных", tColdBad + " ложных");
+		if (tWaterTotal > 0) sGravSeq.judge("ВЕТКА B: вода рядом со щелочным металлом поглощена", tWaterGone == tWaterTotal,
+			tWaterTotal + " из " + tWaterTotal, tWaterGone + " из " + tWaterTotal);
 	}
 
 	/**
