@@ -369,6 +369,18 @@ public final class GT6ProbeStand {
 			if (mDone) return;
 			mDone = true; mDoneTick = mCurrentTick;
 			O.println("========== [" + mMarker + "] DONE (pass=" + passCount + " fail=" + failCount + ") ==========");
+			// САМОЗАВЕРШЕНИЕ. Отработавший стенд держал клиент открытым бесконечно, и гасить процесс приходилось
+			// человеку — при десятке прогонов подряд это чистая потеря его времени. Флаг `<стенд>.keepalive` в
+			// рабочем каталоге оставляет клиент жить (нужно, когда площадка отдаётся игроку на приёмку).
+			if (gregapi.data.CS.probeFlag(mMarker.toLowerCase().replace("gt6-", "gt6") + ".keepalive")) {
+				O.println("[" + mMarker + "] keepalive: клиент оставлен открытым (флаг), закройте вручную");
+				return;
+			}
+			O.println("[" + mMarker + "] стенд отработал — гашу процесс сам (флаг .keepalive оставляет открытым)");
+			new Thread(() -> {
+				try {Thread.sleep(3000);} catch (InterruptedException e) {/**/}
+				Runtime.getRuntime().halt(0);
+			}, "gt6-probe-shutdown").start();
 		}
 
 		/** Диспетчер: вызывать из статического tick(...) пробы КАЖДЫЙ серверный тик, пока probeFlag активен. */

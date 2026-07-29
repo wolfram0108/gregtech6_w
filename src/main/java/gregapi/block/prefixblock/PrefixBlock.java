@@ -621,6 +621,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// scheduleUpdateIfNeeded (:423-438) били в пустоту: ГРАВИТАЦИЯ мета-блоков, самовозгорание пыли и
 	// взрыв горючих/щелочных материалов при нагреве. Конвертер RandomSource→java.util.Random — центр UT.Code.random.
 	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+
 		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), UT.Code.random(aRandom));
 	}
 

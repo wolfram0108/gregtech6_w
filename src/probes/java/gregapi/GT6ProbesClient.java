@@ -1365,4 +1365,69 @@ public final class GT6ProbesClient {
 		O.println("========== [GT6-MESHHEIGHT] DONE ==========");
 	}
 	private static int mMeshHeightWait = 0;
+
+	// ==========================================================================================================
+	// gt6fallrender — КЛИЕНТСКИЙ канал падающего блока (F12-entity). Картинку судит пользователь (правило проекта),
+	// поэтому здесь судятся ДАННЫЕ рендера, ровно те, которыми движок рисует сущность:
+	//   1) какой рендерер диспетчер выдал НАШЕЙ сущности (должен быть FallingBlockRenderer, 1:1 оригинала
+	//      RenderingRegistry.registerEntityRenderingHandler(PrefixBlockFallingEntity.class, new RenderFallingBlock()));
+	//   2) с каким состоянием он её рисует — getBlockState(), у Грега подменён на гравий (func_145805_f:120-122).
+	// Позитивный контроль: ванильному падающему блоку диспетчер выдаёт тот же класс рендерера (значит вопрос
+	// вообще осмыслен). Холодный: предмету-сущности выдаётся ДРУГОЙ рендерер (значит судья различает).
+	// ==========================================================================================================
+	private static boolean mFallRenderDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onFallRenderProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mFallRenderDone || !gregapi.data.CS.probeFlag("gt6fallrender.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null || tMC.getEntityRenderDispatcher() == null) return;
+		mFallRenderDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-FALLRENDER] F12-entity: клиентский канал падающего блока ==========");
+		int tPass = 0, tFail = 0;
+		try {
+			// испытуемый: наш падающий мета-блок с реальной рудой внутри
+			net.minecraft.world.level.block.Block tOre = gregapi.data.CS.BlocksGT.oreBroken instanceof net.minecraft.world.level.block.Block b ? b : null;
+			gregapi.oredict.OreDictMaterial tMat = null;
+			if (tOre instanceof gregapi.block.prefixblock.PrefixBlock tP)
+				for (gregapi.oredict.OreDictMaterial m : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+					if (m == null) continue;
+					try {if (!tP.mPrefix.isGeneratingItem(m)) continue;} catch (Throwable e) {continue;}
+					tMat = m; break;
+				}
+			if (tOre == null || tMat == null) {O.println("[GT6-FALLRENDER] руда не найдена — замер невозможен"); return;}
+
+			gregapi.block.prefixblock.PrefixBlockFallingEntity tOurs = new gregapi.block.prefixblock.PrefixBlockFallingEntity(
+				tMC.level, tMC.player.getX(), tMC.player.getY() + 3, tMC.player.getZ(),
+				(gregapi.block.IBlockPlacable)tOre, gregapi.util.ST.make(tOre, 1, tMat.mID));
+			net.minecraft.world.entity.item.FallingBlockEntity tVanilla =
+				new net.minecraft.world.entity.item.FallingBlockEntity(net.minecraft.world.entity.EntityType.FALLING_BLOCK, tMC.level);
+			net.minecraft.world.entity.item.ItemEntity tItem = new net.minecraft.world.entity.item.ItemEntity(
+				tMC.level, tMC.player.getX(), tMC.player.getY(), tMC.player.getZ(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STONE));
+
+			Object tOursR   = tMC.getEntityRenderDispatcher().getRenderer(tOurs);
+			Object tVanR    = tMC.getEntityRenderDispatcher().getRenderer(tVanilla);
+			Object tItemR   = tMC.getEntityRenderDispatcher().getRenderer(tItem);
+			String tOursN = tOursR == null ? "НЕТ" : tOursR.getClass().getSimpleName();
+			String tVanN  = tVanR  == null ? "НЕТ" : tVanR.getClass().getSimpleName();
+			String tItemN = tItemR == null ? "НЕТ" : tItemR.getClass().getSimpleName();
+			net.minecraft.world.level.block.Block tDrawn = tOurs.getBlockState().getBlock();
+
+			O.println("[GT6-FALLRENDER] рендерер нашей сущности: " + tOursN + " | ванильной: " + tVanN + " | предмета (холодный): " + tItemN);
+			O.println("[GT6-FALLRENDER] состояние, которым её рисуют: " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tDrawn));
+
+			if (tOursR instanceof net.minecraft.client.renderer.entity.FallingBlockRenderer) {tPass++; O.println("[GT6-FALLRENDER] PASS: диспетчер выдал НАШЕЙ сущности FallingBlockRenderer (рендерер зарегистрирован)");}
+			else {tFail++; O.println("[GT6-FALLRENDER] FAIL: рендерер не тот — " + tOursN + " (регистрация не сработала, сущность рисоваться не будет)");}
+			if (tVanR instanceof net.minecraft.client.renderer.entity.FallingBlockRenderer) {tPass++; O.println("[GT6-FALLRENDER] PASS: ПОЗИТИВНЫЙ КОНТРОЛЬ — ванильный падающий блок даёт тот же класс рендерера");}
+			else {tFail++; O.println("[GT6-FALLRENDER] FAIL: позитивный контроль не прошёл — вопрос поставлен неверно");}
+			if (!(tItemR instanceof net.minecraft.client.renderer.entity.FallingBlockRenderer)) {tPass++; O.println("[GT6-FALLRENDER] PASS: ХОЛОДНЫЙ КОНТРОЛЬ — предмету выдан другой рендерер (" + tItemN + "), судья различает");}
+			else {tFail++; O.println("[GT6-FALLRENDER] FAIL: холодный контроль — предмету выдан тот же рендерер, судья слеп");}
+			if (tDrawn == net.minecraft.world.level.block.Blocks.GRAVEL) {tPass++; O.println("[GT6-FALLRENDER] PASS: рисуется ГРАВИЕМ — 1:1 оригинала (func_145805_f -> Blocks.gravel)");}
+			else {tFail++; O.println("[GT6-FALLRENDER] FAIL: рисуется не гравием, а " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tDrawn) + " — расхождение с оригиналом");}
+			tOurs.discard(); tVanilla.discard(); tItem.discard();
+		} catch (Throwable e) {
+			tFail++; O.println("[GT6-FALLRENDER] FAIL: замер сорвался — " + e);
+		}
+		O.println("========== [GT6-FALLRENDER] ВЕРДИКТ: " + (tFail == 0 ? "PASS" : "FAIL") + " (pass=" + tPass + " fail=" + tFail + ") ==========");
+	}
 }

@@ -8891,7 +8891,9 @@ public final class GT6Probes {
 			// Через ТОТ ЖЕ мост идут ещё две ветки updateTick — их тоже судим, чтобы не осталось пробелов
 			.at(220, () -> gt6BurnBuild(tPlayer))
 			.at(280, () -> gt6BurnMeasure(tPlayer))
-			.at(320, () -> gt6GravYard(tPlayer));   // двор для ГЛАЗ игрока — приёмку визуального судит он, не стенд
+			// полный обход всех пар: партия ставится и судится через тик, и так пока не кончатся
+			.window(300, 100000, () -> {if (sSweepPhase != 2 && sGravTick % 4 == 0) gt6BurnSweep(tPlayer);})
+			.at(340, () -> gt6GravYard(tPlayer));   // двор для ГЛАЗ игрока — приёмку визуального судит он, не стенд
 		sGravSeq.tick(sGravTick);
 	}
 
@@ -8926,10 +8928,13 @@ public final class GT6Probes {
 				try {if (!tP.mPrefix.isGeneratingItem(tMat)) continue;} catch (Throwable e) {continue;}
 				boolean tDustish = tP.mPrefix.contains(gregapi.data.TD.Prefix.DUST_BASED)
 					|| (tP.mCanExplode && tMat.contains(gregapi.data.TD.Properties.EXPLOSIVE));
-				if (tP.mCanBurn && tDustish && tMat.contains(gregapi.data.TD.Properties.FLAMMABLE)) {sBurnPairsA++; if (tA.size() < 3) tA.add(new Object[]{tBl, tMat});}
-				if ((tP.mCanBurn || tP.mCanExplode) && tMat.contains(gregapi.data.TD.Atomic.ALKALI_METAL)) {sBurnPairsB++; if (tB.size() < 3) tB.add(new Object[]{tBl, tMat});}
+				if (tP.mCanBurn && tDustish && tMat.contains(gregapi.data.TD.Properties.FLAMMABLE)) {sBurnPairsA++; tA.add(new Object[]{tBl, tMat});}
+				if ((tP.mCanBurn || tP.mCanExplode) && tMat.contains(gregapi.data.TD.Atomic.ALKALI_METAL)) {sBurnPairsB++; tB.add(new Object[]{tBl, tMat});}
 			}
 		}
+		sBurnAll.clear();
+		for (Object[] p : tA) sBurnAll.add(new Object[]{p[0], p[1], T});   // T = ветка A (нагрев)
+		for (Object[] p : tB) sBurnAll.add(new Object[]{p[0], p[1], F});   // F = ветка B (вода)
 		O.println("[" + GRAV_M + "] ветка A (горючее при нагреве): подходящих пар блок×материал " + sBurnPairsA + ", на стенд взято " + tA.size());
 		O.println("[" + GRAV_M + "] ветка B (щелочной + вода): подходящих пар блок×материал " + sBurnPairsB + ", на стенд взято " + tB.size());
 
@@ -8939,12 +8944,84 @@ public final class GT6Probes {
 			for (int dy = 0; dy <= 4; dy++) tLevel.setBlock(sBurnOrigin.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 		}
 
+		// Показательная площадка на три пары каждой ветки + их холодные контроли — для глаза и для лога.
+		// ПОЛНЫЙ обход всех пар идёт отдельно, партиями (gt6BurnSweep), чтобы «взято 3 из 2927» перестало быть
+		// доводом вместо замера.
 		int i = 0;
-		for (Object[] tPair : tA) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, T, T, F);}   // с нагревом — ждём исчезновения
-		for (Object[] tPair : tA) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, F, F, F);}   // ХОЛОДНЫЙ контроль: то же, но без лавы
-		for (Object[] tPair : tB) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, F, T, T);}   // с водой — ждём исчезновения
-		for (Object[] tPair : tB) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, F, F, F);}   // ХОЛОДНЫЙ контроль: то же, но без воды
-		O.println("[" + GRAV_M + "] площадка веток A/B построена @ " + sBurnOrigin + ", колонок " + sBurnCases.size());
+		for (Object[] tPair : tA.subList(0, Math.min(3, tA.size()))) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, T, T, F);}
+		for (Object[] tPair : tA.subList(0, Math.min(3, tA.size()))) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, F, F, F);}
+		for (Object[] tPair : tB.subList(0, Math.min(3, tB.size()))) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, F, T, T);}
+		for (Object[] tPair : tB.subList(0, Math.min(3, tB.size()))) {i = gt6BurnPlace(tLevel, aPlayer, tPair, i, F, F, F);}
+		O.println("[" + GRAV_M + "] показательная площадка веток A/B @ " + sBurnOrigin + ", колонок " + sBurnCases.size()
+			+ "; ПОЛНЫЙ обход впереди: " + sBurnAll.size() + " пар");
+	}
+
+	// ---------------------------------------------------------------------------------------------------------
+	// ПОЛНЫЙ обход всех пар веток A и B — партиями. Ставим блоки напрямую (WD.set): путь постановки для этих
+	// веток роли не играет, важен приход отложенного тика, а через клик игрока 8000+ блоков ставить нечем.
+	// Каждая партия: ряд блоков на бедроке, рядом лава (A) или вода (B), scheduleTick — и через несколько тиков
+	// замер «блок исчез». Считаем ВСЕ, не выборку.
+	// ---------------------------------------------------------------------------------------------------------
+	private static final java.util.List<Object[]> sBurnAll = new java.util.ArrayList<>();
+	private static int sSweepIdx = 0, sSweepOK = 0, sSweepBad = 0, sSweepPhase = 0;
+	private static final int SWEEP_BATCH = 160;
+	private static java.util.List<Object[]> sSweepBatch = new java.util.ArrayList<>();
+	private static BlockPos sSweepOrigin = null;
+	private static final StringBuilder sSweepBadNames = new StringBuilder();
+
+	/** Одна партия за вызов: сначала ставим, на следующем заходе судим и ставим следующую. */
+	private static void gt6BurnSweep(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		if (sSweepOrigin == null) sSweepOrigin = aPlayer.blockPosition().offset(0, 6, 40);
+
+		if (sSweepPhase == 1) {   // судим поставленную партию
+			for (int k = 0; k < sSweepBatch.size(); k++) {
+				Object[] tIt = sSweepBatch.get(k);
+				BlockPos tP = sSweepOrigin.offset(k, 0, 0);
+				boolean tGone = gregapi.util.WD.block(tLevel, tP.getX(), tP.getY(), tP.getZ()) != (net.minecraft.world.level.block.Block)tIt[0];
+				if (tGone) sSweepOK++; else {
+					sSweepBad++;
+					if (sSweepBadNames.length() < 600) sSweepBadNames.append(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey((net.minecraft.world.level.block.Block)tIt[0]))
+						.append('/').append(((gregapi.oredict.OreDictMaterial)tIt[1]).mNameInternal).append(' ');
+				}
+			}
+			sSweepBatch.clear();
+			sSweepPhase = 0;
+			return;
+		}
+
+		if (sSweepIdx >= sBurnAll.size()) {   // всё пройдено — вердикт
+			O.println("[" + GRAV_M + "] ПОЛНЫЙ обход веток A/B: пройдено " + (sSweepOK + sSweepBad) + " пар из " + sBurnAll.size()
+				+ " | сработали " + sSweepOK + " | НЕ сработали " + sSweepBad + (sSweepBad > 0 ? " | не сработали: " + sSweepBadNames : ""));
+			sGravSeq.judge("ПОЛНЫЙ ОБХОД веток A/B: сработали ВСЕ пары блок×материал, без выборки",
+				sSweepBad == 0 && sSweepOK == sBurnAll.size(), sBurnAll.size() + " из " + sBurnAll.size(), sSweepOK + " из " + sBurnAll.size());
+			sSweepPhase = 2;
+			sGravSeq.done();   // последовательность закрывается ЗДЕСЬ: полный обход — самый долгий шаг
+			return;
+		}
+
+		// расчистка полосы и постановка очередной партии
+		for (int k = 0; k < SWEEP_BATCH + 2; k++) for (int dy = -1; dy <= 2; dy++) {
+			BlockPos tP = sSweepOrigin.offset(k, dy, 0);
+			tLevel.setBlock(tP, dy == -1 ? net.minecraft.world.level.block.Blocks.BEDROCK.defaultBlockState()
+			                             : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+			tLevel.setBlock(sSweepOrigin.offset(k, dy, 1), dy == -1 ? net.minecraft.world.level.block.Blocks.BEDROCK.defaultBlockState()
+			                             : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+		}
+		for (int k = 0; k < SWEEP_BATCH && sSweepIdx < sBurnAll.size(); k++, sSweepIdx++) {
+			Object[] tIt = sBurnAll.get(sSweepIdx);
+			net.minecraft.world.level.block.Block tBl = (net.minecraft.world.level.block.Block)tIt[0];
+			gregapi.oredict.OreDictMaterial tMat = (gregapi.oredict.OreDictMaterial)tIt[1];
+			boolean tHot = (Boolean)tIt[2];
+			BlockPos tP = sSweepOrigin.offset(k, 0, 0);
+			gregapi.util.WD.set(tLevel, tP.getX(), tP.getY(), tP.getZ(), tBl, tMat.mID, 3);
+			tLevel.setBlock(sSweepOrigin.offset(k, 0, 1), tHot ? net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState()
+			                                                  : net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+			tLevel.scheduleTick(tP, tBl, 2);
+			sSweepBatch.add(tIt);
+		}
+		sSweepPhase = 1;
 	}
 
 	private static int gt6BurnPlace(ServerLevel aLevel, ServerPlayer aPlayer, Object[] aPair, int aIndex, boolean aLava, boolean aExpectGone, boolean aWater) {
@@ -9119,7 +9196,6 @@ public final class GT6Probes {
 		};
 		for (String s : tChat) aPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal(s));
 		O.println("[" + GRAV_M + "] двор приёмки построен @ " + tO + " (игрок телепортирован); руды: " + tNames);
-		sGravSeq.done();
 	}
 
 	/** Три колонки: дроблёная руда GT6 (испытуемый), песок (позитивный контроль), обычная руда GT6 (холодный). */
@@ -9305,6 +9381,21 @@ public final class GT6Probes {
 		sGravSeq.judge("УПАЛИ ВСЕ гравитационные блоки GT6, без исключений", tFell == sGravCases.size(),
 			"упало " + sGravCases.size() + " из " + sGravCases.size(), "упало " + tFell + " (зависло " + tStuck + ", пропало " + tLost + ")");
 		sGravSeq.judge("ПОДТИП (материал/мета) сохранён у всех упавших", tSubBad == 0, "0 потерь", tSubBad + " потерь");
+
+		// РАЗДЕЛЕНИЕ ЗАСЛУГ. Гравитация живёт в ДВУХ независимых иерархиях: PrefixBlock (руды) чинилась в этом
+		// заходе, BlockBase (пески/копаемое/шипы) имела свой мост ещё с BUG-005 и работала до него. Судим их
+		// раздельно, иначе общий зелёный приписал бы починке чужую половину класса.
+		int tPrefixFell = 0, tPrefixAll = 0, tBaseFell = 0, tBaseAll = 0;
+		for (GravCase tC : sGravCases) {
+			boolean tOK = tC.mFoundY >= 0 && tC.mStart != null && tC.mFoundY < tC.mStart.getY();
+			if (tC.mIsPrefix) {tPrefixAll++; if (tOK) tPrefixFell++;} else {tBaseAll++; if (tOK) tBaseFell++;}
+		}
+		O.println("  разделение: PrefixBlock (чинилось сейчас) " + tPrefixFell + "/" + tPrefixAll
+			+ " | BlockBase (мост с BUG-005, работал до этого захода) " + tBaseFell + "/" + tBaseAll);
+		sGravSeq.judge("иерархия PrefixBlock (руды) — та, что чинилась в этом заходе", tPrefixFell == tPrefixAll,
+			tPrefixAll + " из " + tPrefixAll, tPrefixFell + " из " + tPrefixAll);
+		sGravSeq.judge("иерархия BlockBase (пески/копаемое/шипы) — НЕ трогалась, работает своим мостом", tBaseFell == tBaseAll,
+			tBaseAll + " из " + tBaseAll, tBaseFell + " из " + tBaseAll);
 		// done() НЕ здесь: он закрывает последовательность, и шаг постройки двора приёмки (тик 200) не отработал бы.
 	}
 }
