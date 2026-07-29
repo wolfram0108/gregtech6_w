@@ -230,7 +230,14 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	/** 1:1 оригинала (:175): {@code Blocks.iron_bars.getIcon(2, 0)} — спрайт ВАНИЛЬНЫХ решёток. neo-резолв
 	 *  ванильного блока в {@link Identifier} уже централизован в {@link gregapi.render.GT6QuadBuilder#resolveBlockFaceIcon}
 	 *  — спрашиваем его, второго резолвера не заводим. Только клиент: атлас существует лишь там. */
-	public Identifier getIcon(int aSide, int aMeta) {return CODE_CLIENT ? gregapi.render.GT6QuadBuilder.resolveBlockFaceIcon(net.minecraft.world.level.block.Blocks.IRON_BARS, 2, 0) : null;}
+	// ⛔ Сторону НЕЛЬЗЯ определять по CS.CODE_CLIENT: в одиночной игре его выставляют ОБА прокси —
+	// GT_API_Proxy_Client:93 ставит T, GT_API_Proxy_Server:32 ставит F, и побеждает тот, кто
+	// инициализировался последним. Из-за этого канал молча отдавал null, рендер подставлял серую
+	// CFoam-заглушку, и крошка решёток/шипов оставалась серой (найдено живым тестом игрока).
+	// Физическая сторона — FMLEnvironment.getDist().isClient(), тот же канон, что в GT_API:378.
+	// Гейт обязателен: resolveBlockFaceIcon трогает Minecraft.getInstance(), а на выделенном сервере
+	// этого класса нет (класс дефекта BUG-084 — клиентский тип в общем коде).
+	public Identifier getIcon(int aSide, int aMeta) {return net.neoforged.fml.loading.FMLEnvironment.getDist().isClient() ? gregapi.render.GT6QuadBuilder.resolveBlockFaceIcon(net.minecraft.world.level.block.Blocks.IRON_BARS, 2, 0) : null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return F;}

@@ -230,6 +230,10 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6mapcolorprobe.flag")) gt6MapColorProbeTick(aEvent.getServer());
 	// [GT6-MAPPROBE] MODCOMPAT-002: прогон АЛГОРИТМА ВАНИЛЬНОЙ КАРТЫ (MapItem) на блоках GT6 — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6mapprobe.flag")) gt6MapProbeTick(aEvent.getServer());
+	// [GT6-TODOPROBE] судья правок захода PORT-TODO 43->28 (канал иконки, чёрный песок) + площадка для игрока
+		if (gregapi.data.CS.probeFlag("gt6todoprobe.flag")) gt6TodoProbeTick(aEvent.getServer());
+	// [GT6-FLUIDHEIGHT] BUG-086: измеритель высоты растёкшейся жидкости — порт против формулы оригинала 1.7.10
+		if (gregapi.data.CS.probeFlag("gt6fluidheight.flag")) gt6FluidHeightTick(aEvent.getServer());
 	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска в Соковыжималке» — снять при уборке фазы
@@ -8573,5 +8577,278 @@ public final class GT6Probes {
 			}
 		}
 		sMapPSeq.done();
+	}
+
+	// ==========================================================================================================
+	// [GT6-TODOPROBE] СУДЬЯ ПРАВОК ЗАХОДА «PORT-TODO 43 -> 28».
+	//
+	// Правки судятся по ФАКТУ в мире, не по компиляции:
+	//   1) КАНАЛ ИКОНКИ. Шесть классов раньше бросали UnsupportedOperationException в getIcon(side,meta), и оба
+	//      центра-потребителя глушили это catch(Throwable). Судья обходит ВЕСЬ реестр блоков GT6 и спрашивает
+	//      канал через контракт IBlock: бросков обязано быть 0. Плюс поимённо проверяются те шесть классов.
+	//   2) ЧЁРНЫЙ ПЕСОК. Ставился мимо центра меты -> в мире всегда вариант 0 (Magnetite). Судья ставит через
+	//      тот же центр WD.set три меты 0/1/2 и читает их обратно из мира: обязаны быть РАЗНЫЕ.
+	//   3) КРОШКА ВОДЫ. particleMaterial раньше не покрывал водоподобные (река/океан/болото) -> крошка CFoam.
+	//      Серверная половина судьи проверяет то, от чего она зависит: канал иконки у водоподобных != null.
+	// Контроли: ПОЗИТИВНЫЙ — две одинаковые меты песка дают одинаковое состояние (иначе судья «зелен» всегда);
+	// НЕГАТИВНЫЙ — блок вне контракта (ванильный камень) каналом не отвечает.
+	// ==========================================================================================================
+	private static final String TODO_M = "GT6-TODOPROBE";
+	private static int sTodoTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sTodoSeq;
+
+	public static void gt6TodoProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sTodoTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sTodoSeq == null) sTodoSeq = new gregapi.probe.GT6ProbeStand.Seq(TODO_M)
+			.at(100, () -> gt6TodoProbeIcons(tPlayer))
+			.at(140, () -> gt6TodoProbeSand(tPlayer))
+			.at(400, () -> gt6TodoProbeYard(tPlayer));
+		sTodoSeq.tick(sTodoTick);
+	}
+
+	/** 1) Канал иконки: ни один блок GT6 не имеет права БРОСАТЬ. */
+	private static void gt6TodoProbeIcons(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + TODO_M + "] 1/3 КАНАЛ ИКОНКИ БЛОКА ==========");
+		int tTotal = 0, tAnswered = 0, tNull = 0, tThrew = 0;
+		java.util.List<String> tBroken = new java.util.ArrayList<>();
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			if (tID == null || !(tID.getNamespace().equals(gregapi.data.CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
+			if (!(tBlock instanceof gregapi.block.IBlock tGT6)) continue;
+			tTotal++;
+			try {
+				Object tIcon = tGT6.getIcon(0, 0);
+				if (tIcon == null) tNull++; else tAnswered++;
+			} catch (Throwable e) {
+				tThrew++;
+				if (tBroken.size() < 10) tBroken.add(tID + " -> " + e.getClass().getSimpleName());
+			}
+		}
+		O.println("[" + TODO_M + "] блоков GT6 с контрактом: " + tTotal + " | ответили иконкой: " + tAnswered + " | ответили «нет иконки»: " + tNull + " | БРОСИЛИ: " + tThrew);
+		if (!tBroken.isEmpty()) O.println("[" + TODO_M + "] бросают: " + String.join(", ", tBroken));
+		sTodoSeq.judge("канал иконки: НИ ОДИН блок GT6 не бросает исключение", tThrew == 0, "0 бросков", tThrew + " бросков");
+		sTodoSeq.judge("канал иконки: блоки реально отвечают (не все null)", tAnswered > 0, "> 0 ответивших", String.valueOf(tAnswered));
+
+		// поимённо — те шесть, что бросали до правки
+		Object[][] tNamed = {
+			  {"река (BlockWaterlike)", gregapi.data.CS.BlocksGT.River}
+			, {"океан (BlockOcean)", gregapi.data.CS.BlocksGT.Ocean}
+			, {"болото (BlockSwamp)", gregapi.data.CS.BlocksGT.Swamp}
+			, {"нефть (BlockBaseFluid)", gregapi.data.CS.BlocksGT.OilHeavy}
+		};
+		for (Object[] tRow : tNamed) {
+			if (!(tRow[1] instanceof gregapi.block.IBlock tGT6)) continue;
+			Object tIcon = null; boolean tThrow = false;
+			try {tIcon = tGT6.getIcon(0, 0);} catch (Throwable e) {tThrow = true;}
+			O.println("[" + TODO_M + "] " + tRow[0] + ": иконка = " + tIcon + (tThrow ? " (БРОСИЛ)" : ""));
+			sTodoSeq.judge(tRow[0] + ": канал отвечает, а не бросает (от него зависит крошка разрушения)", !tThrow && tIcon != null, "непустая иконка", tThrow ? "бросок" : String.valueOf(tIcon));
+		}
+		// НЕГАТИВНЫЙ контроль: ванильный блок контракта не имеет — судья не должен считать его «нашим»
+		sTodoSeq.judge("НЕГАТИВНЫЙ контроль: ванильный камень вне контракта IBlock", !(net.minecraft.world.level.block.Blocks.STONE instanceof gregapi.block.IBlock), "не IBlock", "IBlock");
+	}
+
+	/** 2) Чёрный песок: три меты через центр -> в мире три РАЗНЫХ состояния. */
+	private static void gt6TodoProbeSand(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + TODO_M + "] 2/3 ЧЁРНЫЙ ПЕСОК: три вида, а не один ==========");
+		ServerLevel tLevel = aPlayer.level();
+		net.minecraft.world.level.block.Block tSands = gregapi.data.CS.BlocksGT.Sands;
+		if (tSands == null) {sTodoSeq.judge("блок чёрного песка существует", false, "не null", "null"); return;}
+		BlockPos tO = aPlayer.blockPosition().offset(0, 0, 6);
+		short[] tGot = new short[4];
+		for (int i = 0; i < 4; i++) {
+			int tMeta = (i < 3 ? i : 1); // 4-й столб — ПОЗИТИВНЫЙ контроль: повтор меты 1
+			BlockPos tP = tO.offset(i * 2, 0, 0);
+			// ⚠ чёрный песок ПАДАЮЩИЙ (BlockSands:64 useGravity=T) — без опоры он улетает вниз в тот же тик.
+			tLevel.setBlock(tP.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			tLevel.setBlock(tP, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+			gregapi.util.WD.set(tLevel, tP.getX(), tP.getY(), tP.getZ(), tSands, tMeta, 3);
+			tGot[i] = gregapi.util.WD.meta(tLevel, tP.getX(), tP.getY(), tP.getZ());
+			O.println("[" + TODO_M + "] столб " + i + ": просили мету " + tMeta + " -> в мире мета " + tGot[i]
+				+ " | блок " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tLevel.getBlockState(tP).getBlock()));
+		}
+		sTodoSeq.judge("песок: мета 0 сохранилась", tGot[0] == 0, "0", String.valueOf(tGot[0]));
+		sTodoSeq.judge("песок: мета 1 сохранилась (до фикса ронялась в 0)", tGot[1] == 1, "1", String.valueOf(tGot[1]));
+		sTodoSeq.judge("песок: мета 2 сохранилась (до фикса ронялась в 0)", tGot[2] == 2, "2", String.valueOf(tGot[2]));
+		sTodoSeq.judge("ПОЗИТИВНЫЙ контроль: повтор меты 1 даёт то же самое", tGot[3] == tGot[1], "= " + tGot[1], String.valueOf(tGot[3]));
+		sTodoSeq.judge("песок: три вида РАЗЛИЧАЮТСЯ (а не один Magnetite)", tGot[0] != tGot[1] && tGot[1] != tGot[2], "0/1/2 разные", tGot[0] + "/" + tGot[1] + "/" + tGot[2]);
+	}
+
+	/**
+	 * 3) Площадка для ЖИВОЙ приёмки ИГРОКОМ.
+	 * ⚠ Прошлая редакция была негодной: строилась по координатам игрока на 180-м тике (игрок мог быть ещё не в мире),
+	 * песок ставился без опоры и ПАДАЛ (BlockSands:64 useGravity=T), а игроку выдавались голые координаты.
+	 * Теперь: строим ВОКРУГ игрока в момент постройки, кладём двойной каменный помост, телепортируем игрока на
+	 * площадку и пишем ему в чат простыми словами, что именно смотреть.
+	 */
+	private static void gt6TodoProbeYard(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition().offset(0, 0, 4);
+		net.minecraft.world.level.block.Block tSands = gregapi.data.CS.BlocksGT.Sands;
+
+		// помост 2 слоя (чтобы ничего не проваливалось) + расчистка воздуха над ним
+		for (int dx = -3; dx <= 10; dx++) for (int dz = -3; dz <= 5; dz++) {
+			tLevel.setBlock(tO.offset(dx, -2, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			tLevel.setBlock(tO.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			for (int dy = 0; dy <= 4; dy++) tLevel.setBlock(tO.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		}
+		// три вида чёрного песка в ряд, с промежутками — на прочной опоре
+		int tPlaced = 0;
+		if (tSands != null) for (int i = 0; i < 3; i++) {
+			BlockPos tP = tO.offset(i * 2, 0, 0);
+			gregapi.util.WD.set(tLevel, tP.getX(), tP.getY(), tP.getZ(), tSands, i, 3);
+			if (tLevel.getBlockState(tP).getBlock() == tSands) tPlaced++;
+		}
+		// лужа нефти в каменной чаше — по ней бить, смотреть цвет крошки
+		boolean tOil = false;
+		if (gregapi.data.CS.BlocksGT.OilHeavy != null) {
+			for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+				tLevel.setBlock(tO.offset(7 + dx, 0, dz), (dx != 0 || dz != 0) ? net.minecraft.world.level.block.Blocks.STONE.defaultBlockState() : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			// ⚠ КОНВЕНЦИЯ МЕТЫ У ДВУХ ИЕРАРХИЙ РАЗНАЯ, обе 1:1 с оригиналом — проверено против Forge 1.7.10:
+			//   BlockWaterlike  (река/океан/болото) наследует BlockFluidClassic: квант = quantaPerBlock - мета → мета 0 = ПОЛНЫЙ;
+			//   BlockBaseFluid  (нефть/газ/гео-вода) наследует BlockFluidFinite : квант = мета + 1        → мета 0 = 1/8 (плёнка!).
+			// Первый прогон площадки налил нефть метой 0 и дал плёнку в 1/8 блока — игрок увидел «лужа невидима,
+			// только грань камня закрашена». Это была ошибка СТЕНДА, не порта. Для полной лужи нужна мета 7.
+			gregapi.util.WD.set(tLevel, tO.getX() + 7, tO.getY(), tO.getZ(), gregapi.data.CS.BlocksGT.OilHeavy, 7, 2, F);
+			tOil = (tLevel.getBlockState(tO.offset(7, 0, 0)).getBlock() == gregapi.data.CS.BlocksGT.OilHeavy);
+		}
+
+		// решётка и шипы — до фикса их код на вопрос о текстуре БРОСАЛ исключение, и рендер подставлял
+		// серую бетонную заглушку (CFOAM_HARDENED). Это единственное место, где фикс виден ГЛАЗОМ: их можно
+		// разрушить и посмотреть, какого цвета летит крошка. По жидкости ударить нельзя — она не ломается,
+		// поэтому прежняя инструкция «ударьте по луже» была бессмысленной.
+		boolean tBars = false, tSpikes = false;
+		if (gregapi.data.CS.BlocksGT.Bars_Steel != null) {
+			gregapi.util.WD.set(tLevel, tO.getX(), tO.getY(), tO.getZ() + 3, gregapi.data.CS.BlocksGT.Bars_Steel.getBlock(), 0, 3);
+			tBars = (tLevel.getBlockState(tO.offset(0, 0, 3)).getBlock() == gregapi.data.CS.BlocksGT.Bars_Steel.getBlock());
+		}
+		if (gregapi.data.CS.BlocksGT.Spikes_Steel != null) {
+			gregapi.util.WD.set(tLevel, tO.getX() + 2, tO.getY(), tO.getZ() + 3, gregapi.data.CS.BlocksGT.Spikes_Steel.getBlock(), 0, 3);
+			tSpikes = (tLevel.getBlockState(tO.offset(2, 0, 3)).getBlock() == gregapi.data.CS.BlocksGT.Spikes_Steel.getBlock());
+		}
+		O.println("[" + TODO_M + "] решётка встала: " + tBars + " | шипы встали: " + tSpikes);
+		sTodoSeq.judge("ПЛОЩАДКА: решётка стоит (на ней видно крошку при разрушении)", tBars, "true", String.valueOf(tBars));
+		sTodoSeq.judge("ПЛОЩАДКА: шипы стоят (на них видно крошку при разрушении)", tSpikes, "true", String.valueOf(tSpikes));
+
+		// поставить игрока НА площадку, лицом к ряду песка
+		aPlayer.teleportTo(tO.getX() - 2 + 0.5D, tO.getY(), tO.getZ() + 0.5D);
+
+		// сказать игроку в ЧАТ простыми словами
+		aPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("§e[GT6] Площадка проверки. Три вещи:"));
+		aPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("§f1) §aТри блока чёрного песка§f перед вами. Наведитесь на каждый — ИМЕНА должны быть РАЗНЫЕ (магнетитовый / базальтовый / гранитный). На вид они похожи, все чёрные."));
+		aPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("§f2) §aРешётка и шипы§f за спиной песка — РАЗБЕЙТЕ их. Крошка должна быть их текстурой, а не серой бетонной."));
+		aPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("§f3) §aЛужа нефти§f правее — просто посмотрите, что это жидкость нормальной глубины, а не плёнка на камне."));
+
+		O.println("========== [" + TODO_M + "] 3/3 ПЛОЩАДКА ДЛЯ ПРОВЕРКИ ГЛАЗАМИ ==========");
+		O.println("[" + TODO_M + "] площадка построена в (" + tO.getX() + ", " + tO.getY() + ", " + tO.getZ() + "), игрок телепортирован на неё");
+		O.println("[" + TODO_M + "] блоков песка реально стоит: " + tPlaced + " из 3 | лужа нефти встала: " + tOil);
+		sTodoSeq.judge("ПЛОЩАДКА: все три блока песка реально стоят в мире (падающий блок не улетел)", tPlaced == 3, "3", String.valueOf(tPlaced));
+		sTodoSeq.judge("ПЛОЩАДКА: лужа нефти реально стоит", tOil, "true", String.valueOf(tOil));
+		if (tOil && gregapi.data.CS.BlocksGT.OilHeavy instanceof gregapi.block.fluid.BlockFluidBaseGT tFB) {
+			int tQuanta = tFB.getQuantaValue(tLevel, tO.getX() + 7, tO.getY(), tO.getZ());
+			O.println("[" + TODO_M + "] квант лужи нефти: " + tQuanta + " из 8 (мета 7 = полный блок, конвенция BlockFluidFinite)");
+			sTodoSeq.judge("ПЛОЩАДКА: лужа ПОЛНАЯ, а не плёнка 1/8 (её видно глазом)", tQuanta == 8, "8", String.valueOf(tQuanta));
+		}
+		sTodoSeq.done();
+	}
+
+	// ==========================================================================================================
+	// [GT6-FLUIDHEIGHT] BUG-086 — ИЗМЕРИТЕЛЬ ВЫСОТЫ РАСТЁКШЕЙСЯ ЖИДКОСТИ (заказан игроком).
+	//
+	// Репорт: огороженная лужа занимает блок, растёкшаяся — «буквально плёнка»; проблема именно в ОТОБРАЖЕНИИ
+	// высоты. Судить надо не глазом и не чтением кода, а числом: по каждой клетке лужи печатается
+	//   квант · доля объёма · высота ПОРТА · высота по формуле ОРИГИНАЛА 1.7.10 · расхождение.
+	//
+	// Формула оригинала воспроизведена здесь ДОСЛОВНО по декомпилу Forge
+	// (gregtech6/build/tmp/recompSrc/net/minecraftforge/fluids/RenderBlockFluid.java:56-72):
+	//   если блок в позиции — эта же жидкость:
+	//       блок СВЕРХУ (y - densityDir) жидкость или IFluidBlock                  -> 1.0
+	//       мета == getMaxRenderHeightMeta() (для Finite = quantaPerBlock-1 = 7)   -> 0.875   ← ветки НЕТ в порте
+	//   иначе: не-solid и снизу та же жидкость -> 1.0, иначе доля * 0.875          (порт умножает на 0.8888889)
+	// ==========================================================================================================
+	private static final String FH_M = "GT6-FLUIDHEIGHT";
+	private static int sFHTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sFHSeq;
+	private static BlockPos sFHOrigin = null;
+
+	public static void gt6FluidHeightTick(net.minecraft.server.MinecraftServer aServer) {
+		sFHTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sFHSeq == null) sFHSeq = new gregapi.probe.GT6ProbeStand.Seq(FH_M)
+			.at(100, () -> gt6FHPour(tPlayer))
+			.at(300, () -> gt6FHMeasure(tPlayer, "после растекания (200 тиков)"));
+		sFHSeq.tick(sFHTick);
+	}
+
+	/** Наливаем ПОЛНЫЙ блок нефти в ОТКРЫТОМ поле — ровно случай игрока (без стенок). */
+	private static void gt6FHPour(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		sFHOrigin = aPlayer.blockPosition().offset(0, 0, 5);
+		net.minecraft.world.level.block.Block tOil = gregapi.data.CS.BlocksGT.OilHeavy;
+		if (tOil == null) {sFHSeq.judge("блок нефти существует", false, "не null", "null"); return;}
+		// ровная каменная плита 11x11, всё выше — воздух
+		for (int dx = -5; dx <= 5; dx++) for (int dz = -5; dz <= 5; dz++) {
+			tLevel.setBlock(sFHOrigin.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			for (int dy = 0; dy <= 3; dy++) tLevel.setBlock(sFHOrigin.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		}
+		// мета 7 = квант 8 = полный блок (конвенция BlockFluidFinite: квант = мета+1)
+		gregapi.util.WD.set(tLevel, sFHOrigin.getX(), sFHOrigin.getY(), sFHOrigin.getZ(), tOil, 7, 3);
+		O.println("[" + FH_M + "] налит ПОЛНЫЙ блок нефти (мета 7 = квант 8) в открытом поле @ " + sFHOrigin);
+		gt6FHMeasure(aPlayer, "СРАЗУ после налива (эталон: 1 клетка, полная)");
+	}
+
+	/** Формула ОРИГИНАЛА 1.7.10, дословно (RenderBlockFluid.java:56-72). */
+	private static float gt6FHOriginalHeight(ServerLevel aLevel, int aX, int aY, int aZ, gregapi.block.fluid.BlockFluidBaseGT aFluid) {
+		net.minecraft.world.level.block.Block tHere = gregapi.util.WD.block(aLevel, aX, aY, aZ);
+		int tDir = aFluid.dir();
+		if (tHere == aFluid) {
+			net.minecraft.world.level.block.Block tVerticalOrigin = gregapi.util.WD.block(aLevel, aX, aY - tDir, aZ);
+			if (gregapi.util.WD.getMaterial(tVerticalOrigin).isLiquid() || tVerticalOrigin instanceof gregapi.block.fluid.BlockFluidBaseGT) return 1F;
+			if (gregapi.util.WD.meta(aLevel, aX, aY, aZ) == (8 - 1)) return 0.875F;   // getMaxRenderHeightMeta() = quantaPerBlock-1
+		}
+		boolean tSolid = gregapi.util.WD.getMaterial(tHere).isSolid();
+		if (!tSolid && gregapi.util.WD.block(aLevel, aX, aY - tDir, aZ) == aFluid) return 1F;
+		return aFluid.getQuantaPercentage(aLevel, aX, aY, aZ) * 0.875F;
+	}
+
+	private static void gt6FHMeasure(ServerPlayer aPlayer, String aWhen) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		net.minecraft.world.level.block.Block tOilRaw = gregapi.data.CS.BlocksGT.OilHeavy;
+		if (!(tOilRaw instanceof gregapi.block.fluid.BlockFluidBaseGT tOil)) return;
+		O.println("========== [" + FH_M + "] " + aWhen + " ==========");
+		int tCells = 0, tMismatch = 0, tFilm = 0;
+		float tSumPort = 0, tSumOrig = 0;
+		StringBuilder tRows = new StringBuilder();
+		for (int dx = -5; dx <= 5; dx++) for (int dz = -5; dz <= 5; dz++) {
+			int tX = sFHOrigin.getX() + dx, tY = sFHOrigin.getY(), tZ = sFHOrigin.getZ() + dz;
+			if (gregapi.util.WD.block(tLevel, tX, tY, tZ) != tOil) continue;
+			tCells++;
+			int tQuanta = tOil.getQuantaValue(tLevel, tX, tY, tZ);
+			float tPct = tOil.getQuantaPercentage(tLevel, tX, tY, tZ);
+			float tPort = gregapi.render.RendererBlockFluid.getFluidHeightForRender(tLevel, tX, tY, tZ, tOil, null);
+			float tOrig = gt6FHOriginalHeight(tLevel, tX, tY, tZ, tOil);
+			tSumPort += tPort; tSumOrig += tOrig;
+			boolean tDiff = Math.abs(tPort - tOrig) > 0.0001F;
+			if (tDiff) tMismatch++;
+			if (tPort < 0.25F) tFilm++;
+			if (tRows.length() < 1400) tRows.append(String.format("  (%+d,%+d) квант=%d доля=%.3f | ПОРТ=%.4f | ОРИГИНАЛ=%.4f%s%n",
+				dx, dz, tQuanta, tPct, tPort, tOrig, tDiff ? "  <-- РАСХОЖДЕНИЕ" : ""));
+		}
+		O.print(tRows);
+		O.println("[" + FH_M + "] клеток с нефтью: " + tCells
+			+ " | сумма высот ПОРТ=" + String.format("%.3f", tSumPort) + " ОРИГИНАЛ=" + String.format("%.3f", tSumOrig)
+			+ " | клеток тоньше 1/4 блока: " + tFilm + " | расхождений формулы: " + tMismatch);
+		sFHSeq.judge(aWhen + ": высота ПОРТА совпадает с формулой оригинала на всех клетках", tMismatch == 0, "0 расхождений", tMismatch + " из " + tCells);
+		if (aWhen.startsWith("после")) {
+			sFHSeq.judge("ОБЪЁМ сохранён при растекании (сумма долей = 1 полный блок)", tCells > 0, "> 0 клеток", String.valueOf(tCells));
+			sFHSeq.done();
+		}
 	}
 }

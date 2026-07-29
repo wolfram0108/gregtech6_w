@@ -1231,4 +1231,138 @@ public final class GT6ProbesClient {
 		} catch (Throwable e) {/* один предмет не должен ронять весь замер */}
 		return r;
 	}
+
+	// ==========================================================================================================
+	// [GT6-CRUMBPROBE] КЛИЕНТСКИЙ судья крошки разрушения (живой тест игрока: «у решётки и шипов серые партиклы»).
+	//
+	// Серверный судья этот дефект ПРОПУСТИЛ: он опрашивал getIcon с серверного потока, где реализация решёток
+	// намеренно отвечает null, и засчитал это как норму. Дефект живёт на клиенте — здесь его и судим,
+	// ровно тем путём, которым крошку берёт движок: BlockStateModelSet.getParticleMaterial(state) →
+	// GT6BlockModel.particleMaterial. Серый цвет = фолбэк CFOAM_HARDENED, то есть канал вернул пусто.
+	// ==========================================================================================================
+	private static boolean mCrumbDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onCrumbProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mCrumbDone || !gregapi.data.CS.probeFlag("gt6crumbprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null || tMC.getModelManager() == null) return;
+		mCrumbDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-CRUMBPROBE] крошка разрушения: что реально отдаёт канал НА КЛИЕНТЕ ==========");
+		O.println("[GT6-CRUMBPROBE] CS.CODE_CLIENT = " + gregapi.data.CS.CODE_CLIENT
+			+ " | FMLEnvironment.isClient = " + net.neoforged.fml.loading.FMLEnvironment.getDist().isClient());
+
+		Object[][] tCases = {
+			  {"решётка (BlockBaseBars)", gregapi.data.CS.BlocksGT.Bars_Steel}
+			, {"шипы (BlockBaseSpike)", gregapi.data.CS.BlocksGT.Spikes_Steel}
+			, {"чёрный песок (контроль: крошка ЧЁРНАЯ по факту игрока)", gregapi.data.CS.BlocksGT.Sands}
+		};
+		net.minecraft.resources.Identifier tCFoam = null;
+		try {tCFoam = gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);} catch (Throwable e) {}
+		O.println("[GT6-CRUMBPROBE] серая заглушка CFOAM_HARDENED = " + tCFoam);
+
+		for (Object[] tRow : tCases) {
+			Object tRaw = tRow[1];
+			if (tRaw == null) {O.println("[GT6-CRUMBPROBE] " + tRow[0] + ": блока нет в реестре"); continue;}
+			net.minecraft.world.level.block.Block tBlock = (tRaw instanceof net.minecraft.world.level.block.Block tB) ? tB
+				: (tRaw instanceof gregapi.block.IBlock tIB ? tIB.getBlock() : null);
+			if (tBlock == null) {O.println("[GT6-CRUMBPROBE] " + tRow[0] + ": не удалось получить Block"); continue;}
+
+			// 1) что отдаёт САМ канал на клиенте
+			Object tIcon = null; String tThrew = "";
+			try {if (tBlock instanceof gregapi.block.IBlock tIB2) tIcon = tIB2.getIcon(0, 0);} catch (Throwable e) {tThrew = " БРОСИЛ:" + e.getClass().getSimpleName();}
+
+			// 2) что отдаёт движку модель — тем же вызовом, которым берётся крошка
+			String tParticle = "?";
+			try {
+				net.minecraft.client.renderer.block.BlockStateModelSet tSet = tMC.getModelManager().getBlockStateModelSet();
+				net.minecraft.client.resources.model.sprite.Material.Baked tMat = tSet.getParticleMaterial(tBlock.defaultBlockState());
+				tParticle = String.valueOf(tMat == null ? null : tMat.sprite().contents().name());
+			} catch (Throwable e) {tParticle = "БРОСИЛ:" + e.getClass().getSimpleName();}
+
+			boolean tIsGrey = tCFoam != null && String.valueOf(tParticle).equals(String.valueOf(tCFoam));
+			O.println("[GT6-CRUMBPROBE] " + tRow[0]
+				+ " | канал getIcon -> " + tIcon + tThrew
+				+ " | КРОШКА движка -> " + tParticle
+				+ (tIsGrey ? "   <-- СЕРАЯ ЗАГЛУШКА" : ""));
+		}
+		O.println("========== [GT6-CRUMBPROBE] DONE ==========");
+	}
+
+	// ==========================================================================================================
+	// [GT6-MESHHEIGHT] BUG-086 — ИЗМЕРИТЕЛЬ ФАКТИЧЕСКОЙ ВЫСОТЫ НАРИСОВАННОЙ ЖИДКОСТИ.
+	//
+	// Требование игрока (2026-07-29): «мне нужно не значение формулы измерять — я в математике не сомневаюсь;
+	// мне нужно измерить фактическое значение высоты блока в самой игре. Измеряй СЛЕДСТВИЕ, а не формулу».
+	//
+	// Поэтому здесь не считается ничего. Берутся КВАДЫ, которые движок реально построил для блока
+	// (BlockStateModelSet.get(state).collectParts — тот же вызов, которым строится меш чанка), и по их
+	// вершинам (BakedQuad.position(i).y()) находится фактическая максимальная высота поверхности.
+	// Печатается рядом с квантом — чтобы было видно, что нарисовано при каком объёме.
+	// ==========================================================================================================
+	private static boolean mMeshHeightDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onMeshHeightProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mMeshHeightDone || !gregapi.data.CS.probeFlag("gt6meshheight.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null || tMC.getModelManager() == null) return;
+		// ждём, пока серверная половина (gt6fluidheight) нальёт и жидкость растечётся
+		if (mMeshHeightWait++ < 320) return;
+		mMeshHeightDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-MESHHEIGHT] ФАКТИЧЕСКАЯ высота нарисованной жидкости (вершины меша) ==========");
+
+		net.minecraft.world.level.block.Block tOilRaw = gregapi.data.CS.BlocksGT.OilHeavy;
+		if (!(tOilRaw instanceof gregapi.block.fluid.BlockFluidBaseGT tOil)) {O.println("[GT6-MESHHEIGHT] нефти нет в реестре"); return;}
+		net.minecraft.core.BlockPos tCenter = tMC.player.blockPosition().offset(0, 0, 5);
+		int tCells = 0, tFilm = 0;
+		StringBuilder tRows = new StringBuilder();
+		for (int dx = -5; dx <= 5; dx++) for (int dz = -5; dz <= 5; dz++) {
+			net.minecraft.core.BlockPos tPos = tCenter.offset(dx, 0, dz);
+			net.minecraft.world.level.block.state.BlockState tState = tMC.level.getBlockState(tPos);
+			if (tState.getBlock() != tOil) continue;
+			tCells++;
+			int tQuanta = tOil.getQuantaValue(tMC.level, tPos.getX(), tPos.getY(), tPos.getZ());
+			float tMaxY = Float.NEGATIVE_INFINITY, tMinY = Float.POSITIVE_INFINITY;
+			int tQuadCount = 0;
+			try {
+				java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> tParts = new java.util.ArrayList<>();
+				// ⛔ ВАЖНО: звать перегрузку С УРОВНЕМ И ПОЗИЦИЕЙ — именно ею мешит чанк. Вариант без контекста
+				// (collectParts(random, parts)) у динамической модели GT6 отдаёт ЗАГЛУШКУ: первый прогон дал
+				// 6 квадов и высоту ровно 1.0 на всех клетках, включая клетки с квантом 1 из 8.
+				tMC.getModelManager().getBlockStateModelSet().get(tState).collectParts(tMC.level, tPos, tState, net.minecraft.util.RandomSource.create(42L), tParts);
+				for (net.minecraft.client.renderer.block.dispatch.BlockStateModelPart tPart : tParts) {
+					for (net.minecraft.core.Direction tDir : net.minecraft.core.Direction.values()) {
+						java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tQuads = tPart.getQuads(tDir);
+						if (tQuads == null) continue;
+						for (net.minecraft.client.resources.model.geometry.BakedQuad tQ : tQuads) {
+							tQuadCount++;
+							for (int v = 0; v < 4; v++) {
+								float tY = tQ.position(v).y();
+								if (tY > tMaxY) tMaxY = tY;
+								if (tY < tMinY) tMinY = tY;
+							}
+						}
+					}
+					java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tNoDir = tPart.getQuads(null);
+					if (tNoDir != null) for (net.minecraft.client.resources.model.geometry.BakedQuad tQ : tNoDir) {
+						tQuadCount++;
+						for (int v = 0; v < 4; v++) {
+							float tY = tQ.position(v).y();
+							if (tY > tMaxY) tMaxY = tY;
+							if (tY < tMinY) tMinY = tY;
+						}
+					}
+				}
+			} catch (Throwable e) {O.println("[GT6-MESHHEIGHT] сбор квадов упал: " + e); }
+			float tHeight = (tQuadCount == 0 ? -1F : tMaxY - tMinY);
+			if (tQuadCount > 0 && tHeight < 0.25F) tFilm++;
+			if (tRows.length() < 1600) tRows.append(String.format("  (%+d,%+d) квант=%d | квадов=%d | ФАКТИЧЕСКАЯ высота меша=%.4f (minY=%.3f maxY=%.3f)%n",
+				dx, dz, tQuanta, tQuadCount, tHeight, tMinY, tMaxY));
+		}
+		O.print(tRows);
+		O.println("[GT6-MESHHEIGHT] клеток с нефтью: " + tCells + " | из них нарисовано тоньше 1/4 блока: " + tFilm);
+		O.println("========== [GT6-MESHHEIGHT] DONE ==========");
+	}
+	private static int mMeshHeightWait = 0;
 }

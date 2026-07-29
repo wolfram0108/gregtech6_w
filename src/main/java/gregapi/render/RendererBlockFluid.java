@@ -51,7 +51,12 @@ public class RendererBlockFluid {
 	}
 
 	/** 1:1 константы оригинала (:48-49). */
-	public static final float MAX_FLUID_HEIGHT = 0.8888889F, RENDER_OFFSET = 0.0010000000474974513F;
+	/** ⚠ 0.875, НЕ 0.8888889. Оригинал 1.7.10 применяет ровно этот множитель, причём в ДВУХ ролях сразу
+	 *  (RenderBlockFluid.java:38 — порог в усреднении углов, :68 и :71 — множитель доли объёма). Порт держал
+	 *  здесь 0.8888889 (=8/9), и это расходилось с эталоном на всех клетках: живой замер обеих версий одним
+	 *  способом (BUG-086, эталон gregapi.GT6OracleFluidProbe в живом 1.7.10) дал сумму высот 0.875 против
+	 *  0.889 при полностью совпавшем растекании — 7 клеток, кванты 2/1/1/1/1/1/1 в обеих версиях. */
+	public static final float MAX_FLUID_HEIGHT = 0.875F, RENDER_OFFSET = 0.0010000000474974513F;
 
 	/** было {@code getFluidHeightAverage(float[])} (:51-63) — тело 1:1. */
 	public static float getFluidHeightAverage(float[] aFlow) {
