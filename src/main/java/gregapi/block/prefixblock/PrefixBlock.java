@@ -574,7 +574,24 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		}
 		return T;
 	}
-	
+
+	// ===== ПОДКЛЮЧЕНИЕ 1.7.10-каналов огня и разрушаемости к движку =====================================
+	// Тем же приёмом, что уже принят у брата MultiTileEntityBlock:526-535 — прямой делегат в 1.7.10-метод,
+	// типы совпадают 1:1. У руд/дроблёнки каналы были объявлены (тела 1:1 с оригиналом PrefixBlock.java:453-476),
+	// но вызывателей не имели: движок спрашивает их через IBlockExtension, а не по 1.7.10-именам. Без этого
+	// горючесть и защита от дракона/иссушителя считались ванильными дефолтами (FireBlock-таблица и тег
+	// DRAGON_IMMUNE), а не по МАТЕРИАЛУ блока, как задумано в GT6.
+	@Override public int getFlammability(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return getFlammability(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aSide);}
+	@Override public int getFireSpreadSpeed(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return getFireSpreadSpeed(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aSide);}
+	@Override public boolean canEntityDestroy(BlockState aState, BlockGetter aWorld, BlockPos aPos, Entity aEntity) {return canEntityDestroy(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aEntity);}
+	// isFireSource: neo сузил тип до LevelReader (IBlockExtension:736), а 1.7.10-тело просит Level. Единственный
+	// вызыватель в движке — FireBlock.tick(BlockState, ServerLevel, ...) (FireBlock.java:141,149), то есть сюда
+	// всегда приходит ServerLevel; приведение проверено по коду движка, а не предположено. Иной случай
+	// (LevelReader вне Level) в движке не встречается — там отдаём ванильный дефолт, не тихий false.
+	@Override public boolean isFireSource(BlockState aState, net.minecraft.world.level.LevelReader aWorld, BlockPos aPos, Direction aSide) {
+		return aWorld instanceof Level tLevel ? isFireSource(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), aSide) : super.isFireSource(aState, aWorld, aPos, aSide);
+	}
+
 	@Override
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		OreDictMaterial aMaterial = getMetaMaterial(aWorld, aX, aY, aZ);
@@ -668,6 +685,14 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);
 	}
 	
+	// ⚠️ КАНАЛ ИЗБЫТОЧЕН, мост НЕ нужен — разобрано поимённо (реестр мёртвых каналов, 2026-07-30).
+	// Роль тела закрыта тремя разными путями, ни один из них не потерян:
+	//  • дроп — через getDrops(BlockState, LootParams.Builder) ниже (BUG-020), туда же приходит silk/fortune;
+	//  • статистика добычи — ванильный дефолт Block.playerDestroy (Block.java:468) делает то же awardStat;
+    //  • усталость — там же (Block.java:469), причём значение брать НЕ отсюда: 0.025F в 1.7.10 было ВАНИЛЬНЫМ
+    //    (recompSrc Block.java:1195), GT6 его просто повторял, своего правила у мода не было. Ваниль neo сменила
+    //    его на 0.005F, и 1:1 здесь — «как ванильный блок», а не «то же число»: иначе руда GT6 утомляла бы игрока
+    //    впятеро сильнее камня, чего в оригинале не было.
 	// @Override
 	public void harvestBlock(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {
 		aPlayer.awardStat(Stats.BLOCK_MINED.get(this), 1); /* было Stats.mineBlockStatArray[getIdFromBlock(this)] (1.7.10 int-ID) -> Stats.BLOCK_MINED.get(Block) [Stats.java:12] + Player.awardStat [Player.java:1413] */
