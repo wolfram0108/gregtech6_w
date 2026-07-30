@@ -196,7 +196,19 @@ public final class GT6ProbesClient {
 				int tActual = (tSrc == null ? 0xFFFFFF : tSrc.color(tState)) & 0xFFFFFF;
 				tChecked++;
 				if (tExpect != 0xFFFFFF) {tColoured++; if (tShow.size() < 6) tShow.add(tID + " мета " + tMeta + " → " + String.format("#%06X", tExpect));}
-				if (tExpect == tActual) tOk++; else {tBad++; if (tFails.size() < 8) tFails.add(tID + " мета " + tMeta + ": движок " + String.format("#%06X", tActual) + ", GT6 " + String.format("#%06X", tExpect));}
+				if (tExpect == tActual) tOk++; else {
+					tBad++;
+					// ДИАГНОСТИКА расхождения: что реально лежит в состоянии и кто отвечает за цвет.
+					// Без этого причина «движок отдал цвет меты 0» неотличима от «мета в состояние не встала».
+					if (tFails.size() < 8) {
+						short tBack = tBlock instanceof gregapi.block.IBlockExtendedMetaData tMB3 ? tMB3.getExtendedMetaData(tState) : -1;
+						tFails.add(tID + " мета " + tMeta + ": движок " + String.format("#%06X", tActual) + ", GT6 " + String.format("#%06X", tExpect)
+							+ " | мета обратно из состояния: " + tBack + " | источник: " + (tSrc == null ? "НЕТ" : tSrc.getClass().getSimpleName())
+							+ " | источников на блок: " + tColors.getTintSources(tState).size()
+							+ " | свойства состояния: " + tState.getProperties()
+							+ " | relevantProperties: " + (tSrc == null ? "—" : tSrc.relevantProperties().toString()));
+					}
+				}
 			}
 		}
 		for (String s : tFails) O.println("[GT6-TINTPROBE] расхождение — " + s);
