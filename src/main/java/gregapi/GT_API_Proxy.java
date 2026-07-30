@@ -56,6 +56,7 @@ import gregapi.code.ItemNBT;
 import gregapi.code.ItemStackContainer;
 import gregapi.data.*;
 import gregapi.enchants.Enchantment_WerewolfDamage;
+import gregapi.item.IItemBeaconPayment;
 import gregapi.item.IItemNoGTOverride;
 import gregapi.item.IItemProjectile;
 import gregapi.item.IItemProjectile.EntityProjectile;
@@ -222,7 +223,39 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		int tBurnTime = getBurnTime(aEvent.getItemStack());
 		if (tBurnTime > 0) aEvent.setBurnTime(tBurnTime);
 	}
-	
+
+	/** Мост оплаты маяка — возрождение Forge-хука 1.7.10 {@code Item.isBeaconPayment(ItemStack)} (Forge Item.java:1482).
+	 *  В 1.7.10 слот маяка спрашивал сам предмет (TileEntityBeacon.isItemValidForSlot:409); в neo оплата — тег
+	 *  {@code ItemTags.BEACON_PAYMENT_ITEMS} на Item (BeaconMenu:33,165), материал в данных стека тегу не виден.
+	 *  Центральный предикат: ванильный тег ИЛИ пер-стековый ответ носителя контракта {@link IItemBeaconPayment}
+	 *  (сейчас — PrefixItem, тело 1:1 с оригиналом). Тег GT6-предметами НЕ заполняется — иначе маяк принимал бы
+	 *  и неценные материалы, шире оригинала (решение пользователя 2026-07-30). */
+	public static boolean isBeaconPayment(ItemStack aStack) {
+		return aStack.is(net.minecraft.tags.ItemTags.BEACON_PAYMENT_ITEMS) || (aStack.getItem() instanceof IItemBeaconPayment tItem && tItem.isBeaconPayment(aStack));
+	}
+
+	/** Плечо моста: подмена слота 0 ванильного {@code BeaconMenu} на слот с центральным предикатом. Все пути
+	 *  клика идут через {@code slots.get(index).mayPlace} (AbstractContainerMenu:356,382,452,485,494,693), поле
+	 *  {@code BeaconMenu.paymentSlot} продолжает работать (тот же Container, возврат предмета в {@code removed()}
+	 *  не задет). Клиентское плечо — {@code GT_API_Proxy_Client.onScreenOpening} (клиент строит СВОЙ экземпляр
+	 *  меню по сети, серверная подмена его не достигает). */
+	public static void wrapBeaconPaymentSlot(net.minecraft.world.inventory.AbstractContainerMenu aMenu) {
+		if (!(aMenu instanceof net.minecraft.world.inventory.BeaconMenu)) return;
+		net.minecraft.world.inventory.Slot tOld = aMenu.slots.get(0);
+		net.minecraft.world.inventory.Slot tNew = new net.minecraft.world.inventory.Slot(tOld.container, tOld.getContainerSlot(), tOld.x, tOld.y) {
+			@Override public boolean mayPlace(ItemStack aStack) {return isBeaconPayment(aStack);}
+			@Override public int getMaxStackSize() {return 1;} // как у PaymentSlot (BeaconMenu:170)
+		};
+		tNew.index = tOld.index;
+		aMenu.slots.set(0, tNew);
+	}
+
+	/** Серверное плечо: {@code PlayerContainerEvent.Open} летит после сборки меню (ServerPlayer.java:1458). */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onContainerOpen(net.neoforged.neoforge.event.entity.player.PlayerContainerEvent.Open aEvent) {
+		wrapBeaconPaymentSlot(aEvent.getContainer());
+	}
+
 	public int addArmor(String aPrefix) {
 		return 0;
 	}

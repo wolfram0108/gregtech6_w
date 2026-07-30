@@ -48,7 +48,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefixItem, IItemGT, IItemNoGTOverride {
+public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemBeaconPayment, IPrefixItem, IItemGT, IItemNoGTOverride {
 	public final String mNameInternal;
 	public final OreDictPrefix mPrefix;
 	public final OreDictMaterial[] mMaterialList;
@@ -183,13 +183,13 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		return mContainerItem != null ? ST.amount(1, mContainerItem) : mPrefix.containerItem() != null ? ST.amount(1, mContainerItem = mPrefix.containerItem()) : null;
 	}
 	
-	// ⚠️ КАНАЛ РАЗОБРАН — роль перешла в ТЕГ, работа отдельным шагом (реестр мёртвых каналов, 2026-07-30).
-	// В 1.7.10 «можно ли платить этим маяку» решал сам предмет; в neo это тег
-	// ItemTags.BEACON_PAYMENT_ITEMS (ItemTags.java:135), то есть данные, а не метод — как и с боеприпасом
-	// лука (ARROWS), уже перенесённым через GT6ItemTags. Здесь тот же приём: слитки/самоцветы GT6,
-	// проходящие условие ниже (VALUABLE или железо-подобные), должны попасть в тег датагеном.
-	// Следствие сейчас: ценные слитки и самоцветы GT6 в маяк не принимаются.
-	// @Override
+	// ✅ КАНАЛ ЖИВ — мост GT_API_Proxy.isBeaconPayment + подмена слота 0 BeaconMenu (реестр каналов, 2026-07-30).
+	// В 1.7.10 «можно ли платить этим маяку» решал сам предмет (Forge Item.java:1482, маяк спрашивал его:
+	// TileEntityBeacon.isItemValidForSlot:409); в neo это тег ItemTags.BEACON_PAYMENT_ITEMS (ItemTags.java:135)
+	// на Item — материал в данных стека тегу не виден, а у GT6 один предмет на префикс. Тег НЕ заполняется
+	// (иначе маяк принимал бы и неценные материалы — шире оригинала, решение пользователя 2026-07-30):
+	// пер-стековый ответ возвращён контрактом IItemBeaconPayment, тело ниже 1:1 (оригинал PrefixItem.java:168-174).
+	@Override
 	public boolean isBeaconPayment(ItemStack aStack) {
 		if (mPrefix.mAmount >= U && (mPrefix.contains(TD.Prefix.GEM_BASED) || mPrefix.contains(TD.Prefix.INGOT_BASED))) {
 			short aMetaData = ST.meta_(aStack);

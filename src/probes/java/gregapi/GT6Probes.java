@@ -292,6 +292,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6sidelessprobe.flag")) gt6SidelessProbeTick(aEvent.getServer());
 	// [GT6-SLOTGUARD] BUG-082: попытка ВЫНУТЬ служебный дисплей всеми путями движка (GUI-клики + капа) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6slotguardprobe.flag")) gt6SlotGuardProbeTick(aEvent.getServer());
+	// [GT6-BEACON] мост оплаты маяка: слот 0 BeaconMenu после подмены судит материал стека 1:1 с оригиналом — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6beaconprobe.flag")) gt6BeaconProbeTick(aEvent.getServer());
 	}
 
 	// ==========================================================================================================
@@ -429,6 +431,101 @@ public final class GT6Probes {
 		}
 		O.println("[GT6-SLOTGUARD] ВЕРДИКТ: " + (tFail == 0 ? "PASS" : "FAIL") + " (pass=" + tPass + " fail=" + tFail + ")");
 		O.println("========== [GT6-SLOTGUARD] конец ==========");
+	}
+
+	// ==========================================================================================================
+	// [GT6-BEACON] МОСТ ОПЛАТЫ МАЯКА — судья пер-стековой избирательности 1:1 с 1.7.10.
+	//
+	// В 1.7.10 слот маяка спрашивал сам предмет (TileEntityBeacon.isItemValidForSlot:409 → Item.isBeaconPayment),
+	// GT6 отвечал по МАТЕРИАЛУ стека (PrefixItem:168-174: формы ≥1U GEM/INGOT_BASED, материал VALUABLE или
+	// ANY.Iron). В neo оплата — тег на Item (BeaconMenu:33,165), материал не виден; мост подменяет слот 0 на
+	// открытии меню (GT_API_Proxy.wrapBeaconPaymentSlot). Здесь НАСТОЯЩИЙ путь: ставится Blocks.BEACON,
+	// меню открывается state.getMenuProvider → player.openMenu (именно он даёт PlayerContainerEvent.Open),
+	// затем матрица mayPlace ПО МАТЕРИАЛАМ + живые клики + COLD-контроль (голый BeaconMenu без события —
+	// ванильный слот обязан ОТКАЗАТЬ серебру GT6, иначе PASS даёт не мост, а что-то другое).
+	// ==========================================================================================================
+	private static boolean mBeaconProbeDone = false;
+	private static void gt6BeaconProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (mBeaconProbeDone) return;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		mBeaconProbeDone = true;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-BEACON] мост оплаты маяка: избирательность по материалу 1:1 ==========");
+		int tPass = 0, tFail = 0;
+		try {
+			// Маяк в мир — реальный путь открытия меню, тот же, что у игрока по ПКМ.
+			BlockPos tPos = tPlayer.blockPosition().offset(2, 0, 0);
+			tLevel.setBlock(tPos, net.minecraft.world.level.block.Blocks.BEACON.defaultBlockState(), 3);
+			net.minecraft.world.MenuProvider tProvider = tLevel.getBlockState(tPos).getMenuProvider(tLevel, tPos);
+			if (tProvider == null) {O.println("[GT6-BEACON] ⛔ у маяка нет MenuProvider — СТЕНД НЕ СОСТОЯЛСЯ"); tFail++;}
+			else {
+				tPlayer.openMenu(tProvider);
+				net.minecraft.world.inventory.AbstractContainerMenu tMenu = tPlayer.containerMenu;
+				if (!(tMenu instanceof net.minecraft.world.inventory.BeaconMenu)) {O.println("[GT6-BEACON] ⛔ меню маяка не открылось (" + tMenu + ") — СТЕНД НЕ СОСТОЯЛСЯ"); tFail++;}
+				else {
+					net.minecraft.world.inventory.Slot tSlot = tMenu.slots.get(0);
+					O.println("[GT6-BEACON] слот 0 после openMenu: " + tSlot.getClass().getName() + " (ожидается аноним моста, НЕ BeaconMenu$PaymentSlot)");
+
+					// Матрица «стек → ожидание» — ожидания выведены из предиката оригинала (PrefixItem:168-174).
+					Object[][] tCases = {
+						{new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_INGOT), true , "ваниль iron_ingot (тег)"},
+						{gregapi.data.OP.ingot.mat(gregapi.data.MT.Ag,          1), true , "GT6 слиток серебра (VALUABLE)"},
+						{gregapi.data.OP.ingot.mat(gregapi.data.MT.WroughtIron, 1), true , "GT6 слиток кованого железа (ANY.Iron)"},
+						{gregapi.data.OP.gem  .mat(gregapi.data.MT.Ruby,        1), true , "GT6 рубин (GEM_BASED + VALUABLE)"},
+						{gregapi.data.OP.ingot.mat(gregapi.data.MT.Sn,          1), false, "GT6 слиток олова (не VALUABLE, не Iron)"},
+						{gregapi.data.OP.dust .mat(gregapi.data.MT.Ag,          1), false, "GT6 пыль серебра (префикс не INGOT/GEM_BASED)"},
+						{new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COBBLESTONE), false, "булыжник (негативный контроль)"},
+					};
+					for (Object[] tCase : tCases) {
+						net.minecraft.world.item.ItemStack tStack = (net.minecraft.world.item.ItemStack)tCase[0];
+						boolean tExpected = (Boolean)tCase[1];
+						String tName = (String)tCase[2];
+						if (tStack == null || tStack.isEmpty()) {tFail++; O.println("[GT6-BEACON] ⛔ стек «" + tName + "» не создался — пара НЕ СОСТОЯЛАСЬ"); continue;}
+						boolean tGot = tSlot.mayPlace(tStack);
+						if (tGot == tExpected) {tPass++; O.println("[GT6-BEACON] PASS: " + tName + " → " + tGot + " [" + tStack.getItem().getClass().getSimpleName() + "]");}
+						else {tFail++; O.println("[GT6-BEACON] FAIL: " + tName + " → " + tGot + ", ожидалось " + tExpected + " [" + tStack.getItem().getClass().getSimpleName() + "]");}
+					}
+
+					// Живой клик — следствие у конечного объекта, не только паспорт mayPlace:
+					// серебро ложится В СЛОТ, олово остаётся НА КУРСОРЕ.
+					net.minecraft.world.item.ItemStack tAg = gregapi.data.OP.ingot.mat(gregapi.data.MT.Ag, 1);
+					tMenu.setCarried(tAg.copy());
+					tMenu.clicked(0, 0, net.minecraft.world.inventory.ContainerInput.PICKUP, tPlayer);
+					boolean tAgPlaced = net.minecraft.world.item.ItemStack.isSameItemSameComponents(tMenu.slots.get(0).getItem(), tAg) && tMenu.getCarried().isEmpty();
+					if (tAgPlaced) {tPass++; O.println("[GT6-BEACON] PASS: клик серебром — слиток РЕАЛЬНО встал в слот маяка");}
+					else {tFail++; O.println("[GT6-BEACON] FAIL: клик серебром — слот «" + tMenu.slots.get(0).getItem() + "», курсор «" + tMenu.getCarried() + "»");}
+					tMenu.slots.get(0).set(net.minecraft.world.item.ItemStack.EMPTY);
+					tMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
+
+					net.minecraft.world.item.ItemStack tSn = gregapi.data.OP.ingot.mat(gregapi.data.MT.Sn, 1);
+					tMenu.setCarried(tSn.copy());
+					tMenu.clicked(0, 0, net.minecraft.world.inventory.ContainerInput.PICKUP, tPlayer);
+					boolean tSnRejected = tMenu.slots.get(0).getItem().isEmpty() && net.minecraft.world.item.ItemStack.isSameItemSameComponents(tMenu.getCarried(), tSn);
+					if (tSnRejected) {tPass++; O.println("[GT6-BEACON] PASS: клик оловом — маяк ОТКАЗАЛ, слиток остался на курсоре");}
+					else {tFail++; O.println("[GT6-BEACON] FAIL: клик оловом — слот «" + tMenu.slots.get(0).getItem() + "», курсор «" + tMenu.getCarried() + "»");}
+					tMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
+					tPlayer.closeContainer();
+				}
+
+				// COLD-контроль: ГОЛЫЙ BeaconMenu конструктором — событие Open не летит, слот ванильный.
+				// Серебро GT6 обязан ОТКАЗАТЬ (нет в теге), ваниль — принять. Иначе PASS выше даёт не мост.
+				net.minecraft.world.inventory.BeaconMenu tCold = new net.minecraft.world.inventory.BeaconMenu(0, tPlayer.getInventory());
+				boolean tColdAg = tCold.slots.get(0).mayPlace(gregapi.data.OP.ingot.mat(gregapi.data.MT.Ag, 1));
+				boolean tColdFe = tCold.slots.get(0).mayPlace(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_INGOT));
+				if (!tColdAg && tColdFe) {tPass++; O.println("[GT6-BEACON] PASS: COLD — ванильный слот без моста отказывает серебру GT6 и принимает iron_ingot");}
+				else {tFail++; O.println("[GT6-BEACON] FAIL: COLD — серебро GT6 → " + tColdAg + " (ожидалось false), iron_ingot → " + tColdFe + " (ожидалось true)");}
+
+				tLevel.setBlock(tPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			}
+		} catch (Throwable e) {
+			O.println("[GT6-BEACON] СТЕНД УПАЛ: " + e);
+			e.printStackTrace(O);
+			tFail++;
+		}
+		O.println("[GT6-BEACON] ВЕРДИКТ: " + (tFail == 0 ? "PASS" : "FAIL") + " (pass=" + tPass + " fail=" + tFail + ")");
+		O.println("========== [GT6-BEACON] конец ==========");
 	}
 
 	private static boolean hasDisplay(net.minecraft.world.Container aContainer) {

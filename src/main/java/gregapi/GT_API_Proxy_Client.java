@@ -457,7 +457,15 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	public void onTextureStitchedPre(TextureAtlasStitchedEvent aEvent) {
 		//
 	}
-	
+
+	/** Клиентское плечо моста оплаты маяка (центр — {@link GT_API_Proxy#wrapBeaconPaymentSlot}): клиент строит
+	 *  СВОЙ экземпляр {@code BeaconMenu} по сетевому пакету, серверная подмена слота его не достигает — без
+	 *  этого плеча клиентское предсказание клика отвергало бы стек, который сервер принимает. */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onScreenOpening(net.neoforged.neoforge.client.event.ScreenEvent.Opening aEvent) {
+		if (aEvent.getNewScreen() instanceof net.minecraft.client.gui.screens.inventory.BeaconScreen tScreen) GT_API_Proxy.wrapBeaconPaymentSlot(tScreen.getMenu());
+	}
+
 	/**
 	 * PORT-TODO(F3, baked-рендер клиента, частично): 1.7.10 {@code net.minecraftforge.event.entity.player.ItemTooltipEvent}
 	 * держал tooltip как {@code List<String>} напрямую в поле {@code toolTip}; neo-эквивалент
@@ -581,9 +589,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				aToolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_SANDWICHABLE));
 			}
 
-			/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code Item.isBeaconPayment(ItemStack)} (Forge 1.7.10,
-			 * метод удалён) — neo эквивалент тег {@code ItemTags.BEACON_PAYMENT_ITEMS}. */
-			if (aEvent.getItemStack().is(net.minecraft.tags.ItemTags.BEACON_PAYMENT_ITEMS)) {
+			/* Было {@code Item.isBeaconPayment(ItemStack)} (Forge 1.7.10, метод удалён) — центральный предикат моста
+			 * (тег {@code BEACON_PAYMENT_ITEMS} ИЛИ контракт IItemBeaconPayment): тултип отвечает то же, что слот маяка. */
+			if (GT_API_Proxy.isBeaconPayment(aEvent.getItemStack())) {
 				aToolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_BEACON_PAYMENT));
 			}
 
