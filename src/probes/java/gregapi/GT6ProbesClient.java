@@ -152,6 +152,60 @@ public final class GT6ProbesClient {
 	// выглядит нераспознанным ключом. Меряем НА КЛИЕНТЕ и тем же вызовом, которым имя берут тултип и Jade —
 	// ItemStack.getHoverName() (урок BUG-064: серверная сторона показывает не то, что видит игрок).
 	// Снять при уборке фазы.
+	// ==========================================================================================================
+	// gt6tintprobe — цвет блоков GT6 доходит ли до движка.
+	//
+	// В 1.7.10 движок спрашивал цвет У БЛОКА (getRenderColor/colorMultiplier); в neo он берёт его из РЕЕСТРА
+	// источников тинта. Судим ДВИЖКОВЫМ путём — Minecraft.getBlockColors().getColor(state, level, pos, tintIndex),
+	// тем самым, которым идёт рендер, и сверяем с тем, что отдаёт сам GT6-блок.
+	//
+	// КОНТРОЛЬ ОСМЫСЛЕННОСТИ: обязаны найтись блоки с НЕбелым цветом (крашеные) — иначе судья ничего не мерит:
+	// белый 0xFFFFFF отдаёт и ванильный дефолт, и незарегистрированный блок.
+	// ==========================================================================================================
+	private static boolean mTintDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onTintProbeClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mTintDone || !gregapi.data.CS.probeFlag("gt6tintprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		mTintDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.client.color.block.BlockColors tColors = tMC.getBlockColors();
+		net.minecraft.core.BlockPos tPos = tMC.player.blockPosition();
+		O.println("========== [GT6-TINTPROBE] цвет блоков GT6 движковым путём ==========");
+		int tChecked = 0, tOk = 0, tBad = 0, tColoured = 0;
+		java.util.List<String> tFails = new java.util.ArrayList<>(), tShow = new java.util.ArrayList<>();
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			if (tID == null || !(tID.getNamespace().equals(gregapi.data.CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
+			if (!(tBlock instanceof gregapi.block.IBlock tGT)) continue;
+			// перебираем подтипы: цвет у крашеных блоков зависит от меты
+			for (int tMeta = 0; tMeta < 16; tMeta++) {
+				net.minecraft.world.level.block.state.BlockState tState = tBlock.defaultBlockState();
+				if (tBlock instanceof gregapi.block.IBlockExtendedMetaData tMB) {
+					net.minecraft.world.level.block.state.BlockState tWith = tMB.getStateForExtendedMetaData(tState, (short)tMeta);
+					if (tWith != null) tState = tWith;
+				}
+				int tExpect = tGT.getRenderColor(tBlock instanceof gregapi.block.IBlockExtendedMetaData tMB2 ? tMB2.getExtendedMetaData(tState) : 0) & 0xFFFFFF;
+				// движковый путь 26.1.2: реестр отдаёт ИСТОЧНИК тинта для слоя, он и считает цвет.
+				// ⚠️ Спрашиваем БЕЗ мира (color(state)): 1.7.10-метод colorMultiplier читает мету ИЗ МИРА по
+				// координатам, поэтому вопрос «цвет состояния, которого на этой позиции нет» бессмысленен —
+				// первая редакция судьи так и мерила и получила цвет меты 0 на всех подтипах. Позиционную ветку
+				// (биом-оттенок) на клиенте без постановки блока не проверить — она отдельно, живым тестом.
+				net.minecraft.client.color.block.BlockTintSource tSrc = tColors.getTintSource(tState, 0);
+				int tActual = (tSrc == null ? 0xFFFFFF : tSrc.color(tState)) & 0xFFFFFF;
+				tChecked++;
+				if (tExpect != 0xFFFFFF) {tColoured++; if (tShow.size() < 6) tShow.add(tID + " мета " + tMeta + " → " + String.format("#%06X", tExpect));}
+				if (tExpect == tActual) tOk++; else {tBad++; if (tFails.size() < 8) tFails.add(tID + " мета " + tMeta + ": движок " + String.format("#%06X", tActual) + ", GT6 " + String.format("#%06X", tExpect));}
+			}
+		}
+		for (String s : tFails) O.println("[GT6-TINTPROBE] расхождение — " + s);
+		for (String s : tShow) O.println("[GT6-TINTPROBE] крашеный блок — " + s);
+		O.println("[GT6-TINTPROBE] проверено состояний: " + tChecked + "; совпало " + tOk + "; разошлось " + tBad + "; с НЕбелым цветом " + tColoured);
+		O.println("[GT6-TINTPROBE] " + (tBad == 0 ? "PASS" : "FAIL") + ": цвет доходит до движка; контроль осмысленности " + (tColoured > 0 ? "PASS" : "FAIL") + " (небелых " + tColoured + ")");
+		O.println("========== [GT6-TINTPROBE] DONE ==========");
+	}
+
 	private static boolean mNameProbeDone = false;
 	@net.neoforged.bus.api.SubscribeEvent
 	public static void onNameProbeClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {

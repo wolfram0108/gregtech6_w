@@ -132,6 +132,43 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		aModBus.addListener(this::onRegisterFluidModels);
 		aModBus.addListener(this::onRegisterBlockEntityRenderers);
 		aModBus.addListener(this::onRegisterMenuScreens);
+		aModBus.addListener(this::onRegisterBlockTints);
+	}
+
+	// ===== F3 tint ЦЕНТР: цвет блоков GT6 ====================================================================
+	// В 1.7.10 движок спрашивал цвет У БЛОКА двумя методами: getRenderColor(meta) — цвет по подтипу, и
+	// colorMultiplier(world,x,y,z) — цвет в точке мира (биом-оттенок). Оба метода в порте живы, но вызывателей
+	// не имели: neo цвет у блока НЕ спрашивает — он берёт его из РЕЕСТРА источников тинта
+	// (BlockColors.register(List<BlockTintSource>, Block...), RegisterColorHandlersEvent.BlockTintSources:68).
+	// Поэтому здесь ОДНА регистрация на весь мод, а не мост в каждом блоке: подключать нечего к семи корням —
+	// движок вообще ходит другим путём. Источник ниже спрашивает те самые 1.7.10-методы, значения не дублируются.
+	// Следствие до этой правки: крашеные блоки (BlockColored — цветное стекло и родня) рисовались без цвета,
+	// а биом-оттенок скопированных текстур не работал (метка PORT-TODO в BlockTextureCopied:36 — тот же канал).
+	private void onRegisterBlockTints(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.BlockTintSources aEvent) {
+		java.util.List<net.minecraft.client.color.block.BlockTintSource> tSource = java.util.List.of(new GT6BlockTint());
+		java.util.List<net.minecraft.world.level.block.Block> tBlocks = new java.util.ArrayList<>();
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			if (tID == null || !(tID.getNamespace().equals(gregapi.data.CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
+			if (tBlock instanceof gregapi.block.IBlock) tBlocks.add(tBlock);
+		}
+		if (!tBlocks.isEmpty()) aEvent.register(tSource, tBlocks.toArray(new net.minecraft.world.level.block.Block[0]));
+		gregapi.data.CS.OUT.println("[F3-tint] источник цвета зарегистрирован для блоков GT6: " + tBlocks.size());
+	}
+
+	/** Переходник «вопрос движка о цвете» → «1.7.10-методы блока GT6». Один на весь мод; величины живут в блоках. */
+	private static final class GT6BlockTint implements net.minecraft.client.color.block.BlockTintSource {
+		/** Вопрос без мира — 1.7.10 {@code getRenderColor(meta)}. Подтип берём СУЩЕСТВУЮЩИМ центром мета↔BlockState
+		 *  ({@code IBlockExtendedMetaData.getExtendedMetaData}), а не своим разбором свойств. */
+		@Override public int color(net.minecraft.world.level.block.state.BlockState aState) {
+			if (!(aState.getBlock() instanceof gregapi.block.IBlock tBlock)) return 16777215;
+			int tMeta = aState.getBlock() instanceof gregapi.block.IBlockExtendedMetaData tMetaBlock ? tMetaBlock.getExtendedMetaData(aState) : 0;
+			return tBlock.getRenderColor(tMeta);
+		}
+		/** Вопрос с миром — 1.7.10 {@code colorMultiplier(world,x,y,z)} (биом-оттенок и прочее позиционное). */
+		@Override public int colorInWorld(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.client.renderer.block.BlockAndTintGetter aLevel, net.minecraft.core.BlockPos aPos) {
+			return aState.getBlock() instanceof gregapi.block.IBlock tBlock ? tBlock.colorMultiplier(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : color(aState);
+		}
 	}
 
 	// F14-gui: КЛИЕНТ-регистрация экрана для ContainerCommon.MENU_TYPE (без неё neo падает при открытии любого GUI мода —
