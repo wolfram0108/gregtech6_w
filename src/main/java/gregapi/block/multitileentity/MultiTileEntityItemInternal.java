@@ -705,6 +705,8 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return V[aTier] * doEnergyInjection (TD.Energy.EU, aStack, V[aTier], (long)(aCharge / V[aTier]), null, null, 0, 0, 0, !aSimulate);
 	}
 	
+	// ⚠️ КАНАЛ ЧУЖОГО МОДА — та же ветка, что charge выше: интерфейсы IC2 (IElectricItemManager) и
+	// Galacticraft (IItemElectric) под @Optional.Interface в оригинале (:45-48,83-88). Модов в сборке нет.
 	// @Override
 	public double discharge(ItemStack aStack, double aCharge, int aTier, boolean aIgnoreTransferLimit, boolean aBatteryAlike, boolean aSimulate) {
 		if (aCharge < V[aTier = UT.Code.bind4(aTier)]) return 0;

@@ -164,9 +164,13 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		return (aMeta & 7) < 6 && WD.set(aWorld, aX, aY, aZ, this, (aMeta & 8) | (((aMeta & 7) + 1) % 6), 3);
 	}
 	
-	// @Override
+	// ⚠️ КАНАЛ ЧУЖОГО МОДА — вторая половина пары с rotateBlock выше: Forge-канал «какие оси допустимы»
+	// для ключей ДРУГИХ модов. В neo такой пары нет (поворот инструментом идёт через
+	// IBlockExtension.getToolModifiedState:814, без списка осей), ключей сторонних модов в сборке нет,
+	// а свой поворот GT6 делает сам — onToolClick, ветка TOOL_wrench/TOOL_rotator, она жива.
 	// было ForgeDirection.VALID_DIRECTIONS (1.7.10, все 6 реальных направлений, без UNKNOWN) -> neo Direction
 	// не имеет UNKNOWN-константы вовсе (Direction.java:33-38, ровно 6 значений) -> Direction.values() 1:1.
+	// @Override
 	public Direction[] getValidRotations(Level aWorld, int aX, int aY, int aZ) {
 		return (WD.meta(aWorld, aX, aY, aZ) & 7) < 6 ? Direction.values() : null;
 	}
