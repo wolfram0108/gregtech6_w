@@ -300,6 +300,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6smeltxpprobe.flag")) gt6SmeltXPProbeTick(aEvent.getServer());
 	// [GT6-SMELTXPYARD] ПЛОЩАДКА ПРИЁМКИ опыта плавки (не судья — печи с контрастом «опыт есть/нет» для глаз игрока) — снять после приёмки
 		if (gregapi.data.CS.probeFlag("gt6smeltxpyard.flag")) gt6SmeltXPYardTick(aEvent.getServer());
+	// [GT6-LIQUIDPROBE] шов F5 surface-B: вода GT6 = LiquidBlock (заморозка/ведро/губка/лава/без двойного разлива) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6liquidprobe.flag")) gt6LiquidProbeTick(aEvent.getServer());
 	}
 
 	// ==========================================================================================================
@@ -11353,5 +11355,205 @@ public final class GT6Probes {
 		tServer.saveEverything(true, true, true);
 		tServer.getPlayerList().saveAll();
 		O.println("========== [" + PY_M + "] ПЛОЩАДКА ГОТОВА, мир сохранён ==========");
+	}
+
+	// ==========================================================================================================
+	// [GT6-LIQUIDPROBE] Шов F5 surface-B: вода GT6 стала настоящим LiquidBlock — судим СЛЕДСТВИЯ у движковых
+	// путей, а не instanceof-формулу: (1) ведро BucketPickup (1:1 ItemBucket 1.7.10: вода/лава мета 0 —
+	// черпается, нефть — нет); (2) губка SpongeBlock:66-69; (3) заморозка настоящим ServerLevel.tickPrecipitation:592
+	// (ванильный погодный тик, @VisibleForTesting-публичный) в найденном ХОЛОДНОМ биоме; (4) лава сверху →
+	// LavaFluid.spreadTo:218 → камень — судится ИДЕНТИЧНОСТЬ следствия с ванильным зеркалом; (5) двойного
+	// разлива НЕТ: в чаше с водой GT6 после тиков (включая пинок updateShape) ванильных водных блоков 0.
+	// Позитивные контроли — те же испытания над ванильной водой; COLD-кейсы — нефть (не черпается/не впитывается)
+	// и тёплый биом (не мёрзнет). НЕ доказывает: worldgen-плечо льда (SnowAndFreezeFeature на свежих холодных
+	// чанках — тот же shouldFreeze-шов, судится живой приёмкой) и карту (MODCOMPAT-002, отдельный тикет).
+	// ==========================================================================================================
+	private static int mLiqPhase = 0, mLiqTick = 0, mLiqPass = 0, mLiqFail = 0;
+	private static net.minecraft.core.BlockPos mLiqLavaGT, mLiqLavaVan, mLiqSpillGT, mLiqSpillVan;
+	private static void gt6LiquidProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (mLiqPhase >= 2) return;
+		ServerLevel tLevel = aServer.overworld();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (mLiqPhase == 1) {
+			if (++mLiqTick < 150) return;
+			mLiqPhase = 2;
+			// --- (4) лава → камень: следствие GT6 обязано СОВПАСТЬ с ванильным зеркалом -------------------
+			net.minecraft.world.level.block.Block tResGT  = tLevel.getBlockState(mLiqLavaGT ).getBlock();
+			net.minecraft.world.level.block.Block tResVan = tLevel.getBlockState(mLiqLavaVan).getBlock();
+			O.println("[GT6-LIQUIDPROBE] лава-над-водой: GT6 → " + regName(tResGT) + " · ваниль → " + regName(tResVan));
+			liqJudge(O, "лава+ваниль-вода даёт твёрдый камнеподобный результат (позитив рига)", tResVan == net.minecraft.world.level.block.Blocks.STONE || tResVan == net.minecraft.world.level.block.Blocks.COBBLESTONE || tResVan == net.minecraft.world.level.block.Blocks.OBSIDIAN);
+			liqJudge(O, "лава+вода GT6 даёт ТО ЖЕ следствие, что ваниль (LavaFluid.spreadTo:218)", tResGT == tResVan);
+			// --- (5) двойной разлив: в GT6-чаше ванильной воды быть не должно ------------------------------
+			int tVanInGT = liqCountVanillaWater(tLevel, mLiqSpillGT), tVanInVan = liqCountVanillaWater(tLevel, mLiqSpillVan);
+			int tGTInGT = 0;
+			for (int dx = -4; dx <= 4; dx++) for (int dy = 0; dy <= 3; dy++) for (int dz = -4; dz <= 4; dz++)
+				if (tLevel.getBlockState(mLiqSpillGT.offset(dx, dy, dz)).getBlock() instanceof gregtech.blocks.fluids.BlockWaterlike) tGTInGT++;
+			O.println("[GT6-LIQUIDPROBE] чаша GT6: ванильных водных блоков " + tVanInGT + ", GT6-водных " + tGTInGT + " · чаша-зеркало: ванильных " + tVanInVan);
+			liqJudge(O, "ванильная вода в зеркальной чаше РАСТЕКЛАСЬ — чанки тикали, детектор видит (позитив)", tVanInVan >= 2);
+			liqJudge(O, "GT6-вода в своей чаше жива и растеклась СВОИМИ квантами (позитив GT6-плеча)", tGTInGT >= 2);
+			liqJudge(O, "двойного разлива НЕТ: ванильной воды в чаше GT6 ноль (updateShape/onPlace нейтрализованы)", tVanInGT == 0);
+			for (int cx = 74; cx <= 77; cx++) for (int cz = 74; cz <= 77; cz++) tLevel.setChunkForced(cx, cz, false);
+			O.println("========== [GT6-LIQUIDPROBE] ВЕРДИКТ: PASS " + mLiqPass + " / FAIL " + mLiqFail + " ==========");
+			O.println("[GT6-LIQUIDPROBE] НЕ доказано стендом: worldgen-лёд свежих холодных чанков (живая приёмка) · карта (MODCOMPAT-002)");
+			return;
+		}
+		mLiqPhase = 1;
+		O.println("========== [GT6-LIQUIDPROBE] шов F5 surface-B: вода GT6 = LiquidBlock ==========");
+		try {
+			// --- инвентарь класса: все жидкостные блоки GT6 из живого реестра --------------------------------
+			int tCount = 0;
+			StringBuilder tList = new StringBuilder();
+			for (net.minecraft.world.level.block.Block tB : net.minecraft.core.registries.BuiltInRegistries.BLOCK)
+				if (tB instanceof gregapi.block.fluid.BlockFluidBaseGT) {tCount++; tList.append(' ').append(regName(tB));}
+			O.println("[GT6-LIQUIDPROBE] носителей класса (BlockFluidBaseGT, все теперь LiquidBlock+BucketPickup):" + tList + " · всего " + tCount);
+			liqJudge(O, "жидкостные блоки GT6 в реестре есть (инвентарь класса не пуст)", tCount > 0);
+
+			net.minecraft.world.level.block.state.BlockState tStone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+			net.minecraft.world.level.block.state.BlockState tAir   = net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+			net.minecraft.core.BlockPos tBase = new net.minecraft.core.BlockPos(1200, 200, 1200);
+			tLevel.getChunkAt(tBase); // синхронная загрузка чанка рига
+			// ⛔ Урок прогона №1: без игрока рядом чанки НЕ ТИКАЮТ — планируемые тики (лава 30, разлив воды)
+			// замораживаются, и «дозревание» судит нетронутый риг (позитив лавы дал WATER). Форс-тикет = ticking.
+			for (int cx = 74; cx <= 77; cx++) for (int cz = 74; cz <= 77; cz++) tLevel.setChunkForced(cx, cz, true);
+
+			// --- (1) ВЕДРО: прямое зерно шва — instanceof BucketPickup + pickupBlock -------------------------
+			// (цепь BucketItem.use → clip → instanceof BucketPickup → pickupBlock; клип ванильно-общий, судим шов)
+			net.minecraft.core.BlockPos tPB = tBase; liqPlate(tLevel, tPB, tStone);
+			liqPlaceRiver(tLevel, tPB.above());
+			boolean tIsPickup = tLevel.getBlockState(tPB.above()).getBlock() instanceof net.minecraft.world.level.block.BucketPickup;
+			net.minecraft.world.item.ItemStack tGot = tIsPickup ? ((net.minecraft.world.level.block.BucketPickup)tLevel.getBlockState(tPB.above()).getBlock()).pickupBlock(null, tLevel, tPB.above(), tLevel.getBlockState(tPB.above())) : net.minecraft.world.item.ItemStack.EMPTY;
+			liqJudge(O, "ведро: вода GT6 черпается ванильным путём (ведро ВОДЫ + блок исчез; 1:1 ItemBucket:85-92)",
+				tIsPickup && tGot.getItem() == net.minecraft.world.item.Items.WATER_BUCKET && tLevel.getBlockState(tPB.above()).isAir());
+
+			net.minecraft.core.BlockPos tPV = tBase.offset(6, 0, 0); liqPlate(tLevel, tPV, tStone);
+			tLevel.setBlockAndUpdate(tPV.above(), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState());
+			net.minecraft.world.item.ItemStack tGotV = ((net.minecraft.world.level.block.BucketPickup)tLevel.getBlockState(tPV.above()).getBlock()).pickupBlock(null, tLevel, tPV.above(), tLevel.getBlockState(tPV.above()));
+			liqJudge(O, "ведро: ванильная вода черпается тем же путём (позитив)", tGotV.getItem() == net.minecraft.world.item.Items.WATER_BUCKET);
+
+			net.minecraft.core.BlockPos tPO = tBase.offset(12, 0, 0); liqPlate(tLevel, tPO, tStone);
+			tLevel.setBlockAndUpdate(tPO.above(), gregapi.data.CS.BlocksGT.OilHeavy.defaultBlockState());
+			net.minecraft.world.item.ItemStack tGotO = ((net.minecraft.world.level.block.BucketPickup)tLevel.getBlockState(tPO.above()).getBlock()).pickupBlock(null, tLevel, tPO.above(), tLevel.getBlockState(tPO.above()));
+			liqJudge(O, "ведро: НЕФТЬ не черпается и блок цел (COLD; 1.7.10 черпал только Material.water/lava)",
+				tGotO.isEmpty() && tLevel.getBlockState(tPO.above()).getBlock() == gregapi.data.CS.BlocksGT.OilHeavy);
+
+			// --- (2) ГУБКА: setBlockAndUpdate(SPONGE) вплотную — впитывание синхронно в onPlace ---------------
+			net.minecraft.core.BlockPos tSG = tBase.offset(0, 0, 6); liqPlate(tLevel, tSG, tStone);
+			liqPlaceRiver(tLevel, tSG.above());
+			tLevel.setBlockAndUpdate(tSG.above().east(), net.minecraft.world.level.block.Blocks.SPONGE.defaultBlockState());
+			liqJudge(O, "губка: вода GT6 впитана (блок исчез, губка намокла; SpongeBlock:66-69)",
+				tLevel.getBlockState(tSG.above()).isAir() && tLevel.getBlockState(tSG.above().east()).is(net.minecraft.world.level.block.Blocks.WET_SPONGE));
+
+			net.minecraft.core.BlockPos tSV = tBase.offset(6, 0, 6); liqPlate(tLevel, tSV, tStone);
+			tLevel.setBlockAndUpdate(tSV.above(), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState());
+			tLevel.setBlockAndUpdate(tSV.above().east(), net.minecraft.world.level.block.Blocks.SPONGE.defaultBlockState());
+			liqJudge(O, "губка: ванильная вода впитана (позитив)", tLevel.getBlockState(tSV.above()).isAir());
+
+			net.minecraft.core.BlockPos tSO = tBase.offset(12, 0, 6); liqPlate(tLevel, tSO, tStone);
+			tLevel.setBlockAndUpdate(tSO.above(), gregapi.data.CS.BlocksGT.OilHeavy.defaultBlockState());
+			tLevel.setBlockAndUpdate(tSO.above().east(), net.minecraft.world.level.block.Blocks.SPONGE.defaultBlockState());
+			liqJudge(O, "губка: НЕФТЬ не впитана, губка сухая (COLD; canBeHydrated отсекает не-воду)",
+				tLevel.getBlockState(tSO.above()).getBlock() == gregapi.data.CS.BlocksGT.OilHeavy && tLevel.getBlockState(tSO.above().east()).is(net.minecraft.world.level.block.Blocks.SPONGE));
+
+			// --- (3) ЗАМОРОЗКА настоящим погодным тиком: холодный биом ищем по миру --------------------------
+			com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tCold =
+				tLevel.findClosestBiome3d(h -> h.value().getBaseTemperature() < 0.15F, tLevel.getRespawnData().pos(), 6400, 32, 64); // getSharedSpawnPos 26.1 → LevelData.RespawnData.pos() (Level.java:724)
+			if (tCold == null) {
+				liqJudge(O, "холодный биом в радиусе 6400 НЕ НАЙДЕН — заморозка НЕ СОСТОЯЛАСЬ (среда, не код)", false);
+			} else {
+				int tX = tCold.getFirst().getX(), tZ = tCold.getFirst().getZ();
+				tLevel.getChunkAt(new net.minecraft.core.BlockPos(tX, 0, tZ));
+				int tTop = tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, tX, tZ);
+				net.minecraft.core.BlockPos tFG = new net.minecraft.core.BlockPos(tX, tTop + 2, tZ);
+				O.println("[GT6-LIQUIDPROBE] холодный биом: " + tCold.getSecond().getRegisteredName() + " @ " + tX + "," + tZ
+					+ " · warmEnoughToRain(точка воды)=" + tLevel.getBiome(tFG).value().warmEnoughToRain(tFG, tLevel.getSeaLevel()));
+				tLevel.setBlockAndUpdate(tFG.below(), tStone);
+				liqPlaceRiver(tLevel, tFG);
+				tLevel.tickPrecipitation(new net.minecraft.core.BlockPos(tX, tTop, tZ));
+				liqJudge(O, "заморозка: вода GT6 в холодном биоме замёрзла ВАНИЛЬНЫМ tickPrecipitation:592 (Biome.shouldFreeze:161)",
+					tLevel.getBlockState(tFG).is(net.minecraft.world.level.block.Blocks.ICE));
+
+				net.minecraft.core.BlockPos tFV = new net.minecraft.core.BlockPos(tX + 4, tTop + 2, tZ);
+				tLevel.getChunkAt(tFV);
+				tLevel.setBlockAndUpdate(tFV.below(), tStone);
+				tLevel.setBlockAndUpdate(tFV, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState());
+				tLevel.tickPrecipitation(new net.minecraft.core.BlockPos(tFV.getX(), tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, tFV.getX(), tFV.getZ()), tFV.getZ()));
+				liqJudge(O, "заморозка: ванильная вода в той же точке мёрзнет (позитив рига)", tLevel.getBlockState(tFV).is(net.minecraft.world.level.block.Blocks.ICE));
+			}
+			// COLD-кейс: тёплая точка — вода GT6 НЕ мёрзнет
+			net.minecraft.core.BlockPos tFW = tBase.offset(0, 0, 12); liqPlate(tLevel, tFW, tStone);
+			liqPlaceRiver(tLevel, tFW.above());
+			boolean tWarmHere = tLevel.getBiome(tFW.above()).value().warmEnoughToRain(tFW.above(), tLevel.getSeaLevel());
+			if (tWarmHere) {
+				tLevel.tickPrecipitation(new net.minecraft.core.BlockPos(tFW.getX(), tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, tFW.getX(), tFW.getZ()), tFW.getZ()));
+				liqJudge(O, "заморозка: в ТЁПЛОМ биоме вода GT6 осталась водой (COLD-кейс)", tLevel.getBlockState(tFW.above()).getBlock() instanceof gregtech.blocks.fluids.BlockWaterlike);
+			} else O.println("[GT6-LIQUIDPROBE] точка рига не тёплая (" + tLevel.getBiome(tFW.above()).getRegisteredName() + ") — COLD-кейс тепла пропущен, не судится");
+
+			// --- (4) ЛАВА НАД ВОДОЙ: риги на дозревание (лава тикает с задержкой ~30) ------------------------
+			mLiqLavaGT = tBase.offset(0, 0, 18); liqBowl(tLevel, mLiqLavaGT, tStone, 1);
+			liqPlaceRiver(tLevel, mLiqLavaGT.above());
+			tLevel.setBlockAndUpdate(mLiqLavaGT.above(2), net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState());
+			mLiqLavaVan = tBase.offset(8, 0, 18); liqBowl(tLevel, mLiqLavaVan, tStone, 1);
+			tLevel.setBlockAndUpdate(mLiqLavaVan.above(), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState());
+			tLevel.setBlockAndUpdate(mLiqLavaVan.above(2), net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState());
+			mLiqLavaGT = mLiqLavaGT.above(); mLiqLavaVan = mLiqLavaVan.above(); // судим позицию ВОДЫ
+
+			// --- (5) ЧАШИ РАЗЛИВА: вода GT6 растекается ТОЛЬКО своими квантами -------------------------------
+			mLiqSpillGT = tBase.offset(0, 0, 26); liqBowl(tLevel, mLiqSpillGT, tStone, 3);
+			liqPlaceRiver(tLevel, mLiqSpillGT.above());
+			// пинок updateShape (сосед меняет форму дважды) — единственный НОВЫЙ канал планирования у LiquidBlock
+			tLevel.setBlockAndUpdate(mLiqSpillGT.above().north(), tStone);
+			tLevel.setBlockAndUpdate(mLiqSpillGT.above().north(), tAir);
+			mLiqSpillVan = tBase.offset(12, 0, 26); liqBowl(tLevel, mLiqSpillVan, tStone, 3);
+			tLevel.setBlockAndUpdate(mLiqSpillVan.above(), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState());
+			O.println("[GT6-LIQUIDPROBE] риги лавы и разлива поставлены, дозревание 150 тиков…");
+		} catch (Throwable t) {
+			mLiqFail++;
+			O.println("[GT6-LIQUIDPROBE] ⛔ ИСКЛЮЧЕНИЕ стенда: " + t);
+			t.printStackTrace(O);
+			mLiqPhase = 2;
+			O.println("========== [GT6-LIQUIDPROBE] ВЕРДИКТ: PASS " + mLiqPass + " / FAIL " + mLiqFail + " ==========");
+		}
+	}
+
+	private static void liqJudge(java.io.PrintStream O, String aWhat, boolean aOk) {
+		if (aOk) mLiqPass++; else mLiqFail++;
+		O.println("[GT6-LIQUIDPROBE] " + (aOk ? "PASS" : "FAIL") + " · " + aWhat);
+	}
+
+	private static String regName(net.minecraft.world.level.block.Block aBlock) {
+		net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock);
+		return tKey == null ? String.valueOf(aBlock) : tKey.toString();
+	}
+
+	/** Плита 3×3 + воздух над ней — изолированный пятачок под одно испытание. */
+	private static void liqPlate(ServerLevel aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aFloor) {
+		for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+			aLevel.setBlockAndUpdate(aPos.offset(dx, 0, dz), aFloor);
+			for (int dy = 1; dy <= 3; dy++) aLevel.setBlockAndUpdate(aPos.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+		}
+	}
+
+	/** Чаша (2R+1)² со стенками высоты 3 — жидкость остаётся внутри рига. */
+	private static void liqBowl(ServerLevel aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aWall, int aR) {
+		for (int dx = -aR-1; dx <= aR+1; dx++) for (int dz = -aR-1; dz <= aR+1; dz++) {
+			boolean tEdge = Math.abs(dx) > aR || Math.abs(dz) > aR;
+			aLevel.setBlockAndUpdate(aPos.offset(dx, 0, dz), aWall);
+			for (int dy = 1; dy <= 3; dy++) aLevel.setBlockAndUpdate(aPos.offset(dx, dy, dz), tEdge ? aWall : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+		}
+	}
+
+	/** Река GT6 c гейтом постановки (onBlockAdded вне worldgen сам себя стирает — тот же приём, что WorldgenRiver). */
+	private static void liqPlaceRiver(ServerLevel aLevel, net.minecraft.core.BlockPos aPos) {
+		gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = true;
+		aLevel.setBlockAndUpdate(aPos, gregapi.data.CS.BlocksGT.River.defaultBlockState());
+		gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = false;
+	}
+
+	/** Счёт ВАНИЛЬНЫХ водных блоков в объёме чаши (двойной разлив = ванильная вода появилась рядом с GT6). */
+	private static int liqCountVanillaWater(ServerLevel aLevel, net.minecraft.core.BlockPos aCenter) {
+		int rCount = 0;
+		for (int dx = -4; dx <= 4; dx++) for (int dy = 0; dy <= 3; dy++) for (int dz = -4; dz <= 4; dz++)
+			if (aLevel.getBlockState(aCenter.offset(dx, dy, dz)).getBlock() == net.minecraft.world.level.block.Blocks.WATER) rCount++;
+		return rCount;
 	}
 }

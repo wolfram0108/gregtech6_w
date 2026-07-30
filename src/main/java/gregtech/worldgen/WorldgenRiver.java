@@ -71,23 +71,19 @@ public class WorldgenRiver extends WorldgenObject {
 				
 				if (tPlacedNone) {
 					tPlacedNone = F;
-					// worldgen-заморозка (как ванильный генератор): ВЕРХНИЙ слой воды в ХОЛОДНОМ биоме генерится сразу льдом,
-					// а не мёрзнет позже через randomTick при приходе игрока (иначе GT6-чанки без льда рядом с замёрзшими
-					// vanilla-чанками). Холод = vanilla-условие !warmEnoughToRain (Biome:184). Под льдом — River (ниже по циклу).
-					net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ);
-					if (!aWorld.getBiome(tP).value().warmEnoughToRain(tP, aWorld.getSeaLevel())) {
-						tStorage.setBlockState(tX, tY & 15, tZ, Blocks.ICE.defaultBlockState());
-					} else {
-						BlockRiver.PLACEMENT_ALLOWED = T;
-						if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.River, 0, 0)) {
-							WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
-							aChunk.markUnsaved();
-							return F;
-						}
-						BlockRiver.PLACEMENT_ALLOWED = F;
-						// Стартовый тик 1:1 onBlockAdded (10+rand(90)) — см. WorldgenSwamp (neo прото-чанк без колбэков).
-						aWorld.scheduleTick(new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ), BlocksGT.River, 10+RNGSUS.nextInt(90));
+					// F5 surface-B: собственное worldgen-плечо льда СНЯТО (было: верхний слой воды в холодном биоме →
+					// сразу Blocks.ICE). River теперь LiquidBlock → ванильная SnowAndFreezeFeature:34 (шаг
+					// TOP_LAYER_MODIFICATION, ПОСЛЕ этого прохода) замораживает поверхность сама через
+					// Biome.shouldFreeze:161 — источник льда один, ванильный, как в 1.7.10 (корень BUG-066).
+					BlockRiver.PLACEMENT_ALLOWED = T;
+					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.River, 0, 0)) {
+						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
+						aChunk.markUnsaved();
+						return F;
 					}
+					BlockRiver.PLACEMENT_ALLOWED = F;
+					// Стартовый тик 1:1 onBlockAdded (10+rand(90)) — см. WorldgenSwamp (neo прото-чанк без колбэков).
+					aWorld.scheduleTick(new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ), BlocksGT.River, 10+RNGSUS.nextInt(90));
 				} else {
 					tStorage.setBlockState(tX, tY & 15, tZ, BlocksGT.River.defaultBlockState());
 				}

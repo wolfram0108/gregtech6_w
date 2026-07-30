@@ -415,6 +415,10 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// как на твёрдом блоке (оригинал: Forge BlockFluidBase — коллайдера нет, canDisplace). getCollisionShape/getShape=empty.
 	// В ОТЛИЧИЕ от BlockWaterlike здесь НЕТ getRenderShape=INVISIBLE: материал-жидкость РИСУЕТСЯ своей текстурой через
 	// GT6BlockModel (IRenderedBlock getTexture→renderTexture→FluidGT), а не через vanilla FluidRenderer.
+	// F5 surface-B: после репарентинга предка на LiquidBlock его INVISIBLE (:136) перекрывается обратно в MODEL —
+	// различие «чем рисуется» между иерархиями живёт в потомках, как и в 1.7.10 (у водоподобных — ванильная вода,
+	// здесь — своя текстура жидкости).
+	@Override protected net.minecraft.world.level.block.RenderShape getRenderShape(BlockState aState) {return net.minecraft.world.level.block.RenderShape.MODEL;}
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 

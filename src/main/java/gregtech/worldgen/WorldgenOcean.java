@@ -71,24 +71,20 @@ public class WorldgenOcean extends WorldgenObject {
 				
 				if (tPlacedNone) {
 					tPlacedNone = F;
-					// worldgen-заморозка (как River/vanilla): верхний слой воды в холодном биоме (!warmEnoughToRain) → сразу лёд,
-					// под ним Ocean. Даёт замёрзшую поверхность frozen-ocean при генерации, а не через runtime randomTick.
-					net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ);
-					if (!aWorld.getBiome(tP).value().warmEnoughToRain(tP, aWorld.getSeaLevel())) {
-						tStorage.setBlockState(tX, tY & 15, tZ, Blocks.ICE.defaultBlockState());
-					} else {
-						BlockOcean.UPDATE_TICK = (aBiomeNames.size() > 1);
-						BlockOcean.PLACEMENT_ALLOWED = T;
-						if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.Ocean, 0, 0)) {
-							WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
-							aChunk.markUnsaved();
-							return F;
-						}
-						BlockOcean.PLACEMENT_ALLOWED = F;
-						// Стартовый тик 1:1 onBlockAdded Ocean (гейт UPDATE_TICK: чистый океан-чанк не тикает —
-						// оригинальная оптимизация); см. WorldgenSwamp (neo прото-чанк без колбэков).
-						if (BlockOcean.UPDATE_TICK) aWorld.scheduleTick(new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ), BlocksGT.Ocean, 10+RNGSUS.nextInt(90));
+					// F5 surface-B: собственное worldgen-плечо льда СНЯТО (как у River) — Ocean теперь LiquidBlock,
+					// поверхность frozen-ocean замораживает ванильная SnowAndFreezeFeature:34 (TOP_LAYER_MODIFICATION,
+					// после этого прохода) через Biome.shouldFreeze:161. Источник льда один, ванильный (корень BUG-066).
+					BlockOcean.UPDATE_TICK = (aBiomeNames.size() > 1);
+					BlockOcean.PLACEMENT_ALLOWED = T;
+					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.Ocean, 0, 0)) {
+						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
+						aChunk.markUnsaved();
+						return F;
 					}
+					BlockOcean.PLACEMENT_ALLOWED = F;
+					// Стартовый тик 1:1 onBlockAdded Ocean (гейт UPDATE_TICK: чистый океан-чанк не тикает —
+					// оригинальная оптимизация); см. WorldgenSwamp (neo прото-чанк без колбэков).
+					if (BlockOcean.UPDATE_TICK) aWorld.scheduleTick(new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ), BlocksGT.Ocean, 10+RNGSUS.nextInt(90));
 				} else {
 					tStorage.setBlockState(tX, tY & 15, tZ, BlocksGT.Ocean.defaultBlockState());
 				}

@@ -52,8 +52,19 @@ import static gregapi.data.CS.*;
  * calculateFlowCost/flowIntoBlock/canFlowInto/isFlowingVertically — никогда не вызывается, GT6 переопределяет
  * тик целиком в Ocean/River/Swamp и никогда не зовёт {@code super.updateTick}) не портирован — не выдумываем
  * мёртвый код.
+ *
+ * <p><b>F5 surface-B (2026-07-30): предок — {@link LiquidBlock}, а не {@code Block}.</b> В 1.7.10 общий
+ * Forge-предок нёс ИДЕНТИЧНОСТЬ жидкости (интерфейс {@code IFluidBlock}), и весь движок+моды видели GT6-блок
+ * как жидкость. Порт воспроизвёл текучесть, но потерял идентичность: все движковые пути, отбирающие по
+ * {@code instanceof LiquidBlock}, GT6-жидкость не видели ({@code Biome.shouldFreeze:161} — заморозка,
+ * {@code SnowAndFreezeFeature:34} — worldgen-лёд, {@code SpongeBlock:66-69} — губка,
+ * {@code LavaFluid.spreadTo:218} — лава+вода→камень, {@code SpawnEggItem:108}, {@code LevelChunk:587}), плюс
+ * ванильное ведро ({@code BucketItem} → {@code BucketPickup}). Идентичность возвращена наследованием;
+ * ТЕКУЧЕСТЬ остаётся GT6-квантовой: все тик-каналы {@code LiquidBlock} перекрыты здесь же
+ * ({@link #onPlace}/{@link #neighborChanged}/{@link #tick}/{@link #updateShape}/{@link #isRandomlyTicking}) —
+ * ванильный fluid-тик не планируется НИКОГДА, двойного разлива нет.
  */
-public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.block.IBlockExtendedMetaData, gregapi.render.IRenderedBlock {
+public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.LiquidBlock implements IBlock, gregapi.block.IBlockExtendedMetaData, gregapi.render.IRenderedBlock {
 	/** было Forge {@code BlockFluidBase.displacements} + статический {@code defaultDisplacements}
 	 *  (wooden_door/iron_door/standing_sign/wall_sign/reeds -> false). F5 данные-дефолт (door/sign/reeds не вытесняются жидкостью — набор блоков, не заглушка):
 	 *  1.7.10 знал ОДИН блок на дверь/вывеску; neo расщепил на блок-на-древесину (нет 1:1 отображения без
@@ -89,9 +100,20 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 	 *  (данные из {@link gregapi.fluid.FluidGT}); эта 2-арг перегрузка оставляет Forge-дефолты
 	 *  (density=1, densityDir=-1, tickRate=20, quantaPerBlock=8). */
 	public BlockFluidBaseGT(BlockBehaviour.Properties aProperties, Material aMaterial) {
-		super(aProperties);
-		mMaterial = aMaterial;
-		registerDefaultState(getStateDefinition().any().setValue(FLUID_META, 0));
+		this(aProperties, aMaterial, null);
+	}
+
+	/** F5 surface-B: движковая идентичность жидкости блока — ЕДИНОЕ правило, то же, что у {@code getFluidState}
+	 *  обеих иерархий: материал water → ванильная WATER, lava → LAVA (их FluidState блок и отдаёт), иначе —
+	 *  собственный GT6-{@link net.minecraft.world.level.material.FlowingFluid} (Source; его FluidState блок НЕ
+	 *  отдаёт — идентичность без физики). Порядок реестров гарантирует связанность GT6-жидкостей к моменту
+	 *  конструирования блоков: FLUID регистрируется ДО BLOCK ({@code BuiltInRegistries.java:178,180} +
+	 *  {@code GameData.getRegistrationOrder} — ванильный порядок). */
+	private static net.minecraft.world.level.material.FlowingFluid liquidCarrierFor(Material aMaterial, net.minecraft.world.level.material.Fluid aFluid) {
+		if (aMaterial == Material.water) return net.minecraft.world.level.material.Fluids.WATER;
+		if (aMaterial == Material.lava ) return net.minecraft.world.level.material.Fluids.LAVA;
+		if (aFluid instanceof net.minecraft.world.level.material.FlowingFluid tFlowing) return tFlowing;
+		return net.minecraft.world.level.material.Fluids.WATER; // недостижимо при живой регистрации (все вызыватели несут GT6-Source); безопасный носитель-идентичность
 	}
 
 	/** Перенос характеристик Fluid→блок 1:1 с Forge {@code BlockFluidBase(Fluid,Material)} (:68-72):
@@ -104,7 +126,11 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 	 *  (Loader_Fluids: воды/нефти/газ без setLuminosity) — мёртвое поле не выдумываем.
 	 *  {@code temperature} НЕ перенесён: в порту никто не читает (Forge-static getTemperature не портирован). */
 	public BlockFluidBaseGT(BlockBehaviour.Properties aProperties, Material aMaterial, net.minecraft.world.level.material.Fluid aFluid) {
-		this(aProperties, aMaterial);
+		// F5 surface-B: super = LiquidBlock(FlowingFluid, Properties) — блок ЯВЛЯЕТСЯ жидкостью для движка.
+		// Его stateCache/LEVEL-каналы не используются (getFluidState/кванты — GT6-свои, перекрыты в потомках).
+		super(liquidCarrierFor(aMaterial, aFluid), aProperties);
+		mMaterial = aMaterial;
+		registerDefaultState(getStateDefinition().any().setValue(FLUID_META, 0).setValue(LEVEL, 0));
 		gregapi.fluid.FluidGT tFluid = gregapi.fluid.FluidGT.of(aFluid);
 		if (tFluid != null) {
 			density    = tFluid.getDensity();
@@ -119,8 +145,12 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 	public static final net.minecraft.world.level.block.state.properties.IntegerProperty FLUID_META =
 		net.minecraft.world.level.block.state.properties.IntegerProperty.create("gt6_meta", 0, 15);
 
+	// F5 surface-B: LEVEL объявляется ТОЛЬКО потому, что его требует конструктор предка (LiquidBlock:78
+	// registerDefaultState(...LEVEL...)); носитель квант — FLUID_META, LEVEL всегда 0 и никем не читается
+	// (все LEVEL-каналы LiquidBlock — getFluidState/getCollisionShape/pickupBlock — перекрыты).
+	// Сейв-совместимость: у старых состояний свойства level нет — при чтении оно берёт дефолт (0).
 	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<Block, BlockState> aBuilder) {
-		aBuilder.add(FLUID_META);
+		aBuilder.add(FLUID_META, LEVEL);
 	}
 
 	public void setExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
@@ -153,6 +183,34 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 	}
 	@Override protected void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
+	}
+
+	// ================= F5 surface-B: нейтрализация ВАНИЛЬНОЙ текучести предка =================
+	// LiquidBlock планирует ванильные fluid-тики в onPlace:153 / neighborChanged:199 / updateShape:181-183 —
+	// первые два уже перекрыты GT6-каналами выше; updateShape перекрывается здесь (тело = дефолт
+	// BlockBehaviour.updateShape «вернуть состояние без изменений», как было до репарентинга). Без этого
+	// FlowingFluid.tick ванили работал бы ПОВЕРХ GT6-квант — двойной разлив.
+	@Override protected BlockState updateShape(BlockState aState, net.minecraft.world.level.LevelReader aWorld, net.minecraft.world.level.ScheduledTickAccess aTicks, BlockPos aPos, net.minecraft.core.Direction aDirection, BlockPos aNeighborPos, BlockState aNeighborState, net.minecraft.util.RandomSource aRandom) {
+		return aState;
+	}
+
+	// LiquidBlock делегирует randomTick в FluidState (:105-111) — у лавы это ванильные поджоги
+	// (LavaFluid.randomTick), которых у GT6-жидкостей 1.7.10 не было (своя flammability в updateTick).
+	// Дефолт до репарентинга = F (randomTicks() в Properties не ставится); потомок с СОБСТВЕННЫМ
+	// random-каналом переопределяет сам (в 1.7.10 у жидкостей GT6 его не было ни у одной).
+	@Override protected boolean isRandomlyTicking(BlockState aState) {return F;}
+
+	/** F5 surface-B, ведро 1:1 с ванилью 1.7.10 ({@code recompSrc/.../ItemBucket.java:85-98}): материал water
+	 *  + мета 0 → {@code setBlockToAir} + ведро воды; материал lava + мета 0 → ведро лавы; ИНАЧЕ — не
+	 *  черпается и блок НЕ трогается (нефти/газы вычерпывались только GT6-механикой drain()). Канал читают
+	 *  {@code BucketItem} (ведро игрока) и {@code SpongeBlock:66} (губка). LEVEL-тело предка (:249-256)
+	 *  не годится: читает мёртвый LEVEL и отдаёт ведро {@code fluid.getBucket()} без материального гейта. */
+	@Override public net.minecraft.world.item.ItemStack pickupBlock(net.minecraft.world.entity.LivingEntity aUser, net.minecraft.world.level.LevelAccessor aLevel, BlockPos aPos, BlockState aState) {
+		if (aState.getValue(FLUID_META) != 0) return net.minecraft.world.item.ItemStack.EMPTY;
+		net.minecraft.world.item.Item tBucket = mMaterial == Material.water ? net.minecraft.world.item.Items.WATER_BUCKET : mMaterial == Material.lava ? net.minecraft.world.item.Items.LAVA_BUCKET : null;
+		if (tBucket == null) return net.minecraft.world.item.ItemStack.EMPTY;
+		aLevel.setBlock(aPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 11);
+		return new net.minecraft.world.item.ItemStack(tBucket);
 	}
 
 	public abstract int getQuantaValue(BlockGetter aWorld, int aX, int aY, int aZ);

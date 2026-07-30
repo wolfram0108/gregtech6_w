@@ -238,30 +238,13 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		return net.minecraft.world.level.material.Fluids.FLOWING_WATER.getFlowing(tAmount, false);
 	}
 
-	// F5-B block-контракт (ПЕРЕНОС эталона vanilla LiquidBlock, decisions/F-water-vanilla-to-gt6.md): вода — НЕ baked-model
-	// блок, а рисуется ЧЕРЕЗ getFluidState→WATER (neo FluidRenderer); проходима и прозрачна. Без этих 4 override neo рисовал
-	// missing-model (getRenderShape дефолт MODEL + нет json) и полный коллайдер (в воду нельзя войти). 1:1 к LiquidBlock:
-	// getRenderShape:136 INVISIBLE, getShape:147 empty, getCollisionShape:82 empty (проходима), propagatesSkylightDown:115 false.
-	@Override protected net.minecraft.world.level.block.RenderShape getRenderShape(net.minecraft.world.level.block.state.BlockState aState) {return net.minecraft.world.level.block.RenderShape.INVISIBLE;}
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aLevel, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aLevel, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
-	@Override protected boolean propagatesSkylightDown(net.minecraft.world.level.block.state.BlockState aState) {return false;}
-
-	// R1-заморозка (зимние биомы): vanilla замораживает воду в холодном биоме, но Biome.shouldFreeze:161 требует
-	// blockState instanceof LiquidBlock — GT6-вода им НЕ является → не мёрзла. Воспроизводим УСЛОВИЯ vanilla 1:1
-	// (Biome.shouldFreeze:154-172: !warmEnoughToRain + brightness(BLOCK)<10 + source + НЕ окружён водой=край), механизм —
-	// randomTick GT6-блока (vanilla делает это через ServerLevel.tickChunk по heightmap; здесь — surface-check above).
-	// Оригинал GT6 1.7.10 мёрз через vanilla (Material.water); в neo instanceof-хардкод → свой перенос. Ставит Blocks.ICE.
-	@Override protected boolean isRandomlyTicking(net.minecraft.world.level.block.state.BlockState aState) {return true;}
-	@Override protected void randomTick(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aLevel, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
-		if (WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()) != 0) return;                                  // только source (полный блок)
-		if (!aLevel.getBlockState(aPos.above()).isAir()) return;                                                  // только верхний открытый слой (surface)
-		net.minecraft.world.level.biome.Biome tBiome = aLevel.getBiome(aPos).value();
-		if (tBiome.warmEnoughToRain(aPos, aLevel.getSeaLevel())) return;                                          // тёплый биом — не мёрзнет
-		if (aLevel.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, aPos) >= 10) return;                 // у источника света — не мёрзнет
-		if (aLevel.isWaterAt(aPos.west()) && aLevel.isWaterAt(aPos.east()) && aLevel.isWaterAt(aPos.north()) && aLevel.isWaterAt(aPos.south())) return; // окружён водой — не мёрзнет (только края)
-		aLevel.setBlockAndUpdate(aPos, net.minecraft.world.level.block.Blocks.ICE.defaultBlockState());
-	}
+	// F5-B block-контракт: getRenderShape=INVISIBLE / getShape=empty / getCollisionShape / propagatesSkylightDown=false
+	// НАСЛЕДУЮТСЯ от настоящего LiquidBlock (:82,:115,:136,:147) — 4 ручные копии эталона сняты при репарентинге
+	// предка (F5 surface-B, BlockFluidBaseGT). Вода рисуется через getFluidState→WATER (neo FluidRenderer).
+	//
+	// R1-заморозка: собственный randomTick-перенос УДАЛЁН (F5 surface-B) — блок теперь LiquidBlock, и оба
+	// ванильных плеча видят его сами: рантайм ServerLevel.tickPrecipitation:592 (погодный тик чанка) и worldgen
+	// SnowAndFreezeFeature:34 — через Biome.shouldFreeze:161. Источник льда снова ОДИН, ванильный, как в 1.7.10.
 
 	// ⚠️ КАНАЛ ИЗБЫТОЧЕН — роль закрыта движком + швом F5-B, ЗАМЕРЕНО живым стендом gt6waterface
 	// (геометрия ванильного FluidRenderer.tesselate, PASS 8/0 ДВАЖДЫ, 2026-07-30). Прежний разбор предполагал
