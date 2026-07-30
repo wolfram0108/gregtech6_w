@@ -186,11 +186,10 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {return EnumPlantType.Plains;}
 	public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return this;}
 	public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
-	// было Block.canSustainPlant(IBlockAccess,x,y,z,side,IPlantable) (1.7.10) -> IBlockExtension.canSustainPlant(BlockState,
-	// BlockGetter,BlockPos,Direction,BlockState) [IBlockExtension.java:424], TriState вместо boolean; вызов на generic
-	// Block-объекте (не IMTE-дispatch, простая soil-проверка) - toBoolean(T) как дефолт для TriState.DEFAULT ("плант решает
-	// сам"), тот же fallback, что в MultiTileEntityBlock.canSustainPlant, для соответствия старому boolean-контракту метода.
-	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {BlockPos tBelow = new BlockPos(aX, aY-1, aZ); return WD.oxygen(aWorld, aX, aY, aZ) && WD.block(aWorld, aX, aY - 1, aZ).canSustainPlant(aWorld.getBlockState(tBelow), aWorld, tBelow, Direction.UP, Blocks.DANDELION.defaultBlockState()).toBoolean(T);}
+	// 1:1 оригинала (:131): кислород + canSustainPlant почвы через ЦЕНТР WD.canSustainPlant — он несёт таблицу
+	// почв 1.7.10 для TriState.DEFAULT. ⛔ Прежняя копия здесь сворачивала toBoolean(T): цветок «стоял» на камне
+	// и в воздухе — снос не работал вовсе (замер gt6flowerprobe, 2026-07-30).
+	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return WD.oxygen(aWorld, aX, aY, aZ) && WD.canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, Blocks.DANDELION);}
 	public boolean func_149851_a(Level aWorld, int aX, int aY, int aZ, boolean aIsRemote) {return T;}
 	public boolean func_149852_a(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return T;}
 	public void func_149853_b(Level aWorld, Random aRandom, int aX, int aY, int aZ) {ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, 1, WD.meta(aWorld, aX, aY, aZ));}
@@ -199,16 +198,23 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	// же приём, что BlockBaseSpike/BlockBaseLog/BlockBaseBeam уже переопределяют), дефолт-идентичность как в оригинале.
 	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return aMeta;}
 	
-	// ⚠️ КАНАЛ РАЗОБРАН, НЕ ПОДКЛЮЧЁН — нужны ДВА моста, отдельным шагом (реестр мёртвых каналов, 2026-07-30).
-	// 1.7.10 checkAndDropBlock звался из updateTick/onNeighborChange и сносил цветок, когда canBlockStay:193
-	// говорило «нельзя»: условие GT6 — КИСЛОРОД (WD.oxygen, класс несёт IOreDictOptimized… IOxygenReliantBlock)
-	// плюс почва, поддерживающая растение. В порте у этого класса нет ни canSurvive, ни randomTick, ни
-	// neighborChanged (сверено грепом — 0 вхождений), поэтому движок судит по ванильному FlowerBlock: свет и
-	// почва. Следствие: цветы GT6 НЕ гибнут без кислорода — механика потеряна целиком, а не искажена.
-	// Для закрытия нужно: (1) canSurvive(BlockState,LevelReader,BlockPos) → canBlockStay (движок перестанет
-	// держать цветок на негодном месте); (2) активная проверка тиком — кислород меняется без обновления
-	// соседей, поэтому одного canSurvive мало. Живым тестом не проверялось.
-	// @Override
+	// КАНАЛ ПОДКЛЮЧЁН (2026-07-30, реестр мёртвых каналов): 1.7.10 checkAndDropBlock звался из
+	// updateTick/onNeighborBlockChange ванильного BlockBush (recompSrc :53-56, :62-64; setTickRandomly(true) :22)
+	// и сносил цветок, когда canBlockStay:193 говорило «нельзя» (кислород WD.oxygen + почва). Neo-эквиваленты
+	// ниже — оба канала ванильной базы, к которым цветок и в 1.7.10 был прикреплён:
+	//  (1) canSurvive → canBlockStay: его читает унаследованный VegetationBlock.updateShape (:28-40 референса)
+	//      — снос при обновлении соседа, роль onNeighborBlockChange; и он же гейт постановки. Правило ЗАМЕНЯЕТ
+	//      ванильное целиком, как @Override canBlockStay в 1.7.10 (:131 оригинала). LevelReader без Level
+	//      (регион генерации) → ванильное правило почвы, приём как isFireSource у PrefixBlock;
+	//  (2) isRandomlyTicking + randomTick → checkAndDropBlock: random-плечо 1:1 (BlockBush:22,:62-64) —
+	//      кислород меняется и без обновления соседей.
+	@Override protected boolean canSurvive(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.LevelReader aWorld, BlockPos aPos) {
+		return aWorld instanceof Level tLevel ? canBlockStay(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : super.canSurvive(aState, aWorld, aPos);
+	}
+	@Override protected boolean isRandomlyTicking(net.minecraft.world.level.block.state.BlockState aState) {return T;}
+	@Override protected void randomTick(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		checkAndDropBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());
+	}
 	public void checkAndDropBlock(Level aWorld, int aX, int aY, int aZ) {
 		if (canBlockStay(aWorld, aX, aY, aZ)) return;
 		WD.dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);

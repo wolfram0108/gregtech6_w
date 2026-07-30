@@ -106,10 +106,11 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeSapling.mDefaultStackSize);}
 	@Override public Identifier getIcon(int aSide, int aMeta) {return mIcons[aMeta & 15].getIcon(0);}
-	// было Block.canSustainPlant(IBlockAccess,x,y,z,side,IPlantable) (1.7.10) -> IBlockExtension.canSustainPlant(BlockState,
-	// BlockGetter,BlockPos,Direction,BlockState) [IBlockExtension.java:424], TriState вместо boolean; тот же приём, что
-	// уже принят в BlockBaseFlower.canBlockStay - toBoolean(T) как дефолт для TriState.DEFAULT.
-	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {BlockPos tBelow = new BlockPos(aX, aY-1, aZ); return WD.block(aWorld, aX, aY - 1, aZ).canSustainPlant(aWorld.getBlockState(tBelow), aWorld, tBelow, Direction.UP, Blocks.OAK_SAPLING.defaultBlockState()).toBoolean(T);}
+	// 1:1 оригинала: canSustainPlant почвы через ЦЕНТР WD.canSustainPlant — он несёт таблицу почв 1.7.10 для
+	// TriState.DEFAULT. ⛔ Прежняя копия здесь сворачивала toBoolean(T) («саженец стоит на чём угодно»), а
+	// наследник BlockTreeSaplingAB:76 шёл через центр со старым toBoolean(F) («ни на чём») — его и сносило
+	// с травы первым же тиком (замер gt6flowerprobe, 2026-07-30).
+	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return WD.canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, Blocks.OAK_SAPLING);}
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return null;}
 	public int getRenderType() {return 1;}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
@@ -166,15 +167,18 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 
 	// F13 functional-adapted: 1.7.10 vanilla Block.canBeReplacedByLeaves(World,x,y,z) — generic overridable-хук; neo Block
 	// такой generic-точки не имеет. Подключено instanceof-диспетчером по ВСЕМ GT6-переопределениям (BlockBase/PrefixBlock/
-	// BlockBaseRail/BlockBaseFlower/MultiTileEntityBlock — полный набор, грепом "canBeReplacedByLeaves" по gregapi/block),
-	// дефолт F = vanilla Block-дефолт. Не заглушка: реальная GT6-логика вызывается, vanilla-блоки берут корректный дефолт.
+	// BlockBaseRail/BlockBaseFlower/MultiTileEntityBlock — полный набор, грепом "canBeReplacedByLeaves" по gregapi/block).
+	// Дефолт — 1:1 vanilla Block:1995-1998 (recompSrc): {@code !func_149730_j()} = «НЕ полный непрозрачный куб»
+	// (снимок isOpaqueCube); neo-канон признака — isSolidRender (тот же, что WD.visOpq:1371). ⛔ Прежний дефолт
+	// был константой F: ВОЗДУХ считался «незаменяемым листьями» → getMaxHeight давал 0 → деревья GT6 не могли
+	// вырасти нигде (замер gt6flowerprobe: мета 8 взведена, grow отказывал; 2026-07-30).
 	private static boolean canBeReplacedByLeavesOf(Block aBlock, net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ) {
 		if (aBlock instanceof gregapi.block.BlockBase) return ((gregapi.block.BlockBase)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.prefixblock.PrefixBlock) return ((gregapi.block.prefixblock.PrefixBlock)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.misc.BlockBaseRail) return ((gregapi.block.misc.BlockBaseRail)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.misc.BlockBaseFlower) return ((gregapi.block.misc.BlockBaseFlower)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) return ((gregapi.block.multitileentity.MultiTileEntityBlock)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
-		return F;
+		return !aBlock.defaultBlockState().isSolidRender();
 	}
 	
 	// было Block.canPlaceBlockAt(World,x,y,z) (1.7.10, дефолт world.getBlock(x,y,z).isReplaceable(...), Block.java:1046-1049)

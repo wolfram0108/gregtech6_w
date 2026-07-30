@@ -410,6 +410,14 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), UT.Code.random(aRandom)); // конвертер — ЦЕНТР UT.Code.random
 	}
+	// Random-плечо ТОГО ЖЕ канала: в 1.7.10 updateTick был ОДНИМ на scheduled И random тики (World звал его по
+	// needsRandomTick). Neo разделил их: tick(scheduled) и randomTick(random), причём дефолт randomTick ПУСТ
+	// (BlockBehaviour:334-335) — мост BUG-005 покрывал только scheduled, и у носителей isRandomlyTicking
+	// (саженец: setTickRandomly(true) 1.7.10 BlockBaseSapling:65) случайный тик бил в пустоту — деревья из
+	// саженцев GT6 не росли. Канал сведён обратно в один, 1:1 с 1.7.10.
+	@Override protected void randomTick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		tick(aState, aWorld, aPos, aRandom);
+	}
 	public final void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (aWorld.isClientSide() || checkGravity(aWorld, aX, aY, aZ)) return;
 		updateTick2(aWorld, aX, aY, aZ, aRandom);

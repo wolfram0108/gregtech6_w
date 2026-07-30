@@ -227,10 +227,10 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	// Иконка = still-текстура жидкости (1:1 Fluid.getStillIcon): GT6-жидкости — из центра F5 (FluidGT.mTexture),
 	// ванильные/чужие — neo-канон IClientFluidTypeExtensions (клиент-класс → изолирован во вложенном холдере,
 	// грузится лениво только под CODE_CLIENT — dedicated-сервер его не трогает).
-	// ⚠️ КАНАЛ РАЗОБРАН — тот же класс, что getIconFromDamageForRenderPass у MultiItemRandom:430: в neo вид
-	// предмета задаёт МОДЕЛЬ (data-driven), метода «дай иконку по подтипу» нет. Решается вместе с F3-рендером
-	// предметов, делегатом не закрывается. Спрайт жидкости сам по себе жив — stillIcon ниже используется
-	// клиентским каналом IClientFluidTypeExtensions (см. разбор выше).
+	// КАНАЛ ЖИВ — вызыватель: центр GT6ItemModel.iconForPass:229 (рефлексия): у класса нет getIcon(ItemStack,int),
+	// поэтому pass0 идёт фолбэком getIconIndex → getIconFromDamage. Спрайт жидкости жив и вторым путём —
+	// stillIcon ниже используется клиентским каналом IClientFluidTypeExtensions (см. разбор выше).
+	// Реестр мёртвых каналов рефлексию грепом не видит — прежняя метка «разобран» была ложной (2026-07-30).
 	// @Override
 	public net.minecraft.resources.Identifier getIconFromDamage(int aMeta) {
 		return stillIcon(FL.fluid(aMeta));
@@ -249,7 +249,8 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 
 	// Тинт (1:1 Fluid.getColor): GT6-жидкости — mRGBa из центра F5 (FluidGT); ванильная вода — NORMAL_WATER_COLOR
 	// (OverworldBiomes.java:28, серый water_still без тинта был бы бесцветным); лава несёт цвет в текстуре.
-	// ⚠️ КАНАЛ РАЗОБРАН — цвет предмета в neo задаётся МОДЕЛЬЮ, не методом; разбор — PrefixBlockItem:131.
+	// КАНАЛ ЖИВ — вызыватель: центр GT6ItemModel.itemColor:224 (рефлексия по сигнатуре (ItemStack,int)) красит
+	// им квады пасса. Реестр рефлексию грепом не видит — прежняя метка «разобран» была ложной (2026-07-30).
 	// @Override
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		net.minecraft.world.level.material.Fluid tFluid = FL.fluid(ST.meta_(aStack));

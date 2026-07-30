@@ -523,11 +523,33 @@ public class WD {
 	}
 	/** F-plant: 1.7.10 Block.canSustainPlant(IBlockAccess,x,y,z,side,IPlantable):boolean -> neo
 	 *  IBlockExtension.canSustainPlant(BlockState,BlockGetter,BlockPos,Direction,BlockState):TriState (растение как
-	 *  BlockState, не IPlantable). Централизованный переходник: собирает состояние блока по координатам, растение
-	 *  как defaultBlockState(), TriState.toBoolean(F) (недетерм. -> не растёт, консервативно 1:1). */
+	 *  BlockState, не IPlantable). ЦЕНТР перевода на весь мод. Не-DEFAULT ответ почвы — её слово (хуки модов и
+	 *  GT6-блоков: BlockStones:644, MultiTileEntityBlock:474). DEFAULT: в 1.7.10 его НЕ СУЩЕСТВОВАЛО — решала
+	 *  таблица почв Block.canSustainPlant:2237-2252 (recompSrc) по типу растения; воспроизводится дословно, тип
+	 *  выражен тем же ванильным блоком-представителем, каким вызыватели выражали IPlantable. Расщеплённые семьи
+	 *  (dirt:0..2 -> DIRT/COARSE_DIRT/PODZOL, sand:0..1 -> SAND/RED_SAND) — через центр Flattened (headOf).
+	 *  ⛔ Прежнее тело сворачивало toBoolean(F): DEFAULT становился «не растёт» — саженцы деревьев GT6 сносило с
+	 *  травы первым же тиком, цветы-B не держались на песке; копии с toBoolean(T) в цветах/саженцах наоборот
+	 *  держали цветок на камне и в воздухе (замер gt6flowerprobe, 2026-07-30). */
 	public static boolean canSustainPlant(LevelAccessor aWorld, int aX, int aY, int aZ, Direction aSide, Block aPlant) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
-		return aWorld.getBlockState(tPos).getBlock().canSustainPlant(aWorld.getBlockState(tPos), aWorld, tPos, aSide, aPlant.defaultBlockState()).toBoolean(F);
+		BlockState tSoil = aWorld.getBlockState(tPos);
+		net.minecraft.util.TriState tDecision = tSoil.getBlock().canSustainPlant(tSoil, aWorld, tPos, aSide, aPlant.defaultBlockState());
+		if (tDecision != net.minecraft.util.TriState.DEFAULT) return tDecision.isTrue();
+		Block tSelf = tSoil.getBlock(), tHead = gregapi.data.CS.Flattened.headOf(tSelf);
+		if (tHead == null) tHead = tSelf;
+		if (aPlant == Blocks.CACTUS)      return tSelf == Blocks.CACTUS || tHead == Blocks.SAND;  // кактус-на-кактусе (:2222) + Desert (:2239)
+		if (aPlant == Blocks.SUGAR_CANE)  return tSelf == Blocks.SUGAR_CANE                       // тростник-на-тростнике (:2227) + Beach (:2245-2251)
+			|| ((tSelf == Blocks.GRASS_BLOCK || tHead == Blocks.DIRT || tHead == Blocks.SAND)
+				&& (aWorld.getBlockState(tPos.west()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
+				 || aWorld.getBlockState(tPos.east()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
+				 || aWorld.getBlockState(tPos.north()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
+				 || aWorld.getBlockState(tPos.south()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)));
+		if (aPlant == Blocks.NETHER_WART) return tSelf == Blocks.SOUL_SAND;                       // Nether (:2240)
+		if (aPlant == Blocks.WHEAT)       return tSelf == Blocks.FARMLAND;                        // Crop (:2241)
+		if (aPlant == Blocks.LILY_PAD)    return tSoil.getFluidState().isSource() && tSoil.getFluidState().is(net.minecraft.tags.FluidTags.WATER); // Water (:2244: материал water + мета 0)
+		// Plains (:2243) — дефолтный тип BlockBush 1.7.10 (цветы, саженцы, травы)
+		return tSelf == Blocks.GRASS_BLOCK || tHead == Blocks.DIRT || tSelf == Blocks.FARMLAND;
 	}
 	/** F-spawn: 1.7.10 World.setSpawnLocation(x,y,z) -> neo ServerLevel.setRespawnData(RespawnData) (ServerLevel:1507;
 	 *  spawn = GlobalPos+yaw/pitch). Централизованный переходник (worldgen задаёт мир-спавн). Чтение — getRespawnData().pos(). */

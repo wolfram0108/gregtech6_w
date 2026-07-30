@@ -276,6 +276,10 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6demo.flag")) gt6DemoTick(aEvent.getServer());
 	// [GT6-FLUIDYARD] BUG-082: чистый полигон жидкостей (не судья — строит мир) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidyard.flag")) gt6FluidYardTick(aEvent.getServer());
+	// [GT6-WATERFACE] грани воды GT6: серверная половина строит чаши-пары «вода|сосед», судит клиентская — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6waterface.flag")) gt6WaterFaceTick(aEvent.getServer());
+	// [GT6-FLOWERPROBE] выживание цветов GT6 (canSurvive+randomTick) и рост саженцев (random-плечо) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6flowerprobe.flag")) gt6FlowerProbeTick(aEvent.getServer());
 	// [GT6-TOOLMATRIX] BUG-071: матрица «блок × инструмент» — право добычи и скорость по КАЖДОМУ типу — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6toolmatrixprobe.flag")) gt6ToolMatrixTick(aEvent.getServer());
 	// [GT6-TOOLYARD] BUG-071: ПОЛИГОН для ЖИВОЙ приёмки игроком (не судья — строит мир и выдаёт инструменты) — снять при уборке фазы
@@ -10647,5 +10651,218 @@ public final class GT6Probes {
 			gt6BLSay(aPlayer, String.format("§f%-28s§r свет на полу §e%2d§r · в состоянии §f%2d§r%s",
 				tC[1], tFloor, tState, tDeclared >= 0 ? " · объявлено модом §7" + tDeclared : ""));
 		}
+	}
+
+	// ==========================================================================================================
+	// gt6waterface — СЕРВЕРНАЯ половина стенда «грани воды GT6» (реестр каналов: BlockWaterlike:279).
+	// Строит 8 чаш-пар «вода | сосед-EAST»; судит КЛИЕНТСКАЯ половина (GT6ProbesClient) — фактическую
+	// геометрию ванильного FluidRenderer.tesselate (ровно путь SectionCompiler:103). Здесь только стройка
+	// и печать ИДЕНТИЧНОСТИ поставленного (какой блок реально встал — урок «объект есть без величины»).
+	// Раскладка чаши k (k=0..7): начало x0=k*4 от tO; вода @ (x0,-1,0), сосед @ (x0+1,-1,0); дно y=-2 и
+	// периметр y=-1 — камень; сверху воздух. Жидкости — WD.set с метой 0 (источник) и flags=2 (без
+	// обновления соседей — с flags=3 водоподобные разливались прямо в момент постройки, урок BUG-067).
+	// ==========================================================================================================
+	private static final String WF_M = "GT6-WATERFACE";
+	private static int sWFTick = 0;
+	private static gregapi.probe.GT6ProbeStand.Seq sWFSeq;
+
+	public static void gt6WaterFaceTick(net.minecraft.server.MinecraftServer aServer) {
+		sWFTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sWFSeq == null) sWFSeq = new gregapi.probe.GT6ProbeStand.Seq(WF_M)
+			.at(200, () -> gt6WFBuild(tPlayer));
+		sWFSeq.tick(sWFTick);
+	}
+
+	private static void gt6WFBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition().offset(6, 0, 10);
+		O.println("========== [" + WF_M + "] СТРОЙКА ЧАШ, начало " + tO + " ==========");
+		net.minecraft.world.level.block.Block tRiver = gregapi.data.CS.BlocksGT.River;
+		net.minecraft.world.level.block.Block tOcean = gregapi.data.CS.BlocksGT.Ocean;
+		net.minecraft.world.level.block.Block tOil   = gregapi.data.CS.BlocksGT.OilHeavy;
+		if (tRiver == null || tOcean == null || tOil == null) {O.println("[" + WF_M + "] нет блоков жидкостей в реестре — стройка невозможна"); return;}
+		// каркас всех 8 чаш
+		for (int k = 0; k <= 7; k++) {
+			int x0 = k * 4;
+			for (int dx = -1; dx <= 2; dx++) for (int dz = -1; dz <= 1; dz++) {
+				tLevel.setBlock(tO.offset(x0 + dx, -2, dz), Blocks.STONE.defaultBlockState(), 2);
+				boolean tInner = (dx == 0 || dx == 1) && dz == 0;
+				tLevel.setBlock(tO.offset(x0 + dx, -1, dz), tInner ? Blocks.AIR.defaultBlockState() : Blocks.STONE.defaultBlockState(), 2);
+				for (int dy = 0; dy <= 2; dy++) tLevel.setBlock(tO.offset(x0 + dx, dy, dz), Blocks.AIR.defaultBlockState(), 2);
+			}
+		}
+		// наполнение: сценарии A..H (ожидания клиентской половины — из правила оригинала 1.7.10 BlockWaterlike:182).
+		// Гейт постановки: мировые воды GT6 ставит ТОЛЬКО вордген — вне его onBlockAdded сносит блок в воздух
+		// (BlockRiver:57, 1:1 оригинала :52). Стенд имитирует вордген: поднимаем PLACEMENT_ALLOWED на время
+		// наполнения (у каждого класса СВОЙ статик) и опускаем обратно, как GT6WorldgenFeature:241.
+		boolean tOldR = gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED, tOldO = gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED;
+		gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = T;
+		gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = T;
+		try {
+		gt6WFWater(tLevel, tO, 0, tRiver);  tLevel.setBlock(tO.offset(0*4+1, -1, 0), Blocks.GLASS.defaultBlockState(), 2);          // A: Река|СТЕКЛО
+		gt6WFWater(tLevel, tO, 1, tRiver);  gt6WFWaterAt(tLevel, tO, 1*4+1, tOcean);                                                // B: Река|Океан
+		gt6WFWater(tLevel, tO, 2, tRiver);  tLevel.setBlock(tO.offset(2*4+1, -1, 0), Blocks.WATER.defaultBlockState(), 2);          // C: Река|ваниль-вода
+		gt6WFWater(tLevel, tO, 3, tRiver);  tLevel.setBlock(tO.offset(3*4+1, -1, 0), Blocks.STONE.defaultBlockState(), 2);          // D: Река|камень
+		tLevel.setBlock(tO.offset(4*4, -1, 0), Blocks.WATER.defaultBlockState(), 2); gt6WFWaterAt(tLevel, tO, 4*4+1, tRiver);       // E: ваниль-вода|Река
+		gt6WFWater(tLevel, tO, 5, tRiver);  gt6WFWaterAt(tLevel, tO, 5*4+1, tOil);                                                  // F: Река|нефть
+		// G: Река|машина MTE — живая постановка предметом (useOn); анкер — дно чаши, машина встаёт на y=-1
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		BlockEntity tMachine = tReg == null ? null : gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tO.offset(6*4+1, -2, 0), net.minecraft.core.Direction.UP, tReg.getItem(10080), BlockEntity.class, WF_M, "машина");
+		if (tMachine instanceof gregapi.tileentity.data.ITileEntitySurface tSurf) {
+			// сторона машины, обращённая к воде: вода смотрит EAST (5), машина спрашивается за WEST (OPOS[5]=4) —
+			// ровно как в 1.7.10 (isSurfaceOpaque(OPOS[aSide])). Печатаем ФАКТ — ожидание клиента стоит на нём.
+			O.println("[" + WF_M + "] G: машина ITileEntitySurface, isSurfaceOpaque(WEST)=" + tSurf.isSurfaceOpaque((byte)4));
+		} else O.println("[" + WF_M + "] G: машина НЕ ITileEntitySurface (" + (tMachine == null ? "не встала" : tMachine.getClass().getSimpleName()) + ") — ветка 1.7.10 к ней неприменима");
+		gt6WFWater(tLevel, tO, 6, tRiver);
+		} finally {
+			gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = tOldR;
+			gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = tOldO;
+		}
+		// крышки над обеими внутренними клетками: заморозка (randomTick BlockWaterlike:257 и ванильная) требует
+		// ВОЗДУХ сверху — без крышки река в холодном биоме успевала стать льдом до замера (прогон 3, чаша D).
+		// Верхняя грань судьёй не судится — крышка на EAST-классификацию не влияет.
+		for (int k = 0; k <= 6; k++) {
+			tLevel.setBlock(tO.offset(k*4,     0, 0), Blocks.GLASS.defaultBlockState(), 2);
+			tLevel.setBlock(tO.offset(k*4 + 1, 0, 0), Blocks.GLASS.defaultBlockState(), 2);
+		}
+		tLevel.setBlock(tO.offset(7*4, -1, 0), Blocks.STONE.defaultBlockState(), 2);                                                // H: COLD — обе клетки камень
+		tLevel.setBlock(tO.offset(7*4+1, -1, 0), Blocks.STONE.defaultBlockState(), 2);
+		// идентичность: что РЕАЛЬНО стоит в каждой клетке
+		for (int k = 0; k <= 7; k++) {
+			net.minecraft.world.level.block.state.BlockState tW = tLevel.getBlockState(tO.offset(k*4, -1, 0));
+			net.minecraft.world.level.block.state.BlockState tN = tLevel.getBlockState(tO.offset(k*4+1, -1, 0));
+			O.println("[" + WF_M + "] чаша " + (char)('A'+k) + ": вода=" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tW.getBlock())
+				+ " | сосед=" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tN.getBlock()));
+		}
+		O.println("========== [" + WF_M + "] СТРОЙКА DONE ==========");
+	}
+
+	/** Вода сценария k — в клетку (k*4, -1, 0). */
+	private static void gt6WFWater(ServerLevel aLevel, BlockPos aO, int aK, net.minecraft.world.level.block.Block aBlock) {gt6WFWaterAt(aLevel, aO, aK*4, aBlock);}
+	/** Жидкость GT6 в клетку (aX, -1, 0) от начала: мета 0 = полный источник, flags=2 — канал вордгена (WD.set).
+	 *  МГНОВЕННАЯ идентичность: что реально стоит СРАЗУ после set — отличает «не встала» от «исчезла потом». */
+	private static void gt6WFWaterAt(ServerLevel aLevel, BlockPos aO, int aX, net.minecraft.world.level.block.Block aBlock) {
+		boolean tSet = gregapi.util.WD.set(aLevel, aO.getX() + aX, aO.getY() - 1, aO.getZ(), aBlock, 0, 2, F);
+		net.minecraft.world.level.block.state.BlockState tNow = aLevel.getBlockState(aO.offset(aX, -1, 0));
+		gregapi.data.CS.OUT.println("[" + WF_M + "] set @x+" + aX + " " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock)
+			+ " -> вернул " + tSet + ", стоит СЕЙЧАС: " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tNow.getBlock()));
+	}
+
+	// ==========================================================================================================
+	// gt6flowerprobe — судья «выживание цветов GT6 + рост саженцев» (реестр каналов: BlockBaseFlower canSurvive/
+	// randomTick, random-плечо BlockBase). Движковый путь: снос — state.randomTick(...) (ровно вызов
+	// ServerLevel:533) и destroyBlock опоры (канал updateShape предка VegetationBlock); рост — тот же
+	// state.randomTick. Судится ИДЕНТИЧНОСТЬ: какой блок реально стоит, что реально выпало.
+	// Контроли: цветок на ГОДНОЙ почве под теми же тиками обязан ВЫСТОЯТЬ (иначе судья сносит всё подряд).
+	// ==========================================================================================================
+	private static final String FP_M = "GT6-FLOWERPROBE";
+	private static int sFPTick = 0;
+	private static gregapi.probe.GT6ProbeStand.Seq sFPSeq;
+
+	public static void gt6FlowerProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sFPTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sFPSeq == null) sFPSeq = new gregapi.probe.GT6ProbeStand.Seq(FP_M)
+			.at(200, () -> gt6FPRun(tPlayer))
+			.at(340, () -> gt6FPGrow(tPlayer)); // рост отдельно: свету нужно время пересчитаться после стройки
+		sFPSeq.tick(sFPTick);
+	}
+
+	private static void gt6FPRun(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition().offset(-6, 0, 10);
+		O.println("========== [" + FP_M + "] ВЫЖИВАНИЕ ЦВЕТОВ + РОСТ САЖЕНЦЕВ, начало " + tO + " ==========");
+		net.minecraft.world.level.block.Block tFlower = gregapi.data.CS.BlocksGT.FlowersA instanceof net.minecraft.world.level.block.Block b ? b : null;
+		net.minecraft.world.level.block.Block tSap = gregapi.data.CS.BlocksGT.Saplings_AB;
+		if (tFlower == null || tSap == null) {O.println("[" + FP_M + "] нет цветов/саженцев в реестре"); return;}
+		// время не мутируем: свежий автомир стартует утром; фактический свет печатается в сценарии 4
+		int tPass = 0, tFail = 0;
+		// платформа: камень y=-1, воздух над ней; высота расчистки 12 — рост дерева требует свободных 7-9
+		// (BlockTreeSaplingAB.grow: tMaxHeight < 7 -> return F), меньшая расчистка глушит рост самим стендом
+		for (int dx = -2; dx <= 10; dx++) for (int dz = -2; dz <= 2; dz++) {
+			tLevel.setBlock(tO.offset(dx, -1, dz), Blocks.STONE.defaultBlockState(), 2);
+			for (int dy = 0; dy <= 12; dy++) tLevel.setBlock(tO.offset(dx, dy, dz), Blocks.AIR.defaultBlockState(), 2);
+		}
+		// 1) КОНТРОЛЬ: цветок на ЗЕМЛЕ выдерживает 10 случайных тиков движка
+		tLevel.setBlock(tO.offset(0, -1, 0), Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+		gregapi.util.WD.set(tLevel, tO.getX(), tO.getY(), tO.getZ(), tFlower, 0, 3, F);
+		BlockPos tP1 = tO;
+		if (tLevel.getBlockState(tP1).getBlock() == tFlower) {
+			for (int i = 0; i < 10 && tLevel.getBlockState(tP1).getBlock() == tFlower; i++)
+				tLevel.getBlockState(tP1).randomTick(tLevel, tP1, tLevel.getRandom());
+			if (tLevel.getBlockState(tP1).getBlock() == tFlower) {tPass++; O.println("[" + FP_M + "] PASS 1) цветок на земле ВЫСТОЯЛ 10 тиков (контроль)");}
+			else {tFail++; O.println("[" + FP_M + "] FAIL 1) цветок на земле СНЕСЁН тиком — судья сносит всё подряд! стоит: " + tLevel.getBlockState(tP1).getBlock());}
+		} else {tFail++; O.println("[" + FP_M + "] FAIL 1) цветок на землю не встал: " + tLevel.getBlockState(tP1).getBlock());}
+		// 2) цветок на КАМНЕ — негодное место, случайный тик обязан снести (1.7.10 updateTick→checkAndDropBlock)
+		BlockPos tP2 = tO.offset(2, 0, 0);
+		gregapi.util.WD.set(tLevel, tP2.getX(), tP2.getY(), tP2.getZ(), tFlower, 0, 2, F); // flags=2: без соседских апдейтов, чтобы снос был именно ТИКОМ
+		if (tLevel.getBlockState(tP2).getBlock() == tFlower) {
+			tLevel.getBlockState(tP2).randomTick(tLevel, tP2, tLevel.getRandom());
+			boolean tGone = tLevel.getBlockState(tP2).getBlock() != tFlower;
+			int tDrops = tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tP2).inflate(2)).size();
+			if (tGone) {tPass++; O.println("[" + FP_M + "] PASS 2) цветок на камне СНЕСЁН одним тиком, дроп-сущностей рядом: " + tDrops);}
+			else {tFail++; O.println("[" + FP_M + "] FAIL 2) цветок на камне ПЕРЕЖИЛ тик — канал checkAndDropBlock мёртв");}
+		} else {tFail++; O.println("[" + FP_M + "] FAIL 2) цветок на камень не встал (постановка стенда): " + tLevel.getBlockState(tP2).getBlock());}
+		// 3) выбита ОПОРА под цветком — снос каналом предка (updateShape), без всяких тиков
+		BlockPos tP3 = tO.offset(4, 0, 0);
+		tLevel.setBlock(tP3.below(), Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+		gregapi.util.WD.set(tLevel, tP3.getX(), tP3.getY(), tP3.getZ(), tFlower, 0, 3, F);
+		if (tLevel.getBlockState(tP3).getBlock() == tFlower) {
+			tLevel.destroyBlock(tP3.below(), false); // живой путь: опора выбита
+			boolean tGone = tLevel.getBlockState(tP3).getBlock() != tFlower;
+			if (tGone) {tPass++; O.println("[" + FP_M + "] PASS 3) выбита опора → цветок снесён каналом предка (роль onNeighborBlockChange)");}
+			else {tFail++; O.println("[" + FP_M + "] FAIL 3) опора выбита, а цветок ВИСИТ В ВОЗДУХЕ");}
+		} else {tFail++; O.println("[" + FP_M + "] FAIL 3) цветок не встал для сценария опоры: " + tLevel.getBlockState(tP3).getBlock());}
+		// 4) посадка САЖЕНЦА — рост судится отдельным шагом (gt6FPGrow), когда свет пересчитается
+		BlockPos tP4 = tO.offset(7, 0, 0);
+		tLevel.setBlock(tP4.below(), Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+		gregapi.util.WD.set(tLevel, tP4.getX(), tP4.getY(), tP4.getZ(), tSap, 0, 3, F);
+		sFPSapPos = tLevel.getBlockState(tP4).getBlock() == tSap ? tP4 : null;
+		if (sFPSapPos == null) {tFail++; O.println("[" + FP_M + "] FAIL 4) саженец не встал (или снесён постановкой): " + tLevel.getBlockState(tP4).getBlock());}
+		else O.println("[" + FP_M + "] 4) саженец посажен @ " + tP4 + " — рост меряется на шаге 340");
+		O.println("[" + FP_M + "] промежуточно: pass=" + tPass + " fail=" + tFail + " (вердикт после шага роста)");
+		sFPPass = tPass; sFPFail = tFail;
+	}
+
+	private static BlockPos sFPSapPos;
+	private static int sFPPass, sFPFail;
+
+	/** Шаг 2: рост саженца random-плечом (дефект: isRandomlyTicking=T, а randomTick бил в пустой дефолт BlockBehaviour:334). */
+	private static void gt6FPGrow(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		int tPass = sFPPass, tFail = sFPFail;
+		net.minecraft.world.level.block.Block tSap = gregapi.data.CS.BlocksGT.Saplings_AB;
+		if (sFPSapPos == null || tSap == null) {
+			O.println("========== [" + FP_M + "] ВЕРДИКТ: FAIL (pass=" + tPass + " fail=" + (tFail + 1) + ") — саженец для роста не посажен ==========");
+			return;
+		}
+		BlockPos tP4 = sFPSapPos;
+		if (tLevel.getBlockState(tP4).getBlock() != tSap) {
+			tFail++;
+			O.println("[" + FP_M + "] FAIL 4) саженец ИСЧЕЗ между посадкой и замером роста — снос ложно-положителен, стоит: " + tLevel.getBlockState(tP4).getBlock());
+		} else {
+			int tLight = tLevel.getMaxLocalRawBrightness(tP4.above());
+			int tTicks = 0;
+			for (; tTicks < 400 && tLevel.getBlockState(tP4).getBlock() == tSap; tTicks++)
+				tLevel.getBlockState(tP4).randomTick(tLevel, tP4, tLevel.getRandom());
+			net.minecraft.world.level.block.Block tNow = tLevel.getBlockState(tP4).getBlock();
+			int tMeta = tNow == tSap && tSap instanceof gregapi.block.IBlockExtendedMetaData tX ? tX.getExtendedMetaData(tLevel, tP4.getX(), tP4.getY(), tP4.getZ()) : -1;
+			boolean tLog = false; // дерево = брёвна рядом, а не просто «блок сменился»
+			for (int dy = 0; dy <= 9 && !tLog; dy++) for (int dx = -2; dx <= 2 && !tLog; dx++) for (int dz = -2; dz <= 2 && !tLog; dz++)
+				if (tLevel.getBlockState(tP4.offset(dx, dy, dz)).getBlock() == gregapi.data.CS.BlocksGT.LogA) tLog = true;
+			if (tNow != tSap && tLog) {tPass++; O.println("[" + FP_M + "] PASS 4) саженец ПРОРОС за " + tTicks + " случайных тиков (свет " + tLight + "), ствол найден; на месте саженца: " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tNow));}
+			else if (tNow != tSap) {tFail++; O.println("[" + FP_M + "] FAIL 4) саженец исчез за " + tTicks + " тиков БЕЗ ДЕРЕВА (свет " + tLight + ") — снесён, а не пророс; на месте: " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tNow));}
+			// мета 8+ = «готов расти» — этот бит взводится ТОЛЬКО через random-плечо (tryGrow при мета<8):
+			// плечо доказано, даже если сам генератор дерева не сработал (у него свои условия места)
+			else if (tMeta >= 8) {tFail++; O.println("[" + FP_M + "] FAIL 4) random-плечо ЖИВО (мета " + tMeta + " — бит готовности взведён тиком), но ДЕРЕВО не выросло за 400 тиков (свет " + tLight + ") — сломан сам генератор роста");}
+			else {tFail++; O.println("[" + FP_M + "] FAIL 4) саженец НЕ пророс за 400 тиков (свет " + tLight + ", мета " + tMeta + " — бит готовности НЕ взведён) — random-плечо мертво");}
+		}
+		O.println("========== [" + FP_M + "] ВЕРДИКТ: " + (tFail == 0 ? "PASS" : "FAIL") + " (pass=" + tPass + " fail=" + tFail + ") ==========");
 	}
 }

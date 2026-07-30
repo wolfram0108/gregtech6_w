@@ -156,7 +156,9 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		return null;
 	}
 	
-	// ⚠️ КАНАЛ РАЗОБРАН — цвет предмета в neo задаётся МОДЕЛЬЮ, не методом; разбор — PrefixBlockItem:131.
+	// КАНАЛ ЖИВ — вызыватель: центр GT6ItemModel.itemColor:224 находит метод РЕФЛЕКСИЕЙ по сигнатуре
+	// (ItemStack,int) и красит им квады каждого пасса; иконки пассов идут через getIcon:146 тем же центром.
+	// Реестр мёртвых каналов рефлексию грепом не видит — прежняя метка «разобран» была ложной (2026-07-30).
 	// @Override
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		if (aRenderPass == 0) {

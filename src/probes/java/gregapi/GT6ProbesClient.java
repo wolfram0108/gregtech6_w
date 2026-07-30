@@ -1496,4 +1496,90 @@ public final class GT6ProbesClient {
 		}
 		O.println("========== [GT6-FALLRENDER] ВЕРДИКТ: " + (tFail == 0 ? "PASS" : "FAIL") + " (pass=" + tPass + " fail=" + tFail + ") ==========");
 	}
+
+	// ==========================================================================================================
+	// gt6waterface — КЛИЕНТСКИЙ судья «грани воды GT6» (реестр каналов: BlockWaterlike:279). Серверная половина
+	// (GT6Probes) строит 8 чаш-пар «вода | сосед-EAST»; здесь судится СЛЕДСТВИЕ — фактически построенная
+	// геометрия ванильного FluidRenderer.tesselate (ровно путь SectionCompiler:103, свой Output-перехватчик
+	// вершин). EAST-грань = квад, все 4 вершины которого лежат на плоскости x=(pos&15)+1 и разнесены по Y.
+	// Ожидания — правило оригинала 1.7.10 BlockWaterlike.shouldSideBeRendered:182 (адреса в паспорте замера).
+	// Позитивный контроль: A (Река|стекло — грань ОБЯЗАНА быть, иначе судья слеп). COLD: H (не жидкость).
+	// ==========================================================================================================
+	private static boolean mWaterFaceDone = false;
+	private static int mWaterFaceWait = 0;
+
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onWaterFaceProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mWaterFaceDone || !gregapi.data.CS.probeFlag("gt6waterface.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null || tMC.getModelManager() == null) return;
+		if (mWaterFaceWait++ < 320) return; // сервер строит на тике 200 — ждём стройку и синк чанков
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.core.BlockPos tO = tMC.player.blockPosition().offset(6, 0, 10);
+		// готовность площадки на КЛИЕНТЕ: чаша B должна держать реку; до таймаута — просто ждём дальше
+		if (tMC.level.getBlockState(tO.offset(4, -1, 0)).getBlock() != gregapi.data.CS.BlocksGT.River && mWaterFaceWait < 1200) return;
+		mWaterFaceDone = true;
+		O.println("========== [GT6-WATERFACE] СУДЬЯ ГРАНЕЙ: геометрия FluidRenderer.tesselate ==========");
+		final String[] tNames = {
+			  "A: Река|СТЕКЛО (позитив: грань ОБЯЗАНА быть)"
+			, "B: Река|Океан GT6"
+			, "C: Река|ваниль-вода"
+			, "D: Река|камень"
+			, "E: ваниль-вода|Река GT6"
+			, "F: Река|нефть GT6"
+			, "G: Река|машина MTE (ПРИНЯТОЕ ОТКЛОНЕНИЕ: 1.7.10 прятал грань через ITileEntitySurface, neo-канал соседа без Level/BlockPos — TE не достать; следствие невидимо: непрозрачная поверхность MTE закрывает грань собой)"
+			, "H: COLD: не жидкость"};
+		// ожидание «EAST-грань есть?»: стекло/нефть — есть (1.7.10); вода-любая/камень — нет (1.7.10);
+		// машина — ЕСТЬ (принятое отклонение, разбор у BlockWaterlike.shouldSideBeRendered)
+		final boolean[] tExpect = {true, false, false, false, false, true, true, false};
+		net.minecraft.client.renderer.block.FluidRenderer tFR;
+		try {tFR = new net.minecraft.client.renderer.block.FluidRenderer(tMC.getModelManager().getFluidStateModelSet());}
+		catch (Throwable e) {O.println("[GT6-WATERFACE] FluidRenderer недоступен: " + e); return;}
+		int tPass = 0, tFail = 0;
+		for (int k = 0; k <= 7; k++) {
+			net.minecraft.core.BlockPos tPos = tO.offset(k * 4, -1, 0);
+			net.minecraft.world.level.block.state.BlockState tState = tMC.level.getBlockState(tPos);
+			net.minecraft.world.level.material.FluidState tFluid = tState.getFluidState();
+			net.minecraft.world.level.block.state.BlockState tNb = tMC.level.getBlockState(tPos.east());
+			String tWho = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tState.getBlock())
+				+ " | сосед=" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tNb.getBlock());
+			if (k == 7) { // COLD-контроль: судья обязан РАЗЛИЧАТЬ «жидкости нет»
+				if (tFluid.isEmpty()) {tPass++; O.println("[GT6-WATERFACE] PASS " + tNames[k] + " — жидкости нет, замер не осмыслен (" + tWho + ")");}
+				else {tFail++; O.println("[GT6-WATERFACE] FAIL " + tNames[k] + " — в COLD-клетке жидкость! (" + tWho + ")");}
+				continue;
+			}
+			if (tFluid.isEmpty()) {tFail++; O.println("[GT6-WATERFACE] FAIL " + tNames[k] + " — жидкость не стоит/не синкнулась (" + tWho + ")"); continue;}
+			final java.util.List<float[]> tVerts = new java.util.ArrayList<>();
+			final com.mojang.blaze3d.vertex.VertexConsumer tSink = new com.mojang.blaze3d.vertex.VertexConsumer() {
+				@Override public com.mojang.blaze3d.vertex.VertexConsumer addVertex(float x, float y, float z) {tVerts.add(new float[]{x, y, z}); return this;}
+				@Override public com.mojang.blaze3d.vertex.VertexConsumer setColor(int r, int g, int b, int a) {return this;}
+				@Override public com.mojang.blaze3d.vertex.VertexConsumer setColor(int c) {return this;}
+				@Override public com.mojang.blaze3d.vertex.VertexConsumer setUv(float u, float v) {return this;}
+				@Override public com.mojang.blaze3d.vertex.VertexConsumer setUv1(int u, int v) {return this;}
+				@Override public com.mojang.blaze3d.vertex.VertexConsumer setUv2(int u, int v) {return this;}
+				@Override public com.mojang.blaze3d.vertex.VertexConsumer setNormal(float x, float y, float z) {return this;}
+				@Override public com.mojang.blaze3d.vertex.VertexConsumer setLineWidth(float w) {return this;}
+			};
+			try {tFR.tesselate(tMC.level, tPos, tLayer -> tSink, tState, tFluid);}
+			catch (Throwable e) {tFail++; O.println("[GT6-WATERFACE] FAIL " + tNames[k] + " — tesselate упал: " + e); continue;}
+			float tPlane = (tPos.getX() & 15) + 1.0F;
+			int tEast = 0;
+			for (int q = 0; q + 3 < tVerts.size(); q += 4) {
+				boolean tOnPlane = true; float tMinY = Float.POSITIVE_INFINITY, tMaxY = Float.NEGATIVE_INFINITY;
+				for (int v = q; v < q + 4; v++) {
+					float[] tV = tVerts.get(v);
+					if (Math.abs(tV[0] - tPlane) > 0.02F) {tOnPlane = false; break;}
+					if (tV[1] < tMinY) tMinY = tV[1];
+					if (tV[1] > tMaxY) tMaxY = tV[1];
+				}
+				if (tOnPlane && tMaxY - tMinY > 0.05F) tEast++;
+			}
+			boolean tFace = tEast > 0, tOk = tFace == tExpect[k];
+			if (tOk) tPass++; else tFail++;
+			O.println("[GT6-WATERFACE] " + (tOk ? "PASS" : "FAIL") + " " + tNames[k]
+				+ " — EAST-грань " + (tFace ? "ЕСТЬ" : "НЕТ") + " (ждали " + (tExpect[k] ? "ЕСТЬ" : "НЕТ") + ")"
+				+ " · квадов всего=" + tVerts.size() / 4 + ", на EAST-плоскости=" + tEast + " · " + tWho);
+		}
+		O.println("========== [GT6-WATERFACE] ВЕРДИКТ: " + (tFail == 0 ? "PASS" : "FAIL") + " (pass=" + tPass + " fail=" + tFail + ") ==========");
+	}
 }
