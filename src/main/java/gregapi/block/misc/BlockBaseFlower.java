@@ -160,9 +160,10 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	// дефолты интерфейса (консолидация захода #39: зеркало удалено; прежний локальный сеттер гейтился на Level —
 	// дефолт шире и вернее 1:1: пишет и LevelAccessor-регион, и ChunkAccess ворлдгена, как остальная семья).
 	// F3-render (IRenderedCross): текстура cross-модели per-мета (getIcon уже per-мета из mIcons); GT6BlockModel рисует X-форму.
+	// aWorld==null = item-рендер, aX несёт МЕТУ СТЕКА (контракт IRenderedCross; прежде item всегда рисовал мету 0).
 	@Override public Identifier getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (mIcons == null || mIcons.length == 0) return null;
-		IIconContainer tIcon = mIcons[UT.Code.bind4(aWorld == null ? 0 : WD.meta(aWorld, aX, aY, aZ)) % mIcons.length];
+		IIconContainer tIcon = mIcons[UT.Code.bind4(aWorld == null ? aX : WD.meta(aWorld, aX, aY, aZ)) % mIcons.length];
 		return tIcon == null ? null : tIcon.getIcon(0);
 	}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
@@ -198,6 +199,23 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	// же приём, что BlockBaseSpike/BlockBaseLog/BlockBaseBeam уже переопределяют), дефолт-идентичность как в оригинале.
 	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return aMeta;}
 	
+	// BUG-006-приём для иерархии ВНЕ BlockBase (цветок стоит на ванильном FlowerBlock, мостов BlockBase:312 /
+	// PrefixBlock / BlockBaseRail у него нет): loot-таблиц у GT6 нет, neo-дефолт getDrops(loot) отдавал ПУСТО —
+	// снос тиком/опорой и добыча не роняли НИЧЕГО (приёмка 2026-07-30: «цветок исчезает без лута»; судья
+	// gt6flowerprobe показывал «дроп-сущностей 0», но судил только снос — слепота исправлена). Формула дропа —
+	// дефолт 1.7.10 Block.getDrops: quantityDropped копий ST(getItemDropped, 1, damageDropped) из СОБСТВЕННЫХ
+	// методов ниже (:132-149, 1:1 оригинала :97-101). Мета — из СНИМКА aState (BUG-016/026).
+	@Override protected java.util.List<ItemStack> getDrops(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
+		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
+		if (tOrigin == null) return super.getDrops(aState, aParams);
+		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList();
+		java.util.ArrayList<ItemStack> rDrops = ST.arraylist();
+		int tMeta = WD.meta(aState);
+		Item tItem = getItemDropped(tMeta, RNGSUS, 0);
+		if (tItem != null) for (int i = 0, j = quantityDropped(RNGSUS); i < j; i++) rDrops.add(ST.make(tItem, 1, damageDropped(tMeta)));
+		return rDrops;
+	}
+
 	// КАНАЛ ПОДКЛЮЧЁН (2026-07-30, реестр мёртвых каналов): 1.7.10 checkAndDropBlock звался из
 	// updateTick/onNeighborBlockChange ванильного BlockBush (recompSrc :53-56, :62-64; setTickRandomly(true) :22)
 	// и сносил цветок, когда canBlockStay:193 говорило «нельзя» (кислород WD.oxygen + почва). Neo-эквиваленты

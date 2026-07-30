@@ -280,6 +280,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6waterface.flag")) gt6WaterFaceTick(aEvent.getServer());
 	// [GT6-FLOWERPROBE] выживание цветов GT6 (canSurvive+randomTick) и рост саженцев (random-плечо) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6flowerprobe.flag")) gt6FlowerProbeTick(aEvent.getServer());
+	// [GT6-PLANTYARD] ПЛОЩАДКА ПРИЁМКИ: воды встык + цветы + саженцы (не судья — строит мир для глаза игрока) — снять после приёмки
+		if (gregapi.data.CS.probeFlag("gt6plantyard.flag")) gt6PlantYardTick(aEvent.getServer());
 	// [GT6-TOOLMATRIX] BUG-071: матрица «блок × инструмент» — право добычи и скорость по КАЖДОМУ типу — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6toolmatrixprobe.flag")) gt6ToolMatrixTick(aEvent.getServer());
 	// [GT6-TOOLYARD] BUG-071: ПОЛИГОН для ЖИВОЙ приёмки игроком (не судья — строит мир и выдаёт инструменты) — снять при уборке фазы
@@ -10804,8 +10806,16 @@ public final class GT6Probes {
 		if (tLevel.getBlockState(tP2).getBlock() == tFlower) {
 			tLevel.getBlockState(tP2).randomTick(tLevel, tP2, tLevel.getRandom());
 			boolean tGone = tLevel.getBlockState(tP2).getBlock() != tFlower;
-			int tDrops = tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tP2).inflate(2)).size();
-			if (tGone) {tPass++; O.println("[" + FP_M + "] PASS 2) цветок на камне СНЕСЁН одним тиком, дроп-сущностей рядом: " + tDrops);}
+			// ЛУТ ОБЯЗАТЕЛЕН (слепота приёмки 2026-07-30: «снесён, дропа 0» шёл в PASS — игрок поймал исчезновение
+			// без лута). Судится ИДЕНТИЧНОСТЬ выпавшего: среди ItemEntity рядом должен лежать ИМЕННО цветок.
+			java.util.List<net.minecraft.world.entity.item.ItemEntity> tDrops = tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tP2).inflate(2));
+			boolean tFlowerDropped = false; String tWhat = "";
+			for (net.minecraft.world.entity.item.ItemEntity tE : tDrops) {
+				tWhat += (tWhat.isEmpty() ? "" : ", ") + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tE.getItem().getItem());
+				if (tE.getItem().getItem() == net.minecraft.world.item.Item.byBlock(tFlower)) tFlowerDropped = true;
+			}
+			if (tGone && tFlowerDropped) {tPass++; O.println("[" + FP_M + "] PASS 2) цветок на камне СНЕСЁН одним тиком, ВЫПАЛ ПРЕДМЕТОМ (" + tWhat + ")");}
+			else if (tGone) {tFail++; O.println("[" + FP_M + "] FAIL 2) цветок снесён, но ЛУТ НЕ ВЫПАЛ (рядом: " + (tWhat.isEmpty() ? "пусто" : tWhat) + ") — канал дропа мёртв");}
 			else {tFail++; O.println("[" + FP_M + "] FAIL 2) цветок на камне ПЕРЕЖИЛ тик — канал checkAndDropBlock мёртв");}
 		} else {tFail++; O.println("[" + FP_M + "] FAIL 2) цветок на камень не встал (постановка стенда): " + tLevel.getBlockState(tP2).getBlock());}
 		// 3) выбита ОПОРА под цветком — снос каналом предка (updateShape), без всяких тиков
@@ -10815,7 +10825,11 @@ public final class GT6Probes {
 		if (tLevel.getBlockState(tP3).getBlock() == tFlower) {
 			tLevel.destroyBlock(tP3.below(), false); // живой путь: опора выбита
 			boolean tGone = tLevel.getBlockState(tP3).getBlock() != tFlower;
-			if (tGone) {tPass++; O.println("[" + FP_M + "] PASS 3) выбита опора → цветок снесён каналом предка (роль onNeighborBlockChange)");}
+			boolean tFlowerDropped = false;
+			for (net.minecraft.world.entity.item.ItemEntity tE : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tP3).inflate(2)))
+				if (tE.getItem().getItem() == net.minecraft.world.item.Item.byBlock(tFlower)) tFlowerDropped = true;
+			if (tGone && tFlowerDropped) {tPass++; O.println("[" + FP_M + "] PASS 3) выбита опора → цветок снесён каналом предка И выпал предметом");}
+			else if (tGone) {tFail++; O.println("[" + FP_M + "] FAIL 3) опора выбита, цветок снесён, но ЛУТ НЕ ВЫПАЛ");}
 			else {tFail++; O.println("[" + FP_M + "] FAIL 3) опора выбита, а цветок ВИСИТ В ВОЗДУХЕ");}
 		} else {tFail++; O.println("[" + FP_M + "] FAIL 3) цветок не встал для сценария опоры: " + tLevel.getBlockState(tP3).getBlock());}
 		// 4) посадка САЖЕНЦА — рост судится отдельным шагом (gt6FPGrow), когда свет пересчитается
@@ -10864,5 +10878,100 @@ public final class GT6Probes {
 			else {tFail++; O.println("[" + FP_M + "] FAIL 4) саженец НЕ пророс за 400 тиков (свет " + tLight + ", мета " + tMeta + " — бит готовности НЕ взведён) — random-плечо мертво");}
 		}
 		O.println("========== [" + FP_M + "] ВЕРДИКТ: " + (tFail == 0 ? "PASS" : "FAIL") + " (pass=" + tPass + " fail=" + tFail + ") ==========");
+	}
+
+	// ==========================================================================================================
+	// gt6plantyard — ПЛОЩАДКА ПРИЁМКИ ГЛАЗОМ ИГРОКА (не судья — строит мир): заход «очередь каналов»
+	// 2026-07-30. Три сектора: воды встык (грани) · цветы (снос тиком и опорой) · саженцы (рост деревьев).
+	// randomTickSpeed поднимается до 60, чтобы случайные тики шли на глазах. Мир сохраняется принудительно
+	// (урок gt6demo: без save постройка гибнет вместе с JVM).
+	// ==========================================================================================================
+	private static final String PY_M = "GT6-PLANTYARD";
+	private static int sPYTick = 0;
+	private static gregapi.probe.GT6ProbeStand.Seq sPYSeq;
+
+	public static void gt6PlantYardTick(net.minecraft.server.MinecraftServer aServer) {
+		sPYTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sPYSeq == null) sPYSeq = new gregapi.probe.GT6ProbeStand.Seq(PY_M)
+			.at(240, () -> gt6PYBuild(tPlayer));
+		sPYSeq.tick(sPYTick);
+	}
+
+	private static void gt6PYBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		net.minecraft.server.MinecraftServer tServer = tLevel.getServer();
+		// приёмка 2026-07-30: спавн фикс-сида оказался ЗИМНИМ — ускоренные тики мгновенно заморозили канаву
+		// (заморозка сама по себе работала верно). Площадка переносится в РАВНИНУ: поиск — тот же канал, что
+		// ванильный /locate biome (ServerLevel.findClosestBiome3d:1457), высота — по heightmap.
+		com.mojang.datafixers.util.Pair<BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tWarm =
+			tLevel.findClosestBiome3d(h -> h.is(net.minecraft.world.level.biome.Biomes.PLAINS), aPlayer.blockPosition(), 6400, 32, 64);
+		if (tWarm != null) {
+			int tX = tWarm.getFirst().getX(), tZ = tWarm.getFirst().getZ();
+			tLevel.getChunk(tX >> 4, tZ >> 4); // форс-генерация: heightmap НЕсгенерированного чанка отдаёт дно мира (-64)
+			int tY = tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, tX, tZ);
+			gregapi.probe.GT6ProbeStand.teleportLook(aPlayer, tX + 0.5, tY + 1, tZ + 0.5, -90F, 10F);
+			O.println("[" + PY_M + "] равнина найдена @ " + tX + "," + tY + "," + tZ + " — площадка строится там");
+		} else O.println("[" + PY_M + "] ⚠ равнина в радиусе 6400 НЕ найдена — строю на месте (возможна заморозка)");
+		BlockPos tO = aPlayer.blockPosition().offset(8, 0, 8);
+		O.println("========== [" + PY_M + "] ПЛОЩАДКА ПРИЁМКИ, начало " + tO + " ==========");
+		net.minecraft.world.level.block.Block tRiver = gregapi.data.CS.BlocksGT.River;
+		net.minecraft.world.level.block.Block tOcean = gregapi.data.CS.BlocksGT.Ocean;
+		net.minecraft.world.level.block.Block tFlower = gregapi.data.CS.BlocksGT.FlowersA instanceof net.minecraft.world.level.block.Block b ? b : null;
+		net.minecraft.world.level.block.Block tSap = gregapi.data.CS.BlocksGT.Saplings_AB;
+		if (tRiver == null || tOcean == null || tFlower == null || tSap == null) {O.println("[" + PY_M + "] реестр неполон — площадка не построена"); return;}
+		// общее поле 30×7: каменный пол y=-1, расчистка до y=14 (деревьям нужна высота)
+		for (int dx = -2; dx <= 28; dx++) for (int dz = -2; dz <= 4; dz++) {
+			tLevel.setBlock(tO.offset(dx, -1, dz), Blocks.STONE.defaultBlockState(), 2);
+			for (int dy = 0; dy <= 14; dy++) tLevel.setBlock(tO.offset(dx, dy, dz), Blocks.AIR.defaultBlockState(), 2);
+		}
+		// ── СЕКТОР 1 (x 0..5): ШЕСТЬ ВОД ВСТЫК — река,река,океан,океан,ваниль,ваниль ────────────────────────
+		for (int dx = -1; dx <= 6; dx++) for (int dz = -1; dz <= 1; dz++) {
+			tLevel.setBlock(tO.offset(dx, -2, dz), Blocks.STONE.defaultBlockState(), 2);
+			boolean tInner = dx >= 0 && dx <= 5 && dz == 0;
+			tLevel.setBlock(tO.offset(dx, -1, dz), tInner ? Blocks.AIR.defaultBlockState() : Blocks.STONE.defaultBlockState(), 2);
+		}
+		boolean tOldR = gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED, tOldO = gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED;
+		gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = T;
+		gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = T;
+		try {
+			gregapi.util.WD.set(tLevel, tO.getX(),     tO.getY() - 1, tO.getZ(), tRiver, 0, 2, F);
+			gregapi.util.WD.set(tLevel, tO.getX() + 1, tO.getY() - 1, tO.getZ(), tRiver, 0, 2, F);
+			gregapi.util.WD.set(tLevel, tO.getX() + 2, tO.getY() - 1, tO.getZ(), tOcean, 0, 2, F);
+			gregapi.util.WD.set(tLevel, tO.getX() + 3, tO.getY() - 1, tO.getZ(), tOcean, 0, 2, F);
+			tLevel.setBlock(tO.offset(4, -1, 0), Blocks.WATER.defaultBlockState(), 2);
+			tLevel.setBlock(tO.offset(5, -1, 0), Blocks.WATER.defaultBlockState(), 2);
+		} finally {
+			gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = tOldR;
+			gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = tOldO;
+		}
+		// ── СЕКТОР 2 (x 10..14): ЦВЕТЫ — на земле · на камне (сам выпадет) · «сломай опору» ────────────────
+		tLevel.setBlock(tO.offset(10, -1, 0), Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+		gregapi.util.WD.set(tLevel, tO.getX() + 10, tO.getY(), tO.getZ(), tFlower, 0, 3, F);
+		gregapi.util.WD.set(tLevel, tO.getX() + 12, tO.getY(), tO.getZ(), tFlower, 1, 2, F); // на камне пола, БЕЗ апдейтов — выпадет случайным тиком на глазах
+		tLevel.setBlock(tO.offset(14, -1, 0), Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+		gregapi.util.WD.set(tLevel, tO.getX() + 14, tO.getY(), tO.getZ(), tFlower, 2, 3, F);
+		// ── СЕКТОР 3 (x 18..27): ГРЯДКА — четыре саженца на траве ──────────────────────────────────────────
+		for (int dx = 18; dx <= 27; dx++) for (int dz = -1; dz <= 1; dz++) tLevel.setBlock(tO.offset(dx, -1, dz), Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+		for (int i = 0; i < 4; i++) gregapi.util.WD.set(tLevel, tO.getX() + 19 + i * 3, tO.getY(), tO.getZ(), tSap, i, 3, F);
+		// быстрые случайные тики — снос цветка и рост деревьев видны за секунды, путь движка тот же
+		tLevel.getGameRules().set(net.minecraft.world.level.gamerules.GameRules.RANDOM_TICK_SPEED, 60, tServer);
+		// набор в руки: цветы и саженцы — сажать самому (на камень цветок не встанет: гейт постановки)
+		aPlayer.getInventory().add(gregapi.util.ST.make(tFlower, 16, 0));
+		aPlayer.getInventory().add(gregapi.util.ST.make(tSap, 16, 0));
+		// точка обзора: юго-западнее площадки, взгляд на восток вдоль ряда
+		gregapi.probe.GT6ProbeStand.teleportLook(aPlayer, tO.getX() - 4.5, tO.getY() + 1, tO.getZ() + 0.5, -90F, 10F);
+		gregapi.util.UT.Entities.sendchat(aPlayer, "=== ПЛОЩАДКА ПРИЁМКИ: смотри слева направо ===");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "1) КАНАВА С ВОДОЙ: река+океан+обычная вода вплотную. Смотреть сверху и сбоку: внутри НЕ должно быть стенок между разными водами.");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "2) ТРИ ЦВЕТКА: левый на земле — стоит; средний на камне — сам выпадет за несколько секунд; у правого сломай землю ПОД ним — цветок упадёт предметом.");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "3) ГРЯДКА С 4 САЖЕНЦАМИ: вырастут в деревья сами за ~минуту (время ускорено). В руках запас — можешь сажать свои на траву.");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "Цветок в руках НЕ ставится на камень — только на землю/траву. Это тоже проверка.");
+		O.println("[" + PY_M + "] цветок-на-камне @ " + tO.offset(12, 0, 0) + ": " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tLevel.getBlockState(tO.offset(12, 0, 0)).getBlock()));
+		// принудительное сохранение — постройка и набор обязаны пережить закрытие JVM
+		tServer.saveEverything(true, true, true);
+		tServer.getPlayerList().saveAll();
+		O.println("========== [" + PY_M + "] ПЛОЩАДКА ГОТОВА, мир сохранён ==========");
 	}
 }

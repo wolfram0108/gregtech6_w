@@ -65,7 +65,10 @@ import static net.minecraftforge.common.EnumPlantType.Plains;
 @Optional.InterfaceList(value = {
 	@Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock", modid = ModIDs.GC)
 })
-public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantable, BonemealableBlock, IOxygenReliantBlock {
+// IRenderedCross: 1.7.10 getRenderType()==1 (:90 оригинала, крест drawCrossedSquares) — единственный носитель
+// renderType 1 в дереве (греп). Без него саженец шёл кубической цепочкой IRenderedBlock и рисовался «кубом
+// с шестью саженцами» (приёмка 2026-07-30). Тот же контракт, что у BlockBaseFlower.
+public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantable, BonemealableBlock, IOxygenReliantBlock, gregapi.render.IRenderedCross {
 	public BlockBaseSapling(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, Math.min(8, aMaxMeta), aIcons);
 		setBlockBounds(0.1F, 0.0F, 0.1F, 0.9F, 0.8F, 0.9F);
@@ -106,6 +109,13 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeSapling.mDefaultStackSize);}
 	@Override public Identifier getIcon(int aSide, int aMeta) {return mIcons[aMeta & 15].getIcon(0);}
+	// F3-render (IRenderedCross): та же per-мета иконка, что getIcon выше; aWorld==null = item-рендер,
+	// aX несёт МЕТУ СТЕКА (контракт IRenderedCross, как у BlockBaseFlower).
+	@Override public Identifier getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ) {
+		if (mIcons == null || mIcons.length == 0) return null;
+		gregapi.render.IIconContainer tIcon = mIcons[(aWorld == null ? aX : WD.meta(aWorld, aX, aY, aZ)) & 15];
+		return tIcon == null ? null : tIcon.getIcon(0);
+	}
 	// 1:1 оригинала: canSustainPlant почвы через ЦЕНТР WD.canSustainPlant — он несёт таблицу почв 1.7.10 для
 	// TriState.DEFAULT. ⛔ Прежняя копия здесь сворачивала toBoolean(T) («саженец стоит на чём угодно»), а
 	// наследник BlockTreeSaplingAB:76 шёл через центр со старым toBoolean(F) («ни на чём») — его и сносило

@@ -92,7 +92,9 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	public boolean isShearable(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeLeaves.mDefaultStackSize);}
-	@Override public Identifier getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(WD.opaque(Blocks.OAK_LEAVES)?8:0)].getIcon(0);}
+	// 1:1 (:91 оригинала): выбор fancy/fast-варианта иконки по признаку ванильной листвы; семантика isOpaqueCube
+	// = WD.visOpq (WD.opaque=canOcclude тут врал — см. skipRendering ниже). В neo-ванили листва всегда fancy.
+	@Override public Identifier getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(WD.visOpq(Blocks.OAK_LEAVES)?8:0)].getIcon(0);}
 	public ArrayList<ItemStack> onSheared(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aX, aY, aZ) & 7));}
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : WD.collisionBox(aWorld, aX, aY, aZ, this);}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
@@ -107,10 +109,16 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering). Позиция(aX,aY,aZ) в исходнике
 	// была позицией СОСЕДА (стандартная 1.7.10-семантика shouldSideBeRendered) -> aNeighbor.getBlock() эквивалентен
 	// WD.block(aWorld,aX,aY,aZ) без потерь.
+	// ⛔ БЫЛО WD.opaque (canOcclude) — а canOcclude у всей BlockBase-семьи дефолтно TRUE, поэтому сосед-листва
+	// считался «непрозрачным кубом» и грань скрывалась ВСЕГДА: дерево выглядело полым «стеклом» без внутренних
+	// граней (приёмка 2026-07-30). Семантика 1.7.10 здесь — isOpaqueCube (:106 оригинала), её neo-канон —
+	// isSolidRender = центр WD.visOpq (тот же класс дефекта, что F3-render «грань против слаба», WD:1368-1371).
+	// visOpq(OAK_LEAVES) при noOcclusion ванильной листвы = false всегда — постоянный fancy, 1:1 с neo-ванилью
+	// (динамический fast-режим листвы 1.7.10 в движке отсутствует).
 	@Override
 	protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
 		Block aBlock = aNeighbor.getBlock();
-		return WD.opaque(aBlock) || (WD.opaque(Blocks.OAK_LEAVES) && aBlock instanceof BlockBaseLeaves);
+		return WD.visOpq(aBlock) || (WD.visOpq(Blocks.OAK_LEAVES) && aBlock instanceof BlockBaseLeaves);
 	}
 	
 	// @Override

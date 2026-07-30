@@ -196,6 +196,15 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 	}
 	private static void buildInventoryQuads0(GT6QuadBuilder aQB, Block aBlock, net.minecraft.world.item.ItemStack aStack) {
 		if (!(aBlock instanceof IRenderedBlock tRB)) return;
+		// F3-render (приёмка 2026-07-30, «цветок в инвентаре без иконки»): item-форма cross-блока — те же две
+		// скрещенные плоскости (1.7.10 renderBlockAsItem case 1 = drawCrossedSquares), а кубические каналы у
+		// IRenderedCross — контрактные null (IRenderedCross:40-45) и давали ПУСТОЙ набор квадов. aWorld==null +
+		// мета стека в aX — контракт getCrossIcon.
+		if (tRB instanceof IRenderedCross tCross) {
+			int tMeta = gregapi.util.ST.meta_(aStack);
+			aQB.crossFace(tCross.getCrossIcon(null, tMeta, 0, 0), tCross.getCrossRGBa(null, tMeta, 0, 0));
+			return;
+		}
 		boolean[] tSides = {true, true, true, true, true, true}; // SIDES_ITEM_RENDER (без соседей → все грани)
 		IRenderedBlockObject tRenderer = tRB.passRenderingToObject(aStack);
 		if (tRenderer != null) tRenderer = tRenderer.passRenderingToObject(aStack);
