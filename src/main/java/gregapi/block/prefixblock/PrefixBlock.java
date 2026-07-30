@@ -439,7 +439,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 			return T;
 		}
 		OreDictMaterial aMaterial = getMetaMaterial(aTileEntity);
-		if (aMaterial.containsAny(TD.Properties.FLAMMABLE, TD.Properties.EXPLOSIVE, TD.Atomic.ALKALI_METAL)) {
+		// null-гард (краш приёмки 2026-07-30): в neo TE свежезагруженного чанка существует ДО заполнения меты
+		// (каскад от приземления PrefixBlockFallingEntity) → материала по мете нет. Оригинал :385 гарда не имел —
+		// в 1.7.10 этого окна не было; ВСЕ соседние ветки файла (:463, :472, :663) охраняются так же.
+		if (aMaterial != null && aMaterial.containsAny(TD.Properties.FLAMMABLE, TD.Properties.EXPLOSIVE, TD.Atomic.ALKALI_METAL)) {
 			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2);
 			return T;
 		}
