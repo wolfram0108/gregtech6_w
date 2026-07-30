@@ -69,9 +69,16 @@ public class FurnaceRecipes {
 	/** 1.7.10 getSmeltingList(): мутабельная карта — GT6 итерирует и удаляет через entrySet().iterator().remove(). */
 	public Map<ItemStack, ItemStack> getSmeltingList() {return mSmeltingList;}
 
-	/** 1.7.10 func_151398_b = getSmeltingExperience(output). */
+	/** 1.7.10 func_151398_b = getSmeltingExperience(output). Правило 1:1 (recompSrc FurnaceRecipes:115-135):
+	 *  СНАЧАЛА хук предмета-результата, его ответ != -1 ПЕРЕКРЫВАЕТ карту (у GT6-предметов: самоцвет → 1.0,
+	 *  иначе 0 — анти-фарм Грега); не-носитель контракта = дефолт 1.7.10 Item.getSmeltingExperience = -1
+	 *  «спроси карту»; нет и в карте → 0. */
 	public float func_151398_b(ItemStack aOutput) {
 		if (ST.invalid(aOutput)) return 0.0F;
+		if (aOutput.getItem() instanceof gregapi.item.IItemSmeltingExperience tItem) {
+			float tXP = tItem.getSmeltingExperience(aOutput);
+			if (tXP != -1) return tXP;
+		}
 		for (Map.Entry<ItemStack, Float> tEntry : mExperienceList.entrySet()) if (ST.equal(aOutput, tEntry.getKey(), T)) return tEntry.getValue();
 		return 0.0F;
 	}

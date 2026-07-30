@@ -294,6 +294,10 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6slotguardprobe.flag")) gt6SlotGuardProbeTick(aEvent.getServer());
 	// [GT6-BEACON] мост оплаты маяка: слот 0 BeaconMenu после подмены судит материал стека 1:1 с оригиналом — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6beaconprobe.flag")) gt6BeaconProbeTick(aEvent.getServer());
+	// [GT6-BEACONYARD] ПЛОЩАДКА ПРИЁМКИ маяка (не судья — строит пирамиду и выдаёт слитки для рук игрока) — снять после приёмки
+		if (gregapi.data.CS.probeFlag("gt6beaconyard.flag")) gt6BeaconYardTick(aEvent.getServer());
+	// [GT6-SMELTXP] (б′) опыт плавки: классы по реестру + маршрутизация по диспетчерам + живые печи с орбами — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6smeltxpprobe.flag")) gt6SmeltXPProbeTick(aEvent.getServer());
 	}
 
 	// ==========================================================================================================
@@ -526,6 +530,230 @@ public final class GT6Probes {
 		}
 		O.println("[GT6-BEACON] ВЕРДИКТ: " + (tFail == 0 ? "PASS" : "FAIL") + " (pass=" + tPass + " fail=" + tFail + ")");
 		O.println("========== [GT6-BEACON] конец ==========");
+	}
+
+	// ==========================================================================================================
+	// [GT6-SMELTXP] (б′) ОПЫТ ПЛАВКИ 1:1 — судья трёх уровней.
+	//
+	// В 1.7.10 опыт печи = функция ПРЕДМЕТА-РЕЗУЛЬТАТА (хук перекрывал карту, FurnaceRecipes:117-118); в neo
+	// опыт — поле рецепта. Решение (б′): правило восстановлено в func_151398_b (хук IItemSmeltingExperience →
+	// карта → 0), а до ванильной печи его доносят ЭКЗЕМПЛЯРЫ GT6SmeltingDispatcher по классам опыта.
+	// Уровни судьи: (1) гистограмма классов опыта по живому реестру + список классов БЕЗ своего экземпляра;
+	// (2) МАРШРУТИЗАЦИЯ: для каждой записи реестра ВСЕ матчащиеся SMELTING-рецепты обязаны нести
+	// experience() == классу записи (иначе печь, выбрав «не тот» рецепт, выдаст чужой опыт — недетерминизм);
+	// (3) ЖИВЫЕ ПЕЧИ: реальная плавка + awardUsedRecipesAndPopExperience → счёт ОРБОВ (следствие у конечного
+	// объекта): самоцветный выход → 1 очко, слиточный GT6 → 0 (анти-фарм Грега 1:1), ванильный вход — свой XP.
+	// ==========================================================================================================
+	private static boolean mSmeltXPDone = false;
+	private static int sSmeltXPPhase = 0, sSmeltXPWait = 0;
+	private static BlockPos sSmeltXPFurnaceA, sSmeltXPFurnaceB, sSmeltXPFurnaceC;
+	private static net.minecraft.world.item.ItemStack sSmeltXPSynthIn = null;
+	private static float sSmeltXPExpectA = -1, sSmeltXPExpectB = -1, sSmeltXPExpectC = -1;
+	private static int sSmeltXPPass = 0, sSmeltXPFail = 0;
+	private static void gt6SmeltXPProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (mSmeltXPDone) return;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sSmeltXPPhase == 0) {
+				// GT6-реестр наполняется data-init'ом на server-start — ждём непустого
+				if (gregapi.recipes.FurnaceRecipes.smelting().getSmeltingList().isEmpty()) {if (++sSmeltXPWait > 1200) {mSmeltXPDone = true; O.println("[GT6-SMELTXP] реестр пуст 60с — СТЕНД НЕ СОСТОЯЛСЯ");} return;}
+				O.println("========== [GT6-SMELTXP] (б′) опыт плавки: классы, маршрутизация, живые печи ==========");
+
+				// ── Уровень 1: гистограмма классов опыта по правилу 1.7.10 ────────────────────────────────
+				java.util.Map<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tList = gregapi.recipes.FurnaceRecipes.smelting().getSmeltingList();
+				java.util.TreeMap<Float, Integer> tHisto = new java.util.TreeMap<>();
+				java.util.Map<Float, net.minecraft.world.item.ItemStack> tSampleIn = new java.util.HashMap<>();
+				for (java.util.Map.Entry<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tE : tList.entrySet()) {
+					float tXP = gregapi.recipes.FurnaceRecipes.smelting().func_151398_b(tE.getValue());
+					tHisto.merge(tXP, 1, Integer::sum);
+					tSampleIn.putIfAbsent(tXP, tE.getKey());
+				}
+				// покрытые классы = experience() всех экземпляров диспетчера в карте рецептов уровня
+				java.util.Set<Float> tCovered = new java.util.HashSet<>();
+				int tDispatchers = 0;
+				for (net.minecraft.world.item.crafting.RecipeHolder<?> tH : tLevel.recipeAccess().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.SMELTING))
+					if (tH.value() instanceof gregapi.recipes.GT6SmeltingDispatcher tD) {tCovered.add(tD.experience()); tDispatchers++;}
+				O.println("[GT6-SMELTXP] записей в GT6-реестре: " + tList.size() + " · экземпляров диспетчера: " + tDispatchers + " · их классы: " + tCovered);
+				int tUncovered = 0;
+				for (java.util.Map.Entry<Float, Integer> tE : tHisto.entrySet()) {
+					boolean tOK = tE.getKey() == 0.0F || tCovered.contains(tE.getKey());
+					if (!tOK) tUncovered++;
+					O.println("[GT6-SMELTXP] класс XP " + tE.getKey() + " — записей " + tE.getValue() + (tOK ? "" : " ⛔ БЕЗ СВОЕГО ЭКЗЕМПЛЯРА (через дефолт уйдёт в 0)"));
+				}
+				if (tUncovered == 0) {sSmeltXPPass++; O.println("[GT6-SMELTXP] PASS: все классы опыта покрыты экземплярами");}
+				else {sSmeltXPFail++; O.println("[GT6-SMELTXP] FAIL: непокрытых классов " + tUncovered);}
+
+				// ── Уровень 2: маршрутизация — каждая запись × ВСЕ матчащиеся рецепты. ДВА счётчика:
+				//    (а) ГЕЙТ (б′): каждый матчащийся ДИСПЕТЧЕР обязан нести класс записи;
+				//    (б) шов «двойной источник»: ванильный json несёт XP ≠ классу карты — коллизия карты по
+				//        ВЫХОДУ, присущая оригиналу (1.7.10 experienceList.put(output,xp), func_151398_b
+				//        возвращал ПЕРВУЮ совпавшую — recompSrc FurnaceRecipes:80,120-134; «кирпич 0.3 от
+				//        ванили vs 0.0 от Loader_Recipes_Furnace:177» сосуществовали и там). Не гейт (б′).
+				int tRouteOK = 0, tRouteBad = 0, tRouteNone = 0, tDualSource = 0;
+				var tSmelting = tLevel.recipeAccess().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.SMELTING);
+				for (java.util.Map.Entry<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tE : tList.entrySet()) {
+					float tExpect = gregapi.recipes.FurnaceRecipes.smelting().func_151398_b(tE.getValue());
+					var tInput = new net.minecraft.world.item.crafting.SingleRecipeInput(tE.getKey());
+					int tMatched = 0; boolean tBad = false, tDual = false;
+					for (net.minecraft.world.item.crafting.RecipeHolder<?> tH : tSmelting) {
+						@SuppressWarnings("unchecked")
+						net.minecraft.world.item.crafting.Recipe<net.minecraft.world.item.crafting.SingleRecipeInput> tR = (net.minecraft.world.item.crafting.Recipe<net.minecraft.world.item.crafting.SingleRecipeInput>)tH.value();
+						if (!tR.matches(tInput, tLevel)) continue;
+						tMatched++;
+						float tGot = tR instanceof net.minecraft.world.item.crafting.AbstractCookingRecipe tC ? tC.experience() : -999;
+						if (tGot == tExpect) continue;
+						if (tR instanceof gregapi.recipes.GT6SmeltingDispatcher) {
+							tBad = true;
+							if (tRouteBad < 8) O.println("[GT6-SMELTXP] МАРШРУТ-FAIL: вход «" + tE.getKey().getHoverName().getString() + "» → диспетчер " + tH.id().identifier() + " несёт XP " + tGot + ", класс записи " + tExpect);
+						} else {
+							tDual = true;
+							O.println("[GT6-SMELTXP] шов двойного источника: вход «" + tE.getKey().getHoverName().getString() + "» → выход «" + tE.getValue().getHoverName().getString() + "»: ванильный " + tH.id().identifier() + " несёт XP " + tGot + ", карта по выходу даёт " + tExpect);
+						}
+					}
+					if (tMatched == 0) tRouteNone++;
+					else if (tBad) tRouteBad++;
+					else tRouteOK++;
+					if (tDual) tDualSource++;
+				}
+				O.println("[GT6-SMELTXP] маршрутизация: записей ОК " + tRouteOK + " · диспетчер с неверным классом " + tRouteBad + " · не находимых печью " + tRouteNone + " · шов двойного источника (не гейт) " + tDualSource);
+				if (tRouteBad == 0 && tRouteOK > 0) {sSmeltXPPass++; O.println("[GT6-SMELTXP] PASS: все маршруты диспетчеров несут верный класс опыта");}
+				else {sSmeltXPFail++; O.println("[GT6-SMELTXP] FAIL: маршрутизация диспетчеров (bad=" + tRouteBad + ", ok=" + tRouteOK + ")");}
+
+				// ── Уровень 3: живые печи. A: ХУК — выход обязан быть НОСИТЕЛЕМ IItemSmeltingExperience-самоцветом
+				//    (иначе класс 1.0 мог прийти из карты, и хук останется непроверенным); нет живой — синтетика;
+				//    B: запись класса 0 (GT6-выход); C: ванильный вход gold_ore (что бы ни выбрал движок).
+				net.minecraft.world.item.ItemStack tInA = null;
+				for (java.util.Map.Entry<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tE : tList.entrySet())
+					if (tE.getValue().getItem() instanceof gregapi.item.IItemSmeltingExperience tI && tI.getSmeltingExperience(tE.getValue()) == 1.0F) {tInA = tE.getKey(); break;}
+				if (tInA == null) {
+					sSmeltXPSynthIn = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BEDROCK);
+					gregapi.recipes.FurnaceRecipes.smelting().func_151394_a(sSmeltXPSynthIn, gregapi.data.OP.gem.mat(gregapi.data.MT.Ruby, 1), 0.0F);
+					tInA = sSmeltXPSynthIn;
+					O.println("[GT6-SMELTXP] живой записи с самоцветным GT6-выходом нет — синтетика: бедрок → рубин GT6 с XP-полем 0 (опыт обязан прийти из ХУКА, не из карты; снимется после замера)");
+				}
+				sSmeltXPExpectA = 1.0F;
+				net.minecraft.world.item.ItemStack tInB = tSampleIn.get(0.0F);
+				sSmeltXPExpectB = 0.0F;
+				net.minecraft.world.item.ItemStack tInC = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GOLD_ORE);
+				sSmeltXPExpectC = gregapi.recipes.FurnaceRecipes.smelting().func_151398_b(gregapi.recipes.FurnaceRecipes.smelting().getSmeltingResult(tInC));
+				if (sSmeltXPExpectC == 0.0F && !ST.valid(gregapi.recipes.FurnaceRecipes.smelting().getSmeltingResult(tInC))) sSmeltXPExpectC = -2; // не в GT6-реестре — ожидание от ванильного рецепта, посчитаем по факту >0
+				BlockPos tBase = tPlayer.blockPosition().offset(3, 0, 0);
+				sSmeltXPFurnaceA = tBase; sSmeltXPFurnaceB = tBase.offset(2, 0, 0); sSmeltXPFurnaceC = tBase.offset(4, 0, 0);
+				loadFurnace(tLevel, sSmeltXPFurnaceA, tInA);
+				if (tInB != null) loadFurnace(tLevel, sSmeltXPFurnaceB, tInB); else {sSmeltXPFurnaceB = null; O.println("[GT6-SMELTXP] ⚠ записи класса 0 нет — кейс B пропущен");}
+				loadFurnace(tLevel, sSmeltXPFurnaceC, tInC);
+				O.println("[GT6-SMELTXP] печи заряжены: A(самоцвет 1.0) @ " + sSmeltXPFurnaceA + " · B(GT6 класс 0) @ " + sSmeltXPFurnaceB + " · C(gold_ore, класс " + sSmeltXPExpectC + ") @ " + sSmeltXPFurnaceC);
+				sSmeltXPPhase = 1; sSmeltXPWait = 0;
+				return;
+			}
+			if (sSmeltXPPhase == 1) {
+				// ждём готовности всех печей (слот 2 непуст), максимум 30с
+				boolean tReadyA = furnaceHasResult(tLevel, sSmeltXPFurnaceA);
+				boolean tReadyB = sSmeltXPFurnaceB == null || furnaceHasResult(tLevel, sSmeltXPFurnaceB);
+				boolean tReadyC = furnaceHasResult(tLevel, sSmeltXPFurnaceC);
+				if (!(tReadyA && tReadyB && tReadyC)) {
+					if (++sSmeltXPWait <= 600) return;
+					O.println("[GT6-SMELTXP] ⛔ печь не доплавила за 30с: A=" + tReadyA + " B=" + tReadyB + " C=" + tReadyC + " — кейсы ниже судятся по фактической готовности");
+					sSmeltXPFail++;
+				}
+				judgeFurnaceXP(tLevel, tPlayer, sSmeltXPFurnaceA, "A самоцветный выход", sSmeltXPExpectA);
+				if (sSmeltXPFurnaceB != null) judgeFurnaceXP(tLevel, tPlayer, sSmeltXPFurnaceB, "B GT6-выход класса 0", sSmeltXPExpectB);
+				judgeFurnaceXP(tLevel, tPlayer, sSmeltXPFurnaceC, "C ванильный gold_ore", sSmeltXPExpectC);
+				if (sSmeltXPSynthIn != null) {gregapi.recipes.FurnaceRecipes.smelting().getSmeltingList().keySet().removeIf(k -> ST.equal(k, sSmeltXPSynthIn, T)); O.println("[GT6-SMELTXP] синтетическая запись снята");}
+				for (BlockPos tP : new BlockPos[]{sSmeltXPFurnaceA, sSmeltXPFurnaceB, sSmeltXPFurnaceC}) if (tP != null) tLevel.setBlock(tP, Blocks.AIR.defaultBlockState(), 3);
+				O.println("[GT6-SMELTXP] ВЕРДИКТ: " + (sSmeltXPFail == 0 ? "PASS" : "FAIL") + " (pass=" + sSmeltXPPass + " fail=" + sSmeltXPFail + ")");
+				O.println("========== [GT6-SMELTXP] конец ==========");
+				mSmeltXPDone = true;
+			}
+		} catch (Throwable e) {
+			O.println("[GT6-SMELTXP] СТЕНД УПАЛ: " + e);
+			e.printStackTrace(O);
+			O.println("[GT6-SMELTXP] ВЕРДИКТ: FAIL (упал)");
+			mSmeltXPDone = true;
+		}
+	}
+
+	private static void loadFurnace(ServerLevel aLevel, BlockPos aPos, net.minecraft.world.item.ItemStack aInput) {
+		aLevel.setBlock(aPos, Blocks.FURNACE.defaultBlockState(), 3);
+		if (aLevel.getBlockEntity(aPos) instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity tBE) {
+			tBE.setItem(0, ST.amount(1, aInput));
+			tBE.setItem(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COAL, 4));
+		}
+	}
+
+	private static boolean furnaceHasResult(ServerLevel aLevel, BlockPos aPos) {
+		return aLevel.getBlockEntity(aPos) instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity tBE && !tBE.getItem(2).isEmpty();
+	}
+
+	/** Выемка опыта РЕАЛЬНЫМ каналом печи (awardUsedRecipesAndPopExperience — тот же вызов, что при взятии
+	 *  из слота результата) и счёт ВЫПАВШИХ орбов. aExpect: -2 = «строго больше нуля» (вероятностное
+	 *  округление дробного XP), иначе точное значение floor(1×XP). */
+	private static void judgeFurnaceXP(ServerLevel aLevel, ServerPlayer aPlayer, BlockPos aPos, String aName, float aExpect) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (!(aLevel.getBlockEntity(aPos) instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity tBE)) {sSmeltXPFail++; O.println("[GT6-SMELTXP] FAIL: " + aName + " — печь исчезла"); return;}
+		net.minecraft.world.item.ItemStack tResult = tBE.getItem(2);
+		java.util.List<net.minecraft.world.entity.ExperienceOrb> tBefore = aLevel.getEntitiesOfClass(net.minecraft.world.entity.ExperienceOrb.class, aPlayer.getBoundingBox().inflate(16));
+		tBefore.forEach(net.minecraft.world.entity.ExperienceOrb::discard);
+		tBE.awardUsedRecipesAndPopExperience(aPlayer);
+		int tXP = 0;
+		for (net.minecraft.world.entity.ExperienceOrb tOrb : aLevel.getEntitiesOfClass(net.minecraft.world.entity.ExperienceOrb.class, aPlayer.getBoundingBox().inflate(16))) {tXP += tOrb.getValue(); tOrb.discard();}
+		boolean tOK = aExpect == -2 ? tXP > 0 : tXP == (int)Math.floor(aExpect);
+		if (tOK) {sSmeltXPPass++; O.println("[GT6-SMELTXP] PASS: " + aName + " — результат «" + tResult.getHoverName().getString() + "», орбов на " + tXP + " очков (ожидание " + (aExpect == -2 ? "> 0" : String.valueOf((int)Math.floor(aExpect))) + ")");}
+		else {sSmeltXPFail++; O.println("[GT6-SMELTXP] FAIL: " + aName + " — результат «" + tResult.getHoverName().getString() + "», орбов на " + tXP + " очков, ожидалось " + (aExpect == -2 ? "> 0" : String.valueOf((int)Math.floor(aExpect))));}
+	}
+
+	// ==========================================================================================================
+	// [GT6-BEACONYARD] ПЛОЩАДКА ПРИЁМКИ МОСТА ОПЛАТЫ МАЯКА — не судья, строит мир для рук игрока.
+	// Пирамида 3×3 из железных блоков + маяк на поверхности рядом с игроком, столб до неба расчищен (лучу
+	// нужна прямая видимость), в сумку — шесть стопок: четыре должны ложиться в слот, две — нет.
+	// ==========================================================================================================
+	private static final String BY_M = "GT6-BEACONYARD";
+	private static int sBYTick = 0;
+	private static gregapi.probe.GT6ProbeStand.Seq sBYSeq;
+	private static void gt6BeaconYardTick(net.minecraft.server.MinecraftServer aServer) {
+		sBYTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sBYSeq == null) sBYSeq = new gregapi.probe.GT6ProbeStand.Seq(BY_M)
+			.at(240, () -> gt6BYBuild(tPlayer));
+		sBYSeq.tick(sBYTick);
+	}
+
+	private static void gt6BYBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		net.minecraft.server.MinecraftServer tServer = tLevel.getServer();
+		int tX = aPlayer.blockPosition().getX() + 6, tZ = aPlayer.blockPosition().getZ();
+		tLevel.getChunk(tX >> 4, tZ >> 4); // форс-генерация: heightmap НЕсгенерированного чанка отдаёт дно мира (-64)
+		int tY = tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, tX, tZ);
+		BlockPos tO = new BlockPos(tX, tY, tZ);
+		O.println("========== [" + BY_M + "] ПЛОЩАДКА ПРИЁМКИ МАЯКА, пирамида @ " + tO + " ==========");
+		// фундамент 5×5, пирамида 3×3, маяк в центре, столб к небу расчищен
+		for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) tLevel.setBlock(tO.offset(dx, -1, dz), Blocks.STONE.defaultBlockState(), 2);
+		for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) tLevel.setBlock(tO.offset(dx, 0, dz), Blocks.IRON_BLOCK.defaultBlockState(), 2);
+		for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = 2; dy <= 40 && tO.getY() + dy < tLevel.getMaxY(); dy++)
+			tLevel.setBlock(tO.offset(dx, dy, dz), Blocks.AIR.defaultBlockState(), 2);
+		tLevel.setBlock(tO.above(), Blocks.BEACON.defaultBlockState(), 3);
+		// сумка: четыре «должны лечь» + две «не должны» (предикат оригинала PrefixItem:168-174)
+		aPlayer.getInventory().add(gregapi.data.OP.ingot.mat(gregapi.data.MT.Ag,          4)); // серебро — VALUABLE
+		aPlayer.getInventory().add(gregapi.data.OP.ingot.mat(gregapi.data.MT.WroughtIron, 4)); // кованое железо — семья железа
+		aPlayer.getInventory().add(gregapi.data.OP.gem  .mat(gregapi.data.MT.Ruby,        4)); // рубин — самоцвет VALUABLE
+		aPlayer.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_INGOT, 4)); // ваниль — контроль
+		aPlayer.getInventory().add(gregapi.data.OP.ingot.mat(gregapi.data.MT.Sn,          4)); // олово — НЕ ценное
+		aPlayer.getInventory().add(gregapi.data.OP.dust .mat(gregapi.data.MT.Ag,          4)); // пыль серебра — не слиток/самоцвет
+		gregapi.probe.GT6ProbeStand.teleportLook(aPlayer, tO.getX() - 3.5, tO.getY() + 1, tO.getZ() + 0.5, -90F, 10F);
+		gregapi.util.UT.Entities.sendchat(aPlayer, "=== ПРИЁМКА МАЯКА: перед вами маяк на железной пирамиде ===");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "Откройте маяк правой кнопкой. Слот оплаты — слева внизу, рядом с зелёной галочкой.");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "ДОЛЖНЫ ложиться в слот: серебряный слиток, слиток кованого железа, рубин, обычный железный слиток.");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "НЕ должны ложиться (останутся на курсоре): оловянный слиток, пыль серебра.");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "Подсказка предмета: у тех, что ложатся, есть серая строка про маяк; у остальных её нет.");
+		// принудительное сохранение — постройка и набор обязаны пережить закрытие JVM
+		tServer.saveEverything(true, true, true);
+		tServer.getPlayerList().saveAll();
+		O.println("========== [" + BY_M + "] ПЛОЩАДКА ГОТОВА, мир сохранён ==========");
 	}
 
 	private static boolean hasDisplay(net.minecraft.world.Container aContainer) {

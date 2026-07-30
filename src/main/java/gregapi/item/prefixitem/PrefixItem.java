@@ -48,7 +48,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemBeaconPayment, IPrefixItem, IItemGT, IItemNoGTOverride {
+public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemBeaconPayment, IItemSmeltingExperience, IPrefixItem, IItemGT, IItemNoGTOverride {
 	public final String mNameInternal;
 	public final OreDictPrefix mPrefix;
 	public final OreDictMaterial[] mMaterialList;
@@ -209,15 +209,11 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 		}
 	}
 	
-	// ⚠️ КАНАЛ РАЗОБРАН, мост невозможен на текущей архитектуре — часть УЖЕ зафиксированного отклонения
-	// движка (см. GT6SmeltingDispatcher javadoc, строки 60-62). В 1.7.10 опыт печи был ФУНКЦИЕЙ предмета:
-	// движок спрашивал getSmeltingExperience у результата плавки. В neo опыт — поле РЕЦЕПТА
-	// (AbstractCookingRecipe.experience(), выдаётся в AbstractFurnaceBlockEntity:400 без контекста входа
-	// и результата). Все плавки GT6 идут через ОДИН объект-диспетчер, поэтому per-результатный опыт
-	// на нём невыразим: переопределение experience() вернуло бы одно значение на все плавки мода.
-	// Следствие для игрока: плавка с самоцветом на выходе не даёт 1.0 опыта. Выразить это можно только
-	// сменой архитектуры диспетчера (рецепт на каждую плавку вместо одного) — отдельное решение, не заплатка.
-	// @Override
+	// ✅ КАНАЛ ЖИВ — правило 1.7.10 «хук результата перекрывает карту» восстановлено в FurnaceRecipes.func_151398_b,
+	// до ванильной печи доносится экземплярами GT6SmeltingDispatcher по классам опыта (решение (б′), 2026-07-30).
+	// Тело 1:1 (оригинал PrefixItem.java:188-190): самоцвет → 1.0, любой другой предмет GT6-префикса → 0
+	// (Грег сознательно гасил опыт плавки слитков). Контракт IItemSmeltingExperience; дефолт не-носителя = -1.
+	@Override
 	public float getSmeltingExperience(ItemStack aStack) {
 		return mPrefix == OP.gem ? 1.0F : 0.0F;
 	}
