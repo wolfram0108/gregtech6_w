@@ -257,15 +257,9 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		return aStack;
 	}
 	
-	// F13: neo зовёт appendHoverText (не 1.7.10 addInformation) — мост: собираем GT6-тултип через addInformation, отдаём в neo builder.
-	@Override @SuppressWarnings({"rawtypes", "unchecked"})
-	public void appendHoverText(ItemStack aStack, net.minecraft.world.item.Item.TooltipContext aCtx, net.minecraft.world.item.component.TooltipDisplay aDisplay, java.util.function.Consumer<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
-		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
-		if (tPlayer == null) return;
-		java.util.List tList = new java.util.ArrayList();
-		try {addInformation(aStack, tPlayer, tList, aFlag.isAdvanced());} catch (Throwable e) {/**/}
-		for (Object o : tList) if (o != null) aBuilder.accept(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
-	}
+	// F13-мост тултипа (appendHoverText) — в КОРНЕ иерархии ItemBase: тело универсально, addInformation
+	// виртуален, поэтому каждый потомок отдаёт своё. Копия здесь была дублем и оставляла остальных
+	// наследников ItemBase вовсе без подсказок.
 
 	@Override
 	@SuppressWarnings("unchecked")
@@ -307,6 +301,17 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	public void onUpdate(ItemStack aStack, Level aWorld, Entity aPlayer, int aTimer, boolean aIsInHand) {
 		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));
 		if (tList != null) for (IBehavior<MultiItem> tBehavior : tList) tBehavior.onUpdate(this, aStack, aWorld, aPlayer, aTimer, aIsInHand);
+	}
+
+	// Подключение канала «тик предмета в инвентаре» (2026-07-30, реестр мёртвых каналов).
+	// 1.7.10 onUpdate(ItemStack,World,Entity,int itemSlot,boolean isSelected) → neo
+	// Item.inventoryTick(ItemStack,ServerLevel,Entity,EquipmentSlot) (Item.java:307).
+	// ⚠️ Расхождение подписей, разобрано: НОМЕРА СЛОТА в neo нет вовсе — вместо индекса инвентаря приходит
+	// EquipmentSlot (nullable). Единственный носитель канала в моде — Behavior_Sonictron:68, и он ни слот, ни
+	// «в руке» не читает: своё состояние берёт из NBT стека (getTickTimer/getCurrentIndex). Поэтому индекс
+	// передаётся нейтральным 0, а «в руке» выражается точно — основная рука. Без моста Сониктрон не тикал вовсе.
+	@Override public void inventoryTick(ItemStack aStack, net.minecraft.server.level.ServerLevel aLevel, Entity aOwner, net.minecraft.world.entity.EquipmentSlot aSlot) {
+		onUpdate(aStack, aLevel, aOwner, 0, aSlot == net.minecraft.world.entity.EquipmentSlot.MAINHAND);
 	}
 	
 	public FluidStack getFluid(ItemStack aStack) {return getFluidContent(aStack);}

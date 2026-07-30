@@ -293,6 +293,13 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		Fluid aFluid = FL.fluid(ST.meta_(aStack));
 		return aFluid != null && FluidsGT.ENCHANTED_EFFECT.contains(FL.regName(aFluid));
 	}
+
+	// Подключение канала «блеск зачарования» к движку (2026-07-30, реестр мёртвых каналов). В 1.7.10 его
+	// спрашивали по проходам рендера (RenderHelper.java:89 — aStack.hasEffect(i)), в neo проходов нет и
+	// вопрос задаётся один раз: Item.isFoil(ItemStack). Приём взят у брата MultiItemTool:795. Тело 1:1 с
+	// оригиналом (ItemFluidDisplay.java:270-273) — проход 0 у 1.7.10-версии значения не менял.
+	// Без моста дисплеи жидкостей из FluidsGT.ENCHANTED_EFFECT не блестели вовсе.
+	@Override public boolean isFoil(ItemStack aStack) {return hasEffect(aStack, 0);}
 	
 	// @Override
 	@SuppressWarnings("unchecked")
@@ -324,6 +331,8 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		return T;
 	}
 
+	// ⚠️ КАНАЛ ИЗБЫТОЧЕН — 1.7.10-подпись, роль закрыта neo-версией выше (строка 322, IItemExtension:251).
+	// Оставлена как точка сверки с оригиналом; вызывателей не имеет и иметь не должна.
 	// @Override
 	public boolean doesSneakBypassUse(Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
 		return T;

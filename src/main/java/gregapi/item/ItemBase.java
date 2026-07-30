@@ -115,6 +115,20 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 		DispenserBlock.registerBehavior(this, new GT_Item_Dispense()); // было dispenseBehaviorRegistry.putObject (DispenserBlock.java:61)
 	}
 	
+	// F13 МОСТ ТУЛТИПА, поднят в КОРЕНЬ иерархии (2026-07-30, реестр мёртвых каналов). neo зовёт
+	// appendHoverText, а не 1.7.10 addInformation. Мост существовал только у потомка MultiItem:262, поэтому
+	// у самого ItemBase и остальных его наследников (ItemEmptySlot, ItemIntegratedCircuit, GT_Tool_Item)
+	// подсказки до движка НЕ доходили вовсе: прочность, строка mTooltip и addAdditionalToolTips терялись.
+	// Тело универсально — addInformation виртуален, поэтому каждый потомок отдаёт своё; копия в MultiItem снята.
+	@Override @SuppressWarnings({"rawtypes", "unchecked"})
+	public void appendHoverText(ItemStack aStack, net.minecraft.world.item.Item.TooltipContext aCtx, net.minecraft.world.item.component.TooltipDisplay aDisplay, java.util.function.Consumer<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
+		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
+		if (tPlayer == null) return;
+		java.util.List tList = new java.util.ArrayList();
+		try {addInformation(aStack, tPlayer, tList, aFlag.isAdvanced());} catch (Throwable e) {/**/}
+		for (Object o : tList) if (o != null) aBuilder.accept(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
+	}
+
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {

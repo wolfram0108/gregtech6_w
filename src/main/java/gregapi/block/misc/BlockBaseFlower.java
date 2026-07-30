@@ -199,6 +199,15 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	// же приём, что BlockBaseSpike/BlockBaseLog/BlockBaseBeam уже переопределяют), дефолт-идентичность как в оригинале.
 	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return aMeta;}
 	
+	// ⚠️ КАНАЛ РАЗОБРАН, НЕ ПОДКЛЮЧЁН — нужны ДВА моста, отдельным шагом (реестр мёртвых каналов, 2026-07-30).
+	// 1.7.10 checkAndDropBlock звался из updateTick/onNeighborChange и сносил цветок, когда canBlockStay:193
+	// говорило «нельзя»: условие GT6 — КИСЛОРОД (WD.oxygen, класс несёт IOreDictOptimized… IOxygenReliantBlock)
+	// плюс почва, поддерживающая растение. В порте у этого класса нет ни canSurvive, ни randomTick, ни
+	// neighborChanged (сверено грепом — 0 вхождений), поэтому движок судит по ванильному FlowerBlock: свет и
+	// почва. Следствие: цветы GT6 НЕ гибнут без кислорода — механика потеряна целиком, а не искажена.
+	// Для закрытия нужно: (1) canSurvive(BlockState,LevelReader,BlockPos) → canBlockStay (движок перестанет
+	// держать цветок на негодном месте); (2) активная проверка тиком — кислород меняется без обновления
+	// соседей, поэтому одного canSurvive мало. Живым тестом не проверялось.
 	// @Override
 	public void checkAndDropBlock(Level aWorld, int aX, int aY, int aZ) {
 		if (canBlockStay(aWorld, aX, aY, aZ)) return;

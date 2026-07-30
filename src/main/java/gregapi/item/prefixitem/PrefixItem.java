@@ -200,6 +200,14 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		}
 	}
 	
+	// ⚠️ КАНАЛ РАЗОБРАН, мост невозможен на текущей архитектуре — часть УЖЕ зафиксированного отклонения
+	// движка (см. GT6SmeltingDispatcher javadoc, строки 60-62). В 1.7.10 опыт печи был ФУНКЦИЕЙ предмета:
+	// движок спрашивал getSmeltingExperience у результата плавки. В neo опыт — поле РЕЦЕПТА
+	// (AbstractCookingRecipe.experience(), выдаётся в AbstractFurnaceBlockEntity:400 без контекста входа
+	// и результата). Все плавки GT6 идут через ОДИН объект-диспетчер, поэтому per-результатный опыт
+	// на нём невыразим: переопределение experience() вернуло бы одно значение на все плавки мода.
+	// Следствие для игрока: плавка с самоцветом на выходе не даёт 1.0 опыта. Выразить это можно только
+	// сменой архитектуры диспетчера (рецепт на каждую плавку вместо одного) — отдельное решение, не заплатка.
 	// @Override
 	public float getSmeltingExperience(ItemStack aStack) {
 		return mPrefix == OP.gem ? 1.0F : 0.0F;

@@ -309,6 +309,13 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		}
 		updateItemStack(aStack);
 	}
+
+	// Подключение канала «предмет скрафчен» к движку (2026-07-30, реестр мёртвых каналов). 1.7.10
+	// onCreated(ItemStack,World,EntityPlayer) → neo Item.onCraftedBy(ItemStack,Player) (Item.java:310;
+	// мир берётся оттуда же, чем это делает сам движок — player.level(), Item.java:311). Приём взят у брата
+	// ItemArmorBase:255. Без моста у свежескрафченной машины не звался IMTE_OnCrafted.onCrafted и не
+	// обновлялся NBT предмета (updateItemStack) — то есть личность блока в стеке оставалась незаполненной.
+	@Override public void onCraftedBy(ItemStack aStack, Player aPlayer) {onCreated(aStack, aPlayer.level(), aPlayer);}
 	
 	@Override
 	public OreDictItemData getOreDictItemData(ItemStack aStack) {
@@ -687,6 +694,11 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return 0;
 	}
 	
+	// ⚠️ КАНАЛ ЧУЖОГО МОДА — подключать нечего и некому. В оригинале charge/discharge реализовывали
+	// интерфейсы IC2 (ic2.api.item.IElectricItemManager) и Galacticraft (micdoodle8...IItemElectric) под
+	// @Optional.Interface (оригинал MultiTileEntityItemInternal.java:45-48, 83-88), то есть работали ТОЛЬКО
+	// при наличии этих модов. Ни IC2, ни Galacticraft в сборке нет — мертвы законно, как остальные compat-каналы.
+	// Собственная энергия GT6 идёт своим путём (IItemEnergy выше, doEnergyInjection/doEnergyExtraction) и жива.
 	// @Override
 	public double charge   (ItemStack aStack, double aCharge, int aTier, boolean aIgnoreTransferLimit, boolean aSimulate) {
 		if (aCharge < V[aTier = UT.Code.bind4(aTier)]) return 0;
