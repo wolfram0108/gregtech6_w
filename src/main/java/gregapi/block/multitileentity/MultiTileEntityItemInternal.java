@@ -711,6 +711,9 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return V[aTier] * doEnergyExtraction(TD.Energy.EU, aStack, V[aTier], (long)(aCharge / V[aTier]), null, null, 0, 0, 0, !aSimulate);
 	}
 	
+	// ⚠️ КАНАЛ ЧУЖОГО МОДА — та же ветка, что charge/discharge выше: это Galacticraft-интерфейс
+	// (micdoodle8...IItemElectric, оригинал :47,85), видно и по EnergyConfigHandler.IC2_RATIO в теле.
+	// Мода в сборке нет — мёртв законно. Своя энергия GT6 (IItemEnergy) жива.
 	// @Override
 	public float discharge(ItemStack aStack, float aEnergy, boolean aDoExtract) {
 		if (aEnergy <= 0) return 0;

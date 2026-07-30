@@ -156,6 +156,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		return null;
 	}
 	
+	// ⚠️ КАНАЛ РАЗОБРАН — цвет предмета в neo задаётся МОДЕЛЬЮ, не методом; разбор — PrefixBlockItem:131.
 	// @Override
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		if (aRenderPass == 0) {
@@ -180,6 +181,12 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		return mContainerItem != null ? ST.amount(1, mContainerItem) : mPrefix.containerItem() != null ? ST.amount(1, mContainerItem = mPrefix.containerItem()) : null;
 	}
 	
+	// ⚠️ КАНАЛ РАЗОБРАН — роль перешла в ТЕГ, работа отдельным шагом (реестр мёртвых каналов, 2026-07-30).
+	// В 1.7.10 «можно ли платить этим маяку» решал сам предмет; в neo это тег
+	// ItemTags.BEACON_PAYMENT_ITEMS (ItemTags.java:135), то есть данные, а не метод — как и с боеприпасом
+	// лука (ARROWS), уже перенесённым через GT6ItemTags. Здесь тот же приём: слитки/самоцветы GT6,
+	// проходящие условие ниже (VALUABLE или железо-подобные), должны попасть в тег датагеном.
+	// Следствие сейчас: ценные слитки и самоцветы GT6 в маяк не принимаются.
 	// @Override
 	public boolean isBeaconPayment(ItemStack aStack) {
 		if (mPrefix.mAmount >= U && (mPrefix.contains(TD.Prefix.GEM_BASED) || mPrefix.contains(TD.Prefix.INGOT_BASED))) {

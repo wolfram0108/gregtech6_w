@@ -128,6 +128,12 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	}
 	
 	// @Override
+	// ⚠️ КАНАЛ РАЗОБРАН — цвет ПРЕДМЕТА в neo задаётся МОДЕЛЬЮ, не методом (реестр, 2026-07-30).
+	// У блоков этот канал уже закрыт центром GT6BlockTint + одна регистрация (см. GT_API_Proxy_Client), но
+	// у предметов API иной: ItemTintSources.register(Identifier, MapCodec<? extends ItemTintSource>) —
+	// регистрируется ТИП источника тинта, а ссылка на него стоит в json-модели предмета. Модели предметов
+	// GT6 генерируются процедурно, поэтому решается вместе с F3-рендером предметов, а не делегатом.
+	// Следствие сейчас: предметы GT6 рисуются без материального оттенка.
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		if (aRenderPass == 0) {
 			short aMetaData = ST.meta_(aStack);

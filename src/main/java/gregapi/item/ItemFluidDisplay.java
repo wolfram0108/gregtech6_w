@@ -227,6 +227,10 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	// Иконка = still-текстура жидкости (1:1 Fluid.getStillIcon): GT6-жидкости — из центра F5 (FluidGT.mTexture),
 	// ванильные/чужие — neo-канон IClientFluidTypeExtensions (клиент-класс → изолирован во вложенном холдере,
 	// грузится лениво только под CODE_CLIENT — dedicated-сервер его не трогает).
+	// ⚠️ КАНАЛ РАЗОБРАН — тот же класс, что getIconFromDamageForRenderPass у MultiItemRandom:430: в neo вид
+	// предмета задаёт МОДЕЛЬ (data-driven), метода «дай иконку по подтипу» нет. Решается вместе с F3-рендером
+	// предметов, делегатом не закрывается. Спрайт жидкости сам по себе жив — stillIcon ниже используется
+	// клиентским каналом IClientFluidTypeExtensions (см. разбор выше).
 	// @Override
 	public net.minecraft.resources.Identifier getIconFromDamage(int aMeta) {
 		return stillIcon(FL.fluid(aMeta));
@@ -245,6 +249,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 
 	// Тинт (1:1 Fluid.getColor): GT6-жидкости — mRGBa из центра F5 (FluidGT); ванильная вода — NORMAL_WATER_COLOR
 	// (OverworldBiomes.java:28, серый water_still без тинта был бы бесцветным); лава несёт цвет в текстуре.
+	// ⚠️ КАНАЛ РАЗОБРАН — цвет предмета в neo задаётся МОДЕЛЬЮ, не методом; разбор — PrefixBlockItem:131.
 	// @Override
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		net.minecraft.world.level.material.Fluid tFluid = FL.fluid(ST.meta_(aStack));
@@ -260,6 +265,9 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		return 0;
 	}
 	
+	// ⚠️ КАНАЛ ИЗБЫТОЧЕН — имя предмета строит getItemStackDisplayName:270 (сам берёт жидкость из меты),
+	// а до движка его доводит мост getName:280. Этот 1.7.10-метод в цепочке не участвует; оставлен точкой
+	// сверки с оригиналом.
 	// @Override
 	public String getUnlocalizedName(ItemStack aStack) {
 		if (aStack != null) return FL.name(FL.fluid(ST.meta_(aStack)), F);

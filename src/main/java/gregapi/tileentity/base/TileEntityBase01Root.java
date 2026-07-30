@@ -584,6 +584,11 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		return mIsTicking && mShouldRefresh;
 	}
 	
+	// ⚠️ КАНАЛА В NEO НЕТ ВОВСЕ — 1.7.10 Forge-хук shouldRefresh решал, пересоздавать ли BlockEntity при
+	// смене блока/меты. Сверено: в neoforge-расширениях такого метода нет (0 вхождений), решение о
+	// пересоздании движок принимает сам — BlockEntity живёт, пока новый BlockState его поддерживает
+	// (иначе снимается), а мета в neo — часть BlockState и «смены меты» как отдельного события больше нет.
+	// Восстанавливать нечего; метод оставлен точкой сверки с оригиналом.
 	// @Override
 	public boolean shouldRefresh(Block aOldBlock, Block aNewBlock, int aOldMeta, int aNewMeta, Level aWorld, int aX, int aY, int aZ) {
 		return mShouldRefresh || aOldBlock != aNewBlock;

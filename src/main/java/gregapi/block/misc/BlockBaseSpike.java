@@ -153,6 +153,11 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		return ST.make(this, 1, (aMeta & 7) < 6 ? aMeta & 8 : aMeta);
 	}
 	
+	// ⚠️ КАНАЛ ЧУЖОГО МОДА — 1.7.10 rotateBlock/getValidRotations были Forge-каналами для ключей ДРУГИХ
+	// модов (свой поворот GT6 делает сам — onToolClick ниже, ветка TOOL_wrench/TOOL_rotator, она жива и
+	// вызывателя имеет). В neo этой пары нет: поворот инструментом идёт через
+	// IBlockExtension.getToolModifiedState(state, context, ItemAbility, simulate) (:814) — иная модель,
+	// без «списка допустимых осей», а ключей сторонних модов в сборке нет. Подключать нечего и некому.
 	// @Override
 	public boolean rotateBlock(Level aWorld, int aX, int aY, int aZ, Direction aAxis) {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);

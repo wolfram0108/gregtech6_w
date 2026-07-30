@@ -210,6 +210,11 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		return rList;
 	}
 	
+	// ⚠️ КАНАЛ ИЗБЫТОЧЕН — роль закрыта shapeFromState:187 (BUG-076): форма выделения выводится из состояния
+	// и спрашивается движком через getShape в корне BlockBase. Мировая оговорка оригинала («игрок держит
+	// такой же блок ближе 5 блоков → полный куб») в outline не воспроизводится — это ОСОЗНАННОЕ отклонение,
+	// обоснованное в javadoc выше (:182-185): в кэш-контексте формы мира нет, а цена оговорке — удобство
+	// прицеливания, тогда как ошибка формы ломает проходимость. Метод оставлен точкой сверки с оригиналом.
 	// @Override
 	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
 		// было World.loadedEntityList (1.7.10 public-поле) -> neo EntityGetter.players() [EntityGetter.java:27]

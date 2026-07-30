@@ -426,6 +426,11 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		return UT.Code.exists(aMetaData, mIconList) ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 	}
 
+	// ⚠️ КАНАЛ РАЗОБРАН — в neo его нет как метода, работа отдельным шагом (реестр, 2026-07-30).
+	// 1.7.10 отдавал иконку предмета ПО ПРОХОДУ РЕНДЕРА; проходов в neo не существует вовсе, а внешний вид
+	// предмета задаёт МОДЕЛЬ (data-driven, регистрируется событиями ModelEvent/RegisterBlockModelsEvent).
+	// Поэтому делегата тут быть не может: значение должно попасть в модель, а не в вызов. Тот же класс, что
+	// цвет предметов (getColorFromItemStack) — обе ветки решаются вместе с F3-рендером предметов.
 	// @Override
 	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
 		ensureIconsRegistered();
