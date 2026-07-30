@@ -11393,8 +11393,36 @@ public final class GT6Probes {
 			liqJudge(O, "GT6-вода в своей чаше жива и растеклась СВОИМИ квантами (позитив GT6-плеча)", tGTInGT >= 2);
 			liqJudge(O, "двойного разлива НЕТ: ванильной воды в чаше GT6 ноль (updateShape/onPlace нейтрализованы)", tVanInGT == 0);
 			for (int cx = 74; cx <= 77; cx++) for (int cz = 74; cz <= 77; cz++) tLevel.setChunkForced(cx, cz, false);
+
+			// --- (6) WORLDGEN-ЛЁД: свежие чанки замёрзшего водного биома — лёд кладёт ванильная
+			// SnowAndFreezeFeature:34 (собственные плечи River/Ocean сняты). Судим факт у конечного объекта:
+			// поверх воды GT6 лежит лёд, а двойного льда (ICE над ICE — симптом BUG-066) в СВЕЖИХ чанках нет.
+			com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tFrozen =
+				tLevel.findClosestBiome3d(h -> h.is(net.minecraft.world.level.biome.Biomes.FROZEN_RIVER) || h.is(net.minecraft.world.level.biome.Biomes.FROZEN_OCEAN) || h.is(net.minecraft.world.level.biome.Biomes.DEEP_FROZEN_OCEAN), tLevel.getRespawnData().pos(), 6400, 32, 64);
+			if (tFrozen == null) {
+				liqJudge(O, "замёрзший водный биом в радиусе 6400 НЕ НАЙДЕН — worldgen-плечо НЕ СОСТОЯЛОСЬ (среда, не код)", false);
+			} else {
+				int tFX = tFrozen.getFirst().getX(), tFZ = tFrozen.getFirst().getZ();
+				int tIceOverGT = 0, tIceOverIce = 0, tOpenGT = 0, tIceOther = 0;
+				for (int dx = -24; dx <= 24; dx++) for (int dz = -24; dz <= 24; dz++) {
+					int x = tFX + dx, z = tFZ + dz;
+					tLevel.getChunkAt(new net.minecraft.core.BlockPos(x, 0, z));
+					int tTopY = tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z) - 1;
+					net.minecraft.world.level.block.state.BlockState tTopS = tLevel.getBlockState(new net.minecraft.core.BlockPos(x, tTopY, z));
+					net.minecraft.world.level.block.state.BlockState tUnder = tLevel.getBlockState(new net.minecraft.core.BlockPos(x, tTopY - 1, z));
+					if (tTopS.is(net.minecraft.world.level.block.Blocks.ICE)) {
+						if (tUnder.getBlock() instanceof gregtech.blocks.fluids.BlockWaterlike) tIceOverGT++;
+						else if (tUnder.is(net.minecraft.world.level.block.Blocks.ICE)) tIceOverIce++;
+						else tIceOther++;
+					} else if (tTopS.getBlock() instanceof gregtech.blocks.fluids.BlockWaterlike) tOpenGT++;
+				}
+				O.println("[GT6-LIQUIDPROBE] worldgen-лёд: биом " + tFrozen.getSecond().getRegisteredName() + " @ " + tFX + "," + tFZ
+					+ " · лёд-над-GT6-водой " + tIceOverGT + " · лёд-над-льдом " + tIceOverIce + " · лёд-над-прочим " + tIceOther + " · открытая GT6-вода " + tOpenGT);
+				liqJudge(O, "worldgen: лёд лежит ПОВЕРХ воды GT6 — ванильное плечо живо и замещение воды прошло", tIceOverGT >= 1);
+				liqJudge(O, "worldgen: двойного льда (ICE над ICE) в свежих чанках НЕТ (симптом BUG-066)", tIceOverIce == 0);
+			}
 			O.println("========== [GT6-LIQUIDPROBE] ВЕРДИКТ: PASS " + mLiqPass + " / FAIL " + mLiqFail + " ==========");
-			O.println("[GT6-LIQUIDPROBE] НЕ доказано стендом: worldgen-лёд свежих холодных чанков (живая приёмка) · карта (MODCOMPAT-002)");
+			O.println("[GT6-LIQUIDPROBE] НЕ доказано стендом: карта (MODCOMPAT-002) · двойной лёд в СТАРЫХ чанках живого мира (сгенерированы прежним кодом — живая приёмка)");
 			return;
 		}
 		mLiqPhase = 1;
