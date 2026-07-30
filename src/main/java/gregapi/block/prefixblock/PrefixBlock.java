@@ -484,6 +484,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return aTileEntity == null || aTileEntity.triggerEvent(aID, aParam);
 	}
 	
+	// ⚠️ КАНАЛ ИЗБЫТОЧЕН — 1.7.10 getDamageValue отвечал «какой подтип у предмета этого блока» и звался из
+	// getPickBlock/createStackedBlock. В neo эту роль целиком несёт getCloneItemStack (ниже, строка 494):
+	// он отдаёт готовый стек с метой через getItemStackFromBlock. Оставлен точкой сверки с оригиналом.
 	// @Override
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {
 		return getMetaDataValue(aWorld, aX, aY, aZ);
@@ -499,6 +502,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN);
 	}
 
+	// ⚠️ КАНАЛ ИЗБЫТОЧЕН — разобран при BUG-020 (разбор ниже, строки 508-510): роль «запомнить снимаемый
+	// BlockEntity до его снятия» несёт мост onDestroyedByPlayer (строка 511), поставленный тем же приёмом,
+	// что MultiTileEntityBlock.onDestroyedByPlayer:433. Оставлен точкой сверки с оригиналом.
 	// @Override
 	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int par6) {
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);

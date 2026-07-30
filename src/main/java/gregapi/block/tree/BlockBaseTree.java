@@ -49,6 +49,16 @@ public abstract class BlockBaseTree extends BlockBaseMeta {
 	public abstract int getLeavesRangeYPos(byte aMeta);
 	public abstract int getLeavesRangeYNeg(byte aMeta);
 	
+	// Подключение канала «блок снят — тронь соседей» (2026-07-30, реестр мёртвых каналов).
+	// 1.7.10 breakBlock(World,x,y,z,Block,meta) → neo BlockBehaviour.affectNeighborsAfterRemoval(BlockState,
+	// ServerLevel,BlockPos,boolean) (BlockBehaviour.java:170; зовётся движком после снятия блока,
+	// BlockStateBase:748). Без моста тело ниже не звалось НИКЕМ: срубленный ствол GT6 не запускал распад
+	// листвы вокруг — листья оставались висеть в воздухе. Подтип берём тем же центром мета↔BlockState, что и
+	// остальной порт (IBlockExtendedMetaData), а не своим разбором свойств.
+	@Override protected void affectNeighborsAfterRemoval(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aLevel, BlockPos aPos, boolean aMovedByPiston) {
+		breakBlock(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), getExtendedMetaData(aState));
+	}
+
 	// @Override
 	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {
 		int tRangeSide = getLeavesRangeSide((byte)aMeta)+1, tRangeYNeg = getLeavesRangeYNeg((byte)aMeta)+1, tRangeYPos = getLeavesRangeYPos((byte)aMeta)+1;

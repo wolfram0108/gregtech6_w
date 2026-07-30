@@ -241,6 +241,29 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		//
 	}
 	
+	// Подключение канала «клик по блоку» (2026-07-30, реестр мёртвых каналов). Канал СМЕСТИЛСЯ: в 1.7.10
+	// движок звал Block.onBlockActivated, в neo — BlockBehaviour.useItemOn (с предметом) и useWithoutItem
+	// (пустая рука). Мост тот же, что у брата MultiTileEntityBlock:365-381, включая порядок диспетчеризации.
+	// Мост стоит ЗДЕСЬ, а не в корне BlockBase: в оригинале правило живёт у BlockMetaType:142 и
+	// BlockStones:557, в базе его нет; BlockStones наследует этот класс, поэтому один мост покрывает оба.
+	// Без моста тело ниже не звалось никем: половинка GT6 не собиралась в целый блок кликом второй половинки,
+	// и правило BlockStones (:573) тоже молчало.
+	@Override protected net.minecraft.world.InteractionResult useItemOn(net.minecraft.world.item.ItemStack aStack, net.minecraft.world.level.block.state.BlockState aState, Level aWorld, net.minecraft.core.BlockPos aPos, Player aPlayer, net.minecraft.world.InteractionHand aHand, net.minecraft.world.phys.BlockHitResult aHit) {
+		if (aHand == net.minecraft.world.InteractionHand.MAIN_HAND && bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
+			return aWorld.isClientSide() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.SUCCESS_SERVER;
+		return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
+	}
+	@Override protected net.minecraft.world.InteractionResult useWithoutItem(net.minecraft.world.level.block.state.BlockState aState, Level aWorld, net.minecraft.core.BlockPos aPos, Player aPlayer, net.minecraft.world.phys.BlockHitResult aHit) {
+		if (bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
+			return aWorld.isClientSide() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.SUCCESS_SERVER;
+		return net.minecraft.world.InteractionResult.PASS;
+	}
+	private boolean bridgeBlockActivated(Level aWorld, net.minecraft.core.BlockPos aPos, Player aPlayer, net.minecraft.world.phys.BlockHitResult aHit) {
+		net.minecraft.world.phys.Vec3 tHitVec = aHit.getLocation();
+		return onBlockActivated(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aPlayer, aHit.getDirection().get3DDataValue(),
+			(float)(tHitVec.x - aPos.getX()), (float)(tHitVec.y - aPos.getY()), (float)(tHitVec.z - aPos.getZ()));
+	}
+
 	// @Override
 	public boolean onBlockActivated(Level aWorld, int aX, int aY, int aZ, Player aPlayer, int aSide, float aHitX, float aHitY, float aHitZ) {
 		if (mBlock == this || aSide != OPOS[mSide] || (WD.hasCollide(aWorld, aX, aY, aZ, mBlock) && !WD.noEntityCollision(aWorld, WD.collisionBox(aWorld, aX, aY, aZ, mBlock)))) return F;
