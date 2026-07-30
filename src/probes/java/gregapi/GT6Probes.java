@@ -298,6 +298,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6beaconyard.flag")) gt6BeaconYardTick(aEvent.getServer());
 	// [GT6-SMELTXP] (б′) опыт плавки: классы по реестру + маршрутизация по диспетчерам + живые печи с орбами — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6smeltxpprobe.flag")) gt6SmeltXPProbeTick(aEvent.getServer());
+	// [GT6-SMELTXPYARD] ПЛОЩАДКА ПРИЁМКИ опыта плавки (не судья — печи с контрастом «опыт есть/нет» для глаз игрока) — снять после приёмки
+		if (gregapi.data.CS.probeFlag("gt6smeltxpyard.flag")) gt6SmeltXPYardTick(aEvent.getServer());
 	}
 
 	// ==========================================================================================================
@@ -703,6 +705,59 @@ public final class GT6Probes {
 		boolean tOK = aExpect == -2 ? tXP > 0 : tXP == (int)Math.floor(aExpect);
 		if (tOK) {sSmeltXPPass++; O.println("[GT6-SMELTXP] PASS: " + aName + " — результат «" + tResult.getHoverName().getString() + "», орбов на " + tXP + " очков (ожидание " + (aExpect == -2 ? "> 0" : String.valueOf((int)Math.floor(aExpect))) + ")");}
 		else {sSmeltXPFail++; O.println("[GT6-SMELTXP] FAIL: " + aName + " — результат «" + tResult.getHoverName().getString() + "», орбов на " + tXP + " очков, ожидалось " + (aExpect == -2 ? "> 0" : String.valueOf((int)Math.floor(aExpect))));}
+	}
+
+	// ==========================================================================================================
+	// [GT6-SMELTXPYARD] ПЛОЩАДКА ПРИЁМКИ ОПЫТА ПЛАВКИ — не судья, строит контраст для глаз игрока:
+	// левая печь плавит золотую руду (при выемке — зелёные шарики опыта), правая — GT6-плавку класса 0
+	// (шариков НЕТ — анти-фарм Грега 1:1). В сумке запас для самостоятельной плавки.
+	// ==========================================================================================================
+	private static final String XY_M = "GT6-SMELTXPYARD";
+	private static int sXYTick = 0;
+	private static gregapi.probe.GT6ProbeStand.Seq sXYSeq;
+	private static void gt6SmeltXPYardTick(net.minecraft.server.MinecraftServer aServer) {
+		sXYTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sXYSeq == null) sXYSeq = new gregapi.probe.GT6ProbeStand.Seq(XY_M)
+			.at(240, () -> gt6XYBuild(tPlayer));
+		sXYSeq.tick(sXYTick);
+	}
+
+	private static void gt6XYBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		net.minecraft.server.MinecraftServer tServer = tLevel.getServer();
+		// вход GT6-плавки класса 0 — из живого реестра (выход — предмет GT6, опыт по правилу 1.7.10 = 0)
+		net.minecraft.world.item.ItemStack tGT6In = null;
+		for (java.util.Map.Entry<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tE : gregapi.recipes.FurnaceRecipes.smelting().getSmeltingList().entrySet())
+			if (tE.getValue().getItem() instanceof gregapi.item.IItemSmeltingExperience && gregapi.recipes.FurnaceRecipes.smelting().func_151398_b(tE.getValue()) == 0.0F) {tGT6In = tE.getKey(); break;}
+		if (tGT6In == null) {O.println("[" + XY_M + "] в реестре нет GT6-плавки класса 0 — площадка не построена"); return;}
+		int tX = aPlayer.blockPosition().getX() + 5, tZ = aPlayer.blockPosition().getZ();
+		tLevel.getChunk(tX >> 4, tZ >> 4); // форс-генерация: heightmap НЕсгенерированного чанка отдаёт дно мира (-64)
+		int tY = tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, tX, tZ);
+		BlockPos tO = new BlockPos(tX, tY, tZ);
+		O.println("========== [" + XY_M + "] ПЛОЩАДКА ПРИЁМКИ ОПЫТА ПЛАВКИ @ " + tO + " ==========");
+		for (int dx = -1; dx <= 3; dx++) for (int dz = -1; dz <= 1; dz++) {
+			tLevel.setBlock(tO.offset(dx, -1, dz), Blocks.STONE.defaultBlockState(), 2);
+			for (int dy = 0; dy <= 2; dy++) tLevel.setBlock(tO.offset(dx, dy, dz), Blocks.AIR.defaultBlockState(), 2);
+		}
+		// путём игрока: ванильных руд в мире GT6 нет (mDisableVanillaOres) — позитивный контроль на ЕДЕ:
+		// говядина реальна (коровы в мире), плавка 0.35 XP за штуку — 8 штук дают 2-3 видимых шарика
+		loadFurnace(tLevel, tO, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BEEF, 8));
+		loadFurnace(tLevel, tO.offset(2, 0, 0), ST.amount(8, tGT6In));
+		aPlayer.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BEEF, 16));
+		aPlayer.getInventory().add(ST.amount(16, tGT6In));
+		aPlayer.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COAL, 16));
+		gregapi.probe.GT6ProbeStand.teleportLook(aPlayer, tO.getX() - 2.5, tO.getY(), tO.getZ() + 0.5, -90F, 0F);
+		gregapi.util.UT.Entities.sendchat(aPlayer, "=== ПРИЁМКА ОПЫТА ПЛАВКИ: две печи, обе уже плавят ===");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "ЛЕВАЯ печь жарит говядину (8 шт). Дождитесь всей пачки и выньте разом — выпадут ЗЕЛЁНЫЕ ШАРИКИ опыта (2-3 очка).");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "ПРАВАЯ печь плавит «" + tGT6In.getHoverName().getString() + "» (плавка GregTech). Выньте результат — шариков НЕ будет, сколько бы ни выплавили.");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "Так и в оригинале: за свои плавки Грег опыта не давал; опыт живёт у ванильных (еда) и самоцветных.");
+		gregapi.util.UT.Entities.sendchat(aPlayer, "В сумке запас говядины, GT6-входа и угля — можете плавить сами.");
+		tServer.saveEverything(true, true, true);
+		tServer.getPlayerList().saveAll();
+		O.println("========== [" + XY_M + "] ПЛОЩАДКА ГОТОВА (GT6-вход: " + tGT6In.getHoverName().getString() + "), мир сохранён ==========");
 	}
 
 	// ==========================================================================================================
