@@ -223,7 +223,19 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 				if (tTarget != null && tTarget.getType() == HitResult.Type.BLOCK) {
 					BlockPos tPos = ((BlockHitResult)tTarget).getBlockPos();
 					Block tBlock = WD.block(aEvent.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ());
-					if (tBlock instanceof BlockWaterlike && tBlock != BlocksGT.River) aEvent.setCanceled(T);
+					if (tBlock instanceof BlockWaterlike && tBlock != BlocksGT.River) {
+						// 1:1 (ориг. :253-260): океан/болото ванильным ведром НЕ черпаются (иначе морская/грязная
+						// становилась бы бесплатной пресной), река — черпается.
+						aEvent.setCanceled(T);
+						// Страховка рассинхрона предсказания (вердикт приёмки 2026-07-30, «ведро-призрак»):
+						// клиентский BucketItem мог уже показать ведро воды и стереть блок — рейкасты сторон
+						// расходятся на кадр интерполяции WD.getMOP:193. При СЕРВЕРНОЙ отмене возвращаем клиенту
+						// правду: полный синк меню (broadcastChanges не шлёт — сервер ничего не менял) + блок хита.
+						if (!aEvent.getLevel().isClientSide() && aEvent.getEntity() instanceof net.minecraft.server.level.ServerPlayer tSP) {
+							tSP.containerMenu.sendAllDataToRemote();
+							tSP.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(aEvent.getLevel(), tPos)); // ctor (BlockGetter,BlockPos) — ClientboundBlockUpdatePacket.java:29
+						}
+					}
 				}
 				return;
 			}

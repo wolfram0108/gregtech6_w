@@ -302,6 +302,10 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6smeltxpyard.flag")) gt6SmeltXPYardTick(aEvent.getServer());
 	// [GT6-LIQUIDPROBE] шов F5 surface-B: вода GT6 = LiquidBlock (заморозка/ведро/губка/лава/без двойного разлива) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6liquidprobe.flag")) gt6LiquidProbeTick(aEvent.getServer());
+	// [GT6-LIQUIDYARD] ПЛОЩАДКА ПРИЁМКИ шва F5 surface-B (не судья — канава 4 вод + вёдра + замёрзшая река) — снять после приёмки
+		if (gregapi.data.CS.probeFlag("gt6liquidyard.flag")) gt6LiquidYardTick(aEvent.getServer());
+	// [GT6-BUCKETPROBE] замер вердикта приёмки 2026-07-30: все 8 пар «ведро × вода» РЕАЛЬНЫМ use() игрока — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6bucketprobe.flag")) gt6BucketProbeTick(aEvent.getServer());
 	}
 
 	// ==========================================================================================================
@@ -11583,5 +11587,227 @@ public final class GT6Probes {
 		for (int dx = -4; dx <= 4; dx++) for (int dy = 0; dy <= 3; dy++) for (int dz = -4; dz <= 4; dz++)
 			if (aLevel.getBlockState(aCenter.offset(dx, dy, dz)).getBlock() == net.minecraft.world.level.block.Blocks.WATER) rCount++;
 		return rCount;
+	}
+
+	// ==========================================================================================================
+	// [GT6-LIQUIDYARD] ПЛОЩАДКА ПРИЁМКИ шва F5 surface-B — глазам игрока. Канава из 4 секций (река | океан |
+	// болото | ванильная вода) у замёрзшей реки: железное ведро черпает ЛЮБУЮ (обычная вода — 1:1 ItemBucket
+	// 1.7.10), деревянное ведро GT6 различает (Water / Sea Water / Dirty Water — канал Behavior_Bucket_Simple
+	// :135-145, шов его не трогал), губка впитывает, лёд worldgen — ОДИН слой. Глоустоун в полу секций держит
+	// block-light ≥ 10 — канава сама не замерзает (Biome.shouldFreeze:158). Предметы — реального мира игрока.
+	// ==========================================================================================================
+	private static boolean mLiqYardDone = false;
+	private static void gt6LiquidYardTick(net.minecraft.server.MinecraftServer aServer) {
+		if (mLiqYardDone) return;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		mLiqYardDone = true;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = aServer.overworld();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-LIQUIDYARD] строю площадку приёмки жидкостей ==========");
+		try {
+			// точка: берег замёрзшей реки, чтобы worldgen-лёд был виден прямо с канавы
+			com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tFrozen =
+				tLevel.findClosestBiome3d(h -> h.is(net.minecraft.world.level.biome.Biomes.FROZEN_RIVER), tLevel.getRespawnData().pos(), 6400, 32, 64);
+			int tX = tFrozen != null ? tFrozen.getFirst().getX() : tLevel.getRespawnData().pos().getX() + 32;
+			int tZ = tFrozen != null ? tFrozen.getFirst().getZ() : tLevel.getRespawnData().pos().getZ() + 32;
+			tLevel.getChunkAt(new net.minecraft.core.BlockPos(tX, 0, tZ));
+			int tY = tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, tX, tZ) + 1;
+			net.minecraft.core.BlockPos tO = new net.minecraft.core.BlockPos(tX, tY, tZ);
+
+			net.minecraft.world.level.block.state.BlockState tStone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+			net.minecraft.world.level.block.state.BlockState tGlass = net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState();
+			net.minecraft.world.level.block.state.BlockState tGlow  = net.minecraft.world.level.block.Blocks.GLOWSTONE.defaultBlockState();
+			// платформа 17×4: пол (глоустоун под каждой второй клеткой воды), борта, перегородки; воздух сверху
+			for (int dx = -1; dx <= 15; dx++) for (int dz = -1; dz <= 2; dz++) {
+				boolean tEdge = dx == -1 || dx == 15 || dz == -1 || dz == 2;
+				tLevel.setBlockAndUpdate(tO.offset(dx, -1, dz), (dx >= 0 && dx <= 14 && dz >= 0 && dz <= 1 && (dx + dz) % 2 == 0) ? tGlow : tStone);
+				tLevel.setBlockAndUpdate(tO.offset(dx, 0, dz), tEdge || dx == 3 || dx == 7 || dx == 11 ? (tEdge ? tStone : tGlass) : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+				for (int dy = 1; dy <= 3; dy++) tLevel.setBlockAndUpdate(tO.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+			}
+			// секции: река 0-2 | океан 4-6 | болото 8-10 | ваниль 12-14 (ширина 2)
+			gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = true;
+			gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = true;
+			gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = true;
+			for (int dz = 0; dz <= 1; dz++) {
+				for (int dx = 0;  dx <= 2;  dx++) tLevel.setBlockAndUpdate(tO.offset(dx, 0, dz), gregapi.data.CS.BlocksGT.River.defaultBlockState());
+				for (int dx = 4;  dx <= 6;  dx++) tLevel.setBlockAndUpdate(tO.offset(dx, 0, dz), gregapi.data.CS.BlocksGT.Ocean.defaultBlockState());
+				for (int dx = 8;  dx <= 10; dx++) tLevel.setBlockAndUpdate(tO.offset(dx, 0, dz), gregapi.data.CS.BlocksGT.Swamp.defaultBlockState());
+				for (int dx = 12; dx <= 14; dx++) tLevel.setBlockAndUpdate(tO.offset(dx, 0, dz), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState());
+			}
+			gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = false;
+			gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = false;
+			gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = false;
+
+			// сумка: железные вёдра (реальный предмет движка), деревянные вёдра GT6 (реальный предмет мода), губки
+			tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+			tPlayer.getInventory().clearContent();
+			tPlayer.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BUCKET, 8));
+			net.minecraft.world.item.ItemStack tWooden = liqFindWoodenBucket();
+			int tSlot = 1;
+			if (tWooden != null) for (int i = 0; i < 4; i++) tPlayer.getInventory().setItem(tSlot++, tWooden.copy());
+			else O.println("[GT6-LIQUIDYARD] ⚠ деревянное ведро GT6 в реестре не найдено — выдал только железные");
+			tPlayer.getInventory().setItem(tSlot, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.SPONGE, 4));
+			tPlayer.teleportTo(tLevel, tO.getX() + 7.5, tO.getY() + 1, tO.getZ() - 3.5, java.util.Set.of(), 0, 30, true);
+
+			gregapi.util.UT.Entities.sendchat(tPlayer, "=== ПРИЁМКА ВОДЫ (2-я редакция): канава из 4 секций, за стеклом слева направо: РЕКА | ОКЕАН | БОЛОТО | ОБЫЧНАЯ ===");
+			gregapi.util.UT.Entities.sendchat(tPlayer, "1) ЖЕЛЕЗНЫМ ведром: из РЕКИ и ОБЫЧНОЙ — наберётся обычная вода, блок исчезнет.");
+			gregapi.util.UT.Entities.sendchat(tPlayer, "   Из ОКЕАНА и БОЛОТА железным НЕ зачерпнётся ВООБЩЕ — так задумано в оригинале (морскую и грязную нельзя превращать в пресную). Ведро при этом не должно пропадать или глючить.");
+			gregapi.util.UT.Entities.sendchat(tPlayer, "2) ДЕРЕВЯННЫМ ведром: река — Water, океан — Sea Water, болото — Dirty Water, обычная — Water. Вода мода при этом НЕ кончается (она бесконечная), обычная — исчезает.");
+			gregapi.util.UT.Entities.sendchat(tPlayer, "3) ГУБКУ поставьте вплотную к любой воде — впитает и намокнет.");
+			gregapi.util.UT.Entities.sendchat(tPlayer, tFrozen != null ? "4) Вокруг замёрзшая река: лёд на воде должен быть ОДНИМ слоем, без двойного." : "4) Замёрзшей реки рядом не нашлось — лёд гляньте в любом снежном биоме: один слой.");
+			gregapi.util.UT.Entities.sendchat(tPlayer, "Канава не замерзает нарочно (подсвечена глоустоуном) — лёд смотрите на реке.");
+			O.println("[GT6-LIQUIDYARD] канава @ " + tO + " · биом " + tLevel.getBiome(tO).getRegisteredName() + " · деревянное ведро: " + (tWooden != null ? tWooden.getHoverName().getString() : "НЕ НАЙДЕНО"));
+			tServerSave(aServer);
+			O.println("========== [GT6-LIQUIDYARD] ПЛОЩАДКА ГОТОВА, мир сохранён ==========");
+		} catch (Throwable t) {
+			O.println("[GT6-LIQUIDYARD] ⛔ ИСКЛЮЧЕНИЕ площадки: " + t);
+			t.printStackTrace(O);
+		}
+	}
+
+	/** Деревянное ведро GT6 — поиск по живому реестру (MultiItem, мета по имени), не по константе из памяти. */
+	private static net.minecraft.world.item.ItemStack liqFindWoodenBucket() {
+		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			if (!(tItem instanceof gregtech.items.MultiItemRandomTools)) continue;
+			for (int tMeta = 0; tMeta < 4000; tMeta++) {
+				try {
+					net.minecraft.world.item.ItemStack tStack = gregapi.util.ST.make(tItem, 1, tMeta);
+					String tName = tStack.getHoverName().getString();
+					if ("Wooden Bucket".equals(tName)) return tStack;
+				} catch (Throwable t) {/* нерабочая мета — дальше */}
+			}
+		}
+		return null;
+	}
+
+	private static void tServerSave(net.minecraft.server.MinecraftServer aServer) {
+		aServer.saveEverything(true, true, true);
+		aServer.getPlayerList().saveAll();
+	}
+
+	// ==========================================================================================================
+	// [GT6-BUCKETPROBE] Замер вердикта живой приёмки 2026-07-30 («обычная вода в ведро грега не набирается;
+	// в обычное — не набирается морская, грязная набирается, но ведро исчезает»): НЕ рассуждение, а ПОПЫТКА —
+	// та же канава, что у площадки, реальный игрок, реальный use() (путь клика правой) над каждой секцией.
+	// 8 пар «ведро × вода», после каждой печатается ВСЁ: блок/мета/FluidState до, результат, рука и блок после.
+	// ==========================================================================================================
+	private static int mBktPhase = 0, mBktTick = 0;
+	private static net.minecraft.core.BlockPos mBktO;
+	private static void gt6BucketProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (mBktPhase >= 2) return;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = aServer.overworld();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (mBktPhase == 0) {
+			mBktPhase = 1;
+			mBktO = new net.minecraft.core.BlockPos(500, 200, 500);
+			tLevel.getChunkAt(mBktO);
+			for (int cx = 30; cx <= 32; cx++) for (int cz = 30; cz <= 32; cz++) tLevel.setChunkForced(cx, cz, true);
+			bktBuildTrench(tLevel, mBktO);
+			O.println("[GT6-BUCKETPROBE] канава построена @ " + mBktO + ", дозревание 100 тиков (как у игрока)…");
+			return;
+		}
+		if (++mBktTick < 100) return;
+		mBktPhase = 2;
+		O.println("========== [GT6-BUCKETPROBE] 8 пар «ведро × вода» реальным use() ==========");
+		int tPass = 0, tFail = 0;
+		try {
+			net.minecraft.world.item.ItemStack tWooden = liqFindWoodenBucket();
+			// центры секций: река x+1 | океан x+5 | болото x+9 | ваниль x+13 (z+0)
+			String[] tNames = {"РЕКА", "ОКЕАН", "БОЛОТО", "ВАНИЛЬ"};
+			int[]    tDX    = {1, 5, 9, 13};
+			for (int tPass2 = 0; tPass2 < 2; tPass2++) {
+				boolean tIron = tPass2 == 0;
+				for (int i = 0; i < 4; i++) {
+					// восстановить секцию перед каждым испытанием
+					bktBuildTrench(tLevel, mBktO);
+					net.minecraft.core.BlockPos tW = mBktO.offset(tDX[i], 0, 0);
+					net.minecraft.world.level.block.state.BlockState tBefore = tLevel.getBlockState(tW);
+					net.minecraft.world.level.material.FluidState tFS = tBefore.getFluidState();
+					// игрок над водой, взгляд вертикально вниз — рейкаст обеих цепей бьёт в секцию
+					tPlayer.teleportTo(tLevel, tW.getX() + 0.5, tW.getY() + 2, tW.getZ() + 0.5, java.util.Set.of(), 0, 90, true);
+					tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+					tPlayer.getInventory().clearContent();
+					// железное — СТОПКОЙ 8, как у игрока на приёмке (createFilledResult при стопке кладёт полное
+					// ведро ДРУГИМ слотом); путь ПОЛНЫЙ — gameMode.useItem применяет heldItemTransformedTo (:326),
+					// прямой item.use() его терял (урок замера №1: «рука Air» был артефактом стенда, не дефектом)
+					net.minecraft.world.item.ItemStack tHand = tIron ? new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BUCKET, 8) : (tWooden == null ? null : tWooden.copy());
+					if (tHand == null) {O.println("[GT6-BUCKETPROBE] деревянного ведра нет — пары пропущены"); break;}
+					tPlayer.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tHand);
+					net.minecraft.world.InteractionResult tRes = tPlayer.gameMode.useItem(tPlayer, tLevel, tHand, net.minecraft.world.InteractionHand.MAIN_HAND);
+					net.minecraft.world.item.ItemStack tAfterHand = tPlayer.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND);
+					net.minecraft.world.level.block.state.BlockState tAfter = tLevel.getBlockState(tW);
+					// весь инвентарь: что реально пришло игроку (createFilledResult может класть в другой слот)
+					StringBuilder tInv = new StringBuilder();
+					for (int s = 0; s < 36; s++) {
+						net.minecraft.world.item.ItemStack tS = tPlayer.getInventory().getItem(s);
+						if (!tS.isEmpty()) tInv.append(" [").append(s).append("] ").append(tS.getHoverName().getString()).append("×").append(tS.getCount());
+					}
+					String tFluidInHand = "-";
+					net.neoforged.neoforge.fluids.FluidStack tHF = gregapi.data.FL.getFluid(tAfterHand, true);
+					if (tHF != null) tFluidInHand = gregapi.data.FL.name(tHF.getFluid(), true) + "×" + tHF.getAmount();
+					O.println("[GT6-BUCKETPROBE] " + (tIron ? "ЖЕЛЕЗНОЕ" : "ДЕРЕВЯННОЕ") + " × " + tNames[i]
+						+ " · до: " + regName(tBefore.getBlock()) + " мета " + gregapi.util.WD.meta(tLevel, tW.getX(), tW.getY(), tW.getZ())
+						+ " fluid " + (tFS.isEmpty() ? "ПУСТО" : (tFS.isSource() ? "source" : "flowing"))
+						+ " · use=" + tRes
+						+ " · рука после: " + tAfterHand.getHoverName().getString() + "×" + tAfterHand.getCount() + " (fluid " + tFluidInHand + ")"
+						+ " · блок после: " + regName(tAfter.getBlock())
+						+ " · инвентарь:" + (tInv.length() == 0 ? " пусто" : tInv));
+					boolean tOk;
+					if (tIron) {
+						boolean tGotWaterBucket = tAfterHand.getItem() == net.minecraft.world.item.Items.WATER_BUCKET || tInv.toString().contains("Water Bucket");
+						if (i == 1 || i == 2) {
+							// ожидание 1:1 — КАНОН Грега (GT_Proxy ориг. :253-260): океан/болото ванильным ведром
+							// НЕ черпаются (отмена события) — ведра НЕТ, блок ЦЕЛ
+							tOk = !tGotWaterBucket && !tAfter.isAir();
+						} else {
+							// река/ваниль (ItemBucket 1.7.10:85-92): ведро ВОДЫ появилось (при стопке — другим слотом), блок исчез
+							tOk = tGotWaterBucket && tAfter.isAir();
+						}
+					} else {
+						// ожидание 1:1 (Behavior_Bucket_Simple:135-154 = ориг. :131-145): жидкость судится
+						// ИДЕНТИЧНОСТЬЮ объекта из того же центра FL, что у канала (не строкой из головы);
+						// блок GT6-воды ОСТАЁТСЯ (воды GT6 для вёдер бесконечны), ванильный — исчезает
+						net.minecraft.world.level.material.Fluid tWant = (i == 1 ? gregapi.data.FL.Ocean : i == 2 ? gregapi.data.FL.Dirty_Water : gregapi.data.FL.Water).fluid();
+						tOk = tHF != null && tHF.getFluid() == tWant && (i == 3 ? tAfter.isAir() : !tAfter.isAir());
+					}
+					if (tOk) tPass++; else tFail++;
+					O.println("[GT6-BUCKETPROBE] " + (tOk ? "PASS" : "FAIL") + " · " + (tIron ? "железное" : "деревянное") + " × " + tNames[i]);
+				}
+			}
+			for (int cx = 30; cx <= 32; cx++) for (int cz = 30; cz <= 32; cz++) tLevel.setChunkForced(cx, cz, false);
+		} catch (Throwable t) {
+			tFail++;
+			O.println("[GT6-BUCKETPROBE] ⛔ ИСКЛЮЧЕНИЕ: " + t);
+			t.printStackTrace(O);
+		}
+		O.println("========== [GT6-BUCKETPROBE] ВЕРДИКТ: PASS " + tPass + " / FAIL " + tFail + " ==========");
+	}
+
+	/** Канава площадки 1:1 (17×4, глоустоун, стекло-перегородки, 4 секции вод) — восстановима между испытаниями. */
+	private static void bktBuildTrench(ServerLevel tLevel, net.minecraft.core.BlockPos tO) {
+		net.minecraft.world.level.block.state.BlockState tStone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+		net.minecraft.world.level.block.state.BlockState tGlass = net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState();
+		net.minecraft.world.level.block.state.BlockState tGlow  = net.minecraft.world.level.block.Blocks.GLOWSTONE.defaultBlockState();
+		for (int dx = -1; dx <= 15; dx++) for (int dz = -1; dz <= 2; dz++) {
+			boolean tEdge = dx == -1 || dx == 15 || dz == -1 || dz == 2;
+			tLevel.setBlockAndUpdate(tO.offset(dx, -1, dz), (dx >= 0 && dx <= 14 && dz >= 0 && dz <= 1 && (dx + dz) % 2 == 0) ? tGlow : tStone);
+			tLevel.setBlockAndUpdate(tO.offset(dx, 0, dz), tEdge || dx == 3 || dx == 7 || dx == 11 ? (tEdge ? tStone : tGlass) : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+			for (int dy = 1; dy <= 3; dy++) tLevel.setBlockAndUpdate(tO.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+		}
+		gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = true;
+		gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = true;
+		gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = true;
+		for (int dz = 0; dz <= 1; dz++) {
+			for (int dx = 0;  dx <= 2;  dx++) tLevel.setBlockAndUpdate(tO.offset(dx, 0, dz), gregapi.data.CS.BlocksGT.River.defaultBlockState());
+			for (int dx = 4;  dx <= 6;  dx++) tLevel.setBlockAndUpdate(tO.offset(dx, 0, dz), gregapi.data.CS.BlocksGT.Ocean.defaultBlockState());
+			for (int dx = 8;  dx <= 10; dx++) tLevel.setBlockAndUpdate(tO.offset(dx, 0, dz), gregapi.data.CS.BlocksGT.Swamp.defaultBlockState());
+			for (int dx = 12; dx <= 14; dx++) tLevel.setBlockAndUpdate(tO.offset(dx, 0, dz), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState());
+		}
+		gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = false;
+		gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = false;
+		gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = false;
 	}
 }

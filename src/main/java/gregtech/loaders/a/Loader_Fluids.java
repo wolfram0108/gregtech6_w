@@ -698,6 +698,11 @@ public class Loader_Fluids implements Runnable {
 		
 		// F12/F5: контейнер-регистрации (FL.X.make/ST.make/IL.get — стек+fluid-value) load-unsafe (fluid привязан на RegisterEvent, компоненты на server-start) → весь блок отложен на server-start.
 		gregapi.GT_API.deferItemInit(() -> {
+		// F5 (1:1): static-init Forge FluidContainerRegistry:80-83 регистрировал ванильные вёдра ДО любого мода —
+		// порт воссоздал реестр (FL.java:1062), но потерял эти две записи ДВИЖКА. Без них FL.getFluid(ведро воды)=NF,
+		// и деревянное ведро GT6 на ванильной воде съедало блок, оставаясь пустым (вердикт живой приёмки 2026-07-30).
+		FL.reg(FL.Water                   .make(1000), ST.make(Items.WATER_BUCKET                  , 1, 0), ST.make(Items.BUCKET, 1, 0));
+		FL.reg(FL.Lava                    .make(1000), ST.make(Items.LAVA_BUCKET                   , 1, 0), ST.make(Items.BUCKET, 1, 0));
 		FL.reg(FL.Air                     .make(1000), IL.Cell_Air                                 .get(1), IL.Cell_Empty.get(1), F, T, T);
 		FL.reg(FL.Air_Nether              .make(1000), IL.Cell_Air                                 .get(1), IL.Cell_Empty.get(1), F, T, F);
 		FL.reg(FL.Air_End                 .make(1000), IL.Cell_Air                                 .get(1), IL.Cell_Empty.get(1), F, T, F);
