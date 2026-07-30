@@ -36,6 +36,12 @@ import net.minecraft.resources.Identifier;
  * PORT-TODO(F3, block-render-color): {@code Block.getRenderColor(meta)} удалён из neo {@code Block} (REMAP-RULES §C2) —
  * 1:1-доступа к цвету рендера блока нет (для биом-тинта нужен neo {@code BlockColors}); тинт — {@code UNCOLOURED}
  * (заглушка помечена явно, оригинальная строка сохранена — не тихое обнуление; корректно для всех не-биом-тинт блоков).
+ * <p>⚠️ АДРЕС РЕШЕНИЯ ИЗВЕСТЕН с 2026-07-30: реестр источников тинта в порте уже задействован — центр
+ * {@code GT6BlockTint} + одна регистрация на все блоки мода ({@code GT_API_Proxy_Client.onRegisterBlockTints},
+ * судья {@code gt6tintprobe}, замер {@code M-37}). Здесь нужна ДРУГАЯ половина того же канала: цвет
+ * КОПИРУЕМОГО ванильного блока, то есть запрос {@code BlockColors.getTintSource(vanillaState, 0)} и его
+ * {@code colorInWorld(state, level, pos)} — тем же путём, которым движок красит саму ванильную листву.
+ * Метка снимается вместе с этой веткой; величины по-прежнему не выдумываем.
  */
 public class BlockTextureCopied implements ITexture {
 	private final Block mBlock;

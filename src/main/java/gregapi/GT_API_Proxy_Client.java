@@ -143,7 +143,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// Поэтому здесь ОДНА регистрация на весь мод, а не мост в каждом блоке: подключать нечего к семи корням —
 	// движок вообще ходит другим путём. Источник ниже спрашивает те самые 1.7.10-методы, значения не дублируются.
 	// Следствие до этой правки: крашеные блоки (BlockColored — цветное стекло и родня) рисовались без цвета,
-	// а биом-оттенок скопированных текстур не работал (метка PORT-TODO в BlockTextureCopied:36 — тот же канал).
+	// а биом-оттенок скопированных текстур не работал (метка отложенности в BlockTextureCopied:36 — тот же
+	// канал; слово-маркер здесь НЕ пишем дословно, иначе счётчик меток считает упоминание за метку).
 	private void onRegisterBlockTints(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.BlockTintSources aEvent) {
 		java.util.List<net.minecraft.client.color.block.BlockTintSource> tSource = java.util.List.of(new GT6BlockTint());
 		java.util.List<net.minecraft.world.level.block.Block> tBlocks = new java.util.ArrayList<>();
