@@ -450,11 +450,11 @@ public class GT_API extends Abstract_Mod {
 		ST.forceProperMaxStacksizes();
 		
 		// Fixing some Adventure Mode things.
-		// F12 impossible-1:1 (harvest-tier в neo immutable при ctor + data-driven BlockTags.MINEABLE_WITH_*, не runtime-мутатор): Block.setHarvestLevel(String,int) (1.7.10 runtime
-		// harvest-tier mutator) удалён из движка целиком, не переименован — harvest-tier в neo задаётся
-		// НЕИЗМЕНЯЕМО при регистрации блока (BlockBehaviour.Properties) и мешает через data-driven теги
-		// (BlockTags.MINEABLE_WITH_AXE/MINEABLE_WITH_PICKAXE, датапак, не Java-runtime API). Не найдено
-		// ни в одном из 3 корней референса — деградация до no-op (см. также reflection-хак ниже).
+		// 1.7.10 правил здесь ЧУЖОЙ объект: Blocks.bed/sponge/hay_block -> "axe", tnt/monster_egg -> "pickaxe",
+		// obsidian -> "pickaxe" 3 (оригинал GT_API.java:204-209). Мутатора чужого блока в neo нет
+		// (harvest-tier задаётся неизменяемо при регистрации), НО мод спрашивает не движок, а свой центр:
+		// все шесть значений лежат в паспорте WD.vanillaPassport, снятом оракулом с ЖИВОГО 1.7.10 — то есть
+		// уже вместе с этой правкой, потому что дампер мерил мод в сборе. Функция на месте, мутация не нужна.
 
 		try {
 			// The Access Transformer should make this work

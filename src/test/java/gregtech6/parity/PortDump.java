@@ -117,6 +117,8 @@ public final class PortDump {
         tFact.put("itemdata.csv", reportCI("itemdata.csv", 1, new int[]{6})); // игнор col6 unificationTarget: ленивый недетерминир. кэш (getStack_:630), несемантичен как fluidId
         tFact.put("engine_items.csv", reportEngine("engine_items.csv")); // GT6-регистрация (искл. vanilla minecraft: neo 1.21 ≠ 1.7.10 count+класс-имена, инхерентно)
         tFact.put("engine_blocks.csv", reportEngine("engine_blocks.csv"));
+        tFact.put("engine_block_passport.csv", reportPassport());
+        tFact.put("engine_block_toolmatrix.csv", reportToolMatrix());
         tFact.put("recipemaps.csv", report("recipemaps.csv", 1, 20));
         tFact.put("recipes.jsonl", reportJsonl("recipes.jsonl")); // config-паритет; recipeCount(col20) trigger-недетерминирован в golden (60s-лимит)
         gate(tFact);
@@ -161,6 +163,13 @@ public final class PortDump {
         // (у игрока показывался сырой ключ). Пропавших/лишних записей 0 — отличается ТОЛЬКО имя класса.
         // Порог опущен до факта осознанно: гейт обязан догонять факт, а не держать заведомо недостижимое 100 %.
         tFloor.put("engine_items.csv", 98.90);
+        // Паспорт блока 1.7.10 (материал + harvestTool/Level) и его СЛЕДСТВИЕ — вердикт инструментов.
+        // Факт обоих 100.00 на замере 2026-08-06 (815 общих блоков; 7638 пар «инструмент × ванильный блок»),
+        // поэтому floor ровно 100: величины не выводятся, а взяты замером с живого оригинала — любая просадка
+        // означает потерю данных или ветку мимо центра, а не шум. Позитивный контроль судьи: с отключённой
+        // таблицей паспорта матрица даёт 94.017 % (457 расхождений) — судья краснеть умеет.
+        tFloor.put("engine_block_passport.csv", 100.0);
+        tFloor.put("engine_block_toolmatrix.csv", 100.0);
         tFloor.put("engine_blocks.csv", 100.0);
         tFloor.put("oredict.csv", 99.95);          // факт 99.957 (0 пропавших записей — ванильный набор Forge восстановлен)
         tFloor.put("unification.csv", 99.95);      // факт 99.974
@@ -980,7 +989,100 @@ public final class PortDump {
             bl.add(rn + "," + BuiltInRegistries.BLOCK.getId(block) + "," + (k == null ? "" : k.getNamespace()) + "," + block.getClass().getName());
         }
         writeCsv("engine_blocks.csv", "registryName,id,modid,className", bl);
+        dumpBlockPassport();
         return il.size();
+    }
+
+    /**
+     * ПАСПОРТ БЛОКА — зеркало {@code DumpEngine.dumpBlockPassport} оракула (PORT-TODO №5/№8).
+     *
+     * <p>1.7.10 держал у каждого блока три поля, удалённые в neo ПО ИМЕНИ: {@code getMaterial()},
+     * {@code getHarvestTool(meta)} (дефолт <b>null</b>), {@code getHarvestLevel(meta)} (дефолт <b>-1</b>).
+     * Порт отвечает на те же вопросы центрами {@code WD.getMaterial/harvestTool/harvestLevel} — этот набор
+     * выставляет их ответы против оригинала, вместо того чтобы судить их чтением кода.</p>
+     *
+     * <p>Меты в neo нет (семьи расщеплены на отдельные блоки, центр {@code CS.Flattened}), поэтому колонка
+     * снимается один раз на блок; в golden 16 мет сжаты и у ванильных блоков дают одно значение —
+     * {@code Block.setHarvestLevel(tool,level)} проставлял все 16 сразу ({@code Block.java:2502-2508}).</p>
+     */
+    private static void dumpBlockPassport() throws IOException {
+        List<String> lines = new ArrayList<>();
+        for (Block block : BuiltInRegistries.BLOCK) {
+            var k = BuiltInRegistries.BLOCK.getKey(block);
+            String rn = k == null ? "" : k.toString();
+            gregapi.block.Material mat = null;
+            try { mat = gregapi.util.WD.getMaterial(block); } catch (Throwable t) { /* остаётся null */ }
+            String tool = "null";
+            int level = -1;
+            try { String s = gregapi.util.WD.harvestTool(block, 0); if (s != null && !s.isEmpty()) tool = s; } catch (Throwable t) { tool = "!ERR"; }
+            try { level = gregapi.util.WD.harvestLevel(block, 0); } catch (Throwable t) { level = -999; }
+            lines.add(rn + ","
+                    + (k == null ? "" : k.getNamespace()) + ","
+                    + block.getClass().getName() + ","
+                    + materialName(mat) + ","
+                    + (mat != null && mat.isToolNotRequired()) + ","
+                    + tool + ","
+                    + level);
+        }
+        writeCsv("engine_block_passport.csv",
+                "registryName,modid,className,material,toolNotRequired,harvestTool,harvestLevel", lines);
+        dumpVanillaToolMatrix();
+    }
+
+    /**
+     * СЛЕДСТВИЕ паспорта — зеркало {@code DumpEngine.dumpVanillaToolMatrix} оракула.
+     *
+     * <p>Судья, НЕЗАВИСИМЫЙ от паспорта: таблица паспорта в {@code WD} сгенерирована из golden-паспорта,
+     * поэтому сверка паспорта с ним же тавтологична (ловит только опечатки переноса). Здесь меряется выход
+     * правила — {@code IToolStats.isMinableBlock} ({@code IToolStats.java:170}), то есть берёт ли инструмент
+     * GT6 данный ванильный блок; ровно это видит игрок.</p>
+     */
+    private static void dumpVanillaToolMatrix() throws IOException {
+        List<String> lines = new ArrayList<>();
+        try {
+            java.util.Map<String, gregapi.item.multiitem.tools.IToolStats> byClass = new java.util.TreeMap<>();
+            for (gregapi.item.multiitem.tools.IToolStats s : gregapi.data.CS.ToolsGT.sMetaTool.mToolStats.values()) {
+                if (s != null) byClass.put(s.getClass().getName(), s);
+            }
+            List<Block> blocks = new ArrayList<>();
+            for (Block block : BuiltInRegistries.BLOCK) {
+                var k = BuiltInRegistries.BLOCK.getKey(block);
+                if (k != null && "minecraft".equals(k.getNamespace())) blocks.add(block);
+            }
+            for (Map.Entry<String, gregapi.item.multiitem.tools.IToolStats> e : byClass.entrySet()) {
+                for (Block block : blocks) {
+                    var k = BuiltInRegistries.BLOCK.getKey(block);
+                    String verdict;
+                    try { verdict = String.valueOf(e.getValue().isMinableBlock(block, (byte)0)); }
+                    catch (Throwable t) { verdict = "!ERR"; }
+                    lines.add((k == null ? "" : k.toString()) + "," + e.getKey() + "," + verdict);
+                }
+            }
+            System.out.println("[port-dump] toolmatrix: инструментов=" + byClass.size() + " ванильных блоков=" + blocks.size());
+        } catch (Throwable t) {
+            System.out.println("[port-dump] toolmatrix НЕ СНЯТ: " + t);
+        }
+        writeCsv("engine_block_toolmatrix.csv", "registryName,toolStatsClass,minable", lines);
+    }
+
+    /** Имя константы {@code gregapi.block.Material.*} — копия 1.7.10, имена совпадают с golden дословно. */
+    private static Map<gregapi.block.Material, String> sMaterialNames = null;
+
+    private static String materialName(gregapi.block.Material aMaterial) {
+        if (aMaterial == null) return "null";
+        if (sMaterialNames == null) {
+            sMaterialNames = new java.util.LinkedHashMap<>();
+            for (java.lang.reflect.Field f : gregapi.block.Material.class.getDeclaredFields()) {
+                if (!gregapi.block.Material.class.isAssignableFrom(f.getType())) continue;
+                try {
+                    f.setAccessible(true);
+                    Object v = f.get(null);
+                    if (v instanceof gregapi.block.Material m && !sMaterialNames.containsKey(m)) sMaterialNames.put(m, f.getName());
+                } catch (Throwable t) { /* поле недоступно — упадём в класс-имя ниже */ }
+            }
+        }
+        String name = sMaterialNames.get(aMaterial);
+        return name != null ? name : "#" + aMaterial.getClass().getName();
     }
 
     private static String esc(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
@@ -1023,6 +1125,71 @@ public final class PortDump {
         if (!Files.isRegularFile(golden)) { System.out.println("[parity] нет golden: " + golden); return 0.0; }
         return reportSets(file, ParityDiff.fromLinesFlattenCI(golden), ParityDiff.fromLinesFlattenCI(port));
     }
+    /**
+     * Паспорт блока: сверка только по ПЕРЕСЕЧЕНИЮ имён и по МЕТЕ 0.
+     *
+     * <p>Общий {@code report} здесь врёт по двум причинам, и обе — формат, а не расхождение: (1) golden сжимает
+     * 16 мет в одно поле ({@code «0|1|2|…|15»}), а в neo меты нет и порт снимает одно значение; (2) в neo больше
+     * тысячи блоков, которых в 1.7.10 не существовало, и они считались бы «лишними». Сверяется то, что
+     * сопоставимо: общие имена, мета 0. Имя класса не сверяется — {@code net.minecraft.block.*} 1.7.10 против
+     * {@code net.minecraft.world.level.block.*} neo, инхерентно (как в {@code engine_blocks.csv}).</p>
+     */
+    private static double reportPassport() { return reportMeta0("engine_block_passport.csv", 3, 6); }
+
+    /**
+     * Матрица вердиктов «инструмент × ванильный блок» — СЛЕДСТВИЕ паспорта и потому судья, независимый от него:
+     * таблица паспорта в {@code WD} сгенерирована из golden-паспорта, так что сверка паспорта с ним же ловит
+     * лишь опечатки переноса. Здесь сверяется выход правила ({@code IToolStats.isMinableBlock}) — то, что видит
+     * игрок. Блоки, которых в neo нет, в пересечение не входят.
+     */
+    private static double reportToolMatrix() { return reportMeta0("engine_block_toolmatrix.csv", 2, 2); }
+
+    /** Общая сверка «пересечение имён, значения golden берутся по мете 0 (до разделителя `|`)». */
+    private static double reportMeta0(String file, int aFirstValueCol, int aLastValueCol) {
+        Path golden = ORACLE.resolve(file), port = DUMP.resolve(file);
+        if (!Files.isRegularFile(golden)) { System.out.println("[parity] нет golden: " + golden); return 0.0; }
+        if (!Files.isRegularFile(port))   { System.out.println("[parity] нет дампа порта: " + port); return 0.0; }
+        try {
+            int keyCols = file.contains("toolmatrix") ? 2 : 1;
+            Map<String, String[]> g = readKeyed(golden, keyCols), p = readKeyed(port, keyCols);
+            int total = 0, same = 0;
+            List<String> shown = new ArrayList<>();
+            for (Map.Entry<String, String[]> e : g.entrySet()) {
+                String[] pv = p.get(e.getKey());
+                if (pv == null) continue; // имени нет в neo (flatten/удалён) — сверять нечего
+                total++;
+                boolean ok = true;
+                for (int i = aFirstValueCol; i <= aLastValueCol && i < e.getValue().length && i < pv.length; i++) {
+                    String gv = e.getValue()[i];
+                    int bar = gv.indexOf('|');
+                    if (bar >= 0) gv = gv.substring(0, bar); // golden сжал 16 мет — берём мету 0
+                    if (!gv.equals(pv[i])) { ok = false; if (shown.size() < 5) shown.add(e.getKey() + ": golden=" + gv + " port=" + pv[i]); break; }
+                }
+                if (ok) same++;
+            }
+            double percent = total == 0 ? 0.0 : 100.0 * same / total;
+            System.out.printf("[parity] %-30s сверено=%d совпало=%d  %6.2f%%%n", file, total, same, percent);
+            for (String s : shown) System.out.println("   DIFFER  " + s);
+            return percent;
+        } catch (IOException e) {
+            System.out.println("[parity] ошибка чтения " + file + ": " + e);
+            return 0.0;
+        }
+    }
+
+    private static Map<String, String[]> readKeyed(Path aPath, int aKeyCols) throws IOException {
+        Map<String, String[]> r = new java.util.LinkedHashMap<>();
+        for (String line : Files.readAllLines(aPath)) {
+            if (line.isEmpty() || line.startsWith("#")) continue;
+            String[] c = line.split(",", -1);
+            if (c.length <= aKeyCols) continue;
+            StringBuilder key = new StringBuilder();
+            for (int i = 0; i < aKeyCols; i++) { if (i > 0) key.append('#'); key.append(c[i]); }
+            r.put(key.toString(), c);
+        }
+        return r;
+    }
+
     private static double reportSets(String file, ParityDiff.ParitySet g, ParityDiff.ParitySet p) {
         ParityDiff.Report r = ParityDiff.diff(file, g, p);
         System.out.printf("[parity] %-14s golden=%d совпало=%d нет=%d лишних=%d отлич=%d  %6.2f%%%n",

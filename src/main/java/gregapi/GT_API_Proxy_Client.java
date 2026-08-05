@@ -467,7 +467,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	}
 
 	/**
-	 * PORT-TODO(F3, baked-рендер клиента, частично): 1.7.10 {@code net.minecraftforge.event.entity.player.ItemTooltipEvent}
+	 * 1.7.10 {@code net.minecraftforge.event.entity.player.ItemTooltipEvent}
 	 * держал tooltip как {@code List<String>} напрямую в поле {@code toolTip}; neo-эквивалент
 	 * {@code net.neoforged.neoforge.event.entity.player.ItemTooltipEvent} (`neoforge-decompiled/.../ItemTooltipEvent.java:16-70`)
 	 * — геттеры, а список типизирован {@code List<Component>} (движко-шов, т.к. рендер текста теперь
@@ -478,9 +478,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	 * на ЛОКАЛЬНОЙ {@code List<String>}-копии (снятой из {@code Component.getString()} до, собранной
 	 * обратно через {@code Component.literal(...)} после — §-коды внутри literal-строки по-прежнему
 	 * рендерятся движком, см. {@code FormattedCharSequence}); синхронизация — в {@code finally}, чтобы
-	 * сработать на ЛЮБОМ выходе (return/exception), как оригинал мутировал список напрямую. Единственная
-	 * генуинно потерянная строка — harvest-tooltip ({@code Block.getHarvestTool/getHarvestLevel}, API
-	 * удалено целиком, замены нет, помечено ниже отдельно).
+	 * сработать на ЛЮБОМ выходе (return/exception), как оригинал мутировал список напрямую. Harvest-строка
+	 * восстановлена ниже: {@code Block.getHarvestTool/getHarvestLevel} удалены из neo по имени, но те же
+	 * величины отдаёт центр {@link WD} из паспорта блока 1.7.10 (данные оракула, см. {@code WD.vanillaPassport}).
 	 */
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onItemTooltip(ItemTooltipEvent aEvent) {
@@ -572,9 +572,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					} else {
 						aToolTip.add(LH.getToolTipBlastResistance(aBlock, aBlock.getExplosionResistance()));
 					}
-					// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code Block.getHarvestTool(meta)/getHarvestLevel(meta)}
-					// (API удалено целиком в 26.1.2 — заменено тег-системой {@code BlockTags.MINEABLE_WITH_*} без
-					// прямого "имя инструмента + уровень" аксессора; равноценной замены нет) — строка не добавляется.
+					// 1:1 с оригиналом (`gregtech6/.../GT_API_Proxy_Client.java:301`): те же три величины, только
+					// спрошенные у центра WD — в neo у блока нет ни материала, ни harvestTool/Level по имени.
+					aToolTip.add(LH.getToolTipHarvest(WD.getMaterial(aBlock), WD.harvestTool(aBlock, aBlockMeta), WD.harvestLevel(aBlock, aBlockMeta)));
 				}
 				if (BlocksGT.openableCrowbar.contains(aBlock)) {
 					aToolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_OPEN_CROWBAR));

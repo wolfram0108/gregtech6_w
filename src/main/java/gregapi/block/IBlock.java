@@ -58,7 +58,21 @@ public interface IBlock {
 	 *  нет — та же причина, что getRenderBounds выше). Носители перекрывают дефолт автоматически одноимёнными
 	 *  существующими методами; не-носители (жидкости, Internal — как в 1.7.10 без override) — дефолт «без инструмента». */
 	default String getHarvestTool(int aMeta) {return "";}
-	default int getHarvestLevel(int aMeta) {return 0;}
+	/** Дефолт -1, а не 0: ровно так его держал 1.7.10 ({@code Block.java:2490} — массив уровней инициализирован
+	 *  -1, «уровень не задан»). Носители, не перекрывающие метод (жидкости GT6, MTE-Internal), в оригинале
+	 *  отдавали именно -1 — сверено набором {@code engine_block_passport.csv}. Потребители к этому готовы:
+	 *  клампят тем же приёмом, что оригинал ({@code MultiItemTool.java:482} → {@code bind4} даёт 0), либо
+	 *  сравнивают «инструмент сильнее» ({@code ForgeHooks.java:115}), где -1 верно означает «требования нет». */
+	default int getHarvestLevel(int aMeta) {return -1;}
+	/** F9 (читает ЦЕНТР {@link gregapi.util.WD#getMaterial}): 1.7.10 {@code Block.getMaterial()} — материал блока,
+	 *  у GT6 это ДЕЙСТВУЮЩЕЕ правило инструментов ({@code GT_Tool_*.isMinableBlock} сверяет именно его), а не
+	 *  украшение. Точка удалена из neo, и центр отбирал носителей ПЕРЕЧИСЛЕНИЕМ ИЕРАРХИЙ — из-за чего
+	 *  {@code PrefixBlock} в список не попал и его 27 блоков падали в общий хвост {@code rock}: ящики отвечали
+	 *  «камень» вместо {@code wood}, руды в песке/гравии/грязи — вместо {@code sand}/{@code ground}, корпуса
+	 *  машин — вместо {@code iron} (замер против 1.7.10, набор {@code engine_block_passport.csv}). Отбор по
+	 *  КОНТРАКТУ, как у harvestTool/harvestLevel выше. Дефолт {@code null} = «контракт величины не несёт»
+	 *  (носители-предметы вроде {@code ItemBlockBase}), центр тогда идёт своим разбором дальше. */
+	default Material getMaterial() {return null;}
 	/** BUG-071 (пер-материальность уровня): в 1.7.10 движок звал {@code getHarvestLevel(мета блока)}, и мета несла
 	 *  ОСМЫСЛЕННУЮ величину — у prefix-блока это {@code bind4(материал.mToolQuality)} (PrefixBlock:435 оригинала),
 	 *  у MTE-блока {@code mBlockMetaData} класса (= {@code mToolQuality} материала машины, Loader_MultiTileEntities:895).

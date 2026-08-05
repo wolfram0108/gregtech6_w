@@ -433,6 +433,12 @@ public class WD {
 		// диспатч по КОНТРАКТУ IBlock (все GT6-иерархии: BlockBase/MTE-Block/Internal/Prefix/Rail — общего предка нет;
 		// прежний instanceof BlockBase был слеп к MTE → машины «без уровня» — класс «две Block-иерархии»)
 		if (aBlock instanceof gregapi.block.IBlock tBlock) return tBlock.getHarvestLevel(aMeta);
+		// точные данные оригинала перед обобщением по tier-тегам; 1.7.10-дефолт «уровень не задан» = -1
+		// (Block.java:2490), и он переносится как есть: потребители клампят его сами тем же приёмом, что
+		// оригинал (`MultiItemTool.java:482` bind4 → 0), а сравнение «инструмент сильнее» с -1 верно и так
+		// (`ForgeHooks.java:115`).
+		VanillaPassport tPassport = vanillaPassport(aBlock);
+		if (tPassport != null) return tPassport.mLevel();
 		BlockState tState = aBlock.defaultBlockState();
 		if (tState.is(net.minecraft.tags.BlockTags.NEEDS_DIAMOND_TOOL)) return 3;
 		if (tState.is(net.minecraft.tags.BlockTags.NEEDS_IRON_TOOL  )) return 2;
@@ -491,11 +497,18 @@ public class WD {
 		return rTier;
 	}
 
+	/** F-tool ЦЕНТР (продолжение): у ванильных блоков класс инструмента 1.7.10 ЗАДАН ДАННЫМИ, а не выводим —
+	 *  ни один neo-тег ему не равен ({@code MINEABLE_WITH_*} шире: держит двери, заборы, бочки, листву, а
+	 *  класса {@code hoe} у ванили 1.7.10 не было вовсе). Берём из паспорта; вне таблицы — {@code ""}, что для
+	 *  правила добычи равносильно 1.7.10-дефолту {@code null} («спроси ванильное правило», {@code ForgeHooks:104}),
+	 *  поскольку все потребители сверяют класс через {@code equalsIgnoreCase} и пустая строка не совпадает ни с чем. */
 	public static String harvestTool(Block aBlock, int aMeta) {
 		// диспатч по КОНТРАКТУ IBlock (см. harvestLevel выше: instanceof BlockBase был слеп к MTE/Prefix/Rail —
 		// ключ не «видел» машину своим блоком → canHarvestBlock=false → машина не добывалась ВООБЩЕ после
 		// requiresCorrectToolForDrops; поймано судьёй gt6seamprobe)
-		return aBlock instanceof gregapi.block.IBlock tBlock ? tBlock.getHarvestTool(aMeta) : "";
+		if (aBlock instanceof gregapi.block.IBlock tBlock) return tBlock.getHarvestTool(aMeta);
+		VanillaPassport tPassport = vanillaPassport(aBlock);
+		return tPassport != null && tPassport.mTool() != null ? tPassport.mTool() : "";
 	}
 	/** F-motion: 1.7.10 WD.motionX(Entity)/Y/Z (public поля) -> neo Vec3 getDeltaMovement()/setDeltaMovement (Entity.java).
 	 *  Покомпонентная запись обязана сохранять две другие оси -> централизуем здесь ОДИН раз (философия §2). */
@@ -585,11 +598,12 @@ public class WD {
 		return tKey == null ? 0 : tKey.identifier().hashCode(); // neo ResourceKey: location()->identifier() (ResourceKey.java:55); null-ключ (экзотический LevelAccessor без Level/ServerLevelAccessor) -> 0 как overworld-дефолт
 	}
 	/** F9: 1.7.10 WD.getMaterial(Block) удалён в neo (класс Material убран). GT6-блок (BlockBase) хранит портированный
-	 *  gregapi.block.Material; для ВАНИЛЬНЫХ neo-блоков классифицируем по идентичности (критичные fluid/air/fire —
-	 *  ТОЧНО, сверено с 1.7.10) + neo BlockTags (семьи logs/leaves/carpet — надёжнее ручного списка). Материалы —
-	 *  портированные 1:1 gregapi.block.Material (список сверен с референсом). PORT-TODO(F9, material-table): непокрытые
-	 *  блоки -> Material.rock (документированная деградация §10; критичные сравнения GT6 — water/lava/air/fire/wood/
-	 *  leaves/sand/grass/ground/gourd/cactus/vine/clay/carpet — покрыты, редкие блоки классиф. как rock). */
+	 *  gregapi.block.Material; ванильные блоки 1.7.10 отвечают ТОЧНЫМИ данными оригинала — паспорт
+	 *  {@link #vanillaPassport} (171 запись, снята оракулом с живого 1.7.10). Ниже — обобщения по идентичности
+	 *  и neo-тегам: они обслуживают то, чего в паспорте нет по существу — расщеплённые neo-семьи (flatten) и
+	 *  блоки, которых в 1.7.10 НЕ СУЩЕСТВОВАЛО (медь, глубинный сланец, кораллы…). Для последних ответа
+	 *  оригинала не существует в природе, поэтому хвост {@code Material.rock} — не отложенный долг переноса,
+	 *  а классификация нового контента (журнал адаптаций), и она не участвует в паритете против 1.7.10. */
 	/** F-sound: 1.7.10 WD.playStepSound(aWorld, x, y, z, block) —
 	 *  строковый sound-path + отдельный вызов. neo: SoundType через state.getSoundType() -> getStepSound() (SoundEvent),
 	 *  Level.playSound(null,x,y,z,SoundEvent,SoundSource.BLOCKS,vol,pitch) (Level.java:444). Формула шага 1:1 (едина
@@ -604,24 +618,249 @@ public class WD {
 	public static net.minecraft.world.level.block.SoundType soundType(Block aBlock) {
 		return aBlock.defaultBlockState().getSoundType();
 	}
+	/**
+	 * ПАСПОРТ ВАНИЛЬНОГО БЛОКА 1.7.10 — ДАННЫЕ, снятые с ЖИВОГО оригинала, а не выведенные из neo-тегов.
+	 *
+	 * <p>1.7.10 держал у каждого {@code Block} три поля, удалённые в neo ПО ИМЕНИ: {@code blockMaterial},
+	 * {@code harvestTool[16]} (дефолт <b>null</b>, {@code Block.java:2489}) и {@code harvestLevel[16]}
+	 * (дефолт <b>-1</b>, {@code :2490}). Значения ванильным блокам проставляли ДВА источника, и ни один
+	 * из них не выражается neo-тегами:</p>
+	 * <ol>
+	 *   <li>Forge — {@code ForgeHooks.initTools} ({@code ForgeHooks.java:154-189}): три списка
+	 *       ({@code ItemPickaxe:11}, {@code ItemSpade:11}, {@code ItemAxe:11}) + 9 явных строк.
+	 *       Класса {@code hoe} у ванили нет НИ У ОДНОГО блока — тег {@code MINEABLE_WITH_HOE} ему не равен;</li>
+	 *   <li>сам GT6 — {@code gregtech6/.../GT_API.java:204-209} (кровать/губка/сено под топор, TNT и
+	 *       «яйцо монстра» под кирку, обсидиан на уровень 3). В neo runtime-мутатора чужого блока нет
+	 *       ({@link gregapi.GT_API} помечает это), но мод спрашивает НЕ движок, а этот центр — поэтому
+	 *       функция восстановима без мутации ванили.</li>
+	 * </ol>
+	 *
+	 * <p>Таблица ниже <b>сгенерирована</b> из golden-набора {@code engine_block_passport.csv}
+	 * (оракул {@code DumpEngine.dumpBlockPassport} на живом 1.7.10) — 171 запись, по одной на ванильный
+	 * блок оригинала; величины не придуманы и не обобщены. Сверяется тем же набором в
+	 * {@code PortDump.dumpBlockPassport}.</p>
+	 *
+	 * <p>Блоки, которых в 1.7.10 не было, и расщеплённые семьи (neo-flatten: {@code leaves}/{@code leaves2}
+	 * → 12 видов листвы и т.п.) в таблице по имени не находятся — их обслуживают ветки-обобщения ниже
+	 * по тегам, как и раньше.</p>
+	 */
+	private record VanillaPassport(Material mMaterial, String mTool, int mLevel) {}
+	private static final Map<String, VanillaPassport> VANILLA_PASSPORT_BY_NAME = new HashMap<>(256);
+	private static final Map<Block, VanillaPassport> VANILLA_PASSPORT = new java.util.IdentityHashMap<>(256);
+	private static boolean VANILLA_PASSPORT_RESOLVED = F;
+
+	private static void p(String aName, Material aMaterial, String aTool, int aLevel) {
+		VANILLA_PASSPORT_BY_NAME.put(aName, new VanillaPassport(aMaterial, aTool, aLevel));
+	}
+
+	/** Резолв «имя 1.7.10 -> живой neo-блок» откладывается до первого запроса: на {@code <clinit>} реестр
+	 *  блоков ещё не заполнен, а имена, которых в neo нет (flatten/удалённые), просто не попадают в карту. */
+	private static VanillaPassport vanillaPassport(Block aBlock) {
+		if (!VANILLA_PASSPORT_RESOLVED) {
+			VANILLA_PASSPORT_RESOLVED = T;
+			for (Map.Entry<String, VanillaPassport> tEntry : VANILLA_PASSPORT_BY_NAME.entrySet()) try {
+				net.minecraft.resources.Identifier tID = net.minecraft.resources.Identifier.parse(tEntry.getKey());
+				net.minecraft.core.registries.BuiltInRegistries.BLOCK.getOptional(tID).ifPresent(tBlock -> VANILLA_PASSPORT.put(tBlock, tEntry.getValue()));
+			} catch (Throwable e) {/* имени нет в neo (flatten/удалён) — обслуживают ветки-обобщения */}
+		}
+		return VANILLA_PASSPORT.get(aBlock);
+	}
+
+	static {
+		p("minecraft:acacia_stairs",                 Material.wood,          null,            -1);
+		p("minecraft:activator_rail",                Material.circuits,      TOOL_pickaxe,       0);
+		p("minecraft:air",                           Material.air,           null,            -1);
+		p("minecraft:anvil",                         Material.anvil,         null,            -1);
+		p("minecraft:beacon",                        Material.glass,         null,            -1);
+		p("minecraft:bed",                           Material.cloth,         TOOL_axe,           0);
+		p("minecraft:bedrock",                       Material.rock,          null,            -1);
+		p("minecraft:birch_stairs",                  Material.wood,          null,            -1);
+		p("minecraft:bookshelf",                     Material.wood,          TOOL_axe,           0);
+		p("minecraft:brewing_stand",                 Material.iron,          null,            -1);
+		p("minecraft:brick_block",                   Material.rock,          null,            -1);
+		p("minecraft:brick_stairs",                  Material.rock,          null,            -1);
+		p("minecraft:brown_mushroom",                Material.plants,        null,            -1);
+		p("minecraft:brown_mushroom_block",          Material.wood,          null,            -1);
+		p("minecraft:cactus",                        Material.cactus,        null,            -1);
+		p("minecraft:cake",                          Material.cake,          null,            -1);
+		p("minecraft:carpet",                        Material.carpet,        null,            -1);
+		p("minecraft:carrots",                       Material.plants,        null,            -1);
+		p("minecraft:cauldron",                      Material.iron,          null,            -1);
+		p("minecraft:chest",                         Material.wood,          TOOL_axe,           0);
+		p("minecraft:clay",                          Material.clay,          TOOL_shovel,        0);
+		p("minecraft:coal_block",                    Material.rock,          null,            -1);
+		p("minecraft:coal_ore",                      Material.rock,          TOOL_pickaxe,       0);
+		p("minecraft:cobblestone",                   Material.rock,          TOOL_pickaxe,       0);
+		p("minecraft:cobblestone_wall",              Material.rock,          null,            -1);
+		p("minecraft:cocoa",                         Material.plants,        null,            -1);
+		p("minecraft:command_block",                 Material.iron,          null,            -1);
+		p("minecraft:crafting_table",                Material.wood,          null,            -1);
+		p("minecraft:dark_oak_stairs",               Material.wood,          null,            -1);
+		p("minecraft:daylight_detector",             Material.wood,          null,            -1);
+		p("minecraft:deadbush",                      Material.vine,          null,            -1);
+		p("minecraft:detector_rail",                 Material.circuits,      TOOL_pickaxe,       0);
+		p("minecraft:diamond_block",                 Material.iron,          TOOL_pickaxe,       2);
+		p("minecraft:diamond_ore",                   Material.rock,          TOOL_pickaxe,       2);
+		p("minecraft:dirt",                          Material.ground,        TOOL_shovel,        0);
+		p("minecraft:dispenser",                     Material.rock,          null,            -1);
+		p("minecraft:double_plant",                  Material.plants,        null,            -1);
+		p("minecraft:double_stone_slab",             Material.rock,          TOOL_pickaxe,       0);
+		p("minecraft:double_wooden_slab",            Material.wood,          null,            -1);
+		p("minecraft:dragon_egg",                    Material.dragonEgg,     null,            -1);
+		p("minecraft:dropper",                       Material.rock,          null,            -1);
+		p("minecraft:emerald_block",                 Material.iron,          TOOL_pickaxe,       2);
+		p("minecraft:emerald_ore",                   Material.rock,          TOOL_pickaxe,       2);
+		p("minecraft:enchanting_table",              Material.rock,          null,            -1);
+		p("minecraft:end_portal",                    Material.portal,        null,            -1);
+		p("minecraft:end_portal_frame",              Material.rock,          null,            -1);
+		p("minecraft:end_stone",                     Material.rock,          null,            -1);
+		p("minecraft:ender_chest",                   Material.rock,          null,            -1);
+		p("minecraft:farmland",                      Material.ground,        TOOL_shovel,        0);
+		p("minecraft:fence",                         Material.wood,          null,            -1);
+		p("minecraft:fence_gate",                    Material.wood,          null,            -1);
+		p("minecraft:fire",                          Material.fire,          null,            -1);
+		p("minecraft:flower_pot",                    Material.circuits,      null,            -1);
+		p("minecraft:flowing_lava",                  Material.lava,          null,            -1);
+		p("minecraft:flowing_water",                 Material.water,         null,            -1);
+		p("minecraft:furnace",                       Material.rock,          null,            -1);
+		p("minecraft:glass",                         Material.glass,         null,            -1);
+		p("minecraft:glass_pane",                    Material.glass,         null,            -1);
+		p("minecraft:glowstone",                     Material.glass,         null,            -1);
+		p("minecraft:gold_block",                    Material.iron,          TOOL_pickaxe,       2);
+		p("minecraft:gold_ore",                      Material.rock,          TOOL_pickaxe,       2);
+		p("minecraft:golden_rail",                   Material.circuits,      TOOL_pickaxe,       0);
+		p("minecraft:grass",                         Material.grass,         TOOL_shovel,        0);
+		p("minecraft:gravel",                        Material.sand,          TOOL_shovel,        0);
+		p("minecraft:hardened_clay",                 Material.rock,          null,            -1);
+		p("minecraft:hay_block",                     Material.grass,         TOOL_axe,           0);
+		p("minecraft:heavy_weighted_pressure_plate", Material.iron,          null,            -1);
+		p("minecraft:hopper",                        Material.iron,          null,            -1);
+		p("minecraft:ice",                           Material.ice,           TOOL_pickaxe,       0);
+		p("minecraft:iron_bars",                     Material.iron,          null,            -1);
+		p("minecraft:iron_block",                    Material.iron,          TOOL_pickaxe,       1);
+		p("minecraft:iron_door",                     Material.iron,          null,            -1);
+		p("minecraft:iron_ore",                      Material.rock,          TOOL_pickaxe,       1);
+		p("minecraft:jukebox",                       Material.wood,          null,            -1);
+		p("minecraft:jungle_stairs",                 Material.wood,          null,            -1);
+		p("minecraft:ladder",                        Material.circuits,      null,            -1);
+		p("minecraft:lapis_block",                   Material.iron,          TOOL_pickaxe,       1);
+		p("minecraft:lapis_ore",                     Material.rock,          TOOL_pickaxe,       1);
+		p("minecraft:lava",                          Material.lava,          null,            -1);
+		p("minecraft:leaves",                        Material.leaves,        null,            -1);
+		p("minecraft:leaves2",                       Material.leaves,        null,            -1);
+		p("minecraft:lever",                         Material.circuits,      null,            -1);
+		p("minecraft:light_weighted_pressure_plate", Material.iron,          null,            -1);
+		p("minecraft:lit_furnace",                   Material.rock,          null,            -1);
+		p("minecraft:lit_pumpkin",                   Material.gourd,         TOOL_axe,           0);
+		p("minecraft:lit_redstone_lamp",             Material.redstoneLight, null,            -1);
+		p("minecraft:lit_redstone_ore",              Material.rock,          TOOL_pickaxe,       2);
+		p("minecraft:log",                           Material.wood,          TOOL_axe,           0);
+		p("minecraft:log2",                          Material.wood,          TOOL_axe,           0);
+		p("minecraft:melon_block",                   Material.gourd,         null,            -1);
+		p("minecraft:melon_stem",                    Material.plants,        null,            -1);
+		p("minecraft:mob_spawner",                   Material.rock,          null,            -1);
+		p("minecraft:monster_egg",                   Material.clay,          TOOL_pickaxe,       0);
+		p("minecraft:mossy_cobblestone",             Material.rock,          TOOL_pickaxe,       0);
+		p("minecraft:mycelium",                      Material.grass,         TOOL_shovel,        0);
+		p("minecraft:nether_brick",                  Material.rock,          null,            -1);
+		p("minecraft:nether_brick_fence",            Material.rock,          null,            -1);
+		p("minecraft:nether_brick_stairs",           Material.rock,          null,            -1);
+		p("minecraft:nether_wart",                   Material.plants,        null,            -1);
+		p("minecraft:netherrack",                    Material.rock,          TOOL_pickaxe,       0);
+		p("minecraft:noteblock",                     Material.wood,          null,            -1);
+		p("minecraft:oak_stairs",                    Material.wood,          null,            -1);
+		p("minecraft:obsidian",                      Material.rock,          TOOL_pickaxe,       3);
+		p("minecraft:packed_ice",                    Material.packedIce,     null,            -1);
+		p("minecraft:piston",                        Material.piston,        null,            -1);
+		p("minecraft:piston_extension",              Material.piston,        null,            -1);
+		p("minecraft:piston_head",                   Material.piston,        null,            -1);
+		p("minecraft:planks",                        Material.wood,          TOOL_axe,           0);
+		p("minecraft:portal",                        Material.portal,        null,            -1);
+		p("minecraft:potatoes",                      Material.plants,        null,            -1);
+		p("minecraft:powered_comparator",            Material.circuits,      null,            -1);
+		p("minecraft:powered_repeater",              Material.circuits,      null,            -1);
+		p("minecraft:pumpkin",                       Material.gourd,         TOOL_axe,           0);
+		p("minecraft:pumpkin_stem",                  Material.plants,        null,            -1);
+		p("minecraft:quartz_block",                  Material.rock,          null,            -1);
+		p("minecraft:quartz_ore",                    Material.rock,          TOOL_pickaxe,       0);
+		p("minecraft:quartz_stairs",                 Material.rock,          null,            -1);
+		p("minecraft:rail",                          Material.circuits,      TOOL_pickaxe,       0);
+		p("minecraft:red_flower",                    Material.plants,        null,            -1);
+		p("minecraft:red_mushroom",                  Material.plants,        null,            -1);
+		p("minecraft:red_mushroom_block",            Material.wood,          null,            -1);
+		p("minecraft:redstone_block",                Material.iron,          null,            -1);
+		p("minecraft:redstone_lamp",                 Material.redstoneLight, null,            -1);
+		p("minecraft:redstone_ore",                  Material.rock,          TOOL_pickaxe,       2);
+		p("minecraft:redstone_torch",                Material.circuits,      null,            -1);
+		p("minecraft:redstone_wire",                 Material.circuits,      null,            -1);
+		p("minecraft:reeds",                         Material.plants,        null,            -1);
+		p("minecraft:sand",                          Material.sand,          TOOL_shovel,        0);
+		p("minecraft:sandstone",                     Material.rock,          TOOL_pickaxe,       0);
+		p("minecraft:sandstone_stairs",              Material.rock,          null,            -1);
+		p("minecraft:sapling",                       Material.plants,        null,            -1);
+		p("minecraft:skull",                         Material.circuits,      null,            -1);
+		p("minecraft:snow",                          Material.craftedSnow,   TOOL_shovel,        0);
+		p("minecraft:snow_layer",                    Material.snow,          TOOL_shovel,        0);
+		p("minecraft:soul_sand",                     Material.sand,          TOOL_shovel,        0);
+		p("minecraft:sponge",                        Material.sponge,        TOOL_axe,           0);
+		p("minecraft:spruce_stairs",                 Material.wood,          null,            -1);
+		p("minecraft:stained_glass",                 Material.glass,         null,            -1);
+		p("minecraft:stained_glass_pane",            Material.glass,         null,            -1);
+		p("minecraft:stained_hardened_clay",         Material.rock,          null,            -1);
+		p("minecraft:standing_sign",                 Material.wood,          null,            -1);
+		p("minecraft:sticky_piston",                 Material.piston,        null,            -1);
+		p("minecraft:stone",                         Material.rock,          TOOL_pickaxe,       0);
+		p("minecraft:stone_brick_stairs",            Material.rock,          null,            -1);
+		p("minecraft:stone_button",                  Material.circuits,      null,            -1);
+		p("minecraft:stone_pressure_plate",          Material.rock,          null,            -1);
+		p("minecraft:stone_slab",                    Material.rock,          TOOL_pickaxe,       0);
+		p("minecraft:stone_stairs",                  Material.rock,          null,            -1);
+		p("minecraft:stonebrick",                    Material.rock,          null,            -1);
+		p("minecraft:tallgrass",                     Material.vine,          null,            -1);
+		p("minecraft:tnt",                           Material.tnt,           TOOL_pickaxe,       0);
+		p("minecraft:torch",                         Material.circuits,      null,            -1);
+		p("minecraft:trapdoor",                      Material.wood,          null,            -1);
+		p("minecraft:trapped_chest",                 Material.wood,          null,            -1);
+		p("minecraft:tripwire",                      Material.circuits,      null,            -1);
+		p("minecraft:tripwire_hook",                 Material.circuits,      null,            -1);
+		p("minecraft:unlit_redstone_torch",          Material.circuits,      null,            -1);
+		p("minecraft:unpowered_comparator",          Material.circuits,      null,            -1);
+		p("minecraft:unpowered_repeater",            Material.circuits,      null,            -1);
+		p("minecraft:vine",                          Material.vine,          null,            -1);
+		p("minecraft:wall_sign",                     Material.wood,          null,            -1);
+		p("minecraft:water",                         Material.water,         null,            -1);
+		p("minecraft:waterlily",                     Material.plants,        null,            -1);
+		p("minecraft:web",                           Material.web,           null,            -1);
+		p("minecraft:wheat",                         Material.plants,        null,            -1);
+		p("minecraft:wooden_button",                 Material.circuits,      null,            -1);
+		p("minecraft:wooden_door",                   Material.wood,          null,            -1);
+		p("minecraft:wooden_pressure_plate",         Material.wood,          null,            -1);
+		p("minecraft:wooden_slab",                   Material.wood,          null,            -1);
+		p("minecraft:wool",                          Material.cloth,         null,            -1);
+		p("minecraft:yellow_flower",                 Material.plants,        null,            -1);
+	}
+
 	public static gregapi.block.Material getMaterial(Block aBlock) {
-		if (aBlock instanceof BlockBase) return ((BlockBase)aBlock).getMaterial();
-		// GT6-жидкости (BlockWaterlike Ocean/River/Swamp, BlockBaseFluid масла/химия) — BlockFluidBaseGT (НЕ BlockBase),
-		// несут собственный Material (water/lava/gas/материал). Без этой ветки getMaterial возвращал fallback (rock) →
-		// isLiquid()=false → декор-guard'ы worldgen (rocks/lily/stone-layers `!isLiquid()`) садили декор на воду.
-		if (aBlock instanceof gregapi.block.fluid.BlockFluidBaseGT) return ((gregapi.block.fluid.BlockFluidBaseGT)aBlock).getMaterial();
-		// РЕПОРТ ИГРОКА («батарейный бокс/бочку/тигель ломаю киркой, и они выпадают»): у GT6 материал блока —
-		// не украшение, а ДЕЙСТВУЮЩЕЕ правило. Инструменты решают «мой ли это блок» именно по нему:
-		// GT_Tool_Pickaxe.isMinableBlock = `harvestTool==pickaxe ИЛИ материал rock/iron/anvil/glass/ice` (1:1 с
-		// оригиналом :55). Эти три иерархии несут СВОЙ Material, но не наследуют BlockBase (машины — Block,
-		// цветы — FlowerBlock, рельсы — BaseRailBlock), поэтому проваливались в разбор ванильных блоков и
-		// получали fallback `rock` (последняя строка метода) — то есть КИРКА СЧИТАЛА МАШИНУ КАМНЕМ и законно её
-		// добывала, хотя блок объявляет инструментом гаечный ключ. Замер до фикса (проба gt6harvestprobe, блок
-		// machine.stone.wrench): GT6-кирка isCorrectToolForDrops=true, скорость 2.0. В 1.7.10 такого не было —
-		// там `aBlock.getMaterial()` был методом самого блока и возвращал MaterialMachines.
-		if (aBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) return ((gregapi.block.multitileentity.MultiTileEntityBlock)aBlock).getMaterial();
-		if (aBlock instanceof gregapi.block.misc.BlockBaseFlower) return ((gregapi.block.misc.BlockBaseFlower)aBlock).getMaterial();
-		if (aBlock instanceof gregapi.block.misc.BlockBaseRail) return ((gregapi.block.misc.BlockBaseRail)aBlock).getMaterial();
+		// ОТБОР ПО КОНТРАКТУ, не по перечислению иерархий. Прежде здесь стояли пять instanceof
+		// (BlockBase, BlockFluidBaseGT, MultiTileEntityBlock, BlockBaseFlower, BlockBaseRail), и носитель,
+		// не попавший в список, молча получал хвост `rock`: так выпал PrefixBlock — ящики отвечали «камень»
+		// вместо wood, руды в песке/гравии/грязи вместо sand/ground, корпуса машин вместо iron (27 блоков,
+		// пойманы набором engine_block_passport.csv против живого 1.7.10). Величину по-прежнему знает сам
+		// блок — центр её только спрашивает, тем же приёмом, что harvestTool/harvestLevel.
+		if (aBlock instanceof gregapi.block.IBlock tGT) {
+			gregapi.block.Material tMaterial = tGT.getMaterial();
+			if (tMaterial != null) return tMaterial;
+		}
+		// (РЕПОРТ ИГРОКА «батарейный бокс/бочку/тигель ломаю киркой, и они выпадают» закрыт этим же контрактом:
+		// машины/цветы/рельсы не наследуют BlockBase — машины Block, цветы FlowerBlock, рельсы BaseRailBlock —
+		// и прежде проваливались в разбор ванильных блоков, получая хвост `rock`, то есть КИРКА СЧИТАЛА МАШИНУ
+		// КАМНЕМ, хотя блок объявляет инструментом гаечный ключ. В 1.7.10 материал был методом самого блока.)
+		// ТОЧНЫЕ ДАННЫЕ ОРИГИНАЛА идут ПЕРЕД обобщениями: ветки ниже (идентичность + neo-теги) выводят материал
+		// по семье и потому неизбежно приблизительны — замер против 1.7.10 давал 51 расхождение на 114 общих
+		// ванильных блоков, почти все схлопнутые в rock (iron 14, circuits 12, glass/plants/wood по 4, piston 3).
+		// Обобщения остаются: они обслуживают расщеплённые семьи и блоки, которых в 1.7.10 не было.
+		VanillaPassport tPassport = vanillaPassport(aBlock);
+		if (tPassport != null) return tPassport.mMaterial();
 		net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
 		if (tState.isAir())                                                                                      return gregapi.block.Material.air;
 		if (aBlock == Blocks.WATER || aBlock == Blocks.BUBBLE_COLUMN)                                            return gregapi.block.Material.water;
