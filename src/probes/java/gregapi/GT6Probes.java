@@ -7905,8 +7905,10 @@ public final class GT6Probes {
 			aPlayer.setHealth(aPlayer.getMaxHealth());
 			O.println("[" + YARD_M + "] условия: PEACEFUL, полдень, спавн мобов и погода выключены, убрано враждебных рядом: " + tKilled);
 		} catch (Throwable e) {O.println("[" + YARD_M + "] не удалось выставить мирные условия: " + e);}
-		// ровная площадка: пол из камня, воздух над ним
-		for (int x = -2; x <= 40; x++) for (int z = -2; z <= 12; z++) {
+		// ровная площадка: пол из камня, воздух над ним.
+		// ⚠ глубина по z обязана покрывать ВСЕ ряды (ряд N стоит на z = N*2): секторы паспорта довели их число
+		// до ~16, то есть до z+32 — прежние 12 оставляли половину рядов стоять в нерасчищенном ландшафте.
+		for (int x = -2; x <= 40; x++) for (int z = -2; z <= 36; z++) {
 			tLevel.setBlock(tO.offset(x, -1, z), Blocks.STONE.defaultBlockState(), 2);
 			for (int y = 0; y <= 5; y++) tLevel.setBlock(tO.offset(x, y, z), Blocks.AIR.defaultBlockState(), 2);
 		}
@@ -7994,6 +7996,14 @@ public final class GT6Probes {
 		for (int i = 0; i < tVanilla.length; i++) tLevel.setBlock(tO.offset(2 + i * 2, 0, tZV), tVanilla[i].defaultBlockState(), 3);
 		gt6ToolYardSign(tLevel, tO.offset(0, 0, tZV), "ВАНИЛЬ (эталон)", "камень/жел.руда", "алмаз.руда/обсидиан");
 		O.println("[" + YARD_M + "] ряд " + tRow + " ВАНИЛЬНЫЕ ЭТАЛОНЫ: камень(0), железная руда(1), алмазная руда(2), обсидиан(3)");
+		tRow++; // ⚠ раньше ряд был последним и счётчик не двигал — следующий сектор вставал ПОВЕРХ него
+
+		// ── СЕКТОР «ПАСПОРТ БЛОКА»: ванильные блоки 1.7.10 ──────────────────────────────────────────────
+		// Что проверяем: в 1.7.10 у ванильного блока были материал и «каким инструментом добывается», и обе
+		// величины удалены из neo по имени. Ожидание НИЖЕ ЗАШИТО ДАННЫМИ ОРИГИНАЛА (набор golden
+		// engine_block_passport.csv) и стенд НЕ спрашивает у порта — иначе площадка проверяла бы саму себя.
+		// Игрок сверяет не число с числом, а надпись на табличке с тем, что реально произошло от удара.
+		tRow = gt6ToolYardPassportRows(tLevel, aPlayer, tO, tRow, O);
 
 		// ── ИНСТРУМЕНТЫ В ИНВЕНТАРЬ: по каждому типу слабый и сильный ────────────────────────────────────
 		// Тир GT6-инструмента задаёт МАТЕРИАЛ (getHarvestLevel = baseQuality + material.mToolQuality). Берём один
@@ -8013,7 +8023,9 @@ public final class GT6Probes {
 			+ ", сильный=" + (tStrong == null ? "?" : tStrong.mNameInternal + "(тир " + tStrong.mToolQuality + ")"));
 		for (String tType : new String[]{gregapi.data.CS.TOOL_pickaxe, gregapi.data.CS.TOOL_wrench, gregapi.data.CS.TOOL_crowbar,
 			gregapi.data.CS.TOOL_cutter, gregapi.data.CS.TOOL_axe, gregapi.data.CS.TOOL_shovel, gregapi.data.CS.TOOL_shears,
-			gregapi.data.CS.TOOL_saw, gregapi.data.CS.TOOL_hammer, gregapi.data.CS.TOOL_scoop}) {
+			gregapi.data.CS.TOOL_saw, gregapi.data.CS.TOOL_hammer, gregapi.data.CS.TOOL_scoop,
+			gregapi.data.CS.TOOL_hoe, // нужен для НЕГАТИВНОГО контроля: в 1.7.10 класс «мотыга» не назначен ни одному ванильному блоку
+			gregapi.data.CS.TOOL_screwdriver}) { // отвёртка: на ней ярче всего видно починенное — рельсы (457 вердиктов)
 			try {
 				for (gregapi.code.ItemStackContainer tC : gregapi.data.CS.ToolsGT.list(tType)) {
 					net.minecraft.world.item.ItemStack tSample = tC.toStack();
@@ -8048,7 +8060,118 @@ public final class GT6Probes {
 		O.println("[" + YARD_M + "] выдано инструментов: " + tGiven + " (слабые и сильные пары + ванильные кирки), режим переключён в ВЫЖИВАНИЕ");
 		O.println("[" + YARD_M + "] КАК ПРОВЕРЯТЬ: в каждом ряду левый блок — низкий тир, правый — высокий. Слабым инструментом");
 		O.println("[" + YARD_M + "]   высокий тир не должен добываться (или ломаться без дропа), сильным — должен. Чужим типом — ничто.");
+		O.println("[" + YARD_M + "] РЯДЫ «КИРКА/ЛОПАТА/ТОПОР» — то, что чинилось в этот заход. На табличке написано, чем блок");
+		O.println("[" + YARD_M + "]   добывался в СТАРОЙ версии. Бейте тем инструментом, что на табличке: блок должен сломаться");
+		O.println("[" + YARD_M + "]   и ВЫПАСТЬ предметом. Тем же местом проверьте наоборот: киркой по земле и лопатой по камню —");
+		O.println("[" + YARD_M + "]   должно быть заметно медленнее и без выпадения предмета.");
+		O.println("[" + YARD_M + "] РЯД «МОТЫГА-КОНТРОЛЬ» — обратная проверка: мотыга НЕ должна вести себя как «свой» инструмент");
+		O.println("[" + YARD_M + "]   для листвы, сена и шерсти. Если мотыга их берёт быстро и с дропом — правило взято из новой");
+		O.println("[" + YARD_M + "]   версии вместо старой, это дефект.");
+		O.println("[" + YARD_M + "] РЯДЫ «ЯЩИКИ/РУДА В ПЕСКЕ/РУДА В ГРАВИИ» — блоки GT6, которые раньше считались камнем:");
+		O.println("[" + YARD_M + "]   ящик должен браться ТОПОРОМ, руда в песке и гравии — ЛОПАТОЙ.");
+		O.println("[" + YARD_M + "] Отвёртка в инвентаре — для рельсов: раньше она их не снимала.");
 		O.println("========== [" + YARD_M + "] ПОЛИГОН ГОТОВ ==========");
+	}
+
+	/**
+	 * СЕКТОР ЖИВОЙ ПРИЁМКИ «ПАСПОРТ БЛОКА» (закрытый класс: материал + «чем добывается»).
+	 *
+	 * <p>Механика этого класса уже судится машиной ({@code engine_block_toolmatrix.csv}, 7638 пар, floor 100).
+	 * Здесь проверяется то, чего машина не видит: реальный удар игрока по блоку в мире — ломается ли, падает ли
+	 * предмет, и совпадает ли это с тем, как вёл себя оригинал.</p>
+	 *
+	 * <p><b>Изоляция судьи.</b> Ожидание в таблицах ниже — ДАННЫЕ 1.7.10, выписанные из golden-набора, а не
+	 * ответ порта. Стенд ничего не спрашивает у {@code WD}: иначе он подтверждал бы сам себя.</p>
+	 *
+	 * <p><b>Позитивный и негативный контроль.</b> В каждом ряду стоят блоки, которые ДОЛЖНЫ браться этим типом,
+	 * и рядом — те, что не должны. Отдельный ряд «мотыга» — контроль на класс, которого в 1.7.10 не было ни у
+	 * одного ванильного блока: если листва/сено начнут отзываться на мотыгу, значит порт взял правило из
+	 * neo-тегов ({@code MINEABLE_WITH_HOE}) вместо оригинала.</p>
+	 */
+	private static int gt6ToolYardPassportRows(ServerLevel aLevel, ServerPlayer aPlayer, BlockPos aO, int aRow, java.io.PrintStream O) {
+		// {блок, чем добывается по 1.7.10, требуемый тир по 1.7.10}
+		Object[][] tPick = {
+			  {Blocks.STONE,          "кирка", 0}, {Blocks.COBBLESTONE, "кирка", 0}, {Blocks.COAL_ORE,   "кирка", 0}
+			, {Blocks.IRON_ORE,       "кирка", 1}, {Blocks.LAPIS_ORE,   "кирка", 1}, {Blocks.DIAMOND_ORE,"кирка", 2}
+			, {Blocks.EMERALD_ORE,    "кирка", 2}, {Blocks.OBSIDIAN,    "кирка", 3}, {Blocks.ICE,        "кирка", 0}
+			, {Blocks.RAIL,           "кирка", 0}, {Blocks.DETECTOR_RAIL,"кирка",0}, {Blocks.TNT,        "кирка", 0}
+		};
+		Object[][] tShovel = {
+			  {Blocks.DIRT,   "лопата", 0}, {Blocks.SAND,      "лопата", 0}, {Blocks.GRAVEL,  "лопата", 0}
+			, {Blocks.CLAY,   "лопата", 0}, {Blocks.FARMLAND,  "лопата", 0}, {Blocks.SOUL_SAND,"лопата",0}
+			, {Blocks.MYCELIUM,"лопата",0}, {Blocks.SNOW_BLOCK,"лопата", 0}
+		};
+		Object[][] tAxe = {
+			  {Blocks.OAK_PLANKS, "топор", 0}, {Blocks.OAK_LOG,  "топор", 0}, {Blocks.BOOKSHELF, "топор", 0}
+			, {Blocks.CHEST,      "топор", 0}, {Blocks.PUMPKIN,  "топор", 0}, {Blocks.JACK_O_LANTERN,"топор",0}
+			// три последних — правка САМОГО GT6 (оригинал GT_API.java:204-209), в порту она была потеряна
+			, {Blocks.RED_BED,    "топор", 0}, {Blocks.SPONGE,   "топор", 0}, {Blocks.HAY_BLOCK, "топор", 0}
+		};
+		aRow = gt6ToolYardPassportRow(aLevel, aPlayer, aO, aRow, O, "КИРКА",  "камень, руды,", "рельсы, лёд, TNT", tPick);
+		aRow = gt6ToolYardPassportRow(aLevel, aPlayer, aO, aRow, O, "ЛОПАТА", "земля, песок,", "гравий, глина", tShovel);
+		aRow = gt6ToolYardPassportRow(aLevel, aPlayer, aO, aRow, O, "ТОПОР",  "дерево, сундук,", "кровать, губка, сено", tAxe);
+
+		// НЕГАТИВНЫЙ КОНТРОЛЬ: в 1.7.10 класс «мотыга» не был назначен НИ ОДНОМУ ванильному блоку.
+		Object[][] tNoTool = {{Blocks.OAK_LEAVES, "НИЧЕМ", -1}, {Blocks.HAY_BLOCK, "топор", 0}, {Blocks.WHITE_WOOL, "НИЧЕМ", -1}};
+		aRow = gt6ToolYardPassportRow(aLevel, aPlayer, aO, aRow, O, "МОТЫГА-КОНТРОЛЬ", "мотыга НЕ должна", "брать эти блоки", tNoTool);
+
+		// ── СЕКТОР PrefixBlock: ящики, руды в породах, корпуса машин ────────────────────────────────────
+		// Эти 27 блоков отвечали «камень» вместо своего материала — центр отбирал носителей перечислением
+		// иерархий и PrefixBlock в список не попал. Ожидание: ящик — дерево (топор), руда в песке/гравии —
+		// сыпучее (лопата), корпус машины — металл (кирка/ключ).
+		aRow = gt6ToolYardPrefixRow(aLevel, aPlayer, aO, aRow, O, "crate",       "ЯЩИКИ GT6",       "должны браться", "ТОПОРОМ (дерево)");
+		aRow = gt6ToolYardPrefixRow(aLevel, aPlayer, aO, aRow, O, "ore.normal.sand", "РУДА В ПЕСКЕ", "должна браться", "ЛОПАТОЙ (песок)");
+		aRow = gt6ToolYardPrefixRow(aLevel, aPlayer, aO, aRow, O, "ore.normal.gravel","РУДА В ГРАВИИ","должна браться", "ЛОПАТОЙ (гравий)");
+		return aRow;
+	}
+
+	/** Один ряд ванильных блоков с общим ожиданием; ставится обычным {@code setBlock} — ваниль, TileEntity не нужен. */
+	private static int gt6ToolYardPassportRow(ServerLevel aLevel, ServerPlayer aPlayer, BlockPos aO, int aRow, java.io.PrintStream O,
+			String aTitle, String aLine2, String aLine3, Object[][] aBlocks) {
+		int tZ = aRow * 2, tCol = 2;
+		StringBuilder tList = new StringBuilder();
+		for (Object[] tEntry : aBlocks) {
+			net.minecraft.world.level.block.Block tBlock = (net.minecraft.world.level.block.Block) tEntry[0];
+			try {
+				aLevel.setBlock(aO.offset(tCol, 0, tZ), tBlock.defaultBlockState(), 3);
+				tList.append(tList.length() == 0 ? "" : ", ")
+					.append(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock).getPath())
+					.append(" → ").append(tEntry[1]).append(" тир ").append(tEntry[2]).append(" @x+").append(tCol);
+				tCol += 2;
+			} catch (Throwable e) {O.println("[" + YARD_M + "] не встал блок " + tBlock + ": " + e);}
+		}
+		gt6ToolYardSign(aLevel, aO.offset(0, 0, tZ), aTitle, aLine2, aLine3);
+		O.println("[" + YARD_M + "] ряд " + aRow + " «" + aTitle + "» (ожидание по ОРИГИНАЛУ 1.7.10): " + tList);
+		return aRow + 1;
+	}
+
+	/** Ряд prefix-блоков, отобранных по подстроке реестрового имени; материал берётся первый генерируемый. */
+	private static int gt6ToolYardPrefixRow(ServerLevel aLevel, ServerPlayer aPlayer, BlockPos aO, int aRow, java.io.PrintStream O,
+			String aNamePart, String aTitle, String aLine2, String aLine3) {
+		int tZ = aRow * 2, tCol = 2;
+		StringBuilder tList = new StringBuilder();
+		try {
+			for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+				if (!(tBlock instanceof gregapi.block.prefixblock.PrefixBlock tPrefix)) continue;
+				net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+				if (tKey == null || !tKey.getPath().contains(aNamePart)) continue;
+				for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+					if (tMat == null) continue;
+					try {if (!tPrefix.mPrefix.isGeneratingItem(tMat)) continue;} catch (Throwable e) {continue;}
+					if (gregapi.probe.GT6ProbeStand.place(aLevel, aPlayer, aO.offset(tCol, -1, tZ), net.minecraft.core.Direction.UP,
+						gregapi.util.ST.make(tBlock, 1, tMat.mID), BlockEntity.class, YARD_M, tKey.getPath()) != null) {
+						tList.append(tList.length() == 0 ? "" : ", ").append(tKey.getPath()).append('/').append(tMat.mNameInternal).append(" @x+").append(tCol);
+						tCol += 2;
+					}
+					break; // одного материала на блок довольно: проверяется материал БЛОКА, не перебор руд
+				}
+				if (tCol > 16) break; // ряд заполнен
+			}
+		} catch (Throwable e) {O.println("[" + YARD_M + "] ряд «" + aTitle + "» не собрался: " + e);}
+		if (tList.length() == 0) {O.println("[" + YARD_M + "] ряд «" + aTitle + "»: подходящих блоков не нашлось — проверять нечем"); return aRow;}
+		gt6ToolYardSign(aLevel, aO.offset(0, 0, tZ), aTitle, aLine2, aLine3);
+		O.println("[" + YARD_M + "] ряд " + aRow + " «" + aTitle + "» (ожидание по ОРИГИНАЛУ 1.7.10): " + tList);
+		return aRow + 1;
 	}
 
 	/** Подпись ряда: обычная табличка — игроку должно быть понятно в мире, без чтения лога. */
