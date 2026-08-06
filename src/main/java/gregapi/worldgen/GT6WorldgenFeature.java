@@ -427,6 +427,20 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	public static void reconstructMTE(net.minecraft.world.level.Level aLevel, gregapi.tileentity.base.TileEntityLoaderStub aStub) {
 		net.minecraft.nbt.CompoundTag tNBT = aStub.mLoadedNBT;
 		if (tNBT == null) return;
+		// BUG-057-хвост (решение игрока 2026-08-06): самоочистка «шелухи» старых миров. Прежний дефект сохранения
+		// (до фикса TileEntityLoaderStub.saveAdditional) писал на диск только id/x/y/z — личность блока стёрта
+		// НАВСЕГДА. Точный признак: NBT прочитан, но ключей NBT_MTE_REG/NBT_MTE_ID в нём НЕТ ВООБЩЕ (законный стаб
+		// несёт оба ключа даже при значении 0). По философии «не выдумывать состояние» реконструировать нечего —
+		// блок-призрак и стаб снимаются (НЕ выводится дефолтный MTE: пулы вроде aUtilStone неоднозначны).
+		if (!tNBT.contains(gregapi.data.CS.NBT_MTE_REG) || !tNBT.contains(gregapi.data.CS.NBT_MTE_ID)) {
+			net.minecraft.core.BlockPos tHuskPos = aStub.getBlockPos();
+			if (aLevel.getBlockState(tHuskPos).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)
+				aLevel.setBlock(tHuskPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			else aLevel.removeBlockEntity(tHuskPos);
+			long tN = sHusksCleaned.incrementAndGet();
+			if (tN <= 20 || tN % 500 == 0) gregapi.data.CS.OUT.println("[GT6-WG] шелуха BUG-057 вычищена @" + tHuskPos.toShortString() + ", всего=" + tN);
+			return;
+		}
 		short tReg = tNBT.getShort(gregapi.data.CS.NBT_MTE_REG).orElse((short)0);
 		short tID  = tNBT.getShort(gregapi.data.CS.NBT_MTE_ID ).orElse((short)0);
 		gregapi.block.multitileentity.MultiTileEntityRegistry tRegistry = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry(tReg);
@@ -450,4 +464,5 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		aLevel.setBlockEntity(tContainer.mTileEntity); // pos-канал → реальная pos → крепит на своё место, заменяя стаб
 	}
 	private static final java.util.concurrent.atomic.AtomicLong sOrphansCleaned = new java.util.concurrent.atomic.AtomicLong();
+	private static final java.util.concurrent.atomic.AtomicLong sHusksCleaned = new java.util.concurrent.atomic.AtomicLong();
 }

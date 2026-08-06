@@ -234,6 +234,12 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6mapyard.flag")) gt6MapYardTick(aEvent.getServer());
 	// [GT6-YPROBE] BUG-089: судья класса «жёсткие границы мира 0..255 вместо центра F6-Y-scale» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6yprobe.flag")) gt6YProbeTick(aEvent.getServer());
+	// [GT6-POTIONPROBE] BUG-090: судья GT6-зельев (PotionsGT → MobEffectsGT, купание в нефти) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6potionprobe.flag")) gt6PotionProbeTick(aEvent.getServer());
+	// [GT6-WOODPROBE] BUG-091: судья новых пород дерева в словаре (пила по бревну через диспетчер) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6woodprobe.flag")) gt6WoodProbeTick(aEvent.getServer());
+	// [GT6-HUSKPROBE] BUG-057-хвост: судья самоочистки шелухи (стаб без identity → air) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6huskprobe.flag")) gt6HuskProbeTick(aEvent.getServer());
 	// [GT6-TODOPROBE] судья правок захода PORT-TODO 43->28 (канал иконки, чёрный песок) + площадка для игрока
 		if (gregapi.data.CS.probeFlag("gt6todoprobe.flag")) gt6TodoProbeTick(aEvent.getServer());
 	// [GT6-FLUIDHEIGHT] BUG-086: измеритель высоты растёкшейся жидкости — порт против формулы оригинала 1.7.10
@@ -9389,6 +9395,271 @@ public final class GT6Probes {
 			sYPSeq.judge("§3 ХОЛОДНЫЙ: камень в соседней трубе висит", tLevel.getBlockState(sYPColdTube).getBlock() == net.minecraft.world.level.block.Blocks.STONE, "stone", String.valueOf(tLevel.getBlockState(sYPColdTube)));
 		} else sYPSeq.judge("§3 ГРАВИТАЦИЯ: представитель с mGravity найден в реестре", false, "PrefixBlock.mGravity", "нет");
 		sYPSeq.done();
+	}
+
+	// ==========================================================================================================
+	// [GT6-WOODPROBE] BUG-091 — судья новых ванильных пород в словаре древесины. Судит РЕАЛЬНЫМ путём
+	// движка (GT6CraftingDispatcher.matches/assemble, приём gt6craftprobe/M-52): пила + бревно каждой новой
+	// породы обязаны дать доски ЭТОЙ породы; позитив — дуб (старый словарь), негатив — камень (молчит).
+	// Раскладка GT-рецепта заранее не известна — перебираются 4 варианта 2-слотовой сетки. Снять при уборке фазы.
+	// ==========================================================================================================
+	private static boolean sWoodProbeDone = F;
+	public static void gt6WoodProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sWoodProbeDone || aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sWoodProbeDone = T;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		int tPass = 0, tFail = 0;
+		var tDispatcher = new gregapi.recipes.GT6CraftingDispatcher();
+		O.println("========== [GT6-WOODPROBE] BUG-091: новые породы в словаре древесины ==========");
+		try {
+			ItemStack tSaw = ItemStack.EMPTY;
+			for (ItemStack tCand : gregapi.oredict.OreDictionary.getOres("craftingToolSaw")) if (gregapi.util.ST.valid(tCand)) {tSaw = tCand; break;}
+			if (tSaw.isEmpty()) {O.println("[GT6-WOODPROBE] пила в craftingToolSaw не найдена — FAIL"); tFail++;}
+			Object[][] tCases = {
+				{"§ВИШНЯ бревно",   net.minecraft.world.level.block.Blocks.CHERRY_LOG,    net.minecraft.world.level.block.Blocks.CHERRY_PLANKS,   T},
+				{"§МАНГРЫ бревно",  net.minecraft.world.level.block.Blocks.MANGROVE_LOG,  net.minecraft.world.level.block.Blocks.MANGROVE_PLANKS, T},
+				{"§БАМБУК блок",    net.minecraft.world.level.block.Blocks.BAMBOO_BLOCK,  net.minecraft.world.level.block.Blocks.BAMBOO_PLANKS,   T},
+				{"§БАГРОВЫЙ стем",  net.minecraft.world.level.block.Blocks.CRIMSON_STEM,  net.minecraft.world.level.block.Blocks.CRIMSON_PLANKS,  T},
+				{"§ИСКАЖЁН. стем",  net.minecraft.world.level.block.Blocks.WARPED_STEM,   net.minecraft.world.level.block.Blocks.WARPED_PLANKS,   T},
+				{"§ПОЗИТИВ дуб",    net.minecraft.world.level.block.Blocks.OAK_LOG,       net.minecraft.world.level.block.Blocks.OAK_PLANKS,      T},
+				{"§НЕГАТИВ камень", net.minecraft.world.level.block.Blocks.STONE,         null,                                                    F},
+			};
+			for (Object[] tCase : tCases) {
+				ItemStack tLog = new ItemStack(((net.minecraft.world.level.block.Block)tCase[1]).asItem());
+				ItemStack tOut = gt6WoodProbeSaw(tDispatcher, tLevel, tSaw, tLog);
+				boolean tExpect = (Boolean)tCase[3];
+				boolean tOk = tExpect
+					? (!tOut.isEmpty() && tOut.getItem() == ((net.minecraft.world.level.block.Block)tCase[2]).asItem())
+					: tOut.isEmpty();
+				O.println("[GT6-WOODPROBE] " + tCase[0] + " + пила: выход=" + (tOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tOut) + " x" + tOut.getCount()) + (tOk ? " => PASS" : " => FAIL"));
+				if (tOk) tPass++; else tFail++;
+			}
+			// два канала PlankEntry точными раскладками (Loader_Recipes_Woods): ВЕРТИКАЛЬ "s"/"P" (:244) → палки;
+			// ГОРИЗОНТАЛЬ "vP" (:270) → 2 слэба. Прежний судья брал первый успешный из перебора и путал каналы.
+			ItemStack tCherryPlankStack = new ItemStack(net.minecraft.world.level.block.Blocks.CHERRY_PLANKS.asItem());
+			var tGridStick = net.minecraft.world.item.crafting.CraftingInput.of(1, 2, java.util.List.of(gregapi.util.ST.copy(tSaw), gregapi.util.ST.copy(tCherryPlankStack)));
+			ItemStack tPlankStick = tDispatcher.matches(tGridStick, tLevel) ? tDispatcher.assemble(tGridStick) : ItemStack.EMPTY;
+			boolean tStickOk = !tPlankStick.isEmpty() && gregapi.util.ST.regName(tPlankStick).contains("stick");
+			O.println("[GT6-WOODPROBE] §ПАЛКИ вишнёвая доска, вертикаль \"s\"/\"P\": выход=" + (tPlankStick.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tPlankStick) + " x" + tPlankStick.getCount()) + (tStickOk ? " => PASS" : " => FAIL"));
+			if (tStickOk) tPass++; else tFail++;
+			var tGridSlab = net.minecraft.world.item.crafting.CraftingInput.of(2, 1, java.util.List.of(gregapi.util.ST.copy(tSaw), gregapi.util.ST.copy(tCherryPlankStack)));
+			ItemStack tPlankSlab = tDispatcher.matches(tGridSlab, tLevel) ? tDispatcher.assemble(tGridSlab) : ItemStack.EMPTY;
+			boolean tSlabOk = !tPlankSlab.isEmpty() && tPlankSlab.getItem() == net.minecraft.world.level.block.Blocks.CHERRY_SLAB.asItem() && tPlankSlab.getCount() == 2;
+			O.println("[GT6-WOODPROBE] §СЛЭБЫ вишнёвая доска, горизонталь \"vP\": выход=" + (tPlankSlab.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tPlankSlab) + " x" + tPlankSlab.getCount()) + (tSlabOk ? " => PASS" : " => FAIL"));
+			if (tSlabOk) tPass++; else tFail++;
+			// центр словаря заполнен (WOODS/PLANKS) — все 5 пород
+			boolean tDict = gregapi.wooddict.WoodDictionary.WOODS.get(net.minecraft.world.level.block.Blocks.CHERRY_LOG, 0) != null
+				&& gregapi.wooddict.WoodDictionary.WOODS.get(net.minecraft.world.level.block.Blocks.MANGROVE_LOG, 0) != null
+				&& gregapi.wooddict.WoodDictionary.WOODS.get(net.minecraft.world.level.block.Blocks.BAMBOO_BLOCK, 0) != null
+				&& gregapi.wooddict.WoodDictionary.WOODS.get(net.minecraft.world.level.block.Blocks.CRIMSON_STEM, 0) != null
+				&& gregapi.wooddict.WoodDictionary.WOODS.get(net.minecraft.world.level.block.Blocks.WARPED_STEM, 0) != null;
+			O.println("[GT6-WOODPROBE] §ЦЕНТР WoodDictionary.WOODS содержит все 5 новых пород: " + (tDict ? "=> PASS" : "=> FAIL"));
+			if (tDict) tPass++; else tFail++;
+		} catch(Throwable e) {e.printStackTrace(O); tFail++;}
+		O.println("========== [GT6-WOODPROBE] DONE (pass=" + tPass + " fail=" + tFail + ") ==========");
+	}
+
+	/** Перебор 4 раскладок 2-слотовой сетки (форма GT-рецепта — деталь; судится функция «пила+бревно=доски»). */
+	private static ItemStack gt6WoodProbeSaw(gregapi.recipes.GT6CraftingDispatcher aDispatcher, ServerLevel aLevel, ItemStack aSaw, ItemStack aLog) {
+		int[][] tShapes = {{2,1},{1,2}};
+		for (int[] tWH : tShapes) for (boolean tSawFirst : new boolean[]{true, false}) {
+			var tGrid = net.minecraft.world.item.crafting.CraftingInput.of(tWH[0], tWH[1], java.util.List.of(
+				gregapi.util.ST.copy(tSawFirst ? aSaw : aLog), gregapi.util.ST.copy(tSawFirst ? aLog : aSaw)));
+			if (aDispatcher.matches(tGrid, aLevel)) {
+				ItemStack tOut = aDispatcher.assemble(tGrid);
+				if (!tOut.isEmpty()) return tOut;
+			}
+		}
+		return ItemStack.EMPTY;
+	}
+
+	// ==========================================================================================================
+	// [GT6-HUSKPROBE] BUG-057-хвост — судья самоочистки «шелухи» старых миров. Шелуха = TileEntityLoaderStub,
+	// чей NBT прочитан, но ключей gt.mte.reg/gt.mte.id в нём НЕТ (прежний дефект сохранения стирал личность).
+	// Стенд строит на живом сервере: §ПОЗИТИВ — стаб с ПОЛНЫМ NBT реального MTE реконструируется в живой MTE;
+	// §ШЕЛУХА — стаб с пустым NBT вычищается в air вместе с блоком; §ХОЛОДНЫЙ — камень не тронут.
+	// Путь движка тот же, что при загрузке чанка: GT6WorldgenFeature.reconstructChunkMTEs. Снять при уборке фазы.
+	// ==========================================================================================================
+	private static boolean sHuskProbeDone = F;
+	public static void gt6HuskProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sHuskProbeDone || aServer.getPlayerList().getPlayers().isEmpty()) return;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		sHuskProbeDone = T;
+		int tPass = 0, tFail = 0;
+		O.println("========== [GT6-HUSKPROBE] BUG-057-хвост: самоочистка шелухи ==========");
+		try {
+			var tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			if (tReg == null) {O.println("[GT6-HUSKPROBE] реестр gt.multitileentity не найден — FAIL"); tFail++;}
+			BlockPos tBase = tPlayer.blockPosition().offset(4, 2, -4);
+			BlockPos tPosLive = tBase, tPosHusk = tBase.offset(2, 0, 0), tPosCold = tBase.offset(4, 0, 0);
+			// живой MTE — первый реконструируемый id реестра
+			gregapi.block.multitileentity.MultiTileEntityContainer tContainer = null;
+			if (tReg != null) for (var tRegn : tReg.mRegistrations) {
+				tContainer = tReg.getNewTileEntityContainer(tLevel, tPosLive.getX(), tPosLive.getY(), tPosLive.getZ(), tRegn.mID, null);
+				if (tContainer != null && tContainer.mTileEntity != null) break;
+			}
+			if (tContainer == null || tContainer.mTileEntity == null) {O.println("[GT6-HUSKPROBE] живой MTE не собрался — FAIL"); tFail++;}
+			else {
+				gregapi.util.WD.set(tLevel, tPosLive.getX(), tPosLive.getY(), tPosLive.getZ(), tContainer.mBlock, tContainer.mBlockMetaData, 3, F);
+				tLevel.setBlockEntity(tContainer.mTileEntity);
+				// полный NBT живого MTE (несёт gt.mte.reg/gt.mte.id) — для позитивной реконструкции
+				net.minecraft.nbt.CompoundTag tFullNBT = tContainer.mTileEntity.saveWithFullMetadata(tLevel.registryAccess());
+				boolean tHasKeys = tFullNBT.contains(gregapi.data.CS.NBT_MTE_REG) && tFullNBT.contains(gregapi.data.CS.NBT_MTE_ID);
+				O.println("[GT6-HUSKPROBE] предусловие: NBT живого MTE несёт reg/id: " + (tHasKeys ? "=> PASS" : "=> FAIL (ключи " + tFullNBT.keySet() + ")"));
+				if (tHasKeys) tPass++; else tFail++;
+				// §ПОЗИТИВ: заменяем живой BE стабом с ПОЛНЫМ NBT — реконструкция обязана вернуть живой MTE
+				var tStubLive = new gregapi.tileentity.base.TileEntityLoaderStub(tPosLive, tLevel.getBlockState(tPosLive));
+				tStubLive.mLoadedNBT = tFullNBT.copy();
+				tLevel.setBlockEntity(tStubLive);
+				// §ШЕЛУХА: тот же блок, стаб с NBT БЕЗ identity (как писал прежний дефект: только id/x/y/z)
+				gregapi.util.WD.set(tLevel, tPosHusk.getX(), tPosHusk.getY(), tPosHusk.getZ(), tContainer.mBlock, tContainer.mBlockMetaData, 3, F);
+				var tStubHusk = new gregapi.tileentity.base.TileEntityLoaderStub(tPosHusk, tLevel.getBlockState(tPosHusk));
+				tStubHusk.mLoadedNBT = gregapi.util.UT.NBT.make();
+				tLevel.setBlockEntity(tStubHusk);
+				// §ХОЛОДНЫЙ: камень
+				tLevel.setBlock(tPosCold, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				// путь движка: реконструкция чанков обеих позиций
+				gregapi.worldgen.GT6WorldgenFeature.reconstructChunkMTEs(tLevel, tPosLive.getX() >> 4, tPosLive.getZ() >> 4);
+				gregapi.worldgen.GT6WorldgenFeature.reconstructChunkMTEs(tLevel, tPosHusk.getX() >> 4, tPosHusk.getZ() >> 4);
+				// вердикты
+				var tBELive = tLevel.getBlockEntity(tPosLive);
+				boolean tLiveOk = tBELive != null && !(tBELive instanceof gregapi.tileentity.base.TileEntityLoaderStub)
+					&& tLevel.getBlockState(tPosLive).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock;
+				O.println("[GT6-HUSKPROBE] §ПОЗИТИВ стаб с полным NBT реконструирован в живой MTE: BE=" + (tBELive == null ? "null" : tBELive.getClass().getSimpleName()) + (tLiveOk ? " => PASS" : " => FAIL"));
+				if (tLiveOk) tPass++; else tFail++;
+				boolean tHuskOk = gregapi.util.WD.air(tLevel, tPosHusk.getX(), tPosHusk.getY(), tPosHusk.getZ()) && tLevel.getBlockEntity(tPosHusk) == null;
+				O.println("[GT6-HUSKPROBE] §ШЕЛУХА стаб без identity вычищен в air: блок=" + tLevel.getBlockState(tPosHusk).getBlock() + ", BE=" + tLevel.getBlockEntity(tPosHusk) + (tHuskOk ? " => PASS" : " => FAIL"));
+				if (tHuskOk) tPass++; else tFail++;
+				boolean tColdOk = tLevel.getBlockState(tPosCold).getBlock() == net.minecraft.world.level.block.Blocks.STONE;
+				O.println("[GT6-HUSKPROBE] §ХОЛОДНЫЙ камень не тронут: " + (tColdOk ? "=> PASS" : "=> FAIL"));
+				if (tColdOk) tPass++; else tFail++;
+			}
+		} catch(Throwable e) {e.printStackTrace(O); tFail++;}
+		O.println("========== [GT6-HUSKPROBE] DONE (pass=" + tPass + " fail=" + tFail + ") ==========");
+	}
+
+	// ==========================================================================================================
+	// [GT6-POTIONPROBE] BUG-090 — судья GT6-зельев-эффектов (PotionsGT → gregapi.potion.MobEffectsGT).
+	// Судится СЛЕДСТВИЕ у конечного объекта, реальным путём движка:
+	//   §ID — postInit проставил id (24/25/26/27/31), фолбэки RADIATION/DEHYDRATION остались отрицательными;
+	//   §ПОЗИТИВ — ванильный яд через ТОТ ЖЕ int-канал applyPotion(19) наложен (контроль судьи);
+	//   §СИМПТОМ — корова, стоящая в нефти (BlocksGT.OilMedium), получает flammable(amp1)+slippery+blindness
+	//     реальным путём entityInside (голова коровы ВЫШЕ блока нефти — breathing-плечо не мешает);
+	//   §ХОЛОДНЫЙ — корова на камне эффектов не имеет;
+	//   §STICKY — атрибут скорости упал вдвое (величина, не наличие); §INSANITY — эффект наложен через -7;
+	//   §FLAMMABLE-УРОН — одинаковый удар огнём: нефтяная корова теряет ~×2 здоровья от контрольной
+	//     (обработчик LivingIncomingDamageEvent, 1:1 IE EventHandler.java:390-395).
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static final String POT_M = "GT6-POTIONPROBE";
+	private static int sPotTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sPotSeq;
+	private static net.minecraft.world.entity.Mob sPotCowOil, sPotCowCold, sPotCowVanilla, sPotCowAux;
+	private static float sPotHpOil, sPotHpCold;
+
+	public static void gt6PotionProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sPotTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sPotSeq == null) sPotSeq = new gregapi.probe.GT6ProbeStand.Seq(POT_M)
+			.at(100, () -> gt6PotionProbeBuild(tPlayer))
+			.at(140, () -> gt6PotionProbeApply(tPlayer))
+			.at(220, () -> gt6PotionProbeJudgeEffects(tPlayer))
+			.at(230, () -> gt6PotionProbeBurn(tPlayer))
+			.at(250, () -> gt6PotionProbeJudgeBurn(tPlayer));
+		sPotSeq.tick(sPotTick);
+	}
+
+	private static net.minecraft.world.entity.Mob gt6PotionProbeCow(ServerLevel aLevel, BlockPos aPos) {
+		aLevel.setBlock(aPos.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+		aLevel.setBlock(aPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		aLevel.setBlock(aPos.above(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		net.minecraft.world.entity.Mob tCow = net.minecraft.world.entity.EntityType.COW.spawn(aLevel, aPos, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+		if (tCow != null) tCow.setNoAi(true);
+		return tCow;
+	}
+
+	private static void gt6PotionProbeBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tBase = aPlayer.blockPosition().offset(8, 0, 8);
+		// нефтяная клетка: каменная чаша 3×3, в центре нефть-источник, корова стоит В блоке нефти
+		BlockPos tOilPos = tBase;
+		for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+			tLevel.setBlock(tOilPos.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			tLevel.setBlock(tOilPos.offset(dx, 0, dz), (dx == 0 && dz == 0) ? net.minecraft.world.level.block.Blocks.AIR.defaultBlockState() : net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			tLevel.setBlock(tOilPos.offset(dx, 1, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		}
+		gregapi.block.fluid.BlockBaseFluid tOil = gregapi.data.CS.BlocksGT.OilMedium;
+		if (tOil == null) {O.println("[" + POT_M + "] BlocksGT.OilMedium == null — стенд не собрать"); return;}
+		sPotCowOil = net.minecraft.world.entity.EntityType.COW.spawn(tLevel, tOilPos, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+		if (sPotCowOil != null) sPotCowOil.setNoAi(true);
+		gregapi.util.WD.set(tLevel, tOilPos.getX(), tOilPos.getY(), tOilPos.getZ(), tOil, 0, 3, F);
+		sPotCowCold    = gt6PotionProbeCow(tLevel, tBase.offset(3, 0, 0));
+		sPotCowVanilla = gt6PotionProbeCow(tLevel, tBase.offset(6, 0, 0));
+		sPotCowAux     = gt6PotionProbeCow(tLevel, tBase.offset(9, 0, 0));
+		O.println("[" + POT_M + "] клетки построены: нефть " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tOil)
+			+ ", коровы oil/cold/vanilla/aux=" + (sPotCowOil != null) + "/" + (sPotCowCold != null) + "/" + (sPotCowVanilla != null) + "/" + (sPotCowAux != null));
+	}
+
+	private static void gt6PotionProbeApply(ServerPlayer aPlayer) {
+		// ванильный позитив-контроль ТЕМ ЖЕ int-каналом (19 = poison 1.7.10)
+		if (sPotCowVanilla != null) gregapi.util.UT.Entities.applyPotion(sPotCowVanilla, 19, 300, 0, F);
+		// GT6-эффекты отрицательными id 1.7.10: -11 sticky, -7 insanity (amp1 — как holywater, Loader_Fluids:636)
+		if (sPotCowAux != null) {
+			gregapi.util.UT.Entities.applyPotion(sPotCowAux, -11, 600, 0, F);
+			gregapi.util.UT.Entities.applyPotion(sPotCowAux, -7, 600, 1, F);
+		}
+	}
+
+	private static void gt6PotionProbeJudgeEffects(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + POT_M + "] BUG-090: зелья PotionsGT ==========");
+		sPotSeq.judge("§ID postInit проставил id GT6-эффектов (24/25/26/27/31)",
+			gregapi.data.CS.PotionsGT.ID_FLAMMABLE == 24 && gregapi.data.CS.PotionsGT.ID_SLIPPERY == 25 && gregapi.data.CS.PotionsGT.ID_CONDUCTIVE == 26 && gregapi.data.CS.PotionsGT.ID_STICKY == 27 && gregapi.data.CS.PotionsGT.ID_INSANITY == 31,
+			"24/25/26/27/31", gregapi.data.CS.PotionsGT.ID_FLAMMABLE + "/" + gregapi.data.CS.PotionsGT.ID_SLIPPERY + "/" + gregapi.data.CS.PotionsGT.ID_CONDUCTIVE + "/" + gregapi.data.CS.PotionsGT.ID_STICKY + "/" + gregapi.data.CS.PotionsGT.ID_INSANITY);
+		sPotSeq.judge("§ID фолбэк-каналы НЕ тронуты (RADIATION=-2, DEHYDRATION=-6)",
+			gregapi.data.CS.PotionsGT.ID_RADIATION == -2 && gregapi.data.CS.PotionsGT.ID_DEHYDRATION == -6,
+			"-2/-6", gregapi.data.CS.PotionsGT.ID_RADIATION + "/" + gregapi.data.CS.PotionsGT.ID_DEHYDRATION);
+		if (sPotCowVanilla != null) sPotSeq.judge("§ПОЗИТИВ ванильный яд через int-канал applyPotion(19) наложен",
+			sPotCowVanilla.hasEffect(net.minecraft.world.effect.MobEffects.POISON), "poison активен", "нет эффекта");
+		if (sPotCowOil != null) {
+			net.minecraft.world.effect.MobEffectInstance tFlam = sPotCowOil.getEffect(gregapi.potion.MobEffectsGT.FLAMMABLE);
+			sPotSeq.judge("§СИМПТОМ корова в нефти: flammable наложен купанием (entityInside)", tFlam != null, "активен", "нет");
+			sPotSeq.judge("§СИМПТОМ величина: flammable amp == 1 (Loader_Blocks: addEffectBathing(...,300,1))", tFlam != null && tFlam.getAmplifier() == 1, 1, tFlam == null ? "нет" : tFlam.getAmplifier());
+			sPotSeq.judge("§СИМПТОМ корова в нефти: slippery наложен купанием", sPotCowOil.hasEffect(gregapi.potion.MobEffectsGT.SLIPPERY), "активен", "нет");
+			sPotSeq.judge("§СИМПТОМ корова в нефти: ванильная blindness из той же bathing-цепочки", sPotCowOil.hasEffect(net.minecraft.world.effect.MobEffects.BLINDNESS), "активен", "нет");
+		}
+		if (sPotCowCold != null) sPotSeq.judge("§ХОЛОДНЫЙ корова на камне без эффектов",
+			!sPotCowCold.hasEffect(gregapi.potion.MobEffectsGT.FLAMMABLE) && !sPotCowCold.hasEffect(gregapi.potion.MobEffectsGT.SLIPPERY), "пусто", "эффекты есть");
+		if (sPotCowAux != null && sPotCowCold != null) {
+			double tAux = sPotCowAux.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
+			double tRef = sPotCowCold.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
+			sPotSeq.judge("§STICKY атрибут скорости упал вдвое (−50% × amp+1, op MULTIPLY_TOTAL)", tAux < tRef * 0.6 && tAux > tRef * 0.4, "~" + (tRef * 0.5), tAux);
+			sPotSeq.judge("§INSANITY эффект наложен через applyPotion(-7)", sPotCowAux.hasEffect(gregapi.potion.MobEffectsGT.INSANITY), "активен", "нет");
+		}
+	}
+
+	private static void gt6PotionProbeBurn(ServerPlayer aPlayer) {
+		ServerLevel tLevel = aPlayer.level();
+		if (sPotCowOil == null || sPotCowCold == null) return;
+		sPotHpOil  = sPotCowOil.getHealth();
+		sPotHpCold = sPotCowCold.getHealth();
+		sPotCowOil .hurt(tLevel.damageSources().onFire(), 2.0F);
+		sPotCowCold.hurt(tLevel.damageSources().onFire(), 2.0F);
+	}
+
+	private static void gt6PotionProbeJudgeBurn(ServerPlayer aPlayer) {
+		if (sPotCowOil != null && sPotCowCold != null) {
+			float tLossOil = sPotHpOil - sPotCowOil.getHealth(), tLossCold = sPotHpCold - sPotCowCold.getHealth();
+			sPotSeq.judge("§FLAMMABLE-УРОН контроль: огонь ранит корову без эффекта", tLossCold > 0.5F, "> 0.5", tLossCold);
+			sPotSeq.judge("§FLAMMABLE-УРОН следствие: нефтяная корова теряет ~×2 (amp1 → ×2.0, IE:393)", tLossOil > tLossCold * 1.5F, "> " + (tLossCold * 1.5F), tLossOil);
+		}
+		sPotSeq.done();
 	}
 
 	// ==========================================================================================================

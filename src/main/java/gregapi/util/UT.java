@@ -3179,6 +3179,14 @@ public class UT {
 			, POTID_HUNGER         = 17, POTID_WEAKNESS       = 18, POTID_POISON         = 19, POTID_WITHER         = 20
 			, POTID_ABSORPTION     = 22, POTID_SATURATION     = 23;
 
+		/** BUG-090: привязка НЕванильного id к Holder в ту же карту — механизм 1.7.10 «real IDs are to be set
+		 *  on API postInit» (`CS.java:1690`): PotionsGT.ID_* проставляются в GT_API.onModPostInit2Deferred, id
+		 *  GT6-собственных эффектов (MobEffectsGT) идут этим же путём и резолвятся тем же applyPotion(int).
+		 *  Карта остаётся единственным местом конверсии id→Holder на весь мод. */
+		public static void bindPotionID(int aID, Holder<MobEffect> aPotion) {
+			if (aID >= 0 && aPotion != null) VANILLA_POTION_IDS.put(aID, aPotion);
+		}
+
 		/** id-адресуемый активный эффект: vanilla id → Holder через VANILLA_POTION_IDS, дальше neo getEffect(Holder).
 		 *  Кастом-id чужих модов (не в карте) → null — 1:1 деградация «зелье не зарегистрировано» (как оригинал при
 		 *  отсутствии мода: тихий пропуск). Централизует бывший `getEffect(MobEffect.potionTypes[id])`. */
@@ -3212,14 +3220,16 @@ public class UT {
 			// значения оставались отрицательными и оригинал так же тихо пропускал эффект. Речь о кастом-зельях
 			// чужих модов PotionsGT.ID_RADIATION/ID_HYPOTHERMIA/ID_HEATSTROKE/ID_FROSTBITE/ID_DEHYDRATION/
 			// ID_INSANITY/ID_FLAMMABLE/ID_SLIPPERY/ID_CONDUCTIVE/ID_STICKY (`gregapi/data/CS.java`, класс
-			// PotionsGT, IC2/EnviroMine/Immersive Engineering) — сейчас raw int-плейсхолдеры (не
-			// `Holder<MobEffect>`), не зарегистрированы как neo MobEffect ни своим, ни чужим
-			// DeferredRegister; для НИХ `VANILLA_POTION_IDS.get(aID)` вернёт null (даже если compat-мост
-			// когда-нибудь пропишет туда неотрицательное число, коллизии с vanilla-диапазоном 1-23 не
-			// будет — id мода отличаются) — попадание сюда форс-деградирует до "не найдено" так же, как
-			// оригинал при `aID < 0` (мод не установлен ⇒ тихий пропуск, это 1:1, не новая деградация).
-			// Обрести реальный Holder — только после регистрации PotionsGT на DeferredRegister<MobEffect>
-			// (отдельный шов, не эта задача).
+			// PotionsGT, IC2/EnviroMine/Immersive Engineering). BUG-090: пять из них (flammable/slippery/
+			// conductive/sticky/insanity) регистрирует сам GT6 — `gregapi.potion.MobEffectsGT` («функция,
+			// не авторство»: модов-владельцев для 26.1.2 нет), их id встают в карту через bindPotionID на
+			// postInit (GT_API.onModPostInit2Deferred) и резолвятся здесь как ванильные. Остальные пять
+			// ОСТАЮТСЯ отрицательными намеренно: RADIATION/DEHYDRATION — Грегов фолбэк-дизайн без IC2/
+			// EnviroMine (wither/poison/hunger — ветки `PotionsGT.ID_* >= 0 ? ... :` выше и в
+			// EntityFoodTracker) и есть каноническое поведение; HYPOTHERMIA/HEATSTROKE/FROSTBITE GT6
+			// никогда не накладывает (только снятие Pill_Cure_All — no-op, 1:1 с «мод не установлен»).
+			// Для незарегистрированных id `VANILLA_POTION_IDS.get(aID)` вернёт null — тихий пропуск,
+			// как оригинал при `aID < 0`.
 			Holder<MobEffect> tPotion = VANILLA_POTION_IDS.get(aID);
 			return tPotion != null && applyPotion(aEntity, tPotion, aDuration, aLevel, aInvisibleParticles);
 		}

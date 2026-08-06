@@ -828,6 +828,17 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				// в сборке, {@code ST.item(MD.FMB, "microblock")} = null, цикл был бы пустым.
 			}
 
+			// BUG-090: клиентское плечо скольжения slippery. В 1.7.10 Potion.performEffect тикал на ОБЕИХ
+			// сторонах (IEPotions.java:118-121 двигал и клиентского игрока); в neo applyEffectTick сервер-only
+			// (сигнатура ServerLevel), а движение игрока клиент-авторитетно — серверная добавка скорости до
+			// клиента не доезжает. Эффект синхронизирован клиенту штатно (ClientboundUpdateMobEffectPacket) —
+			// читаем его здесь тем же вектором и коэффициентом; выброс предмета остаётся серверным.
+			{
+				net.minecraft.client.player.LocalPlayer tSlipperyPlayer = Minecraft.getInstance().player;
+				if (tSlipperyPlayer != null && tSlipperyPlayer.onGround() && tSlipperyPlayer.hasEffect(gregapi.potion.MobEffectsGT.SLIPPERY))
+					tSlipperyPlayer.moveRelative(0.005F, new net.minecraft.world.phys.Vec3(0, 0, 1));
+			}
+
 			// Countdown the Timeout of Sounds that play in rapid succession.
 			for (int i = 0; i < UT.Sounds.sPlayedSounds.size(); i++) if (UT.Sounds.sPlayedSounds.get(i).mTimer-- < 0) UT.Sounds.sPlayedSounds.remove(i--);
 			// Mute Sounds for the first second so people wont get blasted with nonsense.

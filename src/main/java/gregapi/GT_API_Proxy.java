@@ -93,6 +93,7 @@ import gregapi.block.Material;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -144,6 +145,8 @@ import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.item.ItemExpireEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 import net.neoforged.neoforge.event.entity.player.ArrowLooseEvent;
 import net.neoforged.neoforge.event.entity.player.ArrowNockEvent;
@@ -741,6 +744,38 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (tBehavior == null || tBehavior instanceof gregapi.block.misc.BlockBaseRail.GT6MinecartBehavior) return;
 			sMinecartBehaviorField.set(tCart, new gregapi.block.misc.BlockBaseRail.GT6MinecartBehavior(tCart));
 		} catch (Throwable e) {e.printStackTrace(ERR);}
+	}
+
+	// BUG-090: поведение GT6-зельев-эффектов, жившее в 1.7.10 в обработчиках Immersive Engineering
+	// (EventHandler.java:387-408, декомпил-референс ImmersiveEngineering-1.7.10/ в дереве проекта) — сами
+	// эффекты теперь регистрирует GT6 (gregapi/potion/MobEffectsGT, «функция, не авторство»), обработчики
+	// продублированы 1:1 в этом же едином центре подписки. LivingHurtEvent (1.7.10) в neo не существует —
+	// модифицируемая величина урона до брони = LivingIncomingDamageEvent.setAmount (сверено,
+	// neoforge-decompiled/.../LivingIncomingDamageEvent.java); приоритет LOWEST — как у IE-оригинала.
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onLivingHurtPotionsGT(LivingIncomingDamageEvent aEvent) {
+		MobEffectInstance tEffect;
+		// 1:1 IE EventHandler.java:390-395: урон огнём × (1.5 + amp²·0.5) при эффекте flammable.
+		if (aEvent.getSource().is(DamageTypeTags.IS_FIRE) && (tEffect = aEvent.getEntity().getEffect(gregapi.potion.MobEffectsGT.FLAMMABLE)) != null) {
+			int tAmp = tEffect.getAmplifier();
+			aEvent.setAmount(aEvent.getAmount() * (1.5F + tAmp*tAmp*0.5F));
+		}
+		// 1:1 IE EventHandler.java:396-401: урон типа "flux" (IE-электричество) × тот же множитель при
+		// conductive. В сборке без IE-машин источника "flux"-урона нет — как и в 1.7.10 (см. MobEffectsGT).
+		if ("flux".equals(aEvent.getSource().getMsgId()) && (tEffect = aEvent.getEntity().getEffect(gregapi.potion.MobEffectsGT.CONDUCTIVE)) != null) {
+			int tAmp = tEffect.getAmplifier();
+			aEvent.setAmount(aEvent.getAmount() * (1.5F + tAmp*tAmp*0.5F));
+		}
+	}
+
+	// 1:1 IE EventHandler.java:403-408: sticky ослабляет прыжок — motionY -= (amp+1)·0.3.
+	@SubscribeEvent
+	public void onLivingJumpPotionsGT(LivingEvent.LivingJumpEvent aEvent) {
+		MobEffectInstance tEffect = aEvent.getEntity().getEffect(gregapi.potion.MobEffectsGT.STICKY);
+		if (tEffect != null) {
+			net.minecraft.world.phys.Vec3 tMotion = aEvent.getEntity().getDeltaMovement();
+			aEvent.getEntity().setDeltaMovement(tMotion.x, tMotion.y - (tEffect.getAmplifier()+1)*0.3F, tMotion.z);
+		}
 	}
 
 	// Было @SubscribeEvent onLivingUpdate(LivingUpdateEvent) — LivingUpdateEvent (net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent,

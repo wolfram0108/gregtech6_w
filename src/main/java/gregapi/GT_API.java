@@ -524,6 +524,10 @@ public class GT_API extends Abstract_Mod {
 		// ENCHANT: центральный переходник кастомных чар-эффектов — тот же мод-бас, единая точка подписки
 		// (gregapi/enchants/EnchantsGT6.java; закрывает стык F6↔ENCHANT wiring, метка `ENCHANT, регистрация`).
 		gregapi.enchants.EnchantsGT6.register(aModBus);
+		// BUG-090: центральный DeferredRegister GT6-зельев-эффектов (flammable/slippery/conductive/sticky/
+		// insanity — «функция, не авторство»: IE/EnviroMine для 26.1.2 нет) — тот же мод-бас, единая точка
+		// подписки (gregapi/potion/MobEffectsGT.java; int-id встают в PotionsGT.ID_* на postInit ниже).
+		gregapi.potion.MobEffectsGT.register(aModBus);
 		// F5: центральные DeferredRegister жидкостей (FluidType+Fluid) — тот же мод-бас, единая точка
 		// подписки (decisions/F5-fluids.md §3, gregapi/fluid/FluidGT.java; закрывает прежний долг F12↔F5 wiring).
 		gregapi.fluid.FluidGT.FLUID_TYPES.register(aModBus);
@@ -1248,7 +1252,18 @@ public class GT_API extends Abstract_Mod {
 			PotionsGT.ID_CONDUCTIVE   = blusunrize.immersiveengineering.common.util.IEPotions.conductive.id;
 			PotionsGT.ID_STICKY       = blusunrize.immersiveengineering.common.util.IEPotions.sticky.id;
 		}
-		
+		// BUG-090: моды-владельцы выше для 26.1.2 не существуют (гейты мертвы) — пять эффектов, которые GT6
+		// реально накладывает, регистрирует сам мод (gregapi/potion/MobEffectsGT, поведение 1:1 с декомпил-
+		// референсами IE/EnviroMine в дереве проекта). Механизм — Грегов же «real IDs are to be set on API
+		// postInit» (CS.java:1690): проставляем id и привязываем Holder в единую карту канала applyPotion(int).
+		// Гейт `< 0` сохраняет приоритет чужого мода, если тот когда-либо оживёт. RADIATION/DEHYDRATION/
+		// HYPOTHERMIA/HEATSTROKE/FROSTBITE остаются отрицательными намеренно — разбор в MobEffectsGT (javadoc).
+		if (PotionsGT.ID_FLAMMABLE  < 0) UT.Entities.bindPotionID(PotionsGT.ID_FLAMMABLE  = gregapi.potion.MobEffectsGT.ID_FLAMMABLE , gregapi.potion.MobEffectsGT.FLAMMABLE );
+		if (PotionsGT.ID_SLIPPERY   < 0) UT.Entities.bindPotionID(PotionsGT.ID_SLIPPERY   = gregapi.potion.MobEffectsGT.ID_SLIPPERY  , gregapi.potion.MobEffectsGT.SLIPPERY  );
+		if (PotionsGT.ID_CONDUCTIVE < 0) UT.Entities.bindPotionID(PotionsGT.ID_CONDUCTIVE = gregapi.potion.MobEffectsGT.ID_CONDUCTIVE, gregapi.potion.MobEffectsGT.CONDUCTIVE);
+		if (PotionsGT.ID_STICKY     < 0) UT.Entities.bindPotionID(PotionsGT.ID_STICKY     = gregapi.potion.MobEffectsGT.ID_STICKY    , gregapi.potion.MobEffectsGT.STICKY    );
+		if (PotionsGT.ID_INSANITY   < 0) UT.Entities.bindPotionID(PotionsGT.ID_INSANITY   = gregapi.potion.MobEffectsGT.ID_INSANITY  , gregapi.potion.MobEffectsGT.INSANITY  );
+
 		EnergyCompat.checkAvailabilities();
 		ToolCompat.checkAvailabilities();
 		ST.checkAvailabilities();

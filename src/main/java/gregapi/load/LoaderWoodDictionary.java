@@ -39,7 +39,7 @@ import static gregapi.data.CS.W;
 public class LoaderWoodDictionary implements Runnable {
 	@Override
 	public void run() {
-		// 261 is next! There is no Gaps in this List!
+		// 262 is next! There is no Gaps in this List! (261 занят манграми, BUG-091 ниже)
 		
 		// Vanilla Trees
 		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.OAK_PLANKS, 1, 0));
@@ -63,7 +63,39 @@ public class LoaderWoodDictionary implements Runnable {
 		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 3), WoodDictionary.PLANKS.get(Blocks.JUNGLE_PLANKS, 0));
 		new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 0), WoodDictionary.PLANKS.get(Blocks.ACACIA_PLANKS, 0));
 		new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 1), WoodDictionary.PLANKS.get(Blocks.DARK_OAK_PLANKS, 0));
-		
+
+		// BUG-091 («функция, не авторство»): новые ванильные породы — вишня/бамбук/мангры/багровые. В 1.7.10 их
+		// давали бэкпорт-моды, и Грег вносил их в словарь гейтованными ветками (вишня/бамбук — EtFu, ниже
+		// `MD.EtFu.mLoaded`, метка Грега «TODO CHERRY, BAMBOO AND MANGROVE»; багровые — NeLi/NePl); в neo контент
+		// ванильный, ветки мертвы. Записи ниже — тем же приёмом и с ТЕМИ ЖЕ материалами/plank-id/числами выходов,
+		// что в ветках-прообразах (id закреплён за породой, не за модом; мёртвые ветки этих id не занимают);
+		// балка = stripped-вариант (приём EtFu: beam вишни = cherry_log:2 «stripped»). Мангры прообраза не имеют
+		// (TODO Грега не реализован) — тот же приём, что вишня, материал MT.WOODS.Mangrove (жил в GT6 для BoP),
+		// plank-id 261 (по счётчику «There is no Gaps»). PALE_OAK НЕ внесён: GT-материала породы не существует,
+		// прообраза нет — не выдумываем (кандидат отдельным решением).
+		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.CHERRY_PLANKS  , 1, 0));
+		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.BAMBOO_PLANKS  , 1, 0));
+		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.MANGROVE_PLANKS, 1, 0));
+		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.CRIMSON_PLANKS , 1, 0));
+		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.WARPED_PLANKS  , 1, 0));
+		// вишня — 1:1 с EtFu-веткой (PlankEntry id 257, MT.WOODS.Sakura; wood-вариант = вторая WoodEntry, как cherry_log:1/:3)
+		PlankEntry tCherryPlank = new PlankEntry(ST.make(Blocks.CHERRY_PLANKS, 1, 0), ST.make(Blocks.CHERRY_SLAB, 1, 0), ST.make(Blocks.CHERRY_STAIRS, 1, W), MT.WOODS.Sakura, 257);
+		new SaplingEntry(ST.make(Blocks.CHERRY_SAPLING, 1, 0), new WoodEntry(ST.make(Blocks.CHERRY_LOG, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_CHERRY_LOG, 1, 0), tCherryPlank)), ST.make(Blocks.CHERRY_LEAVES, 1, 0));
+		new WoodEntry(ST.make(Blocks.CHERRY_WOOD, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_CHERRY_WOOD, 1, 0), tCherryPlank));
+		// бамбук — 1:1 с EtFu-веткой (мозаика id 259 у балки, доски id 258 у бревна; выходы/палки MT.Bamboo те же)
+		new SaplingEntry(ST.make(Items.BAMBOO, 1, 0), new WoodEntry(ST.make(Blocks.BAMBOO_BLOCK, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_BAMBOO_BLOCK, 1, 0), new PlankEntry(ST.make(Blocks.BAMBOO_MOSAIC, 1, 0), ST.make(Blocks.BAMBOO_MOSAIC_SLAB, 1, 0), ST.make(Blocks.BAMBOO_MOSAIC_STAIRS, 1, W), MT.Bamboo, 259, ST.make(Items.BAMBOO, 1, 0), 1, 1, 1), 1, 100, 2, 2, 2, MT.Bamboo, OP.stickLong.mat(MT.Bamboo, 1), 1, 1), new PlankEntry(ST.make(Blocks.BAMBOO_PLANKS, 1, 0), ST.make(Blocks.BAMBOO_SLAB, 1, 0), ST.make(Blocks.BAMBOO_STAIRS, 1, W), MT.Bamboo, 258, ST.make(Items.BAMBOO, 1, 0), 1, 1, 1), 1, 100, 2, 2, 2, NI, MT.Bamboo, null, OP.stickLong.mat(MT.Bamboo, 1), 1, 1), ST.make(Items.BAMBOO, 1, 0));
+		// мангры — приём вишни (прообраза нет: TODO Грега), id 261
+		PlankEntry tMangrovePlank = new PlankEntry(ST.make(Blocks.MANGROVE_PLANKS, 1, 0), ST.make(Blocks.MANGROVE_SLAB, 1, 0), ST.make(Blocks.MANGROVE_STAIRS, 1, W), MT.WOODS.Mangrove, 261);
+		new SaplingEntry(ST.make(Blocks.MANGROVE_PROPAGULE, 1, 0), new WoodEntry(ST.make(Blocks.MANGROVE_LOG, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_MANGROVE_LOG, 1, 0), tMangrovePlank)), ST.make(Blocks.MANGROVE_LEAVES, 1, 0));
+		new WoodEntry(ST.make(Blocks.MANGROVE_WOOD, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_MANGROVE_WOOD, 1, 0), tMangrovePlank));
+		// багровые/искажённые — 1:1 с NeLi-веткой (id 235/236, уголь/креозот 1/150 и 1/200, «кора» = гриб, «листва» = варт-блок)
+		PlankEntry tCrimsonPlank = new PlankEntry(ST.make(Blocks.CRIMSON_PLANKS, 1, 0), ST.make(Blocks.CRIMSON_SLAB, 1, 0), ST.make(Blocks.CRIMSON_STAIRS, 1, W), MT.WOODS.Crimson, 235);
+		PlankEntry tWarpedPlank  = new PlankEntry(ST.make(Blocks.WARPED_PLANKS , 1, 0), ST.make(Blocks.WARPED_SLAB , 1, 0), ST.make(Blocks.WARPED_STAIRS , 1, W), MT.WOODS.Warped , 236);
+		new SaplingEntry(ST.make(Blocks.CRIMSON_FUNGUS, 1, 0), new WoodEntry(ST.make(Blocks.CRIMSON_STEM, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_CRIMSON_STEM, 1, 0), tCrimsonPlank, 1, 150), 1, 150, ST.make(Blocks.CRIMSON_FUNGUS, 1, 0), MT.WOODS.Crimson), ST.make(Blocks.NETHER_WART_BLOCK, 1, 0));
+		new SaplingEntry(ST.make(Blocks.WARPED_FUNGUS , 1, 0), new WoodEntry(ST.make(Blocks.WARPED_STEM , 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_WARPED_STEM , 1, 0), tWarpedPlank , 1, 200), 1, 200, ST.make(Blocks.WARPED_FUNGUS , 1, 0), MT.WOODS.Warped ), ST.make(Blocks.WARPED_WART_BLOCK, 1, 0));
+		new WoodEntry(ST.make(Blocks.CRIMSON_HYPHAE, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_CRIMSON_HYPHAE, 1, 0), tCrimsonPlank, 1, 150), 1, 150, ST.make(Blocks.CRIMSON_FUNGUS, 1, 0), MT.WOODS.Crimson);
+		new WoodEntry(ST.make(Blocks.WARPED_HYPHAE , 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_WARPED_HYPHAE , 1, 0), tWarpedPlank , 1, 200), 1, 200, ST.make(Blocks.WARPED_FUNGUS , 1, 0), MT.WOODS.Warped );
+
 		// GregTech Trees
 		if (MD.GT.mLoaded) {
 			WoodDictionary.DEFAULT_BEAM = new BeamEntry(IL.Beam.get(1), WoodDictionary.DEFAULT_PLANK = new PlankEntry(IL.Plank.get(1), IL.Plank_Slab.get(1), 55));
