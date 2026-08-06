@@ -31,11 +31,16 @@ import static gregapi.data.CS.RES_PATH_MODEL;
  * ручная интерполяция позиции игрока по SRG-полям {@code field_71091_bM}.., {@code ModelBiped.renderCloak})
  * — весь этот стек удалён в 26.1.2 (decisions/F3-render.md §1). Класс больше не наследует движковый
  * рендерер игрока (тип удалён без замены с той же формой) — держит только чистую бизнес-логику выбора
- * плаща по нику/UUID ({@link #getResource(String)}, БЕЗ ИЗМЕНЕНИЙ) + PORT-TODO-заглушку хука. Хук
- * ретипирован на реальный neo-эквивалент {@code net.neoforged.neoforge.client.event.RenderPlayerEvent.Pre}
- * (`neoforge-decompiled/net/neoforged/neoforge/client/event/RenderPlayerEvent.java:50-55` — «до рендера
- * игрока, для доп. эффектов», 1:1 замена старого {@code RenderPlayerEvent.Specials.Pre}); тело — no-op,
- * реальная перерисовка плаща — {@code SubmitNodeCollector}/BER-путь (§2.5).
+ * плаща по нику/UUID ({@link #getResource(String)}, БЕЗ ИЗМЕНЕНИЙ). Хук ретипирован на neo-эквивалент
+ * {@code RenderPlayerEvent.Pre} (1:1 замена старого {@code RenderPlayerEvent.Specials.Pre}).
+ * [Метка отложенности «заглушка хука» СНЯТА 2026-08-06.] Тело оригинала (:69-111) копировало ванильную
+ * геометрию плаща руками (immediate-mode, мёртв) — в neo та же функция выражается ДАННЫМИ: подмена
+ * {@code AvatarRenderState.skin} (public-поле стейта, пересобирается каждый кадр) на копию с GT6-плащом,
+ * рисует сам движковый {@code CapeLayer.submit:44-68}. Условия оригинала несёт движок 1:1: невидимость —
+ * {@code !state.isInvisible} (CapeLayer:45), настройка «скрыть плащ» ({@code getHideCape()} оригинала) —
+ * {@code state.showCape} (CapeLayer:45); фолбэк выбора по UUID — как оригинал :78. Отличие, осознанное:
+ * оригинал рисовал GT6-плащ ПОВЕРХ Mojang-плаща (два слоя друг на друге со сдвигом 0.125) — здесь
+ * Mojang-плащ не перекрывается (свой плащ у игрока побеждает GT6-шный), двойного рисования нет.
  */
 public class PlayerModelRenderer {
 	// neo Identifier.assertValidPath запрещает заглавные в path (1.7.10 ResourceLocation их допускал) — имена
@@ -70,9 +75,23 @@ public class PlayerModelRenderer {
 		return null;
 	}
 
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было immediate-mode рисование плаща через {@code ModelBiped.renderCloak}
-	 *  (см. class javadoc) — тело заглушка, {@link #getResource(String)} (реальный выбор текстуры) сохранён живым. */
+	/** Плащ GT6 — данными движковому слою (разбор в class javadoc): свой выбор текстуры + ванильный
+	 *  {@code CapeLayer}. Имя игрока — по entity id из стейта (в {@code AvatarRenderState} ника нет). */
 	public void receiveRenderSpecialsEvent(RenderPlayerEvent.Pre<?> aEvent) {
-		//
+		try {
+			net.minecraft.client.renderer.entity.state.AvatarRenderState tState = aEvent.getRenderState();
+			if (tState.skin == null || tState.skin.cape() != null) return;
+			net.minecraft.client.multiplayer.ClientLevel tLevel = net.minecraft.client.Minecraft.getInstance().level;
+			if (tLevel == null) return;
+			if (!(tLevel.getEntity(tState.id) instanceof net.minecraft.world.entity.player.Player tPlayer)) return;
+			// имя — getScoreboardName(): у Player это имя профиля (приём проекта, EnchantmentEffect_Werewolf:56)
+			Identifier tCape = getResource(tPlayer.getScoreboardName());
+			if (tCape == null) tCape = getResource(tPlayer.getUUID().toString());
+			if (tCape == null) return;
+			// ResourceTexture(id, texturePath) — 2-арг конструктор, путь прямой (без авто-«textures/…png»):
+			// mResources уже несут полный путь вида gregtech:textures/model/<имя>.png (ClientAsset.java:19-27).
+			tState.skin = net.minecraft.world.entity.player.PlayerSkin.insecure(
+				tState.skin.body(), new net.minecraft.core.ClientAsset.ResourceTexture(tCape, tCape), tState.skin.elytra(), tState.skin.model());
+		} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
 	}
 }

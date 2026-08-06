@@ -28,8 +28,12 @@ import net.neoforged.neoforge.fluids.IFluidTank;
  * 26.1.2 прямого аналога нет (заменено transfer-API {@code ResourceHandler}, не возвращающим такую
  * пару напрямую) — воспроизведена по фактическому использованию в дереве (2-арг конструктор,
  * поля {@code fluid}/{@code capacity}: {@code gregapi.data.CS.java:834}, {@code FluidTankGT.getInfo()}).
- * // PORT-TODO(этап 6, F5): места, где это ещё нужно как часть legacy IFluidHandler.getTankInfo(),
- * не мигрированы — они относятся к consumer-файлам вне области этого переходника.
+ * [Метка отложенности «consumer-файлы не мигрированы» СНЯТА 2026-08-06 — пережила собственный фикс:
+ * в оригинале ровно 14 вызывателей {@code getTankInfo}, в порте у всех 14 есть плечо — 12 ходят через
+ * ЦЕНТР шва {@code FL.getTankInfo} ({@code FL.java:944}, side-aware поверх neo-API), сенсоры
+ * Fluidometer/Bucketometer/KiloBucketometer, BasicMachine:705, WD:2061, Bridge/Extender/MiniPortal/
+ * LongDistancePipelineFluid; 1 — контракт {@code IMultiBlockFluidHandler} (1:1 с оригиналом :396);
+ * 1 — {@code MultiTileEntityPipeFluid:506-511}, длина берётся из neo-API напрямую (документировано там).]
  */
 public final class FluidTankInfo {
 	public final FluidStack fluid;

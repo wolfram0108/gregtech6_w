@@ -694,24 +694,53 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 	// [BUG-047] F-hook-removed → центральный мост: 1.7.10 Forge-хуки BlockRailBase.onMinecartPass/getRailMaxSpeed
 	// ВЫРЕЗАНЫ из NeoForge 26.1.2 (extensions-каталог: только IBaseRailBlockExtension — isFlexibleRail/canMakeSlopes/
-	// getRailDirection/isValidRailShape; клапан скорости захардкожен OldMinecartBehavior.getMaxSpeed:410-411 = 0.4,
-	// буст движок читает ТОЛЬКО с instanceof PoweredRailBlock — OldMinecartBehavior:115-116). Мост: EntityTickEvent.Post =
-	// раз в тик на сущность ПОСЛЕ движения — та же фаза, что 1.7.10 хвост EntityMinecart.func_145821_a (вызывал
-	// onMinecartPass после moveAlongTrack); позиция рельса — getCurrentBlockPosOrRailBelow (канал самого движка).
-	// getRailMaxSpeed-кламп восстанавливает per-rail скорости (медленные Al 0.2/Bronze 0.3 — 1:1).
-	// PORT-TODO(F-hook-removed): скорости рельсов ВЫШЕ движковых 0.4 (Ti 1.2 … Adamantium 4.0) недостижимы —
-	// кламп СМЕЩЕНИЯ захардкожен внутри OldMinecartBehavior.moveAlongTrack:208-211 (getMaxSpeed:410 = 0.4),
-	// per-rail переопределения в 26.1.2 нет; поднять при появлении хука/решении о патче. Реестр: DEFERRED-LEDGER.
+	// getRailDirection/isValidRailShape; буст движок читает ТОЛЬКО с instanceof PoweredRailBlock —
+	// OldMinecartBehavior:115-116). Мост: EntityTickEvent.Post = раз в тик на сущность ПОСЛЕ движения — та же фаза,
+	// что 1.7.10 хвост EntityMinecart.func_145821_a (вызывал onMinecartPass после moveAlongTrack); позиция рельса —
+	// getCurrentBlockPosOrRailBelow (канал самого движка). Кламп СКОРОСТИ здесь — только ЗАПАСНОЕ плечо (вниз):
+	// основной канал — GT6MinecartBehavior (см. onMinecartJoinBridge ниже), который отвечает движку per-rail
+	// величиной ДО движения; у подменённых минкартов пост-кламп не дублируется.
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onMinecartPassBridge(EntityTickEvent.Post aEvent) {
 		if (!(aEvent.getEntity() instanceof net.minecraft.world.entity.vehicle.minecart.AbstractMinecart tCart) || tCart.level().isClientSide()) return;
 		BlockPos tRailPos = tCart.getCurrentBlockPosOrRailBelow();
 		if (!(WD.block(tCart.level(), tRailPos.getX(), tRailPos.getY(), tRailPos.getZ()) instanceof gregapi.block.misc.BlockBaseRail tRail)) return;
 		tRail.onMinecartPass(tCart.level(), tCart, tRailPos.getX(), tRailPos.getY(), tRailPos.getZ());
+		if (minecartBehavior(tCart) instanceof gregapi.block.misc.BlockBaseRail.GT6MinecartBehavior) return; // движок уже клампит per-rail
 		float tMax = tRail.getRailMaxSpeed(tCart.level(), tCart, tRailPos.getX(), tRailPos.getY(), tRailPos.getZ());
 		net.minecraft.world.phys.Vec3 tCartMotion = tCart.getDeltaMovement();
 		if (Math.abs(tCartMotion.x) > tMax || Math.abs(tCartMotion.z) > tMax)
 			tCart.setDeltaMovement(net.minecraft.util.Mth.clamp(tCartMotion.x, -tMax, tMax), tCartMotion.y, net.minecraft.util.Mth.clamp(tCartMotion.z, -tMax, tMax));
+	}
+
+	// [BUG-047, метка отложенности F-hook-removed СНЯТА 2026-08-06] Скорости рельсов ВЫШЕ движковых 0.4 (Ti 1.2 и далее):
+	// кламп смещения захардкожен ВНУТРИ OldMinecartBehavior.moveAlongTrack:208-211 через getMaxSpeed:410-411 —
+	// пост-событием не поднимается. Единственная точка per-cart — поле AbstractMinecart.behavior (private final,
+	// AbstractMinecart:62, назначается конструктором); события/расширения на выбор поведения в 26.1.2 нет.
+	// Подмена рефлексией на входе минкарта в мир — приём прецедентен (IItemProjectile → AbstractArrow.baseDamage,
+	// единственное место чтения на весь мод); подкласс — BlockBaseRail.GT6MinecartBehavior (1:1-формула
+	// min(rail, капа-минкарта-1.2) из EntityMinecart:373-374, там же цитаты). Обе стороны: клиентское плечо кроет
+	// getKnownMovement (производные системы). Experimental-физика (NewMinecartBehavior) НЕ подменяется: её модель
+	// скоростей — своя (канона 1.7.10 у неё нет), там остаётся запасной пост-кламп из onMinecartPassBridge.
+	private static java.lang.reflect.Field sMinecartBehaviorField = null;
+	private static Object minecartBehavior(net.minecraft.world.entity.vehicle.minecart.AbstractMinecart aCart) {
+		try {
+			if (sMinecartBehaviorField == null) {
+				sMinecartBehaviorField = net.minecraft.world.entity.vehicle.minecart.AbstractMinecart.class.getDeclaredField("behavior");
+				sMinecartBehaviorField.setAccessible(true);
+			}
+			return sMinecartBehaviorField.get(aCart);
+		} catch (Throwable e) {return null;}
+	}
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onMinecartJoinBridge(EntityJoinLevelEvent aEvent) {
+		if (!(aEvent.getEntity() instanceof net.minecraft.world.entity.vehicle.minecart.AbstractMinecart tCart)) return;
+		if (net.minecraft.world.entity.vehicle.minecart.AbstractMinecart.useExperimentalMovement(tCart.level())) return;
+		try {
+			Object tBehavior = minecartBehavior(tCart);
+			if (tBehavior == null || tBehavior instanceof gregapi.block.misc.BlockBaseRail.GT6MinecartBehavior) return;
+			sMinecartBehaviorField.set(tCart, new gregapi.block.misc.BlockBaseRail.GT6MinecartBehavior(tCart));
+		} catch (Throwable e) {e.printStackTrace(ERR);}
 	}
 
 	// Было @SubscribeEvent onLivingUpdate(LivingUpdateEvent) — LivingUpdateEvent (net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent,

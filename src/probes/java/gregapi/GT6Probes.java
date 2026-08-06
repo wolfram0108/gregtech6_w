@@ -236,6 +236,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6fluidheight.flag")) gt6FluidHeightTick(aEvent.getServer());
 		// F12-tick: падают ли гравитационные блоки GT6 (дроблёные руды) — судья положения, не формулы
 		if (gregapi.data.CS.probeFlag("gt6gravityprobe.flag")) gt6GravityProbeTick(aEvent.getServer());
+	// [GT6-RAILPROBE] снятие PORT-TODO(F-hook-removed): per-rail скорость минкарта выше движковых 0.4 — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6railprobe.flag")) gt6RailProbeTick(aEvent.getServer());
 		// F12-hook: ожили ли восстановленные приёмники движковых каналов (доение, присед)
 		if (gregapi.data.CS.probeFlag("gt6hookprobe.flag")) gt6HookProbeTick(aEvent.getServer());
 	// [GT6-ARROWPROBE] стенд «PORT-TODO №1: чары лука (Power/Punch/Flame) на стрелах GT6» — снять при уборке фазы
@@ -9477,6 +9479,129 @@ public final class GT6Probes {
 			sFHSeq.judge("ОБЪЁМ сохранён при растекании (сумма долей = 1 полный блок)", tCells > 0, "> 0 клеток", String.valueOf(tCells));
 			sFHSeq.done();
 		}
+	}
+
+	// ==========================================================================================================
+	// ==========================================================================================================
+	// gt6railprobe — снятие PORT-TODO(F-hook-removed): per-rail скорость минкарта.
+	//
+	// Что проверяем. 1.7.10: EntityMinecart:373-374 — maxSpeed = min(rail.getRailMaxSpeed, капа минкарта 1.2).
+	// neo: кламп смещения захардкожен OldMinecartBehavior.moveAlongTrack:208-211 (getMaxSpeed:410-411 = 0.4) —
+	// фикс: подмена AbstractMinecart.behavior (private final, рефлексия) на BlockBaseRail.GT6MinecartBehavior
+	// в GT_API_Proxy.onMinecartJoinBridge. Судим СЛЕДСТВИЕ у конечного объекта: фактическое смещение минкарта
+	// за тик (позиция, не формула и не поле скорости).
+	//   судья подмены     — behavior минкарта instanceof GT6MinecartBehavior (запись в final-поле состоялась);
+	//   быстрая дорожка   — GT6-рельс с max mSpeed: Δ/тик ОБЯЗАНО превысить движковые 0.4 И не превысить капу 1.2;
+	//   медленная дорожка — GT6-рельс с min mSpeed: Δ/тик ≤ его величины (прежнее плечо BUG-047 не сломано);
+	//   позитивный контроль — ВАНИЛЬНЫЙ рельс, тот же толчок: Δ/тик ≤ 0.45 (движковый кламп жив; судья умеет FAIL:
+	//   до фикса быстрая дорожка выглядела ровно как эта).
+	// ==========================================================================================================
+	private static final String RAIL_M = "GT6-RAILPROBE";
+	private static int sRailTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sRailSeq;
+	private static BlockPos sRailOrigin = null;
+	private static gregapi.block.misc.BlockBaseRail sRailFast = null, sRailSlow = null;
+	private static net.minecraft.world.entity.vehicle.minecart.AbstractMinecart sRailCartFast, sRailCartSlow, sRailCartVanilla;
+	private static double sRailMaxFast = 0, sRailMaxSlow = 0, sRailMaxVanilla = 0;
+	private static net.minecraft.world.phys.Vec3 sRailPrevFast, sRailPrevSlow, sRailPrevVanilla;
+
+	public static void gt6RailProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sRailTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sRailSeq == null) sRailSeq = new gregapi.probe.GT6ProbeStand.Seq(RAIL_M)
+			.at(60, () -> gt6RailBuild(tPlayer))
+			.at(100, () -> gt6RailSpawn(tPlayer))
+			.window(101, 200, () -> gt6RailMeasure(tPlayer))
+			.at(220, () -> gt6RailVerdict(tPlayer));
+		sRailSeq.tick(sRailTick);
+	}
+
+	private static void gt6RailBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		// Рельсы — ИЗ ЖИВОГО РЕЕСТРА (не из памяти): быстрейший и медленнейший по mSpeed.
+		for (net.minecraft.world.level.block.Block tBl : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			if (!(tBl instanceof gregapi.block.misc.BlockBaseRail tRail)) continue;
+			if (sRailFast == null || tRail.mSpeed > sRailFast.mSpeed) sRailFast = tRail;
+			if (sRailSlow == null || tRail.mSpeed < sRailSlow.mSpeed) sRailSlow = tRail;
+		}
+		if (sRailFast == null) {O.println("[" + RAIL_M + "] FAIL: в реестре нет ни одного BlockBaseRail — стенд не собрать"); return;}
+		O.println("[" + RAIL_M + "] быстрый рельс: " + sRailFast.mNameInternal + " mSpeed=" + sRailFast.mSpeed
+			+ " · медленный: " + sRailSlow.mNameInternal + " mSpeed=" + sRailSlow.mSpeed);
+		if (sRailFast.mSpeed <= 0.4F) O.println("[" + RAIL_M + "] ⚠️ быстрейший рельс не быстрее движковых 0.4 — быстрая дорожка не докажет снятие клампа");
+		// Полигон: три дорожки вдоль Z (дефолтный RailShape NORTH_SOUTH), длина 64, бедрок-основание.
+		sRailOrigin = aPlayer.blockPosition().offset(16, 0, -8);
+		for (int tX : new int[]{0, 4, 8}) for (int dz = 0; dz < 64; dz++) {
+			tLevel.setBlock(sRailOrigin.offset(tX, -1, dz), net.minecraft.world.level.block.Blocks.BEDROCK.defaultBlockState(), 3);
+			for (int dy = 0; dy <= 2; dy++) tLevel.setBlock(sRailOrigin.offset(tX, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		}
+		for (int dz = 0; dz < 64; dz++) {
+			tLevel.setBlock(sRailOrigin.offset(0, 0, dz), sRailFast.defaultBlockState(), 3);
+			tLevel.setBlock(sRailOrigin.offset(4, 0, dz), sRailSlow.defaultBlockState(), 3);
+			tLevel.setBlock(sRailOrigin.offset(8, 0, dz), net.minecraft.world.level.block.Blocks.RAIL.defaultBlockState(), 3);
+		}
+		O.println("[" + RAIL_M + "] полигон @ " + sRailOrigin + ": x+0 быстрый GT6, x+4 медленный GT6, x+8 ваниль (контроль клампа)");
+	}
+
+	private static net.minecraft.world.entity.vehicle.minecart.AbstractMinecart gt6RailCart(ServerLevel aLevel, BlockPos aPos) {
+		net.minecraft.world.entity.Entity tEntity = net.minecraft.world.entity.EntityType.MINECART.create(aLevel, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
+		if (!(tEntity instanceof net.minecraft.world.entity.vehicle.minecart.AbstractMinecart tCart)) return null;
+		tCart.setPos(aPos.getX() + 0.5, aPos.getY() + 0.1, aPos.getZ() + 0.5);
+		aLevel.addFreshEntity(tCart);
+		return tCart;
+	}
+
+	private static void gt6RailSpawn(ServerPlayer aPlayer) {
+		if (sRailOrigin == null || sRailFast == null) return;
+		ServerLevel tLevel = aPlayer.level();
+		sRailCartFast    = gt6RailCart(tLevel, sRailOrigin.offset(0, 0, 4));
+		sRailCartSlow    = gt6RailCart(tLevel, sRailOrigin.offset(4, 0, 4));
+		sRailCartVanilla = gt6RailCart(tLevel, sRailOrigin.offset(8, 0, 4));
+		gregapi.data.CS.OUT.println("[" + RAIL_M + "] минкарты поставлены: fast=" + (sRailCartFast != null)
+			+ " slow=" + (sRailCartSlow != null) + " vanilla=" + (sRailCartVanilla != null));
+	}
+
+	/** Толчок КАЖДЫЙ тик заведомо выше любой капы (2.0) — фактическое смещение задаёт кламп движка;
+	 *  мерится Δ позиции за тик (следствие у конечного объекта), максимум копится за окно. */
+	private static double gt6RailStep(net.minecraft.world.entity.vehicle.minecart.AbstractMinecart aCart, net.minecraft.world.phys.Vec3 aPrev, double aMax) {
+		if (aCart == null) return aMax;
+		if (aPrev != null) aMax = Math.max(aMax, Math.abs(aCart.position().z - aPrev.z));
+		aCart.setDeltaMovement(0, 0, 2.0);
+		return aMax;
+	}
+
+	private static void gt6RailMeasure(ServerPlayer aPlayer) {
+		sRailMaxFast    = gt6RailStep(sRailCartFast   , sRailPrevFast   , sRailMaxFast);
+		sRailMaxSlow    = gt6RailStep(sRailCartSlow   , sRailPrevSlow   , sRailMaxSlow);
+		sRailMaxVanilla = gt6RailStep(sRailCartVanilla, sRailPrevVanilla, sRailMaxVanilla);
+		sRailPrevFast    = sRailCartFast    == null ? null : sRailCartFast.position();
+		sRailPrevSlow    = sRailCartSlow    == null ? null : sRailCartSlow.position();
+		sRailPrevVanilla = sRailCartVanilla == null ? null : sRailCartVanilla.position();
+	}
+
+	private static boolean gt6RailSwapped(net.minecraft.world.entity.vehicle.minecart.AbstractMinecart aCart) {
+		try {
+			java.lang.reflect.Field tField = net.minecraft.world.entity.vehicle.minecart.AbstractMinecart.class.getDeclaredField("behavior");
+			tField.setAccessible(true);
+			return tField.get(aCart) instanceof gregapi.block.misc.BlockBaseRail.GT6MinecartBehavior;
+		} catch (Throwable e) {return false;}
+	}
+
+	private static void gt6RailVerdict(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (sRailFast == null || sRailCartFast == null) {O.println("[" + RAIL_M + "] FAIL: стенд не собрался"); return;}
+		double tCapFast = Math.min(sRailFast.mSpeed, 1.2), tCapSlow = Math.min(sRailSlow.mSpeed, 1.2);
+		boolean tSwapOK    = gt6RailSwapped(sRailCartFast) && gt6RailSwapped(sRailCartVanilla);
+		boolean tFastOK    = sRailMaxFast > 0.5 && sRailMaxFast <= tCapFast + 0.05;
+		boolean tSlowOK    = sRailMaxSlow > 0.05 && sRailMaxSlow <= tCapSlow + 0.05;
+		boolean tVanillaOK = sRailMaxVanilla > 0.05 && sRailMaxVanilla <= 0.45;
+		O.println("[" + RAIL_M + "] подмена behavior (запись в private final): " + (tSwapOK ? "PASS" : "FAIL"));
+		O.println("[" + RAIL_M + "] быстрый GT6 (" + sRailFast.mNameInternal + ", ожидание ≤" + tCapFast + " и >0.5): Δmax=" + String.format("%.4f", sRailMaxFast) + " → " + (tFastOK ? "PASS" : "FAIL"));
+		O.println("[" + RAIL_M + "] медленный GT6 (" + sRailSlow.mNameInternal + ", ожидание ≤" + tCapSlow + "): Δmax=" + String.format("%.4f", sRailMaxSlow) + " → " + (tSlowOK ? "PASS" : "FAIL"));
+		O.println("[" + RAIL_M + "] ваниль (контроль клампа 0.4): Δmax=" + String.format("%.4f", sRailMaxVanilla) + " → " + (tVanillaOK ? "PASS" : "FAIL"));
+		O.println("[" + RAIL_M + "] ИТОГ: " + ((tSwapOK && tFastOK && tSlowOK && tVanillaOK) ? "PASS 4/4" : "ЕСТЬ FAIL — разбирать"));
+		for (net.minecraft.world.entity.vehicle.minecart.AbstractMinecart tCart : new net.minecraft.world.entity.vehicle.minecart.AbstractMinecart[]{sRailCartFast, sRailCartSlow, sRailCartVanilla}) if (tCart != null) tCart.discard();
 	}
 
 	// ==========================================================================================================

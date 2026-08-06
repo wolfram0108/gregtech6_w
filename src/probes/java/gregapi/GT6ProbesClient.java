@@ -1695,4 +1695,124 @@ public final class GT6ProbesClient {
 		}
 		O.println("========== [GT6-WATERFACE] ВЕРДИКТ: " + (tFail == 0 ? "PASS" : "FAIL") + " (pass=" + tPass + " fail=" + tFail + ") ==========");
 	}
+
+	// ==========================================================================================================
+	// [GT6-COPYCOLORPROBE] снятие метки «block-render-color» (BlockTextureCopied.vanillaRenderColor) — снять при
+	// уборке фазы. Судим ДАННЫЕ в конечном объекте-текстуре (mRGBa построенного BlockTextureCopied) в ЖИВОМ
+	// клиенте — colormap-ветки (листва/трава) считаются по реально загруженным biome colormap'ам, не константам.
+	// Ожидания — НЕЗАВИСИМЫЕ величины 1.7.10: ель 0x619961, берёза 0x80A755 (константы Colorizer оригинала),
+	// лилия 2129968, стебель age=7 формулой, дуб/лоза = живой foliage(0.5,1.0), трава = живой grass(0.5,1.0).
+	// Контроли: камень и cherry-листва (в 1.7.10 её нет) ОБЯЗАНЫ остаться UNCOLOURED — судья умеет «нет».
+	// ==========================================================================================================
+	private static boolean sCopyColorDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onCopyColorProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (sCopyColorDone || !gregapi.data.CS.probeFlag("gt6copycolorprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		sCopyColorDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-COPYCOLORPROBE] канал getRenderColor скопированных текстур ==========");
+		int tFoliage = net.minecraft.world.level.FoliageColor.get(0.5, 1.0) & 0xFFFFFF;
+		int tGrass   = net.minecraft.world.level.GrassColor.getDefaultColor() & 0xFFFFFF;
+		Object[][] tCases = {
+			{"ель (0x619961, конст. 1.7.10)"  , net.minecraft.world.level.block.Blocks.SPRUCE_LEAVES, 0, 0x619961},
+			{"берёза (0x80A755, конст. 1.7.10)", net.minecraft.world.level.block.Blocks.BIRCH_LEAVES , 0, 0x80A755},
+			{"дуб (живой foliage-colormap)"    , net.minecraft.world.level.block.Blocks.OAK_LEAVES   , 0, tFoliage},
+			{"лоза (живой foliage-colormap)"   , net.minecraft.world.level.block.Blocks.VINE         , 0, tFoliage},
+			{"трава-блок (живой grass-colormap)", net.minecraft.world.level.block.Blocks.GRASS_BLOCK , 0, tGrass},
+			{"папоротник (живой grass-colormap)", net.minecraft.world.level.block.Blocks.FERN        , 0, tGrass},
+			{"лилия (2129968, конст. 1.7.10)"  , net.minecraft.world.level.block.Blocks.LILY_PAD     , 0, 2129968},
+			{"стебель age=7 (формула 1.7.10)"  , net.minecraft.world.level.block.Blocks.PUMPKIN_STEM , 7, (7*32)<<16 | (255-7*8)<<8 | 7*4},
+			{"КОНТРОЛЬ камень → белый"          , net.minecraft.world.level.block.Blocks.STONE        , 0, 0xFFFFFF},
+			{"КОНТРОЛЬ cherry (нет в 1.7.10) → белый", net.minecraft.world.level.block.Blocks.CHERRY_LEAVES, 0, 0xFFFFFF},
+		};
+		int tPass = 0, tFail = 0;
+		for (Object[] tCase : tCases) {
+			gregapi.render.BlockTextureCopied tTex = new gregapi.render.BlockTextureCopied((net.minecraft.world.level.block.Block)tCase[1], gregapi.data.CS.SIDE_ANY, (Integer)tCase[2]);
+			int tGot = ((tTex.mRGBa[0] & 0xFF) << 16) | ((tTex.mRGBa[1] & 0xFF) << 8) | (tTex.mRGBa[2] & 0xFF);
+			boolean tOk = tGot == (Integer)tCase[3];
+			if (tOk) tPass++; else tFail++;
+			O.println("[GT6-COPYCOLORPROBE] " + (tOk ? "PASS" : "FAIL") + " " + tCase[0]
+				+ " · получено 0x" + Integer.toHexString(tGot).toUpperCase() + " · ожидание 0x" + Integer.toHexString((Integer)tCase[3]).toUpperCase());
+		}
+		O.println("[GT6-COPYCOLORPROBE] живые colormap: foliage(0.5,1.0)=0x" + Integer.toHexString(tFoliage).toUpperCase() + " grass(0.5,1.0)=0x" + Integer.toHexString(tGrass).toUpperCase());
+		O.println("========== [GT6-COPYCOLORPROBE] ИТОГ: " + (tFail == 0 ? "PASS " + tPass + "/" + tCases.length : "FAIL — разбирать (" + tFail + " красных)") + " ==========");
+	}
+
+	// ==========================================================================================================
+	// [GT6-CAPEPROBE] снятие метки отложенности «плащи GT6» (PlayerModelRenderer) — снять при уборке фазы.
+	//
+	// Судим СЛЕДСТВИЕ у конечного объекта: что лежит в AvatarRenderState.skin.cape() ПОСЛЕ кадра рендера
+	// игрока (RenderPlayerEvent.Post) — тот самый стейт, из которого движковый CapeLayer:44-68 рисует плащ.
+	//   контроль ДО    — ник НЕ в списках: cape обязан быть null (судья умеет говорить «нет»);
+	//   впрыск         — ник локального игрока добавляется в живой mSupporterListSilver (lowercase, как грузит
+	//                    GT_Proxy:117), ожидание: cape = gregtech:textures/model/silver.png;
+	//   судья ресурсов — все 7 текстур плащей резолвятся ResourceManager (битый путь = невидимый плащ);
+	//   камера         — в 1-м лице игрок не рендерится и событие не стреляет: проба сама включает 3-е лицо
+	//                    и возвращает обратно. Лимиты жёсткие (не «вечное ожидание»).
+	// ==========================================================================================================
+	private static int sCapePhase = 0, sCapeWait = 0, sCapePostFrames = 0;
+	private static String sCapeSeen = "-";
+	private static net.minecraft.client.CameraType sCapeOldCam = null;
+
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onCapeProbeRender(net.neoforged.neoforge.client.event.RenderPlayerEvent.Post<?> aEvent) {
+		if (sCapePhase != 1 && sCapePhase != 2) return;
+		if (!gregapi.data.CS.probeFlag("gt6capeprobe.flag")) return;
+		sCapePostFrames++;
+		net.minecraft.core.ClientAsset.Texture tCape = aEvent.getRenderState().skin == null ? null : aEvent.getRenderState().skin.cape();
+		sCapeSeen = tCape == null ? "null" : String.valueOf(tCape.texturePath());
+	}
+
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onCapeProbeTick(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (sCapePhase >= 4 || !gregapi.data.CS.probeFlag("gt6capeprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (tMC.level == null || tMC.player == null) {if (++sCapeWait > 12000) sCapePhase = 4; return;}
+		switch (sCapePhase) {
+		case 0: {
+			O.println("========== [GT6-CAPEPROBE] плащи GT6: данные движковому CapeLayer ==========");
+			int tBad = 0;
+			for (String tName : new String[]{"braintech", "silver", "mrbrain", "dev", "gold", "crazy", "sus"}) {
+				net.minecraft.resources.Identifier tId = net.minecraft.resources.Identifier.parse(gregapi.data.CS.RES_PATH_MODEL + tName + ".png");
+				boolean tOk = tMC.getResourceManager().getResource(tId).isPresent();
+				if (!tOk) tBad++;
+				O.println("[GT6-CAPEPROBE] ресурс " + tId + ": " + (tOk ? "PASS (резолвится)" : "FAIL (НЕТ В СБОРКЕ)"));
+			}
+			O.println("[GT6-CAPEPROBE] текстур с дефектом: " + tBad);
+			sCapeOldCam = tMC.options.getCameraType();
+			tMC.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
+			sCapePhase = 1; sCapeWait = 0; sCapePostFrames = 0;
+			return;
+		}
+		case 1: { // контроль ДО впрыска: ник не в списках → cape null
+			if (sCapePostFrames < 5 && ++sCapeWait < 400) return;
+			if (sCapePostFrames == 0) {O.println("[GT6-CAPEPROBE] FAIL: RenderPlayerEvent.Post не пришёл за 400 тиков (3-е лицо не рендерит?)"); sCapePhase = 3; return;}
+			boolean tClean = "null".equals(sCapeSeen);
+			O.println("[GT6-CAPEPROBE] контроль ДО (ник не в списке, кадров " + sCapePostFrames + "): cape=" + sCapeSeen + " → " + (tClean ? "PASS" : "FAIL (плащ без права?)"));
+			String tNick = tMC.player.getScoreboardName().toLowerCase();
+			((gregtech.GT_Proxy)gregtech.GT6_Main.gt_proxy).mSupporterListSilver.add(tNick);
+			O.println("[GT6-CAPEPROBE] впрыск: ник '" + tNick + "' добавлен в mSupporterListSilver — ждём подмену");
+			sCapePhase = 2; sCapeWait = 0; sCapePostFrames = 0;
+			return;
+		}
+		case 2: { // после впрыска: cape обязан стать silver.png
+			String tExpect = gregapi.data.CS.RES_PATH_MODEL + "silver.png";
+			boolean tGot = sCapeSeen.equals(tExpect) || sCapeSeen.equals(String.valueOf(net.minecraft.resources.Identifier.parse(tExpect)));
+			if (!tGot && ++sCapeWait < 400) return;
+			O.println("[GT6-CAPEPROBE] после впрыска (кадров " + sCapePostFrames + "): cape=" + sCapeSeen + " · ожидание=" + tExpect + " → " + (tGot ? "PASS" : "FAIL"));
+			O.println("========== [GT6-CAPEPROBE] ИТОГ: " + (tGot ? "PASS — путь ник→список→skin→CapeLayer жив" : "FAIL — разбирать") + " ==========");
+			sCapePhase = 3;
+			return;
+		}
+		case 3: { // уборка: ник из списка, камера назад
+			try {((gregtech.GT_Proxy)gregtech.GT6_Main.gt_proxy).mSupporterListSilver.remove(tMC.player.getScoreboardName().toLowerCase());} catch (Throwable e) {}
+			if (sCapeOldCam != null) tMC.options.setCameraType(sCapeOldCam);
+			sCapePhase = 4;
+			return;
+		}
+		}
+	}
 }

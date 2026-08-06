@@ -444,14 +444,20 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	public static final List<short[]> sRainbow = new ArrayListNoNulls<>(), sRainbowFast = new ArrayListNoNulls<>(), sPosR = new ArrayListNoNulls<>(), sPosG = new ArrayListNoNulls<>(), sPosB = new ArrayListNoNulls<>(), sPosA = new ArrayListNoNulls<>(), sNegR = new ArrayListNoNulls<>(), sNegG = new ArrayListNoNulls<>(), sNegB = new ArrayListNoNulls<>(), sNegA = new ArrayListNoNulls<>();
 	
 	/**
-	 * PORT-TODO(F3/F5 граница, baked-рендер клиента): 1.7.10 {@code TextureStitchEvent.Pre} (до стежки,
-	 * позволял чинить иконки жидкостей ДО постройки атласа) заменён на {@code TextureAtlasStitchedEvent}
-	 * (только ПОСЛЕ стежки, `neoforge-decompiled/.../TextureAtlasStitchedEvent.java:24-38`, нет Pre-варианта)
-	 * — сама точка вмешательства форсированно иная (движко-шов). Тело зовёт удалённый Forge-кастом-жидкостный
-	 * {@code net.minecraftforge.fluids.FluidRegistry}/{@code IIcon Fluid.getIcon()} — F5 ({@code gregapi.fluid}/
-	 * {@code FL}) уже закрыт другим заходом и эту точку не использует (см. {@link RendererBlockFluid} class
-	 * javadoc, "F5 закрыт, сюда не лезем") — фикс "жидкость без иконки" переносится в baked-фазу F3 (материал
-	 * атласа резолвится через {@code ModelBaker.materials()}, decisions/F3-render.md §2.3), не сюда.
+	 * 1.7.10 {@code TextureStitchEvent.Pre} нёс здесь страховку Грегориуса «жидкость без иконки или с битой
+	 * иконкой получает иконку своего блока либо воды» (оригинал {@code GT_API_Proxy_Client:194-212}). В neo
+	 * Pre-события нет ({@code TextureAtlasStitchedEvent} приходит только ПОСЛЕ стежки), а мутировать чужую
+	 * жидкость нельзя — модель жидкости регистрирует владеющий мод. Функция страховки НЕ утрачена: она несётся
+	 * тремя централизованными плечами. Ветка «иконки нет» ({@code getIcon()==null}) — {@link gregapi.data.FL#stillIcon}
+	 * (заведено в BUG-049: нет своей текстуры → {@code water_still}; потребители — дисплеи и ВСЕ баки через
+	 * {@link gregapi.render.BlockTextureFluid}). Ветка «иконка битая» ({@code FluidsGT.BROKEN}) —
+	 * {@code BlockTextureFluid:105}: спрайт не нашёлся в атласе → {@code water_still}. Мировой рендер —
+	 * {@link #onRegisterFluidModels}: фолбэк на воду при null/невалидной иконе (baked-фаза F3 — ровно куда
+	 * прежняя метка отложенности предписывала перенести фикс). Списки-исключения оригинала перенесены 1:1:
+	 * {@code BROKEN} пуст, {@code BORKEN} несёт одну thaumcraft-жидкость (мода в сборке нет) — применимых
+	 * чужих случаев нет, жидкости регистрируют только ваниль и GT6. Судья фолбэка — {@code gt6itemmodelprobe}
+	 * (BUG-068): river/ocean/swamp — жидкости БЕЗ своей текстуры — получают {@code water_still}, 10/10.
+	 * Обработчик оставлен пустым 1:1 к точке подписки оригинала.
 	 */
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onTextureStitchedPre(TextureAtlasStitchedEvent aEvent) {

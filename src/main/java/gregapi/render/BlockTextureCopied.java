@@ -33,15 +33,11 @@ import net.minecraft.resources.Identifier;
  * самосветящихся ванильных блоков), перенесена 1:1 (REMAP-RULES §A: данные не гатим).
  * F3 block-icon-data ЗАКРЫТ: {@code Block.getIcon(side,meta)} удалён из neo (baked-model рендер) — спрайт грани
  * копируемого ванильного блока резолвится из его baked {@code BlockStateModel} ({@link GT6QuadBuilder#resolveBlockFaceIcon}).
- * PORT-TODO(F3, block-render-color): {@code Block.getRenderColor(meta)} удалён из neo {@code Block} (REMAP-RULES §C2) —
- * 1:1-доступа к цвету рендера блока нет (для биом-тинта нужен neo {@code BlockColors}); тинт — {@code UNCOLOURED}
- * (заглушка помечена явно, оригинальная строка сохранена — не тихое обнуление; корректно для всех не-биом-тинт блоков).
- * <p>⚠️ АДРЕС РЕШЕНИЯ ИЗВЕСТЕН с 2026-07-30: реестр источников тинта в порте уже задействован — центр
- * {@code GT6BlockTint} + одна регистрация на все блоки мода ({@code GT_API_Proxy_Client.onRegisterBlockTints},
- * судья {@code gt6tintprobe}, замер {@code M-37}). Здесь нужна ДРУГАЯ половина того же канала: цвет
- * КОПИРУЕМОГО ванильного блока, то есть запрос {@code BlockColors.getTintSource(vanillaState, 0)} и его
- * {@code colorInWorld(state, level, pos)} — тем же путём, которым движок красит саму ванильную листву.
- * Метка снимается вместе с этой веткой; величины по-прежнему не выдумываем.
+ * [Метка отложенности «block-render-color» СНЯТА 2026-08-06.] Прежняя её формулировка («для биом-тинта нужен
+ * {@code BlockColors}») несла НЕВЕРНУЮ модель: 1.7.10 звал здесь {@code Block.getRenderColor(meta)} —
+ * СТАТИЧЕСКИЙ цвет рендера БЕЗ мира и биома; биомный канал {@code colorMultiplier(world,x,y,z)} этот класс
+ * не звал и в оригинале. Канал восстановлен методом {@link #vanillaRenderColor} — переопределения ванили
+ * 1.7.10 перенесены как ДАННЫЕ (сверено по декомпилу {@code recompSrc}, тела в javadoc метода).
  */
 public class BlockTextureCopied implements ITexture {
 	private final Block mBlock;
@@ -121,14 +117,42 @@ public class BlockTextureCopied implements ITexture {
 		//    (греп BlockTextureCopied.get/new по FIRE|LAVA|GLOWSTONE|LAMP: только LAVA, GLOWSTONE, OBSIDIAN
 		//    и портал Aether), поэтому расхождение ненаблюдаемо; при появлении вызывателя различие берётся
 		//    из состояния позиции, а не из блок-идентичности. Долгом это не является — движковое расхождение.
-		// Цвет: 4-й аргумент был aBlock.getRenderColor(aMeta). Канал восстановлен как контракт IBlock#getRenderColor
-		// (общего Block-предка у иерархий GT6 нет) — спрашиваем ЕГО у GT6-блоков. У ванильных neo-блоков тинта нет
-		// и не нужно: их цвет перенесён в САМИ блоки флэттенингом (white_wool/red_wool — свои текстуры), а дефолт
-		// 1.7.10 Block.getRenderColor был 0xFFFFFF = UNCOLOURED, то есть для них поведение и так 1:1.
+		// Цвет: 4-й аргумент был aBlock.getRenderColor(aMeta). Для GT6-блоков канал — контракт IBlock#getRenderColor
+		// (общего Block-предка у иерархий GT6 нет); для ванильных — vanillaRenderColor ниже (переопределения
+		// 1.7.10 как данные; дефолт 1.7.10 Block.getRenderColor = 0xFFFFFF = UNCOLOURED — для прочих 1:1 и так).
 		this(aBlock, aSide, aMeta
-			, aBlock instanceof gregapi.block.IBlock tGT6 ? tGT6.getRenderColor(aMeta) : UT.Code.getRGBInt(UNCOLOURED), F
+			, aBlock instanceof gregapi.block.IBlock tGT6 ? tGT6.getRenderColor(aMeta) : vanillaRenderColor(aBlock, aMeta), F
 			, aBlock == Blocks.FIRE || aBlock == Blocks.LAVA || aBlock == Blocks.GLOWSTONE
 			, aBlock == Blocks.FIRE || aBlock == Blocks.LAVA || aBlock == Blocks.GLOWSTONE);
+	}
+
+	/** [снятие метки block-render-color 2026-08-06] Восстановленный канал 1.7.10 {@code Block.getRenderColor(meta)}
+	 *  для ВАНИЛЬНЫХ блоков: статический цвет рендера, БЕЗ мира и биома (биомный {@code colorMultiplier} этот класс
+	 *  не звал и в оригинале). Данные — ВСЕ переопределения ванили 1.7.10 (recompSrc, полный греп по
+	 *  {@code net/minecraft/block}: Grass, Leaves, OldLeaf, LilyPad, Stem, TallGrass, Vine — 7 + дефолт):
+	 *  · {@code BlockOldLeaf}: meta&3==1 (ель) → {@code getFoliageColorPine()} = 0x619961 — neo-константа
+	 *    {@code FoliageColor.FOLIAGE_EVERGREEN} несёт ту же величину; ==2 (берёза) → 0x80A755 = {@code FOLIAGE_BIRCH};
+	 *    прочее и {@code BlockLeaves}-база (дуб/джунгли/акация/тёмный дуб) → {@code getFoliageColorBasic()} =
+	 *    colormap(0.5,1.0) — neo {@code FoliageColor.get(0.5,1.0)}, та же формула по тому же colormap;
+	 *  · {@code BlockGrass}/{@code BlockTallGrass} (meta 1/2 → в neo SHORT_GRASS/FERN; meta 0 dead shrub →
+	 *    в neo DEAD_BUSH, у него 1.7.10 давал белый) → {@code ColorizerGrass.getGrassColor(0.5,1.0)} —
+	 *    neo {@code GrassColor.getDefaultColor()} = буквально {@code get(0.5,1.0)};
+	 *  · {@code BlockVine} → foliage basic; · {@code BlockLilyPad} → константа 2129968;
+	 *  · {@code BlockStem} → формула из меты 1:1 (attached-стебли — расщепление того же блока 1.7.10).
+	 *  Листвы, которых в 1.7.10 нет (cherry/azalea/mangrove/pale_oak), канала не имели — дефолт, не выдумываем.
+	 *  Модовые блоки: 1.7.10 диспатчил виртуально и чужие переопределения работали; в neo канала нет ни у кого —
+	 *  восстановимы только ванильные данные, чужие получают дефолт (граница шва, честно). */
+	private static int vanillaRenderColor(Block aBlock, int aMeta) {
+		if (aBlock == Blocks.SPRUCE_LEAVES) return net.minecraft.world.level.FoliageColor.FOLIAGE_EVERGREEN & 0xFFFFFF;
+		if (aBlock == Blocks.BIRCH_LEAVES)  return net.minecraft.world.level.FoliageColor.FOLIAGE_BIRCH & 0xFFFFFF;
+		if (aBlock == Blocks.OAK_LEAVES || aBlock == Blocks.JUNGLE_LEAVES || aBlock == Blocks.ACACIA_LEAVES || aBlock == Blocks.DARK_OAK_LEAVES || aBlock == Blocks.VINE)
+			return net.minecraft.world.level.FoliageColor.get(0.5, 1.0) & 0xFFFFFF;
+		if (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.SHORT_GRASS || aBlock == Blocks.FERN)
+			return net.minecraft.world.level.GrassColor.getDefaultColor() & 0xFFFFFF;
+		if (aBlock == Blocks.LILY_PAD) return 2129968;
+		if (aBlock == Blocks.PUMPKIN_STEM || aBlock == Blocks.MELON_STEM || aBlock == Blocks.ATTACHED_PUMPKIN_STEM || aBlock == Blocks.ATTACHED_MELON_STEM)
+			return (aMeta * 32) << 16 | (255 - aMeta * 8) << 8 | aMeta * 4;
+		return UT.Code.getRGBInt(UNCOLOURED);
 	}
 
 	private Identifier getIcon(int aSide) {

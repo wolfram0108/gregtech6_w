@@ -463,6 +463,45 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		}
 	}
 	
+	/** [BUG-047, метка отложенности F-hook-removed СНЯТА 2026-08-06] Per-rail максимум скорости В КАНАЛЕ ДВИЖКА.
+	 *  1.7.10: {@code EntityMinecart:373-374} — {@code maxSpeed = min(rail.getRailMaxSpeed(...),
+	 *  getCurrentCartSpeedCapOnRail())}, капа минкарта {@code getMaxCartSpeedOnRail() = 1.2f}
+	 *  ({@code EntityMinecart:1335}, инициализация {@code currentSpeedRail} — {@code :61}); водной ветки не было
+	 *  (вода-физика минкартов — движок 1.13+). neo 26.1.2: величина захардкожена
+	 *  {@code OldMinecartBehavior.getMaxSpeed:410-411} (вода 0.2 / суша 0.4) и читается клампом смещения
+	 *  {@code moveAlongTrack:208-211} ДО любого события — потому пост-мост {@code GT_API_Proxy.onMinecartPassBridge}
+	 *  мог только резать вниз (медленные Al 0.2/Bronze 0.3), а Ti 1.2 был недостижим. Восстановление 1:1 —
+	 *  подкласс поведения отвечает движку per-rail величиной в ЕГО ЖЕ канале (второй хардкод того же рода —
+	 *  {@code getKnownMovement:403-407}, кламп ±0.4 для производных систем: снаряды/поводок/частицы — перекрыт
+	 *  той же величиной). Подмену поля {@code AbstractMinecart.behavior} держит
+	 *  {@code GT_API_Proxy.onMinecartJoinBridge} — единственная точка на весь мод. */
+	public static final class GT6MinecartBehavior extends net.minecraft.world.entity.vehicle.minecart.OldMinecartBehavior {
+		/** Капа минкарта 1.7.10: {@code EntityMinecart.getMaxCartSpeedOnRail() = 1.2f} ({@code :1335}) —
+		 *  непреодолима и в оригинале: Adamantium-рельс 4.0 давал минкарту максимум 1.2. */
+		private static final double CART_SPEED_CAP = 1.2;
+		public GT6MinecartBehavior(AbstractMinecart aCart) {super(aCart);}
+		/** GT6-рельс под минкартом → его {@link BlockBaseRail#getRailMaxSpeed}; иначе −1 (не наш случай). */
+		private float railMax() {
+			BlockPos tPos = minecart.getCurrentBlockPosOrRailBelow();
+			if (WD.block(minecart.level(), tPos.getX(), tPos.getY(), tPos.getZ()) instanceof BlockBaseRail tRail)
+				return tRail.getRailMaxSpeed(minecart.level(), minecart, tPos.getX(), tPos.getY(), tPos.getZ());
+			return -1;
+		}
+		@Override public double getMaxSpeed(net.minecraft.server.level.ServerLevel aLevel) {
+			float tRailMax = railMax();
+			return tRailMax < 0 ? super.getMaxSpeed(aLevel) : Math.min(tRailMax, CART_SPEED_CAP);
+		}
+		@Override public net.minecraft.world.phys.Vec3 getKnownMovement(net.minecraft.world.phys.Vec3 aMovement) {
+			float tRailMax = railMax();
+			if (tRailMax < 0) return super.getKnownMovement(aMovement);
+			double tMax = Math.min(tRailMax, CART_SPEED_CAP);
+			// 1:1 к NaN-гарду движка (OldMinecartBehavior.getKnownMovement:403-407), предел — per-rail.
+			return !Double.isNaN(aMovement.x) && !Double.isNaN(aMovement.y) && !Double.isNaN(aMovement.z)
+				? new net.minecraft.world.phys.Vec3(net.minecraft.util.Mth.clamp(aMovement.x, -tMax, tMax), aMovement.y, net.minecraft.util.Mth.clamp(aMovement.z, -tMax, tMax))
+				: net.minecraft.world.phys.Vec3.ZERO;
+		}
+	}
+
 	// @Override
 	public void onMinecartPass(Level aWorld, AbstractMinecart aCart, int aX, int aY, int aZ) {
 		if (mPowerRail) {
