@@ -155,9 +155,9 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		CR.shaped(ST.make(Blocks.NETHERRACK                 , 1, 0), DEF    , "XX", "XX", 'X', rockGt.dat(MT.Netherrack));
 		CR.shaped(ST.make(Blocks.END_STONE                  , 1, 0), DEF    , "XX", "XX", 'X', rockGt.dat(MT.Endstone));
 		CR.shaped(ST.make(Blocks.COBBLESTONE                , 1, 0), DEF    , "XX", "XX", 'X', rockGt.dat(MT.Stone));
-		CR.shaped(ST.make(Blocks.STONE_STAIRS               , 1, 0), DEF_MIR, " X", "XX", 'X', rockGt.dat(MT.Stone));
+		CR.shaped(ST.make(Blocks.COBBLESTONE_STAIRS               , 1, 0), DEF_MIR, " X", "XX", 'X', rockGt.dat(MT.Stone));
 		CR.shaped(ST.make(Blocks.COBBLESTONE_SLAB, 1, 0), DEF    , "  ", "XX", 'X', rockGt.dat(MT.Stone));
-		CR.shaped(ST.make(Blocks.STONE_STAIRS               , 4, 0), DEF_MIR, " X", "XX", 'X', Blocks.COBBLESTONE);
+		CR.shaped(ST.make(Blocks.COBBLESTONE_STAIRS               , 4, 0), DEF_MIR, " X", "XX", 'X', Blocks.COBBLESTONE);
 		CR.shaped(ST.make(Blocks.COBBLESTONE_SLAB, 4, 0), DEF    , "  ", "XX", 'X', Blocks.COBBLESTONE);
 		
 		// Hammering and Filing Stones into different Stones.

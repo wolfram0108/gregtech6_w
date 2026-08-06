@@ -45,6 +45,11 @@ public class ShapedOreRecipe implements ICraftingRecipeGT {
 	protected final Object[] mInput;
 	protected final int mWidth, mHeight;
 	protected boolean mMirrored = F;
+	/** F4 роль-C: рецепт — ore-версия ВАНИЛЬНОГО датапак-рецепта (не родной GT6). В 1.7.10 такие Forge-замены
+	 *  НЕ были ICraftingRecipeGT и потому обрабатывались сканом Loader_Recipes_Replace — маркер сохраняет
+	 *  им этот статус; {@code mSourceId} — ключ датапак-оригинала для подавления при замене. */
+	public boolean mVanillaReplacement = F;
+	public net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> mSourceId = null;
 
 	public ShapedOreRecipe(ItemStack aResult, Object... aRecipe) {
 		mOutput = ST.copy(aResult);

@@ -281,7 +281,9 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		RM.add_smelting(OP.blockDust.mat(mMaterial, 1), ST.make(this, 1, STONE), F, F, F);
 		
 		CR.shaped(gearGtSmall.mat(     mMaterial, 1), CR.DEF    , "X ", " f", 'X', OP.stone.dat(mMaterial));
-		CR.shaped(ST.make(Blocks.STONE_STAIRS, 1, 0), CR.DEF_MIR, " X", "XX", 'X', OP.rockGt.dat(mMaterial)); // TODO Stairs
+		// 1.7.10 minecraft:stone_stairs = лестница ИЗ БУЛЫЖНИКА (исторический мисноминг ванили; DataFixer
+		// stone_stairs.0 -> cobblestone_stairs). neo Blocks.STONE_STAIRS — ДРУГОЙ, новый блок из камня.
+		CR.shaped(ST.make(Blocks.COBBLESTONE_STAIRS, 1, 0), CR.DEF_MIR, " X", "XX", 'X', OP.rockGt.dat(mMaterial)); // TODO Stairs
 		CR.shaped(ST.make(mSlabs[0]      , 1, COBBL), CR.DEF    , "  ", "XX", 'X', OP.rockGt.dat(mMaterial));
 		
 		for (int i = 0; i < maxMeta(); i++) if (JUSTSTONE[i]) {
@@ -341,7 +343,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		RM.growmoss(tStack.toStack(), ST.make(this, 1, MCOBL));
 		RM.add_smelting(tStack.toStack(), ST.make(this, 1, STONE), F, F, F);
 		CR.shaped(ST.make(mSlabs[0]          , 4, COBBL), CR.DEF    , "  " , "XX" , 'X', tStack.toStack());
-		CR.shaped(ST.make(Blocks.STONE_STAIRS    , 4, 0), CR.DEF_MIR, " X" , "XX" , 'X', tStack.toStack()); // TODO Stairs
+		CR.shaped(ST.make(Blocks.COBBLESTONE_STAIRS    , 4, 0), CR.DEF_MIR, " X" , "XX" , 'X', tStack.toStack()); // TODO Stairs
 		CR.shaped(ST.make(Blocks.COBBLESTONE_WALL, 6, 0), CR.DEF_MIR, "XXX", "XXX", 'X', tStack.toStack()); // TODO Walls
 		if (IL.TF_Pick_Giant.exists()) RM.Boxinator.addRecipe2(T,128,128, ST.amount(64, tStack.toStack()), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Cobble.get(1));
 		RM.Extruder.addRecipe2(F, F, F, F, F, 16,  32, ST.amount(1, tStack.toStack()), IL.Shape_Extruder_Plate       .get(0), OP.plate.mat(mMaterial, 9));

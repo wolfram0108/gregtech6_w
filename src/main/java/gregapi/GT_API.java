@@ -244,6 +244,34 @@ public class GT_API extends Abstract_Mod {
 	 *  (ReloadableServerResources) → тот же пайплайн физически сдвинут сюда. OreDictManager.registerOre_ имеет guard
 	 *  «Only @Init/@PreInit» (sStartedPostInit>0 → throw) — во время ЭТОГО окна guard подавляется: это init GT6, сдвинутый во времени. */
 	public static boolean sDeferredItemInitRunning = false;
+
+	/** F11-recipe-scan: очередь сканов ЧУЖИХ рецептов (Loader_Recipes_Replace). В 1.7.10 скан бежал на PostInit
+	 *  по готовому CraftingManager; в neo его вход (ore-версии ванильных рецептов, F4 роль-C) появляется только
+	 *  на server-start — очередь исполняется в {@link #onLevelLoadEarlyItemInit} ПОСЛЕ роли-C и ДО
+	 *  {@code finalizeRecipeLoading} (чтобы пересборка propertySets/дисплеев увидела уже подавленные рецепты). */
+	public static final List<Runnable> DEFERRED_RECIPE_SCAN = new ArrayListNoNulls<>();
+	public static void deferRecipeScan(Runnable aScan) {if (aScan != null) DEFERRED_RECIPE_SCAN.add(aScan);}
+	/** Сервер текущего окна recipe-scan (ненулевой только во время исполнения очереди) — для {@link #removeDatapackRecipes}. */
+	public static net.minecraft.server.MinecraftServer sCurrentServerForRecipeScan = null;
+
+	/** F11-recipe-scan: ПОДАВЛЕНИЕ датапак-рецептов — neo-эквивалент 1.7.10 {@code CraftingManager.getRecipeList().remove(...)}
+	 *  (в 1.7.10 Replace удалял заменённый рецепт из живого списка; в neo {@code RecipeManager} рантайм-удаления не имеет,
+	 *  {@code RecipeMap} immutable). Карта пересобирается публичной фабрикой {@code RecipeMap.create} без подавленных,
+	 *  private-поле {@code RecipeManager.recipes} подменяется рефлексией — приём прецедентен (подмена
+	 *  {@code AbstractMinecart.behavior}, JDK 25 пишет private instance-поля). Зовётся ДО finalizeRecipeLoading. */
+	public static void removeDatapackRecipes(net.minecraft.server.MinecraftServer aServer, java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> aRemove) {
+		if (aServer == null || aRemove == null || aRemove.isEmpty()) return;
+		try {
+			net.minecraft.world.item.crafting.RecipeManager tRM = aServer.getRecipeManager();
+			java.util.List<net.minecraft.world.item.crafting.RecipeHolder<?>> tKeep = new java.util.ArrayList<>();
+			int tBefore = 0;
+			for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : tRM.recipeMap().values()) {tBefore++; if (!aRemove.contains(tHolder.id())) tKeep.add(tHolder);}
+			java.lang.reflect.Field tField = net.minecraft.world.item.crafting.RecipeManager.class.getDeclaredField("recipes");
+			tField.setAccessible(true);
+			tField.set(tRM, net.minecraft.world.item.crafting.RecipeMap.create(tKeep));
+			OUT.println("GT_API: datapack recipes suppressed (F11-recipe-scan): " + (tBefore - tKeep.size()) + " of " + aRemove.size() + " requested.");
+		} catch(Throwable e) {e.printStackTrace(ERR);}
+	}
 	// drain-loop: коллбэк может добавить новый deferItemInit (вложенная отложка, напр. блок→слэб) — обрабатываем FIFO
 	// без ConcurrentModification; список опустошается полностью, включая добавленное во время выполнения.
 	public static void runDeferredItemInit() {
@@ -566,11 +594,19 @@ public class GT_API extends Abstract_Mod {
 			// делает на reload (MinecraftServer.java:356,1588), идемпотентен. Топливо (isFuel) не затронуто — оно идёт через
 			// FurnaceFuelBurnTimeEvent, независимо от propertySet. Сама плавка/ручная укладка работали и до фикса (matches live-lookup).
 			net.minecraft.server.MinecraftServer tServer = tLevel.getServer();
-			if (tServer != null) tServer.getRecipeManager().finalizeRecipeLoading(tLevel.enabledFeatures());
 			// F4 роль-C: замена ванильных верстак-рецептов ore-версиями (в 1.7.10 это делал сам Forge в
 			// initVanillaEntries, вторая половина). Именно здесь: RecipeManager полон датапаком, словарь
 			// полон ванилью (роль-B в начале drain'а выше) и GT6-стеками (сам drain). Идемпотентно.
 			gregapi.oredict.OreDictionary.initVanillaRecipeReplacements(tServer);
+			// F11-recipe-scan: сканы чужих рецептов (Loader_Recipes_Replace) — ПОСЛЕ роли-C (их вход — её
+			// ore-версии, как в 1.7.10 входом были Forge-замены) и ДО finalizeRecipeLoading ниже (подавление
+			// датапак-рецептов должно попасть в пересборку propertySets/дисплеев recipe book).
+			sCurrentServerForRecipeScan = tServer;
+			try {for (Runnable tScan : DEFERRED_RECIPE_SCAN) try {tScan.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_RECIPE_SCAN.clear();}
+			finally {sCurrentServerForRecipeScan = null;}
+			// BUG-054: пересборка propertySets ПОСЛЕ наполнения FurnaceRecipes (drain выше) — и после подавления
+			// датапак-рецептов сканом (той же пересборкой соберутся дисплеи без подавленных). Идемпотентен.
+			if (tServer != null) tServer.getRecipeManager().finalizeRecipeLoading(tLevel.enabledFeatures());
 			// BUG-039 (F-loot, тот же класс тайминга): LootTableLoadEvent отстрелял при загрузке ресурсов ДО этой
 			// data-init (буфер ChestGenHooks был пуст) → догоняющая инъекция GT-пулов в загруженные таблицы.
 			// Идемпотентна (именованный pool); /reload и последующие загрузки покрывает сам LootTableLoadEvent.

@@ -87,6 +87,11 @@ public final class PortDump {
         // Сервер эфемерного стенда (параметр JUnit) несёт полный датапак-RecipeManager.
         System.out.println("[port-dump] F4 роль-C: сервер " + (aServer == null ? "НЕДОСТУПЕН — замены не снимаются" : "есть, снимаем замены"));
         gregapi.oredict.OreDictionary.initVanillaRecipeReplacements(aServer);
+        // F11-recipe-scan (Loader_Recipes_Replace): в игре очередь исполняется в GT_API.onLevelLoadEarlyItemInit
+        // после роли-C; здесь — тем же порядком явно.
+        gregapi.GT_API.sCurrentServerForRecipeScan = aServer;
+        try {for (Runnable tScan : gregapi.GT_API.DEFERRED_RECIPE_SCAN) try {tScan.run();} catch(Throwable e) {e.printStackTrace();} gregapi.GT_API.DEFERRED_RECIPE_SCAN.clear();}
+        finally {gregapi.GT_API.sCurrentServerForRecipeScan = null;}
 
         Files.createDirectories(DUMP);
         // Путь печатаем абсолютным: рабочий каталог тест-JVM — build/minecraft-junit/, поэтому относительный

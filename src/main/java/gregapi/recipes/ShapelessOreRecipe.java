@@ -45,6 +45,9 @@ public class ShapelessOreRecipe implements ICraftingRecipeGT {
 	protected final ItemStack mOutput;
 	/** Каждый элемент: {@code ItemStack} (точный вход) или {@code List<ItemStack>} (ore-альтернативы). */
 	protected final List<Object> mInput = new ArrayList<>();
+	/** F4 роль-C: ore-версия ванильного датапак-рецепта (см. {@code ShapedOreRecipe.mVanillaReplacement}). */
+	public boolean mVanillaReplacement = F;
+	public net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> mSourceId = null;
 
 	public ShapelessOreRecipe(ItemStack aResult, Object... aRecipe) {
 		mOutput = ST.copy(aResult);

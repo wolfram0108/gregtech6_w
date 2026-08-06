@@ -2533,7 +2533,7 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.SAND, 1, 0), MT.Sand               ,  U * 9);
 		OM.data(ST.make(Blocks.RED_SAND, 1, 0)                          , MT.Sand               ,  U * 9, MT.Fe2O3, U);
 		OM.data(ST.make(Blocks.SANDSTONE, 1, W), MT.Sand               ,  U * 9);
-		OM.data(ST.make(Blocks.STONE_STAIRS                  , 1, W), ANY.Stone             ,  U4*27);
+		OM.data(ST.make(Blocks.COBBLESTONE_STAIRS                  , 1, W), ANY.Stone             ,  U4*27);
 		OM.data(ST.make(Blocks.STONE_BRICK_STAIRS            , 1, W), ANY.Stone             ,  U4*27);
 		OM.data(ST.make(Blocks.COBBLESTONE_WALL              , 1, W), ANY.Stone             ,  U * 9);
 		OM.data(ST.make(Blocks.STONE_SLAB, 1, 0), ANY.Stone             ,  U2* 9);

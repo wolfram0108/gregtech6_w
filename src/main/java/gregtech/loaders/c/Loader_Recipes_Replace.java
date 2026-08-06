@@ -119,9 +119,17 @@ public class Loader_Recipes_Replace implements Runnable {
 		NON_REPLACEABLE.add(ST.make(MD.NC, "ItemToolThermometer"                , 1, W));
 		
 		
+		// F11-recipe-scan (перенос скана в окно server-start): в 1.7.10 скан бежал на PostInit по готовому
+		// CraftingManager и обрабатывал Forge-ЗАМЕНЫ ванильных рецептов (ShapedOreRecipe — НЕ ICraftingRecipeGT).
+		// В neo их эквивалент — ore-версии F4 роли-C (маркер mVanillaReplacement), а появляются они только на
+		// server-start -> скан отложен в GT_API.deferRecipeScan (исполняется после роли-C, до finalizeRecipeLoading).
+		// Датапак-оригинал заменённого рецепта подавляется центром GT_API.removeDatapackRecipes (в 1.7.10 эту роль
+		// исполнял remove из живого CraftingManager-списка).
+		gregapi.GT_API.deferRecipeScan(() -> {
 		List<ItemStack> tStickList = OreDictionary.getOres(OD.stickWood.toString());
 		HashSetNoNulls<Object> tAlreadyScannedItems = new HashSetNoNulls<>();
 		ArrayListNoNulls<RecipeReplacement> tList = new ArrayListNoNulls<>();
+		java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> tSuppress = new java.util.HashSet<>();
 		List<ICraftingRecipeGT> tRecipeList = CR.list(); // CR.list() отдаёт GT6-буфер ICraftingRecipeGT (не neo Recipe)
 		boolean tUseProgressBar = UT.LoadingBar.start("Looking up Recipes", tRecipeList.size());
 		for (int l = 0; l < tRecipeList.size(); l++) {
@@ -132,25 +140,17 @@ public class Loader_Recipes_Replace implements Runnable {
 			if (aOutput.getCount() != 1) continue;
 			if (aOutput.getMaxDamage() <= 0) continue;
 			if (aOutput.getMaxStackSize() != 1) continue;
-			if (tRecipe instanceof ShapelessRecipe) continue;
-			if (tRecipe instanceof ICraftingRecipeGT) continue; // GT6-буфер: ВСЕ элементы CR.list() — ICraftingRecipeGT -> тело ниже недостижимо (см. F11-recipe-scan ниже)
+			// 1:1-фильтр 1.7.10: shapeless (любые) — скип; РОДНЫЕ GT6-рецепты (ICraftingRecipeGT) — скип;
+			// обрабатываются только замены ванильных (в 1.7.10 — Forge ShapedOreRecipe, здесь — роль-C с маркером).
+			if (!(tRecipe instanceof gregapi.recipes.ShapedOreRecipe tShapedOre) || !tShapedOre.mVanillaReplacement) continue;
 			if (ST.block(aOutput) != NB) continue;
 			if (COMPAT_IC2 != null && COMPAT_IC2.isReactorItem(aOutput)) continue;
 			if (COMPAT_EU_ITEM != null && COMPAT_EU_ITEM.is(aOutput)) continue;
 			if (NON_REPLACEABLE.contains(aOutput, T)) continue;
 			if (sNonReplaceableNames.contains(aOutput.getItem().getDescriptionId())) continue;
-			
-			Object[] tRecipeInputs = null;
 
-			// F11-recipe-scan: 1.7.10 читал вход через Forge ShapedOreRecipe.getInput()/ShapedRecipe.recipeItems — оба
-			// класса удалены в neo; neo-рецепты живут в RecipeManager (server-lifecycle), а НЕ в GT6-буфере CR.list().
-			// Кросс-мод скан входов чужих рецептов требует RecipeManager (отдельная ADR-recipe-scan). GT6-буфер
-			// (ICraftingRecipeGT) вход не отдаёт, и цикл выше (стр. instanceof ICraftingRecipeGT) скипает все его элементы
-			// -> этот блок недостижим. IC2 AdvRecipe сохранён (зеркало compile-only).
-			if (MD.IC2.mLoaded && tRecipe instanceof ic2.core.AdvRecipe) {
-				tRecipeInputs = ((ic2.core.AdvRecipe)tRecipe).input;
-			}
-			
+			Object[] tRecipeInputs = tShapedOre.getInput(); // формат ячеек 1:1 с Forge getInput(): null | ItemStack | List<ItemStack>
+
 			if (tRecipeInputs == null || tRecipeInputs.length <= 0) continue;
 			
 			OreDictPrefix tPrefix = null;
@@ -251,6 +251,9 @@ public class Loader_Recipes_Replace implements Runnable {
 				if (tPlate == null || aReplacer.mShape == null || aReplacer.mShape.length <= 0) continue;
 				if (!ConfigsGT.RECIPES.get(ConfigCategories.Recipes.recipereplacements, aRecipe.mMat+"."+aReplacer.mName, T)) continue;
 				if (!tRecipeList.remove(aRecipe.mRecipe)) continue;
+				// заменённая ore-версия удалена из буфера — подавляем и её датапак-оригинал (в 1.7.10 удаление
+				// из CraftingManager снимало рецепт целиком; ore-версия и оригинал здесь — одна функция).
+				if (aRecipe.mRecipe instanceof gregapi.recipes.ShapedOreRecipe tSrc && tSrc.mSourceId != null) tSuppress.add(tSrc.mSourceId);
 				Object tNamePlate = OreDictionary.getOres(OP.plate.dat(aRecipe.mMat).toString()).isEmpty() ? OP.ingot.dat(aRecipe.mMat) : OP.plate.dat(aRecipe.mMat), tNameCurve = OreDictionary.getOres(OP.plateCurved.dat(aRecipe.mMat).toString()).isEmpty() ? tNamePlate : OP.plateCurved.dat(aRecipe.mMat);
 				switch (aReplacer.mShape.length) {
 				case  1: CR.shaped(tCrafted, CR.DEF, new Object[] {aReplacer.mShape[0]                                          , PLT.charAt(0), tNamePlate, CRV.charAt(0), tNameCurve, ROD.charAt(0), OP.stick.dat(aRecipe.mRod == null ? aRecipe.mMat : aRecipe.mRod), NGT.charAt(0), OP.ingot.dat(aRecipe.mMat)}); break;
@@ -259,10 +262,12 @@ public class Loader_Recipes_Replace implements Runnable {
 				}
 			}
 		}
-		
+
 		if (tUseProgressBar) UT.LoadingBar.finish();
+		gregapi.GT_API.removeDatapackRecipes(gregapi.GT_API.sCurrentServerForRecipeScan, tSuppress);
+		}); // конец GT_API.deferRecipeScan
 	}
-	
+
 	public static ItemStack getRecipeOutput(ICraftingRecipeGT aRecipe, ItemStack... aStacks) {
 		if (aRecipe == null || aStacks == null) return null;
 		boolean tAny = F; for (ItemStack s : aStacks) if (s != null) {tAny = T; break;}

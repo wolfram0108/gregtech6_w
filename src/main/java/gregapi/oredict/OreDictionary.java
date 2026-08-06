@@ -306,7 +306,10 @@ public class OreDictionary {
 						tRows[y] = tRow.toString();
 					}
 					tArgs.add(0, tRows);
-					gregapi.util.CR.BUFFER.add(new gregapi.recipes.ShapedOreRecipe(tOutput, tArgs.toArray()));
+					gregapi.recipes.ShapedOreRecipe tRecipe = new gregapi.recipes.ShapedOreRecipe(tOutput, tArgs.toArray());
+					tRecipe.mVanillaReplacement = true; // статус Forge-замены 1.7.10: обрабатывается сканом Loader_Recipes_Replace
+					tRecipe.mSourceId = (net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>)(net.minecraft.resources.ResourceKey<?>)tHolder.id();
+					gregapi.util.CR.BUFFER.add(tRecipe);
 					tReplaced++;
 				} else if (tHolder.value() instanceof net.minecraft.world.item.crafting.ShapelessRecipe tShapeless) {
 					ItemStack tOutput = tShapeless.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY);
@@ -317,7 +320,10 @@ public class OreDictionary {
 					for (net.minecraft.world.item.crafting.Ingredient tIn : tPlacement.ingredients()) tIngredients.add(java.util.Optional.of(tIn));
 					Object[] tCells = replaceIngredients(tIngredients, tReplacements);
 					if (tCells == null) continue;
-					gregapi.util.CR.BUFFER.add(new gregapi.recipes.ShapelessOreRecipe(tOutput, tCells));
+					gregapi.recipes.ShapelessOreRecipe tRecipe = new gregapi.recipes.ShapelessOreRecipe(tOutput, tCells);
+					tRecipe.mVanillaReplacement = true;
+					tRecipe.mSourceId = (net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>)(net.minecraft.resources.ResourceKey<?>)tHolder.id();
+					gregapi.util.CR.BUFFER.add(tRecipe);
 					tReplaced++;
 				}
 			} catch(Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}

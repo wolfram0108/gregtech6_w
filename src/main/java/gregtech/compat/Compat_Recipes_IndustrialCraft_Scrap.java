@@ -163,7 +163,7 @@ public class Compat_Recipes_IndustrialCraft_Scrap extends CompatMods {
 			}
 			COMPAT_IC2.blacklist(ST.make(Blocks.COBBLESTONE_WALL  , 1, W));
 			COMPAT_IC2.blacklist(ST.make(Blocks.SANDSTONE_STAIRS  , 1, W));
-			COMPAT_IC2.blacklist(ST.make(Blocks.STONE_STAIRS      , 1, W));
+			COMPAT_IC2.blacklist(ST.make(Blocks.COBBLESTONE_STAIRS      , 1, W));
 			COMPAT_IC2.blacklist(ST.make(Blocks.STONE_BRICK_STAIRS, 1, W));
 			COMPAT_IC2.blacklist(RM.get_smelting(ST.make(Blocks.STONE, 1, 0)));
 			COMPAT_IC2.blacklist(CR.get(ST.make(Blocks.GLASS, 1, 0), null, null, ST.make(Blocks.GLASS, 1, 0)));

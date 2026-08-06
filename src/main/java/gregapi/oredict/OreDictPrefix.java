@@ -283,7 +283,7 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		ST.setMaxStackSize(Item.byBlock(Blocks.BRICK_STAIRS           ), OP.stair.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.NETHER_BRICK_STAIRS    ), OP.stair.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.SANDSTONE_STAIRS       ), OP.stair.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.STONE_STAIRS           ), OP.stair.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.COBBLESTONE_STAIRS           ), OP.stair.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.OAK_STAIRS             ), OP.stair.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.JUNGLE_STAIRS          ), OP.stair.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.BIRCH_STAIRS           ), OP.stair.mDefaultStackSize);
