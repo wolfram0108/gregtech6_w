@@ -238,6 +238,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6gravityprobe.flag")) gt6GravityProbeTick(aEvent.getServer());
 	// [GT6-RAILPROBE] снятие PORT-TODO(F-hook-removed): per-rail скорость минкарта выше движковых 0.4 — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6railprobe.flag")) gt6RailProbeTick(aEvent.getServer());
+	// [GT6-PORTYARD] двор ЖИВОЙ ПРИЁМКИ закрытых меток отложенности (рельсы/плащ/цвет копий) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6portyard.flag")) gt6PortYardTick(aEvent.getServer());
 		// F12-hook: ожили ли восстановленные приёмники движковых каналов (доение, присед)
 		if (gregapi.data.CS.probeFlag("gt6hookprobe.flag")) gt6HookProbeTick(aEvent.getServer());
 	// [GT6-ARROWPROBE] стенд «PORT-TODO №1: чары лука (Power/Punch/Flame) на стрелах GT6» — снять при уборке фазы
@@ -9482,6 +9484,132 @@ public final class GT6Probes {
 	}
 
 	// ==========================================================================================================
+	// ==========================================================================================================
+	// gt6portyard — ДВОР ЖИВОЙ ПРИЁМКИ закрытых меток отложенности (глаз игрока, стенд не судит — только строит).
+	//
+	// Сектор РЕЛЬСЫ (три дорожки вдоль Z, маркер-шерсть у старта): красная = быстрый GT6 (max mSpeed),
+	//   жёлтая = медленный GT6 (min mSpeed), белая = ваниль. Вагонетки курсируют сами (пинг-понг с постоянным
+	//   толчком) — скорость видна без посадки; сесть тоже можно.
+	// Сектор ЦВЕТ (ряд труб с канвас-каверами вдоль X): на N/S/UP гранях каждой трубы канвас, «нарисованный»
+	//   под блок 1.7.10-канала цвета; ПЕРЕД трубой на земле — сам блок-оригинал для сравнения. Цвет копии —
+	//   СТАТИЧЕСКИЙ (канон 1.7.10, basic-colorizer), у настоящего блока рядом — биомный: лёгкое расхождение
+	//   оттенка с оригиналом-соседом — норма, дефект — если копия БЕЛАЯ/серая.
+	// Сектор ПЛАЩ: ник игрока добавляется в живой mSupporterListSilver — F5: на спине серебряный плащ GT6.
+	// ==========================================================================================================
+	private static final String PORTY_M = "GT6-PORTYARD";
+	private static int sPortYTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sPortYSeq;
+	private static BlockPos sPortYRailOrigin = null;
+	private static final net.minecraft.world.entity.vehicle.minecart.AbstractMinecart[] sPortYCarts = new net.minecraft.world.entity.vehicle.minecart.AbstractMinecart[3];
+	private static final int[] sPortYDirs = {1, 1, 1};
+
+	public static void gt6PortYardTick(net.minecraft.server.MinecraftServer aServer) {
+		sPortYTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sPortYSeq == null) sPortYSeq = new gregapi.probe.GT6ProbeStand.Seq(PORTY_M)
+			.at(60, () -> gt6YardBuild(tPlayer))
+			.window(80, 1000000, () -> gt6YardDrive());
+		sPortYSeq.tick(sPortYTick);
+	}
+
+	private static void gt6YardChat(ServerPlayer aPlayer, String aText) {
+		aPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b[GT6-СТЕНД]§r " + aText));
+	}
+
+	private static void gt6YardBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tBase = aPlayer.blockPosition();
+
+		// ---------- сектор РЕЛЬСЫ ----------
+		gregapi.block.misc.BlockBaseRail tFast = null, tSlow = null;
+		for (net.minecraft.world.level.block.Block tBl : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			if (!(tBl instanceof gregapi.block.misc.BlockBaseRail tRail)) continue;
+			if (tFast == null || tRail.mSpeed > tFast.mSpeed) tFast = tRail;
+			if (tSlow == null || tRail.mSpeed < tSlow.mSpeed) tSlow = tRail;
+		}
+		if (tFast == null) {O.println("[" + PORTY_M + "] в реестре нет GT6-рельсов"); return;}
+		sPortYRailOrigin = tBase.offset(10, 0, -24);
+		net.minecraft.world.level.block.Block[] tRails = {tFast, tSlow, net.minecraft.world.level.block.Blocks.RAIL};
+		net.minecraft.world.level.block.Block[] tMarks = {net.minecraft.world.level.block.Blocks.RED_WOOL, net.minecraft.world.level.block.Blocks.YELLOW_WOOL, net.minecraft.world.level.block.Blocks.WHITE_WOOL};
+		for (int i = 0; i < 3; i++) {
+			int tX = i * 3;
+			for (int dz = 0; dz < 48; dz++) {
+				tLevel.setBlock(sPortYRailOrigin.offset(tX, -1, dz), tMarks[i].defaultBlockState(), 3);
+				for (int dy = 0; dy <= 2; dy++) tLevel.setBlock(sPortYRailOrigin.offset(tX, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			}
+			for (int dz = 0; dz < 48; dz++) tLevel.setBlock(sPortYRailOrigin.offset(tX, 0, dz), tRails[i].defaultBlockState(), 3);
+			net.minecraft.world.entity.Entity tEntity = net.minecraft.world.entity.EntityType.MINECART.create(tLevel, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
+			if (tEntity instanceof net.minecraft.world.entity.vehicle.minecart.AbstractMinecart tCart) {
+				tCart.setPos(sPortYRailOrigin.getX() + tX + 0.5, sPortYRailOrigin.getY() + 0.1, sPortYRailOrigin.getZ() + 4.5);
+				tLevel.addFreshEntity(tCart);
+				sPortYCarts[i] = tCart;
+			}
+		}
+		O.println("[" + PORTY_M + "] рельсы @ " + sPortYRailOrigin + ": красная=" + tFast.mNameInternal + " (mSpeed=" + tFast.mSpeed
+			+ ", капа минкарта 1.2) · жёлтая=" + tSlow.mNameInternal + " (mSpeed=" + tSlow.mSpeed + ") · белая=ваниль (0.4)");
+
+		// ---------- сектор ЦВЕТ (канвас-каверы) ----------
+		Object[][] tCases = {
+			{"ель"        , net.minecraft.world.level.block.Blocks.SPRUCE_LEAVES, 0},
+			{"берёза"     , net.minecraft.world.level.block.Blocks.BIRCH_LEAVES , 0},
+			{"дуб"        , net.minecraft.world.level.block.Blocks.OAK_LEAVES   , 0},
+			{"лоза"       , net.minecraft.world.level.block.Blocks.VINE         , 0},
+			{"трава-блок" , net.minecraft.world.level.block.Blocks.GRASS_BLOCK  , 0},
+			{"папоротник" , net.minecraft.world.level.block.Blocks.FERN         , 0},
+			{"лилия"      , net.minecraft.world.level.block.Blocks.LILY_PAD     , 0},
+			{"стебель ×7" , net.minecraft.world.level.block.Blocks.PUMPKIN_STEM , 7},
+			{"КОНТРОЛЬ камень", net.minecraft.world.level.block.Blocks.STONE    , 0},
+			{"КОНТРОЛЬ cherry", net.minecraft.world.level.block.Blocks.CHERRY_LEAVES, 0},
+		};
+		BlockPos tCanvasBase = tBase.offset(-6, 0, 8);
+		int tPlaced = 0;
+		for (int i = 0; i < tCases.length; i++) {
+			BlockPos tPos = tCanvasBase.offset(i * 2, 1, 0);
+			tLevel.setBlock(tPos.below(), net.minecraft.world.level.block.Blocks.SMOOTH_STONE.defaultBlockState(), 3);
+			gregapi.tileentity.connectors.MultiTileEntityPipeItem tPipe = gregapi.probe.GT6ProbeStand.place(
+				tLevel, aPlayer, tPos, net.minecraft.core.Direction.NORTH, gregapi.probe.GT6ProbeStand.mteStack(25002),
+				gregapi.tileentity.connectors.MultiTileEntityPipeItem.class, PORTY_M, "канвас-носитель " + tCases[i][0]);
+			if (tPipe == null) continue;
+			net.minecraft.world.level.block.Block tBl = (net.minecraft.world.level.block.Block)tCases[i][1];
+			// канвас 1:1 путём игрока: стек Canvas (MultiItemRandomTools 7030) с NBT Обскуратора → setCoverItem →
+			// onCoverPlaced сам пишет visual=(id<<4)|meta (CoverTextureCanvas:52) → рендер BlockTextureCopied.
+			ItemStack tCanvas = ST.make(gregapi.data.CS.ItemsGT.TOOLS, 1, 7030);
+			net.minecraft.nbt.CompoundTag tNBT = new net.minecraft.nbt.CompoundTag();
+			tNBT.putInt(NBT_CANVAS_BLOCK, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(tBl));
+			tNBT.putInt(NBT_CANVAS_META, (Integer)tCases[i][2]);
+			gregapi.code.ItemNBT.set(tCanvas, tNBT);
+			for (byte tSide : new byte[]{SIDE_NORTH, SIDE_SOUTH, SIDE_TOP}) tPipe.setCoverItem(tSide, ST.copy(tCanvas), null, T, T);
+			// блок-оригинал перед трубой — живой эталон для глаза (его красит БИОМ, копию — статический канон 1.7.10)
+			try {tLevel.setBlock(tPos.offset(0, -1, 2), tBl.defaultBlockState(), 3);} catch (Throwable e) {}
+			tPlaced++;
+		}
+		O.println("[" + PORTY_M + "] канвас-столбы @ " + tCanvasBase + ": " + tPlaced + "/" + tCases.length);
+
+		// ---------- сектор ПЛАЩ ----------
+		String tNick = aPlayer.getScoreboardName().toLowerCase();
+		((gregtech.GT_Proxy)gregtech.GT6_Main.gt_proxy).mSupporterListSilver.add(tNick);
+		O.println("[" + PORTY_M + "] ник '" + tNick + "' добавлен в список серебряных плащей");
+
+		gt6YardChat(aPlayer, "СТЕНД ГОТОВ. §cКрасная§r дорожка = быстрый GT6-рельс (едет до 1.2, втрое быстрее ванили), §eжёлтая§r = медленный (0.2), белая = ваниль (0.4). Вагонетки курсируют сами.");
+		gt6YardChat(aPlayer, "Ряд труб с холстами (запад): грани = КОПИИ листвы/травы/лозы/лилии/стебля — должны быть ЦВЕТНЫМИ; два правых столба — контроли (камень серый, cherry розово-белая без тинта). Перед каждой трубой лежит блок-оригинал; лёгкая разница оттенка с ним — норма (копия красится статическим цветом 1.7.10, сосед — биомным).");
+		gt6YardChat(aPlayer, "Плащ: нажмите F5 — на спине серебряный плащ GT6 (ваш ник добавлен в список спонсоров на эту сессию).");
+	}
+
+	private static void gt6YardDrive() {
+		if (sPortYRailOrigin == null) return;
+		for (int i = 0; i < 3; i++) {
+			net.minecraft.world.entity.vehicle.minecart.AbstractMinecart tCart = sPortYCarts[i];
+			if (tCart == null || tCart.isRemoved()) continue;
+			if (tCart.isVehicle()) continue; // игрок сел — не мешаем ему рулить
+			double tZ = tCart.position().z - sPortYRailOrigin.getZ();
+			if (tZ > 44) sPortYDirs[i] = -1;
+			if (tZ < 4)  sPortYDirs[i] = +1;
+			tCart.setDeltaMovement(0, 0, 2.0 * sPortYDirs[i]);
+		}
+	}
+
 	// ==========================================================================================================
 	// gt6railprobe — снятие PORT-TODO(F-hook-removed): per-rail скорость минкарта.
 	//
