@@ -59,16 +59,23 @@ public class Loader_Blocks implements Runnable {
 		
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.asphalt", () -> {BlockAsphalt b = new BlockAsphalt("gt.block.asphalt"); BlocksGT.Asphalt = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.Asphalt, 1, W), F, TC.stack(TC.TERRA, 1), TC.stack(TC.ITER, 1));
-		ItemsGT.addNEIRedirects(BlocksGT.Asphalt);
-		
+		// F12-followup (block-split): всё, что читает лениво-заселяемые поля BlocksGT.* (NEI-redirects, рецепты, IMC),
+		// — deferItemInit (server-start), как у братьев Loader_Rails/Rocks/Woods: поля заселяет RegisterEvent<Block>,
+		// а этот run() исполняется на FMLConstructModEvent, РАНЬШЕ него — синхронное чтение даёт null, и CR.shaped
+		// молча отбрасывает рецепт (CR.java: ST.invalid(aResult) -> return F). До правки так терялись все 16+5
+		// рецептов LongDistWire/LongDistPipe и 16 армирований бетона (сверка crafting.jsonl против golden 2026-08-06).
+		gregapi.GT_API.deferItemInit(() -> ItemsGT.addNEIRedirects(BlocksGT.Asphalt));
+
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.concrete", () -> {BlockConcrete b = new BlockConcrete("gt.block.concrete"); BlocksGT.Concrete = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.Concrete, 1, W), F, TC.stack(TC.TERRA, 1), TC.stack(TC.FABRICO, 1));
-		ItemsGT.addNEIRedirects(BlocksGT.Concrete);
-		
+		gregapi.GT_API.deferItemInit(() -> ItemsGT.addNEIRedirects(BlocksGT.Concrete));
+
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.concrete.reinforced", () -> {BlockConcreteReinforced b = new BlockConcreteReinforced("gt.block.concrete.reinforced"); BlocksGT.ConcreteReinforced = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.ConcreteReinforced, 1, W), F, TC.stack(TC.TERRA, 1), TC.stack(TC.FABRICO, 1), TC.stack(TC.TUTAMEN, 1));
+		gregapi.GT_API.deferItemInit(() -> {
 		ItemsGT.addNEIRedirects(BlocksGT.ConcreteReinforced);
 		for (byte i = 0; i < 16; i++) CR.shaped(ST.make(BlocksGT.ConcreteReinforced, 1, i), CR.DEF_MIR, "Se", "X ", 'X', ST.make(BlocksGT.Concrete, 1, i), 'S', OP.stick.dat(ANY.Iron));
+		});
 		
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.glass", () -> {BlockGlassClear b = new BlockGlassClear("gt.block.glass"); BlocksGT.Glass = b; return b;});
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.glass.glow", () -> {BlockGlassGlow b = new BlockGlassGlow("gt.block.glass.glow"); BlocksGT.GlowGlass = b; return b;});
@@ -139,10 +146,14 @@ public class Loader_Blocks implements Runnable {
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.River          , 1, W), F, TC.stack(TC.AQUA, 3), TC.stack(TC.MOTUS, 3));
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.Ocean          , 1, W), F, TC.stack(TC.AQUA, 3), TC.stack(TC.TEMPESTAS, 3));
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.Swamp          , 1, W), F, TC.stack(TC.AQUA, 3), TC.stack(TC.VENEMUM, 1));
-		ListTag tNBTList = new ListTag();
-		tNBTList.add(new StringTag(ST.regName(BlocksGT.River)));
-		tNBTList.add(new StringTag(ST.regName(BlocksGT.Ocean)));
-		InterModComms.sendTo(MD.IC2C.mID, "watergen", () -> UT.NBT.make("blocks", tNBTList));
+		// F12-followup (block-split): имена блоков читаются ВНУТРИ supplier — IMC-сообщение потребляется на
+		// InterModProcessEvent, ПОСЛЕ RegisterEvent<Block>; синхронный ST.regName здесь дал бы null (поля ленивые).
+		InterModComms.sendTo(MD.IC2C.mID, "watergen", () -> {
+			ListTag tNBTList = new ListTag();
+			tNBTList.add(new StringTag(ST.regName(BlocksGT.River)));
+			tNBTList.add(new StringTag(ST.regName(BlocksGT.Ocean)));
+			return UT.NBT.make("blocks", tNBTList);
+		});
 		
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.fluid.water.geothermal", () -> {BlockBaseFluid b = new BlockBaseFluid("gt.block.fluid.water.geothermal"  , FL.Water_Geothermal,    0, Material.water      ).setLighterThanWater().addEffectBathing(/*regeneration*/10, 100, 0).addEffectBathing(/*resistance*/11, 2400, 2); BlocksGT.WaterGeothermal = b; return b;});
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.WaterGeothermal, 1, W), F, TC.stack(TC.AQUA, 3), TC.stack(TC.SANO, 3));
@@ -160,6 +171,7 @@ public class Loader_Blocks implements Runnable {
 		
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.longdistwire.01", () -> {BlockLongDistWire b = new BlockLongDistWire("gt.block.longdistwire.01", Textures.BlockIcons.LONG_DIST_WIRES_01, new byte[] {4, 4, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8}); BlocksGT.LongDistWire01 = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 		
+		gregapi.GT_API.deferItemInit(() -> { // F12-followup (block-split): рецепты — deferItemInit, поле LongDistWire01 заселяет RegisterEvent<Block>
 		CR.shaped(ST.make(BlocksGT.LongDistWire01, 1, 0), CR.DEF_REV_NCC, "RSR", "PWP", "RSR", 'R', OP.plate.dat(ANY.Rubber), 'P', OP.plateCurved.dat(ANY.Cu), 'S', OP.plateCurved.dat(MT.Al), 'W', OP.wireGt16.dat(MT.Sn));
 		CR.shaped(ST.make(BlocksGT.LongDistWire01, 1, 1), CR.DEF_REV_NCC, "RSR", "PWP", "RSR", 'R', OP.plate.dat(ANY.Rubber), 'P', OP.plateCurved.dat(ANY.Cu), 'S', OP.plateCurved.dat(MT.Al), 'W', OP.wireGt16.dat(MT.Pb));
 		CR.shaped(ST.make(BlocksGT.LongDistWire01, 1, 2), CR.DEF_REV_NCC, "RSR", "PWP", "RSR", 'R', OP.plate.dat(ANY.Rubber), 'P', OP.plateCurved.dat(ANY.Cu), 'S', OP.plateCurved.dat(MT.Al), 'W', OP.wireGt16.dat(ANY.Cu));
@@ -176,15 +188,18 @@ public class Loader_Blocks implements Runnable {
 		CR.shaped(ST.make(BlocksGT.LongDistWire01, 1,13), CR.DEF_REV_NCC, "RSR", "PWP", "RSR", 'R', OP.plate.dat(ANY.Rubber), 'P', OP.plateCurved.dat(ANY.Cu), 'S', OP.plateCurved.dat(MT.Al), 'W', OP.wireGt16.dat(MT.Pt));
 		CR.shaped(ST.make(BlocksGT.LongDistWire01, 1,14), CR.DEF_REV_NCC, "RSR", "PWP", "RSR", 'R', OP.plate.dat(ANY.Rubber), 'P', OP.plateCurved.dat(ANY.Cu), 'S', OP.plateCurved.dat(MT.Al), 'W', OP.wireGt16.dat(MT.Nq));
 		CR.shaped(ST.make(BlocksGT.LongDistWire01, 1,15), CR.DEF_REV_NCC, "RSR", "PWP", "RSR", 'R', OP.plate.dat(ANY.Rubber), 'P', OP.plateCurved.dat(ANY.Cu), 'S', OP.plateCurved.dat(MT.Al), 'W', OP.wireGt16.dat(MT.Graphene));
-		
+		});
+
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.longdistpipe.01", () -> {BlockLongDistPipe b = new BlockLongDistPipe("gt.block.longdistpipe.01", Textures.BlockIcons.LONG_DIST_PIPES_01, new long[] {-1, MT.StainlessSteel.mMeltingPoint, MT.W.mMeltingPoint, MT.Ad.mMeltingPoint, MT.Draconium.mMeltingPoint, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}); BlocksGT.LongDistPipe01 = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 		
+		gregapi.GT_API.deferItemInit(() -> { // F12-followup (block-split): рецепты — deferItemInit, поле LongDistPipe01 заселяет RegisterEvent<Block>
 		CR.shaped(ST.make(BlocksGT.LongDistPipe01, 1, 0), CR.DEF_REV_NCC, "SPS", "PwP", "SPS", 'P', OP.pipeMedium.dat(MT.Electrum       ), 'S', OP.plate.dat(ANY.Plastic));
 		CR.shaped(ST.make(BlocksGT.LongDistPipe01, 1, 1), CR.DEF_REV_NCC, "SPS", "PwP", "SPS", 'P', OP.pipeMedium.dat(MT.StainlessSteel ), 'S', OP.plate.dat(ANY.Plastic));
 		CR.shaped(ST.make(BlocksGT.LongDistPipe01, 1, 2), CR.DEF_REV_NCC, "SPS", "PwP", "SPS", 'P', OP.pipeMedium.dat(ANY.W             ), 'S', OP.plate.dat(ANY.Plastic));
 		CR.shaped(ST.make(BlocksGT.LongDistPipe01, 1, 3), CR.DEF_REV_NCC, "SPS", "PwP", "SPS", 'P', OP.pipeMedium.dat(MT.Ad             ), 'S', OP.plate.dat(ANY.Plastic));
 		CR.shaped(ST.make(BlocksGT.LongDistPipe01, 1, 4), CR.DEF_REV_NCC, "SPS", "PwP", "SPS", 'P', OP.pipeMedium.dat(MT.Draconium      ), 'S', OP.plate.dat(ANY.Plastic));
-		
+		});
+
 		/*
 		OM.reg(OP.blockGlass    .toString()                     , ST.make(BlocksGT.Glass, 1, W));
 		for (byte i = 0; i < 16; i++) {
