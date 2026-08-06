@@ -238,6 +238,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6gravityprobe.flag")) gt6GravityProbeTick(aEvent.getServer());
 	// [GT6-RAILPROBE] снятие PORT-TODO(F-hook-removed): per-rail скорость минкарта выше движковых 0.4 — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6railprobe.flag")) gt6RailProbeTick(aEvent.getServer());
+	// [GT6-CRAFTPROBE] судья захода «крафт до 100%»: LongDistWire (ленивые поля), кровать из GT-досок (роль-C), подавление Replace — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6craftprobe.flag")) gt6CraftProbeTick(aEvent.getServer());
 	// [GT6-PORTYARD] двор ЖИВОЙ ПРИЁМКИ закрытых меток отложенности (рельсы/плащ/цвет копий) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6portyard.flag")) gt6PortYardTick(aEvent.getServer());
 		// F12-hook: ожили ли восстановленные приёмники движковых каналов (доение, присед)
@@ -11490,6 +11492,105 @@ public final class GT6Probes {
 		gt6BLSay(aPlayer, "Ряд одинаковых ячеек, у каждой крыша из своего блока; вход с южной стороны. Последние три — ванильные эталоны.");
 		gt6BLSay(aPlayer, "§7Ожидание: под рудой/песком темно (непрозрачные), под стеклом светло как на улице, под листвой чуть темнее, рельсы и цветы свет не держат.");
 		gt6BLSay(aPlayer, "§7Числа печатаю каждые 3 секунды: «объявлено модом» — то, что GT6 просит; «в состоянии» — то, что реально знает движок.");
+	}
+
+	// ───────────────────────────────────────────────────────────────────────────────────────────
+	// [GT6-CRAFTPROBE] Судья захода «крафт верстака до 100 %» + двор живой приёмки. Судит ПУТЁМ
+	// ДВИЖКА (GT6CraftingDispatcher.matches/assemble — единственная точка, которой neo спрашивает
+	// GT6-крафт, приём M-10c) на ЖИВОМ сервере клиента (LevelEvent.Load прошёл — роль-C и Replace
+	// отработали). Позитивные §1-§2, негативный §3, подавление §4; затем двор с материалами.
+	private static boolean sCraftProbeDone = F;
+	public static void gt6CraftProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sCraftProbeDone || aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sCraftProbeDone = T;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		int tPass = 0, tFail = 0;
+		var tDispatcher = new gregapi.recipes.GT6CraftingDispatcher();
+		try {
+			// §1 фикс ленивых полей: LongDistWire01 из "RSR","PWP","RSR" (Loader_Blocks:163) — до фикса рецепта не было ВООБЩЕ
+			ItemStack tR = gregapi.data.OP.plate      .mat(gregapi.data.MT.Rubber, 1);
+			ItemStack tP = gregapi.data.OP.plateCurved.mat(gregapi.data.MT.Cu    , 1);
+			ItemStack tS = gregapi.data.OP.plateCurved.mat(gregapi.data.MT.Al    , 1);
+			ItemStack tW = gregapi.data.OP.wireGt16   .mat(gregapi.data.MT.Sn    , 1);
+			if (gregapi.util.ST.valid(tR) && gregapi.util.ST.valid(tP) && gregapi.util.ST.valid(tS) && gregapi.util.ST.valid(tW)) {
+				var tGrid = net.minecraft.world.item.crafting.CraftingInput.of(3, 3, java.util.List.of(
+					gregapi.util.ST.copy(tR), gregapi.util.ST.copy(tS), gregapi.util.ST.copy(tR),
+					gregapi.util.ST.copy(tP), gregapi.util.ST.copy(tW), gregapi.util.ST.copy(tP),
+					gregapi.util.ST.copy(tR), gregapi.util.ST.copy(tS), gregapi.util.ST.copy(tR)));
+				ItemStack tOut = tDispatcher.matches(tGrid, tLevel) ? tDispatcher.assemble(tGrid) : ItemStack.EMPTY;
+				boolean tOk = !tOut.isEmpty() && gregapi.util.ST.regName(tOut).contains("longdistwire");
+				gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] §1 LongDistWire из пластин/провода: выход=" + (tOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tOut)) + (tOk ? " => PASS" : " => FAIL"));
+				if (tOk) tPass++; else tFail++;
+			} else {gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] §1 материалы не сгенерированы — FAIL"); tFail++;}
+			// §2 роль-C: кровать = 3 шерсти + 3 ДОСКИ GT6 (ore-версия ванильного рецепта; ванильный требует minecraft-доски)
+			ItemStack tPlank = null;
+			for (ItemStack tCand : gregapi.oredict.OreDictionary.getOres("plankWood")) if (gregapi.util.ST.regName(tCand).startsWith("gregtech:")) {tPlank = tCand; break;}
+			if (gregapi.util.ST.valid(tPlank)) {
+				ItemStack tWool = new ItemStack(net.minecraft.world.level.block.Blocks.WHITE_WOOL.asItem());
+				var tGrid = net.minecraft.world.item.crafting.CraftingInput.of(3, 2, java.util.List.of(
+					gregapi.util.ST.copy(tWool), gregapi.util.ST.copy(tWool), gregapi.util.ST.copy(tWool),
+					gregapi.util.ST.amount(1, tPlank), gregapi.util.ST.amount(1, tPlank), gregapi.util.ST.amount(1, tPlank)));
+				ItemStack tOut = tDispatcher.matches(tGrid, tLevel) ? tDispatcher.assemble(tGrid) : ItemStack.EMPTY;
+				boolean tOk = !tOut.isEmpty() && gregapi.util.ST.regName(tOut).contains("_bed");
+				gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] §2 кровать из GT-досок (" + gregapi.util.ST.regName(tPlank) + "): выход=" + (tOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tOut)) + (tOk ? " => PASS" : " => FAIL"));
+				if (tOk) tPass++; else tFail++;
+			} else {gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] §2 GT-доска в plankWood не найдена — FAIL"); tFail++;}
+			// §3 негативный контроль: форма кровати из алмазов — диспетчер обязан молчать
+			ItemStack tDiamond = new ItemStack(net.minecraft.world.item.Items.DIAMOND);
+			var tGridNeg = net.minecraft.world.item.crafting.CraftingInput.of(3, 2, java.util.List.of(
+				gregapi.util.ST.copy(tDiamond), gregapi.util.ST.copy(tDiamond), gregapi.util.ST.copy(tDiamond),
+				gregapi.util.ST.copy(tDiamond), gregapi.util.ST.copy(tDiamond), gregapi.util.ST.copy(tDiamond)));
+			boolean tNeg = tDispatcher.matches(tGridNeg, tLevel);
+			gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] §3 негативный (6 алмазов): matches=" + tNeg + (tNeg ? " => FAIL" : " => PASS"));
+			if (tNeg) tFail++; else tPass++;
+			// §4 подавление Replace: датапак-рецепт железной кирки снят, GT-схема в буфере
+			boolean tStillThere = F;
+			for (var tHolder : aServer.getRecipeManager().recipeMap().values()) if ("minecraft:iron_pickaxe".equals(tHolder.id().identifier().toString())) {tStillThere = T; break;}
+			boolean tGTScheme = gregapi.util.CR.has(gregapi.util.ST.make(net.minecraft.world.item.Items.IRON_PICKAXE, 1, 0));
+			gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] §4 Replace: датапак iron_pickaxe " + (tStillThere ? "ЖИВ => FAIL" : "подавлен => PASS") + " · GT-схема в буфере: " + (tGTScheme ? "есть => PASS" : "НЕТ => FAIL"));
+			if (!tStillThere) tPass++; else tFail++;
+			if (tGTScheme) tPass++; else tFail++;
+		} catch(Throwable e) {e.printStackTrace(); tFail++;}
+		gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] DONE PASS=" + tPass + " FAIL=" + tFail);
+
+		// ── двор живой приёмки: верстак + сундук с материалами
+		try {
+			BlockPos tO = tPlayer.blockPosition().offset(2, 0, 2);
+			tLevel.setBlock(tO, net.minecraft.world.level.block.Blocks.CRAFTING_TABLE.defaultBlockState(), 3);
+			BlockPos tChest = tO.offset(1, 0, 0);
+			tLevel.setBlock(tChest, net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState(), 3);
+			if (tLevel.getBlockEntity(tChest) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity tBE) {
+				int i = 0;
+				ItemStack tPlank = null;
+				for (ItemStack tCand : gregapi.oredict.OreDictionary.getOres("plankWood")) if (gregapi.util.ST.regName(tCand).startsWith("gregtech:")) {tPlank = tCand; break;}
+				ItemStack[] tKit = {
+					gregapi.data.OP.stick.mat(gregapi.data.MT.WOODS.Oak, 16),                      // GT-палки — лук/факел
+					new ItemStack(net.minecraft.world.item.Items.STRING, 16),
+					new ItemStack(net.minecraft.world.level.block.Blocks.WHITE_WOOL.asItem(), 16),
+					tPlank == null ? null : gregapi.util.ST.amount(16, tPlank),                    // GT-доски — кровать
+					gregapi.data.OP.plate      .mat(gregapi.data.MT.Rubber, 16),                   // LongDistWire
+					gregapi.data.OP.plateCurved.mat(gregapi.data.MT.Cu    , 16),
+					gregapi.data.OP.plateCurved.mat(gregapi.data.MT.Al    , 16),
+					gregapi.data.OP.wireGt16   .mat(gregapi.data.MT.Sn    , 16),
+					new ItemStack(net.minecraft.world.level.block.Blocks.GLASS.asItem(), 16),      // витраж: 8 стекла вокруг красителя
+					gregapi.data.OP.dust.mat(gregapi.data.MT.Lapis, 16),                           // GT-лазурит = ore-краситель dyeBlue
+					new ItemStack(net.minecraft.world.item.Items.IRON_INGOT, 9),                   // кирка из 3 слитков БОЛЬШЕ НЕ крафтится (Replace)
+					new ItemStack(net.minecraft.world.item.Items.STICK, 8),
+					new ItemStack(net.minecraft.world.item.Items.CHARCOAL, 8),                     // факел с GT-палкой
+				};
+				for (ItemStack tStack : tKit) if (gregapi.util.ST.valid(tStack)) tBE.setItem(i++, tStack);
+			}
+			gt6Say(tPlayer, "§e=== ДВОР ПРИЁМКИ КРАФТА: верстак и сундук рядом с вами ===");
+			gt6Say(tPlayer, "§b1) ЛУК из GT-палок (3 палки Oak + 3 нити колонками) — раньше GT-палки в ванильных рецептах не работали;");
+			gt6Say(tPlayer, "§b2) КРОВАТЬ: 3 шерсти + 3 GT-доски; 3) ПРОВОД Long-Distance: резина/медь/алюминий/олово по схеме RSR-PWP-RSR (см. JEI) — раньше рецепта НЕ БЫЛО;");
+			gt6Say(tPlayer, "§b4) ВИТРАЖ: 8 стекла вокруг GT-пыли лазурита; 5) ФАКЕЛ: уголь + GT-палка;");
+			gt6Say(tPlayer, "§b6) КОНТРОЛЬ КАНОНА: железная кирка из 3 слитков + 2 палок крафтиться НЕ должна (GT6 заменяет её схемой с плитами — см. JEI).");
+		} catch(Throwable e) {e.printStackTrace();}
+	}
+
+	private static void gt6Say(ServerPlayer aPlayer, String aText) {
+		aPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal(aText));
 	}
 
 	private static void gt6BlockLightMeasure(ServerPlayer aPlayer) {
