@@ -145,7 +145,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 						if (dropItem) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, tStack);}} else {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, mStack);}
 					}
 				}
-			} else if (time > 100 && !level().isClientSide() && (aY < 1 || aY > 256) || time > 600) {
+			} else if (time > 100 && !level().isClientSide() && (aY < WD.minY(level())+1 || aY > WD.topY(level())) || time > 600) { // BUG-089: было aY < 1 || aY > 256 — границы мира через центр F6-Y-scale
 				if (dropItem) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, tStack);}} else {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, mStack);}
 				discard();
 			}

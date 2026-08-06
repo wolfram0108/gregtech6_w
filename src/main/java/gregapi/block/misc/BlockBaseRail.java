@@ -559,7 +559,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 
 		// World.canPlaceEntityOnSide восстановлен 1:1 через ЦЕНТР WD.canPlaceEntityOnSide (Forge-хук удалён по ИМЕНИ,
 		// способность есть — коллизия формы с исключением размещающего + заменяемость цели; централизован в WD.java).
-		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !WD.canPlaceEntityOnSide(aWorld, this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == WD.maxY(aWorld) && getMaterial().isSolid()) /* BUG-089: было aY == 255 — верх мира через центр F6-Y-scale */ || !WD.canPlaceEntityOnSide(aWorld, this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
 
 		// BUG-047 waterlog: замещаемая вода-источник запоминается ДО установки (сам сет её затирает) — семантика
 		// vanilla getStateForPlacement (BaseRailBlock.java:138-144), приём — прецедент слэбов BUG-010 (ItemBlockMetaType:49-57).

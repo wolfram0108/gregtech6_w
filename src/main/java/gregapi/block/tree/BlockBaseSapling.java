@@ -159,7 +159,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	public int getMaxHeight(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, int aMaxTreeHeight) {
 		aMaxTreeHeight--;
 		int rMaxHeight = 0;
-		while (rMaxHeight++ < aMaxTreeHeight) if (aY+rMaxHeight >= aWorld.getHeight() || !canPlaceTree(aWorld, aX, aY+rMaxHeight, aZ)) return rMaxHeight-1;
+		while (rMaxHeight++ < aMaxTreeHeight) if (aY+rMaxHeight >= WD.topY(aWorld) || !canPlaceTree(aWorld, aX, aY+rMaxHeight, aZ)) return rMaxHeight-1; // BUG-089: было getHeight() (в MC26 = COUNT 384, не верх) — потолок через центр F6-Y-scale
 		return rMaxHeight;
 	}
 	

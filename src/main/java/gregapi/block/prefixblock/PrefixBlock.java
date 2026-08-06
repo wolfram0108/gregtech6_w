@@ -428,7 +428,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	public boolean scheduleUpdateIfNeeded(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity) {
-		if (mGravity && aY > 0 && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) {
+		if (mGravity && aY > WD.minY(aWorld) && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) { // BUG-089: было aY > 0, дно MC26 = getMinY()
 			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2);
 			return T;
 		}
@@ -883,7 +883,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	protected boolean checkGravity(Level aWorld, int aX, int aY, int aZ) {
-		if (mGravity && aY > 0 && WD.te(aWorld, aX, aY, aZ, T) != null && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) {
+		if (mGravity && aY > WD.minY(aWorld) && WD.te(aWorld, aX, aY, aZ, T) != null && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) { // BUG-089: было aY > 0, дно MC26 = getMinY()
 			// было BlockFalling.fallInstantly (1.7.10 static-поле, дефолт false, не найден ни в одном из 3 корней) ->
 			// "T"; World.checkChunksExist(±32) -> ILevelReaderExtension.isAreaLoaded(BlockPos,int) [ILevelReaderExtension.java:19]
 			// (тот же приём, что и BlockBase.checkGravity/decisions/DEFERRED-LEDGER.md §B2).

@@ -53,7 +53,7 @@ public class WorldgenMarsRocks extends WorldgenObject {
 		if (tRegistry == null) return F;
 		for (int i = 0, j = 1+aRandom.nextInt(2); i < j; i++) {
 			int tX = aMinX + aRandom.nextInt(16), tZ = aMinZ + aRandom.nextInt(16);
-			for (int tY = aWorld.getHeight()-50; tY > 0; tY--) {
+			for (int tY = gregapi.util.WD.topY(aWorld)-50; tY > gregapi.util.WD.minY(aWorld); tY--) /* BUG-089: было getHeight()-50 и дно 0 — границы через центр F6-Y-scale */ {
 				Block tContact = WD.block(aChunk, tX&15, tY, tZ&15);
 				if (WD.getMaterial(tContact).isLiquid()) break;
 				if (tContact == NB || WD.air(aWorld, tX, tY, tZ, tContact)) continue;

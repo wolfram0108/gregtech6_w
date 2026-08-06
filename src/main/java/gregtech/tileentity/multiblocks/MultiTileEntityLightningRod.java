@@ -133,7 +133,7 @@ public class MultiTileEntityLightningRod extends TileEntityBase10MultiBlockBase 
 						for (MultiTileEntityLightningRod tLightningRod : ALL_LIGHTNING_RODS) if (tLightningRod != this && tLightningRod.mSize > 0 && tLightningRod.getWorld() == level && Math.abs(tLightningRod.getBlockPos().getX() - getBlockPos().getX()) < 256 && Math.abs(tLightningRod.getBlockPos().getZ() - getBlockPos().getZ()) < 256) tCount++;
 						if (rng(tCount) == 0) {
 							boolean temp = T;
-							for (int i = getBlockPos().getY() + mSize + 5, j = level.getHeight(); i < j; i++) {
+							for (int i = getBlockPos().getY() + mSize + 5, j = gregapi.util.WD.topY(level) /* BUG-089: было getHeight()=COUNT */; i < j; i++) {
 								if (!WD.air(level, getBlockPos().getX(), i, getBlockPos().getZ())) {
 									temp = F;
 									break;

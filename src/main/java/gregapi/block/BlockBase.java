@@ -425,7 +425,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	
 	public boolean checkGravity(Level aWorld, int aX, int aY, int aZ) {
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
-		if (aY > 0 && useGravity(aMeta) && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) {
+		if (aY > WD.minY(aWorld) && useGravity(aMeta) && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) { // BUG-089: было aY > 0, дно MC26 = getMinY()
 			// было BlockFalling.fallInstantly (1.7.10 static-поле, дефолт false, не найден ни в одном из 3 корней
 			// референса) -> дефолтное значение "T" (=!false), тот же эффект без движкового поля.
 			// было World.checkChunksExist(x0,y0,z0,x1,y1,z1) (симметричный диапазон ±32) -> ILevelReaderExtension.
@@ -465,7 +465,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		if (!checkNoEntityCollision(aWorld, aX, aY, aZ, aMeta, null)) return F;
 		// canPlaceEntityOnSide восстановлен 1:1 через ЦЕНТР WD.canPlaceEntityOnSide (Forge-хук удалён по ИМЕНИ, способность
 		// адаптирована централизованно — коллизия формы с исключением размещающего + заменяемость цели, WD.java).
-		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !WD.canPlaceEntityOnSide(aWorld, this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == WD.maxY(aWorld) && getMaterial().isSolid()) /* BUG-089: было aY == 255 — верх мира через центр F6-Y-scale */ || !WD.canPlaceEntityOnSide(aWorld, this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
 
 		// 1:1 vanilla ItemBlock.onItemUse: завершение установки — КАНАЛ aItem.placeBlockAt (подклассы item'а его
 		// переопределяют: ItemBlockMetaType выбирает слэб-вариант по wrenching-стороне клика). Дефолт placeBlockAt =

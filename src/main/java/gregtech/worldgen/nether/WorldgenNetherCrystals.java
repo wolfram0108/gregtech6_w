@@ -52,7 +52,7 @@ public class WorldgenNetherCrystals extends WorldgenObject {
 		if (aRandom.nextBoolean() || aBiomeNames.contains("Crystalline Crag")) return F;
 		int aX = aMinX+aRandom.nextInt(16), aY = WD.waterLevel(aWorld), aZ = aMinZ+aRandom.nextInt(16), aMeta = new NoiseGenerator(aWorld).get(aX/2, 360, aZ/2, BlocksGT.CrystalOres.maxMeta());
 		
-		while (WD.air(aWorld, aX, ++aY, aZ) && aY < aWorld.getHeight());
+		while (WD.air(aWorld, aX, ++aY, aZ) && aY < gregapi.util.WD.topY(aWorld)) /* BUG-089: было getHeight()=COUNT */;
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tBlock == Blocks.NETHER_BRICKS || WD.getMaterial(tBlock) != Material.rock) return F;
 		if (--aY -10 < WD.waterLevel(aWorld)) return F;

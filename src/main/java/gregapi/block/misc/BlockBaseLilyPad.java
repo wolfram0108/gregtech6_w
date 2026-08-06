@@ -79,7 +79,7 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	// было super.addCollisionBoxesToList(...) (1.7.10 Block, УДАЛЁН из neo целиком). Дефолт inline-порт 1:1 вместо
 	// super-вызова (Block.java:661-669 recompSrc), тот же приём, что уже принят в MultiTileEntityBlock.
 	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {if (!(aEntity instanceof AbstractBoat)) {AABB tBox = getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ); if (tBox != null && aAABB.intersects(tBox)) aList.add(tBox);}}
-	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return aY >= 0 && aY < 256 && WD.getMaterial(WD.block(aWorld, aX, aY - 1, aZ)) == Material.water && WD.meta(aWorld, aX, aY - 1, aZ) == 0;}
+	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return aY >= WD.minY(aWorld) && aY < WD.topY(aWorld) && WD.getMaterial(WD.block(aWorld, aX, aY - 1, aZ)) == Material.water && WD.meta(aWorld, aX, aY - 1, aZ) == 0;} // BUG-089: было aY >= 0 && aY < 256 — границы мира через центр F6-Y-scale
 	// было Block.canPlaceBlockAt(World,x,y,z) (1.7.10, дефолт world.getBlock(x,y,z).isReplaceable(...), Block.java:1046-1049)
 	// удалён из neo целиком - inline-порт вместо super через уже-существующий центр WD.replaceable (тот же приём, что
 	// BlockBase.onItemUse уже использует для идентичной проверки).

@@ -232,6 +232,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6mapprobe.flag")) gt6MapProbeTick(aEvent.getServer());
 	// [GT6-MAPYARD] MODCOMPAT-002: двор ЖИВОЙ ПРИЁМКИ карты (JourneyMap в dev-клиенте, глаз игрока) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6mapyard.flag")) gt6MapYardTick(aEvent.getServer());
+	// [GT6-YPROBE] BUG-089: судья класса «жёсткие границы мира 0..255 вместо центра F6-Y-scale» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6yprobe.flag")) gt6YProbeTick(aEvent.getServer());
 	// [GT6-TODOPROBE] судья правок захода PORT-TODO 43->28 (канал иконки, чёрный песок) + площадка для игрока
 		if (gregapi.data.CS.probeFlag("gt6todoprobe.flag")) gt6TodoProbeTick(aEvent.getServer());
 	// [GT6-FLUIDHEIGHT] BUG-086: измеритель высоты растёкшейся жидкости — порт против формулы оригинала 1.7.10
@@ -9255,6 +9257,138 @@ public final class GT6Probes {
 			}
 		}
 		sMapPSeq.done();
+	}
+
+	// ==========================================================================================================
+	// [GT6-YPROBE] BUG-089 — СУДЬЯ КЛАССА «жёсткие границы мира 0..255 вместо центра F6-Y-scale (WD.minY/maxY/topY)».
+	// Репорт игрока 2026-08-06: «верёвки мода не ставятся на отрицательной высоте; так было с жидкостями, так же
+	// с некоторыми блоками». Мир 1.7.10 жил в Y∈[0..255]; в MC26 дно getMinY() (-64) — жёсткие 0/255/256 ложно
+	// отсекают ниже нуля. Судится РЕАЛЬНЫМ путём движка на Y=-30, три плеча + контроли:
+	//   §1 ВЕРЁВКА (сам симптом): установка item.useOn на низ опоры + ПРОТЯЖКА gameMode.useItemOn по верёвке
+	//      (ровно жест игрока; до фикса цикл MultiTileEntityRope:55 `tY >= 0` ниже нуля не итерировал —
+	//      клик молча ничего не делал). ПОЗИТИВНЫЙ контроль: те же два клика на Y=+40. ХОЛОДНЫЙ: клик пустой
+	//      рукой верёвку не протягивает.
+	//   §2 ЛИЛИЯ: canBlockStay над водой на Y<0 (было aY >= 0 && aY < 256). НЕГАТИВНЫЙ: над камнем — false.
+	//   §3 ГРАВИТАЦИЯ PrefixBlock: гравитационный блок на Y=-30 с воздухом ниже обязан УПАСТЬ (было aY > 0 —
+	//      ниже нуля гравитация выключалась). ХОЛОДНЫЙ: камень в соседней трубе висит.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static final String YP_M = "GT6-YPROBE";
+	private static int sYPTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sYPSeq;
+	private static BlockPos sYPNegSupport, sYPPosSupport, sYPLilyWater, sYPLilyStone, sYPGravTube, sYPColdTube;
+	private static gregapi.block.misc.BlockBaseLilyPad sYPLily;
+	private static gregapi.block.prefixblock.PrefixBlock sYPGrav;
+
+	public static void gt6YProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sYPTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sYPSeq == null) sYPSeq = new gregapi.probe.GT6ProbeStand.Seq(YP_M)
+			.at(100, () -> gt6YProbeBuild(tPlayer))
+			.at(140, () -> gt6YProbeRope(tPlayer, sYPNegSupport))   // установка на -30
+			.at(170, () -> gt6YProbeExtend(tPlayer, sYPNegSupport.below(), T)) // протяжка -30 -> -31
+			.at(200, () -> gt6YProbeExtend(tPlayer, sYPNegSupport.below(), F)) // холодный: пустая рука
+			.at(230, () -> gt6YProbeRope(tPlayer, sYPPosSupport))   // позитив: установка на +40
+			.at(260, () -> gt6YProbeExtend(tPlayer, sYPPosSupport.below(), T)) // позитив: протяжка
+			.at(290, () -> gt6YProbeGravity(tPlayer))
+			.at(360, () -> gt6YProbeJudge(tPlayer));
+		sYPSeq.tick(sYPTick);
+	}
+
+	private static void gt6YProbeBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		int tX = aPlayer.blockPosition().getX() + 6, tZ = aPlayer.blockPosition().getZ() + 6;
+		// представители — из ЖИВОГО реестра, не из памяти
+		for (net.minecraft.world.level.block.Block tB : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			if (sYPLily == null && tB instanceof gregapi.block.misc.BlockBaseLilyPad tL) sYPLily = tL;
+			if (sYPGrav == null && tB instanceof gregapi.block.prefixblock.PrefixBlock tP && tP.mGravity) sYPGrav = tP;
+			if (sYPLily != null && sYPGrav != null) break;
+		}
+		// §1: опоры для верёвки — камень, под ним расчищенный воздух (столб клетки)
+		sYPNegSupport = new BlockPos(tX, -29, tZ);
+		sYPPosSupport = new BlockPos(tX, 41, tZ);
+		for (BlockPos tSup : new BlockPos[]{sYPNegSupport, sYPPosSupport}) {
+			tLevel.setBlock(tSup, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+			for (int dy = 1; dy <= 5; dy++) tLevel.setBlock(tSup.below(dy), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+		}
+		// §2: чаша с ванильной водой на -31 (лилия судится на -30) и контрольный камень
+		sYPLilyWater = new BlockPos(tX + 4, -31, tZ);
+		for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+			tLevel.setBlock(sYPLilyWater.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+			tLevel.setBlock(sYPLilyWater.offset(dx, 0, dz), (dx == 0 && dz == 0) ? net.minecraft.world.level.block.Blocks.WATER.defaultBlockState() : net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+			tLevel.setBlock(sYPLilyWater.offset(dx, 1, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+		}
+		sYPLilyStone = sYPLilyWater.offset(1, 0, 0); // над этим камнем canBlockStay обязан дать false
+		// §3: трубы гравитации — дно -35, воздух -34..-30
+		sYPGravTube = new BlockPos(tX + 8, -30, tZ);
+		sYPColdTube = new BlockPos(tX + 10, -30, tZ);
+		for (BlockPos tTube : new BlockPos[]{sYPGravTube, sYPColdTube}) {
+			tLevel.setBlock(new BlockPos(tTube.getX(), -35, tTube.getZ()), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+			for (int tY = -34; tY <= -29; tY++) tLevel.setBlock(new BlockPos(tTube.getX(), tY, tTube.getZ()), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+		}
+		O.println("[" + YP_M + "] клетки построены: верёвка -30/+40, лилия " + (sYPLily == null ? "НЕТ В РЕЕСТРЕ" : net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(sYPLily))
+			+ ", гравитация " + (sYPGrav == null ? "НЕТ В РЕЕСТРЕ" : net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(sYPGrav)));
+	}
+
+	/** Установка верёвки РЕАЛЬНЫМ каналом: item.useOn по НИЖНЕЙ грани опоры (жест «подвесить верёвку»). */
+	private static void gt6YProbeRope(ServerPlayer aPlayer, BlockPos aSupport) {
+		aPlayer.getInventory().setItem(0, gregapi.data.IL.Rope.get(64));
+		aPlayer.getInventory().setSelectedSlot(0);
+		net.minecraft.world.phys.Vec3 tHit = net.minecraft.world.phys.Vec3.atCenterOf(aSupport).add(0, -0.5, 0);
+		aPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(aPlayer, net.minecraft.world.InteractionHand.MAIN_HAND,
+			new net.minecraft.world.phys.BlockHitResult(tHit, net.minecraft.core.Direction.DOWN, aSupport, false)));
+	}
+
+	/** Протяжка: gameMode.useItemOn ПО САМОЙ верёвке (onBlockActivated3), с верёвкой в руке либо пустой рукой (холодный). */
+	private static void gt6YProbeExtend(ServerPlayer aPlayer, BlockPos aRopePos, boolean aWithRope) {
+		aPlayer.getInventory().setItem(0, aWithRope ? gregapi.data.IL.Rope.get(64) : net.minecraft.world.item.ItemStack.EMPTY);
+		aPlayer.getInventory().setSelectedSlot(0);
+		net.minecraft.world.phys.Vec3 tHit = net.minecraft.world.phys.Vec3.atCenterOf(aRopePos);
+		aPlayer.gameMode.useItemOn(aPlayer, aPlayer.level(), aPlayer.getMainHandItem(), net.minecraft.world.InteractionHand.MAIN_HAND,
+			new net.minecraft.world.phys.BlockHitResult(tHit, net.minecraft.core.Direction.NORTH, aRopePos, false));
+	}
+
+	private static void gt6YProbeGravity(ServerPlayer aPlayer) {
+		ServerLevel tLevel = aPlayer.level();
+		if (sYPGrav != null) {
+			gregapi.util.WD.set(tLevel, sYPGravTube.getX(), sYPGravTube.getY(), sYPGravTube.getZ(), sYPGrav, 0, 3, F);
+			sYPGrav.scheduleUpdateIfNeeded(tLevel, sYPGravTube.getX(), sYPGravTube.getY(), sYPGravTube.getZ(), null);
+		}
+		tLevel.setBlock(sYPColdTube, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3); // холодный: камень не гравитационен
+	}
+
+	private static boolean gt6YProbeIsRope(ServerLevel aLevel, BlockPos aPos) {
+		return aLevel.getBlockEntity(aPos) instanceof gregtech.tileentity.tools.MultiTileEntityRope;
+	}
+
+	private static void gt6YProbeJudge(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		O.println("========== [" + YP_M + "] BUG-089: границы мира на отрицательной высоте ==========");
+		// §1 верёвка
+		BlockPos tNegRope = sYPNegSupport.below(), tNegExt = sYPNegSupport.below(2), tNegCold = sYPNegSupport.below(3);
+		BlockPos tPosRope = sYPPosSupport.below(), tPosExt = sYPPosSupport.below(2);
+		sYPSeq.judge("§1 предусловие: верёвка ПОВЕШЕНА на опору на Y=" + tNegRope.getY(), gt6YProbeIsRope(tLevel, tNegRope), "rope-TE", String.valueOf(tLevel.getBlockState(tNegRope)));
+		sYPSeq.judge("§1 СИМПТОМ: протяжка верёвки НИЖЕ НУЛЯ (клик по верёвке на " + tNegRope.getY() + " ставит на " + tNegExt.getY() + ")", gt6YProbeIsRope(tLevel, tNegExt), "rope-TE", String.valueOf(tLevel.getBlockState(tNegExt)));
+		sYPSeq.judge("§1 ХОЛОДНЫЙ: пустая рука верёвку не протянула (на " + tNegCold.getY() + " воздух)", gregapi.util.WD.air(tLevel, tNegCold.getX(), tNegCold.getY(), tNegCold.getZ()), "air", String.valueOf(tLevel.getBlockState(tNegCold)));
+		sYPSeq.judge("§1 ПОЗИТИВ: установка и протяжка на Y=+40 работают", gt6YProbeIsRope(tLevel, tPosRope) && gt6YProbeIsRope(tLevel, tPosExt), "rope-TE оба", tLevel.getBlockState(tPosRope) + " / " + tLevel.getBlockState(tPosExt));
+		// §2 лилия
+		if (sYPLily != null) {
+			BlockPos tOnWater = sYPLilyWater.above();
+			sYPSeq.judge("§2 ЛИЛИЯ: canBlockStay над водой на Y=" + tOnWater.getY(), sYPLily.canBlockStay(tLevel, tOnWater.getX(), tOnWater.getY(), tOnWater.getZ()), "true", "false");
+			sYPSeq.judge("§2 НЕГАТИВ: canBlockStay над камнем — false", !sYPLily.canBlockStay(tLevel, sYPLilyStone.getX(), sYPLilyStone.getY() + 1, sYPLilyStone.getZ()), "false", "true");
+		} else sYPSeq.judge("§2 ЛИЛИЯ: представитель найден в реестре", false, "BlockBaseLilyPad", "нет");
+		// §3 гравитация
+		if (sYPGrav != null) {
+			boolean tFell = gregapi.util.WD.air(tLevel, sYPGravTube.getX(), sYPGravTube.getY(), sYPGravTube.getZ());
+			boolean tLanded = false;
+			for (int tY = -34; tY < -29 && !tLanded; tY++) tLanded = tLevel.getBlockState(new BlockPos(sYPGravTube.getX(), tY, sYPGravTube.getZ())).getBlock() == sYPGrav;
+			sYPSeq.judge("§3 ГРАВИТАЦИЯ: блок на Y=-30 упал (исходная позиция пуста, блок ниже)", tFell && tLanded, "упал", "исход=" + tLevel.getBlockState(sYPGravTube) + " приземлился=" + tLanded);
+			sYPSeq.judge("§3 ХОЛОДНЫЙ: камень в соседней трубе висит", tLevel.getBlockState(sYPColdTube).getBlock() == net.minecraft.world.level.block.Blocks.STONE, "stone", String.valueOf(tLevel.getBlockState(sYPColdTube)));
+		} else sYPSeq.judge("§3 ГРАВИТАЦИЯ: представитель с mGravity найден в реестре", false, "PrefixBlock.mGravity", "нет");
+		sYPSeq.done();
 	}
 
 	// ==========================================================================================================

@@ -108,7 +108,7 @@ public class GT_Tool_Axe extends ToolStats {
 		if (LOCK && !MD.TreeCap.mLoaded && !aPlayer.level().isClientSide() && !aPlayer.isShiftKeyDown() && !aBlock.getClass().getName().startsWith("com.ferreusveritas.dynamictrees") && (aBlock instanceof HugeMushroomBlock || WD.wood(aBlock, aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T))) {
 			LOCK = F;
 			try {
-				int tY = aY, tH = aPlayer.level().getHeight(), tCount = 0, tIncrement = UT.Code.roundUp(WD.hardness(aBlock, aPlayer.level(), aX, aY, aZ) * getToolDamagePerBlockBreak());
+				int tY = aY, tH = gregapi.util.WD.topY(aPlayer.level()) /* BUG-089: было getHeight()=COUNT */, tCount = 0, tIncrement = UT.Code.roundUp(WD.hardness(aBlock, aPlayer.level(), aX, aY, aZ) * getToolDamagePerBlockBreak());
 				// Checking...
 				while (++tY < tH) {
 					if (WD.block(aPlayer.level(), aX, tY, aZ) != aBlock) break;
@@ -134,7 +134,7 @@ public class GT_Tool_Axe extends ToolStats {
 		if (aBlock.getClass().getName().startsWith("com.ferreusveritas.dynamictrees")) return aDefault;
 		if (aBlock instanceof HugeMushroomBlock || WD.wood(aBlock, aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T)) {
 			float rAmount = 1.0F, tIncrement = 1.0F;
-			if (!aPlayer.isShiftKeyDown() && !MD.TreeCap.mLoaded) for (int tY = aY+1, tH = aPlayer.level().getHeight(); tY < tH; tY++) if (WD.block(aPlayer.level(), aX, tY, aZ) == aBlock) {tIncrement+=0.1F; rAmount+=tIncrement;} else break;
+			if (!aPlayer.isShiftKeyDown() && !MD.TreeCap.mLoaded) for (int tY = aY+1, tH = gregapi.util.WD.topY(aPlayer.level()) /* BUG-089: было getHeight()=COUNT */; tY < tH; tY++) if (WD.block(aPlayer.level(), aX, tY, aZ) == aBlock) {tIncrement+=0.1F; rAmount+=tIncrement;} else break;
 			if (rAmount > 2.0F && (aBlock instanceof HugeMushroomBlock || MD.NeLi.owns(aBlock))) return aDefault / (4.0F * rAmount);
 			return 2.0F * aDefault / rAmount;
 		}

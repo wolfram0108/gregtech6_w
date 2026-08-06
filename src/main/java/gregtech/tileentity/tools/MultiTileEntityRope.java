@@ -52,7 +52,9 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 		ItemStack aStack = aPlayer.getMainHandItem();
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID());
 		if (tRegistry != null && ST.equal(aStack, toStack(), F)) {
-			if (isServerSide()) for (int tY = getBlockPos().getY()-1; tY >= 0; tY--) {
+			// BUG-089 (класс F6-Y-scale): было tY >= 0 — дно мира 1.7.10; в MC26 дно getMinY() (-64), протяжка
+			// верёвки ниже нуля молча не работала. Граница — через центр WD.minY, как у жидкостей/данжей.
+			if (isServerSide()) for (int tY = getBlockPos().getY()-1; tY >= WD.minY(level); tY--) {
 				BlockEntity tTileEntity = getTileEntity(getBlockPos().getX(), tY, getBlockPos().getZ());
 				if (tTileEntity instanceof MultiTileEntityRope) {
 					if (((MultiTileEntityRope)tTileEntity).getMultiTileEntityRegistryID() != getMultiTileEntityRegistryID()) return T;
@@ -76,7 +78,7 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 	public void onBlockHarvested(int aMetaData, Player aPlayer) {
 		if (isServerSide() && aPlayer != null) {
 			BlockEntity tTileEntity = getTileEntityAtSideAndDistance(SIDE_UP, 1);
-			if (!(tTileEntity instanceof MultiTileEntityRope)) for (int tY = getBlockPos().getY()-1; tY >= 0; tY--) {
+			if (!(tTileEntity instanceof MultiTileEntityRope)) for (int tY = getBlockPos().getY()-1; tY >= WD.minY(level); tY--) { // BUG-089: было tY >= 0, дно MC26 = getMinY()
 				tTileEntity = getTileEntity(getBlockPos().getX(), tY, getBlockPos().getZ());
 				if (tTileEntity instanceof MultiTileEntityRope && ((MultiTileEntityRope)tTileEntity).mFacing == mFacing && ((MultiTileEntityRope)tTileEntity).getMultiTileEntityRegistryID() == getMultiTileEntityRegistryID() && ((MultiTileEntityRope)tTileEntity).getMultiTileEntityID() == getMultiTileEntityID()) {
 					((MultiTileEntityRope)tTileEntity).popOff(aPlayer);

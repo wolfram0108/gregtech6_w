@@ -1890,7 +1890,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		if (aEvent.getSpawnType() == net.minecraft.world.entity.EntitySpawnReason.CHUNK_GENERATION) return;
 		Class<? extends LivingEntity> aMobClass = aEvent.getEntity().getClass();
 		Level aWorld = aEvent.getEntity().level();
-		int aX = UT.Code.roundDown(aEvent.getX()), aY = (int)UT.Code.bind(0, aWorld.getHeight(), UT.Code.roundDown(aEvent.getY())), aZ = UT.Code.roundDown(aEvent.getZ());
+		int aX = UT.Code.roundDown(aEvent.getX()), aY = (int)UT.Code.bind(WD.minY(aWorld), WD.topY(aWorld), UT.Code.roundDown(aEvent.getY())), aZ = UT.Code.roundDown(aEvent.getZ()); // BUG-089: было bind(0, getHeight()) — спавн на Y<0 кламплся к нулю, проверки судили чужую позицию
 
 		if (SPAWN_NO_BATS && aMobClass == Bat.class && WD.block(aWorld, aX, aY-2, aZ) != Blocks.STONE && WD.block(aWorld, aX, aY+2, aZ) != Blocks.STONE) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
 
