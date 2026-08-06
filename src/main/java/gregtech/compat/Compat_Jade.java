@@ -230,6 +230,20 @@ public class Compat_Jade implements IWailaPlugin {
 			Block tBlock = aAccessor.getBlockState().getBlock();
 			Level tWorld = aAccessor.getLevel();
 			BlockPos tPos = aAccessor.getPosition();
+			// ── ИКОНКИ ИНСТРУМЕНТОВ ТАМ, ГДЕ JADE ИХ ПРЯЧЕТ ──────────────────────────────────────────────
+			// Jade выходит ДО отрисовки, когда скорость разрушения равна нулю (HarvestToolProvider:93), а у GT6
+			// неподходящий инструмент даёт РОВНО ноль — и это КАНОН 1.7.10, подтверждённый парным замером
+			// (1360 пар, нулей 1176 в обеих версиях). Механику трогать нельзя; чиним витрину витриной.
+			// Список инструментов спрашиваем У САМОГО JADE (его же getText), а не собираем свой — иначе это была
+			// бы копия чужой политики, на которой заход BUG-070 уже обжигался. Рисуем ТОЛЬКО в дыре: он знает
+			// инструменты, но показать их не может. При ненулевом прогрессе молчим — там рисует он сам, и наш
+			// значок был бы дублем.
+			try {
+				if (aAccessor.getBlockState().getDestroyProgress(aAccessor.getPlayer(), tWorld, tPos) <= 0) {
+					java.util.List<snownee.jade.api.ui.Element> tTools = HarvestToolProvider.INSTANCE.getText(aAccessor, aConfig);
+					if (!tTools.isEmpty()) aTooltip.add(tTools);
+				}
+			} catch (Throwable e) {/* витрина Jade недоступна — строка тира ниже всё равно будет */}
 			try {
 				int tNeeded = WD.harvestLevel(tWorld, tPos.getX(), tPos.getY(), tPos.getZ());
 				// Условие показа — «ИЗВЕСТЕН ли инструмент», а не «требуется ли он». Прежде выходили по

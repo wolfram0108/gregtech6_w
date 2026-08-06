@@ -410,6 +410,18 @@ public final class GT6ProbesClient {
 					O.println("[GT6-JADEHAND]    строка тира: инструмент=" + (tTool == null || tTool.isEmpty() ? "<неизвестен>" : tTool)
 						+ ", берётся рукой=" + tByHand + ", тир=" + tNeeded
 						+ " → " + (tSilent ? "строки НЕТ (сказать нечего)" : "строка ЕСТЬ «Requires Tier: " + tNeeded + "»"));
+					// ИКОНКИ: кто их покажет при инструменте в руке. Jade рисует сам только при ненулевом прогрессе;
+					// в нуле их подставляет наш провайдер — проверяем ровно этот стык, а не картинку.
+					for (net.minecraft.world.item.ItemStack tHand2 : tHands) {
+						tMC.player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tHand2);
+						float tPr = tState.getDestroyProgress(tMC.player, tMC.level, tProbePos);
+						int tKnown = -1;
+						try {tKnown = snownee.jade.addon.harvest.HarvestToolProvider.getTool(tState, tMC.level, tProbePos).size();} catch (Throwable e) {/**/}
+						O.println("[GT6-JADEHAND]      иконки при «" + (tHand2.isEmpty() ? "пустая рука" : tHand2.getHoverName().getString()) + "»: "
+							+ "Jade знает " + tKnown + " шт., прогресс " + String.format("%.4f", tPr)
+							+ " → рисует " + (tPr > 0 ? "САМ JADE" : (tKnown > 0 ? "НАШ ПРОВАЙДЕР (дыра закрыта)" : "никто — инструментов нет")));
+					}
+					tMC.player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tSaved);
 				} catch (Throwable e) {O.println("[GT6-JADEHAND]    строка тира: EXC " + e);
 				}
 			}
