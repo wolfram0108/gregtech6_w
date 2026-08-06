@@ -653,17 +653,66 @@ public class WD {
 		VANILLA_PASSPORT_BY_NAME.put(aName, new VanillaPassport(aMaterial, aTool, aLevel));
 	}
 
+	/**
+	 * ПЕРЕИМЕНОВАННЫЕ И РАСЩЕПЛЁННЫЕ СЕМЬИ: где искать паспорт 1.7.10, если имени в neo больше нет.
+	 *
+	 * <p>Здесь НЕТ величин — только адрес. Инструмент, тир и материал по-прежнему берутся из паспорта,
+	 * снятого с живого оригинала; эта карта лишь говорит, каким neo-блокам он принадлежит. Список конечный
+	 * и посчитан машиной: из 171 записи паспорта имён, которых в neo нет, ровно 57, и лишь 12 из них несут
+	 * инструмент — они и перечислены (замер 2026-08-06).</p>
+	 *
+	 * <p>Без этого доски и брёвна оставались «без инструмента»: в 1.7.10 вся порода жила под одним именем
+	 * {@code minecraft:planks}/{@code log}, а neo расщепил их на {@code oak_planks}, {@code birch_log} и так
+	 * далее. Игрок 2026-08-06: «на stone и рудах есть, а на гравии, песке, дереве, сундуке — нет».</p>
+	 */
+	private static final Map<String, net.minecraft.tags.TagKey<Block>> PASSPORT_FAMILY = new LinkedHashMap<>();
+	private static final Map<String, String> PASSPORT_RENAMED = new LinkedHashMap<>();
+	static {
+		// одно имя 1.7.10 -> целая neo-семья
+		PASSPORT_FAMILY.put("minecraft:planks", net.minecraft.tags.BlockTags.PLANKS);
+		PASSPORT_FAMILY.put("minecraft:log"   , net.minecraft.tags.BlockTags.LOGS  ); // и log2: тег общий, паспорт тот же (axe 0)
+		PASSPORT_FAMILY.put("minecraft:bed"   , net.minecraft.tags.BlockTags.BEDS  );
+		PASSPORT_FAMILY.put("minecraft:snow_layer", net.minecraft.tags.BlockTags.SNOW);
+		// просто переименовано
+		PASSPORT_RENAMED.put("minecraft:grass"      , "minecraft:grass_block");
+		PASSPORT_RENAMED.put("minecraft:golden_rail", "minecraft:powered_rail");
+		PASSPORT_RENAMED.put("minecraft:lit_pumpkin", "minecraft:jack_o_lantern");
+		PASSPORT_RENAMED.put("minecraft:quartz_ore" , "minecraft:nether_quartz_ore");
+		PASSPORT_RENAMED.put("minecraft:double_stone_slab", "minecraft:smooth_stone"); // двойная плита 1.7.10 = цельный блок neo
+		PASSPORT_RENAMED.put("minecraft:monster_egg", "minecraft:infested_stone");
+		// minecraft:lit_redstone_ore отдельного блока в neo не имеет (свечение стало свойством redstone_ore,
+		// а он покрыт по имени), minecraft:log2 покрыт тегом LOGS выше — обоим адрес не нужен.
+	}
+
 	/** Резолв «имя 1.7.10 -> живой neo-блок» откладывается до первого запроса: на {@code <clinit>} реестр
-	 *  блоков ещё не заполнен, а имена, которых в neo нет (flatten/удалённые), просто не попадают в карту. */
+	 *  блоков ещё не заполнен. Имя ищется как есть, затем среди переименованных, затем по семье. */
 	private static VanillaPassport vanillaPassport(Block aBlock) {
 		if (!VANILLA_PASSPORT_RESOLVED) {
 			VANILLA_PASSPORT_RESOLVED = T;
 			for (Map.Entry<String, VanillaPassport> tEntry : VANILLA_PASSPORT_BY_NAME.entrySet()) try {
-				net.minecraft.resources.Identifier tID = net.minecraft.resources.Identifier.parse(tEntry.getKey());
-				net.minecraft.core.registries.BuiltInRegistries.BLOCK.getOptional(tID).ifPresent(tBlock -> VANILLA_PASSPORT.put(tBlock, tEntry.getValue()));
-			} catch (Throwable e) {/* имени нет в neo (flatten/удалён) — обслуживают ветки-обобщения */}
+				String tName = tEntry.getKey();
+				VanillaPassport tPassport = tEntry.getValue();
+				net.minecraft.resources.Identifier tID = net.minecraft.resources.Identifier.parse(PASSPORT_RENAMED.getOrDefault(tName, tName));
+				net.minecraft.core.registries.BuiltInRegistries.BLOCK.getOptional(tID).ifPresent(tBlock -> VANILLA_PASSPORT.put(tBlock, tPassport));
+			} catch (Throwable e) {/* имени нет в neo и адреса ему не задано — обслуживают ветки-обобщения */}
 		}
-		return VANILLA_PASSPORT.get(aBlock);
+		VanillaPassport rPassport = VANILLA_PASSPORT.get(aBlock);
+		if (rPassport != null) return rPassport;
+		// ⛔ СЕМЬЮ СПРАШИВАЕМ В МОМЕНТ ВОПРОСА, а не заранее. Содержимое тегов приходит с датапаком ПОЗЖЕ, чем
+		// случается первый запрос паспорта, и предварительный обход реестра давал пусто — а промах кэшировался
+		// навсегда: доски и брёвна так и оставались «без инструмента» (замер 2026-08-06). Проверка дешёвая
+		// (4 тега), и кэшируем только НАЙДЕННОЕ — отрицательный ответ до готовности тегов не должен застывать.
+		try {
+			net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
+			for (Map.Entry<String, net.minecraft.tags.TagKey<Block>> tEntry : PASSPORT_FAMILY.entrySet()) {
+				if (!tState.is(tEntry.getValue())) continue;
+				VanillaPassport tPassport = VANILLA_PASSPORT_BY_NAME.get(tEntry.getKey());
+				if (tPassport == null) continue;
+				VANILLA_PASSPORT.put(aBlock, tPassport);
+				return tPassport;
+			}
+		} catch (Throwable e) {/* состояние/теги ещё не готовы — ответим на следующем запросе */}
+		return null;
 	}
 
 	static {

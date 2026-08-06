@@ -231,8 +231,15 @@ public class Compat_Jade implements IWailaPlugin {
 			Level tWorld = aAccessor.getLevel();
 			BlockPos tPos = aAccessor.getPosition();
 			try {
-				if (WD.getMaterial(tBlock).isToolNotRequired()) return; // берётся рукой — требования нет, строка была бы шумом
 				int tNeeded = WD.harvestLevel(tWorld, tPos.getX(), tPos.getY(), tPos.getZ());
+				// Условие показа — «ИЗВЕСТЕН ли инструмент», а не «требуется ли он». Прежде выходили по
+				// isToolNotRequired, и строка пропадала у песка, гравия, земли, досок и сундука: их материалы
+				// (sand/ground/wood) инструмента не требуют, но класс инструмента у них ЗАДАН — по паспорту
+				// 1.7.10 это shovel/axe, тир 0 (engine_block_passport.csv). Игрок 2026-08-06: «на stone и рудах
+				// есть, а на гравии, песке, дереве, сундуке — нет». Молчим только там, где сказать нечего:
+				// инструмент неизвестен И требования нет.
+				String tTool = WD.harvestTool(tBlock, WD.meta(tWorld, tPos.getX(), tPos.getY(), tPos.getZ()));
+				if ((tTool == null || tTool.isEmpty()) && WD.getMaterial(tBlock).isToolNotRequired()) return;
 				// ⛔ БЕЗ ОТБОРА ПО ПРОИСХОЖДЕНИЮ БЛОКА. Прежде здесь стояло «не IBlock → выходим: чужая шкала
 				// ванильная», и заказ игрока («навожу на ЛЮБОЙ блок — вижу тип, тир и соответствие») исполнялся
 				// лишь наполовину: у блоков GT6 строка была, у ванильных — нет. Отбор был вынужденным: тира

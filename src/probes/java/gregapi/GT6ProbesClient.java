@@ -343,7 +343,12 @@ public final class GT6ProbesClient {
 		java.util.List<net.minecraft.world.level.block.Block> tWanted = java.util.List.of(
 			net.minecraft.world.level.block.Blocks.OAK_PLANKS, net.minecraft.world.level.block.Blocks.OAK_LOG,
 			net.minecraft.world.level.block.Blocks.STONE, net.minecraft.world.level.block.Blocks.DIRT,
-			net.minecraft.world.level.block.Blocks.IRON_ORE);
+			net.minecraft.world.level.block.Blocks.IRON_ORE,
+			// названы игроком 2026-08-06 как «тира нет»: материал инструмента не требует, но класс задан
+			net.minecraft.world.level.block.Blocks.GRAVEL, net.minecraft.world.level.block.Blocks.SAND,
+			net.minecraft.world.level.block.Blocks.CHEST,
+			// контроль обратной стороны: у шерсти и листвы инструмента нет вовсе — строки быть НЕ должно
+			net.minecraft.world.level.block.Blocks.WHITE_WOOL, net.minecraft.world.level.block.Blocks.OAK_LEAVES);
 		java.util.LinkedHashMap<net.minecraft.world.level.block.Block, net.minecraft.core.BlockPos> tFoundAt = new java.util.LinkedHashMap<>();
 		net.minecraft.core.BlockPos tCenter = tMC.player.blockPosition();
 		for (int dx = -48; dx <= 48; dx++) for (int dy = -8; dy <= 8; dy++) for (int dz = -48; dz <= 48; dz++) {
@@ -353,7 +358,11 @@ public final class GT6ProbesClient {
 			// контроль: блок GT6, у которого симптома нет — его строки обязаны отличаться
 			else if (tB instanceof gregapi.block.multitileentity.MultiTileEntityBlock) tFoundAt.putIfAbsent(tB, tPos);
 		}
-		if (tFoundAt.isEmpty()) return; // полигон ещё не построен — ждём
+		// ⛔ ЖДЁМ ПОЛИГОН, а не первый попавшийся блок. Земля, песок, гравий и камень есть в ландшафте с первого
+		// тика, и проба срабатывала ДО постройки полигона — в замер не попадали ни сундук с досками, ни
+		// КОНТРОЛЬНЫЕ шерсть с листвой, то есть судья оставался без обратной стороны. Белая шерсть в мире
+		// бывает только на полигоне, она и служит признаком готовности.
+		if (!tFoundAt.containsKey(net.minecraft.world.level.block.Blocks.WHITE_WOOL)) return;
 		mJadeHandDone = true;
 
 		// что держим в руке: пусто · ванильный топор · GT6-ключ (именно он назван в репорте)
@@ -396,8 +405,11 @@ public final class GT6ProbesClient {
 				try {
 					boolean tByHand = gregapi.util.WD.getMaterial(tBlock).isToolNotRequired();
 					int tNeeded = gregapi.util.WD.harvestLevel(tMC.level, tProbePos.getX(), tProbePos.getY(), tProbePos.getZ());
-					O.println("[GT6-JADEHAND]    строка тира: берётся рукой=" + tByHand + ", требуемый тир=" + tNeeded
-						+ " → " + (tByHand || tNeeded < 0 ? "строки НЕТ (требования нет)" : "строка ЕСТЬ «Requires Tier: " + tNeeded + "»"));
+					String tTool = gregapi.util.WD.harvestTool(tBlock, gregapi.util.WD.meta(tMC.level, tProbePos.getX(), tProbePos.getY(), tProbePos.getZ()));
+					boolean tSilent = ((tTool == null || tTool.isEmpty()) && tByHand) || tNeeded < 0;
+					O.println("[GT6-JADEHAND]    строка тира: инструмент=" + (tTool == null || tTool.isEmpty() ? "<неизвестен>" : tTool)
+						+ ", берётся рукой=" + tByHand + ", тир=" + tNeeded
+						+ " → " + (tSilent ? "строки НЕТ (сказать нечего)" : "строка ЕСТЬ «Requires Tier: " + tNeeded + "»"));
 				} catch (Throwable e) {O.println("[GT6-JADEHAND]    строка тира: EXC " + e);
 				}
 			}
