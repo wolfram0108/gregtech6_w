@@ -77,7 +77,10 @@ public class ShapedOreRecipe implements ICraftingRecipeGT {
 			if (tIn instanceof ItemStack) tMap.put(tChar, ST.copy((ItemStack)tIn));
 			else if (tIn instanceof List) tMap.put(tChar, tIn);
 			else if (tIn instanceof String) tMap.put(tChar, OreDictionary.getOres((String)tIn));
-			else if (tIn instanceof ItemLike) tMap.put(tChar, new ItemStack((ItemLike)tIn));
+			// Forge 1.7.10 превращал Item/Block-ячейку в new ItemStack(item, 1, 0) — МЕТА 0, не джокер
+			// (голый new ItemStack(damageable) в порт-семантике ST.meta_ читается как W и матчил бы ЛЮБОЙ
+			// износ — так рецепты universal-hazmat принимали битую броню, оригинал требует целую).
+			else if (tIn instanceof ItemLike) tMap.put(tChar, ST.make(((ItemLike)tIn).asItem(), 1, 0));
 			else throw new IllegalArgumentException("Invalid shaped ore recipe ingredient: " + tIn);
 		}
 

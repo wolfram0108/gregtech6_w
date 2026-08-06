@@ -575,10 +575,12 @@ public class LoaderItemData implements Runnable {
 		OM.reg(OD.itemMoss                          , ST.make(MD.BTL, "groundStuff", 1, 38));
 		OM.reg(OD.itemMoss                          , ST.make(MD.BoP, "moss", 1, 0));
 		OM.reg(OD.itemMoss                          , ST.make(MD.TF, "tile.TFPlant", 1, 3));
-		OM.reg(OD.blockGlass                        , ST.make(Blocks.WHITE_STAINED_GLASS, 1, W));
+		// 1.7.10 писал семью ОДНИМ wildcard-стеком (stained_glass:W = 16 цветов); в neo члены перечисляются
+		// поимённо из центра CS.Flattened — тот же приём, что роль-B словаря (OreDictionary.initVanillaEntries).
+		for (net.minecraft.world.level.block.Block tGlass : gregapi.data.CS.Flattened.STAINED_GLASS     ) OM.reg(OD.blockGlass, ST.make(tGlass, 1, 0));
 		OM.reg(OD.blockGlassColorless               , ST.make(Blocks.GLASS, 1, W));
 		OM.reg(OD.blockGlassColorless               , ST.make(MD.CHSL, "glass", 1, W));
-		OM.reg(OD.paneGlass                         , ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, W));
+		for (net.minecraft.world.level.block.Block tPane  : gregapi.data.CS.Flattened.STAINED_GLASS_PANE) OM.reg(OD.paneGlass , ST.make(tPane , 1, 0));
 		OM.reg(OD.paneGlassColorless                , ST.make(Blocks.GLASS_PANE, 1, W));
 		OM.reg(OD.paneGlassColorless                , ST.make(MD.CHSL, "glass_pane", 1, W));
 		OM.reg(OD.paneGlass                         , ST.make(MD.CHSL, "stained_glass_pane_brown", 1, W));
@@ -734,7 +736,8 @@ public class LoaderItemData implements Runnable {
 		OM.reg(OD.craftingAnvil                     , ST.make(Blocks.ANVIL, 1, 0));
 		OM.reg(OD.craftingAnvil                     , ST.make(MD.RC, "anvil", 1, 0));
 		OM.reg(OD.craftingHardenedClay              , ST.make(Blocks.TERRACOTTA, 1, W));
-		OM.reg(OD.craftingHardenedClay              , ST.make(Blocks.WHITE_TERRACOTTA, 1, W));
+		// 1.7.10 stained_hardened_clay:W = 16 цветов — семья из центра CS.Flattened (см. blockGlass выше)
+		for (net.minecraft.world.level.block.Block tClay : gregapi.data.CS.Flattened.TERRACOTTA) OM.reg(OD.craftingHardenedClay, ST.make(tClay, 1, 0));
 		OM.reg(OP.treeSapling                       , ST.make(MD.HaC, "pamalmondSapling", 1, W));
 		OM.reg(OP.treeSapling                       , ST.make(MD.HaC, "pamappleSapling", 1, W));
 		OM.reg(OP.treeSapling                       , ST.make(MD.HaC, "pamapricotSapling", 1, W));
@@ -2478,7 +2481,8 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Items.CLAY_BALL                      , 1, W), MT.Clay               ,  U * 1);
 		OM.data(ST.make(Blocks.CLAY                          , 1, W), MT.Clay               ,  U * 4);
 		OM.data(ST.make(Blocks.TERRACOTTA                 , 1, W), MT.Ceramic            ,  U * 4);
-		OM.data(ST.make(Blocks.WHITE_TERRACOTTA, 1, W), MT.Ceramic            ,  U * 4);
+		// 1.7.10 stained_hardened_clay:W = 16 цветов — семья из центра CS.Flattened
+		for (net.minecraft.world.level.block.Block tClay : gregapi.data.CS.Flattened.TERRACOTTA) OM.data(ST.make(tClay, 1, 0), MT.Ceramic, U * 4);
 		OM.data(ST.make(Blocks.FLOWER_POT                    , 1, W), MT.Brick              ,  U * 3);
 		OM.data(ST.make(Items.FLOWER_POT                     , 1, W), MT.Brick              ,  U * 3);
 		OM.data(ST.make(Blocks.BRICKS                   , 1, W), MT.Brick              ,  U * 4);
@@ -2518,9 +2522,10 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.ANVIL                         , 1, 2), ANY.Fe                ,  U *20);
 		OM.data(ST.make(Blocks.HOPPER                        , 1, W), ANY.Fe                ,  U * 5 , ANY.Wood, U * 4);
 		OM.data(ST.make(Blocks.TRIPWIRE_HOOK                 , 1, W), ANY.Fe                ,  OP.ring.mAmount * 2, ANY.Wood, U);
-		OM.data(ST.make(Blocks.WHITE_STAINED_GLASS, 1, W), MT.Glass              ,  U*9);
+		// 1.7.10 stained_glass:W / stained_glass_pane:W = 16 цветов — семьи из центра CS.Flattened
+		for (net.minecraft.world.level.block.Block tGlass : gregapi.data.CS.Flattened.STAINED_GLASS     ) OM.data(ST.make(tGlass, 1, 0), MT.Glass, U*9);
 		OM.data(ST.make(Blocks.GLASS                         , 1, W), MT.Glass              ,  U*9);
-		OM.data(ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, W), MT.Glass              ,  U);
+		for (net.minecraft.world.level.block.Block tPane  : gregapi.data.CS.Flattened.STAINED_GLASS_PANE) OM.data(ST.make(tPane , 1, 0), MT.Glass, U);
 		OM.data(ST.make(Blocks.GLASS_PANE                    , 1, W), MT.Glass              ,  U);
 		OM.data(ST.make(Items.CLOCK                          , 1, W), MT.Au                 ,  U * 4, MT.Redstone, U);
 		OM.data(ST.make(Items.COMPASS                        , 1, W), ANY.Fe                ,  U * 4, MT.Redstone, U);

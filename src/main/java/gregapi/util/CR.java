@@ -310,6 +310,14 @@ public class CR {
 			if (aRecipe[i] instanceof IItemContainer) {
 				aRecipe[i] = ((IItemContainer)aRecipe[i]).get(1);
 				if (aRecipe[i] == null) return F;
+			} else if (aRecipe[i] instanceof java.util.function.Supplier) {
+				// F12 boot-timing: call-site, бегущий на RegisterEvent (напр. конструктор ItemArmorBase),
+				// НЕ может строить ItemStack («Components not bound») — оригинальные ST.make(x,1,0) там
+				// выражаются ленивым Supplier и разворачиваются ЗДЕСЬ, в defer-окне server-start.
+				// Голый Item сюда не годится: ветка ниже канонично даёт W (любой износ), а оригинал
+				// universal-hazmat требует мету 0 — целую броню.
+				aRecipe[i] = ((java.util.function.Supplier<?>)aRecipe[i]).get();
+				if (!(aRecipe[i] instanceof ItemStack)) return F;
 			} else if (aRecipe[i] instanceof Enum) {
 				aRecipe[i] = ((Enum<?>)aRecipe[i]).name();
 			} else if (aRecipe[i] instanceof Item) {
@@ -462,6 +470,14 @@ public class CR {
 			if (aRecipe[i] instanceof IItemContainer) {
 				aRecipe[i] = ((IItemContainer)aRecipe[i]).get(1);
 				if (aRecipe[i] == null) return F;
+			} else if (aRecipe[i] instanceof java.util.function.Supplier) {
+				// F12 boot-timing: call-site, бегущий на RegisterEvent (напр. конструктор ItemArmorBase),
+				// НЕ может строить ItemStack («Components not bound») — оригинальные ST.make(x,1,0) там
+				// выражаются ленивым Supplier и разворачиваются ЗДЕСЬ, в defer-окне server-start.
+				// Голый Item сюда не годится: ветка ниже канонично даёт W (любой износ), а оригинал
+				// universal-hazmat требует мету 0 — целую броню.
+				aRecipe[i] = ((java.util.function.Supplier<?>)aRecipe[i]).get();
+				if (!(aRecipe[i] instanceof ItemStack)) return F;
 			} else if (aRecipe[i] instanceof Enum) {
 				aRecipe[i] = ((Enum<?>)aRecipe[i]).name();
 			} else if (aRecipe[i] instanceof Item) {

@@ -209,6 +209,9 @@ public class OreDictionary {
 			registerOre("blockGlass"+ tDyes[i], ST.make(gregapi.data.CS.Flattened.STAINED_GLASS     [15-i], 1, 0));
 			registerOre("paneGlass" + tDyes[i], ST.make(gregapi.data.CS.Flattened.STAINED_GLASS_PANE[15-i], 1, 0));
 		}
+		// НОВЫЕ чистые красители neo (1.14: black/blue/brown/white_dye) в словарь НЕ регистрируются:
+		// состав ore-списков остаётся 1:1 с 1.7.10 (их принимает сам ванильный датапак-рецепт, а
+		// ore-версии роли-C дают GT-пыли — функция игрока полна; см. tReplacements роли-C).
 	}
 
 	private static boolean sHasReplacedRecipes = false;
@@ -264,6 +267,12 @@ public class OreDictionary {
 			tReplacements.put(gregapi.data.CS.Flattened.STAINED_GLASS     [15-i].asItem()   , "blockGlass" + tDyes[i]);
 			tReplacements.put(gregapi.data.CS.Flattened.STAINED_GLASS_PANE[15-i].asItem()   , "paneGlass"  + tDyes[i]);
 		}
+		// НОВЫЕ чистые красители neo (1.14) — датапак-рецепты покраски требуют их, не исторические
+		// ink_sac/lapis/cocoa/bone_meal; ore-ключи те же (см. роль-B выше).
+		tReplacements.put(net.minecraft.world.item.Items.BLACK_DYE, "dyeBlack");
+		tReplacements.put(net.minecraft.world.item.Items.BLUE_DYE , "dyeBlue");
+		tReplacements.put(net.minecraft.world.item.Items.BROWN_DYE, "dyeBrown");
+		tReplacements.put(net.minecraft.world.item.Items.WHITE_DYE, "dyeWhite");
 
 		// Исключения — дословно Forge :196-211. Карта АДРЕСОВ 1.7.10→neo: stone_slab расщеплён по подтипам
 		// (recompSrc BlockStoneSlab.java:17 — stone/sand/wood/cobble/brick/smoothStoneBrick/netherBrick/quartz);
