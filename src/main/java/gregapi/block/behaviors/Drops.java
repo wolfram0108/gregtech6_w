@@ -38,7 +38,15 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class Drops {
-	public final Item mDropNormal, mDropSilkTouch, mDropFortune, mDropSilkFortune;
+	// F12-followup (block-split): в 1.7.10 ST.register шёл в конструкторе блока ДО mDrops (PrefixBlock.java:208/227
+	// оригинала) → эагерный ST.item(Block) в конструкторе Drops был валиден. В neo BlockItem рождается ПОЗЖЕ блока
+	// (RegisterEvent<Item> после RegisterEvent<Block>), а дефолтный Drops(this,...) строится в конструкторе блока
+	// (PrefixBlock:269) → Item.byBlock в этот момент отдаёт Items.AIR (карта NeoForge наполняется при регистрации
+	// BlockItem), и пустышка замораживалась навсегда: любой PrefixBlock с дефолтным mDrops (все broken-руды) дропал
+	// ПУСТО. Храним ссылку как Object, Block→Item разрешается в момент дропа (реестр полон) — семантика выбора
+	// дропа 1:1, сдвинут только момент разрешения. Тот же класс дефекта уже закрывался тем же приёмом в
+	// MultiTileEntityRegistry:118 («ключ Item.byBlock(mBlock) = AIR»).
+	public final Object mDropNormal, mDropSilkTouch, mDropFortune, mDropSilkFortune;
 	public final boolean mFortunable, mPreferSilk;
 	public final int mExpBase, mExpRandom;
 	
@@ -53,10 +61,10 @@ public class Drops {
 	public Drops(Object aDropNormal, Object aDropSilkTouch, Object aDropFortune) {this(aDropNormal, aDropSilkTouch, aDropFortune, aDropFortune, T, F, 0, 0);}
 	public Drops(Object aDropNormal, Object aDropSilkTouch, Object aDropFortune, int aExpBase, int aExpRandom) {this(aDropNormal, aDropSilkTouch, aDropFortune, aDropFortune, T, F, aExpBase, aExpRandom);}
 	public Drops(Object aDropNormal, Object aDropSilkTouch, Object aDropFortune, Object aDropSilkFortune, boolean aFortunable, boolean aPreferSilk, int aExpBase, int aExpRandom) {
-		mDropNormal      = aDropNormal      instanceof Block ? ST.item((Block)aDropNormal     ) : (Item)aDropNormal     ;
-		mDropSilkTouch   = aDropSilkTouch   instanceof Block ? ST.item((Block)aDropSilkTouch  ) : (Item)aDropSilkTouch  ;
-		mDropFortune     = aDropFortune     instanceof Block ? ST.item((Block)aDropFortune    ) : (Item)aDropFortune    ;
-		mDropSilkFortune = aDropSilkFortune instanceof Block ? ST.item((Block)aDropSilkFortune) : (Item)aDropSilkFortune;
+		mDropNormal      = aDropNormal     ;
+		mDropSilkTouch   = aDropSilkTouch  ;
+		mDropFortune     = aDropFortune    ;
+		mDropSilkFortune = aDropSilkFortune;
 		mFortunable      = aFortunable;
 		mPreferSilk      = aPreferSilk;
 		mExpBase         = Math.max(0, aExpBase);
@@ -71,9 +79,14 @@ public class Drops {
 	
 	public ArrayList<ItemStack> getDrops(PrefixBlock aBlock, Level aWorld, int aX, int aY, int aZ, short aMetaData, BlockEntity aTileEntity, int aFortune, boolean aSilkTouch) {
 		ArrayListNoNulls<ItemStack> rList = ST.arraylist();
-		rList.add(ST.update(ST.make(aFortune>0?aSilkTouch?mDropFortune:mDropSilkFortune:aSilkTouch?mDropSilkTouch:mDropNormal, mPreferSilk&&aSilkTouch?1:mFortunable?1+RNGSUS.nextInt(aFortune+1):1, aMetaData, aTileEntity instanceof PrefixBlockTileEntity?((PrefixBlockTileEntity)aTileEntity).mItemNBT:null)));
+		rList.add(ST.update(ST.make(item(aFortune>0?aSilkTouch?mDropFortune:mDropSilkFortune:aSilkTouch?mDropSilkTouch:mDropNormal), mPreferSilk&&aSilkTouch?1:mFortunable?1+RNGSUS.nextInt(aFortune+1):1, aMetaData, aTileEntity instanceof PrefixBlockTileEntity?((PrefixBlockTileEntity)aTileEntity).mItemNBT:null)));
 		return rList;
 	}
+
+	/** Разрешение ссылки дропа (Block или Item) в Item — в момент дропа, когда реестр предметов уже полон.
+	 *  AIR → null: Item.byBlock отдаёт Items.AIR для блока без предмета, а 1.7.10 getItemFromBlock отдавал null
+	 *  (null не попадает в список — ST.make(null)=null, ArrayListNoNulls его пропускает). */
+	private static Item item(Object aDrop) {Item rItem = aDrop instanceof Block ? ST.item((Block)aDrop) : (Item)aDrop; return rItem == net.minecraft.world.item.Items.AIR ? null : rItem;}
 	
 	public int getExp(PrefixBlock aBlock) {
 		return mExpBase + RNGSUS.nextInt(1+mExpRandom);

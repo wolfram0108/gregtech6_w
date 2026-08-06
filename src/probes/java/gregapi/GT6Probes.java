@@ -292,6 +292,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6jadeprobe.flag")) gt6JadeProbeTick(aEvent.getServer());
 	// [GT6-HARVESTPROBE] «чем добывается машина» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6harvestprobe.flag")) gt6HarvestProbeTick(aEvent.getServer());
+	// [GT6-OREDROP] дроп полноблочных руд PrefixBlock: руда→broken, broken→broken (регресс AIR-дефолта), шёлк→руда, фортуна→oreRaw — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6oredropprobe.flag")) gt6OreDropProbeTick(aEvent.getServer());
 	// [GT6-DEMO] демо-площадка приёмки игроком (не судья — строит мир) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6demo.flag")) gt6DemoTick(aEvent.getServer());
 	// [GT6-FLUIDYARD] BUG-082: чистый полигон жидкостей (не судья — строит мир) — снять при уборке фазы
@@ -13091,5 +13093,130 @@ public final class GT6Probes {
 		gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = false;
 		gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = false;
 		gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = false;
+	}
+
+	// ==========================================================================================================
+	// gt6oredropprobe — судья «дроп полноблочных руд PrefixBlock» (репорт 2026-08-06: «при ударе киркой выпадает
+	// блок, а не ресурсы; выпавший блок руды после установки и повторного разрушения не дропает НИЧЕГО»).
+	// Корень: дефолтный Drops(this,...) в конструкторе блока захватывал Item.byBlock ДО RegisterEvent<Item> →
+	// Items.AIR во все 4 слота (фикс — ленивое разрешение в Drops.java). Живой путь движка: установка реальным
+	// путём игрока (GT6ProbeStand.placeBlock) + слом gameMode.destroyBlock; судится ИДЕНТИЧНОСТЬ выпавшего стека
+	// (item + мета материала). Ожидания — матрица 1:1 оригинала (Loader_Ores.java:77 + Drops.getDrops:74 +
+	// canSilkHarvest=F PrefixBlock.java:608): без шёлка/фортуны → BROKEN-блок; шёлк → сама руда; фортуна → oreRaw;
+	// broken-блок повторно → сам broken (дефолт Drops(this) PrefixBlock.java:227 оригинала).
+	// ПОЗИТИВНЫЙ КОНТРОЛЬ: руда→broken (этот путь работал и до фикса — mDrops руд назначается на server-start).
+	// COLD: слом ГОЛОЙ РУКОЙ → 0 дропов (движковый гейт правильного инструмента; доказывает, что судья видит «пусто»).
+	// ==========================================================================================================
+	private static boolean sOreDropProbeDone = false;
+	public static void gt6OreDropProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sOreDropProbeDone || aServer.getPlayerList().getPlayers().isEmpty()) return;
+		if (aServer.getTickCount() < 200) return;
+		sOreDropProbeDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		final String M = "GT6-OREDROP";
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		net.minecraft.world.level.GameType tWasMode = tPlayer.gameMode.getGameModeForPlayer();
+		try {
+			ServerLevel tLevel = tPlayer.level();
+			O.println("========== [" + M + "] дроп полноблочных руд PrefixBlock ==========");
+			tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL); // ⚠ в креативе destroyBlock дропов не рождает вовсе (первый прогон: все кейсы <НИЧЕГО>)
+			if (!(gregapi.data.CS.BlocksGT.ore instanceof gregapi.block.prefixblock.PrefixBlock tOre)
+			 || !(gregapi.data.CS.BlocksGT.oreBroken instanceof gregapi.block.prefixblock.PrefixBlock tBroken)) {
+				O.println("[" + M + "] блоки руды не найдены — замер невозможен"); return;
+			}
+			// материал: первый, который руда реально генерирует, с качеством инструмента 1 (как gt6harvestprobe)
+			gregapi.oredict.OreDictMaterial tMat = null;
+			for (gregapi.oredict.OreDictMaterial t : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+				if (t == null || t.mToolQuality != 1) continue;
+				try {if (!tOre.mPrefix.isGeneratingItem(t)) continue;} catch (Throwable e) {continue;}
+				tMat = t; break;
+			}
+			if (tMat == null) {O.println("[" + M + "] генерируемый материал не найден — замер невозможен"); return;}
+			net.minecraft.world.item.Item tItemBroken = gregapi.util.ST.item((net.minecraft.world.level.block.Block)tBroken);
+			net.minecraft.world.item.Item tItemOre    = gregapi.util.ST.item((net.minecraft.world.level.block.Block)tOre);
+			net.minecraft.world.item.Item tItemRaw    = (net.minecraft.world.item.Item)gregapi.data.OP.oreRaw.mRegisteredPrefixItems.get(0);
+			O.println("[" + M + "] материал=" + tMat.mNameInternal + " (ID=" + tMat.mID + ", кач.1)"
+				+ " | руда=" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tOre)
+				+ " | broken=" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBroken)
+				+ " | oreRaw=" + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItemRaw));
+			// инструменты: незачарованная / шёлк / фортуна III
+			net.minecraft.world.item.ItemStack tPick     = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.NETHERITE_PICKAXE);
+			net.minecraft.world.item.ItemStack tPickSilk = tPick.copy();
+			net.minecraft.world.item.ItemStack tPickFort = tPick.copy();
+			net.minecraft.core.HolderLookup.RegistryLookup<net.minecraft.world.item.enchantment.Enchantment> tEnch =
+				tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+			tPickSilk.enchant(tEnch.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH), 1);
+			tPickFort.enchant(tEnch.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FORTUNE), 3);
+			int tPass = 0, tFail = 0;
+			// --- кейс 1 (ПОЗИТИВНЫЙ КОНТРОЛЬ): руда + кирка без чар → 1× broken-блок той же меты ---
+			java.util.List<net.minecraft.world.item.ItemStack> tDrops = odpBreak(tLevel, tPlayer, gregapi.util.ST.make(tOre, 1, tMat.mID), tPick, M, "руда/без чар");
+			if (odpJudge(M, "ПОЗИТИВ: руда без чар → 1×broken мета " + tMat.mID, tDrops, tItemBroken, tMat.mID, 1, 1)) tPass++; else tFail++;
+			net.minecraft.world.item.ItemStack tLoot = tDrops.size() == 1 ? tDrops.get(0).copy() : null;
+			// --- кейс 2 (РЕГРЕСС AIR-дефолта): broken-блок → сам broken (было: ПУСТО) ---
+			tDrops = odpBreak(tLevel, tPlayer, gregapi.util.ST.make(tBroken, 1, tMat.mID), tPick, M, "broken/без чар");
+			if (odpJudge(M, "РЕГРЕСС: broken-блок → 1×broken мета " + tMat.mID + " (было ПУСТО)", tDrops, tItemBroken, tMat.mID, 1, 1)) tPass++; else tFail++;
+			// --- кейс 3 (ПУТЬ РЕПОРТА): выпавший в кейсе 1 стек ставим и ломаем снова ---
+			if (tLoot != null) {
+				tDrops = odpBreak(tLevel, tPlayer, tLoot, tPick, M, "повторная установка дропа");
+				if (odpJudge(M, "РЕПОРТ: выпавший блок поставлен и сломан → 1×broken мета " + tMat.mID, tDrops, tItemBroken, tMat.mID, 1, 1)) tPass++; else tFail++;
+			} else {O.println("[" + M + "] кейс 3 пропущен — кейс 1 не дал стека"); tFail++;}
+			// --- кейс 4: шёлк → сам блок руды ---
+			tDrops = odpBreak(tLevel, tPlayer, gregapi.util.ST.make(tOre, 1, tMat.mID), tPickSilk, M, "руда/шёлк");
+			if (odpJudge(M, "ШЁЛК: руда → 1×руда мета " + tMat.mID, tDrops, tItemOre, tMat.mID, 1, 1)) tPass++; else tFail++;
+			// --- кейс 5: фортуна III → oreRaw 1..4 (Drops.getDrops: 1+RNGSUS.nextInt(aFortune+1)) ---
+			tDrops = odpBreak(tLevel, tPlayer, gregapi.util.ST.make(tOre, 1, tMat.mID), tPickFort, M, "руда/фортуна III");
+			if (odpJudge(M, "ФОРТУНА III: руда → oreRaw мета " + tMat.mID + " ×1..4", tDrops, tItemRaw, tMat.mID, 1, 4)) tPass++; else tFail++;
+			// --- кейс 6 (COLD): голой рукой → 0 дропов (гейт инструмента движка) ---
+			tDrops = odpBreak(tLevel, tPlayer, gregapi.util.ST.make(tOre, 1, tMat.mID), net.minecraft.world.item.ItemStack.EMPTY, M, "руда/голая рука");
+			if (gregapi.probe.GT6ProbeStand.judge(M, "COLD: руда голой рукой → дроп ПУСТО", tDrops.isEmpty(), "пусто", odpList(tDrops))) tPass++; else tFail++;
+			O.println("========== [" + M + "] ВЕРДИКТ: PASS " + tPass + " / FAIL " + tFail + " ==========");
+		} catch (Throwable t) {
+			O.println("[" + M + "] EXC " + t);
+			t.printStackTrace(O);
+		} finally {
+			tPlayer.setGameMode(tWasMode); // вернуть режим (§9 гигиена)
+		}
+	}
+
+	/** Ставит блок реальным путём игрока, ломает destroyBlock указанным инструментом, возвращает выпавшие стеки. */
+	private static java.util.List<net.minecraft.world.item.ItemStack> odpBreak(ServerLevel aLevel, ServerPlayer aPlayer,
+			net.minecraft.world.item.ItemStack aPlaceStack, net.minecraft.world.item.ItemStack aTool, String aMarker, String aLabel) {
+		java.util.List<net.minecraft.world.item.ItemStack> rDrops = new java.util.ArrayList<>();
+		BlockPos tP = aPlayer.blockPosition().offset(9, 0, 9);
+		net.minecraft.core.BlockPos tPos = gregapi.probe.GT6ProbeStand.placeBlock(aLevel, aPlayer, tP, net.minecraft.core.Direction.UP, aPlaceStack.copy(), aMarker, aLabel);
+		if (tPos == null) {gregapi.data.CS.OUT.println("[" + aMarker + "] " + aLabel + ": блок не встал"); return rDrops;}
+		// улики ДО разрушения (после — воздух): что реально стоит и какой меты
+		gregapi.data.CS.OUT.println("[" + aMarker + "] " + aLabel + ": стоит "
+			+ net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aLevel.getBlockState(tPos).getBlock())
+			+ " мета-в-мире=" + gregapi.util.WD.meta(aLevel, tPos.getX(), tPos.getY(), tPos.getZ()));
+		for (net.minecraft.world.entity.item.ItemEntity tE : aLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tPos).inflate(6))) tE.discard();
+		aPlayer.getInventory().setItem(0, aTool.copy()); aPlayer.getInventory().setSelectedSlot(0);
+		aPlayer.gameMode.destroyBlock(tPos);
+		for (net.minecraft.world.entity.item.ItemEntity tE : aLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tPos).inflate(6))) {
+			rDrops.add(tE.getItem().copy()); tE.discard();
+		}
+		aLevel.setBlock(tPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		return rDrops;
+	}
+
+	/** Судья идентичности одного дропа: ровно один стек, тот item, та мета, число в [aMin..aMax]. */
+	private static boolean odpJudge(String aMarker, String aName, java.util.List<net.minecraft.world.item.ItemStack> aDrops,
+			net.minecraft.world.item.Item aItem, int aMeta, int aMin, int aMax) {
+		boolean tOK = aDrops.size() == 1
+			&& aDrops.get(0).getItem() == aItem
+			&& gregapi.util.ST.meta_(aDrops.get(0)) == aMeta
+			&& aDrops.get(0).getCount() >= aMin && aDrops.get(0).getCount() <= aMax;
+		return gregapi.probe.GT6ProbeStand.judge(aMarker, aName, tOK,
+			"1 стек: " + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aItem) + " мета " + aMeta + " ×" + aMin + ".." + aMax,
+			odpList(aDrops));
+	}
+
+	private static String odpList(java.util.List<net.minecraft.world.item.ItemStack> aDrops) {
+		if (aDrops.isEmpty()) return "<НИЧЕГО>";
+		StringBuilder r = new StringBuilder();
+		for (net.minecraft.world.item.ItemStack tS : aDrops) r.append(r.length() == 0 ? "" : ", ")
+			.append(tS.getCount()).append("×").append(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tS.getItem()))
+			.append("(мета ").append(gregapi.util.ST.meta_(tS)).append(")");
+		return r.toString();
 	}
 }
