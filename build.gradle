@@ -221,6 +221,9 @@ neoForge {
             server()
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            // Риг «дедикейт + удалённый клиент» (BUG-094): серверу СВОЙ каталог — одновременный runClient
+            // в общем run/ дерётся за logs/latest.log и gregtech.log (Windows file-lock), судья читает кашу.
+            gameDirectory = project.file('runserver')
         }
 
         // This run config launches GameTestServer and runs all registered gametests, then exits.

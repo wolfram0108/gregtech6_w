@@ -866,6 +866,45 @@ public final class GT6ProbesClient {
 		aFile.delete();
 	}
 
+	// ========== [GT6-REMOTE] BUG-094: «на дедикейте камни/палки прозрачны» — судья вида MTE у УДАЛЁННОГО клиента ==========
+	// Среда симптома: ДЕДИКЕЙТ (runServer, свой каталог runserver/) + клиент, подключённый по сети (127.0.0.1:25565).
+	// Одиночка класс маскирует: свежий worldgen синкается каналом WORLDGEN_MTE/onChunkWatch, а на дедикейте к моменту
+	// входа игрока чанки давно перезагружены с диска. Судья — СЧЁТ КЛИЕНТСКИХ BE (gt6MTEAuditScan: real/stub/NULL),
+	// не картинка: «прозрачен» = у клиента нет настоящего BE (passRenderingToObject=null → getRenderPasses=0).
+	// PASS: MTE-блоков > 0 (иначе замер недействителен — вокруг спавна нет камней) И stub==0 И NULL==0.
+	// Автоподключение: на TitleScreen — штатный ConnectScreen.startConnecting (ровно путь кнопки «Подключиться»).
+	private static boolean mRemoteJoinTriggered = false, mRemoteProbeDone = false;
+	private static int mRemoteWaited = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onRemoteProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mRemoteProbeDone || !gregapi.data.CS.probeFlag("gt6remoteprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		try {
+			if (!mRemoteJoinTriggered) {
+				if (tMC.level != null) {mRemoteJoinTriggered = true; return;} // уже в мире — считаем, что подключил человек
+				if (!(tMC.screen instanceof net.minecraft.client.gui.screens.TitleScreen)) return;
+				mRemoteJoinTriggered = true;
+				gregapi.data.CS.OUT.println("[GT6-REMOTE] главное меню — подключаюсь к 127.0.0.1:25565 (штатный ConnectScreen)");
+				net.minecraft.client.gui.screens.ConnectScreen.startConnecting(
+					tMC.screen, tMC,
+					net.minecraft.client.multiplayer.resolver.ServerAddress.parseString("127.0.0.1:25565"),
+					new net.minecraft.client.multiplayer.ServerData("gt6-remoteprobe", "127.0.0.1:25565", net.minecraft.client.multiplayer.ServerData.Type.OTHER),
+					false, null);
+				return;
+			}
+			if (tMC.level == null || tMC.player == null) return;
+			if (++mRemoteWaited < 300) return; // ~15с в мире: чанки и синк-пакеты долетели, клиентская реконструкция дренирована
+			mRemoteProbeDone = true;
+			int[] tR = gregapi.GT6Probes.gt6MTEAuditScan("REMOTE-CLIENT", tMC.level, tMC.player.blockPosition());
+			int tBlocks = tR[0], tReal = tR[1], tStub = tR[2], tNull = tR[3];
+			boolean tValid = tBlocks > 0;
+			boolean tOK = tValid && tStub == 0 && tNull == 0;
+			gregapi.data.CS.OUT.println("[GT6-REMOTE] " + (tValid ? "" : "ЗАМЕР НЕДЕЙСТВИТЕЛЕН (MTE-блоков 0 вокруг спавна) — ")
+				+ "MTE=" + tBlocks + " real=" + tReal + " stub=" + tStub + " NULL=" + tNull);
+			gregapi.data.CS.OUT.println("[GT6-REMOTE] ВЕРДИКТ: " + (tOK ? "PASS" : "FAIL") + " (ожидание: блоков>0, stub=0, NULL=0)");
+		} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-REMOTE] EXC " + e); e.printStackTrace(gregapi.data.CS.ERR); mRemoteProbeDone = true;}
+	}
+
 	// ================= [GT6-JEICRAFT] BUG-079/BUG-073: ЖИВОЙ СУДЬЯ ВИТРИНЫ КРАФТА =================
 	// Игрок 2026-07-28: «я не видел, чтобы ты запускал игру и реально проверял крафты… когда полностью
 	// закончишь и подтвердишь ВСЕ крафты, тогда и сообщай». Судится не наш буфер и не наши данные, а САМА

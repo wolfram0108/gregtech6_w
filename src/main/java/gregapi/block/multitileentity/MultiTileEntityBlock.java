@@ -274,9 +274,18 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		if (tExisting instanceof IMultiTileEntity tMTE && !tExisting.isRemoved()
 		 && tMTE.getMultiTileEntityRegistryID() == aID1 && tMTE.getMultiTileEntityID() == aID2) return tExisting;
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(aID1);
-		if (tRegistry == null) return null;
+		// [GT6-SYNCDIAG] BUG-094 (снять при уборке фазы): молчаливые провалы создания клиент-BE из пакета
+		if (tRegistry == null) {if (probeFlag("gt6syncdiag.flag")) OUT.println("[GT6-SYNCDIAG-CLI] getRegistry(" + aID1 + ")=NULL @" + aX + "," + aY + "," + aZ + " id2=" + aID2); return null;}
 		BlockEntity aTileEntity = tRegistry.getNewTileEntity(aWorld, aX, aY, aZ, aID2);
-		if (aTileEntity == null) return null;
+		if (aTileEntity == null) {
+			if (probeFlag("gt6syncdiag.flag")) {
+				MultiTileEntityClassContainer tClass = tRegistry.mRegistry.get((short)aID2);
+				OUT.println("[GT6-SYNCDIAG-CLI] getNewTileEntity(reg=" + aID1 + ",id=" + aID2 + ")=NULL @" + aX + "," + aY + "," + aZ
+					+ " | классов в реестре=" + tRegistry.mRegistry.size()
+					+ " | класс id=" + (tClass == null ? "НЕ ЗАРЕГИСТРИРОВАН" : ("есть, mBlock=" + (tClass.mBlock == null ? "NULL" : "жив") + ", класс=" + tClass.mClass.getSimpleName())));
+			}
+			return null;
+		}
 		WD.te(aWorld, aX, aY, aZ, aTileEntity, F);
 		return aTileEntity;
 	}

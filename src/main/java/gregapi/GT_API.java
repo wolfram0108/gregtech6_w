@@ -651,6 +651,18 @@ public class GT_API extends Abstract_Mod {
 			// data-init (буфер ChestGenHooks был пуст) → догоняющая инъекция GT-пулов в загруженные таблицы.
 			// Идемпотентна (именованный pool); /reload и последующие загрузки покрывает сам LootTableLoadEvent.
 			net.minecraftforge.common.ChestGenHooks.injectAll(tServer);
+		} else if (aEvent.getLevel() instanceof net.minecraft.world.level.Level tClientLevel && tClientLevel.isClientSide()) {
+			// BUG-094 (дедикейт: камни/палки/машины прозрачны): у клиента, подключённого к ВЫДЕЛЕННОМУ серверу,
+			// ServerLevel не существует → единственный drain выше НИКОГДА не бежал → вся отложенная item-init
+			// (MTE-регистрации 4297, mDrops, oredict, вкладки…) на клиенте пуста; ни один GT6-пакет синка не мог
+			// создать клиент-BE (getRegistry(id).mRegistry.size()==0, замер стенда gt6remoteprobe: NULL=228/228).
+			// В 1.7.10 эта init жила в FML-фазах, бежавших НА ОБЕИХ сторонах, — клиентское плечо потерялось при
+			// переносе на серверное событие. Одиночка маскирует: интегрированный сервер осушает очередь в той же
+			// JVM ДО загрузки ClientLevel → здесь очередь уже пуста → no-op (идемпотентно по пустоте очереди).
+			// Тайминг тот же, что у серверного плеча: ClientLevel.Load = post-bind (реестры/компоненты привязаны).
+			// Серверные хвосты (роль-C, recipe-скан, propertySets, лут) остаются ТОЛЬКО в серверной ветви — у
+			// удалённого клиента рецепты/луты приходят синком с сервера.
+			runDeferredItemInit();
 		}
 	}
 

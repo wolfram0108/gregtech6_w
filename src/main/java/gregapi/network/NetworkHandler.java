@@ -102,9 +102,19 @@ public final class NetworkHandler implements INetworkHandler {
 		aRegistrar.playBidirectional(mPayloadType, mPayloadCodec, this::handlePayload, this::handlePayload);
 	}
 
+	// [GT6-SYNCDIAG] BUG-094 (снять при уборке фазы): клиент — счётчики приёма GT6-пакетов
+	private static final java.util.concurrent.atomic.AtomicLong sDiagReceived = new java.util.concurrent.atomic.AtomicLong(), sDiagQueued = new java.util.concurrent.atomic.AtomicLong(), sDiagProcessed = new java.util.concurrent.atomic.AtomicLong();
+
 	private void handlePayload(GT6Payload aPayload, IPayloadContext aContext) {
 		IPacket tPacket = decode(aPayload.data());
-		if (tPacket == null) return;
+		if (tPacket == null) {
+			if (gregapi.data.CS.probeFlag("gt6syncdiag.flag")) gregapi.data.CS.OUT.println("[GT6-SYNCDIAG-NET] decode=null (канал " + mChannelName + ")");
+			return;
+		}
+		if (gregapi.data.CS.probeFlag("gt6syncdiag.flag")) {
+			long tN = sDiagReceived.incrementAndGet();
+			if (tN <= 10 || tN % 200 == 0) gregapi.data.CS.OUT.println("[GT6-SYNCDIAG-NET] принят #" + tN + " " + tPacket.getClass().getSimpleName() + " (канал " + mChannelName + ")");
+		}
 		aContext.enqueueWork(() -> {
 			BlockGetter tWorld = getProcessingWorld(aContext);
 			// НАДЁЖНЫЙ МОСТ (репорт игрока: worldgen-MTE невидимы в стартовой области при входе): даже на
@@ -114,9 +124,17 @@ public final class NetworkHandler implements INetworkHandler {
 			if (tWorld instanceof Level tLevel && tLevel.isClientSide() && tPacket instanceof gregapi.network.packets.PacketCoordinates tPC
 			 && !tLevel.hasChunkAt(new BlockPos(tPC.mX, tPC.mY, tPC.mZ))) {
 				queuePending(tPC, this);
+				if (gregapi.data.CS.probeFlag("gt6syncdiag.flag")) {
+					long tQ = sDiagQueued.incrementAndGet();
+					if (tQ <= 10 || tQ % 200 == 0) gregapi.data.CS.OUT.println("[GT6-SYNCDIAG-NET] отложен (чанка нет) #" + tQ + " @" + tPC.mX + "," + tPC.mY + "," + tPC.mZ);
+				}
 				return;
 			}
 			tPacket.process(tWorld, this);
+			if (gregapi.data.CS.probeFlag("gt6syncdiag.flag")) {
+				long tP = sDiagProcessed.incrementAndGet();
+				if (tP <= 10 || tP % 200 == 0) gregapi.data.CS.OUT.println("[GT6-SYNCDIAG-NET] обработан #" + tP + " " + tPacket.getClass().getSimpleName() + " world=" + (tWorld == null ? "null" : tWorld.getClass().getSimpleName()));
+			}
 		});
 	}
 

@@ -13169,6 +13169,19 @@ public final class GT6Probes {
 			// --- кейс 6 (COLD): голой рукой → 0 дропов (гейт инструмента движка) ---
 			tDrops = odpBreak(tLevel, tPlayer, gregapi.util.ST.make(tOre, 1, tMat.mID), net.minecraft.world.item.ItemStack.EMPTY, M, "руда/голая рука");
 			if (gregapi.probe.GT6ProbeStand.judge(M, "COLD: руда голой рукой → дроп ПУСТО", tDrops.isEmpty(), "пусто", odpList(tDrops))) tPass++; else tFail++;
+			// --- кейс 7 (ПУТЬ РЕПОРТА, крафт): выпавший broken-блок в верстаке → oreRaw того же материала
+			//     (ориг. Loader_Recipes_Handlers.java:615: STANDARD_ORE-префикс → AdvancedCrafting1ToY(prefix, oreRaw, 1);
+			//      порт — та же строка :616; канал — реальный RecipeManager.getRecipeFor, как gt6woodprobe §РУКОЙ) ---
+			if (tLoot != null) {
+				var tGrid = net.minecraft.world.item.crafting.CraftingInput.of(1, 1, java.util.List.of(gregapi.util.ST.copy(tLoot)));
+				var tFound = aServer.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, tGrid, tLevel);
+				ItemStack tOut = tFound.isPresent() ? ((net.minecraft.world.item.crafting.CraftingRecipe)tFound.get().value()).assemble(tGrid) : ItemStack.EMPTY;
+				boolean tOk = !tOut.isEmpty() && tOut.getItem() == tItemRaw && gregapi.util.ST.meta_(tOut) == tMat.mID;
+				if (gregapi.probe.GT6ProbeStand.judge(M, "КРАФТ: broken-блок в верстаке → oreRaw мета " + tMat.mID, tOk,
+					"oreRaw мета " + tMat.mID + " (рецепт " + (tFound.isPresent() ? tFound.get().id().identifier() : "—") + ")",
+					tOut.isEmpty() ? "<ПУСТО, рецепт " + tFound.map(h -> h.id().identifier().toString()).orElse("нет") + ">"
+						: tOut.getCount() + "×" + gregapi.util.ST.regName(tOut) + "(мета " + gregapi.util.ST.meta_(tOut) + ")")) tPass++; else tFail++;
+			} else {O.println("[" + M + "] кейс 7 пропущен — нет стека из кейса 1"); tFail++;}
 			O.println("========== [" + M + "] ВЕРДИКТ: PASS " + tPass + " / FAIL " + tFail + " ==========");
 		} catch (Throwable t) {
 			O.println("[" + M + "] EXC " + t);
