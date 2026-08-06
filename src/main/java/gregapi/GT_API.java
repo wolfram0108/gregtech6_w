@@ -567,6 +567,10 @@ public class GT_API extends Abstract_Mod {
 			// FurnaceFuelBurnTimeEvent, независимо от propertySet. Сама плавка/ручная укладка работали и до фикса (matches live-lookup).
 			net.minecraft.server.MinecraftServer tServer = tLevel.getServer();
 			if (tServer != null) tServer.getRecipeManager().finalizeRecipeLoading(tLevel.enabledFeatures());
+			// F4 роль-C: замена ванильных верстак-рецептов ore-версиями (в 1.7.10 это делал сам Forge в
+			// initVanillaEntries, вторая половина). Именно здесь: RecipeManager полон датапаком, словарь
+			// полон ванилью (роль-B в начале drain'а выше) и GT6-стеками (сам drain). Идемпотентно.
+			gregapi.oredict.OreDictionary.initVanillaRecipeReplacements(tServer);
 			// BUG-039 (F-loot, тот же класс тайминга): LootTableLoadEvent отстрелял при загрузке ресурсов ДО этой
 			// data-init (буфер ChestGenHooks был пуст) → догоняющая инъекция GT-пулов в загруженные таблицы.
 			// Идемпотентна (именованный pool); /reload и последующие загрузки покрывает сам LootTableLoadEvent.

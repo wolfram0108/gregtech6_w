@@ -65,11 +65,14 @@ public final class PortDump {
         runFull();
     }
 
+    public static void runFull() throws Exception {runFull(null);}
+
     /**
      * Полный дамп material+prefix + parity-отчёт. ТРЕБУЕТ FML-runtime (см. класс-javadoc) — вызывать из
      * gradle-теста ({@code ./gradlew test -PcoreOnly}), где FMLLoader инициализирован.
+     * @param aServer сервер эфемерного стенда (параметр JUnit-теста) — нужен роли-C (RecipeManager); null = роль-C не снимается.
      */
-    public static void runFull() throws Exception {
+    public static void runFull(net.minecraft.server.MinecraftServer aServer) throws Exception {
         // В FML-контексте (coreOnly test) SharedConstants/Bootstrap УЖЕ инициализированы загрузкой мода — guard от
         // "Cannot override the current game version!". Standalone (без FML) — инициализируем сами.
         try {SharedConstants.setVersion(DetectedVersion.BUILT_IN); Bootstrap.bootStrap();} catch (Throwable e) {System.out.println("[port-dump] bootstrap уже сделан FML: " + e);}
@@ -79,6 +82,11 @@ public final class PortDump {
         // fluid-компоненты). В @Test (после EphemeralTestServer server-start) компоненты привязаны → ST.make работает. onModServerStarting2
         // в тесте не срабатывает, потому зовём явно здесь.
         gregapi.GT_API.runDeferredItemInit();
+        // F4 роль-C (замена ванильных рецептов ore-версиями): в игре зовётся из GT_API.onLevelLoadEarlyItemInit
+        // сразу после drain'а; в тесте LevelEvent.Load не проходит — зовём явно, тем же приёмом, что drain выше.
+        // Сервер эфемерного стенда (параметр JUnit) несёт полный датапак-RecipeManager.
+        System.out.println("[port-dump] F4 роль-C: сервер " + (aServer == null ? "НЕДОСТУПЕН — замены не снимаются" : "есть, снимаем замены"));
+        gregapi.oredict.OreDictionary.initVanillaRecipeReplacements(aServer);
 
         Files.createDirectories(DUMP);
         // Путь печатаем абсолютным: рабочий каталог тест-JVM — build/minecraft-junit/, поэтому относительный

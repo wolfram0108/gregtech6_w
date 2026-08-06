@@ -126,9 +126,9 @@ public class OreDictionary {
 	 *
 	 * <p>Идемпотентно ({@code sHasInit}) — как {@code hasInit} у Forge; повторные и пересекающиеся с GT6
 	 * записи дополнительно снимает дедуп {@link #registerOre} (тот же hash-бакет, что у оригинала).
-	 * Блок {@code replacements}/{@code exclusions} Forge-оригинала ({@code :136-190}) сюда НЕ переносится:
-	 * он обслуживал автозамену ингредиентов в ванильных верстак-рецептах, а не словарь (роль-A/B), и в порте
-	 * за крафт отвечает свой диспетчер (F11).</p>
+	 * Блок {@code replacements}/{@code exclusions} Forge-оригинала ({@code :136-190}) — роль-C, перенесён
+	 * отдельным методом {@link #initVanillaRecipeReplacements}: ему нужен полный {@code RecipeManager},
+	 * которого в этом окне ещё нет.</p>
 	 */
 	public static void initVanillaEntries() {
 		if (sHasInit) return;
@@ -209,6 +209,151 @@ public class OreDictionary {
 			registerOre("blockGlass"+ tDyes[i], ST.make(gregapi.data.CS.Flattened.STAINED_GLASS     [15-i], 1, 0));
 			registerOre("paneGlass" + tDyes[i], ST.make(gregapi.data.CS.Flattened.STAINED_GLASS_PANE[15-i], 1, 0));
 		}
+	}
+
+	private static boolean sHasReplacedRecipes = false;
+
+	/**
+	 * Роль-C переходника F4: ЗАМЕНА ванильных верстак-рецептов ore-версиями, которую в 1.7.10 делал САМ Forge —
+	 * вторая половина {@code OreDictionary.initVanillaEntries} (эталон {@code gt6-oracle-dumper/.../OreDictionary.java:136-260}):
+	 * обход {@code CraftingManager}, и каждый {@code Shaped/ShapelessRecipes}, чьи входы содержат предмет из карты
+	 * {@code replacements} (палка/доски/камень/булыжник/слитки/алмаз/изумруд/редстоун/светопыль/слизь/стекло/красители/витражи),
+	 * пере-регистрировался как {@code Shaped/ShapelessOreRecipe} с ore-списком вместо предмета. Именно так GT-палки,
+	 * GT-доски и GT-красители работали в ВАНИЛЬНЫХ рецептах (лук, кровать, полка, витражи, факел...).
+	 *
+	 * <p><b>Улика, что это не догадка:</b> сверка {@code crafting.jsonl} против golden (2026-08-06) — в golden
+	 * ровно 92 таких рецепта (cls {@code shapedorerecipe} 90 + {@code shapelessorerecipe} 2), в порте было 0;
+	 * прежняя пометка роли-B «блок replacements не переносится» этим опровергнута.</p>
+	 *
+	 * <p><b>Адаптация к neo (движок иной — централизованно, на его уровне):</b></p>
+	 * <ul>
+	 * <li>ванильные рецепты живут в датапаке ({@code RecipeManager}), рантайм-удаления в neo нет
+	 *     ({@code RecipeManager.java:74}) → ванильный рецепт ОСТАЁТСЯ, ore-версия добавляется в постоянный буфер GT6
+	 *     ({@code CR.BUFFER}, читается диспетчером F11 живьём). Функция игрока та же, что в 1.7.10: ore-версия —
+	 *     супермножество ванильной (тот же выход на тех же входах плюс ore-альтернативы);</li>
+	 * <li>wildcard-мета семей 1.7.10 → члены поимённо из центра {@code CS.Flattened} — тот же приём, что роль-B выше;</li>
+	 * <li>момент — server-start, ПОСЛЕ {@code runDeferredItemInit} (окно, куда F12 сдвинул весь stack-init):
+	 *     {@code RecipeManager} полон датапаком, словарь полон и ванилью (роль-B), и GT6-стеками.</li>
+	 * </ul>
+	 *
+	 * <p>Ore-списки кладутся ЖИВЫМИ ({@code getOres} возвращает живой список — 1:1 с Forge, который клал тот же
+	 * живой {@code List} из своего словаря): предметы, зарегистрированные под ключом позже, подхватываются сами.</p>
+	 */
+	public static void initVanillaRecipeReplacements(net.minecraft.server.MinecraftServer aServer) {
+		if (sHasReplacedRecipes || aServer == null) return;
+		sHasReplacedRecipes = true;
+
+		// Карта замен — дословно Forge :137-153,176-190; расщеплённые семьи перечислены тем же приёмом, что роль-B.
+		final Map<net.minecraft.world.item.Item, String> tReplacements = new java.util.HashMap<>();
+		tReplacements.put(net.minecraft.world.item.Items.STICK, "stickWood");
+		for (net.minecraft.world.level.block.Block tPlank : new net.minecraft.world.level.block.Block[]{Blocks.OAK_PLANKS, Blocks.SPRUCE_PLANKS, Blocks.BIRCH_PLANKS, Blocks.JUNGLE_PLANKS, Blocks.ACACIA_PLANKS, Blocks.DARK_OAK_PLANKS}) tReplacements.put(tPlank.asItem(), "plankWood");
+		tReplacements.put(Blocks.STONE.asItem()           , "stone");
+		tReplacements.put(Blocks.COBBLESTONE.asItem()     , "cobblestone");
+		tReplacements.put(net.minecraft.world.item.Items.GOLD_INGOT    , "ingotGold");
+		tReplacements.put(net.minecraft.world.item.Items.IRON_INGOT    , "ingotIron");
+		tReplacements.put(net.minecraft.world.item.Items.DIAMOND       , "gemDiamond");
+		tReplacements.put(net.minecraft.world.item.Items.EMERALD       , "gemEmerald");
+		tReplacements.put(net.minecraft.world.item.Items.REDSTONE      , "dustRedstone");
+		tReplacements.put(net.minecraft.world.item.Items.GLOWSTONE_DUST, "dustGlowstone");
+		tReplacements.put(Blocks.GLOWSTONE.asItem()       , "glowstone");
+		tReplacements.put(net.minecraft.world.item.Items.SLIME_BALL    , "slimeball");
+		tReplacements.put(Blocks.GLASS.asItem()           , "blockGlassColorless");
+		final String[] tDyes = {"Black", "Red", "Green", "Brown", "Blue", "Purple", "Cyan", "LightGray", "Gray", "Pink", "Lime", "Yellow", "LightBlue", "Magenta", "Orange", "White"};
+		for (int i = 0; i < 16; i++) {
+			tReplacements.put(gregapi.data.CS.Flattened.DYE[i]                              , "dye"        + tDyes[i]);
+			tReplacements.put(gregapi.data.CS.Flattened.STAINED_GLASS     [15-i].asItem()   , "blockGlass" + tDyes[i]);
+			tReplacements.put(gregapi.data.CS.Flattened.STAINED_GLASS_PANE[15-i].asItem()   , "paneGlass"  + tDyes[i]);
+		}
+
+		// Исключения — дословно Forge :196-211. Карта АДРЕСОВ 1.7.10→neo: stone_slab расщеплён по подтипам
+		// (recompSrc BlockStoneSlab.java:17 — stone/sand/wood/cobble/brick/smoothStoneBrick/netherBrick/quartz);
+		// 1.7.10 minecraft:stone_stairs — лестница ИЗ БУЛЫЖНИКА → neo cobblestone_stairs (neo stone_stairs — новый
+		// блок, его тут не было). SMOOTH_STONE_SLAB добавлен рядом со STONE_SLAB: подтип «stone» 1.7.10 несёт
+		// обе роли, исключение шире на один блок безвредно (его рецепт из smooth_stone, которого нет в карте замен).
+		final java.util.Set<net.minecraft.world.item.Item> tExclusions = new java.util.HashSet<>();
+		tExclusions.add(Blocks.LAPIS_BLOCK.asItem());
+		tExclusions.add(net.minecraft.world.item.Items.COOKIE);
+		tExclusions.add(Blocks.STONE_BRICKS.asItem());
+		for (net.minecraft.world.level.block.Block tSlab : new net.minecraft.world.level.block.Block[]{Blocks.STONE_SLAB, Blocks.SMOOTH_STONE_SLAB, Blocks.SANDSTONE_SLAB, Blocks.PETRIFIED_OAK_SLAB, Blocks.COBBLESTONE_SLAB, Blocks.BRICK_SLAB, Blocks.STONE_BRICK_SLAB, Blocks.NETHER_BRICK_SLAB, Blocks.QUARTZ_SLAB}) tExclusions.add(tSlab.asItem());
+		tExclusions.add(Blocks.COBBLESTONE_STAIRS.asItem());
+		tExclusions.add(Blocks.COBBLESTONE_WALL.asItem());
+		for (net.minecraft.world.level.block.Block tStair : new net.minecraft.world.level.block.Block[]{Blocks.OAK_STAIRS, Blocks.SPRUCE_STAIRS, Blocks.BIRCH_STAIRS, Blocks.JUNGLE_STAIRS, Blocks.ACACIA_STAIRS, Blocks.DARK_OAK_STAIRS}) tExclusions.add(tStair.asItem());
+		tExclusions.add(Blocks.GLASS_PANE.asItem());
+
+		int tReplaced = 0;
+		for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : aServer.getRecipeManager().getRecipes()) {
+			try {
+				if (tHolder.value() instanceof net.minecraft.world.item.crafting.ShapedRecipe tShaped) {
+					ItemStack tOutput = tShaped.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY); // result.create(), input не читается (референс ShapedRecipe.java:68-70)
+					if (ST.invalid(tOutput) || tExclusions.contains(tOutput.getItem())) continue;
+					int tWidth = tShaped.pattern.width(), tHeight = tShaped.pattern.height();
+					Object[] tCells = replaceIngredients(tShaped.pattern.ingredients(), tReplacements);
+					if (tCells == null) continue; // ни одной замены либо custom-ингредиент — рецепт не наш (1:1 containsMatch)
+					// Синтез Forge-формата (строки + пары символ→ингредиент) для конструктора ShapedOreRecipe.
+					java.util.List<Object> tArgs = new java.util.ArrayList<>();
+					String[] tRows = new String[tHeight];
+					char tChar = 'A';
+					for (int y = 0; y < tHeight; y++) {
+						StringBuilder tRow = new StringBuilder();
+						for (int x = 0; x < tWidth; x++) {
+							Object tCell = tCells[x + y * tWidth];
+							if (tCell == null) {tRow.append(' '); continue;}
+							tRow.append(tChar);
+							tArgs.add(tChar);
+							tArgs.add(tCell);
+							tChar++;
+						}
+						tRows[y] = tRow.toString();
+					}
+					tArgs.add(0, tRows);
+					gregapi.util.CR.BUFFER.add(new gregapi.recipes.ShapedOreRecipe(tOutput, tArgs.toArray()));
+					tReplaced++;
+				} else if (tHolder.value() instanceof net.minecraft.world.item.crafting.ShapelessRecipe tShapeless) {
+					ItemStack tOutput = tShapeless.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY);
+					if (ST.invalid(tOutput) || tExclusions.contains(tOutput.getItem())) continue;
+					net.minecraft.world.item.crafting.PlacementInfo tPlacement = tShapeless.placementInfo();
+					if (tPlacement.isImpossibleToPlace()) continue;
+					java.util.List<java.util.Optional<net.minecraft.world.item.crafting.Ingredient>> tIngredients = new java.util.ArrayList<>();
+					for (net.minecraft.world.item.crafting.Ingredient tIn : tPlacement.ingredients()) tIngredients.add(java.util.Optional.of(tIn));
+					Object[] tCells = replaceIngredients(tIngredients, tReplacements);
+					if (tCells == null) continue;
+					gregapi.util.CR.BUFFER.add(new gregapi.recipes.ShapelessOreRecipe(tOutput, tCells));
+					tReplaced++;
+				}
+			} catch(Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
+		}
+		gregapi.data.CS.OUT.println("GT_API: Vanilla recipe replacements (F4 role-C): " + tReplaced + " ore-versions added to CR.BUFFER.");
+	}
+
+	/**
+	 * Ячейки для ore-рецепта из ингредиентов ванильного: замещаемый предмет → ЖИВОЙ ore-список, прочие —
+	 * {@code ItemStack}/{@code List<ItemStack>} членов как есть. {@code null}-возврат = «рецепт не кандидат»
+	 * (ни одной замены — 1:1 с Forge {@code containsMatch}, — либо custom-ингредиент, которого в 1.7.10 не было).
+	 */
+	private static Object[] replaceIngredients(java.util.List<java.util.Optional<net.minecraft.world.item.crafting.Ingredient>> aIngredients, Map<net.minecraft.world.item.Item, String> aReplacements) {
+		Object[] rCells = new Object[aIngredients.size()];
+		boolean tAnyReplaced = false;
+		for (int i = 0; i < rCells.length; i++) {
+			java.util.Optional<net.minecraft.world.item.crafting.Ingredient> tOpt = aIngredients.get(i);
+			if (tOpt.isEmpty()) continue;
+			net.minecraft.world.item.crafting.Ingredient tIn = tOpt.get();
+			if (tIn.isCustom()) return null;
+			java.util.List<net.minecraft.world.item.Item> tItems = tIn.items().map(net.minecraft.core.Holder::value).toList();
+			if (tItems.isEmpty()) return null;
+			String tOreName = null;
+			for (net.minecraft.world.item.Item tItem : tItems) if ((tOreName = aReplacements.get(tItem)) != null) break;
+			if (tOreName != null) {
+				rCells[i] = getOres(tOreName);
+				tAnyReplaced = true;
+			} else if (tItems.size() == 1) {
+				rCells[i] = new ItemStack(tItems.get(0));
+			} else {
+				java.util.List<ItemStack> tAlts = new java.util.ArrayList<>();
+				for (net.minecraft.world.item.Item tItem : tItems) tAlts.add(new ItemStack(tItem));
+				rCells[i] = tAlts;
+			}
+		}
+		return tAnyReplaced ? rCells : null;
 	}
 
 	/**

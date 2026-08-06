@@ -22,6 +22,6 @@ class PortDumpTest {
     @Test
     void dumpAndReportParity(MinecraftServer server) throws Exception {
         // server-параметр → EphemeralTestServer стартует сервер (deferItemInit-pipeline выполнен, компоненты привязаны) ДО дампа.
-        PortDump.runFull();
+        PortDump.runFull(server);
     }
 }
