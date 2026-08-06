@@ -284,6 +284,7 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6plantyard.flag")) gt6PlantYardTick(aEvent.getServer());
 	// [GT6-TOOLMATRIX] BUG-071: матрица «блок × инструмент» — право добычи и скорость по КАЖДОМУ типу — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6toolmatrixprobe.flag")) gt6ToolMatrixTick(aEvent.getServer());
+		if (gregapi.data.CS.probeFlag("gt6speedprobe.flag")) gt6SpeedProbeTick(aEvent.getServer());
 	// [GT6-TOOLYARD] BUG-071: ПОЛИГОН для ЖИВОЙ приёмки игроком (не судья — строит мир и выдаёт инструменты) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6toolyard.flag")) gt6ToolYardTick(aEvent.getServer());
 	// [GT6-JADELEVEL] BUG-070: СЕРВЕРНАЯ половина судьи витрины — снимает ЭТАЛОН уровней на серверном потоке
@@ -7860,6 +7861,93 @@ public final class GT6Probes {
 			+ ", различных требуемых уровней СЕЙЧАС=" + tLevels.size() + " " + tLevels
 			+ ", различных по правилу 1.7.10=" + tExpected.size() + " " + tExpected
 			+ " → " + (tLevels.size() > 1 ? "уровень пер-материальный (дефекта нет)" : "УРОВЕНЬ ОДИН НА ВСЕ МАТЕРИАЛЫ (связь «материал → уровень» потеряна)"));
+	}
+
+	// ========== [GT6-SPEED] BUG-088: СКВОЗНАЯ скорость разрушения — парное плечо к оракулу ==========
+	// Скорость на «своих» блоках была доказана лишь КОСВЕННО: база снята замером живого 1.7.10, множитель —
+	// диффом формул. Здесь снимается ИТОГ — доля разрушения за тик, которую копит движок, — и ровно тот же
+	// итог снимает проба эталона `GT6OracleSpeedProbe` (там `ForgeHooks.blockStrength:125-142`, здесь его
+	// neo-эквивалент `BlockState.getDestroyProgress(player, level, pos)`). Пул строится ОДИНАКОВО: инструменты
+	// по одному экземпляру на класс IToolStats из живого реестра, материал задан ИМЕНЕМ (иначе версии возьмут
+	// разные), блоки — ванильные эталоны + представители GT6 по реестровому имени.
+	private static boolean sSpeedDone = false;
+	private static int sSpeedTick = -1;
+	private static final String SPEED_M = "GT6-SPEED", SPEED_MATERIAL = "Titanium";
+	/** Имена 1.7.10; у расщеплённых neo-семей берём представителя породы дуба — паспорт у семьи общий. */
+	private static final String[][] SPEED_VANILLA = {
+		  {"minecraft:stone", "minecraft:stone"}, {"minecraft:dirt", "minecraft:dirt"}, {"minecraft:sand", "minecraft:sand"}
+		, {"minecraft:gravel", "minecraft:gravel"}, {"minecraft:planks", "minecraft:oak_planks"}, {"minecraft:log", "minecraft:oak_log"}
+		, {"minecraft:chest", "minecraft:chest"}, {"minecraft:iron_ore", "minecraft:iron_ore"}, {"minecraft:diamond_ore", "minecraft:diamond_ore"}
+		, {"minecraft:obsidian", "minecraft:obsidian"}, {"minecraft:glass", "minecraft:glass"}, {"minecraft:wool", "minecraft:white_wool"}
+		, {"minecraft:leaves", "minecraft:oak_leaves"}, {"minecraft:ice", "minecraft:ice"}, {"minecraft:clay", "minecraft:clay"}};
+
+	public static void gt6SpeedProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sSpeedDone || aServer.getPlayerList().getPlayers().isEmpty()) return;
+		if (++sSpeedTick < 100) return;
+		sSpeedDone = true;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		java.io.PrintStream O = OUT;
+		try {
+			ServerLevel tLevel = tPlayer.level();
+			BlockPos tPos = tPlayer.blockPosition().offset(0, 0, 3);
+
+			gregapi.oredict.OreDictMaterial tMaterial = null;
+			for (gregapi.oredict.OreDictMaterial tM : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY)
+				if (tM != null && SPEED_MATERIAL.equals(tM.mNameInternal)) {tMaterial = tM; break;}
+			if (tMaterial == null) {O.println("[" + SPEED_M + "] материал " + SPEED_MATERIAL + " не найден — замер невозможен"); return;}
+
+			java.util.TreeMap<String, net.minecraft.world.item.ItemStack> tTools = new java.util.TreeMap<>();
+			for (java.util.Map.Entry<Short, gregapi.item.multiitem.tools.IToolStats> tE : gregapi.data.CS.ToolsGT.sMetaTool.mToolStats.entrySet()) {
+				if (tE.getValue() == null || tTools.containsKey(tE.getValue().getClass().getName())) continue;
+				try {
+					net.minecraft.world.item.ItemStack tStack = gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(tE.getKey(), 1, tMaterial, tMaterial);
+					if (tStack != null && !tStack.isEmpty()) tTools.put(tE.getValue().getClass().getName(), tStack);
+				} catch (Throwable e) {/* этот ID не собирается — пропуск */}
+			}
+
+			java.util.List<String[]> tBlocks = new java.util.ArrayList<>(java.util.Arrays.asList(SPEED_VANILLA));
+			int tGT = 0;
+			for (net.minecraft.world.level.block.Block tB : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+				net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tB);
+				if (tKey == null || !"gregtech".equals(tKey.getNamespace())) continue;
+				String tName = tKey.toString();
+				if ((tName.contains(".machine.") || tName.contains(".rock.")) && tGT++ < 6) tBlocks.add(new String[]{tName, tName});
+			}
+
+			java.nio.file.Path tOut = java.nio.file.Path.of("gt6_port_speed.csv");
+			java.util.List<String> tLines = new java.util.ArrayList<>();
+			tLines.add("# registryName,toolStatsClass,strength");
+			net.minecraft.world.item.ItemStack tSaved = tPlayer.getMainHandItem().copy();
+			int tRows = 0;
+			for (String[] tPair : tBlocks) {
+				net.minecraft.world.level.block.Block tBlock = net.minecraft.core.registries.BuiltInRegistries.BLOCK
+					.getOptional(net.minecraft.resources.Identifier.parse(tPair[1])).orElse(null);
+				if (tBlock == null) {O.println("[" + SPEED_M + "] нет в neo: " + tPair[1]); continue;}
+				tLevel.setBlock(tPos, tBlock.defaultBlockState(), 3);
+				net.minecraft.world.level.block.state.BlockState tState = tLevel.getBlockState(tPos);
+				if (tState.getBlock() != tBlock) {O.println("[" + SPEED_M + "] не встал: " + tPair[1]); continue;}
+				for (java.util.Map.Entry<String, net.minecraft.world.item.ItemStack> tE : tTools.entrySet()) {
+					tPlayer.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tE.getValue());
+					float tStrength;
+					try {tStrength = tState.getDestroyProgress(tPlayer, tLevel, tPos);} catch (Throwable e) {tStrength = -1;}
+					// КЛЮЧ — имя 1.7.10: у расщеплённых семей строки иначе не сойдутся
+					tLines.add(tPair[0] + "," + tE.getKey() + "," + String.format(java.util.Locale.ROOT, "%.6f", tStrength));
+					tRows++;
+				}
+				tPlayer.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+				float tBare;
+				try {tBare = tState.getDestroyProgress(tPlayer, tLevel, tPos);} catch (Throwable e) {tBare = -1;}
+				tLines.add(tPair[0] + ",<BARE_HAND>," + String.format(java.util.Locale.ROOT, "%.6f", tBare));
+				tRows++;
+				tLevel.setBlock(tPos, Blocks.AIR.defaultBlockState(), 3);
+			}
+			tPlayer.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tSaved);
+			java.nio.file.Files.write(tOut, tLines);
+			O.println("[" + SPEED_M + "] снято строк: " + tRows + " (блоков " + tBlocks.size()
+				+ ", инструментов " + tTools.size() + ", материал " + SPEED_MATERIAL + ") -> " + tOut.toAbsolutePath());
+		} catch (Throwable e) {
+			e.printStackTrace(ERR);
+		}
 	}
 
 	// ========== [GT6-TOOLYARD] BUG-071: ПОЛИГОН ЖИВОЙ ПРИЁМКИ (заказ игрока) ==========
