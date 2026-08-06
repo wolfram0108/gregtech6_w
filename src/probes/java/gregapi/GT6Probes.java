@@ -11553,6 +11553,16 @@ public final class GT6Probes {
 			if (tGTScheme) tPass++; else tFail++;
 		} catch(Throwable e) {e.printStackTrace(); tFail++;}
 		gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] DONE PASS=" + tPass + " FAIL=" + tFail);
+		// §5 граница M-52: /reload пересоздаёт RecipeMap — подавление обязано переприменяться
+		// (GT_API.onDatapackSyncReapplySuppression). Позитивный контроль: ДО фикса здесь был бы FAIL.
+		try {
+			aServer.reloadResources(aServer.getPackRepository().getSelectedIds()).whenComplete((v, err) -> aServer.execute(() -> {
+				boolean tBack = F;
+				for (var tHolder : aServer.getRecipeManager().recipeMap().values()) if ("minecraft:iron_pickaxe".equals(tHolder.id().identifier().toString())) {tBack = T; break;}
+				gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] §5 после /reload: датапак iron_pickaxe " + (tBack ? "ВЕРНУЛСЯ => FAIL" : "остался подавленным => PASS") + (err != null ? " (reload err: " + err + ")" : ""));
+				gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] RELOAD-DONE");
+			}));
+		} catch(Throwable e) {e.printStackTrace();}
 
 		// ── двор живой приёмки: верстак + сундук с материалами
 		try {

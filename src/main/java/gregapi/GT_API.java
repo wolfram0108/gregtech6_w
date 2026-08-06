@@ -259,8 +259,17 @@ public class GT_API extends Abstract_Mod {
 	 *  {@code RecipeMap} immutable). Карта пересобирается публичной фабрикой {@code RecipeMap.create} без подавленных,
 	 *  private-поле {@code RecipeManager.recipes} подменяется рефлексией — приём прецедентен (подмена
 	 *  {@code AbstractMinecart.behavior}, JDK 25 пишет private instance-поля). Зовётся ДО finalizeRecipeLoading. */
+	/** Все когда-либо подавленные ключи — для переприменения после /reload (карта датапака пересоздаётся). */
+	public static final java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> SUPPRESSED_DATAPACK_RECIPES = new java.util.HashSet<>();
+
+	public void onDatapackSyncReapplySuppression(net.neoforged.neoforge.event.OnDatapackSyncEvent aEvent) {
+		if (aEvent.getPlayer() != null) return; // вход игрока — карта не пересоздавалась; переприменение нужно только на /reload
+		removeDatapackRecipes(aEvent.getPlayerList().getServer(), new java.util.HashSet<>(SUPPRESSED_DATAPACK_RECIPES));
+	}
+
 	public static void removeDatapackRecipes(net.minecraft.server.MinecraftServer aServer, java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> aRemove) {
 		if (aServer == null || aRemove == null || aRemove.isEmpty()) return;
+		SUPPRESSED_DATAPACK_RECIPES.addAll(aRemove);
 		try {
 			net.minecraft.world.item.crafting.RecipeManager tRM = aServer.getRecipeManager();
 			java.util.List<net.minecraft.world.item.crafting.RecipeHolder<?>> tKeep = new java.util.ArrayList<>();
@@ -566,6 +575,9 @@ public class GT_API extends Abstract_Mod {
 		NeoForge.EVENT_BUS.addListener(this::onServerStopped);
 		// BUG-033 (КОРЕНЬ): отложенная item-init должна добежать ДО пре-генерации стартовой зоны — см. onLevelLoadEarlyItemInit.
 		NeoForge.EVENT_BUS.addListener(this::onLevelLoadEarlyItemInit);
+		// F11-recipe-scan (граница M-52): /reload пересоздаёт RecipeMap датапака — подавление Replace
+		// переприменяется на OnDatapackSyncEvent (player==null = reload; стреляет ДО отправки рецептов клиенту).
+		NeoForge.EVENT_BUS.addListener(this::onDatapackSyncReapplySuppression);
 	}
 
 	/** BUG-033 fix (КОРЕНЬ стартовой зоны) + F12 refinement. **ЕДИНАЯ авторитетная точка исполнения отложенной
