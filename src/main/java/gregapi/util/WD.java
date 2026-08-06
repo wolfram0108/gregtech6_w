@@ -940,6 +940,21 @@ public class WD {
 		 || aBlock == Blocks.CRAFTING_TABLE || aBlock == Blocks.BOOKSHELF || aBlock == Blocks.CHEST || aBlock == Blocks.JUKEBOX || aBlock == Blocks.NOTE_BLOCK) return gregapi.block.Material.wood;
 		if (tState.is(net.minecraft.tags.BlockTags.WOOL_CARPETS))                                                return gregapi.block.Material.carpet;
 		if (tState.is(net.minecraft.tags.BlockTags.WOOL))                                                        return gregapi.block.Material.cloth;
+		// СЕМЬИ, РАСЩЕПЛЁННЫЕ neo: в 1.7.10 это были блоки с метой-подтипом, их имён в neo больше нет, и паспорт
+		// по имени не находится. Материал брали из хвоста `rock` — замер против оригинала дал 62 таких блока
+		// (`stained_glass`/`stained_glass_pane` → glass 32 шт., `skull` → circuits 15, `wooden_button` → circuits 12,
+		// `repeater`/`comparator` → circuits 2, `portal` → portal 1). Отбор по КЛАССУ движка, а не по списку имён:
+		// список пород и цветов растёт от версии к версии, а класс у семьи один.
+		if (aBlock instanceof net.minecraft.world.level.block.StainedGlassBlock
+		 || aBlock instanceof net.minecraft.world.level.block.StainedGlassPaneBlock)                            return gregapi.block.Material.glass;
+		if (aBlock instanceof net.minecraft.world.level.block.AbstractSkullBlock)                                return gregapi.block.Material.circuits;
+		if (aBlock instanceof net.minecraft.world.level.block.DiodeBlock)                                        return gregapi.block.Material.circuits; // repeater + comparator
+		if (aBlock instanceof net.minecraft.world.level.block.ButtonBlock
+		 && tState.is(net.minecraft.tags.BlockTags.WOODEN_BUTTONS))                                             return gregapi.block.Material.circuits; // каменная кнопка в 1.7.10 = rock (хвост)
+		if (aBlock == Blocks.NETHER_PORTAL)                                                                      return gregapi.block.Material.portal;
+		// цветочный горшок: в 1.7.10 ОДИН блок, содержимое жило в TileEntity — neo расщепил его на 38 занятых
+		// (`potted_*`) плюс пустой. Пустой находился по имени и отвечал circuits, занятые падали в хвост `rock`.
+		if (aBlock instanceof net.minecraft.world.level.block.FlowerPotBlock)                                    return gregapi.block.Material.circuits;
 		// BUG-012: 1.7.10 BlockTallGrass (короткая трава/папоротник) и BlockDeadBush = Material.vine
 		// (BlockTallGrass:33/BlockDeadBush:23 референса 1.7.10) — гейт ножа/косы/меча принимает vine.
 		// ADAPT-006: Blocks.BUSH (нов. контент 26.1.2, в 1.7.10 не было) — в ту же группу «короткая трава», режется ножом в сено.
