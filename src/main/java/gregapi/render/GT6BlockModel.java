@@ -87,12 +87,36 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 		if (aState.isAir()) {
 			if (mOwner instanceof gregapi.block.multitileentity.MultiTileEntityBlock || mOwner instanceof gregapi.block.multitileentity.MultiTileEntityBlockInternal) return;
 			GT6QuadBuilder tCrackQB = new GT6QuadBuilder();
-			net.minecraft.resources.Identifier tCrackIcon = gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);
-			if (mOwner instanceof IRenderedCross) {
-				tCrackQB.crossFace(tCrackIcon, gregapi.data.CS.UNCOLOURED);
-			} else {
-				tCrackQB.setBounds(mOwner instanceof gregapi.block.IBlock tIB ? tIB.getRenderBounds() : null);
-				for (byte tSide = 0; tSide < 6; tSide++) tCrackQB.putFace(tSide, tCrackIcon, gregapi.data.CS.UNCOLOURED);
+			// MODCOMPAT-002: в ЭТУ ЖЕ ветку приходит и СТАТИЧЕСКИЙ запрос модели — context-free collectParts
+			// (дефолт DynamicBlockStateModel:25-27 подставляет EMPTY/ZERO/AIR) зовут JourneyMap
+			// (NeoForgeClientHooks.getQuads:49 — усредняет спрайты квадов в цвет пикселя карты) и любой мод,
+			// читающий модель вне мира. Спрайт — НАСТОЯЩАЯ иконка блока тем же контрактом IBlock.getIcon, что
+			// pos-aware particleMaterial ниже (1:1 с 1.7.10 Block.getIcon(side,meta) — статический канал, который
+			// внешние потребители и сэмплировали); breaking-пути движка спрайт безразличен (важна ГЕОМЕТРИЯ,
+			// UV трещин пересчитывает SheetedDecalTextureGenerator). CFOAM — фолбэк без иконки (1:1-дефолт
+			// getIcon 1.7.10: BlockBase:103/MultiTileEntityBlock:293 → CFOAM_HARDENED).
+			// Первоисточник — ITEM-ФОРМА блока (buildInventoryQuads: тот же центр, что 3D-иконка в инвентаре/JEI —
+			// настоящие per-pass текстуры С КОЛОРИЗАЦИЕЙ; в 1.7.10 карта видела раскрашенный канал getIcon+colorMultiplier,
+			// голая грейскейл-иконка руды теряла цвет — замер #BCBCBC). Фолбэк — куб/крест из иконки канала IBlock.getIcon.
+			if (mOwner != null) {
+				net.minecraft.world.item.Item tOwnerItem = net.minecraft.world.item.Item.byBlock(mOwner);
+				if (tOwnerItem != null && tOwnerItem != net.minecraft.world.item.Items.AIR) {
+					try {buildInventoryQuads(tCrackQB, mOwner, new net.minecraft.world.item.ItemStack(tOwnerItem));} catch (Throwable e) {/* фолбэк ниже */}
+				}
+			}
+			if (tCrackQB.isEmpty()) {
+				net.minecraft.resources.Identifier tCrackIcon = null;
+				try {
+					if (mOwner instanceof IRenderedCross tCross) tCrackIcon = tCross.getCrossIcon(null, 0, 0, 0); // контракт aWorld==null + мета в aX (см. buildInventoryQuads)
+					else if (mOwner instanceof gregapi.block.IBlock tGT6) tCrackIcon = tGT6.getIcon(1, 0);
+				} catch (Throwable e) {/* фолбэк ниже */}
+				if (tCrackIcon == null) tCrackIcon = gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);
+				if (mOwner instanceof IRenderedCross) {
+					tCrackQB.crossFace(tCrackIcon, gregapi.data.CS.UNCOLOURED);
+				} else {
+					tCrackQB.setBounds(mOwner instanceof gregapi.block.IBlock tIB ? tIB.getRenderBounds() : null);
+					for (byte tSide = 0; tSide < 6; tSide++) tCrackQB.putFace(tSide, tCrackIcon, gregapi.data.CS.UNCOLOURED);
+				}
 			}
 			if (!tCrackQB.isEmpty()) aParts.add(new SimpleModelWrapper(tCrackQB.build(), true, mParticle));
 			return;
@@ -258,8 +282,26 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 		}
 	}
 
+	/** MODCOMPAT-002, статическое плечо того же канала, что pos-aware перегрузка ниже: JourneyMap при ПУСТЫХ
+	 *  квадах (MTE — их crack-ветка пуста намеренно, трещины эмитит BER) падает в
+	 *  {@code BlockStateModelSet.getParticleMaterial(state)} → сюда (VanillaBlockSpriteProxy:70-73). Резолвим
+	 *  настоящую иконку владельца тем же контрактом {@code IBlock.getIcon}; у MTE без BE канал 1:1 отдаёт
+	 *  CFOAM (MultiTileEntityBlock.getIcon:293 в 1.7.10 — машины и там были CFoam-серыми на карте, канон);
+	 *  без владельца/иконки — прежний mParticle. */
 	@Override
-	public Material.Baked particleMaterial() {return mParticle;}
+	public Material.Baked particleMaterial() {
+		try {
+			if (mOwner instanceof gregapi.block.IBlock tGT6) {
+				net.minecraft.resources.Identifier tIcon = tGT6.getIcon(1, 0);
+				if (tIcon == null) tIcon = gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);
+				if (tIcon != null) {
+					net.minecraft.client.renderer.texture.TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon);
+					if (tSprite != null) return new Material.Baked(tSprite, false);
+				}
+			}
+		} catch (Throwable e) {/* партикл не рушит рендер */}
+		return mParticle;
+	}
 
 	/** Партиклы разрушения/удара (репорт игрока: ВСЕ GT-блоки крошатся error-текстурой): единая модель на весь мод
 	 *  отдавала статичный mParticle=system/error. neo-канал pos-aware (Forge-патч TerrainParticle.updateSprite →

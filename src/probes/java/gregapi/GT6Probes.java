@@ -230,6 +230,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6mapcolorprobe.flag")) gt6MapColorProbeTick(aEvent.getServer());
 	// [GT6-MAPPROBE] MODCOMPAT-002: прогон АЛГОРИТМА ВАНИЛЬНОЙ КАРТЫ (MapItem) на блоках GT6 — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6mapprobe.flag")) gt6MapProbeTick(aEvent.getServer());
+	// [GT6-MAPYARD] MODCOMPAT-002: двор ЖИВОЙ ПРИЁМКИ карты (JourneyMap в dev-клиенте, глаз игрока) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6mapyard.flag")) gt6MapYardTick(aEvent.getServer());
 	// [GT6-TODOPROBE] судья правок захода PORT-TODO 43->28 (канал иконки, чёрный песок) + площадка для игрока
 		if (gregapi.data.CS.probeFlag("gt6todoprobe.flag")) gt6TodoProbeTick(aEvent.getServer());
 	// [GT6-FLUIDHEIGHT] BUG-086: измеритель высоты растёкшейся жидкости — порт против формулы оригинала 1.7.10
@@ -9144,9 +9146,43 @@ public final class GT6Probes {
 			// колонна над чашей — в воздух, чтобы heightmap упал ровно на испытуемый блок
 			for (int dy = 1; dy <= 24; dy++) for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
 				tLevel.setBlock(new BlockPos(tCX + dx, tY + dy, tZ + dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
-			// испытуемый — через ЦЕНТР WD.set с метой 0 (источник), flags=2 (см. правило BUG-067 выше)
-			if (tTop instanceof net.minecraft.world.level.block.Block tB) gregapi.util.WD.set(tLevel, tCX, tY, tZ, tB, 0, 2, F);
-			sMapPCases.add(new Object[]{tWanted.get(i)[0], new BlockPos(tCX, tY, tZ), tTop});
+			// испытуемый — через ЦЕНТР WD.set с метой 0 (источник), flags=2 (см. правило BUG-067 выше).
+			// Замер ПОСТАНОВКИ (прогон 2026-08-06: водоподобные -> air уже в момент постройки): возврат WD.set
+			// + немедленное перечтение в ТОМ ЖЕ тике — разделяет «не встал» и «встал и был убран синхронно».
+			boolean tSetOK = false; net.minecraft.world.level.block.Block tImmediate = null;
+			if (tTop instanceof net.minecraft.world.level.block.Block tB) {
+				// РАЗГАДАНО замером 2026-08-06 (диаг: set=true -> air, паллета-id валиден, raw18 тоже air):
+				// водоподобные НЕ дефект — КАНОН GT6 1:1 (оригинал BlockOcean.java:50-58): onBlockAdded при
+				// PLACEMENT_ALLOWED=false синхронно убирает блок (реку/океан нельзя «поставить рукой», их кладёт
+				// только worldgen, поднимая флаг). Предусловие стенда — легальный путь: поднять флаг на постановку.
+				boolean tRiverPA = gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED, tOceanPA = gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED, tSwampPA = gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED;
+				gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = true;
+				try {
+					tSetOK = gregapi.util.WD.set(tLevel, tCX, tY, tZ, tB, 0, 2, F);
+				} finally {
+					gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = tRiverPA; gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = tOceanPA; gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = tSwampPA;
+				}
+				tImmediate = tLevel.getBlockState(new BlockPos(tCX, tY, tZ)).getBlock();
+				// ДИАГНОСТИКА синхронного исчезновения (прогон 2026-08-06: set=true, но air в том же вызове):
+				// id состояния в глобальной палитре + сырые setBlock мимо WD с флагами 2 и 2|16 — разделяет
+				// «state не кодируется палитрой» / «убивает shape-каскад» / «убивает сам WD-маршрут».
+				if (tImmediate != tB) {
+					BlockPos tP = new BlockPos(tCX, tY, tZ);
+					net.minecraft.world.level.block.state.BlockState tDef = tB.defaultBlockState();
+					int tStateId = net.minecraft.world.level.block.Block.BLOCK_STATE_REGISTRY.getId(tDef);
+					boolean tRaw2 = tLevel.setBlock(tP, tDef, 2);
+					net.minecraft.world.level.block.Block tAfter2 = tLevel.getBlockState(tP).getBlock();
+					String tExtra = "";
+					if (tAfter2 != tB) {
+						boolean tRaw18 = tLevel.setBlock(tP, tDef, 2 | 16);
+						tExtra = " raw18=" + tRaw18 + "->" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tLevel.getBlockState(tP).getBlock()).getPath();
+					}
+					O.println("[" + MAPP_M + "] ДИАГ " + tWanted.get(i)[0] + ": defState=" + tDef + " паллета-id=" + tStateId
+						+ " raw2=" + tRaw2 + "->" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tAfter2).getPath() + tExtra);
+					tImmediate = tLevel.getBlockState(tP).getBlock();
+				}
+			}
+			sMapPCases.add(new Object[]{tWanted.get(i)[0], new BlockPos(tCX, tY, tZ), tTop, tSetOK, tImmediate});
 		}
 		// проверка СВОЕЙ работы: что реально встало в каждой позиции
 		StringBuilder tReport = new StringBuilder();
@@ -9154,6 +9190,8 @@ public final class GT6Probes {
 			BlockPos tPos = (BlockPos) tCase[1];
 			tReport.append(tReport.length() == 0 ? "" : " | ").append(tCase[0]).append(" -> ")
 				.append(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tLevel.getBlockState(tPos).getBlock()));
+			if (tCase[2] != null) tReport.append(" [set=").append(tCase[3]).append(", сразу после set: ")
+				.append(tCase[4] == null ? "?" : net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey((net.minecraft.world.level.block.Block) tCase[4]).getPath()).append("]");
 		}
 		O.println("[" + MAPP_M + "] столбы построены (чаша+flags=2): " + tReport);
 	}
@@ -9206,10 +9244,90 @@ public final class GT6Probes {
 				// вердикт по карте недействителен, если испытуемый блок не встал: судим ПОСТАНОВКУ, а не карту
 				sMapPSeq.judge(tName + ": блок реально встал в мире (предусловие судьи)", false, tTop.toString(), String.valueOf(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tActual.getBlock())));
 			} else {
-				sMapPSeq.judge(tName + ": карта показывает САМ блок, а не дно под ним", !tShowsBottom, "пиксель != цвета дна", "пиксель " + tPixel.id + ", дно " + tStoneColor.id);
+				// Ужесточено 2026-08-06 (урок «объект есть — а величины нет»): прежний критерий «пиксель != дна»
+				// дал ложный PASS на OilHeavy — пиксель был NONE (блок на карте ОТСУТСТВУЕТ), но с дном не совпал.
+				// Ожидаемый пиксель — цвет САМОГО блока, а для жидкостного — его fluid-подмены (путь MapItem:138-149).
+				net.minecraft.world.level.block.state.BlockState tExpState = tActual;
+				if (!tActual.getFluidState().isEmpty() && !tActual.isFaceSturdy(tLevel, tPos, net.minecraft.core.Direction.UP)) tExpState = tActual.getFluidState().createLegacyBlock();
+				net.minecraft.world.level.material.MapColor tExpected = tExpState.getMapColor(tLevel, tPos);
+				boolean tOK = tPixel != net.minecraft.world.level.material.MapColor.NONE && tPixel == tExpected && !tShowsBottom;
+				sMapPSeq.judge(tName + ": пиксель карты = цвету блока/его жидкости (не NONE, не дно)", tOK, "пиксель " + tExpected.id, "пиксель " + tPixel.id + ", дно " + tStoneColor.id);
 			}
 		}
 		sMapPSeq.done();
+	}
+
+	// ==========================================================================================================
+	// [GT6-MAPYARD] MODCOMPAT-002 — ДВОР ЖИВОЙ ПРИЁМКИ КАРТЫ (глаз игрока; стенд только СТРОИТ, не судит).
+	// JourneyMap подключён в dev-клиент через localRuntime — приёмка идёт в обычном runClient -Pgt6probes.
+	// Водоподобные ставятся легальным путём worldgen (PLACEMENT_ALLOWED на время постройки). Машины НЕ ставим
+	// (MTE требует TE-данные) — игрок ставит сам из креатива. Снять при уборке фазы.
+	// ==========================================================================================================
+	private static final String MAPY_M = "GT6-MAPYARD";
+	private static int sMapYTick = -1;
+	private static boolean sMapYBuilt = false;
+
+	public static void gt6MapYardTick(net.minecraft.server.MinecraftServer aServer) {
+		sMapYTick++;
+		if (sMapYBuilt || aServer.getPlayerList().getPlayers().isEmpty() || sMapYTick < 60) return;
+		sMapYBuilt = true;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		BlockPos tBase = tPlayer.blockPosition();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+
+		// ---------- бассейны: чаша 7×7 из камня, жидкость 5×5 (мета 0 = полный источник) ----------
+		Object[][] tPools = {
+			{"река",          gregapi.data.CS.BlocksGT.River,    -14},
+			{"океан",         gregapi.data.CS.BlocksGT.Ocean,     -5},
+			{"болото",        gregapi.data.CS.BlocksGT.Swamp,      4},
+			{"нефть тяжёлая", gregapi.data.CS.BlocksGT.OilHeavy,  13},
+		};
+		boolean tRiverPA = gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED, tOceanPA = gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED, tSwampPA = gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED;
+		gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = true;
+		try {
+			for (Object[] tPool : tPools) {
+				if (!(tPool[1] instanceof net.minecraft.world.level.block.Block tB)) {O.println("[" + MAPY_M + "] нет блока для «" + tPool[0] + "» — сектор пропущен"); continue;}
+				int tX0 = tBase.getX() + 8, tY = tBase.getY(), tZ0 = tBase.getZ() + (Integer) tPool[2];
+				for (int dx = 0; dx < 7; dx++) for (int dz = 0; dz < 7; dz++) {
+					tLevel.setBlock(new BlockPos(tX0 + dx, tY - 1, tZ0 + dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+					boolean tRim = dx == 0 || dx == 6 || dz == 0 || dz == 6;
+					tLevel.setBlock(new BlockPos(tX0 + dx, tY, tZ0 + dz), tRim ? net.minecraft.world.level.block.Blocks.STONE.defaultBlockState() : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+					for (int dy = 1; dy <= 20; dy++) tLevel.setBlock(new BlockPos(tX0 + dx, tY + dy, tZ0 + dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+				}
+				for (int dx = 1; dx < 6; dx++) for (int dz = 1; dz < 6; dz++) gregapi.util.WD.set(tLevel, tX0 + dx, tY, tZ0 + dz, tB, 0, 2, F);
+			}
+		} finally {
+			gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = tRiverPA; gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = tOceanPA; gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = tSwampPA;
+			// приёмка глазом требует, чтобы бассейны ЖИЛИ (их updateTick сам поднимает PLACEMENT_ALLOWED — канон)
+		}
+
+		// ---------- площадка породы (Sands 5×5) и куст руды (PrefixBlock 3×3) ----------
+		if (gregapi.data.CS.BlocksGT.Sands != null) {
+			int tX0 = tBase.getX() + 20, tY = tBase.getY(), tZ0 = tBase.getZ() - 12;
+			for (int dx = 0; dx < 5; dx++) for (int dz = 0; dz < 5; dz++) {
+				gregapi.util.WD.set(tLevel, tX0 + dx, tY, tZ0 + dz, (net.minecraft.world.level.block.Block) gregapi.data.CS.BlocksGT.Sands, 0, 2, F);
+				for (int dy = 1; dy <= 20; dy++) tLevel.setBlock(new BlockPos(tX0 + dx, tY + dy, tZ0 + dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+			}
+		}
+		net.minecraft.world.level.block.Block tOre = null;
+		for (net.minecraft.world.level.block.Block tB : net.minecraft.core.registries.BuiltInRegistries.BLOCK)
+			if (tB instanceof gregapi.block.prefixblock.PrefixBlock && net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tB).getPath().contains("ore")) {tOre = tB; break;}
+		if (tOre != null) {
+			int tX0 = tBase.getX() + 20, tY = tBase.getY(), tZ0 = tBase.getZ() + 4;
+			for (int dx = 0; dx < 3; dx++) for (int dz = 0; dz < 3; dz++) {
+				gregapi.util.WD.set(tLevel, tX0 + dx, tY, tZ0 + dz, tOre, 0, 2, F);
+				for (int dy = 1; dy <= 20; dy++) tLevel.setBlock(new BlockPos(tX0 + dx, tY + dy, tZ0 + dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+			}
+		}
+
+		O.println("[" + MAPY_M + "] двор построен: 4 бассейна (река/океан/болото/нефть), пески, руда — к востоку от игрока");
+		gt6Say(tPlayer, "§e=== ДВОР ПРИЁМКИ КАРТЫ (MODCOMPAT-002): всё к ВОСТОКУ от вас ===");
+		gt6Say(tPlayer, "§b1) Открой полноэкранную карту JourneyMap (клавиша J) и посмотри на миникарту;");
+		gt6Say(tPlayer, "§b2) 4 бассейна: река, океан, болото — видны КАК ВОДА (не дно под ней); нефть — чёрное пятно;");
+		gt6Say(tPlayer, "§b3) дальше: площадка чёрного песка и куст руды — свои цвета, не пропуски и не одинаковая серость;");
+		gt6Say(tPlayer, "§b4) поставь из креатива любую МАШИНУ GT6 — на карте она CFoam-серая (канон 1.7.10);");
+		gt6Say(tPlayer, "§77) если местность уже была закартирована — тайлы старые: пройдись по двору, JourneyMap перерисует чанки.");
 	}
 
 	// ==========================================================================================================

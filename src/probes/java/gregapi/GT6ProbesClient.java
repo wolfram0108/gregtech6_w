@@ -320,6 +320,100 @@ public final class GT6ProbesClient {
 		O.println("========== [GT6-JADECLIENT] DONE ==========");
 	}
 
+	// ==========================================================================================================
+	// [GT6-JMPROBE] MODCOMPAT-002 — судья с ЖИВЫМ JourneyMap (localRuntime, приём gt6jadeprobe): спрашиваем у
+	// САМОГО мода тем каналом, каким он решает судьбу блока на карте. Симптом игрока: «блоков GT6 на карте нет
+	// вообще, они прозрачны — видно то, что под ними». У JourneyMap это ровно флаг Ignore либо провал цвета
+	// (декомпил-референс journeymap-decompiled/):
+	//   · BlockMD.get(state) → ModBlockDelegate → VanillaBlockHandler.initialize
+	//     (VanillaBlockHandler.java:118: RenderShape.INVISIBLE и НЕ LiquidBlock → BlockFlag.Ignore);
+	//   · цвет — BlockMD.getTextureColor() → VanillaBlockColorProxy.deriveBlockColor: квады модели →
+	//     (пусто) particle-спрайт → (пусто) defaultMapColor (VanillaBlockSpriteProxy.java:70-73).
+	// Судится «видимость» = !isIgnore && alpha>0 && цвет!=0. Контроли: ПОЗИТИВНЫЕ stone/water (обязаны быть
+	// видимы — иначе судья не умеет видеть), НЕГАТИВНЫЙ air (обязан быть Ignore — иначе судья зелен всегда).
+	// Плюс §legacy: fluidState.createLegacyBlock() обязан отдавать БЛОЧНУЮ форму жидкости (фикс
+	// FluidGT.Source, канал ванильной карты MapItem:197) — чистый реестровый замер, мира не требует.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static boolean mJmDone = false;
+	private static int sJmTick = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onJmProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mJmDone || !gregapi.data.CS.probeFlag("gt6jmprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		if (++sJmTick < 400) return; // ~20с в мире: JourneyMap должен подняться и начать маппинг
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (journeymap.client.JourneymapClient.getInstance() == null) {
+				if (sJmTick % 200 == 0) O.println("[GT6-JMPROBE] жду JourneymapClient...");
+				if (sJmTick > 3000) {mJmDone = true; O.println("[GT6-JMPROBE] FAIL: JourneyMap не поднялся за 150с");}
+				return;
+			}
+		} catch (Throwable e) {mJmDone = true; O.println("[GT6-JMPROBE] FAIL: JourneyMap недоступен в рантайме: " + e); return;}
+		mJmDone = true;
+
+		int tPass = 0, tFail = 0;
+		O.println("========== [GT6-JMPROBE] MODCOMPAT-002: вердикты ЖИВОГО JourneyMap по иерархиям GT6 ==========");
+		// представители иерархий — из ЖИВОГО реестра, не из памяти (порода/руда/машина/водоподобные/материал-жидкость)
+		net.minecraft.world.level.block.Block tOre = null, tMachine = null;
+		for (net.minecraft.world.level.block.Block tB : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			String tPath = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tB).getPath();
+			if (tOre == null && tB instanceof gregapi.block.prefixblock.PrefixBlock && tPath.contains("ore")) tOre = tB;
+			if (tMachine == null && tB instanceof gregapi.block.multitileentity.MultiTileEntityBlock && tPath.contains(".machine.")) tMachine = tB;
+			if (tOre != null && tMachine != null) break;
+		}
+		java.util.List<Object[]> tCases = new java.util.ArrayList<>();
+		tCases.add(new Object[]{"ПОЗИТИВНЫЙ контроль: minecraft:stone", net.minecraft.world.level.block.Blocks.STONE, Boolean.TRUE});
+		tCases.add(new Object[]{"ПОЗИТИВНЫЙ контроль: minecraft:water", net.minecraft.world.level.block.Blocks.WATER, Boolean.TRUE});
+		tCases.add(new Object[]{"НЕГАТИВНЫЙ контроль: minecraft:air (обязан быть Ignore)", net.minecraft.world.level.block.Blocks.AIR, Boolean.FALSE});
+		if (gregapi.data.CS.BlocksGT.Sands != null) tCases.add(new Object[]{"порода GT6: Sands", gregapi.data.CS.BlocksGT.Sands, Boolean.TRUE});
+		if (tOre     != null) tCases.add(new Object[]{"руда GT6 (PrefixBlock): " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tOre), tOre, Boolean.TRUE});
+		if (tMachine != null) tCases.add(new Object[]{"машина GT6 (MTE): " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tMachine), tMachine, Boolean.TRUE});
+		if (gregapi.data.CS.BlocksGT.River    != null) tCases.add(new Object[]{"вода GT6: River",    gregapi.data.CS.BlocksGT.River,    Boolean.TRUE});
+		if (gregapi.data.CS.BlocksGT.Ocean    != null) tCases.add(new Object[]{"вода GT6: Ocean",    gregapi.data.CS.BlocksGT.Ocean,    Boolean.TRUE});
+		if (gregapi.data.CS.BlocksGT.Swamp    != null) tCases.add(new Object[]{"вода GT6: Swamp",    gregapi.data.CS.BlocksGT.Swamp,    Boolean.TRUE});
+		if (gregapi.data.CS.BlocksGT.OilHeavy != null) tCases.add(new Object[]{"жидкость GT6: OilHeavy", gregapi.data.CS.BlocksGT.OilHeavy, Boolean.TRUE});
+
+		for (Object[] tCase : tCases) {
+			String tName = (String) tCase[0];
+			if (!(tCase[1] instanceof net.minecraft.world.level.block.Block tBlock)) {tFail++; O.println("[GT6-JMPROBE] " + tName + " — поле не Block => FAIL"); continue;}
+			boolean tExpectVisible = (Boolean) tCase[2];
+			try {
+				journeymap.client.model.block.BlockMD tMD = journeymap.client.model.block.BlockMD.get(tBlock.defaultBlockState());
+				boolean tIgnore = tMD.isIgnore();
+				float tAlpha = tMD.getAlpha();
+				int tColor = tMD.getTextureColor();
+				boolean tVisible = !tIgnore && tAlpha > 0F && tColor != 0;
+				boolean tOK = tVisible == tExpectVisible;
+				O.println("[GT6-JMPROBE] " + tName + " | ignore=" + tIgnore + " alpha=" + tAlpha
+					+ " цвет=#" + String.format("%06X", tColor & 0xFFFFFF) + " флаги=" + tMD.getFlags()
+					+ " => " + (tOK ? "PASS" : "FAIL" + (tExpectVisible ? " <-- JourneyMap этот блок НЕ покажет" : " <-- судья слеп")));
+				if (tOK) tPass++; else tFail++;
+			} catch (Throwable e) {tFail++; O.println("[GT6-JMPROBE] " + tName + " EXC: " + e + " => FAIL");}
+		}
+
+		// §legacy — канал ванильной карты (MapItem:197): подмена жидкостного блока обязана отдавать блочную форму
+		for (Object[] tFC : new Object[][]{{"OilHeavy", gregapi.data.CS.BlocksGT.OilHeavy}, {"River", gregapi.data.CS.BlocksGT.River}}) {
+			if (!(tFC[1] instanceof net.minecraft.world.level.block.Block tBlock)) continue;
+			try {
+				net.minecraft.world.level.block.state.BlockState tLegacy = tBlock.defaultBlockState().getFluidState().createLegacyBlock();
+				boolean tOK = "River".equals(tFC[0])
+					? tLegacy.is(net.minecraft.world.level.block.Blocks.WATER) // водоподобные несут ванильную WATER — блочная форма ванильная
+					: tLegacy.getBlock() == tBlock;                            // материал-жидкость обязана отдать СЕБЯ (фикс FluidGT.Source)
+				O.println("[GT6-JMPROBE] §legacy " + tFC[0] + ": createLegacyBlock -> "
+					+ net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tLegacy.getBlock()) + " => " + (tOK ? "PASS" : "FAIL <-- ванильная карта потеряет жидкость"));
+				if (tOK) tPass++; else tFail++;
+			} catch (Throwable e) {tFail++; O.println("[GT6-JMPROBE] §legacy " + tFC[0] + " EXC: " + e + " => FAIL");}
+		}
+
+		O.println("========== [GT6-JMPROBE] DONE (pass=" + tPass + " fail=" + tFail + ") ==========");
+		if (!gregapi.data.CS.probeFlag("gt6jmprobe.keepalive")) {
+			O.println("[GT6-JMPROBE] стенд отработал — гашу клиент сам (флаг .keepalive оставляет открытым)");
+			tMC.execute(tMC::stop);
+		}
+	}
+
 	// [GT6-JADEHAND] Репорт игрока 2026-08-06: «на ВАНИЛЬНЫХ блоках строка инструмента в Jade видна только с
 	// ПУСТОЙ рукой; стоит взять ключ или любой инструмент — пропадает. На блоках GT6 видна всегда».
 	// Замер, а не рассуждение: повторяем РОВНО тот путь, которым Jade решает, рисовать ли строку

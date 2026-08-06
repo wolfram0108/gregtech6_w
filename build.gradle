@@ -304,6 +304,13 @@ dependencies {
     // тултип (HarvestToolProvider.getTool). На jar игрока не влияет: localRuntime — только dev-запуски.
     localRuntime "maven.modrinth:jade:${jade_version}"
 
+    // JourneyMap (MODCOMPAT-002) — ТОЛЬКО для стенда gt6jmprobe: судья спрашивает РЕАЛЬНЫЙ JourneyMap тем же
+    // каналом, каким тот решает судьбу блока на карте (BlockMD.get → isIgnore/getTextureColor/getAlpha;
+    // декомпил-референс: journeymap-decompiled/). Production-код на него НЕ ссылается; исходники мода закрыты
+    // (ARR), поэтому compileOnly идёт с того же Modrinth-maven, что и Jade.
+    compileOnly "maven.modrinth:journeymap:${journeymap_version}"
+    localRuntime "maven.modrinth:journeymap:${journeymap_version}"
+
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
     // The group id is ignored when searching -- in this case, it is "blank"

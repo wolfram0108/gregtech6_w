@@ -267,7 +267,17 @@ public class FluidGT {
 		@Override protected boolean canBeReplacedWith(FluidState aState, BlockGetter aLevel, BlockPos aPos, Fluid aOther, Direction aDirection) {return aDirection == Direction.DOWN && !isSame(aOther);}
 		@Override public int getTickDelay(LevelReader aLevel) {return 5;}
 		@Override protected float getExplosionResistance() {return 1.0F;}
-		@Override protected BlockState createLegacyBlock(FluidState aState) {return Blocks.AIR.defaultBlockState();}
+		/** Блочная форма жидкости для движковых подмен: MapItem (пиксель карты, :197), Level.destroyBlock (:298),
+		 *  BucketItem, FallingBlockEntity и пр. Эталон — {@code WaterFluid.createLegacyBlock} (:97-99): жидкость
+		 *  отдаёт СВОЙ блок. У мировых жидкостей GT6 блочная форма живёт в реестре {@code FL.BLOCKS}
+		 *  ({@code BlockBaseFluid:110}); контент-жидкость без мировой формы — AIR (1:1: в 1.7.10 Fluid.setBlock
+		 *  не звался, см. fluidProperties). LEVEL ванильного эталона не переносим — у GT6-блока канал LEVEL мёртв
+		 *  (кванты в FLUID_META), defaultBlockState = полный источник. Flowing-плечо (BaseFlowingFluid.Flowing,
+		 *  block=null → AIR) недостижимо: FluidState GT6-блоков всегда source (BlockBaseFluid.getFluidState). */
+		@Override protected BlockState createLegacyBlock(FluidState aState) {
+			Block tBlock = gregapi.data.FL.BLOCKS.get(gregapi.data.FL.regName(this));
+			return tBlock == null ? Blocks.AIR.defaultBlockState() : tBlock.defaultBlockState();
+		}
 		@Override public boolean isSame(Fluid aFluid) {return aFluid == this || (mFlowingHolder != null && mFlowingHolder.isBound() && aFluid == mFlowingHolder.value());}
 		@Override public FluidType getFluidType() {return mType;}
 	}
