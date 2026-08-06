@@ -44,10 +44,6 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.Entity;
@@ -77,8 +73,10 @@ import static gregapi.data.CS.*;
  */
 public class MultiTileEntityChest extends TileEntityBase05Inventories implements IMTE_IsProvidingWeakPower, IMTE_IsProvidingStrongPower, IItemColorableRGB, ITileEntityDecolorable, ITileEntitySurface, IMTE_OnRegistrationClient, IMTE_OnRegistrationFirstClient, IMTE_SyncDataByte, IMTE_AddToolTips, IMTE_SetBlockBoundsBasedOnState, IMTE_GetSubItems, IMTE_SyncDataByteArray, IMTE_GetExplosionResistance, IMTE_GetBlockHardness, IMTE_GetComparatorInputOverride, IMTE_GetSelectedBoundingBoxFromPool, IMTE_GetCollisionBoundingBoxFromPool, IMTE_OnPlaced, IMTE_OnToolClick, IMTE_ItemFacing {
 	protected boolean mIsPainted = F, mIsTrapped = F;
-	protected int mRGBa = UNCOLORED;
-	protected byte mFacing = 3, mUsingPlayers = 0, oUsingPlayers = 0;
+	// BUG-092: mRGBa/mFacing public — их читает вынесенный клиентский рендерер (gregapi/render/MTEChestRenderer)
+	public int mRGBa = UNCOLORED;
+	public byte mFacing = 3;
+	protected byte mUsingPlayers = 0, oUsingPlayers = 0;
 
 	/** BUG-078: сундук крутит СВОЮ модель по {@code mFacing} (формула {@code COMPASS_FROM_SIDE*90 - 180}, мировая
 	 *  сторона 0..5, а не псевдо-facing {@code FACING_ROTATIONS}), поэтому величина item-формы своя — откалибрована
@@ -86,7 +84,9 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	 *  {@code MultiTileEntityRegistry.applyItemFacing} — тот же, что у машин и масстоража. */
 	@Override public byte getItemFacing() {return ITEM_CHEST_FACING;}
 	@Override public void setItemFacing(byte aFacing) {mFacing = aFacing;}
-	protected float mLidAngle = 0, oLidAngle = 0, mHardness = 6, mResistance = 3;
+	// BUG-092: mLidAngle/oLidAngle public — их читает вынесенный клиентский рендерер (gregapi/render/MTEChestRenderer)
+	public float mLidAngle = 0, oLidAngle = 0;
+	protected float mHardness = 6, mResistance = 3;
 	protected OreDictMaterial mMaterial = MT.NULL;
 	
 	/** Gets supplied via Default NBT. */
@@ -332,103 +332,19 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 		return T;
 	}
 	
-	private static MultiTileEntityRendererChest RENDERER;
+	// BUG-092 (дедикейт): спец-рендер/модель/state ВЫНЕСЕНЫ в gregapi/render/MTEChestRenderer — клиентские
+	// типы во вложенных классах/полях/телах методов common-MTE валили линковку класса на выделенном сервере
+	// (NoClassDefFoundError: BlockEntityRenderer при Class.newInstance) и обрывали ВЕСЬ Loader_MultiTileEntities
+	// на первой регистрации. Здесь остались только ленивые invokestatic-мосты: onRegistration*Client зовутся
+	// ТОЛЬКО на клиенте, а верификатор common-класса client-типов больше не видит (neo-эквивалент @SideOnly 1.7.10).
 
 	@Override
 	public void onRegistrationFirstClient(MultiTileEntityRegistry aRegistry, short aID) {
-		// было ClientRegistry.bindTileEntitySpecialRenderer (FML-диспетчер по классу TE; API мёртв, зеркало вырезано из
-		// рантайма) → тот же диспетч по классу в едином GT6-BER (MTE_TYPE один на все MTE, см. MultiTileEntityBER).
-		gregapi.render.MultiTileEntityBER.bindSpecialRenderer(getClass(), RENDERER = new MultiTileEntityRendererChest());
+		gregapi.render.MTEChestRenderer.bindFirst(getClass());
 	}
-	
+
 	@Override
 	public void onRegistrationClient(MultiTileEntityRegistry aRegistry, short aID) {
-		/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code new Identifier(namespace,path)} — конструктор
-		 * стал {@code private} в 26.1.2, фабрика {@code Identifier.fromNamespaceAndPath(namespace,path)}
-		 * (`neo-decompiled/net/minecraft/resources/Identifier.java:41`). */
-		RENDERER.mResources.put(mTextureName, new Identifier[] {Identifier.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistry.mNameInternal + "/" + mTextureName + ".colored.png"), Identifier.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistry.mNameInternal + "/" + mTextureName + ".plain.png")});
-	}
-
-	/**
-	 * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code TileEntitySpecialRenderer} (immediate-mode: GL11
-	 * push/pop-матрицы, {@code OpenGlHelper.glBlendFunc}, ручной {@code bindTexture}+{@code ModelBase}/
-	 * {@code ModelRenderer} с крутящейся крышкой сундука) — весь стек удалён в 26.1.2 (decisions/F3-render.md
-	 * §1). Замена — {@code BlockEntityRenderer<T,S>} нового API (`neo-decompiled/net/minecraft/client/
-	 * renderer/blockentity/BlockEntityRenderer.java:15-24`: {@code createRenderState()}+{@code submit(state,
-	 * PoseStack,SubmitNodeCollector,CameraRenderState)}, БЕЗ старого {@code render(...)}), эталон —
-	 * {@code InscriberRenderer.java:55-276} (F3-render.md §2.5). Реальная перерисовка крышки —
-	 * {@code CubeBuilder}/{@code submitCustomGeometry} по образцу эталона; тело {@code submit} ниже — no-op заглушка.
-	 */
-	/** Состояние кадра спец-рендера сундука (extract на main-thread, submit только читает). */
-	public static class MTEChestRenderState extends BlockEntityRenderState {
-		public float mLidAngleRad; public byte mChestFacing; public int mChestRGBa; public Identifier[] mChestTextures;
-	}
-
-	public static class MultiTileEntityRendererChest implements BlockEntityRenderer<MultiTileEntityChest, MTEChestRenderState> {
-		private static final MultiTileEntityModelChest sModel = new MultiTileEntityModelChest();
-		public final Map<String, Identifier[]> mResources = new HashMap<>();
-
-		@Override
-		public MTEChestRenderState createRenderState() {
-			return new MTEChestRenderState();
-		}
-
-		@Override
-		public void extractRenderState(MultiTileEntityChest aChest, MTEChestRenderState aState, float aPartialTick, net.minecraft.world.phys.Vec3 aCameraPos, net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay aBreakProgress) {
-			BlockEntityRenderer.super.extractRenderState(aChest, aState, aPartialTick, aCameraPos, aBreakProgress);
-			// 1.7.10 renderTileEntityAt: интерполяция крышки + кубическая кривая — дословно.
-			double tLidAngle = 1 - (aChest.oLidAngle + (aChest.mLidAngle - aChest.oLidAngle) * aPartialTick); tLidAngle = -(((1 - tLidAngle*tLidAngle*tLidAngle) * Math.PI) / 2);
-			aState.mLidAngleRad = (float)tLidAngle;
-			aState.mChestFacing = aChest.mFacing; // BUG-078: для item-формы facing уже подставлен центром applyItemFacing (величина — getItemFacing) // BUG-038: item-форма (detached-TE) — калибруемый facing, чтобы сундук смотрел замком к камере
-			aState.mChestRGBa = aChest.mRGBa;
-			aState.mChestTextures = mResources.get(aChest.mTextureName);
-		}
-
-		@Override
-		public void submit(MTEChestRenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
-			Identifier[] tLocation = aState.mChestTextures;
-			if (tLocation == null || tLocation.length < 2) return;
-			// матрицы 1:1 с 1.7.10 (translate(0,1,1)+scale(1,-1,-1) — модель и текстуры в перевёрнутой системе 1.7.10)
-			aPoseStack.pushPose();
-			aPoseStack.translate(0, 1, 1);
-			aPoseStack.scale(1, -1, -1);
-			aPoseStack.translate(0.5f, 0.5f, 0.5f);
-			aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(COMPASS_FROM_SIDE[aState.mChestFacing] * 90 - 180));
-			aPoseStack.translate(-0.5f, -0.5f, -0.5f);
-			short[] tRGBa = UT.Code.getRGBaArray(aState.mChestRGBa);
-			// пасс 1: .colored.png с тинтом mRGBa; пасс 2: .plain.png белым (blend+alpha 1.7.10 → entityCutout)
-			sModel.submit(aNodes, aPoseStack, tLocation[0], aState.mLidAngleRad, aState.lightCoords, net.minecraft.util.ARGB.color(255, tRGBa[0], tRGBa[1], tRGBa[2]));
-			sModel.submit(aNodes, aPoseStack, tLocation[1], aState.mLidAngleRad, aState.lightCoords, -1);
-			aPoseStack.popPose();
-		}
-	}
-
-	/** Модель сундука 1:1 (боксы/rotationPoints/texOffs дословно из 1.7.10 ModelBase-версии; ModelPart — neo-носитель ModelRenderer). */
-	public static class MultiTileEntityModelChest {
-		private final net.minecraft.client.model.geom.ModelPart mRoot, mLid, mKnob;
-
-		public MultiTileEntityModelChest() {
-			net.minecraft.client.model.geom.builders.MeshDefinition tMesh = new net.minecraft.client.model.geom.builders.MeshDefinition();
-			net.minecraft.client.model.geom.builders.PartDefinition tRoot = tMesh.getRoot();
-			tRoot.addOrReplaceChild("lid",    net.minecraft.client.model.geom.builders.CubeListBuilder.create().texOffs(0,  0).addBox( 0, -5, -14, 14,  5, 14), net.minecraft.client.model.geom.PartPose.offset(1, 7, 15));
-			tRoot.addOrReplaceChild("knob",   net.minecraft.client.model.geom.builders.CubeListBuilder.create().texOffs(0,  0).addBox(-1, -2, -15,  2,  4,  1), net.minecraft.client.model.geom.PartPose.offset(8, 7, 15));
-			tRoot.addOrReplaceChild("bottom", net.minecraft.client.model.geom.builders.CubeListBuilder.create().texOffs(0, 19).addBox( 0,  0,   0, 14, 10, 14), net.minecraft.client.model.geom.PartPose.offset(1, 6, 1));
-			mRoot = net.minecraft.client.model.geom.builders.LayerDefinition.create(tMesh, 64, 64).bakeRoot();
-			mLid  = mRoot.getChild("lid");
-			mKnob = mRoot.getChild("knob");
-		}
-
-		public void submit(SubmitNodeCollector aNodes, PoseStack aPoseStack, Identifier aTexture, float aLidAngle, int aLight, int aColor) {
-			aNodes.submitCustomGeometry(aPoseStack, net.minecraft.client.renderer.rendertype.RenderTypes.entityCutout(aTexture), (tPose, tBuffer) -> {
-				// BUG-059: угол крышки ставится ВНУТРИ отложенной лямбды отрисовки. Модель одна (static) на все
-				// сундуки; постановка угла снаружи (в момент submit) означала «в кадре все крышки рисуются углом
-				// последнего сундука» — открытие одного анимировало все крышки комнаты / свой угол терялся.
-				// 1.7.10 был immediate-mode (записал угол → тут же нарисовал) — возвращаем ту же семантику.
-				mKnob.xRot = mLid.xRot = aLidAngle;
-				PoseStack tStack = new PoseStack();
-				tStack.mulPose(tPose.pose());
-				mRoot.render(tStack, tBuffer, aLight, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, aColor);
-			});
-		}
+		gregapi.render.MTEChestRenderer.bindTexture(mTextureName, aRegistry.mNameInternal);
 	}
 }

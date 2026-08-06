@@ -242,6 +242,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6huskprobe.flag")) gt6HuskProbeTick(aEvent.getServer());
 	// [GT6-HOLEYARD] ДВОР ЖИВОЙ ПРИЁМКИ захода «три дыры»: нефть/зелья + пила по новым породам + шелуха — снять после приёмки
 		if (gregapi.data.CS.probeFlag("gt6holeyard.flag")) gt6HoleYardTick(aEvent.getServer());
+	// [GT6-DEDIPROBE] дедикейт-репорт «нет камней и палок»: серверный счёт MTE-BE спавн-чанков БЕЗ игрока — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6dediprobe.flag")) gt6DediProbeTick(aEvent.getServer());
 	// [GT6-TODOPROBE] судья правок захода PORT-TODO 43->28 (канал иконки, чёрный песок) + площадка для игрока
 		if (gregapi.data.CS.probeFlag("gt6todoprobe.flag")) gt6TodoProbeTick(aEvent.getServer());
 	// [GT6-FLUIDHEIGHT] BUG-086: измеритель высоты растёкшейся жидкости — порт против формулы оригинала 1.7.10
@@ -9397,6 +9399,61 @@ public final class GT6Probes {
 			sYPSeq.judge("§3 ХОЛОДНЫЙ: камень в соседней трубе висит", tLevel.getBlockState(sYPColdTube).getBlock() == net.minecraft.world.level.block.Blocks.STONE, "stone", String.valueOf(tLevel.getBlockState(sYPColdTube)));
 		} else sYPSeq.judge("§3 ГРАВИТАЦИЯ: представитель с mGravity найден в реестре", false, "PrefixBlock.mGravity", "нет");
 		sYPSeq.done();
+	}
+
+	// ==========================================================================================================
+	// [GT6-DEDIPROBE] — репорт «при создании мира через сервер нет камней и палок». Разводит две гипотезы
+	// СЕРВЕРНОЙ стороной, БЕЗ игрока (дедикейт): H2 «worldgen не генерит» ↔ H1 «генерит, но клиент не видит».
+	// На тике 400 (спавн-зона пре-генерирована) считает BE по классам в спавн-чанках ±8; Rock/Sticks — MTE-BE.
+	// Затем сервер сам останавливается. Снять при уборке фазы.
+	// ==========================================================================================================
+	private static int sDediTick = -1;
+	public static void gt6DediProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sDediTick++;
+		if (sDediTick != 400) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			ServerLevel tLevel = aServer.overworld();
+			BlockPos tSpawn = tLevel.getRespawnData().pos(); // neo: спавн-точка через LevelData.RespawnData (getSharedSpawnPos удалён)
+			java.util.TreeMap<String, Integer> tCounts = new java.util.TreeMap<>();
+			int tChunks = 0, tMTEBlocks = 0;
+			int tSCX = tSpawn.getX() >> 4, tSCZ = tSpawn.getZ() >> 4;
+			for (int dx = -4; dx <= 4; dx++) for (int dz = -4; dz <= 4; dz++) {
+				// принудительная ГЕНЕРАЦИЯ (новый дедикейт спавн-чанки не держит — getChunkNow давал 0 чанков = пустой замер)
+				net.minecraft.world.level.chunk.ChunkAccess tCA = tLevel.getChunk(tSCX + dx, tSCZ + dz);
+				if (!(tCA instanceof net.minecraft.world.level.chunk.LevelChunk tChunk)) continue;
+				tChunks++;
+				for (net.minecraft.world.level.block.entity.BlockEntity tBE : tChunk.getBlockEntities().values())
+					tCounts.merge(tBE.getClass().getSimpleName(), 1, Integer::sum);
+				// блоки MultiTileEntityBlock по поверхностной полосе (Y спавна ±16) — ловит и блоки, потерявшие BE
+				for (int bx = 0; bx < 16; bx += 2) for (int bz = 0; bz < 16; bz += 2) for (int by = tSpawn.getY() - 16; by <= tSpawn.getY() + 16; by += 1) {
+					if (tChunk.getBlockState(new BlockPos((tSCX + dx) * 16 + bx, by, (tSCZ + dz) * 16 + bz)).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock) tMTEBlocks++;
+				}
+			}
+			O.println("========== [GT6-DEDIPROBE] серверный счёт спавн-зоны (чанков " + tChunks + ", спавн " + tSpawn.toShortString() + ") ==========");
+			for (var tE : tCounts.entrySet()) O.println("[GT6-DEDIPROBE] BE " + tE.getKey() + " = " + tE.getValue());
+			O.println("[GT6-DEDIPROBE] блоков MultiTileEntityBlock в полосе Y±16 (шаг 2): " + tMTEBlocks);
+			O.println("[GT6-DEDIPROBE] ВЕРДИКТ: " + (tChunks == 0 ? "ЗАМЕР НЕ УДАЛСЯ — 0 чанков, судить нечего"
+				: (tCounts.keySet().stream().anyMatch(n -> n.contains("Rock") || n.contains("Stick")) || tMTEBlocks > 0
+				? "H1 — на СЕРВЕРЕ камни/палки ЕСТЬ (дефект синка клиенту)" : "H2 — на сервере их НЕТ (worldgen не генерит на дедикейте)")));
+			// ---- ДИАГНОСТИКА H2: состояние worldgen-списков и ручная постановка Rock ----
+			O.println("[GT6-DEDIPROBE-DIAG] GEN_GT=" + gregapi.data.CS.GEN_GT.size() + " GEN_OVERWORLD=" + gregapi.data.CS.GEN_OVERWORLD.size());
+			for (gregapi.worldgen.WorldgenObject tWG : gregapi.data.CS.GEN_OVERWORLD)
+				if (tWG.getClass().getSimpleName().contains("Rocks") || tWG.getClass().getSimpleName().contains("Sticks") || tWG.getClass().getSimpleName().contains("FluidSpring"))
+					O.println("[GT6-DEDIPROBE-DIAG] в GEN_OVERWORLD: " + tWG.getClass().getSimpleName() + " '" + tWG.mName + "' enabled(overworld)=" + tWG.enabled(tLevel, 0));
+			var tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			O.println("[GT6-DEDIPROBE-DIAG] MTE-реестр=" + (tReg == null ? "NULL" : "жив, регистраций " + tReg.mRegistrations.size()));
+			if (tReg != null) {
+				BlockPos tTry = new BlockPos(tSpawn.getX(), tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, tSpawn.getX(), tSpawn.getZ()), tSpawn.getZ());
+				boolean tPlaced = false; Throwable tExc = null;
+				try {tPlaced = tReg.mBlock.placeBlock(tLevel, tTry.getX(), tTry.getY(), tTry.getZ(), gregapi.data.CS.SIDE_UNKNOWN, (short)32757, null, F, T);}
+				catch(Throwable e) {tExc = e;}
+				O.println("[GT6-DEDIPROBE-DIAG] ручной placeBlock Rock @" + tTry.toShortString() + ": " + (tExc != null ? "EXC " + tExc : tPlaced + ", блок=" + tLevel.getBlockState(tTry).getBlock() + ", BE=" + tLevel.getBlockEntity(tTry)));
+				if (tExc != null) tExc.printStackTrace(O);
+			}
+			O.println("========== [GT6-DEDIPROBE] DONE ==========");
+		} catch(Throwable e) {e.printStackTrace(O);}
+		aServer.halt(F);
 	}
 
 	// ==========================================================================================================
