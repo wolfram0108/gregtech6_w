@@ -620,6 +620,30 @@ public class GT_API extends Abstract_Mod {
 			sCurrentServerForRecipeScan = tServer;
 			try {for (Runnable tScan : DEFERRED_RECIPE_SCAN) try {tScan.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_RECIPE_SCAN.clear();}
 			finally {sCurrentServerForRecipeScan = null;}
+			// BUG-091-хвост, датапак-плечо CR.remove (см. CR.DATAPACK_REMOVALS): в 1.7.10 remove(...) удалял и
+			// ВАНИЛЬНЫЕ рецепты живого CraftingManager (бревно→4 доски и т.п.); их neo-наследники в датапаке
+			// подавляются здесь ТЕМ ЖЕ судом, что 1.7.10 — matches() накопленной сеткой, — тем же центром
+			// removeDatapackRecipes, что Replace. Собственный GT6CraftingDispatcher исключён (он матчится на
+			// те же сетки — подавили бы сами себя).
+			if (tServer != null) try {
+				java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> tRemove = new java.util.HashSet<>();
+				for (net.minecraft.world.item.ItemStack[] tGrid : gregapi.util.CR.DATAPACK_REMOVALS) {
+					net.minecraft.world.item.crafting.CraftingInput tInput = gregapi.util.CR.crafting(tGrid);
+					for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : tServer.getRecipeManager().recipeMap().values()) {
+						if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
+						if (tHolder.value() instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
+						try {if (tCraft.matches(tInput, tServer.overworld())) tRemove.add(tHolder.id());} catch(Throwable e) {/*чужой рецепт упал на matches — не наш суд*/}
+					}
+				}
+				gregapi.util.CR.DATAPACK_REMOVALS.clear();
+				// Перезаход в одиночке = НОВЫЙ MinecraftServer со свежим (полным) датапаком, а очереди сканов
+				// и DATAPACK_REMOVALS уже осушены первым стартом — накопленный набор ключей переприменяется
+				// ЗДЕСЬ на каждом LevelEvent.Load (идемпотентно; /reload покрыт OnDatapackSyncEvent отдельно).
+				// До этой строки подавление жило только в первом сервере сессии — релог возвращал ваниль
+				// (симптом игрока: «бревно рукой снова даёт 4»; касалось и 21 инструмент-подавления Replace).
+				tRemove.addAll(SUPPRESSED_DATAPACK_RECIPES);
+				removeDatapackRecipes(tServer, tRemove);
+			} catch(Throwable e) {e.printStackTrace(ERR);}
 			// BUG-054: пересборка propertySets ПОСЛЕ наполнения FurnaceRecipes (drain выше) — и после подавления
 			// датапак-рецептов сканом (той же пересборкой соберутся дисплеи без подавленных). Идемпотентен.
 			if (tServer != null) tServer.getRecipeManager().finalizeRecipeLoading(tLevel.enabledFeatures());

@@ -240,6 +240,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6woodprobe.flag")) gt6WoodProbeTick(aEvent.getServer());
 	// [GT6-HUSKPROBE] BUG-057-хвост: судья самоочистки шелухи (стаб без identity → air) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6huskprobe.flag")) gt6HuskProbeTick(aEvent.getServer());
+	// [GT6-HOLEYARD] ДВОР ЖИВОЙ ПРИЁМКИ захода «три дыры»: нефть/зелья + пила по новым породам + шелуха — снять после приёмки
+		if (gregapi.data.CS.probeFlag("gt6holeyard.flag")) gt6HoleYardTick(aEvent.getServer());
 	// [GT6-TODOPROBE] судья правок захода PORT-TODO 43->28 (канал иконки, чёрный песок) + площадка для игрока
 		if (gregapi.data.CS.probeFlag("gt6todoprobe.flag")) gt6TodoProbeTick(aEvent.getServer());
 	// [GT6-FLUIDHEIGHT] BUG-086: измеритель высоты растёкшейся жидкости — порт против формулы оригинала 1.7.10
@@ -9398,15 +9400,123 @@ public final class GT6Probes {
 	}
 
 	// ==========================================================================================================
+	// [GT6-HOLEYARD] ДВОР ЖИВОЙ ПРИЁМКИ захода «три дыры» (глаз игрока; стенд только СТРОИТ и выдаёт, не судит):
+	//   §1 BUG-090 — нефтяной бассейн (OilMedium) + еда с GT6-эффектами в сундуке + insanity на игрока (звуки);
+	//   §2 BUG-091 — верстак + сундук с пилой и брёвнами всех новых пород;
+	//   §3 BUG-057-хвост — пара «живой GT-блок / шелуха-призрак»: после выхода в меню (автовход вернёт сам)
+	//      призрак обязан исчезнуть, живой — остаться.
+	// Снять после приёмки.
+	// ==========================================================================================================
+	private static int sHoleYardTick = -1;
+	private static boolean sHoleYardBuilt = false;
+
+	public static void gt6HoleYardTick(net.minecraft.server.MinecraftServer aServer) {
+		sHoleYardTick++;
+		if (sHoleYardBuilt || aServer.getPlayerList().getPlayers().isEmpty() || sHoleYardTick < 60) return;
+		sHoleYardBuilt = true;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		BlockPos tBase = tPlayer.blockPosition();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			// ---------- §1 нефтяной бассейн: чаша 5×5, нефть 3×3 (OilMedium, мета 0 = источник) ----------
+			BlockPos tPool = tBase.offset(6, 0, 0);
+			gregapi.block.fluid.BlockBaseFluid tOil = gregapi.data.CS.BlocksGT.OilMedium;
+			for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
+				boolean tRim = Math.abs(dx) == 2 || Math.abs(dz) == 2;
+				tLevel.setBlock(tPool.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tLevel.setBlock(tPool.offset(dx, 0, dz), tRim ? net.minecraft.world.level.block.Blocks.STONE.defaultBlockState() : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				tLevel.setBlock(tPool.offset(dx, 1, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			}
+			if (tOil != null) for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+				gregapi.util.WD.set(tLevel, tPool.getX() + dx, tPool.getY(), tPool.getZ() + dz, tOil, 0, 3, F);
+			// ---------- §2 верстак + сундук с пилой и брёвнами ----------
+			BlockPos tCraft = tBase.offset(3, 0, 3);
+			tLevel.setBlock(tCraft, net.minecraft.world.level.block.Blocks.CRAFTING_TABLE.defaultBlockState(), 3);
+			BlockPos tChest = tCraft.offset(1, 0, 0);
+			tLevel.setBlock(tChest, net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState(), 3);
+			if (tLevel.getBlockEntity(tChest) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity tBE) {
+				int i = 0;
+				ItemStack[] tKit = {
+					gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.SAW, gregapi.data.MT.Steel, gregapi.data.MT.Steel),
+					new ItemStack(net.minecraft.world.level.block.Blocks.CHERRY_LOG.asItem(), 16),
+					new ItemStack(net.minecraft.world.level.block.Blocks.MANGROVE_LOG.asItem(), 16),
+					new ItemStack(net.minecraft.world.level.block.Blocks.BAMBOO_BLOCK.asItem(), 16),
+					new ItemStack(net.minecraft.world.level.block.Blocks.CRIMSON_STEM.asItem(), 16),
+					new ItemStack(net.minecraft.world.level.block.Blocks.WARPED_STEM.asItem(), 16),
+					new ItemStack(net.minecraft.world.level.block.Blocks.OAK_LOG.asItem(), 16),
+					new ItemStack(net.minecraft.world.level.block.Blocks.CHERRY_PLANKS.asItem(), 16),
+					gregapi.data.IL.Food_Lemon.get(8),          // conductive
+					gregapi.data.IL.Food_Banana.get(8),         // slippery
+					gregapi.data.IL.Food_ChiliChips.get(8),     // flammable
+					gregapi.data.IL.Food_Egg_Scrambled.get(8),  // slippery+sticky
+					new ItemStack(net.minecraft.world.item.Items.FLINT_AND_STEEL),
+				};
+				for (ItemStack tStack : tKit) if (gregapi.util.ST.valid(tStack)) tBE.setItem(i++, gregapi.util.ST.copy(tStack));
+			}
+			// ---------- §3 живой GT-блок и шелуха-призрак: расчищенная площадка, постаменты, витрина ----------
+			BlockPos tPad = tBase.offset(-6, 0, 0);
+			for (int dx = -2; dx <= 2; dx++) for (int dz = -3; dz <= 3; dz++) {
+				tLevel.setBlock(tPad.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.POLISHED_ANDESITE.defaultBlockState(), 3);
+				for (int dy = 0; dy <= 3; dy++) tLevel.setBlock(tPad.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			}
+			BlockPos tLive = tPad.offset(0, 1, -2), tHusk = tPad.offset(0, 1, 2); // на обсидиановых постаментах
+			tLevel.setBlock(tLive.below(), net.minecraft.world.level.block.Blocks.OBSIDIAN.defaultBlockState(), 3);
+			tLevel.setBlock(tHusk.below(), net.minecraft.world.level.block.Blocks.OBSIDIAN.defaultBlockState(), 3);
+			// витрина вокруг призрака: стекло с 4 сторон — видно ПУСТОЙ куб, внутри которого невидимый блок
+			for (net.minecraft.core.Direction tDir : new net.minecraft.core.Direction[]{net.minecraft.core.Direction.NORTH, net.minecraft.core.Direction.SOUTH, net.minecraft.core.Direction.EAST, net.minecraft.core.Direction.WEST})
+				tLevel.setBlock(tHusk.relative(tDir), net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState(), 3);
+			var tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			gregapi.block.multitileentity.MultiTileEntityContainer tContainer = null;
+			if (tReg != null) for (var tRegn : tReg.mRegistrations) {
+				tContainer = tReg.getNewTileEntityContainer(tLevel, tLive.getX(), tLive.getY(), tLive.getZ(), tRegn.mID, null);
+				if (tContainer != null && tContainer.mTileEntity != null) break;
+			}
+			if (tContainer != null && tContainer.mTileEntity != null) {
+				gregapi.util.WD.set(tLevel, tLive.getX(), tLive.getY(), tLive.getZ(), tContainer.mBlock, tContainer.mBlockMetaData, 3, F);
+				tLevel.setBlockEntity(tContainer.mTileEntity);
+				gregapi.util.WD.set(tLevel, tHusk.getX(), tHusk.getY(), tHusk.getZ(), tContainer.mBlock, tContainer.mBlockMetaData, 3, F);
+				var tStubHusk = new gregapi.tileentity.base.TileEntityLoaderStub(tHusk, tLevel.getBlockState(tHusk));
+				tStubHusk.mLoadedNBT = gregapi.util.UT.NBT.make();
+				tLevel.setBlockEntity(tStubHusk);
+			}
+			// ---------- маркеры-столбы (светокамень на +4..+6 над станцией — видно издалека) ----------
+			for (BlockPos tMark : new BlockPos[]{tPool, tCraft, tHusk})
+				for (int dy = 4; dy <= 6; dy++) tLevel.setBlock(tMark.above(dy), net.minecraft.world.level.block.Blocks.GLOWSTONE.defaultBlockState(), 3);
+			// ---------- инструкции + insanity на игрока ----------
+			gt6BLSay(tPlayer, "§e=== ДВОР ПРИЁМКИ «ТРИ ДЫРЫ» — каждая станция под СТОЛБОМ СВЕТОКАМНЯ ===");
+			gt6BLSay(tPlayer, "§b§1 НЕФТЬ — бассейн на XYZ " + tPool.getX() + " " + tPool.getY() + " " + tPool.getZ() + ": встаньте в нефть — эффекты");
+			gt6BLSay(tPlayer, "§bFlammable/Slippery/Blindness; слегка скользит; предмет может выскользнуть из рук (~1/300 в тик).");
+			gt6BLSay(tPlayer, "§bОгниво в нефти (в выживании) — огонь ровно вдвое больнее обычного.");
+			gt6BLSay(tPlayer, "§b§1б ЕДА в сундуке: лимон=Conductive, банан=Slippery, чили-чипсы=Flammable, яичница=Slippery+Sticky (шанс 30-90%).");
+			gt6BLSay(tPlayer, "§d§1в INSANITY наложен на вас на ~60 секунд: фантомные жуткие звуки из случайных точек.");
+			gt6BLSay(tPlayer, "§b§2 ПОРОДЫ — верстак и сундук на XYZ " + tCraft.getX() + " " + tCraft.getY() + " " + tCraft.getZ() + ": пила+бревно породы → доски породы;");
+			gt6BLSay(tPlayer, "§bпила НАД вишнёвой доской (вертикально) → палки Sakura; пила СБОКУ (горизонтально) → 2 слэба.");
+			gt6BLSay(tPlayer, "§b§3 ПРИЗРАК — площадка на XYZ " + tPad.getX() + " " + tPad.getY() + " " + tPad.getZ() + ": два обсидиановых постамента.");
+			gt6BLSay(tPlayer, "§bНа одном — ВИДИМЫЙ живой GT-блок (" + tLive.getX() + " " + tLive.getY() + " " + tLive.getZ() + "). На втором, В СТЕКЛЯННОЙ РАМКЕ (" + tHusk.getX() + " " + tHusk.getY() + " " + tHusk.getZ() + ") — призрак:");
+			gt6BLSay(tPlayer, "§bблок НЕВИДИМ (это и есть симптом шелухи), но наведите прицел внутрь рамки — Jade покажет его имя, и внутрь не пройти.");
+			gt6BLSay(tPlayer, "§bВыйдите в главное меню и подождите: автовход вернёт в мир — призрак ИСЧЕЗНЕТ (Jade молчит, рамка проходима), живой останется.");
+			O.println("[GT6-HOLEYARD] двор построен: нефть=" + (tOil != null) + " @" + tPool.toShortString() + ", верстак @" + tCraft.toShortString() + ", MTE-пара=" + (tContainer != null && tContainer.mTileEntity != null) + " @" + tLive.toShortString() + "/" + tHusk.toShortString());
+			gregapi.util.UT.Entities.applyPotion(tPlayer, -7, 1200, 1, F); // insanity amp1 (как holywater) — звуковая приёмка
+		} catch(Throwable e) {e.printStackTrace(O);}
+	}
+
+	// ==========================================================================================================
 	// [GT6-WOODPROBE] BUG-091 — судья новых ванильных пород в словаре древесины. Судит РЕАЛЬНЫМ путём
 	// движка (GT6CraftingDispatcher.matches/assemble, приём gt6craftprobe/M-52): пила + бревно каждой новой
 	// породы обязаны дать доски ЭТОЙ породы; позитив — дуб (старый словарь), негатив — камень (молчит).
 	// Раскладка GT-рецепта заранее не известна — перебираются 4 варианта 2-слотовой сетки. Снять при уборке фазы.
 	// ==========================================================================================================
-	private static boolean sWoodProbeDone = F;
+	// по одному прогону НА КАЖДЫЙ сервер (слабая ссылка): релог в одиночке пересоздаёт сервер со свежим
+	// датапаком — судья обязан прогоняться заново, иначе класс «подавление не пережило релог» невидим.
+	// После первого прогона судья САМ командует клиенту relog (приём BUG-002/MTEAUDIT: disconnectFromWorld +
+	// перевзвод автовхода) — второй прогон на новом сервере судит переприменение подавления.
+	private static java.lang.ref.WeakReference<Object> sWoodProbeServer = new java.lang.ref.WeakReference<>(null);
+	public static volatile int sWoodProbeClientCmd = 0;
+	private static int sWoodProbeRuns = 0;
 	public static void gt6WoodProbeTick(net.minecraft.server.MinecraftServer aServer) {
-		if (sWoodProbeDone || aServer.getPlayerList().getPlayers().isEmpty()) return;
-		sWoodProbeDone = T;
+		if (sWoodProbeServer.get() == aServer || aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sWoodProbeServer = new java.lang.ref.WeakReference<>(aServer);
 		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
 		ServerLevel tLevel = tPlayer.level();
 		java.io.PrintStream O = gregapi.data.CS.OUT;
@@ -9449,6 +9559,21 @@ public final class GT6Probes {
 			boolean tSlabOk = !tPlankSlab.isEmpty() && tPlankSlab.getItem() == net.minecraft.world.level.block.Blocks.CHERRY_SLAB.asItem() && tPlankSlab.getCount() == 2;
 			O.println("[GT6-WOODPROBE] §СЛЭБЫ вишнёвая доска, горизонталь \"vP\": выход=" + (tPlankSlab.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tPlankSlab) + " x" + tPlankSlab.getCount()) + (tSlabOk ? " => PASS" : " => FAIL"));
 			if (tSlabOk) tPass++; else tFail++;
+			// §РУКОЙ (BUG-091-хвост, класс «CR.remove не достаёт до датапака»): одиночное бревно РЕАЛЬНЫМ каналом
+			// верстака (RecipeManager.getRecipeFor — первый матчащийся рецепт сервера) обязано дать GT-выход
+			// mPlankCountHand=2 (NERFED_WOOD=T дефолт), а не ванильные 4 — и для НОВОЙ породы, и для СТАРОЙ (дуб).
+			Object[][] tHandCases = {
+				{"§РУКОЙ вишня",  net.minecraft.world.level.block.Blocks.CHERRY_LOG, net.minecraft.world.level.block.Blocks.CHERRY_PLANKS},
+				{"§РУКОЙ дуб",    net.minecraft.world.level.block.Blocks.OAK_LOG,    net.minecraft.world.level.block.Blocks.OAK_PLANKS},
+			};
+			for (Object[] tCase : tHandCases) {
+				var tHandGrid = net.minecraft.world.item.crafting.CraftingInput.of(1, 1, java.util.List.of(new ItemStack(((net.minecraft.world.level.block.Block)tCase[1]).asItem())));
+				var tFound = aServer.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, tHandGrid, tLevel);
+				ItemStack tHandOut = tFound.isPresent() ? ((net.minecraft.world.item.crafting.CraftingRecipe)tFound.get().value()).assemble(tHandGrid) : ItemStack.EMPTY;
+				boolean tHandOk = !tHandOut.isEmpty() && tHandOut.getItem() == ((net.minecraft.world.level.block.Block)tCase[2]).asItem() && tHandOut.getCount() == 2;
+				O.println("[GT6-WOODPROBE] " + tCase[0] + " (без пилы, канал RecipeManager): выход=" + (tHandOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tHandOut) + " x" + tHandOut.getCount()) + " рецепт=" + tFound.map(h -> h.id().identifier().toString()).orElse("нет") + (tHandOk ? " => PASS" : " => FAIL (ожидалось x2)"));
+				if (tHandOk) tPass++; else tFail++;
+			}
 			// центр словаря заполнен (WOODS/PLANKS) — все 5 пород
 			boolean tDict = gregapi.wooddict.WoodDictionary.WOODS.get(net.minecraft.world.level.block.Blocks.CHERRY_LOG, 0) != null
 				&& gregapi.wooddict.WoodDictionary.WOODS.get(net.minecraft.world.level.block.Blocks.MANGROVE_LOG, 0) != null
@@ -9458,7 +9583,9 @@ public final class GT6Probes {
 			O.println("[GT6-WOODPROBE] §ЦЕНТР WoodDictionary.WOODS содержит все 5 новых пород: " + (tDict ? "=> PASS" : "=> FAIL"));
 			if (tDict) tPass++; else tFail++;
 		} catch(Throwable e) {e.printStackTrace(O); tFail++;}
-		O.println("========== [GT6-WOODPROBE] DONE (pass=" + tPass + " fail=" + tFail + ") ==========");
+		sWoodProbeRuns++;
+		O.println("========== [GT6-WOODPROBE] DONE (pass=" + tPass + " fail=" + tFail + ", прогон #" + sWoodProbeRuns + (sWoodProbeRuns == 1 ? ", сейчас РЕЛОГ — судим переприменение подавления на новом сервере" : ", после релога") + ") ==========");
+		if (sWoodProbeRuns == 1) sWoodProbeClientCmd = 2;
 	}
 
 	/** Перебор 4 раскладок 2-слотовой сетки (форма GT-рецепта — деталь; судится функция «пила+бревно=доски»). */

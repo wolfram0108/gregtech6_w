@@ -37,6 +37,21 @@ public final class GT6ProbesClient {
 		} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-MTEAUDIT] клиент EXC " + e); e.printStackTrace(gregapi.data.CS.ERR);}
 	}
 
+	// [GT6-WOODPROBE] BUG-091-хвост, клиентская половина: relog по команде серверного судьи (тот же приём
+	// BUG-002/MTEAUDIT выше — disconnectFromWorld + перевзвод автовхода wgautoworld). Снять при уборке фазы.
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onWoodProbeClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (!gregapi.data.CS.probeFlag("gt6woodprobe.flag")) return;
+		if (gregapi.GT6Probes.sWoodProbeClientCmd != 2) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		try {
+			gregapi.GT6Probes.sWoodProbeClientCmd = 0;
+			mAutoWorldTriggered = false; // перевзвод автовхода: на TitleScreen wgautoworld снова войдёт в мир
+			gregapi.data.CS.OUT.println("[GT6-WOODPROBE] клиент: relog (disconnectFromWorld -> автоперевход)");
+			tMC.disconnectFromWorld(net.minecraft.network.chat.Component.literal("[GT6-WOODPROBE] relog"));
+		} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-WOODPROBE] клиент EXC " + e); e.printStackTrace(gregapi.data.CS.ERR);}
+	}
+
 	// [GT6-UVPROBE] BUG-061, клиентская половина: САМ ЗАМЕР. Рендер живёт только на клиенте, поэтому сервер лишь
 	// строит структуру и передаёт координаты, а квады читаются здесь — РЕАЛЬНЫМ путём рендерера секции: та же модель
 	// из ModelManager, тот же collectParts с живыми level/pos/state. Судится координата, а не картинка: лежит ли UV

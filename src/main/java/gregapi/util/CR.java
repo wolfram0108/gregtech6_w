@@ -692,6 +692,14 @@ public class CR {
 	 */
 	public static void delate(ModData aMod, String aName, int aMetaData, int... aOtherMetaData) {Item aItem = ST.item(aMod, aName); if (aItem == null) return; delate(ST.make(aItem, 1, aMetaData)); for (int tMetaData : aOtherMetaData) delate(ST.make(aItem, 1, tMetaData));}
 	
+	/** BUG-091-хвост, класс «CR.remove не достаёт до датапака»: в 1.7.10 remove(...) удалял матчащийся рецепт
+	 *  из ЖИВОГО CraftingManager — включая ВАНИЛЬНЫЕ (например, бревно→4 доски, Loader_Recipes_Woods:182);
+	 *  в neo ваниль живёт в датапаке, а буфер GT6 её не содержит — датапак-плечо удаления терялось молча
+	 *  (симптом: при NERFED_WOOD бревно рукой давало ванильные 4 вместо GT-двух). Сетки всех remove-вызовов
+	 *  копятся здесь и на окне recipe-scan подавляют матчащиеся датапак-рецепты тем же центром
+	 *  {@code GT_API.removeDatapackRecipes}, что и Replace (дренаж — GT_API.onLevelLoadEarlyItemInit). */
+	public static final List<ItemStack[]> DATAPACK_REMOVALS = new ArrayListNoNulls<>();
+
 	/**
 	 * Removes a Crafting Recipe and gives you the former output of it.
 	 * @param aRecipe The content of the Crafting Grid as ItemStackArray with length 9
@@ -699,6 +707,7 @@ public class CR {
 	 */
 	public static ItemStack remove(ItemStack... aRecipe) {
 		if (!ST.hasValid(aRecipe)) return null;
+		DATAPACK_REMOVALS.add(aRecipe.clone());
 		ItemStack rReturn = null, tReturn = null;
 		CraftingInput aCrafting = crafting(aRecipe);
 		List<ICraftingRecipeGT> tList = list();
