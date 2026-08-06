@@ -289,6 +289,17 @@ public class OreDictionary {
 		for (net.minecraft.world.level.block.Block tStair : new net.minecraft.world.level.block.Block[]{Blocks.OAK_STAIRS, Blocks.SPRUCE_STAIRS, Blocks.BIRCH_STAIRS, Blocks.JUNGLE_STAIRS, Blocks.ACACIA_STAIRS, Blocks.DARK_OAK_STAIRS}) tExclusions.add(tStair.asItem());
 		tExclusions.add(Blocks.GLASS_PANE.asItem());
 
+		// F4 роль-C, правило коллизии (без него ore-версия СТИРАЕТ породу/цвет выхода — симптом игрока: из еловых
+		// досок крафтилась АКАЦИЕВАЯ дверь). Замена ингредиента на ore-ключ делает сетку менее специфичной; если после
+		// этого два разных ванильных рецепта становятся неразличимы по входу, а выходы у них разные, — крафт даёт
+		// произвольный из них (побеждает первый в буфере). В 1.7.10 Грег гасил ровно это, но СПИСКОМ (tExclusions:
+		// полублоки и лестницы — единственные породные семьи 1.7.10, OreDictionary:282-290). В neo таких семей на
+		// порядок больше (двери, люки, заборы, ворота, кнопки, плиты, знаки, лодки…), поэтому список заменён ПРАВИЛОМ:
+		// кандидаты группируются по сигнатуре сетки, и группа с несколькими разными выходами не попадает в буфер
+		// вовсе — ванильный датапак-рецепт остаётся действовать как есть (порода сохраняется).
+		final java.util.Map<String, java.util.List<gregapi.recipes.ICraftingRecipeGT>> tBySignature = new java.util.LinkedHashMap<>();
+		final java.util.Map<String, java.util.Set<net.minecraft.world.item.Item>> tOutputsBySignature = new java.util.HashMap<>();
+
 		int tReplaced = 0;
 		for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : aServer.getRecipeManager().getRecipes()) {
 			try {
@@ -296,7 +307,8 @@ public class OreDictionary {
 					ItemStack tOutput = tShaped.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY); // result.create(), input не читается (референс ShapedRecipe.java:68-70)
 					if (ST.invalid(tOutput) || tExclusions.contains(tOutput.getItem())) continue;
 					int tWidth = tShaped.pattern.width(), tHeight = tShaped.pattern.height();
-					Object[] tCells = replaceIngredients(tShaped.pattern.ingredients(), tReplacements);
+					StringBuilder tSignature = new StringBuilder(tWidth + "x" + tHeight + ":");
+					Object[] tCells = replaceIngredients(tShaped.pattern.ingredients(), tReplacements, tSignature);
 					if (tCells == null) continue; // ни одной замены либо custom-ингредиент — рецепт не наш (1:1 containsMatch)
 					// Синтез Forge-формата (строки + пары символ→ингредиент) для конструктора ShapedOreRecipe.
 					java.util.List<Object> tArgs = new java.util.ArrayList<>();
@@ -318,8 +330,8 @@ public class OreDictionary {
 					gregapi.recipes.ShapedOreRecipe tRecipe = new gregapi.recipes.ShapedOreRecipe(tOutput, tArgs.toArray());
 					tRecipe.mVanillaReplacement = true; // статус Forge-замены 1.7.10: обрабатывается сканом Loader_Recipes_Replace
 					tRecipe.mSourceId = (net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>)(net.minecraft.resources.ResourceKey<?>)tHolder.id();
-					gregapi.util.CR.BUFFER.add(tRecipe);
-					tReplaced++;
+					tBySignature.computeIfAbsent(tSignature.toString(), k -> new java.util.ArrayList<>()).add(tRecipe);
+					tOutputsBySignature.computeIfAbsent(tSignature.toString(), k -> new java.util.HashSet<>()).add(tOutput.getItem());
 				} else if (tHolder.value() instanceof net.minecraft.world.item.crafting.ShapelessRecipe tShapeless) {
 					ItemStack tOutput = tShapeless.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY);
 					if (ST.invalid(tOutput) || tExclusions.contains(tOutput.getItem())) continue;
@@ -327,17 +339,30 @@ public class OreDictionary {
 					if (tPlacement.isImpossibleToPlace()) continue;
 					java.util.List<java.util.Optional<net.minecraft.world.item.crafting.Ingredient>> tIngredients = new java.util.ArrayList<>();
 					for (net.minecraft.world.item.crafting.Ingredient tIn : tPlacement.ingredients()) tIngredients.add(java.util.Optional.of(tIn));
-					Object[] tCells = replaceIngredients(tIngredients, tReplacements);
+					StringBuilder tRawSignature = new StringBuilder();
+					Object[] tCells = replaceIngredients(tIngredients, tReplacements, tRawSignature);
 					if (tCells == null) continue;
 					gregapi.recipes.ShapelessOreRecipe tRecipe = new gregapi.recipes.ShapelessOreRecipe(tOutput, tCells);
 					tRecipe.mVanillaReplacement = true;
 					tRecipe.mSourceId = (net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>)(net.minecraft.resources.ResourceKey<?>)tHolder.id();
-					gregapi.util.CR.BUFFER.add(tRecipe);
-					tReplaced++;
+					// shapeless: порядок ячеек значения не имеет — сигнатура нормализуется сортировкой, иначе
+					// одинаковые по сути сетки разошлись бы по разным группам и коллизия осталась бы незамеченной.
+					String[] tParts = tRawSignature.toString().split("\\|", -1);
+					java.util.Arrays.sort(tParts);
+					String tSignature = "shapeless:" + String.join("|", tParts);
+					tBySignature.computeIfAbsent(tSignature, k -> new java.util.ArrayList<>()).add(tRecipe);
+					tOutputsBySignature.computeIfAbsent(tSignature, k -> new java.util.HashSet<>()).add(tOutput.getItem());
 				}
 			} catch(Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
 		}
-		gregapi.data.CS.OUT.println("GT_API: Vanilla recipe replacements (F4 role-C): " + tReplaced + " ore-versions added to CR.BUFFER.");
+		// Правило коллизии: группа сигнатуры с более чем одним выходом отбрасывается целиком — ore-версия там не
+		// «супермножество ванильной», а подмена породы/цвета. Ванильные датапак-рецепты этой группы не трогаются.
+		int tCollided = 0;
+		for (Map.Entry<String, java.util.List<gregapi.recipes.ICraftingRecipeGT>> tEntry : tBySignature.entrySet()) {
+			if (tOutputsBySignature.get(tEntry.getKey()).size() > 1) {tCollided += tEntry.getValue().size(); continue;}
+			for (gregapi.recipes.ICraftingRecipeGT tRecipe : tEntry.getValue()) {gregapi.util.CR.BUFFER.add(tRecipe); tReplaced++;}
+		}
+		gregapi.data.CS.OUT.println("GT_API: Vanilla recipe replacements (F4 role-C): " + tReplaced + " ore-versions added to CR.BUFFER, " + tCollided + " skipped as ambiguous (output family collision).");
 	}
 
 	/**
@@ -345,10 +370,11 @@ public class OreDictionary {
 	 * {@code ItemStack}/{@code List<ItemStack>} членов как есть. {@code null}-возврат = «рецепт не кандидат»
 	 * (ни одной замены — 1:1 с Forge {@code containsMatch}, — либо custom-ингредиент, которого в 1.7.10 не было).
 	 */
-	private static Object[] replaceIngredients(java.util.List<java.util.Optional<net.minecraft.world.item.crafting.Ingredient>> aIngredients, Map<net.minecraft.world.item.Item, String> aReplacements) {
+	private static Object[] replaceIngredients(java.util.List<java.util.Optional<net.minecraft.world.item.crafting.Ingredient>> aIngredients, Map<net.minecraft.world.item.Item, String> aReplacements, StringBuilder aSignature) {
 		Object[] rCells = new Object[aIngredients.size()];
 		boolean tAnyReplaced = false;
 		for (int i = 0; i < rCells.length; i++) {
+			if (i > 0) aSignature.append('|');
 			java.util.Optional<net.minecraft.world.item.crafting.Ingredient> tOpt = aIngredients.get(i);
 			if (tOpt.isEmpty()) continue;
 			net.minecraft.world.item.crafting.Ingredient tIn = tOpt.get();
@@ -360,12 +386,17 @@ public class OreDictionary {
 			if (tOreName != null) {
 				rCells[i] = getOres(tOreName);
 				tAnyReplaced = true;
+				aSignature.append(tOreName); // ячейка после замены — именно ore-ключ; по нему и считается неоднозначность
 			} else if (tItems.size() == 1) {
 				rCells[i] = new ItemStack(tItems.get(0));
+				aSignature.append(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItems.get(0)));
 			} else {
 				java.util.List<ItemStack> tAlts = new java.util.ArrayList<>();
-				for (net.minecraft.world.item.Item tItem : tItems) tAlts.add(new ItemStack(tItem));
+				java.util.List<String> tKeys = new java.util.ArrayList<>();
+				for (net.minecraft.world.item.Item tItem : tItems) {tAlts.add(new ItemStack(tItem)); tKeys.add(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem).toString());}
 				rCells[i] = tAlts;
+				java.util.Collections.sort(tKeys);
+				aSignature.append(String.join(",", tKeys));
 			}
 		}
 		return tAnyReplaced ? rCells : null;

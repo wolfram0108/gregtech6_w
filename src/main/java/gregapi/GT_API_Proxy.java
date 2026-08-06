@@ -387,6 +387,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
 				gt6DungeonRedstoneWakeTick();
+				gt6PlantSweepTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
@@ -2117,6 +2118,33 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		if (!gregapi.worldgen.dungeon.WorldgenDungeonGT.isDungeonAreaChunk(tLevel, tPos.x(), tPos.z())) return;
 		sDgRedstoneWake.add(new Object[] {tLevel, tPos});
 	}
+	// F6-worldgen «осиротевшая растительность» — РОДНОЙ БРАТ redstone-wake выше и лечится ТЕМ ЖЕ приёмом.
+	// GT6 занимает поверхность и сознательно вытесняет растения (WD.easyRep разрешает BushBlock, а к нему
+	// относится и НИЖНЯЯ половина двублочных — tall_grass, large_fern). В 1.7.10 это было безопасно: populate
+	// шёл по живому World, и движок сам ронял осиротевший верх. WorldGenRegion не оповещает соседей вовсе,
+	// и верхушка повисала в воздухе — жалоба игрока «высокая трава над камнем».
+	// Внутри самой генерации чинить НЕЛЬЗЯ (замерено: уборка звалась 1258 раз и увидела 1 кустовой блок —
+	// GT6-проход идёт раньше, чем ванильная растительность встаёт в этот чанк). Поэтому — на первой загрузке
+	// готового чанка, очередью на серверный тик, как и redstone-wake.
+	private static final java.util.concurrent.ConcurrentLinkedQueue<Object[]> sPlantSweep = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onChunkLoadPlantSweep(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
+		if (!(aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel)) return;
+		if (!aEvent.isNewChunk()) return; // только свежесгенерённые: в старых мирах уже стоящее не трогаем
+		sPlantSweep.add(new Object[] {tLevel, aEvent.getChunk().getPos()});
+	}
+	private static void gt6PlantSweepTick() {
+		for (int n = 0; n < 4; n++) {
+			Object[] tJob = sPlantSweep.poll();
+			if (tJob == null) return;
+			net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel)tJob[0];
+			net.minecraft.world.level.ChunkPos tPos = (net.minecraft.world.level.ChunkPos)tJob[1];
+			net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(tPos.x(), tPos.z());
+			if (tChunk == null) {sPlantSweep.add(tJob); return;} // ещё не FULL — попробуем следующим тиком
+			try {gregapi.util.WD.dropUnsupportedPlants(tLevel, tChunk);} catch (Throwable e) {e.printStackTrace(ERR);}
+		}
+	}
+
 	private static void gt6DungeonRedstoneWakeTick() {
 		for (int n = 0; n < 4; n++) {
 			Object[] tWake = sDgRedstoneWake.poll();

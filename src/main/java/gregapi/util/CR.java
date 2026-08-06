@@ -627,6 +627,7 @@ public class CR {
 	 */
 	public static boolean remout(ItemStack aOutput, boolean aIgnoreNBT, boolean aNotRemoveShapelessRecipes, boolean aOnlyRemoveNativeHandlers, boolean aDontRemoveDyeingRecipes) {
 		if (ST.invalid(aOutput)) return F;
+		DATAPACK_REMOVALS_OUT.add(ST.copy(aOutput)); // датапак-плечо: в 1.7.10 этот же вызов резал и ванильные рецепты
 		boolean rReturn = F;
 		List<ICraftingRecipeGT> tList = list();
 		aOutput = OM.get_(aOutput);
@@ -676,7 +677,7 @@ public class CR {
 	 * Removes a Crafting Recipe after Post Init.
 	 * @param aOutput The output of the Recipe.
 	 */
-	public static void delate(ItemStack aOutput) {if (BUFFERING) RECIPES_TO_DELATE.add(aOutput); else remout(aOutput);}
+	public static void delate(ItemStack aOutput) {if (BUFFERING) {RECIPES_TO_DELATE.add(aOutput); if (ST.valid(aOutput)) DATAPACK_REMOVALS_OUT.add(ST.copy(aOutput));} else remout(aOutput);}
 	
 	/**
 	 * Yes "Delate" is a pun on Delete and Late. :P
@@ -699,6 +700,14 @@ public class CR {
 	 *  копятся здесь и на окне recipe-scan подавляют матчащиеся датапак-рецепты тем же центром
 	 *  {@code GT_API.removeDatapackRecipes}, что и Replace (дренаж — GT_API.onLevelLoadEarlyItemInit). */
 	public static final List<ItemStack[]> DATAPACK_REMOVALS = new ArrayListNoNulls<>();
+
+	/** Второе плечо того же класса, что {@link #DATAPACK_REMOVALS}, — удаление по ВЫХОДУ ({@link #delate}/{@link #remout}).
+	 *  В 1.7.10 обе функции резали живой {@code CraftingManager}, где ваниль и GT6 лежали вперемешку; в neo буфер GT6
+	 *  ванили не содержит, и плечо молча теряло ВСЕ 11 ванильных снятий {@code Loader_Recipes_Vanilla} (симптом игрока:
+	 *  печь крафтится без Firestarter, хотя оригинал даёт её только через {@code OD.craftingFirestarter},
+	 *  Loader_Recipes_Vanilla:55-57,63). Сеточное плечо это не покрывало: там суд — {@code matches(сетка)}, здесь — выход.
+	 *  Дренаж — тот же {@code GT_API.onLevelLoadEarlyItemInit}, тот же центр {@code GT_API.removeDatapackRecipes}. */
+	public static final List<ItemStack> DATAPACK_REMOVALS_OUT = new ArrayListNoNulls<>();
 
 	/**
 	 * Removes a Crafting Recipe and gives you the former output of it.

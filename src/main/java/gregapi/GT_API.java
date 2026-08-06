@@ -635,6 +635,20 @@ public class GT_API extends Abstract_Mod {
 						try {if (tCraft.matches(tInput, tServer.overworld())) tRemove.add(tHolder.id());} catch(Throwable e) {/*чужой рецепт упал на matches — не наш суд*/}
 					}
 				}
+				// Второе плечо ТОГО ЖЕ класса — снятие по ВЫХОДУ (CR.delate/CR.remout, см. CR.DATAPACK_REMOVALS_OUT).
+				// Суд ровно тот, что был у 1.7.10-remout: сравнение выхода рецепта с накопленным, NBT игнорируется.
+				// Выход берётся assemble(EMPTY) — тем же приёмом, что роль-C (OreDictionary.initVanillaRecipeReplacements).
+				for (net.minecraft.world.item.ItemStack tOut : gregapi.util.CR.DATAPACK_REMOVALS_OUT) {
+					for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : tServer.getRecipeManager().recipeMap().values()) {
+						if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
+						if (tHolder.value() instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
+						try {
+							net.minecraft.world.item.ItemStack tResult = tCraft.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY);
+							if (gregapi.util.ST.valid(tResult) && gregapi.util.ST.equal(tResult, tOut, T)) tRemove.add(tHolder.id());
+						} catch(Throwable e) {/*чужой рецепт упал на assemble — не наш суд*/}
+					}
+				}
+				gregapi.util.CR.DATAPACK_REMOVALS_OUT.clear();
 				gregapi.util.CR.DATAPACK_REMOVALS.clear();
 				// Перезаход в одиночке = НОВЫЙ MinecraftServer со свежим (полным) датапаком, а очереди сканов
 				// и DATAPACK_REMOVALS уже осушены первым стартом — накопленный набор ключей переприменяется

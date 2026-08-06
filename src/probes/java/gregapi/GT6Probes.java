@@ -254,6 +254,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6railprobe.flag")) gt6RailProbeTick(aEvent.getServer());
 	// [GT6-CRAFTPROBE] судья захода «крафт до 100%»: LongDistWire (ленивые поля), кровать из GT-досок (роль-C), подавление Replace — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6craftprobe.flag")) gt6CraftProbeTick(aEvent.getServer());
+	// [GT6-FIXPROBE] судья захода 2026-08-07: печь/дверь/тигель/соки/трава — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6fixprobe.flag")) gt6FixProbeTick(aEvent.getServer());
 	// [GT6-PORTYARD] двор ЖИВОЙ ПРИЁМКИ закрытых меток отложенности (рельсы/плащ/цвет копий) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6portyard.flag")) gt6PortYardTick(aEvent.getServer());
 		// F12-hook: ожили ли восстановленные приёмники движковых каналов (доение, присед)
@@ -13231,5 +13233,209 @@ public final class GT6Probes {
 			.append(tS.getCount()).append("×").append(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tS.getItem()))
 			.append("(мета ").append(gregapi.util.ST.meta_(tS)).append(")");
 		return r.toString();
+	}
+
+	// ==========================================================================================================
+	// [GT6-FIXPROBE] Судья захода 2026-08-07: печь без Firestarter (датапак-плечо CR.delate) · порода двери
+	// (правило коллизии роли-C) · тигель в JEI (динамическая мапа) · сок ванильных ягод · висящая трава над
+	// камнем GT6 (каскад опоры в вордгене). Судится РЕАЛЬНЫМИ каналами движка: RecipeManager.getRecipeFor —
+	// тот же путь, которым верстак игрока ищет рецепт; список JEI — тот же getNEIAllRecipes, что читает плагин;
+	// мир — фактические блоки прогруженных чанков. У каждой секции ПОЗИТИВНЫЙ контроль. Снять при уборке фазы.
+	// ==========================================================================================================
+	private static java.lang.ref.WeakReference<Object> sFixProbeServer = new java.lang.ref.WeakReference<>(null);
+	private static int sFixPhase = 0, sFixWait = 0;
+	public static void gt6FixProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		// Фаза ожидания: уборка осиротевшей растительности идёт ОЧЕРЕДЬЮ на серверном тике (по 4 чанка), поэтому
+		// сканировать в том же тике, в котором чанки сгенерированы, бессмысленно — она физически не успевает.
+		if (sFixPhase == 1) {
+			if (++sFixWait < 400) return;
+			sFixPhase = 2;
+			gt6FixProbeScanE(aServer, gregapi.data.CS.OUT, "GT6-FIXPROBE");
+			return;
+		}
+		if (sFixPhase != 0 || sFixProbeServer.get() == aServer) return;
+		sFixProbeServer = new java.lang.ref.WeakReference<>(aServer);
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		final String M = "GT6-FIXPROBE";
+		int tPass = 0, tFail = 0;
+		O.println("========== [" + M + "] заход 2026-08-07: печь · дверь · тигель · соки · трава ==========");
+
+		// ---------- A. ВЫХОДЫ, СНЯТЫЕ CR.delate: рецепта в верстаке быть НЕ ДОЛЖНО ----------
+		// Судим тем же вопросом, что задаёт верстак игрока: существует ли ХОТЬ ОДИН рецепт с таким выходом.
+		Object[][] tDelated = {
+			{"печь",                   net.minecraft.world.item.Items.FURNACE},
+			{"зачаровательный стол",   net.minecraft.world.item.Items.ENCHANTING_TABLE},
+			{"эндер-сундук",           net.minecraft.world.item.Items.ENDER_CHEST},
+			{"седло",                  net.minecraft.world.item.Items.SADDLE},
+			{"магма-крем",             net.minecraft.world.item.Items.MAGMA_CREAM},
+			{"стрела",                 net.minecraft.world.item.Items.ARROW},
+			{"печенье",                net.minecraft.world.item.Items.COOKIE},
+			{"золотое яблоко",         net.minecraft.world.item.Items.GOLDEN_APPLE},
+			{"зач. золотое яблоко",    net.minecraft.world.item.Items.ENCHANTED_GOLDEN_APPLE},
+			{"золотая морковь",        net.minecraft.world.item.Items.GOLDEN_CARROT},
+		};
+		for (Object[] tCase : tDelated) {
+			net.minecraft.world.item.Item tItem = (net.minecraft.world.item.Item)tCase[1];
+			java.util.List<String> tSurvivors = gt6FixProbeRecipesFor(aServer, tItem);
+			boolean tOk = tSurvivors.isEmpty();
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§A снят рецепт: " + tCase[0], tOk, "ни одного рецепта", tSurvivors.isEmpty() ? "нет" : tSurvivors.toString())) tPass++; else tFail++;
+		}
+		// ПОЗИТИВНЫЙ КОНТРОЛЬ секции A: выход, который GT6 НЕ снимает, обязан остаться — иначе измеритель просто слеп.
+		{
+			java.util.List<String> tAlive = gt6FixProbeRecipesFor(aServer, net.minecraft.world.item.Items.CRAFTING_TABLE);
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§A ПОЗИТИВ верстак (не снимался)", !tAlive.isEmpty(), "рецепт есть", tAlive.isEmpty() ? "НЕТ НИ ОДНОГО" : tAlive.toString())) tPass++; else tFail++;
+		}
+
+		// ---------- B. ПОРОДА ДВЕРИ: сетка 2x3 из досок одной породы обязана дать дверь ЭТОЙ породы ----------
+		Object[][] tDoors = {
+			{"ель",     net.minecraft.world.level.block.Blocks.SPRUCE_PLANKS,   net.minecraft.world.item.Items.SPRUCE_DOOR},
+			{"дуб",     net.minecraft.world.level.block.Blocks.OAK_PLANKS,      net.minecraft.world.item.Items.OAK_DOOR},
+			{"берёза",  net.minecraft.world.level.block.Blocks.BIRCH_PLANKS,    net.minecraft.world.item.Items.BIRCH_DOOR},
+			{"джунгли", net.minecraft.world.level.block.Blocks.JUNGLE_PLANKS,   net.minecraft.world.item.Items.JUNGLE_DOOR},
+			{"акация",  net.minecraft.world.level.block.Blocks.ACACIA_PLANKS,   net.minecraft.world.item.Items.ACACIA_DOOR},
+			{"тёмн.дуб",net.minecraft.world.level.block.Blocks.DARK_OAK_PLANKS, net.minecraft.world.item.Items.DARK_OAK_DOOR},
+		};
+		for (Object[] tCase : tDoors) {
+			ItemStack tPlank = new ItemStack(((net.minecraft.world.level.block.Block)tCase[1]).asItem());
+			java.util.List<ItemStack> tCells = new java.util.ArrayList<>();
+			for (int i = 0; i < 6; i++) tCells.add(gregapi.util.ST.copy(tPlank));
+			var tGrid = net.minecraft.world.item.crafting.CraftingInput.of(2, 3, tCells);
+			var tFound = aServer.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, tGrid, tLevel);
+			ItemStack tOut = tFound.isPresent() ? ((net.minecraft.world.item.crafting.CraftingRecipe)tFound.get().value()).assemble(tGrid) : ItemStack.EMPTY;
+			boolean tOk = !tOut.isEmpty() && tOut.getItem() == (net.minecraft.world.item.Item)tCase[2];
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§B дверь из досок: " + tCase[0], tOk,
+					net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey((net.minecraft.world.item.Item)tCase[2]),
+					tOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tOut))) tPass++; else tFail++;
+		}
+		// Тот же класс на второй семье — люки (порода тоже кодируется выходом, сетка одинакова у всех пород).
+		{
+			ItemStack tPlank = new ItemStack(net.minecraft.world.level.block.Blocks.SPRUCE_PLANKS.asItem());
+			java.util.List<ItemStack> tCells = new java.util.ArrayList<>();
+			for (int i = 0; i < 6; i++) tCells.add(gregapi.util.ST.copy(tPlank));
+			var tGrid = net.minecraft.world.item.crafting.CraftingInput.of(3, 2, tCells);
+			var tFound = aServer.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, tGrid, tLevel);
+			ItemStack tOut = tFound.isPresent() ? ((net.minecraft.world.item.crafting.CraftingRecipe)tFound.get().value()).assemble(tGrid) : ItemStack.EMPTY;
+			boolean tOk = !tOut.isEmpty() && tOut.getItem() == net.minecraft.world.item.Items.SPRUCE_TRAPDOOR;
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§B люк из еловых досок", tOk, "spruce_trapdoor", tOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tOut))) tPass++; else tFail++;
+		}
+
+		// ---------- C. ТИГЕЛЬ В ВИТРИНЕ: список, который читает JEI-плагин ----------
+		try {
+			java.util.List<gregapi.recipes.Recipe> tAll = gregapi.data.RM.CrucibleSmelting.getNEIAllRecipes();
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§C тигель: рецептов в витрине", tAll != null && !tAll.isEmpty(), "больше 0", tAll == null ? "null" : String.valueOf(tAll.size()))) tPass++; else tFail++;
+			// Чёрный песок (blockDust Магнетита, BlockSands:51) обязан быть СРЕДИ них — именно его назвал игрок.
+			boolean tHasBlackSand = F;
+			if (tAll != null) for (gregapi.recipes.Recipe tRecipe : tAll) {
+				if (tRecipe == null || tRecipe.mInputs == null) continue;
+				for (ItemStack tIn : tRecipe.mInputs) if (gregapi.util.ST.valid(tIn) && gregapi.util.ST.regName(tIn).contains("sand")) {tHasBlackSand = T; break;}
+				if (tHasBlackSand) break;
+			}
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§C тигель: чёрный песок в витрине", tHasBlackSand, "рецепт с песком есть", tHasBlackSand ? "есть" : "НЕТ")) tPass++; else tFail++;
+			// ПОЗИТИВНЫЙ КОНТРОЛЬ: статическая мапа (сплавы) и до правки была видна — измеритель обязан её видеть.
+			java.util.List<gregapi.recipes.Recipe> tAlloy = gregapi.data.RM.CrucibleAlloying.getNEIAllRecipes();
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§C ПОЗИТИВ сплавы (статическая мапа)", tAlloy != null && !tAlloy.isEmpty(), "больше 0", tAlloy == null ? "null" : String.valueOf(tAlloy.size()))) tPass++; else tFail++;
+		} catch(Throwable e) {e.printStackTrace(O); tFail++;}
+
+		// ---------- D. СОК ВАНИЛЬНЫХ ЯГОД ----------
+		Object[][] tBerries = {
+			{"сладкие ягоды",    net.minecraft.world.item.Items.SWEET_BERRIES},
+			{"светящиеся ягоды", net.minecraft.world.item.Items.GLOW_BERRIES},
+			{"ПОЗИТИВ яблоко",   net.minecraft.world.item.Items.APPLE},
+		};
+		for (Object[] tCase : tBerries) {
+			ItemStack tIn = new ItemStack((net.minecraft.world.item.Item)tCase[1]);
+			gregapi.recipes.Recipe tJuice = gt6FixProbeJuice(tIn);
+			boolean tOk = tJuice != null && tJuice.mFluidOutputs != null && tJuice.mFluidOutputs.length > 0 && tJuice.mFluidOutputs[0] != null && tJuice.mFluidOutputs[0].getAmount() > 0;
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§D сок из: " + tCase[0], tOk, "жидкость на выходе Соковыжималки",
+					tJuice == null ? "рецепта НЕТ" : (tJuice.mFluidOutputs == null || tJuice.mFluidOutputs.length == 0 ? "рецепт без жидкости" : String.valueOf(tJuice.mFluidOutputs[0])))) tPass++; else tFail++;
+		}
+
+		// ---------- E, фаза 1: СГЕНЕРИРОВАТЬ свежие чанки (среда симптома) ----------
+		// Мерить это на ServerLevel нельзя: его setBlock рассылает обновления и верх травы падает сам — судья был бы
+		// зелёным всегда. Симптом живёт только в вордгене: WorldGenRegion.setBlock (neo-decompiled/server/level/
+		// WorldGenRegion.java:257-262) пишет состояние в чанк и соседей НЕ оповещает. Скан — отдельной фазой:
+		// уборка идёт очередью на серверном тике, в тике генерации она заведомо не успевает (замерено: вызовов 0).
+		try {
+			int tGen = 0;
+			for (int cx = -FIX_R; cx <= FIX_R; cx++) for (int cz = -FIX_R; cz <= FIX_R; cz++) {
+				// forced: без удержания чанки выгружаются за время ожидания уборки и скан находит 0 (проверено)
+				try {tLevel.getChunk(FIX_OX+cx, FIX_OZ+cz); tLevel.setChunkForced(FIX_OX+cx, FIX_OZ+cz, true); tGen++;} catch(Throwable e) {/* чанк не дался — не наш суд */}
+			}
+			O.println("[" + M + "] §E сгенерировано свежих чанков: " + tGen + "; жду " + 400 + " тиков, пока отработает уборка");
+			sFixPhase = 1;
+		} catch(Throwable e) {e.printStackTrace(O); tFail++;}
+
+		O.println("========== [" + M + "] ИТОГ A-D: PASS " + tPass + " / FAIL " + tFail + " ==========");
+	}
+
+	private static final int FIX_R = 10, FIX_OX = 40000 >> 4, FIX_OZ = 40000 >> 4;
+
+	/** §E, фаза 2: скан уже сгенерированных и убранных чанков. Висящая половина = верх двублочного растения,
+	 *  под которым не осталось своей нижней половины (её вытеснил блок GT6). */
+	private static void gt6FixProbeScanE(net.minecraft.server.MinecraftServer aServer, java.io.PrintStream O, String M) {
+		ServerLevel tLevel = aServer.getPlayerList().getPlayers().get(0).level();
+		int tPass = 0, tFail = 0;
+		try {
+			int tOrphans = 0, tDoubles = 0, tRocks = 0, tScanned = 0;
+			java.util.Map<String, Integer> tUnder = new java.util.TreeMap<>();
+			for (int cx = -FIX_R; cx <= FIX_R; cx++) for (int cz = -FIX_R; cz <= FIX_R; cz++) {
+				net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(FIX_OX+cx, FIX_OZ+cz);
+				if (tChunk == null) continue;
+				tScanned++;
+				int tMinX = tChunk.getPos().getMinBlockX(), tMinZ = tChunk.getPos().getMinBlockZ();
+				for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) {
+					for (int y = 50; y < 140; y++) {
+						net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(tMinX+x, y, tMinZ+z);
+						net.minecraft.world.level.block.state.BlockState tState = tChunk.getBlockState(tPos);
+						if (tState.isAir()) continue;
+						if (tState.getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock) tRocks++;
+						if (!(tState.getBlock() instanceof net.minecraft.world.level.block.DoublePlantBlock)) continue;
+						tDoubles++;
+						if (tState.canSurvive(tLevel, tPos)) continue;
+						tOrphans++;
+						net.minecraft.world.level.block.state.BlockState tBelow = tChunk.getBlockState(tPos.below());
+						tUnder.merge(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBelow.getBlock()).toString(), 1, Integer::sum);
+					}
+				}
+			}
+			O.println("[" + M + "] §E уборка сняла осиротевших растений: " + gregapi.util.WD.sDroppedPlants
+				+ " (вызовов уборки: " + gregapi.util.WD.sPlantSweepCalls + ", кустовых блоков просмотрено: " + gregapi.util.WD.sPlantSweepBushes + ")");
+			O.println("[" + M + "] §E свежая генерация: чанков=" + tScanned + ", двойных растений=" + tDoubles
+				+ ", MTE-блоков GT6=" + tRocks + ", ВИСЯЩИХ половин=" + tOrphans + (tUnder.isEmpty() ? "" : ", под ними: " + tUnder));
+			// ПОЗИТИВНЫЕ КОНТРОЛИ: без травы и без камней GT6 в выборке ноль сирот был бы пустым.
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§E ПОЗИТИВ выборка содержит двойные растения", tDoubles > 0, "больше 0", String.valueOf(tDoubles))) tPass++; else tFail++;
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§E ПОЗИТИВ вордген GT6 отработал (камни/палки)", tRocks > 0, "больше 0", String.valueOf(tRocks))) tPass++; else tFail++;
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§E ПОЗИТИВ уборка вообще работала", gregapi.util.WD.sPlantSweepCalls > 0, "вызовов больше 0", String.valueOf(gregapi.util.WD.sPlantSweepCalls))) tPass++; else tFail++;
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§E висящих половин травы", tOrphans == 0, "0", String.valueOf(tOrphans))) tPass++; else tFail++;
+		} catch(Throwable e) {e.printStackTrace(O); tFail++;}
+		O.println("========== [" + M + "] ИТОГ §E: PASS " + tPass + " / FAIL " + tFail + " ==========");
+	}
+
+
+	/** Рецепт Соковыжималки для стека — перебором её собственного списка (тот же список, что показывает витрина). */
+	private static gregapi.recipes.Recipe gt6FixProbeJuice(ItemStack aInput) {
+		for (gregapi.recipes.Recipe tRecipe : gregapi.data.RM.Juicer.mRecipeList) {
+			if (tRecipe == null || tRecipe.mInputs == null) continue;
+			for (ItemStack tIn : tRecipe.mInputs) if (gregapi.util.ST.valid(tIn) && gregapi.util.ST.equal(tIn, aInput, T)) return tRecipe;
+		}
+		return null;
+	}
+
+	/** Все рецепты сервера, чей выход — данный предмет. Собственный диспетчер GT6 исключён: он матчится на входе,
+	 *  assemble(EMPTY) у него пуст, и в вопрос «остался ли ванильный рецепт» он не входит. */
+	private static java.util.List<String> gt6FixProbeRecipesFor(net.minecraft.server.MinecraftServer aServer, net.minecraft.world.item.Item aItem) {
+		java.util.List<String> rList = new java.util.ArrayList<>();
+		for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : aServer.getRecipeManager().recipeMap().values()) {
+			if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
+			if (tHolder.value() instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
+			try {
+				ItemStack tOut = tCraft.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY);
+				if (gregapi.util.ST.valid(tOut) && tOut.getItem() == aItem) rList.add(tHolder.id().identifier().toString());
+			} catch(Throwable e) {/* чужой рецепт упал на assemble — не наш суд */}
+		}
+		return rList;
 	}
 }

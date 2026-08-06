@@ -146,6 +146,12 @@ public class LoaderItemData implements Runnable {
 		OM.reg("cropAppleRed"                       , ST.make(Items.APPLE, 1, 0));
 		OM.reg("cropMelon"                          , ST.make(Items.MELON_SLICE, 1, 0));
 		OM.reg("cropPumpkin"                        , ST.make(Blocks.PUMPKIN, 1, 0));
+		// Ягоды, которых в 1.7.10 не существовало (sweet_berries — MC 1.14, glow_berries — MC 1.17): тот же класс, что
+		// новые породы дерева (BUG-091). Ключ и приём — Греговы: "cropBerry" уже несёт слушателя (Loader_Recipes_Crops:509
+		// -> RM.crop_fruit -> FL.Juice + консервы + компост), под него же Грег вешал ягоды МОДОВ (там же:331-335,655,819).
+		// Своих сущностей не заводим: регистрации в словаре достаточно, весь фруктовый конвейер подхватывает сам.
+		OM.reg("cropBerry"                          , ST.make(Items.SWEET_BERRIES, 1, 0));
+		OM.reg("cropBerry"                          , ST.make(Items.GLOW_BERRIES, 1, 0));
 		OM.reg("cropHops"                           , ST.mkic("hops", 1));
 		OM.reg("cropCoffee"                         , ST.mkic("coffeeBeans", 1));
 		OM.reg("cropLemon"                          , ST.make(MD.FR, "fruits", 1, 3));

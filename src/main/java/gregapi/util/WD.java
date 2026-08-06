@@ -1717,7 +1717,58 @@ public class WD {
 	
 	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || aWorld.getBlockState(new BlockPos(aX, aY, aZ)).canBeReplaced();}
-	
+
+	/** F6-worldgen, класс «потерянный каскад опоры». В 1.7.10 вордген достраивал мир по ЖИВОМУ {@code World.setBlock}
+	 *  с оповещением соседей, и движок сам ронял то, что осталось без опоры ({@code BlockDoublePlant
+	 *  .onNeighborBlockChange -> checkAndDropBlock}). В neo вордген идёт по {@code WorldGenRegion}, а тот пишет
+	 *  состояние прямо в чанк и соседей НЕ оповещает вовсе ({@code neo-decompiled/server/level/WorldGenRegion.java:257-262})
+	 *  — канал пропал молча. GT6 же занимает поверхность ПОСЛЕ ванильной растительности (шаг
+	 *  {@code TOP_LAYER_MODIFICATION}, {@code GT6WorldgenFeature:146}) и вытесняет её сознательно: {@code easyRep}
+	 *  разрешает замещать {@code BushBlock}, а к нему относится и НИЖНЯЯ половина двублочного растения
+	 *  (tall_grass, large_fern). Верхняя половина оставалась висеть в воздухе — симптом игрока «высокая трава над камнем».
+	 *
+	 *  <p>Чинится ОДНИМ проходом на чанк, а не в каждом генераторе: путей записи много и они разнородны —
+	 *  {@code placeBlock} у MTE (камни/палки/кусты: {@code WorldgenOnSurface}, {@code WorldgenOresLarge:119},
+	 *  {@code WorldgenOresBedrock:181}) и {@code WD.set} у слоёв породы ({@code WorldgenStoneLayers:126-176},
+	 *  включая ветку REPLACEABLE_BLOCKS). Финальная уборка за вордгеном — приём самого оригинала: рядом
+	 *  тем же способом добиваются выпавшие при генерации предметы ({@code GT6WorldGenerator}).</p>
+	 *
+	 *  <p>Обход — по непустым секциям чанка (пустые пропускаются целиком) с дешёвым предфильтром по типу блока:
+	 *  проверяется ровно то, что {@code easyRep} и разрешает вытеснять, — {@code BushBlock} (трава, папоротники,
+	 *  цветы, саженцы, обе половины двублочных). По карте высот идти НЕЛЬЗЯ: во время генерации она ещё не
+	 *  достроена и полоса у поверхности промахивается мимо части случаев (замерено: 14 висящих против 7).</p>
+	 *  @return сколько блоков снято. */
+	public static int dropUnsupportedPlants(LevelAccessor aWorld, net.minecraft.world.level.chunk.ChunkAccess aChunk) {
+		int rDropped = 0;
+		int tMinX = aChunk.getPos().getMinBlockX(), tMinZ = aChunk.getPos().getMinBlockZ();
+		// Обход СВЕРХУ ВНИЗ по всей обитаемой колонне через getBlockState самого чанка. Ни карта высот, ни
+		// LevelChunkSection.hasOnlyAir() во время генерации доверия не заслуживают — оба уже дали промах
+		// (полоса по карте высот: 7 висящих осталось; пропуск «пустых» секций: 20, то есть уборка почти не шла).
+		// Дорогую часть снимает предфильтр по типу: canSurvive спрашивается только у VegetationBlock.
+		// ⛔ Именно VegetationBlock, а НЕ BushBlock: в 1.7.10 BlockDoublePlant наследовал BlockBush, но в neo
+		// иерархия разделилась — DoublePlantBlock extends VegetationBlock, BushBlock extends VegetationBlock,
+		// и двублочные растения (ровно наш случай) под instanceof BushBlock НЕ попадают. Замерено: с фильтром
+		// по BushBlock уборка просмотрела 1 кустовой блок при 2395 двойных растениях в тех же чанках.
+		int tTop = Math.min(aChunk.getMaxY(), 200), tBottom = Math.max(aChunk.getMinY()+1, 40), tBushes = 0;
+		for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) for (int tY = tTop; tY >= tBottom; tY--) {
+			BlockPos tPos = new BlockPos(tMinX+i, tY, tMinZ+j);
+			BlockState tState = aChunk.getBlockState(tPos);
+			if (!(tState.getBlock() instanceof net.minecraft.world.level.block.VegetationBlock)) continue;
+			tBushes++;
+			if (tState.canSurvive(aWorld, tPos)) continue;
+			aWorld.setBlock(tPos, Blocks.AIR.defaultBlockState(), 2);
+			rDropped++;
+		}
+		sDroppedPlants += rDropped;
+		sPlantSweepCalls++;
+		sPlantSweepBushes += tBushes;
+		return rDropped;
+	}
+	/** Сколько всего осиротевших растений снято за сессию — улика «уборка работала», а не догадка по итогу. */
+	public static int sDroppedPlants = 0;
+	/** Сколько раз уборка вызывалась и сколько кустовых блоков вообще видела — отличает «не звалась» от «звалась впустую». */
+	public static int sPlantSweepCalls = 0, sPlantSweepBushes = 0;
+
 	// было aWorld.getBiomeGenForCoords(x,z) — LevelReader.getBiome(BlockPos) (LevelReader.java:42); F6-центр
 	// BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам (unwrapKey().identifier()), сырой
 	// .value().biomeName (мёртвое 1.7.10-поле) больше не нужен — gregapi/code/BiomeNameSet.java.
