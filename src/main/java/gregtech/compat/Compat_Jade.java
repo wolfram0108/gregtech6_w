@@ -216,7 +216,9 @@ public class Compat_Jade implements IWailaPlugin {
 	 * </ul>
 	 *
 	 * <p>Тир печатается СЛОВОМ через центр {@link LH#getHarvestLevelMaterial} — ту же таблицу, которой GT6
-	 * подписывает уровень в тултипе предмета. У блоков, что берутся рукой, строки нет вовсе: требования нет.
+	 * подписывает уровень в тултипе предмета. Строки нет там, где требования нет: блок берётся рукой либо
+	 * уровень не задан ({@code -1}). Блоки спрашиваются ОДИНАКОВО, свои и чужие — заказ игрока звучал
+	 * «навожу на ЛЮБОЙ блок»; отбор по происхождению делал витрину половинчатой.
 	 */
 	public enum GT6HarvestLevelProvider implements IBlockComponentProvider {
 		INSTANCE;
@@ -226,12 +228,19 @@ public class Compat_Jade implements IWailaPlugin {
 		@Override
 		public void appendTooltip(ITooltip aTooltip, BlockAccessor aAccessor, IPluginConfig aConfig) {
 			Block tBlock = aAccessor.getBlockState().getBlock();
-			if (!(tBlock instanceof gregapi.block.IBlock)) return; // чужие блоки не наше дело: их шкала ванильная
 			Level tWorld = aAccessor.getLevel();
 			BlockPos tPos = aAccessor.getPosition();
 			try {
 				if (WD.getMaterial(tBlock).isToolNotRequired()) return; // берётся рукой — требования нет, строка была бы шумом
 				int tNeeded = WD.harvestLevel(tWorld, tPos.getX(), tPos.getY(), tPos.getZ());
+				// ⛔ БЕЗ ОТБОРА ПО ПРОИСХОЖДЕНИЮ БЛОКА. Прежде здесь стояло «не IBlock → выходим: чужая шкала
+				// ванильная», и заказ игрока («навожу на ЛЮБОЙ блок — вижу тип, тир и соответствие») исполнялся
+				// лишь наполовину: у блоков GT6 строка была, у ванильных — нет. Отбор был вынужденным: тира
+				// ванильного блока порт тогда не знал вовсе. Теперь знает — центр WD отвечает по паспорту 1.7.10
+				// (набор engine_block_passport.csv, 171 запись, снята с живого оригинала), поэтому спрашиваем
+				// ОДИНАКОВО у всех. Строку по-прежнему не рисуем там, где требования нет: рука берёт блок
+				// (проверка выше) или уровень не задан (-1 — дефолт 1.7.10, Block.java:2490).
+				if (tNeeded < 0) return;
 				String tName = LH.getHarvestLevelMaterial(tNeeded);
 				aTooltip.add(Component.literal(LH.Chat.DGRAY + LH.get(LH.TOOL_HARVEST_TIER, "Requires Tier") + ": " + LH.Chat.WHITE
 					+ tNeeded + (tName.isEmpty() ? "" : " (" + tName + ")")));

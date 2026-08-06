@@ -391,6 +391,15 @@ public final class GT6ProbesClient {
 						+ " прогресс=" + String.format("%.4f", tProgress) + (tProgress <= 0 ? " <= 0 → JADE ВЫХОДИТ ДО ОТРИСОВКИ" : "")
 						+ "  инструментов от Jade=" + tCount + (tCount == 0 ? " <ПУСТО → строки не будет>" : " (" + tNames + ")"));
 				}
+				// вторая строка витрины — «Requires Tier», её рисуем МЫ (GT6HarvestLevelProvider). От руки не зависит;
+				// печатаем ровно те два входа, по которым провайдер решает, быть строке или нет.
+				try {
+					boolean tByHand = gregapi.util.WD.getMaterial(tBlock).isToolNotRequired();
+					int tNeeded = gregapi.util.WD.harvestLevel(tMC.level, tProbePos.getX(), tProbePos.getY(), tProbePos.getZ());
+					O.println("[GT6-JADEHAND]    строка тира: берётся рукой=" + tByHand + ", требуемый тир=" + tNeeded
+						+ " → " + (tByHand || tNeeded < 0 ? "строки НЕТ (требования нет)" : "строка ЕСТЬ «Requires Tier: " + tNeeded + "»"));
+				} catch (Throwable e) {O.println("[GT6-JADEHAND]    строка тира: EXC " + e);
+				}
 			}
 		} catch (Throwable e) {
 			O.println("[GT6-JADEHAND] замер оборван: " + e);
