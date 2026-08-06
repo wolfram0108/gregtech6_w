@@ -320,6 +320,86 @@ public final class GT6ProbesClient {
 		O.println("========== [GT6-JADECLIENT] DONE ==========");
 	}
 
+	// [GT6-JADEHAND] Репорт игрока 2026-08-06: «на ВАНИЛЬНЫХ блоках строка инструмента в Jade видна только с
+	// ПУСТОЙ рукой; стоит взять ключ или любой инструмент — пропадает. На блоках GT6 видна всегда».
+	// Замер, а не рассуждение: повторяем РОВНО тот путь, которым Jade решает, рисовать ли строку
+	// (HarvestToolProvider.appendTooltip:80-115 → getText:117-131), и снимаем каждый его вход ДВАЖДЫ —
+	// с пустой рукой и с инструментом. Так видно, какой именно вход меняется от руки.
+	//   вход 1 · state.getDestroyProgress(player,…) <= 0  → appendTooltip выходит ДО отрисовки (:93);
+	//   вход 2 · state.requiresCorrectToolForDrops()      → при false нужна опция «Effective Tool» (:118);
+	//   вход 3 · HarvestToolProvider.getTool(state,…)     → пустой список = нечего рисовать (:129).
+	// Контроль: тот же замер на блоке GT6 — у него симптома нет, значит его строки обязаны отличаться.
+	private static boolean mJadeHandDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onJadeHandProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mJadeHandDone || !gregapi.data.CS.probeFlag("gt6jadehand.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+
+		// ⛔ РЕАЛЬНЫЕ блоки мира, а не подставленные. Прежняя редакция ставила блок клиентским setBlock — сервер
+		// его не подтверждал, состояние оставалось ВОЗДУХОМ, и замер дал одинаковые Infinity/NaN на всех целях
+		// (признак: requiresCorrectToolForDrops=false даже у железной руды). Ищем то, что уже стоит на полигоне.
+		java.util.List<net.minecraft.world.level.block.Block> tWanted = java.util.List.of(
+			net.minecraft.world.level.block.Blocks.OAK_PLANKS, net.minecraft.world.level.block.Blocks.OAK_LOG,
+			net.minecraft.world.level.block.Blocks.STONE, net.minecraft.world.level.block.Blocks.DIRT,
+			net.minecraft.world.level.block.Blocks.IRON_ORE);
+		java.util.LinkedHashMap<net.minecraft.world.level.block.Block, net.minecraft.core.BlockPos> tFoundAt = new java.util.LinkedHashMap<>();
+		net.minecraft.core.BlockPos tCenter = tMC.player.blockPosition();
+		for (int dx = -48; dx <= 48; dx++) for (int dy = -8; dy <= 8; dy++) for (int dz = -48; dz <= 48; dz++) {
+			net.minecraft.core.BlockPos tPos = tCenter.offset(dx, dy, dz);
+			net.minecraft.world.level.block.Block tB = tMC.level.getBlockState(tPos).getBlock();
+			if (tWanted.contains(tB)) tFoundAt.putIfAbsent(tB, tPos);
+			// контроль: блок GT6, у которого симптома нет — его строки обязаны отличаться
+			else if (tB instanceof gregapi.block.multitileentity.MultiTileEntityBlock) tFoundAt.putIfAbsent(tB, tPos);
+		}
+		if (tFoundAt.isEmpty()) return; // полигон ещё не построен — ждём
+		mJadeHandDone = true;
+
+		// что держим в руке: пусто · ванильный топор · GT6-ключ (именно он назван в репорте)
+		java.util.List<net.minecraft.world.item.ItemStack> tHands = new java.util.ArrayList<>(java.util.List.of(
+			net.minecraft.world.item.ItemStack.EMPTY, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_AXE)));
+		try {
+			for (gregapi.code.ItemStackContainer tC : gregapi.data.CS.ToolsGT.list(gregapi.data.CS.TOOL_wrench)) {
+				net.minecraft.world.item.ItemStack tS = tC.toStack();
+				if (tS != null && !tS.isEmpty()) {tHands.add(tS); break;}
+			}
+		} catch (Throwable e) {/* ключа в реестре нет — обойдёмся двумя состояниями руки */}
+
+		O.println("========== [GT6-JADEHAND] строка инструмента в Jade: ЗАВИСИТ ЛИ ОТ РУКИ ==========");
+		net.minecraft.world.item.ItemStack tSaved = tMC.player.getMainHandItem().copy(); // руку вернём как было
+		try {
+			for (java.util.Map.Entry<net.minecraft.world.level.block.Block, net.minecraft.core.BlockPos> tEntry : tFoundAt.entrySet()) {
+				net.minecraft.world.level.block.Block tBlock = tEntry.getKey();
+				net.minecraft.core.BlockPos tProbePos = tEntry.getValue();
+				net.minecraft.world.level.block.state.BlockState tState = tMC.level.getBlockState(tProbePos);
+				O.println("[GT6-JADEHAND] --- " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock)
+					+ (tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock ? "  (КОНТРОЛЬ: блок GT6, симптома нет)" : "")
+					+ " @" + tProbePos + "  requiresCorrectToolForDrops=" + tState.requiresCorrectToolForDrops());
+				for (net.minecraft.world.item.ItemStack tHand : tHands) {
+					tMC.player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tHand);
+					String tHandName = tHand.isEmpty() ? "ПУСТАЯ РУКА" : tHand.getHoverName().getString();
+					float tProgress = -1;
+					try {tProgress = tState.getDestroyProgress(tMC.player, tMC.level, tProbePos);} catch (Throwable e) {/* оставим -1 */}
+					int tCount = -1; StringBuilder tNames = new StringBuilder();
+					try {
+						java.util.List<net.minecraft.world.item.ItemStack> tTools = snownee.jade.addon.harvest.HarvestToolProvider.getTool(tState, tMC.level, tProbePos);
+						tCount = tTools.size();
+						for (net.minecraft.world.item.ItemStack tS : tTools) tNames.append(tNames.length() == 0 ? "" : "/").append(tS.getHoverName().getString());
+					} catch (Throwable e) {tNames.append("EXC ").append(e);}
+					O.println("[GT6-JADEHAND]    " + String.format("%-22s", tHandName)
+						+ " прогресс=" + String.format("%.4f", tProgress) + (tProgress <= 0 ? " <= 0 → JADE ВЫХОДИТ ДО ОТРИСОВКИ" : "")
+						+ "  инструментов от Jade=" + tCount + (tCount == 0 ? " <ПУСТО → строки не будет>" : " (" + tNames + ")"));
+				}
+			}
+		} catch (Throwable e) {
+			O.println("[GT6-JADEHAND] замер оборван: " + e);
+		} finally {
+			tMC.player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tSaved);
+		}
+		O.println("========== [GT6-JADEHAND] DONE ==========");
+	}
+
 	// [GT6-JADELEVEL] BUG-070: СУДЬЯ ВИТРИНЫ ДОБЫЧИ В JADE. Игрок просил три вещи: тип инструмента, требуемый уровень
 	// (любой, а не только ванильные три ступени) и соответствие того, что в руке. Судится НЕ картинка, а данные ровно
 	// тех вызовов, из которых Jade строит тултип, и ровно на той стороне, где он его строит, — на КЛИЕНТЕ:

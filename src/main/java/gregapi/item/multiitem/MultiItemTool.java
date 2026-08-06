@@ -507,11 +507,43 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	// isCorrectToolForDrops — БЕЗ позиции (F13: числовой меты в BlockState нет) → мета-0, РОВНО как GT6-canHarvestBlock:518
 	// всегда берёт (byte)0 (консистентно с оригиналом:487-488). mineBlock — С позицией → onBlockDestroyed с реальной метой
 	// (WD.meta(world,pos) внутри). Теперь инструмент в игре копает/дропает/изнашивается по GT6-логике, а не neo-дефолту.
+	/**
+	 * ⛔ КАНАЛ ДВИЖКА ОТДАЁТ ВАНИЛЬНУЮ БАЗУ — в 1.7.10 GT6 его НЕ ЗАНИМАЛ.
+	 *
+	 * <p>Проверено дословно: ванильный {@code Item.func_150893_a} возвращал {@code 1.0F} любому предмету против
+	 * любого блока ({@code recompSrc/net/minecraft/item/Item.java:469-472}), и НИ ОДИН класс {@code gregapi.item}
+	 * оригинала его не переопределял. Вся скорость мода жила в событии {@code BreakSpeed}
+	 * ({@code GT_API_Proxy:1242} → {@link #onBlockBreakSpeedEvent}), где для НЕподходящего блока возвращается
+	 * пришедший {@code aDefault} ({@code ToolStats:94-96}), то есть обычная скорость руки.</p>
+	 *
+	 * <p>Прежняя редакция подавала сюда ВНУТРЕННИЙ {@link #getDigSpeed} — а он для неподходящего блока даёт 0
+	 * ({@code ToolStats:89-91}, {@code isMinableBlock ? 1 : 0}). Следствий было два, и второе замыкало круг:
+	 * блок не разрушался вовсе вместо «медленно, как рукой», И событие {@code BreakSpeed} переставало
+	 * работать — оно входит только при {@code newSpeed > 0} ({@code GT_API_Proxy:1553}, 1:1 с оригиналом
+	 * {@code :1243}), то есть мод сам себе глушил единственный канал скорости.</p>
+	 *
+	 * <p>{@code getDigSpeed} остаётся тем, чем был в оригинале — внутренним расчётом GT6 для права на сбор
+	 * дропа и износа ({@link #convertBlockDrops}, {@link #canCollectDropsDirectly}).</p>
+	 */
 	@Override public float getDestroySpeed(ItemStack aStack, net.minecraft.world.level.block.state.BlockState aState) {
-		return getDigSpeed(aStack, aState.getBlock(), 0);
+		return super.getDestroySpeed(aStack, aState);
 	}
+	/**
+	 * Право на дроп: у СВОИХ блоков считает GT6, у чужих — движок, как и в 1.7.10.
+	 *
+	 * <p>Ванильный {@code Item.func_150897_b} мод тоже не переопределял (греп по {@code gregapi.item} оригинала
+	 * пуст): право решали {@code ForgeHooks.canHarvestBlock} и событие {@code HarvestCheck}. Прежняя редакция
+	 * отдавала сюда внутренний {@link #canHarvestBlock}, который через {@code getDigSpeed > 0} обращался в
+	 * {@code false} на любом чужом блоке — и ключ переставал ронять доски, хотя в 1.7.10 материал {@code wood}
+	 * инструмента не требует вовсе ({@code ForgeHooks.java:97-100}).</p>
+	 *
+	 * <p>Для блоков GT6 расчёт остаётся своим: их подтип живёт в BlockEntity, и ванильный путь по тегам дал бы
+	 * нулевой требуемый уровень (BUG-071). Парная половина — {@code GT_API_Proxy.onPlayerHarvestCheckEvent},
+	 * которая по той же причине трогает только {@code IBlock}.</p>
+	 */
 	@Override public boolean isCorrectToolForDrops(ItemStack aStack, net.minecraft.world.level.block.state.BlockState aState) {
-		return canHarvestBlock(aState.getBlock(), aStack);
+		if (aState.getBlock() instanceof gregapi.block.IBlock) return canHarvestBlock(aState.getBlock(), aStack);
+		return super.isCorrectToolForDrops(aStack, aState);
 	}
 	@Override public boolean mineBlock(ItemStack aStack, Level aWorld, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.core.BlockPos aPos, net.minecraft.world.entity.LivingEntity aPlayer) {
 		// F13-контракт (BUG-016): в 1.7.10 onBlockDestroyed звался ДО removeBlock (мета ещё в мире); в neo mineBlock

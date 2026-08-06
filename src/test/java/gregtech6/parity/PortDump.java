@@ -119,6 +119,7 @@ public final class PortDump {
         tFact.put("engine_blocks.csv", reportEngine("engine_blocks.csv"));
         tFact.put("engine_block_passport.csv", reportPassport());
         tFact.put("engine_block_toolmatrix.csv", reportToolMatrix());
+        tFact.put("engine_tool_basespeed.csv", reportMeta0("engine_tool_basespeed.csv", 2, 2));
         tFact.put("recipemaps.csv", report("recipemaps.csv", 1, 20));
         tFact.put("recipes.jsonl", reportJsonl("recipes.jsonl")); // config-паритет; recipeCount(col20) trigger-недетерминирован в golden (60s-лимит)
         gate(tFact);
@@ -170,6 +171,12 @@ public final class PortDump {
         // таблицей паспорта матрица даёт 94.017 % (457 расхождений) — судья краснеть умеет.
         tFloor.put("engine_block_passport.csv", 100.0);
         tFloor.put("engine_block_toolmatrix.csv", 100.0);
+        // ⛔ ЗАМОК КЛАССА «внутренний расчёт GT6 подан в движковый канал». Витрина инструмента в Jade пропадала
+        // ЧЕТЫРЕЖДЫ (ADAPT-010 → BUG-064 → BUG-070 → 2026-08-06), и корень был один: базовая скорость предмета
+        // против неподходящего блока стала 0 вместо ванильной 1.0, отчего блок не разрушался и глох сам мост
+        // BreakSpeed (входит только при newSpeed > 0). Замер живого 1.7.10: база 1.0 во ВСЕХ 11 457 парах.
+        // Floor 100: любая попытка снова занять канал уронит гейт до живой игры.
+        tFloor.put("engine_tool_basespeed.csv", 100.0);
         tFloor.put("engine_blocks.csv", 100.0);
         tFloor.put("oredict.csv", 99.95);          // факт 99.957 (0 пропавших записей — ванильный набор Forge восстановлен)
         tFloor.put("unification.csv", 99.95);      // факт 99.974
@@ -1063,6 +1070,43 @@ public final class PortDump {
             System.out.println("[port-dump] toolmatrix НЕ СНЯТ: " + t);
         }
         writeCsv("engine_block_toolmatrix.csv", "registryName,toolStatsClass,minable", lines);
+        dumpToolBaseSpeed();
+    }
+
+    /**
+     * БАЗОВАЯ скорость предмета против блока — зеркало {@code DumpEngine.dumpToolBaseSpeed} оракула.
+     *
+     * <p>Это число движок берёт ДО события {@code BreakSpeed}. В 1.7.10 оно всегда ванильное ({@code 1.0F},
+     * {@code Item.java:469-472}; мод канал не переопределял). Порт одно время подавал сюда внутренний
+     * {@code getDigSpeed} — ноль на неподходящем блоке, отчего блок не разрушался и глох сам мост скорости
+     * (он входит только при {@code newSpeed > 0}). Набор стережёт, чтобы канал снова не заняли.</p>
+     */
+    private static void dumpToolBaseSpeed() throws IOException {
+        List<String> lines = new ArrayList<>();
+        try {
+            java.util.Map<String, net.minecraft.world.item.ItemStack> byClass = new java.util.TreeMap<>();
+            for (Map.Entry<Short, gregapi.item.multiitem.tools.IToolStats> e : gregapi.data.CS.ToolsGT.sMetaTool.mToolStats.entrySet()) {
+                if (e.getValue() == null || byClass.containsKey(e.getValue().getClass().getName())) continue;
+                try {
+                    net.minecraft.world.item.ItemStack tStack = gregapi.util.ST.make(gregapi.data.CS.ToolsGT.sMetaTool, 1, e.getKey());
+                    if (tStack != null && !tStack.isEmpty()) byClass.put(e.getValue().getClass().getName(), tStack);
+                } catch (Throwable t) { /* этот ID не собирается в стек — пропуск */ }
+            }
+            for (Map.Entry<String, net.minecraft.world.item.ItemStack> e : byClass.entrySet()) {
+                for (Block block : BuiltInRegistries.BLOCK) {
+                    var k = BuiltInRegistries.BLOCK.getKey(block);
+                    if (k == null || !"minecraft".equals(k.getNamespace())) continue;
+                    String speed;
+                    try { speed = String.valueOf(e.getValue().getDestroySpeed(block.defaultBlockState())); }
+                    catch (Throwable t) { speed = "!ERR"; }
+                    lines.add(k + "," + e.getKey() + "," + speed);
+                }
+            }
+            System.out.println("[port-dump] basespeed: инструментов=" + byClass.size());
+        } catch (Throwable t) {
+            System.out.println("[port-dump] basespeed НЕ СНЯТ: " + t);
+        }
+        writeCsv("engine_tool_basespeed.csv", "registryName,toolStatsClass,baseSpeed", lines);
     }
 
     /** Имя константы {@code gregapi.block.Material.*} — копия 1.7.10, имена совпадают с golden дословно. */
@@ -1150,7 +1194,8 @@ public final class PortDump {
         if (!Files.isRegularFile(golden)) { System.out.println("[parity] нет golden: " + golden); return 0.0; }
         if (!Files.isRegularFile(port))   { System.out.println("[parity] нет дампа порта: " + port); return 0.0; }
         try {
-            int keyCols = file.contains("toolmatrix") ? 2 : 1;
+            // ключ пары «блок + инструмент» — у наборов, где строка описывает их сочетание, а не блок сам по себе
+            int keyCols = (file.contains("toolmatrix") || file.contains("basespeed")) ? 2 : 1;
             Map<String, String[]> g = readKeyed(golden, keyCols), p = readKeyed(port, keyCols);
             int total = 0, same = 0;
             List<String> shown = new ArrayList<>();
