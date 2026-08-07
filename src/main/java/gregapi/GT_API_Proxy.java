@@ -386,8 +386,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			LAST_BROKEN_TILEENTITY.set(null);
 
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
-				gt6DungeonRedstoneWakeTick();
-				gt6PlantSweepTick();
+				gt6ChunkFinishTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
@@ -2102,66 +2101,61 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		return (int)UT.Code.bind(0, 32000, rFuelValue);
 	}
 
-	// F6-worldgen redstone-wake (данжи #39, живой тест «дверь срабатывает со второго раза»): в 1.7.10 редстоун-цепи
-	// данжа оживлял flags=3 факелов при populate (нотификации соседей); WorldGenRegion апдейтов не шлёт ВООБЩЕ →
-	// провода рождаются POWER=0 и цепь двери мертва до первого пинка (движковый postprocess обновляет только ФОРМУ —
-	// LevelChunk.postProcessGeneration:590 updateFromNeighbourShapes, setBlock без бита UPDATE_NEIGHBORS). Эквивалент
-	// 1:1: при ПЕРВОЙ загрузке (генерации) чанка данж-области будим цепь — нотификация соседей каждой редстоун-позиции
-	// Y-окна данжа. Данж-чанк детерминирован якорной формулой (WorldgenDungeonGT.isDungeonAreaChunk); очередь на
-	// серверный тик (в момент ChunkEvent.Load соседние чанки могут быть не готовы). PRODUCTION-механизм (не проба).
-	private static final java.util.concurrent.ConcurrentLinkedQueue<Object[]> sDgRedstoneWake = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	// ==========================================================================================================
+	// F6-worldgen: ЕДИНЫЙ ДИСПЕТЧЕР ОТЛОЖЕННОЙ ДОРАБОТКИ СВЕЖЕГО ЧАНКА.
+	//
+	// Общий корень у всех задач здесь один: `WorldGenRegion` не рассылает соседям НИКАКИХ оповещений
+	// (neo-decompiled/server/level/WorldGenRegion.java:257-262 — состояние пишется прямо в чанк), тогда как в
+	// 1.7.10 populate шёл по живому `World.setBlock` с флагами 3, и движок доводил мир сам. Всё, что раньше
+	// доделывал движок, приходится доделывать явно — и обязательно ПОСЛЕ генерации, на первой загрузке готового
+	// чанка: в момент самой генерации соседние чанки могут быть не готовы, а часть ванильных фич ещё не отработала.
+	//
+	// Задачи различаются флагом, но очередь, отбор чанка и защита «чанк ещё не FULL» у них общие — поэтому
+	// механизм ОДИН, а не по копии на задачу:
+	//   RECHUNK_REDSTONE — данжи #39: разбудить редстоун-цепь (в 1.7.10 её будили flags=3 факелов при populate);
+	//   RECHUNK_PLANTS   — уронить осиротевшую растительность (GT6 вытесняет нижнюю половину двублочных растений,
+	//                      верхняя без оповещения повисала в воздухе — жалоба «высокая трава над камнем»).
+	// PRODUCTION-механизм (не проба).
+	// ==========================================================================================================
+	public static final int RECHUNK_REDSTONE = 1, RECHUNK_PLANTS = 2;
+	private static final java.util.concurrent.ConcurrentLinkedQueue<Object[]> sChunkFinishQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
+
 	@net.neoforged.bus.api.SubscribeEvent
-	public void onChunkLoadDungeonRedstoneWake(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
-		if (!(aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel)) return;
-		if (!aEvent.isNewChunk()) return; // только свежесгенерённые (у загруженных состояние уже пересчитано прошлой сессией)
-		net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
-		if (!gregapi.worldgen.dungeon.WorldgenDungeonGT.isDungeonAreaChunk(tLevel, tPos.x(), tPos.z())) return;
-		sDgRedstoneWake.add(new Object[] {tLevel, tPos});
-	}
-	// F6-worldgen «осиротевшая растительность» — РОДНОЙ БРАТ redstone-wake выше и лечится ТЕМ ЖЕ приёмом.
-	// GT6 занимает поверхность и сознательно вытесняет растения (WD.easyRep разрешает BushBlock, а к нему
-	// относится и НИЖНЯЯ половина двублочных — tall_grass, large_fern). В 1.7.10 это было безопасно: populate
-	// шёл по живому World, и движок сам ронял осиротевший верх. WorldGenRegion не оповещает соседей вовсе,
-	// и верхушка повисала в воздухе — жалоба игрока «высокая трава над камнем».
-	// Внутри самой генерации чинить НЕЛЬЗЯ (замерено: уборка звалась 1258 раз и увидела 1 кустовой блок —
-	// GT6-проход идёт раньше, чем ванильная растительность встаёт в этот чанк). Поэтому — на первой загрузке
-	// готового чанка, очередью на серверный тик, как и redstone-wake.
-	private static final java.util.concurrent.ConcurrentLinkedQueue<Object[]> sPlantSweep = new java.util.concurrent.ConcurrentLinkedQueue<>();
-	@net.neoforged.bus.api.SubscribeEvent
-	public void onChunkLoadPlantSweep(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
+	public void onChunkLoadFinishWorldgen(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
 		if (!(aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel)) return;
 		if (!aEvent.isNewChunk()) return; // только свежесгенерённые: в старых мирах уже стоящее не трогаем
-		sPlantSweep.add(new Object[] {tLevel, aEvent.getChunk().getPos()});
+		net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
+		int tTasks = RECHUNK_PLANTS; // растительность проверяется в каждом свежем чанке
+		// редстоун — только в данж-области, она детерминирована якорной формулой
+		if (gregapi.worldgen.dungeon.WorldgenDungeonGT.isDungeonAreaChunk(tLevel, tPos.x(), tPos.z())) tTasks |= RECHUNK_REDSTONE;
+		sChunkFinishQueue.add(new Object[] {tLevel, tPos, tTasks});
 	}
-	private static void gt6PlantSweepTick() {
+
+	private static void gt6ChunkFinishTick() {
 		for (int n = 0; n < 4; n++) {
-			Object[] tJob = sPlantSweep.poll();
+			Object[] tJob = sChunkFinishQueue.poll();
 			if (tJob == null) return;
 			net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel)tJob[0];
 			net.minecraft.world.level.ChunkPos tPos = (net.minecraft.world.level.ChunkPos)tJob[1];
+			int tTasks = (Integer)tJob[2];
 			net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(tPos.x(), tPos.z());
-			if (tChunk == null) {sPlantSweep.add(tJob); return;} // ещё не FULL — попробуем следующим тиком
-			try {gregapi.util.WD.dropUnsupportedPlants(tLevel, tChunk);} catch (Throwable e) {e.printStackTrace(ERR);}
-		}
-	}
-
-	private static void gt6DungeonRedstoneWakeTick() {
-		for (int n = 0; n < 4; n++) {
-			Object[] tWake = sDgRedstoneWake.poll();
-			if (tWake == null) return;
-			net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel)tWake[0];
-			net.minecraft.world.level.ChunkPos tPos = (net.minecraft.world.level.ChunkPos)tWake[1];
-			net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(tPos.x(), tPos.z());
-			if (tChunk == null) {sDgRedstoneWake.add(tWake); return;} // ещё не FULL — попробуем следующим тиком
-			int tY0 = gregapi.util.WD.remapY(tLevel, 20);
-			for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) for (int y = tY0-12; y <= tY0+14; y++) {
-				BlockPos tBP = new BlockPos((tPos.x() << 4) + x, y, (tPos.z() << 4) + z);
-				net.minecraft.world.level.block.Block tBlock = tChunk.getBlockState(tBP).getBlock();
-				if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WIRE || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WALL_TORCH
-				 || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_TORCH || tBlock == net.minecraft.world.level.block.Blocks.STICKY_PISTON
-				 || tBlock == net.minecraft.world.level.block.Blocks.PISTON || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP) {
-					tLevel.updateNeighborsAt(tBP, tBlock, null);
-				}
+			if (tChunk == null) {sChunkFinishQueue.add(tJob); return;} // ещё не FULL — попробуем следующим тиком
+			if ((tTasks & RECHUNK_PLANTS) != 0) {
+				try {gregapi.util.WD.dropUnsupportedPlants(tLevel, tChunk);} catch (Throwable e) {e.printStackTrace(ERR);}
+			}
+			if ((tTasks & RECHUNK_REDSTONE) != 0) {
+				try {
+					int tY0 = gregapi.util.WD.remapY(tLevel, 20);
+					for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) for (int y = tY0-12; y <= tY0+14; y++) {
+						BlockPos tBP = new BlockPos((tPos.x() << 4) + x, y, (tPos.z() << 4) + z);
+						net.minecraft.world.level.block.Block tBlock = tChunk.getBlockState(tBP).getBlock();
+						if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WIRE || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WALL_TORCH
+						 || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_TORCH || tBlock == net.minecraft.world.level.block.Blocks.STICKY_PISTON
+						 || tBlock == net.minecraft.world.level.block.Blocks.PISTON || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP) {
+							tLevel.updateNeighborsAt(tBP, tBlock, null);
+						}
+					}
+				} catch (Throwable e) {e.printStackTrace(ERR);}
 			}
 		}
 	}

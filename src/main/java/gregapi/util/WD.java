@@ -1749,25 +1749,21 @@ public class WD {
 		// иерархия разделилась — DoublePlantBlock extends VegetationBlock, BushBlock extends VegetationBlock,
 		// и двублочные растения (ровно наш случай) под instanceof BushBlock НЕ попадают. Замерено: с фильтром
 		// по BushBlock уборка просмотрела 1 кустовой блок при 2395 двойных растениях в тех же чанках.
-		int tTop = Math.min(aChunk.getMaxY(), 200), tBottom = Math.max(aChunk.getMinY()+1, 40), tBushes = 0;
+		int tTop = Math.min(aChunk.getMaxY(), 200), tBottom = Math.max(aChunk.getMinY()+1, 40);
 		for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) for (int tY = tTop; tY >= tBottom; tY--) {
 			BlockPos tPos = new BlockPos(tMinX+i, tY, tMinZ+j);
 			BlockState tState = aChunk.getBlockState(tPos);
-			if (!(tState.getBlock() instanceof net.minecraft.world.level.block.VegetationBlock)) continue;
-			tBushes++;
-			if (tState.canSurvive(aWorld, tPos)) continue;
+			if (!(tState.getBlock() instanceof net.minecraft.world.level.block.VegetationBlock) || tState.canSurvive(aWorld, tPos)) continue;
 			aWorld.setBlock(tPos, Blocks.AIR.defaultBlockState(), 2);
 			rDropped++;
 		}
 		sDroppedPlants += rDropped;
-		sPlantSweepCalls++;
-		sPlantSweepBushes += tBushes;
 		return rDropped;
 	}
-	/** Сколько всего осиротевших растений снято за сессию — улика «уборка работала», а не догадка по итогу. */
+	/** Снято осиротевших растений за сессию. Единственный счётчик, оставленный в боевом коде: без него «0 висящих»
+	 *  у судьи неотличимо от «уборка не работала» — то есть это позитивный контроль, а не отладочный вывод.
+	 *  Два отладочных счётчика (вызовы, просмотренные блоки) сняты после закрытия BUG-098. */
 	public static int sDroppedPlants = 0;
-	/** Сколько раз уборка вызывалась и сколько кустовых блоков вообще видела — отличает «не звалась» от «звалась впустую». */
-	public static int sPlantSweepCalls = 0, sPlantSweepBushes = 0;
 
 	// было aWorld.getBiomeGenForCoords(x,z) — LevelReader.getBiome(BlockPos) (LevelReader.java:42); F6-центр
 	// BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам (unwrapKey().identifier()), сырой

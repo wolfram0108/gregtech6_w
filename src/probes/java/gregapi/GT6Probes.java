@@ -13415,14 +13415,13 @@ public final class GT6Probes {
 					}
 				}
 			}
-			O.println("[" + M + "] §E уборка сняла осиротевших растений: " + gregapi.util.WD.sDroppedPlants
-				+ " (вызовов уборки: " + gregapi.util.WD.sPlantSweepCalls + ", кустовых блоков просмотрено: " + gregapi.util.WD.sPlantSweepBushes + ")");
+			O.println("[" + M + "] §E уборка сняла осиротевших растений: " + gregapi.util.WD.sDroppedPlants);
 			O.println("[" + M + "] §E свежая генерация: чанков=" + tScanned + ", двойных растений=" + tDoubles
 				+ ", MTE-блоков GT6=" + tRocks + ", ВИСЯЩИХ половин=" + tOrphans + (tUnder.isEmpty() ? "" : ", под ними: " + tUnder));
 			// ПОЗИТИВНЫЕ КОНТРОЛИ: без травы и без камней GT6 в выборке ноль сирот был бы пустым.
 			if (gregapi.probe.GT6ProbeStand.judge(M, "§E ПОЗИТИВ выборка содержит двойные растения", tDoubles > 0, "больше 0", String.valueOf(tDoubles))) tPass++; else tFail++;
 			if (gregapi.probe.GT6ProbeStand.judge(M, "§E ПОЗИТИВ вордген GT6 отработал (камни/палки)", tRocks > 0, "больше 0", String.valueOf(tRocks))) tPass++; else tFail++;
-			if (gregapi.probe.GT6ProbeStand.judge(M, "§E ПОЗИТИВ уборка вообще работала", gregapi.util.WD.sPlantSweepCalls > 0, "вызовов больше 0", String.valueOf(gregapi.util.WD.sPlantSweepCalls))) tPass++; else tFail++;
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§E ПОЗИТИВ уборка вообще работала", gregapi.util.WD.sDroppedPlants > 0, "снято больше 0", String.valueOf(gregapi.util.WD.sDroppedPlants))) tPass++; else tFail++;
 			if (gregapi.probe.GT6ProbeStand.judge(M, "§E висящих половин травы", tOrphans == 0, "0", String.valueOf(tOrphans))) tPass++; else tFail++;
 		} catch(Throwable e) {e.printStackTrace(O); tFail++;}
 		O.println("========== [" + M + "] ИТОГ §E: PASS " + tPass + " / FAIL " + tFail + " ==========");
