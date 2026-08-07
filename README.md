@@ -286,16 +286,19 @@ difference, not on every build.
 
 ## Continuous integration
 
-Every push and pull request runs three jobs:
+The build is checked on a clean machine — a different OS, an empty cache, nothing but the contents
+of this repository. It runs **on demand** (Actions → CI → Run workflow) and automatically on pull
+requests; it deliberately does not fire on every commit, because the build is run locally anyway and
+a duplicate would only add noise.
+
+Four jobs, in parallel:
 
 | Job | Checks |
 |---|---|
 | **Build** | produces the mod jar, then verifies the jar contains no compile-only stand-in classes for packages the engine owns — shipping those makes the mod fail to load, and it happened once — and that unfinished-work markers left in the source are not accumulating |
 | **Stands** | compiles the in-engine probes, which the normal build does not touch and would otherwise silently rot |
 | **Tests** | runs the test suite and compares the set of failures against a recorded baseline: an unknown failure fails the build, and a suite that did not run at all also fails (a test runner that quietly starts nothing must not read as success) |
-
-A nightly workflow runs the slower checks: the full data comparison against the original, a check
-that generated data files still match their generators, and a dedicated-server boot.
+| **Server** | boots a dedicated server and requires it to reach "Done". No unit test can see this: they bring a server up without a world and without the client side, while what actually broke three times in a month was the dedicated server specifically |
 
 Tagging a release (`v<version>`) builds the jar, verifies the tag matches the version in
 `gradle.properties`, and publishes a GitHub release — pre-release for alpha, beta and rc versions.
