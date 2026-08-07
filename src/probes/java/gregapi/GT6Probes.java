@@ -13337,6 +13337,20 @@ public final class GT6Probes {
 			// ПОЗИТИВНЫЙ КОНТРОЛЬ: статическая мапа (сплавы) и до правки была видна — измеритель обязан её видеть.
 			java.util.List<gregapi.recipes.Recipe> tAlloy = gregapi.data.RM.CrucibleAlloying.getNEIAllRecipes();
 			if (gregapi.probe.GT6ProbeStand.judge(M, "§C ПОЗИТИВ сплавы (статическая мапа)", tAlloy != null && !tAlloy.isEmpty(), "больше 0", tAlloy == null ? "null" : String.valueOf(tAlloy.size()))) tPass++; else tFail++;
+			// ПОЛНОТА КЛАССА МАШИНОЙ, а не списком из головы: обходим ВЕСЬ реестр рецептмап и ищем те, у которых
+			// витрина разрешена (mNEIAllowed), но список для JEI пуст — ровно та дыра, из-за которой пропал тигель.
+			// JEI-плагин отбирает категории тем же условием (GT6_JEI_Plugin:140-143), так что список ниже = список
+			// мап, которых игрок в JEI не увидит вовсе.
+			java.util.List<String> tBlindMaps = new java.util.ArrayList<>();
+			for (gregapi.recipes.Recipe.RecipeMap tMap : gregapi.recipes.Recipe.RecipeMap.RECIPE_MAP_LIST) {
+				if (!tMap.mNEIAllowed) continue;
+				try {
+					java.util.List<gregapi.recipes.Recipe> tList = tMap.getNEIAllRecipes();
+					if (tList == null || tList.isEmpty()) tBlindMaps.add(tMap.mNameInternal);
+				} catch(Throwable e) {tBlindMaps.add(tMap.mNameInternal + "(упала: " + e + ")");}
+			}
+			O.println("[" + M + "] §C реестр рецептмап: всего " + gregapi.recipes.Recipe.RecipeMap.RECIPE_MAP_LIST.size()
+				+ ", с разрешённой витриной и ПУСТЫМ списком: " + tBlindMaps.size() + (tBlindMaps.isEmpty() ? "" : " -> " + tBlindMaps));
 		} catch(Throwable e) {e.printStackTrace(O); tFail++;}
 
 		// ---------- D. СОК ВАНИЛЬНЫХ ЯГОД ----------
