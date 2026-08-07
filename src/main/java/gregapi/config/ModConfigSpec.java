@@ -144,7 +144,7 @@ public class ModConfigSpec {
 			}
 		} catch (IOException e) {
 			// совпадает с Configuration.load() (Configuration.java:1028-1031) — IO-ошибка не прерывает загрузку мода.
-			e.printStackTrace();
+			e.printStackTrace(gregapi.data.CS.ERR);
 		}
 	}
 
@@ -176,7 +176,7 @@ public class ModConfigSpec {
 			}
 		} catch (IOException e) {
 			// совпадает с Configuration.save() (Configuration.java:1101-1104) — IO-ошибка не прерывает работу мода.
-			e.printStackTrace();
+			e.printStackTrace(gregapi.data.CS.ERR);
 		}
 	}
 }

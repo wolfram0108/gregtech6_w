@@ -79,7 +79,7 @@ public class GT6ItemTags extends TagsProvider<Item> {
 			getOrCreateRawBuilder(ItemTags.ARROWS).addElement(tID);
 			tArrows++;
 		}
-		System.out.println("[GT6-DATAGEN] стрел GT6 внесено в minecraft:arrows: " + tArrows);
+		gregapi.data.CS.OUT.println("[GT6-DATAGEN] стрел GT6 внесено в minecraft:arrows: " + tArrows);
 	}
 
 	/** Спрашиваем у предмета ЕГО ТИП СНАРЯДА, а не «годен ли конкретный стек».
@@ -104,7 +104,7 @@ public class GT6ItemTags extends TagsProvider<Item> {
 				}
 			return false;
 		}
-		System.out.println("[GT6-DATAGEN] ⚠ носитель IItemProjectile вне известных иерархий: " + aID
+		gregapi.data.CS.OUT.println("[GT6-DATAGEN] ⚠ носитель IItemProjectile вне известных иерархий: " + aID
 			+ " — тип снаряда на фазе датагена не спросить (стек создавать нельзя), в minecraft:arrows НЕ внесён");
 		return false;
 	}
