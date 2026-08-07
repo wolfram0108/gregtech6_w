@@ -233,6 +233,8 @@ public final class GT6Probes {
 	// [GT6-MAPYARD] MODCOMPAT-002: двор ЖИВОЙ ПРИЁМКИ карты (JourneyMap в dev-клиенте, глаз игрока) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6mapyard.flag")) gt6MapYardTick(aEvent.getServer());
 	// [GT6-YPROBE] BUG-089: судья класса «жёсткие границы мира 0..255 вместо центра F6-Y-scale» — снять при уборке фазы
+	// [GT6-OREPROBE] судья растяжения генерации руд (F6 §4.1) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6oreprobe.flag")) gt6OreProbeTick(aEvent.getServer());
 		if (gregapi.data.CS.probeFlag("gt6yprobe.flag")) gt6YProbeTick(aEvent.getServer());
 	// [GT6-POTIONPROBE] BUG-090: судья GT6-зельев (PotionsGT → MobEffectsGT, купание в нефти) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6potionprobe.flag")) gt6PotionProbeTick(aEvent.getServer());
@@ -13450,5 +13452,161 @@ public final class GT6Probes {
 			} catch(Throwable e) {/* чужой рецепт упал на assemble — не наш суд */}
 		}
 		return rList;
+	}
+
+	// ==========================================================================================================
+	// [GT6-OREPROBE] судья захода «пропорциональное растяжение генерации руд» (F6 §4.1, указание пользователя
+	// 2026-08-07). Судит НЕ формулу, а то, что РЕАЛЬНО легло в мир: принудительно генерирует область реальным
+	// путём движка (ServerLevel.getChunk -> полная генерация со всеми фичами), затем обходит блоки и для каждого
+	// рудного блока GT6 читает материал тем же каналом, что мод (PrefixBlock.getMetaDataValue), и высоту.
+	// Предписание берётся из САМИХ живых worldgen-объектов мода (CS.GEN_OVERWORLD), а не из констант в судье.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static int sOreProbeTick = 0;
+	public static void gt6OreProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sOreProbeTick++;
+		if (sOreProbeTick != 400) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			final int R = Integer.getInteger("gt6.oreprobe.radius", 8); // (2R+1)^2 чанков
+			ServerLevel tLevel = aServer.overworld();
+			O.println("========== [GT6-OREPROBE] радиус " + R + " чанков, мир [" + tLevel.getMinY() + ".." + tLevel.getMaxY() + "], море " + tLevel.getSeaLevel() + " ==========");
+
+			// ---- 1. ПРЕДПИСАНИЕ: что мод обещает положить (из живых объектов, не из констант судьи) ----
+			java.util.TreeMap<String, int[]> tExpect = new java.util.TreeMap<>();
+			for (gregapi.worldgen.WorldgenObject tWG : gregapi.data.CS.GEN_OVERWORLD) {
+				if (!(tWG instanceof gregapi.worldgen.WorldgenOresSmall)) continue;
+				gregapi.worldgen.WorldgenOresSmall tSmall = (gregapi.worldgen.WorldgenOresSmall)tWG;
+				if (!tSmall.mEnabled || tSmall.mMaterial == null || tSmall.mMaterial.mID <= 0) continue;
+				int tRMin = gregapi.util.WD.remapY(tLevel, tSmall.mMinY), tRMax = gregapi.util.WD.remapY(tLevel, tSmall.mMaxY);
+				int tStretch = Math.round(100 * gregapi.util.WD.yStretch(tLevel, tSmall.mMinY, tSmall.mMaxY));
+				tExpect.put(tSmall.mMaterial.mNameInternal, new int[] {tRMin, tRMax, tSmall.mAmount, tStretch, tSmall.mMinY, tSmall.mMaxY});
+			}
+			O.println("[GT6-OREPROBE] россыпей в реестре Overworld: " + tExpect.size());
+
+			// ---- 2. ГЕНЕРАЦИЯ реальным путём движка + обход ----
+			BlockPos tSpawn = tLevel.getRespawnData().pos();
+			int tSCX = tSpawn.getX() >> 4, tSCZ = tSpawn.getZ() >> 4, tChunks = 0;
+			java.util.TreeMap<String, long[]> tFound = new java.util.TreeMap<>();
+			long tOreBelowZero = 0, tOreTotal = 0, tOreBelowSea = 0;
+			for (int dx = -R; dx <= R; dx++) for (int dz = -R; dz <= R; dz++) {
+				net.minecraft.world.level.chunk.ChunkAccess tCA = tLevel.getChunk(tSCX + dx, tSCZ + dz);
+				if (!(tCA instanceof net.minecraft.world.level.chunk.LevelChunk)) continue;
+				net.minecraft.world.level.chunk.LevelChunk tChunk = (net.minecraft.world.level.chunk.LevelChunk)tCA;
+				tChunks++;
+				int tX0 = (tSCX + dx) * 16, tZ0 = (tSCZ + dz) * 16;
+				BlockPos.MutableBlockPos tPos = new BlockPos.MutableBlockPos(); // 28 млн клеток за прогон — позиция не аллоцируется в цикле
+				for (int bx = 0; bx < 16; bx++) for (int bz = 0; bz < 16; bz++) for (int by = tLevel.getMinY(); by <= tLevel.getMaxY(); by++) {
+					tPos.set(tX0 + bx, by, tZ0 + bz);
+					net.minecraft.world.level.block.Block tBlock = tChunk.getBlockState(tPos).getBlock();
+					if (!(tBlock instanceof gregapi.block.prefixblock.PrefixBlock)) continue;
+					gregapi.block.prefixblock.PrefixBlock tPB = (gregapi.block.prefixblock.PrefixBlock)tBlock;
+					if (!tPB.mPrefix.contains(gregapi.data.TD.Prefix.ORE)) continue;
+					short tMatID = tPB.getMetaDataValue(tChunk, tPos.getX(), tPos.getY(), tPos.getZ());
+					gregapi.oredict.OreDictMaterial tMat = gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY[tMatID & 0xFFFF];
+					String tName = tMat == null ? ("?" + tMatID) : tMat.mNameInternal;
+					boolean tIsSmall = tPB.mPrefix == gregapi.data.OP.oreSmall;
+					long[] tRow = tFound.get(tName);
+					if (tRow == null) {tRow = new long[] {0, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0}; tFound.put(tName, tRow);}
+					tRow[tIsSmall ? 0 : 1]++;
+					tRow[2] = Math.min(tRow[2], by);
+					tRow[3] = Math.max(tRow[3], by);
+					tRow[4] += by;
+					tOreTotal++;
+					if (by < 0) tOreBelowZero++;
+					if (by <= tLevel.getSeaLevel()) tOreBelowSea++;
+				}
+			}
+			O.println("[GT6-OREPROBE] сгенерировано чанков: " + tChunks + ", рудных блоков всего: " + tOreTotal + ", из них ниже Y=0: " + tOreBelowZero);
+			// ПАРНАЯ метрика с эталоном 1.7.10 (GT6OracleOreProbe): руда на блок объёма зоны «не выше моря».
+			// В 1.7.10 это [0..62] (63 слоя), здесь [minY..sea] (128 слоёв) — та самая зона, что растянулась.
+			// Требование: плотность одинакова, то есть количество выросло соразмерно объёму.
+			double tSeaVolume = tChunks * 256.0 * (tLevel.getSeaLevel() - tLevel.getMinY() + 1);
+			O.println(String.format("[GT6-OREPROBE] ПЛОТНОСТЬ зоны [%d..%d]: %d руды / %.0f блоков = %.6f",
+				tLevel.getMinY(), tLevel.getSeaLevel(), tOreBelowSea, tSeaVolume, tOreBelowSea / tSeaVolume));
+			if (tChunks == 0 || tOreTotal == 0) {
+				O.println("[GT6-OREPROBE] ЗАМЕР НЕ УДАЛСЯ (чанков " + tChunks + ", руды " + tOreTotal + ") — судить нечего");
+				O.println("========== [GT6-OREPROBE] DONE ==========");
+				aServer.halt(F);
+				return;
+			}
+
+			// ---- 3. ТАБЛИЦА: что реально лежит ----
+			O.println("[GT6-OREPROBE] --- материал | small | normal | Y факт | Y ожид (россыпь) | шт/чанк ---");
+			for (java.util.Map.Entry<String, long[]> tE : tFound.entrySet()) {
+				long[] tR = tE.getValue();
+				int[] tX = tExpect.get(tE.getKey());
+				long tSum = tR[0] + tR[1];
+				O.println(String.format("[GT6-OREPROBE] %-22s small=%-7d normal=%-7d Yфакт=%d..%d Yсред=%d %s шт/чанк=%.2f",
+					tE.getKey(), tR[0], tR[1], tR[2], tR[3], tR[4] / Math.max(1, tSum),
+					tX == null ? "Yожид=-" : ("Yожид=" + tX[0] + ".." + tX[1] + " (было " + tX[4] + ".." + tX[5] + ", x" + (tX[3] / 100.0) + ")"),
+					tSum / (double)tChunks));
+			}
+
+			// ---- 4. ВЕРДИКТЫ ----
+			// Окно россыпи судится ТОЛЬКО у материалов, которые больше НИКАКОЙ канал не кладёт. Иначе в минимум
+			// высоты затекает чужая руда (слои/жилы/бедрок имеют СВОИ окна), и судья краснеет не на дефекте —
+			// первая редакция этого критерия дала ровно такой ложный FAIL на 28 материалах. Список «занятых»
+			// материалов строится из живых реестров мода, не вписывается в судью.
+			java.util.HashSet<String> tOtherChannels = new java.util.HashSet<>();
+			for (gregapi.worldgen.StoneLayer tLayer : gregapi.worldgen.StoneLayer.LAYERS)
+				for (gregapi.worldgen.StoneLayerOres tOre : tLayer.mOres) if (tOre.mMaterial != null) tOtherChannels.add(tOre.mMaterial.mNameInternal);
+			for (java.util.List<gregapi.worldgen.WorldgenObject> tList : new java.util.List[] {gregapi.data.CS.GEN_OVERWORLD, gregapi.data.CS.GEN_GT})
+				for (gregapi.worldgen.WorldgenObject tWG : tList) {
+					if (tWG instanceof gregapi.worldgen.WorldgenOresLarge) {
+						gregapi.worldgen.WorldgenOresLarge tL = (gregapi.worldgen.WorldgenOresLarge)tWG;
+						for (gregapi.oredict.OreDictMaterial tM : new gregapi.oredict.OreDictMaterial[] {tL.mTop, tL.mBottom, tL.mBetween, tL.mSpread}) if (tM != null) tOtherChannels.add(tM.mNameInternal);
+					}
+					if (tWG instanceof gregapi.worldgen.WorldgenOresBedrock) {
+						gregapi.worldgen.WorldgenOresBedrock tB = (gregapi.worldgen.WorldgenOresBedrock)tWG;
+						if (tB.mMaterial != null) tOtherChannels.add(tB.mMaterial.mNameInternal);
+					}
+				}
+			// пятый канал, найден по FAIL первой редакции: случайные самоцветы на СТЫКЕ слоёв
+			// (WorldgenStoneLayers:118-119, шанс 1/100) — кладутся по всей глубине, окна россыпи не соблюдают.
+			for (gregapi.oredict.OreDictMaterial tGem : gregapi.worldgen.StoneLayer.RANDOM_SMALL_GEM_ORES) if (tGem != null) tOtherChannels.add(tGem.mNameInternal);
+			O.println("[GT6-OREPROBE] материалов, занятых другими каналами (слои/жилы/бедрок/самоцветы стыка): " + tOtherChannels.size());
+
+			int tPassWindow = 0, tFailWindow = 0, tSkipWindow = 0;
+			StringBuilder tWindowFails = new StringBuilder();
+			for (java.util.Map.Entry<String, int[]> tE : tExpect.entrySet()) {
+				long[] tR = tFound.get(tE.getKey());
+				if (tR == null || tR[0] == 0) continue;
+				if (tOtherChannels.contains(tE.getKey())) {tSkipWindow++; continue;}
+				int[] tX = tE.getValue();
+				boolean tOk = tR[2] >= tX[0] - 8 && tR[3] <= tX[1] + 8;
+				if (tOk) tPassWindow++; else {tFailWindow++; tWindowFails.append(' ').append(tE.getKey()).append("(факт ").append(tR[2]).append("..").append(tR[3]).append(" вне ").append(tX[0]).append("..").append(tX[1]).append(')');}
+			}
+			O.println("[GT6-OREPROBE] окна: судимо " + (tPassWindow + tFailWindow) + ", пропущено как многоканальные " + tSkipWindow);
+			gregapi.probe.GT6ProbeStand.judge("GT6-OREPROBE", "A. окна одноканальных россыпей совпали с предписанием (судимо " + (tPassWindow+tFailWindow) + ")", tFailWindow == 0, "0 нарушений", tFailWindow + " нарушений:" + tWindowFails);
+
+			gregapi.probe.GT6ProbeStand.judge("GT6-OREPROBE", "B. руда есть ниже Y=0 (новый объём мира)", tOreBelowZero > 0, ">0", String.valueOf(tOreBelowZero));
+
+			int tY0 = gregapi.util.WD.remapY(tLevel, 0), tY62 = gregapi.util.WD.remapY(tLevel, 62), tY255 = gregapi.util.WD.remapY(tLevel, 255);
+			gregapi.probe.GT6ProbeStand.judge("GT6-OREPROBE", "C1. remapY(0/62/255) = дно/море/потолок", tY0 == tLevel.getMinY() && tY62 == tLevel.getSeaLevel() && tY255 == tLevel.getMaxY(),
+				tLevel.getMinY() + "/" + tLevel.getSeaLevel() + "/" + tLevel.getMaxY(), tY0 + "/" + tY62 + "/" + tY255);
+			boolean tMono = T;
+			for (int y = 1; y <= 255; y++) if (gregapi.util.WD.remapY(tLevel, y) < gregapi.util.WD.remapY(tLevel, y - 1)) {tMono = F; break;}
+			gregapi.probe.GT6ProbeStand.judge("GT6-OREPROBE", "C2. remapY монотонен (окна не схлопываются)", tMono, "монотонен", "есть провал");
+			gregapi.probe.GT6ProbeStand.judge("GT6-OREPROBE", "C3. растяжение подземной части > 1.5", gregapi.util.WD.yStretch(tLevel, 5, 10) > 1.5F, ">1.5", String.valueOf(gregapi.util.WD.yStretch(tLevel, 5, 10)));
+
+			net.minecraft.server.level.ServerLevel tNether = aServer.getLevel(net.minecraft.world.level.Level.NETHER);
+			if (tNether == null) O.println("[GT6-OREPROBE] D. Незер недоступен — контроль ПРОПУЩЕН (не засчитан как PASS)");
+			else {
+				boolean tIdentity = T;
+				for (int y = 0; y <= 255; y += 5) if (gregapi.util.WD.remapY(tNether, y) != y) {tIdentity = F; break;}
+				gregapi.probe.GT6ProbeStand.judge("GT6-OREPROBE", "D. Незер (мир не вырос): remapY тождественен, yStretch=1", tIdentity && gregapi.util.WD.yStretch(tNether, 5, 10) == 1.0F,
+					"y->y, 1.0", tIdentity + ", " + gregapi.util.WD.yStretch(tNether, 5, 10));
+			}
+
+			java.util.Random tRnd = new java.util.Random(12345);
+			long tAcc = 0; int tN = 20000;
+			for (int i = 0; i < tN; i++) tAcc += gregapi.util.WD.yScaleAmount(tLevel, 5, 10, 2, tRnd);
+			double tAvg = tAcc / (double)tN, tWant = 2 * gregapi.util.WD.yStretch(tLevel, 5, 10);
+			gregapi.probe.GT6ProbeStand.judge("GT6-OREPROBE", "E. yScaleAmount в среднем = amount*растяжение", Math.abs(tAvg - tWant) < 0.05, String.format("%.3f", tWant), String.format("%.3f", tAvg));
+
+			O.println("========== [GT6-OREPROBE] DONE ==========");
+		} catch(Throwable e) {e.printStackTrace(O);}
+		aServer.halt(F);
 	}
 }

@@ -69,8 +69,12 @@ public abstract class WorldgenBlob extends WorldgenObject {
 			if (temp) return F;
 		}
 		if (aRandom.nextInt(mProbability) == 0) {
-			for (int i = 0; i < mAmount; i++) {
-				int tX = aMinX + aRandom.nextInt(16), tY = mMinY + aRandom.nextInt(mMaxY - mMinY), tZ = aMinZ + aRandom.nextInt(16);
+			// F6 §4.1 (указание пользователя 2026-08-07): тот же приём, что в WorldgenOresSmall — окно растягивается
+			// sea-anchored, количество домножается на растяжение (плотность вкраплений на объём = 1.7.10). Центр — WD.
+			int tRMinY = WD.remapY(aWorld, mMinY), tRMaxY = WD.remapY(aWorld, mMaxY);
+			int tAmount = WD.yScaleAmount(aWorld, mMinY, mMaxY, mAmount, aRandom);
+			for (int i = 0; i < tAmount; i++) {
+				int tX = aMinX + aRandom.nextInt(16), tY = tRMinY + aRandom.nextInt(Math.max(1, tRMaxY - tRMinY)), tZ = aMinZ + aRandom.nextInt(16);
 				if (mAllowToGenerateinVoid || !WD.air(aWorld, tX, tY, tZ)) {
 					float var6 = aRandom.nextFloat() * (float)Math.PI;
 					double aX1 = ((tX + 8) + Mth.sin(var6) * mSize / 8);

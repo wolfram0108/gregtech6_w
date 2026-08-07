@@ -63,21 +63,24 @@ public class WorldgenColtan extends WorldgenObject {
 		
 		// Generate Coltan at the large Area around the Center Point of Coltan Contention.
 		if (tDistance > mRange*mRange) return F;
-		for (int i = 0, j = Math.max(1, mAmount/2 + aRandom.nextInt(1+mAmount)/2); i < j; i++) {
+		// F6 §4.1 (указание пользователя 2026-08-07): окно и количество — через центр WD, как в WorldgenOresSmall.
+		final int tRMinY = WD.remapY(aWorld, mMinY), tRMaxY = WD.remapY(aWorld, mMaxY);
+		final int tAmount = WD.yScaleAmount(aWorld, mMinY, mMaxY, mAmount, aRandom);
+		for (int i = 0, j = Math.max(1, tAmount/2 + aRandom.nextInt(1+tAmount)/2); i < j; i++) {
 			switch(aRandom.nextInt(5)) {
-			default: WD.setSmallOre(aWorld, aMinX+aRandom.nextInt(16), mMinY+aRandom.nextInt(Math.max(1, mMaxY-mMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Coltan   .mID); break;
-			case  0: WD.setSmallOre(aWorld, aMinX+aRandom.nextInt(16), mMinY+aRandom.nextInt(Math.max(1, mMaxY-mMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Columbite.mID); break;
-			case  1: WD.setSmallOre(aWorld, aMinX+aRandom.nextInt(16), mMinY+aRandom.nextInt(Math.max(1, mMaxY-mMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Tantalite.mID); break;
+			default: WD.setSmallOre(aWorld, aMinX+aRandom.nextInt(16), tRMinY+aRandom.nextInt(Math.max(1, tRMaxY-tRMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Coltan   .mID); break;
+			case  0: WD.setSmallOre(aWorld, aMinX+aRandom.nextInt(16), tRMinY+aRandom.nextInt(Math.max(1, tRMaxY-tRMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Columbite.mID); break;
+			case  1: WD.setSmallOre(aWorld, aMinX+aRandom.nextInt(16), tRMinY+aRandom.nextInt(Math.max(1, tRMaxY-tRMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Tantalite.mID); break;
 			}
 		}
 		
 		// If close to the Bedrock Vein, generate a few large Ores too. (64*64=4096)
 		if (tDistance > 4096) return T;
-		for (int i = 0, j = Math.max(1, mAmount/2 + aRandom.nextInt(1+mAmount)/2); i < j; i++) {
+		for (int i = 0, j = Math.max(1, tAmount/2 + aRandom.nextInt(1+tAmount)/2); i < j; i++) {
 			switch(aRandom.nextInt(5)) {
-			default: WD.setOre(aWorld, aMinX+aRandom.nextInt(16), mMinY+aRandom.nextInt(Math.max(1, mMaxY-mMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Coltan   .mID); break;
-			case  0: WD.setOre(aWorld, aMinX+aRandom.nextInt(16), mMinY+aRandom.nextInt(Math.max(1, mMaxY-mMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Columbite.mID); break;
-			case  1: WD.setOre(aWorld, aMinX+aRandom.nextInt(16), mMinY+aRandom.nextInt(Math.max(1, mMaxY-mMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Tantalite.mID); break;
+			default: WD.setOre(aWorld, aMinX+aRandom.nextInt(16), tRMinY+aRandom.nextInt(Math.max(1, tRMaxY-tRMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Coltan   .mID); break;
+			case  0: WD.setOre(aWorld, aMinX+aRandom.nextInt(16), tRMinY+aRandom.nextInt(Math.max(1, tRMaxY-tRMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Columbite.mID); break;
+			case  1: WD.setOre(aWorld, aMinX+aRandom.nextInt(16), tRMinY+aRandom.nextInt(Math.max(1, tRMaxY-tRMinY)), aMinZ+aRandom.nextInt(16), MT.OREMATS.Tantalite.mID); break;
 			}
 		}
 		return T;

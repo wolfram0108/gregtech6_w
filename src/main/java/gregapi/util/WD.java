@@ -1159,12 +1159,37 @@ public class WD {
 	public static int maxY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMaxY();}
 	/** maxY+1 = старая семантика {@code World.getHeight()} (был 256). MC26 no-arg getHeight()=COUNT(384) ≠ верх — заменять этим. */
 	public static int topY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMaxY()+1;}
+	/** Измерение по границам совпадает со старым миром 1.7.10 [0..255] → растягивать НЕЧЕГО (тождественный ремап).
+	 *  Незер и Энд в MC26 именно такие: {@code min_y=0, height=256} (`neo-decompiled/…/data/worldgen/DimensionTypes.java:72-73,105-106`),
+	 *  а вырос только Overworld (−64/384). Без этого гейта ремап тянул бы окна к ЧУЖОМУ уровню моря измерения
+	 *  (незер: {@code sea_level=32}, `NoiseGeneratorSettings.java:110`) и СЖИМАЛ подземную часть вместо растяжения. */
+	private static boolean sameAsOldWorld(net.minecraft.world.level.LevelHeightAccessor aWorld) {
+		return aWorld.getMinY() == OLD_BOTTOM && aWorld.getMaxY() == OLD_TOP;
+	}
 	/** §4.1 sea-anchored: старый абсолютный Y (мир [0..255], море 62) → новый Y (мир [minY..maxY], море getSeaLevel),
 	 *  раздельно по подземной [0..62]→[minY..sea] и надземной [62..255]→[sea..maxY] части (море — якорь, не дно). */
 	public static int remapY(LevelAccessor aWorld, int aOldY) {
+		if (sameAsOldWorld(aWorld)) return aOldY;
 		int tSea = aWorld.getSeaLevel(), tMinY = aWorld.getMinY(), tMaxY = aWorld.getMaxY();
 		if (aOldY <= SEA_OLD) return tMinY + Math.round((aOldY - OLD_BOTTOM) * (tSea - tMinY) / (float)(SEA_OLD - OLD_BOTTOM));
 		return tSea + Math.round((aOldY - SEA_OLD) * (tMaxY - tSea) / (float)(OLD_TOP - SEA_OLD));
+	}
+	/** §4.1 п.3, указание пользователя 2026-08-07: окно растягивается — ПЛОТНОСТЬ руды сохраняется, значит
+	 *  КОЛИЧЕСТВО растёт соразмерно выросшему объёму. Здесь — коэффициент этого роста для окна [aOldMinY..aOldMaxY]:
+	 *  новая толщина / старая (1.0 там, где мир не вырос). Один множитель на весь мод: генераторы не считают
+	 *  растяжение сами, а спрашивают центр — как и сам {@link #remapY}. */
+	public static float yStretch(LevelAccessor aWorld, int aOldMinY, int aOldMaxY) {
+		if (sameAsOldWorld(aWorld)) return 1.0F;
+		int tOldSpan = Math.max(1, aOldMaxY - aOldMinY), tNewSpan = Math.max(1, remapY(aWorld, aOldMaxY) - remapY(aWorld, aOldMinY));
+		return Math.max(1.0F, tNewSpan / (float)tOldSpan);
+	}
+	/** Целое количество объектов на растянутое окно. Дробный остаток разыгрывается СЛУЧАЙНО, а не отбрасывается:
+	 *  при коэффициенте 2.05 и штучной руде (2 шт/чанк) округление вниз потеряло бы 5 % генерации, вверх — добавило 45 %. */
+	public static int yScaleAmount(LevelAccessor aWorld, int aOldMinY, int aOldMaxY, int aAmount, Random aRandom) {
+		float tScaled = aAmount * yStretch(aWorld, aOldMinY, aOldMaxY);
+		int rAmount = (int)tScaled;
+		if (aRandom != null && aRandom.nextFloat() < tScaled - rAmount) rAmount++;
+		return rAmount;
 	}
 	/** F-tileentity-construction Y-порог (ADR): 1.7.10 инвалидировал TE при Y<0 (мир [0..255], Y<0 = аномалия-баг).
 	 *  MC26 мир [minY..maxY] (обычно −64..319), Y<0 ЛЕГИТИМЕН (бедрок на minY=−64, бедрок-руды/источники флюидов там же)

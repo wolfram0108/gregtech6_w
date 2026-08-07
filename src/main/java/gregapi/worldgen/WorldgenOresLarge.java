@@ -93,8 +93,15 @@ public class WorldgenOresLarge extends WorldgenObject {
 		
 		// F6 §4.1: окно жилы [mMinY..mMaxY] (старый мир 0..255) растягивается sea-anchored под MC26 (-64..319).
 		int tRMinY = WD.remapY(aWorld, mMinY), tRMaxY = WD.remapY(aWorld, mMaxY);
-		int tMinY = tRMinY + WD.random(aWorld, aOriginChunkX, aOriginChunkZ).nextInt(Math.max(1, tRMaxY - tRMinY - 5));
-		
+		// F6 §4.1 (указание пользователя 2026-08-07): жила ПЛОСКАЯ — занимает 7 слоёв (tMinY-1..tMinY+5) на любой
+		// высоте окна. Растянув окно, но оставив ОДНУ жилу, мы разредили бы жилы по объёму ровно во столько раз,
+		// во сколько окно выросло. Поэтому число жил на опорный чанк = растяжение окна (под морем 2, изредка 3);
+		// каждая получает СВОЮ высоту из того же детерминированного per-chunk потока (сид чанка не меняется).
+		java.util.Random tVeinRandom = WD.random(aWorld, aOriginChunkX, aOriginChunkZ);
+		int tVeins = WD.yScaleAmount(aWorld, mMinY, mMaxY, 1, tVeinRandom);
+		for (int tVein = 0; tVein < tVeins; tVein++) {
+		int tMinY = tRMinY + tVeinRandom.nextInt(Math.max(1, tRMaxY - tRMinY - 5));
+
 		// F6: было `WD.dimensionId(aWorld) == 0` (буквально ванильный Overworld) — сверено на реальную
 		// константу Level.OVERWORLD (Level.java:95), как и в WorldgenObject.checkForMajorWorldgen.
 		if (mIndicatorRocks && (!(GENERATE_STREETS && aWorld.getLevel().dimension() == Level.OVERWORLD) || (Math.abs(aMinX) >= 64 && Math.abs(aMaxX) >= 64 && Math.abs(aMinZ) >= 64 && Math.abs(aMaxZ) >= 64))) {
@@ -142,6 +149,7 @@ public class WorldgenOresLarge extends WorldgenObject {
 				WD.setOre(aWorld, tX, tMinY-1+aRandom.nextInt(7), tZ, mSpread.mID);
 			}
 		}
+		} // F6 §4.1: конец цикла по жилам (tVeins)
 		return T;
 	}
 	

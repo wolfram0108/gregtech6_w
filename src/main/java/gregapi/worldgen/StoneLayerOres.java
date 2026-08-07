@@ -85,9 +85,14 @@ public class StoneLayerOres {
 	}
 	
 	// F6 §4.1 (decisions/F6-worldgen.md): окно Y руды задано в старом мире [0..255]; в MC26 (-64..319) РАСТЯГИВАЕТСЯ
-	// sea-anchored (WD.remapY, море — якорь) + шанс масштабируется ОБРАТНО растяжению (сохранить исходное КОЛИЧЕСТВО
-	// руды в зоне, §4.1 п.3 — иначе на удвоенной высоте плотность бы упала вдвое). Кэш по (minY,seaLevel) измерения:
-	// считается один раз, а не на каждый из миллионов вызовов check() за чанк.
+	// sea-anchored (WD.remapY, море — якорь). Кэш по (minY,seaLevel) измерения: считается один раз, а не на каждый из
+	// миллионов вызовов check() за чанк.
+	//
+	// ⚠️ ШАНС НЕ МАСШТАБИРУЕТСЯ (изменено 2026-08-07 по указанию пользователя; прежняя редакция делила его на
+	// растяжение). mChance — вероятность руды НА КАЖДЫЙ БЛОК окна, то есть ровно плотность. Деление сохраняло
+	// исходное КОЛИЧЕСТВО руды в растянутой зоне и тем самым роняло плотность вдвое ниже 1.7.10 под морем.
+	// Требование: объём вырос → количество растёт соразмерно, плотность остаётся оригинальной. Значит шанс на блок
+	// берётся как в 1.7.10, без поправок.
 	private transient int mRemapKey = Integer.MIN_VALUE, mRemapMinY, mRemapMaxY;
 	private transient long mRemapChance;
 	private void ensureRemap(WorldGenLevel aWorld) {
@@ -96,8 +101,7 @@ public class StoneLayerOres {
 		mRemapKey = tKey;
 		mRemapMinY = WD.remapY(aWorld, mMinY);
 		mRemapMaxY = WD.remapY(aWorld, mMaxY);
-		long tOldSpan = Math.max(1, mMaxY - mMinY), tNewSpan = Math.max(1, mRemapMaxY - mRemapMinY);
-		mRemapChance = UT.Code.bind(1, U, mChance * tOldSpan / tNewSpan);
+		mRemapChance = mChance;
 	}
 
 	@SuppressWarnings("unlikely-arg-type")
