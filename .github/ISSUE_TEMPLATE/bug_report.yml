@@ -33,7 +33,7 @@ body:
     id: mod-version
     attributes:
       label: Mod version
-      placeholder: "6.0.0-alpha.1"
+      placeholder: "the version you are running, e.g. 6.0.0-alpha.1"
     validations:
       required: true
 

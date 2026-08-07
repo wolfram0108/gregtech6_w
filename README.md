@@ -3,8 +3,7 @@
 # GregTech 6 for NeoForge
 
 [![CI](https://github.com/wolfram0108/gregtech6_w/actions/workflows/build.yml/badge.svg)](https://github.com/wolfram0108/gregtech6_w/actions/workflows/build.yml)
-[![Minecraft](https://img.shields.io/badge/Minecraft-26.1.2-brightgreen)](https://www.minecraft.net/)
-[![NeoForge](https://img.shields.io/badge/NeoForge-26.1.2.77-orange)](https://neoforged.net/)
+[![Release](https://img.shields.io/github/v/release/wolfram0108/gregtech6_w?include_prereleases&sort=semver)](https://github.com/wolfram0108/gregtech6_w/releases)
 [![License](https://img.shields.io/badge/license-LGPL--3.0--or--later-blue)](LICENSE)
 
 **A port of [GregTech 6](https://github.com/GregTech6/gregtech6) — Gregorius Techneticies' mod for
@@ -12,7 +11,6 @@ Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 
 | | |
 |---|---|
-| Mod version | `6.0.0-alpha.1` |
 | Minecraft | `26.1.2` |
 | NeoForge | `26.1.2.77` |
 | Java | 25 |
