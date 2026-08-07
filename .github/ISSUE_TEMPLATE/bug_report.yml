@@ -1,0 +1,100 @@
+name: Bug report
+description: Something is broken, crashes, or behaves differently from GregTech 6 on 1.7.10
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. One thing worth knowing about this project: **"it behaves differently
+        from the original" is the most valuable kind of report**, even when the current behaviour
+        looks reasonable. This is a port, so a difference usually points at a missing piece rather
+        than at a design choice.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, and what the mod did. Be concrete — which block, item, machine, and the exact interaction.
+      placeholder: |
+        Placed a Bronze Boiler, put fire under it, filled it with water with a bucket.
+        The water disappeared and no steam was produced.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: If you know how GregTech 6 on 1.7.10 behaves here, say so — that is the reference this project is measured against.
+    validations:
+      required: true
+
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod version
+      placeholder: "6.0.0-alpha.1"
+    validations:
+      required: true
+
+  - type: input
+    id: loader-version
+    attributes:
+      label: NeoForge version
+      placeholder: "26.1.2.77"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Where it happened
+      options:
+        - Single player
+        - Dedicated server (and I am the server owner)
+        - Dedicated server (I am a player on it)
+      description: Some defects only exist on a dedicated server, so this field decides where to look first.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: world-age
+    attributes:
+      label: World
+      options:
+        - Freshly created on this version
+        - Created on an earlier alpha build
+        - Not applicable
+      description: |
+        Some fixes only apply to newly generated chunks — data destroyed by an earlier build cannot be
+        reconstructed. A fresh world tells us whether the defect is still being produced.
+    validations:
+      required: true
+
+  - type: textarea
+    id: other-mods
+    attributes:
+      label: Other mods installed
+      description: The full list, or "none besides the ones required". Mod interactions are a common cause.
+      placeholder: |
+        JEI 29.5.0.26
+        Jade 26.1.8
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Attach `logs/latest.log` and `gregtech.log`, plus the crash report from `crash-reports/` if the
+        game crashed. Attach files rather than pasting thousands of lines.
+      render: text
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: If it happens reliably, the steps. If it happened once, say so — that is useful too, just harder.
+      placeholder: |
+        1. New creative world
+        2. Place ...
+        3. ...

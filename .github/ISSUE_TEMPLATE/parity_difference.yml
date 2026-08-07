@@ -1,0 +1,55 @@
+name: Difference from the original
+description: Something works, but not the way GregTech 6 on 1.7.10 works
+labels: ["parity"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when nothing is *broken* — the port simply does something else than the original did.
+        Recipe amounts, machine timings, tool behaviour, worldgen density, tooltips, sounds, colours.
+
+  - type: textarea
+    id: original
+    attributes:
+      label: What GregTech 6 on 1.7.10 does
+      description: As precisely as you can — numbers if you have them.
+      placeholder: "A Bronze Boiler with a fire under it produces steam every 20 ticks."
+    validations:
+      required: true
+
+  - type: textarea
+    id: port
+    attributes:
+      label: What this port does instead
+      placeholder: "It produces steam every 10 ticks."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: confidence
+    attributes:
+      label: How do you know the original's behaviour
+      options:
+        - I ran 1.7.10 and checked
+        - From long experience playing GregTech 6
+        - From the wiki, a video, or another second-hand source
+      description: |
+        All three are welcome — this just tells us how much weight to give it before we measure. The
+        project settles such questions by running the original and comparing, so a second-hand answer
+        is a starting point, not a verdict.
+    validations:
+      required: true
+
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod version
+      placeholder: "6.0.0-alpha.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: Screenshots, logs, the specific items or blocks involved.

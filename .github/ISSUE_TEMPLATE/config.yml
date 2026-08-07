@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security issue
+    url: https://github.com/wolfram0108/gregtech6_w/security/advisories/new
+    about: Server crashes triggered by clients, privilege or data leaks — report privately via the Security tab, not here.
+  - name: Original GregTech 6 (Minecraft 1.7.10)
+    url: https://github.com/GregTech6/gregtech6
+    about: Gregorius Techneticies' original mod. Issues with the 1.7.10 mod itself belong there, not in this port.
