@@ -560,9 +560,9 @@ public class GT_API extends Abstract_Mod {
 		gregapi.item.CreativeTabsGT.register(aModBus);
 		// F16/F10: применение накопленных vanilla/форейн stack-size-override (ST.setMaxStackSize) через ModifyDefaultComponentsEvent.
 		aModBus.addListener(gregapi.util.ST::applyVanillaComponentOverrides);
-		// GameTest: проверка механик в РЕАЛЬНОМ мире (block-placement/break/TE, взаимодействие игрок-блок) через
-		// runGameTestServer — тот же мод-бас, единая точка. RegisterGameTestsEvent стреляет только под gametest (dev).
-		gregtech6.gametest.GT6GameTests.register(aModBus);
+		// GameTest'ы (проверка механик в РЕАЛЬНОМ мире) — ОСНАСТКА, а не поставка: живут в src/gametest/java,
+		// подключаются флагом -Pgt6probes и подписываются на мод-шину сами (@EventBusSubscriber). Отсюда их
+		// больше не зовут — production-код об оснастке не знает.
 
 		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на мод-шину напрямую.
 		// GT6-трёхфазный контракт (Pre/Init/Post) сохранён 1:1 поверх родных событий жизненного цикла neo:

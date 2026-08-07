@@ -57,7 +57,10 @@ import net.minecraft.world.item.ItemStack;
 public final class PortDump {
 
     private static final Path DUMP = Path.of("build", "dump");
-    private static final Path ORACLE = Path.of("D:/Temp/MC_NEW/.claude/doc/missions/gt6-port/oracle");
+    /** Дампы живого оригинала 1.7.10. Путь задаётся снаружи (`gradlew parityCheck -Pgt6.oracle=<путь>`),
+     *  потому что эталон весит ~200 МБ и в репозиторий не входит: сверка с оригиналом — инструмент
+     *  расследования расхождений, а не проверка поставки. */
+    private static final Path ORACLE = Path.of(System.getProperty("gt6.oracle", "oracle"));
 
     private PortDump() {}
 
@@ -76,22 +79,11 @@ public final class PortDump {
         // В FML-контексте (coreOnly test) SharedConstants/Bootstrap УЖЕ инициализированы загрузкой мода — guard от
         // "Cannot override the current game version!". Standalone (без FML) — инициализируем сами.
         try {SharedConstants.setVersion(DetectedVersion.BUILT_IN); Bootstrap.bootStrap();} catch (Throwable e) {System.out.println("[port-dump] bootstrap уже сделан FML: " + e);}
-        MT.init();                          // static-init MT (материалы) + init() — идемпотентно (мод уже инициализировал)
-        Class.forName("gregapi.data.OP");   // static-init OP (префиксы)
-        // Выполнить отложенный data-init (loaders/targets/associations — заполняют registeredMaterialsCount/registeredItemsCount,
-        // fluid-компоненты). В @Test (после EphemeralTestServer server-start) компоненты привязаны → ST.make работает. onModServerStarting2
-        // в тесте не срабатывает, потому зовём явно здесь.
-        gregapi.GT_API.runDeferredItemInit();
-        // F4 роль-C (замена ванильных рецептов ore-версиями): в игре зовётся из GT_API.onLevelLoadEarlyItemInit
-        // сразу после drain'а; в тесте LevelEvent.Load не проходит — зовём явно, тем же приёмом, что drain выше.
-        // Сервер эфемерного стенда (параметр JUnit) несёт полный датапак-RecipeManager.
+        // Догон фазы отложенной data-init (в тесте LevelEvent.Load не летит — уровня нет). Прежде эти шаги
+        // стояли здесь копией; теперь последовательность живёт в ОДНОМ месте — gregtech6.GT6TestBoot, — и им
+        // же пользуются тесты механик. Порядок тот же, что в GT_API.onLevelLoadEarlyItemInit.
         System.out.println("[port-dump] F4 роль-C: сервер " + (aServer == null ? "НЕДОСТУПЕН — замены не снимаются" : "есть, снимаем замены"));
-        gregapi.oredict.OreDictionary.initVanillaRecipeReplacements(aServer);
-        // F11-recipe-scan (Loader_Recipes_Replace): в игре очередь исполняется в GT_API.onLevelLoadEarlyItemInit
-        // после роли-C; здесь — тем же порядком явно.
-        gregapi.GT_API.sCurrentServerForRecipeScan = aServer;
-        try {for (Runnable tScan : gregapi.GT_API.DEFERRED_RECIPE_SCAN) try {tScan.run();} catch(Throwable e) {e.printStackTrace();} gregapi.GT_API.DEFERRED_RECIPE_SCAN.clear();}
-        finally {gregapi.GT_API.sCurrentServerForRecipeScan = null;}
+        gregtech6.GT6TestBoot.ensureLoaded(aServer);
 
         Files.createDirectories(DUMP);
         // Путь печатаем абсолютным: рабочий каталог тест-JVM — build/minecraft-junit/, поэтому относительный

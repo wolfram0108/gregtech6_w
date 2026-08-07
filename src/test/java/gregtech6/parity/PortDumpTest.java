@@ -3,6 +3,7 @@ package gregtech6.parity;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.testframework.junit.EphemeralTestServerProvider;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -16,6 +17,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
  *
  * <p>Пока НЕ ассертит 100% (расхождения = сигнал реального дрейфа/тихих data-drop). Ассерт-порог — когда срез позеленеет.</p>
  */
+/*
+ * ОСНАСТКА ФАЗЫ ПОРТА, а не проверка поставки. Отвечает на вопрос «совпадает ли с оригиналом 1.7.10»,
+ * для чего нужны дампы живого оригинала (~200 МБ, в репозиторий не входят). Этап порта закрыт, вопрос
+ * больше не задаётся на каждый прогон — тег выводит тест из обычного `gradlew test`. Запуск по требованию:
+ *     gradlew test -Pgt6.oracle=<путь к дампам оригинала>
+ */
+@Tag("parity")
 @ExtendWith(EphemeralTestServerProvider.class)
 class PortDumpTest {
 

@@ -32,81 +32,13 @@ sourceSets.main.resources {
 // этот каталог и подключить настоящие зависимости — в ОДНОМ месте. Аналог compileOnly dev-jar'ов оракула.
 sourceSets.main.java.srcDir('src/compat-mirror/java')
 
-// -PcoreOnly (ОБРАТИМО, opt-in): сузить main.java до ядра-692 + mirror (917 файлов), исключив контент-слой
-// (568 файлов, 2860 ошибок компиляции). Нужно, чтобы `./gradlew test -PcoreOnly` собрался и запустил PortDump-@Test
-// в FML-runtime (единственный контекст, где заводится FMLLoader → parity-судья material/prefix). Обычная сборка
-// (без -PcoreOnly) НЕ тронута. Снять фильтр, когда контент-слой начнёт компилироваться. См. STATE.md «ПАРИТЕТ-ОСНАСТКА».
-if (project.hasProperty('coreOnly')) {
-    def toRel = { line ->
-        def p = line.trim().replace('\\', '/')
-        int i = p.indexOf('src/main/java/')
-        if (i >= 0) return p.substring(i + 'src/main/java/'.length())
-        int j = p.indexOf('src/compat-mirror/java/')
-        if (j >= 0) return p.substring(j + 'src/compat-mirror/java/'.length())
-        return null
-    }
-    def includes = []
-    file('core_unit_v2_files.txt').eachLine { def r = toRel(it); if (r) includes << r }
-    file('mirror_files.txt').eachLine { def r = toRel(it); if (r) includes << r }
-    sourceSets.main.java.setIncludes(includes)
-    // SanityTest завязан на контент-класс GregTech6.MODID (исключён фильтром) — не компилировать под coreOnly.
-    sourceSets.test.java.exclude('**/SanityTest.java')
-    // JPMS split-package: compat-mirror кладёт crutch-классы в net.minecraft.*/cpw.* (IIcon/IIconRegister/RenderBlocks/
-    // TileEntityFlowerPot/launchwrapper/cpw.mods.fml) — конфликт с реальными модулями minecraft/modlauncher при
-    // module-resolution FML. Они нужны только на КОМПИЛЯЦИИ; в рантайме material/prefix-дамп (server-side, без рендера)
-    // их не вызывает (ленивая линковка). Стрипаем .class из вывода ПОСЛЕ compile, ДО test → модуль gregtech6 не экспортирует
-    // эти пакеты → конфликт исчезает, GT6-импорты остаются verbatim-1:1 (код не тронут). Дёрнет рантайм → NoClassDefFound (тогда --patch-module).
-    // stripMcMirror удаляет .class из вывода → это ломает ИНКРЕМЕНТАЛЬНУЮ компиляцию на след. прогоне (gradle видит
-    // выход изменённым, но incremental-анализ путается: cpw.*/net.minecraft.* «package does not exist»). Полная компиляция
-    // регенерит миражи каждый раз → strip снова удаляет → консистентно. Под coreOnly компилируем 918 файлов (~15с) — ок для итераций.
-    tasks.named('compileJava').configure { options.incremental = false }
-    def stripMirror = tasks.register('stripMcMirror') {
-        doLast {
-            def dir = file('build/classes/java/main')
-            def removed = 0
-            ['net/minecraft', 'cpw'].each { pkg ->
-                def t = file("$dir/$pkg")
-                if (t.exists()) { removed += fileTree(t).files.size(); delete t }
-            }
-            logger.lifecycle("[coreOnly] stripMcMirror: удалено ${removed} crutch-.class из рантайм-модуля")
-        }
-    }
-    tasks.named('stripMcMirror').configure { mustRunAfter tasks.named('classes') }
-    tasks.named('test').configure { dependsOn stripMirror }
-    logger.lifecycle("[coreOnly] main.java сужен до ${includes.size()} файлов (ядро-692 + mirror); SanityTest исключён")
-}
+// Режим -PcoreOnly СНЯТ вместе с фазой массовой компиляции, которую он обслуживал: он сужал сборку до
+// ядра по двум спискам файлов, потому что контент-слой тогда ещё не компилировался. Контент собирается,
+// фаза закрыта — режим и его списки (core_unit_v2_files.txt, mirror_files.txt) убраны из репозитория.
 
-// -PparityFull: контент-слой ТЕПЕРЬ КОМПИЛИРУЕТСЯ (3903→0) -> main НЕ сужаем (полный контент для контент-зависимых
-// fluid/registeredCounts паритета), но JPMS split-package остаётся -> тот же stripMcMirror (удаляем net.minecraft/cpw
-// crutch-.class ПОСЛЕ compile, ДО test). Material/prefix-дамп server-side без рендера мираж не зовёт (ленивая линковка);
-// дёрнет рантайм → NoClassDefFound (тогда --patch-module конкретного пакета). Обычная сборка (без флага) НЕ тронута.
-if (project.hasProperty('parityFull')) {
-    tasks.named('compileJava').configure { options.incremental = false }
-    def stripMirrorFull = tasks.register('stripMcMirrorFull') {
-        doLast {
-            def dir = file('build/classes/java/main')
-            def removed = 0
-            ['net/minecraft', 'cpw'].each { pkg ->
-                def t = file("$dir/$pkg")
-                if (t.exists()) { removed += fileTree(t).files.size(); delete t }
-            }
-            logger.lifecycle("[parityFull] stripMcMirrorFull: удалено ${removed} crutch-.class из рантайм-модуля")
-        }
-    }
-    tasks.named('stripMcMirrorFull').configure { mustRunAfter tasks.named('classes') }
-    tasks.named('test').configure {
-        dependsOn stripMirrorFull
-        // Тот же рубильник проб, что у runClient (CS.probeFlag = свойство + файл-флаг): полный прогон грузит
-        // ВЕСЬ мод за ~40 с, поэтому диагностику фазы ЗАГРУЗКИ (кто и почему регистрирует рецепт) дешевле
-        // снимать здесь, а не поднимая клиент. Флаги кладутся в рабочий каталог тест-JVM (build/minecraft-junit).
-        systemProperty 'gt6.probes', 'true'
-        // Полностью прогруженный GT6 (тысячи предметов/рецептов + дампы) не влезает в дефолтный heap → OutOfMemoryError
-        // в Server thread, обрывающий отложенный init до генерации дампа. Поднимаем память тест-JVM.
-        maxHeapSize = '6G'
-    }
-    sourceSets.test.java.exclude('**/SanityTest.java')
-    logger.lifecycle("[parityFull] полный контент + stripMcMirror для JPMS")
-}
+// Режим -PparityFull СНЯТ: он был третьим способом сказать «сверить с оригиналом» и после разделения
+// режимов (см. блок test ниже) только путал. Сверка включается наличием пути к дампам оригинала:
+//     gradlew test -Pgt6.oracle=<путь>
 
 // runClient/runData/runServer (module-режим дев-запуска): те же JPMS split-package crutch-классы
 // (net.minecraft.*/cpw.* из compat-mirror, зона F10), что и в test, конфликтуют с модулями minecraft/jei при
@@ -118,42 +50,51 @@ if (project.hasProperty('parityFull')) {
 // .class из вывода, инкрементальная компиляция на след. прогоне путается («package does not exist») —
 // полная компиляция регенерит миражи каждый раз, strip снова удаляет → консистентно.
 tasks.named('compileJava').configure { options.incremental = false }
-def stripRunMirror = tasks.register('stripRunMirror') {
+// ОДНА задача на весь проект: и дев-запуски, и тесты снимают одни и те же crutch-классы из одного и
+// того же вывода. Прежде копий было две (для run* и для test) — и они разошлись: тестовая умела
+// configuration cache, запусковая нет, из-за чего любой дев-запуск падал на кэше конфигурации.
+// Пути вычисляются НА КОНФИГУРАЦИИ: обращение к file()/project внутри doLast несовместимо с кэшем.
+def mirrorDirs = ['net/minecraft', 'cpw'].collect { file("build/classes/java/main/$it") }
+def stripCompatMirror = tasks.register('stripCompatMirror') {
+    description = 'Снять compile-only зеркала (net.minecraft, cpw) из рантайм-вывода: их пакетами владеет движок'
     doLast {
-        def dir = file('build/classes/java/main')
-        def removed = 0
-        ['net/minecraft', 'cpw'].each { pkg ->
-            def t = file("$dir/$pkg")
-            if (t.exists()) { removed += fileTree(t).files.size(); delete t }
+        int removed = 0
+        mirrorDirs.each { d ->
+            if (d.exists()) {
+                d.eachFileRecurse { if (it.isFile()) removed++ }
+                d.deleteDir()
+            }
         }
-        logger.lifecycle("[run] stripRunMirror: удалено ${removed} crutch-.class из рантайм-модуля")
+        println("[strip] снято ${removed} crutch-.class из рантайм-модуля")
     }
 }
-stripRunMirror.configure { mustRunAfter tasks.named('classes') }
+stripCompatMirror.configure { mustRunAfter tasks.named('classes') }
 ['runClient', 'runData', 'runServer', 'runGameTestServer'].each { rn ->
-    tasks.matching { it.name == rn }.configureEach { dependsOn stripRunMirror }
+    tasks.matching { it.name == rn }.configureEach { dependsOn stripCompatMirror }
 }
+tasks.named('test').configure { dependsOn stripCompatMirror }
 
 // РУБИЛЬНИК отладочных проб (CS.probeFlag): файлы-флаги в run/ работают ТОЛЬКО при запуске с -Pgt6probes
 // (запуски оркестратора: `gradlew runClient -Pgt6probes …`). Обычный запуск игрока — пробы/автовход-в-мир
 // мертвы, даже если флаг случайно остался (класс сбоя «стухший флаг портит игровой запуск» закрыт механически).
 if (project.hasProperty('gt6probes')) {
-    // Каталог верификационных СТЕНДОВ фазы Ф3.1 (связки №1-14 + каркас GT6ProbeStand).
-    // Тот же приём, что src/compat-mirror/java выше: дополнительный srcDir, подключаемый ОДНОЙ строкой.
-    // В обычной сборке (jar игрока) стенды НЕ КОМПИЛИРУЮТСЯ ВООБЩЕ — их нет в classpath, значит нет и в jar.
-    // Стенды автономны: подписываются на события сами (@EventBusSubscriber), production-код о них не знает.
-    sourceSets.main.java.srcDir('src/probes/java')
+    // ОСНАСТКА ПРОВЕРКИ — два каталога, подключаемые одной строкой каждый (тот же приём, что
+    // src/compat-mirror/java выше). В обычной сборке (jar игрока) они НЕ КОМПИЛИРУЮТСЯ ВООБЩЕ — их нет
+    // в classpath, значит нет и в jar. Обе оснастки автономны: подписываются на события сами
+    // (@EventBusSubscriber), production-код о них не знает ни строчкой.
+    sourceSets.main.java.srcDir('src/probes/java')     // живые стенды (ручная проверка в работающей игре)
+    sourceSets.main.java.srcDir('src/gametest/java')   // GameTest'ы движка (runGameTestServer)
     ['runClient', 'runData', 'runServer', 'runGameTestServer'].each { rn ->
         tasks.matching { it.name == rn }.configureEach { it.jvmArgs('-Dgt6.probes=true') }
     }
-    logger.lifecycle("[gt6probes] отладочные пробы ВКЛЮЧЕНЫ (-Dgt6.probes=true)")
+    logger.lifecycle("[gt6probes] оснастка проверки ВКЛЮЧЕНА: стенды + GameTest'ы (-Dgt6.probes=true)")
 }
 
 // PRODUCTION-JAR: та же JPMS split-package беда, что в run*/test, но БЕЗ фикса ⇒ ломала запуск в реальном
 // (модульном) лаунчере. compat-mirror компилирует crutch-классы в net.minecraft.*/cpw.* — пакеты, которыми
 // в рантайме ВЛАДЕЮТ реальные модули (minecraft / FML). Когда они попадают в jar, automatic-module gregtech6
 // «экспортирует» net.minecraft.client.renderer ⇒ split с модулем minecraft ⇒ FML ResolutionException при
-// загрузке мода (см. STATE.md ит.10). stripRunMirror чистит их ТОЛЬКО для dev-запусков, а `jar` от него не
+// загрузке мода (см. STATE.md ит.10). stripCompatMirror чистит их для dev-запусков и тестов, а `jar` от него не
 // зависел ⇒ костыль недетерминированно (в зависимости от порядка задач) попадал в production-jar.
 // Мираж по замыслу compileOnly («Аналог compileOnly dev-jar'ов оракула», см. §F10 выше) ⇒ его классы НЕ
 // должны быть в jar. Исключаем ровно тот набор, что стрипается для run/test (проверен десятками runClient с
@@ -232,6 +173,9 @@ neoForge {
         gameTestServer {
             type = "gameTestServer"
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            // Свой каталог: без него прогон сыпал logs/, config/ и .cache/ прямо в корень репозитория,
+            // и этот мусор попадал под руку при коммите. Оснастка не гадит там, где лежат исходники.
+            gameDirectory = project.file('rungametest')
         }
 
         data {
@@ -339,40 +283,37 @@ dependencies {
     testImplementation "net.neoforged:testframework:${neo_version}"
 }
 
-// JUnit Platform для задачи test.
+// ДВА РЕЖИМА ПРОЕКТА — разделены намеренно (см. README «Development tooling»).
+//
+//   ПРОДУКТ (по умолчанию): `gradlew build` / `gradlew test` — проверки мода САМОГО ПО СЕБЕ.
+//     Ничего сверх репозитория не требуют, работают у любого, кто склонировал, и служат гейтом CI.
+//
+//   ОСНАСТКА ФАЗЫ ПОРТА (только по требованию): сверка с оригиналом (`test -Pgt6.oracle=<путь>`) и живые
+//     стенды (`-Pgt6probes`). Отвечают на вопрос «совпадает ли с оригиналом», для чего нужны дампы
+//     живого 1.7.10 (~200 МБ, в репозиторий не входят). Этап порта закрыт: вопрос задаётся при
+//     расследовании расхождения, а не на каждый прогон.
+//
+// Инструменты фазы НЕ выбрасываются и НЕ уходят в поставку — они переведены в режим по требованию.
+// Паритет включается НАЛИЧИЕМ пути к дампам оригинала — отдельной задачи не заводим: окружение
+// тестов Minecraft настраивает плагин сборки только для штатной `test`, самодельная Test-задача его
+// не наследует и не стартует вовсе (проверено). Один механизм вместо двух:
+//     gradlew test                         -> проверки мода самого по себе (эталон не нужен)
+//     gradlew test -Pgt6.oracle=<путь>     -> плюс сверка с дампами живого 1.7.10
+def oraclePath = project.findProperty('gt6.oracle')
 test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        if (!oraclePath) excludeTags 'parity'
+    }
+    if (oraclePath) systemProperty 'gt6.oracle', oraclePath.toString()
     // Тесты поднимают ВЕСЬ мод (тысячи предметов и рецептов). На дефолтном heap процесс падает
     // OutOfMemoryError уже во время загрузки, и тогда краснеют все проверки разом — не потому, что
-    // код неверен, а потому, что мод не догрузился. Столько же памяти давно даётся режиму -PparityFull.
+    // код неверен, а потому, что мод не догрузился.
     maxHeapSize = '6G'
-}
-
-// JPMS split-package для ОБЫЧНОГО `gradlew test` (без -PcoreOnly/-PparityFull).
-// compat-mirror кладёт crutch-классы в net.minecraft.*/cpw.* — те же пакеты, что экспортируют модули
-// minecraft/jei, поэтому тест-раннер не стартовал вовсе: «Modules minecraft and gregtech6 export package
-// net.minecraft.client.renderer.texture to module testframework». Под флагами эта же проблема давно решена
-// задачами stripMcMirror/stripMcMirrorFull, но обычный прогон их не включал — и главный регресс-гейт проекта
-// молча не запускался. Тот же приём, третьей копии механизма не заводим: одна задача, общая для всех режимов.
-if (!project.hasProperty('coreOnly') && !project.hasProperty('parityFull')) {
-    tasks.named('compileJava').configure { options.incremental = false }
-    // Пути берём НА КОНФИГУРАЦИИ: обращение к file()/project внутри doLast несовместимо с configuration cache
-    // («references a Gradle script object from a Groovy closure at execution time»).
-    def mirrorDirs = ['net/minecraft', 'cpw'].collect { file("build/classes/java/main/$it") }
-    def stripMirrorTest = tasks.register('stripMcMirrorTest') {
-        doLast {
-            int removed = 0
-            mirrorDirs.each { d ->
-                if (d.exists()) {
-                    d.eachFileRecurse { if (it.isFile()) removed++ }
-                    d.deleteDir()
-                }
-            }
-            println("[test] stripMcMirrorTest: удалено ${removed} crutch-.class из рантайм-модуля")
-        }
+    doFirst {
+        logger.lifecycle(oraclePath
+            ? "[test] режим сверки с оригиналом: дампы ${oraclePath}"
+            : "[test] продуктовый режим: проверки мода самого по себе (сверка с оригиналом — test -Pgt6.oracle=<путь>)")
     }
-    tasks.named('stripMcMirrorTest').configure { mustRunAfter tasks.named('classes') }
-    tasks.named('test').configure { dependsOn stripMirrorTest }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
@@ -425,8 +366,8 @@ idea {
     }
 }
 
-// ОСНАСТКА ИЗОЛЯЦИИ ЯДРА (порт, паритет-первый заход): печать compileClasspath main,
-// чтобы компилировать ровно подмножество ядра-403 отдельным javac (см. core_unit_files.txt).
+// Печать compileClasspath main — для случаев, когда нужно собрать подмножество исходников
+// отдельным вызовом компилятора, минуя Gradle (диагностика швов).
 tasks.register('printCompileCp') {
     def cp = sourceSets.main.compileClasspath
     doLast {
