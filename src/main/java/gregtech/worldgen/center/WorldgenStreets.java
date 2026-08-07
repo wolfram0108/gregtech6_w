@@ -649,7 +649,7 @@ public class WorldgenStreets extends WorldgenObject {
 		}
 		
 		// Kill every living thing close by except Players.
-		for (LivingEntity tEntity : (List<LivingEntity>)aWorld.getEntitiesOfClass(LivingEntity.class, new AABB(-16, mHeight, aMinZ, +16, mHeight+8, aMinZ+16))) if (!(tEntity instanceof Player)) tEntity.discard();
+		gregapi.util.WD.discardEntitiesSafely(aWorld, LivingEntity.class, new AABB(-16, mHeight, aMinZ, +16, mHeight+8, aMinZ+16), e -> !(e instanceof Player)); // BUG-103: удаление — серверным потоком (генерация идёт в воркере)
 		return T;
 	}
 	
@@ -886,7 +886,7 @@ public class WorldgenStreets extends WorldgenObject {
 		}
 		
 		// Kill every living thing close by except Players.
-		for (LivingEntity tEntity : (List<LivingEntity>)aWorld.getEntitiesOfClass(LivingEntity.class, new AABB(aMinX, mHeight, -16, aMinX+16, mHeight+8, +16))) if (!(tEntity instanceof Player)) tEntity.discard();
+		gregapi.util.WD.discardEntitiesSafely(aWorld, LivingEntity.class, new AABB(aMinX, mHeight, -16, aMinX+16, mHeight+8, +16), e -> !(e instanceof Player)); // BUG-103: то же — через центр
 		return T;
 	}
 }

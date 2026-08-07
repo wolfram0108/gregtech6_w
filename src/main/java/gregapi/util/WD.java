@@ -140,6 +140,29 @@ public class WD {
 		}
 		return null;
 	}
+	// ==========================================================================================================
+	// BUG-103, корень «при генерации мира»: ВОРДГЕН УБИРАЕТ СУЩНОСТИ ИЗ ЧУЖОГО ПОТОКА.
+	//
+	// В 1.7.10 генерация шла в главном потоке сервера (IWorldGenerator.generate из chunk provider), поэтому
+	// «убить предметы, выпавшие при генерации» было обычной строкой. В 26.1.2 генерация чанка исполняется
+	// worker-потоками, а состав сущностей — забота серверного потока: discard() тянет цепочку
+	// Callback.onRemove → stopTracking → onTrackingEnd → ChunkMap.removeEntity, то есть правит entityMap
+	// и EntityLookup.byId. Пока серверный поток обходит ту же карту (ChunkMap.tick:1206), правка из воркера
+	// рвёт fastutil-итератор — NPE «this.wrapped is null», в стеке мода нет.
+	//
+	// ЕДИНЫЙ приём на весь мод: и ПОИСК, и удаление откладываются в серверный поток (он же выполняет их сразу,
+	// в ближайшую же свою очередь). Наблюдаемый результат тот же — сущности исчезают; меняется только поток.
+	// Вне сервера (клиентский/тестовый уровень) выполняется на месте, как раньше.
+	// ==========================================================================================================
+	public static <T extends net.minecraft.world.entity.Entity> void discardEntitiesSafely(LevelAccessor aWorld, Class<T> aClass, AABB aBox, java.util.function.Predicate<T> aFilter) {
+		if (aWorld == null || aClass == null || aBox == null) return;
+		net.minecraft.world.level.Level tLevel = aWorld instanceof net.minecraft.world.level.Level tL ? tL : (aWorld instanceof net.minecraft.world.level.ServerLevelAccessor tS ? tS.getLevel() : null);
+		if (tLevel == null) return;
+		Runnable tJob = () -> {for (T tEntity : tLevel.getEntitiesOfClass(aClass, aBox)) if (!tEntity.isRemoved() && (aFilter == null || aFilter.test(tEntity))) tEntity.discard();};
+		net.minecraft.server.MinecraftServer tServer = tLevel.getServer();
+		if (tServer != null) tServer.execute(tJob); else tJob.run();
+	}
+
 	public static List<ItemStack> suckAll(IHasWorldAndCoords aCoordinates) {return suckAll(aCoordinates.getWorld(), aCoordinates.getX(), aCoordinates.getY(), aCoordinates.getZ());}
 	public static List<ItemStack> suckAll(LevelAccessor aWorld, double aX, double aY, double aZ) {return suckAll(aWorld, aX, aY, aZ, 1, 1, 1);}
 	@SuppressWarnings("unchecked")

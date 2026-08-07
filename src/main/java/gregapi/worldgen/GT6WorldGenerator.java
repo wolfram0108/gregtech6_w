@@ -149,7 +149,9 @@ public class GT6WorldGenerator {
 				// (удалён). Реальные neo-эквиваленты: `EntityGetter.getEntitiesOfClass(Class,AABB)`
 				// (EntityGetter.java:50, уже без unchecked-каста), конструктор `AABB(double x6)` (AABB.java:23),
 				// `Entity.discard()` (Entity.java:409, `remove(RemovalReason.DISCARDED)`).
-				for (ItemEntity tEntity : mWorld.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(mMinX-32, 0, mMinZ-32, mMinX+48, 256, mMinZ+48))) tEntity.discard();
+				// BUG-103: удаление идёт через центр WD (серверным потоком) — генерация чанка бежит в воркере,
+				// а состав сущностей правит только серверный поток; иначе рвётся обход ChunkMap.tick.
+				WD.discardEntitiesSafely(mWorld, ItemEntity.class, new AABB(mMinX-32, 0, mMinZ-32, mMinX+48, 256, mMinZ+48), null);
 				// F6 impossible-1:1 (поле удалено; neo Heightmap пересчитывает сам, ручной сброс не нужен): было `Arrays.fill(tChunk.precipitationHeightMap,-999)` —
 				// обходной 1.7.10-хак против убийства снегом пеньков деревьев. Поле удалено, современный
 				// Heightmap-механизм (`net.minecraft.world.level.levelgen.Heightmap`) считается движком заново
