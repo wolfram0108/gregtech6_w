@@ -37,7 +37,7 @@ displayURL="https://github.com/wolfram0108/gregtech6_w"
 # The description text for the mod (multi line!) (#mandatory)
 # Автор оригинала и происхождение — обязательная атрибуция производной работы (LGPL).
 authors="Gregorius Techneticies (GregTech 6); NeoForge port by wolfram0108"
-credits="Ported from GregTech 6 for Minecraft 1.7.10 by Gregorius Techneticies. Reference implementations: NeoForge and Applied Energistics 2."
+credits="Ported from GregTech 6 for Minecraft 1.7.10 by Gregorius Techneticies."
 
 description='''
 GregTech 6 ported to Minecraft 26.1.2 / NeoForge.

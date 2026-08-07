@@ -224,15 +224,7 @@ Two rules keep this from lying, both bought with failures:
 
 **Known differences from the original**
 
-* Recipes that depend on empty slots in the crafting grid — the modern grid is trimmed before the
-  recipe sees it, and the semantics here are unresolved.
 * A small number of workbench recipes differ from the original in ore-list composition.
-
-**Not started**
-
-* Integration with other mods of the 1.7.10 era (IC2, Forestry, Railcraft, BuildCraft, Thaumcraft
-  and ~45 more). GT6's compatibility code is ported and centralized, but nothing modern is wired up
-  to it, so those integrations are inert.
 
 **Alpha warnings**
 
@@ -315,7 +307,7 @@ Tagging a release (`v<version>`) builds the jar, verifies the tag matches the ve
 | **JEI** | supported — GT6's recipe categories and item variants are browsable |
 | **Jade** | supported — GT6 registers its own tools (wrench, crowbar, cutters…), which vanilla tags cannot express, so harvest tooltips are correct |
 | **JourneyMap** and the vanilla map | supported — GT6 blocks and fluids render correctly on both |
-| 1.7.10-era industrial mods | not wired up, see [Current state](#current-state) |
+| 1.7.10-era industrial mods | the original integrated with 211 of them; what survives and what does not is listed in [COMPATIBILITY.md](COMPATIBILITY.md) |
 
 ## Reporting problems
 
@@ -350,5 +342,3 @@ CC BY-NC 4.0 (`LICENSE.logos`).
 * **Gregorius Techneticies** — author of GregTech 6. This project moves his work to a new engine;
   the design, the balance and the ideas are his.
 * **NeoForged** — the mod loader and its documentation.
-* **Applied Energistics 2** and NeoForge's own test mods — read-only references for how things are
-  done on the modern engine.
