@@ -25,6 +25,7 @@ class MechanicsTest {
 	 */
 	@Test
 	void recipeMatchingMechanic(MinecraftServer server) {
+		GT6TestBoot.ensureLoaded(server);   // догон фазы data-init: в эфемерном сервере нет уровня → LevelEvent.Load не летит
 		int maps = 0, exact = 0, other = 0, miss = 0, err = 0;
 		StringBuilder tProblems = new StringBuilder();
 		for (java.util.Map.Entry<String, RecipeMap> e : RecipeMap.RECIPE_MAPS.entrySet()) {
@@ -60,6 +61,7 @@ class MechanicsTest {
 	 */
 	@Test
 	void materialItemGenerationMechanic(MinecraftServer server) {
+		GT6TestBoot.ensureLoaded(server);   // догон фазы data-init: в эфемерном сервере нет уровня → LevelEvent.Load не летит
 		gregapi.oredict.OreDictMaterial[] tMats = {gregapi.data.MT.Fe, gregapi.data.MT.Au, gregapi.data.MT.Cu, gregapi.data.MT.Sn, gregapi.data.MT.Pb, gregapi.data.MT.Ag, gregapi.data.MT.Al, gregapi.data.MT.Ni, gregapi.data.MT.Zn, gregapi.data.MT.Ti};
 		gregapi.oredict.OreDictPrefix[] tPrefixes = {gregapi.data.OP.dust, gregapi.data.OP.ingot, gregapi.data.OP.plate, gregapi.data.OP.stick, gregapi.data.OP.nugget, gregapi.data.OP.gear};
 		int tValid = 0, tRoundtrip = 0, tEmpty = 0;
@@ -82,6 +84,7 @@ class MechanicsTest {
 	 */
 	@Test
 	void materialFluidMechanic(MinecraftServer server) {
+		GT6TestBoot.ensureLoaded(server);   // догон фазы data-init: в эфемерном сервере нет уровня → LevelEvent.Load не летит
 		gregapi.oredict.OreDictMaterial[] tMats = {gregapi.data.MT.Fe, gregapi.data.MT.Au, gregapi.data.MT.Cu, gregapi.data.MT.H2O, gregapi.data.MT.Sn, gregapi.data.MT.Pb};
 		int tOk = 0;
 		StringBuilder tGot = new StringBuilder();
@@ -101,6 +104,7 @@ class MechanicsTest {
 	 */
 	@Test
 	void energyMechanic(MinecraftServer server) {
+		GT6TestBoot.ensureLoaded(server);   // догон фазы data-init: в эфемерном сервере нет уровня → LevelEvent.Load не летит
 		gregtech.tileentity.batteries.eu.MultiTileEntityBatteryEU8 tBat = new gregtech.tileentity.batteries.eu.MultiTileEntityBatteryEU8();
 		tBat.mType = gregapi.data.TD.Energy.EU;
 		tBat.mCapacity = 100000; tBat.mEnergy = 0;
@@ -117,37 +121,11 @@ class MechanicsTest {
 		assertTrue(tWrong == 0, "energy: батарея приняла ЧУЖОЙ тип энергии (RU в EU-батарею)");
 	}
 
-	/**
-	 * Механика БЛОКОВ: размещение GT6-блоков в реальном мире (setBlock) + снос (→air). Server-thread (submit),
-	 * чанк форс-грузим. Доказывает, что GT6-блоки корректно ставятся/читаются/сносятся в neo-мире.
-	 */
-	@Test
-	void blockPlacementMechanic(MinecraftServer server) throws Exception {
-		java.util.Iterator<net.minecraft.server.level.ServerLevel> tIt = server.getAllLevels().iterator();
-		org.junit.jupiter.api.Assumptions.assumeTrue(tIt.hasNext(), "EphemeralTestServer без загруженного мира — placement нужен GameTest-мир");
-		net.minecraft.server.level.ServerLevel tWorldPre = tIt.next();
-		Boolean tOk = server.submit(() -> {
-			net.minecraft.server.level.ServerLevel tLevel = tWorldPre;
-			net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(8, 100, 8);
-			tLevel.getChunk(tPos.getX() >> 4, tPos.getZ() >> 4); // форс-загрузка чанка
-			int tPlaced = 0, tBroke = 0, tTried = 0;
-			for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
-				net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
-				if (tKey == null || !(tKey.getNamespace().equals("gregtech") || tKey.getNamespace().equals("gregapi"))) continue;
-				if (tBlock instanceof net.minecraft.world.level.block.LiquidBlock) continue;
-				if (tTried++ >= 20) break;
-				try {
-					if (tLevel.setBlock(tPos, tBlock.defaultBlockState(), 3) && tLevel.getBlockState(tPos).getBlock() == tBlock) {
-						tPlaced++;
-						if (tLevel.setBlock(tPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3) && tLevel.getBlockState(tPos).isAir()) tBroke++;
-					}
-				} catch (Throwable t) {/**/}
-			}
-			System.out.println("[MECH-BLOCK] испытано=" + tTried + " поставлено+прочитано=" + tPlaced + " снесено=" + tBroke);
-			return tPlaced > 0 && tBroke > 0;
-		}).get();
-		assertTrue(tOk, "block placement/break механика сломана (ни один GT6-блок не поставился/снёсся)");
-	}
+	// Механика РАЗМЕЩЕНИЯ блоков судится живыми стендами (реальный путь игрока: useItemOn/destroyBlock,
+	// 26 точек в src/probes), а не здесь. Прежний headless-тест ставил блок через setBlock и всё равно
+	// НИКОГДА не выполнялся: EphemeralTestServer не грузит уровни вовсе — его initServer() не зовёт
+	// loadLevel(), только AboutToStart/Starting (сверено байткодом testframework 26.1.2.77). Тест вечно
+	// висел в состоянии "пропущен", то есть занимал место сторожа, ничего не сторожа.
 
 	/**
 	 * Механика ОБРАБОТКИ РЕЦЕПТА МАШИНОЙ ЗА ТИКИ (ядро GT6): берём РЕАЛЬНУЮ MTE-машину (MultiTileEntityBasicMachineElectric),
@@ -159,6 +137,7 @@ class MechanicsTest {
 	 */
 	@Test
 	void machineProcessingMechanic(MinecraftServer server) {
+		GT6TestBoot.ensureLoaded(server);   // догон фазы data-init: в эфемерном сервере нет уровня → LevelEvent.Load не летит
 		int tTested = 0, tProcessed = 0, tSetupFail = 0;
 		StringBuilder tOk = new StringBuilder();
 		for (java.util.Map.Entry<String, RecipeMap> e : RecipeMap.RECIPE_MAPS.entrySet()) {
