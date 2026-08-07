@@ -23,7 +23,10 @@ sourceSets.main.resources {
 
     // Exclude common development only resources from finalized outputs
     exclude("**/*.bbmodel") // BlockBench project files
-    exclude("src/generated/**/.cache") // datagen cache files
+    // Шаблон считается ОТ КОРНЯ ресурсного каталога, а не от корня проекта, поэтому прежний
+    // "src/generated/**/.cache" не срабатывал: кэш датагена уезжал в jar (найдено сверкой артефакта
+    // из чистого клона с локальным — у постороннего jar оказался чище на 4 записи).
+    exclude("**/.cache/**")
 }
 
 // F10 (decisions/F10-external-mod-compat.md §3.2): ЦЕНТРАЛЬНОЕ ЗЕРКАЛО чужих API — единственная точка,
