@@ -24,6 +24,22 @@ to publish if they do not.
 
 ## [Unreleased]
 
+### Changed
+
+- **Licensing and attribution were audited across the whole distribution and brought in order.**
+  Thirteen files had lost the licence notice they were published with, and their copyright line had
+  been rewritten — both are now restored verbatim from upstream. Every file carried over from
+  GregTech 6 now also states that it was modified in 2026 for this port, as the licence requires,
+  and the files written for the port carry their own authorship instead of upstream's.
+- **`NOTICE` records where every shipped component comes from**: which assets are upstream's CC0
+  work and which were made here, that no GregTech logo (the one non-free component upstream has) is
+  part of this distribution, and that the classes sitting in other mods' package names are
+  compile-time stand-ins written from scratch — not those projects' code. Each such file now says so
+  in its own header as well.
+- **README and the in-game mod list state plainly that this is an unofficial port**, not affiliated
+  with or endorsed by Gregorius Techneticies, and that problems belong in this issue tracker rather
+  than upstream's.
+
 ## [6.0.0-alpha.2] — crafting by grid position, leaf colour, world generation crash
 
 ### Fixed

@@ -1,0 +1,95 @@
+GregTech 6 for NeoForge — provenance of everything in this distribution
+=======================================================================
+
+This is a derivative work: a port of GregTech 6 by Gregorius Techneticies from
+Minecraft 1.7.10 / Forge to Minecraft 26.1.2 / NeoForge.
+
+    Upstream project   GregTech 6, https://github.com/GregTech6/gregtech6
+    Upstream author    Gregorius Techneticies
+    This port          https://github.com/wolfram0108/gregtech6_w, by wolfram0108
+
+It is NOT an official GregTech release and is not affiliated with, endorsed by, or
+supported by Gregorius Techneticies or the GregTech 6 team. Please report problems with
+this port to its own issue tracker, never to the upstream project.
+
+The name "GregTech" is used to identify the work this port is derived from, as required
+to describe a derivative work accurately. All rights in the name remain with its author.
+
+
+1. Program code
+---------------
+
+Licensed under the GNU Lesser General Public License, version 3 or later
+(LICENSE, COPYING.LESSER), inherited from upstream.
+
+    Copyright (c) Gregorius Techneticies and the GregTech-6 Team — original work
+    Copyright (c) 2026 wolfram0108                                — changes made for this port
+
+Every source file states which of the two it is. Files carried over from upstream keep the
+copyright and licence notice they were published with, plus a notice that they were modified
+in 2026 for this port. Files written for the port say so explicitly.
+
+Complete corresponding source for every released binary is the repository this file comes
+from, at the tag matching the version in the jar.
+
+
+2. Assets — textures and sounds
+-------------------------------
+
+Dedicated to the public domain under CC0 1.0 (LICENSE.assets, COPYING.assets), as released
+upstream.
+
+    20 124 files   byte-for-byte as published in GregTech 6 (many at new paths, because the
+                   modern engine requires lowercase resource names — the bytes are unchanged)
+         5 files   assets/gregapi/textures/mob_effect/*.png — drawn for this port, released
+                   under the same CC0 terms
+
+No texture or sound in this distribution originates from Minecraft itself: all 19 530 images
+were compared against the game's own assets, byte-for-byte and pixel-for-pixel, with no match.
+
+
+3. The GregTech logo — NOT INCLUDED
+-----------------------------------
+
+Upstream licenses its logo separately, under CC BY-NC 4.0 (LICENSE.logos, COPYING.logos) —
+the only non-free component of GregTech 6. None of the six logo files are part of this
+distribution. Those licence texts are shipped only so the terms travel with the work should
+a logo ever be added.
+
+
+4. Compile-time stand-ins for third-party mod APIs
+--------------------------------------------------
+
+The jar contains 244 classes in 28 package names owned by other projects: ic2, thaumcraft,
+forestry, codechicken, buildcraft, appeng, cofh, micdoodle8, net.minecraftforge and others.
+
+These are NOT those projects' code. Every one of them was written from scratch for this port
+and declares only what GregTech 6 itself implements or calls — typically an empty interface.
+Nothing was copied or decompiled from the projects in question. Each such file carries a
+notice saying exactly this; the design is documented in src/compat-mirror/README.md.
+
+They keep the original package names because GregTech 6 implements those interfaces verbatim,
+and this port does not rewrite the code Gregorius Techneticies wrote. They cannot simply be
+dropped from the build: 66 classes of the mod extend or implement them, and the JVM needs the
+type present to load the implementing class. They disappear one by one as real integration
+with each mod becomes possible.
+
+All names, trademarks and rights in those projects remain with their respective authors.
+
+
+5. Supporter lists
+------------------
+
+supporterlist.txt and supporterlistgold.txt list people who supported Gregorius Techneticies'
+work on GregTech 6, and grant small cosmetic in-game perks. They are carried over unchanged
+because the port reproduces upstream behaviour rather than reinterpreting it. The support they
+record was given to the upstream author, not to this port, which asks for none.
+
+
+6. Build tooling
+----------------
+
+gradle/wrapper/gradle-wrapper.jar is part of the Gradle build tool, licensed under the
+Apache License 2.0 by Gradle Inc.
+
+Minecraft and NeoForge are not redistributed by this project in any form.

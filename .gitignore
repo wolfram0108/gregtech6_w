@@ -73,3 +73,7 @@ oracle/
 /config/
 /.cache/
 /rungametest/
+
+### Python
+__pycache__/
+*.pyc

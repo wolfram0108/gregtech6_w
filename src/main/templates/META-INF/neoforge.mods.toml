@@ -47,6 +47,10 @@ processed through chains of machines from a hand hammer up to multiblock reactor
 fluid logistics. Items, blocks, ore dictionary entries and recipes are generated procedurally from a
 material x prefix matrix rather than declared one by one.
 
+UNOFFICIAL PORT: a derivative work under LGPL-3.0-or-later, not affiliated with or endorsed by
+Gregorius Techneticies or the GregTech 6 team. Report problems to this port, not to them.
+Provenance of every shipped component is in NOTICE, inside this jar.
+
 ALPHA: playable end to end, but not finished. Worlds are not guaranteed to survive updates.
 '''
 

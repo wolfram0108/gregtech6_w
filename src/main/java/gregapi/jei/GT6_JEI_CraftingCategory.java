@@ -1,5 +1,9 @@
 /**
- * Copyright (c) 2026 GregTech-6 Team
+ * Copyright (c) 2026 wolfram0108
+ *
+ * Written in 2026 for the GregTech 6 NeoForge port
+ * (https://github.com/wolfram0108/gregtech6_w). Not part of the original GregTech 6
+ * by Gregorius Techneticies; distributed under the same licence as the work it extends.
  *
  * This file is part of GregTech.
  *

@@ -9,10 +9,15 @@
 **A port of [GregTech 6](https://github.com/GregTech6/gregtech6) — Gregorius Techneticies' mod for
 Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 
+> **This is an unofficial port.** It is not affiliated with, endorsed by or supported by Gregorius
+> Techneticies or the GregTech 6 team. Report problems with it *here*, never upstream — the bugs are
+> the port's, not theirs. Where everything in a release comes from, component by component, is set
+> out in [NOTICE](NOTICE).
+
 | | |
 |---|---|
 | Minecraft | `26.1.2` |
-| NeoForge | `26.1.2.77` |
+| NeoForge | `26.1.2.84` |
 | Java | 25 |
 | Upstream | GregTech 6 `v6.17.06` (Minecraft 1.7.10, Forge 10.13.4) |
 | License | LGPL-3.0-or-later, inherited from upstream |
@@ -336,11 +341,17 @@ that shape this codebase. What changed between versions: [CHANGELOG.md](CHANGELO
 
 GregTech 6 is © Gregorius Techneticies and licensed under the **GNU Lesser General Public License,
 version 3 or later** (`LICENSE`, `COPYING.LESSER`). This port is a derivative work and is
-distributed under the same terms.
+distributed under the same terms. Files carried over from upstream keep their original notices and
+say that they were modified for this port; files written for the port say so as well.
 
 Assets are dedicated to the public domain under CC0 1.0 unless stated otherwise
 (`LICENSE.assets`); assets containing the GregTech logo or derivatives of it are under
-CC BY-NC 4.0 (`LICENSE.logos`).
+CC BY-NC 4.0 (`LICENSE.logos`). **No GregTech logo file is part of this distribution** — that
+licence text ships only so the terms travel with the work if one is ever added.
+
+[NOTICE](NOTICE) states the provenance of every component that ships: which assets came from
+upstream unchanged, which were made here, and why the jar contains classes in package names owned by
+other mods (they are stand-ins written from scratch, not those projects' code).
 
 * **Gregorius Techneticies** — author of GregTech 6. This project moves his work to a new engine;
   the design, the balance and the ideas are his.

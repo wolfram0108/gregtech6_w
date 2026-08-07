@@ -15,6 +15,10 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Modified in 2026 for the GregTech 6 NeoForge port
+ * (https://github.com/wolfram0108/gregtech6_w): ported from Minecraft 1.7.10 / Forge
+ * to Minecraft 26.1.2 / NeoForge.
  */
 
 package gregtech.compat;
