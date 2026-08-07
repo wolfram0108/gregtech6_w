@@ -2162,4 +2162,77 @@ public final class GT6ProbesClient {
 		} catch (Throwable e) {e.printStackTrace(O);}
 		O.println("========== [GT6-SOUNDPROBE] DONE ==========");
 	}
+
+	// ==========================================================================================================
+	// gt6jeigrid (BUG-099, вторая половина) — требование пользователя: рецепты обязаны быть в витрине на 100%.
+	// AdvancedCrafting1ToY (продукт выбирается КЛЕТКОЙ) и AdvancedCraftingXToY (X предметов → Y) не показывал
+	// и NEI в 1.7.10 — он умел рисовать только шейповые/бесформенные. Здесь идём дальше оригинала.
+	// Судим ЖИВЫМ JEI, тем же лукапом, что и gt6jeicraft: берём КОНКРЕТНЫЙ выход каждого варианта и спрашиваем
+	// витрину, знает ли она рецепт на него. Позитивный контроль обязателен — иначе «нет рецептов» неотличимо
+	// от «лукап сломан».
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static boolean mJeiGridDone = false;
+	private static int mJeiGridWaited = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onJeiGridProbeClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mJeiGridDone || !gregapi.data.CS.probeFlag("gt6jeigrid.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		mezz.jei.api.runtime.IJeiRuntime tRT = gregapi.jei.GT6_JEI_Plugin.sRuntime;
+		if (tRT == null) {
+			// JEI поднимает плагины по первому открытию GUI. ⛔ Открывать РАНО нельзя: на 100-м тике мир ещё не
+			// доиграл свои события (JEI пишет «Missing events: TagsUpdatedEvent»), из-за чего он стартует поздно,
+			// занимает Render thread на ~16 секунд и мир успевает закрыться — судья тогда ждёт впустую (замер по
+			// двум прогонам). Ждём, пока мир прогрузится, и только потом трогаем экран.
+			if (++mJeiGridWaited == 1200) {
+				gregapi.data.CS.OUT.println("[GT6-JEIGRID] JEI ещё не поднялся — открываю инвентарь (мир прогружен)");
+				try {tMC.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(tMC.player));} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-JEIGRID] экран не открылся: " + e);}
+			}
+			if (mJeiGridWaited > 24000) {mJeiGridDone = true; gregapi.data.CS.OUT.println("[GT6-JEIGRID] runtime JEI не появился — судья НЕ отработал");}
+			return;
+		}
+		mJeiGridDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-JEIGRID] витрина JEI: позиционные и X→Y рецепты ==========");
+		try {
+			var tRM = tRT.getRecipeManager();
+			var tFF = tRT.getJeiHelpers().getFocusFactory();
+			int tCtrl = countRecipes(tRM, tFF, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK));
+			O.println("[GT6-JEIGRID] ПОЗИТИВНЫЙ КОНТРОЛЬ: палка=" + tCtrl + " рецептов" + (tCtrl > 0 ? " — лукап рабочий" : " — ⛔ ЛУКАП СЛОМАН, замер ниже недействителен"));
+
+			int tPos = 0, tPosMissing = 0, tXY = 0, tXYMissing = 0;
+			java.util.List<String> tMissing = new java.util.ArrayList<>();
+			for (gregapi.recipes.ICraftingRecipeGT tR : gregapi.util.CR.list()) {
+				gregapi.oredict.OreDictPrefix tIn = null, tOut = null; int tCount = 0; String tKind = null; int tCell = -1;
+				if (tR instanceof gregapi.recipes.AdvancedCrafting1ToY t1) {tIn = t1.mInput; tOut = t1.mOutput; tCount = t1.mOutputCount; tKind = "клетка " + t1.mEmpty; tCell = t1.mEmpty;}
+				else if (tR instanceof gregapi.recipes.AdvancedCraftingXToY tX) {tIn = tX.mInput; tOut = tX.mOutput; tCount = tX.mOutputCount; tKind = "x" + tX.mInputCount;}
+				else continue;
+				// конкретный материал, для которого у рецепта есть выход
+				net.minecraft.world.item.ItemStack tOutStack = net.minecraft.world.item.ItemStack.EMPTY;
+				for (gregapi.oredict.OreDictMaterial tM : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+					if (tM == null) continue;
+					if (!gregapi.util.ST.valid(tIn.mat(tM, 1))) continue;
+					net.minecraft.world.item.ItemStack tCand = tOut.mat(tM, tCount);
+					if (gregapi.util.ST.valid(tCand)) {tOutStack = tCand; break;}
+				}
+				if (!gregapi.util.ST.valid(tOutStack)) continue;
+				boolean tIsPos = tCell >= 0;
+				if (tIsPos) tPos++; else tXY++;
+				int tFound = countRecipes(tRM, tFF, tOutStack);
+				if (tFound <= 0) {
+					if (tIsPos) tPosMissing++; else tXYMissing++;
+					if (tMissing.size() < 8) tMissing.add(tIn.mNameInternal + " (" + tKind + ") → " + tOut.mNameInternal + "x" + tCount + ": в витрине НЕТ");
+				}
+			}
+			for (String tM : tMissing) O.println("[GT6-JEIGRID] " + tM);
+			O.println("[GT6-JEIGRID] позиционных вариантов " + tPos + ", не показано " + tPosMissing
+				+ " · X→Y рецептов " + tXY + ", не показано " + tXYMissing);
+			gregapi.probe.GT6ProbeStand.judge("GT6-JEIGRID", "A. позиционные рецепты видны в витрине", tPosMissing == 0, "0", String.valueOf(tPosMissing));
+			gregapi.probe.GT6ProbeStand.judge("GT6-JEIGRID", "B. X→Y рецепты видны в витрине", tXYMissing == 0, "0", String.valueOf(tXYMissing));
+			gregapi.probe.GT6ProbeStand.judge("GT6-JEIGRID", "C. позитивный контроль: лукап витрины рабочий", tCtrl > 0, ">0", String.valueOf(tCtrl));
+			gregapi.probe.GT6ProbeStand.judge("GT6-JEIGRID", "D. контроль осмысленности: варианты найдены", tPos > 20 && tXY > 20, "оба >20", tPos + "/" + tXY);
+		} catch (Throwable e) {e.printStackTrace(O);}
+		O.println("========== [GT6-JEIGRID] DONE ==========");
+	}
 }

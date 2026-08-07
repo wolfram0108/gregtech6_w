@@ -159,13 +159,18 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		// категории реально построены и есть что открывать.
 		gregapi.data.CS.NEI = T;
 
-		// Ф1.3-crafting-jei: крафт-верстак GT6 (F11-буфер) — своя категория, см. GT6_JEI_CraftingCategory
-		// javadoc. Показываются только Shaped/ShapelessOreRecipe-наследники (1:1 с тем, что NEI мог отрисовать).
+		// Ф1.3-crafting-jei: крафт-верстак GT6 (F11-буфер) — своя категория, см. GT6_JEI_CraftingCategory javadoc.
+		// BUG-099 (требование пользователя «рецепты обязаны быть в витрине на 100%»): к Shaped/Shapeless добавлены
+		// ОБА самостоятельных типа GT6 — AdvancedCrafting1ToY (один предмет, продукт выбирается КЛЕТКОЙ) и
+		// AdvancedCraftingXToY (X предметов префикса → Y выхода). Их не показывал и NEI в 1.7.10: он умел рисовать
+		// только шейповые/бесформенные, а эти реализуют ICraftingRecipeGT напрямую. Здесь витрина ИДЁТ ДАЛЬШЕ
+		// оригинала — показывает и раскладку, то есть в какую клетку класть, иначе механику не увидеть вовсе.
 		try {
 			List<ICraftingRecipeGT> tCraftingList = new ArrayList<>();
 			for (ICraftingRecipeGT tRecipe : CR.list()) {
 				if (tRecipe == null) continue;
-				if (tRecipe instanceof ShapedOreRecipe || tRecipe instanceof ShapelessOreRecipe) tCraftingList.add(tRecipe);
+				if (tRecipe instanceof ShapedOreRecipe || tRecipe instanceof ShapelessOreRecipe
+				 || tRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY || tRecipe instanceof gregapi.recipes.AdvancedCraftingXToY) tCraftingList.add(tRecipe);
 			}
 			if (!tCraftingList.isEmpty()) {
 				mCraftingRecipes = tCraftingList;

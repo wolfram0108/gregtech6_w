@@ -63,12 +63,15 @@ import static gregapi.data.CS.*;
  * контракт {@link ICraftingGridHelper} в {@code jei-26.1.2-common-api}), — визуально неотличима от
  * нативного крафт-рендера JEI.
  *
- * <p>Показываются ТОЛЬКО {@link ShapedOreRecipe}/{@link ShapelessOreRecipe}-наследники F11-буфера
- * (в т.ч. {@code AdvancedCraftingShaped}/{@code AdvancedCraftingShapeless}/{@code AdvancedCraftingTool}) —
- * 1:1 с тем, что показывал NEI: {@code AdvancedCrafting1ToY}/{@code AdvancedCraftingXToY} реализуют
- * {@code ICraftingRecipeGT} НАПРЯМУЮ (не наследуют forge {@code ShapedOreRecipe}/{@code ShapelessOreRecipe})
- * и их {@code getRecipeOutput()} возвращает {@code ERROR_OUTPUT}-заглушку (не настоящий выход) — они и в
- * 1.7.10 не попадали под NEI-хендлер и NЕ отображались (не регрессия, тот же самый пробел).
+ * <p>BUG-099 (требование пользователя «рецепты обязаны быть в витрине на 100%»): показываются ЧЕТЫРЕ типа —
+ * {@link ShapedOreRecipe}/{@link ShapelessOreRecipe}-наследники (в т.ч. {@code AdvancedCraftingShaped}/
+ * {@code AdvancedCraftingShapeless}/{@code AdvancedCraftingTool}) плюс оба самостоятельных:
+ * {@code AdvancedCrafting1ToY} (один предмет, продукт выбирается КЛЕТКОЙ) и {@code AdvancedCraftingXToY}
+ * (X предметов префикса → Y выхода). Последние два реализуют {@code ICraftingRecipeGT} напрямую, а их
+ * {@code getRecipeOutput()} отдаёт {@code ERROR_OUTPUT}-заглушку — поэтому их не рисовал и NEI в 1.7.10
+ * (тот узнавал рецепты по классу). Здесь витрина ИДЁТ ДАЛЬШЕ оригинала: раскладку и выход строим из полей
+ * самого рецепта (префикс входа/выхода, количество, номер клетки), так что игрок видит и что получится,
+ * и куда класть.</p>
  */
 public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraftingRecipeGT> {
 	public static final RecipeType<ICraftingRecipeGT> TYPE = RecipeType.create(MD.GT.mID, "crafting_gt6", ICraftingRecipeGT.class);
@@ -89,12 +92,69 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 			} else if (aRecipe instanceof ShapelessOreRecipe) {
 				List<Object> tInput = ((ShapelessOreRecipe)aRecipe).getInput();
 				mGridHelper.createAndSetInputs(aBuilder, cells(tInput.toArray()), 0, 0);
+			} else if (aRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY t1ToY) {
+				// BUG-099: продукт выбирается КЛЕТКОЙ — предмет кладётся так, чтобы перед ним стояло ровно
+				// mEmpty пустых (то же число, по которому рецепт себя опознаёт, AdvancedCrafting1ToY:161).
+				// Рисуем настоящую сетку 3x3 с предметом в этой клетке: игрок видит не только ЧТО получится,
+				// но и КУДА положить — без этого механику из витрины не узнать.
+				List<ItemStack> tIn = new java.util.ArrayList<>(), tOut = new java.util.ArrayList<>();
+				materialPairs(t1ToY, t1ToY.mInput, t1ToY.mOutput, t1ToY.mOutputCount, m -> t1ToY.hasOutputFor(m), tIn, tOut);
+				if (!tIn.isEmpty() && t1ToY.mEmpty < 9) {
+					List<List<ItemStack>> tCells = new java.util.ArrayList<>();
+					for (int i = 0; i < 9; i++) tCells.add(i == t1ToY.mEmpty ? tIn : List.of());
+					mGridHelper.createAndSetInputs(aBuilder, tCells, 3, 3);
+					mGridHelper.createAndSetOutputs(aBuilder, tOut);
+				}
+				return;
+			} else if (aRecipe instanceof gregapi.recipes.AdvancedCraftingXToY tXToY) {
+				// BUG-099: X одинаковых предметов префикса → выход. Позиции не важны (рецепт считает только
+				// количество) — показываем плотной раскладкой, как их и кладут.
+				List<ItemStack> tIn = new java.util.ArrayList<>(), tOut = new java.util.ArrayList<>();
+				materialPairs(tXToY, tXToY.mInput, tXToY.mOutput, tXToY.mOutputCount, m -> tXToY.hasOutputFor(m), tIn, tOut);
+				int tN = tXToY.mInputCount;
+				if (!tIn.isEmpty() && tN > 0 && tN <= 9) {
+					int tW = tN >= 9 ? 3 : (tN >= 4 ? 2 : tN), tH = (tN + tW - 1) / tW;
+					List<List<ItemStack>> tCells = new java.util.ArrayList<>();
+					for (int i = 0; i < tW * tH; i++) tCells.add(i < tN ? tIn : List.of());
+					mGridHelper.createAndSetInputs(aBuilder, tCells, tW, tH);
+					mGridHelper.createAndSetOutputs(aBuilder, tOut);
+				}
+				return;
 			}
 			ItemStack tOutput = aRecipe.getRecipeOutput();
 			if (ST.valid(tOutput)) mGridHelper.createAndSetOutputs(aBuilder, List.of(tOutput));
 		} catch (Throwable e) {
 			ERR.println("JEI: GT6 crafting recipe failed to lay out, skipping its slots.");
 			e.printStackTrace(ERR);
+		}
+	}
+
+	/** BUG-099: рецепт задан на ПРЕФИКС, а витрина показывает конкретные предметы — собираем пары «вход↔выход»
+	 *  по всем материалам, для которых у рецепта есть выход. Списки одной длины и одного порядка: JEI листает
+	 *  альтернативы слотов в такт, поэтому вход и выход всегда показывают ОДИН материал.
+	 *  <p>Материалы берём из {@code MATERIAL_MAP} (существующие), а не из разреженного массива на 32767 слотов:
+	 *  раскладка строится для каждого рецепта, и обход массива стоил 14 секунд на регистрации плагина —
+	 *  за это время интегрированный сервер успевал отвалиться (замер по логу JEI-стартера).</p> */
+	private static final java.util.Map<Object, List<List<ItemStack>>> PAIRS_CACHE = new java.util.WeakHashMap<>();
+
+	/** Пары для рецепта, считаются один раз (JEI может перестраивать раскладку). */
+	private static void materialPairs(Object aRecipe, gregapi.oredict.OreDictPrefix aInput, gregapi.oredict.OreDictPrefix aOutput, int aOutputCount
+	, java.util.function.Predicate<gregapi.oredict.OreDictMaterial> aHasOutput, List<ItemStack> rInputs, List<ItemStack> rOutputs) {
+		List<List<ItemStack>> tCached = PAIRS_CACHE.get(aRecipe);
+		if (tCached != null) {rInputs.addAll(tCached.get(0)); rOutputs.addAll(tCached.get(1)); return;}
+		materialPairs(aInput, aOutput, aOutputCount, aHasOutput, rInputs, rOutputs);
+		PAIRS_CACHE.put(aRecipe, List.of(List.copyOf(rInputs), List.copyOf(rOutputs)));
+	}
+
+	private static void materialPairs(gregapi.oredict.OreDictPrefix aInput, gregapi.oredict.OreDictPrefix aOutput, int aOutputCount
+	, java.util.function.Predicate<gregapi.oredict.OreDictMaterial> aHasOutput, List<ItemStack> rInputs, List<ItemStack> rOutputs) {
+		for (gregapi.oredict.OreDictMaterial tMaterial : new java.util.LinkedHashSet<>(gregapi.oredict.OreDictMaterial.MATERIAL_MAP.values())) {
+			if (tMaterial == null || !aHasOutput.test(tMaterial)) continue;
+			ItemStack tIn = aInput.mat(tMaterial, 1);
+			if (!ST.valid(tIn)) continue;
+			ItemStack tOut = aOutput.mat(tMaterial, aOutputCount);
+			if (!ST.valid(tOut)) continue;
+			rInputs.add(tIn); rOutputs.add(tOut);
 		}
 	}
 

@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "gregapi.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "MixinCraftingInput"
+  ],
+  "client": [],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

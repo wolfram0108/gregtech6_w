@@ -13918,7 +13918,14 @@ public final class GT6Probes {
 				java.util.List<gregapi.recipes.AdvancedCrafting1ToY> tList = tPrefix.mShapelessManagersSingle;
 				if (tList == null || tList.size() < 2) {if (tList != null) tHandlers += tList.size(); continue;}
 				tPrefixes++; tHandlers += tList.size();
-				for (gregapi.recipes.AdvancedCrafting1ToY tH : tList) if (tH.mEmpty > 0) tUnreachable++;
+				// поимённый список: что именно недостижимо и в какую клетку это надо было класть
+				StringBuilder tLine = new StringBuilder("[GT6-GRIDPROBE] префикс " + tPrefix.mNameInternal + ": ");
+				for (gregapi.recipes.AdvancedCrafting1ToY tH : tList) {
+					tLine.append("[клетка ").append(tH.mEmpty).append(" → ").append(tH.mOutput.mNameInternal).append("x").append(tH.mOutputCount)
+						.append(tH.mEmpty > 0 ? " НЕДОСТУПЕН" : " работает").append("] ");
+					if (tH.mEmpty > 0) tUnreachable++;
+				}
+				O.println(tLine.toString().trim());
 				if (tShown < 3) {
 					tShown++;
 					// живой путь: тот же вопрос, что задаёт верстак — какой рецепт совпал для сетки 3x3
@@ -13948,7 +13955,69 @@ public final class GT6Probes {
 			}
 			O.println("[GT6-GRIDPROBE] префиксов с несколькими обработчиками " + tPrefixes + " · обработчиков всего " + tHandlers
 				+ " · из них требуют пустых клеток (недостижимы на подрезанной сетке) " + tUnreachable);
-			gregapi.probe.GT6ProbeStand.judge("GT6-GRIDPROBE", "A. недостижимых позиционных обработчиков нет", tUnreachable == 0, "0", String.valueOf(tUnreachable));
+			// ЧАСТЬ B — вторая ветка того же класса: AdvancedCraftingXToY (X предметов префикса → Y выхода).
+			// Позиционного признака у неё нет (только количество), но она ТОЖЕ читает размер сетки — проверяем
+			// живьём, а не рассуждением: плотная раскладка нужного числа предметов должна давать её выход.
+			int tXY = 0, tXYBad = 0; java.util.List<String> tXYFails = new java.util.ArrayList<>();
+			for (gregapi.recipes.ICraftingRecipeGT tR : gregapi.util.CR.list()) {
+				if (!(tR instanceof gregapi.recipes.AdvancedCraftingXToY tX)) continue;
+				gregapi.oredict.OreDictMaterial tMat = null;
+				for (gregapi.oredict.OreDictMaterial tM : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+					if (tM == null) continue;
+					if (gregapi.util.ST.valid(tX.mInput.mat(tM, 1)) && tX.hasOutputFor(tM)) {tMat = tM; break;}
+				}
+				if (tMat == null) continue;
+				tXY++;
+				int tN = tX.mInputCount, tW = tN >= 9 ? 3 : (tN >= 4 ? 2 : tN), tH = (tN + tW - 1) / tW;
+				java.util.List<net.minecraft.world.item.ItemStack> tCells = new java.util.ArrayList<>();
+				for (int c = 0; c < tW * tH; c++) tCells.add(c < tN ? tX.mInput.mat(tMat, 1) : net.minecraft.world.item.ItemStack.EMPTY);
+				net.minecraft.world.item.crafting.CraftingInput tGrid = net.minecraft.world.item.crafting.CraftingInput.of(tW, tH, tCells);
+				net.minecraft.world.item.ItemStack tGot = net.minecraft.world.item.ItemStack.EMPTY;
+				var tFound = aServer.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, tGrid, tLevel);
+				if (tFound.isPresent()) tGot = tFound.get().value().assemble(tGrid);
+				net.minecraft.world.item.ItemStack tWant = tX.mOutput.mat(tMat, tX.mOutputCount);
+				if (!gregapi.util.ST.equal(tGot, tWant, T)) {
+					tXYBad++;
+					if (tXYFails.size() < 6) tXYFails.add(tX.mInput.mNameInternal + "x" + tN + "→" + tX.mOutput.mNameInternal + " (" + tMat.mNameInternal + "): ждали " + tWant + ", получили " + tGot);
+				}
+			}
+			for (String tF : tXYFails) O.println("[GT6-GRIDPROBE] XToY несобираемо — " + tF);
+			O.println("[GT6-GRIDPROBE] XToY-рецептов проверено " + tXY + ", не собирается " + tXYBad);
+			// ЖИВОЙ судья (усиление статического счёта выше): каждый обработчик проверяем НА ЕГО СОБСТВЕННОЙ клетке —
+			// кладём предмет так, чтобы перед ним стояло ровно mEmpty пустых, и спрашиваем настоящий диспетчер.
+			int tLive = 0, tLiveBad = 0; java.util.List<String> tLiveFails = new java.util.ArrayList<>();
+			for (gregapi.oredict.OreDictPrefix tPrefix : gregapi.oredict.OreDictPrefix.VALUES) {
+				java.util.List<gregapi.recipes.AdvancedCrafting1ToY> tList = tPrefix.mShapelessManagersSingle;
+				if (tList == null || tList.size() < 2) continue;
+				for (gregapi.recipes.AdvancedCrafting1ToY tH : tList) {
+					if (tH.mEmpty >= 9) continue; // в сетку 3x3 такая позиция не помещается и в 1.7.10
+					gregapi.oredict.OreDictMaterial tMat = null;
+					for (gregapi.oredict.OreDictMaterial tM : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+						if (tM == null) continue;
+						if (gregapi.util.ST.valid(tPrefix.mat(tM, 1)) && tH.hasOutputFor(tM)) {tMat = tM; break;}
+					}
+					if (tMat == null) continue;
+					tLive++;
+					java.util.List<net.minecraft.world.item.ItemStack> tCells = new java.util.ArrayList<>();
+					for (int c = 0; c < 9; c++) tCells.add(c == tH.mEmpty ? tPrefix.mat(tMat, 1) : net.minecraft.world.item.ItemStack.EMPTY);
+					net.minecraft.world.item.crafting.CraftingInput tGrid = net.minecraft.world.item.crafting.CraftingInput.of(3, 3, tCells);
+					net.minecraft.world.item.ItemStack tGot = net.minecraft.world.item.ItemStack.EMPTY;
+					var tFound = aServer.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, tGrid, tLevel);
+					if (tFound.isPresent()) tGot = tFound.get().value().assemble(tGrid);
+					net.minecraft.world.item.ItemStack tWant = tH.mOutput.mat(tMat, tH.mOutputCount);
+					if (!gregapi.util.ST.equal(tGot, tWant, T)) {
+						tLiveBad++;
+						if (tLiveFails.size() < 8) tLiveFails.add(tPrefix.mNameInternal + " клетка " + tH.mEmpty + " → ждали " + tWant + ", получили " + tGot);
+					}
+				}
+			}
+			for (String tF : tLiveFails) O.println("[GT6-GRIDPROBE] живьём НЕ СОБИРАЕТСЯ — " + tF);
+			O.println("[GT6-GRIDPROBE] живая проверка по собственной клетке: обработчиков " + tLive + ", не собирается " + tLiveBad);
+			gregapi.probe.GT6ProbeStand.judge("GT6-GRIDPROBE", "A. каждый вариант собирается на СВОЕЙ клетке (живьём)", tLiveBad == 0, "0", String.valueOf(tLiveBad));
+			gregapi.probe.GT6ProbeStand.judge("GT6-GRIDPROBE", "E. контроль осмысленности: позиционных вариантов проверено", tLive > 20, ">20", String.valueOf(tLive));
+			O.println("[GT6-GRIDPROBE] (диагностика) вариантов, требующих пустых клеток: " + tUnreachable);
+			gregapi.probe.GT6ProbeStand.judge("GT6-GRIDPROBE", "C. вторая ветка (XToY) собирается плотной раскладкой", tXYBad == 0, "0", String.valueOf(tXYBad));
+			gregapi.probe.GT6ProbeStand.judge("GT6-GRIDPROBE", "D. контроль осмысленности: XToY-рецепты найдены", tXY > 0, ">0", String.valueOf(tXY));
 			gregapi.probe.GT6ProbeStand.judge("GT6-GRIDPROBE", "B. контроль осмысленности: многовариантные префиксы найдены", tPrefixes > 0, ">0", String.valueOf(tPrefixes));
 			O.println("========== [GT6-GRIDPROBE] DONE ==========");
 		} catch(Throwable e) {e.printStackTrace(O);}

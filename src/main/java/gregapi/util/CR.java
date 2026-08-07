@@ -607,6 +607,37 @@ public class CR {
 	/** F11: собственный ПОСТОЯННЫЙ буфер крафт-рецептов GT6 (не neo {@code RecipeManager} — тот наполняется
 	 *  датапаком на старте сервера, на mod-init пуст). Диспетчер-{@code CustomRecipe} читает этот буфер. */
 	public static List<ICraftingRecipeGT> list() {return BUFFER;}
+
+	// ==========================================================================================================
+	// BUG-099: ПОЛНАЯ сетка крафта — то, что движок 26.1.2 отбрасывает до вызова рецепта.
+	//
+	// Часть крафта GT6 несёт смысл в САМОМ МЕСТЕ предмета: AdvancedCrafting1ToY различает варианты по числу
+	// пустых клеток перед предметом (провод 16→8/4/2, дроблёная руда→надтреснутый самоцвет, пыль→четвертинки).
+	// В 1.7.10 рецепту показывали InventoryCrafting целиком; в 26.1.2 сетка приходит подрезанной до габарита
+	// занятых клеток, и одиночный предмет всегда становится 1x1 — признак исчезает. Замер gt6gridprobe:
+	// недостижимо 27 вариантов из 119.
+	//
+	// Снимок кладёт ЕДИНСТВЕННАЯ вставка мода в движок (gregapi.mixin.MixinCraftingInput) — в том месте, где
+	// движок сам подрезает сетку и где полная ещё цела. Читает его рецепт при сопоставлении. Хранится по потоку
+	// (крафт исполняется в потоке своей стороны, клиентский и серверный не пересекаются) и отдаётся ТОЛЬКО той
+	// подрезанной сетке, из которой снимок и сделан — сверка по тождеству ссылки, чужой снимок не подставится.
+	// Снимка нет (вставка не применилась, вход собран не движком) → рецепт работает как прежде, по подрезанной.
+	// ==========================================================================================================
+	private static final ThreadLocal<Object[]> FULL_GRID = new ThreadLocal<>();
+
+	/** Вызывается вставкой в движок: запомнить полную сетку, из которой получена подрезанная {@code aCropped}. */
+	public static void rememberFullGrid(net.minecraft.world.item.crafting.CraftingInput aCropped, int aWidth, int aHeight, List<ItemStack> aFullCells) {
+		if (aCropped == null || aFullCells == null) {FULL_GRID.remove(); return;}
+		FULL_GRID.set(new Object[] {aCropped, aFullCells});
+	}
+
+	/** Полная сетка для этой подрезанной, либо {@code null}: клетки в порядке 1.7.10 {@code getStackInSlot(i)}. */
+	@SuppressWarnings("unchecked")
+	public static List<ItemStack> fullGrid(net.minecraft.world.item.crafting.CraftingInput aCropped) {
+		Object[] tSnapshot = FULL_GRID.get();
+		if (tSnapshot == null || tSnapshot[0] != aCropped) return null;
+		return (List<ItemStack>)tSnapshot[1];
+	}
 	
 	/**
 	 * Checks if this Item has a Crafting Recipe.
