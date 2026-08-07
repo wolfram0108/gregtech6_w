@@ -396,8 +396,17 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 				}
 				ItemStack tArrow = OP.arrowGtWood.mat(tMaterial, 1);
 				if (ST.valid(tArrow)) {
+					// ⛔ ТОТ ЖЕ КРАШ-КЛАСС, что в GT_API_Proxy.onEntitySpawningEvent (лог04): было
+					// `addFreshEntity(замена); discard()` — дословный перенос 1.7.10
+					// (`spawnEntityInWorld(...); setDead()`). В neo это событие постится ВНУТРИ добавления
+					// сущности (PersistentEntitySectionManager.addEntity:80), ДО setLevelCallback, и discard()
+					// оставляет в ChunkMap.entityMap трекер уже удалённой сущности — обход карты потом рвётся.
+					// Штатный путь подмены: ОТМЕНИТЬ добавление ванильной стрелы (движок вернёт false и в мир её
+					// не пустит) и добавить свою — порядок «сначала отмена, потом замена» держит карту трекеров
+					// согласованной. Наблюдаемое поведение 1:1 с оригиналом: в мире оказывается ровно одна
+					// GT6-стрела вместо ванильной.
+					aEvent.setCanceled(true);
 					aEvent.getEntity().level().addFreshEntity(new EntityArrow_Material((Arrow)aEvent.getEntity(), tArrow));
-					aEvent.getEntity().discard();
 				}
 			}
 		}

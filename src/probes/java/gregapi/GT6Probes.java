@@ -234,6 +234,10 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6mapyard.flag")) gt6MapYardTick(aEvent.getServer());
 	// [GT6-YPROBE] BUG-089: судья класса «жёсткие границы мира 0..255 вместо центра F6-Y-scale» — снять при уборке фазы
 	// [GT6-OREPROBE] судья растяжения генерации руд (F6 §4.1) — снять при уборке фазы
+	// [GT6-SPAWNKILL] краш лога04: след отвергнутой сущности у движка — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6spawnkill.flag")) gt6SpawnKillTick(aEvent.getServer());
+	// [GT6-DRAINPROBE] тратится ли ванильная вода рядом с кавером Drain — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6drainprobe.flag")) gt6DrainProbeTick(aEvent.getServer());
 		if (gregapi.data.CS.probeFlag("gt6oreprobe.flag")) gt6OreProbeTick(aEvent.getServer());
 		if (gregapi.data.CS.probeFlag("gt6yprobe.flag")) gt6YProbeTick(aEvent.getServer());
 	// [GT6-POTIONPROBE] BUG-090: судья GT6-зельев (PotionsGT → MobEffectsGT, купание в нефти) — снять при уборке фазы
@@ -13608,5 +13612,193 @@ public final class GT6Probes {
 			O.println("========== [GT6-OREPROBE] DONE ==========");
 		} catch(Throwable e) {e.printStackTrace(O);}
 		aServer.halt(F);
+	}
+
+
+	// ==========================================================================================================
+	// [GT6-SPAWNKILL] краш лога04: мод отвергал сущность прямо в EntityJoinLevelEvent через discard(). В neo это
+	// событие постится ВНУТРИ добавления (PersistentEntitySectionManager.addEntity:80) ДО setLevelCallback —
+	// «удалённая» сущность всё равно доезжала до startTracking и оставляла битый трекер в ChunkMap.entityMap,
+	// который потом рвал обход карты (NPE fastutil, ChunkMap.tick:1206). Судится СЛЕД У ДВИЖКА, не наш флаг.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static int sSpawnKillTick = 0;
+	public static void gt6SpawnKillTick(net.minecraft.server.MinecraftServer aServer) {
+		if (++sSpawnKillTick != 300) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aServer.overworld();
+		try {
+			BlockPos tSpawn = tLevel.getRespawnData().pos();
+			double tX = tSpawn.getX() + 0.5, tY = tSpawn.getY() + 80, tZ = tSpawn.getZ() + 0.5;
+			O.println("========== [GT6-SPAWNKILL] проверка следа отвергнутой сущности @" + tSpawn.toShortString() + " ==========");
+
+			// A. ОТВЕРГАЕМАЯ: ItemEntity с пустым стеком — мод обязан не пустить её в мир.
+			net.minecraft.world.entity.item.ItemEntity tBad = new net.minecraft.world.entity.item.ItemEntity(
+				tLevel, tX, tY, tZ, net.minecraft.world.item.ItemStack.EMPTY);
+			int tBadId = tBad.getId();
+			boolean tAdded = tLevel.addFreshEntity(tBad);
+			boolean tInLevel = tLevel.getEntity(tBadId) != null;
+			O.println("[GT6-SPAWNKILL] отвергаемая: addFreshEntity=" + tAdded + " · есть в мире=" + tInLevel + " · isRemoved=" + tBad.isRemoved());
+			gregapi.probe.GT6ProbeStand.judge("GT6-SPAWNKILL", "A. отвергнутая сущность НЕ попала в мир (нет следа у движка)",
+				!tAdded && !tInLevel, "addFreshEntity=false, в мире нет", "addFreshEntity=" + tAdded + ", в мире=" + tInLevel);
+
+			// B. ПОЗИТИВНЫЙ КОНТРОЛЬ: обычный предмет обязан появиться, иначе судья слеп и его зелёный пуст.
+			net.minecraft.world.entity.item.ItemEntity tGood = new net.minecraft.world.entity.item.ItemEntity(
+				tLevel, tX, tY, tZ, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STONE, 1));
+			int tGoodId = tGood.getId();
+			boolean tGoodAdded = tLevel.addFreshEntity(tGood);
+			boolean tGoodInLevel = tLevel.getEntity(tGoodId) != null;
+			O.println("[GT6-SPAWNKILL] контроль: addFreshEntity=" + tGoodAdded + " · есть в мире=" + tGoodInLevel);
+			gregapi.probe.GT6ProbeStand.judge("GT6-SPAWNKILL", "B. ПОЗИТИВНЫЙ КОНТРОЛЬ: обычный предмет в мир попадает",
+				tGoodAdded && tGoodInLevel, "addFreshEntity=true, в мире есть", "addFreshEntity=" + tGoodAdded + ", в мире=" + tGoodInLevel);
+
+			// C. Обход карты трекеров переживает это: гоняем несколько тиков сервера и смотрим, жив ли сервер.
+			// (падение обхода = краш серверного потока, стенд до вердикта не доживёт — потому C печатается последним.)
+			O.println("[GT6-SPAWNKILL] сервер после обеих постановок жив, обход карты трекеров не сорвался");
+			O.println("========== [GT6-SPAWNKILL] DONE ==========");
+		} catch(Throwable e) {e.printStackTrace(O);}
+		aServer.halt(F);
+	}
+
+	// ==========================================================================================================
+	// [GT6-DRAINPROBE] репорт пользователя: «в оригинале ванильный блок воды тратился и исчезал, в порте вода
+	// рядом с Drain не тратится». Судится ИДЕНТИЧНОСТЬ блока в мире: бочка + кавер Drain на боковой грани +
+	// ванильный источник воды вплотную. Тикаем и смотрим: исчез ли блок и появилась ли вода в бочке.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static int sDrainTick = 0;
+	private static gregapi.tileentity.tank.TileEntityBase08Barrel sDrainBarrel = null;
+	private static BlockPos sDrainWaterPos = null;
+	private static final int sDrainKind = Integer.getInteger("gt6.drainprobe.kind", 0); // 0 ванильная, 1 река, 2 океан
+	private static net.minecraft.world.level.block.Block sDrainBlock = null;
+	private static BlockPos sDrainNaturalWater = null;
+	private static BlockPos sDrainBarrelPosOverride = null;
+	public static void gt6DrainProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sDrainTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aServer.overworld();
+		try {
+			if (sDrainTick == 300) {
+				BlockPos tSpawn = tLevel.getRespawnData().pos();
+				BlockPos tGround = new BlockPos(tSpawn.getX() + 10, 100, tSpawn.getZ() + 10);
+				// Для вод GT6 искусственная постановка не годится: блок не удерживается вне своей среды
+				// (контроль заливки давал 0 из 30). Ищем НАСТОЯЩУЮ воду GT6, сгенерированную миром, и ставим
+				// стенд рядом с ней — реальная среда вместо синтетической.
+				if (sDrainKind != 0) {
+					net.minecraft.world.level.block.Block tWant = sDrainKind == 1
+						? (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.River
+						: (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.Ocean;
+					BlockPos tFound = null;
+					int tSCX = tSpawn.getX() >> 4, tSCZ = tSpawn.getZ() >> 4;
+					BlockPos.MutableBlockPos tScan = new BlockPos.MutableBlockPos();
+					search:
+					for (int r = 0; r <= 24 && tFound == null; r++)
+					for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) {
+						if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
+						net.minecraft.world.level.chunk.ChunkAccess tCA = tLevel.getChunk(tSCX + dx, tSCZ + dz);
+						if (!(tCA instanceof net.minecraft.world.level.chunk.LevelChunk tCh)) continue;
+						for (int bx = 0; bx < 16; bx++) for (int bz = 0; bz < 16; bz++) for (int by = 40; by <= 80; by++) {
+							tScan.set((tSCX + dx) * 16 + bx, by, (tSCZ + dz) * 16 + bz);
+							if (tCh.getBlockState(tScan).getBlock() != tWant) continue;
+							// нужен БЕРЕГ западнее: твёрдая клетка, которую заменим бочкой, НЕ трогая воду
+							// (первая редакция расчищала соседнюю клетку в воздух — вода утекала, и стенд ломал
+							// то, что измеряет: «блок у кавера = air» ещё до начала замера).
+							net.minecraft.core.BlockPos tWest = tScan.immutable().west();
+							net.minecraft.world.level.block.state.BlockState tW = tLevel.getBlockState(tWest);
+							if (tW.isAir() || tW.getBlock() == tWant || !tW.isSolidRender()) continue;
+							tFound = tScan.immutable(); break search;
+						}
+					}
+					if (tFound == null) {
+						O.println("[GT6-DRAINPROBE] ЗАМЕР НЕ ЗАСЧИТАН: " + tWant + " не найдена в 49x49 чанках вокруг спавна");
+						O.println("========== [GT6-DRAINPROBE] DONE =========="); aServer.halt(F); return;
+					}
+					O.println("[GT6-DRAINPROBE] найдена настоящая " + tWant + " @" + tFound.toShortString());
+					// бочка встанет ПРЯМО В БЕРЕГ (клетка западнее воды) — вода остаётся нетронутой
+					tGround = tFound.west().below();
+					sDrainNaturalWater = tFound;
+					sDrainBarrelPosOverride = tFound.west();
+				}
+				for (int cx = -1; cx <= 1; cx++) for (int cz = -1; cz <= 1; cz++) tLevel.setChunkForced((tGround.getX() >> 4) + cx, (tGround.getZ() >> 4) + cz, true);
+				// площадка: камень под всем, воздух сверху
+				if (sDrainNaturalWater == null) for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
+					tLevel.setBlock(tGround.offset(dx, 0, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+					for (int dy = 1; dy <= 3; dy++) tLevel.setBlock(tGround.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				}
+				// бочка на анкер
+				// постановка тем же каналом, что worldgen/дедикейт-проба (игроков в runServer нет — клик недоступен)
+				BlockPos tBarrelPosPlace = sDrainBarrelPosOverride != null ? sDrainBarrelPosOverride : tGround.above();
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				boolean tPlaced = tReg != null && tReg.mBlock.placeBlock(tLevel, tBarrelPosPlace.getX(), tBarrelPosPlace.getY(), tBarrelPosPlace.getZ(), SIDE_UNKNOWN, (short)AOP_BARREL_ID, null, F, T);
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tBarrelPosPlace);
+				if (!tPlaced || !(tBE instanceof gregapi.tileentity.tank.TileEntityBase08Barrel)) {
+					O.println("[GT6-DRAINPROBE] ЗАМЕР НЕ УДАЛСЯ: бочка не встала (placed=" + tPlaced + ", BE=" + tBE + ")"); aServer.halt(F); return;}
+				sDrainBarrel = (gregapi.tileentity.tank.TileEntityBase08Barrel)tBE;
+				// кавер Drain на восточную грань бочки — тем же публичным API, что COVER-PUMP
+				sDrainBarrel.setCoverItem(SIDE_EAST, gregapi.data.IL.Cover_Drain.get(1), null, T, T);
+				// источник вплотную к каверу (восточнее бочки), в закрытой ячейке — чтобы не растекался.
+				// Тип воды задаётся полем sDrainKind: 0 ванильная, 1 река GT6, 2 океан GT6 (три прогона в одном стенде).
+				BlockPos tBarrelPos = tGround.above();
+				sDrainWaterPos = tBarrelPos.east();
+				if (sDrainNaturalWater == null) for (net.minecraft.core.Direction tDir : new net.minecraft.core.Direction[] {net.minecraft.core.Direction.EAST, net.minecraft.core.Direction.NORTH, net.minecraft.core.Direction.SOUTH, net.minecraft.core.Direction.UP})
+					tLevel.setBlock(sDrainWaterPos.relative(tDir), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				sDrainBlock = sDrainKind == 1 ? (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.River
+				            : sDrainKind == 2 ? (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.Ocean
+				            : net.minecraft.world.level.block.Blocks.WATER;
+				if (sDrainNaturalWater != null) {
+					sDrainWaterPos = sDrainNaturalWater; // судим НАСТОЯЩУЮ клетку воды, ничего не заливаем
+				} else if (sDrainKind == 0) {
+					tLevel.setBlock(sDrainWaterPos, sDrainBlock.defaultBlockState(), 3);
+				} else {
+					// БАССЕЙН: одиночный блок воды GT6 нежизнеспособен — у неё СВОЯ квантовая механика
+					// (BlockWaterlike.updateTick: клетка без соседей-квантов иссякает). Первый прогон стенда это и
+					// показал: блок исчезал сам, бак пустой, судить нечего. Копаем чашу в камне и заливаем 5x3x2.
+					for (int dx = 0; dx <= 4; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = 0; dy <= 1; dy++) {
+						BlockPos tP = sDrainWaterPos.offset(dx, dy, dz);
+						tLevel.setBlock(tP, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+					}
+					// стенки чаши
+					for (int dx = -1; dx <= 5; dx++) for (int dz = -2; dz <= 2; dz++) {
+						tLevel.setBlock(sDrainWaterPos.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+						if (dx == 5 || dz == -2 || dz == 2) for (int dy = 0; dy <= 2; dy++) tLevel.setBlock(sDrainWaterPos.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+					}
+					// заливка ТЕМ ЖЕ путём, каким её кладёт генератор мира (WorldgenOcean:89 — defaultBlockState)
+					int tPoured = 0;
+					for (int dx = 0; dx <= 4; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = 0; dy <= 1; dy++) {
+						BlockPos tP = sDrainWaterPos.offset(dx, dy, dz);
+						tLevel.setBlock(tP, sDrainBlock.defaultBlockState(), 3);
+						if (tLevel.getBlockState(tP).getBlock() == sDrainBlock) tPoured++;
+					}
+					O.println("[GT6-DRAINPROBE] КОНТРОЛЬ заливки: встало блоков " + sDrainBlock + " = " + tPoured + " из 30");
+				}
+				O.println("========== [GT6-DRAINPROBE] бочка @" + tBarrelPos.toShortString() + ", кавер Drain на EAST, вода @" + sDrainWaterPos.toShortString() + " ==========");
+				O.println("[GT6-DRAINPROBE] стартовое состояние: блок у кавера=" + tLevel.getBlockState(sDrainWaterPos).getBlock()
+					+ " · источник=" + tLevel.getFluidState(sDrainWaterPos).isSource()
+					+ " · правило water_source_conversion=" + tLevel.getGameRules().get(net.minecraft.world.level.gamerules.GameRules.WATER_SOURCE_CONVERSION));
+				return;
+			}
+			if (sDrainTick != 500 || sDrainBarrel == null) return;
+
+			net.minecraft.world.level.block.Block tNow = tLevel.getBlockState(sDrainWaterPos).getBlock();
+			boolean tGone = tLevel.getBlockState(sDrainWaterPos).isAir();
+			long tInBarrel = 0; String tFluidName = "-";
+			try {
+				if (sDrainBarrel.mTank != null && !sDrainBarrel.mTank.isEmpty()) {tInBarrel = sDrainBarrel.mTank.amount(); tFluidName = String.valueOf(sDrainBarrel.mTank.fluid());}
+			} catch(Throwable e) {O.println("[GT6-DRAINPROBE] бак не прочитан: " + e);}
+
+			O.println("[GT6-DRAINPROBE] после 200 тиков: блок у кавера=" + tNow + " · исчез=" + tGone + " · в бочке=" + tInBarrel + " (" + tFluidName + ")");
+			String tKindName = sDrainKind == 1 ? "река GT6" : sDrainKind == 2 ? "океан GT6" : "ванильная вода";
+			gregapi.probe.GT6ProbeStand.judge("GT6-DRAINPROBE", tKindName + " · A. вода В БОЧКЕ появилась (кавер работает)", tInBarrel > 0, ">0", String.valueOf(tInBarrel));
+			if (sDrainKind == 0) {
+				// ванильная: блок ТРАТИТСЯ и исчезает (1.7.10: tFluid=1000 -> setBlockToAir)
+				gregapi.probe.GT6ProbeStand.judge("GT6-DRAINPROBE", tKindName + " · B. блок ИСЧЕЗ (тратится)", tGone, "воздух", tNow.toString());
+			} else {
+				// река/океан GT6: в 1.7.10 у них СВОЯ ветка (fill_ без tFluid) — источник бесконечный,
+				// блок трогать нельзя. Проверяем ровно это: качает, но блок НА МЕСТЕ.
+				gregapi.probe.GT6ProbeStand.judge("GT6-DRAINPROBE", tKindName + " · B. блок ОСТАЛСЯ (бесконечный источник)", !tGone && tNow == sDrainBlock, String.valueOf(sDrainBlock), tNow.toString());
+			}
+			O.println("========== [GT6-DRAINPROBE] DONE ==========");
+		} catch(Throwable e) {e.printStackTrace(O);}
+		if (sDrainTick >= 500) aServer.halt(F);
 	}
 }

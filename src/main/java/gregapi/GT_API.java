@@ -599,8 +599,32 @@ public class GT_API extends Abstract_Mod {
 	 *  {@code LevelEvent.Load} она полна, drain её осушает целиком, после ничего не добавляется → ServerStarting-вызов
 	 *  был доказанным no-op (живой полный тест игрока на версии с обоими вызовами это подтвердил: всё — рецепты/вкладки/
 	 *  предметы/генерация — работает при drain'е на LevelEvent.Load, т.е. этот момент пост-bind для ВСЕХ отложек). */
+	/** Вода не восстанавливается сама — это ШТАТНОЕ поведение GT6, а не нововведение порта (подтверждено
+	 *  пользователем живой проверкой в 1.7.10: источник между двумя источниками там НЕ появляется). Порт это
+	 *  поведение потерял, здесь оно ВОССТАНАВЛИВАЕТСЯ. Механизм 1.7.10 в исходнике не опознан (проверены события
+	 *  Forge, ASM-патчи GT6, рефлексия по Blocks.water, конфиги, подмена блоков) — воспроизводится РЕЗУЛЬТАТ.
+	 *  В движке 26.1.2 его даёт ЕДИНСТВЕННЫЙ канал — правило мира
+	 *  {@code water_source_conversion} ({@code GameRules.java:92}, дефолт true), которое читает сама ванильная
+	 *  вода ({@code WaterFluid.canConvertToSource:76-77}). Никакой иной точки у мода нет: жидкость ванильная,
+	 *  её {@code FluidType} принадлежит движку. Поэтому правило выставляется ОДИН раз на загрузке overworld —
+	 *  там же, где мод уже приводит мир в своё состояние. Лава не трогается (в 1.7.10 она и так конечна).
+	 *
+	 *  Настройка {@code general.WaterSourceConversion} возвращает ВАНИЛЬНОЕ поведение (дефолт F = вода конечна,
+	 *  как в GT6). ⚠️ Правило пишется в сам мир (level.dat): после снятия мода оно останется выключенным, пока
+	 *  игрок не вернёт его командой — побочный эффект единственного доступного канала. */
+	private void applyWaterSourceConversionRule(net.minecraft.server.level.ServerLevel aLevel) {
+		try {
+			boolean tWanted = gregapi.data.CS.WATER_SOURCE_CONVERSION;
+			net.minecraft.world.level.gamerules.GameRules tRules = aLevel.getGameRules();
+			if (tRules.get(net.minecraft.world.level.gamerules.GameRules.WATER_SOURCE_CONVERSION) == tWanted) return;
+			tRules.set(net.minecraft.world.level.gamerules.GameRules.WATER_SOURCE_CONVERSION, tWanted, aLevel.getServer());
+			OUT.println("[GT6] бесконечная вода: правило water_source_conversion = " + tWanted + (tWanted ? " (ванильное поведение по настройке)" : " (вода конечна, как в 1.7.10 с GT6)"));
+		} catch (Throwable e) {e.printStackTrace(ERR);}
+	}
+
 	public void onLevelLoadEarlyItemInit(net.neoforged.neoforge.event.level.LevelEvent.Load aEvent) {
 		if (aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel && tLevel.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+			applyWaterSourceConversionRule(tLevel);
 			runDeferredItemInit();
 			// BUG-054: гейт shift-click ванильной печи (RecipePropertySet.FURNACE_INPUT → AbstractFurnaceMenu.canSmelt:142)
 			// собирается движком на loadLevel ДО этой data-init (FurnaceRecipes ещё пуст → GT6SmeltingDispatcher.input()
@@ -1017,6 +1041,7 @@ public class GT_API extends Abstract_Mod {
 		EMIT_EU_AS_RF                           = ConfigsGT.GREGTECH.get("general", "Emit_EU_as_RF_from_Blocks"        , F);
 		NERFED_WOOD                             = ConfigsGT.GREGTECH.get("general", "WoodNeedsSawForCrafting"          , T);
 		FORCE_GRAVEL_NO_FLINT                   = ConfigsGT.GREGTECH.get("general", "GravelWontDropFlint"              , F);
+		WATER_SOURCE_CONVERSION                 = ConfigsGT.GREGTECH.get("general", "WaterSourceConversion"            , F);
 		SLOW_LEAF_DECAY                         = ConfigsGT.GREGTECH.get("general", "SlowLeafDecay"                    , F);
 		FAST_LEAF_DECAY                         = ConfigsGT.GREGTECH.get("general", "FastLeafDecay"                    , T);
 		CONSTANT_ENERGY                         = ConfigsGT.GREGTECH.get("general", "UninterruptedEnergyRequirement"   , T);

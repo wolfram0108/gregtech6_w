@@ -150,7 +150,12 @@ public class CoverDrain extends AbstractCoverAttachment {
 							if (tBlock instanceof IFluidBlock) {
 								((IFluidBlock)tBlock).drain(aData.mTileEntity.getWorld(), aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide), T);
 							} else {
-								aData.mTileEntity.getWorld().removeBlock(new BlockPos(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide)), false); // было setBlockToAir(x,y,z) -> neo Level.removeBlock(BlockPos,boolean)
+								// ⛔ Было removeBlock(pos,false) как перевод 1.7.10 setBlockToAir — НЕВЕРНО для клетки,
+								// которая сама является жидкостью: neo removeBlock ставит НЕ воздух, а
+								// fluidState.createLegacyBlock() (Level.java:296-298), то есть возвращает воду на место.
+								// Дрен качал воду бесконечно, а блок не исчезал (репорт пользователя). 1:1 с 1.7.10 —
+								// поставить именно ВОЗДУХ.
+								aData.mTileEntity.getWorld().setBlock(new BlockPos(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide)), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 							}
 						}
 					}

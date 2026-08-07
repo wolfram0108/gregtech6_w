@@ -1831,7 +1831,18 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				((ItemEntity)aEvent.getEntity()).setItem(aStack);
 			} else {
 				// Result was invalid therefore kill the Stack.
-				aEvent.getEntity().discard();
+				// ⛔ КРАШ-КЛАСС (лог04, 2026-08-07): здесь стоял discard() — дословный перенос 1.7.10 setDead(),
+				// и в neo он ЛОМАЕТ ДВИЖОК. Событие постится ВНУТРИ добавления сущности в мир
+				// (PersistentEntitySectionManager.addEntity:80), ДО setLevelCallback: discard() в этот момент
+				// уводит сущность в removed при ЕЩЁ пустом callback'е (EntityInLevelCallback.NULL) — то есть
+				// «удаление» никого не уведомляет. Движок продолжает добавление как ни в чём не бывало
+				// (addEntityWithoutEvent: секция → callback → startTracking) и заносит УЖЕ УДАЛЁННУЮ сущность
+				// в ChunkMap.entityMap. Дальше эта запись рвёт обход карты трекеров: NPE в fastutil-итераторе
+				// ChunkMap.tick:1206 (падает тот, кто обходит, а не тот, кто испортил — в стеке нас нет).
+				// Штатный neo-путь «сущность не появляется» — отмена события: движок делает return false ДО
+				// добавления (addEntity:80), в мир она не попадает вовсе. Наблюдаемое поведение то же, что у
+				// setDead в 1.7.10, где ни entityMap, ни callback-механизма не существовало.
+				aEvent.setCanceled(true);
 				return;
 			}
 		}

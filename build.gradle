@@ -88,7 +88,9 @@ if (project.hasProperty('gt6probes')) {
     sourceSets.main.java.srcDir('src/probes/java')     // живые стенды (ручная проверка в работающей игре)
     sourceSets.main.java.srcDir('src/gametest/java')   // GameTest'ы движка (runGameTestServer)
     ['runClient', 'runData', 'runServer', 'runGameTestServer'].each { rn ->
-        tasks.matching { it.name == rn }.configureEach { it.jvmArgs('-Dgt6.probes=true') }
+        tasks.matching { it.name == rn }.configureEach { it.jvmArgs('-Dgt6.probes=true')
+            // проброс параметров стендов (напр. -Pgt6.probeArgs=gt6.drainprobe.kind=1)
+            if (project.hasProperty('gt6.probeArgs')) project.property('gt6.probeArgs').toString().split(',').each { a -> it.jvmArgs('-D' + a) } }
     }
     logger.lifecycle("[gt6probes] оснастка проверки ВКЛЮЧЕНА: стенды + GameTest'ы (-Dgt6.probes=true)")
 }

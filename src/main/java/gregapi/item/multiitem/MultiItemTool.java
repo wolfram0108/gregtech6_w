@@ -211,7 +211,10 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 			return;
 		}
 		long tDamage = tStats.convertBlockDrops(aDrops, aStack, aPlayer, aBlock, (getToolMaxDamage(aStack) - getToolDamage(aStack)) / tStats.getToolDamagePerDropConversion(), aX, aY, aZ, aMeta, aFortune, aSilkTouch, aEvent);
-		if (aBlock == Blocks.ICE && !aDrops.isEmpty()) aPlayer.level().removeBlock(new BlockPos(aX, aY, aZ), F);
+		// 1:1 с 1.7.10 setBlockToAir: ставим именно ВОЗДУХ. neo removeBlock оставляет на месте жидкость клетки
+		// (Level.java:296-298 — fluidState.createLegacyBlock()), а ванильный лёд к этому моменту уже мог смениться
+		// водой (тот же класс ошибки перевода, что был в CoverDrain).
+		if (aBlock == Blocks.ICE && !aDrops.isEmpty()) aPlayer.level().setBlock(new BlockPos(aX, aY, aZ), Blocks.AIR.defaultBlockState(), 3);
 		if (WD.dimBTL(aPlayer.level()) && !getPrimaryMaterial(aStack).contains(TD.Properties.BETWEENLANDS)) tDamage *= 4;
 		doDamage(aStack, tDamage * tStats.getToolDamagePerDropConversion(), aPlayer, T);
 	}
