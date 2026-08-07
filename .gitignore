@@ -53,3 +53,23 @@ javac_path.txt
 fix_import_targets.txt
 
 runserver/
+
+### Рабочие файлы разовых заходов — в репозиторий не попадают ###
+# Срезы ошибок компиляции, списки файлов, дампы классов, наколенные скрипты сборки:
+# всё это восстанавливается прогоном инструментов и нужно только внутри одного захода.
+*_files.txt
+*_errors.txt
+# ...кроме двух списков, которые РЕАЛЬНО читает build.gradle в режиме -PcoreOnly:
+!core_unit_v2_files.txt
+!mirror_files.txt
+*_classes.txt
+compile_*.ps1
+*_probe*.log
+dump/
+oracle/
+
+### Рантайм дев-запусков (создаётся игрой, не исходник) ###
+/logs/
+/config/
+/.cache/
+/rungametest/

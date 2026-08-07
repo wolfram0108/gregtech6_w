@@ -1,25 +1,124 @@
-name: Build
+# Гейт на каждый push и pull request.
+#
+# Три задания, все блокирующие:
+#   build  — артефакт + механические гейты (чистота jar, счётчики отложенности);
+#   stands — компиляция 86 верификационных стендов (src/probes НЕ входит в обычную сборку,
+#            то есть обычный build их гниение НЕ ловит — отсюда отдельное задание);
+#   test   — регресс-гейт по калиброванному базлайну падений (см. .github/ci/check_tests.py).
+#
+# Требование к раннеру: декомпиляция Minecraft идёт с -Xmx6G (gradle.properties), нужен раннер
+# с >= 16 ГБ RAM. Кэш Gradle делает декомпиляцию попаданием в кэш на последующих прогонах.
+name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['**']
+  pull_request:
+  workflow_dispatch:
+
+# Новый push в ту же ветку отменяет предыдущий прогон: сборка дорогая (декомпиляция MC).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Тише лог и без демона: в одноразовом контейнере демон только жрёт память.
+  GRADLE_ARGS: --no-daemon --stacktrace
 
 jobs:
   build:
+    name: Build artifact + guards
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          fetch-tags: true
 
-      - name: Setup JDK 25
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
           java-version: '25'
           distribution: 'temurin'
 
-      - name: Setup Gradle
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build with Gradle
-        run: ./gradlew build
+      - name: Assemble
+        run: ./gradlew assemble $GRADLE_ARGS
+
+      - name: Guard — jar purity (no net/minecraft, no cpw)
+        run: python3 .github/ci/check_jar.py 'build/libs/*.jar'
+
+      - name: Guard — deferral counters (PORT-TODO / SILENT-STUB)
+        run: python3 .github/ci/check_markers.py
+
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: gregtech6-jar-${{ github.sha }}
+          path: build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 14
+
+  stands:
+    name: Verification stands compile (-Pgt6probes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # src/probes/java подключается ТОЛЬКО этим флагом. Без задания стенды тихо гниют:
+      # обычная сборка их не видит, а замечаешь это в момент, когда судья нужен.
+      - name: Compile stands
+        run: ./gradlew compileJava -Pgt6probes $GRADLE_ARGS
+
+  test:
+    name: Unit + parity tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # continue-on-error: провал самой задачи test — ожидаемое состояние (известные падения).
+      # Вердикт выносит check_tests.py по МНОЖЕСТВУ падений, а не по коду возврата Gradle.
+      - name: Run tests
+        id: gradle_test
+        continue-on-error: true
+        run: ./gradlew test $GRADLE_ARGS
+
+      - name: Gate — compare failures against calibrated baseline
+        run: python3 .github/ci/check_tests.py
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ github.sha }}
+          path: |
+            build/reports/tests/test/**
+            build/test-results/test/**
+          if-no-files-found: warn
+          retention-days: 14
