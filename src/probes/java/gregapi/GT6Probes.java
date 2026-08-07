@@ -238,6 +238,10 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6spawnkill.flag")) gt6SpawnKillTick(aEvent.getServer());
 	// [GT6-DRAINPROBE] тратится ли ванильная вода рядом с кавером Drain — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6drainprobe.flag")) gt6DrainProbeTick(aEvent.getServer());
+		// [GT6-LOOTPROBE] BUG-105 §1: переполнение лут-контейнеров — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6lootprobe.flag")) gt6LootProbeTick(aEvent.getServer());
+		// [GT6-GRIDPROBE] BUG-099: позиционные рецепты на подрезанной сетке — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6gridprobe.flag")) gt6GridProbeTick(aEvent.getServer());
 		if (gregapi.data.CS.probeFlag("gt6oreprobe.flag")) gt6OreProbeTick(aEvent.getServer());
 		if (gregapi.data.CS.probeFlag("gt6yprobe.flag")) gt6YProbeTick(aEvent.getServer());
 	// [GT6-POTIONPROBE] BUG-090: судья GT6-зельев (PotionsGT → MobEffectsGT, купание в нефти) — снять при уборке фазы
@@ -13800,5 +13804,154 @@ public final class GT6Probes {
 			O.println("========== [GT6-DRAINPROBE] DONE ==========");
 		} catch(Throwable e) {e.printStackTrace(O);}
 		if (sDrainTick >= 500) aServer.halt(F);
+	}
+
+	// ==========================================================================================================
+	// [GT6-LOOTPROBE] BUG-105 §1: в логе генерации мира «Tried to over-fill a container» ×37 — движок МОЛЧА
+	// отбрасывает лишнее, часть лута теряется. Замер, а не догадка: для каждой ванильной таблицы, куда GT6
+	// инъектирует свой пул, прогоняем таблицу и считаем, сколько стеков она просит против вместимости
+	// настоящего контейнера (сундук 27 / диспенсер 9 — тот, что ставит структура).
+	// Карту «1.7.10-имя категории → neo-таблица» берём у СУЩЕСТВУЮЩЕГО центра (ST.LOOT_TABLES_VANILLA /
+	// ST.VANILLA_LOOT_KEYS), которым лут и генерируется, — своей копии не заводим.
+	// Судьи: A. просьба НЕ превышает вместимость ни разу; B. контроль осмысленности — GT-предметы в выдаче есть.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static int sLootTick = 0;
+	public static void gt6LootProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sLootTick++;
+		if (sLootTick != 200) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			ServerLevel tLevel = aServer.overworld();
+			O.println("========== [GT6-LOOTPROBE] переполнение лут-контейнеров: замер ==========");
+			// ключи ванильных таблиц — у центра ST (поле приватное: оснастка ЧИТАЕТ его рефлексией, продукт не правим)
+			java.lang.reflect.Field tKeysField = gregapi.util.ST.class.getDeclaredField("VANILLA_LOOT_KEYS");
+			tKeysField.setAccessible(true);
+			@SuppressWarnings("unchecked")
+			java.util.List<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> tKeys =
+				(java.util.List<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>>)tKeysField.get(null);
+			int tRuns = 300, tTotalOver = 0, tWithGT = 0, tTablesSeen = 0;
+			net.minecraft.world.level.storage.loot.LootParams tParams = new net.minecraft.world.level.storage.loot.LootParams.Builder(tLevel)
+				.withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, net.minecraft.world.phys.Vec3.atCenterOf(tLevel.getRespawnData().pos()))
+				.create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.CHEST);
+			for (int tIndex = 0; tIndex < gregapi.util.ST.LOOT_TABLES_VANILLA.size(); tIndex++) {
+				String tCat = gregapi.util.ST.LOOT_TABLES_VANILLA.get(tIndex);
+				if (tIndex >= tKeys.size()) {O.println("[GT6-LOOTPROBE] " + tCat + ": нет ключа таблицы"); continue;}
+				net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable> tKey = tKeys.get(tIndex);
+				net.minecraft.world.level.storage.loot.LootTable tTable = aServer.reloadableRegistries().getLootTable(tKey);
+				if (tTable == null) {O.println("[GT6-LOOTPROBE] " + tCat + ": таблица " + tKey.identifier() + " не найдена"); continue;}
+				boolean tHasGTPool = tTable.getPool("gregtech6:" + tCat) != null;
+				int tCapacity = tCat.toLowerCase().contains("dispenser") ? 9 : 27;
+				int tMax = 0, tOver = 0, tSum = 0, tGT = 0, tAll = 0;
+				for (int i = 0; i < tRuns; i++) {
+					java.util.List<net.minecraft.world.item.ItemStack> tItems = tTable.getRandomItems(tParams);
+					int tN = 0;
+					for (net.minecraft.world.item.ItemStack tS : tItems) {
+						if (tS.isEmpty()) continue;
+						tN++; tAll++;
+						net.minecraft.resources.Identifier tItemID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tS.getItem());
+						if (tItemID != null && (tItemID.getNamespace().equals("gregtech") || tItemID.getNamespace().equals(gregapi.data.CS.ModIDs.GT))) tGT++;
+					}
+					tSum += tN; if (tN > tMax) tMax = tN; if (tN > tCapacity) tOver++;
+				}
+				tTablesSeen++; tTotalOver += tOver; if (tGT > 0) tWithGT++;
+				O.println("[GT6-LOOTPROBE] " + tCat + " (" + tKey.identifier() + ", GT-пул " + (tHasGTPool ? "есть" : "НЕТ") + "): вместимость " + tCapacity
+					+ " · стеков в среднем " + String.format("%.2f", tSum / (double)tRuns) + ", максимум " + tMax
+					+ " · прогонов сверх вместимости " + tOver + "/" + tRuns
+					+ " · доля GT-предметов " + String.format("%.1f%%", tAll == 0 ? 0.0 : 100.0 * tGT / tAll));
+			}
+			// ВТОРАЯ ЧАСТЬ — судим не таблицу, а РЕЗУЛЬТАТ центра ST.generateLoot в настоящих контейнерах GT6:
+			// книжная полка (DummyInventory(14), MultiTileEntityBookShelf:107) и сундук данжа (27).
+			// 1.7.10-инвариант: положено РОВНО столько предметов, сколько даёт счётчик категории, и не больше вместимости.
+			int tBadSize = 0, tBadCount = 0, tEmptyRuns = 0, tCases = 0;
+			for (int tIndex = 0; tIndex < gregapi.util.ST.LOOT_TABLES_VANILLA.size(); tIndex++) {
+				String tCat = gregapi.util.ST.LOOT_TABLES_VANILLA.get(tIndex);
+				int tMaxAllowed = net.minecraftforge.common.ChestGenHooks.getInfo(tCat).getMax();
+				for (int tSize : new int[] {14, 27}) {
+					int tMaxFilled = 0, tSumFilled = 0, tRuns2 = 200;
+					for (int i = 0; i < tRuns2; i++) {
+						gregapi.dummies.DummyInventory tInv = new gregapi.dummies.DummyInventory(tSize);
+						gregapi.util.ST.generateLoot(gregapi.data.CS.RNGSUS, tCat, tInv);
+						int tFilled = 0;
+						for (int sl = 0; sl < tInv.getContainerSize(); sl++) if (!tInv.getItem(sl).isEmpty()) tFilled++;
+						tSumFilled += tFilled; if (tFilled > tMaxFilled) tMaxFilled = tFilled;
+						if (tFilled > tSize) tBadSize++;
+						if (tFilled > tMaxAllowed) tBadCount++;
+						if (tFilled == 0) tEmptyRuns++;
+					}
+					tCases++;
+					O.println("[GT6-LOOTPROBE] раскладка " + tCat + " в контейнер " + tSize + ": занято в среднем "
+						+ String.format("%.2f", tSumFilled / (double)tRuns2) + ", максимум " + tMaxFilled + " · потолок 1.7.10 (getMax) " + tMaxAllowed);
+				}
+			}
+			gregapi.probe.GT6ProbeStand.judge("GT6-LOOTPROBE", "A. ни один прогон не просит больше, чем влезает", tTotalOver == 0, "0", String.valueOf(tTotalOver));
+			gregapi.probe.GT6ProbeStand.judge("GT6-LOOTPROBE", "C. раскладка не переполняет контейнер", tBadSize == 0, "0", String.valueOf(tBadSize));
+			gregapi.probe.GT6ProbeStand.judge("GT6-LOOTPROBE", "D. занято не больше потолка 1.7.10 (счётчик категории)", tBadCount == 0, "0", String.valueOf(tBadCount));
+			gregapi.probe.GT6ProbeStand.judge("GT6-LOOTPROBE", "E. контроль осмысленности: пустых раскладок мало", tEmptyRuns < tCases * 20, "<" + (tCases * 20), String.valueOf(tEmptyRuns));
+			gregapi.probe.GT6ProbeStand.judge("GT6-LOOTPROBE", "B. контроль осмысленности: GT-лут в таблицах есть", tWithGT > 0, ">0 таблиц", tWithGT + " из " + tTablesSeen);
+			O.println("========== [GT6-LOOTPROBE] DONE ==========");
+		} catch(Throwable e) {e.printStackTrace(O);}
+		aServer.halt(F);
+	}
+
+	// ==========================================================================================================
+	// [GT6-GRIDPROBE] BUG-099: механика GT6 «один и тот же предмет в РАЗНОЙ клетке верстака даёт разный выход»
+	// (AdvancedCrafting1ToY: mEmpty = порядковый номер обработчика префикса, условие tEmpty % size == mEmpty,
+	// где tEmpty — число пустых клеток ДО предмета). В 1.7.10 рецепт видел сетку целиком; в 26.1.2 движок
+	// отдаёт CraftingInput, подрезанный до габарита занятых клеток, — одиночный предмет всегда становится 1x1,
+	// пустых клеток нет, и достижим только обработчик с mEmpty==0.
+	// Замер, а не рассуждение: считаем обработчики по всем префиксам и ЖИВЫМ путём (сетка 3x3, предмет в
+	// каждой из 9 клеток → RecipeManager) смотрим, сколько РАЗНЫХ выходов реально достижимо.
+	// Судьи: A. недостижимых обработчиков нет; B. контроль осмысленности — многовариантные префиксы найдены.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static int sGridTick = 0;
+	public static void gt6GridProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sGridTick++;
+		if (sGridTick != 200) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			ServerLevel tLevel = aServer.overworld();
+			O.println("========== [GT6-GRIDPROBE] позиционные рецепты «1 предмет + N пустых» ==========");
+			int tPrefixes = 0, tHandlers = 0, tUnreachable = 0, tShown = 0;
+			for (gregapi.oredict.OreDictPrefix tPrefix : gregapi.oredict.OreDictPrefix.VALUES) {
+				java.util.List<gregapi.recipes.AdvancedCrafting1ToY> tList = tPrefix.mShapelessManagersSingle;
+				if (tList == null || tList.size() < 2) {if (tList != null) tHandlers += tList.size(); continue;}
+				tPrefixes++; tHandlers += tList.size();
+				for (gregapi.recipes.AdvancedCrafting1ToY tH : tList) if (tH.mEmpty > 0) tUnreachable++;
+				if (tShown < 3) {
+					tShown++;
+					// живой путь: тот же вопрос, что задаёт верстак — какой рецепт совпал для сетки 3x3
+					// с одним предметом в клетке k. Материал берём первый, для которого у обработчика есть выход.
+					gregapi.oredict.OreDictMaterial tMat = null;
+					for (gregapi.oredict.OreDictMaterial tM : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+						if (tM == null) continue;
+						net.minecraft.world.item.ItemStack tIn = tPrefix.mat(tM, 1);
+						if (gregapi.util.ST.valid(tIn) && tList.get(0).hasOutputFor(tM)) {tMat = tM; break;}
+					}
+					if (tMat == null) {O.println("[GT6-GRIDPROBE] " + tPrefix.mNameInternal + ": материала для живого прогона не нашлось"); continue;}
+					java.util.Set<String> tOutputs = new java.util.LinkedHashSet<>();
+					for (int k = 0; k < 9; k++) {
+						java.util.List<net.minecraft.world.item.ItemStack> tCells = new java.util.ArrayList<>();
+						for (int c = 0; c < 9; c++) tCells.add(c == k ? tPrefix.mat(tMat, 1) : net.minecraft.world.item.ItemStack.EMPTY);
+						net.minecraft.world.item.crafting.CraftingInput tGrid = net.minecraft.world.item.crafting.CraftingInput.of(3, 3, tCells);
+						net.minecraft.world.item.ItemStack tOut = net.minecraft.world.item.ItemStack.EMPTY;
+						var tFound = aServer.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, tGrid, tLevel);
+						if (tFound.isPresent()) tOut = tFound.get().value().assemble(tGrid);
+						tOutputs.add(gregapi.util.ST.valid(tOut) ? net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tOut.getItem()) + "x" + tOut.getCount() + gregapi.util.ST.meta_(tOut) : "—");
+					}
+					StringBuilder tWant = new StringBuilder();
+					for (gregapi.recipes.AdvancedCrafting1ToY tH : tList) tWant.append(tH.mOutput.mNameInternal).append("x").append(tH.mOutputCount).append(" ");
+					O.println("[GT6-GRIDPROBE] " + tPrefix.mNameInternal + " (" + tMat.mNameInternal + "): обработчиков " + tList.size()
+						+ " → ждём выходы [" + tWant.toString().trim() + "] · живьём по 9 клеткам получили " + tOutputs);
+				}
+			}
+			O.println("[GT6-GRIDPROBE] префиксов с несколькими обработчиками " + tPrefixes + " · обработчиков всего " + tHandlers
+				+ " · из них требуют пустых клеток (недостижимы на подрезанной сетке) " + tUnreachable);
+			gregapi.probe.GT6ProbeStand.judge("GT6-GRIDPROBE", "A. недостижимых позиционных обработчиков нет", tUnreachable == 0, "0", String.valueOf(tUnreachable));
+			gregapi.probe.GT6ProbeStand.judge("GT6-GRIDPROBE", "B. контроль осмысленности: многовариантные префиксы найдены", tPrefixes > 0, ">0", String.valueOf(tPrefixes));
+			O.println("========== [GT6-GRIDPROBE] DONE ==========");
+		} catch(Throwable e) {e.printStackTrace(O);}
+		aServer.halt(F);
 	}
 }

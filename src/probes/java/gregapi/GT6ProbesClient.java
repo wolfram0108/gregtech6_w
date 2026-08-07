@@ -1963,4 +1963,203 @@ public final class GT6ProbesClient {
 		}
 		}
 	}
+
+	// ==========================================================================================================
+	// gt6poscolorprobe (BUG-101) — «радужное дерево выглядит как 3 плоских цвета вместо перехода».
+	//
+	// В 1.7.10 у блока ДВА канала цвета, и движок спрашивал РАЗНЫЕ по пути отрисовки: в мире
+	// colorMultiplier(world,x,y,z) (RenderBlocks.renderStandardBlock:4412 и ещё 16 точек), в инвентаре
+	// getRenderColor(meta) (renderBlockAsItem:7904 — ЕДИНСТВЕННЫЙ метод, где он звался). Порт свёл оба
+	// рендер-пути в одну GT6BlockModel и подставил инвентарный канал обоим.
+	//
+	// Судим НЕ канал, а РЕЗУЛЬТАТ: ставим блок в мире клиента, собираем квады той же моделью, которой их
+	// собирает чанк-мешинг, и читаем цвет квада (BakedQuad.bakedColors). Ожидание считаем НЕЗАВИСИМО —
+	// формулой оригинала RAINBOW_ARRAY[(|x|+|y|+|z|)%24], а не тем же вызовом, что чинили.
+	//
+	// A. цвет квада == формуле оригинала по КООРДИНАТЕ (в трёх разных позициях)
+	// B. цвета в разных позициях РАЗНЫЕ — контроль осмысленности (иначе судья ничего не мерит)
+	// C. цвет НЕ зависит от ВРЕМЕНИ — повторный сбор через 40 тиков даёт то же (симптом «пятна»: старый
+	//    канал брал RAINBOW_ARRAY[CLIENT_TIME/10], и куски мира замерзали в разные моменты)
+	// D. РЕГРЕСС-контроль: у блока БЕЗ позиционного цвета (крашеный BlockColored) цвет квада прежний —
+	//    равен getRenderColor(meta); дефолт colorMultiplier сам отдаёт его же.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static int sPosColorTick = 0;
+	private static int[] sPosColorFirst = null;
+	private static net.minecraft.core.BlockPos[] sPosColorPos = null;
+	private static net.minecraft.world.level.block.state.BlockState sPosColorRainbow = null;
+
+	/** Цвет ARGB первого квада блока, собранного ТОЙ ЖЕ моделью, что и чанк-мешинг; -1 = квадов нет. */
+	private static int quadColorAt(net.minecraft.client.multiplayer.ClientLevel aLevel, net.minecraft.core.BlockPos aPos) {
+		net.minecraft.world.level.block.state.BlockState tState = aLevel.getBlockState(aPos);
+		net.minecraft.client.renderer.block.dispatch.BlockStateModel tModel = Minecraft.getInstance().getModelManager().getBlockStateModelSet().get(tState);
+		if (tModel == null) return -1;
+		java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> tParts = new java.util.ArrayList<>();
+		tModel.collectParts(aLevel, aPos, tState, net.minecraft.util.RandomSource.create(42L), tParts);
+		for (net.minecraft.client.renderer.block.dispatch.BlockStateModelPart tPart : tParts) {
+			for (net.minecraft.core.Direction tDir : net.minecraft.core.Direction.values()) {
+				java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tQuads = tPart.getQuads(tDir);
+				if (tQuads != null && !tQuads.isEmpty()) return tQuads.get(0).bakedColors().color(0);
+			}
+			java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tNoDir = tPart.getQuads(null);
+			if (tNoDir != null && !tNoDir.isEmpty()) return tNoDir.get(0).bakedColors().color(0);
+		}
+		return -1;
+	}
+
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onPosColorProbeClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (!gregapi.data.CS.probeFlag("gt6poscolorprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		sPosColorTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sPosColorTick == 100) {
+				// радужная листва: BlockTreeLeavesAB, подтип (meta&7)==7 (BlockTreeLeavesAB:134,139)
+				net.minecraft.world.level.block.Block tLeaves = null;
+				for (net.minecraft.world.level.block.Block tB : net.minecraft.core.registries.BuiltInRegistries.BLOCK) if (tB instanceof gregtech.blocks.tree.BlockTreeLeavesAB) {tLeaves = tB; break;}
+				if (tLeaves == null) {O.println("[GT6-POSCOLOR] ЗАМЕР НЕ УДАЛСЯ: радужная листва не найдена в реестре"); sPosColorTick = 100000; return;}
+				sPosColorRainbow = tLeaves.defaultBlockState();
+				if (tLeaves instanceof gregapi.block.IBlockExtendedMetaData tMB) {
+					net.minecraft.world.level.block.state.BlockState tWith = tMB.getStateForExtendedMetaData(sPosColorRainbow, (short)7);
+					if (tWith != null) sPosColorRainbow = tWith;
+				}
+				// три позиции с РАЗНОЙ суммой |x|+|y|+|z| по модулю длины радуги
+				net.minecraft.core.BlockPos tBase = tMC.player.blockPosition().above(3);
+				sPosColorPos = new net.minecraft.core.BlockPos[] {tBase, tBase.east(1), tBase.east(5)};
+				sPosColorFirst = new int[sPosColorPos.length];
+				O.println("========== [GT6-POSCOLOR] позиционный цвет блока: доходит ли до квадов ==========");
+				for (int i = 0; i < sPosColorPos.length; i++) {
+					net.minecraft.core.BlockPos tP = sPosColorPos[i];
+					tMC.level.setBlock(tP, sPosColorRainbow, 3);
+					short tMetaBack = tLeaves instanceof gregapi.block.IBlockExtendedMetaData tMB2 ? tMB2.getExtendedMetaData(tMC.level.getBlockState(tP)) : -1;
+					int tColor = quadColorAt(tMC.level, tP) & 0xFFFFFF;
+					sPosColorFirst[i] = tColor;
+					// ожидание — НЕЗАВИСИМАЯ формула оригинала (1.7.10 BlockTreeLeavesAB:137), не тот вызов, что чинили
+					int tExpect = gregapi.data.CS.RAINBOW_ARRAY[(Math.abs(tP.getX()) + Math.abs(tP.getY()) + Math.abs(tP.getZ())) % gregapi.data.CS.RAINBOW_ARRAY.length] & 0xFFFFFF;
+					O.println("[GT6-POSCOLOR] " + tP.toShortString() + " мета=" + tMetaBack + " · сумма%24=" + ((Math.abs(tP.getX()) + Math.abs(tP.getY()) + Math.abs(tP.getZ())) % gregapi.data.CS.RAINBOW_ARRAY.length)
+						+ " · квад " + String.format("#%06X", tColor) + " · формула оригинала " + String.format("#%06X", tExpect));
+					gregapi.probe.GT6ProbeStand.judge("GT6-POSCOLOR", "A" + i + ". цвет квада == формуле оригинала по КООРДИНАТЕ", tColor == tExpect, String.format("#%06X", tExpect), String.format("#%06X", tColor));
+				}
+				boolean tDiffer = sPosColorFirst[0] != sPosColorFirst[1] || sPosColorFirst[0] != sPosColorFirst[2];
+				gregapi.probe.GT6ProbeStand.judge("GT6-POSCOLOR", "B. контроль осмысленности: цвета в разных позициях РАЗНЫЕ", tDiffer, "различаются", sPosColorFirst[0] + "/" + sPosColorFirst[1] + "/" + sPosColorFirst[2]);
+
+				// D. регресс-контроль: крашеный блок (BlockColored) — цвет прежний, из подтипа
+				net.minecraft.world.level.block.Block tColored = null;
+				for (net.minecraft.world.level.block.Block tB : net.minecraft.core.registries.BuiltInRegistries.BLOCK) if (tB instanceof gregapi.block.metatype.BlockColored) {tColored = tB; break;}
+				if (tColored == null) {
+					O.println("[GT6-POSCOLOR] регресс-контроль ПРОПУЩЕН: крашеных блоков в реестре нет");
+				} else {
+					net.minecraft.world.level.block.state.BlockState tCS = tColored.defaultBlockState();
+					if (tColored instanceof gregapi.block.IBlockExtendedMetaData tMB3) {
+						net.minecraft.world.level.block.state.BlockState tWith = tMB3.getStateForExtendedMetaData(tCS, (short)5);
+						if (tWith != null) tCS = tWith;
+					}
+					net.minecraft.core.BlockPos tCP = tBase.west(2);
+					tMC.level.setBlock(tCP, tCS, 3);
+					int tGot = quadColorAt(tMC.level, tCP) & 0xFFFFFF;
+					int tWant = (tColored instanceof gregapi.block.IBlock tGT ? tGT.getRenderColor(tColored instanceof gregapi.block.IBlockExtendedMetaData tMB4 ? tMB4.getExtendedMetaData(tMC.level.getBlockState(tCP)) : 0) : 0xFFFFFF) & 0xFFFFFF;
+					O.println("[GT6-POSCOLOR] регресс-контроль " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tColored) + " @" + tCP.toShortString()
+						+ " · квад " + String.format("#%06X", tGot) + " · подтип-канал " + String.format("#%06X", tWant));
+					gregapi.probe.GT6ProbeStand.judge("GT6-POSCOLOR", "D. крашеный блок: цвет квада прежний (регресса нет)", tGot == tWant, String.format("#%06X", tWant), String.format("#%06X", tGot));
+				}
+				return;
+			}
+			if (sPosColorTick != 140 || sPosColorFirst == null) return;
+			// C. независимость от ВРЕМЕНИ: 40 тиков спустя (старый канал менялся каждые 10 тиков)
+			boolean tStable = true; StringBuilder tSb = new StringBuilder();
+			for (int i = 0; i < sPosColorPos.length; i++) {
+				int tNow = quadColorAt(tMC.level, sPosColorPos[i]) & 0xFFFFFF;
+				if (tNow != sPosColorFirst[i]) tStable = false;
+				tSb.append(String.format("#%06X→#%06X ", sPosColorFirst[i], tNow));
+			}
+			O.println("[GT6-POSCOLOR] через 40 тиков: " + tSb);
+			gregapi.probe.GT6ProbeStand.judge("GT6-POSCOLOR", "C. цвет НЕ зависит от времени (симптом «плоские пятна»)", tStable, "без изменений", tSb.toString().trim());
+			O.println("========== [GT6-POSCOLOR] DONE ==========");
+		} catch (Throwable e) {e.printStackTrace(O); sPosColorTick = 100000;}
+	}
+
+	// ==========================================================================================================
+	// gt6tabprobe (BUG-105 §3) — в логе «Item Group has no display items…» ×2: «GregTech: Bumblebees» и
+	// «Impure Dusts». Пустая вкладка = её предметы не видны ни в креативе, ни в списке ингредиентов JEI.
+	// Судим ДВИЖКОВЫМ путём: перечисляем зарегистрированные вкладки мода и берём у каждой её же набор
+	// отображаемых предметов (тот, что читает JEI). Для пустых печатаем членов вкладки и что даёт перечисление —
+	// чтобы отличить «предметов нет вовсе» от «предметы есть, но все скрыты».
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static boolean mTabProbeDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onTabProbeClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mTabProbeDone || !gregapi.data.CS.probeFlag("gt6tabprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		mTabProbeDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-TABPROBE] вкладки креатива мода: наполнение ==========");
+		int tTabs = 0, tEmpty = 0;
+		java.util.List<String> tEmptyNames = new java.util.ArrayList<>();
+		try {
+			net.minecraft.world.flag.FeatureFlagSet tFlags = tMC.level.enabledFeatures();
+			net.minecraft.core.HolderLookup.Provider tLookup = tMC.level.registryAccess();
+			net.minecraft.world.item.CreativeModeTabs.tryRebuildTabContents(tFlags, true, tLookup);
+			for (java.util.Map.Entry<net.minecraft.resources.ResourceKey<net.minecraft.world.item.CreativeModeTab>, net.minecraft.world.item.CreativeModeTab> tE
+					: net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.entrySet()) {
+				net.minecraft.resources.Identifier tID = tE.getKey().identifier();
+				if (!(tID.getNamespace().equals(gregapi.data.CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
+				net.minecraft.world.item.CreativeModeTab tTab = tE.getValue();
+				int tCount = 0;
+				try {tCount = tTab.getDisplayItems().size();} catch (Throwable e) {O.println("[GT6-TABPROBE] " + tID + ": перечисление упало — " + e);}
+				tTabs++;
+				if (tCount == 0) {
+					tEmpty++; tEmptyNames.add(tID + " «" + tTab.getDisplayName().getString() + "»");
+					O.println("[GT6-TABPROBE] ПУСТАЯ вкладка " + tID + " «" + tTab.getDisplayName().getString() + "»");
+				}
+			}
+			O.println("[GT6-TABPROBE] вкладок мода " + tTabs + ", пустых " + tEmpty + (tEmptyNames.isEmpty() ? "" : ": " + tEmptyNames));
+			gregapi.probe.GT6ProbeStand.judge("GT6-TABPROBE", "A. пустых вкладок креатива нет", tEmpty == 0, "0", String.valueOf(tEmpty));
+			gregapi.probe.GT6ProbeStand.judge("GT6-TABPROBE", "B. контроль осмысленности: вкладки мода найдены", tTabs > 0, ">0", String.valueOf(tTabs));
+		} catch (Throwable e) {e.printStackTrace(O);}
+		O.println("========== [GT6-TABPROBE] DONE ==========");
+	}
+
+	// ==========================================================================================================
+	// gt6soundprobe (BUG-105 §2) — в логе «File minecraft:sounds/wrench.ogg does not exist» (плюс screwdriver,
+	// beep), тогда как файлы лежат в assets/gregapi/sounds/. Следствие: звуки ключа, отвёртки и сигнала не играют.
+	// Судим ДВИЖКОВЫМ путём: спрашиваем у звукового менеджера событие по тому же id, каким мод его играет
+	// (CS.SFX.GT_WRENCH и соседи), и проверяем, что путь каждого варианта указывает в пространство мода и
+	// что этот файл ЕСТЬ в загруженных ресурсах.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static boolean mSoundProbeDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onSoundProbeClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mSoundProbeDone || !gregapi.data.CS.probeFlag("gt6soundprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		mSoundProbeDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-SOUNDPROBE] звуки мода: доходят ли до файла ==========");
+		int tChecked = 0, tMissingEvent = 0, tWrongSpace = 0, tNoFile = 0;
+		try {
+			for (String tName : new String[] {gregapi.data.CS.SFX.GT_WRENCH, gregapi.data.CS.SFX.GT_SCREWDRIVER, gregapi.data.CS.SFX.GT_BEEP}) {
+				tChecked++;
+				net.minecraft.resources.Identifier tID = net.minecraft.resources.Identifier.parse(tName);
+				net.minecraft.client.sounds.WeighedSoundEvents tEvents = tMC.getSoundManager().getSoundEvent(tID);
+				if (tEvents == null) {tMissingEvent++; O.println("[GT6-SOUNDPROBE] " + tName + ": движок НЕ ЗНАЕТ такого звука"); continue;}
+				net.minecraft.client.resources.sounds.Sound tSound = tEvents.getSound(net.minecraft.util.RandomSource.create(1L));
+				net.minecraft.resources.Identifier tFile = tSound.getPath();
+				boolean tOwnSpace = tFile.getNamespace().equals("gregapi");
+				boolean tExists = tMC.getResourceManager().getResource(tFile).isPresent();
+				if (!tOwnSpace) tWrongSpace++;
+				if (!tExists) tNoFile++;
+				O.println("[GT6-SOUNDPROBE] " + tName + " → файл " + tFile + " · пространство мода " + (tOwnSpace ? "да" : "НЕТ") + " · файл на месте " + (tExists ? "да" : "НЕТ"));
+			}
+			gregapi.probe.GT6ProbeStand.judge("GT6-SOUNDPROBE", "A. движок знает все звуки мода", tMissingEvent == 0, "0", String.valueOf(tMissingEvent));
+			gregapi.probe.GT6ProbeStand.judge("GT6-SOUNDPROBE", "B. путь ведёт в пространство мода, а не в minecraft:", tWrongSpace == 0, "0", String.valueOf(tWrongSpace));
+			gregapi.probe.GT6ProbeStand.judge("GT6-SOUNDPROBE", "C. файл звука реально существует", tNoFile == 0, "0", String.valueOf(tNoFile));
+			O.println("[GT6-SOUNDPROBE] проверено " + tChecked + " звуков");
+		} catch (Throwable e) {e.printStackTrace(O);}
+		O.println("========== [GT6-SOUNDPROBE] DONE ==========");
+	}
 }

@@ -100,7 +100,6 @@ public class CoverDrain extends AbstractCoverAttachment {
 						if (FL.fillAll((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.XP.make(((ExperienceOrb)tEntity).getValue() * 20, FL.Mob, UT.Code.units(((ExperienceOrb)tEntity).getValue(), 3, 200, F)), T)) {
 							UT.Sounds.send(SFX.MC_XP, 0.1F, (RNGSUS.nextFloat()-RNGSUS.nextFloat()) * 0.35F + 0.9F, (BlockEntity)aData.mTileEntity);
 							tEntity.discard();
-							tEntity.discard();
 							continue;
 						}
 						continue;

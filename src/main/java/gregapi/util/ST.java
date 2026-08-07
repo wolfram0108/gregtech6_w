@@ -1348,7 +1348,7 @@ public class ST {
 				net.minecraftforge.common.WeightedRandomChestContent.generateChestContents(aRandom, net.minecraftforge.common.ChestGenHooks.getItems(aLoot, aRandom), aInv, net.minecraftforge.common.ChestGenHooks.getCount(aLoot, aRandom));
 			} else {
 				// F-loot: ванильные 1.7.10-имена таблиц → индекс в LOOT_TABLES_VANILLA → VANILLA_LOOT_KEYS (1:1 порядок,
-				// см. generateOneVanillaLoot) → LootTable.fill(Container, LootParams(CHEST), seed) — vanilla-часть
+				// см. generateOneVanillaLoot) → взвешенная выдача таблицы (LootParams(CHEST)) — vanilla-часть
 				// data-driven; GT-добавки уже инъектированы в таблицу пулом gregtech6:<категория> (shim-ChestGenHooks).
 				// Дефолт SIMPLE_DUNGEON для неизвестного имени.
 				net.minecraft.server.MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
@@ -1361,7 +1361,21 @@ public class ST {
 						net.minecraft.world.level.storage.loot.LootParams tParams = new net.minecraft.world.level.storage.loot.LootParams.Builder(tLevel)
 							.withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, net.minecraft.world.phys.Vec3.ZERO)
 							.create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.CHEST);
-						tTable.fill(aInv, tParams, aRandom.nextLong());
+						// BUG-105 §1 (лог: «Tried to over-fill a container» ×37 за одну генерацию): КОЛИЧЕСТВО лута в
+						// 1.7.10 задавал СЧЁТЧИК КАТЕГОРИИ, а не таблица — generateChestContents крутил ровно
+						// getCount(категория) итераций и клал каждый предмет в СЛУЧАЙНЫЙ слот, перезаписывая занятый
+						// (WeightedRandomChestContent:39-51). Переполнения там не бывает по построению. Порт звал
+						// LootTable.fill, отдав количество на откуп neo-таблице: замер gt6lootprobe — simple_dungeon
+						// просит в среднем 21 стек против count=8 у 1.7.10, а книжная полка (DummyInventory(14),
+						// MultiTileEntityBookShelf:107) переполнялась почти всегда, и движок МОЛЧА выбрасывал лишнее.
+						// Возвращаем 1.7.10-раскладку: единый взвешенный список даёт сама таблица (ваниль + пул
+						// gregtech6:<категория>), а сколько из него взять и куда положить — решает счётчик, как раньше.
+						java.util.List<ItemStack> tPool = tTable.getRandomItems(tParams);
+						for (int tRoll = 0, tCount = net.minecraftforge.common.ChestGenHooks.getCount(aLoot, aRandom); tRoll < tCount && !tPool.isEmpty(); tRoll++) {
+							ItemStack tPicked = tPool.get(aRandom.nextInt(tPool.size()));
+							if (invalid(tPicked)) continue;
+							aInv.setItem(aRandom.nextInt(aInv.getContainerSize()), tPicked.copy());
+						}
 					}
 				}
 			}

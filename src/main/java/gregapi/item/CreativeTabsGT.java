@@ -167,11 +167,15 @@ public final class CreativeTabsGT {
 		createShellsFromCache(); // F16-shell: вкладки server-start-генератора (MTE) поднимаются из кэша ДО заморозки реестра
 		for (java.util.Map.Entry<String, CreativeTab> tE : OWN_TABS.entrySet()) try {
 			final CreativeTab tTab = tE.getValue();
-			// Гигиена (JEI «Item Group has no display items»): не регистрируем ЗАВЕДОМО пустую вкладку — Bumblebees
-			// (SHOW_BUMBLEBEES=F → все члены ST.hide, WIP-контент 1:1 с Грегом) и Impure Dusts (dustImpure без материалов
-			// DIRTY_DUSTS → 0 вариантов). Скрываем ТОЛЬКО когда у вкладки ЕСТЬ члены, но все дают hidden/empty (isTabEmpty);
-			// MTE-шеллы (члены доливаются на server-start, тут ещё пусты) НЕ трогаем. 1:1-семантика: вкладка появится,
-			// как только у неё будет хоть один нескрытый предмет.
+			// Гигиена (JEI «Item Group has no display items»): не регистрируем вкладку, у которой ЕСТЬ члены, но все
+			// дают hidden/empty (isTabEmpty); MTE-шеллы (члены доливаются на server-start, тут ещё пусты) НЕ трогаем.
+			// ⚠️ BUG-105 §3, замер gt6tabprobe: до двух известных пустых вкладок эта гигиена НЕ ДОТЯГИВАЕТСЯ и
+			// дотянуться не может — событие бежит на буте, а скрытие приезжает позже, отложенной item-init
+			// (MultiItemBumbles:63 кладёт ST.hide в deferItemInit, очередь осушается на LevelEvent.Load). Обе
+			// вкладки пусты 1:1 С ОРИГИНАЛОМ, а не по дефекту порта: «GregTech: Bumblebees» — SHOW_BUMBLEBEES=F
+			// дефолтом и там (CS.java:866, GT_API:620), «Impure Dusts» — тег DIRTY_DUSTS в 1.7.10 не назначен
+			// НИ ОДНОМУ материалу (0 упоминаний вне TD/OP), то есть вариантов префикса нет в обеих версиях.
+			// 1.7.10 такую вкладку показывал пустой — оставляем как есть; в логе о ней пишет только JEI, NEI молчал.
 			if (isTabEmpty(tE.getKey())) continue;
 			aEvent.register(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB,
 				net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tE.getKey())), () -> tTab);

@@ -74,9 +74,16 @@ public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi
 	 *  тёмные 0x202020 при мете 0); дефолт белый 1:1 vanilla Block. Пойман block-golden (тинт ffffff vs 202020). */
 	public int getRenderColor(int aMeta) {return 0xFFFFFF;}
 
-	private gregapi.render.ITexture texOf(byte aSide, int aMeta) {
+	/** BUG-101: в 1.7.10 у блока ДВА канала цвета, и движок спрашивал РАЗНЫЕ в зависимости от пути отрисовки —
+	 *  в мире {@code colorMultiplier(world,x,y,z)} (RenderBlocks: renderStandardBlock:4412, renderBlockLog,
+	 *  renderCrossedSquares — 17 точек), в инвентаре {@code getRenderColor(meta)} (renderBlockAsItem:7904 —
+	 *  ЕДИНСТВЕННЫЙ метод, где он звался, обе точки :7921/:8382). Порт свёл оба рендер-пути 1.7.10 в одну
+	 *  GT6BlockModel и подставил ИНВЕНТАРНЫЙ канал обоим: позиционный цвет (биом-оттенок листвы, радуга по
+	 *  координате) в мир не доходил вовсе. Цвет приходит параметром — путь выбирает вызыватель ниже. */
+	private gregapi.render.ITexture texOf(byte aSide, int aMeta) {return texOf(aSide, aMeta, getRenderColor(aMeta));}
+	private gregapi.render.ITexture texOf(byte aSide, int aMeta, int aColor) {
 		if (mIcons == null || mIcons.length == 0) return null;
-		final int tColor = getRenderColor(aMeta);
+		final int tColor = aColor;
 		final short[] tRGBa = tColor == 0xFFFFFF ? null : gregapi.util.UT.Code.getRGBaArray(tColor);
 		final net.minecraft.resources.Identifier tIcon = getIcon(aSide, aMeta);
 		final gregapi.render.IIconContainer tBase = mIcons[aMeta % mIcons.length];
@@ -95,7 +102,9 @@ public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi
 		return aRGBa == null ? gregapi.render.BlockTextureDefault.get(tCont) : gregapi.render.BlockTextureDefault.get(tCont, aRGBa);
 	}
 	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, net.minecraft.world.item.ItemStack aStack) {return texOf(aSide, gregapi.util.ST.meta_(aStack));}
-	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {return texOf(aSide, gregapi.util.WD.meta(aWorld, aX, aY, aZ));}
+	// BUG-101: мир-путь = мировой канал цвета (1:1 renderStandardBlock:4412). Дефолт IBlock.colorMultiplier сам
+	// отдаёт getRenderColor(meta) — у блоков без позиционного цвета значение то же, что было (бетон/асфальт/cfoam).
+	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {return texOf(aSide, gregapi.util.WD.meta(aWorld, aX, aY, aZ), colorMultiplier(aWorld, aX, aY, aZ));}
 	@Override public boolean usesRenderPass(int aRenderPass, net.minecraft.world.item.ItemStack aStack) {return aRenderPass == 0;}
 	@Override public boolean usesRenderPass(int aRenderPass, net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return aRenderPass == 0;}
 	@Override public boolean setBlockBounds(int aRenderPass, net.minecraft.world.item.ItemStack aStack) {return true;}

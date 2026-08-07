@@ -1,5 +1,5 @@
 {
-"gt.screwdriver":{"category":"player", "sounds":[{"name":"screwdriver", "stream":false}]},
-"gt.wrench":{"category":"player", "sounds":[{"name":"wrench", "stream":false}]},
-"gt.beep":{"category":"player", "sounds":[{"name":"beep", "stream":false}]}
+"gt.screwdriver":{"category":"player", "sounds":[{"name":"gregapi:screwdriver", "stream":false}]},
+"gt.wrench":{"category":"player", "sounds":[{"name":"gregapi:wrench", "stream":false}]},
+"gt.beep":{"category":"player", "sounds":[{"name":"gregapi:beep", "stream":false}]}
 }
