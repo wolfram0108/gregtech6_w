@@ -22,13 +22,13 @@ package gregapi.block;
 import static gregapi.data.CS.*;
 
 import gregapi.block.MapColor;
-import gregapi.block.MaterialLiquid;
 
-public class MaterialOil extends MaterialLiquid {
+public class MaterialOil extends Material {
 	public static MaterialOil instance = new MaterialOil();
 	
 	private MaterialOil() {
 		super(MapColor.blackColor);
+		setLiquid();   // прежде приходило от MaterialLiquid (жидкость, не плотная, застраивается, поршнем не толкается)
 		setNoPushMobility();
 		setReplaceable();
 	}

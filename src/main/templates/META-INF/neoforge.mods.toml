@@ -9,7 +9,7 @@
 license="${mod_license}"
 
 # A URL to refer people to when problems occur with this mod
-#issueTrackerURL="https://change.me.to.your.issue.tracker.example.invalid/" #optional
+issueTrackerURL="https://github.com/wolfram0108/gregtech6_w/issues"
 
 # A list of mods - how many allowed here is determined by the individual mod loader
 [[mods]] #mandatory
@@ -27,20 +27,27 @@ displayName="${mod_name}" #mandatory
 #updateJSONURL="https://change.me.example.invalid/updates.json" #optional
 
 # A URL for the "homepage" for this mod, displayed in the mod UI
-#displayURL="https://change.me.to.your.mods.homepage.example.invalid/" #optional
+displayURL="https://github.com/wolfram0108/gregtech6_w"
 
 # A file name (in the root of the mod JAR) containing a logo for display
 #logoFile="examplemod.png" #optional
 
-# A text field displayed in the mod UI
-#credits="" #optional
 
-# The authors of the mod, displayed in the mod UI (optional)
-#authors=""
 
 # The description text for the mod (multi line!) (#mandatory)
+# Автор оригинала и происхождение — обязательная атрибуция производной работы (LGPL).
+authors="Gregorius Techneticies (GregTech 6); NeoForge port by wolfram0108"
+credits="Ported from GregTech 6 for Minecraft 1.7.10 by Gregorius Techneticies. Reference implementations: NeoForge and Applied Energistics 2."
+
 description='''
-Port of GregTech 6 to Minecraft 26.1.2 / NeoForge. Skeleton — work in progress.
+GregTech 6 ported to Minecraft 26.1.2 / NeoForge.
+
+An industrial process mod: ores are materials with composition, melting points and by-products,
+processed through chains of machines from a hand hammer up to multiblock reactors and pressurised
+fluid logistics. Items, blocks, ore dictionary entries and recipes are generated procedurally from a
+material x prefix matrix rather than declared one by one.
+
+ALPHA: playable end to end, but not finished. Worlds are not guaranteed to survive updates.
 '''
 
 # F12 (decisions/F12-registration-lifecycle.md): GT6 = три родных FML-мода Грегориуса в одном jar
@@ -53,7 +60,7 @@ modId="gregapi" #mandatory
 version="${mod_version}" #mandatory
 displayName="Greg-API" #mandatory
 description='''
-GT6 GAPI-мод (gregapi.GT_API) — грузится первым, перед GAPI_POST и совместимыми модами.
+Core API of GregTech 6. Part of the GregTech 6 distribution, not a separate mod.
 '''
 
 [[mods]] #mandatory
@@ -61,7 +68,7 @@ modId="gregapi_post" #mandatory
 version="${mod_version}" #mandatory
 displayName="Greg-API-Post" #mandatory
 description='''
-GT6 GAPI_POST-мод (gregapi.GT_API_Post) — грузится после GAPI и совместимых модов.
+Late-loading half of the GregTech 6 core API. Part of the GregTech 6 distribution, not a separate mod.
 '''
 
 # F12 §4.4: контент-мод GT (gregtech.GT6_Main) переведён на реальный neo-@Mod(value=gregtech) —
@@ -72,7 +79,7 @@ modId="gregtech" #mandatory
 version="${mod_version}" #mandatory
 displayName="GregTech" #mandatory
 description='''
-GT6 контент-мод (gregtech.GT6_Main) — грузится последним, после GAPI и GAPI_POST.
+Content of GregTech 6: materials, machines, worldgen, recipes. Part of the GregTech 6 distribution.
 '''
 
 # УЛИКА R7 (доработка): {@code @Mod.depends()} на Java-стороне (gregapi.GT_API/GT_API_Post) НЕ задаёт

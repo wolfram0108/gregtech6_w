@@ -1,74 +1,92 @@
+/**
+ * Copyright (c) 2025 GregTech-6 Team
+ *
+ * This file is part of GregTech.
+ *
+ * GregTech is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GregTech is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package gregapi.block;
 
 /**
- * Переходник (PIVOT-6, подсистема BLOCK-MATERIAL). Дословная копия ванильного
- * net.minecraft.block.material.MapColor (Minecraft 1.7.10, decompiled recompSrc), который в целевом
- * движке удалён из этого пакета. GT6 передаёт эти цвета в конструкторы Material.
+ * ЯРЛЫК цвета карты в именах, которыми оперирует GT6 (палитра 1.7.10).
  *
- * Отличия от оригинала (форсированы движком / доказаны грепом, см. decisions/F9-block-material.md):
- *  - опущен getMapColorForBlockColored(int) — тянул net.minecraft.block.BlockColored (другая стена);
- *    GT6 его не зовёт (grep = 0);
- *  - опущен @SideOnly(CLIENT) func_151643_b(int) — клиентский рендер карты; GT6 его не зовёт (grep = 0);
- *  - удалены decompiler-артефакты __OBFID.
- * Всё остальное (36 цветов, значения, индексы, конструктор, mapColorArray) — как в 1.7.10.
+ * <p><b>Значения цветов здесь НЕ хранятся.</b> Единственный носитель значения — движок:
+ * палитра карты у него своя ({@code net.minecraft.world.level.material.MapColor}), адресуется тем же
+ * индексом 0..63 и тем же порядком. Этот класс держит только соответствие «имя GT6 → индекс палитры»,
+ * потому что мод адресует цвета именами, которых в движке нет.</p>
+ *
+ * <p>Прежняя редакция несла собственную таблицу RGB — и она была мёртвым грузом: поле значения не
+ * читал никто (греп по дереву = 0), фактический цвет и так брался у движка через {@link #toNeo()}.
+ * Снятие таблицы поведение не меняет ни на бит и снимает вопрос о происхождении этих чисел.</p>
+ *
+ * <p>Мост в движок — {@link #toNeo()}, одно место на весь мод (F9-bridge).</p>
  */
-public class MapColor {
-	/** Holds all the 16 colors used on maps, very similar of a pallete system. */
-	public static final MapColor[] mapColorArray = new MapColor[64];
-	public static final MapColor airColor = new MapColor(0, 0);
-	public static final MapColor grassColor = new MapColor(1, 8368696);
-	public static final MapColor sandColor = new MapColor(2, 16247203);
-	public static final MapColor clothColor = new MapColor(3, 10987431);
-	public static final MapColor tntColor = new MapColor(4, 16711680);
-	public static final MapColor iceColor = new MapColor(5, 10526975);
-	public static final MapColor ironColor = new MapColor(6, 10987431);
-	public static final MapColor foliageColor = new MapColor(7, 31744);
-	public static final MapColor snowColor = new MapColor(8, 16777215);
-	public static final MapColor clayColor = new MapColor(9, 10791096);
-	public static final MapColor dirtColor = new MapColor(10, 12020271);
-	public static final MapColor stoneColor = new MapColor(11, 7368816);
-	public static final MapColor waterColor = new MapColor(12, 4210943);
-	public static final MapColor woodColor = new MapColor(13, 6837042);
-	public static final MapColor quartzColor = new MapColor(14, 16776437);
-	public static final MapColor adobeColor = new MapColor(15, 14188339);
-	public static final MapColor magentaColor = new MapColor(16, 11685080);
-	public static final MapColor lightBlueColor = new MapColor(17, 6724056);
-	public static final MapColor yellowColor = new MapColor(18, 15066419);
-	public static final MapColor limeColor = new MapColor(19, 8375321);
-	public static final MapColor pinkColor = new MapColor(20, 15892389);
-	public static final MapColor grayColor = new MapColor(21, 5000268);
-	public static final MapColor silverColor = new MapColor(22, 10066329);
-	public static final MapColor cyanColor = new MapColor(23, 5013401);
-	public static final MapColor purpleColor = new MapColor(24, 8339378);
-	public static final MapColor blueColor = new MapColor(25, 3361970);
-	public static final MapColor brownColor = new MapColor(26, 6704179);
-	public static final MapColor greenColor = new MapColor(27, 6717235);
-	public static final MapColor redColor = new MapColor(28, 10040115);
-	public static final MapColor blackColor = new MapColor(29, 1644825);
-	public static final MapColor goldColor = new MapColor(30, 16445005);
-	public static final MapColor diamondColor = new MapColor(31, 6085589);
-	public static final MapColor lapisColor = new MapColor(32, 4882687);
-	public static final MapColor emeraldColor = new MapColor(33, 55610);
-	public static final MapColor obsidianColor = new MapColor(34, 1381407);
-	public static final MapColor netherrackColor = new MapColor(35, 7340544);
-	/** Holds the color in RGB value that will be rendered on maps. */
-	public final int colorValue;
-	/** Holds the index of the color used on map. */
+public final class MapColor {
+	/** Индекс в 64-цветной палитре карты. Совпадает у 1.7.10 и у целевого движка. */
 	public final int colorIndex;
 
-	private MapColor(int aIndex, int aColor) {
-		if (aIndex >= 0 && aIndex <= 63) {
-			this.colorIndex = aIndex;
-			this.colorValue = aColor;
-			mapColorArray[aIndex] = this;
-		} else {
-			throw new IndexOutOfBoundsException("Map colour ID must be between 0 and 63 (inclusive)");
-		}
+	private MapColor(int aIndex) {
+		if (aIndex < 0 || aIndex > 63) throw new IndexOutOfBoundsException("Индекс цвета карты обязан лежать в 0..63, дано: " + aIndex);
+		colorIndex = aIndex;
 	}
 
-	// F9-bridge (централизованный, одно место на весь мод): gregapi MapColor (1:1-порт 1.7.10 палитры) → движковый
-	// net.minecraft.world.level.material.MapColor. Индексы 0-63 совпадают (обе — ванильная 64-цветная палитра, тот же порядок).
+	private static MapColor idx(int aIndex) {return new MapColor(aIndex);}
+
+	/** Цвет палитры по индексу — для кода, который адресует цвет числом, а не именем. */
+	public static MapColor byId(int aIndex) {return idx(aIndex);}
+
+	/** F9-bridge: ярлык GT6 → цвет движка. Единственная точка перехода на весь мод. */
 	public net.minecraft.world.level.material.MapColor toNeo() {
 		return net.minecraft.world.level.material.MapColor.byId(colorIndex);
 	}
+
+	// Имена — те, которыми пользуется код GT6; число справа — индекс палитры.
+	public static final MapColor airColor         = idx( 0);
+	public static final MapColor grassColor       = idx( 1);
+	public static final MapColor sandColor        = idx( 2);
+	public static final MapColor clothColor       = idx( 3);
+	public static final MapColor tntColor         = idx( 4);
+	public static final MapColor iceColor         = idx( 5);
+	public static final MapColor ironColor        = idx( 6);
+	public static final MapColor foliageColor     = idx( 7);
+	public static final MapColor snowColor        = idx( 8);
+	public static final MapColor clayColor        = idx( 9);
+	public static final MapColor dirtColor        = idx(10);
+	public static final MapColor stoneColor       = idx(11);
+	public static final MapColor waterColor       = idx(12);
+	public static final MapColor woodColor        = idx(13);
+	public static final MapColor quartzColor      = idx(14);
+	public static final MapColor adobeColor       = idx(15);
+	public static final MapColor magentaColor     = idx(16);
+	public static final MapColor lightBlueColor   = idx(17);
+	public static final MapColor yellowColor      = idx(18);
+	public static final MapColor limeColor        = idx(19);
+	public static final MapColor pinkColor        = idx(20);
+	public static final MapColor grayColor        = idx(21);
+	public static final MapColor silverColor      = idx(22);
+	public static final MapColor cyanColor        = idx(23);
+	public static final MapColor purpleColor      = idx(24);
+	public static final MapColor blueColor        = idx(25);
+	public static final MapColor brownColor       = idx(26);
+	public static final MapColor greenColor       = idx(27);
+	public static final MapColor redColor         = idx(28);
+	public static final MapColor blackColor       = idx(29);
+	public static final MapColor goldColor        = idx(30);
+	public static final MapColor diamondColor     = idx(31);
+	public static final MapColor lapisColor       = idx(32);
+	public static final MapColor emeraldColor     = idx(33);
+	public static final MapColor obsidianColor    = idx(34);
+	public static final MapColor netherrackColor  = idx(35);
 }
