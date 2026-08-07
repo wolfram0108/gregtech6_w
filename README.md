@@ -30,7 +30,10 @@ Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 
 - [What GregTech 6 is](#what-gregtech-6-is)
 - [Why porting it is hard](#why-porting-it-is-hard)
-- [How the port is done](#how-the-port-is-done)
+- [The architecture that had to survive](#the-architecture-that-had-to-survive)
+- [How the port was executed](#how-the-port-was-executed)
+- [The eighteen seams](#the-eighteen-seams)
+- [How correctness is judged](#how-correctness-is-judged)
 - [Current state](#current-state)
 - [Building](#building)
 - [Running](#running)
@@ -95,108 +98,115 @@ independently portable slices.
 So the port has no "start with a small feature and grow" path available. Either the foundation
 stands up as a whole, or nothing runs.
 
-## How the port is done
+## The architecture that had to survive
 
-### 1. Port it, do not rewrite it
+GregTech 6 is roughly 200 000 lines across ~1 230 classes, but size is not what makes it hard. Two
+structural properties decide everything about how it can be ported.
 
-The mod you play should be GregTech 6, not something inspired by it. The default is **literal
-transcription**: only the symbol the compiler or the engine physically rejects gets changed, and it
-gets changed as little as possible.
+**It is a generator, not a catalogue.** The mod declares ~407 materials and ~453 prefixes — shapes
+such as ingot, dust, small gear, double plate — and derives the rest: items and blocks, ore
+dictionary entries, textures, names, tooltips, ~196 fluids, and recipes across ~85 machine types. A
+material carries its composition, hardness, melting point, by-products and tool quality; the
+generator reads those and produces the world of the mod at load time. Port the output and you get a
+snapshot that cannot grow. Port the generator and everything derived from it follows.
 
-| Allowed | Not allowed |
+**It talks to the engine in one place per subject.** This is what makes GregTech 6 unusual, and the
+reason porting it is possible at all:
+
+| Centre | Owns |
 |---|---|
-| replacing an API call that no longer exists | restructuring control flow |
-| adapting a signature the engine demands | merging, splitting or reordering methods |
-| a deliberately designed replacement for a removed subsystem | "improving" a design while passing through it |
-| recording an unavoidable deviation as a decision | inventing behaviour or constants not in the source |
+| world access | every read and write of blocks, positions, metadata, tile entities |
+| item stacks | creation, comparison, size, identity, "is this empty" |
+| NBT | reading and writing, including the quirks of wrongly-typed keys |
+| ore dictionary | registration, lookup, unification targets |
+| materials and prefixes | the generator matrix itself |
+| mod presence | whether another mod is installed, asked the same way in ~120 places |
+| constants and flags | shared configuration the whole mod reads |
+| machine registry | machines are *registry entries with parameters*, not classes — thousands of them from a few dozen behaviours |
 
-This includes reproducing choices that look suboptimal. In a system this interconnected, an
-"obvious improvement" is usually a load-order assumption held by something three modules away, and
-the port is not the place to find that out.
+Nothing bypasses these. When the engine removed block metadata, the port did not touch the ~1 200
+call sites that read it: the world-access centre changed internally, and the call sites stayed
+byte-for-byte what Gregorius wrote.
 
-### 2. Adapt centrally, never file by file
+**The consequence: it cannot be sliced.** A dependency graph of the source puts 272 classes in a
+single strongly connected component. There is no "start with the boiler and grow" path — the
+foundation stands up whole or nothing runs. That ruled out the usual incremental strategy before the
+first line was moved.
 
-Where the engine forces a change, the change is designed **once** and placed where GT6 already keeps
-that conversation — then the whole mod goes through it, exactly as it did before.
-
-The alternative is what usually happens to large ports: each file gets patched where it broke, the
-patches drift apart, and the mod's central abstractions quietly turn into a thousand local
-translations that nobody can keep consistent. Concretely: block position metadata no longer exists,
-but GT6's world-access module keeps its original 1.7.10 method signatures and translates internally
-— so the ~1 200 call sites across the mod remain byte-for-byte what Gregorius wrote, and the entire
-adaptation is one file you can read in an afternoon.
-
-Rule of thumb throughout: **where the original has one thing, the port has one thing.**
-
-### 3. The process
+## How the port was executed
 
 ```mermaid
 graph TD
-  A["Copy the source verbatim<br/>(all files, no edits)"] --> B["Compile<br/>≈19 000 distinct errors —<br/>a precise map of what the engine removed"]
-  B --> C["Identify the seams<br/>where 1:1 is physically impossible<br/>and design one central replacement for each"]
-  C --> D["Close the errors, cheapest first:<br/>mechanical renames → local fixes →<br/>extending a central seam"]
-  D --> E["Data correctness:<br/>does the generator still produce<br/>what the original produced?"]
-  E --> F["Runtime correctness:<br/>does it still behave the same<br/>in a running game?"]
+  A["Copy the source verbatim<br/>1 230 files, no edits"] --> B["Compile<br/>~19 000 distinct errors"]
+  B --> C["Read the errors as an inventory:<br/>which engine subsystems are gone,<br/>and which centres they hit"]
+  C --> D["Design one central replacement<br/>per removed subsystem — 18 of them"]
+  D --> E["Close errors by class, cheapest first:<br/>rule-driven mass renames →<br/>local fixes → growing a centre"]
+  E --> F["Data: does the generator still produce<br/>what the original produced?"]
+  F --> G["Behaviour: does it still act the same<br/>in a running game?"]
 ```
 
-The unusual step is the first one. Copying 200 000 lines onto an engine that cannot compile them
-sounds like a strange way to start, but the resulting error list is the most honest inventory of the
-work that exists: every place the two engines disagree, enumerated by a compiler rather than by
-someone's judgement about what probably needs attention. The seams in step 3 were chosen from that
-inventory and from the dependency graph — not from a feature list.
+Copying 200 000 lines onto an engine that cannot compile them is a deliberate first move: the
+resulting error list is an inventory produced by the compiler rather than by anyone's opinion about
+what probably needs attention. Every disagreement between the two engines, enumerated, countable and
+shrinking as work proceeds. The seams came out of that list crossed with the dependency graph, not
+out of a feature wishlist.
 
-### 4. The engine seams
+Errors were then closed **by class, never by file**. "This call was renamed" is a rule that applies
+to five hundred sites at once and can be applied mechanically; "this file is broken" is five hundred
+separate judgement calls. When a class of errors could not be closed by a rule, that was the signal
+a real seam had been found and a centre had to grow.
 
-Eighteen incompatibilities were found where the original construct simply has no counterpart. Each
-one is a single, central replacement rather than a family of local workarounds:
+Work that could not be finished on the spot was marked in the code and counted by a script. That
+counter is the honesty gauge of the effort: it went 43 → 28 → 23 → 10 → 7 → 5 → 0, and CI checks it
+on every push so new deferrals stay visible instead of quietly accumulating.
+
+## The eighteen seams
+
+Places where the original construct has no counterpart at all. Each is one central replacement, not
+a family of local workarounds:
 
 | Removed in the modern engine | Replacement |
 |---|---|
 | item metadata | one item per shape + a material data component |
 | coremod bytecode transformation | mixins over the same methods the original patched, plus access transformers |
 | immediate-mode rendering | baked models driven by GT6's own texture layer; connection-dependent shapes via model data |
-| Forge's ore dictionary | GT6's own registry (it already maintained a richer layer above Forge's) |
-| the fluid system | GT6 fluid data kept as is; world fluids re-parented onto the engine's liquid block so vanilla interactions (freezing, sponges, buckets, lava meeting water) work again, while GT6's own finite-quantum flow is preserved |
-| imperative world generation | the original vein/layer algorithms wrapped as engine features placed by biome modifiers |
+| Forge's ore dictionary | GT6's own registry — it already maintained a richer layer above Forge's |
+| the fluid system | fluid data kept as is; world fluids re-parented onto the engine's liquid block so vanilla interactions (freezing, sponges, buckets, lava meeting water) work again, while GT6's finite-quantum flow is preserved |
+| imperative world generation | the original vein and layer algorithms wrapped as engine features, placed by biome modifiers |
 | the networking layer | the same packets over the modern payload API |
-| raw NBT as the data channel | a bridge that keeps the original keys and semantics, including its quirks |
-| the block material system | the 1.7.10 system copied verbatim, plus one bridge into modern block properties |
-| `@Optional` cross-mod compatibility | GT6's mod-presence registry retained; foreign APIs mirrored at compile time only |
-| code-registered crafting recipes | procedural generation into GT6's own recipe buffer, exposed to the engine through a single dispatcher |
-| the FML mod lifecycle | the mod's own lifecycle center untouched; only the outermost entry points are modern |
-| block position metadata | central world-access module keeps the old signatures; own blocks carry extended metadata |
+| raw NBT as the data channel | a bridge preserving the original keys and semantics, quirks included |
+| the block material system | 1.7.10's categories rebuilt as traits, plus one bridge into modern block properties |
+| `@Optional` cross-mod compatibility | the mod-presence centre retained; foreign APIs mirrored at compile time only |
+| code-registered crafting recipes | procedural generation into GT6's own recipe buffer, exposed through a single dispatcher |
+| the FML mod lifecycle | the mod's own lifecycle centre untouched; only the outermost entry points are modern |
+| block position metadata | world-access centre keeps the old signatures; own blocks carry extended metadata |
 | the GUI stack | one menu provider, one menu type, original routing preserved |
 | `null` as "empty item" | GT6 keeps its own model internally; conversion happens at an enumerated set of engine boundaries |
 | mandatory block codecs | one central stub — GT6 blocks are procedural, never data-driven |
-| the NBT read API | read helpers centralized, preserving 1.7.10's wrong-type behaviour |
-| achievements | a no-op, because the modern award carries side effects the original never had |
+| the NBT read API | read helpers centralised, preserving 1.7.10's wrong-type behaviour |
+| achievements | a no-op: the modern award carries side effects the original never had |
 
-### 5. How correctness is judged
+## How correctness is judged
 
-The port cannot be verified by reading it. 200 000 lines of procedurally interlinked code offer
-endless opportunity to be confidently wrong, and reading the 1.7.10 source produced confident wrong
-answers repeatedly. So the original is not treated as documentation — it is treated as a **reference
-implementation you can run**.
-
-The 1.7.10 mod is kept as a live, instrumented build. It is asked what it does; the port is asked
-the same question the same way; the answers are compared.
+The original is not documentation to be read — it is a **reference implementation you can run**. A
+1.7.10 installation is kept instrumented: it is asked what it does, the port is asked the same
+question the same way, and the answers are compared.
 
 | Level | Question it answers |
 |---|---|
 | Compiler | does it exist and link |
-| Data comparison against the original | does the generator still produce the same materials, items, ore dictionary entries, recipes, worldgen definitions and names |
-| In-engine probes | does the real engine path behave the same — what block actually gets placed, what item actually ends up in the slot, what the machine actually consumes and outputs |
-| Side-by-side measurement | for behaviour that only exists while running (fluid spreading, machine timing), the same instrument is compiled into *both* versions and the same scenario is run in each |
-| Playing the game | everything the above cannot see |
+| Comparison against the original | does the generator still produce the same materials, items, ore dictionary entries, recipes, worldgen definitions and names |
+| In-engine probes | does the real engine path behave the same — which block actually got placed, what actually ended up in the slot, what the machine actually consumed and produced |
+| Side-by-side measurement | for behaviour that exists only while running — fluid spreading, machine timing — the same instrument is compiled into *both* versions and one scenario is run in each |
+| Playing the game | everything the instruments cannot see |
 
-Two things this discipline forces, both learned the hard way:
+Two rules keep this from lying, both bought with failures:
 
-* **A comparison is only as good as its scope.** Matching data dumps prove the generator's *output*
-  matches. They say nothing about whether the result reaches the player — the item can be correct in
-  every registry and still be invisible, unobtainable or wrongly rendered. Each level above only
-  closes its own question.
+* **A comparison is only as good as its scope.** Matching data proves the generator's *output*
+  matches. It says nothing about whether the result reaches the player: an item can be correct in
+  every registry and still be invisible, unobtainable or wrongly rendered.
 * **A check that cannot fail is not a check.** Every comparison is run once in a state where it is
-  known to be broken, to confirm it can actually see the difference.
+  known to be broken, to confirm it can see the difference at all.
 
 ## Current state
 

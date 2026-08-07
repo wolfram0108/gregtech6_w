@@ -5,7 +5,7 @@ is that players get GregTech 6 as Gregorius Techneticies wrote it, running on a 
 change that makes the code nicer but the behaviour different is a regression here, even when it looks
 like an improvement.
 
-Please read [the porting approach in the README](README.md#how-the-port-is-done) before your first
+Please read [how the port was executed](README.md#how-the-port-was-executed) before your first
 change — it explains why the code looks the way it does.
 
 ## The two rules that matter most
