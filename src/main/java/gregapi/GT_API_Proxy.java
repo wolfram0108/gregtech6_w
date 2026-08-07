@@ -876,6 +876,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 		if (aEvent.getLevel() instanceof ServerLevel aServerLevel && aEvent instanceof LevelTickEvent.Post) { // getEntities() без аргументов объявлен на ServerLevel, не Level (сверено, ServerLevel.java:1753)
 			ArrayListNoNulls<ExperienceOrb> tOrbs = (XP_ORB_COMBINING && SERVER_TIME % 40 == 31 ? new ArrayListNoNulls<ExperienceOrb>(128) : null);
+			// BUG-103 (класс «состав сущностей меняется во время обхода»): удалять ПРЯМО В ЦИКЛЕ нельзя. По коду
+			// движка discard() → Callback.onRemove → stopTracking → onTrackingEnd → ChunkMap.removeEntity (правит
+			// entityMap) И visibleEntityStorage.remove — то есть структурно меняет и карту трекеров, и ТУ САМУЮ
+			// коллекцию, которую перебирает getAll() (EntityLookup.byId, Int2ObjectLinkedOpenHashMap; getAllEntities
+			// отдаёт её живую обёртку). В 1.7.10 setDead() только ставил флаг, и обход был безопасен. Копим и
+			// удаляем ПОСЛЕ цикла — наблюдаемое поведение то же, движковые карты не трогаются во время обхода.
+			ArrayListNoNulls<ItemEntity> tToDiscard = null;
 
 			for (Entity aEntity : aServerLevel.getEntities().getAll()) {
 				if (aEntity == null || aEntity.isRemoved()) continue;
@@ -911,7 +918,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 						if (rStack == null || rStack.getCount() <= 0) {
 							((ItemEntity)aEntity).setItem(NI);
-							((ItemEntity)aEntity).discard();
+							// BUG-103: не discard() здесь — мы внутри обхода сущностей мира (см. tToDiscard выше)
+							if (tToDiscard == null) tToDiscard = new ArrayListNoNulls<>(16);
+							tToDiscard.add((ItemEntity)aEntity);
 						} else if (!ST.equal(rStack, aStack) || rStack.getCount() != aStack.getCount()) {
 							((ItemEntity)aEntity).setItem(rStack);
 							UT.Reflection.setField(ItemEntity.class, aEntity, "pickupDelay", 40, F); // было delayBeforeCanPickup (1.7.10) — neo-имя поля: pickupDelay, приватное (сверено, ItemEntity.java:49)
@@ -934,6 +943,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					}
 				}
 			}
+
+			// BUG-103: обход завершён — теперь удаление безопасно (движковые карты правятся вне итерации)
+			if (tToDiscard != null) for (ItemEntity tDead : tToDiscard) if (!tDead.isRemoved()) tDead.discard();
 
 			if (tOrbs != null && tOrbs.size() > 32) for (ExperienceOrb aOrb : tOrbs) {
 				if (aOrb.getValue() >= Short.MAX_VALUE) continue;

@@ -405,8 +405,17 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					// не пустит) и добавить свою — порядок «сначала отмена, потом замена» держит карту трекеров
 					// согласованной. Наблюдаемое поведение 1:1 с оригиналом: в мире оказывается ровно одна
 					// GT6-стрела вместо ванильной.
+					// BUG-103 (рецидив 2026-08-08): добавлять замену ПРЯМО ЗДЕСЬ нельзя — событие постится ВНУТРИ
+					// PersistentEntitySectionManager.addEntity:80, и addFreshEntity отсюда запускает вложенное
+					// добавление в те же структуры (sectionStorage/knownUuids/ChunkMap.entityMap), пока внешнее
+					// ещё не закончено. Ставим замену в очередь сервера — она выполнится тем же серверным
+					// потоком сразу по выходе из добавления. Наблюдаемое поведение то же: в мире ровно одна
+					// GT6-стрела вместо ванильной, ванильная не появляется вовсе (событие отменено).
 					aEvent.setCanceled(true);
-					aEvent.getEntity().level().addFreshEntity(new EntityArrow_Material((Arrow)aEvent.getEntity(), tArrow));
+					final net.minecraft.world.level.Level tLevel = aEvent.getEntity().level();
+					final EntityArrow_Material tReplacement = new EntityArrow_Material((Arrow)aEvent.getEntity(), tArrow);
+					if (tLevel.getServer() != null) tLevel.getServer().execute(() -> tLevel.addFreshEntity(tReplacement));
+					else tLevel.addFreshEntity(tReplacement);
 				}
 			}
 		}

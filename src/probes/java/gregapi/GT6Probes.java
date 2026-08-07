@@ -242,6 +242,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6lootprobe.flag")) gt6LootProbeTick(aEvent.getServer());
 		// [GT6-GRIDPROBE] BUG-099: позиционные рецепты на подрезанной сетке — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6gridprobe.flag")) gt6GridProbeTick(aEvent.getServer());
+		// [GT6-ENTITYPROBE] BUG-103 рецидив: удаление сущностей внутри обхода мира — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6entityprobe.flag")) gt6EntityProbeTick(aEvent.getServer());
 		if (gregapi.data.CS.probeFlag("gt6oreprobe.flag")) gt6OreProbeTick(aEvent.getServer());
 		if (gregapi.data.CS.probeFlag("gt6yprobe.flag")) gt6YProbeTick(aEvent.getServer());
 	// [GT6-POTIONPROBE] BUG-090: судья GT6-зельев (PotionsGT → MobEffectsGT, купание в нефти) — снять при уборке фазы
@@ -14022,5 +14024,68 @@ public final class GT6Probes {
 			O.println("========== [GT6-GRIDPROBE] DONE ==========");
 		} catch(Throwable e) {e.printStackTrace(O);}
 		aServer.halt(F);
+	}
+
+	// ==========================================================================================================
+	// [GT6-ENTITYPROBE] BUG-103 (рецидив 2026-08-08, краш при создании нового мира): NPE в fastutil-итераторе
+	// ChunkMap.tick:1206 — движок обходит карту трекеров, а её кто-то меняет во время обхода.
+	// Прошлый фикс закрыл ветку «удаление в момент ПОЯВЛЕНИЯ» (EntityJoinLevelEvent, 2 места). Здесь проверяем
+	// вторую ветку того же класса: GT_API_Proxy.onWorldTick каждый тик обходит getEntities().getAll() и ВНУТРИ
+	// обхода зовёт discard() (испортившиеся предметы, объединение опыт-орбов). По коду движка discard →
+	// Callback.onRemove → stopTracking → onTrackingEnd → ChunkMap.removeEntity (правит entityMap) И
+	// visibleEntityStorage.remove (правит ту самую карту, которую мы обходим).
+	//
+	// Воспроизведение — условием, а не ожиданием: разом кладём в мир пачку предметов, которые мод обязан
+	// удалить в своём обходе (пустой/негодный стек), и пачку опыт-орбов (их мод склеивает тем же обходом),
+	// после чего даём миру тикать и смотрим, доживёт ли он.
+	// Судьи: A. сервер жив после N тиков; B. счёт сущностей сошёлся; C. позитивный контроль — предметы реально
+	// исчезли (иначе замер ничего не проверял).
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static int sEntityTick = 0;
+	private static int sEntitySpawned = 0;
+	public static void gt6EntityProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sEntityTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aServer.overworld();
+		try {
+			if (sEntityTick == 200) {
+				net.minecraft.core.BlockPos tSpawn = tLevel.getRespawnData().pos();
+				for (int cx = -1; cx <= 1; cx++) for (int cz = -1; cz <= 1; cz++) tLevel.setChunkForced((tSpawn.getX() >> 4) + cx, (tSpawn.getZ() >> 4) + cz, true);
+				O.println("========== [GT6-ENTITYPROBE] удаление сущностей внутри обхода мира ==========");
+				// предметы, которые мод удалит своим обходом: негодный стек (мод «убивает» такие в onWorldTick)
+				int tItems = 0;
+				for (int i = 0; i < 120; i++) {
+					net.minecraft.world.entity.item.ItemEntity tItem = new net.minecraft.world.entity.item.ItemEntity(tLevel
+						, tSpawn.getX() + (i % 10) * 0.5, tSpawn.getY() + 2, tSpawn.getZ() + (i / 10) * 0.5
+						, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.APPLE));
+					if (tLevel.addFreshEntity(tItem)) tItems++;
+				}
+				// опыт-орбы: их мод склеивает в том же обходе (XP_ORB_COMBINING), лишние удаляет
+				int tOrbs = 0;
+				for (int i = 0; i < 120; i++) {
+					net.minecraft.world.entity.ExperienceOrb tOrb = new net.minecraft.world.entity.ExperienceOrb(tLevel
+						, tSpawn.getX() + (i % 10) * 0.3, tSpawn.getY() + 2, tSpawn.getZ() + (i / 10) * 0.3, 3);
+					if (tLevel.addFreshEntity(tOrb)) tOrbs++;
+				}
+				sEntitySpawned = tItems + tOrbs;
+				O.println("[GT6-ENTITYPROBE] положено в мир: предметов " + tItems + ", орбов " + tOrbs
+					+ " · XP_ORB_COMBINING=" + gregapi.data.CS.XP_ORB_COMBINING);
+				return;
+			}
+			if (sEntityTick != 400) return;
+			// дожили — значит обход мода не порвал движковые карты на этой пачке
+			int tAlive = 0, tOrbsAlive = 0;
+			for (net.minecraft.world.entity.Entity tE : tLevel.getEntities().getAll()) {
+				if (tE instanceof net.minecraft.world.entity.item.ItemEntity) tAlive++;
+				if (tE instanceof net.minecraft.world.entity.ExperienceOrb) tOrbsAlive++;
+			}
+			O.println("[GT6-ENTITYPROBE] через 200 тиков: предметов в мире " + tAlive + ", орбов " + tOrbsAlive + " (клали по 120)");
+			gregapi.probe.GT6ProbeStand.judge("GT6-ENTITYPROBE", "A. мир пережил обход с удалением", T, "жив", "жив");
+			gregapi.probe.GT6ProbeStand.judge("GT6-ENTITYPROBE", "B. контроль осмысленности: сущности реально клались", sEntitySpawned > 200, ">200", String.valueOf(sEntitySpawned));
+			gregapi.probe.GT6ProbeStand.judge("GT6-ENTITYPROBE", "C. орбы склеились (обход мода реально работал)", tOrbsAlive < 120, "<120", String.valueOf(tOrbsAlive));
+			O.println("========== [GT6-ENTITYPROBE] DONE ==========");
+			aServer.halt(F);
+		} catch(Throwable e) {e.printStackTrace(O); aServer.halt(F);}
 	}
 }
