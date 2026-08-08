@@ -330,8 +330,12 @@ git checkout v<version> && ./gradlew assemble
 sha256sum build/libs/*.jar     # must equal the published .sha256
 ```
 
-Verified here across three independent builds, with the settings deliberately disabled once to
-confirm the check can actually fail: without them, the same source produced two different jars.
+This is measured, not intended. The jar built on Windows and the one CI built on Ubuntu from the
+same commit are byte-identical, and the digest GitHub attests is the same one a local build
+produces. Getting there took fixing two separate causes — archive timestamps and ordering, then
+line endings, which Windows expands on checkout and which travel into the jar as they sit on disk.
+The check was also run once with the settings deliberately off, to confirm it can fail: without
+them the same source produced two different jars.
 
 Note that the jar is **not** signed with a code-signing certificate, and deliberately so: NeoForge
 does not verify mod signatures at all — it loads classes with `(CodeSigner[]) null` — so a

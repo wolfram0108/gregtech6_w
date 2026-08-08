@@ -30,9 +30,13 @@ to publish if they do not.
   attests that the published jar was built by this repository's release workflow from the tagged
   commit (`gh attestation verify`), and the build itself is now reproducible — archive timestamps
   and file order are pinned, so building a tag on any machine yields a byte-identical jar whose
-  checksum must match the published one. Confirmed across three builds, and once with the settings
-  deliberately off to prove the check can fail: without them the same source produced two different
-  jars. The jar is still not code-signed, deliberately — the loader ignores mod signatures entirely.
+  checksum must match the published one. Measured rather than intended: a jar built on Windows and
+  the one CI builds on Ubuntu from the same commit are byte-identical, and the digest GitHub attests
+  is the one a local build produces. Two causes had to be removed — archive timestamps and ordering,
+  then line endings, which Windows expands on checkout and which reach the jar as they sit on disk.
+  The check was also run with the settings off, to prove it can fail: without them the same source
+  produced two different jars. The jar is still not code-signed, deliberately — the loader ignores
+  mod signatures entirely.
 
 ### Changed
 
