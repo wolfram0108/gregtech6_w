@@ -45,6 +45,7 @@ Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 - [Tests](#tests)
 - [Development tooling](#development-tooling)
 - [Continuous integration](#continuous-integration)
+- [Verifying a download](#verifying-a-download)
 - [Mod compatibility](#mod-compatibility)
 - [Reporting problems](#reporting-problems)
 - [License and credits](#license-and-credits)
@@ -307,6 +308,34 @@ Four jobs, in parallel:
 
 Tagging a release (`v<version>`) builds the jar, verifies the tag matches the version in
 `gradle.properties`, and publishes a GitHub release — pre-release for alpha, beta and rc versions.
+
+## Verifying a download
+
+A mod runs as ordinary code inside your game, with your permissions. So the honest question is not
+"is this file intact" but "is this file the one built from the source you can read" — and both
+answers here are checkable **without trusting me**.
+
+```bash
+gh attestation verify gregtech6-<version>.jar --repo wolfram0108/gregtech6_w
+```
+
+GitHub itself witnessed this exact file being produced by this repository's release workflow from
+the tagged commit, and signs that statement. A file rebuilt or altered by anyone else fails this.
+
+The stronger check is that you can reproduce the build. Archive timestamps and file order are
+pinned, so building a tag twice — on any machine — yields a **byte-identical** jar:
+
+```bash
+git checkout v<version> && ./gradlew assemble
+sha256sum build/libs/*.jar     # must equal the published .sha256
+```
+
+Verified here across three independent builds, with the settings deliberately disabled once to
+confirm the check can actually fail: without them, the same source produced two different jars.
+
+Note that the jar is **not** signed with a code-signing certificate, and deliberately so: NeoForge
+does not verify mod signatures at all — it loads classes with `(CodeSigner[]) null` — so a
+self-signed certificate would add ceremony without adding a verifier.
 
 ## Mod compatibility
 

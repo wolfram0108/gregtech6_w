@@ -24,6 +24,16 @@ to publish if they do not.
 
 ## [Unreleased]
 
+### Added
+
+- **A release can now be verified without trusting the author.** Two independent checks: GitHub
+  attests that the published jar was built by this repository's release workflow from the tagged
+  commit (`gh attestation verify`), and the build itself is now reproducible — archive timestamps
+  and file order are pinned, so building a tag on any machine yields a byte-identical jar whose
+  checksum must match the published one. Confirmed across three builds, and once with the settings
+  deliberately off to prove the check can fail: without them the same source produced two different
+  jars. The jar is still not code-signed, deliberately — the loader ignores mod signatures entirely.
+
 ### Changed
 
 - **Licensing and attribution were audited across the whole distribution and brought in order.**

@@ -21,6 +21,10 @@ concurrency:
 
 permissions:
   contents: write
+  # Удостоверение происхождения артефакта (attestations, шаг ниже): id-token — чтобы прогон получил
+  # OIDC-токен и подписался как ЭТОТ workflow, attestations — чтобы запись легла в реестр репозитория.
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -75,6 +79,18 @@ jobs:
           for f in *.jar; do sha256sum "$f" > "$f.sha256"; done
           cat *.sha256
 
+      # УДОСТОВЕРЕНИЕ ПРОИСХОЖДЕНИЯ. Контрольная сумма выше говорит только «файл дошёл целым»: она
+      # лежит рядом с jar, и подделавший одно подделает и другое. Здесь GitHub криптографически
+      # свидетельствует, что ИМЕННО ЭТОТ файл собран ЭТИМ workflow из ЭТОГО коммита. Подписантом
+      # выступает GitHub, а не самодельный сертификат, поэтому проверка не требует доверия к автору:
+      #     gh attestation verify gregtech6-<версия>.jar --repo wolfram0108/gregtech6_w
+      # Стоит ПОСЛЕ контрольных сумм и ДО публикации: свидетельство привязано к содержимому файла,
+      # значит файл после этого шага изменяться не должен.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'build/libs/*.jar'
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -88,11 +104,32 @@ jobs:
           body: |
             **GregTech 6 for NeoForge — ${{ steps.version.outputs.version }}**
 
-            Minecraft 26.1.2 · NeoForge 26.1.2.77 · Java 25.
+            Minecraft 26.1.2 · NeoForge 26.1.2.84 or newer · Java 25.
+
+            An unofficial port of Gregorius Techneticies' GregTech 6, under LGPL-3.0-or-later.
+            Not affiliated with or endorsed by the upstream author — report problems here, not there.
+            Where every part of this jar comes from is set out in `NOTICE`, inside the jar.
 
             > ⚠️ **Alpha.** Playable, not finished. Worlds are not guaranteed to survive between
             > builds, and some subsystems are ported but not individually verified — see the
             > "Known gaps" section of the README before using a world you care about.
+
+            **Verifying this download.** Two independent checks, neither requiring you to trust me:
+
+            ```
+            gh attestation verify gregtech6-${{ steps.version.outputs.version }}.jar \
+               --repo ${{ github.repository }}
+            ```
+
+            confirms GitHub itself witnessed this exact file being built by this repository's release
+            workflow from the tagged commit. And because the build is reproducible, you can check the
+            claim yourself — build the tag and compare:
+
+            ```
+            ./gradlew assemble && sha256sum build/libs/*.jar
+            ```
+
+            The result must equal the published `.sha256` byte for byte.
 
             Report a defect with: what you did, what the 1.7.10 original does instead,
             single-player or dedicated server, fresh or old world, plus `logs/latest.log`
