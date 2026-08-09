@@ -844,7 +844,12 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	protected IFluidTank getFluidTankFillable(MultiTileEntityMultiBlockPart aPart, byte aSide, FluidStack aFluidToFill) {return getFluidTankFillable(SIDE_ANY, aFluidToFill);}
 	protected IFluidTank getFluidTankDrainable(MultiTileEntityMultiBlockPart aPart, byte aSide, FluidStack aFluidToDrain) {return getFluidTankDrainable(SIDE_ANY, aFluidToDrain);}
-	protected IFluidTank[] getFluidTanks(MultiTileEntityMultiBlockPart aPart, byte aSide) {return getFluidTanks(SIDE_ANY);}
+	/** public, а не protected: через него СТЕНКА многоблока отдаёт наружу танки своего контроллера
+	 *  ({@code IMultiBlockFluidHandler}). В 1.7.10 канала «дай сами танки» не требовалось — часть сама
+	 *  объявляла {@code IFluidHandler}, и чужой мод спрашивал её напрямую; в neo наружу видно только
+	 *  зарегистрированную capability, а та строится из объектов танков ({@code GT6FluidCapability}).
+	 *  Тело и семантика не менялись — часть по-прежнему спрашивает контроллер, контроллер решает сам. */
+	public IFluidTank[] getFluidTanks(MultiTileEntityMultiBlockPart aPart, byte aSide) {return getFluidTanks(SIDE_ANY);}
 	
 	public int fill(MultiTileEntityMultiBlockPart aPart, byte aDirection, FluidStack aFluid, boolean aDoFill) {
 		if (aFluid == null || aFluid.getAmount() <= 0) return 0;

@@ -127,7 +127,7 @@ public class WorldgenOresLarge extends WorldgenObject {
 						// (vanilla-классификация по идентичности+тегам, WD.java:474) — стух-тег снят.
 						gregapi.block.Material tMat = WD.getMaterial(tContact.getBlock());
 						if (tMat != gregapi.block.Material.grass && tMat != gregapi.block.Material.ground && tMat != gregapi.block.Material.sand && tMat != gregapi.block.Material.rock) break;
-						if (WD.easyRep(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(3)!=0?ST.save(NBT_VALUE, OP.rockGt.mat(UT.Code.select(mTop, mTop, mBottom, mBetween, mSpread), 1)):UT.NBT.make(), F, T);
+						if (WD.easyRepDry(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(3)!=0?ST.save(NBT_VALUE, OP.rockGt.mat(UT.Code.select(mTop, mTop, mBottom, mBetween, mSpread), 1)):UT.NBT.make(), F, T);
 						break;
 					}
 				}

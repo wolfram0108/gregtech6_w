@@ -66,7 +66,7 @@ public class WorldgenAetherRocks extends WorldgenOnSurface {
 		if (WD.getMaterial(aContact) != Material.grass && WD.getMaterial(aContact) != Material.ground && WD.getMaterial(aContact) != Material.sand) return F;
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 		if (tRegistry == null) return F;
-		if (WD.easyRep(aWorld, aX, aY+1, aZ)) return tRegistry.mBlock.placeBlock(aWorld, aX, aY+1, aZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(5)==0?ST.save(NBT_VALUE, UT.Code.select(null, OP.gem.mat(MT.Ambrosium, 1), ST.make(Items.FLINT, 1, 0), ST.make(Items.FLINT, 1, 0), (aRandom.nextInt(4)==0?OP.oreRaw:OP.rockGt).mat(MT.MeteoricIron, 1))):null, F, T);
+		if (WD.easyRepDry(aWorld, aX, aY+1, aZ)) return tRegistry.mBlock.placeBlock(aWorld, aX, aY+1, aZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(5)==0?ST.save(NBT_VALUE, UT.Code.select(null, OP.gem.mat(MT.Ambrosium, 1), ST.make(Items.FLINT, 1, 0), ST.make(Items.FLINT, 1, 0), (aRandom.nextInt(4)==0?OP.oreRaw:OP.rockGt).mat(MT.MeteoricIron, 1))):null, F, T);
 		return F;
 	}
 }

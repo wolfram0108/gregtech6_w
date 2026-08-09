@@ -1842,6 +1842,29 @@ public class WD {
 	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || state(aWorld, new BlockPos(aX, aY, aZ)).canBeReplaced();}
 
+	/** Клетка годится под ПОВЕРХНОСТНЫЙ объект вордгена (камешек-индикатор, палка, куст, цветок, саженец).
+	 *
+	 *  <p>Отличается от {@link #easyRep} ровно одним: жидкость клетку НЕ освобождает. {@code easyRep} отвечает
+	 *  на вопрос «можно ли занять клетку вообще» и потому пропускает воду — она {@code replaceable} и в 1.7.10
+	 *  ({@code canBeReplacedByLeaves} у не-цельного блока) тоже давала «да». Для вордгена этого мало: у всех
+	 *  генераторов поверхности гейт на жидкость стоит у ОПОРЫ (блок, на который ставим), а сама целевая клетка
+	 *  сверху не проверялась ничем, кроме {@code easyRep}.</p>
+	 *
+	 *  <p>Пока луч идёт от неба, вода ловится раньше опоры и дыра не видна. Но {@code WorldgenOresLarge:118}
+	 *  бросает луч не от неба, а от «верх жилы + 25» — под океаном и над подземным аквифером эта высота уже
+	 *  НИЖЕ уровня воды: луч упирается в песок дна (законная опора), а индикатор встаёт прямо в воду. Замер по
+	 *  свежему миру: камешков в воде 332 из 7983 (у 99 % под ними рудная жила), палок 1 из 186 — у палок в
+	 *  списке опор нет песка, а дно на 78 % песчаное, отсюда и разница в частоте при общем корне.</p>
+	 *
+	 *  <p>В 1.7.10 индикаторов под водой не было, поэтому поведение возвращается к оригинальному. Проверяется и
+	 *  {@code FluidState}: в neo вода бывает не только отдельным блоком, но и {@code waterlogged}-состоянием. */
+	public static boolean easyRepDry(LevelAccessor aWorld, int aX, int aY, int aZ) {return easyRepDry(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());}
+	public static boolean easyRepDry(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {
+		if (!easyRep(aWorld, aX, aY, aZ, aBlock)) return F;
+		BlockState tState = state(aWorld, new BlockPos(aX, aY, aZ));
+		return !getMaterial(tState.getBlock()).isLiquid() && tState.getFluidState().isEmpty();
+	}
+
 	/** F6-worldgen, класс «потерянный каскад опоры». В 1.7.10 вордген достраивал мир по ЖИВОМУ {@code World.setBlock}
 	 *  с оповещением соседей, и движок сам ронял то, что осталось без опоры ({@code BlockDoublePlant
 	 *  .onNeighborBlockChange -> checkAndDropBlock}). В neo вордген идёт по {@code WorldGenRegion}, а тот пишет

@@ -181,7 +181,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 						}
 					}
 				// Place Rock if on Opaque Surface.
-				} else if (WD.easyRep(aWorld, tX, tY, tZ, aBlock)) {
+				} else if (WD.easyRepDry(aWorld, tX, tY, tZ, aBlock)) {
 					if (tCanPlaceRocks && !WD.getMaterial(aBlock).isLiquid() && aRandom.nextInt(128) == 0) tRegistry.mBlock.placeBlock(aWorld, tX, tY, tZ, SIDE_UNKNOWN, (short)32757, ST.save(NBT_VALUE, OP.rockGt.mat(aRandom.nextBoolean()&&tLastOre!=null?tLastOre.mTargetCrushing.mMaterial:tLastRock, 1)), F, T);
 					tLastOre = null;
 					tCanPlaceRocks = F;

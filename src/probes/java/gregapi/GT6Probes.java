@@ -213,6 +213,10 @@ public final class GT6Probes {
 	 *  в GT_API_Proxy.onServerTick до выноса (порядок вызовов сохранён дословно). */
 	@net.neoforged.bus.api.SubscribeEvent
 	public static void onProbeServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Pre aEvent) {
+	// [GT6-JADEMULTIPROBE] судья «капа жидкости на СТЕНКЕ многоблока» (репорт: Jade молчит на стенках танка)
+		if (gregapi.data.CS.probeFlag("gt6jademultiprobe.flag")) gt6JadeMultiProbeTick(aEvent.getServer());
+	// [GT6-ROCKWATERPROBE] судья «камешек-индикатор/палка в жидкости» (репорт пользователя: камни в воде) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6rockwaterprobe.flag")) gt6RockWaterProbeTick(aEvent.getServer());
 	// [GT6-MTEAUDIT] BUG-057 — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6mteauditprobe.flag")) gt6MTEAuditProbeTick(aEvent.getServer());
 	// [GT6-WIREPROBE] верификационный стенд «Связка №1 — электрические провода EU» (Ф3.1) — снять при уборке фазы
@@ -15177,5 +15181,315 @@ public final class GT6Probes {
 			e.printStackTrace(O);
 			sJYDone = true;
 		}
+	}
+	// ================================================================================================================
+	// [GT6-ROCKWATERPROBE] Репорт пользователя: «камни под водой и в воде». Замер по сохранённым мирам показал
+	// камешков-индикаторов (MTE 32757) в воде 332 из 7983, палок (32756) — 1 из 186; у 99 % мокрых камешков под
+	// ними рудная жила. Корень: WorldgenOresLarge бросает луч не от неба, а от «верх жилы + 25» — под океаном и
+	// над аквифером эта высота ниже уровня воды, гейт жидкости проверяет ОПОРУ (песок дна, законная), а целевую
+	// клетку проверял только WD.easyRep, который воду пропускает. Правка — центр WD.easyRepDry.
+	//
+	// Судья работает на ЖИВОЙ генерации, а не на готовом мире: принудительно генерирует квадрат чанков вокруг
+	// спавна (тот же путь движка, что при ходьбе игрока), затем считает по секциям чанков.
+	//   R-water : камешков и палок, у которых СВЕРХУ или СНИЗУ жидкость — должно быть 0.
+	//   R-land  : камешков на суше — контроль, что фикс не выключил генерацию вообще (ожидание: > 0).
+	//   R-ctrl  : ПОЗИТИВНЫЙ КОНТРОЛЬ ДЕТЕКТОРА — стенд сам ставит камешек в воду в обход центра (прямым
+	//             placeBlock) и убеждается, что счётчик его ВИДИТ. Без этого «0 в воде» может означать просто
+	//             слепого судью.
+	// ================================================================================================================
+	private static int sRWTick = 0, sRWPhase = 0, sRWCursor = 0, sRWChunks = 0;
+	private static boolean sRWDone = false;
+	private static int sRWRockLand = 0, sRWRockWet = 0, sRWStickLand = 0, sRWStickWet = 0, sRWWaterCols = 0, sRWRejectedAtStart = 0;
+	private static net.minecraft.core.BlockPos sRWCenter = null;
+	private static final int RW_RADIUS = 20;                       // (2*20+1)^2 = 1681 чанк вокруг центра-океана
+	private static final int RW_SIDE = RW_RADIUS * 2 + 1, RW_TOTAL = RW_SIDE * RW_SIDE;
+	private static final int RW_PER_TICK = 6;                      // порция за тик: длинный тик валит сервер по watchdog
+	private static final java.util.List<String> sRWExamples = new java.util.ArrayList<>();
+
+	/** Блок-носитель MTE по ID: у камешка (32757) и палки (32756) он свой (группа материал+инструмент). */
+	private static net.minecraft.world.level.block.Block gt6RockWaterBlockOf(short aID) {
+		try {
+			gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			if (tReg == null) return null;
+			gregapi.block.multitileentity.MultiTileEntityClassContainer tClass = tReg.mRegistry.get(aID);
+			return tClass == null ? null : tClass.mBlock;
+		} catch (Throwable e) {return null;}
+	}
+
+	private static boolean gt6RockWaterIsLiquid(net.minecraft.world.level.block.state.BlockState aState) {
+		return !aState.getFluidState().isEmpty() || gregapi.util.WD.getMaterial(aState.getBlock()).isLiquid();
+	}
+
+	/** Центр замера — ОКЕАН, а не спавн: у спавна воды может не быть вовсе, и судья тогда пустой
+	 *  (проверено: 1 мокрый камешек на 2530 при НУЛЕ отводов центра = условие просто не встретилось). */
+	private static net.minecraft.core.BlockPos gt6RockWaterFindOcean(net.minecraft.server.level.ServerLevel aLevel) {
+		try {
+			com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tFound =
+				aLevel.findClosestBiome3d(h -> h.is(net.minecraft.tags.BiomeTags.IS_OCEAN), net.minecraft.core.BlockPos.ZERO, 6400, 32, 64);
+			return tFound == null ? null : tFound.getFirst();
+		} catch (Throwable e) {return null;}
+	}
+
+	/** Перепись ОДНОГО чанка сразу после его генерации: ждать общего прохода нельзя — чанки успевают
+	 *  выгрузиться (после BUG-106 чтения намеренно не грузят чанки), и выборка режется втрое. */
+	private static void gt6RockWaterCensusChunk(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.world.level.chunk.ChunkAccess aChunk,
+	                                            net.minecraft.world.level.block.Block aRockBlock, net.minecraft.world.level.block.Block aStickBlock) {
+		int tX0 = aChunk.getPos().getMinBlockX(), tZ0 = aChunk.getPos().getMinBlockZ();
+		sRWChunks++;
+		for (int lx = 0; lx < 16; lx++) for (int lz = 0; lz < 16; lz++)
+			if (gt6RockWaterIsLiquid(aChunk.getBlockState(new net.minecraft.core.BlockPos(tX0 + lx, aLevel.getSeaLevel()-1, tZ0 + lz)))) sRWWaterCols++;
+		int tFrom = aChunk.getMinY(), tTo = Math.min(aChunk.getMaxY(), aLevel.getSeaLevel() + 80);
+		for (int y = tFrom; y <= tTo; y++) for (int lx = 0; lx < 16; lx++) for (int lz = 0; lz < 16; lz++) {
+			net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(tX0 + lx, y, tZ0 + lz);
+			net.minecraft.world.level.block.Block tBlock = aChunk.getBlockState(tPos).getBlock();
+			boolean tIsRock = (tBlock == aRockBlock), tIsStick = (aStickBlock != null && tBlock == aStickBlock);
+			if (!tIsRock && !tIsStick) continue;
+			boolean tWet = gt6RockWaterIsLiquid(aChunk.getBlockState(tPos.above())) || gt6RockWaterIsLiquid(aChunk.getBlockState(tPos.below()));
+			if (tIsRock) {
+				if (tWet) {sRWRockWet++; if (sRWExamples.size() < 8) sRWExamples.add("камешек " + tPos + " верх=" + aChunk.getBlockState(tPos.above()).getBlock() + " низ=" + aChunk.getBlockState(tPos.below()).getBlock());}
+				else sRWRockLand++;
+			} else {
+				if (tWet) {sRWStickWet++; if (sRWExamples.size() < 8) sRWExamples.add("палка " + tPos);}
+				else sRWStickLand++;
+			}
+		}
+	}
+
+	public static void gt6RockWaterProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sRWDone) return;
+		sRWTick++;
+		if (sRWTick < 200) return;                                  // дать миру подняться
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
+			boolean tBaseline = F; // A/B-переключатель снят вместе с диагностикой захода (замер M-74 уже снят)
+			if (sRWCenter == null) {
+				sRWCenter = gt6RockWaterFindOcean(tLevel);
+				if (sRWCenter == null) {
+					O.println("[GT6-ROCKWATERPROBE] океан в 6400 блоках НЕ найден — условие дефекта не воспроизводимо => FAIL (судья пустой)");
+					O.println("[GT6-ROCKWATERPROBE] ВЕРДИКТ: FAIL");
+					sRWDone = T; return;
+				}
+				sRWRejectedAtStart = 0;
+				O.println("========== [GT6-ROCKWATERPROBE] режим: " + (tBaseline ? "БАЗА «ДО ПРАВКИ» (центр пропускает воду, но считает)" : "ПРАВКА (центр отводит воду)")
+					+ " | центр замера — ОКЕАН " + sRWCenter + " | чанков к обходу " + RW_TOTAL + " ==========");
+			}
+			final int tCX = sRWCenter.getX() >> 4, tCZ = sRWCenter.getZ() >> 4;
+
+			net.minecraft.world.level.block.Block tRockBlock = gt6RockWaterBlockOf((short)32757);
+			net.minecraft.world.level.block.Block tStickBlock = gt6RockWaterBlockOf((short)32756);
+			if (tRockBlock == null) {O.println("[GT6-ROCKWATERPROBE] EXC: блок камешка 32757 не найден в реестре => FAIL"); sRWDone = T; return;}
+
+			// ФАЗА 0 — генерация + НЕМЕДЛЕННАЯ перепись каждого чанка.
+			if (sRWPhase == 0) {
+				for (int n = 0; n < RW_PER_TICK && sRWCursor < RW_TOTAL; n++, sRWCursor++) {
+					int dx = (sRWCursor % RW_SIDE) - RW_RADIUS, dz = (sRWCursor / RW_SIDE) - RW_RADIUS;
+					net.minecraft.world.level.chunk.ChunkAccess tChunk = tLevel.getChunk(tCX + dx, tCZ + dz);
+					if (tChunk != null) gt6RockWaterCensusChunk(tLevel, tChunk, tRockBlock, tStickBlock);
+				}
+				if (sRWCursor % 300 == 0) O.println("[GT6-ROCKWATERPROBE] ... обойдено чанков " + sRWChunks + "/" + RW_TOTAL);
+				if (sRWCursor < RW_TOTAL) return;
+				int tRejected = -1 /* счётчик отводов снят вместе с диагностикой захода */;
+				O.println("[GT6-ROCKWATERPROBE] обойдено чанков=" + sRWChunks + " | водных колонок на уровне моря=" + sRWWaterCols);
+				O.println("[GT6-ROCKWATERPROBE] случаев «постановка в жидкость» насчитано центром: " + tRejected + (tBaseline ? " (в режиме БАЗЫ они РАЗРЕШЕНЫ — должны найтись в мире)" : " (в режиме ПРАВКИ они отведены)"));
+				O.println("[GT6-ROCKWATERPROBE] камешков: суша=" + sRWRockLand + " вода=" + sRWRockWet + " | палок: суша=" + sRWStickLand + " вода=" + sRWStickWet);
+				for (String s : sRWExamples) O.println("[GT6-ROCKWATERPROBE]   пример мокрого: " + s);
+				sRWPhase = 1;
+				return;
+			}
+
+			// ФАЗА 1 — ПОЗИТИВНЫЙ КОНТРОЛЬ: подсаживаем камешек в воду мимо центра; детектор обязан его увидеть.
+			int tCtrl = 0;
+			net.minecraft.core.BlockPos tWaterPos = null;
+			outer:
+			for (int i = 0; i < RW_TOTAL && tWaterPos == null; i++) {
+				int dx = (i % RW_SIDE) - RW_RADIUS, dz = (i / RW_SIDE) - RW_RADIUS;
+				net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunk(tCX + dx, tCZ + dz, F);
+				if (tChunk == null) continue;
+				for (int y = tLevel.getSeaLevel()-1; y > tLevel.getSeaLevel()-16; y--) for (int lx = 0; lx < 16; lx++) for (int lz = 0; lz < 16; lz++) {
+					net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos((tCX+dx)*16 + lx, y, (tCZ+dz)*16 + lz);
+					if (gt6RockWaterIsLiquid(tChunk.getBlockState(tPos)) && gt6RockWaterIsLiquid(tChunk.getBlockState(tPos.above()))) {tWaterPos = tPos; break outer;}
+				}
+			}
+			if (tWaterPos == null) {
+				O.println("[GT6-ROCKWATERPROBE] R-ctrl: воды в загруженной области НЕТ — контроль невозможен => FAIL");
+				O.println("[GT6-ROCKWATERPROBE] ВЕРДИКТ: FAIL");
+				sRWDone = T; return;
+			}
+			gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			boolean tPlaced = tReg.mBlock.placeBlock(tLevel, tWaterPos.getX(), tWaterPos.getY(), tWaterPos.getZ(), gregapi.data.CS.SIDE_UNKNOWN, (short)32757, null, F, T);
+			if (tPlaced && tLevel.getBlockState(tWaterPos).getBlock() == tRockBlock) {
+				boolean tSeen = gt6RockWaterIsLiquid(tLevel.getBlockState(tWaterPos.above())) || gt6RockWaterIsLiquid(tLevel.getBlockState(tWaterPos.below()));
+				tCtrl = tSeen ? 1 : 0;
+				O.println("[GT6-ROCKWATERPROBE] R-ctrl: подсаженный в воду камешек " + tWaterPos + " детектором " + (tSeen ? "УВИДЕН (контроль рабочий)" : "НЕ УВИДЕН — судья слеп"));
+			} else {
+				O.println("[GT6-ROCKWATERPROBE] R-ctrl: подсадить камешек в воду не удалось (placeBlock=" + tPlaced + ") — контроль не подтверждён");
+			}
+
+			int tRejected = -1 /* счётчик отводов снят вместе с диагностикой захода */;
+			boolean tPassCase  = (tRejected > 0);
+			boolean tPassWater = (sRWRockWet == 0 && sRWStickWet == 0);
+			boolean tPassLand  = (sRWRockLand > 0);
+			boolean tPassCtrl  = (tCtrl == 1);
+			O.println("[GT6-ROCKWATERPROBE] ИТОГ[" + (tBaseline ? "БАЗА" : "ПРАВКА") + "]: случаев=" + tRejected + " камешков в воде=" + sRWRockWet + " палок в воде=" + sRWStickWet + " камешков на суше=" + sRWRockLand + " чанков=" + sRWChunks);
+			O.println("[GT6-ROCKWATERPROBE] R-case  (условие встретилось): " + tRejected + " => " + (tPassCase ? "PASS" : "FAIL — судья пустой"));
+			O.println("[GT6-ROCKWATERPROBE] R-water (в жидкости пусто): камешков=" + sRWRockWet + " палок=" + sRWStickWet + " => " + (tPassWater ? "PASS" : "FAIL"));
+			O.println("[GT6-ROCKWATERPROBE] R-land  (суша жива): камешков=" + sRWRockLand + " палок=" + sRWStickLand + " => " + (tPassLand ? "PASS" : "FAIL"));
+			O.println("[GT6-ROCKWATERPROBE] R-ctrl  (детектор рабочий): => " + (tPassCtrl ? "PASS" : "FAIL"));
+			if (tBaseline) O.println("[GT6-ROCKWATERPROBE] ВЕРДИКТ БАЗЫ: справочный прогон (ожидание: случаев > 0 И камешков в воде > 0)");
+			else O.println("[GT6-ROCKWATERPROBE] ВЕРДИКТ: " + (tPassCase && tPassWater && tPassLand && tPassCtrl ? "PASS" : "FAIL"));
+			sRWDone = T;
+		} catch (Throwable e) {
+			O.println("[GT6-ROCKWATERPROBE] EXC: исключение стенда => FAIL");
+			e.printStackTrace(O);
+			sRWDone = T;
+		}
+	}
+	// ================================================================================================================
+	// [GT6-JADEMULTIPROBE] Репорт игрока: «построил ТАНК — на главном блоке Jade показывает воду, на стенках ничего».
+	// Канал наружу в neo — ЗАРЕГИСТРИРОВАННАЯ capability (Capabilities.Fluid.BLOCK), а она строится из объектов
+	// танков (GT6FluidCapability.handlerOf → getFluidTanksForCapability → getFluidTanks(side)). Стенка своих танков
+	// не имеет и унаследованный пустой метод отдавал «танков нет» — при том, что fill/drain/getTankInfo она честно
+	// делегирует контроллеру с 1.7.10 (шесть методов IMultiBlockFluidHandler). Правка — седьмая делегация того же ряда.
+	//
+	// Стенд строит настоящий деревянный танк 3x3x3 (оболочка 18001 «Wood Wall» + клапан 17001), заливает воду
+	// ЧЕРЕЗ КЛАПАН и спрашивает капу у трёх точек. Судьи:
+	//   J-valve : капа на КЛАПАНЕ есть — позитивный контроль, канал наружу вообще жив.
+	//   J-wall  : капа на СТЕНКЕ есть — главный судья (это и видит Jade).
+	//   J-same  : стенка отдаёт ТО ЖЕ содержимое, что клапан (объём совпадает) — не «какой-то» танк, а танк структуры.
+	//   J-cold  : у постороннего блока рядом капы нет — негативный контроль, судья не отвечает «да» на что угодно.
+	// ================================================================================================================
+	private static final String JM_M = "GT6-JADEMULTIPROBE";
+	private static int sJMTick = 0;
+	private static gregapi.probe.GT6ProbeStand.Seq sJMSeq = null;
+	private static net.minecraft.core.BlockPos sJMValve = null, sJMWall = null, sJMOutside = null;
+	private static ServerPlayer sJMPlayer = null;
+
+	/** Ёмкость, видимая снаружи ЧЕРЕЗ КАПУ (то же, что прочтёт Jade): сумма содержимого всех танков. */
+	private static long gt6JadeMultiCapAmount(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aPos) {
+		Object tHandler = aLevel.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Fluid.BLOCK, aPos, null);
+		if (tHandler == null) return -1; // капы нет вовсе — именно это и было на стенках
+		long rAmount = 0;
+		try {
+			net.neoforged.neoforge.transfer.ResourceHandler<?> tRH = (net.neoforged.neoforge.transfer.ResourceHandler<?>) tHandler;
+			for (int i = 0, n = tRH.size(); i < n; i++) rAmount += tRH.getAmountAsLong(i);
+		} catch (Throwable e) {return -2;} // капа есть, но прочитать не смогли — отдельный случай, не путать с «нет капы»
+		return rAmount;
+	}
+
+	private static void gt6JadeMultiBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel) sJMPlayer.level();
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		net.minecraft.core.BlockPos tBase = sJMPlayer.blockPosition().offset(6, 0, 0);
+		// расчистка 5x5x5 под площадку
+		for (int dx = -1; dx <= 4; dx++) for (int dy = -1; dy <= 4; dy++) for (int dz = -1; dz <= 4; dz++)
+			tLevel.setBlock(tBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+		// оболочка 3x3x3 из стенок, внутренность пустая
+		int tWalls = 0;
+		for (int dx = 0; dx < 3; dx++) for (int dy = 0; dy < 3; dy++) for (int dz = 0; dz < 3; dz++) {
+			if (dx == 1 && dy == 1 && dz == 1) continue; // полость танка
+			net.minecraft.core.BlockPos tPos = tBase.offset(dx, dy, dz);
+			if (tReg.mBlock.placeBlock(tLevel, tPos.getX(), tPos.getY(), tPos.getZ(), gregapi.data.CS.SIDE_UNKNOWN, (short)18002, null, F, T)) tWalls++;
+		}
+		// клапан — в середине боковой грани; стенка для замера — соседняя с ним по той же грани
+		sJMValve = tBase.offset(1, 1, 0);
+		sJMWall  = tBase.offset(0, 1, 0);
+		sJMOutside = tBase.offset(1, 1, -2); // посторонняя точка (воздух/земля) для холодного контроля
+		boolean tValve = tReg.mBlock.placeBlock(tLevel, sJMValve.getX(), sJMValve.getY(), sJMValve.getZ(), gregapi.data.CS.SIDE_UNKNOWN, (short)17002, null, F, T);
+		O.println("[" + JM_M + "] построен стальной танк 3x3x3 (клапан 17002 + стенки 18002 — согласованная пара, mTankWalls) у " + tBase + ": стенок=" + tWalls + " клапан=" + tValve + " (клапан " + sJMValve + ", стенка для замера " + sJMWall + ")");
+	}
+
+	private static void gt6JadeMultiFill() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel) sJMPlayer.level();
+		net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(sJMValve);
+		if (!(tBE instanceof gregapi.tileentity.multiblocks.ITileEntityMultiBlockController)) {O.println("[" + JM_M + "] клапан не стал контроллером: " + tBE); return;}
+		// заливаем ЧЕРЕЗ КЛАПАН тем же путём, каким это делает труба/ведро — sideless fill контроллера
+		int tFilled = 0;
+		try {
+			net.neoforged.neoforge.fluids.capability.IFluidHandler tFH = (net.neoforged.neoforge.fluids.capability.IFluidHandler) tBE;
+			tFilled = tFH.fill(gregapi.data.FL.Water.make(16000), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+		} catch (Throwable e) {O.println("[" + JM_M + "] залить не удалось: " + e);}
+		O.println("[" + JM_M + "] в клапан залито воды через капу-мост: " + tFilled + " mb");
+		// Предмет проверки — КАПА НА СТЕНКЕ, а не путь заливки: если штатный fill в клапан не прошёл
+		// (танк принимает жидкость своими путями), сажаем воду прямо в танк контроллера — оснастка, не мод.
+		if (tFilled <= 0) {
+			Object tTank = gregapi.probe.GT6ProbeStand.fld(tBE, "mTank");
+			if (tTank instanceof gregapi.fluid.FluidTankGT tGT) {
+				tGT.setFluid(gregapi.data.FL.Water.make(16000));
+				O.println("[" + JM_M + "] вода посажена напрямую в mTank контроллера: " + tGT.getFluid() + " (" + tGT.getFluidAmount() + " mb)");
+			} else O.println("[" + JM_M + "] mTank у контроллера не найден: " + tTank);
+		}
+	}
+
+	private static void gt6JadeMultiJudge() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel) sJMPlayer.level();
+		long tValve = gt6JadeMultiCapAmount(tLevel, sJMValve);
+		long tWall  = gt6JadeMultiCapAmount(tLevel, sJMWall);
+		long tCold  = gt6JadeMultiCapAmount(tLevel, sJMOutside);
+		net.minecraft.world.level.block.entity.BlockEntity tWallBE = tLevel.getBlockEntity(sJMWall);
+		if (tWallBE instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tPart)
+			O.println("[" + JM_M + "] привязка стенки к контроллеру: mTargetPos=" + tPart.mTargetPos + " mTarget=" + (tPart.mTarget == null ? "null" : tPart.mTarget.getClass().getSimpleName()));
+		else O.println("[" + JM_M + "] в позиции стенки не часть многоблока: " + tWallBE);
+		O.println("[" + JM_M + "] капа наружу: клапан=" + tValve + " стенка=" + tWall + " посторонний блок=" + tCold + "  (-1 = капы нет вовсе, -2 = есть, но нечитаема)");
+		sJMSeq.judge("J-valve капа жидкости есть на КЛАПАНЕ (канал наружу жив)", tValve >= 0, ">=0", tValve);
+		sJMSeq.judge("J-wall  капа жидкости есть на СТЕНКЕ (это и читает Jade)", tWall >= 0, ">=0", tWall);
+		sJMSeq.judge("J-same  стенка показывает ТО ЖЕ содержимое, что клапан", tWall == tValve && tValve > 0, "равно и >0", tWall + " vs " + tValve);
+		sJMSeq.judge("J-cold  у постороннего блока капы НЕТ (судья не отвечает «да» на что угодно)", tCold == -1, "-1", tCold);
+		sJMSeq.done();
+	}
+
+	/** Режим «готовый многоблок»: если рядом с файлом-флагом лежит run/gt6jadeat.txt с двумя строками
+	 *  «x y z» (клапан и стенка), стенд НИЧЕГО не строит, а просто спрашивает капу в этих точках. Нужен потому,
+	 *  что программно собранный танк GT6 своей структурой не признаёт (checkStructure=F), а у игрока в мире
+	 *  структура настоящая — замер надо делать на ней. */
+	private static boolean gt6JadeMultiCheckExisting(net.minecraft.server.MinecraftServer aServer) {
+		java.io.File tFile = new java.io.File("gt6jadeat.txt");
+		if (!tFile.exists()) return F;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			java.util.List<String> tLines = java.nio.file.Files.readAllLines(tFile.toPath());
+			net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
+			for (String tLine : tLines) {
+				String tTrim = tLine.trim();
+				if (tTrim.isEmpty() || tTrim.startsWith("#")) continue;
+				String[] tXYZ = tTrim.split("[ ,;	]+");
+				if (tXYZ.length < 3) continue;
+				net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(Integer.parseInt(tXYZ[0]), Integer.parseInt(tXYZ[1]), Integer.parseInt(tXYZ[2]));
+				tLevel.getChunk(tPos.getX() >> 4, tPos.getZ() >> 4); // подгрузить чанк точки замера
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tPos);
+				String tKind = tBE == null ? "нет BE" : tBE.getClass().getSimpleName();
+				String tLink = "";
+				if (tBE instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tPart) {
+					Object tTarget = tPart.getTarget(T);
+					tLink = " | mTargetPos=" + tPart.mTargetPos + " getTarget(T)=" + (tTarget == null ? "NULL (структура не в порядке)" : tTarget.getClass().getSimpleName());
+				}
+				O.println("[" + JM_M + "] ГОТОВЫЙ МНОГОБЛОК " + tPos + " " + tKind + tLink + " капа=" + gt6JadeMultiCapAmount(tLevel, tPos));
+			}
+		} catch (Throwable e) {O.println("[" + JM_M + "] EXC режима готового многоблока: " + e);}
+		sJMDoneExisting = T;
+		return T;
+	}
+	private static boolean sJMDoneExisting = false;
+
+	public static void gt6JadeMultiProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sJMTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sJMPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (new java.io.File("gt6jadeat.txt").exists()) {
+			if (!sJMDoneExisting && sJMTick == 300) gt6JadeMultiCheckExisting(aServer);
+			return;
+		}
+		if (sJMSeq == null) {
+			sJMSeq = new gregapi.probe.GT6ProbeStand.Seq(JM_M)
+				.at(200, GT6Probes::gt6JadeMultiBuild)
+				// структурная проверка многоблока идёт по таймеру TE (doDefaultStructuralChecks: mTimer % 600 == 5),
+				// поэтому ждём полный цикл: на 60 тиках стенки ещё не привязаны к контроллеру и танк не принимает воду
+				.at(900, GT6Probes::gt6JadeMultiFill)
+				.at(980, GT6Probes::gt6JadeMultiJudge);
+		}
+		sJMSeq.tick(sJMTick);
 	}
 }

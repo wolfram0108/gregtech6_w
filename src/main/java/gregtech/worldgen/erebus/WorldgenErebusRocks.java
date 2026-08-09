@@ -65,7 +65,7 @@ public class WorldgenErebusRocks extends WorldgenObject {
 				if (WD.getMaterial(tContact).isLiquid()) break;
 				if (tContact == NB || WD.air(aWorld, tX, tY, tZ, tContact)) continue;
 				if (WD.getMaterial(tContact) != Material.grass && WD.getMaterial(tContact) != Material.ground && WD.getMaterial(tContact) != Material.sand) continue;
-				if (WD.easyRep(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(3)==0?ST.save(NBT_VALUE, UT.Code.select(null, OP.rockGt.mat(MT.PetrifiedWood, 1), OP.rockGt.mat(MT.STONES.Gneiss, 1), ST.make(Items.FLINT, 1, 0))):null, F, T);
+				if (WD.easyRepDry(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(3)==0?ST.save(NBT_VALUE, UT.Code.select(null, OP.rockGt.mat(MT.PetrifiedWood, 1), OP.rockGt.mat(MT.STONES.Gneiss, 1), ST.make(Items.FLINT, 1, 0))):null, F, T);
 				break;
 			}
 		}

@@ -150,8 +150,8 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		if (aMTEContainer == null) return F;
 		
 		Block tReplacedBlock = WD.block(aWorld, aX, aY, aZ);
-		
-		
+
+
 		// That is some complicated Bullshit I have to do to make my MTEs work right.
 		// Set Block with reverse MetaData first.
 		WD.set(aWorld, aX, aY, aZ, aMTEContainer.mBlock, 15-aMTEContainer.mBlockMetaData, 2);

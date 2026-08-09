@@ -68,7 +68,7 @@ public class WorldgenSticks extends WorldgenOnSurface {
 		if (WD.getMaterial(aContact) != Material.grass && WD.getMaterial(aContact) != Material.ground) return F;
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 		if (tRegistry == null) return F;
-		if (WD.easyRep(aWorld, aX, aY+1, aZ)) return tRegistry.mBlock.placeBlock(aWorld, aX, aY+1, aZ, SIDE_UNKNOWN, (short)32756, null, F, T);
+		if (WD.easyRepDry(aWorld, aX, aY+1, aZ)) return tRegistry.mBlock.placeBlock(aWorld, aX, aY+1, aZ, SIDE_UNKNOWN, (short)32756, null, F, T);
 		return F;
 	}
 }

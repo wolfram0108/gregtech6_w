@@ -414,6 +414,50 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		if (tTileEntity instanceof IMultiBlockFluidHandler) return ((IMultiBlockFluidHandler)tTileEntity).getTankInfo(this, UT.Code.side(aDirection));
 		return ZL_FLUIDTANKINFO;
 	}
+
+	/** СЕДЬМАЯ делегация того же ряда, что fill/drain/canFill/canDrain/getTankInfo выше — и ровно по той же
+	 *  причине: стенка своих танков не имеет, их держит контроллер. Без неё капа жидкости (neo-канал наружу,
+	 *  {@code GT6FluidCapability}) спрашивала у стенки унаследованный пустой {@code getFluidTanks} и получала
+	 *  «танков нет»: содержимое многоблока было видно только на управляющем блоке, а на стенках — ничего
+	 *  (репорт игрока: навёл Jade на стенку танка — пусто, на главный блок — вода). В 1.7.10 дыры не было,
+	 *  потому что наружу торчал сам {@code IFluidHandler} части с её делегирующими методами. */
+	@Override
+	protected net.neoforged.neoforge.fluids.IFluidTank[] getFluidTanks2(byte aSide) {
+		ITileEntityMultiBlockController tTileEntity = getTarget(T);
+		if (tTileEntity == null && isClientSide()) tTileEntity = findControllerClientSide();
+		if (tTileEntity instanceof IMultiBlockFluidHandler) return ((IMultiBlockFluidHandler)tTileEntity).getFluidTanks(this, aSide);
+		return ZL_FT;
+	}
+
+	/** КЛИЕНТ ВОССТАНАВЛИВАЕТ ПРИВЯЗКУ САМ — тем же приёмом, каким восстанавливает сами MTE из пакета IDs.
+	 *
+	 *  <p>Привязка части к контроллеру ({@code mTargetPos}) живёт только в NBT и по сети НЕ идёт: в 1.7.10 это
+	 *  никому не мешало, потому что наружу спрашивали СЕРВЕРНЫЙ {@code IFluidHandler} (так работала и Waila).
+	 *  В neo подсказка над блоком читает capability у КЛИЕНТСКОЙ копии, а та о контроллере не знает — отсюда
+	 *  «на главном блоке танка вода видна, на стенках пусто» при полностью исправном сервере (замер на мире
+	 *  игрока: сервер отдаёт 5000 mb и с клапана, и со стенок).
+	 *
+	 *  <p>Расширять сетевой протокол части ради подсказки не стали: её байтовый канал занят дизайном, а
+	 *  массивный — краской. Вместо этого клиент ищет контроллер сам в пределах ВОЗМОЖНОЙ структуры (куб 5×5×5
+	 *  вокруг части — крупнейшие многоблоки GT6 именно такие) и спрашивает у найденного {@code isInsideStructure}
+	 *  — то есть решение принимает сам контроллер, перебор лишь предлагает кандидатов. Найденное кладётся в
+	 *  {@code mTargetPos}, дальше работает штатный {@code getTarget}, и повторного перебора не будет. */
+	private ITileEntityMultiBlockController findControllerClientSide() {
+		if (level == null) return null;
+		BlockPos tSelf = getBlockPos();
+		for (int dx = -2; dx <= 2; dx++) for (int dy = -2; dy <= 2; dy++) for (int dz = -2; dz <= 2; dz++) {
+			if (dx == 0 && dy == 0 && dz == 0) continue;
+			BlockPos tPos = tSelf.offset(dx, dy, dz);
+			BlockEntity tBE = WD.te(level, tPos, T); // T = не грузить чанк ради подсказки
+			if (tBE instanceof ITileEntityMultiBlockController tController && !((BlockEntity)tController).isRemoved()
+			 && tController.isInsideStructure(tSelf.getX(), tSelf.getY(), tSelf.getZ())) {
+				mTarget = tController;
+				mTargetPos = tPos;
+				return tController;
+			}
+		}
+		return null;
+	}
 	
 	@Override
 	public int funnelFill(byte aSide, FluidStack aFluid, boolean aDoFill) {

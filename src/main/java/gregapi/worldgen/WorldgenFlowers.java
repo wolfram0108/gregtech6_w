@@ -64,6 +64,6 @@ public class WorldgenFlowers extends WorldgenOnSurface {
 	
 	@Override
 	public boolean tryPlaceStuff(WorldGenLevel aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact) {
-		return WD.easyRep(aWorld, aX, aY+1, aZ) && mBlock.defaultBlockState().canSurvive(aWorld, new net.minecraft.core.BlockPos(aX, aY+1, aZ)) && WD.set(aWorld, aX, aY+1, aZ, mBlock, mBlockMeta, 2); // F-plant: canBlockStay -> BlockState.canSurvive (BlockBehaviour.java:827).
+		return WD.easyRepDry(aWorld, aX, aY+1, aZ) && mBlock.defaultBlockState().canSurvive(aWorld, new net.minecraft.core.BlockPos(aX, aY+1, aZ)) && WD.set(aWorld, aX, aY+1, aZ, mBlock, mBlockMeta, 2); // F-plant: canBlockStay -> BlockState.canSurvive (BlockBehaviour.java:827).
 	}
 }

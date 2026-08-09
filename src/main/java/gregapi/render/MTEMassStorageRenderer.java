@@ -82,7 +82,23 @@ public class MTEMassStorageRenderer implements BlockEntityRenderer<MultiTileEnti
 		aPoseStack.translate(0.5 + OFFX[tFacing]*0.502, 0.375, 0.5 + OFFZ[tFacing]*0.502);
 		// BUG-015 v4: rotZ(180) из 1.7.10 компенсировал y-вниз-ориентацию GUI-рендера (renderItemIntoGUI рисовал
 		// текстуру сверху-вниз); neo-модель уже y-вверх — дословный перенос переворачивал иконку вверх ногами.
-		aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(COMPASS_FROM_SIDE[tFacing] * 90));
+		// ПОВОРОТ ЛИЦОМ НАРУЖУ. Содержимое рисуется в контексте GUI, а там модель обращена лицом к камере,
+		// то есть в +Z (у ItemTransforms.GUI плоского предмета поворота нет вовсе). Значит нужен угол,
+		// переводящий +Z в сторону грани: north 180°, south 0°, west 270°, east 90° — это `-toYRot()`.
+		//
+		// Прежняя формула `COMPASS_FROM_SIDE[tFacing]*90` = {north 0, south 180, west 270, east 90}: запад и
+		// восток совпадали, а СЕВЕР и ЮГ были развёрнуты ИЗНАНКОЙ — плоская пластина показывала зеркальную
+		// цифру, блок не ту сторону (скриншоты игрока 2026-08-09). Отсюда вся история BUG-075: общий доворот
+		// 180° чинил север с югом и ровно так же ломал запад с востоком, поэтому симптом «переезжал».
+		// Канон рамки (`180 - toYRot`, ItemFrameRenderer:57-62) сюда НЕ подходит: рамка рисует в контексте
+		// FIXED с иной базовой ориентацией — проверено живьём, зеркальность осталась на всех гранях.
+		// Вертикальные грани: наклон -90*step по X, как у рамки.
+		net.minecraft.core.Direction tDir = net.minecraft.core.Direction.from3DDataValue(tFacing);
+		if (tDir.getAxis().isHorizontal()) {
+			aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-tDir.toYRot()));
+		} else {
+			aPoseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-90 * tDir.getAxisDirection().getStep()));
+		}
 		// BUG-075. Витрина показывает GUI-ФОРМУ содержимого, а её оба движка строят по-разному, причём
 		// ПО-РАЗНОМУ ДЛЯ БЛОКА И ДЛЯ ПЛОСКОГО ПРЕДМЕТА. Факты 1.7.10 (внешняя цепочка витрины :723-729 и
 		// RenderItem.renderItemIntoGUI):

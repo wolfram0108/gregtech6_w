@@ -175,7 +175,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 					Block tContact = WD.block(aWorld, tX, tY, tZ);
 					if (WD.getMaterial(tContact).isLiquid() || tContact == Blocks.FARMLAND) break;
 					if (!WD.opaque(tContact) || WD.wood(tContact, aWorld, tX, tY, tZ) || WD.leaves(tContact, aWorld, tX, tY, tZ)) continue;
-					if (!WD.easyRep(aWorld, tX, tY+1, tZ)) break;
+					if (!WD.easyRepDry(aWorld, tX, tY+1, tZ)) break;
 					if (tFlowers && tContact != Blocks.DIRT && (!tRocks || aRandom.nextInt(4) > 0)) {
 						WD.set(aWorld, tX, tY+1, tZ, mFlower, mFlowerMeta, 0);
 						if (mFlower.defaultBlockState().canSurvive(aWorld, new net.minecraft.core.BlockPos(tX, tY+1, tZ))) break; // F-plant: 1.7.10 Block.canBlockStay(world,x,y,z) -> neo BlockState.canSurvive(LevelReader,BlockPos) (BlockBehaviour.java:827).

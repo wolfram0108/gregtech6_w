@@ -67,7 +67,7 @@ public class WorldgenRacks extends WorldgenObject {
 				if (WD.getMaterial(tContact).isLiquid() || tContact == Blocks.FARMLAND) break;
 				if (tContact == NB || WD.air(aWorld, tX, tY, tZ, tContact)) continue;
 				if (WD.getMaterial(tContact) != Material.grass && WD.getMaterial(tContact) != Material.ground && WD.getMaterial(tContact) != Material.sand && WD.getMaterial(tContact) != Material.rock) continue;
-				if (WD.easyRep(aWorld, tX, tY+1, tZ)) {
+				if (WD.easyRepDry(aWorld, tX, tY+1, tZ)) {
 					switch(aRandom.nextInt(24)) {
 					case  0: tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, ST.save(NBT_VALUE, OP.gem.mat(MT.NetherQuartz, 1)), F, T); break;
 					case  1: tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, ST.save(NBT_VALUE, OP.gem.mat(MT.Glowstone   , 1)), F, T); break;

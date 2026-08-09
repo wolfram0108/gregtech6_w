@@ -65,7 +65,7 @@ public class WorldgenBushes extends WorldgenOnSurface {
 	
 	@Override
 	public boolean tryPlaceStuff(WorldGenLevel aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact) {
-		if (!BlocksGT.plantableGreens.contains(aContact) || !WD.easyRep(aWorld, aX, aY+1, aZ)) return F;
+		if (!BlocksGT.plantableGreens.contains(aContact) || !WD.easyRepDry(aWorld, aX, aY+1, aZ)) return F;
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 		if (tRegistry == null) return F;
 		
@@ -87,17 +87,17 @@ public class WorldgenBushes extends WorldgenOnSurface {
 	
 	public boolean placeBushCore(WorldGenLevel aWorld, int aX, int aY, int aZ, MultiTileEntityRegistry aRegistry, ItemStack aBerry, int aStage) {
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
-		if (!BlocksGT.plantableGreens.contains(tBlock) || !WD.easyRep(aWorld, aX, aY+1, aZ)) return F;
+		if (!BlocksGT.plantableGreens.contains(tBlock) || !WD.easyRepDry(aWorld, aX, aY+1, aZ)) return F;
 		if (tBlock == Blocks.GRASS_BLOCK) WD.set(aWorld, aX, aY, aZ, Blocks.DIRT, 0, 3);
 		return aRegistry.mBlock.placeBlock(aWorld, aX  , aY+1, aZ  , SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_UNDEFINED, NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);
 	}
 	
 	public boolean placeBushSides(WorldGenLevel aWorld, int aX, int aY, int aZ, MultiTileEntityRegistry aRegistry, ItemStack aBerry, int aStage) {
-		if (WD.easyRep(aWorld, aX+1, aY+1, aZ  )) aRegistry.mBlock.placeBlock(aWorld, aX+1, aY+1, aZ  , SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_X_NEG    , NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);
-		if (WD.easyRep(aWorld, aX-1, aY+1, aZ  )) aRegistry.mBlock.placeBlock(aWorld, aX-1, aY+1, aZ  , SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_X_POS    , NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);
-		if (WD.easyRep(aWorld, aX  , aY+1, aZ+1)) aRegistry.mBlock.placeBlock(aWorld, aX  , aY+1, aZ+1, SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_Z_NEG    , NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);
-		if (WD.easyRep(aWorld, aX  , aY+1, aZ-1)) aRegistry.mBlock.placeBlock(aWorld, aX  , aY+1, aZ-1, SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_Z_POS    , NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);
-		if (WD.easyRep(aWorld, aX  , aY+2, aZ  )) aRegistry.mBlock.placeBlock(aWorld, aX  , aY+2, aZ  , SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_Y_NEG    , NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);
+		if (WD.easyRepDry(aWorld, aX+1, aY+1, aZ  )) aRegistry.mBlock.placeBlock(aWorld, aX+1, aY+1, aZ  , SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_X_NEG    , NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);
+		if (WD.easyRepDry(aWorld, aX-1, aY+1, aZ  )) aRegistry.mBlock.placeBlock(aWorld, aX-1, aY+1, aZ  , SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_X_POS    , NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);
+		if (WD.easyRepDry(aWorld, aX  , aY+1, aZ+1)) aRegistry.mBlock.placeBlock(aWorld, aX  , aY+1, aZ+1, SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_Z_NEG    , NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);
+		if (WD.easyRepDry(aWorld, aX  , aY+1, aZ-1)) aRegistry.mBlock.placeBlock(aWorld, aX  , aY+1, aZ-1, SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_Z_POS    , NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);
+		if (WD.easyRepDry(aWorld, aX  , aY+2, aZ  )) aRegistry.mBlock.placeBlock(aWorld, aX  , aY+2, aZ  , SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_Y_NEG    , NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);
 		return T;
 	}
 }

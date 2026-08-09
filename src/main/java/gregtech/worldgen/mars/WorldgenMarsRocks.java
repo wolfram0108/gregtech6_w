@@ -62,7 +62,7 @@ public class WorldgenMarsRocks extends WorldgenObject {
 				if (WD.getMaterial(tContact).isLiquid()) break;
 				if (tContact == NB || WD.air(aWorld, tX, tY, tZ, tContact)) continue;
 				if (!WD.opaque(tContact)) continue;
-				if (WD.easyRep(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(10)==0?ST.save(NBT_VALUE, (aRandom.nextInt(4)==0?OP.oreRaw:OP.rockGt).mat(MT.MeteoricIron, 1)):null, F, T);
+				if (WD.easyRepDry(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(10)==0?ST.save(NBT_VALUE, (aRandom.nextInt(4)==0?OP.oreRaw:OP.rockGt).mat(MT.MeteoricIron, 1)):null, F, T);
 				break;
 			}
 		}
