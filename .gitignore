@@ -77,3 +77,4 @@ oracle/
 ### Python
 __pycache__/
 *.pyc
+scratchpad/

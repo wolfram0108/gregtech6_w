@@ -289,6 +289,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6railprobe.flag")) gt6RailProbeTick(aEvent.getServer());
 	// [GT6-CRAFTPROBE] судья захода «крафт до 100%»: LongDistWire (ленивые поля), кровать из GT-досок (роль-C), подавление Replace — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6craftprobe.flag")) gt6CraftProbeTick(aEvent.getServer());
+	// [GT6-COPPERPROBE] судья ADAPT-014 «медный век питается грегской медью» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6copperprobe.flag")) gt6CopperProbeTick(aEvent.getServer());
 	// [GT6-FIXPROBE] судья захода 2026-08-07: печь/дверь/тигель/соки/трава — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fixprobe.flag")) gt6FixProbeTick(aEvent.getServer());
 	// [GT6-PORTYARD] двор ЖИВОЙ ПРИЁМКИ закрытых меток отложенности (рельсы/плащ/цвет копий) — снять при уборке фазы
@@ -14110,5 +14112,211 @@ public final class GT6Probes {
 			O.println("========== [GT6-ENTITYPROBE] DONE ==========");
 			aServer.halt(F);
 		} catch(Throwable e) {e.printStackTrace(O); aServer.halt(F);}
+	}
+
+	// ==========================================================================================================
+	// [GT6-COPPERPROBE] ADAPT-014: медный век 26.1.2 питается ГРЕГСКОЙ медью.
+	// Судится ИДЕНТИЧНОСТЬ выхода реального канала верстака (GT6CraftingDispatcher.matches/assemble +
+	// RecipeManager.getRecipeFor — тот же приём, что gt6craftprobe/gt6woodprobe), а не наличие строки в коде:
+	//   §1 позитив  — 9 ГРЕГСКИХ слитков меди дают minecraft:copper_block;
+	//   §2 негатив  — 9 ВАНИЛЬНЫХ copper_ingot не дают ничего (ванильный рецепт снят, слиток вне обращения);
+	//   §3 полнота  — ни один crafting-рецепт сервера не производит minecraft:copper_ingot;
+	//   §4 контроль — резчик (stonecutting copper_block -> cut_copper) НЕ тронут, медное семейство живо;
+	//   §5 позитив  — изделия на грегской меди: громоотвод и медная кирка (тег-рецепт переписан поимённо).
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static boolean sCopperProbeDone = F;
+	public static void gt6CopperProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sCopperProbeDone || aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sCopperProbeDone = T;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		int tPass = 0, tFail = 0;
+		var tDispatcher = new gregapi.recipes.GT6CraftingDispatcher();
+		try {
+			ItemStack tGT = gregapi.data.OP.ingot.mat(gregapi.data.MT.Cu, 1);
+			if (!gregapi.util.ST.valid(tGT)) {
+				gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] грегский слиток меди не сгенерирован — судить нечего, FAIL");
+				tFail++;
+			} else {
+				// §1 позитив: девять грегских слитков -> ванильный медный блок
+				var tGrid = net.minecraft.world.item.crafting.CraftingInput.of(3, 3, java.util.List.of(
+					gregapi.util.ST.amount(1, tGT), gregapi.util.ST.amount(1, tGT), gregapi.util.ST.amount(1, tGT),
+					gregapi.util.ST.amount(1, tGT), gregapi.util.ST.amount(1, tGT), gregapi.util.ST.amount(1, tGT),
+					gregapi.util.ST.amount(1, tGT), gregapi.util.ST.amount(1, tGT), gregapi.util.ST.amount(1, tGT)));
+				ItemStack tOut = tDispatcher.matches(tGrid, tLevel) ? tDispatcher.assemble(tGrid) : ItemStack.EMPTY;
+				boolean tOk = !tOut.isEmpty() && "minecraft:copper_block".equals(gregapi.util.ST.regName(tOut));
+				gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §1 9 грегских слитков (" + gregapi.util.ST.regName(tGT) + "): выход="
+					+ (tOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tOut)) + (tOk ? " => PASS" : " => FAIL"));
+				if (tOk) tPass++; else tFail++;
+
+				// §2 утечка закрыта: ванильный слиток (лут drowned/copper_golem) ОПОЗНАН как медь и годен в тот
+				// же рецепт. ⚠ Ожидание изменено осознанно: до признания меди здесь ждали ПУСТО (утечка была).
+				ItemStack tVan = new ItemStack(net.minecraft.world.item.Items.COPPER_INGOT);
+				var tGridV = net.minecraft.world.item.crafting.CraftingInput.of(3, 3, java.util.List.of(
+					gregapi.util.ST.copy(tVan), gregapi.util.ST.copy(tVan), gregapi.util.ST.copy(tVan),
+					gregapi.util.ST.copy(tVan), gregapi.util.ST.copy(tVan), gregapi.util.ST.copy(tVan),
+					gregapi.util.ST.copy(tVan), gregapi.util.ST.copy(tVan), gregapi.util.ST.copy(tVan)));
+				ItemStack tVanOut = tDispatcher.matches(tGridV, tLevel) ? tDispatcher.assemble(tGridV) : ItemStack.EMPTY;
+				boolean tVanOk = !tVanOut.isEmpty() && "minecraft:copper_block".equals(gregapi.util.ST.regName(tVanOut));
+				gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §2 9 ВАНИЛЬНЫХ copper_ingot (лут утопленника): выход="
+					+ (tVanOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tVanOut)) + (tVanOk ? " => PASS" : " => FAIL"));
+				if (tVanOk) tPass++; else tFail++;
+
+				// §2b негативный контроль на честном материале: девять ЖЕЛЕЗНЫХ слитков медным блоком быть не могут
+				ItemStack tFe = new ItemStack(net.minecraft.world.item.Items.IRON_INGOT);
+				var tGridFe = net.minecraft.world.item.crafting.CraftingInput.of(3, 3, java.util.List.of(
+					gregapi.util.ST.copy(tFe), gregapi.util.ST.copy(tFe), gregapi.util.ST.copy(tFe),
+					gregapi.util.ST.copy(tFe), gregapi.util.ST.copy(tFe), gregapi.util.ST.copy(tFe),
+					gregapi.util.ST.copy(tFe), gregapi.util.ST.copy(tFe), gregapi.util.ST.copy(tFe)));
+				ItemStack tFeOut = tDispatcher.matches(tGridFe, tLevel) ? tDispatcher.assemble(tGridFe) : ItemStack.EMPTY;
+				boolean tFeOk = tFeOut.isEmpty() || !"minecraft:copper_block".equals(gregapi.util.ST.regName(tFeOut));
+				gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §2b негативный (9 железных слитков): выход="
+					+ (tFeOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tFeOut)) + (tFeOk ? " => PASS" : " => FAIL"));
+				if (tFeOk) tPass++; else tFail++;
+
+				// §6 ЗАЩИТА ЦЕЛИ УНИФИКАЦИИ — главный риск §2: регистрация ванильного предмета под именем меди
+				// взводит setTarget_(..., aOverwrite=F) (OreDictManager.java:471). Если бы цель перехватилась,
+				// ВСЯ грегская медь выдавалась бы ванильным слитком. Судим то, что реально лежит в карте целей.
+				ItemStack tTarget  = gregapi.data.OP.ingot .mat(gregapi.data.MT.Cu, 1);
+				ItemStack tTargetN = gregapi.data.OP.nugget.mat(gregapi.data.MT.Cu, 1);
+				ItemStack tUnified = gregapi.util.OM.get(gregapi.util.ST.amount(1, tGT));
+				boolean tTargetOk = gregapi.util.ST.valid(tTarget) && gregapi.util.ST.regName(tTarget).startsWith("gregtech:")
+					&& (!gregapi.util.ST.valid(tTargetN) || gregapi.util.ST.regName(tTargetN).startsWith("gregtech:"))
+					&& (!gregapi.util.ST.valid(tUnified) || gregapi.util.ST.regName(tUnified).startsWith("gregtech:"));
+				gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §6 цель унификации меди: ingot=" + gregapi.util.ST.regName(tTarget)
+					+ " · nugget=" + (gregapi.util.ST.valid(tTargetN) ? gregapi.util.ST.regName(tTargetN) : "нет")
+					+ " · унификация грегского слитка -> " + (gregapi.util.ST.valid(tUnified) ? gregapi.util.ST.regName(tUnified) : "нет")
+					+ (tTargetOk ? " => PASS" : " => FAIL (ванильный предмет перехватил цель!)"));
+				if (tTargetOk) tPass++; else tFail++;
+
+				// §7 опознание остальных утечек: самородок (переплавка брони) и сырец (руда в старом мире)
+				ItemStack tVanNug = new ItemStack(net.minecraft.world.item.Items.COPPER_NUGGET);
+				ItemStack tVanRaw = new ItemStack(net.minecraft.world.item.Items.RAW_COPPER);
+				var tDatNug = gregapi.oredict.OreDictManager.INSTANCE.getItemData(tVanNug);
+				var tDatRaw = gregapi.oredict.OreDictManager.INSTANCE.getItemData(tVanRaw);
+				// ⚠ Критерий исправлен после прогона 2026-08-08: первая редакция искала подстроку "cu" в имени
+				// и давала FAIL на ПРАВИЛЬНЫХ данных (nuggetCopper/oreRawCopper — внутреннее имя материала
+				// "Copper", а не "Cu"). Сравнение идёт по ОБЪЕКТУ материала, строки тут не судья.
+				boolean tLeakOk = tDatNug != null && tDatNug.mMaterial != null && tDatNug.mMaterial.mMaterial == gregapi.data.MT.Cu
+					&& tDatRaw != null && tDatRaw.mMaterial != null && tDatRaw.mMaterial.mMaterial == gregapi.data.MT.Cu;
+				gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §7 опознание утечек: copper_nugget=" + tDatNug
+					+ " · raw_copper=" + tDatRaw + (tLeakOk ? " => PASS" : " => FAIL"));
+				if (tLeakOk) tPass++; else tFail++;
+			}
+
+			// §3 полнота: ни один crafting-рецепт сервера не выдаёт ванильный слиток меди
+			java.util.List<String> tProducers = new java.util.ArrayList<>();
+			for (var tHolder : aServer.getRecipeManager().recipeMap().values()) {
+				if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
+				if (tHolder.value() instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
+				try {
+					ItemStack tRes = tCraft.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY);
+					if (gregapi.util.ST.valid(tRes) && "minecraft:copper_ingot".equals(gregapi.util.ST.regName(tRes)))
+						tProducers.add(tHolder.id().identifier().toString());
+				} catch(Throwable e) {/* чужой рецепт упал на assemble — не наш суд */}
+			}
+			gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §3 crafting-рецептов, дающих minecraft:copper_ingot: " + tProducers.size()
+				+ (tProducers.isEmpty() ? " => PASS" : " => FAIL " + tProducers));
+			if (tProducers.isEmpty()) tPass++; else tFail++;
+
+			// §4 контроль осмысленности: медное семейство НЕ выжжено — резчик по-прежнему режет медный блок
+			int tCut = 0;
+			for (var tHolder : aServer.getRecipeManager().recipeMap().values()) {
+				if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.StonecutterRecipe)) continue;
+				String tID = tHolder.id().identifier().toString();
+				if (tID.contains("cut_copper") || tID.contains("copper_grate") || tID.contains("chiseled_copper")) tCut++;
+			}
+			gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §4 stonecutting-рецептов медного семейства живо: " + tCut + (tCut > 0 ? " => PASS" : " => FAIL"));
+			if (tCut > 0) tPass++; else tFail++;
+
+			// §5 позитив по изделиям: громоотвод (3 слитка) и медная кирка (3 слитка + 2 палки)
+			ItemStack tGT2 = gregapi.data.OP.ingot.mat(gregapi.data.MT.Cu, 1);
+			if (gregapi.util.ST.valid(tGT2)) {
+				ItemStack tStick = new ItemStack(net.minecraft.world.item.Items.STICK);
+				var tRod = net.minecraft.world.item.crafting.CraftingInput.of(1, 3, java.util.List.of(
+					gregapi.util.ST.amount(1, tGT2), gregapi.util.ST.amount(1, tGT2), gregapi.util.ST.amount(1, tGT2)));
+				ItemStack tRodOut = tDispatcher.matches(tRod, tLevel) ? tDispatcher.assemble(tRod) : ItemStack.EMPTY;
+				boolean tRodOk = !tRodOut.isEmpty() && "minecraft:lightning_rod".equals(gregapi.util.ST.regName(tRodOut));
+				gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §5a громоотвод из грегской меди: выход="
+					+ (tRodOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tRodOut)) + (tRodOk ? " => PASS" : " => FAIL"));
+				if (tRodOk) tPass++; else tFail++;
+
+				var tPick = net.minecraft.world.item.crafting.CraftingInput.of(3, 3, java.util.List.of(
+					gregapi.util.ST.amount(1, tGT2), gregapi.util.ST.amount(1, tGT2), gregapi.util.ST.amount(1, tGT2),
+					ItemStack.EMPTY, gregapi.util.ST.copy(tStick), ItemStack.EMPTY,
+					ItemStack.EMPTY, gregapi.util.ST.copy(tStick), ItemStack.EMPTY));
+				ItemStack tPickOut = tDispatcher.matches(tPick, tLevel) ? tDispatcher.assemble(tPick) : ItemStack.EMPTY;
+				boolean tPickOk = !tPickOut.isEmpty() && "minecraft:copper_pickaxe".equals(gregapi.util.ST.regName(tPickOut));
+				gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §5b медная кирка из грегской меди: выход="
+					+ (tPickOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tPickOut)) + (tPickOk ? " => PASS" : " => FAIL"));
+				if (tPickOk) tPass++; else tFail++;
+			}
+			// §8 ПАСПОРТ материала у всего медного семейства: тигель и шредер строят рецепт ДИНАМИЧЕСКИ из
+			// OreDictItemData (RecipeMapCrucible:119, RecipeMapShredder:52 — OM.anydata(aInput)). Предмет без
+			// данных в них не входит вовсе. Обходим реестр, а не список из головы: полнота судится машиной.
+			int tWith = 0, tWithout = 0;
+			java.util.List<String> tNoData = new java.util.ArrayList<>();
+			for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+				net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+				if (tID == null || !"minecraft".equals(tID.getNamespace()) || !tID.getPath().contains("copper")) continue;
+				// Яйцо призыва — не изделие из меди, а служебный предмет креатива: в ванили не крафтится,
+				// материального состава не имеет ни у одного моба. Паспорт ему выдавать не за что.
+				if (tID.getPath().endsWith("_spawn_egg")) continue;
+				ItemStack tStack = new ItemStack(tItem);
+				var tDat = gregapi.oredict.OreDictManager.INSTANCE.getItemData(tStack);
+				// Паспорт = либо масса материала, либо рудный ПРЕФИКС: у oreVanillastone/oreDeepslate/oreRaw
+				// массы нет по устройству GT6 (setOreStats, OP.java:63,67,137) — их путь рудный (дробление,
+				// промывка), а не «расплавить в N слитков». Критерий первой редакции требовал массу и давал
+				// FAIL на правильно описанной руде.
+				boolean tOk = tDat != null && ((tDat.mMaterial != null && tDat.mMaterial.mAmount > 0) || tDat.mPrefix != null);
+				if (tOk) tWith++; else {tWithout++; tNoData.add(tID.getPath() + "[" + tDat + "]");}
+			}
+			gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §8 паспорт материала: С ДАННЫМИ " + tWith + " · БЕЗ ДАННЫХ " + tWithout);
+			for (int i = 0; i < tNoData.size(); i += 6)
+				gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §8    без данных: "
+					+ String.join(", ", tNoData.subList(i, Math.min(i + 6, tNoData.size()))));
+			if (tWithout == 0) tPass++; else tFail++;
+
+			// §9 ТИГЕЛЬ реальным путём: карта строит рецепт из паспорта (RecipeMapCrucible.getRecipeFor).
+			// Проверяем то, о чём просил пользователь: медный блок и медная кирка обязаны плавиться в медь.
+			for (Object[] tCase : new Object[][] {
+					{"copper_block"   , new ItemStack(net.minecraft.world.item.Items.COPPER_BLOCK)},
+					{"copper_pickaxe" , new ItemStack(net.minecraft.world.item.Items.COPPER_PICKAXE)},
+					{"copper_chest"   , new ItemStack(net.minecraft.world.item.Items.COPPER_CHEST)},
+					{"waxed_oxidized_cut_copper_stairs", new ItemStack(net.minecraft.world.item.Items.WAXED_OXIDIZED_CUT_COPPER_STAIRS)}}) {
+				gregapi.recipes.Recipe tRec = ((gregapi.recipes.maps.RecipeMapCrucible)gregapi.data.RM.CrucibleSmelting).getRecipeFor((ItemStack)tCase[1]);
+				String tOut = "НЕТ РЕЦЕПТА";
+				boolean tOk = F;
+				if (tRec != null && tRec.mOutputs != null && tRec.mOutputs.length > 0) {
+					StringBuilder tSB = new StringBuilder();
+					for (ItemStack tO : tRec.mOutputs) if (gregapi.util.ST.valid(tO)) {
+						if (tSB.length() > 0) tSB.append(" + ");
+						tSB.append(tO.getCount()).append("x").append(gregapi.util.ST.regName(tO));
+						var tD = gregapi.oredict.OreDictManager.INSTANCE.getItemData(tO);
+						if (tD != null && tD.mMaterial != null && tD.mMaterial.mMaterial == gregapi.data.MT.Cu) tOk = T;
+					}
+					tOut = tSB.toString();
+				}
+				gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §9 тигель " + tCase[0] + " -> " + tOut + (tOk ? " => PASS" : " => FAIL"));
+				if (tOk) tPass++; else tFail++;
+			}
+
+			// §10 обратная сторона требования: ГРЕГСКИЕ самородки обязаны подходить в ванильные медные крафты
+			ItemStack tGTNug = gregapi.data.OP.nugget.mat(gregapi.data.MT.Cu, 1);
+			if (gregapi.util.ST.valid(tGTNug)) {
+				var tTorch = net.minecraft.world.item.crafting.CraftingInput.of(1, 3, java.util.List.of(
+					gregapi.util.ST.amount(1, tGTNug),
+					new ItemStack(net.minecraft.world.item.Items.COAL),
+					new ItemStack(net.minecraft.world.item.Items.STICK)));
+				ItemStack tTorchOut = tDispatcher.matches(tTorch, tLevel) ? tDispatcher.assemble(tTorch) : ItemStack.EMPTY;
+				boolean tTorchOk = !tTorchOut.isEmpty() && "minecraft:copper_torch".equals(gregapi.util.ST.regName(tTorchOut));
+				gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §10 медный торч из ГРЕГСКОГО самородка: выход="
+					+ (tTorchOut.isEmpty() ? "ПУСТО" : gregapi.util.ST.regName(tTorchOut)) + (tTorchOk ? " => PASS" : " => FAIL"));
+				if (tTorchOk) tPass++; else tFail++;
+			} else {gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] §10 грегский самородок меди не сгенерирован — FAIL"); tFail++;}
+		} catch(Throwable e) {e.printStackTrace(); tFail++;}
+		gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] DONE PASS=" + tPass + " FAIL=" + tFail);
+		aServer.halt(F);
 	}
 }

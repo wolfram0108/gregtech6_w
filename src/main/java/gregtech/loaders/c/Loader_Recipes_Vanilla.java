@@ -993,7 +993,220 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.generify(plantGtFiber.mat(MT.Orange   , 1), ST.make(Items.STRING, 1, 0));
 		RM.generify(plantGtFiber.mat(MT.White    , 1), ST.make(Items.STRING, 1, 0));
 		RM.generify(plantGtFiber.mat(MT.Cu       , 1), ST.make(Items.STRING, 1, 0));
-		
+
+		copperAge();
+
 		new Loader_Recipes_OreDict();
+	}
+
+	/**
+	 * ADAPT-014 — МЕДНЫЙ ВЕК 26.1.2 ПИТАЕТСЯ ГРЕГСКОЙ МЕДЬЮ.
+	 *
+	 * <p><b>Чего не было в 1.7.10.</b> Меди в ванили 1.7.10 не существовало вовсе (её нет в
+	 * {@code net/minecraft/init/Items.java}). В 26.1.2 это 93 блока: окисление, воск, срез, решётка,
+	 * лампа, сундук, статуя медного голема, плюс инструменты и броня.
+	 *
+	 * <p><b>Приём — авторский.</b> Когда медь приходила к Грегориусу через мод-бэкпорт, он оставлял
+	 * ЧУЖОЙ блок, снимал его ванильный рецепт и выдавал свой из «любой меди»:
+	 * {@code Compat_Recipes_Ganys.java:118} {@code CR.remove(IL.EtFu_Block_Copper.get(1))},
+	 * {@code :121-122} {@code CR.shaped(..., 'X', OP.ingot.dat(ANY.Cu))}. Здесь то же самое,
+	 * применённое к ванили 26.1.2, где эти блоки стали ванильными.
+	 *
+	 * <p><b>Канон сохраняется.</b> Ванильная генерация руд удалена биом-модификатором
+	 * ({@code remove_vanilla_ores_overworld.json}, включая {@code ore_copper}); медь GT6 добывается
+	 * только переработкой минералов с дробным выходом ({@code MT.java:3806} Chalcopyrite {@code 2*U9},
+	 * {@code :3811} Tetrahedrite {@code U4}, {@code :3847} Malachite {@code U6}). Ванильный слиток меди
+	 * в обращение НЕ вводится: цель унификации {@code OP.ingot + MT.Cu} на {@code minecraft:copper_ingot}
+	 * не ставится, а все рецепты, которые его требовали, переведены на {@code ANY.Cu} —
+	 * «любая медь» ({@code ANY.java:125}: {@code MT.Cu} + {@code MT.AnnealedCopper}).
+	 *
+	 * <p><b>Почему рецептами, а не тегом.</b> {@code #minecraft:copper_tool_materials} отбирает по
+	 * {@code Item}, а подтип материала GT6 живёт в компоненте ({@code ST.meta_}: {@code GT_API.SUBTYPE}),
+	 * то есть {@code gt.meta.ingot} — ОДИН предмет на все материалы. Тег сделал бы «медным материалом»
+	 * любой слиток GT6, поэтому шесть рецептов инструментов переписаны поимённо.
+	 *
+	 * <p><b>Что НЕ трогается:</b> 184 из 204 ванильных медных рецептов — внутренняя кухня медного века
+	 * (резчик 64, окисление, воск, срезы). Они работают от {@code copper_block}, который игрок получает
+	 * из грегской меди первым рецептом ниже.
+	 *
+	 * <p>{@code DEF_REM} снимает ванильный рецепт с тем же выходом — включая датапак-плечо
+	 * ({@code CR.remout:665} → {@code CR.DATAPACK_REMOVALS_OUT} → {@code GT_API.removeDatapackRecipes}).
+	 */
+	private static void copperAge() {
+		final Object tIngot = ingot.dat(ANY.Cu), tNugget = nugget.dat(ANY.Cu);
+
+		// Вход в медный век: девять грегских слитков дают ванильный медный блок. Отсюда весь остальной
+		// медный контент 26.1.2 берётся ванильными путями без нашего участия.
+		CR.shaped(ST.make(Items.COPPER_BLOCK          , 1, 0), DEF_REM    , "XXX", "XXX", "XXX", 'X', tIngot);
+
+		// Изделия, которые в ванили требуют слиток меди.
+		CR.shaped(ST.make(Items.COPPER_BARS.unaffected(),16,0), DEF_REM    , "XXX", "XXX"       , 'X', tIngot);
+		CR.shaped(ST.make(Items.COPPER_DOOR           , 3, 0), DEF_REM    , "XX" , "XX" , "XX" , 'X', tIngot);
+		CR.shaped(ST.make(Items.COPPER_TRAPDOOR       , 1, 0), DEF_REM    , "XX" , "XX"        , 'X', tIngot);
+		CR.shaped(ST.make(Items.COPPER_CHEST          , 1, 0), DEF_REM    , "XXX", "XCX", "XXX", 'X', tIngot, 'C', ST.make(Blocks.CHEST, 1, 0));
+		CR.shaped(ST.make(Items.COPPER_HELMET         , 1, 0), DEF_REM    , "XXX", "X X"       , 'X', tIngot);
+		CR.shaped(ST.make(Items.COPPER_CHESTPLATE     , 1, 0), DEF_REM    , "X X", "XXX", "XXX", 'X', tIngot);
+		CR.shaped(ST.make(Items.COPPER_LEGGINGS       , 1, 0), DEF_REM    , "XXX", "X X", "X X", 'X', tIngot);
+		CR.shaped(ST.make(Items.COPPER_BOOTS          , 1, 0), DEF_REM    , "X X", "X X"       , 'X', tIngot);
+		CR.shaped(ST.make(Items.LIGHTNING_ROD         , 1, 0), DEF_REM    , "X"  , "X"  , "X"  , 'X', tIngot);
+		CR.shaped(ST.make(Items.SPYGLASS              , 1, 0), DEF_REM    , " A ", " X ", " X ", 'X', tIngot, 'A', ST.make(Items.AMETHYST_SHARD, 1, 0));
+		CR.shaped(ST.make(Items.BRUSH                 , 1, 0), DEF_REM    , "F"  , "X"  , "S"  , 'X', tIngot, 'F', ST.make(Items.FEATHER, 1, 0), 'S', ST.make(Items.STICK, 1, 0));
+
+		// Изделия на медном самородке — у GT6 своя форма nugget, берём её.
+		CR.shaped(ST.make(Items.COPPER_CHAIN.unaffected(), 1, 0), DEF_REM , "N"  , "X"  , "N"  , 'X', tIngot, 'N', tNugget);
+		// Ванильный рецепт торча даёт выбор «уголь ИЛИ древесный уголь» одним ключом — у нас это два
+		// рецепта; ванильный снимается первым из них.
+		CR.shaped(ST.make(Items.COPPER_TORCH          , 4, 0), DEF_REM    , "N"  , "C"  , "S"  , 'N', tNugget, 'C', ST.make(Items.COAL    , 1, 0), 'S', ST.make(Items.STICK, 1, 0));
+		CR.shaped(ST.make(Items.COPPER_TORCH          , 4, 0), DEF        , "N"  , "C"  , "S"  , 'N', tNugget, 'C', ST.make(Items.CHARCOAL, 1, 0), 'S', ST.make(Items.STICK, 1, 0));
+		CR.shaped(ST.make(Items.COPPER_LANTERN.unaffected(), 1, 0), DEF_REM, "NNN", "NTN", "NNN", 'N', tNugget, 'T', ST.make(Items.COPPER_TORCH, 1, 0));
+
+		// Инструменты: ванильный рецепт стоит на теге, который подтип GT6 выразить не может (см. javadoc).
+		CR.shaped(ST.make(Items.COPPER_PICKAXE        , 1, 0), DEF_REM    , "XXX", " S ", " S ", 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
+		CR.shaped(ST.make(Items.COPPER_SWORD          , 1, 0), DEF_REM    , "X"  , "X"  , "S"  , 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
+		CR.shaped(ST.make(Items.COPPER_SHOVEL         , 1, 0), DEF_REM    , "X"  , "S"  , "S"  , 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
+		CR.shaped(ST.make(Items.COPPER_AXE            , 1, 0), DEF_REM|MIR, "XX" , "XS" , " S" , 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
+		CR.shaped(ST.make(Items.COPPER_HOE            , 1, 0), DEF_REM|MIR, "XX" , " S" , " S" , 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
+		CR.shaped(ST.make(Items.COPPER_SPEAR          , 1, 0), DEF_REM|MIR, "  X", " S ", "S  ", 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
+
+		// Ванильный слиток меди и его спутники в обращение не вводятся: рецептов, дающих их, не остаётся.
+		// (Плавка руды/сырца сюда не входит — она датапак-рецепт типа smelting, см. «Не сделано» в ADAPT-014.)
+		CR.delate(ST.make(Items.COPPER_INGOT     , 1, 0));
+		CR.delate(ST.make(Items.COPPER_NUGGET    , 1, 0));
+		CR.delate(ST.make(Items.RAW_COPPER_BLOCK , 1, 0));
+
+		// --- УТЕЧКА МАТЕРИАЛА: ванильная медь достижима МИМО рецептов ---------------------------------------
+		// Производить её нельзя (выше снято), но попасть в руки она может: лут-таблицы entities/drowned и
+		// entities/copper_golem дают minecraft:copper_ingot, ванильная переплавка медной брони и инструментов
+		// (smelting/blasting, датапак — нашим плечом не снимается: GT_API.java:659,668 судит только
+		// CraftingRecipe) даёт minecraft:copper_nugget, а блоки руды в старом мире или креативе дают
+		// raw_copper. Без опознания эти предметы — мусор, в который утекает УЖЕ ДОБЫТАЯ грегская медь
+		// (скрафтил броню из своей меди -> переплавил -> ванильные самородки в никуда).
+		//
+		// Приём — тот же, которым GT6 опознаёт любой чужой предмет: регистрация под своим именем материала
+		// (ср. OreDictionary.java:196-199 для ванильных ingotIron/ingotGold). Ингредиент рецепта матчится
+		// по ИМЕНИ OreDict (CR.java:401-411), поэтому опознание = вход в наши рецепты выше.
+		//
+		// ⛔ РИСК, ради которого написана страховка ниже: регистрация имени взводит
+		// setTarget_(prefix, material, stack, aOverwrite=F, ...) (OreDictManager.java:471). Цель ставится
+		// только при пустой ячейке, но полагаться на порядок фаз нельзя — перехват цели означал бы, что ВСЯ
+		// грегская медь начнёт выдаваться ванильным слитком. Поэтому грегский стек берётся ДО регистрации и
+		// возвращается целью ПОСЛЕ, уже с aOverwrite=T. Судится стендом gt6copperprobe §6.
+		// ⚠ ПОРЯДОК: паспорт материала выдаётся ДО регистрации имён. addItemData_ (OreDictManager:667)
+		// не перезаписывает уже существующую ассоциацию, а регистрация имени её создаёт — при обратном
+		// порядке сырец получал ассоциацию oreRawCopper без массы и оставался без паспорта (замер: 130
+		// предметов без данных, из них raw_copper не лечился повторной выдачей).
+		copperItemData();
+
+		ItemStack tGTIngot  = ingot .mat(MT.Cu, 1);
+		ItemStack tGTNugget = nugget.mat(MT.Cu, 1);
+		gregapi.oredict.OreDictManager.INSTANCE.registerOre(ingot , MT.Cu, ST.make(Items.COPPER_INGOT , 1, 0));
+		gregapi.oredict.OreDictManager.INSTANCE.registerOre(nugget, MT.Cu, ST.make(Items.COPPER_NUGGET, 1, 0));
+		gregapi.oredict.OreDictManager.INSTANCE.registerOre(oreRaw, MT.Cu, ST.make(Items.RAW_COPPER   , 1, 0));
+		if (ST.valid(tGTIngot )) gregapi.oredict.OreDictManager.INSTANCE.setTarget(ingot , MT.Cu, tGTIngot , T, T);
+		if (ST.valid(tGTNugget)) gregapi.oredict.OreDictManager.INSTANCE.setTarget(nugget, MT.Cu, tGTNugget, T, T);
+
+	}
+
+	/**
+	 * ADAPT-014, часть II — ПАСПОРТ МАТЕРИАЛА всему медному семейству 26.1.2.
+	 *
+	 * <p><b>Зачем.</b> Тигель и шредер не имеют статических рецептов на чужие предметы: они строят рецепт
+	 * ДИНАМИЧЕСКИ из {@link gregapi.oredict.OreDictItemData} входа ({@code RecipeMapCrucible:119},
+	 * {@code RecipeMapShredder:52} — {@code OM.anydata(aInput)}). Предмет без данных в них не входит вовсе:
+	 * медный сундук, дверь, кирка, лампа были бы неплавким мусором, хотя сделаны из грегской меди.
+	 * Замер до этой правки: с паспортом 2 предмета, без паспорта — 130.
+	 *
+	 * <p><b>Масса выведена из ванильных рецептов, а не назначена на глаз</b> (обход
+	 * {@code data/minecraft/recipe} итеративным замыканием: слиток = U, блок = 9 слитков, лестница = 3/2
+	 * блока и т.д.). Инструменты сосчитаны по числу ячеек материала в паттерне.
+	 *
+	 * <p><b>Окисление и воск массу меди не меняют</b> — это тот же предмет в другом состоянии, поэтому
+	 * префиксы {@code waxed_}/{@code exposed_}/{@code weathered_}/{@code oxidized_} снимаются, и все 8
+	 * состояний каждой формы получают паспорт базовой. Обход идёт по РЕЕСТРУ, а не по списку из головы:
+	 * новый медный блок в будущей версии движка получит паспорт сам, без правки кода — сохраняется
+	 * свойство GT6 порождать содержимое процедурно.
+	 *
+	 * <p>Вторичные материалы указываются там, где они есть в рецепте: дерево у инструментов (палки,
+	 * {@code OP.stick} = U2 каждая) и у сундука, блез и редстоун у лампы. Тогда шредер вернёт и их.
+	 */
+	private static void copperItemData() {
+		// базовое имя формы -> сколько меди в ней (U = один слиток)
+		java.util.Map<String, Long> tForms = new java.util.LinkedHashMap<>();
+		tForms.put("copper"              , U*9  ); // окисленные варианты блока зовутся exposed_copper и т.п.
+		tForms.put("copper_block"        , U*9  );
+		tForms.put("raw_copper_block"    , U*9  );
+		tForms.put("cut_copper"          , U*9  );
+		tForms.put("chiseled_copper"     , U*9  );
+		tForms.put("copper_grate"        , U*9  );
+		tForms.put("copper_golem_statue" , U*9  ); // крафта нет (структуры/креатив), облик медного блока
+		tForms.put("cut_copper_stairs"   , U*27/2);
+		tForms.put("copper_bulb"         , U*27/4);
+		tForms.put("cut_copper_slab"     , U*9/2);
+		tForms.put("copper_chest"        , U*8  );
+		tForms.put("copper_chestplate"   , U*8  );
+		tForms.put("copper_leggings"     , U*7  );
+		tForms.put("copper_horse_armor"  , U*6  );
+		tForms.put("copper_nautilus_armor",U*6  );
+		tForms.put("copper_helmet"       , U*5  );
+		tForms.put("copper_boots"        , U*4  );
+		tForms.put("copper_trapdoor"     , U*4  );
+		tForms.put("copper_axe"          , U*3  );
+		tForms.put("copper_pickaxe"      , U*3  );
+		tForms.put("copper_door"         , U*2  );
+		tForms.put("copper_hoe"          , U*2  );
+		tForms.put("copper_sword"        , U*2  );
+		tForms.put("copper_chain"        , U*11/9);
+		tForms.put("copper_ingot"        , U    );
+		tForms.put("copper_shovel"       , U    );
+		tForms.put("copper_spear"        , U    );
+		tForms.put("raw_copper"          , U    );
+		tForms.put("copper_lantern"      , U*11/12);
+		tForms.put("copper_bars"         , U*3/8);
+		tForms.put("copper_nugget"       , U/9  );
+		tForms.put("copper_torch"        , U/36 );
+		// вторичный материал формы (дерево палок и досок), U2 = половина юнита на палку
+		java.util.Map<String, Long> tWood = new java.util.LinkedHashMap<>();
+		tWood.put("copper_axe"     , U    ); // 2 палки
+		tWood.put("copper_pickaxe" , U    );
+		tWood.put("copper_hoe"     , U    );
+		tWood.put("copper_shovel"  , U    );
+		tWood.put("copper_sword"   , U2   ); // 1 палка
+		tWood.put("copper_spear"   , U    );
+		tWood.put("copper_torch"   , U2/4 ); // палка на 4 торча
+		tWood.put("copper_chest"   , U*8  ); // ванильный сундук — 8 досок
+
+		// Рудные формы описываются ПРЕФИКСОМ, а не массой: у oreVanillastone/oreDeepslate/oreRaw стоит
+		// setOreStats(2*U) (OP.java:63,67,137), и путь у них рудный — дробление, промывка, обжиг, а не
+		// «расплавить в два слитка». Поэтому им выдаётся паспорт префикса, а не число.
+		OM.data(ST.make(Items.COPPER_ORE          , 1, 0), oreVanillastone.dat(MT.Cu));
+		OM.data(ST.make(Items.DEEPSLATE_COPPER_ORE, 1, 0), oreDeepslate   .dat(MT.Cu));
+		OM.data(ST.make(Items.RAW_COPPER          , 1, 0), oreRaw         .dat(MT.Cu));
+
+		int tSet = 0, tSkip = 0;
+		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+			if (tID == null || !"minecraft".equals(tID.getNamespace()) || !tID.getPath().contains("copper")) continue;
+			String tBase = tID.getPath();
+			for (boolean tChanged = T; tChanged; ) {
+				tChanged = F;
+				for (String tPrefix : new String[] {"waxed_", "exposed_", "weathered_", "oxidized_"})
+					if (tBase.startsWith(tPrefix)) {tBase = tBase.substring(tPrefix.length()); tChanged = T;}
+			}
+			Long tAmount = tForms.get(tBase);
+			// руда (свой префикс, задаётся отдельно) и яйцо призыва материалом не описываются
+			if (tAmount == null) {tSkip++; continue;}
+			ItemStack tStack = ST.make(tItem, 1, 0);
+			if (ST.invalid(tStack)) {tSkip++; continue;}
+			Long tWoodAmount = tWood.get(tBase);
+			if (tBase.equals("copper_bulb")) {
+				OM.data(tStack, MT.Cu, tAmount, MT.Blaze, U, MT.Redstone, U);
+			} else if (tWoodAmount != null) {
+				OM.data(tStack, MT.Cu, tAmount, ANY.Wood, tWoodAmount);
+			} else {
+				OM.data(tStack, MT.Cu, tAmount);
+			}
+			tSet++;
+		}
+		OUT.println("[GT6-COPPER] паспорт материала выдан: " + tSet + " предметов, пропущено (руда/яйцо): " + tSkip);
 	}
 }
