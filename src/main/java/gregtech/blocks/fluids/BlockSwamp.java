@@ -178,6 +178,11 @@ public class BlockSwamp extends BlockWaterlike {
 		}
 		
 		for (BlockPos tCoords : tList) {
+			// ADAPT (класс «признак сменил носитель», см. BlockWaterlike.canClaim): в 1.7.10 болото
+			// упиралось в воду, которая САМА была биомом river/ocean/beach, и ветка BIOMES_INFINITE_WATER
+			// выше его останавливала. В mc26 разлив лежит в биоме суши (замер: minecraft:savanna), список
+			// мимо — и болото ело чужую воду без предела. Своя территория болота = биом болота.
+			if (!canClaim(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ())) continue;
 			if (WD.set(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
 				if (WD.exists(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j)) {
 					tBlock = WD.block(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j);
@@ -191,6 +196,15 @@ public class BlockSwamp extends BlockWaterlike {
 		return;
 	}
 	
+	/** Своя территория болота — биом болота ({@code BIOMES_SWAMP}, тот же центр, которым пользуется
+	 *  {@link gregtech.worldgen.WorldgenSwamp}, где болото и создаётся). Обоснование класса и замер —
+	 *  {@link BlockWaterlike#canClaim}. Уже стоящее болото за границей биома (ворлдген кладёт его по
+	 *  чанкам, а чанк пересекает границу) остаётся на месте — правило запрещает ЗАХВАТ, а не существование. */
+	@Override
+	public boolean canClaim(Level aWorld, int aX, int aY, int aZ) {
+		return BIOMES_SWAMP.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));
+	}
+
 	@Override
 	public void onHeadInside(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
 		if (aEntity instanceof Slime) return;

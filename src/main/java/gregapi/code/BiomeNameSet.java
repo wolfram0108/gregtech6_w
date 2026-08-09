@@ -66,8 +66,40 @@ public class BiomeNameSet extends AbstractSet<String> {
 	public static String biomeKeyName(Object aName) {
 		if (aName instanceof Holder<?> aHolder) return aHolder.unwrapKey().map(k -> k.identifier().toString()).orElse("");
 		if (aName instanceof ResourceKey<?> aKey) return aKey.identifier().toString();
-		if (aName instanceof Biome) return "";
+		if (aName instanceof Biome aBiome) return keyOfBiome(aBiome);
 		return aName.toString();
+	}
+
+	/**
+	 * КЛЮЧ ГОЛОГО {@code Biome} — поиском по живому реестру.
+	 *
+	 * <p>Раньше здесь стояло {@code return ""}, и это делало МЁРТВЫМИ все ветки, куда биом приходит без
+	 * {@code Holder}: {@code WD.biome(...)} отдаёт {@code .value()} (WD.java:1185-1186), поэтому
+	 * {@code contains(...)} возвращал false ВСЕГДА. Так молча не работали: влажность биома для гниения сена
+	 * ({@code BlockBaleGrass:113}), поиск магического биома и Энда компасом пчелы
+	 * ({@code MultiItemBumbles:234,266}), гены пчёл по пустыне/меса ({@code IItemBumbleBee:141}), опознание
+	 * лунного, марсианского и космического камня ({@code MultiTileEntityRock:105-107,189,231}).
+	 *
+	 * <p>Обратной ссылки на ключ у {@code Biome} действительно нет ({@code final class} без registry-back-ref),
+	 * но сам реестр её знает: {@code registryAccess().lookupOrThrow(Registries.BIOME).getResourceKey(value)}.
+	 * Реестр берём у текущего сервера ({@code ServerLifecycleHooks.getCurrentServer()}); вне сервера (датаген,
+	 * ранняя загрузка) отвечаем "" — прежним поведением, а не выдумкой. Результат кэшируется: вызовы идут из
+	 * тиков блоков.
+	 */
+	private static final java.util.Map<Biome, String> BIOME_KEY_CACHE = new java.util.WeakHashMap<>();
+	public static String keyOfBiome(Biome aBiome) {
+		if (aBiome == null) return "";
+		synchronized (BIOME_KEY_CACHE) {
+			String rCached = BIOME_KEY_CACHE.get(aBiome);
+			if (rCached != null) return rCached;
+		}
+		String rKey = "";
+		try {
+			net.minecraft.server.MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+			if (tServer != null) rKey = tServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getResourceKey(aBiome).map(k -> k.identifier().toString()).orElse("");
+		} catch (Throwable e) {rKey = "";}
+		if (!rKey.isEmpty()) synchronized (BIOME_KEY_CACHE) {BIOME_KEY_CACHE.put(aBiome, rKey);}
+		return rKey;
 	}
 
 	@SafeVarargs

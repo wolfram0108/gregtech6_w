@@ -275,6 +275,27 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		return T;
 	}
 	
+	/**
+	 * МОЖНО ЛИ обратить ЧУЖУЮ воду в этой клетке в свою (ветка конверсии {@code tList} у Ocean/Swamp).
+	 *
+	 * <p>Класс «признак сменил носитель». В 1.7.10 ограничителем служил СПИСОК БИОМОВ: у болота
+	 * {@code BIOMES_INFINITE_WATER} (BlockSwamp:164 оригинала), у океана {@code BIOMES_RIVER_LAKE}. Это
+	 * работало, потому что всякая крупная вода 1.7.10 САМА БЫЛА биомом — {@code ocean}/{@code river}/
+	 * {@code beach}/{@code frozenRiver}, и список их перечислял. В mc26 биомы 3D, и вода стоит внутри
+	 * обычных биомов суши: разлив у мангрового болота лежит в {@code minecraft:savanna}, которой ни в одном
+	 * списке нет. Ограничитель перестал накрывать те же случаи — механизм цел, изменился мир.
+	 *
+	 * <p>Замер (живой стенд {@code gt6swampprobe}, два прогона): весь захват шёл в {@code minecraft:savanna},
+	 * 425 клеток за 3600 тиков в радиусе 40, из них из ванильной воды 425, из воздуха 0 — то есть болото не
+	 * растекалось, а ело чужую воду, и остановиться не могло: воды в районе оставалось ещё 1587 клеток.
+	 *
+	 * <p>Дефолт — прежнее поведение (можно везде). Переопределяет тот, у кого «своя территория» выражается
+	 * биомом: {@link BlockSwamp}. ⚠️ {@link BlockOcean} — ВТОРОЙ ЭКЗЕМПЛЯР ТОГО ЖЕ КЛАССА (та же ветка
+	 * конверсии со списком {@code BIOMES_RIVER_LAKE}), но собственного замера по нему нет, поэтому его
+	 * поведение НЕ меняется — правка без замера в этом проекте запрещена.
+	 */
+	public boolean canClaim(Level aWorld, int aX, int aY, int aZ) {return T;}
+
 	public boolean isSourceBlock(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.block(aWorld, aX, aY, aZ) instanceof BlockWaterlike && WD.meta(aWorld, aX, aY, aZ) == 0;}
 	@Override public Block getBlock() {return this;}
 	public final String getUnlocalizedName() {return FL.name(mFluid, F);}

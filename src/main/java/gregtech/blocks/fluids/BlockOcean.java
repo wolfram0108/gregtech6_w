@@ -129,7 +129,11 @@ public class BlockOcean extends BlockWaterlike {
 			if (WD.meta(aWorld, aX, aY-1, aZ) == 0) tOceanCounter++;
 		} else if (WD.anywater(tBlock)) {
 			tHasNoOceanAround = F;
-			if (WD.set(aWorld, aX, aY-1, aZ, this, 0, WATER_UPDATE_FLAGS)) tOceanCounter++;
+			// ADAPT (класс «признак сменил носитель», см. BlockWaterlike.canClaim): захват воды ПОД собой —
+			// вторая ветка конверсии у океана, в 1.7.10 не ограниченная ничем, потому что океан и не мог
+			// оказаться вне океанских биомов: крупная вода САМА была биомом. Своя территория океана — тот же
+			// BIOMES_OCEAN_BEACH, который он уже спрашивает выше (tHasOceanBiome).
+			if (canClaim(aWorld, aX, aY-1, aZ) && WD.set(aWorld, aX, aY-1, aZ, this, 0, WATER_UPDATE_FLAGS)) tOceanCounter++;
 		}
 		
 		if (tHasNoOceanAround && WD.block(aWorld, aX, aY+1, aZ) != this) {
@@ -159,6 +163,9 @@ public class BlockOcean extends BlockWaterlike {
 		}
 		
 		for (BlockPos tCoords : tList) {
+			// ADAPT: та же причина, что у ветки aY-1 выше и у BlockSwamp:180 — ограничитель BIOMES_RIVER_LAKE
+			// накрывал воду, пока она сама была биомом; в mc26 она стоит в биомах суши.
+			if (!canClaim(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ())) continue;
 			if (WD.set(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
 				if (WD.exists(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j)) {
 					tBlock = WD.block(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j);
@@ -187,4 +194,14 @@ public class BlockOcean extends BlockWaterlike {
 	// с базовым (BlockWaterlike:200) — копия была бы дублем детали. Своё у океана только тинт (ниже, 1:1 :170-171).
 	@Override public int getRenderColor(int aMeta) {return 0x00c0c0c0;}
 	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00c0c0c0;}
+
+	/** Своя территория океана — океанские и пляжные биомы ({@code BIOMES_OCEAN_BEACH}, тот же набор, который
+	 *  тик уже спрашивает как {@code tHasOceanBiome}, :106). Обоснование класса и замер — {@link
+	 *  BlockWaterlike#canClaim}; болотный близнец — {@link BlockSwamp#canClaim}. Ограничитель оригинала
+	 *  {@code BIOMES_RIVER_LAKE} (:147) оставлен на месте: он выражает ДРУГОЕ правило («в реках и озёрах
+	 *  захватывать только сплошным фронтом»), и внутри своей территории работает как в 1.7.10. */
+	@Override
+	public boolean canClaim(Level aWorld, int aX, int aY, int aZ) {
+		return BIOMES_OCEAN_BEACH.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));
+	}
 }

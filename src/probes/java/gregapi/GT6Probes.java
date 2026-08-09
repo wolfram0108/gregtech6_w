@@ -14755,6 +14755,38 @@ public final class GT6Probes {
 				swBuildControl(tLevel, mSwCtrlIn);
 				O.println("[GT6-SWAMPPROBE] очаг ВНУТРИ биома болот: " + mSwCtrlIn + " · биом " + tLevel.getBiome(mSwCtrlIn).getRegisteredName() + " · воды в луже " + swControlWater(tLevel, mSwCtrlIn));
 			}
+
+			// --- (E) ОКЕАН — второй носитель класса: своя территория = BIOMES_OCEAN_BEACH ---------------
+			com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tOceanBiome =
+				tLevel.findClosestBiome3d(h -> BIOMES_OCEAN_BEACH.contains(h), tLevel.getRespawnData().pos(), 12800, 32, 64);
+			gregtech.blocks.fluids.BlockWaterlike tOceanBlk = (gregtech.blocks.fluids.BlockWaterlike)gregapi.data.CS.BlocksGT.Ocean;
+			if (tOceanBiome == null) {
+				swJudge(O, "океанский биом найден — без него ветку океана не судить (среда, не код)", F);
+			} else {
+				net.minecraft.core.BlockPos tOP = new net.minecraft.core.BlockPos(tOceanBiome.getFirst().getX(), tLevel.getSeaLevel(), tOceanBiome.getFirst().getZ());
+				boolean tOcIn = tOceanBlk.canClaim(tLevel, tOP.getX(), tOP.getY(), tOP.getZ());
+				boolean tOcOut = mSwCtrl != null && tOceanBlk.canClaim(tLevel, mSwCtrl.getX(), mSwCtrl.getY(), mSwCtrl.getZ());
+				O.println("[GT6-SWAMPPROBE] ОКЕАН: биом " + tLevel.getBiome(tOP).getRegisteredName() + " @ " + tOP + " · canClaim внутри = " + tOcIn + " · canClaim в саванне = " + tOcOut);
+				swJudge(O, "ОКЕАН, позитив: в своём биоме захват разрешён — правило 1.7.10 живо", tOcIn);
+				swJudge(O, "ОКЕАН, ограничитель: в чужом биоме захват запрещён", mSwCtrl == null || !tOcOut);
+			}
+
+			// --- (F) ГОЛЫЙ Biome: идентичность биома без Holder (были МЁРТВЫЕ ветки) --------------------
+			// WD.biome(...) отдаёт .value(); прежний biomeKeyName возвращал для него "" и contains был false
+			// ВСЕГДА — молча не работали влажность сена (BlockBaleGrass:113), компас пчелы (MultiItemBumbles:
+			// 234,266), гены пчёл (IItemBumbleBee:141), опознание лунного/марсианского камня
+			// (MultiTileEntityRock:105-107). Судим на биоме болота: набор его содержит, ответ обязан быть T.
+			{
+				// колонку берём ЗАВЕДОМО болотную (mSwCtrlIn найден перебором с проверкой биома), а не центр
+				// findClosestBiome3d: тот возвращается с шагом сетки 32/64 и сам может стоять в соседнем биоме —
+				// на этом судья уже дал ложный FAIL при исправном коде.
+				net.minecraft.core.BlockPos tBareAt = mSwCtrlIn != null ? mSwCtrlIn : mSwFront;
+				net.minecraft.world.level.biome.Biome tBare = gregapi.util.WD.biome(tLevel, tBareAt.getX(), tBareAt.getY(), tBareAt.getZ());
+				boolean tBareHit = BIOMES_SWAMP.contains(tBare), tBareMiss = BIOMES_NETHER.contains(tBare);
+				O.println("[GT6-SWAMPPROBE] голый Biome: ключ = \"" + gregapi.code.BiomeNameSet.keyOfBiome(tBare) + "\" · BIOMES_SWAMP=" + tBareHit + " · BIOMES_NETHER=" + tBareMiss);
+				swJudge(O, "голый Biome резолвится в ключ: BIOMES_SWAMP.contains(WD.biome(...)) = true (было false ВСЕГДА)", tBareHit);
+				swJudge(O, "негативный контроль: чужой набор на том же биоме отвечает false", !tBareMiss);
+			}
 		} catch (Throwable e) {
 			swJudge(O, "стенд отработал без исключения", F);
 			e.printStackTrace(O);
