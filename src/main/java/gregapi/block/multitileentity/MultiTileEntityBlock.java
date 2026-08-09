@@ -332,19 +332,47 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// Гейт отдавал super=ПОЛНЫЙ КУБ → «блок душит» → LocalPlayer.moveTowardsClosestSpace каждый тик выталкивал
 	// игрока из проходимых MTE (леса/верёвка) — карабканье обрывалось (судья gt6climbprobe: onClimbable=true,
 	// игрок лез, но suffocateCell=true выталкивал). TE-лукапу Level не нужен — BlockGetter.getBlockEntity достаточно.
+	// Правка №4 (BUG-106): кэш ВОКСЕЛИЗАЦИИ форм. Боксы у MTE дискретны (доли 1/16 от mConnections/боундов) —
+	// одинаковые наборы боксов встречаются у тысяч блоков, а Shapes.create/or (дорогая вокселизация) звался на
+	// КАЖДЫЙ запрос коллизии каждого тика (~2% всех аллокаций по JFR). Ключ — точные координаты боксов в
+	// локальной системе блока: одинаковые боксы → та же (иммутабельная, разделяемая) форма. Сами боксы
+	// по-прежнему собираются живым TE-вызовом (зависимость от сущности/соседей сохранена 1:1) — кэшируется
+	// только преобразование «боксы → воксель-форма», оно чистая функция.
+	private static final class ShapeKey {
+		private final double[] mCoords; private final int mHash;
+		ShapeKey(double[] aCoords) {mCoords = aCoords; mHash = java.util.Arrays.hashCode(aCoords);}
+		@Override public int hashCode() {return mHash;}
+		@Override public boolean equals(Object aOther) {return aOther instanceof ShapeKey tKey && java.util.Arrays.equals(mCoords, tKey.mCoords);}
+	}
+	private static final java.util.concurrent.ConcurrentHashMap<ShapeKey, net.minecraft.world.phys.shapes.VoxelShape> SHAPE_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+	private static net.minecraft.world.phys.shapes.VoxelShape cachedShape(List<AABB> aBoxes, BlockPos aPos) {
+		if (SHAPE_CACHE.size() > 8192) SHAPE_CACHE.clear(); // предохранитель (формы дискретны — реальный размер сотни)
+		double[] tCoords = new double[aBoxes.size() * 6];
+		int i = 0;
+		for (AABB tBox : aBoxes) {
+			tCoords[i++] = tBox.minX - aPos.getX(); tCoords[i++] = tBox.minY - aPos.getY(); tCoords[i++] = tBox.minZ - aPos.getZ();
+			tCoords[i++] = tBox.maxX - aPos.getX(); tCoords[i++] = tBox.maxY - aPos.getY(); tCoords[i++] = tBox.maxZ - aPos.getZ();
+		}
+		return SHAPE_CACHE.computeIfAbsent(new ShapeKey(tCoords), aKey -> {
+			net.minecraft.world.phys.shapes.VoxelShape rShape = net.minecraft.world.phys.shapes.Shapes.empty();
+			for (int j = 0; j < aKey.mCoords.length; j += 6)
+				rShape = net.minecraft.world.phys.shapes.Shapes.or(rShape, net.minecraft.world.phys.shapes.Shapes.create(new AABB(aKey.mCoords[j], aKey.mCoords[j+1], aKey.mCoords[j+2], aKey.mCoords[j+3], aKey.mCoords[j+4], aKey.mCoords[j+5])));
+			return rShape;
+		});
+	}
+
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (aWorld == null) return super.getCollisionShape(aState, aWorld, aPos, aContext);
 		BlockEntity tTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		if (tTileEntity instanceof IMTE_AddCollisionBoxesToList tMulti) {
 			List<AABB> tList = new ArrayList<>();
 			tMulti.addCollisionBoxesToList(new AABB(aPos.getX()-1, aPos.getY()-1, aPos.getZ()-1, aPos.getX()+2, aPos.getY()+2, aPos.getZ()+2), tList, aContext instanceof net.minecraft.world.phys.shapes.EntityCollisionContext tEntityContext ? tEntityContext.getEntity() : null);
-			net.minecraft.world.phys.shapes.VoxelShape rShape = net.minecraft.world.phys.shapes.Shapes.empty();
-			for (AABB tBox : tList) if (tBox != null) rShape = net.minecraft.world.phys.shapes.Shapes.or(rShape, net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ())));
-			return rShape;
+			if (tList.isEmpty()) return net.minecraft.world.phys.shapes.Shapes.empty();
+			return cachedShape(tList, aPos); // правка №4: вокселизация из кэша
 		}
 		if (tTileEntity instanceof IMTE_GetCollisionBoundingBoxFromPool tPool) {
 			AABB tBox = tPool.getCollisionBoundingBoxFromPool();
-			return tBox == null ? net.minecraft.world.phys.shapes.Shapes.empty() : net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ()));
+			return tBox == null ? net.minecraft.world.phys.shapes.Shapes.empty() : cachedShape(java.util.List.of(tBox), aPos); // правка №4
 		}
 		return super.getCollisionShape(aState, aWorld, aPos, aContext); // TE null/без интерфейсов → полный куб (1:1 pool-фолбэк)
 	}
@@ -353,7 +381,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 			BlockEntity tTileEntity = WD.te(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 			if (tTileEntity instanceof IMTE_GetSelectedBoundingBoxFromPool tSel) {
 				AABB tBox = tSel.getSelectedBoundingBoxFromPool();
-				if (tBox != null) return net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ()));
+				if (tBox != null) return cachedShape(java.util.List.of(tBox), aPos); // правка №4: вокселизация из кэша
 			}
 		}
 		return super.getShape(aState, aWorld, aPos, aContext); // обычные MTE (машины/сундуки) — полный куб (как было)

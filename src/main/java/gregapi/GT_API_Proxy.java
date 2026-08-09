@@ -564,6 +564,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					if (tTileEntity.isDead()) {
 						SERVER_TICK_PRE.remove(i--);
 						tTileEntity.onUnregisterPre();
+					} else if (!WD.blockTicking(tTileEntity)) {
+						// №2в (2026-08-09): чанк не тикает блоками (пограничный/выгружается) — техника замирает
+						// вместе с миром, из списка НЕ удаляется (оттает при повышении уровня чанка).
 					} else {
 						try {
 							tTileEntity.onServerTickPre(T);
@@ -579,6 +582,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					if (tTileEntity.isDead()) {
 						SERVER_TICK_PR2.remove(i--);
 						tTileEntity.onUnregisterPre();
+					} else if (!WD.blockTicking(tTileEntity)) {
+						// №2в: см. SERVER_TICK_PRE выше.
 					} else {
 						try {
 							tTileEntity.onServerTickPre(F);
@@ -596,6 +601,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				DELAYED_BLOCK_UPDATES = tList;
 				for (IHasWorldAndCoords tTileEntity : DELAYED_BLOCK_UPDATES_2) {
 					try {
+						// №2в: сущность мертва — апдейт потерял хозяина, выбрасываем; чанк заморожен — переносим
+						// в активную очередь до оттаивания (в замороженном мире соседям нечего пересчитывать).
+						if (tTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)tTileEntity).isDead()) continue;
+						if (!WD.blockTicking(tTileEntity)) {DELAYED_BLOCK_UPDATES.add(tTileEntity); continue;}
 						tTileEntity.getWorld().updateNeighborsAt(new BlockPos(tTileEntity.getX(), tTileEntity.getY(), tTileEntity.getZ()), tTileEntity.getBlock(tTileEntity.getCoords()), null);
 					} catch(Throwable e) {
 						if (tTileEntity instanceof ITileEntityErrorable) ((ITileEntityErrorable)tTileEntity).setError("Delayed Block Update - " + e);
@@ -616,7 +625,14 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						try {
 							ServerLevel tLevel = (ServerLevel)tEntry[0];
 							BlockPos tPos = (BlockPos)tEntry[1];
-							if (tLevel.isLoaded(tPos)) {
+							// №2в: было isLoaded — пограничный чанк проходил гейт, и распад листвы шёл там, где движок
+							// случайные тики уже выключил. Теперь тот же закон, что у движка: не тикает — переносим на
+							// +8 тиков БЕЗ сжигания попытки (чанк загружен, но заморожен); чанк выгружен — бросаем,
+							// как бросал прежний isLoaded-гейт.
+							if (!WD.blockTicking(tLevel, tPos)) {
+								if (WD.chunkNow(tLevel, tPos.getX() >> 4, tPos.getZ() >> 4) != null)
+									DELAYED_LEAF_DECAYS.add(new Object[] {tLevel, tPos, SERVER_TIME + 8, tEntry[3]});
+							} else if (tLevel.isLoaded(tPos)) {
 								net.minecraft.world.level.block.state.BlockState tState = tLevel.getBlockState(tPos);
 								if (tState.getBlock() instanceof net.minecraft.world.level.block.LeavesBlock) {
 									tState.tick(tLevel, tPos, tLevel.getRandom());
@@ -638,6 +654,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (SERVER_TIME > 10) {
 					for (ITileEntityScheduledUpdate tTileEntity : SCHEDULED_TILEENTITY_UPDATES_2) if (!tTileEntity.isDead()) {
 						try {
+							// №2в: чанк заморожен — перенос в активную очередь до оттаивания.
+							if (!WD.blockTicking(tTileEntity)) {SCHEDULED_TILEENTITY_UPDATES.add(tTileEntity); continue;}
 							tTileEntity.onScheduledUpdate();
 						} catch(Throwable e) {
 							if (tTileEntity instanceof ITileEntityErrorable) ((ITileEntityErrorable)tTileEntity).setError("Scheduled TileEntity Update - " + e);
@@ -663,6 +681,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					if (tTileEntity.isDead()) {
 						SERVER_TICK_POST.remove(i--);
 						tTileEntity.onUnregisterPost();
+					} else if (!WD.blockTicking(tTileEntity)) {
+						// №2в: см. SERVER_TICK_PRE выше.
 					} else {
 						try {
 							tTileEntity.onServerTickPost(T);
@@ -679,6 +699,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					if (tTileEntity.isDead()) {
 						SERVER_TICK_PO2T.remove(i--);
 						tTileEntity.onUnregisterPost();
+					} else if (!WD.blockTicking(tTileEntity)) {
+						// №2в: см. SERVER_TICK_PRE выше.
 					} else {
 						try {
 							tTileEntity.onServerTickPost(F);
@@ -691,6 +713,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				}
 				
 				EntityFoodTracker.tick();
+				if (++sFlightTick % 600 == 0) flightSample(aEvent.getServer()); // самописец: срез раз в 30 секунд
 				
 				if (SERVER_TIME % 1200 == 0) checkSaveLocation(aEvent.getServer().getWorldPath(LevelResource.ROOT).toFile(), T);
 				
@@ -1259,6 +1282,77 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} else if (probeFlag("gt6syncdiag.flag")) OUT.println("[GT6-SYNCDIAG-SRV] чанк " + tChunk.getPos() + ": BE в чанке=0 (после reconstruct)");
 	}
 	
+	// Правка №1 (BUG-106): МИГРАЦИЯ старых миров — сущности руды/породы (материал в mMetaData) переливаются в
+	// карту чанка (PrefixBlockOreMap) и снимаются НАВСЕГДА (чанк помечен на сохранение — при записи уйдёт уже
+	// без них). Сущности с mItemNBT (канал №8 аудита) остаются жить, но материал дублируется в карту, чтобы
+	// воронка чтения была единой. Тип сущности остаётся зарегистрированным вечно — он и есть читатель легаси.
+	// ================================================================================================================
+	// ПОЛЁТНЫЙ САМОПИСЕЦ (требование пользователя 2026-08-09: «любая многочасовая игра фиксирует всё — потом
+	// разбирается любой баг без наигрывания»). Мод-половина чёрного ящика (внешняя — watchdog: JFR/GC/куча/дамп):
+	// раз в 30 секунд строка CSV в logs/gt6-flight.csv — время, средний тик, куча, по каждому измерению чанки/
+	// сущности/игроки/позиция. Команда /gt6mark <текст> — пометить МОМЕНТ бага в самописце и логе: при разборе
+	// метка связывает слова пользователя с телеметрией и JFR-стеками по времени. Стоимость среза — микросекунды.
+	// ================================================================================================================
+	private static long sFlightTick = 0;
+	private static boolean sFlightBroken = false;
+	private static final java.time.format.DateTimeFormatter FLIGHT_TS = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+	private static void flightWrite(net.minecraft.server.MinecraftServer aServer, String aLine) {
+		if (sFlightBroken) return;
+		try {
+			java.nio.file.Path tDir = aServer.getServerDirectory().resolve("logs");
+			java.nio.file.Files.createDirectories(tDir);
+			java.nio.file.Path tFile = tDir.resolve("gt6-flight.csv");
+			if (java.nio.file.Files.exists(tFile) && java.nio.file.Files.size(tFile) > 64L << 20) // ротация 64МБ
+				java.nio.file.Files.move(tFile, tDir.resolve("gt6-flight-" + System.currentTimeMillis() + ".csv"));
+			if (!java.nio.file.Files.exists(tFile))
+				java.nio.file.Files.writeString(tFile, "время;тип;тик_мс;куча_МБ;куча_макс_МБ;измерение;чанков;сущностей;игроков;позиция;текст\n", java.nio.file.StandardOpenOption.CREATE);
+			java.nio.file.Files.writeString(tFile, aLine, java.nio.file.StandardOpenOption.APPEND);
+		} catch (Throwable e) {sFlightBroken = true; ERR.println("[GT6-FLIGHT] самописец отключён: " + e);}
+	}
+
+	private static void flightSample(net.minecraft.server.MinecraftServer aServer) {
+		try {
+			String tNow = java.time.LocalDateTime.now().format(FLIGHT_TS);
+			double tTickMs = aServer.getAverageTickTimeNanos() / 1.0e6;
+			Runtime tRt = Runtime.getRuntime();
+			long tUsed = (tRt.totalMemory() - tRt.freeMemory()) >> 20, tMax = tRt.maxMemory() >> 20;
+			StringBuilder tOut = new StringBuilder();
+			for (net.minecraft.server.level.ServerLevel tLevel : aServer.getAllLevels()) {
+				int tEntities = 0; for (@SuppressWarnings("unused") Object tE : tLevel.getAllEntities()) tEntities++;
+				net.minecraft.server.level.ServerPlayer tFirst = tLevel.players().isEmpty() ? null : tLevel.players().get(0);
+				tOut.append(tNow).append(";срез;").append(String.format(java.util.Locale.ROOT, "%.1f", tTickMs)).append(';').append(tUsed).append(';').append(tMax)
+					.append(';').append(tLevel.dimension().identifier()).append(';').append(tLevel.getChunkSource().getLoadedChunksCount())
+					.append(';').append(tEntities).append(';').append(tLevel.players().size())
+					.append(';').append(tFirst == null ? "-" : tFirst.blockPosition().toShortString().replace(',', ' ')).append(";-\n");
+			}
+			flightWrite(aServer, tOut.toString());
+		} catch (Throwable e) {/* срез не смеет ронять тик */}
+	}
+
+	/** Метка момента: пишется и в самописец, и в gregtech.log — при разборе связывает слова пользователя со стеками/телеметрией по времени. */
+	public static void flightMark(net.minecraft.server.MinecraftServer aServer, String aText) {
+		String tNow = java.time.LocalDateTime.now().format(FLIGHT_TS);
+		String tSafe = aText == null ? "-" : aText.replace(';', ',').replace('\n', ' ');
+		OUT.println("[GT6-MARK " + tNow + "] " + tSafe);
+		flightWrite(aServer, tNow + ";МЕТКА;-;-;-;-;-;-;-;-;" + tSafe + "\n");
+		flightSample(aServer); // срез в момент метки — состояние ровно тогда, когда пользователь это увидел
+	}
+
+	@SubscribeEvent
+	public void onRegisterCommands(net.neoforged.neoforge.event.RegisterCommandsEvent aEvent) {
+		aEvent.getDispatcher().register(net.minecraft.commands.Commands.literal("gt6mark")
+			.executes(tCtx -> {flightMark(tCtx.getSource().getServer(), "метка без текста"); tCtx.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("[GT6] метка записана в самописец"), false); return 1;})
+			.then(net.minecraft.commands.Commands.argument("текст", com.mojang.brigadier.arguments.StringArgumentType.greedyString())
+				.executes(tCtx -> {flightMark(tCtx.getSource().getServer(), com.mojang.brigadier.arguments.StringArgumentType.getString(tCtx, "текст")); tCtx.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("[GT6] метка записана в самописец"), false); return 1;})));
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onChunkLoadMigrateOres(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
+		if (aEvent.getLevel() == null || aEvent.getLevel().isClientSide() || !(aEvent.getChunk() instanceof LevelChunk tChunk)) return;
+		gregapi.block.prefixblock.PrefixBlock.migrateChunkOres(tChunk); // логика — в центре у данных (PrefixBlock)
+	}
+
 	// PlayerDestroyItemEvent.original/.entityPlayer (1.7.10) — приватные поля в neo, getOriginal()/getEntity() (сверено,
 	// net.neoforged.neoforge.event.entity.player.PlayerDestroyItemEvent.java). ItemSword/ItemTool (1.7.10 классы) в neo не существуют
 	// (нет ни SwordItem/PickaxeItem/DiggerItem под net.minecraft.world.item — сверено) — реальный аналог: ItemTags.SWORDS/AXES/PICKAXES/
@@ -1409,11 +1503,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			}
 			// Some Clientside Only Stuff.
 			if (aPlayer.level().isClientSide() && !aPlayer.isShiftKeyDown()) {
-				if (aTileEntity instanceof PrefixBlockTileEntity) {
+				// Правка №1 (BUG-106): сущности у руды больше нет — бедрок-руда узнаётся по самому блоку (пара та же).
+				{
 					// Show uses for Bedrock Ore when clicking it.
 					if (aBlock == BlocksGT.oreBedrock || aBlock == BlocksGT.oreSmallBedrock) {
 						RM.BedrockOreList.openNEI();
-					//  RM.BedrockOreList.guiUsesNEI(ST.make((Block)BlocksGT.oreBedrock, 1, ((PrefixBlockTileEntity)aTileEntity).mMetaData));
 					}
 				}
 			}
@@ -1593,7 +1687,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// эквивалент через ExplosionEvent.Detonate: убираем SPAWNER-позиции из разрушаемых (спавнер переживает взрыв). Config кэширован.
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onExplosionDetonate(net.neoforged.neoforge.event.level.ExplosionEvent.Detonate aEvent) {
-		if (BLAST_RESISTANT_MOB_SPAWNERS) aEvent.getAffectedBlocks().removeIf(p -> aEvent.getLevel().getBlockState(p).getBlock() == net.minecraft.world.level.block.Blocks.SPAWNER);
+		if (BLAST_RESISTANT_MOB_SPAWNERS) aEvent.getAffectedBlocks().removeIf(p -> gregapi.util.WD.state(aEvent.getLevel(), p).getBlock() == net.minecraft.world.level.block.Blocks.SPAWNER);
 	}
 	
 	// BUG-071 ПАРНАЯ ПОЛОВИНА МОСТА ДОБЫЧИ (к onBlockBreakSpeedEvent ниже): ПРАВО на дроп.

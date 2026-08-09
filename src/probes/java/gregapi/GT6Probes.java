@@ -261,6 +261,12 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6spawnkill.flag")) gt6SpawnKillTick(aEvent.getServer());
 	// [GT6-DRAINPROBE] тратится ли ванильная вода рядом с кавером Drain — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6drainprobe.flag")) gt6DrainProbeTick(aEvent.getServer());
+		// [GT6-CHUNKPROBE] правка №2 (BUG-106): чтения без подгрузки + заморозка техники в пограничных чанках
+		if (gregapi.data.CS.probeFlag("gt6chunkprobe.flag")) gt6ChunkProbeTick(aEvent.getServer());
+		// [GT6-OREMAPPROBE] правка №1 (BUG-106): карта материалов чанка вместо сущностей руды
+		if (gregapi.data.CS.probeFlag("gt6oremapprobe.flag")) gt6OreMapProbeTick(aEvent.getServer());
+		// [GT6-JOURNEYPROBE] приёмка BUG-106: механизация «активной игры» — путешествие с переписью чанков/памяти
+		if (gregapi.data.CS.probeFlag("gt6journeyprobe.flag")) gt6JourneyProbeTick(aEvent.getServer());
 		// [GT6-LOOTPROBE] BUG-105 §1: переполнение лут-контейнеров — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6lootprobe.flag")) gt6LootProbeTick(aEvent.getServer());
 		// [GT6-GRIDPROBE] BUG-099: позиционные рецепты на подрезанной сетке — снять при уборке фазы
@@ -368,6 +374,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6liquidyard.flag")) gt6LiquidYardTick(aEvent.getServer());
 	// [GT6-BUCKETPROBE] замер вердикта приёмки 2026-07-30: все 8 пар «ведро × вода» РЕАЛЬНЫМ use() игрока — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6bucketprobe.flag")) gt6BucketProbeTick(aEvent.getServer());
+	// [GT6-SWAMPPROBE] уровень ванильной жидкости (WD.meta) и фронт болота — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6swampprobe.flag")) gt6SwampProbeTick(aEvent.getServer());
 	}
 
 	// ==========================================================================================================
@@ -14318,5 +14326,740 @@ public final class GT6Probes {
 		} catch(Throwable e) {e.printStackTrace(); tFail++;}
 		gregapi.data.CS.OUT.println("[GT6-COPPERPROBE] DONE PASS=" + tPass + " FAIL=" + tFail);
 		aServer.halt(F);
+	}
+
+	// ================================================================================================
+	// [GT6-MEMPROBE] BUG-106 — ЧТО копит heap при АКТИВНОЙ игре.
+	// Уточнение пользователя 2026-08-09: при простое в мире память НЕ растёт, растёт при игре. Значит
+	// накопление привязано к событиям активности (подгрузка/выгрузка чанков), а не к тику простоя.
+	// НАГРУЗКА: телепорт игрока шагом 256 блоков каждую секунду — движок грузит ~(2r+1)^2 чанков впереди
+	// и выгружает столько же позади. Та же работа, что при полёте, но плотнее по времени в разы.
+	// СУДЬЯ: не «сколько занято», а «сколько ОСТАЁТСЯ ПОСЛЕ принудительной сборки мусора» — растущий
+	// остаток и есть накопление. Плюс размеры долгоживущих коллекций порта (рефлексией, чтобы не
+	// открывать поля ради замера): если растёт конкретная — виновник назван, а не предположен.
+	// Гейт: run/gt6memprobe.flag. Останов: сам, после mMemLimit замеров.
+	// ================================================================================================
+	private static int mMemTicks = 0, mMemSamples = 0, mMemLeg = 0;
+	private static long mMemFirstUsed = -1;
+	private static final int mMemStep = 20, mMemPeriod = 300, mMemLimit = 10;
+
+	@SubscribeEvent
+	public static void onMemProbe(ServerTickEvent.Post aEvent) {
+		if (mMemSamples > mMemLimit || !gregapi.data.CS.probeFlag("gt6memprobe.flag")) return;
+		net.minecraft.server.MinecraftServer tServer = aEvent.getServer();
+		net.minecraft.server.level.ServerLevel tLevel = tServer.overworld();
+		if (tLevel.players().isEmpty()) return; // ждём игрока: без него движок чанки не грузит и нагрузки нет
+		net.minecraft.server.level.ServerPlayer tPlayer = tLevel.players().get(0);
+		mMemTicks++;
+
+		// ШАГ НАГРУЗКИ: «змейка» по Z с чередованием знака X — каждый прыжок открывает целиком новую площадь.
+		if (mMemTicks % mMemStep == 0) {
+			mMemLeg++;
+			tPlayer.teleportTo(((mMemLeg % 2 == 0) ? 256.0 : -256.0) * ((mMemLeg / 2) + 1), 200.0, 256.0 * mMemLeg);
+		}
+		if (mMemTicks % mMemPeriod != 0) return;
+
+		// ЗАМЕР: остаток после принудительной сборки. Два вызова — первый оставляет мусор в живых
+		// через finalizer-очередь/ссылки, второй даёт устойчивое число (иначе замер шумит на сотни МБ).
+		System.gc(); System.runFinalization(); System.gc();
+		Runtime tRT = Runtime.getRuntime();
+		long tUsed = (tRT.totalMemory() - tRT.freeMemory()) >> 20, tMax = tRT.maxMemory() >> 20;
+		if (mMemFirstUsed < 0) mMemFirstUsed = tUsed;
+		mMemSamples++;
+		gregapi.data.CS.OUT.println("[GT6-MEMPROBE] замер#" + mMemSamples
+			+ " | остаток после сборки=" + tUsed + " МБ из " + tMax
+			+ " | прирост от первого=" + (tUsed - mMemFirstUsed) + " МБ"
+			+ " | чанков загружено=" + tLevel.getChunkSource().getLoadedChunksCount()
+			+ " | прыжков=" + mMemLeg + " | позиция=" + (int)tPlayer.getX() + "," + (int)tPlayer.getZ()
+			+ "\n[GT6-MEMPROBE]   коллекции: " + memColl());
+		if (mMemSamples > mMemLimit) gregapi.data.CS.OUT.println("[GT6-MEMPROBE] DONE — серия замеров закончена");
+	}
+
+	// ================================================================================================
+	// [GT6-LEAKPROBE] BUG-106 — накопление при РЕАЛЬНОЙ игре. Уточнение пользователя 2026-08-09: в простое
+	// не растёт, растёт когда СТРОИШЬ машины, соединяешь трубы, крафтишь. Значит судить надо не полёт.
+	// НАГРУЗКА (одна итерация ≈ то, что игрок делает руками): на ОДНОЙ площадке ставим машину, сундук,
+	// линию провода, предметную трубу, жидкостную трубу с бочкой — реальным путём игрока (useOn через
+	// каркас GT6ProbeStand), даём поработать, затем сносим всё destroyBlock и повторяем.
+	// Площадка ОДНА и та же: новых чанков не создаём — накопление от постройки отделено от прогрузки мира.
+	// СУДЬЯ: остаток heap ПОСЛЕ принудительной сборки. Освобождается — остаток стоит на месте; течёт —
+	// растёт монотонно от итерации к итерации. Плюс размеры долгоживущих коллекций порта.
+	// Гейт: run/gt6leakprobe.flag.
+	// ================================================================================================
+	private static int sLeakTick = 0, sLeakIter = 0;
+	private static long sLeakFirstUsed = -1;
+	private static net.minecraft.core.BlockPos sLeakBase = null;
+	private static final int LEAK_PERIOD = 25, LEAK_SAMPLE_EVERY = 15, LEAK_MAX_ITER = 300;
+	private static final int LEAK_MACHINE_ID = 20181, LEAK_CHEST_ID = 32745, LEAK_WIRE_ID = 28050;
+	private static final int LEAK_IPIPE_ID = 25002, LEAK_FPIPE_ID = 26102, LEAK_BARREL_ID = 32102;
+
+	@SubscribeEvent
+	public static void onLeakProbe(ServerTickEvent.Post aEvent) {
+		if (sLeakIter > LEAK_MAX_ITER || !gregapi.data.CS.probeFlag("gt6leakprobe.flag")) return;
+		net.minecraft.server.level.ServerLevel tLevel = aEvent.getServer().overworld();
+		if (tLevel.players().isEmpty()) return;
+		net.minecraft.server.level.ServerPlayer tPlayer = tLevel.players().get(0);
+		if (++sLeakTick % LEAK_PERIOD != 0) return;
+
+		if (sLeakBase == null) { // площадка там, где игрок уже стоит: чанк заведомо загружен, новых не создаём
+			sLeakBase = tPlayer.blockPosition().offset(3, 0, 3);
+			tPlayer.teleportTo(sLeakBase.getX() + 0.5, sLeakBase.getY() + 1.0, sLeakBase.getZ() - 6.5);
+			gregapi.data.CS.OUT.println("[GT6-LEAKPROBE] площадка @" + sLeakBase.toShortString() + ", итераций будет " + LEAK_MAX_ITER);
+		}
+		sLeakIter++;
+		try {leakBuildAndTearDown(tLevel, tPlayer, sLeakBase);}
+		catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-LEAKPROBE] итерация " + sLeakIter + " упала: " + e); e.printStackTrace(gregapi.data.CS.ERR);}
+
+		if (sLeakIter % LEAK_SAMPLE_EVERY != 0) return;
+		System.gc(); System.runFinalization(); System.gc();
+		Runtime tRT = Runtime.getRuntime();
+		long tUsed = (tRT.totalMemory() - tRT.freeMemory()) >> 20;
+		if (sLeakFirstUsed < 0) sLeakFirstUsed = tUsed;
+		gregapi.data.CS.OUT.println("[GT6-LEAKPROBE] итерация " + sLeakIter
+			+ " | остаток после сборки=" + tUsed + " МБ"
+			+ " | прирост от первого замера=" + (tUsed - sLeakFirstUsed) + " МБ"
+			+ " | чанков=" + tLevel.getChunkSource().getLoadedChunksCount()
+			+ "\n[GT6-LEAKPROBE]   коллекции: " + memColl());
+		if (sLeakIter > LEAK_MAX_ITER) gregapi.data.CS.OUT.println("[GT6-LEAKPROBE] DONE");
+	}
+
+	/** Одна итерация «поиграл»: расчистка → постройка шести видов объектов → работа → снос всего. */
+	private static void leakBuildAndTearDown(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.server.level.ServerPlayer aPlayer, net.minecraft.core.BlockPos aBase) {
+		net.minecraft.core.Direction tE = net.minecraft.core.Direction.EAST, tU = net.minecraft.core.Direction.UP;
+		// расчистка площадки 11x4x11 и твёрдый пол — стартовое состояние каждой итерации одинаково
+		for (int tX = -1; tX <= 9; tX++) for (int tZ = -1; tZ <= 9; tZ++) for (int tY = 0; tY <= 3; tY++)
+			aLevel.setBlock(aBase.offset(tX, tY, tZ), tY == 0 ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState(), 3);
+
+		// машина и сундук — то, что игрок ставит первым делом
+		Class<net.minecraft.world.level.block.entity.BlockEntity> tAny = net.minecraft.world.level.block.entity.BlockEntity.class;
+		gregapi.probe.GT6ProbeStand.place(aLevel, aPlayer, aBase.offset(0, 0, 0), tU, gregapi.probe.GT6ProbeStand.mteStack(LEAK_MACHINE_ID), tAny, "GT6-LEAKPROBE", "машина");
+		gregapi.probe.GT6ProbeStand.place(aLevel, aPlayer, aBase.offset(2, 0, 0), tU, gregapi.probe.GT6ProbeStand.mteStack(LEAK_CHEST_ID),   tAny, "GT6-LEAKPROBE", "сундук");
+		// три линии по 5 звеньев: провод, предметная труба, жидкостная труба — соединение сетей
+		gregapi.probe.GT6ProbeStand.line(aLevel, aPlayer, aBase.offset(0, 1, 2), tE, 5, LEAK_WIRE_ID,  tAny, "GT6-LEAKPROBE");
+		gregapi.probe.GT6ProbeStand.line(aLevel, aPlayer, aBase.offset(0, 1, 4), tE, 5, LEAK_IPIPE_ID, tAny, "GT6-LEAKPROBE");
+		gregapi.probe.GT6ProbeStand.line(aLevel, aPlayer, aBase.offset(0, 1, 6), tE, 5, LEAK_FPIPE_ID, tAny, "GT6-LEAKPROBE");
+		gregapi.probe.GT6ProbeStand.place(aLevel, aPlayer, aBase.offset(6, 1, 6), tE, gregapi.probe.GT6ProbeStand.mteStack(LEAK_BARREL_ID), tAny, "GT6-LEAKPROBE", "бочка");
+
+		// снос всего построенного — реальным каналом разрушения, как киркой
+		for (int tX = -1; tX <= 9; tX++) for (int tZ = -1; tZ <= 9; tZ++) for (int tY = 1; tY <= 3; tY++) {
+			net.minecraft.core.BlockPos tPos = aBase.offset(tX, tY, tZ);
+			if (!aLevel.getBlockState(tPos).isAir()) aLevel.destroyBlock(tPos, F);
+		}
+	}
+
+	/** Размеры долгоживущих коллекций порта. Рефлексия — чтобы замер не требовал открывать приватные поля. */
+	private static String memColl() {
+		StringBuilder rOut = new StringBuilder();
+		memSize(rOut, "gregapi.worldgen.GT6WorldgenFeature", "WORLDGEN_MTE");
+		memSize(rOut, "gregapi.worldgen.GT6WorldgenFeature", "PENDING_SYNC");
+		memSize(rOut, "gregapi.worldgen.GT6WorldgenFeature", "STUB_QUEUE");
+		memSize(rOut, "gregapi.worldgen.GT6WorldgenFeature", "CLIENT_STUB_QUEUE");
+		memSize(rOut, "gregapi.GT_API_Proxy", "DELAYED_BLOCK_UPDATES");
+		memSize(rOut, "gregapi.GT_API_Proxy", "SCHEDULED_TILEENTITY_UPDATES");
+		memSize(rOut, "gregapi.GT_API_Proxy", "SERVER_TICK_PRE");
+		memSize(rOut, "gregapi.GT_API_Proxy", "SERVER_TICK_POST");
+		memSize(rOut, "gregapi.GT_API_Proxy", "MOB_SPAWN_INHIBITORS");
+		memSize(rOut, "gregapi.GT_API_Proxy", "mNewPlayers");
+		memSize(rOut, "gregapi.data.CS", "PLAYER_LAST_CLICKED");
+		return rOut.toString();
+	}
+
+	private static void memSize(StringBuilder aOut, String aClass, String aField) {
+		try {
+			java.lang.reflect.Field tField = Class.forName(aClass).getDeclaredField(aField);
+			tField.setAccessible(true);
+			Object tValue = tField.get(null);
+			if (tValue instanceof java.util.Map<?, ?> tMap) {
+				int tInner = 0; boolean tNested = F;
+				for (Object tV : tMap.values()) if (tV instanceof java.util.Collection<?> tC) {tNested = T; tInner += tC.size();}
+				aOut.append(aField).append('=').append(tMap.size()).append(tNested ? "(элементов=" + tInner + ")" : "").append(' ');
+			} else if (tValue instanceof java.util.Collection<?> tColl) {
+				aOut.append(aField).append('=').append(tColl.size()).append(' ');
+			} else aOut.append(aField).append("=<не коллекция> ");
+		} catch (Throwable e) {aOut.append(aField).append("=ERR:").append(e.getClass().getSimpleName()).append(' ');}
+	}
+
+	// ================== [GT6-SWAMPPROBE] уровень ванильной жидкости и фронт болота ==================
+	// Дефект: WD.meta для ванильного LiquidBlock возвращал 0 при ЛЮБОМ уровне (WD.java, ветки только
+	// WATER_CAULDRON / Flattened / IBlockExtendedMetaData). В 1.7.10 getBlockMetadata воды = уровень
+	// (0 источник, 1-7 поток, 8 падающая), и на нём стоят: счёт соседей-источников (BlockSwamp:106-108,
+	// BlockOcean:113,119,129, BlockRiver:94), кванты растекания (BlockWaterlike.getQuantaValue:227),
+	// «черпается только источник» (Behavior_Bucket_Container:55,62), опора кувшинки (BlockBaseLilyPad:86).
+	private static int mSwPass = 0, mSwFail = 0, mSwPhase = 0, mSwTick = 0, mSwCells1 = -1, mSwDirt1 = -1;
+	private static net.minecraft.core.BlockPos mSwFront = null, mSwCtrl = null, mSwCtrlIn = null;
+	private static java.util.HashMap<Long, String> mSwSnap = null;
+	private static int mSwSnapTick = 0;
+
+	private static void swJudge(java.io.PrintStream O, String aWhat, boolean aOk) {
+		if (aOk) mSwPass++; else mSwFail++;
+		O.println("[GT6-SWAMPPROBE] " + (aOk ? "PASS" : "FAIL") + " · " + aWhat);
+	}
+	private static int swMeta(ServerLevel aLevel, net.minecraft.core.BlockPos aPos) {return gregapi.util.WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ());}
+	/** захват района: болото GT6 и болотистая земля (Diggables), РАЗДЕЛЬНО в биоме болот и вне его.
+	 *  Биом спрашивается у КАЖДОЙ колонки тем же центром, которым пользуется сам код мода (BIOMES_SWAMP). */
+	private static int[] swScan(ServerLevel aLevel, net.minecraft.core.BlockPos aCenter, int aR) {
+		int tSwampIn = 0, tSwampOut = 0, tDirtIn = 0, tDirtOut = 0;
+		int tY0 = aLevel.getSeaLevel() - 8, tY1 = aLevel.getSeaLevel() + 8;
+		for (int dx = -aR; dx <= aR; dx++) for (int dz = -aR; dz <= aR; dz++) {
+			int tX = aCenter.getX() + dx, tZ = aCenter.getZ() + dz;
+			boolean tInSwamp = BIOMES_SWAMP.contains(aLevel.getBiome(new net.minecraft.core.BlockPos(tX, aCenter.getY(), tZ)));
+			for (int tY = tY0; tY <= tY1; tY++) {
+				net.minecraft.world.level.block.Block tB = aLevel.getBlockState(new net.minecraft.core.BlockPos(tX, tY, tZ)).getBlock();
+				if (tB instanceof gregtech.blocks.fluids.BlockSwamp) {if (tInSwamp) tSwampIn++; else tSwampOut++;}
+				else if (tB == gregapi.data.CS.BlocksGT.Diggables) {if (tInSwamp) tDirtIn++; else tDirtOut++;}
+			}
+		}
+		return new int[] {tSwampIn, tSwampOut, tDirtIn, tDirtOut};
+	}
+	/** снимок района: что за блок в каждой клетке — нужен, чтобы на втором замере сказать, ИЗ ЧЕГО
+	 *  выросло болото (из ванильной воды = конверсия tList, из воздуха/суши = растекание updateFlow). */
+	private static java.util.HashMap<Long, String> swSnapshot(ServerLevel aLevel, net.minecraft.core.BlockPos aCenter, int aR) {
+		java.util.HashMap<Long, String> rMap = new java.util.HashMap<>();
+		int tY0 = aLevel.getSeaLevel() - 8, tY1 = aLevel.getSeaLevel() + 8;
+		for (int dx = -aR; dx <= aR; dx++) for (int dz = -aR; dz <= aR; dz++) for (int tY = tY0; tY <= tY1; tY++) {
+			net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(aCenter.getX() + dx, tY, aCenter.getZ() + dz);
+			net.minecraft.world.level.block.Block tB = aLevel.getBlockState(tP).getBlock();
+			String tKind = tB instanceof gregtech.blocks.fluids.BlockSwamp ? "SWAMP"
+				: tB == net.minecraft.world.level.block.Blocks.WATER ? "WATER"
+				: tB == gregapi.data.CS.BlocksGT.Diggables ? "MUD"
+				: aLevel.getBlockState(tP).isAir() ? "AIR" : "SOLID";
+			rMap.put(tP.asLong(), tKind);
+		}
+		return rMap;
+	}
+	/** вода, оставшаяся в контрольной луже. ПАРНЫЙ контроль: очаг ВНУТРИ биома болот обязан лужу съесть
+	 *  (механика жива), очаг ВНЕ его — обязан не тронуть (работает ограничитель). Одиночный очаг в саванне
+	 *  негоден: он проверял ровно то, что фикс запрещает, и давал FAIL при исправном коде. */
+	private static int swControlWater(ServerLevel aLevel, net.minecraft.core.BlockPos aCtrl) {
+		if (aCtrl == null) return -1;
+		int r = 0;
+		for (int dx = 1; dx <= 5; dx++) if (aLevel.getBlockState(aCtrl.offset(dx, 0, 0)).getBlock() == net.minecraft.world.level.block.Blocks.WATER) r++;
+		return r;
+	}
+	/** очаг: каменная чаша 5 клеток воды-источников, в начале — источник болота */
+	private static void swBuildControl(ServerLevel aLevel, net.minecraft.core.BlockPos aC) {
+		for (int dx = -1; dx <= 7; dx++) for (int dz = -1; dz <= 1; dz++) {
+			aLevel.setBlock(aC.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+			for (int dy = 0; dy <= 2; dy++) aLevel.setBlock(aC.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+		}
+		for (int dx = -1; dx <= 7; dx++) for (int dz = -1; dz <= 1; dz++) if (dz != 0 || dx < 0 || dx > 5) aLevel.setBlock(aC.offset(dx, 0, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+		for (int dx = 1; dx <= 5; dx++) swWater(aLevel, aC.offset(dx, 0, 0), 0);
+		swSwamp(aLevel, aC, 0);
+		aLevel.scheduleTick(aC, gregapi.data.CS.BlocksGT.Swamp, 1);
+	}
+	/** ванильная вода ЗАДАННОГО уровня (0 источник, 1-7 поток) — флаг 2: без соседских апдейтов, состояние читается тем же тиком */
+	private static void swWater(ServerLevel aLevel, net.minecraft.core.BlockPos aPos, int aLevelValue) {
+		aLevel.setBlock(aPos, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState().setValue(net.minecraft.world.level.block.LiquidBlock.LEVEL, aLevelValue), 2);
+	}
+	/** болото GT6 заданной кванты; PLACEMENT_ALLOWED обязателен — иначе onBlockAdded сносит блок (BlockSwamp:59-65) */
+	private static void swSwamp(ServerLevel aLevel, net.minecraft.core.BlockPos aPos, int aMeta) {
+		boolean tOld = gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED;
+		gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = T;
+		gregapi.util.WD.set(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), gregapi.data.CS.BlocksGT.Swamp, aMeta, 2);
+		gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = tOld;
+	}
+
+	private static void gt6SwampProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (mSwPhase >= 3) return;
+		ServerLevel tLevel = aServer.overworld();
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+
+		if (mSwPhase == 1 || mSwPhase == 2) {
+			// ЧАСТЫЕ снимки между главными замерами: переход «вода → болото» может идти через промежуточный
+			// ВОЗДУХ (поток воды высох, потеряв источник, и болото растеклось в освободившуюся клетку). Снимок
+			// раз в 3600 тиков такое не различает и показывает ложное «выросло из воды».
+			if (mSwPhase == 2 && mSwSnap != null && mSwTick - mSwSnapTick >= 200 && mSwTick < 4000) {
+				java.util.HashMap<Long, String> tS = swSnapshot(tLevel, mSwFront, 40);
+				int tWA = 0, tAS = 0, tWS = 0, tNewSrc = 0, tNewFlow = 0;
+				for (java.util.Map.Entry<Long, String> tE : tS.entrySet()) {
+					String tWas = mSwSnap.get(tE.getKey());
+					if (tWas == null || tWas.equals(tE.getValue())) continue;
+					if (tWas.equals("WATER") && tE.getValue().equals("AIR")) tWA++;
+					else if (tWas.equals("AIR") && tE.getValue().equals("SWAMP")) tAS++;
+					else if (tWas.equals("WATER") && tE.getValue().equals("SWAMP")) tWS++;
+					if (tE.getValue().equals("SWAMP")) {if (swMeta(tLevel, net.minecraft.core.BlockPos.of(tE.getKey())) == 0) tNewSrc++; else tNewFlow++;}
+				}
+				if (tWA + tAS + tWS > 0) O.println("[GT6-SWAMPPROBE] шаг " + (mSwTick - mSwSnapTick) + " тиков: вода→воздух " + tWA + " · воздух→болото " + tAS + " · вода→болото " + tWS + " || новых источников " + tNewSrc + ", новых потоков " + tNewFlow);
+				mSwSnap = tS; mSwSnapTick = mSwTick;
+			}
+			if (++mSwTick < (mSwPhase == 1 ? 400 : 4000)) return;
+			// --- (D) НАСТОЯЩЕЕ БОЛОТО В ЖИВОМ МИРЕ: растёт ли захват ВНЕ биома болот -------------------
+			int[] tNow = swScan(tLevel, mSwFront, 40);
+			O.println("[GT6-SWAMPPROBE] замер " + mSwPhase + " (" + mSwTick + " тиков): болото в биоме " + tNow[0] + " · болото ВНЕ биома " + tNow[1]
+				+ " · грязь в биоме " + tNow[2] + " · грязь ВНЕ биома " + tNow[3] + " · лужи: внутри " + swControlWater(tLevel, mSwCtrlIn) + ", снаружи " + swControlWater(tLevel, mSwCtrl));
+			if (mSwPhase == 1) {
+				mSwCells1 = tNow[1]; mSwDirt1 = tNow[3];
+				mSwSnap = swSnapshot(tLevel, mSwFront, 40);
+				mSwSnapTick = mSwTick;
+				swJudge(O, "в районе ЕСТЬ болото GT6 — судить есть что (позитив рига)", tNow[0] + tNow[1] > 0);
+				mSwPhase = 2;
+				return;
+			}
+			mSwPhase = 3;
+			// ИЗ ЧЕГО выросло болото: разбор по снимку замера 1 — конверсия воды или растекание по суше
+			int tFromWater = 0, tFromAir = 0, tFromSolid = 0, tFromMud = 0, tMudFromSolid = 0, tWaterAppeared = 0;
+			java.util.HashMap<Long, String> tSnap2 = swSnapshot(tLevel, mSwFront, 40);
+			for (java.util.Map.Entry<Long, String> tE : tSnap2.entrySet()) {
+				String tWas = mSwSnap.get(tE.getKey());
+				if (tWas == null || tWas.equals(tE.getValue())) continue;
+				if (tE.getValue().equals("SWAMP")) {
+					if (tWas.equals("WATER")) tFromWater++; else if (tWas.equals("AIR")) tFromAir++; else if (tWas.equals("MUD")) tFromMud++; else tFromSolid++;
+				} else if (tE.getValue().equals("MUD") && tWas.equals("SOLID")) tMudFromSolid++;
+				else if (tE.getValue().equals("WATER") && !tWas.equals("WATER")) tWaterAppeared++;
+			}
+			O.println("[GT6-SWAMPPROBE] ИЗ ЧЕГО выросло болото ЗА ПОСЛЕДНИЙ ШАГ (" + (mSwTick - mSwSnapTick) + " тиков): из ванильной воды " + tFromWater + " · из воздуха " + tFromAir
+				+ " · из грязи " + tFromMud + " · из твёрдого " + tFromSolid + " || грязь из твёрдого " + tMudFromSolid + " · НОВОЙ ванильной воды появилось " + tWaterAppeared);
+			// В КАКИХ БИОМАХ идёт захват и сколько воды осталось «топливом». Ограничитель оригинала —
+			// BIOMES_INFINITE_WATER (BlockSwamp:166): в биомах бесконечной воды конверсия не идёт. В 1.7.10
+			// всякий крупный водоём был биомом river/ocean/lake; в mc26 вода стоит и внутри обычных биомов.
+			java.util.HashMap<String, int[]> tByBiome = new java.util.HashMap<>();
+			for (java.util.Map.Entry<Long, String> tE : tSnap2.entrySet()) {
+				String tWas = mSwSnap.get(tE.getKey());
+				if (tWas == null || !tE.getValue().equals("SWAMP") || !tWas.equals("WATER")) continue;
+				net.minecraft.core.BlockPos tP = net.minecraft.core.BlockPos.of(tE.getKey());
+				String tName = tLevel.getBiome(tP).getRegisteredName();
+				tByBiome.computeIfAbsent(tName, k -> new int[2])[0]++;
+				if (BIOMES_INFINITE_WATER.contains(tLevel.getBiome(tP))) tByBiome.get(tName)[1] = 1;
+			}
+			StringBuilder tB = new StringBuilder();
+			for (java.util.Map.Entry<String, int[]> tE : tByBiome.entrySet()) tB.append(tE.getKey()).append('=').append(tE.getValue()[0]).append(tE.getValue()[1] == 1 ? " (в списке INFINITE_WATER!)" : " (НЕ в списке)").append(" · ");
+			int tWaterLeftAll = 0;
+			for (String tV : tSnap2.values()) if (tV.equals("WATER")) tWaterLeftAll++;
+			O.println("[GT6-SWAMPPROBE] биомы захвата: " + tB + "|| ванильной воды в районе ещё " + tWaterLeftAll);
+			// ПАРНЫЙ КОНТРОЛЬ. Считаем от ПОСТАНОВКИ (5), а не от замера 1: очаг срабатывает за первые сотни тиков.
+			int tCtrlIn = swControlWater(tLevel, mSwCtrlIn), tCtrlOut = swControlWater(tLevel, mSwCtrl);
+			swJudge(O, "ПОЗИТИВ: очаг ВНУТРИ биома болот съел лужу: 5 → " + tCtrlIn + " (механика жива, мир тикает)", mSwCtrlIn != null && tCtrlIn < 5);
+			swJudge(O, "ОГРАНИЧИТЕЛЬ: очаг ВНЕ биома болот лужу НЕ тронул: 5 → " + tCtrlOut + " (захват за границей запрещён)", mSwCtrl == null || tCtrlOut == 5);
+			// ГЛАВНЫЙ СУДЬЯ ЖАЛОБЫ: захват ВНЕ биома болот не растёт.
+			swJudge(O, "болото ВНЕ биома болот НЕ приросло за " + (4000 - 400) + " тиков: " + mSwCells1 + " → " + tNow[1], tNow[1] <= mSwCells1);
+			swJudge(O, "болотистая земля ВНЕ биома болот НЕ приросла: " + mSwDirt1 + " → " + tNow[3], tNow[3] <= mSwDirt1);
+			O.println("========== [GT6-SWAMPPROBE] ВЕРДИКТ: PASS " + mSwPass + " / FAIL " + mSwFail + " ==========");
+			O.println("[GT6-SWAMPPROBE] НЕ доказано стендом: СТАРЫЕ миры (уже расползшееся болото остаётся) · часы живой игры · районы вне просканированного радиуса 40");
+			return;
+		}
+
+		mSwPhase = 1;
+		O.println("========== [GT6-SWAMPPROBE] уровень ванильной жидкости (WD.meta) и его следствия ==========");
+		try {
+			net.minecraft.core.BlockPos tSpawn = tLevel.getRespawnData().pos();
+			int tY = tSpawn.getY() + 24, tX0 = tSpawn.getX() + 512, tZ0 = tSpawn.getZ() + 512;
+			for (int cx = (tX0 >> 4) - 1; cx <= ((tX0 + 200) >> 4) + 1; cx++) for (int cz = (tZ0 >> 4) - 3; cz <= (tZ0 >> 4) + 3; cz++) tLevel.setChunkForced(cx, cz, T);
+
+			// --- (A) КАНАЛ: WD.meta ванильной жидкости обязан вернуть уровень -----------------------------
+			for (int tLvl : new int[] {0, 3, 7}) {
+				net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(tX0 + tLvl * 2, tY, tZ0);
+				swWater(tLevel, tP, tLvl);
+				int tGot = swMeta(tLevel, tP);
+				swJudge(O, "WD.meta(ванильная вода LEVEL=" + tLvl + ") = " + tGot + ", ожидание " + tLvl + " (1.7.10 getBlockMetadata)", tGot == tLvl);
+				tLevel.setBlock(tP, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+			}
+			for (int tLvl : new int[] {0, 4}) {
+				net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(tX0 + 20 + tLvl * 2, tY, tZ0);
+				tLevel.setBlock(tP, net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState().setValue(net.minecraft.world.level.block.LiquidBlock.LEVEL, tLvl), 2);
+				int tGot = swMeta(tLevel, tP);
+				swJudge(O, "WD.meta(ванильная ЛАВА LEVEL=" + tLvl + ") = " + tGot + ", ожидание " + tLvl + " (тот же канал)", tGot == tLvl);
+				tLevel.setBlock(tP, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+			}
+			// позитивный контроль канала: у собственной жидкости GT6 мета жила в FLUID_META и обязана остаться целой
+			net.minecraft.core.BlockPos tCtrl = new net.minecraft.core.BlockPos(tX0 + 40, tY, tZ0);
+			swSwamp(tLevel, tCtrl, 3);
+			int tCtrlMeta = swMeta(tLevel, tCtrl);
+			swJudge(O, "WD.meta(болото GT6, квант 3) = " + tCtrlMeta + " — свой канал не задет правкой (позитив)", tCtrlMeta == 3);
+			tLevel.setBlock(tCtrl, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+
+			// --- (B) СЛЕДСТВИЕ 1: кванты растекания у ванильной воды -------------------------------------
+			gregtech.blocks.fluids.BlockWaterlike tSwampBlock = (gregtech.blocks.fluids.BlockWaterlike)gregapi.data.CS.BlocksGT.Swamp;
+			net.minecraft.core.BlockPos tQ = new net.minecraft.core.BlockPos(tX0 + 50, tY, tZ0);
+			swWater(tLevel, tQ, 5);
+			int tQuanta = tSwampBlock.getQuantaValue(tLevel, tQ.getX(), tQ.getY(), tQ.getZ());
+			swJudge(O, "getQuantaValue(вода LEVEL=5) = " + tQuanta + ", ожидание 3 = 8-5 (BlockWaterlike:227)", tQuanta == 3);
+			swWater(tLevel, tQ, 0);
+			int tQuantaSrc = tSwampBlock.getQuantaValue(tLevel, tQ.getX(), tQ.getY(), tQ.getZ());
+			swJudge(O, "getQuantaValue(вода-ИСТОЧНИК) = " + tQuantaSrc + ", ожидание 8 (позитив: судья видит оба исхода)", tQuantaSrc == 8);
+			tLevel.setBlock(tQ, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+
+			// --- (C) СЛЕДСТВИЕ 2: поток болота у ПОТОКОВ воды не должен становиться источником -----------
+			// BlockSwamp:160-163 — «поток при tSwampCounter >= 2 становится источником». Соседи-ПОТОКИ воды
+			// источниками не являются, значит превращения быть не должно; соседи-ИСТОЧНИКИ — должно (контроль).
+			int[] tNeighbourLevels = {5, 0};
+			for (int tIdx = 0; tIdx < 2; tIdx++) {
+				int tNL = tNeighbourLevels[tIdx];
+				net.minecraft.core.BlockPos tC = new net.minecraft.core.BlockPos(tX0 + 70 + tIdx * 10, tY, tZ0);
+				for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) tLevel.setBlock(tC.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+				swWater(tLevel, tC.offset(-1, 0, 0), tNL);
+				swWater(tLevel, tC.offset( 1, 0, 0), tNL);
+				swSwamp(tLevel, tC, 4);
+				((gregtech.blocks.fluids.BlockSwamp)gregapi.data.CS.BlocksGT.Swamp).updateTick(tLevel, tC.getX(), tC.getY(), tC.getZ(), new java.util.Random(1234));
+				int tAfter = swMeta(tLevel, tC);
+				boolean tBecameSource = tLevel.getBlockState(tC).getBlock() instanceof gregtech.blocks.fluids.BlockSwamp && tAfter == 0;
+				if (tNL == 0) {
+					swJudge(O, "поток болота рядом с двумя ИСТОЧНИКАМИ воды стал источником — правило 1.7.10 живо (позитив)", tBecameSource);
+				} else {
+					swJudge(O, "поток болота рядом с двумя ПОТОКАМИ воды (LEVEL=5) источником НЕ стал (мета " + tAfter + ")", !tBecameSource);
+				}
+			}
+
+			// --- (D) НАСТОЯЩЕЕ БОЛОТО: ищем биом болота в живом мире ------------------------------------
+			// Синтетическая коробка (русло в камне) жалобу не воспроизводит: она отвечает на «останавливается ли
+			// фронт в моей сцене», а вопрос стоит иначе — «уходит ли болото ЗА ПРЕДЕЛЫ своего биома». Поэтому
+			// меряем настоящее болото ворлдгена и делим захват по биому каждой клетки центром BIOMES_SWAMP.
+			com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tSwampBiome =
+				tLevel.findClosestBiome3d(h -> BIOMES_SWAMP.contains(h), tLevel.getRespawnData().pos(), 12800, 32, 64);
+			if (tSwampBiome == null) {
+				swJudge(O, "биом болота найден в радиусе 12800 — без него замер невозможен (среда, не код)", F);
+				mSwPhase = 3;
+				return;
+			}
+			mSwFront = new net.minecraft.core.BlockPos(tSwampBiome.getFirst().getX(), tLevel.getSeaLevel(), tSwampBiome.getFirst().getZ());
+			for (int cx = (mSwFront.getX() >> 4) - 3; cx <= (mSwFront.getX() >> 4) + 3; cx++)
+			for (int cz = (mSwFront.getZ() >> 4) - 3; cz <= (mSwFront.getZ() >> 4) + 3; cz++) tLevel.setChunkForced(cx, cz, T);
+			O.println("[GT6-SWAMPPROBE] биом болота: " + tSwampBiome.getSecond().getRegisteredName() + " @ " + mSwFront + " · чанки форсированы 7×7");
+
+			// контрольный очаг ВНЕ биома болот: лужа из 5 ванильных источников + один источник болота.
+			// Он и есть позитив рига — если за время наблюдения лужа не съедена, механика не работала,
+			// и «прироста нет» ничего не доказывает.
+			mSwCtrl = null;
+			for (int tD = 24; tD <= 40 && mSwCtrl == null; tD++) for (int tDir = 0; tDir < 4 && mSwCtrl == null; tDir++) {
+				int tCX = mSwFront.getX() + (tDir == 0 ? tD : tDir == 1 ? -tD : 0), tCZ = mSwFront.getZ() + (tDir == 2 ? tD : tDir == 3 ? -tD : 0);
+				net.minecraft.core.BlockPos tCol = new net.minecraft.core.BlockPos(tCX, tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, tCX, tCZ), tCZ);
+				if (BIOMES_SWAMP.contains(tLevel.getBiome(tCol))) continue;
+				mSwCtrl = tCol;
+			}
+			if (mSwCtrl == null) {
+				swJudge(O, "площадка вне биома болот найдена — нужна для контроля (среда, не код)", F);
+			} else {
+				swBuildControl(tLevel, mSwCtrl);
+				O.println("[GT6-SWAMPPROBE] очаг ВНЕ биома болот: " + mSwCtrl + " · биом " + tLevel.getBiome(mSwCtrl).getRegisteredName() + " · воды в луже " + swControlWater(tLevel, mSwCtrl));
+			}
+			// ПАРНЫЙ очаг ВНУТРИ биома болот — позитив рига: там конверсия разрешена и обязана сработать
+			// высоту ищем: биомы mc26 ТРЁХМЕРНЫЕ — на seaLevel+4 над мангровым болотом биом уже не болотный,
+			// и очаг не строился вовсе (FAIL «площадка непригодна»). Берём первую высоту, где биом болотный.
+			// ⚠️ findClosestBiome3d возвращает точку с шагом сетки (32 по горизонтали, 64 по вертикали) — сама
+			// колонка центра болотной может НЕ быть. Ищем перебором вокруг, как и для внешнего очага.
+			mSwCtrlIn = null;
+			for (int tR = 0; tR <= 40 && mSwCtrlIn == null; tR += 4) for (int tDir = 0; tDir < 4 && mSwCtrlIn == null; tDir++) {
+				int tCX = mSwFront.getX() + (tDir == 0 ? tR : tDir == 1 ? -tR : 0), tCZ = mSwFront.getZ() + (tDir == 2 ? tR : tDir == 3 ? -tR : 0);
+				for (int tDY = 2; tDY >= -2 && mSwCtrlIn == null; tDY--) {
+					net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(tCX, tLevel.getSeaLevel() + tDY, tCZ);
+					if (BIOMES_SWAMP.contains(tLevel.getBiome(tP))) mSwCtrlIn = tP;
+				}
+			}
+			// ФАКТ, а не догадка: что отвечает сам ограничитель в обеих точках
+			gregtech.blocks.fluids.BlockWaterlike tSw = (gregtech.blocks.fluids.BlockWaterlike)gregapi.data.CS.BlocksGT.Swamp;
+			if (mSwCtrl != null) O.println("[GT6-SWAMPPROBE] canClaim ВНЕ биома (" + tLevel.getBiome(mSwCtrl).getRegisteredName() + ") = " + tSw.canClaim(tLevel, mSwCtrl.getX(), mSwCtrl.getY(), mSwCtrl.getZ()));
+			if (mSwCtrlIn != null) O.println("[GT6-SWAMPPROBE] canClaim ВНУТРИ биома (" + tLevel.getBiome(mSwCtrlIn).getRegisteredName() + ") = " + tSw.canClaim(tLevel, mSwCtrlIn.getX(), mSwCtrlIn.getY(), mSwCtrlIn.getZ()));
+			if (mSwCtrlIn == null) {
+				swJudge(O, "площадка ВНУТРИ биома болот пригодна — нужна для позитивного контроля (среда, не код)", F);
+				mSwCtrlIn = null;
+			} else {
+				swBuildControl(tLevel, mSwCtrlIn);
+				O.println("[GT6-SWAMPPROBE] очаг ВНУТРИ биома болот: " + mSwCtrlIn + " · биом " + tLevel.getBiome(mSwCtrlIn).getRegisteredName() + " · воды в луже " + swControlWater(tLevel, mSwCtrlIn));
+			}
+		} catch (Throwable e) {
+			swJudge(O, "стенд отработал без исключения", F);
+			e.printStackTrace(O);
+		}
+	}
+	// ================================================================================================================
+	// [GT6-CHUNKPROBE] Правка №2 (BUG-106): судья «чтения не грузят чанки, техника замирает по гейту движка».
+	// Геометрия: якорь A=(100,100) держится setChunkForced (FORCED-тикет уровня 31, ChunkMap.java:126);
+	// распространение уровней: B=(101,100)→32 (block-ticking), C=(102,100)→33 (border, заморожен).
+	// Колонны труб строятся в B и C, ОБЕ — при принудительно тикающем C (трубы успевают зарегистрироваться в
+	// SERVER_TICK_PRE); затем C отпускается до 33 — с этого момента переливание в C обязано ОСТАНОВИТЬСЯ
+	// (движковый тикер выключен движком, глобальный список — гейтом №2в). Судьи:
+	//   J1 позитив: колонна в B продолжает переливать после отпускания C.
+	//   J2 негатив: сумма жидкости колонны C не меняется после отпускания (заморожена, ничего не потеряно).
+	//   J3 свобода от тикетов: 100 тиков подряд WD.state/WD.te по несгенерированному чанку D=(300,300) —
+	//      холдер не рождается (getVisibleChunkIfPresent == null). Контроль чувствительности: одно ЧТЕНИЕ
+	//      движковым путём level.getBlockState по E=(304,304) — холдер ПОЯВЛЯЕТСЯ (судья умеет видеть).
+	//   J4 отпускание мира: снят якорь A — B и C выгружаются (chunkNow==null): ничто из GT6 не прижимает
+	//      чанки (закрыт механизм «дальних точек» BUG-106).
+	// ================================================================================================================
+	private static int sCPTick = 0;
+	private static boolean sCPBuilt = F, sCPReleased = F, sCPHolderLeak = F, sCPSensitivity = F;
+	private static int sCPReadTicks = 0;
+	private static long sCPSumB0 = -1, sCPSumC0 = -1, sCPSumCFrozen = -1, sCPSinkBAtRelease = -1;
+	private static gregapi.tileentity.tank.TileEntityBase08Barrel sCPSrcB, sCPSinkB, sCPSrcC, sCPSinkC;
+	private static final gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] sCPChainB = new gregapi.tileentity.connectors.MultiTileEntityPipeFluid[FP_L], sCPChainC = new gregapi.tileentity.connectors.MultiTileEntityPipeFluid[FP_L];
+	private static final int CP_AX = 100, CP_AZ = 100, CP_BX = 101, CP_CX = 102, CP_DX = 300, CP_DZ = 300, CP_EX = 304, CP_EZ = 304;
+
+	public static void gt6ChunkProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sCPTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
+			if (sCPTick == 100) {
+				O.println("========== [GT6-CHUNKPROBE] Правка №2: чтения без подгрузки + заморозка по гейту движка ==========");
+				tLevel.setChunkForced(CP_AX, CP_AZ, true);
+				tLevel.setChunkForced(CP_CX, CP_AZ, true); // временно: строим и гоняем колонну C в тикающем чанке
+				O.println("[GT6-CHUNKPROBE] якорь A=(" + CP_AX + "," + CP_AZ + ") + временный форс C=(" + CP_CX + "," + CP_AZ + ") поставлены");
+			} else if (sCPTick > 100 && !sCPBuilt) {
+				if (gregapi.util.WD.chunkNow(tLevel, CP_BX, CP_AZ) == null || gregapi.util.WD.chunkNow(tLevel, CP_CX, CP_AZ) == null) {
+					if (sCPTick > 1300) {O.println("[GT6-CHUNKPROBE] EXC: чанки B/C не догрузились за 1200 тиков => FAIL"); sCPTick = 999999;}
+					return;
+				}
+				if (aServer.getPlayerList().getPlayers().isEmpty()) return; // постройка идёт реальным путём движка — нужен игрок
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				if (tReg == null) {O.println("[GT6-CHUNKPROBE] EXC: реестр MTE не найден => FAIL"); sCPTick = 999999; return;}
+				net.minecraft.core.BlockPos tBaseB = new net.minecraft.core.BlockPos(CP_BX * 16 + 8, 120, CP_AZ * 16 + 8);
+				net.minecraft.core.BlockPos tBaseC = new net.minecraft.core.BlockPos(CP_CX * 16 + 8, 120, CP_AZ * 16 + 8);
+				Object[] tRowB = gt6FluidPipeProbeBuildColumn(tPlayer, tLevel, tBaseB, tReg.getItem(BARREL_ID), tReg.getItem(BARREL_ID), tReg.getItem(PIPE_NORM_ID, FP_L + 2), sCPChainB, null);
+				Object[] tRowC = gt6FluidPipeProbeBuildColumn(tPlayer, tLevel, tBaseC, tReg.getItem(BARREL_ID), tReg.getItem(BARREL_ID), tReg.getItem(PIPE_NORM_ID, FP_L + 2), sCPChainC, null);
+				sCPSrcB = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowB[0]; sCPSinkB = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowB[1];
+				sCPSrcC = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowC[0]; sCPSinkC = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowC[1];
+				if (sCPSrcB == null || sCPSinkB == null || sCPChainB[FP_L-1] == null || sCPSrcC == null || sCPSinkC == null || sCPChainC[FP_L-1] == null) {
+					O.println("[GT6-CHUNKPROBE] EXC: постройка колонн не удалась => FAIL"); sCPTick = 999999; return;
+				}
+				sCPSrcB.mTank.setFluid(FL.Water.make(FP_WATER)); sCPSrcB.mMode |= B[0];
+				sCPSrcC.mTank.setFluid(FL.Water.make(FP_WATER)); sCPSrcC.mMode |= B[0];
+				sCPSumB0 = gt6FluidPipeProbeSum(sCPSrcB, sCPSinkB, sCPChainB);
+				sCPSumC0 = gt6FluidPipeProbeSum(sCPSrcC, sCPSinkC, sCPChainC);
+				sCPBuilt = T; sCPTick = 200;
+				O.println("[GT6-CHUNKPROBE] колонны построены: B@" + tBaseB + " C@" + tBaseC + "; стартовые суммы B=" + sCPSumB0 + "mb C=" + sCPSumC0 + "mb; 40 тиков разгона (обе тикают)");
+			} else if (sCPBuilt && sCPTick == 240) {
+				long tMovedB = sCPSinkB.mTank.amount(), tMovedC = sCPSinkC.mTank.amount();
+				O.println("[GT6-CHUNKPROBE] разгон: приёмник B=" + tMovedB + "mb приёмник C=" + tMovedC + "mb (позитивный контроль обеих колонн)");
+				if (tMovedB <= 0 || tMovedC <= 0) {O.println("[GT6-CHUNKPROBE] EXC: колонны не переливают в тикающем состоянии — стенд неисправен => FAIL"); sCPTick = 999999; return;}
+				tLevel.setChunkForced(CP_CX, CP_AZ, false); // отпускаем C: распространение от A даст ему уровень 33 (border)
+				sCPReleased = T;
+				sCPSumCFrozen = gt6FluidPipeProbeSum(sCPSrcC, sCPSinkC, sCPChainC);
+				sCPSinkBAtRelease = sCPSinkB.mTank.amount();
+				O.println("[GT6-CHUNKPROBE] C отпущен (ожидаемый уровень 33 = заморозка); сумма C зафиксирована: " + sCPSumCFrozen + "mb");
+			} else if (sCPReleased && sCPTick > 250 && sCPTick <= 350) {
+				// J3: сто тиков подряд читаем несгенерированный чанк D нашими центрами — холдер не должен родиться
+				gregapi.util.WD.state(tLevel, new net.minecraft.core.BlockPos(CP_DX * 16 + 8, 64, CP_DZ * 16 + 8));
+				gregapi.util.WD.te(tLevel, CP_DX * 16 + 8, 64, CP_DZ * 16 + 8, T); // T-флаг: и он не смеет грузить
+				gregapi.util.WD.exists(tLevel, CP_DX * 16 + 8, 64, CP_DZ * 16 + 8);
+				sCPReadTicks++;
+				if (tLevel.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.pack(CP_DX, CP_DZ)) != null) sCPHolderLeak = T;
+			} else if (sCPReleased && sCPTick == 360) {
+				// контроль чувствительности J3: движковое ЧТЕНИЕ обязано родить холдер (судья умеет видеть подгрузку).
+				// Проверка В ТОМ ЖЕ тике: холдер создаётся синхронно внутри getChunk (runDistanceManagerUpdates,
+				// ServerChunkCache.java:246), а unknown-тикет живёт 1 тик — через 2 тика чанк уже выгружен
+				// (первый прогон: проверка на +2 тика дала ложный FAIL контроля).
+				tLevel.getBlockState(new net.minecraft.core.BlockPos(CP_EX * 16 + 8, 64, CP_EZ * 16 + 8));
+				sCPSensitivity = tLevel.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.pack(CP_EX, CP_EZ)) != null;
+			} else if (sCPReleased && sCPTick == 380) {
+				long tSumC = gt6FluidPipeProbeSum(sCPSrcC, sCPSinkC, sCPChainC);
+				long tSinkB = sCPSinkB.mTank.amount();
+				boolean tJ1 = tSinkB > sCPSinkBAtRelease;
+				boolean tJ2 = tSumC == sCPSumCFrozen;
+				boolean tJ3 = !sCPHolderLeak && sCPReadTicks >= 100;
+				O.println("[GT6-CHUNKPROBE] J1 (B продолжает переливать в block-ticking): приёмник " + sCPSinkBAtRelease + " -> " + tSinkB + "mb => " + (tJ1 ? "PASS" : "FAIL"));
+				O.println("[GT6-CHUNKPROBE] J2 (C заморожен на границе, ничего не потеряно): сумма " + sCPSumCFrozen + " -> " + tSumC + "mb => " + (tJ2 ? "PASS" : "FAIL"));
+				O.println("[GT6-CHUNKPROBE] J3 (чтения WD.state/te/exists " + sCPReadTicks + " тиков по D=(" + CP_DX + "," + CP_DZ + ") не родили холдер): " + (tJ3 ? "PASS" : "FAIL — холдер появился, чтение грузит!"));
+				O.println("[GT6-CHUNKPROBE] J3-контроль (движковое чтение по E=(" + CP_EX + "," + CP_EZ + ") родило холдер — судья видит подгрузку): " + (sCPSensitivity ? "PASS" : "FAIL — судья слеп, J3 недоказателен"));
+				tLevel.setChunkForced(CP_AX, CP_AZ, false);
+				O.println("[GT6-CHUNKPROBE] якорь A снят — 300 тиков на естественную выгрузку B и C (J4)");
+				if (!(tJ1 && tJ2 && tJ3 && sCPSensitivity)) sCPHolderLeak = T; // финальный вердикт учтёт
+			} else if (sCPReleased && sCPTick == 680) {
+				boolean tGoneB = gregapi.util.WD.chunkNow(tLevel, CP_BX, CP_AZ) == null;
+				boolean tGoneC = gregapi.util.WD.chunkNow(tLevel, CP_CX, CP_AZ) == null;
+				O.println("[GT6-CHUNKPROBE] J4 (после снятия якоря ничто из GT6 не прижимает чанки): B выгружен=" + tGoneB + " C выгружен=" + tGoneC + " => " + (tGoneB && tGoneC ? "PASS" : "FAIL — трубы/списки держат чанк (механизм дальних точек BUG-106 НЕ закрыт)"));
+				O.println("[GT6-CHUNKPROBE] ВЕРДИКТ: " + (tGoneB && tGoneC && !sCPHolderLeak ? "PASS — чтения не грузят, техника замирает по закону движка, чанки отпускаются" : "FAIL — см. судьи выше"));
+				sCPTick = 999999;
+			}
+		} catch(Throwable e) {
+			O.println("[GT6-CHUNKPROBE] EXC: исключение стенда => FAIL");
+			e.printStackTrace(O);
+			sCPTick = 999999;
+		}
+	}
+	// ================================================================================================================
+	// [GT6-OREMAPPROBE] Правка №1 (BUG-106): материал руды/породы — в карте чанка (PrefixBlockOreMap) вместо
+	// блок-сущности на каждую позицию. Судьи:
+	//   W  ворлдген: в свежесгенерированном чанке КАЖДАЯ позиция PrefixBlock имеет материал в карте (100%
+	//      покрытие, счёт>0 — позитивный контроль: GT6 замещает весь пласт), и НОЛЬ рудных сущностей.
+	//   M  миграция старого мира: легаси-сущность с mMetaData (руками воткнута, карта очищена) → migrateChunkOres
+	//      → материал в карте, сущность снята, блок цел.
+	//   D  дроп: руда ставится placeBlock и ломается РЕАЛЬНЫМ путём игрока (gameMode.destroyBlock) → выпавший
+	//      стек несёт тот же материал (identity через дамаг стека = ID материала).
+	//   P  поршень: getPistonPushReaction()==BLOCK — прежде неподвижность держалась на факте «есть сущность»
+	//      (движок не толкает блоки с BE); без сущности запрет обязан быть объявлен явно.
+	// ================================================================================================================
+	private static int sOMTick = 0;
+	private static short sOMDropMeta = 0;
+	private static net.minecraft.core.BlockPos sOMDropPos = null;
+	private static net.minecraft.world.level.GameType sOMOldMode = null;
+
+	public static void gt6OreMapProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sOMTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
+			if (sOMTick == 100) {
+				O.println("========== [GT6-OREMAPPROBE] Правка №1: карта материалов чанка вместо сущностей ==========");
+				tLevel.setChunkForced(120, 120, true);
+			} else if (sOMTick > 100 && sOMTick < 2400 && sOMTick % 20 == 0) {
+				net.minecraft.world.level.chunk.LevelChunk tChunk = gregapi.util.WD.chunkNow(tLevel, 120, 120);
+				if (tChunk == null) {if (sOMTick > 2300) {O.println("[GT6-OREMAPPROBE] EXC: чанк не сгенерировался => FAIL"); sOMTick = 999999;} return;}
+				if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+				sOMTick = 2400; // чанк готов, игрок есть — к судьям на следующем тике
+			} else if (sOMTick == 2401) {
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.world.level.chunk.LevelChunk tChunk = gregapi.util.WD.chunkNow(tLevel, 120, 120);
+				gregapi.block.prefixblock.PrefixBlockOreMap tMap = tChunk.getData(gregapi.block.prefixblock.PrefixBlockOreMap.TYPE.get());
+
+				// ---- W: покрытие ворлдгена ----
+				int tPrefixBlocks = 0, tCovered = 0, tOreBEs = 0;
+				for (int tY = tLevel.getMinY(); tY < tLevel.getMaxY(); tY++) for (int tX = 0; tX < 16; tX++) for (int tZ = 0; tZ < 16; tZ++) {
+					net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(120*16 + tX, tY, 120*16 + tZ);
+					if (tChunk.getBlockState(tPos).getBlock() instanceof gregapi.block.prefixblock.PrefixBlock) {
+						tPrefixBlocks++;
+						if (tMap.get(tPos.getX(), tPos.getY(), tPos.getZ()) != 0) tCovered++;
+					}
+				}
+				for (net.minecraft.world.level.block.entity.BlockEntity tBE : tChunk.getBlockEntities().values())
+					if (tBE instanceof gregapi.block.prefixblock.PrefixBlockTileEntity) tOreBEs++;
+				O.println("[GT6-OREMAPPROBE] W (ворлдген): PrefixBlock-позиций=" + tPrefixBlocks + " покрыто картой=" + tCovered
+					+ " рудных сущностей=" + tOreBEs + " записей в карте=" + tMap.size()
+					+ " => " + (tPrefixBlocks > 0 && tCovered == tPrefixBlocks && tOreBEs == 0 ? "PASS" : "FAIL"));
+
+				// ---- P: правило поршня ----
+				gregapi.block.prefixblock.PrefixBlock tOre = (gregapi.block.prefixblock.PrefixBlock) gregapi.data.CS.BlocksGT.oreBroken;
+				boolean tP = tOre.defaultBlockState().getPistonPushReaction() == net.minecraft.world.level.material.PushReaction.BLOCK;
+				O.println("[GT6-OREMAPPROBE] P (поршень: PushReaction=BLOCK объявлен явно): " + (tP ? "PASS" : "FAIL"));
+
+				// ---- M: миграция легаси-сущности ----
+				net.minecraft.core.BlockPos tMigPos = new net.minecraft.core.BlockPos(120*16 + 8, 200, 120*16 + 8);
+				// материал — ИЗ КОДА, не выдуман: первый ID, который сам блок считает валидным (getMetaMaterial != null;
+				// первый прогон с константой 861 дал пустой слот MATERIAL_ARRAY → placeBlock честно отказал)
+				short tMigMeta = 0;
+				for (short i = 1; i < 32000; i++) if (((gregapi.block.prefixblock.PrefixBlock)gregapi.data.CS.BlocksGT.oreBroken).getMetaMaterial(i) != null) {tMigMeta = i; break;}
+				O.println("[GT6-OREMAPPROBE] материал для судей M/D: ID=" + tMigMeta + " (" + ((gregapi.block.prefixblock.PrefixBlock)gregapi.data.CS.BlocksGT.oreBroken).getMetaMaterial((int)tMigMeta) + ")");
+				boolean tPlaced = tOre.placeBlock(tLevel, tMigPos.getX(), tMigPos.getY(), tMigPos.getZ(), gregapi.data.CS.SIDE_UP, tMigMeta, null, true, true);
+				short tAfterPlace = tOre.getMetaDataValue(tLevel, tMigPos.getX(), tMigPos.getY(), tMigPos.getZ());
+				// симулируем старый мир: карту чистим, втыкаем легаси-сущность с материалом
+				tMap.remove(tMigPos.getX(), tMigPos.getY(), tMigPos.getZ());
+				gregapi.block.prefixblock.PrefixBlockTileEntity tLegacy = new gregapi.block.prefixblock.PrefixBlockTileEntity(tMigPos, tOre.defaultBlockState());
+				tLegacy.mMetaData = tMigMeta;
+				tChunk.setBlockEntity(tLegacy);
+				boolean tLegacyIn = tChunk.getBlockEntities().get(tMigPos) instanceof gregapi.block.prefixblock.PrefixBlockTileEntity;
+				gregapi.block.prefixblock.PrefixBlock.migrateChunkOres(tChunk);
+				short tAfterMig = tMap.get(tMigPos.getX(), tMigPos.getY(), tMigPos.getZ());
+				boolean tBEGone = !(tChunk.getBlockEntities().get(tMigPos) instanceof gregapi.block.prefixblock.PrefixBlockTileEntity);
+				boolean tBlockIntact = tChunk.getBlockState(tMigPos).getBlock() == tOre;
+				O.println("[GT6-OREMAPPROBE] M (миграция): установка=" + tPlaced + "/meta=" + tAfterPlace + " легаси-BE воткнута=" + tLegacyIn
+					+ " после миграции: meta=" + tAfterMig + " BE снята=" + tBEGone + " блок цел=" + tBlockIntact
+					+ " => " + (tPlaced && tAfterPlace == tMigMeta && tLegacyIn && tAfterMig == tMigMeta && tBEGone && tBlockIntact ? "PASS" : "FAIL"));
+
+				// ---- D: дроп реальным путём игрока — на РЕАЛЬНОЙ позиции ворлдгена (ничего не выдумано:
+				// блок, материал и позиция взяты из свежесгенерированного пласта; инструмент — кирка, выживание) ----
+				net.minecraft.core.BlockPos tDropPos = null;
+				short tDropMeta = 0;
+				for (int tY = tLevel.getMinY(); tY < 100 && tDropPos == null; tY++) for (int tX = 0; tX < 16 && tDropPos == null; tX++) for (int tZ = 0; tZ < 16; tZ++) {
+					net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(120*16 + tX, tY, 120*16 + tZ);
+					if (tChunk.getBlockState(tPos).getBlock() instanceof gregapi.block.prefixblock.PrefixBlock && tMap.get(tPos.getX(), tPos.getY(), tPos.getZ()) != 0) {
+						tDropPos = tPos; tDropMeta = tMap.get(tPos.getX(), tPos.getY(), tPos.getZ()); break;
+					}
+				}
+				if (tDropPos == null) {O.println("[GT6-OREMAPPROBE] D: в пласте не нашлось PrefixBlock-позиции => SKIP"); sOMTick = 2519; return;}
+				gregapi.block.prefixblock.PrefixBlock tDropBlock = (gregapi.block.prefixblock.PrefixBlock) tChunk.getBlockState(tDropPos).getBlock();
+				O.println("[GT6-OREMAPPROBE] D: позиция ворлдгена " + tDropPos + " блок=" + tDropBlock + " материал=" + tDropBlock.getMetaMaterial((int)tDropMeta) + " (ID=" + tDropMeta + ")");
+				sOMDropPos = tDropPos;
+				java.util.List<net.minecraft.world.entity.item.ItemEntity> tBefore = tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tDropPos).inflate(4));
+				for (net.minecraft.world.entity.item.ItemEntity tE : tBefore) tE.discard();
+				// дроп судится в ВЫЖИВАНИИ (правило проекта: креатив прячет добычу) и С КИРКОЙ (без инструмента ноль — ванильно верно)
+				sOMOldMode = tPlayer.gameMode.getGameModeForPlayer();
+				tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+				tPlayer.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE));
+				tPlayer.getInventory().setSelectedSlot(0);
+				tPlayer.gameMode.destroyBlock(tDropPos); // реальный путь игрока
+				sOMDropMeta = tDropMeta;
+				sOMTick = 2500; // дроп судится на 2520 (сущности предметов рождаются в том же тике, но дадим запас)
+			} else if (sOMTick == 2520) {
+				net.minecraft.core.BlockPos tDropPos = sOMDropPos != null ? sOMDropPos : new net.minecraft.core.BlockPos(120*16 + 4, 200, 120*16 + 4);
+				java.util.List<net.minecraft.world.entity.item.ItemEntity> tDrops = tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tDropPos).inflate(4));
+				boolean tGone = !(tLevel.getBlockState(tDropPos).getBlock() instanceof gregapi.block.prefixblock.PrefixBlock);
+				String tList = "";
+				boolean tMetaOk = false;
+				for (net.minecraft.world.entity.item.ItemEntity tE : tDrops) {
+					net.minecraft.world.item.ItemStack tStack = tE.getItem();
+					tList += " [" + tStack.getCount() + "x " + tStack.getItem() + " dmg=" + gregapi.util.ST.meta(tStack) + "]";
+					if (gregapi.util.ST.meta(tStack) == sOMDropMeta) tMetaOk = true;
+				}
+				String tVerdict = !tGone ? "FAIL (блок не снялся)" : tDrops.isEmpty() ? "FAIL (выживание+кирка, а дропа нет)" : tMetaOk ? "PASS" : "FAIL (материал в дропе не совпал)";
+				O.println("[GT6-OREMAPPROBE] D (дроп реальным путём): блок снят=" + tGone + " дропов=" + tDrops.size() + tList
+					+ " материал в дропе=" + tMetaOk + " => " + tVerdict);
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				O.println("[GT6-OREMAPPROBE] справка: режим на дропе=" + tPlayer.gameMode.getGameModeForPlayer());
+				if (sOMOldMode != null) tPlayer.setGameMode(sOMOldMode); // вернуть режим игрока
+				tLevel.setChunkForced(120, 120, false);
+				O.println("[GT6-OREMAPPROBE] ВЕРДИКТ: см. судьи W/P/M/D выше (все PASS = правка №1 держит)");
+				sOMTick = 999999;
+			}
+		} catch(Throwable e) {
+			O.println("[GT6-OREMAPPROBE] EXC: исключение стенда => FAIL");
+			e.printStackTrace(O);
+			sOMTick = 999999;
+		}
+	}
+	// ================================================================================================================
+	// [GT6-JOURNEYPROBE] Приёмка BUG-106 без наигрывания пользователем: автопилот эмулирует сценарий симптома —
+	// путешествие с генерацией новых чанков и возвратом. Телепорт игрока шагами по +X (движок сам грузит/генерит
+	// чанки вокруг игрока — тот же путь, что при живой ходьбе), затем обратно на базу и отдых. Перепись каждые
+	// 10 секунд: загруженные серверные чанки + занятая куча. Судьи:
+	//   J-chunks: после возврата и отдыха число чанков ВЕРНУЛОСЬ к базовому (нет храповика «дальних точек»
+	//     BUG-106; допуск +30% на кольца вокруг следа, дожёвываемые выгрузкой).
+	//   J-quiet: за весь прогон ни одного WARN «Tried to access a block entity» (флуд-фикс) — судится
+	//     монитором лога снаружи (grep -c), здесь только маркеры фаз.
+	// ================================================================================================================
+	private static int sJYTick = 0, sJYStep = 0, sJYBase = -1;
+	private static net.minecraft.core.BlockPos sJYHome = null;
+	private static boolean sJYDone = false;
+
+	private static void gt6JourneyCensus(net.minecraft.server.level.ServerLevel aLevel, String aPhase) {
+		Runtime tRt = Runtime.getRuntime();
+		long tUsedMB = (tRt.totalMemory() - tRt.freeMemory()) >> 20;
+		gregapi.data.CS.OUT.println("[GT6-JOURNEYPROBE] " + aPhase + " тик=" + sJYTick
+			+ " чанков=" + aLevel.getChunkSource().getLoadedChunksCount() + " куча=" + tUsedMB + "МБ");
+	}
+
+	public static void gt6JourneyProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sJYDone) return;
+		sJYTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			if (sJYTick < 3600) return; // дать oremap/itemmodel-пробам отработать, миру — устаканиться
+			if (sJYHome == null) {
+				sJYHome = tPlayer.blockPosition();
+				sJYBase = tLevel.getChunkSource().getLoadedChunksCount();
+				tPlayer.getAbilities().flying = true; tPlayer.onUpdateAbilities(); // полёт: телепорт по поверхности без урона
+				O.println("========== [GT6-JOURNEYPROBE] старт: база " + sJYHome + ", базовые чанки=" + sJYBase + " ==========");
+			}
+			if (sJYTick % 200 == 0) gt6JourneyCensus(tLevel, sJYStep <= 60 ? "путь" : "отдых");
+			if (sJYTick % 100 != 0) return; // шаг раз в 5 секунд
+			if (sJYStep < 30) { // 30 шагов по 2 чанка на восток = 60 чанков (~1 км) с генерацией
+				sJYStep++;
+				int tX = sJYHome.getX() + sJYStep * 32, tZ = sJYHome.getZ();
+				tPlayer.teleportTo(tLevel, tX + 0.5, 200, tZ + 0.5, java.util.Set.of(), tPlayer.getYRot(), tPlayer.getXRot(), false);
+			} else if (sJYStep < 60) { // обратно
+				sJYStep++;
+				int tX = sJYHome.getX() + (60 - sJYStep) * 32, tZ = sJYHome.getZ();
+				tPlayer.teleportTo(tLevel, tX + 0.5, 200, tZ + 0.5, java.util.Set.of(), tPlayer.getYRot(), tPlayer.getXRot(), false);
+			} else if (sJYStep == 60) { // домой, отдых
+				sJYStep++;
+				tPlayer.teleportTo(tLevel, sJYHome.getX() + 0.5, sJYHome.getY() + 1, sJYHome.getZ() + 0.5, java.util.Set.of(), tPlayer.getYRot(), tPlayer.getXRot(), false);
+				O.println("[GT6-JOURNEYPROBE] маршрут пройден (60 шагов, ~2 км с генерацией) — 5 минут отдыха на базе");
+			} else if (sJYStep < 61 + 60) { // 60 * 100 тиков = 5 минут отдыха
+				sJYStep++;
+			} else {
+				sJYDone = true;
+				int tFinal = tLevel.getChunkSource().getLoadedChunksCount();
+				gt6JourneyCensus(tLevel, "финал");
+				boolean tPass = tFinal <= sJYBase * 13 / 10 + 50;
+				O.println("[GT6-JOURNEYPROBE] J-chunks (чанки вернулись к базе после путешествия): база=" + sJYBase
+					+ " финал=" + tFinal + " допуск=" + (sJYBase * 13 / 10 + 50) + " => " + (tPass ? "PASS" : "FAIL — храповик удержания жив"));
+				O.println("[GT6-JOURNEYPROBE] ВЕРДИКТ: " + (tPass ? "PASS" : "FAIL"));
+			}
+		} catch (Throwable e) {
+			O.println("[GT6-JOURNEYPROBE] EXC: исключение стенда => FAIL");
+			e.printStackTrace(O);
+			sJYDone = true;
+		}
 	}
 }

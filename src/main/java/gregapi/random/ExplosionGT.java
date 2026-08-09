@@ -144,10 +144,10 @@ public class ExplosionGT extends ServerExplosion {
 					int tFloorX = UT.Code.roundDown(tX), tFloorY = UT.Code.roundDown(tY), tFloorZ = UT.Code.roundDown(tZ);
 					BlockPos tPos = new BlockPos(tFloorX, tFloorY, tFloorZ);
 					Block tBlock = WD.block(mWorld, tFloorX, tFloorY, tFloorZ);
-					BlockState tState = mWorld.getBlockState(tPos);
+					BlockState tState = gregapi.util.WD.state(mWorld, tPos);
 					if (WD.getMaterial(tBlock) != Material.air) {
 						float tBaseResistance = tBlock.getExplosionResistance(tState, mWorld, tPos, this);
-						float f3 = exploder != null ? exploder.getBlockExplosionResistance(this, mWorld, tPos, tState, mWorld.getFluidState(tPos), tBaseResistance) : tBaseResistance;
+						float f3 = exploder != null ? exploder.getBlockExplosionResistance(this, mWorld, tPos, tState, tState.getFluidState(), tBaseResistance) : tBaseResistance;
 						tPow -= (f3 + 0.3F) * tMul;
 					}
 					if (tPow > 0 && (exploder == null || exploder.shouldBlockExplode(this, mWorld, tPos, tState, tPow))) {
@@ -215,7 +215,7 @@ public class ExplosionGT extends ServerExplosion {
 					// F-explosion: было mWorld.spawnParticle("explode"/"smoke") — per-block частицы покрыты ClientboundExplodePacket (см. заметку метода выше). Не заглушка.
 				}
 				if (WD.getMaterial(tBlock) != Material.air) {
-					BlockState tState = mWorld.getBlockState(tPos);
+					BlockState tState = gregapi.util.WD.state(mWorld, tPos);
 					// F-explosion (АДАПТИРОВАНО): дроп блоков от взрыва РЕАЛИЗОВАН через neo Block.dropResources (loot-table) с
 					// порогом chance=1/explosionSize (как 1.7.10 dropBlockAsItemWithChance). Caveat: neo loot-модель = роль-на-стек
 					// vs 1.7.10 роль-на-предмет — распределение при >1 дропе с блока не идентично (движок-форс). Функционально, не заглушка.
@@ -230,7 +230,7 @@ public class ExplosionGT extends ServerExplosion {
 			while (tIterator.hasNext()) {
 				final BlockPos tPos = (BlockPos)tIterator.next();
 				final Block tBlock = WD.block(mWorld, tPos.getX(), tPos.getY(), tPos.getZ());
-				final BlockState tAboveState = mWorld.getBlockState(new BlockPos(tPos.getX(), tPos.getY() - 1, tPos.getZ()));
+				final BlockState tAboveState = gregapi.util.WD.state(mWorld, new BlockPos(tPos.getX(), tPos.getY() - 1, tPos.getZ()));
 				if (WD.getMaterial(tBlock) == Material.air && tAboveState.isSolidRender() && RNGSUS.nextInt(3) == 0) {
 					WD.set(mWorld, tPos.getX(), tPos.getY(), tPos.getZ(), Blocks.FIRE, 0, 3);
 				}

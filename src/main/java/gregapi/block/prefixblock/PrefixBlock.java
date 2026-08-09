@@ -190,7 +190,11 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	 */
 	// F13/F16/F16: Properties при ctor — sound(step-звук) + noOcclusion для non-opaque (иначе рендер solid + свет блокируется). setId обязателен.
 	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aModIDOwner, String aNameInternal, SoundType aSoundType, boolean aOpaque, String aTool, Material aVanillaMaterial) {
-		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal))));
+		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal))))
+			// Правка №1 (BUG-106): раньше неподвижность для поршней держалась на факте «у блока есть BE» (движок не
+			// толкает блоки с сущностью); с переносом материала в карту чанка сущности нет — запрет объявляем явно,
+			// поведение 1:1 с прежним (и с 1.7.10, где TE-блоки были нетолкаемы).
+			.pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK);
 		if (!aOpaque) p = p.noOcclusion();
 		// F-harvest-tool (1:1 GT6, зеркало MultiTileEntityBlock.mkProps): гейт «нужен ли инструмент для дропа» решает
 		// МАТЕРИАЛ (1.7.10 EntityPlayer.canHarvestBlock → Material.isToolNotRequired), не строка инструмента: руды на
@@ -436,17 +440,19 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2);
 			return T;
 		}
-		if (aTileEntity == null) return F;
 		if (!mCanBurn && !mCanExplode) return F;
+		// Правка №1: материал — из переданной сущности (легаси/NBT) либо из воронки (карта чанка); прежний гейт
+		// «TE == null → выход» означал «на позиции нет данных» — теперь это «материал == null».
+		OreDictMaterial aMaterial = aTileEntity != null ? getMetaMaterial(aTileEntity) : getMetaMaterial((BlockGetter)aWorld, aX, aY, aZ);
+		// null-гард (краш приёмки 2026-07-30): данные свежезагруженного чанка могут прийти позже блока
+		// (каскад от приземления PrefixBlockFallingEntity) → материала по мете нет. Оригинал :385 гарда не имел —
+		// в 1.7.10 этого окна не было; ВСЕ соседние ветки файла (:463, :472, :663) охраняются так же.
+		if (aMaterial == null) return F;
 		if (mPrefix.contains(TD.Prefix.DUST_BASED)) {
 			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2);
 			return T;
 		}
-		OreDictMaterial aMaterial = getMetaMaterial(aTileEntity);
-		// null-гард (краш приёмки 2026-07-30): в neo TE свежезагруженного чанка существует ДО заполнения меты
-		// (каскад от приземления PrefixBlockFallingEntity) → материала по мете нет. Оригинал :385 гарда не имел —
-		// в 1.7.10 этого окна не было; ВСЕ соседние ветки файла (:463, :472, :663) охраняются так же.
-		if (aMaterial != null && aMaterial.containsAny(TD.Properties.FLAMMABLE, TD.Properties.EXPLOSIVE, TD.Atomic.ALKALI_METAL)) {
+		if (aMaterial.containsAny(TD.Properties.FLAMMABLE, TD.Properties.EXPLOSIVE, TD.Atomic.ALKALI_METAL)) {
 			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2);
 			return T;
 		}
@@ -463,7 +469,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// @Override
 	public void onBlockExploded(Level aWorld, int aX, int aY, int aZ, Explosion aExplosion) {
 		if (aWorld.isClientSide()) return;
-		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
+		BlockEntity aTileEntity = teOrCarrier(aWorld, aX, aY, aZ); // правка №1: сущности нет — носитель с материалом из карты
 		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
 		OreDictMaterial aMaterial = getMetaMaterial(aTileEntity);
 		WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
@@ -522,7 +528,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// Drops.getDrops (:67 WD.te) на loot-этапе (BE уже снят движком) не находил материал. Мост тем же приёмом, что
 	// MultiTileEntityBlock.onDestroyedByPlayer:433 — LAST_BROKEN ставится ДО снятия блока, тик-конец его чистит (Proxy:911).
 	@Override public boolean onDestroyedByPlayer(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, ItemStack aToolStack, boolean aWillHarvest, net.minecraft.world.level.material.FluidState aFluid) {
-		BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+		BlockEntity aTileEntity = teOrCarrier(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()); // правка №1: носитель из карты
 		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
 		return super.onDestroyedByPlayer(aState, aWorld, aPos, aPlayer, aToolStack, aWillHarvest, aFluid);
 	}
@@ -534,16 +540,13 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		// Иначе setBlock во время ворлдгена читает соседний (ещё не сгенерированный) чанк → синхронная его генерация → каскад
 		// (тик >60с → watchdog-краш). 1:1 с 1.7.10: ворлдген клал флагом 2 (без neighbor-notify), тут UPDATE_KNOWN_SHAPE — эквивалент.
 		if (aMaterial != null && (aForcePlacement || ((!mPlacementChecksAntimatter || !aMaterial.contains(TD.Atomic.ANTIMATTER)) && (!mPlacementChecksTemperature || aMaterial.mMeltingPoint > WD.temperature(aWorld, aX, aY, aZ)))) && WD.set(aWorld, aX, aY, aZ, this, UT.Code.bind4(aMaterial.mToolQuality), aCauseBlockUpdates?3:net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE)) {
-			// This darn TileEntity update is ruining World generation Code (infinite Loops when placing TileEntities on Chunk Borders). I'm glad I finally found a way to disable it.
-			BlockEntity tTileEntity = createTileEntity(aWorld, aX, aY, aZ, aSide, aMetaData, aNBT);
-			WD.te(aWorld, aX, aY, aZ, tTileEntity, aCauseBlockUpdates);
-			scheduleUpdateIfNeeded(aWorld, aX, aY, aZ, tTileEntity);
-			// F6-worldgen: планировать occlusion-апдейт ТОЛЬКО при размещении в настоящем Level (gameplay). Во время worldgen
-			// aWorld=WorldGenLevel/WorldGenRegion — BE ставится на ProtoChunk, его level ещё НЕ привязан (привяжется при
-			// ProtoChunk→LevelChunk). Прежний безусловный add клал 96741 руд-BE с level=null → onScheduledUpdate→visOcc(null)→NPE
-			// на каждом server-tick. Синк материала руды клиенту в worldgen не нужен (нет игроков) и всё равно идёт через
-			// getUpdateTag на chunk-load. 1:1 с духом Грегориуса «This darn TileEntity update is ruining World generation Code».
-			if (aWorld instanceof Level && !aWorld.isClientSide()) GT_API_Proxy.SCHEDULED_TILEENTITY_UPDATES.add((PrefixBlockTileEntity)tTileEntity);
+			// Правка №1 (BUG-106): материал — в карту чанка (одна запись вместо сущности на каждую руду).
+			// «This darn TileEntity update is ruining World generation Code» Грегориуса решён здесь в корне:
+			// запись в карту не трогает соседей и не будит синк. Сущность остаётся ЕДИНСТВЕННОМУ случаю —
+			// блок с предметным NBT (mItemNBT, канал №8 аудита) — и ставится вручную, как ставил оригинал.
+			setOreMeta(aWorld, aX, aY, aZ, aMetaData);
+			if (aNBT != null) WD.te(aWorld, aX, aY, aZ, createTileEntity(aWorld, aX, aY, aZ, aSide, aMetaData, aNBT), aCauseBlockUpdates);
+			scheduleUpdateIfNeeded(aWorld, aX, aY, aZ, null); // гравитация/самовозгорание при установке — как в оригинале
 			return T;
 		}
 		return F;
@@ -551,8 +554,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	
 	@Override
 	public ItemStack getItemStackFromBlock(BlockGetter aWorld, int aX, int aY, int aZ, byte aSide) {
+		// Правка №1: материал — через воронку (карта чанка, фолбэк-сущность); NBT — из редкой сущности, если стоит.
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		return ST.make(this, 1, getMetaDataValue(aTileEntity), aTileEntity instanceof PrefixBlockTileEntity ? ((PrefixBlockTileEntity)aTileEntity).mItemNBT : null);
+		short tMeta = getMetaDataValue(aWorld, aX, aY, aZ);
+		return ST.make(this, 1, tMeta, aTileEntity instanceof PrefixBlockTileEntity ? ((PrefixBlockTileEntity)aTileEntity).mItemNBT : null);
 	}
 	
 	// @Override
@@ -629,10 +634,15 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	
 	@Override
 	public void setExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
-		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		if (aTileEntity == null && aWorld instanceof Level) aTileEntity = WD.te((Level)aWorld, aX, aY, aZ, createTileEntity((Level)aWorld, aX, aY, aZ, SIDE_ANY, aMetaData, null), F);
-		if (aTileEntity instanceof PrefixBlockTileEntity) ((PrefixBlockTileEntity)aTileEntity).receiveMetaData(aMetaData); // F3-render #2: сбрасывает кэш mTexture вместе с mMetaData.
-		if (aWorld instanceof Level && ((Level)aWorld).isClientSide()) WD.update(aWorld, aX, aY, aZ);
+		// Правка №1: запись — в карту чанка (воронка записи); легаси/NBT-сущность обновляем ТОЛЬКО в живом мире
+		// (сброс кэша текстуры, F3-render #2). В ворлдгене сущностей не бывает, а чтение BE у WorldGenRegion
+		// печатает движковый WARN на каждый вызов — флуд лога 100k+ строк (репорт пользователя 2026-08-09).
+		if (aWorld instanceof net.minecraft.world.level.LevelAccessor tAcc) setOreMeta(tAcc, aX, aY, aZ, aMetaData);
+		if (aWorld instanceof Level) {
+			BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
+			if (aTileEntity instanceof PrefixBlockTileEntity) ((PrefixBlockTileEntity)aTileEntity).receiveMetaData(aMetaData);
+			if (((Level)aWorld).isClientSide()) WD.update(aWorld, aX, aY, aZ);
+		}
 	}
 	
 	@Override
@@ -662,11 +672,17 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), UT.Code.random(aRandom));
 	}
 
+	// Правка №1: уборка карты при снятии блока любым путём (игрок/взрыв/поршень-невозможен/WD.set) — иначе
+	// записи копились бы под чужими блоками. Дроп не страдает: материал к тому моменту уже в LAST_BROKEN-носителе.
+	@Override protected void affectNeighborsAfterRemoval(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, boolean aMovedByPiston) {
+		setOreMeta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), (short)0);
+		super.affectNeighborsAfterRemoval(aState, aWorld, aPos, aMovedByPiston);
+	}
+
 	// @Override
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (aWorld.isClientSide() || checkGravity(aWorld, aX, aY, aZ)) return;
-		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		OreDictMaterial aMaterial = getMetaMaterial(aTileEntity);
+		OreDictMaterial aMaterial = getMetaMaterial(aWorld, aX, aY, aZ); // правка №1: через воронку (карта, фолбэк-сущность)
 		if (aMaterial != null) {
 			if (mCanBurn && (mPrefix.contains(TD.Prefix.DUST_BASED) || (mCanExplode && aMaterial.contains(TD.Properties.EXPLOSIVE))) && aMaterial.contains(TD.Properties.FLAMMABLE) && WD.temperature(aWorld, aX, aY, aZ) > C + 100) {
 				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
@@ -763,7 +779,13 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// PrefixBlockTileEntity (mMetaData дочитывается из синка readFromNBT/receiveMetaData; placeBlock всё равно ставит свой BE
 	// с материалом на сервере). RE-APPLY 2026-07-17: безопасно после снятия серверно-тикового worldgen (генерация в Feature.place
 	// на регионе, реентрантного getChunk текущего чанка больше нет — прежний дедлок с ore-BE устранён в корне).
-	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return new PrefixBlockTileEntity(aPos, aState);}
+	// Правка №1 (BUG-106): материал живёт в карте чанка (PrefixBlockOreMap, синк штатным AttachmentSync) —
+	// прежняя причина клиентской сущности («材ал недоступен на рендере», RE-APPLY 2026-07-17 выше) снята в корне.
+	// null = движок больше НЕ создаёт сущность на каждую руду (2 845 589 живых объектов по замеру BUG-106).
+	// EntityBlock-природа блока сохраняется: старые сущности из NBT чанков грузятся (тип валиден,
+	// TileEntityBase01Root.createType) и мигрируют в карту (GT_API_Proxy.onChunkLoadMigrateOres), а блоки с
+	// mItemNBT ставят свою сущность вручную (placeBlock) — «Where I come from, we set the TileEntities ourselves».
+	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return null;}
 	@Override public String toString() {return mNameInternal;}
 	public String getUnlocalizedName() {return mNameInternal;}
 	public String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mNameInternal);}
@@ -776,14 +798,21 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// статических bounds mMin*..mMax*, что 1.7.10-каналы выше (:678-680). Bounds финальны per-инстанс → позиция/мир не
 	// нужны, одна ветка обслуживает и живой мир, и BlockState-кэш (EmptyBlockGetter: снег/isFaceSturdy). Полный куб
 	// (руды/блоки 0..1) → super без изменений; неполные prefix-формы получают реальную коллизию и прицел-рамку.
+	// Правка №4 (BUG-106): границы mMin*..mMax* финальны на экземпляр → воксель-форма считается ОДИН раз
+	// (прежде Shapes.create аллоцировался на каждый запрос коллизии/прицела — ~2% всех аллокаций по JFR).
+	private net.minecraft.world.phys.shapes.VoxelShape mShapeCache;
+	private net.minecraft.world.phys.shapes.VoxelShape subCubeShape() {
+		if (mShapeCache == null) mShapeCache = net.minecraft.world.phys.shapes.Shapes.create(new AABB(mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ));
+		return mShapeCache;
+	}
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (!hasCollision) return net.minecraft.world.phys.shapes.Shapes.empty();
 		if (mMinX <= 0 && mMinY <= 0 && mMinZ <= 0 && mMaxX >= 1 && mMaxY >= 1 && mMaxZ >= 1) return super.getCollisionShape(aState, aWorld, aPos, aContext);
-		return net.minecraft.world.phys.shapes.Shapes.create(new AABB(mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ));
+		return subCubeShape();
 	}
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (mMinX <= 0 && mMinY <= 0 && mMinZ <= 0 && mMaxX >= 1 && mMaxY >= 1 && mMaxZ >= 1) return super.getShape(aState, aWorld, aPos, aContext);
-		net.minecraft.world.phys.shapes.VoxelShape rShape = net.minecraft.world.phys.shapes.Shapes.create(new AABB(mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ));
+		net.minecraft.world.phys.shapes.VoxelShape rShape = subCubeShape();
 		return rShape.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.block() : rShape;
 	}
 	// F12/F9-hardness (BUG-020): в 1.7.10 getBlockHardness был @Override реального Forge-хука — движок звал его сам.
@@ -859,21 +888,92 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public short getMetaDataValue(BlockEntity aTileEntity) {
 		return aTileEntity instanceof PrefixBlockTileEntity?((PrefixBlockTileEntity)aTileEntity).mMetaData:0;
 	}
-	
+
+	/** Правка №1 (BUG-106): ГОРЛЫШКО ВОРОНКИ ЧТЕНИЯ. Материал берётся из карты чанка (PrefixBlockOreMap);
+	 *  фолбэк в сущность — ТОЛЬКО для ещё не мигрированных чанков старых миров (сущность жива до первого
+	 *  ChunkEvent.Load) — после миграции ветка мертва. Все прежние вызыватели воронки не изменились. */
 	public short getMetaDataValue(BlockGetter aWorld, int aX, int aY, int aZ) {
+		short rMeta = getOreMeta(aWorld, aX, aY, aZ);
+		if (rMeta != 0) return rMeta;
+		// Фолбэк в сущность — ТОЛЬКО живой мир (легаси старых миров/NBT-блоки). У WorldGenRegion и прочих вью
+		// легаси-сущностей не бывает по определению, а их getBlockEntity на блоке «с правом на BE, но без BE»
+		// печатает движковый WARN на каждый вызов — флуд лога 100k+ строк (репорт пользователя 2026-08-09).
+		if (!(aWorld instanceof Level)) return 0;
 		return getMetaDataValue(WD.te(aWorld, aX, aY, aZ, T));
 	}
-	
+
+	/** Чтение карты материалов. Разрешение чанка: ворлдген-регион → свой чанк региона (ProtoChunk);
+	 *  живой мир → WD.chunkNow (без подгрузки, правка №2); рендер-вью клиента (RenderRegion и т.п. карт
+	 *  не несут) → чанк клиентского мира. */
+	public static short getOreMeta(BlockGetter aWorld, int aX, int aY, int aZ) {
+		net.minecraft.world.level.chunk.ChunkAccess tChunk = oreChunk(aWorld, aX, aZ);
+		if (tChunk == null) return 0;
+		PrefixBlockOreMap tMap = tChunk.getExistingDataOrNull(PrefixBlockOreMap.TYPE.get());
+		return tMap == null ? 0 : tMap.get(aX, aY, aZ);
+	}
+
+	private static net.minecraft.world.level.chunk.ChunkAccess oreChunk(BlockGetter aWorld, int aX, int aZ) {
+		if (aWorld instanceof Level tL) return WD.chunkNow(tL, aX >> 4, aZ >> 4);
+		if (aWorld instanceof net.minecraft.world.level.WorldGenLevel tGen) return tGen.getChunk(aX >> 4, aZ >> 4);
+		net.minecraft.world.entity.player.Player tPlayer = gregapi.GT_API.api_proxy == null ? null : gregapi.GT_API.api_proxy.getThePlayer();
+		return tPlayer == null ? null : WD.chunkNow(tPlayer.level(), aX >> 4, aZ >> 4);
+	}
+
+	/** Правка №1: ГОРЛЫШКО ВОРОНКИ ЗАПИСИ. Пишет материал в карту чанка; в живом серверном мире — пометка
+	 *  на сохранение + штатный синк attachment клиентам (AttachmentSync); на ProtoChunk ворлдгена — просто
+	 *  запись (карта уедет в LevelChunk при промоушене и к клиенту при отправке чанка). */
+	public static void setOreMeta(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, short aMeta) {
+		net.minecraft.world.level.chunk.ChunkAccess tChunk = oreChunk(aWorld, aX, aZ);
+		if (tChunk == null) return;
+		tChunk.getData(PrefixBlockOreMap.TYPE.get()).set(aX, aY, aZ, aMeta);
+		tChunk.markUnsaved();
+		if (tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC && aWorld instanceof net.minecraft.server.level.ServerLevel) tLC.syncData(PrefixBlockOreMap.TYPE.get());
+	}
+
+	/** Правка №1 (BUG-106): МИГРАЦИЯ старого чанка — сущности руды/породы переливаются в карту чанка и
+	 *  снимаются навсегда (чанк помечен на сохранение — на диск уйдёт уже без них). Сущности с mItemNBT
+	 *  (канал №8 аудита) живут дальше, но материал дублируется в карту — воронка чтения едина.
+	 *  Зовётся из GT_API_Proxy.onChunkLoadMigrateOres (ChunkEvent.Load, сервер) и напрямую стендом. */
+	public static void migrateChunkOres(net.minecraft.world.level.chunk.LevelChunk aChunk) {
+		java.util.List<BlockPos> tLegacy = null;
+		for (java.util.Map.Entry<BlockPos, BlockEntity> tEntry : aChunk.getBlockEntities().entrySet()) {
+			if (!(tEntry.getValue() instanceof PrefixBlockTileEntity tTE)) continue;
+			BlockPos tPos = tEntry.getKey();
+			if (tTE.mMetaData > 0) aChunk.getData(PrefixBlockOreMap.TYPE.get()).set(tPos.getX(), tPos.getY(), tPos.getZ(), tTE.mMetaData);
+			if (tTE.mItemNBT == null) {
+				if (tLegacy == null) tLegacy = new java.util.ArrayList<>();
+				tLegacy.add(tPos);
+			}
+		}
+		if (tLegacy != null) {
+			for (BlockPos tPos : tLegacy) aChunk.removeBlockEntity(tPos);
+			aChunk.markUnsaved();
+		}
+	}
+
+	/** Правка №1: мост LAST_BROKEN для мигрированных блоков — сущности на позиции больше нет, а механика
+	 *  дропа (Drops.getDrops через getMetaDataValue(TE)) читает «последнюю сломанную». Носитель-односменка
+	 *  с материалом из карты, в мир не ставится. */
+	protected BlockEntity teOrCarrier(BlockGetter aWorld, int aX, int aY, int aZ) {
+		BlockEntity rTileEntity = WD.te(aWorld, aX, aY, aZ, T);
+		if (rTileEntity != null) return rTileEntity;
+		short tMeta = getOreMeta(aWorld, aX, aY, aZ);
+		if (tMeta == 0) return null;
+		PrefixBlockTileEntity rCarrier = new PrefixBlockTileEntity(new BlockPos(aX, aY, aZ), defaultBlockState());
+		rCarrier.mMetaData = tMeta;
+		return rCarrier;
+	}
+
 	public OreDictMaterial getMetaMaterial(int aMetaData) {
 		return UT.Code.exists(aMetaData, mMaterialList)?mMaterialList[aMetaData]:null;
 	}
-	
+
 	public OreDictMaterial getMetaMaterial(BlockEntity aTileEntity) {
 		return getMetaMaterial(aTileEntity instanceof PrefixBlockTileEntity?((PrefixBlockTileEntity)aTileEntity).mMetaData:0);
 	}
 	
 	public OreDictMaterial getMetaMaterial(BlockGetter aWorld, int aX, int aY, int aZ) {
-		return getMetaMaterial(WD.te(aWorld, aX, aY, aZ, T));
+		return getMetaMaterial((int)getMetaDataValue(aWorld, aX, aY, aZ)); // правка №1: через воронку (карта чанка, фолбэк-сущность)
 	}
 	
 	public BlockEntity createTileEntity(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT) {
@@ -887,7 +987,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	protected boolean checkGravity(Level aWorld, int aX, int aY, int aZ) {
-		if (mGravity && aY > WD.minY(aWorld) && WD.te(aWorld, aX, aY, aZ, T) != null && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) { // BUG-089: было aY > 0, дно MC26 = getMinY()
+		if (mGravity && aY > WD.minY(aWorld) && getMetaDataValue(aWorld, aX, aY, aZ) != 0 && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) { // BUG-089: было aY > 0, дно MC26 = getMinY(); правка №1: «есть сущность» → «есть материал в воронке»
 			// было BlockFalling.fallInstantly (1.7.10 static-поле, дефолт false, не найден ни в одном из 3 корней) ->
 			// "T"; World.checkChunksExist(±32) -> ILevelReaderExtension.isAreaLoaded(BlockPos,int) [ILevelReaderExtension.java:19]
 			// (тот же приём, что и BlockBase.checkGravity/decisions/DEFERRED-LEDGER.md §B2).

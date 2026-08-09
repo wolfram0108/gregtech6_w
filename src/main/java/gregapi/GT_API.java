@@ -528,6 +528,9 @@ public class GT_API extends Abstract_Mod {
 		// ENCHANT: центральный переходник кастомных чар-эффектов — тот же мод-бас, единая точка подписки
 		// (gregapi/enchants/EnchantsGT6.java; закрывает стык F6↔ENCHANT wiring, метка `ENCHANT, регистрация`).
 		gregapi.enchants.EnchantsGT6.register(aModBus);
+		// Правка №1 (BUG-106): карта материалов руды на чанке — тот же мод-бас, единая точка подписки
+		// (gregapi/block/prefixblock/PrefixBlockOreMap.java).
+		gregapi.block.prefixblock.PrefixBlockOreMap.register(aModBus);
 		// BUG-090: центральный DeferredRegister GT6-зельев-эффектов (flammable/slippery/conductive/sticky/
 		// insanity — «функция, не авторство»: IE/EnviroMine для 26.1.2 нет) — тот же мод-бас, единая точка
 		// подписки (gregapi/potion/MobEffectsGT.java; int-id встают в PotionsGT.ID_* на postInit ниже).
@@ -1258,12 +1261,18 @@ public class GT_API extends Abstract_Mod {
 			if (!tFile.exists()) tFile = new File(DirectoriesGT.MINECRAFT, "gregtech.lang");
 			LanguageHandler.sLangFile = new ModConfigSpec(tFile);
 			LanguageHandler.sUseFile = LanguageHandler.sLangFile.get("EnableLangFile", "UseThisFileAsLanguageFile", F).getBoolean(F);
-		} else {
-			sBlockIconload.clear();
-			sBlockIconload = null;
-			sItemIconload.clear();
-			sItemIconload = null;
 		}
+		// BUG-106 (вторая утечка, замер живой игры 2026-08-09): очереди icon-load снимаются на ОБЕИХ сторонах, а не только
+		// на сервере. В 1.7.10 их разбирал драйвер фазы загрузки иконок (ItemFluidDisplay.registerIcons -> обход
+		// sBlockIconload при сшивке атласа); в порте этот драйвер МЁРТВ (IIconRegister удалён движком), а построение иконки
+		// сделано ЛЕНИВЫМ (Textures.java:720, TextureSet.java:158, BI.java:176) — очередь больше никто не читает, но её
+		// продолжали НАПОЛНЯТЬ. На клиенте она жила вечно: каждый CustomIcon, созданный уже в игре, вписывал себя в
+		// статику навсегда. Горячий источник — MultiTileEntityMultiBlockPart.readFromNBT2:144 (иконки строятся на КАЖДОМ
+		// чтении NBT части мультиблока, а оно идёт при загрузке чанков и реконструкции блок-сущностей).
+		// Замер: 8 549 954 объекта CustomIcon, класс GT_API удерживал 1 924 485 544 байт = 47,26 % кучи (дамп MAT).
+		// Снятие очереди отключает ВСЕ четыре точки записи разом (они все под гейтом `!= null`) — центр, а не россыпь.
+		if (sBlockIconload != null) {sBlockIconload.clear(); sBlockIconload = null;}
+		if (sItemIconload  != null) {sItemIconload .clear(); sItemIconload  = null;}
 		// Creating and loading the Unification Config.
 		OreDictManager.INSTANCE.mUnificationConfig = new Config("Unification.cfg");
 		// Initialising the Re-Registrations.

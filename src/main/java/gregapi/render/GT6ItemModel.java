@@ -47,6 +47,47 @@ import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
  */
 public class GT6ItemModel implements ItemModel {
 
+	// ================================================================================================================
+	// Правка №3 (BUG-106): КЭШ ГЕОМЕТРИИ ПРЕДМЕТОВ. Замер JFR (52 мин живой игры): ~40% ВСЕХ аллокаций клиента —
+	// пересборка одних и тех же квадов каждый кадр (sideQuad 12.6%, boundedFace-семья ~27%). Плоская геометрия —
+	// ЧИСТАЯ функция (спрайт, тинт, ободок): кэшируем глобально; BakedQuad иммутабелен — безопасно разделяется
+	// между кадрами и слоями (движок сам так делает с ванильными baked-моделями). 3D-форма блока-предмета —
+	// функция (блок, мета, компоненты стека). Сброс — при перепечке моделей (onModifyBakingResult →
+	// invalidateCaches: атлас пересоздан, старые спрайты мертвы). Отступление от 1.7.10 (там immediate-mode
+	// каждый кадр) одобрено пользователем 2026-08-09: «оптимизация важнее 1:1, централизация обязательна».
+	// ================================================================================================================
+	private record FlatKey(TextureAtlasSprite mSprite, int mColor, boolean mSides) {}
+	private record InvKey(net.minecraft.world.level.block.Block mBlock, short mMeta, net.minecraft.core.component.DataComponentPatch mComponents) {}
+	private static final java.util.concurrent.ConcurrentHashMap<FlatKey, List<BakedQuad>> sFlatCache = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final java.util.concurrent.ConcurrentHashMap<InvKey, List<BakedQuad>> sInvCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+	/** Сброс кэшей геометрии — зовётся из onModifyBakingResult при каждой перепечке моделей/атласов. */
+	public static void invalidateCaches() {sFlatCache.clear(); sInvCache.clear();}
+
+	/** Правка №3: кэш рефлексивных Method — прежде getClass().getMethod(...) звался на КАЖДЫЙ пасс КАЖДОГО
+	 *  видимого предмета каждый кадр (аллокации в reflection-машинерии видны в JFR). null-значение — «метода нет». */
+	private static final java.util.concurrent.ConcurrentHashMap<String, java.lang.reflect.Method> sMethodCache = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final java.lang.reflect.Method NO_METHOD;
+	static {java.lang.reflect.Method m = null; try {m = Object.class.getMethod("hashCode");} catch (Throwable e) {} NO_METHOD = m;}
+	private static java.lang.reflect.Method cachedMethod(Class<?> aClass, String aName, Class<?>... aArgs) {
+		String tKey = aClass.getName() + '#' + aName + '#' + aArgs.length + (aArgs.length > 0 ? aArgs[0].getSimpleName() : "");
+		java.lang.reflect.Method rMethod = sMethodCache.computeIfAbsent(tKey, k -> {
+			try {return aClass.getMethod(aName, aArgs);} catch (Throwable e) {return NO_METHOD;}
+		});
+		return rMethod == NO_METHOD ? null : rMethod;
+	}
+
+	/** Плоская геометрия предмета (front+back+опц. ободок) из кэша; сборка — только на промах. */
+	private static List<BakedQuad> flatQuads(TextureAtlasSprite aSprite, int aColor, boolean aSides) {
+		if (sFlatCache.size() > 16384) sFlatCache.clear(); // предохранитель размера (JEI листает тысячи предметов)
+		return sFlatCache.computeIfAbsent(new FlatKey(aSprite, aColor, aSides), aKey -> {
+			java.util.ArrayList<BakedQuad> rQuads = new java.util.ArrayList<>(aSides ? 10 : 2);
+			rQuads.add(flatFace(aSprite, true, aColor));
+			rQuads.add(flatFace(aSprite, false, aColor));
+			if (aSides) addSideQuads(rQuads, aSprite, aColor);
+			return java.util.List.copyOf(rQuads);
+		});
+	}
 
 	@Override
 	public void update(ItemStackRenderState aOutput, ItemStack aItem, ItemModelResolver aResolver, ItemDisplayContext aCtx, net.minecraft.client.multiplayer.ClientLevel aLevel, net.minecraft.world.entity.ItemOwner aOwner, int aSeed) {
@@ -77,9 +118,13 @@ public class GT6ItemModel implements ItemModel {
 
 	/** Предмет-форма БЛОКА: 3D-геометрия блока в инвентаре через {@link GT6BlockModel#buildInventoryQuads} (= renderInventoryBlock). */
 	private static void renderBlockInventory(ItemStackRenderState aOutput, ItemStack aStack, net.minecraft.world.level.block.Block aBlock, net.minecraft.world.item.ItemDisplayContext aCtx) {
-		GT6QuadBuilder tQB = new GT6QuadBuilder();
-		try { GT6BlockModel.buildInventoryQuads(tQB, aBlock, aStack); } catch (Throwable e) {}
-		List<BakedQuad> tBuilt = tQB.quads();
+		// Правка №3: 3D-форма блока-предмета — функция (блок, мета, компоненты стека); кэш глобальный, сборка на промах.
+		if (sInvCache.size() > 16384) sInvCache.clear();
+		List<BakedQuad> tBuilt = sInvCache.computeIfAbsent(new InvKey(aBlock, gregapi.util.ST.meta_(aStack), aStack.getComponentsPatch()), aKey -> {
+			GT6QuadBuilder tQB = new GT6QuadBuilder();
+			try { GT6BlockModel.buildInventoryQuads(tQB, aBlock, aStack); } catch (Throwable e) {}
+			return java.util.List.copyOf(tQB.quads());
+		});
 		if (tBuilt.isEmpty()) {
 			// 1.7.10 renderItem TESR-классов (Chest/MassStorage): item-форму рисовал спец-рендер (renderTileEntityAt(this,0,0,0,0));
 			// neo-носитель — special-model слой, тот же зарегистрированный рендерер, что и в мире (BER-диспетч по классу).
@@ -139,10 +184,7 @@ public class GT6ItemModel implements ItemModel {
 		if (tSprite.contents().isAnimated()) aOutput.setAnimated();
 		ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
 		tLayer.setUsesBlockLight(false); // плоский предмет — full-bright (эталон ItemModelGenerator/GuiLight.FRONT)
-		List<BakedQuad> tQuads = tLayer.prepareQuadList();
-		tQuads.add(flatFace(tSprite, true, -1));
-		tQuads.add(flatFace(tSprite, false, -1));
-		addSideQuads(tQuads, tSprite, -1);
+		tLayer.prepareQuadList().addAll(flatQuads(tSprite, -1, true)); // правка №3: геометрия из кэша
 		tLayer.setParticleMaterial(new Material.Baked(tSprite, false));
 	}
 
@@ -178,13 +220,9 @@ public class GT6ItemModel implements ItemModel {
 				aOutput.setAnimated();
 				aOutput.appendModelIdentityElement(ItemStackRenderState.FoilType.STANDARD);
 			}
-			List<BakedQuad> tQuads = tLayer.prepareQuadList();
-			tQuads.add(flatFace(tSprite, true, tColor));
-			tQuads.add(flatFace(tSprite, false, tColor));
-			// BUG-031: «толщина» плоского предмета — боковой ободок 1px по контуру спрайта (третья составляющая
-			// движкового алгоритма generated-модели, была утеряна: строились только перед+зад). Бар-оверлей
-			// прочности/заряда — GUI-декор поверх иконки, ободок ему не строим (1.7.10 рисовал бар плоским оверлеем).
-			if (!isBarOverlayIcon(tIcon)) addSideQuads(tQuads, tSprite, tColor);
+			// BUG-031: «толщина» — ободок 1px по контуру (бар-оверлею не строим, 1.7.10 рисовал бар плоско);
+			// правка №3: геометрия из кэша — чистая функция (спрайт, тинт, ободок).
+			tLayer.prepareQuadList().addAll(flatQuads(tSprite, tColor, !isBarOverlayIcon(tIcon)));
 			tLayer.setParticleMaterial(new Material.Baked(tSprite, false));
 		}
 	}
@@ -214,18 +252,18 @@ public class GT6ItemModel implements ItemModel {
 
 	/** Число рендер-пассов предмета (PrefixItem.getRenderPasses(int)=2). Нет метода → 1 пасс. */
 	private static int itemRenderPasses(Object aItem, ItemStack aStack) {
-		try { java.lang.reflect.Method m = aItem.getClass().getMethod("getRenderPasses", int.class); Object r = m.invoke(aItem, (int)gregapi.util.ST.meta_(aStack)); if (r instanceof Integer ri && ri > 0) return Math.min(ri, 8); } catch (Throwable e) {}
+		try { java.lang.reflect.Method m = cachedMethod(aItem.getClass(), "getRenderPasses", int.class); if (m != null) { Object r = m.invoke(aItem, (int)gregapi.util.ST.meta_(aStack)); if (r instanceof Integer ri && ri > 0) return Math.min(ri, 8); } } catch (Throwable e) {}
 		return 1;
 	}
 	/** Иконка предмета на пасс: GT6 {@code getIcon(stack,pass)} (=getIconFromDamageForRenderPass); fallback pass0 getIconIndex/getIconFromDamage. */
 	private static Identifier iconForPass(Object aItem, ItemStack aStack, int aPass) {
-		try { java.lang.reflect.Method m = aItem.getClass().getMethod("getIcon", ItemStack.class, int.class); Object o = m.invoke(aItem, aStack, aPass); if (o instanceof Identifier id) return id; } catch (Throwable e) {}
+		try { java.lang.reflect.Method m = cachedMethod(aItem.getClass(), "getIcon", ItemStack.class, int.class); if (m != null) { Object o = m.invoke(aItem, aStack, aPass); if (o instanceof Identifier id) return id; } } catch (Throwable e) {}
 		if (aPass == 0) { Identifier r = tryIcon(aItem, "getIconIndex", ItemStack.class, aStack); if (r == null) r = tryIcon(aItem, "getIconFromDamage", int.class, aStack.getDamageValue()); return r; }
 		return null;
 	}
 	/** GT6 {@code getColorFromItemStack(stack,pass)} → 0xRRGGBB (pass0 = материал-тинт, иначе 0xFFFFFF белый). */
 	private static int itemColor(Object aItem, ItemStack aStack, int aPass) {
-		try { java.lang.reflect.Method m = aItem.getClass().getMethod("getColorFromItemStack", ItemStack.class, int.class); Object c = m.invoke(aItem, aStack, aPass); if (c instanceof Integer ci) return ci; } catch (Throwable e) {}
+		try { java.lang.reflect.Method m = cachedMethod(aItem.getClass(), "getColorFromItemStack", ItemStack.class, int.class); if (m != null) { Object c = m.invoke(aItem, aStack, aPass); if (c instanceof Integer ci) return ci; } } catch (Throwable e) {}
 		return 0xFFFFFF;
 	}
 
@@ -258,7 +296,8 @@ public class GT6ItemModel implements ItemModel {
 
 	private static Identifier tryIcon(Object aTarget, String aMethod, Class<?> aArgType, Object aArg) {
 		try {
-			java.lang.reflect.Method m = aTarget.getClass().getMethod(aMethod, aArgType);
+			java.lang.reflect.Method m = cachedMethod(aTarget.getClass(), aMethod, aArgType);
+			if (m == null) return null;
 			Object o = m.invoke(aTarget, aArg);
 			return o instanceof Identifier tId ? tId : null;
 		} catch (Throwable ignored) {return null;}

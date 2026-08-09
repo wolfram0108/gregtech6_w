@@ -159,7 +159,7 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 		// F-block: Block.hasComparatorInputOverride/getComparatorInputOverride(world,x,y,z,side) ->
 		// BlockState.hasAnalogOutputSignal/getAnalogOutputSignal(Level,BlockPos,Direction) (BlockBehaviour:628/632).
 		BlockPos tPos = new BlockPos(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide));
-		net.minecraft.world.level.block.state.BlockState tState = mWorld.getBlockState(tPos);
+		net.minecraft.world.level.block.state.BlockState tState = gregapi.util.WD.state(mWorld, tPos);
 		return tState.hasAnalogOutputSignal()?UT.Code.bind4(tState.getAnalogOutputSignal(mWorld, tPos, FORGE_DIR[OPOS[aSide]])):getRedstoneIncoming(aSide);
 	}
 	

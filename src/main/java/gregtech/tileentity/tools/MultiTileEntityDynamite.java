@@ -230,7 +230,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 				Block tBlock = WD.block(mWorld, tX, tY, tZ);
 				if (tBlock == Blocks.SPAWNER || WD.bedrock(tBlock)) continue;
 				BlockPos tPos = new BlockPos(tX, tY, tZ);
-				if (tBlock.getExplosionResistance(mWorld.getBlockState(tPos), mWorld, tPos, this) <= mMaxExplosionResistance) affectedBlockPositions.add(tPos);
+				if (tBlock.getExplosionResistance(gregapi.util.WD.state(mWorld, tPos), mWorld, tPos, this) <= mMaxExplosionResistance) affectedBlockPositions.add(tPos);
 			}
 			List tList = mWorld.getEntities(exploder, new AABB(explosionX - 2, explosionY - 2, explosionZ - 2, explosionX + 2, explosionY + 2, explosionZ + 2));
 			net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(mWorld, this, tList, affectedBlockPositions);
@@ -251,7 +251,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 					Block tBlock = WD.block(mWorld, i, j, k);
 					if (WD.getMaterial(tBlock) != Material.air) {
 						BlockPos tPos = new BlockPos(i, j, k);
-						BlockState tState = mWorld.getBlockState(tPos);
+						BlockState tState = gregapi.util.WD.state(mWorld, tPos);
 						// F-explosion (АДАПТИРОВАНО): дроп блоков реализован через neo Block.dropResources (loot-table, строка ниже). Caveat: loot-модель распределения ≠ 1.7.10 (движок-форс). Функционально, не заглушка.
 						if (tBlock.canDropFromExplosion(tState, mWorld, tPos, this)) Block.dropResources(tState, mWorld, tPos);
 						if (mWorld instanceof ServerLevel tServerLevel) tBlock.onBlockExploded(tState, tServerLevel, tPos, this);

@@ -195,7 +195,7 @@ public class WD {
 			if (MD.TC.mLoaded && tTileEntity instanceof INode) return F;
 		}
 		BlockPos tObstrPos = new BlockPos(aX, aY, aZ);
-		BlockState tObstrState = aWorld.getBlockState(tObstrPos); // было aWorld.getBlock(x,y,z) — BlockGetter.java:32
+		BlockState tObstrState = state(aWorld, tObstrPos); // было aWorld.getBlock(x,y,z) — BlockGetter.java:32
 		Block tBlock = tObstrState.getBlock();
 		if (tBlock instanceof TrapDoorBlock || tBlock instanceof DoorBlock || tBlock instanceof LadderBlock) return F;
 		// было tBlock.getCollisionBoundingBoxFromPool(world,x,y,z) — BlockBehaviour.getCollisionShape(level,pos)
@@ -321,18 +321,13 @@ public class WD {
 	
 	/** Marks a Chunk dirty so it is saved */
 	public static boolean mark(LevelAccessor aWorld, int aX, int aZ) {
-		if (aWorld == null || aWorld.isClientSide()) return F;
-		// было aWorld.getChunkFromBlockCoords(x,z) — neo: Level.getChunk(int,int) (Level.java:202), блок-координаты
-		// >>4 переведены в чанк-координаты вручную (как делал старый метод внутри себя).
-		ChunkAccess aChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
-		if (aChunk == null) {
-			aWorld.getBlockState(new BlockPos(aX, 0, aZ)); // было WD.meta(aWorld, x,0,z) — тот же "трогающий" вызов для форс-загрузки чанка, результат отбрасывался и раньше
-			aChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
-			if (aChunk == null) {
-				ERR.println("Some important Chunk does not exist for some reason at Coordinates X: " + aX + " and Z: " + aZ);
-				return F;
-			}
-		}
+		if (!(aWorld instanceof Level) || aWorld.isClientSide()) return F;
+		// БЕЗ-ПОДГРУЗКИ (правка №2, 2026-08-09): 1.7.10 getChunkFromBlockCoords на невыгруженном давал EmptyChunk,
+		// markDirty на нём был no-op — то есть оригинал НЕ грузил чанк ради пометки. Порт звал грузящий
+		// Level.getChunk(int,int) (тикет unknown на каждый вызов, ServerChunkCache.java:242). Невыгруженный чанк
+		// помечать незачем — его состояние уже на диске.
+		net.minecraft.world.level.chunk.LevelChunk aChunk = chunkNow((Level)aWorld, aX >> 4, aZ >> 4);
+		if (aChunk == null) return F;
 		aChunk.markUnsaved(); // было aChunk.markUnsaved() — neo: LevelChunk.markUnsaved() (см. Level.java:868 aWorld.getChunkAt(pos).markUnsaved())
 		return T;
 	}
@@ -359,14 +354,22 @@ public class WD {
 	/** to get a TileEntity properly, according to my additional Interfaces. Normally you should set aLoadUnloadedChunks to false, unless you have already checked these Coordinates, or you want to load Chunks */
 	public static BlockEntity te(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
-		if (aLoadUnloadedChunks || aWorld.hasChunkAt(tPos)) { // было WD.exists(aWorld, x, y, z) — Level.isLoaded(BlockPos) (Level.java:695)
-			BlockEntity rTileEntity = aWorld.getBlockEntity(tPos); // было WD.te(aWorld, x, y, z, T) — BlockGetter.java:25 / Level.java:671
+		// БЕЗ-ПОДГРУЗКИ (правка №2, 2026-08-09): чтение НИКОГДА не грузит чанк и не ставит тикет — контракт
+		// 1.7.10 (blockExists+EmptyChunk). Прежний путь и при ПОЛОЖИТЕЛЬНОМ гейте шёл Level.getBlockEntity →
+		// getChunk(FULL,true) → тикет unknown НА КАЖДЫЙ вызов даже по загруженному чанку (ServerChunkCache.java:242)
+		// — это продлевало жизнь чанкам (замер BUG-106: 4769 серверных чанков при норме ~1400). Флаг
+		// aLoadUnloadedChunks сохранён сигнатурно, но грузить больше не может (решение пользователя 2026-08-09:
+		// оптимизация важнее 1:1, централизация обязательна).
+		if (aWorld instanceof Level tL) {
+			net.minecraft.world.level.chunk.LevelChunk tChunk = chunkNow(tL, aX >> 4, aZ >> 4);
+			if (tChunk == null || tL.isOutsideBuildHeight(tPos)) return null;
+			BlockEntity rTileEntity = tChunk.getBlockEntity(tPos); // ленивое создание из NBT — как сделал бы движок
 			if (rTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)rTileEntity).isDead()) return null;
 			if (rTileEntity != null) return rTileEntity;
 			rTileEntity = LAST_BROKEN_TILEENTITY.get();
 			// было .x/.y/.z — neo: BlockEntity.getBlockPos() (BlockEntity.java:232)
 			if (rTileEntity != null && rTileEntity.getBlockPos().getX() == aX && rTileEntity.getBlockPos().getY() == aY && rTileEntity.getBlockPos().getZ() == aZ) return rTileEntity;
-			Block tBlock = aWorld.getBlockState(tPos).getBlock(); // было aWorld.getBlock(x,y,z) — BlockGetter.java:32
+			Block tBlock = tChunk.getBlockState(tPos).getBlock(); // было aWorld.getBlock(x,y,z) — BlockGetter.java:32
 			return tBlock instanceof IBlockTileEntity ? ((IBlockTileEntity)tBlock).getTileEntity(aWorld, aX, aY, aZ) : null;
 		}
 		return null;
@@ -383,7 +386,7 @@ public class WD {
 		if (rTileEntity != null) return rTileEntity;
 		rTileEntity = LAST_BROKEN_TILEENTITY.get();
 		if (rTileEntity != null && rTileEntity.getBlockPos().getX() == aX && rTileEntity.getBlockPos().getY() == aY && rTileEntity.getBlockPos().getZ() == aZ) return rTileEntity;
-		Block tBlock = aWorld.getBlockState(tPos).getBlock();
+		Block tBlock = state(aWorld, tPos).getBlock();
 		return tBlock instanceof IBlockTileEntity ? ((IBlockTileEntity)tBlock).getTileEntity(aWorld, aX, aY, aZ) : null;
 	}
 	/** F6-worldgen/lighting КРИТ (дедлок при генерации): BE-доступ БЕЗ форс-загрузки чанка. Блок-методы, которые движок
@@ -415,9 +418,56 @@ public class WD {
 		return aWorld == null ? null : aWorld.getBlockEntity(new BlockPos(aX, aY, aZ));
 	}
 	/** F-world: 1.7.10 World.blockExists(x,y,z) = «чанк с этим блоком загружен». Порт централизовал вызовы как
-	 *  WD.exists, но метод не был определён. neo-эквивалент — Level.isLoaded(BlockPos) (Level.java:695). */
+	 *  WD.exists, но метод не был определён. БЕЗ-ПОДГРУЗКИ (правка №2): прежний hasChunkAt шёл через
+	 *  getChunk(FULL,false)+managedBlock (Level.java:695) — не грузил, но качал очередь main-потока; теперь
+	 *  лок-фри взгляд на видимый холдер — точный смысл 1.7.10 «чанк в loadedChunkHashMap». */
 	public static boolean exists(LevelAccessor aWorld, int aX, int aY, int aZ) {
-		return aWorld != null && aWorld.hasChunkAt(new BlockPos(aX, aY, aZ));
+		return aWorld instanceof Level tL && chunkNow(tL, aX >> 4, aZ >> 4) != null;
+	}
+
+	/** ЦЕНТР чтения чанка (правка №2, 2026-08-09): единственный способ мода получить чанк для ЧТЕНИЯ.
+	 *  НИКОГДА не грузит чанк, НИКОГДА не ставит тикет (грузящий Level.getChunk ставит unknown-тикет на
+	 *  КАЖДЫЙ вызов даже по уже загруженному чанку — ServerChunkCache.java:242; замер BUG-106: эти тикеты
+	 *  держали 4769 серверных чанков при норме ~1400). Сервер: зеркало getChunkNow (ServerChunkCache.java:182-211),
+	 *  но без гейта «только main-поток» — лок-фри цепь видимый-холдер → getChunkIfPresent(FULL) (AtomicReference,
+	 *  без join; тот же приём, что teNonForcing ниже). Клиент: ClientChunkCache.getChunk(...,false) — чтение карты.
+	 *  null = чанк не загружен до FULL → для читателей это «воздух/нет», контракт 1.7.10 blockExists+EmptyChunk. */
+	public static net.minecraft.world.level.chunk.LevelChunk chunkNow(Level aWorld, int aChunkX, int aChunkZ) {
+		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
+			net.minecraft.server.level.ChunkHolder tHolder = tSL.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.pack(aChunkX, aChunkZ));
+			if (tHolder == null) return null;
+			if (tHolder.currentlyLoading != null) return tHolder.currentlyLoading; // neo-патч анти-дедлока: чанк в процессе load
+			net.minecraft.world.level.chunk.ChunkAccess tChunk = tHolder.getChunkIfPresent(net.minecraft.world.level.chunk.status.ChunkStatus.FULL);
+			return tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
+		}
+		return aWorld.getChunkSource().getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, F) instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
+	}
+
+	/** ЦЕНТР гейта «блоки здесь тикают» (правка №2в, решение пользователя 2026-08-09: «где замерла вода —
+	 *  замирает и труба», один закон для GT6 и ванили). Движковый предикат ServerLevel.shouldTickBlocksAt
+	 *  (ServerLevel.java:480 → DistanceManager.inBlockTickingRange) — ровно тот же гейт, которым движок
+	 *  выключает BlockEntityTicker, случайные тики и жидкости в пограничных чанках. В 1.7.10 градации не было
+	 *  (любой загруженный чанк тикал целиком) — глобальные тик-списки GT6 без этого гейта тикали технику там,
+	 *  где движок уже всё заморозил. Не-BlockEntity (нет позиции) не гейтится. */
+	public static boolean blockTicking(Object aTileEntity) {
+		if (!(aTileEntity instanceof BlockEntity tTE)) return T;
+		Level tLevel = tTE.getLevel();
+		return !(tLevel instanceof net.minecraft.server.level.ServerLevel tSL) || tSL.shouldTickBlocksAt(tTE.getBlockPos());
+	}
+	public static boolean blockTicking(LevelAccessor aWorld, BlockPos aPos) {
+		return !(aWorld instanceof net.minecraft.server.level.ServerLevel tSL) || tSL.shouldTickBlocksAt(aPos);
+	}
+
+	/** ЦЕНТР чтения стейта (правка №2): все чтения блоков внутри WD идут сюда. Level → через chunkNow
+	 *  (невыгружено = воздух, без тикетов); прочие BlockGetter (вью чанка, рендер-регион) — прямое чтение,
+	 *  оно неблокирующее по природе. */
+	public static BlockState state(BlockGetter aView, BlockPos aPos) {
+		if (aView instanceof Level tL) {
+			if (tL.isOutsideBuildHeight(aPos)) return NB.defaultBlockState();
+			net.minecraft.world.level.chunk.LevelChunk tChunk = chunkNow(tL, aPos.getX() >> 4, aPos.getZ() >> 4);
+			return tChunk == null ? NB.defaultBlockState() : tChunk.getBlockState(aPos);
+		}
+		return aView.getBlockState(aPos);
 	}
 	/** F-world: 1.7.10 World-небовидимость(x,y,z) -> neo canSeeSky(BlockPos) (BlockAndLightGetter.java:17). */
 	public static boolean canSeeSky(LevelAccessor aWorld, int aX, int aY, int aZ) {
@@ -573,7 +623,7 @@ public class WD {
 	 *  держали цветок на камне и в воздухе (замер gt6flowerprobe, 2026-07-30). */
 	public static boolean canSustainPlant(LevelAccessor aWorld, int aX, int aY, int aZ, Direction aSide, Block aPlant) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
-		BlockState tSoil = aWorld.getBlockState(tPos);
+		BlockState tSoil = state(aWorld, tPos);
 		net.minecraft.util.TriState tDecision = tSoil.getBlock().canSustainPlant(tSoil, aWorld, tPos, aSide, aPlant.defaultBlockState());
 		if (tDecision != net.minecraft.util.TriState.DEFAULT) return tDecision.isTrue();
 		Block tSelf = tSoil.getBlock(), tHead = gregapi.data.CS.Flattened.headOf(tSelf);
@@ -581,10 +631,10 @@ public class WD {
 		if (aPlant == Blocks.CACTUS)      return tSelf == Blocks.CACTUS || tHead == Blocks.SAND;  // кактус-на-кактусе (:2222) + Desert (:2239)
 		if (aPlant == Blocks.SUGAR_CANE)  return tSelf == Blocks.SUGAR_CANE                       // тростник-на-тростнике (:2227) + Beach (:2245-2251)
 			|| ((tSelf == Blocks.GRASS_BLOCK || tHead == Blocks.DIRT || tHead == Blocks.SAND)
-				&& (aWorld.getBlockState(tPos.west()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
-				 || aWorld.getBlockState(tPos.east()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
-				 || aWorld.getBlockState(tPos.north()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
-				 || aWorld.getBlockState(tPos.south()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)));
+				&& (state(aWorld, tPos.west()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
+				 || state(aWorld, tPos.east()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
+				 || state(aWorld, tPos.north()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
+				 || state(aWorld, tPos.south()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)));
 		if (aPlant == Blocks.NETHER_WART) return tSelf == Blocks.SOUL_SAND;                       // Nether (:2240)
 		if (aPlant == Blocks.WHEAT)       return tSelf == Blocks.FARMLAND;                        // Crop (:2241)
 		if (aPlant == Blocks.LILY_PAD)    return tSoil.getFluidState().isSource() && tSoil.getFluidState().is(net.minecraft.tags.FluidTags.WATER); // Water (:2244: материал water + мета 0)
@@ -1138,16 +1188,21 @@ public class WD {
 	public static float rainfall(Biome aBiome) {return aBiome == null ? 0 : aBiome.getModifiedClimateSettings().downfall();}
 	/** было World.getLightBrightness(x,y,z) (float 0..1) -> LevelLightEngine.getRawBrightness(pos,0)/15 (LevelLightEngine.java:146, Level.getLightEngine() :375). */
 	public static float lightBrightness(LevelAccessor aWorld, int aX, int aY, int aZ) {return aWorld == null ? 0 : aWorld.getLightEngine().getRawBrightness(new BlockPos(aX, aY, aZ), 0) / 15.0F;}
-	/** было World.getPrecipitationHeight(x,z) -> Level.getHeight(Heightmap.MOTION_BLOCKING,x,z) (Level.java:359, Heightmap:147). */
-	public static int precipitationHeight(LevelAccessor aWorld, int aX, int aZ) {return aWorld == null ? 0 : aWorld.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, aX, aZ);}
+	/** было World.getPrecipitationHeight(x,z) -> карта высот чанка. БЕЗ-ПОДГРУЗКИ (правка №2): Level.getHeight
+	 *  шёл через грузящий getChunk(FULL,true) (тикет на каждый вызов); 1.7.10 на невыгруженном давал 0 (EmptyChunk). */
+	public static int precipitationHeight(LevelAccessor aWorld, int aX, int aZ) {
+		if (!(aWorld instanceof Level tL)) return 0;
+		net.minecraft.world.level.chunk.LevelChunk tChunk = chunkNow(tL, aX >> 4, aZ >> 4);
+		return tChunk == null ? 0 : tChunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, aX & 15, aZ & 15) + 1; // +1: getHeight чанка отдаёт Y верхнего блока, Level.getHeight — первый свободный
+	}
 	/** было Block.dropBlockAsItem(world,x,y,z,meta,fortune) (лут блока, удалён) -> Block.dropResources(state,level,pos) (Block.java:380).
 	 *  F6/F13 functional-adapted: fortune-параметр не нужен (все вызыватели fortune=0; dropResources — дефолтный лут). */
-	public static void dropBlockAsItem(LevelAccessor aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {if (aWorld == null) return; BlockPos tPos = new BlockPos(aX, aY, aZ); Block.dropResources(aWorld.getBlockState(tPos), aWorld, tPos, aWorld.getBlockEntity(tPos));} // 4-арг dropResources(BlockState,LevelAccessor,BlockPos,BlockEntity) (Block.java:389) — принимает LevelAccessor (3-арг брал Level)
+	public static void dropBlockAsItem(LevelAccessor aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {if (aWorld == null) return; BlockPos tPos = new BlockPos(aX, aY, aZ); Block.dropResources(state(aWorld, tPos), aWorld, tPos, te(aWorld, tPos, F));} // 4-арг dropResources(BlockState,LevelAccessor,BlockPos,BlockEntity) (Block.java:389) — принимает LevelAccessor (3-арг брал Level)
 	/** было Block.dropBlockAsItem(world,x,y,z,ItemStack) (конкретный стек) -> Block.popResource(level,pos,stack) (Block.java:407, приёмник Level — спавн ItemEntity, gameplay). */
 	public static void dropBlockAsItem(Level aWorld, int aX, int aY, int aZ, ItemStack aStack) {if (aWorld != null && ST.valid(aStack)) Block.popResource(aWorld, new BlockPos(aX, aY, aZ), aStack);}
 	/** было Block.getCollisionBoundingBoxFromPool(w,x,y,z) (world-space AABB или null) -> getCollisionShape(w,pos).bounds().move(x,y,z)
 	 *  (VoxelShape.bounds:39/isEmpty:73, AABB.move:220); пустая форма -> null (1:1 с 1.7.10 «нет коллизии»). */
-	public static AABB collisionBox(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {if (aWorld == null) return null; BlockPos tPos = new BlockPos(aX, aY, aZ); net.minecraft.world.phys.shapes.VoxelShape tShape = aWorld.getBlockState(tPos).getCollisionShape(aWorld, tPos); return tShape.isEmpty() ? null : tShape.bounds().move(aX, aY, aZ);}
+	public static AABB collisionBox(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {if (aWorld == null) return null; BlockPos tPos = new BlockPos(aX, aY, aZ); net.minecraft.world.phys.shapes.VoxelShape tShape = state(aWorld, tPos).getCollisionShape(aWorld, tPos); return tShape.isEmpty() ? null : tShape.bounds().move(aX, aY, aZ);}
 	/** было World.checkNoEntityCollision(AABB) (нет сущностей в боксе) -> EntityGetter.getEntities(null,bb).isEmpty() (EntityGetter:29); null-бокс -> true (нет коллизии). */
 	public static boolean noEntityCollision(LevelAccessor aWorld, AABB aBox) {return aWorld == null || aBox == null || aWorld.getEntities((Entity)null, aBox).isEmpty();}
 	public static boolean noEntityCollision(LevelAccessor aWorld, AABB aBox, Entity aExcept) {return aWorld == null || aBox == null || aWorld.getEntities(aExcept, aBox).isEmpty();}
@@ -1242,7 +1297,7 @@ public class WD {
 	}
 	
 	public static ItemStack stack(LevelAccessor aWorld, int aX, int aY, int aZ) {
-		Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
+		Block tBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		// было aWorld.getBlockMetadata(x,y,z) в ветке else — числовой меты в neo больше нет (МОДЕЛЬ МЕТЫ п.4):
 		// для ванильных блоков (не IBlockExtendedMetaData) возвращаем 0, не выдумывая числовую таблицу.
 		return ST.make(tBlock, 1, tBlock instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX, aY, aZ) : 0);
@@ -1253,7 +1308,7 @@ public class WD {
 		// (Level.java:333); старое/новое состояние не отслеживались раздельно, тот же приём уже применён в
 		// GT_API_Proxy.java:1316 (getBlockState дважды, flags=3=UPDATE_ALL).
 		BlockPos tUpdPos = new BlockPos(aX, aY, aZ);
-		BlockState tUpdState = ((Level)aWorld).getBlockState(tUpdPos);
+		BlockState tUpdState = state(aWorld, tUpdPos);
 		((Level)aWorld).sendBlockUpdated(tUpdPos, tUpdState, tUpdState, 3);
 		if (CLIENT_BLOCKUPDATE_SOUNDS && CODE_CLIENT && CLIENT_TIME > 100) {
 			Player tPlayer = GT_API.api_proxy.getThePlayer();
@@ -1265,14 +1320,14 @@ public class WD {
 	
 	// было aWorld.getBlock(x,y,z) — neo: BlockGetter.getBlockState(BlockPos).getBlock() (BlockGetter.java:32); было
 	// WD.exists(aWorld, x, y, z) — Level.isLoaded(BlockPos) (Level.java:695).
-	public static Block block(BlockGetter aWorld, int aX, int aY, int aZ) {return aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock();}
-	public static Block block(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.hasChunkAt(tP) ? aWorld.getBlockState(tP).getBlock() : NB;}
+	public static Block block(BlockGetter aWorld, int aX, int aY, int aZ) {return state(aWorld, new BlockPos(aX, aY, aZ)).getBlock();}
+	public static Block block(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? state(aWorld, tP).getBlock() : NB;}
 	public static Block block(LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
 	public static Block block(LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
 	// МОДЕЛЬ МЕТЫ п.4: числовой меты в neo больше нет — для IBlockExtendedMetaData (свои блоки, п.1) реальное
 	// значение, иначе 0 (не выдумываем числовую таблицу для ванильных блоков).
 	public static byte  meta (BlockGetter aWorld, int aX, int aY, int aZ) {
-		BlockState tState = aWorld.getBlockState(new BlockPos(aX, aY, aZ)); Block tB = tState.getBlock();
+		BlockState tState = state(aWorld, new BlockPos(aX, aY, aZ)); Block tB = tState.getBlock();
 		// BUG-025: 1.7.10-котёл (один блок, мета 0-3 = уровень воды) движок (1.13+) разложил на CAULDRON(пусто, без
 		// свойства уровня) / WATER_CAULDRON(LayeredCauldronBlock, LEVEL 1-3) — читаем уровень из split-блока, чтобы
 		// GT6-код (труба) видел мету котла как в 1.7.10 (getBlockMetadata давал 0-3). Пусто = 0 (ниже, дефолт).
@@ -1283,7 +1338,24 @@ public class WD {
 		// «а не нужного ли уже цвета блок» (Behavior_Spray_Color.colorize:167) всегда ложны. Карты — тот же центр.
 		int tFlat = gregapi.data.CS.Flattened.metaOf(tB);
 		if (tFlat >= 0) return UT.Code.bind4(tFlat);
-		return UT.Code.bind4(tB instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)tB).getExtendedMetaData(aWorld, aX, aY, aZ) : 0);
+		if (tB instanceof IBlockExtendedMetaData) return UT.Code.bind4(((IBlockExtendedMetaData)tB).getExtendedMetaData(aWorld, aX, aY, aZ));
+		return UT.Code.bind4(vanillaFluidLevel(tState));
+	}
+	/** УРОВЕНЬ ВАНИЛЬНОЙ ЖИДКОСТИ (вода/лава). В 1.7.10 {@code getBlockMetadata} у воды возвращал уровень
+	 *  (0 — источник, 1-7 — убывающий поток, 8 — падающая), и на этом стоит вся 1.7.10-логика GT6: счёт
+	 *  соседей-источников ({@code BlockSwamp:106-108}, {@code BlockOcean:113,119,129}, {@code BlockRiver:94}),
+	 *  кванты растекания ({@code BlockWaterlike.getQuantaValue:227}), «черпается только источник»
+	 *  ({@code Behavior_Bucket_Container:55,62}, {@code TileEntityBase08FluidContainer:303,316}), опора кувшинки
+	 *  ({@code BlockBaseLilyPad:86,123}). Носитель того же числа в neo — {@code LiquidBlock.LEVEL}
+	 *  (LiquidBlock.java:125-128: {@code stateCache.get(min(level,8))}), семантика совпадает 1:1.
+	 *  <p>Без этой ветки любая вода читалась как «мета 0 = источник»: болотный ПОТОК рядом с ручьём становился
+	 *  ИСТОЧНИКОМ ({@code BlockSwamp:161}), источник никогда не самоудалялся ({@code BlockSwamp:155}), а кванты
+	 *  у воды всегда были полными (8) — фронт болота не затухал и расползался за пределы биома.
+	 *  <p>Собственные жидкости GT6 сюда не попадают: они {@link IBlockExtendedMetaData} (ветка выше), их
+	 *  кванты живут в {@code FLUID_META}, а унаследованный от {@code LiquidBlock} {@code LEVEL} всегда 0
+	 *  (BlockFluidBaseGT.java:152-154). Тот же приём, что уже применён к расщеплённому котлу выше. */
+	private static int vanillaFluidLevel(BlockState aState) {
+		return aState.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock ? aState.getValue(net.minecraft.world.level.block.LiquidBlock.LEVEL) : 0;
 	}
 	/** F13-контракт: мета из СНИМКА BlockState (BlockDropsEvent.getState() / mineBlock aState). В neo removeBlock
 	 *  происходит ДО дропов и Item.mineBlock (в 1.7.10 — ПОСЛЕ), поэтому meta(aWorld,x,y,z) на harvest-путях читает
@@ -1292,14 +1364,14 @@ public class WD {
 	 *  мета-семей, SHAPE+POWERED у рельса) → делегат в IBlockExtendedMetaData.getExtendedMetaData(BlockState)
 	 *  (дефолт интерфейса = прежний META-хардкод, поведение семей 1:1). */
 	public static byte  meta (net.minecraft.world.level.block.state.BlockState aState) {
-		if (!(aState.getBlock() instanceof IBlockExtendedMetaData)) return 0;
+		if (!(aState.getBlock() instanceof IBlockExtendedMetaData)) return UT.Code.bind4(vanillaFluidLevel(aState)); // уровень ванильной жидкости — тот же канал, что в позиционной перегрузке выше
 		return UT.Code.bind4(((IBlockExtendedMetaData)aState.getBlock()).getExtendedMetaData(aState));
 	}
-	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.hasChunkAt(new BlockPos(aX, aY, aZ)) ? meta((BlockGetter)aWorld, aX, aY, aZ) : 0;}
+	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? meta((BlockGetter)aWorld, aX, aY, aZ) : 0;}
 	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return meta(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
 	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide) {return meta(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
 	public static byte  meta (long aBitAnd, BlockGetter aWorld, int aX, int aY, int aZ) {return UT.Code.bind4(meta(aWorld, aX, aY, aZ) & aBitAnd);}
-	public static byte  meta (long aBitAnd, LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.hasChunkAt(new BlockPos(aX, aY, aZ)) ? UT.Code.bind4(meta((BlockGetter)aWorld, aX, aY, aZ) & aBitAnd) : 0;}
+	public static byte  meta (long aBitAnd, LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? UT.Code.bind4(meta((BlockGetter)aWorld, aX, aY, aZ) & aBitAnd) : 0;}
 	public static byte  meta (long aBitAnd, LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return meta(aBitAnd, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
 	public static byte  meta (long aBitAnd, LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide) {return meta(aBitAnd, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
 	
@@ -1316,7 +1388,7 @@ public class WD {
 	public static boolean rotateBlock(LevelAccessor aWorld, int aX, int aY, int aZ, Direction aAxis) {
 		if (aWorld == null) return F;
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
-		BlockState tState = aWorld.getBlockState(tPos);
+		BlockState tState = state(aWorld, tPos);
 		BlockState tRotated = tState.rotate(net.minecraft.world.level.block.Rotation.CLOCKWISE_90);
 		return tRotated != tState && aWorld.setBlock(tPos, tRotated, 3);
 	}
@@ -1335,7 +1407,7 @@ public class WD {
 			net.minecraft.world.phys.shapes.VoxelShape tShape = aBlock.defaultBlockState().getCollisionShape(aWorld, tPos);
 			if (!tShape.isEmpty() && !noEntityCollision(aWorld, tShape.bounds().move(aX, aY, aZ), aEntity)) return F;
 		}
-		return aWorld.getBlockState(tPos).canBeReplaced();
+		return state(aWorld, tPos).canBeReplaced();
 	}
 
 	/** ЦЕНТР гейта дропа от взрыва (BUG-024; консолидация BUG-047-ревизии — были копии в BlockBase/PrefixBlock/
@@ -1351,14 +1423,14 @@ public class WD {
 	 *  установки блока; решение «была ли вода» вызыватель снимает ДО неё (сам сет воду затирает). */
 	public static boolean waterlog(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
-		BlockState tState = aWorld.getBlockState(tPos);
+		BlockState tState = state(aWorld, tPos);
 		if (!tState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)) return F;
 		return aWorld.setBlock(tPos, tState.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.TRUE), 3);
 	}
 
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
-			Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
+			Block tBlock = state(aWorld, new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
 			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)
 		}
 		// BUG-025: движок (1.13+) разложил 1.7.10-котёл (один блок, мета 0-3 = уровень воды) на РАЗНЫЕ реестровые блоки:
@@ -1388,7 +1460,7 @@ public class WD {
 		// TE-мета (PrefixBlock: getStateForExtendedMetaData=null) — прежний двухфазный путь. Для ванильных aMeta теряется (форс движка).
 		BlockPos tSetPos = new BlockPos(aX, aY, aZ);
 		if (aBlock instanceof IBlockExtendedMetaData) {
-			BlockState tCur = aWorld.getBlockState(tSetPos);
+			BlockState tCur = state(aWorld, tSetPos);
 			BlockState tNew = ((IBlockExtendedMetaData)aBlock).getStateForExtendedMetaData(tCur.getBlock() == aBlock ? tCur : aBlock.defaultBlockState(), Code.bind4(aMeta));
 			if (tNew != null) return aWorld.setBlock(tSetPos, tNew, (int)aFlags);
 		}
@@ -1453,7 +1525,7 @@ public class WD {
 			if (tMeta < 8) return aBlock.defaultBlockState()
 				.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER)
 				.setValue(net.minecraft.world.level.block.DoorBlock.FACING, DIR_1710_DOOR[tMeta & 3]);
-			BlockState tLower = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ));
+			BlockState tLower = state(aWorld, new BlockPos(aX, aY-1, aZ));
 			BlockState rDoor = aBlock.defaultBlockState()
 				.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER)
 				.setValue(net.minecraft.world.level.block.DoorBlock.HINGE, (tMeta & 1) == 0 ? net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT : net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT);
@@ -1651,9 +1723,9 @@ public class WD {
 	public static boolean leafdecay(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, boolean aOnlyTopArea, boolean aTreeCapitator) {
 		// F-tree: Forge Block.canSustainLeaves (блок держит листву от распада — брёвна) удалён -> neo тег
 		// BlockTags.LOGS (BlockTags.java:38; leaf-decay в neo смотрит именно логи), проверка на состоянии.
-		if (aBlock == null || aWorld.getBlockState(new BlockPos(aX, aY, aZ)).is(net.minecraft.tags.BlockTags.LOGS)) {
+		if (aBlock == null || state(aWorld, new BlockPos(aX, aY, aZ)).is(net.minecraft.tags.BlockTags.LOGS)) {
 			for (int j = (aOnlyTopArea ? 0 : -7); j <= 7; ++j) for (int i = -7; i <= 7; ++i) for (int k = -7; k <= 7; ++k) {
-				Block tBlock = aWorld.getBlockState(new BlockPos(aX+i, aY+j, aZ+k)).getBlock(); // было aWorld.getBlock(x+i,y+j,z+k)
+				Block tBlock = state(aWorld, new BlockPos(aX+i, aY+j, aZ+k)).getBlock(); // было aWorld.getBlock(x+i,y+j,z+k)
 				if (tBlock != NB) {
 					if (tBlock == Blocks.BROWN_MUSHROOM_BLOCK || tBlock == Blocks.RED_MUSHROOM_BLOCK) {
 						if (aTreeCapitator && Math.abs(i) <= 4 && Math.abs(k) <= 4 && j <= 0 && j >= -2) aWorld.destroyBlock(new BlockPos(aX+i, aY+j, aZ+k), T); // было aWorld.func_147480_a(x,y,z,drop) — LevelWriter.destroyBlock(BlockPos,boolean) (LevelWriter.java:18)
@@ -1691,16 +1763,16 @@ public class WD {
 	// (decisions/F5-fluids.md §5): ЕДИНЫЙ маркер GT6-жидкости — BlockFluidBaseGT, его наследники BlockWaterlike
 	// (classic) / BlockBaseFluid (finite). GT6-жидкости IFluidBlock/LiquidBlock НЕ несут → классификаторы ниже
 	// спрашивают этот живой центр (тот же приём, что WD.getMaterial:530). LiquidBlock=ваниль, IFluidBlock=чужие моды (интероп).
-	public static boolean liquid(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean liquid(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof gregapi.block.fluid.BlockFluidBaseGT || aBlock instanceof IFluidBlock;} // было BlockLiquid || IFluidBlock; BlockFluidBaseGT = GT6-жидкости (IFluidBlock не несут)
 
-	public static boolean liquid_classic(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_classic(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean liquid_classic(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_classic(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof BlockWaterlike;} // было BlockLiquid || BlockFluidClassic; BlockWaterlike = classic-стиль GT6
 
-	public static boolean liquid_finite(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_finite(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean liquid_finite(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_finite(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid_finite(Block aBlock) {return aBlock instanceof gregapi.block.fluid.BlockBaseFluid;} // было BlockFluidFinite; BlockBaseFluid = finite-стиль GT6 (единственный вызыватель — MultiTileEntityFluidSpring)
 
-	public static boolean liquid_borken(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_borken(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean liquid_borken(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_borken(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid_borken(Block aBlock) {return !(aBlock instanceof IItemGT) && liquid_classic(aBlock);}
 	
 	public static boolean stone(Block aBlock, short aMeta) {
@@ -1710,7 +1782,7 @@ public class WD {
 		return BlocksGT.stoneToNormalOres.containsKey(tStack) || BlocksGT.stoneToBrokenOres.containsKey(tStack) || BlocksGT.stoneToSmallOres.containsKey(tStack);
 	}
 	
-	public static boolean floor(LevelAccessor aWorld, int aX, int aY, int aZ) {return floor(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean floor(LevelAccessor aWorld, int aX, int aY, int aZ) {return floor(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean floor(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return WD.sideSolid(aBlock, aWorld, aX, aY, aZ, FORGE_DIR[SIDE_UP]) || floor(aBlock);}
 	public static boolean floor(Block aBlock) {return WD.opaque(aBlock) || aBlock instanceof SlabBlock || aBlock instanceof StairBlock || aBlock instanceof BlockMetaType;}
 	
@@ -1719,7 +1791,7 @@ public class WD {
 	public static boolean ore_stone(Block aBlock, short aMeta) {return ore(aBlock, aMeta) || stone(aBlock, aMeta);}
 	
 	public static boolean visOcc(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return visOpq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && visOpq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && visOpq(aWorld, aX, aY+1, aZ, T, aDefault) && visOpq(aWorld, aX, aY-1, aZ, T, aDefault) && visOpq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && visOpq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
-	public static boolean visOpq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.hasChunkAt(tP) ? visOpq(aWorld.getBlockState(tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
+	public static boolean visOpq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? visOpq(state(aWorld, tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
 	// F3-render КОРЕНЬ «грань GT6-блока пропадает на стыке с забором/слабом/любым НЕ-полным соседом»: 1.7.10 скрывал грань,
 	// если сосед isOpaqueCube() (ПОЛНЫЙ непрозрачный куб). Порт ошибочно взял canOcclude() (WD.opaque) — а он TRUE и для слабов/
 	// лестниц/заборов (они окклюдят ЧАСТИЧНО) → грань GT6-блока против них скрывалась. Верный neo-эквивалент isOpaqueCube =
@@ -1727,30 +1799,30 @@ public class WD {
 	public static boolean visOpq(Block aBlock) {return aBlock.defaultBlockState().isSolidRender() || VISUALLY_OPAQUE_BLOCKS.contains(aBlock);}
 	
 	public static boolean occ(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return opq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && opq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && opq(aWorld, aX, aY+1, aZ, T, aDefault) && opq(aWorld, aX, aY-1, aZ, T, aDefault) && opq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && opq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
-	public static boolean opq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.hasChunkAt(tP) ? opq(aWorld.getBlockState(tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
+	public static boolean opq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? opq(state(aWorld, tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
 	public static boolean opq(Block aBlock) {return WD.opaque(aBlock) && !(aBlock instanceof LeavesBlock);}
 	
-	public static boolean air(LevelAccessor aWorld, int aX, int aY, int aZ) {return air(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean air(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir() && !(MD.TC.mLoaded && !WD.opaque(aBlock) && te(aWorld, aX, aY, aZ, T) instanceof INode));} // было aBlock.isAir(world,x,y,z) — BlockBehaviour.java:575 state.isAir()
+	public static boolean air(LevelAccessor aWorld, int aX, int aY, int aZ) {return air(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean air(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || (state(aWorld, new BlockPos(aX, aY, aZ)).isAir() && !(MD.TC.mLoaded && !WD.opaque(aBlock) && te(aWorld, aX, aY, aZ, T) instanceof INode));} // было aBlock.isAir(world,x,y,z) — BlockBehaviour.java:575 state.isAir()
 	public static boolean air(Block aBlock) {return aBlock == NB;}
 	/** BlockGetter-вариант (без Level-only TC/INode-проверки): чистый air-тест для блок-физики (canDisplace и т.п.). */
-	public static boolean air(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir();}
+	public static boolean air(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || state(aWorld, new BlockPos(aX, aY, aZ)).isAir();}
 	
-	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ) {return lava(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ) {return lava(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == Blocks.LAVA || aBlock == Blocks.LAVA;}
 	public static boolean lava(Block aBlock) {return aBlock == Blocks.LAVA || aBlock == Blocks.LAVA;}
 	
-	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ) {return water(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ) {return water(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == Blocks.WATER || aBlock == Blocks.WATER;}
 	public static boolean water(Block aBlock) {return aBlock == Blocks.WATER || aBlock == Blocks.WATER;}
 	
 	public static boolean waterstream(Block aBlock) {return MD.Streams.mLoaded && UT.Code.stringValidate(ST.regName(aBlock)).startsWith("streams:river/tile.water");}
 	
-	public static boolean anywater(BlockGetter aWorld, int aX, int aY, int aZ) {return anywater(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean anywater(BlockGetter aWorld, int aX, int aY, int aZ) {return anywater(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean anywater(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock instanceof BlockWaterlike || water(aWorld, aX, aY, aZ, aBlock) || waterstream(aBlock);}
 	public static boolean anywater(Block aBlock) {return aBlock instanceof BlockWaterlike || water(aBlock) || waterstream(aBlock);}
 	
-	public static boolean bedrock(LevelAccessor aWorld, int aX, int aY, int aZ) {return bedrock(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean bedrock(LevelAccessor aWorld, int aX, int aY, int aZ) {return bedrock(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean bedrock(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return bedrock(aBlock);}
 	public static boolean bedrock(Block aBlock) {return aBlock == Blocks.BEDROCK || IL.BTL_Bedrock.equal(aBlock);}
 	
@@ -1764,11 +1836,11 @@ public class WD {
 		return IL.AETHER_Tall_Grass.equal(aBlock);
 	}
 	
-	public static boolean irrelevant(LevelAccessor aWorld, int aX, int aY, int aZ) {return irrelevant(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean irrelevant(LevelAccessor aWorld, int aX, int aY, int aZ) {return irrelevant(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean irrelevant(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock == Blocks.VINE || aBlock == Blocks.SNOW || aBlock == Blocks.FIRE || grass(aWorld, aX, aY, aZ) || anywater(aBlock);}
 	
-	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || aWorld.getBlockState(new BlockPos(aX, aY, aZ)).canBeReplaced();}
+	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || state(aWorld, new BlockPos(aX, aY, aZ)).canBeReplaced();}
 
 	/** F6-worldgen, класс «потерянный каскад опоры». В 1.7.10 вордген достраивал мир по ЖИВОМУ {@code World.setBlock}
 	 *  с оповещением соседей, и движок сам ронял то, что осталось без опоры ({@code BlockDoublePlant
@@ -1823,13 +1895,13 @@ public class WD {
 	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ              ) {int tLevel = waterLevel(aWorld); return                                                                                       UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));}
 	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {int tLevel = waterLevel(aWorld); return waterstream(aBlock) || ((aBlock == Blocks.WATER || aBlock == Blocks.WATER) && UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ))));}
 	
-	public static boolean hasCollide(LevelAccessor aWorld, int aX, int aY, int aZ) {return hasCollide(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean hasCollide(LevelAccessor aWorld, int aX, int aY, int aZ) {return hasCollide(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	// было aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null — BlockState.getCollisionShape(level,pos).isEmpty()
 	// перевёрнуто (BlockBehaviour.java:674; VoxelShape.isEmpty(), VoxelShape.java:73); isOpaqueCube() не тронут.
-	public static boolean hasCollide(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return WD.opaque(aBlock) || !aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getCollisionShape(aWorld, new BlockPos(aX, aY, aZ)).isEmpty();}
+	public static boolean hasCollide(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return WD.opaque(aBlock) || !state(aWorld, new BlockPos(aX, aY, aZ)).getCollisionShape(aWorld, new BlockPos(aX, aY, aZ)).isEmpty();}
 
-	public static boolean hasCollide(LevelAccessor aWorld, BlockPos aCoords) {return hasCollide(aWorld, aCoords, aWorld.getBlockState(aCoords).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean hasCollide(LevelAccessor aWorld, BlockPos aCoords, Block aBlock) {return WD.opaque(aBlock) || !aWorld.getBlockState(aCoords).getCollisionShape(aWorld, aCoords).isEmpty();} // было aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null
+	public static boolean hasCollide(LevelAccessor aWorld, BlockPos aCoords) {return hasCollide(aWorld, aCoords, state(aWorld, aCoords).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean hasCollide(LevelAccessor aWorld, BlockPos aCoords, Block aBlock) {return WD.opaque(aBlock) || !state(aWorld, aCoords).getCollisionShape(aWorld, aCoords).isEmpty();} // было aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null
 	
 	public static boolean flaming(LevelAccessor aWorld, int aX, int aY, int aZ) {return block(aWorld, aX, aY, aZ, F) instanceof FireBlock;}
 	public static boolean burning(LevelAccessor aWorld, int aX, int aY, int aZ) {return flaming(aWorld, aX, aY, aZ) || flaming(aWorld, aX+1, aY, aZ) || flaming(aWorld, aX-1, aY, aZ) || flaming(aWorld, aX, aY+1, aZ) || flaming(aWorld, aX, aY-1, aZ) || flaming(aWorld, aX, aY, aZ+1) || flaming(aWorld, aX, aY, aZ-1);}
@@ -1840,14 +1912,14 @@ public class WD {
 	public static boolean fire(LevelAccessor aWorld, BlockPos aCoords, boolean aCheckFlammability) {return fire(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aCheckFlammability);}
 	public static boolean fire(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aCheckFlammability) {
 		BlockPos tFirePos = new BlockPos(aX, aY, aZ);
-		Block tBlock = aWorld.getBlockState(tFirePos).getBlock(); // было aWorld.getBlock(x,y,z)
+		Block tBlock = state(aWorld, tFirePos).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (WD.getMaterial(tBlock) == Material.lava || WD.getMaterial(tBlock) == Material.fire) return F;
 		// было tBlock.getCollisionBoundingBoxFromPool(world,x,y,z)==null — BlockState.getCollisionShape(level,pos).isEmpty() (BlockBehaviour.java:674)
-		if (WD.getMaterial(tBlock) == Material.carpet || aWorld.getBlockState(tFirePos).getCollisionShape(aWorld, tFirePos).isEmpty()) {
+		if (WD.getMaterial(tBlock) == Material.carpet || state(aWorld, tFirePos).getCollisionShape(aWorld, tFirePos).isEmpty()) {
 			if (MD.TC.mLoaded && te(aWorld, aX, aY, aZ, T) instanceof INode) return F;
 			// F-block: IBlockExtension.getFlammability(int meta,world,x,y,z,dir) -> BlockState.getFlammability(
 			// BlockGetter,BlockPos,Direction) (IBlockExtension.java:677) — на состоянии, не на Block.
-			if (aWorld.getBlockState(tFirePos).getFlammability(aWorld, tFirePos, FORGE_DIR[SIDE_ANY]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE,0,3)
+			if (state(aWorld, tFirePos).getFlammability(aWorld, tFirePos, FORGE_DIR[SIDE_ANY]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE,0,3)
 			if (tBlock instanceof IItemGT) return F;
 			if (aCheckFlammability) {
 				for (byte tSide : ALL_SIDES_VALID) {
@@ -1855,7 +1927,7 @@ public class WD {
 					Block tAdjacent = block(aWorld, aX, aY, aZ, tSide);
 					if (tAdjacent == Blocks.CHEST || tAdjacent == Blocks.TRAPPED_CHEST) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE) (3-арг default meta=0,flags=3)
 					// F-block: getFlammability на BlockState соседа (IBlockExtension.java:677), pos соседа вычислен.
-					if (aWorld.getBlockState(tAdjPos).getFlammability(aWorld, tAdjPos, FORGE_DIR_OPPOSITES[tSide]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE)
+					if (state(aWorld, tAdjPos).getFlammability(aWorld, tAdjPos, FORGE_DIR_OPPOSITES[tSide]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE)
 				}
 			} else {
 				return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE,0,3)
@@ -1865,7 +1937,7 @@ public class WD {
 	}
 	
 	public static boolean oreGenReplaceable(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aAllowAir) {
-		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
+		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB) return aAllowAir;
 		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z) — централизованный meta(...), МОДЕЛЬ МЕТЫ п.4
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
@@ -1884,7 +1956,7 @@ public class WD {
 	
 	public static boolean setOre(LevelAccessor aWorld, int aX, int aY, int aZ, short aID) {
 		if (aID <= 0 && aID == W) return F;
-		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
+		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB) return F;
 		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z)
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
@@ -1905,7 +1977,7 @@ public class WD {
 	
 	public static boolean setSmallOre(LevelAccessor aWorld, int aX, int aY, int aZ, short aID) {
 		if (aID <= 0 && aID == W) return F;
-		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
+		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB || WD.bedrock(aBlock)) return F;
 		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z)
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
@@ -1924,12 +1996,12 @@ public class WD {
 	public static boolean removeBedrock(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		// было aWorld.getBlock(x,y,z) + WD.dimensionId(aWorld)==DIM_NETHER — Level.dimension()==Level.NETHER,
 		// тот же приём F6, что уже применён у dimOverworldLike/dimPlanet выше в этом файле.
-		Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(), tStone = (dimKey(aWorld) == Level.NETHER ? Blocks.NETHERRACK : Blocks.STONE);
+		Block tBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(), tStone = (dimKey(aWorld) == Level.NETHER ? Blocks.NETHERRACK : Blocks.STONE);
 
 		if (tBlock == NB || bedrock(tBlock)) {
 			for (byte tSide : ALL_SIDES_BUT_BOTTOM) for (int i = 1; i < 7; i++) {
 				BlockPos tRBPos = new BlockPos(aX+OFFX[tSide]*i, aY+OFFY[tSide]*i, aZ+OFFZ[tSide]*i);
-				tBlock = aWorld.getBlockState(tRBPos).getBlock(); // было aWorld.getBlock(x,y,z)
+				tBlock = state(aWorld, tRBPos).getBlock(); // было aWorld.getBlock(x,y,z)
 				if (tBlock != NB && tBlock != tStone && !bedrock(tBlock)) {
 					int tMetaData = meta(aWorld, tRBPos.getX(), tRBPos.getY(), tRBPos.getZ()); // было WD.meta(aWorld, x,y,z)
 					if (BlocksGT.stoneToNormalOres.containsKey(new ItemStackContainer(tBlock, 1, tMetaData))) {
@@ -2054,7 +2126,7 @@ public class WD {
 		ArrayList<String> rList = new ArrayListNoNulls<>();
 		long rEUAmount = 0;
 		
-		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
+		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z)
 		BlockEntity aTileEntity = te(aWorld, aX, aY, aZ, T);
 		
@@ -2082,7 +2154,7 @@ public class WD {
 			rList.add(tHarvestLevel == 0 && WD.getMaterial(aBlock).isAdventureModeExempt() ? "Hand-Harvestable, but " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " is faster" : "Tool to Harvest: " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " (" + tHarvestLevel + ")");
 			// F-block: Forge Block.isBeaconBase(world,x,y,z,bx,by,bz) удалён -> neo тег BlockTags.BEACON_BASE_BLOCKS
 			// (BlockTags.java:115), проверка на состоянии.
-			if (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).is(net.minecraft.tags.BlockTags.BEACON_BASE_BLOCKS)) rList.add("Is usable for Beacon Pyramids");
+			if (state(aWorld, new BlockPos(aX, aY, aZ)).is(net.minecraft.tags.BlockTags.BEACON_BASE_BLOCKS)) rList.add("Is usable for Beacon Pyramids");
 			if (MD.GC.mLoaded && aBlock instanceof IPartialSealableBlock) rList.add(((IPartialSealableBlock)aBlock).isSealed(aWorld, aX, aY, aZ, FORGE_DIR[aSide ^ 1]) ? "Is Sealable on this Side" : "Is not Sealable on this Side");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (aTileEntity != null) {

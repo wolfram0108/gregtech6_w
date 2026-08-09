@@ -6,7 +6,9 @@
   "mixins": [
     "MixinCraftingInput"
   ],
-  "client": [],
+  "client": [
+    "MixinSectionCopy"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 1

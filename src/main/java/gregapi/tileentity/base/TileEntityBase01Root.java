@@ -756,7 +756,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		// F-block: Forge Block.hasComparatorInputOverride()/getComparatorInputOverride(world,x,y,z,side) удалены ->
 		// neo BlockState.hasAnalogOutputSignal()/getAnalogOutputSignal(Level,BlockPos,Direction) (BlockBehaviour:628/632).
 		BlockPos tPos = new BlockPos(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide));
-		net.minecraft.world.level.block.state.BlockState tState = level.getBlockState(tPos);
+		net.minecraft.world.level.block.state.BlockState tState = gregapi.util.WD.state(level, tPos);
 		return tState.hasAnalogOutputSignal()?UT.Code.bind4(tState.getAnalogOutputSignal(level, tPos, FORGE_DIR[OPOS[aSide]])):getRedstoneIncoming(aSide);
 	}
 	
