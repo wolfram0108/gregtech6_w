@@ -14511,6 +14511,86 @@ public final class GT6Probes {
 		}
 		return new int[] {tSwampIn, tSwampOut, tDirtIn, tDirtOut};
 	}
+	/** Random, отдающий ноль: тик сена трижды выходит по {@code nextInt(3) > 0}, и на живом рандоме судья
+	 *  был бы плавающим. Ноль — не подгонка: это разрешённое значение, при котором тело метода исполняется. */
+	private static java.util.Random swZeroRandom() {
+		return new java.util.Random() {
+			private static final long serialVersionUID = 1L;
+			@Override public int nextInt(int aBound) {return 0;}
+			@Override public int nextInt() {return 0;}
+			@Override public boolean nextBoolean() {return false;}
+		};
+	}
+
+	/**
+	 * ПОВЕДЕНЧЕСКИЕ судьи следствий BUG-108 — вызовом самих функций, а не проверкой канала.
+	 *
+	 * <p>Судимы только те следствия, чьи наборы содержат ВАНИЛЬНЫЕ биомы: гниение сена
+	 * ({@code BIOMES_INFINITE_WATER}: ocean/beach/river) и гены пчёл ({@code BIOMES_DESERT}: desert,
+	 * {@code BIOMES_MESA}: badlands). Компас пчелы на магический биом и материал лунного/марсианского
+	 * камня проверить нечем: {@code BIOMES_MAGICAL}/{@code BIOMES_MOON}/{@code BIOMES_MARS}/
+	 * {@code BIOMES_SPACE} состоят ТОЛЬКО из модовых имён (Thaumcraft, Galacticraft), а этих модов в
+	 * сборке нет. Ветка компаса на Энд неразличима: она срабатывает и по {@code dimensionId == 1}.
+	 */
+	private static void swBehaviourJudges(ServerLevel aLevel, java.io.PrintStream O) {
+		// --- G1. СЕНО: во влажном биоме тюк должен намокнуть (мета|2), в сухом — высохнуть (мета|1) ----
+		// Воду рядом исключаем каменной площадкой: иначе сработает запасная ветка «сосед — вода»
+		// (BlockBaleGrass:114) и судья позеленеет независимо от биомного признака.
+		net.minecraft.world.level.block.Block tBale = gregapi.data.CS.BlocksGT.BalesGrass;
+		com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tWetB =
+			aLevel.findClosestBiome3d(h -> BIOMES_INFINITE_WATER.contains(h), aLevel.getRespawnData().pos(), 12800, 32, 64);
+		com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tDryB =
+			aLevel.findClosestBiome3d(h -> BIOMES_SAVANNA.contains(h), aLevel.getRespawnData().pos(), 12800, 32, 64);
+		if (tBale == null || tWetB == null || tDryB == null) {
+			swJudge(O, "СЕНО: нашлись блок тюка, влажный и сухой биом (среда, не код)", F);
+		} else {
+			int tWetMeta = swBaleTick(aLevel, tBale, tWetB.getFirst()), tDryMeta = swBaleTick(aLevel, tBale, tDryB.getFirst());
+			O.println("[GT6-SWAMPPROBE] СЕНО: во влажном биоме (" + aLevel.getBiome(tWetB.getFirst()).getRegisteredName() + ") мета " + tWetMeta
+				+ " · в сухом (" + aLevel.getBiome(tDryB.getFirst()).getRegisteredName() + ") мета " + tDryMeta + " — ждём 2 и 1");
+			swJudge(O, "СЕНО во влажном биоме НАМОКЛО (мета " + tWetMeta + " несёт бит 2) — признак влажности биома жив", (tWetMeta & 2) != 0);
+			swJudge(O, "СЕНО в сухом биоме высохло (мета " + tDryMeta + " несёт бит 1) — негативный контроль", (tDryMeta & 1) != 0 && (tDryMeta & 2) == 0);
+		}
+
+		// --- G2. ГЕНЫ ПЧЁЛ: в пустыне пчела НОЧНАЯ, в обычном биоме — ДНЕВНАЯ ------------------------
+		// IItemBumbleBee.Genes:141 — aDay = !(desert||mesa), aNight = (desert||mesa); :152-153 пишут
+		// "day"/"night" в NBT. До правки пустыня не опознавалась и давала дневные гены, как лес.
+		com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tDesert =
+			aLevel.findClosestBiome3d(h -> BIOMES_DESERT.contains(h), aLevel.getRespawnData().pos(), 12800, 32, 64);
+		if (tDesert == null) {
+			swJudge(O, "ПЧЁЛЫ: биом пустыни найден (среда, не код)", F);
+		} else {
+			// биом берём ИЗ HOLDER'А находки, а не по её координате: findClosestBiome3d возвращает точку с шагом
+			// сетки 32/64, и getBiome в ней даёт СОСЕДНИЙ биом — судья уже получил так «пустыню sparse_jungle».
+			net.minecraft.world.level.biome.Biome tDes = tDesert.getSecond().value();
+			net.minecraft.world.level.biome.Biome tPlain = gregapi.util.WD.biome(aLevel, mSwCtrl != null ? mSwCtrl.getX() : 0, mSwCtrl != null ? mSwCtrl.getZ() : 0);
+			net.minecraft.nbt.CompoundTag tGenDes = gregapi.item.bumble.IItemBumbleBee.Util.getBumbleGenes(300, tDes, T, swZeroRandom());
+			net.minecraft.nbt.CompoundTag tGenPln = gregapi.item.bumble.IItemBumbleBee.Util.getBumbleGenes(300, tPlain, T, swZeroRandom());
+			boolean tDesNight = tGenDes.getBooleanOr("night", false), tDesDay = tGenDes.getBooleanOr("day", false);
+			boolean tPlnDay = tGenPln.getBooleanOr("day", false), tPlnNight = tGenPln.getBooleanOr("night", false);
+			O.println("[GT6-SWAMPPROBE] ПЧЁЛЫ: пустыня (" + gregapi.code.BiomeNameSet.keyOfBiome(tDes) + ") day=" + tDesDay + " night=" + tDesNight
+				+ " · не-пустыня (" + gregapi.code.BiomeNameSet.keyOfBiome(tPlain) + ") day=" + tPlnDay + " night=" + tPlnNight);
+			swJudge(O, "ПЧЁЛЫ в пустыне НОЧНЫЕ (day=false, night=true) — признак пустыни жив", !tDesDay && tDesNight);
+			swJudge(O, "ПЧЁЛЫ вне пустыни ДНЕВНЫЕ (day=true, night=false) — негативный контроль", tPlnDay && !tPlnNight);
+		}
+
+		O.println("[GT6-SWAMPPROBE] НЕ судимо стендом: компас пчелы на магический биом и материал лунного/"
+			+ "марсианского/космического камня — наборы BIOMES_MAGICAL/MOON/MARS/SPACE состоят только из модовых "
+			+ "имён (Thaumcraft, Galacticraft), модов в сборке нет; ветка компаса на Энд неразличима (срабатывает и по dimensionId==1)");
+	}
+
+	/** ставит тюк сена на каменной площадке БЕЗ воды рядом, дёргает его тик и возвращает получившуюся мету */
+	private static int swBaleTick(ServerLevel aLevel, net.minecraft.world.level.block.Block aBale, net.minecraft.core.BlockPos aWhere) {
+		net.minecraft.core.BlockPos tC = new net.minecraft.core.BlockPos(aWhere.getX(), aLevel.getSeaLevel() + 6, aWhere.getZ());
+		for (int cx = (tC.getX() >> 4) - 1; cx <= (tC.getX() >> 4) + 1; cx++) for (int cz = (tC.getZ() >> 4) - 1; cz <= (tC.getZ() >> 4) + 1; cz++) aLevel.setChunkForced(cx, cz, T);
+		for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
+			aLevel.setBlock(tC.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+			for (int dy = 0; dy <= 3; dy++) aLevel.setBlock(tC.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+		}
+		gregapi.util.WD.set(aLevel, tC.getX(), tC.getY(), tC.getZ(), aBale, 0, 2);
+		((gregtech.blocks.BlockBaleGrass)aBale).updateTick2(aLevel, tC.getX(), tC.getY(), tC.getZ(), swZeroRandom());
+		return swMeta(aLevel, tC);
+	}
+
 	/** снимок района: что за блок в каждой клетке — нужен, чтобы на втором замере сказать, ИЗ ЧЕГО
 	 *  выросло болото (из ванильной воды = конверсия tList, из воздуха/суши = растекание updateFlow). */
 	private static java.util.HashMap<Long, String> swSnapshot(ServerLevel aLevel, net.minecraft.core.BlockPos aCenter, int aR) {
@@ -14786,6 +14866,10 @@ public final class GT6Probes {
 				O.println("[GT6-SWAMPPROBE] голый Biome: ключ = \"" + gregapi.code.BiomeNameSet.keyOfBiome(tBare) + "\" · BIOMES_SWAMP=" + tBareHit + " · BIOMES_NETHER=" + tBareMiss);
 				swJudge(O, "голый Biome резолвится в ключ: BIOMES_SWAMP.contains(WD.biome(...)) = true (было false ВСЕГДА)", tBareHit);
 				swJudge(O, "негативный контроль: чужой набор на том же биоме отвечает false", !tBareMiss);
+
+				// --- (G) ПОВЕДЕНИЕ, а не канал: следствия BUG-108 реальными методами -------------------
+				// Канал доказан выше; здесь дёргаются САМИ функции, которые от него зависели.
+				swBehaviourJudges(tLevel, O);
 			}
 		} catch (Throwable e) {
 			swJudge(O, "стенд отработал без исключения", F);
