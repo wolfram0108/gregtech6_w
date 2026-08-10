@@ -2293,4 +2293,116 @@ public final class GT6ProbesClient {
 			mCoverProbeDone = true;
 		}
 	}
+
+	// ========== [GT6-ITEMPOSE] BUG-112: положение предмета в руке/на земле/в рамке (гейт run/gt6itempose.flag) ==========
+	// ⛔ Картинку не судим (правило проекта). Судим ИДЕНТИЧНОСТЬ ЗНАЧЕНИЙ: 1.7.10 держал предмет ровно двумя способами,
+	// различая их по Item.isFull3D() (RenderPlayer:353-374) — «как рукоять» для инструментов/мечей и «плашмя» для
+	// прочих иконок. В neo носитель — ItemTransforms модели, и ванильные предметы несут ровно эти два положения.
+	// Потому эталон берётся у САМОГО ДВИЖКА: ванильный меч (handheld) и ванильный слиток (generated); GT6-предмет
+	// обязан совпасть с соответствующим эталоном в КАЖДОМ контексте отображения.
+	// Состояние строится движковым путём (ItemModelResolver.updateForTopItem) — тем же, что рисует предмет игроку.
+	// Снять при уборке фазы.
+	private static boolean mItemPoseDone = false;
+	private static int mItemPoseWait = 0;
+
+	/** ItemTransform слоя 0 после реального прохода движка. null — слоёв нет (предмет не нарисовался). */
+	private static Object itemPoseTransform(net.minecraft.client.Minecraft aMC, net.minecraft.world.item.ItemStack aStack, net.minecraft.world.item.ItemDisplayContext aCtx) {
+		try {
+			net.minecraft.client.renderer.item.ItemStackRenderState tState = new net.minecraft.client.renderer.item.ItemStackRenderState();
+			aMC.getItemModelResolver().updateForTopItem(tState, aStack, aCtx, aMC.level, aMC.player, 0);
+			java.lang.reflect.Field tLayersF = net.minecraft.client.renderer.item.ItemStackRenderState.class.getDeclaredField("layers");
+			tLayersF.setAccessible(true);
+			Object[] tLayers = (Object[]) tLayersF.get(tState);
+			java.lang.reflect.Field tCountF = net.minecraft.client.renderer.item.ItemStackRenderState.class.getDeclaredField("activeLayerCount");
+			tCountF.setAccessible(true);
+			if (((Integer) tCountF.get(tState)) <= 0) return null;
+			java.lang.reflect.Field tTrF = tLayers[0].getClass().getDeclaredField("itemTransform");
+			tTrF.setAccessible(true);
+			return tTrF.get(tLayers[0]);
+		} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-ITEMPOSE] замер сорвался: " + e); return null;}
+	}
+
+	private static String itemPoseShow(Object aTr) {
+		if (aTr == null) return "СЛОЁВ НЕТ";
+		try {
+			net.minecraft.client.resources.model.cuboid.ItemTransform t = (net.minecraft.client.resources.model.cuboid.ItemTransform) aTr;
+			return "rot" + t.rotation() + " tr" + t.translation() + " sc" + t.scale();
+		} catch (Throwable e) {return String.valueOf(aTr);}
+	}
+
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onItemPoseProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mItemPoseDone || !gregapi.data.CS.probeFlag("gt6itempose.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		if (mItemPoseWait++ < 60) return; // модели уже испечены, но даём миру устояться
+		mItemPoseDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-ITEMPOSE] BUG-112: положение предмета против ванильного эталона ==========");
+
+		// эталоны движка: меч = «как рукоять» (handheld), слиток = «плашмя» (generated)
+		net.minecraft.world.item.ItemStack tRefTool = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_SWORD);
+		net.minecraft.world.item.ItemStack tRefFlat = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_INGOT);
+
+		// подопытные GT6: инструмент (full3D) и материальный предмет (плоский). Берём ПЕРВЫЕ подходящие из реестра,
+		// чтобы стенд не зависел от конкретного id.
+		net.minecraft.world.item.ItemStack tGtTool = net.minecraft.world.item.ItemStack.EMPTY, tGtFlat = net.minecraft.world.item.ItemStack.EMPTY, tGtSpray = net.minecraft.world.item.ItemStack.EMPTY;
+		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			if (!(tItem instanceof gregapi.item.ItemBase)) continue;
+			try {
+				net.minecraft.world.item.ItemStack tStack = new net.minecraft.world.item.ItemStack(tItem);
+				if (tItem instanceof gregapi.item.multiitem.MultiItemTool && tGtTool.isEmpty()) tGtTool = tStack;
+				else if (tItem instanceof gregapi.old.GT_Tool_Item && tGtSpray.isEmpty()) tGtSpray = tStack;
+				else if (!(tItem instanceof gregapi.item.multiitem.MultiItemTool) && !((gregapi.item.ItemBase)tItem).isFull3D() && tGtFlat.isEmpty()) tGtFlat = tStack;
+			} catch (Throwable e) {/* предмет без дефолтного стека */}
+		}
+		O.println("[GT6-ITEMPOSE] подопытные: инструмент=" + (tGtTool.isEmpty() ? "НЕ НАЙДЕН" : tGtTool.getItem())
+			+ " · спрей/паяльник(GT_Tool_Item)=" + (tGtSpray.isEmpty() ? "НЕ НАЙДЕН" : tGtSpray.getItem())
+			+ " · плоский=" + (tGtFlat.isEmpty() ? "НЕ НАЙДЕН" : tGtFlat.getItem()));
+
+		net.minecraft.world.item.ItemDisplayContext[] tCtxs = {
+			net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_RIGHT_HAND,
+			net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,
+			net.minecraft.world.item.ItemDisplayContext.GROUND,
+			net.minecraft.world.item.ItemDisplayContext.FIXED,
+			net.minecraft.world.item.ItemDisplayContext.GUI};
+
+		// ПОЗИТИВНЫЙ КОНТРОЛЬ: эталоны движка обязаны РАЗЛИЧАТЬСЯ, иначе совпадение с ними ничего не значит.
+		// ⛔ Брать его в ПЕРВОМ лице нельзя: item/handheld наследует item/generated и переопределяет ТОЛЬКО
+		// thirdperson_* (assets/minecraft/models/item/handheld.json) — в первом лице оба положения тождественны
+		// по построению. Первый прогон судьи именно на этом и сгорел: 10 PASS при слепом эталоне.
+		Object tRefToolFP = itemPoseTransform(tMC, tRefTool, net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_RIGHT_HAND);
+		Object tRefFlatFP = itemPoseTransform(tMC, tRefFlat, net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_RIGHT_HAND);
+		O.println("[GT6-ITEMPOSE] эталон меч   = " + itemPoseShow(tRefToolFP));
+		O.println("[GT6-ITEMPOSE] эталон слиток= " + itemPoseShow(tRefFlatFP));
+		gregapi.probe.GT6ProbeStand.judge("GT6-ITEMPOSE", "ПОЗИТИВНЫЙ КОНТРОЛЬ: два ванильных положения РАЗЛИЧНЫ",
+			tRefToolFP != null && tRefFlatFP != null && !tRefToolFP.equals(tRefFlatFP), "различны", "меч=" + itemPoseShow(tRefToolFP) + " слиток=" + itemPoseShow(tRefFlatFP));
+
+		int tPass = 0, tFail = 0;
+		Object[][] tCases = {
+			{tGtTool,  tRefTool, "инструмент GT6 (MultiItemTool, full3D) == ванильный меч"},
+			{tGtSpray, tRefTool, "спрей/паяльник GT6 (GT_Tool_Item, setFull3D) == ванильный меч"},
+			{tGtFlat,  tRefFlat, "плоский предмет GT6 (не full3D) == ванильный слиток"}};
+		for (Object[] tCase : tCases) {
+			net.minecraft.world.item.ItemStack tGt = (net.minecraft.world.item.ItemStack) tCase[0];
+			net.minecraft.world.item.ItemStack tRef = (net.minecraft.world.item.ItemStack) tCase[1];
+			String tName = (String) tCase[2];
+			// носителя нет в реестре — это ФАКТ о содержимом мода, а не провал судьи: наследники GT_Tool_Item
+			// (спреи, паяльник) не создаются ни в порте, ни в оригинале 1.7.10 — мёртвый код в обеих версиях.
+			if (tGt.isEmpty()) {O.println("[GT6-ITEMPOSE] носитель не представлен в реестре, случай не судится: " + tName); continue;}
+			for (net.minecraft.world.item.ItemDisplayContext tCtx : tCtxs) {
+				Object tGtTr = itemPoseTransform(tMC, tGt, tCtx);
+				Object tRefTr = itemPoseTransform(tMC, tRef, tCtx);
+				boolean tOk = tGtTr != null && tGtTr.equals(tRefTr);
+				if (tOk) tPass++; else tFail++;
+				O.println("[GT6-ITEMPOSE] " + tName + " · " + tCtx + ": " + (tOk ? "PASS" : "FAIL")
+					+ (tOk ? "" : " · наш=" + itemPoseShow(tGtTr) + " эталон=" + itemPoseShow(tRefTr)));
+			}
+		}
+		O.println("========== [GT6-ITEMPOSE] DONE (pass=" + tPass + " fail=" + tFail + ") ==========");
+		if (!gregapi.data.CS.probeFlag("gt6itempose.keepalive")) {
+			O.println("[GT6-ITEMPOSE] стенд отработал — гашу процесс сам");
+			new Thread(() -> {try {Thread.sleep(3000);} catch (InterruptedException e) {} Runtime.getRuntime().halt(0);}, "gt6-itempose-shutdown").start();
+		}
+	}
 }

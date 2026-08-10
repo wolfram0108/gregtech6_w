@@ -69,9 +69,14 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	 *  флаг-override (ремонт через isValidRepairItem+durability); GT6-инструменты имеют свою логику ремонта — храним флаг для неё. */
 	protected boolean mNoRepair = false;
 	public ItemBase setNoRepair() {mNoRepair = true; return this;}
-	/** F3-render: 1.7.10 Item.setFull3D() — рендер-хинт (инструмент в руке в 3D). neo рендер модель-based, серверного
-	 *  эффекта нет — no-op, возвращает this для цепочки конструктора. */
-	public ItemBase setFull3D() {return this;}
+	/** F3-render: 1.7.10 {@code Item.setFull3D()} взводил поле {@code bFull3D}, а {@code isFull3D()} его отдавал
+	 *  (Item.java:577-580 recompSrc). Клиент читал этот флаг и держал предмет в руке ИНАЧЕ: «как рукоять» вместо
+	 *  «плашмя» (RenderPlayer:353-374 / RenderBiped:287 / RenderWitch:92). BUG-112: в порте сеттер был no-op, флаг
+	 *  негде было прочесть, и все наследники {@code GT_Tool_Item} (спреи, паяльник) лежали в руке как слиток.
+	 *  Носитель различия в neo — ItemTransforms модели, их подставляет {@code GT6ItemModel.flatItemTransforms}. */
+	protected boolean mFull3D = false;
+	public ItemBase setFull3D() {mFull3D = true; return this;}
+	public boolean isFull3D() {return mFull3D;}
 	/** F1: 1.7.10 Item.setHasSubtypes(true)/getHasSubtypes() — реальный флаг подтипов (metadata), потребители
 	 *  ЕСТЬ в этом же файле (addInformation/getUnlocalizedName ниже) и в MultiItem (extends ItemBase, вызывает
 	 *  setHasSubtypes(T) в ctor, полагается на неунаследованный getUnlocalizedName(ItemStack) отсюда) — не может

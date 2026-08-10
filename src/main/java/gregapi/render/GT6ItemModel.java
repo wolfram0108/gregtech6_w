@@ -183,6 +183,9 @@ public class GT6ItemModel implements ItemModel {
 		aOutput.appendModelIdentityElement(tSprite.contents().name());
 		if (tSprite.contents().isAnimated()) aOutput.setAnimated();
 		ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
+		// BUG-112: рельс — плоская иконка и НЕ full3D (в 1.7.10 его ItemBlock не звал setFull3D) → положение «плашмя»
+		net.minecraft.client.resources.model.cuboid.ItemTransforms tRailTr = flatItemTransforms(false);
+		if (tRailTr != null) tLayer.setItemTransform(tRailTr.getTransform(aCtx));
 		tLayer.setUsesBlockLight(false); // плоский предмет — full-bright (эталон ItemModelGenerator/GuiLight.FRONT)
 		tLayer.prepareQuadList().addAll(flatQuads(tSprite, -1, true)); // правка №3: геометрия из кэша
 		tLayer.setParticleMaterial(new Material.Baked(tSprite, false));
@@ -214,6 +217,10 @@ public class GT6ItemModel implements ItemModel {
 			// жидкости) требует setAnimated — иначе GuiItemAtlas рисует слот один раз (READY) и анимация замирает статикой.
 			if (tSprite.contents().isAnimated()) aOutput.setAnimated();
 			ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
+			// BUG-112: положение в руке/на земле/в рамке. Без трансформа модель рисуется тождественно во всех контекстах —
+			// инструмент и меч лежали в руке не как в 1.7.10. Канал различия — тот же, что и там: isFull3D().
+			net.minecraft.client.resources.model.cuboid.ItemTransforms tFlatTr = flatItemTransforms(isFull3D(aItem));
+			if (tFlatTr != null) tLayer.setItemTransform(tFlatTr.getTransform(aCtx));
 			tLayer.setUsesBlockLight(false); // эталон ItemModelGenerator=GuiLight.FRONT: плоский предмет в GUI full-bright; без этого слой block-shade'ится (SOUTH-грань ~0.8) → предмет «затемнён» и цвет искажён тенью
 			if (aStack.hasFoil()) { // 1:1: GT6-1.7.10 рисует глинт по hasEffect (=isItemEnchanted) поверх пассов; канон neo — FoilType на слое + identity + animated (глинт скроллится)
 				tLayer.setFoilType(ItemStackRenderState.FoilType.STANDARD);
@@ -227,16 +234,39 @@ public class GT6ItemModel implements ItemModel {
 		}
 	}
 
-	// Каноническая block-GUI трансформация (изометрия) — кэш; читается ИЗ ДВИЖКА один раз (после bake атласа/моделей).
-	private static net.minecraft.client.resources.model.cuboid.ItemTransforms sBlockGuiTransforms;
-	private static boolean sBlockGuiTransformsTried = false;
+	// Канонические трансформации ванильных моделей — кэш по пути модели; читаются ИЗ ДВИЖКА один раз (после bake).
+	private static final java.util.Map<String, net.minecraft.client.resources.model.cuboid.ItemTransforms> sVanillaTransforms = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final java.util.Set<String> sVanillaTransformsTried = java.util.concurrent.ConcurrentHashMap.newKeySet();
 	/** ItemTransforms ванильного {@code minecraft:block/block} (его {@code display.gui} — изометрия 30/225, scale 0.625),
 	 *  взятые из движкового {@link net.minecraft.client.resources.model.ResolvedModel} — НЕ хардкод-константа (§«не выдумывать
 	 *  константы»). 1.7.10 применял ту же изометрию в {@code RenderBlocks.renderBlockAsItem}; в neo носитель — ItemTransforms
 	 *  модели. Публичного геттера нет → рефлексия приватного {@code ModelBakery.resolvedModels} (идиома проекта, как iconForPass). */
-	private static net.minecraft.client.resources.model.cuboid.ItemTransforms blockGuiTransforms() {
-		if (sBlockGuiTransformsTried) return sBlockGuiTransforms;
-		sBlockGuiTransformsTried = true;
+	private static net.minecraft.client.resources.model.cuboid.ItemTransforms blockGuiTransforms() {return vanillaTransforms("block/block");}
+
+	/** Тот же канал, что и в 1.7.10: {@code Item.isFull3D()} (у GT6 его несут {@code MultiItemTool} — все инструменты и
+	 *  мечи — и {@code ItemBase.setFull3D()} — спреи, паяльник от {@code GT_Tool_Item}). Спрашиваем КОНТРАКТ базового
+	 *  класса предметов мода, а не иерархию инструментов. */
+	private static boolean isFull3D(net.minecraft.world.item.Item aItem) {
+		return aItem instanceof gregapi.item.ItemBase tBase && tBase.isFull3D();
+	}
+
+	/** BUG-112: положение ПЛОСКОГО предмета. В 1.7.10 его задавал сам движок и различал ровно два случая по
+	 *  {@code Item.isFull3D()} — «как рукоять» (RenderPlayer:353-374: поворот -100/45, scale 0.625) для инструментов и
+	 *  мечей, и «плашмя» для остальных иконок. В neo носитель этого различия — ItemTransforms модели: ванильные
+	 *  {@code item/handheld} и {@code item/generated} несут ровно те же два положения. Потому берём их ИЗ ДВИЖКА тем же
+	 *  приёмом, что и {@code block/block} выше, — углы не выдумываем. */
+	private static net.minecraft.client.resources.model.cuboid.ItemTransforms flatItemTransforms(boolean aFull3D) {
+		return vanillaTransforms(aFull3D ? "item/handheld" : "item/generated");
+	}
+
+	/** ItemTransforms ванильной модели по её пути ({@code block/block} — изометрия 30/225 scale 0.625; {@code item/handheld}
+	 *  и {@code item/generated} — два положения предмета в руке). Берутся из движкового
+	 *  {@link net.minecraft.client.resources.model.ResolvedModel}, НЕ хардкод-константами (§«не выдумывать константы»).
+	 *  Публичного геттера нет → рефлексия приватного {@code ModelBakery.resolvedModels} (идиома проекта, как iconForPass). */
+	private static net.minecraft.client.resources.model.cuboid.ItemTransforms vanillaTransforms(String aModelPath) {
+		net.minecraft.client.resources.model.cuboid.ItemTransforms rCached = sVanillaTransforms.get(aModelPath);
+		if (rCached != null || sVanillaTransformsTried.contains(aModelPath)) return rCached;
+		sVanillaTransformsTried.add(aModelPath);
 		try {
 			net.minecraft.client.resources.model.ModelBakery tBakery = net.minecraft.client.Minecraft.getInstance().getModelManager().getModelBakery();
 			java.lang.reflect.Field tF = net.minecraft.client.resources.model.ModelBakery.class.getDeclaredField("resolvedModels");
@@ -244,10 +274,14 @@ public class GT6ItemModel implements ItemModel {
 			@SuppressWarnings("unchecked")
 			java.util.Map<net.minecraft.resources.Identifier, net.minecraft.client.resources.model.ResolvedModel> tResolved =
 				(java.util.Map<net.minecraft.resources.Identifier, net.minecraft.client.resources.model.ResolvedModel>) tF.get(tBakery);
-			net.minecraft.client.resources.model.ResolvedModel tBlock = tResolved.get(net.minecraft.resources.Identifier.withDefaultNamespace("block/block"));
-			if (tBlock != null) sBlockGuiTransforms = tBlock.getTopTransforms();
-		} catch (Throwable e) {/* block/block transforms недоступны -> fallback NO_TRANSFORM */}
-		return sBlockGuiTransforms;
+			net.minecraft.client.resources.model.ResolvedModel tModel = tResolved.get(net.minecraft.resources.Identifier.withDefaultNamespace(aModelPath));
+			if (tModel != null) {
+				net.minecraft.client.resources.model.cuboid.ItemTransforms tTr = tModel.getTopTransforms();
+				if (tTr != null) sVanillaTransforms.put(aModelPath, tTr);
+				return tTr;
+			}
+		} catch (Throwable e) {/* модель недоступна -> fallback NO_TRANSFORM */}
+		return null;
 	}
 
 	/** Число рендер-пассов предмета (PrefixItem.getRenderPasses(int)=2). Нет метода → 1 пасс. */
