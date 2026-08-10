@@ -125,6 +125,11 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	/** BUG-115: {@code IFluidBlock} вернулся общему предку — {@code getFluid()} снова есть, 1:1 с 1.7.10. */
 	@Override public Fluid getFluid() {return mFluid;}
 
+	/** было Forge {@code BlockFluidFinite.canDrain:332-335} — тело 1:1 ({@code return true}); finite-жидкость
+	 *  черпается на любом уровне, в отличие от classic-ветки ({@link gregtech.blocks.fluids.BlockWaterlike}),
+	 *  где GT6 перекрывает его своим «мета 0 = источник». */
+	@Override public boolean canDrain(Level aWorld, int aX, int aY, int aZ) {return T;}
+
 	@Override
 	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
 		// Forge royally fucked up again. You check for MetaData FIRST and do the set Block to Air SECOND, like I demonstrate here!!!

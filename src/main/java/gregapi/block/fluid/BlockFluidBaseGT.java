@@ -298,14 +298,20 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	/** {@code drain} НЕ объявляем: тела уже есть у обоих носителей ({@link gregtech.blocks.fluids.BlockWaterlike},
 	 *  {@link BlockBaseFluid}) — 1:1 с 1.7.10, где они были {@code @Override} этого же интерфейса. */
 
-	/** Дефолт для {@link BlockBaseFluid} (в 1.7.10 приходил от {@code BlockFluidFinite}, которого в референсе нет,
-	 *  поэтому тело выведено из quanta-модели ЭТОГО класса, а не выдумано из Forge). {@link
-	 *  gregtech.blocks.fluids.BlockWaterlike} перекрывает своим (мета 0 = источник, 1:1 с оригиналом GT6).
-	 *  В моде не вызывается ни разу: единственные живые вызыватели интерфейса — {@code drain} и {@code getFluid}. */
-	@Override public boolean canDrain(Level aWorld, int aX, int aY, int aZ) {return getQuantaValue(aWorld, aX, aY, aZ) > 0;}
+	/** {@code canDrain} НЕ реализуем здесь: у Forge он жил в РАЗНЫХ потомках и с разными телами —
+	 *  {@code BlockFluidClassic.canDrain:358} = {@code isSourceBlock(...)} (у GT6 перекрыт своим, мета 0),
+	 *  {@code BlockFluidFinite.canDrain:332} = {@code return true}. Один дефолт в общем предке подменил бы
+	 *  обе ветки выдуманным правилом, поэтому метод остаётся за носителями. */
 
-	/** Доля заполнения — тот же quanta-канал, что у рендера; в моде не вызывается (см. {@link #canDrain}). */
-	@Override public float getFilledPercentage(Level aWorld, int aX, int aY, int aZ) {return getQuantaPercentage(aWorld, aX, aY, aZ);}
+	/** было Forge {@code BlockFluidBase.getFilledPercentage(World,x,y,z)} (:524-531) — тело 1:1:
+	 *  quanta+1, срез по 1.0 и знак по плотности (у газов плотность отрицательна, доля идёт со знаком минус —
+	 *  так Forge отличал «заполнено снизу» от «заполнено сверху»). */
+	@Override public float getFilledPercentage(Level aWorld, int aX, int aY, int aZ) {
+		int tQuantaRemaining = getQuantaValue(aWorld, aX, aY, aZ) + 1;
+		float tRemaining = tQuantaRemaining / quantaPerBlockFloat;
+		if (tRemaining > 1) tRemaining = 1.0F;
+		return tRemaining * (density > 0 ? 1 : -1);
+	}
 
 	/** было Forge {@code BlockFluidBase.getQuantaPercentage(IBlockAccess,x,y,z)} (:452) — тело 1:1. */
 	public final float getQuantaPercentage(BlockGetter aWorld, int aX, int aY, int aZ) {
