@@ -24,20 +24,54 @@ to publish if they do not.
 
 ## [Unreleased]
 
-### Added
+## [6.0.0-alpha.3] — biomes decide again, tools are heard and held right, machines cost less to draw
 
-- **A release can now be verified without trusting the author.** Two independent checks: GitHub
-  attests that the published jar was built by this repository's release workflow from the tagged
-  commit (`gh attestation verify`), and the build itself is now reproducible — archive timestamps
-  and file order are pinned, so building a tag on any machine yields a byte-identical jar whose
-  checksum must match the published one. Measured rather than intended: a jar built on Windows and
-  the one CI builds on Ubuntu from the same commit are byte-identical, and the digest GitHub attests
-  is the one a local build produces. Two causes had to be removed — archive timestamps and ordering,
-  then line endings, which Windows expands on checkout and which reach the jar as they sit on disk.
-  The check was also run with the settings off, to prove it can fail: without them the same source
-  produced two different jars. The jar is still not code-signed, deliberately — the loader ignores
-  mod signatures entirely.
+### Fixed
 
+- **Ores that belong to a biome were not generated anywhere.** Every worldgen entry restricted to a
+  biome — ruby, cinnabar, topaz, the jaspers, emerald, gold in badlands, copper in savanna, 51 entries
+  in all — asked "is this biome in my list?" and always got "no", because the biome arrived stripped of
+  its identity. Four materials existed in no world at all: niter, pink diamond, alexandrite and
+  dominican amber. The same loss silenced eight other things quietly: hay bales never took the
+  humidity of their biome, bees always hatched with day genes instead of desert night ones, and a rock
+  could not tell where it lay. Worlds generated before this release keep the ground they already have;
+  newly generated chunks carry the ores.
+- **Tool sounds were silent.** The wrench, the screwdriver and the beep failed in three different
+  ways at once — the sounds were never registered (1.7.10 needed no registration), the list of them
+  could not be read from inside a packaged jar, and the mining sound was played by a client-only call
+  from code that now runs on the server. Sounds of an action are now born on the server and addressed
+  to whoever caused them, exactly as they were heard in 1.7.10. A lost sound no longer disappears in
+  silence: it names itself, its reason and its place in the log.
+- **Tools and swords were held wrong in hand.** In 1.7.10 an item had exactly two hand poses and a
+  flag chose between them; that flag had lost its meaning here, so every flat item was held the same
+  way. Both poses are taken from the engine's own models now.
+- **Covers stayed visible after being removed.** The packet that carries a machine's full state was
+  applied to a reused block entity, and the part that was absent from the packet survived it.
+- **Other mods could not see any GregTech name.** Item tooltips, waila-style overlays and mod config
+  screens fall back to a second translation table on the client, which the mod never filled — so a
+  neighbour mod asking for a GregTech name got the raw key. Both tables are filled now, from the one
+  place the mod installs its names.
+- **Saplings and flowers blocked the world generator and would not grow on GregTech soil.** The sign
+  that means "a plant, easily displaced" covered a single block type here instead of every plant, so
+  58 of them — saplings of every wood, dandelions, torchflower — were treated as solid obstacles.
+- **Bottled potions and four loot entries were lost.** A fluid could not be poured into the container
+  declared for it, because the pairing was never registered: 76 of the 96 fluids that name a container
+  had none. Potions in bottles also carried no vanilla potion data — they were nameless, colourless
+  and had no effect when drunk. Both are restored, and the loot table for bottles is complete again.
+- **Swamp and ocean claimed land beyond their own biome.** In 1.7.10 large water *was* a biome, so
+  the original's biome list was enough to hold them; in this version the spill lies in the biome of
+  the shore, and the guard did not recognise it.
+
+### Changed
+
+- **The client draws machines far more cheaply.** Machine geometry was rebuilt every single frame;
+  it is now kept and rebuilt only when the engine itself marks that part of the world as changed —
+  the same signal vanilla uses to rebuild a chunk's mesh, and the same condition under which 1.7.10
+  rebuilt it. Reading the world no longer forces chunks to load, ore material is stored per chunk
+  instead of per block entity, and a flight recorder writes a line every 30 seconds so a slowdown can
+  be examined after the fact rather than reproduced.
+- **The log is quiet again.** Ore blocks answered the engine's block-entity contract in a way that
+  made it warn on every one of them — hundreds of thousands of lines on an old world.
 ### Changed
 
 - **Licensing and attribution were audited across the whole distribution and brought in order.**
@@ -53,6 +87,20 @@ to publish if they do not.
 - **README and the in-game mod list state plainly that this is an unofficial port**, not affiliated
   with or endorsed by Gregorius Techneticies, and that problems belong in this issue tracker rather
   than upstream's.
+
+### Added
+
+- **A release can now be verified without trusting the author.** Two independent checks: GitHub
+  attests that the published jar was built by this repository's release workflow from the tagged
+  commit (`gh attestation verify`), and the build itself is now reproducible — archive timestamps
+  and file order are pinned, so building a tag on any machine yields a byte-identical jar whose
+  checksum must match the published one. Measured rather than intended: a jar built on Windows and
+  the one CI builds on Ubuntu from the same commit are byte-identical, and the digest GitHub attests
+  is the one a local build produces. Two causes had to be removed — archive timestamps and ordering,
+  then line endings, which Windows expands on checkout and which reach the jar as they sit on disk.
+  The check was also run with the settings off, to prove it can fail: without them the same source
+  produced two different jars. The jar is still not code-signed, deliberately — the loader ignores
+  mod signatures entirely.
 
 ## [6.0.0-alpha.2] — crafting by grid position, leaf colour, world generation crash
 
