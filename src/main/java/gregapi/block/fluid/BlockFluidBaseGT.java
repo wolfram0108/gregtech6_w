@@ -67,8 +67,22 @@ import static gregapi.data.CS.*;
  * ТЕКУЧЕСТЬ остаётся GT6-квантовой: все тик-каналы {@code LiquidBlock} перекрыты здесь же
  * ({@link #onPlace}/{@link #neighborChanged}/{@link #tick}/{@link #updateShape}/{@link #isRandomlyTicking}) —
  * ванильный fluid-тик не планируется НИКОГДА, двойного разлива нет.
+ *
+ * <p><b>BUG-115 (2026-08-10): вторая половина идентичности — {@code IFluidBlock}.</b> Repарентинг выше вернул
+ * идентичность ДВИЖКУ ({@code instanceof LiquidBlock}), но не МОДУ: в 1.7.10 обе иерархии получали
+ * {@code net.minecraftforge.fluids.IFluidBlock} от того же Forge-предка ({@code BlockWaterlike extends
+ * BlockFluidClassic}, {@code BlockBaseFluid extends BlockFluidFinite} -> {@code BlockFluidBase implements
+ * IFluidBlock}), и весь мод отбирал жидкости именно им. Порт воспроизвёл предка, но интерфейс потерял — восемь
+ * живых ветвей отвечали {@code false} ВСЕГДА: насос ({@code MultiTileEntityPump:193,225}), кавер Drain
+ * ({@code CoverDrain:149,153}), оба ведёрных поведения ({@code Behavior_Bucket_Simple:103,160},
+ * {@code Behavior_Bucket_Container:80,94}), ёмкости ({@code TileEntityBase08FluidContainer:334,348}) и три
+ * датчика ({@code Bucketometer}/{@code Fluidometer}/{@code KiloBucketometer}:64). Тела при этом были целы и
+ * помечены {@code // @Override} — код жил, канал был оторван. Замер {@code [GT6-PUMPPROBE]}: насос осушал
+ * океан и болото (36 блоков из 36) и набирал 0 mb — жидкость уничтожалась.
+ * Интерфейс возвращён ЗДЕСЬ, в общем предке, ровно там же, где его нёс Forge: все восемь ветвей оживают
+ * разом, ни один вызыватель не правится.
  */
-public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.LiquidBlock implements IBlock, gregapi.block.IBlockExtendedMetaData, gregapi.render.IRenderedBlock {
+public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.LiquidBlock implements IBlock, gregapi.block.IBlockExtendedMetaData, gregapi.render.IRenderedBlock, net.minecraftforge.fluids.IFluidBlock {
 	/** было Forge {@code BlockFluidBase.displacements} + статический {@code defaultDisplacements}
 	 *  (wooden_door/iron_door/standing_sign/wall_sign/reeds -> false). F5 данные-дефолт (door/sign/reeds не вытесняются жидкостью — набор блоков, не заглушка):
 	 *  1.7.10 знал ОДИН блок на дверь/вывеску; neo расщепил на блок-на-древесину (нет 1:1 отображения без
@@ -275,6 +289,23 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 
 	/** аксессор densityDir для рендера (было 1.7.10 {@code FL.dir(BlockFluidBase)} / прямое поле). */
 	public int dir() {return densityDir;}
+
+	// ================= BUG-115: поверхность IFluidBlock (см. шапку класса) =================
+	/** Жидкость блока. В 1.7.10 приходила от Forge-предка ({@code BlockFluidBase.getFluid()}); здесь её знают
+	 *  сами носители — оба подкласса уже хранят её в собственном {@code mFluid}, второго хранилища не заводим. */
+	@Override public abstract net.minecraft.world.level.material.Fluid getFluid();
+
+	/** {@code drain} НЕ объявляем: тела уже есть у обоих носителей ({@link gregtech.blocks.fluids.BlockWaterlike},
+	 *  {@link BlockBaseFluid}) — 1:1 с 1.7.10, где они были {@code @Override} этого же интерфейса. */
+
+	/** Дефолт для {@link BlockBaseFluid} (в 1.7.10 приходил от {@code BlockFluidFinite}, которого в референсе нет,
+	 *  поэтому тело выведено из quanta-модели ЭТОГО класса, а не выдумано из Forge). {@link
+	 *  gregtech.blocks.fluids.BlockWaterlike} перекрывает своим (мета 0 = источник, 1:1 с оригиналом GT6).
+	 *  В моде не вызывается ни разу: единственные живые вызыватели интерфейса — {@code drain} и {@code getFluid}. */
+	@Override public boolean canDrain(Level aWorld, int aX, int aY, int aZ) {return getQuantaValue(aWorld, aX, aY, aZ) > 0;}
+
+	/** Доля заполнения — тот же quanta-канал, что у рендера; в моде не вызывается (см. {@link #canDrain}). */
+	@Override public float getFilledPercentage(Level aWorld, int aX, int aY, int aZ) {return getQuantaPercentage(aWorld, aX, aY, aZ);}
 
 	/** было Forge {@code BlockFluidBase.getQuantaPercentage(IBlockAccess,x,y,z)} (:452) — тело 1:1. */
 	public final float getQuantaPercentage(BlockGetter aWorld, int aX, int aY, int aZ) {

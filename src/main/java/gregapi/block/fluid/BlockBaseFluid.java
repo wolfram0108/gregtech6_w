@@ -122,7 +122,10 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		UT.Reflection.setField(Fluid.class, aFluid, "block", this, F);
 	}
 	
-	// @Override
+	/** BUG-115: {@code IFluidBlock} вернулся общему предку — {@code getFluid()} снова есть, 1:1 с 1.7.10. */
+	@Override public Fluid getFluid() {return mFluid;}
+
+	@Override
 	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
 		// Forge royally fucked up again. You check for MetaData FIRST and do the set Block to Air SECOND, like I demonstrate here!!!
 		FluidStack rFluid = FL.mul(mQuanta, WD.meta(aWorld, aX, aY, aZ)+1);

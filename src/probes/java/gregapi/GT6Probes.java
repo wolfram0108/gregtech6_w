@@ -337,6 +337,10 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6recipegui.flag")) gt6RecipeGuiServerTick(aEvent.getServer());
 	// [GT6-HARVESTTAGPROBE] стенд «MODCOMPAT-001 П1/П3: Currently Harvestable + Effective Tool» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6harvesttagprobe.flag")) gt6HarvestTagProbeTick(aEvent.getServer());
+	// [GT6-GEOPROBE] BUG-115 сложная геометрия: озеро со ступенями, навесом, каскадом, обрывом — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6geoprobe.flag")) gt6GeoProbeTick(aEvent.getServer());
+	// [GT6-PUMPPROBE] BUG-115: насос и шесть видов воды — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6pumpprobe.flag")) gt6PumpProbeTick(aEvent.getServer());
 	// [GT6-JADEPROBE] стенд «MODCOMPAT-001: инструменты GT6 в тултипе Jade» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6jadeprobe.flag")) gt6JadeProbeTick(aEvent.getServer());
 	// [GT6-HARVESTPROBE] «чем добывается машина» — снять при уборке фазы
@@ -15491,5 +15495,560 @@ public final class GT6Probes {
 				.at(980, GT6Probes::gt6JadeMultiJudge);
 		}
 		sJMSeq.tick(sJMTick);
+	}
+
+	// ==========================================================================================================
+	// [GT6-PUMPPROBE] BUG-115: «насос не откачивает воду, просто не наполняется водой».
+	// Судится ИДЕНТИЧНОСТЬ содержимого: шесть площадок, на каждой свой ВИД ВОДЫ, насос гранью в воду, бочка
+	// сверху (приёмник — иначе насос выпивает один блок и встаёт: mTank.has() гасит его же тик).
+	// Энергия подаётся ТЕМ ЖЕ контрактом, каким её подаёт вал (ITileEntityEnergy.doInject, сторона OPOS[mFacing]).
+	// Судьи на каждый вид: A. набрано > 0 · B. блоков воды убыло · C. НЕТ уничтожения (убыло => набрано).
+	// Позитивный контроль встроен: вид №0 — ванильная вода, её ветка в насосе заведомо жива; её провал означает,
+	// что негоден стенд (энергия/постановка), а не мод.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static int sPumpTick = 0;
+	private static final int PUMP_BUILD = 200, PUMP_JUDGE = 700;
+	private static final int PUMP_ID = 16001; // Rotational Pump (Bronze), RU, NBT_INPUT=32 — Loader_MultiTileEntities.java:1132
+	private static final String[] sPumpKindNames = {"ванильная вода", "река GT6", "океан GT6", "болото GT6", "геотермальная вода GT6", "СМЕСЬ: ванильная + река", "ЛАВА (герметичная чаша)", "ЛАВА (открытый край — растекание)"};
+	private static final int PUMP_KINDS = sPumpKindNames.length;
+	/** у вида 7 дальняя стенка не ставится: лава уходит наружу и образует потоки-«полублоки». */
+	private static boolean pumpOpenEdge(int aKind) {return aKind == 7;}
+	private static final Object[] sPumpCases = new Object[PUMP_KINDS]; // MultiTileEntityPump на каждой площадке
+	private static final BlockPos[] sPumpOrigin = new BlockPos[PUMP_KINDS];
+	private static final int[] sPumpPoured = new int[PUMP_KINDS];       // сколько блоков жидкости реально встало
+	private static final Object[] sPumpBarrel = new Object[PUMP_KINDS];
+	private static final int[] sPumpSeenFluids = new int[PUMP_KINDS]; // max(mPumpedFluids) за прогон — «насос распознал жидкость»
+	private static final int[] sPumpSeenList   = new int[PUMP_KINDS]; // max(mPumpList) за прогон — «нашёл что качать»
+
+	// --- дифференциальный замер «зависших потоков» (репорт 2026-08-10) ---
+	// 0 — центр WD.set флагом 2 (ровно как насос) · 1 — центр флагом 3 (контроль) · 2 — СЫРОЙ setBlock мимо центра
+	private static final BlockPos[] sFlowOrigin = new BlockPos[3];
+	private static final int[] sFlowBefore = new int[3];           // потоков лавы ДО удаления источника
+	private static final int PUMP_FLOW_SPREAD = 430, PUMP_FLOW_CUT = 520; // растекание -> срез источника
+
+	/** потоки (не источники) данной жидкости вокруг площадки. */
+	private static int flowCount(ServerLevel aLevel, BlockPos aOrigin) {
+		int r = 0;
+		for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) for (int dy = -1; dy <= 4; dy++) {
+			net.minecraft.world.level.material.FluidState tFS = aLevel.getFluidState(aOrigin.offset(dx, dy, dz));
+			if (!tFS.isEmpty() && tFS.getType().isSame(net.minecraft.world.level.material.Fluids.LAVA) && !tFS.isSource()) r++;
+		}
+		return r;
+	}
+
+	private static Object pumpField(Object aObject, String aName) {
+		Class<?> c = aObject.getClass();
+		while (c != null) {
+			try {java.lang.reflect.Field f = c.getDeclaredField(aName); f.setAccessible(true); return f.get(aObject);}
+			catch (NoSuchFieldException e) {c = c.getSuperclass();}
+			catch (Throwable e) {return null;}
+		}
+		return null;
+	}
+
+	/** блок жидкости данного вида, которым заливаем чашу; для смеси — по локальному X. */
+	private static net.minecraft.world.level.block.Block pumpFluidBlock(int aKind, int aLocalX) {
+		switch (aKind) {
+			case 1: return (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.River;
+			case 2: return (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.Ocean;
+			case 3: return (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.Swamp;
+			case 4: return (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.WaterGeothermal;
+			case 5: return aLocalX <= 3 ? net.minecraft.world.level.block.Blocks.WATER : (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.River;
+			case 6: case 7: return net.minecraft.world.level.block.Blocks.LAVA;
+			default: return net.minecraft.world.level.block.Blocks.WATER;
+		}
+	}
+
+	/** мета заливки: у BlockBaseFluid кванты живут в мете (quanta = meta+1), полный блок = 7; у остальных 0. */
+	private static long pumpFluidMeta(int aKind, int aLocalX) {return aKind == 4 ? 7 : 0;}
+
+	/** сколько клеток чаши всё ещё заняты ЛЮБОЙ жидкостью. */
+	private static int pumpCountFluid(ServerLevel aLevel, BlockPos aOrigin) {
+		int r = 0;
+		for (int dx = 1; dx <= 6; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = 1; dy <= 2; dy++) {
+			net.minecraft.world.level.block.state.BlockState tState = aLevel.getBlockState(aOrigin.offset(dx, dy, dz));
+			if (gregapi.util.WD.liquid(tState.getBlock()) || !tState.getFluidState().isEmpty()) r++;
+		}
+		return r;
+	}
+
+	/** блоки лавы в РАСШИРЕННОЙ области (чаша + площадка снаружи): отдельно источники и потоки-«полублоки». */
+	private static int[] pumpCountLava(ServerLevel aLevel, BlockPos aOrigin) {
+		int rSource = 0, rFlowing = 0;
+		for (int dx = -2; dx <= 15; dx++) for (int dz = -4; dz <= 4; dz++) for (int dy = 1; dy <= 4; dy++) {
+			net.minecraft.world.level.material.FluidState tFS = aLevel.getFluidState(aOrigin.offset(dx, dy, dz));
+			if (tFS.isEmpty() || !tFS.getType().isSame(net.minecraft.world.level.material.Fluids.LAVA)) continue;
+			if (tFS.isSource()) rSource++; else rFlowing++;
+		}
+		return new int[] {rSource, rFlowing};
+	}
+
+	public static void gt6PumpProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sPumpTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aServer.overworld();
+		try {
+			if (sPumpTick == PUMP_BUILD) {
+				BlockPos tSpawn = tLevel.getRespawnData().pos();
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				if (tReg == null) {O.println("[GT6-PUMPPROBE] ЗАМЕР НЕ УДАЛСЯ: реестр MTE не найден"); aServer.halt(F); return;}
+				O.println("========== [GT6-PUMPPROBE] BUG-115: шесть видов воды, спавн @" + tSpawn.toShortString() + " ==========");
+				for (int k = 0; k < PUMP_KINDS; k++) {
+					BlockPos tO = new BlockPos(tSpawn.getX() + 40 + k * 24, 100, tSpawn.getZ() + 40);
+					sPumpOrigin[k] = tO;
+					for (int cx = -1; cx <= 1; cx++) for (int cz = -1; cz <= 1; cz++) tLevel.setChunkForced((tO.getX() >> 4) + cx, (tO.getZ() >> 4) + cz, true);
+					// пол и расчистка
+					for (int dx = -2; dx <= 8; dx++) for (int dz = -3; dz <= 3; dz++) {
+						tLevel.setBlock(tO.offset(dx, 0, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+						for (int dy = 1; dy <= 4; dy++) tLevel.setBlock(tO.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+					}
+					// стенки чаши: дальняя (x=7) и боковые (z=+-2) — жидкость GT6 квантовая, без стенок вытекает
+					for (int dy = 1; dy <= 3; dy++) {
+						if (!pumpOpenEdge(k)) for (int dz = -2; dz <= 2; dz++) tLevel.setBlock(tO.offset(7, dy, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+						for (int dx = 0; dx <= 7; dx++) {
+							tLevel.setBlock(tO.offset(dx, dy, -2), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+							tLevel.setBlock(tO.offset(dx, dy,  2), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+						}
+					}
+					// вид 7: площадка ЗА открытым краем — сюда лава утекает и оставляет потоки-«полублоки»
+					if (pumpOpenEdge(k)) for (int dx = 7; dx <= 14; dx++) for (int dz = -3; dz <= 3; dz++) {
+						tLevel.setBlock(tO.offset(dx, 0, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+						for (int dy = 1; dy <= 4; dy++) tLevel.setBlock(tO.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+					}
+					// насос и бочка-приёмник над ним
+					boolean tPlaced = tReg.mBlock.placeBlock(tLevel, tO.getX(), tO.getY() + 1, tO.getZ(), SIDE_UNKNOWN, (short)PUMP_ID, null, F, T);
+					net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tO.above());
+					if (!tPlaced || !(tBE instanceof gregtech.tileentity.tanks.MultiTileEntityPump tPump)) {
+						O.println("[GT6-PUMPPROBE] " + sPumpKindNames[k] + ": насос НЕ встал (placed=" + tPlaced + ", BE=" + tBE + ")"); continue;}
+					tPump.setPrimaryFacing(SIDE_EAST); // грань в чашу
+					sPumpCases[k] = tPump;
+					boolean tBarrel = tReg.mBlock.placeBlock(tLevel, tO.getX(), tO.getY() + 2, tO.getZ(), SIDE_UNKNOWN, (short)AOP_BARREL_ID, null, F, T);
+					net.minecraft.world.level.block.entity.BlockEntity tBBE = tLevel.getBlockEntity(tO.above(2));
+					if (tBarrel && tBBE instanceof gregapi.tileentity.tank.TileEntityBase08Barrel) sPumpBarrel[k] = tBBE;
+					// Заливка ТЕМ ЖЕ каналом, каким кладёт генератор мира: WD.set(..., флаг 0)
+					// (WorldgenOcean:83 / WorldgenRiver:83 / WorldgenSwamp:81). Первый прогон стенда лил
+					// setBlock с флагом 3 — обновление соседей будило квантовую логику GT6-вод, и блок
+					// сносился синхронно: «залито 0 из 36», три вида воды остались НЕ измеренными.
+					// Воды GT6 вне ворлдгена сносят себя сами: onBlockAdded при PLACEMENT_ALLOWED=F ставит воздух
+					// (BlockOcean:58-64, 1:1 с 1.7.10 — защита от «поставил ведром бесконечное море»). Первые два
+					// прогона стенда упёрлись ровно в это: WD.set возвращал true, а в клетке оставался воздух.
+					// Взводим гейт ровно тем же приёмом, каким его взводит сам блок в своём updateTick (:74).
+					gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = T;
+					gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = T;
+					gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = T;
+					int tPoured = 0;
+					for (int dx = 1; dx <= 6; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = 1; dy <= 2; dy++) {
+						BlockPos tP = tO.offset(dx, dy, dz);
+						net.minecraft.world.level.block.Block tWant = pumpFluidBlock(k, dx);
+						gregapi.util.WD.set(tLevel, tP.getX(), tP.getY(), tP.getZ(), tWant, pumpFluidMeta(k, dx), 0);
+						if (tLevel.getBlockState(tP).getBlock() == tWant) tPoured++;
+					}
+					gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = F;
+					gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = F;
+					gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = F;
+					sPumpPoured[k] = tPoured;
+					O.println("[GT6-PUMPPROBE] " + sPumpKindNames[k] + " @" + tO.toShortString()
+						+ " · насос facing=" + tPump.mFacing + " · перед гранью=" + tLevel.getBlockState(tO.offset(1, 1, 0)).getBlock()
+						+ " · залито " + tPoured + " из 36 · бочка=" + (sPumpBarrel[k] != null));
+				}
+				// две площадки для дифференциального замера «зависших потоков»
+				for (int i = 0; i < 3; i++) {
+					BlockPos tO = new BlockPos(tSpawn.getX() + 40 + PUMP_KINDS * 24 + i * 24, 100, tSpawn.getZ() + 40);
+					sFlowOrigin[i] = tO;
+					for (int cx = -1; cx <= 1; cx++) for (int cz = -1; cz <= 1; cz++) tLevel.setChunkForced((tO.getX() >> 4) + cx, (tO.getZ() >> 4) + cz, true);
+					for (int dx = -6; dx <= 6; dx++) for (int dz = -6; dz <= 6; dz++) {
+						tLevel.setBlock(tO.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+						for (int dy = 0; dy <= 4; dy++) tLevel.setBlock(tO.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+					}
+					// источник на пьедестале: лава потечёт по площадке во все стороны и оставит потоки
+					tLevel.setBlock(tO.offset(0, 0, 0), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+					tLevel.setBlock(tO.offset(0, 1, 0), net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState(), 3);
+					O.println("[GT6-PUMPPROBE] площадка потоков #" + i + " @" + tO.toShortString() + " (срез источника " + (i == 0 ? "центром WD.set, флаг 2 — как насос" : i == 1 ? "центром WD.set, флаг 3" : "СЫРЫМ setBlock мимо центра, флаг 2") + ")");
+				}
+				return;
+			}
+			if (sPumpTick == PUMP_FLOW_SPREAD) {
+				for (int i = 0; i < 3; i++) if (sFlowOrigin[i] != null) {
+					sFlowBefore[i] = flowCount(tLevel, sFlowOrigin[i]);
+					O.println("[GT6-PUMPPROBE] площадка потоков #" + i + ": потоков до среза=" + sFlowBefore[i]);
+				}
+				return;
+			}
+			if (sPumpTick == PUMP_FLOW_CUT) {
+				// срез источника: #0 — ровно тем вызовом, что в MultiTileEntityPump.drainFluid:231 (флаг 2);
+				// #1 — тот же центр с UPDATE_NEIGHBORS (флаг 3).
+				for (int i = 0; i < 3; i++) if (sFlowOrigin[i] != null) {
+					BlockPos tSrc = sFlowOrigin[i].offset(0, 1, 0);
+					boolean tCut = i == 2
+						? tLevel.setBlock(tSrc, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2) // МИМО центра
+						: gregapi.util.WD.set(tLevel, tSrc.getX(), tSrc.getY(), tSrc.getZ(), NB, 0, i == 0 ? 2 : 3);
+					O.println("[GT6-PUMPPROBE] площадка потоков #" + i + ": источник срезан=" + tCut);
+				}
+				return;
+			}
+			if (sPumpTick == PUMP_BUILD + 5) {
+				for (int k = 0; k < PUMP_KINDS; k++) if (sPumpOrigin[k] != null)
+					O.println("[GT6-PUMPPROBE] КОНТРОЛЬ +5 тиков " + sPumpKindNames[k] + ": жидкости в чаше=" + pumpCountFluid(tLevel, sPumpOrigin[k]) + " (залито было " + sPumpPoured[k] + ")");
+			}
+			// энергия: тем же контрактом, каким кормит вал (сторона OPOS[mFacing] = WEST), size <= mInput*2 = 64
+			if (sPumpTick > PUMP_BUILD && sPumpTick < PUMP_JUDGE) {
+				for (int k = 0; k < PUMP_KINDS; k++) if (sPumpCases[k] instanceof gregtech.tileentity.tanks.MultiTileEntityPump tP) {
+					tP.doEnergyInjection(gregapi.data.TD.Energy.RU, SIDE_WEST, 64, 128, T);
+					sPumpSeenFluids[k] = Math.max(sPumpSeenFluids[k], tP.mPumpedFluids.size());
+					sPumpSeenList[k]   = Math.max(sPumpSeenList[k],   tP.mPumpList.size());
+				}
+				return;
+			}
+			if (sPumpTick != PUMP_JUDGE) return;
+
+			O.println("[GT6-PUMPPROBE] --- после " + (PUMP_JUDGE - PUMP_BUILD) + " тиков работы ---");
+			for (int k = 0; k < PUMP_KINDS; k++) {
+				String tKind = sPumpKindNames[k];
+				if (!(sPumpCases[k] instanceof gregtech.tileentity.tanks.MultiTileEntityPump tPump)) {
+					gregapi.probe.GT6ProbeStand.judge("GT6-PUMPPROBE", tKind + " · ЗАМЕР НЕ ЗАСЧИТАН: насос не поставлен", F, "насос", "нет");
+					continue;
+				}
+				gregapi.fluid.FluidTankGT tTank = (gregapi.fluid.FluidTankGT)pumpField(tPump, "mTank");
+				long tInPump = tTank == null ? -1 : tTank.amount();
+				long tInBarrel = 0; String tFluid = "-";
+				if (sPumpBarrel[k] instanceof gregapi.tileentity.tank.TileEntityBase08Barrel tB && tB.mTank != null && !tB.mTank.isEmpty()) {
+					tInBarrel = tB.mTank.amount(); tFluid = String.valueOf(tB.mTank.fluid());
+				}
+				if (tInBarrel == 0 && tTank != null && !tTank.isEmpty()) tFluid = String.valueOf(tTank.fluid());
+				long tGot = Math.max(0, tInPump) + tInBarrel;
+				int tLeft = pumpCountFluid(tLevel, sPumpOrigin[k]);
+				int tGone = sPumpPoured[k] - tLeft;
+				O.println("[GT6-PUMPPROBE] " + tKind + ": набрано=" + tGot + " mb (" + tFluid + ")"
+					+ " · в насосе=" + tInPump + " · в бочке=" + tInBarrel
+					+ " · блоков было=" + sPumpPoured[k] + " осталось=" + tLeft + " убыло=" + tGone
+					+ " · mEnergy=" + pumpField(tPump, "mEnergy") + " · mActive=" + pumpField(tPump, "mActive")
+					+ " · mPumpedFluids(max)=" + sPumpSeenFluids[k] + " · mPumpList(max)=" + sPumpSeenList[k]);
+				gregapi.probe.GT6ProbeStand.judge("GT6-PUMPPROBE", tKind + " · A. насос НАБРАЛ жидкость", tGot > 0, ">0 mb", tGot + " mb");
+				gregapi.probe.GT6ProbeStand.judge("GT6-PUMPPROBE", tKind + " · B. блоков жидкости УБЫЛО", tGone > 0, ">0", String.valueOf(tGone));
+				gregapi.probe.GT6ProbeStand.judge("GT6-PUMPPROBE", tKind + " · C. НЕТ уничтожения (убыло без набора)", !(tGone > 0 && tGot <= 0), "набор при убыли", "убыло " + tGone + ", набрано " + tGot);
+				// D различает «не увидел жидкость вовсе» от «увидел и выпил»: к моменту судейства список пуст
+				// в обоих случаях (после опустошения чаши насос сканирует воздух), поэтому судим МАКСИМУМ за прогон.
+				gregapi.probe.GT6ProbeStand.judge("GT6-PUMPPROBE", tKind + " · D. насос РАСПОЗНАЛ жидкость перед гранью", sPumpSeenFluids[k] > 0, ">0 видов", sPumpSeenFluids[k] + " видов");
+			}
+			// F. Лава: после работы насоса не должно остаться НИ ИСТОЧНИКОВ, НИ ПОТОКОВ («полублоков»),
+			// и лава не должна была уйти за исходный контур. Репорт пользователя 2026-08-10.
+			for (int k = 6; k < PUMP_KINDS; k++) {
+				if (sPumpOrigin[k] == null) continue;
+				int[] tLava = pumpCountLava(tLevel, sPumpOrigin[k]);
+				O.println("[GT6-PUMPPROBE] " + sPumpKindNames[k] + ": ОСТАЛОСЬ лавы — источников=" + tLava[0] + ", потоков(«полублоков»)=" + tLava[1]);
+				gregapi.probe.GT6ProbeStand.judge("GT6-PUMPPROBE", sPumpKindNames[k] + " · F. не осталось источников лавы", tLava[0] == 0, "0", String.valueOf(tLava[0]));
+				gregapi.probe.GT6ProbeStand.judge("GT6-PUMPPROBE", sPumpKindNames[k] + " · G. не осталось потоков-«полублоков»", tLava[1] == 0, "0", String.valueOf(tLava[1]));
+			}
+			// Дифференциальный замер «зависших потоков»: одинаковые площадки, разный флаг удаления источника.
+			for (int i = 0; i < 3; i++) {
+				if (sFlowOrigin[i] == null) continue;
+				int tAfter = flowCount(tLevel, sFlowOrigin[i]);
+				String tName = i == 0 ? "СРЕЗ ЦЕНТРОМ, флаг 2 (как насос)" : i == 1 ? "СРЕЗ ЦЕНТРОМ, флаг 3" : "СРЕЗ МИМО ЦЕНТРА (контроль механизма)";
+				O.println("[GT6-PUMPPROBE] " + tName + ": потоков было " + sFlowBefore[i] + ", осталось через "
+					+ (PUMP_JUDGE - PUMP_FLOW_CUT) + " тиков = " + tAfter);
+				gregapi.probe.GT6ProbeStand.judge("GT6-PUMPPROBE", tName + " · L. позитивный контроль: потоки успели образоваться", sFlowBefore[i] > 0, ">0", String.valueOf(sFlowBefore[i]));
+				if (i == 2) {
+					// эта площадка обязана остаться КРАСНОЙ и после фикса: сырой setBlock центра не знает,
+					// а значит симптом жив — доказательство, что зелень площадок #0/#1 дал именно центр.
+					gregapi.probe.GT6ProbeStand.judge("GT6-PUMPPROBE", tName + " · K. симптом ВНЕ центра сохраняется (иначе судья бессмыслен)", tAfter > 0, ">0 (потоки висят)", String.valueOf(tAfter));
+				} else {
+					gregapi.probe.GT6ProbeStand.judge("GT6-PUMPPROBE", tName + " · J. после среза источника потоки ИСЧЕЗЛИ", tAfter == 0, "0", String.valueOf(tAfter));
+				}
+			}
+			// E. Канал IFluidBlock у самого блока. Его спрашивают ОДИНАКОВО восемь мест мода (насос,
+			// кавер Drain, два ведёрных поведения, ёмкости, три датчика) — проверка канала на блоке
+			// доказывает оживление всех восьми, а не только того потребителя, чей стенд построен.
+			for (int k = 0; k < PUMP_KINDS; k++) {
+				net.minecraft.world.level.block.Block tBlock = pumpFluidBlock(k, 1);
+				boolean tIs = tBlock instanceof net.minecraftforge.fluids.IFluidBlock;
+				String tDrained = "-";
+				if (tIs) try {
+					net.neoforged.neoforge.fluids.FluidStack tFS = ((net.minecraftforge.fluids.IFluidBlock)tBlock)
+						.drain(tLevel, sPumpOrigin[k].getX() + 6, sPumpOrigin[k].getY() + 2, sPumpOrigin[k].getZ(), F);
+					tDrained = tFS == null ? "null" : tFS.getAmount() + " mb " + tFS.getFluid();
+				} catch (Throwable e) {tDrained = "ИСКЛЮЧЕНИЕ " + e;}
+				// Ванильные вода и лава IFluidBlock-ом не были и в 1.7.10 (Forge оборачивал только жидкости модов),
+				// в моде у них СВОИ ветки выше по коду — для них ждём false. Первая редакция судьи исключала
+				// только воду и потому ошибочно требовала канал у лавы.
+				boolean tVanilla = tBlock == net.minecraft.world.level.block.Blocks.WATER || tBlock == net.minecraft.world.level.block.Blocks.LAVA;
+				gregapi.probe.GT6ProbeStand.judge("GT6-PUMPPROBE", sPumpKindNames[k] + " · E. канал IFluidBlock у блока",
+					tIs != tVanilla, tVanilla ? "ванильная: канала нет (как в 1.7.10)" : "канал есть", "instanceof=" + tIs + ", drain=" + tDrained);
+			}
+			O.println("========== [GT6-PUMPPROBE] DONE ==========");
+		} catch (Throwable e) {e.printStackTrace(O);}
+		if (sPumpTick >= PUMP_JUDGE) aServer.halt(F);
+	}
+
+	// ==========================================================================================================
+	// [GT6-GEOPROBE] BUG-115, сложная геометрия. Две площадки: лава и вода. У каждой:
+	//   · ступенчатое дно (три террасы) — разные глубины в одном водоёме;
+	//   · НАВЕС над частью озера — карман, куда насос идёт по горизонтали под потолком;
+	//   · узкая протока 1x1 в боковой карман с УСТУПОМ (каскад-водопад на два блока ниже);
+	//   · ОТКРЫТЫЙ ОБРЫВ наружу — жидкость свободно утекает и оставляет потоки;
+	//   · ИЗОЛИРОВАННЫЙ карман, связанный с озером только ДИАГОНАЛЬЮ (жидкость туда не течёт).
+	// Жидкости дают растечься ДО пуска насоса — иначе потоков не возникает и симптом не воспроизводится.
+	// Судьи: A набрал · B источников в озере не осталось · C НЕТ зависших потоков во всей области ·
+	//        D изолированный карман нетронут (он же позитивный контроль счётчика) · E жидкость не ушла за рамку замера.
+	// Стенд НЕ гасит сервер: на живом клиенте halt закрыл бы мир, а автовход завёл бы прогон заново.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static int sGeoTick = 0;
+	private static boolean sGeoDone = F;
+	private static final int GEO_BUILD = 200, GEO_SPREAD_END = 700, GEO_CUT = 2400, GEO_JUDGE = 3000;
+	private static final String[] sGeoNames = {"ЛАВА, сложная геометрия", "ВОДА, сложная геометрия"};
+	private static final BlockPos[] sGeoOrigin = new BlockPos[2];
+	private static final Object[] sGeoPump = new Object[2];
+	private static final Object[] sGeoBarrel = new Object[2];
+	private static final int[] sGeoPoured = new int[2], sGeoIsolatedAfterSpread = new int[2];
+	private static final long[] sGeoDrained = new long[2]; // суммарно откачано: бочку опустошаем каждый тик (бесконечный сток)
+
+	private static net.minecraft.world.level.material.Fluid geoFluid(int aKind) {
+		return aKind == 0 ? net.minecraft.world.level.material.Fluids.LAVA : net.minecraft.world.level.material.Fluids.WATER;
+	}
+	private static net.minecraft.world.level.block.Block geoBlock(int aKind) {
+		return aKind == 0 ? net.minecraft.world.level.block.Blocks.LAVA : net.minecraft.world.level.block.Blocks.WATER;
+	}
+	/** {источники, потоки} нужной жидкости в прямоугольнике локальных координат. */
+	private static int[] geoCount(ServerLevel aLevel, BlockPos aO, int aKind, int aX0, int aX1, int aY0, int aY1, int aZ0, int aZ1) {
+		int rSrc = 0, rFlow = 0;
+		for (int dx = aX0; dx <= aX1; dx++) for (int dz = aZ0; dz <= aZ1; dz++) for (int dy = aY0; dy <= aY1; dy++) {
+			net.minecraft.world.level.material.FluidState tFS = aLevel.getFluidState(aO.offset(dx, dy, dz));
+			if (tFS.isEmpty() || !tFS.getType().isSame(geoFluid(aKind))) continue;
+			if (tFS.isSource()) rSrc++; else rFlow++;
+		}
+		return new int[] {rSrc, rFlow};
+	}
+	/** ОСИРОТЕВШИЕ потоки — ПО СВЯЗНОСТИ, а не по соседям. Прежняя редакция считала осиротевшим любой поток,
+	 *  у которого нет источника в 26 соседях и в 4 клетках над ним, и потому записывала в дефект ЗАКОННЫЙ каскад
+	 *  (поток питается потоком сверху, а источник далеко) — на стенде с обрывом и уступом это давало 20-28
+	 *  ложных срабатываний, из-за которых A/B выглядело как «фикс не работает».
+	 *  Здесь: из каждого потока идём в ширину ПО САМОЙ ЖИДКОСТИ (6 направлений); достижим источник — поток
+	 *  питаемый и законный; недостижим — он и есть «полублок, который никогда не исчезнет».
+	 *  Возвращает {число осиротевших, число просмотренных потоков}; координаты первых пяти печатает вызыватель. */
+	private static int[] geoOrphanFlows(ServerLevel aLevel, BlockPos aO, int aKind, java.util.List<BlockPos> aSamples) {
+		java.util.Set<BlockPos> tOrphanKnown = new java.util.HashSet<>(), tFedKnown = new java.util.HashSet<>();
+		int rOrphan = 0, rFlows = 0;
+		for (int dx = -6; dx <= 26; dx++) for (int dz = -12; dz <= 12; dz++) for (int dy = -4; dy <= 6; dy++) {
+			BlockPos tStart = aO.offset(dx, dy, dz);
+			net.minecraft.world.level.material.FluidState tFS = aLevel.getFluidState(tStart);
+			if (tFS.isEmpty() || !tFS.getType().isSame(geoFluid(aKind)) || tFS.isSource()) continue;
+			rFlows++;
+			if (tFedKnown.contains(tStart)) continue;
+			if (tOrphanKnown.contains(tStart)) {rOrphan++; continue;}
+			// поиск в ширину по клеткам той же жидкости
+			java.util.ArrayDeque<BlockPos> tQueue = new java.util.ArrayDeque<>();
+			java.util.Set<BlockPos> tSeen = new java.util.HashSet<>();
+			tQueue.add(tStart); tSeen.add(tStart);
+			boolean tFed = F;
+			while (!tQueue.isEmpty() && tSeen.size() < 4096) {
+				BlockPos tCur = tQueue.poll();
+				for (net.minecraft.core.Direction tDir : net.minecraft.core.Direction.values()) {
+					BlockPos tNext = tCur.relative(tDir);
+					if (!tSeen.add(tNext)) continue;
+					net.minecraft.world.level.material.FluidState tN = aLevel.getFluidState(tNext);
+					if (tN.isEmpty() || !tN.getType().isSame(geoFluid(aKind))) continue;
+					if (tN.isSource()) {tFed = T; break;}
+					tQueue.add(tNext);
+				}
+				if (tFed) break;
+			}
+			for (BlockPos tP : tSeen) {if (tFed) tFedKnown.add(tP); else tOrphanKnown.add(tP);}
+			if (!tFed) {rOrphan++; if (aSamples != null && aSamples.size() < 5) aSamples.add(tStart);}
+		}
+		return new int[] {rOrphan, rFlows};
+	}
+
+	private static void geoSet(ServerLevel aLevel, BlockPos aO, int dx, int dy, int dz, net.minecraft.world.level.block.Block aBlock) {
+		aLevel.setBlock(aO.offset(dx, dy, dz), aBlock.defaultBlockState(), 3);
+	}
+
+	public static void gt6GeoProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sGeoDone) return;
+		sGeoTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aServer.overworld();
+		net.minecraft.world.level.block.Block AIR = net.minecraft.world.level.block.Blocks.AIR, STONE = net.minecraft.world.level.block.Blocks.STONE;
+		try {
+			if (sGeoTick == GEO_BUILD) {
+				BlockPos tSpawn = tLevel.getRespawnData().pos();
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				if (tReg == null) {O.println("[GT6-GEOPROBE] ЗАМЕР НЕ УДАЛСЯ: реестр MTE не найден"); sGeoDone = T; return;}
+				O.println("========== [GT6-GEOPROBE] BUG-115 сложная геометрия, спавн @" + tSpawn.toShortString() + " ==========");
+				for (int k = 0; k < 2; k++) {
+					BlockPos tO = new BlockPos(tSpawn.getX() - 120 + k * 48, 100, tSpawn.getZ() + 96);
+					sGeoOrigin[k] = tO;
+					for (int cx = -2; cx <= 2; cx++) for (int cz = -2; cz <= 2; cz++) tLevel.setChunkForced((tO.getX() >> 4) + cx, (tO.getZ() >> 4) + cz, true);
+					// ---- расчистка коробки и сплошное основание ----
+					for (int dx = -6; dx <= 26; dx++) for (int dz = -12; dz <= 12; dz++) {
+						geoSet(tLevel, tO, dx, -1, dz, STONE);
+						for (int dy = 0; dy <= 8; dy++) geoSet(tLevel, tO, dx, dy, dz, AIR);
+					}
+					// ---- ступенчатое дно основного озера (x 1..10, z -4..4): три террасы ----
+					for (int dx = 1; dx <= 10; dx++) for (int dz = -4; dz <= 4; dz++) {
+						int tFloor = dx <= 3 ? 0 : dx <= 6 ? 1 : 2;
+						for (int dy = -1; dy < tFloor; dy++) geoSet(tLevel, tO, dx, dy, dz, STONE);
+					}
+					// ---- стены озера: запад (насос), север, юг; ЮГ разорван у z=+5 -> открытый обрыв ----
+					for (int dy = 0; dy <= 5; dy++) {
+						for (int dz = -5; dz <= 5; dz++) geoSet(tLevel, tO, 0, dy, dz, STONE);   // западная (в ней насос)
+						for (int dx = 0; dx <= 11; dx++) geoSet(tLevel, tO, dx, dy, -5, STONE);  // северная
+						for (int dx = 0; dx <= 11; dx++) if (dx < 6 || dx > 8) geoSet(tLevel, tO, dx, dy, 5, STONE); // южная с проёмом 6..8
+						for (int dz = -5; dz <= 5; dz++) if (dz != 0) geoSet(tLevel, tO, 11, dy, dz, STONE);         // восточная с протокой в z=0
+					}
+					// ---- НАВЕС над северо-восточной частью озера (потолок на +4) ----
+					for (int dx = 7; dx <= 10; dx++) for (int dz = -4; dz <= -2; dz++) geoSet(tLevel, tO, dx, 4, dz, STONE);
+					// ---- боковой карман за протокой: дно НИЖЕ на 2 -> каскад ----
+					for (int dx = 12; dx <= 16; dx++) for (int dz = -3; dz <= 3; dz++) {
+						geoSet(tLevel, tO, dx, -3, dz, STONE); geoSet(tLevel, tO, dx, -2, dz, AIR); geoSet(tLevel, tO, dx, -1, dz, AIR);
+					}
+					for (int dy = -3; dy <= 5; dy++) {
+						for (int dz = -4; dz <= 4; dz++) geoSet(tLevel, tO, 17, dy, dz, STONE);
+						for (int dx = 11; dx <= 17; dx++) {geoSet(tLevel, tO, dx, dy, -4, STONE); geoSet(tLevel, tO, dx, dy, 4, STONE);}
+					}
+					// ---- ОБРЫВ за южным проёмом: пол уходит на 3 вниз, жидкость льётся наружу ----
+					for (int dx = 5; dx <= 9; dx++) for (int dz = 6; dz <= 11; dz++) {geoSet(tLevel, tO, dx, -4, dz, STONE); for (int dy = -3; dy <= 3; dy++) geoSet(tLevel, tO, dx, dy, dz, AIR);}
+					// ---- ИЗОЛИРОВАННЫЙ карман: касается озера только УГЛОМ (диагональю) ----
+					for (int dx = 12; dx <= 14; dx++) for (int dz = 6; dz <= 8; dz++) {
+						geoSet(tLevel, tO, dx, -1, dz, STONE);
+						for (int dy = 0; dy <= 3; dy++) geoSet(tLevel, tO, dx, dy, dz, dy <= 1 ? geoBlock(k) : AIR);
+					}
+					for (int dy = 0; dy <= 3; dy++) {
+						for (int dz = 5; dz <= 9; dz++) {geoSet(tLevel, tO, 11, dy, dz, STONE); geoSet(tLevel, tO, 15, dy, dz, STONE);}
+						for (int dx = 11; dx <= 15; dx++) {geoSet(tLevel, tO, dx, dy, 5, STONE); geoSet(tLevel, tO, dx, dy, 9, STONE);}
+					}
+					// ---- насос в западной стене на уровне поверхности озера, гранью в озеро; бочка сверху ----
+					boolean tPlaced = tReg.mBlock.placeBlock(tLevel, tO.getX(), tO.getY() + 2, tO.getZ(), SIDE_UNKNOWN, (short)PUMP_ID, null, F, T);
+					net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tO.offset(0, 2, 0));
+					if (!tPlaced || !(tBE instanceof gregtech.tileentity.tanks.MultiTileEntityPump tPump)) {
+						O.println("[GT6-GEOPROBE] " + sGeoNames[k] + ": насос НЕ встал (placed=" + tPlaced + ")"); continue;}
+					tPump.setPrimaryFacing(SIDE_EAST);
+					sGeoPump[k] = tPump;
+					if (tReg.mBlock.placeBlock(tLevel, tO.getX(), tO.getY() + 3, tO.getZ(), SIDE_UNKNOWN, (short)AOP_BARREL_ID, null, F, T)
+					 && tLevel.getBlockEntity(tO.offset(0, 3, 0)) instanceof gregapi.tileentity.tank.TileEntityBase08Barrel tB) sGeoBarrel[k] = tB;
+					// ---- заливка озера: источники до уровня +3, поверх ступеней ----
+					int tPoured = 0;
+					for (int dx = 1; dx <= 10; dx++) for (int dz = -4; dz <= 4; dz++) {
+						int tFloor = dx <= 3 ? 0 : dx <= 6 ? 1 : 2;
+						for (int dy = tFloor; dy <= 2; dy++) {
+							BlockPos tP = tO.offset(dx, dy, dz);
+							tLevel.setBlock(tP, geoBlock(k).defaultBlockState(), 3);
+							if (tLevel.getBlockState(tP).getBlock() == geoBlock(k)) tPoured++;
+						}
+					}
+					sGeoPoured[k] = tPoured;
+					O.println("[GT6-GEOPROBE] " + sGeoNames[k] + " @" + tO.toShortString() + " · насос facing=" + tPump.mFacing
+						+ " · перед гранью=" + tLevel.getBlockState(tO.offset(1, 2, 0)).getBlock() + " · залито источников=" + tPoured + " · бочка=" + (sGeoBarrel[k] != null));
+				}
+				return;
+			}
+			// растекание БЕЗ насоса: каскад, обрыв, карманы — потоки должны появиться
+			if (sGeoTick == GEO_SPREAD_END) {
+				for (int k = 0; k < 2; k++) if (sGeoOrigin[k] != null) {
+					int[] tAll = geoCount(tLevel, sGeoOrigin[k], k, -6, 26, -4, 6, -12, 12);
+					int[] tIso = geoCount(tLevel, sGeoOrigin[k], k, 12, 14, 0, 3, 6, 8);
+					sGeoIsolatedAfterSpread[k] = tIso[0] + tIso[1];
+					O.println("[GT6-GEOPROBE] " + sGeoNames[k] + " ПОСЛЕ РАСТЕКАНИЯ (насос ещё не работал): источников="
+						+ tAll[0] + ", потоков=" + tAll[1] + " · в изолированном кармане=" + sGeoIsolatedAfterSpread[k]);
+				}
+				return;
+			}
+			if (sGeoTick == GEO_CUT - 1) {
+				// РЕПОРТ ПОЛЬЗОВАТЕЛЯ дословно: «на слое насоса оставались полублоки лавы, которые никогда не
+				// исчезали». Меряем именно это: потоки на СЛОЕ НАСОСА (dy=2) по итогу работы САМОГО насоса,
+				// до всякого скриптового вмешательства.
+				for (int k = 0; k < 2; k++) if (sGeoOrigin[k] != null) {
+					int[] tLayer = geoCount(tLevel, sGeoOrigin[k], k, -6, 26, 2, 2, -12, 12);
+					java.util.List<BlockPos> tSamples = new java.util.ArrayList<>();
+					int[] tOrphan = geoOrphanFlows(tLevel, sGeoOrigin[k], k, tSamples);
+					StringBuilder tWhere = new StringBuilder();
+					for (BlockPos tP : tSamples) tWhere.append(" ").append(tP.toShortString());
+					O.println("[GT6-GEOPROBE] " + sGeoNames[k] + " по итогу работы насоса: слой насоса ист=" + tLayer[0] + " пот=" + tLayer[1]
+						+ " · потоков всего=" + tOrphan[1] + " · ОСИРОТЕВШИХ (источник недостижим по жидкости) = " + tOrphan[0]
+						+ (tWhere.length() > 0 ? " · примеры:" + tWhere : "")
+						+ " · A/B-режим=" + (gregapi.data.CS.probeFlag("gt6nofluidwake.flag") ? "БАЗА (как до фикса)" : "с фиксом"));
+					gregapi.probe.GT6ProbeStand.judge("GT6-GEOPROBE", sGeoNames[k] + " · H. НЕТ осиротевших потоков (репорт: «полублоки, которые никогда не исчезают»)", tOrphan[0] == 0, "0", String.valueOf(tOrphan[0]));
+				}
+				return;
+			}
+			if (sGeoTick == GEO_CUT) {
+				// Насос глохнет, выкачав клетку перед гранью (канон GT6, сверено с 1.7.10). Дальше нас интересует
+				// НЕ полнота откачки, а репорт: рассасываются ли потоки, когда питавшие их источники убраны.
+				// Срезаем ВСЕ оставшиеся источники ТЕМ ЖЕ вызовом, каким их убирает насос.
+				for (int k = 0; k < 2; k++) if (sGeoOrigin[k] != null) {
+					BlockPos tO = sGeoOrigin[k];
+					int tCut = 0;
+					for (int dx = -6; dx <= 26; dx++) for (int dz = -12; dz <= 12; dz++) for (int dy = -4; dy <= 6; dy++) {
+						BlockPos tP = tO.offset(dx, dy, dz);
+						// изолированный карман не трогаем — он контроль счётчика
+						if (dx >= 12 && dx <= 14 && dz >= 6 && dz <= 8) continue;
+						net.minecraft.world.level.material.FluidState tFS = tLevel.getFluidState(tP);
+						if (tFS.isEmpty() || !tFS.getType().isSame(geoFluid(k)) || !tFS.isSource()) continue;
+						gregapi.util.WD.set(tLevel, tP.getX(), tP.getY(), tP.getZ(), NB, 0, 2);
+						tCut++;
+					}
+					int[] tNow = geoCount(tLevel, tO, k, -6, 26, -4, 6, -12, 12);
+					O.println("[GT6-GEOPROBE] " + sGeoNames[k] + ": СРЕЗАНО источников=" + tCut + " (каналом насоса, флаг 2) · сразу после среза: ист=" + tNow[0] + " пот=" + tNow[1]);
+				}
+				return;
+			}
+			if (sGeoTick > GEO_SPREAD_END && sGeoTick < GEO_JUDGE) {
+				for (int k = 0; k < 2; k++) {
+					if (sGeoPump[k] instanceof gregtech.tileentity.tanks.MultiTileEntityPump tP)
+						tP.doEnergyInjection(gregapi.data.TD.Energy.RU, SIDE_WEST, 64, 128, T);
+					// БЕСКОНЕЧНЫЙ СТОК: бочка Bronze Drum вмещает 64000 mb, и на первом прогоне насос встал,
+					// упершись в неё (набрано ровно 65000 = 64000 бочка + 1000 танк). Меряем откачку, а не хранение.
+					if (sGeoBarrel[k] instanceof gregapi.tileentity.tank.TileEntityBase08Barrel tB && tB.mTank != null && !tB.mTank.isEmpty()) {
+						sGeoDrained[k] += tB.mTank.amount();
+						tB.mTank.setEmpty();
+					}
+				}
+				// динамика раз в 400 тиков: видно, выкачивает ли насос вообще и с какой скоростью
+				if (sGeoTick % 400 == 0) for (int k = 0; k < 2; k++) if (sGeoOrigin[k] != null) {
+					int[] tNow = geoCount(tLevel, sGeoOrigin[k], k, -6, 26, -4, 6, -12, 12);
+					O.println("[GT6-GEOPROBE] t=" + sGeoTick + " " + sGeoNames[k] + ": источников=" + tNow[0] + " потоков=" + tNow[1] + " откачано=" + sGeoDrained[k] + " mb");
+				}
+				return;
+			}
+			if (sGeoTick != GEO_JUDGE) return;
+
+			O.println("[GT6-GEOPROBE] --- насос отработал " + (GEO_JUDGE - GEO_SPREAD_END) + " тиков ---");
+			for (int k = 0; k < 2; k++) {
+				if (!(sGeoPump[k] instanceof gregtech.tileentity.tanks.MultiTileEntityPump tPump)) {
+					gregapi.probe.GT6ProbeStand.judge("GT6-GEOPROBE", sGeoNames[k] + " · ЗАМЕР НЕ ЗАСЧИТАН: насос не поставлен", F, "насос", "нет"); continue;}
+				BlockPos tO = sGeoOrigin[k];
+				String tFluid = "-";
+				if (sGeoBarrel[k] instanceof gregapi.tileentity.tank.TileEntityBase08Barrel tB && tB.mTank != null && !tB.mTank.isEmpty()) {sGeoDrained[k] += tB.mTank.amount(); tFluid = String.valueOf(tB.mTank.fluid());}
+				gregapi.fluid.FluidTankGT tTank = (gregapi.fluid.FluidTankGT)pumpField(tPump, "mTank");
+				if (tTank != null && !tTank.isEmpty()) {sGeoDrained[k] += tTank.amount(); if ("-".equals(tFluid)) tFluid = String.valueOf(tTank.fluid());}
+				long tGot = sGeoDrained[k];
+
+				int[] tLake  = geoCount(tLevel, tO, k, 1, 10, 0, 4, -4, 4);      // само озеро
+				int[] tAll   = geoCount(tLevel, tO, k, -6, 26, -4, 6, -12, 12);  // вся площадка
+				int[] tIso   = geoCount(tLevel, tO, k, 12, 14, 0, 3, 6, 8);      // изолированный карман
+				int[] tPocket= geoCount(tLevel, tO, k, 12, 16, -3, -1, -3, 3);   // карман за протокой (каскад)
+				int[] tCliff = geoCount(tLevel, tO, k, 5, 9, -4, 3, 6, 11);      // площадка за обрывом
+				// рамка замера: если жидкость дошла до края измеряемой области — область мала, замер неполон
+				int tEdge = geoCount(tLevel, tO, k, -6, -6, -4, 6, -12, 12)[0] + geoCount(tLevel, tO, k, 26, 26, -4, 6, -12, 12)[0]
+				          + geoCount(tLevel, tO, k, -6, 26, -4, 6, -12, -12)[0] + geoCount(tLevel, tO, k, -6, 26, -4, 6, 12, 12)[0];
+
+				O.println("[GT6-GEOPROBE] " + sGeoNames[k] + ": набрано=" + tGot + " mb (" + tFluid + ")"
+					+ " · озеро: ист=" + tLake[0] + " пот=" + tLake[1]
+					+ " · вся площадка: ист=" + tAll[0] + " пот=" + tAll[1]
+					+ " · карман-каскад: ист=" + tPocket[0] + " пот=" + tPocket[1]
+					+ " · за обрывом: ист=" + tCliff[0] + " пот=" + tCliff[1]
+					+ " · изолированный=" + (tIso[0] + tIso[1]) + " (было " + sGeoIsolatedAfterSpread[k] + ")"
+					+ " · на рамке=" + tEdge);
+
+				gregapi.probe.GT6ProbeStand.judge("GT6-GEOPROBE", sGeoNames[k] + " · A. насос НАБРАЛ жидкость", tGot > 0, ">0 mb", tGot + " mb");
+				// C: ГЛАВНЫЙ судья репорта — источников не осталось (срезаны на " + GEO_CUT + "), потоки обязаны рассосаться.
+				gregapi.probe.GT6ProbeStand.judge("GT6-GEOPROBE", sGeoNames[k] + " · C. после снятия источников НЕТ зависших потоков", tAll[1] == 0, "0", String.valueOf(tAll[1]));
+				gregapi.probe.GT6ProbeStand.judge("GT6-GEOPROBE", sGeoNames[k] + " · C2. источники действительно сняты (иначе C бессмыслен)", tAll[0] - (tIso[0] + tIso[1]) <= 0, "0 вне изолированного", String.valueOf(tAll[0] - (tIso[0] + tIso[1])));
+				gregapi.probe.GT6ProbeStand.judge("GT6-GEOPROBE", sGeoNames[k] + " · D. изолированный карман НЕТРОНУТ (контроль счётчика)", tIso[0] + tIso[1] > 0, ">0", String.valueOf(tIso[0] + tIso[1]));
+				gregapi.probe.GT6ProbeStand.judge("GT6-GEOPROBE", sGeoNames[k] + " · E. жидкость не ушла за рамку замера", tEdge == 0, "0", String.valueOf(tEdge));
+			}
+			O.println("========== [GT6-GEOPROBE] DONE ==========");
+			sGeoDone = T;
+		} catch (Throwable e) {e.printStackTrace(O); sGeoDone = T;}
 	}
 }

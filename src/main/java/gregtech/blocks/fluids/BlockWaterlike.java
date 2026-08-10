@@ -95,13 +95,16 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		if (aHide) gregapi.GT_API.deferItemInit(() -> ST.hide(this));
 	}
 
-	// @Override
+	/** BUG-115: {@code IFluidBlock} вернулся общему предку — {@code getFluid()} снова есть, 1:1 с 1.7.10. */
+	@Override public Fluid getFluid() {return mFluid;}
+
+	@Override
 	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
 		if (aDoDrain) WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
-		return FL.make(mFluid, 1000); // было getFluid() (IFluidBlock/Forge) — mFluid собственное поле (F5)
+		return FL.make(getFluid(), 1000);
 	}
-	
-	// @Override
+
+	@Override
 	public boolean canDrain(Level aWorld, int aX, int aY, int aZ) {
 		return WD.meta(aWorld, aX, aY, aZ) == 0;
 	}

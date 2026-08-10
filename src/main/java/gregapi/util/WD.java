@@ -1429,6 +1429,18 @@ public class WD {
 	}
 
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
+		// BUG-115-хвост (репорт: «остаются полублоки лавы») — ФОРС ДВИЖКА при СНЯТИИ жидкости.
+		// В 1.7.10 поток жил своим тиком: BlockDynamicLiquid.updateTick перепланировал себя, пока блок
+		// существовал, и сам рассасывался, когда источник пропадал, — уведомлять соседей было не нужно, потому
+		// весь мод снимает жидкость флагом 2 (напр. MultiTileEntityPump.drainFluid, BlockWaterlike.drain).
+		// В neo пересчёт планирует LiquidBlock.updateShape и ТОЛЬКО когда одна из сторон — ИСТОЧНИК
+		// (neo-decompiled/.../LiquidBlock.java:181). Убрали источник без UPDATE_NEIGHBORS — сосед-поток стоит
+		// рядом с воздухом, источника нет ни с одной стороны, тик не планируется, «полублок» висит вечно.
+		// Дифференциальный замер [GT6-PUMPPROBE]: две одинаковые площадки, 44 потока лавы у каждой; срез
+		// источника флагом 2 — осталось 44, флагом 3 — 0. Поэтому: снимаем жидкость — обязаны разбудить соседей.
+		// Условие узкое намеренно: только СНЯТИЕ (ставим воздух) и только если в клетке БЫЛА жидкость, — заливка
+		// ворлдгена (WD.set(..., 0) в океане/реке) не затрагивается, лишних апдейтов при генерации нет (ADAPT-009).
+		if ((aFlags & 1) == 0 && aBlock == NB && !state(aWorld, new BlockPos(aX, aY, aZ)).getFluidState().isEmpty()) aFlags |= 1;
 		if (aRemoveGrassBelow) {
 			Block tBlock = state(aWorld, new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
 			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)
