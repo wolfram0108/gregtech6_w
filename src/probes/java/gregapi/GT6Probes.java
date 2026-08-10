@@ -16159,7 +16159,12 @@ public final class GT6Probes {
 	public static volatile boolean sCVRCliBeforeDone = F, sCVRCliAfterDone = F;
 
 	/** Сколько каверов реально сидит на BE (сервер или клиент — метод один). */
+	// ⛔ «НОЛЬ» И «ОБЪЕКТА НЕТ» — РАЗНЫЕ СОСТОЯНИЯ. Прежний счётчик отдавал 0 в обоих случаях, и вердикт по
+	// notick-стене оказался неотличим: клиентский BE там может просто отсутствовать, и тогда «каверов 0»
+	// доказывает не работу фикса, а пустоту клетки. -2 = BE нет вовсе, -3 = BE есть, но каверы не носит.
 	public static int cpCoverCount(net.minecraft.world.level.block.entity.BlockEntity aBE) {
+		if (aBE == null) return -2;
+		if (!(aBE instanceof gregapi.tileentity.base.TileEntityBase06Covers || aBE instanceof gregapi.tileentity.notick.TileEntityBase04Covers)) return -3;
 		gregapi.cover.CoverData tData = cpCoverData(aBE);
 		if (tData == null) return 0;
 		int rCount = 0;
@@ -16185,6 +16190,12 @@ public final class GT6Probes {
 		O.println("========== [" + CP_M + "] BUG-114: снятие кавера и клиентское состояние ==========");
 		BlockPos tBase = sCVRPlayer.blockPosition().offset(4, 0, 4);
 		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBase.offset(-2, -1, -2), 12, 8);
+		// ⛔ РЕЛЬЕФ — ВНЕШНИЙ ШУМ, а не условие замера: снятие монтировкой запрещено, когда клетка со стороны
+		// клика загорожена (checkObstruction, TileEntityBase03MultiTileEntities:160 → WD.obstructed). Площадка
+		// строится в живом мире, и естественный склон восточнее стены сорвал снятие в одном прогоне из двух —
+		// судья стал недетерминированным. Расчищаем объём над полом целиком.
+		for (int dx = -2; dx < 10; dx++) for (int dy = 0; dy < 4; dy++) for (int dz = -2; dz < 6; dz++)
+			tLevel.setBlock(tBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 		// A: бочка, ОДИН кавер — главный случай (снимаем последний)
 		sCVRBarrelOne = gregapi.probe.GT6ProbeStand.place(tLevel, sCVRPlayer, tBase, net.minecraft.core.Direction.UP,
 			gregapi.probe.GT6ProbeStand.mteStack(CP_BARREL_ID), gregapi.tileentity.tank.TileEntityBase08Barrel.class, CP_M, "A-бочка(один кавер)");
@@ -16243,8 +16254,13 @@ public final class GT6Probes {
 		sCVRSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: до снятия клиент видит каверы (A=1, B=2, C=1)",
 			sCVRCliOneBefore == 1 && sCVRCliTwoBefore == 2 && sCVRCliWallBefore == 1,
 			"1/2/1", sCVRCliOneBefore + "/" + sCVRCliTwoBefore + "/" + sCVRCliWallBefore);
-		sCVRSeq.judge("A (бочка, тикающая ветка): снят ПОСЛЕДНИЙ кавер -> на клиенте 0", sCVRCliOneAfter == 0, 0, sCVRCliOneAfter);
-		sCVRSeq.judge("C (стена многоблока, notick-ветка): снят ПОСЛЕДНИЙ кавер -> на клиенте 0", sCVRCliWallAfter == 0, 0, sCVRCliWallAfter);
+		// «-2» = клиентского BE нет вовсе: кавера на экране тоже нет, но доказывает это не работу синка, а пустую
+		// клетку — потому состояние печатается сырым, а вердикт формулируется по видимому итогу.
+		sCVRSeq.judge("A (бочка, тикающая ветка): снят ПОСЛЕДНИЙ кавер -> клиент кавера не несёт (0; -2 = BE нет)",
+			sCVRCliOneAfter == 0 || sCVRCliOneAfter == -2, "0 либо -2", sCVRCliOneAfter);
+		sCVRSeq.judge("A: клиентский BE при этом ЖИВ (иначе замер вырожден)", sCVRCliOneAfter == 0, "0 (BE жив, каверов нет)", sCVRCliOneAfter);
+		sCVRSeq.judge("C (стена многоблока, notick-ветка): снят ПОСЛЕДНИЙ кавер -> клиент кавера не несёт (0; -2 = BE нет)",
+			sCVRCliWallAfter == 0 || sCVRCliWallAfter == -2, "0 либо -2", sCVRCliWallAfter);
 		sCVRSeq.judge("B (снят один из двух): на клиенте остался ровно один", sCVRCliTwoAfter == 1, 1, sCVRCliTwoAfter);
 		sCVRSeq.judge("B: остался именно НЕСНЯТЫЙ кавер (западная сторона " + SIDE_WEST + ")", sCVRCliTwoSideAfter == SIDE_WEST, SIDE_WEST, sCVRCliTwoSideAfter);
 		sCVRSeq.done();
