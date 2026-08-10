@@ -229,6 +229,18 @@ public class Compat_Jade implements IWailaPlugin {
 
 		private final Identifier mUID = Identifier.fromNamespaceAndPath(MD.GT.mID, "harvest_level");
 
+		// MODCOMPAT-014: экран настроек Jade требует перевод у КАЖДОЙ опции плагина и роняет
+		// AssertionError, если его нет — ключ строится как "config.jade.plugin_<namespace>.<path>" из UID
+		// провайдера и проверяется через I18n.exists (JadeClient, ветка «Missing config translation: %s»).
+		// Имя группы (без пути) Jade берёт тем же семейством ключей для заголовка раздела (его собственные —
+		// config.jade.plugin_jade* в assets/jade/lang/en_us.json). Оба ключа отдаёт центр локализации мода,
+		// как и все остальные имена GT6: LH.add → BACKUPMAP → Language.inject (LanguageHandler:87-97).
+		// Место — здесь, рядом с UID: строка ключа выводится из него, и разъехаться им негде.
+		static {
+			LH.add("config.jade.plugin_" + MD.GT.mID, "GregTech");
+			LH.add("config.jade.plugin_" + MD.GT.mID + ".harvest_level", "Harvest Level");
+		}
+
 		@Override
 		public void appendTooltip(ITooltip aTooltip, BlockAccessor aAccessor, IPluginConfig aConfig) {
 			Block tBlock = aAccessor.getBlockState().getBlock();

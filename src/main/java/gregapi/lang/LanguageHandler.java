@@ -95,6 +95,11 @@ public class LanguageHandler {
 			for (Entry<String, String> tEntry : BACKUPMAP.entrySet()) rInjected += tOverlay.own(tEntry.getKey(), tEntry.getValue());
 			mEngineOverlay = tOverlay;
 			Language.inject(tOverlay);
+			// ВТОРОЙ НОСИТЕЛЬ (MODCOMPAT-014): на клиенте таблиц две, и Language.inject ставит только одну —
+			// у I18n свой указатель, который движок трогает лишь в LanguageManager.apply. Сводим их здесь, в
+			// той же точке, где ставится надстройка: иначе каждый новый overlay расходится со вторым носителем
+			// и имена GT6 видит только первый. Сторону решает прокси — на сервере второго носителя нет.
+			if (gregapi.GT_API.api_proxy != null) gregapi.GT_API.api_proxy.syncClientI18n();
 			return rInjected;
 		} catch (Throwable e) {
 			mEngineOverlay = null;

@@ -247,6 +247,37 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		if (tInjected > 0) gregapi.data.CS.OUT.println("GT6 localization: имён GT6 дописано в таблицу движка: " + tInjected + (aEvent.isInitial() ? " (первая загрузка ресурсов)" : " (перезагрузка ресурсов)"));
 	}
 
+	/**
+	 * ВТОРОЙ НОСИТЕЛЬ ПЕРЕВОДА НА КЛИЕНТЕ (MODCOMPAT-014).
+	 *
+	 * <p>{@code I18n} держит СОБСТВЕННЫЙ указатель на таблицу ({@code I18n.java:11} — {@code private static
+	 * volatile Language language}), и ставит его единственное место — {@code LanguageManager.apply:66-68}:
+	 * <pre>  I18n.setLanguage(locale);   Language.inject(locale);</pre>
+	 * Надстройка GT6 приходит позже и только через {@code Language.inject} ({@code Language.java:121-123}),
+	 * которое это поле НЕ трогает. Поэтому {@code I18n.exists/get} не видели имён GT6 вообще: замер на живом
+	 * клиенте — {@code Language.getInstance()} знает 4 ключа из 5, {@code I18n} — 0, и объекты у каналов
+	 * разные. Через {@code I18n} спрашивают сторонние моды (Jade — переводы своих конфиг-опций, отсюда
+	 * «Missing config translation»), поэтому носителя два, а имя должно быть одно.
+	 *
+	 * <p>Ставим во второй носитель ТУ ЖЕ надстройку, что уже стоит в первом, — и там же, где движок ставит
+	 * свою: после каждой загрузки ресурсов. Штатной точки расширения у {@code I18n} нет ({@code setLanguage}
+	 * пакетный), поэтому поле берётся отражением — тем же приёмом, каким мод уже достаёт закрытые узлы
+	 * движка ({@code GT6ItemModel} → {@code ModBakery.resolvedModels}). Отказ не тихий: если приём перестанет
+	 * работать, в лог уйдёт строка, а не молчание.
+	 *
+	 * <p>Метод живёт в КЛИЕНТСКОМ прокси намеренно: {@code I18n} — {@code @OnlyIn(Dist.CLIENT)}, и упоминание
+	 * его в общем классе тянет клиентский тип на выделенный сервер (класс дефекта BUG-092).
+	 */
+	@Override public void syncClientI18n() {
+		try {
+			java.lang.reflect.Field tField = net.minecraft.client.resources.language.I18n.class.getDeclaredField("language");
+			tField.setAccessible(true);
+			if (tField.get(null) != net.minecraft.locale.Language.getInstance()) tField.set(null, net.minecraft.locale.Language.getInstance());
+		} catch (Throwable e) {
+			gregapi.data.CS.ERR.println("GT6 localization: I18n остался без имён GT6 — сторонние моды их не увидят (" + e + ").");
+		}
+	}
+
 	// F-tileentity-construction (КЛИЕНТ-реконструкция MTE-BE): neo подменяет не-PrefixBlock GT6-MTE общим MTE_TYPE →
 	// TileEntityLoaderStub при десериализации BE чанка НА КЛИЕНТЕ. Стаб — не IRenderedBlockObject → passRenderingToObject=null
 	// → getRenderPasses=0 → MTE-блок НЕ рисуется (прозрачный: камни/палки/флюид-источники/машины). Серверная реконструкция

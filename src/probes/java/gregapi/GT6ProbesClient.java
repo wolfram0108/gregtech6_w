@@ -2482,4 +2482,94 @@ public final class GT6ProbesClient {
 			}
 		} catch (Throwable e) {/* звук без адреса */}
 	}
+
+	// ==========================================================================================================
+	// [GT6-JADECONFIG] MODCOMPAT-014 — у КАЖДОЙ конфиг-опции GT6-плагина Jade обязан быть перевод.
+	//
+	// Судья повторяет проверку самого Jade, а не проверяет один ключ: тот перебирает
+	// WailaClientRegistration.instance().getConfigKeys() и для каждого спрашивает
+	// I18n.exists("config.jade.plugin_<namespace>.<path>"); при первом промахе кидает
+	// AssertionError «Missing config translation: %s» (JadeClient, ветка под CommonProxy.isDevEnv()).
+	// Поэтому судится КЛАСС: появится у мода новая опция без перевода — стенд её поймает, а не пропустит.
+	// ==========================================================================================================
+	private static boolean mJadeCfgDone = false;
+
+	/** объект Language, который держит САМ I18n (его поле private static volatile language, I18n.java:11) —
+	 *  нужен, чтобы показать: это НЕ тот объект, что отдаёт Language.getInstance() после нашей надстройки */
+	private static net.minecraft.locale.Language bpI18nLanguage() {
+		try {
+			java.lang.reflect.Field tField = net.minecraft.client.resources.language.I18n.class.getDeclaredField("language");
+			tField.setAccessible(true);
+			return (net.minecraft.locale.Language) tField.get(null);
+		} catch (Throwable e) {return null;}
+	}
+
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onJadeConfigProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mJadeCfgDone || !gregapi.data.CS.probeFlag("gt6jadeconfig.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return; // ресурсы (а с ними язык) уже загружены
+		mJadeCfgDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		int tPass = 0, tFail = 0;
+		O.println("========== [GT6-JADECONFIG] MODCOMPAT-014: переводы конфиг-опций плагина ==========");
+		// ДИАГНОСТИКА (не судья): разделяет два разных отказа — «мод не объявил ключ» и «объявил, но он не
+		// дошёл до таблицы движка». Первый виден в собственной таблице мода, второй — только через I18n.
+		{
+			String tKey = "config.jade.plugin_" + gregapi.data.MD.GT.mID + ".harvest_level";
+			O.println("[GT6-JADECONFIG] диагностика: таблица мода знает ключ = " + !gregapi.lang.LanguageHandler.translate(tKey).equals(tKey)
+				+ " (\"" + gregapi.lang.LanguageHandler.translate(tKey) + "\") · движок знает = " + net.minecraft.client.resources.language.I18n.exists(tKey));
+			// МАСШТАБ КЛАССА: I18n держит СВОЙ объект Language (I18n:11,16-19 — поле language, ставится только
+			// из LanguageManager.apply:66), а надстройка мода приходит позже через Language.inject (:121-123),
+			// которое это поле не трогает. Значит вопрос не в одном ключе Jade: сравниваем ОБА канала на
+			// выборке имён GT6 — что видит Language.getInstance() и что видит I18n.
+			int tInLang = 0, tInI18n = 0, tChecked = 0;
+			for (String tSample : new String[] {
+					"gt.tooltip.bale", "gt.tooltip.bale.dry", tKey,
+					"config.jade.plugin_" + gregapi.data.MD.GT.mID,
+					"gt.research.page.1.gt.tooltip.bale"}) {
+				tChecked++;
+				if (net.minecraft.locale.Language.getInstance().has(tSample)) tInLang++;
+				if (net.minecraft.client.resources.language.I18n.exists(tSample)) tInI18n++;
+			}
+			O.println("[GT6-JADECONFIG] диагностика КЛАССА: из " + tChecked + " ключей GT6 Language.getInstance() знает "
+				+ tInLang + ", I18n знает " + tInI18n + " · один и тот же объект у обоих каналов = "
+				+ (net.minecraft.locale.Language.getInstance() == bpI18nLanguage()));
+		}
+		try {
+			java.util.Set<net.minecraft.resources.Identifier> tKeys = snownee.jade.impl.WailaClientRegistration.instance().getConfigKeys();
+			int tOurs = 0, tAlien = 0, tAlienMissing = 0;
+			for (net.minecraft.resources.Identifier tKey : tKeys) {
+				String tLangKey = "config.jade.plugin_%s.%s".formatted(tKey.getNamespace(), tKey.getPath());
+				boolean tHas = net.minecraft.client.resources.language.I18n.exists(tLangKey);
+				if (gregapi.data.MD.GT.mID.equals(tKey.getNamespace())) {
+					tOurs++;
+					O.println("[GT6-JADECONFIG] наша опция " + tKey + " → \"" + tLangKey + "\" перевод " + (tHas ? "ЕСТЬ: \"" + net.minecraft.client.resources.language.I18n.get(tLangKey) + "\"" : "ОТСУТСТВУЕТ"));
+					if (tHas) tPass++; else {tFail++; O.println("[GT6-JADECONFIG] FAIL · опция GT6 без перевода: " + tLangKey);}
+				} else {
+					tAlien++;
+					if (!tHas) tAlienMissing++;
+				}
+			}
+			O.println("[GT6-JADECONFIG] опций всего " + tKeys.size() + " · наших " + tOurs + " · чужих " + tAlien
+				+ " (из них без перевода " + tAlienMissing + " — не наша ответственность, показано для полноты)");
+			// у мода ДОЛЖНА быть хотя бы одна опция: иначе судья зелен просто потому, что судить нечего
+			if (tOurs > 0) {tPass++; O.println("[GT6-JADECONFIG] PASS · опции GT6 в реестре Jade найдены: " + tOurs);}
+			else {tFail++; O.println("[GT6-JADECONFIG] FAIL · опций GT6 в реестре Jade НЕТ — судить нечего, плагин не зарегистрирован");}
+
+			// позитивный контроль способа проверки: собственный ключ Jade обязан находиться тем же вызовом
+			boolean tAlive = net.minecraft.client.resources.language.I18n.exists("config.jade.plugin_jade.registry_name");
+			if (tAlive) {tPass++; O.println("[GT6-JADECONFIG] PASS · контроль: ключ самого Jade находится тем же вызовом");}
+			else {tFail++; O.println("[GT6-JADECONFIG] FAIL · контроль мёртв: I18n не находит даже ключи Jade");}
+			// негативный контроль: заведомо отсутствующий ключ обязан НЕ находиться
+			boolean tGhost = net.minecraft.client.resources.language.I18n.exists("config.jade.plugin_gregtech.no_such_option_gt6probe");
+			if (!tGhost) {tPass++; O.println("[GT6-JADECONFIG] PASS · негативный контроль: несуществующий ключ не находится");}
+			else {tFail++; O.println("[GT6-JADECONFIG] FAIL · негативный контроль: I18n находит несуществующий ключ");}
+		} catch (Throwable e) {
+			tFail++;
+			O.println("[GT6-JADECONFIG] FAIL · стенд отработал с исключением");
+			e.printStackTrace(O);
+		}
+		O.println("========== [GT6-JADECONFIG] ВЕРДИКТ: PASS " + tPass + " / FAIL " + tFail + " ==========");
+	}
 }
