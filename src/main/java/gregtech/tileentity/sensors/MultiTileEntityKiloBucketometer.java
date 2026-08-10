@@ -57,10 +57,9 @@ public class MultiTileEntityKiloBucketometer extends MultiTileEntitySensorTE {
 			}
 		}
 		Block tBlock = aDelegator.getBlock();
-		if (tBlock instanceof IFluidBlock) {
-			FluidStack tFluid = ((IFluidBlock)tBlock).drain(aDelegator.mWorld, aDelegator.mX, aDelegator.mY, aDelegator.mZ, F);
-			return tFluid == null ? 0 : tFluid.getAmount() / 1000000;
-		}
+		// F5 §6.2: «сколько в клетке» — один вопрос центру (ванильные источники, воды GT6, кванты нефтей).
+		FluidStack tFluid = FL.drainable(aDelegator.mWorld, new net.minecraft.core.BlockPos(aDelegator.mX, aDelegator.mY, aDelegator.mZ));
+		if (tFluid != null) return tFluid.getAmount() / 1000000;
 		return 0;
 	}
 	

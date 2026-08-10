@@ -101,11 +101,11 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 				return tBucket == null ? aStack : WD.set(aWorld, aX, aY, aZ, NB, 0, 3) ? tBucket : aStack;
 			}
 			if (tFluidBlock instanceof IFluidBlock) {
-				FluidStack tFluid = ((IFluidBlock)tFluidBlock).drain(aWorld, aX, aY, aZ, F);
+				FluidStack tFluid = FL.drainable(aWorld, new net.minecraft.core.BlockPos(aX, aY, aZ)); // F5 §6.2 — центр
 				if (tFluid != null) {
 					tBucket = FL.fill(tFluid, aStack, F, T, F, T);
 					if (ST.valid(tBucket)) {
-						((IFluidBlock)tFluidBlock).drain(aWorld, aX, aY, aZ, T);
+						FL.drainCell(aWorld, new net.minecraft.core.BlockPos(aX, aY, aZ)); // F5 §6.2 — центр
 						return tBucket == null ? aStack : tBucket;
 					}
 					return super.onDispense(aItem, aSource, aStack);
@@ -158,7 +158,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 				}
 			} else
 			if (tFluidBlock instanceof IFluidBlock) {
-				FluidStack tFluid = ((IFluidBlock)tFluidBlock).drain(aWorld, aX, aY, aZ, F);
+				FluidStack tFluid = FL.drainable(aWorld, new net.minecraft.core.BlockPos(aX, aY, aZ)); // F5 §6.2 — центр
 				if (tFluid != null) {
 					// F-item-use: vanilla Bucket.onItemRightClick(tBucket) не заполняется от modded IFluidBlock (mirror, мод не загружен);
 					// GT6-бакет уже заполняется FL.fill(aStack) в общем потоке — vestigial vanilla-делегат убран, tBucket без изменений.

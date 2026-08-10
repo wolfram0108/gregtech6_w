@@ -57,15 +57,10 @@ public class MultiTileEntityBucketometer extends MultiTileEntitySensorTE {
 				return rFluid / 1000;
 			}
 		}
-		Block tBlock = aDelegator.getBlock();
-		if (tBlock == Blocks.WATER || tBlock == Blocks.WATER || tBlock == Blocks.LAVA || tBlock == Blocks.LAVA) {
-			return aDelegator.getMetaData() == 0 ? 1 : 0;
-		}
-		if (tBlock instanceof IFluidBlock) {
-			FluidStack tFluid = ((IFluidBlock)tBlock).drain(aDelegator.mWorld, aDelegator.mX, aDelegator.mY, aDelegator.mZ, F);
-			return tFluid == null ? 0 : tFluid.getAmount() / 1000;
-		}
-		return 0;
+		// F5 §6.2: «сколько в клетке» — один вопрос центру (ванильные источники, воды GT6 и кванты нефтей),
+		// вместо ветки «мета 0 = 1000» плюс отдельной ветки IFluidBlock.
+		FluidStack tFluid = FL.drainable(aDelegator.mWorld, new net.minecraft.core.BlockPos(aDelegator.mX, aDelegator.mY, aDelegator.mZ));
+		return tFluid == null ? 0 : tFluid.getAmount() / 1000;
 	}
 	
 	@Override

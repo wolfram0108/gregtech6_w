@@ -313,7 +313,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 					return scoopResult(aPlayer, aStack, aTarget);
 				}
 				if (tBlock == Blocks.LAVA || tBlock == Blocks.LAVA) {
-					if (WD.meta(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ()) == 0 && aItem.fill(aTarget, FL.Lava.make(1000), F) == 1000) {
+					if (FL.drainable(aWorld, ((BlockHitResult)tTarget).getBlockPos()) != null && aItem.fill(aTarget, FL.Lava.make(1000), F) == 1000) { // F5 §6.2 — центр вместо «мета 0»
 						WD.set(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), NB, 0, 3);
 						aItem.fill(aTarget, FL.Lava.make(1000), T);
 					}
@@ -332,11 +332,11 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 					return scoopResult(aPlayer, aStack, aTarget);
 				}
 				if (tBlock instanceof IFluidBlock) {
-					FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), F);
+					FluidStack tDrained = FL.drainable(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // F5 §6.2 — центр
 					if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aTarget, tDrained, F) == tDrained.getAmount()) {
 						// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 						aItem.fill(aTarget, tDrained, T);
-						((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), T);
+						FL.drainCell(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // F5 §6.2 — центр
 					}
 					return scoopResult(aPlayer, aStack, aTarget);
 				}
@@ -346,11 +346,11 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				tBlock = WD.block(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ());
 				
 				if (tBlock instanceof IFluidBlock) {
-					FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), F);
+					FluidStack tDrained = FL.drainable(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // F5 §6.2 — центр
 					if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aTarget, tDrained, F) == tDrained.getAmount()) {
 						// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 						aItem.fill(aTarget, tDrained, T);
-						((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), T);
+						FL.drainCell(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // F5 §6.2 — центр
 					}
 					return scoopResult(aPlayer, aStack, aTarget);
 				}

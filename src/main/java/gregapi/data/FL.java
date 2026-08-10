@@ -892,6 +892,69 @@ public enum FL {
 		return aFluid.getFluid().getFluidType().getTemperature(aFluid);
 	}
 	
+	// ==========================================================================================================
+	// F5 §6.2 (decisions/F5-fluids.md) — ЧТО И СКОЛЬКО РЕАЛЬНО МОЖНО ИЗВЛЕЧЬ ИЗ КЛЕТКИ. Один ответ на весь мод.
+	//
+	// В 1.7.10 ответ выражал САМ ТИП БЛОКА: источник и поток были разными реестровыми блоками
+	// (Blocks.water / Blocks.flowing_water), а у жидкостей модов отвечал IFluidBlock от Forge-предка. Поэтому
+	// мод спрашивал вразнобой — сравнением блока, «meta == 0», либо IFluidBlock.drain(..., false).
+	// В neo источник и поток — ОДИН блок, разница живёт в FluidState.isSource(); дословный перенос сохранил
+	// форму вопроса и потерял смысл, а ответ расползся по вызывателям (BUG-115: насос осушал океан «в никуда»;
+	// BUG-116: молол натекающие потоки вхолостую). Приём переизобретён здесь, централизованно.
+	//
+	// Своей таблицы типов центр НЕ заводит — он спрашивает каналы самих носителей:
+	//   ванильная вода/лава     LEVEL == 0 -> 1000 mb, поток -> ПУСТО (объёма в потоке нет);
+	//   GT6 classic (река/океан/болото)  canDrain (мета 0) -> drain(...) = 1000 mb, поток -> ПУСТО;
+	//   GT6 finite (нефти/газ/геотермальная вода)  drain(...) = (мета+1) квант -> объём ЕСТЬ и у «потока»;
+	//   прочее -> ПУСТО.
+	// ==========================================================================================================
+
+	/** Извлекаемое содержимое клетки, БЕЗ изъятия (пробный вызов). {@code null} — брать нечего. */
+	public static FluidStack drainable(net.minecraft.world.level.Level aWorld, net.minecraft.core.BlockPos aPos) {
+		if (aWorld == null || aPos == null) return null;
+		net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(aPos);
+		net.minecraft.world.level.block.Block tBlock = tState.getBlock();
+		// Река — исключение ПРОДУКТА, а не движка: блок несёт riverwater, но GT6 извлекает из него ЧИСТУЮ ВОДУ,
+		// причём одинаково у всех потребителей (1.7.10 MultiTileEntityPump.drainFluid:221-222 и CoverDrain:140-141
+		// — оба отдают FL.Water). Правило живёт здесь, иначе каждый потребитель снова заведёт свою ветку.
+		if (tBlock == gregapi.data.CS.BlocksGT.River || gregapi.util.WD.waterstream(tBlock)) {
+			return gregapi.util.WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) == 0 ? Water.make(1000) : null;
+		}
+		// GT6-жидкости отвечают своим каналом: classic сама гейтит по canDrain, finite отдаёт кванты по мете
+		if (tBlock instanceof net.minecraftforge.fluids.IFluidBlock tFluidBlock) {
+			if (!tFluidBlock.canDrain(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())) return null;
+			FluidStack rFluid = tFluidBlock.drain(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), F);
+			return rFluid == null || rFluid.getAmount() <= 0 ? null : rFluid;
+		}
+		// ванильные: объём несёт ТОЛЬКО источник (1.7.10 — отдельный блок Blocks.water/lava, ныне FluidState)
+		net.minecraft.world.level.material.FluidState tFluidState = tState.getFluidState();
+		if (tFluidState.isEmpty() || !tFluidState.isSource()) return null;
+		if (tFluidState.getType().isSame(Fluids.WATER)) return Water.make(1000);
+		if (tFluidState.getType().isSame(Fluids.LAVA )) return Lava .make(1000);
+		return null;
+	}
+
+	/** Есть ли в клетке извлекаемый объём. Для «пресечения» (снять клетку, из которой брать нечего). */
+	public static boolean drainableEmpty(net.minecraft.world.level.Level aWorld, net.minecraft.core.BlockPos aPos) {
+		return drainable(aWorld, aPos) == null;
+	}
+
+	/** Изъять содержимое клетки НАСОВСЕМ: тот же ответ, что у {@link #drainable}, плюс снятие блока.
+	 *  Снятие идёт через центр записи мира ({@code WD.set}) — он же будит соседей, чтобы потоки не зависали
+	 *  (BUG-115, {@code LiquidBlock.updateShape} планирует пересчёт только при источнике рядом). */
+	public static FluidStack drainCell(net.minecraft.world.level.Level aWorld, net.minecraft.core.BlockPos aPos) {
+		FluidStack rFluid = drainable(aWorld, aPos);
+		if (rFluid == null) return null;
+		net.minecraft.world.level.block.Block tBlock = aWorld.getBlockState(aPos).getBlock();
+		if (tBlock instanceof net.minecraftforge.fluids.IFluidBlock tFluidBlock) {
+			// у GT6-жидкостей снятие — их собственный drain(..., true): finite ещё и пересчитывает соседей
+			tFluidBlock.drain(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+		} else {
+			gregapi.util.WD.set(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), gregapi.data.CS.NB, 0, 2);
+		}
+		return rFluid;
+	}
+
 	public static FluidStack make (int aFluid, long aAmount) {return aFluid < 0 ? null : make(fluid(aFluid), Code.bindInt(aAmount));}
 	public static FluidStack make (Fluid aFluid, long aAmount) {return aFluid == null ? null : new FluidStack(aFluid, Code.bindInt(aAmount));}
 	public static FluidStack make (String aFluidName, long aAmount) {return make(fluid(aFluidName), aAmount);}

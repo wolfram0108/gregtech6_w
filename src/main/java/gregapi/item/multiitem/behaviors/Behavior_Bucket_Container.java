@@ -52,14 +52,14 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 		
 		Block tBlock = WD.block(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ());
 		if (tBlock == Blocks.WATER || tBlock == Blocks.WATER) {
-			if (WD.meta(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ()) == 0 && aItem.fill(aStack, FL.Water.make(1000), F) == 1000) {
+			if (FL.drainable(aWorld, ((BlockHitResult)tPosition).getBlockPos()) != null && aItem.fill(aStack, FL.Water.make(1000), F) == 1000) { // F5 §6.2 — центр вместо «мета 0»
 				WD.set(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ(), NB, 0, 3);
 				aItem.fill(aStack, FL.Water.make(1000), T);
 			}
 			return aStack;
 		}
 		if (tBlock == Blocks.LAVA || tBlock == Blocks.LAVA) {
-			if (WD.meta(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ()) == 0 && aItem.fill(aStack, FL.Lava.make(1000), F) == 1000) {
+			if (FL.drainable(aWorld, ((BlockHitResult)tPosition).getBlockPos()) != null && aItem.fill(aStack, FL.Lava.make(1000), F) == 1000) { // F5 §6.2 — центр вместо «мета 0»
 				WD.set(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ(), NB, 0, 3);
 				aItem.fill(aStack, FL.Lava.make(1000), T);
 			}
@@ -78,11 +78,11 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 			return aStack;
 		}
 		if (tBlock instanceof IFluidBlock) {
-			FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ(), F);
+			FluidStack tDrained = FL.drainable(aWorld, ((BlockHitResult)tPosition).getBlockPos()); // F5 §6.2 — центр
 			if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aStack, tDrained, F) == tDrained.getAmount()) {
 				// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 				aItem.fill(aStack, tDrained, T);
-				((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ(), T);
+				FL.drainCell(aWorld, ((BlockHitResult)tPosition).getBlockPos()); // F5 §6.2 — центр
 			}
 			return aStack;
 		}
@@ -92,11 +92,11 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 		tBlock = WD.block(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ());
 		
 		if (tBlock instanceof IFluidBlock) {
-			FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ(), F);
+			FluidStack tDrained = FL.drainable(aWorld, ((BlockHitResult)tPosition).getBlockPos()); // F5 §6.2 — центр
 			if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aStack, tDrained, F) == tDrained.getAmount()) {
 				// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 				aItem.fill(aStack, tDrained, T);
-				((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ(), T);
+				FL.drainCell(aWorld, ((BlockHitResult)tPosition).getBlockPos()); // F5 §6.2 — центр
 			}
 			return aStack;
 		}

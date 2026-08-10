@@ -146,12 +146,12 @@ public class CoverDrain extends AbstractCoverAttachment {
 					if (tBlock == BlocksGT.Swamp) {
 						FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Dirty_Water.make(16000), T);
 					} else
-					if (tBlock instanceof IFluidBlock) tFluid = ((IFluidBlock)tBlock).drain(aData.mTileEntity.getWorld(), aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide), F);
+					if (tBlock instanceof IFluidBlock) tFluid = FL.drainable(aData.mTileEntity.getWorld(), new net.minecraft.core.BlockPos(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide))); // F5 §6.2 — центр
 					
 					if (tFluid != null && (SIDES_HORIZONTAL[aCoverSide] || FL.gas(tFluid) || (FL.lighter(tFluid)?SIDES_BOTTOM:SIDES_TOP)[aCoverSide])) {
 						if (FL.fillAll((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], tFluid, T)) {
 							if (tBlock instanceof IFluidBlock) {
-								((IFluidBlock)tBlock).drain(aData.mTileEntity.getWorld(), aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide), T);
+								FL.drainCell(aData.mTileEntity.getWorld(), new net.minecraft.core.BlockPos(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide))); // F5 §6.2 — центр
 							} else {
 								// ⛔ Было removeBlock(pos,false) как перевод 1.7.10 setBlockToAir — НЕВЕРНО для клетки,
 								// которая сама является жидкостью: neo removeBlock ставит НЕ воздух, а

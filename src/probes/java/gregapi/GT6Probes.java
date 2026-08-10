@@ -337,6 +337,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6recipegui.flag")) gt6RecipeGuiServerTick(aEvent.getServer());
 	// [GT6-HARVESTTAGPROBE] стенд «MODCOMPAT-001 П1/П3: Currently Harvestable + Effective Tool» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6harvesttagprobe.flag")) gt6HarvestTagProbeTick(aEvent.getServer());
+	// [GT6-DRAINMODEL] судьи модели F5 §6.2 «извлекаемый объём клетки» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6drainmodel.flag")) gt6DrainModelTick(aEvent.getServer());
 	// [GT6-GEOPROBE] BUG-115 сложная геометрия: озеро со ступенями, навесом, каскадом, обрывом — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6geoprobe.flag")) gt6GeoProbeTick(aEvent.getServer());
 	// [GT6-PUMPPROBE] BUG-115: насос и шесть видов воды — снять при уборке фазы
@@ -16050,5 +16052,83 @@ public final class GT6Probes {
 			O.println("========== [GT6-GEOPROBE] DONE ==========");
 			sGeoDone = T;
 		} catch (Throwable e) {e.printStackTrace(O); sGeoDone = T;}
+	}
+
+	// ==========================================================================================================
+	// [GT6-DRAINMODEL] Судьи модели F5 §6.2 «извлекаемый объём клетки» (decisions/F5-fluids.md).
+	// На каждый класс таблицы проверяется ОТДЕЛЬНО источник и поток — центр обязан отвечать по-разному:
+	//   вода/лава/река/океан/болото: источник даёт объём, поток — НОЛЬ (его снимают пресечением);
+	//   нефти/газ/геотермальная вода: объём есть и у «потока» — пропорционально квантам в мете.
+	// Плюс живой насос: считаем ходы добычи против холостых снятий.
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static int sDMTick = 0;
+	private static boolean sDMDone = F;
+
+	private static void dmCase(ServerLevel aLevel, BlockPos aPos, net.minecraft.world.level.block.Block aBlock, long aMeta, String aName, boolean aSourceExpected, boolean aFlowExpected) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		// источник (мета 0) и поток (мета 1 у ванильных/classic, у finite мета = кванты-1)
+		for (int tPass = 0; tPass < 2; tPass++) {
+			boolean tIsSource = tPass == 0;
+			BlockPos tP = aPos.offset(tPass * 4, 0, 0);
+			for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = -1; dy <= 2; dy++)
+				aLevel.setBlock(tP.offset(dx, dy, dz), dy < 0 ? net.minecraft.world.level.block.Blocks.STONE.defaultBlockState() : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = T;
+			if (aBlock == net.minecraft.world.level.block.Blocks.WATER || aBlock == net.minecraft.world.level.block.Blocks.LAVA) {
+				// ванильные: поток задаётся уровнем LEVEL (0 — источник)
+				aLevel.setBlock(tP, aBlock.defaultBlockState().setValue(net.minecraft.world.level.block.LiquidBlock.LEVEL, tIsSource ? 0 : 1), 3);
+			} else {
+				gregapi.util.WD.set(aLevel, tP.getX(), tP.getY(), tP.getZ(), aBlock, tIsSource ? 0 : aMeta, 0);
+			}
+			gregtech.blocks.fluids.BlockOcean.PLACEMENT_ALLOWED = gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = gregtech.blocks.fluids.BlockSwamp.PLACEMENT_ALLOWED = F;
+
+			net.neoforged.neoforge.fluids.FluidStack tGot = gregapi.data.FL.drainable(aLevel, tP);
+			boolean tHas = tGot != null && tGot.getAmount() > 0;
+			boolean tWant = tIsSource ? aSourceExpected : aFlowExpected;
+			O.println("[GT6-DRAINMODEL] " + aName + (tIsSource ? " · ИСТОЧНИК" : " · ПОТОК") + ": в клетке=" + aLevel.getBlockState(tP)
+				+ " · центр вернул=" + (tGot == null ? "пусто" : tGot.getAmount() + " mb " + tGot.getFluid()));
+			gregapi.probe.GT6ProbeStand.judge("GT6-DRAINMODEL", aName + (tIsSource ? " · источник даёт объём" : " · поток " + (aFlowExpected ? "даёт объём (кванты)" : "НЕ даёт объёма")),
+				tHas == tWant, tWant ? "объём > 0" : "пусто", tGot == null ? "пусто" : tGot.getAmount() + " mb");
+		}
+	}
+
+	public static void gt6DrainModelTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sDMDone) return;
+		sDMTick++;
+		if (sDMTick != 200) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aServer.overworld();
+		try {
+			BlockPos tSpawn = tLevel.getRespawnData().pos();
+			BlockPos tO = new BlockPos(tSpawn.getX() + 300, 100, tSpawn.getZ() + 300);
+			for (int cx = -2; cx <= 4; cx++) for (int cz = -2; cz <= 2; cz++) tLevel.setChunkForced((tO.getX() >> 4) + cx, (tO.getZ() >> 4) + cz, true);
+			O.println("========== [GT6-DRAINMODEL] модель F5 §6.2: класс за классом ==========");
+			int i = 0;
+			dmCase(tLevel, tO.offset(0,  0, i++ * 6), net.minecraft.world.level.block.Blocks.WATER, 1, "ванильная вода",  T, F);
+			dmCase(tLevel, tO.offset(0,  0, i++ * 6), net.minecraft.world.level.block.Blocks.LAVA,  1, "ванильная лава",  T, F);
+			dmCase(tLevel, tO.offset(0,  0, i++ * 6), (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.River, 1, "река GT6",   T, F);
+			dmCase(tLevel, tO.offset(0,  0, i++ * 6), (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.Ocean, 1, "океан GT6",  T, F);
+			dmCase(tLevel, tO.offset(0,  0, i++ * 6), (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.Swamp, 1, "болото GT6", T, F);
+			// finite: «поток» = неполные кванты, объём ЕСТЬ и должен быть пропорционален мете
+			dmCase(tLevel, tO.offset(0,  0, i++ * 6), (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.WaterGeothermal, 3, "геотермальная вода GT6 (finite)", T, T);
+			dmCase(tLevel, tO.offset(0,  0, i++ * 6), (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.OilLight,        3, "нефть лёгкая GT6 (finite)",      T, T);
+			dmCase(tLevel, tO.offset(0,  0, i++ * 6), (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.GasNatural,      3, "природный газ GT6 (finite)",     T, T);
+
+			// пропорциональность квантов: мета 0 и мета 3 у одной и той же finite-жидкости обязаны отличаться
+			BlockPos tQ = tO.offset(0, 0, i * 6 + 12);
+			for (int dy = -1; dy <= 2; dy++) tLevel.setBlock(tQ.offset(0, dy, 0), dy < 0 ? net.minecraft.world.level.block.Blocks.STONE.defaultBlockState() : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			gregapi.util.WD.set(tLevel, tQ.getX(), tQ.getY(), tQ.getZ(), (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.OilLight, 0, 0);
+			net.neoforged.neoforge.fluids.FluidStack tLow = gregapi.data.FL.drainable(tLevel, tQ);
+			gregapi.util.WD.set(tLevel, tQ.getX(), tQ.getY(), tQ.getZ(), (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.OilLight, 7, 0);
+			net.neoforged.neoforge.fluids.FluidStack tFull = gregapi.data.FL.drainable(tLevel, tQ);
+			O.println("[GT6-DRAINMODEL] нефть, кванты: мета 0 = " + (tLow == null ? "пусто" : tLow.getAmount() + " mb") + " · мета 7 = " + (tFull == null ? "пусто" : tFull.getAmount() + " mb"));
+			gregapi.probe.GT6ProbeStand.judge("GT6-DRAINMODEL", "finite: объём ПРОПОРЦИОНАЛЕН квантам",
+				tLow != null && tFull != null && tFull.getAmount() > tLow.getAmount(), "мета 7 больше меты 0",
+				(tLow == null ? "пусто" : tLow.getAmount() + "") + " против " + (tFull == null ? "пусто" : tFull.getAmount() + ""));
+
+			O.println("========== [GT6-DRAINMODEL] DONE ==========");
+			sDMDone = T;
+		} catch (Throwable e) {e.printStackTrace(O); sDMDone = T;}
+		aServer.halt(F);
 	}
 }
