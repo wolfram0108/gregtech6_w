@@ -573,7 +573,47 @@ public class ST {
 	// (там же обоснование и границы); здесь — единственная точка подстановки для вещей в стеке, поэтому все
 	// 477 мест-вызывателей чинятся разом и остаются verbatim-1:1. Мета варианту НЕ ставится: она уже выражена
 	// самим предметом. Не-семейные вещи (GT-мета-предметы, инструменты с износом, wildcard W) идут прежним путём.
-	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {Item  tFlat = CS.Flattened.item (aItem , aMeta); if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize)); ItemStack rStack = new ItemStack(aItem , UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
+	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {Item  tFlat = CS.Flattened.item (aItem , aMeta); if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize)); ItemStack tPotion = legacyPotion(aItem, aSize, aMeta); if (tPotion != null) return tPotion; ItemStack rStack = new ItemStack(aItem , UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
+
+	// BUG-118 §2, МОДЕЛЬ МЕТЫ: мост «легаси-мета зелья 1.7.10 → neo PotionContents» — то же семейство мостов,
+	// что CS.Flattened строкой выше, только вид у зелий в neo выражен КОМПОНЕНТОМ, а не отдельным предметом
+	// (взрывное — предметом: SPLASH_POTION). В 1.7.10 вид кодировала мета (низ 4 бита — тип по PotionHelper,
+	// 0x20 усиленное, 0x40 растянутое, 0x2000 питьевое, 0x4000 взрывное); без моста стек из ST.make был
+	// безликим «Uncraftable Potion» — ни цвета, ни имени, ни эффекта при питье ванильным путём (все 96
+	// контейнеров-зелий Loader_Fluids). SUBTYPE-мета сохраняется как раньше — личность стека в картах и
+	// рецептах не меняется. Комбинация без neo-варианта деградирует до базового вида (усиленное огнестойкое
+	// и т.п. в 1.7.10 не регистрировалось); неизвестная мета → null = прежний путь без компонента, не выдумываем.
+	private static ItemStack legacyPotion(Item aItem, long aSize, long aMeta) {
+		if (aItem != Items.POTION && aItem != Items.SPLASH_POTION) return null;
+		net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> tKind = legacyPotionKind(aMeta);
+		if (tKind == null) return null;
+		ItemStack rStack = new ItemStack((aMeta & 0x4000) != 0 ? Items.SPLASH_POTION : aItem, UT.Code.bindInt(aSize));
+		rStack.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, new net.minecraft.world.item.alchemy.PotionContents(tKind));
+		meta_(rStack, UT.Code.bindShort(aMeta));
+		return rStack;
+	}
+	private static net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> legacyPotionKind(long aMeta) {
+		boolean tStrong = (aMeta & 0x20) != 0, tLong = (aMeta & 0x40) != 0;
+		switch ((int)(aMeta & 15)) {
+		case  1: return tStrong ? net.minecraft.world.item.alchemy.Potions.STRONG_REGENERATION : tLong ? net.minecraft.world.item.alchemy.Potions.LONG_REGENERATION : net.minecraft.world.item.alchemy.Potions.REGENERATION;
+		case  2: return tStrong ? net.minecraft.world.item.alchemy.Potions.STRONG_SWIFTNESS : tLong ? net.minecraft.world.item.alchemy.Potions.LONG_SWIFTNESS : net.minecraft.world.item.alchemy.Potions.SWIFTNESS;
+		case  3: return tLong ? net.minecraft.world.item.alchemy.Potions.LONG_FIRE_RESISTANCE : net.minecraft.world.item.alchemy.Potions.FIRE_RESISTANCE;
+		case  4: return tStrong ? net.minecraft.world.item.alchemy.Potions.STRONG_POISON : tLong ? net.minecraft.world.item.alchemy.Potions.LONG_POISON : net.minecraft.world.item.alchemy.Potions.POISON;
+		case  5: return tStrong ? net.minecraft.world.item.alchemy.Potions.STRONG_HEALING : net.minecraft.world.item.alchemy.Potions.HEALING;
+		case  6: return tLong ? net.minecraft.world.item.alchemy.Potions.LONG_NIGHT_VISION : net.minecraft.world.item.alchemy.Potions.NIGHT_VISION;
+		case  8: return tLong ? net.minecraft.world.item.alchemy.Potions.LONG_WEAKNESS : net.minecraft.world.item.alchemy.Potions.WEAKNESS;
+		case  9: return tStrong ? net.minecraft.world.item.alchemy.Potions.STRONG_STRENGTH : tLong ? net.minecraft.world.item.alchemy.Potions.LONG_STRENGTH : net.minecraft.world.item.alchemy.Potions.STRENGTH;
+		case 10: return tStrong ? net.minecraft.world.item.alchemy.Potions.STRONG_SLOWNESS : tLong ? net.minecraft.world.item.alchemy.Potions.LONG_SLOWNESS : net.minecraft.world.item.alchemy.Potions.SLOWNESS;
+		case 11: return tStrong ? net.minecraft.world.item.alchemy.Potions.STRONG_LEAPING : tLong ? net.minecraft.world.item.alchemy.Potions.LONG_LEAPING : net.minecraft.world.item.alchemy.Potions.LEAPING;
+		case 12: return tStrong ? net.minecraft.world.item.alchemy.Potions.STRONG_HARMING : net.minecraft.world.item.alchemy.Potions.HARMING;
+		case 13: return tLong ? net.minecraft.world.item.alchemy.Potions.LONG_WATER_BREATHING : net.minecraft.world.item.alchemy.Potions.WATER_BREATHING;
+		case 14: return tLong ? net.minecraft.world.item.alchemy.Potions.LONG_INVISIBILITY : net.minecraft.world.item.alchemy.Potions.INVISIBILITY;
+		// низ 4 бита пусты: базовые варева (16 неуклюжее, 32 густое, 64/8192 заурядное) и вода (мета 0 = бутылка воды 1.7.10)
+		case  0: return aMeta == 16 ? net.minecraft.world.item.alchemy.Potions.AWKWARD : aMeta == 32 ? net.minecraft.world.item.alchemy.Potions.THICK
+			: (aMeta == 64 || aMeta == 8192) ? net.minecraft.world.item.alchemy.Potions.MUNDANE : aMeta == 0 ? net.minecraft.world.item.alchemy.Potions.WATER : null;
+		default: return null;
+		}
+	}
 	public static ItemStack make_(Block aBlock, long aSize, long aMeta) {Block tFlat = CS.Flattened.block(aBlock, aMeta); if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize)); ItemStack rStack = new ItemStack(aBlock, UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
 	public static ItemStack make(ModData aModID, String aItem, long aSize) {
 		if (!aModID.mLoaded || UT.Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null;
