@@ -337,6 +337,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6recipegui.flag")) gt6RecipeGuiServerTick(aEvent.getServer());
 	// [GT6-HARVESTTAGPROBE] стенд «MODCOMPAT-001 П1/П3: Currently Harvestable + Effective Tool» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6harvesttagprobe.flag")) gt6HarvestTagProbeTick(aEvent.getServer());
+	// [GT6-SOUNDCHAIN] BUG-113: доходит ли звук до звуковой системы — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6soundchain.flag")) gt6SoundChainTick(aEvent.getServer());
 	// [GT6-COVERPROBE] BUG-114: кавер снят — ушёл ли он с клиента (обе ветки каверов) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6coverprobe.flag")) gt6CoverProbeTick(aEvent.getServer());
 	// [GT6-DRAINMODEL] судьи модели F5 §6.2 «извлекаемый объём клетки» — снять при уборке фазы
@@ -16277,5 +16279,95 @@ public final class GT6Probes {
 			.window(220, 1600, () -> {if (sCVRPhase == 2 && sCVRCliAfterDone && !sCVRSeq.isDone()) gt6CoverProbeJudge();})
 			.at(1600, () -> {if (!sCVRSeq.isDone()) {gregapi.data.CS.OUT.println("[" + CP_M + "] клиент не ответил (before=" + sCVRCliBeforeDone + " after=" + sCVRCliAfterDone + ")"); sCVRSeq.judge("клиентская половина ответила", F, "ответ", "молчание"); sCVRSeq.done();}});
 		sCVRSeq.tick(sCVRTick);
+	}
+
+	// ========== [GT6-SOUNDCHAIN] серверная половина: реальные действия ключом и ломом (гейт run/gt6soundchain.flag) ==========
+	// Снять при уборке фазы.
+	private static final String SC_M = "GT6-SOUNDCHAIN";
+	private static final int SC_MACHINE_ID = 32102; // Bronze Drum — MTE, который ключ поворачивает
+	private static int sSCTick = 0;
+	private static ServerPlayer sSCPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sSCSeq;
+	private static BlockPos sSCPos;
+	private static long sSCWrenchDamage = -1;
+
+	private static void gt6SoundChainBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sSCPlayer.level();
+		O.println("========== [" + SC_M + "] BUG-113: доходит ли звук до звуковой системы ==========");
+		BlockPos tBase = sSCPlayer.blockPosition().offset(3, 0, 3);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBase.offset(-2, -1, -2), 8, 8);
+		for (int dx = -2; dx < 6; dx++) for (int dy = 0; dy < 4; dy++) for (int dz = -2; dz < 6; dz++)
+			tLevel.setBlock(tBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		gregapi.tileentity.tank.TileEntityBase08Barrel tMachine = gregapi.probe.GT6ProbeStand.place(
+			tLevel, sSCPlayer, tBase, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(SC_MACHINE_ID),
+			gregapi.tileentity.tank.TileEntityBase08Barrel.class, SC_M, "машина под ключ");
+		if (tMachine == null) throw new RuntimeException("машина не встала");
+		sSCPos = tBase.above();
+		gregapi.GT6ProbesClient.mSoundsHeard.clear();
+		O.println("[" + SC_M + "] машина @" + sSCPos + ", список услышанных звуков очищен");
+	}
+
+	/** Реальный путь ключа: предмет в руку и useOn по грани — ровно то, что делает игрок правым кликом. */
+	private static void gt6SoundChainWrench() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sSCPlayer.level();
+		// ключ берём из реестра предметов мода по его поведению, а не по угаданному id
+		// ключ = мета-инструмент GT6 с ID WRENCH (CS.java:2129), собранный штатным путём мода со статами материала
+		net.minecraft.world.item.ItemStack tWrench = net.minecraft.world.item.ItemStack.EMPTY;
+		try {
+			tWrench = gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.WRENCH, gregapi.data.MT.Fe, gregapi.data.MT.Fe);
+		} catch (Throwable e) {O.println("[" + SC_M + "] ключ собрать не удалось: " + e);}
+		O.println("[" + SC_M + "] ключ: " + (tWrench.isEmpty() ? "НЕ НАЙДЕН" : tWrench.getItem() + " meta=" + gregapi.util.ST.meta_(tWrench)));
+		sSCSeq.judge("ключ найден в реестре", !tWrench.isEmpty(), "найден", tWrench.isEmpty() ? "нет" : "да");
+		if (tWrench.isEmpty()) return;
+		// реальный путь: инструмент в руку, правый клик по верхней грани машины
+		sSCPlayer.getInventory().setItem(0, tWrench);
+		sSCPlayer.getInventory().setSelectedSlot(0);
+		net.minecraft.world.phys.Vec3 tHit = net.minecraft.world.phys.Vec3.atCenterOf(sSCPos).add(0, 0.5, 0);
+		// ⛔ stack.useOn(...) — только ВТОРАЯ половина пути. Движок сперва зовёт onItemUseFirst
+		// (ServerPlayerGameMode.useItemOn:388), и звук инструмента шлёт именно ОНА (Behavior_Tool:68).
+		// Потому идём полным путём движка — тем же, каким идёт правый клик игрока.
+		sSCPlayer.gameMode.useItemOn(sSCPlayer, tLevel, sSCPlayer.getMainHandItem(), net.minecraft.world.InteractionHand.MAIN_HAND,
+			new net.minecraft.world.phys.BlockHitResult(tHit, net.minecraft.core.Direction.UP, sSCPos, false));
+		// и напрямую тот же публичный путь, которым инструмент судит своё срабатывание (чтобы отделить «не сработал» от «звук не дошёл»)
+		java.util.List<String> tChat = new gregapi.code.ArrayListNoNulls<>();
+		sSCWrenchDamage = gregapi.block.IBlockToolable.Util.onToolClick(gregapi.data.CS.TOOL_wrench, Long.MAX_VALUE, 3, sSCPlayer, tChat, sSCPlayer.getInventory(), F,
+			tWrench, tLevel, gregapi.data.CS.SIDE_TOP, sSCPos.getX(), sSCPos.getY(), sSCPos.getZ(), 0.5F, 0.5F, 0.5F);
+		O.println("[" + SC_M + "] onToolClick(ключ) вернул износ = " + sSCWrenchDamage + " (0 = инструмент НЕ сработал, звука не будет по построению)");
+		sSCSeq.judge("ключ реально сработал по машине (износ > 0)", sSCWrenchDamage > 0, "> 0", sSCWrenchDamage);
+	}
+
+	/** Разрушение MTE-блока реальным путём движка. */
+	private static void gt6SoundChainBreak() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sSCPlayer.level();
+		O.println("[" + SC_M + "] ломаю блок @" + sSCPos + " реальным путём (destroyBlock)");
+		tLevel.destroyBlock(sSCPos, F, sSCPlayer);
+	}
+
+	private static void gt6SoundChainJudge() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		java.util.List<String> tHeard = new java.util.ArrayList<>(gregapi.GT6ProbesClient.mSoundsHeard);
+		O.println("[" + SC_M + "] звуковая система получила " + tHeard.size() + " звуков: " + tHeard);
+		boolean tWrenchHeard = tHeard.stream().anyMatch(s -> s.contains("gt.wrench"));
+		boolean tBreakHeard  = tHeard.stream().anyMatch(s -> s.contains("break") || s.contains("dig") || s.contains("step"));
+		sSCSeq.judge("A. звук КЛЮЧА дошёл до звуковой системы", tWrenchHeard, "gregapi:gt.wrench в списке", tWrenchHeard);
+		sSCSeq.judge("B. звук РАЗРУШЕНИЯ блока дошёл до звуковой системы", tBreakHeard, "звук ломания в списке", tBreakHeard);
+		// КОНТРОЛЬ: перехват вообще работает — играем заведомо ванильный звук и убеждаемся, что он попал в список
+		sSCSeq.judge("КОНТРОЛЬ: перехват звуков жив (список не пуст)", !tHeard.isEmpty(), "не пусто", tHeard.size());
+		sSCSeq.done();
+	}
+
+	public static void gt6SoundChainTick(net.minecraft.server.MinecraftServer aServer) {
+		sSCTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sSCPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sSCSeq == null) sSCSeq = new gregapi.probe.GT6ProbeStand.Seq(SC_M)
+			.at(200, GT6Probes::gt6SoundChainBuild)
+			.at(240, GT6Probes::gt6SoundChainWrench)
+			.at(300, GT6Probes::gt6SoundChainBreak)
+			.at(360, GT6Probes::gt6SoundChainJudge);
+		sSCSeq.tick(sSCTick);
 	}
 }

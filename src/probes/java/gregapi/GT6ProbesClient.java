@@ -2435,4 +2435,21 @@ public final class GT6ProbesClient {
 			new Thread(() -> {try {Thread.sleep(3000);} catch (InterruptedException e) {} Runtime.getRuntime().halt(0);}, "gt6-itempose-shutdown").start();
 		}
 	}
+
+	// ========== [GT6-SOUNDCHAIN] BUG-113, вторая половина: доходит ли звук ДО ЗВУКОВОЙ СИСТЕМЫ ==========
+	// Пользователь: «звука нет при разрушении и повороте ключом» — значит регистрации в реестре мало, рвётся
+	// какое-то ЗВЕНО цепи: клик → onToolClick вернул износ → сервер шлёт PacketSound → клиент кладёт в очередь
+	// sSoundsToPlay → очередь дренируется → резолв SoundEvent → playLocalSound → SoundEngine.
+	// Судим САМЫЙ КОНЕЦ цепи: PlaySoundEvent приходит на каждый звук, который клиент реально собирается играть.
+	// Что сюда попало — то и слышно; чего нет — того не слышно. Снять при уборке фазы.
+	public static final java.util.List<String> mSoundsHeard = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onAnySoundPlayed(net.neoforged.neoforge.client.event.sound.PlaySoundEvent aEvent) {
+		if (!gregapi.data.CS.probeFlag("gt6soundchain.flag")) return;
+		try {
+			net.minecraft.client.resources.sounds.SoundInstance tSound = aEvent.getSound();
+			if (tSound != null) mSoundsHeard.add(tSound.getIdentifier().toString());
+		} catch (Throwable e) {/* звук без адреса */}
+	}
 }
