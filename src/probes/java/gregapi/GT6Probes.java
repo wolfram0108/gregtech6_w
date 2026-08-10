@@ -15966,7 +15966,7 @@ public final class GT6Probes {
 					O.println("[GT6-GEOPROBE] " + sGeoNames[k] + " по итогу работы насоса: слой насоса ист=" + tLayer[0] + " пот=" + tLayer[1]
 						+ " · потоков всего=" + tOrphan[1] + " · ОСИРОТЕВШИХ (источник недостижим по жидкости) = " + tOrphan[0]
 						+ (tWhere.length() > 0 ? " · примеры:" + tWhere : "")
-						+ " · A/B-режим=" + (gregapi.data.CS.probeFlag("gt6nofluidwake.flag") ? "БАЗА (как до фикса)" : "с фиксом"));
+						);  // A/B-гейт замера снят из центра WD.set вместе с закрытием BUG-115 — режим больше не печатается
 					gregapi.probe.GT6ProbeStand.judge("GT6-GEOPROBE", sGeoNames[k] + " · H. НЕТ осиротевших потоков (репорт: «полублоки, которые никогда не исчезают»)", tOrphan[0] == 0, "0", String.valueOf(tOrphan[0]));
 				}
 				return;
