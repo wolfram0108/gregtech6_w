@@ -94,6 +94,33 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 
 	/** Диаг-счётчики судьи П2 (спец-рендер реально вызван движком). */
 	public static final java.util.concurrent.atomic.AtomicLong sSpecialExtract = new java.util.concurrent.atomic.AtomicLong(), sSpecialSubmit = new java.util.concurrent.atomic.AtomicLong(), sSpecialItemForm = new java.util.concurrent.atomic.AtomicLong();
+	/** Диаг-счётчики кэша квадов (BUG-106 №4): extract'ы рендер-объектов / реальные пересборки / кэш-хиты. */
+	public static final java.util.concurrent.atomic.AtomicLong sQuadExtracts = new java.util.concurrent.atomic.AtomicLong(), sQuadBuilds = new java.util.concurrent.atomic.AtomicLong(), sQuadCacheHits = new java.util.concurrent.atomic.AtomicLong();
+
+	/** BUG-106 №4 — кэш квадов BER. Эпоха рендера: {@code allChanged()} (перешив атласа/моделей — F3+T, F3+A,
+	 *  смена дистанции; кэшированные квады держат UV СТАРОГО атласа) рвёт ВСЕ кэши разом, O(1). Точечный сброс —
+	 *  {@link #onSectionDirty}: та же воронка, которой движок помечает секции на перестройку, то есть ровно тот
+	 *  сигнал, по которому в 1.7.10 пересобирался мэш с геометрией MTE (recompSrc RenderGlobal.markBlockForUpdate →
+	 *  markBlockRangeForRenderUpdate ±1). Всё общение клиента о смене облика уже проходит через неё:
+	 *  каждый receiveData*-диспетчер ({@code MultiTileEntityBlock:265-325}) кончается {@code WD.update} →
+	 *  {@code ClientLevel.sendBlockUpdated:701} → {@code LevelRenderer.blockChanged:1432} → setSectionDirty;
+	 *  прямые setBlock и свет — туда же ({@code viewArea.setDirty} зовётся ТОЛЬКО из setSectionDirty:1481).
+	 *  Залипание кэша возможно лишь там, где залипал бы и мэш 1.7.10 — 1:1 по следствию. */
+	public static long sQuadEpoch = 0;
+
+	/** Сброс кэша квадов у всех MTE секции (зовёт MixinLevelRenderer из setSectionDirty, main-thread). */
+	public static void onSectionDirty(net.minecraft.client.multiplayer.ClientLevel aLevel, int aSectionX, int aSectionY, int aSectionZ) {
+		net.minecraft.world.level.chunk.LevelChunk tChunk = gregapi.util.WD.chunkNow(aLevel, aSectionX, aSectionZ);
+		if (tChunk == null) return;
+		int tMinY = aSectionY << 4, tMaxY = tMinY + 15;
+		for (java.util.Map.Entry<BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tEntry : tChunk.getBlockEntities().entrySet()) {
+			int tY = tEntry.getKey().getY();
+			if (tY >= tMinY && tY <= tMaxY && tEntry.getValue() instanceof TileEntityBase01Root tBE) tBE.mQuadCacheEpoch = Long.MIN_VALUE;
+		}
+	}
+
+	/** Полный сброс (зовёт MixinLevelRenderer из allChanged, main-thread). */
+	public static void onRenderAllChanged() {sQuadEpoch++;}
 	/** Счётчик crack-decal сабмитов (судья трещин). */
 	public static final java.util.concurrent.atomic.AtomicLong sCrackSubmits = new java.util.concurrent.atomic.AtomicLong();
 
@@ -149,21 +176,34 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 		aState.mQuads = null;
 		aState.mSpecialRenderer = null; aState.mSpecialState = null;
 		Block tBlock = aBE.getBlockState().getBlock();
-		// BUG-063: рамку отсечения ставим ДО гейта — иначе у тех, кого гейт отсеивает (руды рисует baked-модель,
-		// стабы не рисуют ничего), она навсегда осталась бы неизвестной, а неизвестная = «не отсекать» (см.
-		// getRenderBoundingBox). Их геометрия — обычный куб блока, что здесь и объявляется.
-		aBE.mRenderAABB = new net.minecraft.world.phys.AABB(aBE.getBlockPos());
 		// Только MTE-блоки с render-объектом: руды(PrefixBlock/PrefixBlockTileEntity) и стабы(TileEntityLoaderStub, render-данных нет) → baked/пусто.
-		if (aBE.getLevel() == null || !(aBE instanceof IRenderedBlockObject tRenderer) || !(tBlock instanceof MultiTileEntityBlock)) return;
-		BlockPos tPos = aBE.getBlockPos();
-		GT6QuadBuilder tQB = new GT6QuadBuilder();
-		try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* render-логика конкретного MTE не должна ронять кадр */}
-		if (!tQB.isEmpty()) aState.mQuads = tQB.quads();
-		// BUG-063: рамка = ФАКТИЧЕСКИ нарисованное этим BE (quads строятся в локальных координатах блока → сдвигаем в мир).
-		float[] tDrawn = tQB.drawnBounds();
-		if (tDrawn != null) aBE.mRenderAABB = new net.minecraft.world.phys.AABB(
-			  tPos.getX() + Math.min(tDrawn[0], 0F), tPos.getY() + Math.min(tDrawn[1], 0F), tPos.getZ() + Math.min(tDrawn[2], 0F)
-			, tPos.getX() + Math.max(tDrawn[3], 1F), tPos.getY() + Math.max(tDrawn[4], 1F), tPos.getZ() + Math.max(tDrawn[5], 1F));
+		// BUG-063: рамку отсечения гейт-отсеянным ставим ЗДЕСЬ — иначе она навсегда осталась бы неизвестной,
+		// а неизвестная = «не отсекать» (см. getRenderBoundingBox). Их геометрия — обычный куб блока.
+		if (aBE.getLevel() == null || !(aBE instanceof IRenderedBlockObject tRenderer) || !(tBlock instanceof MultiTileEntityBlock)) {
+			aBE.mRenderAABB = new net.minecraft.world.phys.AABB(aBE.getBlockPos());
+			return;
+		}
+		sQuadExtracts.incrementAndGet();
+		// BUG-106 №4: кэш-хит — облик с кадра построения не менялся (сигнала setSectionDirty не было, см. sQuadEpoch
+		// выше). mRenderAABB остаётся от кадра построения, спец-рендер (аниматика TESR) идёт живым ниже, как всегда.
+		if (aBE.mQuadCacheEpoch == sQuadEpoch) {
+			aState.mQuads = aBE.mQuadCache;
+			sQuadCacheHits.incrementAndGet();
+		} else {
+			aBE.mRenderAABB = new net.minecraft.world.phys.AABB(aBE.getBlockPos());
+			BlockPos tPos = aBE.getBlockPos();
+			GT6QuadBuilder tQB = new GT6QuadBuilder();
+			try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* render-логика конкретного MTE не должна ронять кадр */}
+			if (!tQB.isEmpty()) aState.mQuads = tQB.quads();
+			// BUG-063: рамка = ФАКТИЧЕСКИ нарисованное этим BE (quads строятся в локальных координатах блока → сдвигаем в мир).
+			float[] tDrawn = tQB.drawnBounds();
+			if (tDrawn != null) aBE.mRenderAABB = new net.minecraft.world.phys.AABB(
+				  tPos.getX() + Math.min(tDrawn[0], 0F), tPos.getY() + Math.min(tDrawn[1], 0F), tPos.getZ() + Math.min(tDrawn[2], 0F)
+				, tPos.getX() + Math.max(tDrawn[3], 1F), tPos.getY() + Math.max(tDrawn[4], 1F), tPos.getZ() + Math.max(tDrawn[5], 1F));
+			aBE.mQuadCache = aState.mQuads; // null = «квадов нет» — тоже кэшируется (валидность судит эпоха)
+			aBE.mQuadCacheEpoch = sQuadEpoch;
+			sQuadBuilds.incrementAndGet();
+		}
 		@SuppressWarnings("rawtypes") BlockEntityRenderer tSpecial = SPECIAL_RENDERERS.get(aBE.getClass());
 		if (tSpecial != null) try {
 			aState.mSpecialRenderer = tSpecial;

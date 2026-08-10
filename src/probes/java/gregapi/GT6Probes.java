@@ -341,6 +341,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6soundchain.flag")) gt6SoundChainTick(aEvent.getServer());
 	// [GT6-COVERPROBE] BUG-114: кавер снят — ушёл ли он с клиента (обе ветки каверов) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6coverprobe.flag")) gt6CoverProbeTick(aEvent.getServer());
+	// [GT6-BERPROBE] BUG-106 №4: кэш квадов BER — судья залипания — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6berprobe.flag")) gt6BerProbeTick(aEvent.getServer());
 	// [GT6-DRAINMODEL] судьи модели F5 §6.2 «извлекаемый объём клетки» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6drainmodel.flag")) gt6DrainModelTick(aEvent.getServer());
 	// [GT6-GEOPROBE] BUG-115 сложная геометрия: озеро со ступенями, навесом, каскадом, обрывом — снять при уборке фазы
@@ -16301,6 +16303,93 @@ public final class GT6Probes {
 			.window(220, 1600, () -> {if (sCVRPhase == 2 && sCVRCliAfterDone && !sCVRSeq.isDone()) gt6CoverProbeJudge();})
 			.at(1600, () -> {if (!sCVRSeq.isDone()) {gregapi.data.CS.OUT.println("[" + CP_M + "] клиент не ответил (before=" + sCVRCliBeforeDone + " after=" + sCVRCliAfterDone + ")"); sCVRSeq.judge("клиентская половина ответила", F, "ответ", "молчание"); sCVRSeq.done();}});
 		sCVRSeq.tick(sCVRTick);
+	}
+
+	// ========== [GT6-BERPROBE] BUG-106 №4: кэш квадов BER — судья ЗАЛИПАНИЯ (гейт run/gt6berprobe.flag + -Pgt6probes) ==========
+	// Судится КЛИЕНТ (кэш живёт там): сервер ставит бочку и меняет её облик реальным публичным путём кавера
+	// (setCoverItem — тот же вызов, что правый клик кавер-предметом; снятие — onToolClick(TOOL_crowbar), как у
+	// GT6-COVERPROBE), клиентская половина (GT6ProbesClient.onBerProbeClient) извлекает квады НАСТОЯЩИМ рендерером
+	// (MultiTileEntityBER.extractRenderState) и судит: (1) кэш держит инстанс на статичной сцене; (2) кавер ДОШЁЛ
+	// до квадов (hash сменился) — позитивный контроль, что картинка вообще меняется; (3) снятие вернуло ИСХОДНЫЙ
+	// hash — содержимое, не ощущение; (4) чувствительность: данные каверов, поданные приёмником БЕЗ сигнала,
+	// картинку НЕ меняют (кэш держит — судья способен увидеть залипание), а WD.update (сигнал 1.7.10
+	// markBlockForUpdate) её перестраивает. Снять при уборке фазы.
+	private static final String BQ_M = "GT6-BERPROBE";
+	private static final int BQ_DRUM_ID = 32102; // Bronze Drum (тикающая ветка каверов, как в COVERPROBE)
+	private static int sBPTick = 0;
+	private static ServerPlayer sBPPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sBPSeq;
+	private static gregapi.tileentity.base.TileEntityBase06Covers sBPDrum;
+	/** позиция машины и снимки клиента — читаются клиентской половиной (один процесс, разные потоки) */
+	public static volatile BlockPos sBPPos;
+	public static volatile int sBPPhase = 0; // 1 — машина стоит · 2 — кавер поставлен · 3 — кавер снят
+	public static volatile boolean sBPCli1Done, sBPCli2Done, sBPCli3Done, sBPCli4Done;
+	public static volatile boolean sBPCliCacheStable, sBPCliMutHeld, sBPCliMutRebuilt, sBPCliMutContentChanged;
+	public static volatile long sBPCliHash1 = -1, sBPCliHash2 = -1, sBPCliHash3 = -1;
+	public static volatile int sBPCliQuads1 = -1;
+	public static volatile short sBPCliCoverID = 0, sBPCliCoverMeta = 0, sBPCliCoverVisual = 0;
+
+	private static void gt6BerProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sBPPlayer.level();
+		O.println("========== [" + BQ_M + "] BUG-106 №4: кэш квадов BER — судья залипания ==========");
+		BlockPos tBase = sBPPlayer.blockPosition().offset(4, 0, 4);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBase.offset(-2, -1, -2), 8, 8);
+		for (int dx = -2; dx < 6; dx++) for (int dy = 0; dy < 4; dy++) for (int dz = -2; dz < 6; dz++)
+			tLevel.setBlock(tBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		sBPDrum = gregapi.probe.GT6ProbeStand.place(tLevel, sBPPlayer, tBase, net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(BQ_DRUM_ID), gregapi.tileentity.tank.TileEntityBase08Barrel.class, BQ_M, "бочка под кавер");
+		if (sBPDrum == null) throw new RuntimeException("машина не встала");
+		sBPPos = tBase.above();
+		O.println("[" + BQ_M + "] машина @" + sBPPos + " — ждём клиентский снимок статичной сцены");
+		sBPPhase = 1;
+	}
+
+	public static void gt6BerProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sBPTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sBPPlayer = aServer.getPlayerList().getPlayers().get(0);
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (sBPSeq == null) sBPSeq = new gregapi.probe.GT6ProbeStand.Seq(BQ_M)
+			.at(200, GT6Probes::gt6BerProbeBuild)
+			// ждём по ФАКТУ ответа клиента (пакеты могут задержаться), не по таймеру — приём COVERPROBE
+			.window(210, 1200, () -> {if (sBPPhase == 1 && sBPCli1Done) {
+				boolean tSet = sBPDrum.setCoverItem(SIDE_EAST, IL.PUMPS[0].get(1), null, T, T);
+				O.println("[" + BQ_M + "] кавер поставлен реальным путём: " + tSet + " (сервер видит " + cpCoverCount(sBPDrum) + ")");
+				sBPSeq.judge("кавер встал на сервере (setCoverItem, восточная грань)", tSet && cpCoverCount(sBPDrum) == 1, "true/1", tSet + "/" + cpCoverCount(sBPDrum));
+				sBPPhase = 2;
+			}})
+			.window(220, 1600, () -> {if (sBPPhase == 2 && sBPCli2Done) {
+				boolean tOff = gt6CoverProbeCrowbarBP(sBPDrum, SIDE_EAST);
+				O.println("[" + BQ_M + "] кавер снят монтировкой: " + tOff + " (сервер видит " + cpCoverCount(sBPDrum) + ")");
+				sBPSeq.judge("монтировка сняла кавер (реальный путь onToolClick)", tOff && cpCoverCount(sBPDrum) == 0, "true/0", tOff + "/" + cpCoverCount(sBPDrum));
+				sBPPhase = 3;
+			}})
+			.window(230, 2000, () -> {if (sBPPhase == 3 && sBPCli3Done && sBPCli4Done && !sBPSeq.isDone()) gt6BerProbeJudge();})
+			.at(2000, () -> {if (!sBPSeq.isDone()) {
+				O.println("[" + BQ_M + "] клиент не ответил (1=" + sBPCli1Done + " 2=" + sBPCli2Done + " 3=" + sBPCli3Done + " 4=" + sBPCli4Done + ")");
+				sBPSeq.judge("клиентская половина ответила", F, "ответ", "молчание"); sBPSeq.done();
+			}});
+		sBPSeq.tick(sBPTick);
+	}
+
+	/** Снятие реальным путём монтировки — тот же вызов, что у GT6-COVERPROBE. */
+	private static boolean gt6CoverProbeCrowbarBP(gregapi.tileentity.base.TileEntityBase06Covers aBE, byte aSide) {
+		return aBE.onToolClick(TOOL_crowbar, 10000, 10000, sBPPlayer, new java.util.ArrayList<String>(), null, F, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK), aSide, 0.5F, 0.5F, 0.5F) > 0;
+	}
+
+	private static void gt6BerProbeJudge() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + BQ_M + "] снимки клиента: quads1=" + sBPCliQuads1 + " hash1=" + sBPCliHash1 + " hash2=" + sBPCliHash2 + " hash3=" + sBPCliHash3 + " coverID=" + sBPCliCoverID);
+		sBPSeq.judge("КЭШ: 60 тиков статичной сцены — тот же список квадов (ни одной пересборки)", sBPCliCacheStable, "инстанс стабилен", sBPCliCacheStable ? "стабилен" : "ПЕРЕСОБИРАЛСЯ");
+		sBPSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: машина рисуется (квадов > 0)", sBPCliQuads1 > 0, "> 0", sBPCliQuads1);
+		sBPSeq.judge("РЕАЛЬНЫЙ ПУТЬ: кавер ДОШЁЛ до квадов клиента (hash сменился)", sBPCliHash2 != -1 && sBPCliHash2 != sBPCliHash1, "hash2 != hash1", sBPCliHash2 == sBPCliHash1 ? "ЗАЛИП" : "сменился");
+		sBPSeq.judge("РЕАЛЬНЫЙ ПУТЬ: снятие кавера дошло (hash сменился обратно)", sBPCliHash3 != -1 && sBPCliHash3 != sBPCliHash2, "hash3 != hash2", sBPCliHash3 == sBPCliHash2 ? "ЗАЛИП" : "сменился");
+		sBPSeq.judge("СОДЕРЖИМОЕ: после снятия картинка ИДЕНТИЧНА исходной (hash3 == hash1)", sBPCliHash3 == sBPCliHash1, sBPCliHash1, sBPCliHash3);
+		sBPSeq.judge("ЧУВСТВИТЕЛЬНОСТЬ: данные каверов БЕЗ сигнала картинку не меняют — кэш держит (залипание судье видно)", sBPCliMutHeld, "инстанс тот же", sBPCliMutHeld ? "тот же" : "пересобрался (кэша нет)");
+		sBPSeq.judge("ВОРОНКА: WD.update перестраивает квады (инстанс новый)", sBPCliMutRebuilt, "перестроен", sBPCliMutRebuilt ? "перестроен" : "ЗАЛИП");
+		sBPSeq.judge("ВОРОНКА: перестроенные квады НЕСУТ поданный кавер (содержимое сменилось)", sBPCliMutContentChanged, "содержимое новое", sBPCliMutContentChanged ? "новое" : "старое");
+		sBPSeq.done();
 	}
 
 	// ========== [GT6-SOUNDCHAIN] серверная половина: реальные действия ключом и ломом (гейт run/gt6soundchain.flag) ==========

@@ -2324,6 +2324,134 @@ public final class GT6ProbesClient {
 		}
 	}
 
+	// ========== [GT6-BERPROBE] клиентская половина (BUG-106 №4): квады НАСТОЯЩИМ BER, суждение залипания ==========
+	// Кэш живёт на клиентском BE и судится только здесь. Извлечение — тот же MultiTileEntityBER.extractRenderState,
+	// которым рисует движок (кэш-путь и инвалидация проходятся 1:1). Фазы ведёт сервер (gt6BerProbeTick).
+	// Снять при уборке фазы.
+	private static boolean mBerProbeDone = false;
+	private static int mBerProbeWait = 0;
+	private static gregapi.render.MultiTileEntityBER mBerProbeBER;
+	private static java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> mBerP1First;
+	private static int mBerP1Ticks = 0;
+	private static boolean mBerP1Stable = true;
+	private static long mBerP1Extracts0 = -1, mBerP1Builds0 = -1, mBerP1Hits0 = -1;
+
+	/** Квады машины ТЕМ ЖЕ вызовом, что движок: кэш-путь BER, а не прямой buildRendererQuads. */
+	private static java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> berProbeExtract(net.minecraft.client.Minecraft aMC) {
+		net.minecraft.world.level.block.entity.BlockEntity tBE = aMC.level.getBlockEntity(gregapi.GT6Probes.sBPPos);
+		if (!(tBE instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot)) return null;
+		if (mBerProbeBER == null) mBerProbeBER = new gregapi.render.MultiTileEntityBER(null);
+		gregapi.render.MultiTileEntityBER.MTERenderState tState = mBerProbeBER.createRenderState();
+		mBerProbeBER.extractRenderState(tRoot, tState, 0, net.minecraft.world.phys.Vec3.ZERO, null);
+		return tState.mQuads;
+	}
+
+	/** Хэш СОДЕРЖИМОГО квадов: позиции вершин + упакованные UV + грань. Идентичность картинки, не ощущение. */
+	private static long berProbeHash(java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> aQuads) {
+		if (aQuads == null) return -1;
+		long rHash = 1;
+		for (net.minecraft.client.resources.model.geometry.BakedQuad tQuad : aQuads) {
+			for (int i = 0; i < 4; i++) {
+				org.joml.Vector3fc tPos = tQuad.position(i);
+				rHash = rHash*31 + Float.floatToIntBits(tPos.x());
+				rHash = rHash*31 + Float.floatToIntBits(tPos.y());
+				rHash = rHash*31 + Float.floatToIntBits(tPos.z());
+				rHash = rHash*31 + Long.hashCode(tQuad.packedUV(i));
+			}
+			rHash = rHash*31 + tQuad.direction().ordinal();
+		}
+		return rHash;
+	}
+
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onBerProbeClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mBerProbeDone || !gregapi.data.CS.probeFlag("gt6berprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || gregapi.GT6Probes.sBPPos == null) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			int tPhase = gregapi.GT6Probes.sBPPhase;
+			if (tPhase == 1 && !gregapi.GT6Probes.sBPCli1Done) {
+				// ФАЗА 1: статичная сцена 60 тиков — кэш обязан отдавать ОДИН И ТОТ ЖЕ список (инстанс).
+				java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tQuads = berProbeExtract(tMC);
+				if (tQuads == null) return; // BE ещё не доехал до клиента
+				if (mBerP1First == null) {
+					mBerP1First = tQuads; mBerP1Ticks = 0; mBerP1Stable = true;
+					mBerP1Extracts0 = gregapi.render.MultiTileEntityBER.sQuadExtracts.get();
+					mBerP1Builds0   = gregapi.render.MultiTileEntityBER.sQuadBuilds.get();
+					mBerP1Hits0     = gregapi.render.MultiTileEntityBER.sQuadCacheHits.get();
+					return;
+				}
+				mBerP1Stable &= (tQuads == mBerP1First);
+				if (++mBerP1Ticks < 60) return;
+				gregapi.GT6Probes.sBPCliCacheStable = mBerP1Stable;
+				gregapi.GT6Probes.sBPCliQuads1 = mBerP1First.size();
+				gregapi.GT6Probes.sBPCliHash1 = berProbeHash(mBerP1First);
+				// экономия — информационно (глобальные счётчики шумят чужими инвалидациями, судит их парный замер):
+				O.println("[GT6-BERPROBE] клиент, окно 60 тиков: extract +" + (gregapi.render.MultiTileEntityBER.sQuadExtracts.get()-mBerP1Extracts0)
+					+ " · пересборок +" + (gregapi.render.MultiTileEntityBER.sQuadBuilds.get()-mBerP1Builds0)
+					+ " · кэш-хитов +" + (gregapi.render.MultiTileEntityBER.sQuadCacheHits.get()-mBerP1Hits0)
+					+ " · quads=" + mBerP1First.size() + " hash=" + gregapi.GT6Probes.sBPCliHash1);
+				mBerProbeWait = 0;
+				gregapi.GT6Probes.sBPCli1Done = true;
+			} else if (tPhase == 2 && !gregapi.GT6Probes.sBPCli2Done) {
+				// ФАЗА 2: сервер поставил кавер реальным путём — ждём, когда он ДОЕДЕТ до квадов (смену hash).
+				java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tQuads = berProbeExtract(tMC);
+				long tHash = berProbeHash(tQuads);
+				if (tHash == -1 || tHash == gregapi.GT6Probes.sBPCliHash1) {mBerProbeWait++; return;} // ещё не доехал (окно судит сервер)
+				gregapi.GT6Probes.sBPCliHash2 = tHash;
+				// снимок кавера с клиентского BE — понадобится фазе чувствительности (валидные данные, не выдуманные);
+				// берём ВСЕ ТРИ канала (id, мета, визуал): реальный пакет несёт их вместе, а квады кавера строятся
+				// из ВИЗУАЛА (первый прогон: подача одних id дала FAIL «содержимое старое» — кавер без визуала не рисуется)
+				if (tMC.level.getBlockEntity(gregapi.GT6Probes.sBPPos) instanceof gregapi.tileentity.base.TileEntityBase06Covers tCov && tCov.hasCovers()) {
+					gregapi.GT6Probes.sBPCliCoverID = tCov.mCovers.mIDs[gregapi.data.CS.SIDE_EAST];
+					gregapi.GT6Probes.sBPCliCoverMeta = tCov.mCovers.mMetas[gregapi.data.CS.SIDE_EAST];
+					gregapi.GT6Probes.sBPCliCoverVisual = tCov.mCovers.mVisuals[gregapi.data.CS.SIDE_EAST];
+				}
+				O.println("[GT6-BERPROBE] клиент: кавер дошёл до квадов через " + mBerProbeWait + " тик(ов), hash=" + tHash + " coverID=" + gregapi.GT6Probes.sBPCliCoverID);
+				mBerProbeWait = 0;
+				gregapi.GT6Probes.sBPCli2Done = true;
+			} else if (tPhase == 3 && !gregapi.GT6Probes.sBPCli3Done) {
+				// ФАЗА 3: кавер снят монтировкой — картинка обязана вернуться к ИСХОДНОЙ (hash3 == hash1 судит сервер).
+				java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tQuads = berProbeExtract(tMC);
+				long tHash = berProbeHash(tQuads);
+				if (tHash == -1 || tHash == gregapi.GT6Probes.sBPCliHash2) {mBerProbeWait++; return;}
+				gregapi.GT6Probes.sBPCliHash3 = tHash;
+				O.println("[GT6-BERPROBE] клиент: снятие кавера дошло через " + mBerProbeWait + " тик(ов), hash=" + tHash);
+				gregapi.GT6Probes.sBPCli3Done = true;
+			} else if (tPhase == 3 && gregapi.GT6Probes.sBPCli3Done && !gregapi.GT6Probes.sBPCli4Done) {
+				// ФАЗА 4 (чувствительность, локально): «данные пришли, сигнала нет» — страшный сценарий из реестра.
+				// Подаём каверы ПРИЁМНИКОМ клиента (receiveDataCovers, TileEntityBase06Covers:101), минуя диспетчер
+				// с его WD.update. Кэш ОБЯЗАН удержать старую картинку (иначе он не кэш и судья слеп к залипанию),
+				// а последующий WD.update (= 1.7.10 markBlockForUpdate) — перестроить её с кавером.
+				if (!(tMC.level.getBlockEntity(gregapi.GT6Probes.sBPPos) instanceof gregapi.tileentity.base.TileEntityBase06Covers tCov)) return;
+				java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tBefore = berProbeExtract(tMC);
+				// обе половины реального пакета (диспетчер MultiTileEntityBlock:314 зовёт ОБА receiveDataCovers):
+				// id+мета и следом визуалы — без визуала кавер не рисуется и содержимое «не меняется» ложно
+				short[] tIDs = new short[6]; tIDs[gregapi.data.CS.SIDE_EAST] = gregapi.GT6Probes.sBPCliCoverID;
+				short[] tMetas = new short[6]; tMetas[gregapi.data.CS.SIDE_EAST] = gregapi.GT6Probes.sBPCliCoverMeta;
+				tCov.receiveDataCovers(tIDs, tMetas, null);
+				short[] tVisuals = new short[6]; tVisuals[gregapi.data.CS.SIDE_EAST] = gregapi.GT6Probes.sBPCliCoverVisual;
+				tCov.receiveDataCovers(tVisuals, new boolean[]{true, true, true, true, true, true}, null);
+				java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tHeld = berProbeExtract(tMC);
+				gregapi.GT6Probes.sBPCliMutHeld = (tHeld == tBefore);
+				gregapi.util.WD.update(tMC.level, gregapi.GT6Probes.sBPPos.getX(), gregapi.GT6Probes.sBPPos.getY(), gregapi.GT6Probes.sBPPos.getZ());
+				java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tAfter = berProbeExtract(tMC);
+				gregapi.GT6Probes.sBPCliMutRebuilt = (tAfter != tHeld);
+				gregapi.GT6Probes.sBPCliMutContentChanged = berProbeHash(tAfter) != berProbeHash(tHeld);
+				O.println("[GT6-BERPROBE] клиент, чувствительность: держит без сигнала=" + gregapi.GT6Probes.sBPCliMutHeld
+					+ " · WD.update перестроил=" + gregapi.GT6Probes.sBPCliMutRebuilt
+					+ " · содержимое сменилось=" + gregapi.GT6Probes.sBPCliMutContentChanged);
+				gregapi.GT6Probes.sBPCli4Done = true;
+				mBerProbeDone = true;
+			}
+		} catch (Throwable e) {
+			O.println("[GT6-BERPROBE] клиент EXC " + e); e.printStackTrace(gregapi.data.CS.ERR);
+			gregapi.GT6Probes.sBPCli1Done = gregapi.GT6Probes.sBPCli2Done = gregapi.GT6Probes.sBPCli3Done = gregapi.GT6Probes.sBPCli4Done = true;
+			mBerProbeDone = true;
+		}
+	}
+
 	// ========== [GT6-ITEMPOSE] BUG-112: положение предмета в руке/на земле/в рамке (гейт run/gt6itempose.flag) ==========
 	// ⛔ Картинку не судим (правило проекта). Судим ИДЕНТИЧНОСТЬ ЗНАЧЕНИЙ: 1.7.10 держал предмет ровно двумя способами,
 	// различая их по Item.isFull3D() (RenderPlayer:353-374) — «как рукоять» для инструментов/мечей и «плашмя» для

@@ -134,7 +134,17 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	 *  умолчание которой — куб 1×1×1, а геометрия GT6 выходит за свой блок (тигель 3×3×3 из контроллера, лопасти
 	 *  турбины, коннекторы труб). Не сохраняется и не синхронизируется: чисто визуальный кэш. */
 	public net.minecraft.world.phys.AABB mRenderAABB = null;
-	
+
+	/** BUG-106 №4, ТОЛЬКО КЛИЕНТ: кэш квадов BER ({@link gregapi.render.MultiTileEntityBER#extractRenderState}).
+	 *  В 1.7.10 геометрия MTE жила в мэше секции и пересобиралась ТОЛЬКО по сигналу markBlockForUpdate
+	 *  (recompSrc RenderGlobal.markBlockForUpdate → секции ±1 блока); BER же строил её каждый кадр. Кэш
+	 *  возвращает гранулярность 1.7.10: сбрасывается тем же движковым сигналом (LevelRenderer.setSectionDirty —
+	 *  единственная воронка «картинка секции изменилась», см. MixinLevelRenderer). Валиден, пока
+	 *  {@code mQuadCacheEpoch == MultiTileEntityBER.sQuadEpoch}; сам список может быть null (MTE без квадов).
+	 *  Не сохраняется и не синхронизируется: чисто визуальный кэш, как mRenderAABB выше. */
+	public java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> mQuadCache = null;
+	public long mQuadCacheEpoch = Long.MIN_VALUE;
+
 	/** If this TileEntity is ticking at all */
 	public final boolean mIsTicking;
 	
