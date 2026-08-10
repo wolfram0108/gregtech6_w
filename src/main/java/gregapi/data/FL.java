@@ -1156,6 +1156,27 @@ public enum FL {
 		FluidContainerRegistry.registerFluidContainer(aData);
 	}
 
+	/**
+	 * Завести пару полный↔пустой, НЕ вытесняя уже занятую — эквивалент {@code FluidContainerRegistry
+	 * .registerFluidContainer} 1.7.10, который возвращал false на занятой паре (`FL.java:1139` оригинала).
+	 *
+	 * @return T — пара заведена; F — место занято, вызывающему остаётся рецепт-фолбэк, как в оригинале.
+	 */
+	public static boolean regIfFree(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty) {
+		if (aFluid == null || ST.invalid(aFull) || ST.invalid(aEmpty)) return F;
+		ItemStackContainer tEmpty = new ItemStackContainer(aEmpty);
+		String tFluidName = FluidGT.nameOf(aFluid.getFluid());
+		Map<String, FluidContainerData> tByFluid = EMPTY_TO_FLUID_TO_DATA.get(tEmpty);
+		// ЗАНЯТОСТЬ СУДИТСЯ ПО ПАРЕ «пустой + жидкость», а НЕ по полному контейнеру. Первая редакция
+		// отвергала пару, если такой полный стек уже был в FULL_TO_DATA, — и отсекала почти все зелья:
+		// их «полный контейнер» задан МЕТОЙ 1.7.10 (`ST.make(Items.POTION, 1, 8194)`), а в neo мета у зелья
+		// мертва, поэтому стек у них ОДИН И ТОТ ЖЕ, и первая же жидкость занимала место для всех прочих.
+		// Наливание ищет именно по (пустой, жидкость) — `fill(...)` берёт EMPTY_TO_FLUID_TO_DATA.
+		if (tByFluid != null && tByFluid.containsKey(tFluidName)) return F;
+		reg(new FluidContainerData(aFluid, aFull, aEmpty, F));
+		return T;
+	}
+
 	public static void set(FluidContainerData aData) {
 		set(aData, F, F);
 	}
@@ -1430,17 +1451,25 @@ public enum FL {
 			}
 		}
 		
-		// F5 impossible-1:1-global (глобальный auto-fill/drain удалён в neo; программный путь реализован), decisions/F5-fluids.md §3,8: 1.7.10
-		// FluidContainerRegistry.registerFluidContainer (авто fill/drain по паре full<->empty) не имеет
-		// neo-аналога (см. блок `reg(...)` выше) — оригинал шёл в рецепт-фолбэк ТОЛЬКО если регистрация
-		// не удавалась; теперь регистрации в принципе нет, поэтому фолбэк — ВСЕГДА при заданной паре.
+		// F5, BUG-118. Оригинал (`FL.java:1139-1140`) СНАЧАЛА регистрировал пару полный↔пустой и лишь при
+		// НЕУДАЧЕ добавлял рецепт Канистры. Порт регистрацию выбросил, сочтя, что neo-аналога нет, — и это
+		// была неверная посылка: аналог есть, и он СВОЙ. `FL.set(...)` заполняет карты `FULL_TO_DATA` /
+		// `EMPTY_TO_FLUID_TO_DATA`, по которым работает `FL.fill(...)`/`drain(...)`; именно так заводит пару
+		// соседний метод `reg(...)`. Без регистрации пара была лишь у тех жидкостей, кому её прописали
+		// отдельным `FL.reg` (20 записей), тогда как контейнер задают 96 — остальные не наливались вовсе.
+		// Симптом, по которому это нашли: 4 записи лута `gt.bottles` теряли стак (`Loader_Loot:396-414`).
 		if (aFullContainer != null && aEmptyContainer != null) {
 			// F12/F5: контейнер-Supplier зовётся на server-start (ST.make внутри создаёт стек — компоненты привязаны только там);
-			// rFluid.getFluid() тоже привязан после RegisterEvent. Весь контейнер-рецепт отложен (register рано / стек поздно).
-			final java.util.function.Supplier<ItemStack> fFull = aFullContainer;
+			// rFluid.getFluid() тоже привязан после RegisterEvent. Весь контейнер-шов отложен (register рано / стек поздно).
+			final java.util.function.Supplier<ItemStack> fFull = aFullContainer, fEmpty = aEmptyContainer;
 			final gregapi.fluid.FluidGT fReg = rFluid;
 			final int fAmt = aFluidAmount;
-			gregapi.GT_API.deferItemInit(() -> {ItemStack tFull = fFull.get(); RM.Canner.addRecipe1(T, 16, Math.max(fAmt / 64, 16), tFull, NF, make(fReg.getFluid(), fAmt), ST.container(tFull, F));});
+			gregapi.GT_API.deferItemInit(() -> {
+				ItemStack tFull = fFull.get(), tEmpty = fEmpty.get();
+				FluidStack tFluid = make(fReg.getFluid(), fAmt);
+				// 1:1 с оригиналом: рецепт — ФОЛБЭК, а не всегда. Пара занята другим — регистрация «не удалась».
+				if (!regIfFree(tFluid, tFull, tEmpty)) RM.Canner.addRecipe1(T, 16, Math.max(fAmt / 64, 16), tFull, NF, tFluid, ST.container(tFull, F));
+			});
 		}
 		return rFluid;
 	}

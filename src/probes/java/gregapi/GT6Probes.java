@@ -482,6 +482,36 @@ public final class GT6Probes {
 			gregapi.probe.GT6ProbeStand.judge("GT6-TAILS", "/gt6mark отработала без исключения", F, "без исключения", String.valueOf(e));
 			e.printStackTrace(O);
 		}
+		// BUG-118: СТОРОЖ пары «жидкость → свой контейнер». Симптомом были 4 записи лута `gt.bottles`,
+		// терявшие стак («Failed to add Loot: null»), а дефектом — отсутствие регистрации пары у 76 жидкостей
+		// из 96 (`FL.create` не заводил пару, её имели лишь те, кому прописали отдельный `FL.reg`).
+		// Карточка честно говорит «класс не назван — кандидаты не установлены». Спрашиваем ровно то же,
+		// что спрашивает загрузчик (Loader_Loot:396-414): наполнение пустой бутылки жидкостью. Печатаем
+		// КАЖДУЮ, а не только сломанные: иначе «сломано 4» неотличимо от «проверено 4».
+		try {
+			Object[][] tFluids = {
+				{"Sap_Maple", gregapi.data.FL.Sap_Maple}, {"Sap_Rainbow", gregapi.data.FL.Sap_Rainbow},
+				{"Med_Heal", gregapi.data.FL.Med_Heal}, {"Med_Laxative", gregapi.data.FL.Med_Laxative},
+				{"Grenade_Juice", gregapi.data.FL.Grenade_Juice},
+				{"Potion_Speed_1", gregapi.data.FL.Potion_Speed_1}, {"Potion_Slowness_1S", gregapi.data.FL.Potion_Slowness_1S},
+				{"Potion_Strength_1", gregapi.data.FL.Potion_Strength_1}, {"Potion_Weakness_1S", gregapi.data.FL.Potion_Weakness_1S},
+				{"Potion_Regen_1", gregapi.data.FL.Potion_Regen_1}, {"Potion_Heal_1S", gregapi.data.FL.Potion_Heal_1S},
+				{"Potion_Poison_1S", gregapi.data.FL.Potion_Poison_1S}, {"Potion_Harm_1S", gregapi.data.FL.Potion_Harm_1S},
+				{"Potion_FireResistance_1", gregapi.data.FL.Potion_FireResistance_1}, {"Potion_NightVision_1", gregapi.data.FL.Potion_NightVision_1},
+				{"Potion_WaterBreathing_1", gregapi.data.FL.Potion_WaterBreathing_1}, {"Potion_Invisibility_1", gregapi.data.FL.Potion_Invisibility_1},
+			};
+			java.util.List<String> tBroken = new java.util.ArrayList<>();
+			for (Object[] tCase : tFluids) {
+				gregapi.data.FL tFL = (gregapi.data.FL)tCase[1];
+				boolean tExists = tFL.exists();
+				net.minecraft.world.item.ItemStack tFilled = tFL.fill(gregapi.data.IL.Bottle_Empty.get(1));
+				boolean tOk = gregapi.util.ST.valid(tFilled);
+				if (!tOk) tBroken.add((String)tCase[0] + (tExists ? "" : " (жидкости нет в реестре)"));
+				O.println("[GT6-TAILS] BUG-118 · " + tCase[0] + ": жидкость зарегистрирована=" + tExists + " · бутылка наполнена=" + tOk);
+			}
+			O.println("[GT6-TAILS] BUG-118: теряющихся записей " + tBroken.size() + " " + tBroken);
+			gregapi.probe.GT6ProbeStand.judge("GT6-TAILS", "BUG-118: записи лута gt.bottles не теряются", tBroken.isEmpty(), "0", String.valueOf(tBroken.size()));
+		} catch (Throwable e) {e.printStackTrace(O);}
 		O.println("========== [GT6-TAILS] DONE ==========");
 	}
 
