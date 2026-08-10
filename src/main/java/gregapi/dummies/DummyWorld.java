@@ -158,11 +158,36 @@ public class DummyWorld extends Level {
 	// (не найдены ни в одном из 3 корней референса), делегирующий ctor физически невозможен 1:1. Единственный
 	// оставшийся no-arg ctor `DummyWorld()` (обязателен, зовёт `GT_API.java:254 new DummyWorld()`) строит
 	// аргументы нового `Level`-контракта напрямую.
-	public DummyWorld() {
+	public DummyWorld() {this(RegistryAccess.EMPTY);}
+
+	/**
+	 * ЕДИНСТВЕННАЯ точка появления {@code CS.DW}: строит мир, когда реестр уже загружен, и молчит, если он
+	 * уже построен. Зовётся со старта сервера — там {@code MinecraftServer.registryAccess()} полон.
+	 * Потеря не молчит: если мир не построится и здесь, в лог уйдёт причина, а не пустая ссылка.
+	 */
+	public static synchronized void ensure(RegistryAccess aRegistryAccess) {
+		if (gregapi.data.CS.DW != null || aRegistryAccess == null) return;
+		try {
+			gregapi.data.CS.DW = new DummyWorld(aRegistryAccess);
+		} catch (Throwable e) {
+			gregapi.data.CS.ERR.println("GT6: dummy-мир не создан — проверка совпадения рецептов пойдёт без мира (" + e + ").");
+			e.printStackTrace(gregapi.data.CS.ERR);
+		}
+	}
+
+	/**
+	 * РЕЕСТР ОБЯЗАТЕЛЕН С 26.1.2. Прежде здесь стоял жёсткий {@code RegistryAccess.EMPTY}, и мир не строился
+	 * ВООБЩЕ: {@code Level.<init>} (Level.java:158) зовёт {@code PalettedContainerFactory.create}
+	 * (PalettedContainerFactory.java:25), а тот — {@code lookupOrThrow(Registries.BIOME)}, которого у пустого
+	 * реестра нет. Мод ловил это и печатал «DUMMY WORLD COULD NOT BE CREATED» при КАЖДОМ запуске, оставляя
+	 * {@code CS.DW} равным null; крафт держался лишь на том, что ванильные рецепты не читают мир в
+	 * {@code matches}. Поэтому реестр приходит снаружи — от сервера, когда он уже загружен.
+	 */
+	public DummyWorld(RegistryAccess aRegistryAccess) {
 		super(
 			new DummyLevelData(),
 			ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("dummy_dimension")),
-			RegistryAccess.EMPTY,
+			aRegistryAccess,
 			Holder.direct(mDimensionType),
 			F,
 			F,

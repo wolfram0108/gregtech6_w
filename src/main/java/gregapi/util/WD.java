@@ -1852,7 +1852,13 @@ public class WD {
 	public static boolean irrelevant(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock == Blocks.VINE || aBlock == Blocks.SNOW || aBlock == Blocks.FIRE || grass(aWorld, aX, aY, aZ) || anywater(aBlock);}
 	
 	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || state(aWorld, new BlockPos(aX, aY, aZ)).canBeReplaced();}
+	// ⛔ Признак растения — VegetationBlock, а НЕ BushBlock. В 1.7.10 `BlockBush` был базой ВСЕХ растений
+	// (recompSrc: BlockCrops, BlockDeadBush, BlockDoublePlant, BlockFlower, BlockLilyPad, BlockMushroom,
+	// BlockNetherWart, BlockSapling — все `extends BlockBush`), а в neo иерархия разделилась и `BushBlock`
+	// сузился до ОДНОГО блока реестра из 1875 при 72 у `VegetationBlock` (замер `M-84`). С прежним признаком
+	// 58 растений — саженцы всех пород, одуванчик, факелоцвет — переставали быть «легко вытесняемыми», хотя
+	// в оригинале ими были. Тот же переход уже сделан в `dropUnsupportedPlants` ниже: признак один на файл.
+	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof net.minecraft.world.level.block.VegetationBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || state(aWorld, new BlockPos(aX, aY, aZ)).canBeReplaced();}
 
 	/** Клетка годится под ПОВЕРХНОСТНЫЙ объект вордгена (камешек-индикатор, палка, куст, цветок, саженец).
 	 *
@@ -1916,13 +1922,8 @@ public class WD {
 			aWorld.setBlock(tPos, Blocks.AIR.defaultBlockState(), 2);
 			rDropped++;
 		}
-		sDroppedPlants += rDropped;
 		return rDropped;
 	}
-	/** Снято осиротевших растений за сессию. Единственный счётчик, оставленный в боевом коде: без него «0 висящих»
-	 *  у судьи неотличимо от «уборка не работала» — то есть это позитивный контроль, а не отладочный вывод.
-	 *  Два отладочных счётчика (вызовы, просмотренные блоки) сняты после закрытия BUG-098. */
-	public static int sDroppedPlants = 0;
 
 	// было aWorld.getBiomeGenForCoords(x,z) — LevelReader.getBiome(BlockPos) (LevelReader.java:42); F6-центр
 	// BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам (unwrapKey().identifier()), сырой

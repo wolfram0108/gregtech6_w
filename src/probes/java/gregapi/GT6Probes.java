@@ -392,6 +392,95 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6swampprobe.flag")) gt6SwampProbeTick(aEvent.getServer());
 	// [GT6-BIOMEPROBE] BUG-108: идентичность биома — ВЕСЬ класс (канал, Энд, полнота реестра, камень, ворлдген, сено, пчёлы) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6biomeprobe.flag")) gt6BiomeProbeTick(aEvent.getServer());
+	// [GT6-TAILS] судья хвостов захода 2026-08-10: признак растения (easyRep 1:1) и dummy-мир — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6tails.flag")) gt6EasyRepProbeTick(aEvent.getServer());
+	}
+
+	// ==========================================================================================================
+	// [GT6-TAILS] ЦЕНА ВОЗВРАТА К 1:1. В 1.7.10 `BlockBush` покрывал и двублочные растения
+	// (`BlockDoublePlant extends BlockBush`), в neo иерархия разделилась: и `BushBlock`, и `DoublePlantBlock`
+	// наследуют `VegetationBlock`. Поэтому `WD.easyRep` (WD.java:1855), проверяющий `instanceof BushBlock`,
+	// СУЖЕН против оригинала. Прежде чем менять признак, считаем ЦЕНУ: у скольких блоков реестра вердикт
+	// «легко вытесняется» изменится. Ноль означает, что правка возвращает 1:1 и ничего не двигает в мире.
+	// ==========================================================================================================
+	private static boolean mERDone = false;
+	public static void gt6EasyRepProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (mERDone) return;
+		mERDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-TAILS] цена возврата easyRep к признаку оригинала ==========");
+		int tBlocks = 0, tBush = 0, tVeg = 0, tWouldChange = 0;
+		java.util.List<String> tChanged = new java.util.ArrayList<>();
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			tBlocks++;
+			boolean tIsBush = tBlock instanceof net.minecraft.world.level.block.BushBlock;
+			boolean tIsVeg  = tBlock instanceof net.minecraft.world.level.block.VegetationBlock;
+			if (tIsBush) tBush++;
+			if (tIsVeg ) tVeg++;
+			// остальные ветки easyRep от признака не зависят; меняет вердикт только тот блок, который
+			// растение по neo-иерархии, НЕ куст, и при этом сам по себе не считается заменяемым
+			if (tIsVeg && !tIsBush && !tBlock.defaultBlockState().canBeReplaced()) {
+				tWouldChange++;
+				if (tChanged.size() < 12) tChanged.add(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock).toString());
+			}
+		}
+		O.println("[GT6-TAILS] блоков в реестре " + tBlocks + " · BushBlock " + tBush + " · VegetationBlock " + tVeg
+			+ " · СМЕНЯТ вердикт " + tWouldChange + (tChanged.isEmpty() ? "" : " " + tChanged));
+		O.println("[GT6-TAILS] столько блоков ПЕРЕСТАВАЛИ быть легко вытесняемыми с прежним признаком: " + tWouldChange);
+		// контроль осмысленности замера: признаки обязаны быть различимы, иначе числа ничего не значат
+		gregapi.probe.GT6ProbeStand.judge("GT6-TAILS", "контроль: признаки различимы (VegetationBlock шире BushBlock)", tVeg > tBush, "VegetationBlock > BushBlock", tVeg + " > " + tBush);
+
+		// ВЕРДИКТ САМОЙ ФУНКЦИИ на живом мире: растения обязаны вытесняться, твердь — нет.
+		net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
+		net.minecraft.core.BlockPos tAt = new net.minecraft.core.BlockPos(tLevel.getRespawnData().pos().getX() + 9, tLevel.getSeaLevel() + 10, tLevel.getRespawnData().pos().getZ() + 9);
+		tLevel.setChunkForced(tAt.getX() >> 4, tAt.getZ() >> 4, T);
+		Object[][] tCases = {
+			{"саженец дуба"   , net.minecraft.world.level.block.Blocks.OAK_SAPLING, T},
+			{"одуванчик"      , net.minecraft.world.level.block.Blocks.DANDELION  , T},
+			{"высокая трава"  , net.minecraft.world.level.block.Blocks.SHORT_GRASS, T},
+			{"камень"         , net.minecraft.world.level.block.Blocks.STONE      , F}, // негативный контроль
+			{"дубовые доски"  , net.minecraft.world.level.block.Blocks.OAK_PLANKS , F}, // негативный контроль
+		};
+		for (Object[] tCase : tCases) {
+			net.minecraft.world.level.block.Block tBlock = (net.minecraft.world.level.block.Block)tCase[1];
+			tLevel.setBlock(tAt, tBlock.defaultBlockState(), 2);
+			boolean tGot = gregapi.util.WD.easyRep(tLevel, tAt.getX(), tAt.getY(), tAt.getZ());
+			boolean tWant = (Boolean)tCase[2];
+			gregapi.probe.GT6ProbeStand.judge("GT6-TAILS", "easyRep: " + tCase[0] + (tWant ? " вытесняется (как в 1.7.10)" : " НЕ вытесняется — негативный контроль"), tGot == tWant, String.valueOf(tWant), String.valueOf(tGot));
+		}
+		tLevel.setBlock(tAt, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+
+		// DUMMY-МИР: с 26.1.2 Level требует реестр биомов, и построенный на фазе конструирования мода
+		// (RegistryAccess.EMPTY) он падал КАЖДЫЙ запуск — CS.DW оставался null, а его единственные
+		// потребители зовут recipe.matches(grid, CS.DW). Судим не молчание лога, а сам объект и его работу.
+		gregapi.probe.GT6ProbeStand.judge("GT6-TAILS", "dummy-мир построен (CS.DW не null)", gregapi.data.CS.DW != null, "не null", String.valueOf(gregapi.data.CS.DW));
+		if (gregapi.data.CS.DW != null) {
+			boolean tUsable = F;
+			try {
+				// тот же вызов, что делают диспетчер крафта и автокрафт: мир как аргумент matches
+				net.minecraft.world.item.crafting.CraftingInput tGrid = net.minecraft.world.item.crafting.CraftingInput.of(1, 1, java.util.List.of(new net.minecraft.world.item.ItemStack(net.minecraft.world.level.block.Blocks.OAK_PLANKS)));
+				aServer.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, tGrid, gregapi.data.CS.DW);
+				tUsable = T;
+			} catch (Throwable e) {O.println("[GT6-TAILS] dummy-мир не годится для matches: " + e);}
+			gregapi.probe.GT6ProbeStand.judge("GT6-TAILS", "dummy-мир принимается движком в поиске рецепта", tUsable, "без исключения", String.valueOf(tUsable));
+			gregapi.probe.GT6ProbeStand.judge("GT6-TAILS", "контроль: у dummy-мира есть реестр биомов (то, чего не хватало)", gregapi.data.CS.DW.registryAccess().lookup(net.minecraft.core.registries.Registries.BIOME).isPresent(), "реестр есть", String.valueOf(gregapi.data.CS.DW.registryAccess().lookup(net.minecraft.core.registries.Registries.BIOME).isPresent()));
+		}
+
+		// СМОУК КОМАНДЫ /gt6mark (BUG-106): в реестре отложенного она значилась «руками не вводилась, код-путь
+		// тривиален — флаг честности». Тривиальность не проверка: зовём команду настоящим путём движка
+		// (тот же dispatcher, что обслуживает чат) и смотрим, появилась ли метка в самописце.
+		try {
+			java.nio.file.Path tFlight = aServer.getServerDirectory().resolve("logs").resolve("gt6-flight.csv");
+			long tBefore = java.nio.file.Files.exists(tFlight) ? java.nio.file.Files.readAllLines(tFlight).stream().filter(l -> l.contains("МЕТКА")).count() : 0;
+			aServer.getCommands().performPrefixedCommand(aServer.createCommandSourceStack(), "gt6mark смоук стенда хвостов");
+			long tAfter = java.nio.file.Files.exists(tFlight) ? java.nio.file.Files.readAllLines(tFlight).stream().filter(l -> l.contains("МЕТКА")).count() : 0;
+			O.println("[GT6-TAILS] /gt6mark: меток в самописце было " + tBefore + ", стало " + tAfter + " (" + tFlight + ")");
+			gregapi.probe.GT6ProbeStand.judge("GT6-TAILS", "/gt6mark пишет метку в самописец", tAfter == tBefore + 1, String.valueOf(tBefore + 1), String.valueOf(tAfter));
+		} catch (Throwable e) {
+			gregapi.probe.GT6ProbeStand.judge("GT6-TAILS", "/gt6mark отработала без исключения", F, "без исключения", String.valueOf(e));
+			e.printStackTrace(O);
+		}
+		O.println("========== [GT6-TAILS] DONE ==========");
 	}
 
 	// ==========================================================================================================
@@ -13476,13 +13565,24 @@ public final class GT6Probes {
 					}
 				}
 			}
-			O.println("[" + M + "] §E уборка сняла осиротевших растений: " + gregapi.util.WD.sDroppedPlants);
+			// ПОЗИТИВ «уборка вообще работала» — ЗАМЕРОМ, а не счётчиком в боевом коде: сажаем заведомо
+			// висящую половину двойного растения (опора выбита) и зовём ту же уборку на её чанке. Прежде
+			// здесь читалось поле WD.sDroppedPlants — единственная оснастка, жившая в продукте; она снята,
+			// а контроль остался: без него «0 висящих» неотличимо от «уборка не работала».
+			int tCleaned = -1;
+			try {
+				net.minecraft.core.BlockPos tSeed = new net.minecraft.core.BlockPos(tLevel.getRespawnData().pos().getX() + 5, tLevel.getSeaLevel() + 20, tLevel.getRespawnData().pos().getZ() + 5);
+				tLevel.setChunkForced(tSeed.getX() >> 4, tSeed.getZ() >> 4, T);
+				tLevel.setBlock(tSeed, net.minecraft.world.level.block.Blocks.TALL_GRASS.defaultBlockState(), 2); // опоры под ней нет
+				tCleaned = gregapi.util.WD.dropUnsupportedPlants(tLevel, gregapi.util.WD.chunkNow(tLevel, tSeed.getX() >> 4, tSeed.getZ() >> 4));
+			} catch (Throwable e) {e.printStackTrace(O);}
 			O.println("[" + M + "] §E свежая генерация: чанков=" + tScanned + ", двойных растений=" + tDoubles
-				+ ", MTE-блоков GT6=" + tRocks + ", ВИСЯЩИХ половин=" + tOrphans + (tUnder.isEmpty() ? "" : ", под ними: " + tUnder));
+				+ ", MTE-блоков GT6=" + tRocks + ", ВИСЯЩИХ половин=" + tOrphans + (tUnder.isEmpty() ? "" : ", под ними: " + tUnder)
+				+ " · контрольная посадка снята уборкой: " + tCleaned);
 			// ПОЗИТИВНЫЕ КОНТРОЛИ: без травы и без камней GT6 в выборке ноль сирот был бы пустым.
 			if (gregapi.probe.GT6ProbeStand.judge(M, "§E ПОЗИТИВ выборка содержит двойные растения", tDoubles > 0, "больше 0", String.valueOf(tDoubles))) tPass++; else tFail++;
 			if (gregapi.probe.GT6ProbeStand.judge(M, "§E ПОЗИТИВ вордген GT6 отработал (камни/палки)", tRocks > 0, "больше 0", String.valueOf(tRocks))) tPass++; else tFail++;
-			if (gregapi.probe.GT6ProbeStand.judge(M, "§E ПОЗИТИВ уборка вообще работала", gregapi.util.WD.sDroppedPlants > 0, "снято больше 0", String.valueOf(gregapi.util.WD.sDroppedPlants))) tPass++; else tFail++;
+			if (gregapi.probe.GT6ProbeStand.judge(M, "§E ПОЗИТИВ уборка вообще работала (контрольная посадка)", tCleaned > 0, "снято больше 0", String.valueOf(tCleaned))) tPass++; else tFail++;
 			if (gregapi.probe.GT6ProbeStand.judge(M, "§E висящих половин травы", tOrphans == 0, "0", String.valueOf(tOrphans))) tPass++; else tFail++;
 		} catch(Throwable e) {e.printStackTrace(O); tFail++;}
 		O.println("========== [" + M + "] ИТОГ §E: PASS " + tPass + " / FAIL " + tFail + " ==========");

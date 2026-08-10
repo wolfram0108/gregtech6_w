@@ -114,7 +114,10 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 	@Override
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {
 		if (IS_CLAY[WD.meta(aWorld, aX, aY, aZ)]) return F;
-		if (aPlant == Blocks.SUGAR_CANE || aPlant instanceof BushBlock) return T;
+		// ориг. :108 `aPlant instanceof BlockBush` — в 1.7.10 это ВСЕ растения (BlockCrops/BlockFlower/
+		// BlockSapling/BlockMushroom/… все `extends BlockBush`). Neo-эквивалент — VegetationBlock: `BushBlock`
+		// там сузился до одного блока реестра, и грядка GT6 переставала держать саженцы и цветы (замер `M-84`).
+		if (aPlant == Blocks.SUGAR_CANE || aPlant instanceof net.minecraft.world.level.block.VegetationBlock) return T;
 		EnumPlantType tType = aPlant.getPlantType(aWorld, aX+aSide.getStepX(), aY+aSide.getStepY(), aZ+aSide.getStepZ());
 		return tType == EnumPlantType.Plains || tType == EnumPlantType.Water || tType == EnumPlantType.Desert || tType == EnumPlantType.Beach;
 	}

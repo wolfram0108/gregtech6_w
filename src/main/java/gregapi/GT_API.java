@@ -491,15 +491,12 @@ public class GT_API extends Abstract_Mod {
 		IMTE_CanConnectRedstone.class.toString();
 		
 		
-		try {
-			DW = new DummyWorld();
-		} catch(Throwable e) {
-			ERR.println("======================================================================================================");
-			ERR.println("WARNING, DUMMY WORLD COULD NOT BE CREATED, SOME RECIPE RELATED THINGS MAY NOT FUNCTION PROPERLY NOW!!!");
-			ERR.println("======================================================================================================");
-			e.printStackTrace(ERR);
-			ERR.println("======================================================================================================");
-		}
+		// F6/26.1.2: здесь мир больше НЕ строится. Level.<init> требует реестр биомов
+		// (Level.java:158 → PalettedContainerFactory:25 → lookupOrThrow(Registries.BIOME)), а на фазе
+		// конструирования мода реестров ещё нет — попытка падала каждый запуск, и CS.DW оставался null.
+		// Мир создаётся, когда реестр появляется: gregapi.dummies.DummyWorld.ensure(server.registryAccess()),
+		// вызывается на старте сервера (Abstract_Mod.onModServerStarting) — раньше рецептов он не нужен,
+		// его единственные потребители зовут recipe.matches(...) уже в игре.
 		
 		IconsGT.INDEX_BLOCK_GAS       = TextureSet.addToAll(MD.GT.mID, F, "gas");
 		IconsGT.INDEX_BLOCK_PLASMA    = TextureSet.addToAll(MD.GT.mID, F, "plasma");

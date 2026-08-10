@@ -308,6 +308,9 @@ public abstract class Abstract_Mod {
 	}
 	
 	public void onModServerStarting(ServerStartingEvent aEvent) {
+		// DUMMY-МИР строится здесь, а не на конструировании мода: Level требует реестр биомов, которого на той
+		// фазе ещё нет (см. gregapi.dummies.DummyWorld.ensure и GT_API, где стояла падавшая попытка).
+		gregapi.dummies.DummyWorld.ensure(aEvent.getServer().registryAccess());
 		loadRunnables(mBeforeServerStarting);
 		mStartedServerStarting++;
 		if (mProxy != null) mProxy.onProxyBeforeServerStarting(this, aEvent);
