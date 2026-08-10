@@ -780,12 +780,21 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// с материалом на сервере). RE-APPLY 2026-07-17: безопасно после снятия серверно-тикового worldgen (генерация в Feature.place
 	// на регионе, реентрантного getChunk текущего чанка больше нет — прежний дедлок с ore-BE устранён в корне).
 	// Правка №1 (BUG-106): материал живёт в карте чанка (PrefixBlockOreMap, синк штатным AttachmentSync) —
-	// прежняя причина клиентской сущности («材ал недоступен на рендере», RE-APPLY 2026-07-17 выше) снята в корне.
-	// null = движок больше НЕ создаёт сущность на каждую руду (2 845 589 живых объектов по замеру BUG-106).
+	// прежняя причина клиентской сущности («материал недоступен на рендере», RE-APPLY 2026-07-17 выше) снята в корне.
 	// EntityBlock-природа блока сохраняется: старые сущности из NBT чанков грузятся (тип валиден,
 	// TileEntityBase01Root.createType) и мигрируют в карту (GT_API_Proxy.onChunkLoadMigrateOres), а блоки с
 	// mItemNBT ставят свою сущность вручную (placeBlock) — «Where I come from, we set the TileEntities ourselves».
-	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return null;}
+	// ⛔ null возвращать НЕЛЬЗЯ (жило 2026-08-09..10): контракт neo «EntityBlock всегда создаёт» жёсткий —
+	// ворлдген пишет в прото-чанк заглушку id="DUMMY" на КАЖДЫЙ блок с hasBlockEntity (WorldGenRegion:276-281),
+	// а первая полная загрузка чанка зовёт этот метод (LevelChunk.promotePendingBlockEntity:612-614) и на null
+	// печатает WARN:627 на каждую руду — 343 394 строки за 3 минуты на старом мире, ~1 млн за прогон на свежем
+	// (репорт пользователя 2026-08-10). Возврат сущности заглушку удовлетворяет, а миграция снимает её В ТОЙ ЖЕ
+	// цепочке загрузки (ChunkStatusTasks:201-204: registerAllBlockEntitiesAfterLevelLoad → ChunkEvent.Load, один
+	// тред, между ними чтений нет) — сущность-однодневка, постоянных объектов на рудах не появляется. Обычные
+	// чтения сущностей не плодят: getBlockEntity идёт с EntityCreationType.CHECK (только чтение,
+	// LevelChunk:372-395); IMMEDIATE зовётся лишь для сущностей из чанк-пакета (:546-547) — у рядовых руд их
+	// нет. Материал однодневки — из карты (setLevel-фолбэк в PrefixBlockTileEntity), «0 вместо руды» невозможен.
+	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return new PrefixBlockTileEntity(aPos, aState);}
 	@Override public String toString() {return mNameInternal;}
 	public String getUnlocalizedName() {return mNameInternal;}
 	public String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mNameInternal);}
@@ -927,6 +936,15 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		if (tChunk == null) return;
 		tChunk.getData(PrefixBlockOreMap.TYPE.get()).set(aX, aY, aZ, aMeta);
 		tChunk.markUnsaved();
+		// Хвост правки №1 (2026-08-10): раз материал записан в карту, сущность/закладка, рождённая движком на
+		// САМ setBlock, снимается тут же — в той же воронке записи. Рождает их контракт «EntityBlock всегда
+		// создаёт» (newBlockEntity обязан быть non-null, см. :788): ветка «ворлдген в живой чанк» кладёт живую
+		// сущность (WorldGenRegion:268-274 — судья W ловил 875 шт), ветка прото-чанка — закладку DUMMY (:276-281).
+		// Носитель предметного NBT не задет: он ставится ПОСЛЕ этой записи (placeBlock:548), а уже стоящий
+		// защищён условием mItemNBT == null. На прото-чанке removeBlockEntity снимает и pending-закладку (:283-286).
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		BlockEntity tBE = tChunk.getBlockEntity(tPos);
+		if (tBE == null || (tBE instanceof PrefixBlockTileEntity tTE && tTE.mItemNBT == null)) tChunk.removeBlockEntity(tPos);
 		if (tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC && aWorld instanceof net.minecraft.server.level.ServerLevel) tLC.syncData(PrefixBlockOreMap.TYPE.get());
 	}
 

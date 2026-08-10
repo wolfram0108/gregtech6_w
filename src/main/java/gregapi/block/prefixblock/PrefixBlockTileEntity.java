@@ -100,6 +100,19 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	/** F3-render #2: приход mMetaData (материал) при синке — сбросить кэш текстуры, иначе меш остаётся с material=none. */
 	public void receiveMetaData(short aMetaData) {mMetaData = aMetaData; mTexture = null;}
 
+	/** Хвост правки №1 (WARN-флуд DUMMY): сущность, рождённая движком через {@code newBlockEntity} (заглушка
+	 *  ворлдгена), приходит с дефолтным {@code mMetaData=W} — материал дочитывается из карты чанка в момент
+	 *  постановки в мир ({@code setLevel} — единственный такой хук в 26.1.2, {@code onLoad} удалён). Обычно эта
+	 *  однодневка тут же снимается миграцией (та же цепочка загрузки чанка), но в ветке «ворлдген догнал уже
+	 *  живой чанк» ({@code WorldGenRegion:268-274}) она доживает до следующей загрузки — и без фолбэка отвечала
+	 *  бы «материала нет» вместо карты. Сущности из NBT/placeBlock сюда не попадают: их материал уже прочитан
+	 *  (readFromNBT/createTileEntity идут ДО постановки в мир). */
+	@Override public void setLevel(net.minecraft.world.level.Level aLevel) {
+		super.setLevel(aLevel);
+		if (mMetaData == W && aLevel != null && getBlockState().getBlock() instanceof PrefixBlock)
+			mMetaData = PrefixBlock.getOreMeta(aLevel, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
+	}
+
 	@Override
 	public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {
 		if (!aShouldSideBeRendered[aSide]) return null;
