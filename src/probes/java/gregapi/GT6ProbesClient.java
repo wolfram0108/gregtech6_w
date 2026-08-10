@@ -2444,12 +2444,42 @@ public final class GT6ProbesClient {
 	// Что сюда попало — то и слышно; чего нет — того не слышно. Снять при уборке фазы.
 	public static final java.util.List<String> mSoundsHeard = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
 
+	private static net.minecraft.client.resources.sounds.SoundInstance mPendingSound = null;
+	private static int mPendingTicks = 0;
+
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onSoundChainTick(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mPendingSound == null || !gregapi.data.CS.probeFlag("gt6soundchain.flag")) return;
+		if (--mPendingTicks > 0) return;
+		try {
+			boolean tActive = Minecraft.getInstance().getSoundManager().isActive(mPendingSound);
+			gregapi.data.CS.OUT.println("[GT6-SOUNDCHAIN] через 5 тиков канал звука " + mPendingSound.getIdentifier()
+				+ " · играется движком=" + tActive + " (false = движок его отбросил, слышно не будет)");
+		} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-SOUNDCHAIN] опрос канала сорвался: " + e);}
+		mPendingSound = null;
+	}
+
 	@net.neoforged.bus.api.SubscribeEvent
 	public static void onAnySoundPlayed(net.neoforged.neoforge.client.event.sound.PlaySoundEvent aEvent) {
 		if (!gregapi.data.CS.probeFlag("gt6soundchain.flag")) return;
 		try {
 			net.minecraft.client.resources.sounds.SoundInstance tSound = aEvent.getSound();
-			if (tSound != null) mSoundsHeard.add(tSound.getIdentifier().toString());
+			if (tSound == null) return;
+			String tId = tSound.getIdentifier().toString();
+			mSoundsHeard.add(tId);
+			// для СВОИХ звуков печатаем всё, от чего зависит слышимость, и через 5 тиков спрашиваем движок,
+			// живёт ли канал: «дошло до PlaySoundEvent» и «реально звучит» — разные вещи.
+			if (tId.startsWith("gregapi:")) {
+				// каждый опрос — в СВОЁМ try: прошлый прогон печатал молчание, потому что один из них бросал
+				// исключение и уносил всю строку во внешний catch.
+				java.io.PrintStream O = gregapi.data.CS.OUT;
+				O.println("[GT6-SOUNDCHAIN] СВОЙ ЗВУК " + tId);
+				try {O.println("[GT6-SOUNDCHAIN]   громкость=" + tSound.getVolume() + " тон=" + tSound.getPitch());} catch (Throwable e) {O.println("[GT6-SOUNDCHAIN]   громкость/тон: " + e);}
+				try {O.println("[GT6-SOUNDCHAIN]   позиция=" + tSound.getX() + "," + tSound.getY() + "," + tSound.getZ() + " категория=" + tSound.getSource() + " затухание=" + tSound.getAttenuation());} catch (Throwable e) {O.println("[GT6-SOUNDCHAIN]   позиция/категория: " + e);}
+				try {O.println("[GT6-SOUNDCHAIN]   разрешён в файл=" + (tSound.getSound() == null ? "НЕТ (тишина)" : tSound.getSound().getPath()));} catch (Throwable e) {O.println("[GT6-SOUNDCHAIN]   разрешение в файл СОРВАЛОСЬ: " + e);}
+				mPendingSound = tSound;
+				mPendingTicks = 5;
+			}
 		} catch (Throwable e) {/* звук без адреса */}
 	}
 }
