@@ -390,6 +390,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6bucketprobe.flag")) gt6BucketProbeTick(aEvent.getServer());
 	// [GT6-SWAMPPROBE] уровень ванильной жидкости (WD.meta) и фронт болота — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6swampprobe.flag")) gt6SwampProbeTick(aEvent.getServer());
+	// [GT6-BIOMEPROBE] BUG-108: идентичность биома — ВЕСЬ класс (канал, Энд, полнота реестра, камень, ворлдген, сено, пчёлы) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6biomeprobe.flag")) gt6BiomeProbeTick(aEvent.getServer());
 	}
 
 	// ==========================================================================================================
@@ -14525,86 +14527,6 @@ public final class GT6Probes {
 		}
 		return new int[] {tSwampIn, tSwampOut, tDirtIn, tDirtOut};
 	}
-	/** Random, отдающий ноль: тик сена трижды выходит по {@code nextInt(3) > 0}, и на живом рандоме судья
-	 *  был бы плавающим. Ноль — не подгонка: это разрешённое значение, при котором тело метода исполняется. */
-	private static java.util.Random swZeroRandom() {
-		return new java.util.Random() {
-			private static final long serialVersionUID = 1L;
-			@Override public int nextInt(int aBound) {return 0;}
-			@Override public int nextInt() {return 0;}
-			@Override public boolean nextBoolean() {return false;}
-		};
-	}
-
-	/**
-	 * ПОВЕДЕНЧЕСКИЕ судьи следствий BUG-108 — вызовом самих функций, а не проверкой канала.
-	 *
-	 * <p>Судимы только те следствия, чьи наборы содержат ВАНИЛЬНЫЕ биомы: гниение сена
-	 * ({@code BIOMES_INFINITE_WATER}: ocean/beach/river) и гены пчёл ({@code BIOMES_DESERT}: desert,
-	 * {@code BIOMES_MESA}: badlands). Компас пчелы на магический биом и материал лунного/марсианского
-	 * камня проверить нечем: {@code BIOMES_MAGICAL}/{@code BIOMES_MOON}/{@code BIOMES_MARS}/
-	 * {@code BIOMES_SPACE} состоят ТОЛЬКО из модовых имён (Thaumcraft, Galacticraft), а этих модов в
-	 * сборке нет. Ветка компаса на Энд неразличима: она срабатывает и по {@code dimensionId == 1}.
-	 */
-	private static void swBehaviourJudges(ServerLevel aLevel, java.io.PrintStream O) {
-		// --- G1. СЕНО: во влажном биоме тюк должен намокнуть (мета|2), в сухом — высохнуть (мета|1) ----
-		// Воду рядом исключаем каменной площадкой: иначе сработает запасная ветка «сосед — вода»
-		// (BlockBaleGrass:114) и судья позеленеет независимо от биомного признака.
-		net.minecraft.world.level.block.Block tBale = gregapi.data.CS.BlocksGT.BalesGrass;
-		com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tWetB =
-			aLevel.findClosestBiome3d(h -> BIOMES_INFINITE_WATER.contains(h), aLevel.getRespawnData().pos(), 12800, 32, 64);
-		com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tDryB =
-			aLevel.findClosestBiome3d(h -> BIOMES_SAVANNA.contains(h), aLevel.getRespawnData().pos(), 12800, 32, 64);
-		if (tBale == null || tWetB == null || tDryB == null) {
-			swJudge(O, "СЕНО: нашлись блок тюка, влажный и сухой биом (среда, не код)", F);
-		} else {
-			int tWetMeta = swBaleTick(aLevel, tBale, tWetB.getFirst()), tDryMeta = swBaleTick(aLevel, tBale, tDryB.getFirst());
-			O.println("[GT6-SWAMPPROBE] СЕНО: во влажном биоме (" + aLevel.getBiome(tWetB.getFirst()).getRegisteredName() + ") мета " + tWetMeta
-				+ " · в сухом (" + aLevel.getBiome(tDryB.getFirst()).getRegisteredName() + ") мета " + tDryMeta + " — ждём 2 и 1");
-			swJudge(O, "СЕНО во влажном биоме НАМОКЛО (мета " + tWetMeta + " несёт бит 2) — признак влажности биома жив", (tWetMeta & 2) != 0);
-			swJudge(O, "СЕНО в сухом биоме высохло (мета " + tDryMeta + " несёт бит 1) — негативный контроль", (tDryMeta & 1) != 0 && (tDryMeta & 2) == 0);
-		}
-
-		// --- G2. ГЕНЫ ПЧЁЛ: в пустыне пчела НОЧНАЯ, в обычном биоме — ДНЕВНАЯ ------------------------
-		// IItemBumbleBee.Genes:141 — aDay = !(desert||mesa), aNight = (desert||mesa); :152-153 пишут
-		// "day"/"night" в NBT. До правки пустыня не опознавалась и давала дневные гены, как лес.
-		com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tDesert =
-			aLevel.findClosestBiome3d(h -> BIOMES_DESERT.contains(h), aLevel.getRespawnData().pos(), 12800, 32, 64);
-		if (tDesert == null) {
-			swJudge(O, "ПЧЁЛЫ: биом пустыни найден (среда, не код)", F);
-		} else {
-			// биом берём ИЗ HOLDER'А находки, а не по её координате: findClosestBiome3d возвращает точку с шагом
-			// сетки 32/64, и getBiome в ней даёт СОСЕДНИЙ биом — судья уже получил так «пустыню sparse_jungle».
-			net.minecraft.world.level.biome.Biome tDes = tDesert.getSecond().value();
-			net.minecraft.world.level.biome.Biome tPlain = gregapi.util.WD.biome(aLevel, mSwCtrl != null ? mSwCtrl.getX() : 0, mSwCtrl != null ? mSwCtrl.getZ() : 0);
-			net.minecraft.nbt.CompoundTag tGenDes = gregapi.item.bumble.IItemBumbleBee.Util.getBumbleGenes(300, tDes, T, swZeroRandom());
-			net.minecraft.nbt.CompoundTag tGenPln = gregapi.item.bumble.IItemBumbleBee.Util.getBumbleGenes(300, tPlain, T, swZeroRandom());
-			boolean tDesNight = tGenDes.getBooleanOr("night", false), tDesDay = tGenDes.getBooleanOr("day", false);
-			boolean tPlnDay = tGenPln.getBooleanOr("day", false), tPlnNight = tGenPln.getBooleanOr("night", false);
-			O.println("[GT6-SWAMPPROBE] ПЧЁЛЫ: пустыня (" + gregapi.code.BiomeNameSet.keyOfBiome(tDes) + ") day=" + tDesDay + " night=" + tDesNight
-				+ " · не-пустыня (" + gregapi.code.BiomeNameSet.keyOfBiome(tPlain) + ") day=" + tPlnDay + " night=" + tPlnNight);
-			swJudge(O, "ПЧЁЛЫ в пустыне НОЧНЫЕ (day=false, night=true) — признак пустыни жив", !tDesDay && tDesNight);
-			swJudge(O, "ПЧЁЛЫ вне пустыни ДНЕВНЫЕ (day=true, night=false) — негативный контроль", tPlnDay && !tPlnNight);
-		}
-
-		O.println("[GT6-SWAMPPROBE] НЕ судимо стендом: компас пчелы на магический биом и материал лунного/"
-			+ "марсианского/космического камня — наборы BIOMES_MAGICAL/MOON/MARS/SPACE состоят только из модовых "
-			+ "имён (Thaumcraft, Galacticraft), модов в сборке нет; ветка компаса на Энд неразличима (срабатывает и по dimensionId==1)");
-	}
-
-	/** ставит тюк сена на каменной площадке БЕЗ воды рядом, дёргает его тик и возвращает получившуюся мету */
-	private static int swBaleTick(ServerLevel aLevel, net.minecraft.world.level.block.Block aBale, net.minecraft.core.BlockPos aWhere) {
-		net.minecraft.core.BlockPos tC = new net.minecraft.core.BlockPos(aWhere.getX(), aLevel.getSeaLevel() + 6, aWhere.getZ());
-		for (int cx = (tC.getX() >> 4) - 1; cx <= (tC.getX() >> 4) + 1; cx++) for (int cz = (tC.getZ() >> 4) - 1; cz <= (tC.getZ() >> 4) + 1; cz++) aLevel.setChunkForced(cx, cz, T);
-		for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
-			aLevel.setBlock(tC.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
-			for (int dy = 0; dy <= 3; dy++) aLevel.setBlock(tC.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
-		}
-		gregapi.util.WD.set(aLevel, tC.getX(), tC.getY(), tC.getZ(), aBale, 0, 2);
-		((gregtech.blocks.BlockBaleGrass)aBale).updateTick2(aLevel, tC.getX(), tC.getY(), tC.getZ(), swZeroRandom());
-		return swMeta(aLevel, tC);
-	}
-
 	/** снимок района: что за блок в каждой клетке — нужен, чтобы на втором замере сказать, ИЗ ЧЕГО
 	 *  выросло болото (из ванильной воды = конверсия tList, из воздуха/суши = растекание updateFlow). */
 	private static java.util.HashMap<Long, String> swSnapshot(ServerLevel aLevel, net.minecraft.core.BlockPos aCenter, int aR) {
@@ -14881,9 +14803,9 @@ public final class GT6Probes {
 				swJudge(O, "голый Biome резолвится в ключ: BIOMES_SWAMP.contains(WD.biome(...)) = true (было false ВСЕГДА)", tBareHit);
 				swJudge(O, "негативный контроль: чужой набор на том же биоме отвечает false", !tBareMiss);
 
-				// --- (G) ПОВЕДЕНИЕ, а не канал: следствия BUG-108 реальными методами -------------------
-				// Канал доказан выше; здесь дёргаются САМИ функции, которые от него зависели.
-				swBehaviourJudges(tLevel, O);
+				// Судьи КЛАССА BUG-108 (сено, пчёлы, компас, камень, ворлдген) здесь были гостями — они
+				// переехали в свой стенд [GT6-BIOMEPROBE] (флаг gt6biomeprobe.flag), где класс судится целиком.
+				// Тут остаётся только то, что доказывает контекст болота.
 			}
 		} catch (Throwable e) {
 			swJudge(O, "стенд отработал без исключения", F);
@@ -16385,5 +16307,403 @@ public final class GT6Probes {
 			.at(300, GT6Probes::gt6SoundChainBreak)
 			.at(360, GT6Probes::gt6SoundChainJudge);
 		sSCSeq.tick(sSCTick);
+	}
+
+	// ==========================================================================================================
+	// [GT6-BIOMEPROBE] BUG-108 — ИДЕНТИЧНОСТЬ БИОМА: класс судится ЦЕЛИКОМ, все носители сразу.
+	//
+	// Дефект: BiomeNameSet.contains(голый Biome) отвечал false ВСЕГДА — имя биома взять было негде
+	// (BiomeNameSet:66-71 до правки). Через голый Biome ходят ВСЕ потребители: WD.biome(...) отдаёт .value()
+	// (WD.java:1185-1186). Носители: сено (BlockBaleGrass:113), гены пчёл (IItemBumbleBee:141), компас пчелы
+	// (MultiItemBumbles:234,266), камень (MultiTileEntityRock:105-107,187-189) и ВОРЛДГЕН — StoneLayerOres.check
+	// (:114,119,124) спрашивает mTargetBiomes.contains(aBiome) тем же голым Biome, то есть все руды с биомным
+	// ограничением не рождались НИГДЕ.
+	//
+	// Судьи: A канал на ванильных наборах · B Энд · C полнота обходом ВСЕГО реестра биомов · D живой камень ·
+	// E ворлдген (прямой вызов правила + реальная генерация A/B) · F сено и гены пчёл.
+	// У каждого — негативный контроль. Там, где ветка недостижима в этой сборке, недостижимость ИЗМЕРЯЕТСЯ
+	// обходом реестра, а не объявляется словами.
+	// ==========================================================================================================
+	private static final String BP_M = "GT6-BIOMEPROBE";
+	private static int mBpTick = 0, mBpPass = 0, mBpFail = 0;
+	private static boolean mBpDone = F;
+	private static net.minecraft.core.BlockPos mBpDesertPos = null, mBpCtrlPos = null;
+	private static net.minecraft.world.level.biome.Biome mBpDesertBiome = null, mBpCtrlBiome = null;
+
+	private static void bpJudge(java.io.PrintStream O, String aWhat, boolean aOk) {
+		if (aOk) mBpPass++; else mBpFail++;
+		O.println("[" + BP_M + "] " + (aOk ? "PASS" : "FAIL") + " · " + aWhat);
+	}
+
+	/** Random, отдающий ноль: тик сена трижды выходит по {@code nextInt(3) > 0}, и на живом рандоме судья был бы
+	 *  плавающим. Ноль — не подгонка: это разрешённое значение, при котором тело метода исполняется. */
+	private static java.util.Random bpZeroRandom() {
+		return new java.util.Random() {
+			private static final long serialVersionUID = 1L;
+			@Override public int nextInt(int aBound) {return 0;}
+			@Override public int nextInt() {return 0;}
+			@Override public boolean nextBoolean() {return false;}
+		};
+	}
+
+	/** материал, под которым руда РЕАЛЬНО регистрируется в мире: подвиды схлопываются в базовый по цепочке
+	 *  mTargetRegistration (OreDictMaterial:207,285,392). Правила ворлдгена записаны на подвиды
+	 *  (TigerEyeYellow/Red/Black...), а в блоке лежит базовый TigerEye — без нормализации обоих концов
+	 *  сравниваются разные ключи, и судья видит несуществующие нарушения. */
+	private static gregapi.oredict.OreDictMaterial bpBaseMat(gregapi.oredict.OreDictMaterial aMat) {
+		gregapi.oredict.OreDictMaterial rMat = aMat;
+		while (rMat != null && rMat != rMat.mTargetRegistration) rMat = rMat.mTargetRegistration;
+		return rMat;
+	}
+
+	/**
+	 * ВСЕ рудные записи ворлдгена — из ОБОИХ источников, которые читает сам генератор:
+	 * {@code tScan[3].mOres} (руды слоя, WorldgenStoneLayers:110,160) и {@code StoneLayer.get(top,bottom)}
+	 * = {@code MAP.get(top).get(bottom)} (руды ПАРЫ слоёв, там же :116,166; StoneLayer.java:149,171-178).
+	 *
+	 * <p>Замер обоих однобоких вариантов: только {@code mOres} — 41 биом-ограниченная запись, только
+	 * {@code MAP} — 10. Судья, построенный на любой половине, называет нарушением законную руду из другой
+	 * (так топаз в {@code sparse_jungle} трижды шёл в нарушения, хотя {@code BIOMES_JUNGLE} содержит
+	 * {@code SPARSE_JUNGLE}, CS.java:342, а запись есть в Loader_Worldgen:75).
+	 */
+	private static java.util.List<gregapi.worldgen.StoneLayerOres> bpAllLayerOres() {
+		java.util.List<gregapi.worldgen.StoneLayerOres> rList = new java.util.ArrayList<>();
+		java.util.HashSet<gregapi.worldgen.StoneLayerOres> tSeen = new java.util.HashSet<>();
+		for (gregapi.worldgen.StoneLayer tLayer : gregapi.worldgen.StoneLayer.LAYERS)
+			for (gregapi.worldgen.StoneLayerOres tOre : tLayer.mOres) if (tOre != null && tSeen.add(tOre)) rList.add(tOre);
+		for (java.util.Map<gregapi.oredict.OreDictMaterial, java.util.List<gregapi.worldgen.StoneLayerOres>> tByBottom : gregapi.worldgen.StoneLayer.MAP.values())
+			for (java.util.List<gregapi.worldgen.StoneLayerOres> tList : tByBottom.values())
+				for (gregapi.worldgen.StoneLayerOres tOre : tList) if (tOre != null && tSeen.add(tOre)) rList.add(tOre);
+		return rList;
+	}
+
+	/** биом-ограниченные записи — именно они были мертвы целиком до фикса */
+	private static java.util.List<gregapi.worldgen.StoneLayerOres> bpRestrictedOres() {
+		java.util.List<gregapi.worldgen.StoneLayerOres> rList = new java.util.ArrayList<>();
+		for (gregapi.worldgen.StoneLayerOres tOre : bpAllLayerOres()) if (!tOre.mTargetBiomes.isEmpty()) rList.add(tOre);
+		return rList;
+	}
+
+	public static void gt6BiomeProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (mBpDone) return;
+		mBpTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
+		try {
+			if (mBpTick == 60) {
+				bpFindZones(tLevel, O);
+			} else if (mBpTick == 260) {
+				bpChannel(tLevel, O);
+				bpEnd(aServer, tLevel, O);
+				bpRegistrySweep(aServer, O);
+				bpRock(aServer, tLevel, O);
+				bpWorldgenRule(tLevel, O);
+				bpBaleAndBees(tLevel, O);
+			} else if (mBpTick == 700) {
+				bpWorldgenReality(tLevel, O);
+				bpVerdict(O);
+			}
+		} catch (Throwable e) {
+			bpJudge(O, "стенд отработал без исключения", F);
+			e.printStackTrace(O);
+			bpVerdict(O);
+		}
+	}
+
+	/** зоны замера: пустыня (её признак несут и пчёлы, и ворлдген) и КОНТРОЛЬНЫЙ биом — такой, которого нет
+	 *  НИ В ОДНОМ наборе рудных записей; выбирается перебором самих записей, а не назначается мной. */
+	private static void bpFindZones(net.minecraft.server.level.ServerLevel aLevel, java.io.PrintStream O) {
+		O.println("========== [" + BP_M + "] BUG-108: идентичность биома — весь класс ==========");
+		java.util.List<gregapi.worldgen.StoneLayerOres> tRestricted = bpRestrictedOres();
+		O.println("[" + BP_M + "] рудных записей ворлдгена с ограничением по биому: " + tRestricted.size()
+			+ " (до фикса ни одна не срабатывала: contains(голый Biome) = false всегда)");
+
+		com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tDes =
+			aLevel.findClosestBiome3d(h -> BIOMES_DESERT.contains(h), aLevel.getRespawnData().pos(), 12800, 32, 64);
+		com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tCtrl =
+			aLevel.findClosestBiome3d(h -> {
+				for (gregapi.worldgen.StoneLayerOres tOre : tRestricted) if (tOre.mTargetBiomes.contains(h)) return F;
+				return T;
+			}, aLevel.getRespawnData().pos(), 12800, 32, 64);
+
+		if (tDes != null) {mBpDesertPos = tDes.getFirst(); mBpDesertBiome = tDes.getSecond().value();}
+		if (tCtrl != null) {mBpCtrlPos = tCtrl.getFirst(); mBpCtrlBiome = tCtrl.getSecond().value();}
+		O.println("[" + BP_M + "] зона ПУСТЫНИ: " + mBpDesertPos + " (" + gregapi.code.BiomeNameSet.keyOfBiome(mBpDesertBiome) + ")"
+			+ " · зона КОНТРОЛЯ (нет ни в одном наборе руд): " + mBpCtrlPos + " (" + gregapi.code.BiomeNameSet.keyOfBiome(mBpCtrlBiome) + ")");
+
+		// чанки обеих зон — под замер реальной генерации (судья E2); 3×3 на зону
+		for (net.minecraft.core.BlockPos tZone : new net.minecraft.core.BlockPos[] {mBpDesertPos, mBpCtrlPos}) {
+			if (tZone == null) continue;
+			for (int cx = (tZone.getX() >> 4) - 1; cx <= (tZone.getX() >> 4) + 1; cx++)
+				for (int cz = (tZone.getZ() >> 4) - 1; cz <= (tZone.getZ() >> 4) + 1; cz++) aLevel.setChunkForced(cx, cz, T);
+		}
+	}
+
+	/** A. КАНАЛ на ванильных наборах: каждый набор обязан узнать СВОЙ биом и не узнать чужой. */
+	private static void bpChannel(net.minecraft.server.level.ServerLevel aLevel, java.io.PrintStream O) {
+		Object[][] tCases = {
+			{"BIOMES_DESERT" , BIOMES_DESERT , BIOMES_NETHER},
+			{"BIOMES_MESA"   , BIOMES_MESA   , BIOMES_DESERT},
+			{"BIOMES_SAVANNA", BIOMES_SAVANNA, BIOMES_MESA  },
+			{"BIOMES_SWAMP"  , BIOMES_SWAMP  , BIOMES_DESERT},
+			{"BIOMES_INFINITE_WATER", BIOMES_INFINITE_WATER, BIOMES_DESERT},
+		};
+		for (Object[] tCase : tCases) {
+			String tName = (String)tCase[0];
+			gregapi.code.BiomeNameSet tSet = (gregapi.code.BiomeNameSet)tCase[1];
+			gregapi.code.BiomeNameSet tOther = (gregapi.code.BiomeNameSet)tCase[2];
+			com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tFound =
+				aLevel.findClosestBiome3d(h -> tSet.contains(h), aLevel.getRespawnData().pos(), 12800, 32, 64);
+			if (tFound == null) {O.println("[" + BP_M + "] A: биом набора " + tName + " в этом мире не найден — судья пропущен (среда, не код)"); continue;}
+			// биом берём ИЗ HOLDER'А находки: findClosestBiome3d возвращает точку с шагом сетки 32/64, и getBiome
+			// в самой точке даёт СОСЕДНИЙ биом — на этом судья уже давал ложный FAIL при исправном коде.
+			net.minecraft.world.level.biome.Biome tBiome = tFound.getSecond().value();
+			boolean tHit = tSet.contains(tBiome), tMiss = tOther.contains(tBiome);
+			O.println("[" + BP_M + "] A: " + tName + " на голом Biome \"" + gregapi.code.BiomeNameSet.keyOfBiome(tBiome) + "\" = " + tHit + " · чужой набор = " + tMiss);
+			bpJudge(O, "A. " + tName + " узнаёт свой биом голым значением (до фикса false ВСЕГДА)", tHit);
+			bpJudge(O, "A. негативный контроль: чужой набор на том же биоме отвечает false", !tMiss);
+		}
+	}
+
+	/** B. ЭНД: BIOMES_END состоит из ВАНИЛЬНОГО Biomes.THE_END — набор проверяем на настоящем биоме Энда. */
+	private static void bpEnd(net.minecraft.server.MinecraftServer aServer, net.minecraft.server.level.ServerLevel aOverworld, java.io.PrintStream O) {
+		net.minecraft.server.level.ServerLevel tEnd = aServer.getLevel(net.minecraft.world.level.Level.END);
+		if (tEnd == null) {bpJudge(O, "B. измерение Энда доступно (среда, не код)", F); return;}
+		tEnd.setChunkForced(0, 0, T);
+		net.minecraft.world.level.biome.Biome tEndBiome = gregapi.util.WD.biome(tEnd, 8, 8);
+		net.minecraft.world.level.biome.Biome tOverBiome = gregapi.util.WD.biome(aOverworld, aOverworld.getRespawnData().pos().getX(), aOverworld.getRespawnData().pos().getZ());
+		boolean tHit = BIOMES_END.contains(tEndBiome), tMiss = BIOMES_END.contains(tOverBiome);
+		O.println("[" + BP_M + "] B: биом Энда \"" + gregapi.code.BiomeNameSet.keyOfBiome(tEndBiome) + "\" BIOMES_END=" + tHit
+			+ " · биом Оверворлда \"" + gregapi.code.BiomeNameSet.keyOfBiome(tOverBiome) + "\" BIOMES_END=" + tMiss);
+		bpJudge(O, "B. BIOMES_END узнаёт настоящий биом Энда голым значением", tHit);
+		bpJudge(O, "B. негативный контроль: биом Оверворлда в BIOMES_END не попадает", !tMiss);
+
+		// поведение компаса: ветка 4 сама по себе НЕ различает фикс — она срабатывает и по dimensionId==1
+		// (MultiItemBumbles:266, левая половина ИЛИ). Поэтому судим то, что различимо: сам набор выше.
+		// Здесь только показываем, не подменена ли ветка модовым блоком.
+		net.minecraft.world.level.block.Block tChorus = gregapi.util.ST.block(gregapi.data.MD.EtFu, "chorus_flower", null);
+		O.println("[" + BP_M + "] B: ветка компаса на Энд неразличима по построению (dimensionId==1 || BIOMES_END) —"
+			+ " судится набор, а не её итог; модовая подмена chorus_flower " + (tChorus == null ? "отсутствует (идёт ванильная ветка)" : "присутствует"));
+	}
+
+	/** C. ПОЛНОТА: обход ВСЕГО реестра биомов мира. Наборы из чужих модов обязаны не совпасть ни с чем —
+	 *  это измеренный ноль, а не слова «проверить нечем»; контроль — что обход вообще способен совпадать. */
+	private static void bpRegistrySweep(net.minecraft.server.MinecraftServer aServer, java.io.PrintStream O) {
+		java.util.List<net.minecraft.world.level.biome.Biome> tAll = new java.util.ArrayList<>();
+		aServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).listElements().forEach(h -> tAll.add(h.value()));
+		int tMagical = 0, tMoon = 0, tMars = 0, tSpace = 0, tDesert = 0, tResolved = 0;
+		for (net.minecraft.world.level.biome.Biome tB : tAll) {
+			if (!gregapi.code.BiomeNameSet.keyOfBiome(tB).isEmpty()) tResolved++;
+			if (BIOMES_MAGICAL.contains(tB)) tMagical++;
+			if (BIOMES_MOON   .contains(tB)) tMoon++;
+			if (BIOMES_MARS   .contains(tB)) tMars++;
+			if (BIOMES_SPACE  .contains(tB)) tSpace++;
+			if (BIOMES_DESERT .contains(tB)) tDesert++;
+		}
+		O.println("[" + BP_M + "] C: биомов в реестре мира " + tAll.size() + " · имя резолвится у " + tResolved
+			+ " · попаданий: MAGICAL=" + tMagical + " MOON=" + tMoon + " MARS=" + tMars + " SPACE=" + tSpace + " DESERT=" + tDesert);
+		bpJudge(O, "C. имя резолвится у ВСЕХ биомов реестра (" + tResolved + " из " + tAll.size() + ")", tResolved == tAll.size() && tAll.size() > 0);
+		bpJudge(O, "C. контроль обхода: ванильный набор совпадает хотя бы с одним биомом (DESERT=" + tDesert + ")", tDesert > 0);
+		bpJudge(O, "C. модовые наборы MAGICAL/MOON/MARS/SPACE недостижимы в этой сборке — ИЗМЕРЕНО, ветки мертвы"
+			+ " и в оригинале без Thaumcraft/Galacticraft", tMagical == 0 && tMoon == 0 && tMars == 0 && tSpace == 0);
+	}
+
+	/** D. ЖИВОЙ КАМЕНЬ в мире: его идентичность биома обязана быть, а материал — ванильный камень
+	 *  (лунный/марсианский недостижимы, что доказано судьёй C). */
+	private static void bpRock(net.minecraft.server.MinecraftServer aServer, net.minecraft.server.level.ServerLevel aLevel, java.io.PrintStream O) {
+		if (aServer.getPlayerList().getPlayers().isEmpty()) {bpJudge(O, "D. игрок в мире есть (среда, не код)", F); return;}
+		net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		net.minecraft.core.BlockPos tAnchor = new net.minecraft.core.BlockPos(tPlayer.getBlockX() + 3, aLevel.getSeaLevel() + 6, tPlayer.getBlockZ() + 3);
+		gregapi.probe.GT6ProbeStand.solidPad(aLevel, tAnchor.below(), 3, 3);
+		gregtech.tileentity.placeables.MultiTileEntityRock tRock = gregapi.probe.GT6ProbeStand.place(
+			aLevel, tPlayer, tAnchor, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(32757),
+			gregtech.tileentity.placeables.MultiTileEntityRock.class, BP_M, "камень");
+		if (tRock == null) {bpJudge(O, "D. камень встал в мире (оснастка)", F); return;}
+		String tKey = gregapi.code.BiomeNameSet.keyOfBiome(tRock.getBiome());
+		net.minecraft.world.item.ItemStack tDrop = tRock.getDefaultRock(1);
+		gregapi.oredict.OreDictItemData tData = gregapi.util.OM.anydata_(tDrop);
+		gregapi.oredict.OreDictMaterial tMat = (tData == null || tData.mMaterial == null) ? null : tData.mMaterial.mMaterial;
+		O.println("[" + BP_M + "] D: живой камень @" + tAnchor + " биом=\"" + tKey + "\" материал дропа=" + tMat);
+		bpJudge(O, "D. у живого объекта в мире идентичность биома ЕСТЬ (ключ непустой)", !tKey.isEmpty());
+		bpJudge(O, "D. материал камня — ванильный (MoonRock/MarsRock/SpaceRock недостижимы, судья C)", tMat == gregapi.data.MT.Stone);
+	}
+
+	/** E1. ВОРЛДГЕН, прямой вызов правила: то самое место, что решает «класть руду или нет». */
+	private static void bpWorldgenRule(net.minecraft.server.level.ServerLevel aLevel, java.io.PrintStream O) {
+		if (mBpDesertBiome == null || mBpCtrlBiome == null) {bpJudge(O, "E1. обе зоны замера найдены (среда, не код)", F); return;}
+		int tHitDesert = 0, tHitCtrl = 0, tChecked = 0;
+		// слой-аргумент формальный: check(...) его не читает (StoneLayerOres:112-125 — только Y, шанс и биом)
+		gregapi.worldgen.StoneLayer tAnyLayer = gregapi.worldgen.StoneLayer.LAYERS.isEmpty() ? null : gregapi.worldgen.StoneLayer.LAYERS.get(0);
+		for (gregapi.worldgen.StoneLayerOres tOre : bpRestrictedOres()) {
+			tChecked++;
+			int tY = gregapi.util.WD.remapY(aLevel, (tOre.mMinY + tOre.mMaxY) / 2);
+			// aRandomNumber = 0: шанс из проверки убран намеренно — судится ИМЕННО биомный признак, а не удача
+			if (tOre.check(tAnyLayer, aLevel, mBpDesertPos.getX(), tY, mBpDesertPos.getZ(), mBpDesertBiome, 0)) tHitDesert++;
+			if (tOre.check(tAnyLayer, aLevel, mBpCtrlPos  .getX(), tY, mBpCtrlPos  .getZ(), mBpCtrlBiome  , 0)) tHitCtrl++;
+		}
+		O.println("[" + BP_M + "] E1: биом-ограниченных рудных записей " + tChecked + " · прошли правило в ПУСТЫНЕ " + tHitDesert
+			+ " · в КОНТРОЛЬНОМ биоме " + tHitCtrl + " (контрольный не входит ни в один набор — ждём 0)");
+		bpJudge(O, "E1. правило ворлдгена пропускает руду в её биоме (до фикса не пропускало НИ ОДНУ, нигде)", tHitDesert > 0);
+		bpJudge(O, "E1. негативный контроль: в биоме вне наборов не проходит ни одна запись", tHitCtrl == 0);
+	}
+
+	/**
+	 * E2. ВОРЛДГЕН, реальность: судится КАЖДЫЙ рудный блок по биому СВОЕЙ клетки.
+	 *
+	 * <p>Первая редакция судьи стояла на неверной посылке и дала ложный FAIL: «материал рождается только по
+	 * биомному правилу» бралось из одних слоёв пород, тогда как те же самоцветы рождают ЖИЛЫ без всякого
+	 * биомного ограничения ({@code Loader_Worldgen:901,902,920} — Ruby/Sapphire в {@code WorldgenOresLarge}).
+	 * Поэтому эксклюзивность считается против ВСЕХ источников (слои без ограничения + жилы + мелкие руды), а
+	 * найденный блок судится биомом своей клетки, а не биомом зоны: зона — это точка с шагом сетки 32/64, и
+	 * биом вокруг неё уже другой (первый прогон сканировал «пустыню» в {@code sparse_jungle}).
+	 */
+	private static void bpWorldgenReality(net.minecraft.server.level.ServerLevel aLevel, java.io.PrintStream O) {
+		if (mBpDesertPos == null || mBpCtrlPos == null) {bpJudge(O, "E2. обе зоны замера найдены (среда, не код)", F); return;}
+
+		// ВСЕ прочие источники того же материала: слои без биомного ограничения + жилы + мелкие руды
+		java.util.HashSet<gregapi.oredict.OreDictMaterial> tOther = new java.util.HashSet<>();
+		for (gregapi.worldgen.StoneLayerOres tOre : bpAllLayerOres())
+			if (tOre.mMaterial != null && tOre.mTargetBiomes.isEmpty()) tOther.add(bpBaseMat(tOre.mMaterial));
+		// ДВА списка, не один: жилы (ore.large.*) регистрируются в ORE_OVERWORLD, мелкие руды (ore.small.*) —
+		// в GEN_OVERWORLD (Loader_Worldgen:833). Вычет только по ORE_* оставлял мелкие руды «нарушителями».
+		for (java.util.List<gregapi.worldgen.WorldgenObject> tList : java.util.List.of(ORE_OVERWORLD, GEN_OVERWORLD))
+		for (gregapi.worldgen.WorldgenObject tGen : tList) {
+			if (tGen instanceof gregapi.worldgen.WorldgenOresLarge tLarge) {
+				tOther.add(bpBaseMat(tLarge.mTop)); tOther.add(bpBaseMat(tLarge.mBottom)); tOther.add(bpBaseMat(tLarge.mBetween)); tOther.add(bpBaseMat(tLarge.mSpread));
+			} else if (tGen instanceof gregapi.worldgen.WorldgenOresSmall tSmall) {
+				tOther.add(bpBaseMat(tSmall.mMaterial));
+			}
+		}
+		// Замещение ВАНИЛЬНЫХ руд: эти материалы встают на место ванильной руды, биомного правила там нет
+		// (BlockVanillaOresA:53 — там же MT.Amber, BlockCrystalOres:49, BlockRockOres:54).
+		for (gregapi.oredict.OreDictMaterial[] tArray : java.util.List.of(
+				gregtech.blocks.stone.BlockVanillaOresA.ORE_MATERIALS,
+				gregtech.blocks.stone.BlockCrystalOres.ORE_MATERIALS,
+				gregtech.blocks.stone.BlockRockOres.ORE_MATERIALS))
+			for (gregapi.oredict.OreDictMaterial tMat : tArray) if (tMat != null) tOther.add(bpBaseMat(tMat));
+		// ЧЕТВЁРТЫЙ источник, и он же объяснил все ложные нарушения: на стыке слоёв с шансом 1/100 кладётся
+		// СЛУЧАЙНЫЙ самоцвет из RANDOM_SMALL_GEM_ORES — БЕЗ всякой проверки биома (WorldgenStoneLayers:122-123,
+		// 172-173; список наполняется всеми самоцветами, Loader_Worldgen:886). Поэтому океанская яшма в
+		// джунглях и кошачий глаз в тайге лежат ЗАКОННО, а судья считал их нарушением правила.
+		for (gregapi.oredict.OreDictMaterial tGem : gregapi.worldgen.StoneLayer.RANDOM_SMALL_GEM_ORES) tOther.add(bpBaseMat(tGem));
+		tOther.add(bpBaseMat(gregapi.data.MT.Emerald)); // фолбэк того же места (UT.Code.select(MT.Emerald, ...))
+		// материал → его биомные наборы. Ключ — БАЗОВЫЙ материал: подвиды (TigerEyeYellow/Red/Black...) в мире
+		// схлопываются в один блок, и разделить их постфактум нечем — значит и правило берётся объединением
+		// наборов всех подвидов, иначе судья сравнивает разные ключи (первая редакция дала 386 ложных нарушений).
+		java.util.HashMap<gregapi.oredict.OreDictMaterial, java.util.List<gregapi.code.BiomeNameSet>> tRule = new java.util.HashMap<>();
+		for (gregapi.worldgen.StoneLayerOres tOre : bpAllLayerOres()) {
+			if (tOre.mMaterial == null || tOre.mTargetBiomes.isEmpty()) continue;
+			gregapi.oredict.OreDictMaterial tBase = bpBaseMat(tOre.mMaterial);
+			if (tOther.contains(tBase)) continue;
+			tRule.computeIfAbsent(tBase, k -> new java.util.ArrayList<>()).add(tOre.mTargetBiomes);
+		}
+		O.println("[" + BP_M + "] E2: материалов, рождающихся ТОЛЬКО по биомному правилу (после вычета жил и мелких руд): "
+			+ tRule.size() + " " + tRule.keySet());
+		if (tRule.isEmpty()) {
+			O.println("[" + BP_M + "] E2: судья реальностью НЕПРИМЕНИМ — у каждого биом-ограниченного материала есть и"
+				+ " безбиомный источник (жила/мелкая руда), отделить рождённое правилом от рождённого жилой в готовом"
+				+ " мире нечем. Само правило судится E1 прямым вызовом.");
+			return;
+		}
+		int tInPlace = bpScanRule(aLevel, mBpDesertPos, tRule, O, "ЗОНА-1") + bpScanRule(aLevel, mBpCtrlPos, tRule, O, "ЗОНА-2");
+		bpJudge(O, "E2. в мире реально лежат руды, рождённые биомным правилом (в биоме своей клетки): " + tInPlace, tInPlace > 0);
+		bpJudge(O, "E2. негативный контроль: ни один такой блок не лежит в биоме вне своего набора: " + mBpOutOfPlace, mBpOutOfPlace == 0);
+	}
+
+	/** скан 3×3 чанков: сколько блоков «правило-эксклюзивных» материалов лежит В СВОЁМ биоме (возврат) и
+	 *  сколько — в чужом (печатается и отдаётся через счётчик нарушений во второй вызов). */
+	private static int mBpOutOfPlace = 0;
+	private static int bpScanRule(
+			net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aZone,
+			java.util.HashMap<gregapi.oredict.OreDictMaterial, java.util.List<gregapi.code.BiomeNameSet>> aRule,
+			java.io.PrintStream O, String aLabel) {
+		int tOreBlocks = 0, tChunksReady = 0, tInPlace = 0, tOutOfPlace = 0;
+		for (int cx = (aZone.getX() >> 4) - 1; cx <= (aZone.getX() >> 4) + 1; cx++)
+		for (int cz = (aZone.getZ() >> 4) - 1; cz <= (aZone.getZ() >> 4) + 1; cz++) {
+			net.minecraft.world.level.chunk.LevelChunk tChunk = gregapi.util.WD.chunkNow(aLevel, cx, cz);
+			if (tChunk == null) continue;
+			tChunksReady++;
+			for (int tY = aLevel.getMinY(); tY < aLevel.getMaxY(); tY++) for (int tX = 0; tX < 16; tX++) for (int tZ = 0; tZ < 16; tZ++) {
+				net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(cx*16 + tX, tY, cz*16 + tZ);
+				if (!(tChunk.getBlockState(tPos).getBlock() instanceof gregapi.block.prefixblock.PrefixBlock tPrefix)) continue;
+				tOreBlocks++;
+				gregapi.oredict.OreDictMaterial tMat = bpBaseMat(tPrefix.getMetaMaterial(aLevel, tPos.getX(), tPos.getY(), tPos.getZ()));
+				java.util.List<gregapi.code.BiomeNameSet> tSets = tMat == null ? null : aRule.get(tMat);
+				if (tSets == null) continue;
+				// БИОМ РЕШЕНИЯ — ровно тот канал, которым его спрашивал сам генератор: quart-биом ПОВЕРХНОСТИ
+				// колонки, без шумового джиттера (GT6WorldGenerator:108 — getNoiseBiome(x>>2, height>>2, z>>2)).
+				// Биом клетки на глубине для этого не годится: там 3D-биом пещер, а правило про него не знало —
+				// первая редакция судьи спрашивала именно его и дала 398 ложных нарушений на y≈-60.
+				net.minecraft.world.level.biome.Biome tBiome = tChunk.getNoiseBiome(
+					tPos.getX() >> 2, aLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, tPos.getX(), tPos.getZ()) >> 2, tPos.getZ() >> 2).value();
+				boolean tAllowed = F;
+				for (gregapi.code.BiomeNameSet tSet : tSets) if (tSet.contains(tBiome)) {tAllowed = T; break;}
+				if (tAllowed) tInPlace++; else {
+					if (tOutOfPlace < 3) O.println("[" + BP_M + "] E2: НАРУШЕНИЕ — " + tMat + " @" + tPos + " · биом решения (поверхность колонки) \""
+						+ gregapi.code.BiomeNameSet.keyOfBiome(tBiome) + "\" · биом самой клетки \"" + gregapi.code.BiomeNameSet.keyOfBiome(aLevel.getBiome(tPos).value()) + "\"");
+					tOutOfPlace++;
+				}
+			}
+		}
+		O.println("[" + BP_M + "] E2: " + aLabel + " @" + aZone + ": чанков готово " + tChunksReady + "/9 · блоков породы-руды " + tOreBlocks
+			+ " · правило-эксклюзивных В СВОЁМ биоме " + tInPlace + " · в чужом " + tOutOfPlace);
+		mBpOutOfPlace += tOutOfPlace;
+		return tInPlace;
+	}
+
+	/** F. СЕНО и ГЕНЫ ПЧЁЛ — вызовом самих функций (переехали сюда из стенда болота, где были гостями). */
+	private static void bpBaleAndBees(net.minecraft.server.level.ServerLevel aLevel, java.io.PrintStream O) {
+		// F1. Воду рядом исключаем каменной площадкой: иначе сработает запасная ветка «сосед — вода»
+		// (BlockBaleGrass:114) и судья позеленеет независимо от биомного признака.
+		net.minecraft.world.level.block.Block tBale = gregapi.data.CS.BlocksGT.BalesGrass;
+		com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tWetB =
+			aLevel.findClosestBiome3d(h -> BIOMES_INFINITE_WATER.contains(h), aLevel.getRespawnData().pos(), 12800, 32, 64);
+		com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tDryB =
+			aLevel.findClosestBiome3d(h -> BIOMES_SAVANNA.contains(h), aLevel.getRespawnData().pos(), 12800, 32, 64);
+		if (tBale == null || tWetB == null || tDryB == null) {
+			bpJudge(O, "F1. СЕНО: нашлись блок тюка, влажный и сухой биом (среда, не код)", F);
+		} else {
+			int tWetMeta = bpBaleTick(aLevel, tBale, tWetB.getFirst()), tDryMeta = bpBaleTick(aLevel, tBale, tDryB.getFirst());
+			O.println("[" + BP_M + "] F1: СЕНО во влажном биоме (" + aLevel.getBiome(tWetB.getFirst()).getRegisteredName() + ") мета " + tWetMeta
+				+ " · в сухом (" + aLevel.getBiome(tDryB.getFirst()).getRegisteredName() + ") мета " + tDryMeta + " — ждём 2 и 1");
+			bpJudge(O, "F1. сено во влажном биоме НАМОКЛО (мета " + tWetMeta + " несёт бит 2)", (tWetMeta & 2) != 0);
+			bpJudge(O, "F1. негативный контроль: в сухом биоме высохло (мета " + tDryMeta + ")", (tDryMeta & 1) != 0 && (tDryMeta & 2) == 0);
+		}
+
+		// F2. IItemBumbleBee:141 — aDay = !(desert||mesa), aNight = (desert||mesa). До правки пустыня не
+		// опознавалась, и пчёлы везде получали дневные гены.
+		if (mBpDesertBiome == null || mBpCtrlBiome == null) {
+			bpJudge(O, "F2. ПЧЁЛЫ: обе зоны найдены (среда, не код)", F);
+		} else {
+			net.minecraft.nbt.CompoundTag tGenDes = gregapi.item.bumble.IItemBumbleBee.Util.getBumbleGenes(300, mBpDesertBiome, T, bpZeroRandom());
+			net.minecraft.nbt.CompoundTag tGenPln = gregapi.item.bumble.IItemBumbleBee.Util.getBumbleGenes(300, mBpCtrlBiome, T, bpZeroRandom());
+			boolean tDesNight = tGenDes.getBooleanOr("night", false), tDesDay = tGenDes.getBooleanOr("day", false);
+			boolean tPlnDay = tGenPln.getBooleanOr("day", false), tPlnNight = tGenPln.getBooleanOr("night", false);
+			O.println("[" + BP_M + "] F2: ПЧЁЛЫ пустыня (" + gregapi.code.BiomeNameSet.keyOfBiome(mBpDesertBiome) + ") day=" + tDesDay + " night=" + tDesNight
+				+ " · не-пустыня (" + gregapi.code.BiomeNameSet.keyOfBiome(mBpCtrlBiome) + ") day=" + tPlnDay + " night=" + tPlnNight);
+			bpJudge(O, "F2. пчёлы в пустыне НОЧНЫЕ (day=false, night=true)", !tDesDay && tDesNight);
+			bpJudge(O, "F2. негативный контроль: вне пустыни ДНЕВНЫЕ (day=true, night=false)", tPlnDay && !tPlnNight);
+		}
+	}
+
+	/** ставит тюк сена на каменной площадке БЕЗ воды рядом, дёргает его тик и возвращает получившуюся мету */
+	private static int bpBaleTick(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.world.level.block.Block aBale, net.minecraft.core.BlockPos aWhere) {
+		net.minecraft.core.BlockPos tC = new net.minecraft.core.BlockPos(aWhere.getX(), aLevel.getSeaLevel() + 6, aWhere.getZ());
+		for (int cx = (tC.getX() >> 4) - 1; cx <= (tC.getX() >> 4) + 1; cx++) for (int cz = (tC.getZ() >> 4) - 1; cz <= (tC.getZ() >> 4) + 1; cz++) aLevel.setChunkForced(cx, cz, T);
+		for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
+			aLevel.setBlock(tC.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+			for (int dy = 0; dy <= 3; dy++) aLevel.setBlock(tC.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+		}
+		gregapi.util.WD.set(aLevel, tC.getX(), tC.getY(), tC.getZ(), aBale, 0, 2);
+		((gregtech.blocks.BlockBaleGrass)aBale).updateTick2(aLevel, tC.getX(), tC.getY(), tC.getZ(), bpZeroRandom());
+		return gregapi.util.WD.meta(aLevel, tC.getX(), tC.getY(), tC.getZ());
+	}
+
+	private static void bpVerdict(java.io.PrintStream O) {
+		mBpDone = T;
+		O.println("========== [" + BP_M + "] ВЕРДИКТ: PASS " + mBpPass + " / FAIL " + mBpFail + " ==========");
+		O.println("[" + BP_M + "] НЕ доказано стендом: поведение веток, недостижимых в этой сборке (MAGICAL/MOON/MARS/SPACE) —"
+			+ " их недостижимость измерена судьёй C, но при появлении Thaumcraft/Galacticraft они нуждаются в замере заново;"
+			+ " итог ветки компаса на Энд неразличим по построению (dimensionId==1 || BIOMES_END).");
 	}
 }
