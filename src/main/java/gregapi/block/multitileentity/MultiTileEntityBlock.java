@@ -672,9 +672,14 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// было EntityBlock.newBlockEntity(BlockPos,BlockState) (neo, EntityBlock.java:14, обязательный т.к. класс implements
 	// EntityBlock) - GT6 TE-создание для MultiTileEntityBlock идёт НЕ через это (сверено оригиналом: createNewTileEntity/
 	// createTileEntity УЖЕ возвращают null и в 1.7.10-оракуле, MultiTileEntityBlock.java:282-283), а через
-	// MultiTileEntityRegistry.getNewTileEntity (см. receiveData выше) - сетевой/явный путь. null здесь 1:1 с оракулом,
-	// не деградация.
-	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return null;}
+	// MultiTileEntityRegistry.getNewTileEntity (см. receiveData выше) - сетевой/явный путь.
+	// BUG-117, второй носитель класса «EntityBlock отвечает null на заглушку DUMMY»: null здесь ДОСТИЖИМ только
+	// для позиции БЕЗ живой сущности (promotePendingBlockEntity, LevelChunk:373-381; при живой сущности/стабе
+	// заглушка не спрашивается) — и тогда движок печатал WARN:627, а блок оставался призраком без сущности.
+	// Отдаём TileEntityLoaderStub — ровно то, что фабрика MTE_TYPE отдаёт этому же блоку на LOAD-пути
+	// (TileEntityBase01Root.createType:178): контракт соблюдён, WARN невозможен, а стаб без захваченного NBT
+	// штатно деградирует по канону BUG-057 (реконструкция: нет ключей reg/id → air, шелухи не остаётся).
+	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return new gregapi.tileentity.base.TileEntityLoaderStub(aPos, aState);}
 	// F-tick (шов «тики BE», центр на весь MTE-класс): 1.7.10 World сам тикал TileEntity с canUpdate()==true
 	// (updateEntity каждый тик, ОБЕ стороны — recompSrc World.updateEntities); в neo тики BE идут ТОЛЬКО через
 	// EntityBlock.getTicker → BlockEntityTicker (Level.tickBlockEntities). Без шва весь механизм TE03+ мёртв:

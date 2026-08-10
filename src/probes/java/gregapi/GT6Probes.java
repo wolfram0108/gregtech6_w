@@ -516,19 +516,22 @@ public final class GT6Probes {
 			// BUG-118 §2 — мост меты зелья: налитое обязано НЕСТИ свой ванильный вид (PotionContents), взрывное —
 			// быть взрывным ПРЕДМЕТОМ. Без этого «наполнена=true» выше означает лишь безликий стек.
 			Object[][] tKinds = {
-				{"Potion_Speed_1", gregapi.data.FL.Potion_Speed_1, "swiftness", false},
-				{"Potion_Strength_1", gregapi.data.FL.Potion_Strength_1, "strength", false},
-				{"Potion_Regen_1", gregapi.data.FL.Potion_Regen_1, "regeneration", false},
-				{"Potion_Poison_1S", gregapi.data.FL.Potion_Poison_1S, "poison", true},
-				{"Potion_FireResistance_1", gregapi.data.FL.Potion_FireResistance_1, "fire_resistance", false},
+				{"Potion_Speed_1", gregapi.data.FL.Potion_Speed_1, "swiftness", net.minecraft.world.item.Items.POTION},
+				{"Potion_Strength_1", gregapi.data.FL.Potion_Strength_1, "strength", net.minecraft.world.item.Items.POTION},
+				{"Potion_Regen_1", gregapi.data.FL.Potion_Regen_1, "regeneration", net.minecraft.world.item.Items.POTION},
+				{"Potion_Poison_1S", gregapi.data.FL.Potion_Poison_1S, "poison", net.minecraft.world.item.Items.SPLASH_POTION},
+				{"Potion_FireResistance_1", gregapi.data.FL.Potion_FireResistance_1, "fire_resistance", net.minecraft.world.item.Items.POTION},
+				{"Potion_Speed_1D (lingering)", gregapi.data.FL.Potion_Speed_1D, "swiftness", net.minecraft.world.item.Items.LINGERING_POTION},
+				{"Potion_Harm_1D (lingering)", gregapi.data.FL.Potion_Harm_1D, "harming", net.minecraft.world.item.Items.LINGERING_POTION},
 			};
 			for (Object[] tCase : tKinds) {
 				net.minecraft.world.item.ItemStack tFilled = ((gregapi.data.FL)tCase[1]).fill(gregapi.data.IL.Bottle_Empty.get(1));
 				net.minecraft.world.item.alchemy.PotionContents tPC = gregapi.util.ST.valid(tFilled) ? tFilled.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS) : null;
 				String tKind = tPC == null ? "БЕЗ ВИДА" : tPC.potion().flatMap(net.minecraft.core.Holder::unwrapKey).map(k -> k.identifier().getPath()).orElse("БЕЗ ВИДА");
-				boolean tSplash = gregapi.util.ST.valid(tFilled) && tFilled.is(net.minecraft.world.item.Items.SPLASH_POTION);
-				gregapi.probe.GT6ProbeStand.judge("GT6-TAILS", "BUG-118 §2: " + tCase[0] + " несёт вид «" + tCase[2] + "»" + (((Boolean)tCase[3]) ? " взрывным предметом" : ""),
-					tKind.equals(tCase[2]) && tSplash == (Boolean)tCase[3], tCase[2] + "/splash=" + tCase[3], tKind + "/splash=" + tSplash);
+				net.minecraft.world.item.Item tExpectItem = (net.minecraft.world.item.Item)tCase[3];
+				boolean tItemOk = gregapi.util.ST.valid(tFilled) && tFilled.is(tExpectItem);
+				gregapi.probe.GT6ProbeStand.judge("GT6-TAILS", "BUG-118 §2: " + tCase[0] + " несёт вид «" + tCase[2] + "» предметом " + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tExpectItem).getPath(),
+					tKind.equals(tCase[2]) && tItemOk, tCase[2], tKind + (tItemOk ? "" : " (не тот предмет: " + (gregapi.util.ST.valid(tFilled) ? tFilled.getItem() : "пусто") + ")"));
 			}
 		} catch (Throwable e) {e.printStackTrace(O);}
 		O.println("========== [GT6-TAILS] DONE ==========");

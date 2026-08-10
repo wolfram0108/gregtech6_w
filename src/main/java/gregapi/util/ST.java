@@ -584,10 +584,12 @@ public class ST {
 	// рецептах не меняется. Комбинация без neo-варианта деградирует до базового вида (усиленное огнестойкое
 	// и т.п. в 1.7.10 не регистрировалось); неизвестная мета → null = прежний путь без компонента, не выдумываем.
 	private static ItemStack legacyPotion(Item aItem, long aSize, long aMeta) {
-		if (aItem != Items.POTION && aItem != Items.SPLASH_POTION) return null;
+		if (aItem != Items.POTION && aItem != Items.SPLASH_POTION && aItem != Items.LINGERING_POTION) return null;
 		net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> tKind = legacyPotionKind(aMeta);
 		if (tKind == null) return null;
-		ItemStack rStack = new ItemStack((aMeta & 0x4000) != 0 ? Items.SPLASH_POTION : aItem, UT.Code.bindInt(aSize));
+		// lingering — отдельный ПРЕДМЕТ уже на входе (тара EtFu-ветки замощена на ваниль, Loader_Fluids:344);
+		// взрывной бит меты предмет не меняет — у lingering его в метах не было
+		ItemStack rStack = new ItemStack(aItem == Items.POTION && (aMeta & 0x4000) != 0 ? Items.SPLASH_POTION : aItem, UT.Code.bindInt(aSize));
 		rStack.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, new net.minecraft.world.item.alchemy.PotionContents(tKind));
 		meta_(rStack, UT.Code.bindShort(aMeta));
 		return rStack;
