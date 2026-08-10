@@ -260,7 +260,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		// play(String,int,float,BlockPos) неоднозначны компилятору на этом call-site (не мой центр, вне зоны,
 		// gregapi/util/UT.java) — обхожу через координатный overload, тот же эффект (Entity-overload сам вызывает
 		// координатный внутри).
-		if (TOOL_SOUNDS) UT.Sounds.playFor(tStats.getEntityHitSound(), 20, 1, aPlayer, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())); // BUG-113: hitEntity идёт только на сервере
+		if (TOOL_SOUNDS) UT.Sounds.forActor(tStats.getEntityHitSound(), 20, 1, aPlayer, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())); // BUG-113: hitEntity идёт только на сервере
 		if (super.onLeftClickEntity(aStack, aPlayer, aEntity)) return T;
 		// 1.7.10 Entity.canAttackWithItem() -> neo Entity.isAttackable() (можно ли атаковать сущность). Способность есть, 1:1.
 		if (aEntity.isAttackable()) {
@@ -485,7 +485,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 						String tBreakSound = getPrimaryMaterial(aStack) == MT.NULL ? tStats.getCraftingSound() : tStats.getBreakingSound();
 						// BUG-113: ветвление «есть игрок / нет игрока» больше не пишется на месте — его держит центр
 						if (aPlayer == null) UT.Sounds.play(tBreakSound, 100, 1, LAST_TOOL_COORDS_BEFORE_DAMAGE);
-						else UT.Sounds.playFor(tBreakSound, 100, 1, aPlayer, UT.Code.roundDown(aPlayer.getX()), UT.Code.roundDown(aPlayer.getY()), UT.Code.roundDown(aPlayer.getZ()));
+						else UT.Sounds.forActor(tBreakSound, 100, 1, aPlayer, UT.Code.roundDown(aPlayer.getX()), UT.Code.roundDown(aPlayer.getY()), UT.Code.roundDown(aPlayer.getZ()));
 					}
 					LAST_TOOL_COORDS_BEFORE_DAMAGE = null;
 					ItemStack tBroken = tStats.getBrokenItem(aStack);
@@ -594,7 +594,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null) return F;
-		if (TOOL_SOUNDS) UT.Sounds.playFor(tStats.getMiningSound(), 5, 1, aPlayer, aX, aY, aZ); // BUG-113: mineBlock идёт только на сервере
+		if (TOOL_SOUNDS) UT.Sounds.forActor(tStats.getMiningSound(), 5, 1, aPlayer, aX, aY, aZ); // BUG-113: mineBlock идёт только на сервере
 		String aRegName = ST.regName(aBlock);
 		boolean rReturn = (getDigSpeed(aStack, aBlock, aMeta) > 0);
 		// оригинал: * aBlock.getBlockHardness(aWorld,aX,aY,aZ). Способность ЕСТЬ — ЦЕНТР WD.hardness (уже

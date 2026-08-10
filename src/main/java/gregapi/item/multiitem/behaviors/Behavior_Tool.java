@@ -63,17 +63,9 @@ public class Behavior_Tool extends AbstractBehaviorDefault {
 		List<String> tChatReturn = new ArrayListNoNulls<>();
 		long tDamage = IBlockToolable.Util.onToolClick(mToolName, Long.MAX_VALUE, (aItem instanceof MultiItemTool ? ((MultiItemTool)aItem).getHarvestLevel(aStack, mToolName) : 1), aPlayer, tChatReturn, aPlayer==null?null:aPlayer.getInventory(), aPlayer!=null&&aPlayer.isShiftKeyDown(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 		UT.Entities.sendchat(aPlayer, tChatReturn, F);
-		// [GT6-SOUNDDIAG] BUG-113: самописец взаимодействия инструментом (гейт run/gt6sounddiag.flag) — снять при уборке фазы
-		if (gregapi.data.CS.probeFlag("gt6sounddiag.flag")) gregapi.data.CS.OUT.println("[GT6-SOUNDDIAG] инструмент=" + mToolName
-			+ " сторона=" + (aWorld == null ? "?" : aWorld.isClientSide() ? "КЛИЕНТ" : "сервер")
-			+ " блок=" + (aWorld == null ? "?" : aWorld.getBlockState(new net.minecraft.core.BlockPos(aX, aY, aZ)).getBlock())
-			+ " износ=" + tDamage + " звук=" + mSoundName);
 		if (tDamage > 0) {
 			if (mDamage > 0) ((MultiItemTool)aItem).doDamage(aStack, UT.Code.units(tDamage, 10000, mDamage, T), aPlayer, F);
-			if (mSoundName != null) {
-				boolean tSent = UT.Sounds.send(mSoundName, 1.0F, mPitch, aWorld, aX, aY, aZ);
-				if (gregapi.data.CS.probeFlag("gt6sounddiag.flag")) gregapi.data.CS.OUT.println("[GT6-SOUNDDIAG]   -> звук " + mSoundName + " отправлен=" + tSent);
-			}
+			if (mSoundName != null) UT.Sounds.send(mSoundName, 1.0F, mPitch, aWorld, aX, aY, aZ);
 			return !aWorld.isClientSide();
 		}
 		return F;

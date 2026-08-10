@@ -57,7 +57,7 @@ public class Behavior_Scanner extends AbstractBehaviorDefault {
 			if (aItem.useEnergy(TD.Energy.EU, aStack, WD.scan(tList, aPlayer, aWorld, mScanLevel, aX, aY, aZ, aSide, hitX, hitY, hitZ), aPlayer, aPlayer.getInventory(), aWorld, aX, aY, aZ, T)) UT.Entities.sendchat(aPlayer, tList, F);
 			return T;
 		}
-		UT.Sounds.play(SFX.IC_SCANNER, 20, 1.0F, aX, aY, aZ);
+		UT.Sounds.forActor(SFX.IC_SCANNER, 20, 1.0F, aPlayer, aX, aY, aZ); // звук ДЕЙСТВИЯ
 		return aPlayer instanceof ServerPlayer;
 	}
 	
@@ -65,7 +65,7 @@ public class Behavior_Scanner extends AbstractBehaviorDefault {
 	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (mScanLevel > 100) {
 			UT.Entities.sendchat(aPlayer, aEntity.getClass().getName());
-			UT.Sounds.play(SFX.IC_SCANNER, 20, 1.0F, aEntity);
+			UT.Sounds.forActor(SFX.IC_SCANNER, 20, 1.0F, aPlayer, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())); // звук ДЕЙСТВИЯ
 		}
 		return T;
 	}
@@ -74,7 +74,7 @@ public class Behavior_Scanner extends AbstractBehaviorDefault {
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (mScanLevel > 100) {
 			UT.Entities.sendchat(aPlayer, aEntity.getClass().getName());
-			UT.Sounds.play(SFX.IC_SCANNER, 20, 1.0F, aEntity);
+			UT.Sounds.forActor(SFX.IC_SCANNER, 20, 1.0F, aPlayer, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())); // звук ДЕЙСТВИЯ
 		}
 		return T;
 	}

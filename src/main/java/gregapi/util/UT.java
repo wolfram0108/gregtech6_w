@@ -2743,13 +2743,17 @@ public class UT {
 		}
 		public static String neoSound(String aSound) {String r = SFX_LEGACY.get(aSound); return r != null ? r : aSound;}
 		
+		// ⛔ ГЕЙТ СТОРОНЫ ЖИВЁТ В ОДНОМ МЕСТЕ — в конечной перегрузке ниже. Прежде он был переписан в четырёх
+		// перегрузках подряд, и вызов отсекался раньше, чем доходил до места, где потеря называется: сторож
+		// молчал, а звук пропадал. Остальные перегрузки только приводят аргументы к общему виду.
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume) {
-			if (!CODE_CLIENT || net.neoforged.fml.util.thread.EffectiveSide.get().isServer()) return F;
-			return play(aSound, aTimeUntilNextSound, aVolume, GT_API.api_proxy.getThePlayer());
+			Player tPlayer = GT_API.api_proxy.getThePlayer();
+			if (tPlayer == null) {namePlaceOfLostSound(aSound, "клиентский play() без игрока (СЕРВЕРНЫЙ код?)"); return F;}
+			return play(aSound, aTimeUntilNextSound, aVolume, tPlayer);
 		}
 		
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, Entity aEntity) {
-			if (!CODE_CLIENT || aEntity == null || net.neoforged.fml.util.thread.EffectiveSide.get().isServer()) return F;
+			if (aEntity == null) {namePlaceOfLostSound(aSound, "клиентский play() без сущности"); return F;}
 			return play(aSound, aTimeUntilNextSound, aVolume, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ()));
 		}
 		
@@ -2759,7 +2763,6 @@ public class UT {
 		
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, BlockPos aCoords) {
 			if (aCoords == null) return play(aSound, aTimeUntilNextSound, aVolume);
-			if (!CODE_CLIENT || net.neoforged.fml.util.thread.EffectiveSide.get().isServer()) return F;
 			return play(aSound, aTimeUntilNextSound, aVolume, 0.9F + RNGSUS.nextFloat() * 0.2F, aCoords.getX(), aCoords.getY(), aCoords.getZ());
 		}
 		
@@ -2767,8 +2770,37 @@ public class UT {
 			return play(aSound, aTimeUntilNextSound, aVolume, aPitch, new BlockPos(aX, aY, aZ));
 		}
 		
+		/** Места, о потере звука в которых уже сказано — чтобы предупреждение не повторялось каждый тик. */
+		private static final java.util.Set<String> sMutedPlaces = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+		/** Сколько РАЗНЫХ мест потери звука названо за сеанс — для судьи сторожа (и для приёмки: число должно убывать). */
+		public static int lostPlacesCount() {return sMutedPlaces.size();}
+
+		/** Называет МЕСТО, где звук потерян (один раз на место). Молчаливая потеря — худшая часть дефекта:
+		 *  её не видно ни в логе, ни в судье, и находится она только жалобой игрока (BUG-113). */
+		private static void namePlaceOfLostSound(String aSound, String aWhy) {
+			try {
+				for (StackTraceElement tAt : Thread.currentThread().getStackTrace()) {
+					String tCls = tAt.getClassName();
+					if (tCls.startsWith("gregapi.util.UT") || tCls.startsWith("java.") || tCls.startsWith("jdk.")) continue;
+					String tPlace = tCls + ":" + tAt.getLineNumber();
+					if (sMutedPlaces.add(tPlace)) ERR.println("[GT6-SOUND] ЗВУК ПОТЕРЯН: " + aSound + " — " + aWhy + " @" + tPlace + " (чинится переводом на send = звук места, либо forActor = звук действия)");
+					return;
+				}
+			} catch (Throwable e) {/* называние места не должно мешать игре */}
+		}
+
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, float aPitch, BlockPos aCoords) {
-			if (!CODE_CLIENT || net.neoforged.fml.util.thread.EffectiveSide.get().isServer()) return F;
+			// ⛔ КЛИЕНТСКИЙ ПРИМИТИВ. В 1.7.10 звук можно было играть отсюда откуда угодно: тот же код исполнялся
+			// и на клиенте, и на сервере, и клиент играл сам. В neo носители разъехались — часть кода стала
+			// ТОЛЬКО серверной (Item.mineBlock, hitEntity, useOn), и вызов отсюда пропадал МОЛЧА (BUG-113: звук
+			// ключа при разрушении). Молчание — худшая часть дефекта: он не виден ни в логе, ни в судье.
+			// Теперь центр называет место потери сам, один раз на место: чинить — переводом на send (звук места)
+			// или forActor (звук действия), которые доставляют пакет с любой стороны.
+			if (!CODE_CLIENT || net.neoforged.fml.util.thread.EffectiveSide.get().isServer()) {
+				if (Code.stringValid(aSound)) namePlaceOfLostSound(aSound, "клиентский play() из СЕРВЕРНОГО кода");
+				return F;
+			}
 			Player aPlayer = GT_API.api_proxy.getThePlayer();
 			if (aPlayer == null || !aPlayer.level().isClientSide() || Code.stringInvalid(aSound)) return F;
 			sSoundsToPlay.add(new SoundWithLocation(aPlayer.level(), UT.Code.roundDown(aCoords.getX()), UT.Code.roundDown(aCoords.getY()), UT.Code.roundDown(aCoords.getZ()), aTimeUntilNextSound, aSound, aVolume, Float.isNaN(aPitch) || aPitch == SFX.RANDOM_PITCH ? SFX._7_GRAND_DAD_[SFX.PITCH_INDEX=((SFX.PITCH_INDEX+1)%SFX._7_GRAND_DAD_.length)] : aPitch));
@@ -2781,9 +2813,12 @@ public class UT {
 		 *  построению возвращает F — звук молча пропадал (звук поворота ключом жил, звук того же ключа при
 		 *  разрушении блока — нет). Приём выражен один раз здесь: на клиенте играем как прежде, на сервере
 		 *  шлём пакет ТОМУ, кто действует (1:1 по слышимости: в 1.7.10 звук слышал только он). */
-		public static boolean playFor(String aSound, int aTimeUntilNextSound, float aVolume, net.minecraft.world.entity.Entity aPlayer, int aX, int aY, int aZ) {
+		public static boolean forActor(String aSound, int aTimeUntilNextSound, float aVolume, net.minecraft.world.entity.Entity aPlayer, int aX, int aY, int aZ) {
 			if (Code.stringInvalid(aSound) || aPlayer == null || aPlayer.level() == null) return F;
-			if (aPlayer.level().isClientSide()) return play(aSound, aTimeUntilNextSound, aVolume, aX, aY, aZ);
+			// ⛔ Клиентская половина двустороннего вызова обязана МОЛЧАТЬ: иначе на действие, чей код идёт на обеих
+			// сторонах, клиент сыграет сам И получит пакет — звук раздвоится. Звук действия рождается один раз,
+			// на сервере, и адресуется тому, кто действует (в 1.7.10 его слышал ровно он).
+			if (aPlayer.level().isClientSide()) return F;
 			if (!(aPlayer instanceof ServerPlayer)) return F;
 			NW_API.sendToPlayer(new PacketSound(aSound, aVolume, SFX.RANDOM_PITCH, new BlockPos(aX, aY, aZ)), (ServerPlayer)aPlayer);
 			return T;
@@ -2849,13 +2884,13 @@ public class UT {
 			return send(aSound, aVolume, aPitch, aWorld, new BlockPos(aX, aY, aZ));
 		}
 		public static boolean send(String aSound, float aVolume, float aPitch, Level aWorld, BlockPos aCoords) {
+			// СЕРВЕРНЫЙ приём «звук места». Симметрично play(): вызов не со своей стороны — это потеря звука,
+			// и центр называет место сам, вместо того чтобы промолчать.
 			if (Code.stringInvalid(aSound) || aWorld == null || aWorld.isClientSide()) {
-				// [GT6-SOUNDDIAG] BUG-113 — снять при уборке фазы
-				if (gregapi.data.CS.probeFlag("gt6sounddiag.flag")) OUT.println("[GT6-SOUNDDIAG] send ОТКАЗ: звук=" + aSound + " мир=" + (aWorld == null ? "null" : aWorld.isClientSide() ? "клиентский" : "серверный"));
+				if (Code.stringValid(aSound) && aWorld != null) namePlaceOfLostSound(aSound, "send() из КЛИЕНТСКОГО кода");
 				return F;
 			}
 			NW_API.sendToAllPlayersInRange(new PacketSound(aSound, aVolume, aPitch, aCoords), aWorld, aCoords);
-			if (gregapi.data.CS.probeFlag("gt6sounddiag.flag")) OUT.println("[GT6-SOUNDDIAG] СЕРВЕР разослал звук " + aSound + " @" + aCoords);
 			return T;
 		}
 		
@@ -2901,11 +2936,6 @@ public class UT {
 			
 			public void play() {
 				PlayedSound tSound = new PlayedSound(mSound, mX, mY, mZ, mTimeUntilNextSound);
-				// [GT6-SOUNDDIAG] BUG-113 — последнее звено: глушилка повторов, резолв события, сам вызов. Снять при уборке фазы.
-				boolean tDiag = gregapi.data.CS.probeFlag("gt6sounddiag.flag");
-				if (tDiag) OUT.println("[GT6-SOUNDDIAG] ОЧЕРЕДЬ->play " + mSound + " · заглушен как повтор=" + sPlayedSounds.contains(tSound)
-					+ " · событие=" + net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse(neoSound(mSound)))
-					+ " · громкость=" + mVolume + " тон=" + mPitch + " мир=" + (mWorld == null ? "null" : mWorld.getClass().getSimpleName()));
 				if (!sPlayedSounds.contains(tSound)) try {
 					sPlayedSounds.add(tSound);
 					// F-sound: neo Level.playSound(double,double,double,String,...) удалён — звук адресуется
@@ -2915,10 +2945,7 @@ public class UT {
 					// F-sound (1:1): легаси 1.7.10 SFX-строки → neo sound-id через neoSound (карта SFX_LEGACY, сверена по SoundEvents.java);
 					// neo-native строки проходят как есть. Раньше легаси не резолвились → все GT6-звуки молчали. Восстановлено.
 					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse(neoSound(mSound)));
-					if (tEvent != null) {
-						mWorld.playLocalSound(mX+0.5, mY+0.5, mZ+0.5, tEvent, net.minecraft.sounds.SoundSource.BLOCKS, mVolume, mPitch, T);
-						if (tDiag) OUT.println("[GT6-SOUNDDIAG]   -> playLocalSound ВЫЗВАН для " + mSound);
-					} else if (tDiag) OUT.println("[GT6-SOUNDDIAG]   -> событие NULL, звука не будет: " + mSound);
+					if (tEvent != null) mWorld.playLocalSound(mX+0.5, mY+0.5, mZ+0.5, tEvent, net.minecraft.sounds.SoundSource.BLOCKS, mVolume, mPitch, T);
 				} catch(Throwable e) {/**/}
 			}
 		}

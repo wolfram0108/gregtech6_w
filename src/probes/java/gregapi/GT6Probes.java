@@ -16357,6 +16357,13 @@ public final class GT6Probes {
 
 	private static void gt6SoundChainJudge() {
 		java.io.PrintStream O = gregapi.data.CS.OUT;
+		// ПОЗИТИВНЫЙ КОНТРОЛЬ СТОРОЖА: центр обязан НАЗЫВАТЬ место потерянного звука. Без этой проверки
+		// «потерь не найдено» неотличимо от «сторож молчит всегда» — ровно та ловушка, на которой сгорел
+		// первый судья положения предметов.
+		int tNamedBefore = gregapi.util.UT.Sounds.lostPlacesCount();
+		gregapi.util.UT.Sounds.play(gregapi.data.CS.SFX.GT_BEEP, 5, 1.0F, sSCPos.getX(), sSCPos.getY(), sSCPos.getZ()); // намеренно КЛИЕНТСКИЙ вызов с сервера
+		int tNamedAfter = gregapi.util.UT.Sounds.lostPlacesCount();
+		sSCSeq.judge("СТОРОЖ: центр называет место потерянного звука", tNamedAfter > tNamedBefore, "стало больше на 1", tNamedBefore + "->" + tNamedAfter);
 		java.util.List<String> tHeard = new java.util.ArrayList<>(gregapi.GT6ProbesClient.mSoundsHeard);
 		O.println("[" + SC_M + "] звуковая система получила " + tHeard.size() + " звуков: " + tHeard);
 		boolean tWrenchHeard = tHeard.stream().anyMatch(s -> s.contains("gt.wrench")); // после очистки — это звук ИНСТРУМЕНТА ПРИ ДОБЫЧЕ
