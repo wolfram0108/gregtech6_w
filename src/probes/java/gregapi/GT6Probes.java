@@ -273,6 +273,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6journeyprobe.flag")) gt6JourneyProbeTick(aEvent.getServer());
 		// [GT6-LOOTPROBE] BUG-105 §1: переполнение лут-контейнеров — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6lootprobe.flag")) gt6LootProbeTick(aEvent.getServer());
+	// [GT6-DUNGEONLOOT] BUG-118 живьём: телепорт к структуре, реальные сундуки, Clouded Bottle — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6dungeonloot.flag")) gt6DungeonLootTick(aEvent.getServer());
 		// [GT6-GRIDPROBE] BUG-099: позиционные рецепты на подрезанной сетке — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6gridprobe.flag")) gt6GridProbeTick(aEvent.getServer());
 		// [GT6-ENTITYPROBE] BUG-103 рецидив: удаление сущностей внутри обхода мира — снять при уборке фазы
@@ -14092,6 +14094,117 @@ public final class GT6Probes {
 			O.println("========== [GT6-LOOTPROBE] DONE ==========");
 		} catch(Throwable e) {e.printStackTrace(O);}
 		aServer.halt(F);
+	}
+
+	// ==========================================================================================================
+	// [GT6-DUNGEONLOOT] BUG-118 ЖИВЬЁМ (требование пользователя: «не собираюсь выискивать данжи — стенд с
+	// телепортом»): сервер сам находит структуру с GT6-лутом (строллхолд — в его сундуки Loader_Loot:551
+	// кладёт Clouded Bottle 30/2-8), телепортирует игрока НАД ней (серверный телепорт = /tp), форсирует
+	// генерацию чанков, сканирует НАСТОЯЩИЕ сундуки структуры, распаковывает их лут реальным путём
+	// (unpackLootTable — то же, что открытие крышки игроком) и судит: GT-пул доехал; зелья в луте несут вид.
+	// Затем — сама цепочка четвёрки: Clouded Bottle из лута исполняется РЕАЛЬНЫМ кликом по блоку
+	// (Behavior_Drop_Loot → ChestGenHooks.getOneItem("gt.bottles")), выпавшие бутылки судятся по виду.
+	// Игрок остаётся стоять над структурой — можно осмотреть глазами (флаг .keepalive не гасит клиент).
+	// Снять при уборке фазы.
+	// ==========================================================================================================
+	private static final String DL_M = "GT6-DUNGEONLOOT";
+	private static int sDLTick = 0;
+	private static ServerPlayer sDLPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sDLSeq;
+	private static BlockPos sDLTarget;
+	private static final java.util.List<net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity> sDLChests = new java.util.ArrayList<>();
+
+	public static void gt6DungeonLootTick(net.minecraft.server.MinecraftServer aServer) {
+		sDLTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sDLPlayer = aServer.getPlayerList().getPlayers().get(0);
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (sDLSeq == null) sDLSeq = new gregapi.probe.GT6ProbeStand.Seq(DL_M)
+			.at(100, () -> {
+				ServerLevel tLevel = sDLPlayer.level();
+				O.println("========== [" + DL_M + "] BUG-118 живьём: структура, сундуки, Clouded Bottle ==========");
+				sDLTarget = tLevel.findNearestMapStructure(net.minecraft.tags.StructureTags.EYE_OF_ENDER_LOCATED, sDLPlayer.blockPosition(), 100, false);
+				sDLSeq.judge("структура с GT-лутом найдена (строллхолд)", sDLTarget != null, "позиция", String.valueOf(sDLTarget));
+				if (sDLTarget == null) {sDLSeq.done(); return;}
+				for (int cx = (sDLTarget.getX() >> 4) - 3; cx <= (sDLTarget.getX() >> 4) + 3; cx++)
+					for (int cz = (sDLTarget.getZ() >> 4) - 3; cz <= (sDLTarget.getZ() >> 4) + 3; cz++)
+						tLevel.setChunkForced(cx, cz, true);
+				int tY = tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, sDLTarget.getX(), sDLTarget.getZ());
+				gregapi.probe.GT6ProbeStand.teleportLook(sDLPlayer, sDLTarget.getX() + 0.5, tY + 1, sDLTarget.getZ() + 0.5, 0, 60);
+				O.println("[" + DL_M + "] телепорт на " + sDLTarget.getX() + "," + (tY + 1) + "," + sDLTarget.getZ() + ", форс 7×7 чанков, ждём генерацию");
+			})
+			.at(260, () -> {
+				ServerLevel tLevel = sDLPlayer.level();
+				int tWithTable = 0;
+				for (int cx = (sDLTarget.getX() >> 4) - 3; cx <= (sDLTarget.getX() >> 4) + 3; cx++)
+					for (int cz = (sDLTarget.getZ() >> 4) - 3; cz <= (sDLTarget.getZ() >> 4) + 3; cz++) {
+						net.minecraft.world.level.chunk.LevelChunk tChunk = gregapi.util.WD.chunkNow(tLevel, cx, cz);
+						if (tChunk == null) continue;
+						for (net.minecraft.world.level.block.entity.BlockEntity tBE : tChunk.getBlockEntities().values())
+							if (tBE instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity tBox) {
+								sDLChests.add(tBox);
+								if (tBox.getLootTable() != null) tWithTable++;
+							}
+					}
+				O.println("[" + DL_M + "] лут-контейнеров в структуре: " + sDLChests.size() + " (с нераспакованной таблицей " + tWithTable + ")");
+				sDLSeq.judge("сундуки структуры найдены сканом", !sDLChests.isEmpty(), "> 0", sDLChests.size());
+				int tAll = 0, tGT = 0, tPotions = 0, tFaceless = 0; boolean tClouded = false;
+				for (net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity tBox : sDLChests) {
+					tBox.unpackLootTable(sDLPlayer); // реальный путь: то же, что открытие сундука игроком
+					StringBuilder tLine = new StringBuilder("[" + DL_M + "] сундук " + tBox.getBlockPos().toShortString() + ":");
+					for (int i = 0; i < tBox.getContainerSize(); i++) {
+						net.minecraft.world.item.ItemStack tS = tBox.getItem(i);
+						if (tS.isEmpty()) continue;
+						tAll++;
+						net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tS.getItem());
+						if (tID != null && tID.getNamespace().equals("gregtech")) tGT++;
+						if (gregapi.data.IL.Bottle_Loot.equal(tS, true, true)) tClouded = true;
+						if (tS.is(net.minecraft.world.item.Items.POTION) || tS.is(net.minecraft.world.item.Items.SPLASH_POTION)) {
+							tPotions++;
+							net.minecraft.world.item.alchemy.PotionContents tPC = tS.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
+							if (tPC == null || tPC.potion().isEmpty()) tFaceless++;
+						}
+						tLine.append(" ").append(tS.getCount()).append("x").append(tID == null ? tS.getItem() : tID.getPath());
+					}
+					O.println(tLine.toString());
+				}
+				O.println("[" + DL_M + "] итог сундуков: предметов " + tAll + " · GT-предметов " + tGT + " · зелий " + tPotions + " · безликих зелий " + tFaceless + " · Clouded Bottle в луте: " + tClouded);
+				sDLSeq.judge("GT-пул доехал до настоящих сундуков (GT-предметы в луте есть)", tGT > 0, "> 0", tGT);
+				sDLSeq.judge("безликих зелий в сундуках НЕТ (мост меты)", tFaceless == 0, "0", tFaceless);
+			})
+			.at(300, () -> {
+				ServerLevel tLevel = sDLPlayer.level();
+				// Цепочка четвёрки реальным путём: Clouded Bottle в руку (40 шт — вероятностный простор),
+				// клик по блоку под ногами, как кликает игрок; выпавшее судим по виду.
+				sDLPlayer.getInventory().setItem(0, gregapi.data.IL.Bottle_Loot.get(40));
+				sDLPlayer.getInventory().setSelectedSlot(0);
+				BlockPos tGround = sDLPlayer.blockPosition().below();
+				for (int i = 0; i < 40 && !sDLPlayer.getMainHandItem().isEmpty(); i++)
+					gregapi.probe.GT6ProbeStand.clickBlock(sDLPlayer, tGround, net.minecraft.core.Direction.UP);
+				int tDropStacks = 0, tPotions = 0, tFaceless = 0; java.util.Map<String, Integer> tKinds = new java.util.TreeMap<>();
+				for (net.minecraft.world.entity.item.ItemEntity tDrop : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, sDLPlayer.getBoundingBox().inflate(12))) {
+					net.minecraft.world.item.ItemStack tS = tDrop.getItem();
+					if (tS.isEmpty()) continue;
+					tDropStacks += tS.getCount();
+					if (tS.is(net.minecraft.world.item.Items.POTION) || tS.is(net.minecraft.world.item.Items.SPLASH_POTION)) {
+						tPotions += tS.getCount();
+						net.minecraft.world.item.alchemy.PotionContents tPC = tS.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
+						String tKind = tPC == null ? null : tPC.potion().flatMap(net.minecraft.core.Holder::unwrapKey).map(k -> k.identifier().getPath()).orElse(null);
+						if (tKind == null) tFaceless += tS.getCount(); else tKinds.merge(tKind + (tS.is(net.minecraft.world.item.Items.SPLASH_POTION) ? " (взрывное)" : ""), tS.getCount(), Integer::sum);
+					}
+				}
+				O.println("[" + DL_M + "] Clouded Bottle ×40: выпало предметов " + tDropStacks + " · зелий " + tPotions + " · безликих " + tFaceless + " · виды: " + tKinds);
+				sDLSeq.judge("Clouded Bottle реально сыплет лут (использования сработали)", tDropStacks >= 30, ">= 30", tDropStacks);
+				sDLSeq.judge("среди выпавшего есть зелья (позитивный контроль чувствительности)", tPotions > 0, "> 0", tPotions);
+				sDLSeq.judge("ВСЕ выпавшие зелья несут вид — безликих нет", tFaceless == 0, "0", tFaceless);
+				sDLSeq.judge("видов зелий больше одного (не вырожденный мост)", tKinds.size() > 1, "> 1", tKinds.size());
+				for (int cx = (sDLTarget.getX() >> 4) - 3; cx <= (sDLTarget.getX() >> 4) + 3; cx++)
+					for (int cz = (sDLTarget.getZ() >> 4) - 3; cz <= (sDLTarget.getZ() >> 4) + 3; cz++)
+						sDLPlayer.level().setChunkForced(cx, cz, false);
+				sDLSeq.done();
+			})
+			.at(1200, () -> {if (!sDLSeq.isDone()) {sDLSeq.judge("стенд дошёл до конца", F, "done", "таймаут"); sDLSeq.done();}});
+		sDLSeq.tick(sDLTick);
 	}
 
 	// ==========================================================================================================
