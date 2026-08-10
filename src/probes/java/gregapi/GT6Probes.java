@@ -337,6 +337,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6recipegui.flag")) gt6RecipeGuiServerTick(aEvent.getServer());
 	// [GT6-HARVESTTAGPROBE] стенд «MODCOMPAT-001 П1/П3: Currently Harvestable + Effective Tool» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6harvesttagprobe.flag")) gt6HarvestTagProbeTick(aEvent.getServer());
+	// [GT6-COVERPROBE] BUG-114: кавер снят — ушёл ли он с клиента (обе ветки каверов) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6coverprobe.flag")) gt6CoverProbeTick(aEvent.getServer());
 	// [GT6-DRAINMODEL] судьи модели F5 §6.2 «извлекаемый объём клетки» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6drainmodel.flag")) gt6DrainModelTick(aEvent.getServer());
 	// [GT6-GEOPROBE] BUG-115 сложная геометрия: озеро со ступенями, навесом, каскадом, обрывом — снять при уборке фазы
@@ -16130,5 +16132,134 @@ public final class GT6Probes {
 			sDMDone = T;
 		} catch (Throwable e) {e.printStackTrace(O); sDMDone = T;}
 		aServer.halt(F);
+	}
+
+	// ========== [GT6-COVERPROBE] ВРЕМЕННАЯ проба BUG-114 «кавер снят — ушёл ли он с клиента» (гейт run/gt6coverprobe.flag + -Pgt6probes) ==========
+	// Судится КЛИЕНТСКОЕ состояние (там и был дефект): сервер строит площадки, ставит каверы реальным публичным
+	// setCoverItem, снимает реальным путём монтировки (onToolClick(TOOL_crowbar), TileEntityBase06Covers:151-158),
+	// клиентская половина (GT6ProbesClient.onCoverProbeClient) читает СВОЙ BlockEntity и считает каверы.
+	// Оба носителя условного пакета: бочка (тикающая ветка base/TileEntityBase06Covers) и стена многоблока
+	// (notick-ветка notick/TileEntityBase04Covers — именно её пользователь называет «стенкой»).
+	// Позитивный контроль обязателен: до снятия клиент ОБЯЗАН видеть каверы, иначе замер ничего не значит.
+	// Снять при уборке фазы.
+	private static final String CP_M = "GT6-COVERPROBE";
+	private static final int CP_BARREL_ID = 32102; // Bronze Drum (тикающая ветка)
+	private static final int CP_WALL_ID   = 18010; // Bronze Wall = MultiTileEntityMultiBlockPart (notick-ветка)
+	private static int sCVRTick = 0;
+	private static ServerPlayer sCVRPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sCVRSeq;
+	private static gregapi.tileentity.base.TileEntityBase06Covers sCVRBarrelOne, sCVRBarrelTwo;
+	private static gregapi.tileentity.notick.TileEntityBase04Covers sCVRWall;
+	/** позиции площадок и снимки клиента — читаются клиентской половиной (один процесс, разные потоки) */
+	public static volatile BlockPos sCVRPosOne, sCVRPosTwo, sCVRPosWall;
+	public static volatile int sCVRPhase = 0;                       // 1 — каверы стоят, 2 — сняты
+	public static volatile int sCVRCliOneBefore = -1, sCVRCliTwoBefore = -1, sCVRCliWallBefore = -1;
+	public static volatile int sCVRCliOneAfter  = -1, sCVRCliTwoAfter  = -1, sCVRCliWallAfter  = -1;
+	public static volatile int sCVRCliTwoSideAfter = -1;             // какая сторона осталась у площадки B
+	public static volatile boolean sCVRCliBeforeDone = F, sCVRCliAfterDone = F;
+
+	/** Сколько каверов реально сидит на BE (сервер или клиент — метод один). */
+	public static int cpCoverCount(net.minecraft.world.level.block.entity.BlockEntity aBE) {
+		gregapi.cover.CoverData tData = cpCoverData(aBE);
+		if (tData == null) return 0;
+		int rCount = 0;
+		for (byte tSide : ALL_SIDES_VALID) if (tData.mIDs[tSide] != 0) rCount++;
+		return rCount;
+	}
+	/** Индекс первой занятой стороны либо -1. */
+	public static int cpCoverSide(net.minecraft.world.level.block.entity.BlockEntity aBE) {
+		gregapi.cover.CoverData tData = cpCoverData(aBE);
+		if (tData == null) return -1;
+		for (byte tSide : ALL_SIDES_VALID) if (tData.mIDs[tSide] != 0) return tSide;
+		return -1;
+	}
+	private static gregapi.cover.CoverData cpCoverData(net.minecraft.world.level.block.entity.BlockEntity aBE) {
+		if (aBE instanceof gregapi.tileentity.base.TileEntityBase06Covers tA) return tA.hasCovers() ? tA.mCovers : null;
+		if (aBE instanceof gregapi.tileentity.notick.TileEntityBase04Covers tB) return tB.hasCovers() ? tB.mCovers : null;
+		return null;
+	}
+
+	private static void gt6CoverProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sCVRPlayer.level();
+		O.println("========== [" + CP_M + "] BUG-114: снятие кавера и клиентское состояние ==========");
+		BlockPos tBase = sCVRPlayer.blockPosition().offset(4, 0, 4);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBase.offset(-2, -1, -2), 12, 8);
+		// A: бочка, ОДИН кавер — главный случай (снимаем последний)
+		sCVRBarrelOne = gregapi.probe.GT6ProbeStand.place(tLevel, sCVRPlayer, tBase, net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(CP_BARREL_ID), gregapi.tileentity.tank.TileEntityBase08Barrel.class, CP_M, "A-бочка(один кавер)");
+		// B: бочка, ДВА кавера — контроль «обычный путь не сломан» (снимаем один из двух)
+		sCVRBarrelTwo = gregapi.probe.GT6ProbeStand.place(tLevel, sCVRPlayer, tBase.offset(3, 0, 0), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(CP_BARREL_ID), gregapi.tileentity.tank.TileEntityBase08Barrel.class, CP_M, "B-бочка(два кавера)");
+		// C: стена многоблока — notick-ветка, второй носитель того же условного пакета
+		gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tWall = gregapi.probe.GT6ProbeStand.place(tLevel, sCVRPlayer, tBase.offset(6, 0, 0), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(CP_WALL_ID), gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart.class, CP_M, "C-стена(один кавер)");
+		sCVRWall = tWall;
+		if (sCVRBarrelOne == null || sCVRBarrelTwo == null || sCVRWall == null) throw new RuntimeException("площадки не построились");
+		sCVRPosOne  = tBase.above();
+		sCVRPosTwo  = tBase.offset(3, 1, 0);
+		sCVRPosWall = tBase.offset(6, 1, 0);
+		// каверы ставим тем же публичным API, что дёргает правый клик кавер-предметом
+		sCVRBarrelOne.setCoverItem(SIDE_EAST, IL.PUMPS[0].get(1), null, T, T);
+		sCVRBarrelTwo.setCoverItem(SIDE_EAST, IL.PUMPS[0].get(1), null, T, T);
+		sCVRBarrelTwo.setCoverItem(SIDE_WEST, IL.PUMPS[0].get(1), null, T, T);
+		sCVRWall     .setCoverItem(SIDE_EAST, IL.PUMPS[0].get(1), null, T, T);
+		O.println("[" + CP_M + "] построено: A@" + sCVRPosOne + " каверов=" + cpCoverCount(sCVRBarrelOne)
+			+ " · B@" + sCVRPosTwo + " каверов=" + cpCoverCount(sCVRBarrelTwo)
+			+ " · C(стена)@" + sCVRPosWall + " каверов=" + cpCoverCount(sCVRWall));
+		sCVRSeq.judge("СЕРВЕР до снятия: A=1, B=2, C=1 кавера",
+			cpCoverCount(sCVRBarrelOne) == 1 && cpCoverCount(sCVRBarrelTwo) == 2 && cpCoverCount(sCVRWall) == 1,
+			"1/2/1", cpCoverCount(sCVRBarrelOne) + "/" + cpCoverCount(sCVRBarrelTwo) + "/" + cpCoverCount(sCVRWall));
+		sCVRPhase = 1;
+	}
+
+	/** Снятие реальным путём монтировки — тот же вызов, что делает предмет-монтировка в руке игрока. */
+	private static boolean gt6CoverProbeCrowbar(Object aBE, byte aSide) {
+		long rDamage = aBE instanceof gregapi.tileentity.base.TileEntityBase06Covers tA
+			? tA.onToolClick(TOOL_crowbar, 10000, 10000, sCVRPlayer, new java.util.ArrayList<String>(), null, F, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK), aSide, 0.5F, 0.5F, 0.5F)
+			: ((gregapi.tileentity.notick.TileEntityBase04Covers)aBE).onToolClick(TOOL_crowbar, 10000, 10000, sCVRPlayer, new java.util.ArrayList<String>(), null, F, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK), aSide, 0.5F, 0.5F, 0.5F);
+		return rDamage > 0;
+	}
+
+	private static void gt6CoverProbeRemove() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		boolean tA = gt6CoverProbeCrowbar(sCVRBarrelOne, SIDE_EAST);
+		boolean tB = gt6CoverProbeCrowbar(sCVRBarrelTwo, SIDE_EAST);   // остаться должен ЗАПАДНЫЙ
+		boolean tC = gt6CoverProbeCrowbar(sCVRWall,      SIDE_EAST);
+		O.println("[" + CP_M + "] монтировка сработала: A=" + tA + " B=" + tB + " C=" + tC
+			+ " · СЕРВЕР после снятия: A=" + cpCoverCount(sCVRBarrelOne) + " B=" + cpCoverCount(sCVRBarrelTwo) + " C=" + cpCoverCount(sCVRWall));
+		sCVRSeq.judge("монтировка сняла кавер на всех трёх площадках", tA && tB && tC, "true/true/true", tA + "/" + tB + "/" + tC);
+		sCVRSeq.judge("СЕРВЕР после снятия: A=0, B=1, C=0 — снятие само по себе исправно",
+			cpCoverCount(sCVRBarrelOne) == 0 && cpCoverCount(sCVRBarrelTwo) == 1 && cpCoverCount(sCVRWall) == 0,
+			"0/1/0", cpCoverCount(sCVRBarrelOne) + "/" + cpCoverCount(sCVRBarrelTwo) + "/" + cpCoverCount(sCVRWall));
+		sCVRPhase = 2;
+	}
+
+	private static void gt6CoverProbeJudge() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + CP_M + "] КЛИЕНТ до снятия: A=" + sCVRCliOneBefore + " B=" + sCVRCliTwoBefore + " C(стена)=" + sCVRCliWallBefore);
+		O.println("[" + CP_M + "] КЛИЕНТ после снятия: A=" + sCVRCliOneAfter + " B=" + sCVRCliTwoAfter + " (осталась сторона " + sCVRCliTwoSideAfter + ") C(стена)=" + sCVRCliWallAfter);
+		// ПОЗИТИВНЫЙ КОНТРОЛЬ: без него «после снятия ноль» доказывает лишь то, что каверов на клиенте не было НИКОГДА
+		sCVRSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: до снятия клиент видит каверы (A=1, B=2, C=1)",
+			sCVRCliOneBefore == 1 && sCVRCliTwoBefore == 2 && sCVRCliWallBefore == 1,
+			"1/2/1", sCVRCliOneBefore + "/" + sCVRCliTwoBefore + "/" + sCVRCliWallBefore);
+		sCVRSeq.judge("A (бочка, тикающая ветка): снят ПОСЛЕДНИЙ кавер -> на клиенте 0", sCVRCliOneAfter == 0, 0, sCVRCliOneAfter);
+		sCVRSeq.judge("C (стена многоблока, notick-ветка): снят ПОСЛЕДНИЙ кавер -> на клиенте 0", sCVRCliWallAfter == 0, 0, sCVRCliWallAfter);
+		sCVRSeq.judge("B (снят один из двух): на клиенте остался ровно один", sCVRCliTwoAfter == 1, 1, sCVRCliTwoAfter);
+		sCVRSeq.judge("B: остался именно НЕСНЯТЫЙ кавер (западная сторона " + SIDE_WEST + ")", sCVRCliTwoSideAfter == SIDE_WEST, SIDE_WEST, sCVRCliTwoSideAfter);
+		sCVRSeq.done();
+	}
+
+	public static void gt6CoverProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sCVRTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sCVRPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sCVRSeq == null) sCVRSeq = new gregapi.probe.GT6ProbeStand.Seq(CP_M)
+			.at(200, GT6Probes::gt6CoverProbeBuild)
+			// ждём не по таймеру, а по ФАКТУ ответа клиента: пакет мог задержаться, и замер «в никуда» дал бы ложный ноль
+			.window(210, 1200, () -> {if (sCVRPhase == 1 && sCVRCliBeforeDone) gt6CoverProbeRemove();})
+			.window(220, 1600, () -> {if (sCVRPhase == 2 && sCVRCliAfterDone && !sCVRSeq.isDone()) gt6CoverProbeJudge();})
+			.at(1600, () -> {if (!sCVRSeq.isDone()) {gregapi.data.CS.OUT.println("[" + CP_M + "] клиент не ответил (before=" + sCVRCliBeforeDone + " after=" + sCVRCliAfterDone + ")"); sCVRSeq.judge("клиентская половина ответила", F, "ответ", "молчание"); sCVRSeq.done();}});
+		sCVRSeq.tick(sCVRTick);
 	}
 }

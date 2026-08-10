@@ -2258,4 +2258,39 @@ public final class GT6ProbesClient {
 		} catch (Throwable e) {e.printStackTrace(O);}
 		O.println("========== [GT6-JEIGRID] DONE ==========");
 	}
+
+	// ========== [GT6-COVERPROBE] клиентская половина (BUG-114): читает СВОЙ BlockEntity и считает каверы ==========
+	// Дефект жил ровно здесь: сервер каверы снял, а клиентский BE их сохранял, потому что переиспользуется вместо
+	// пересоздания. Замер идёт по факту фазы, выставленной серверной половиной, с задержкой на доставку пакета.
+	// Снять при уборке фазы.
+	private static int mCoverProbeWait = 0;
+	private static boolean mCoverProbeDone = false;
+
+	private static int coverProbeCount(net.minecraft.client.Minecraft aMC, net.minecraft.core.BlockPos aPos) {
+		return aPos == null || aMC.level == null ? -1 : gregapi.GT6Probes.cpCoverCount(aMC.level.getBlockEntity(aPos));
+	}
+
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onCoverProbeClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mCoverProbeDone || !gregapi.data.CS.probeFlag("gt6coverprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null) return;
+		int tPhase = gregapi.GT6Probes.sCVRPhase;
+		if (tPhase == 1 && !gregapi.GT6Probes.sCVRCliBeforeDone) {
+			if (mCoverProbeWait++ < 40) return; // даём пакету доехать до клиента
+			gregapi.GT6Probes.sCVRCliOneBefore  = coverProbeCount(tMC, gregapi.GT6Probes.sCVRPosOne);
+			gregapi.GT6Probes.sCVRCliTwoBefore  = coverProbeCount(tMC, gregapi.GT6Probes.sCVRPosTwo);
+			gregapi.GT6Probes.sCVRCliWallBefore = coverProbeCount(tMC, gregapi.GT6Probes.sCVRPosWall);
+			mCoverProbeWait = 0;
+			gregapi.GT6Probes.sCVRCliBeforeDone = true;
+		} else if (tPhase == 2 && !gregapi.GT6Probes.sCVRCliAfterDone) {
+			if (mCoverProbeWait++ < 40) return;
+			gregapi.GT6Probes.sCVRCliOneAfter  = coverProbeCount(tMC, gregapi.GT6Probes.sCVRPosOne);
+			gregapi.GT6Probes.sCVRCliTwoAfter  = coverProbeCount(tMC, gregapi.GT6Probes.sCVRPosTwo);
+			gregapi.GT6Probes.sCVRCliWallAfter = coverProbeCount(tMC, gregapi.GT6Probes.sCVRPosWall);
+			gregapi.GT6Probes.sCVRCliTwoSideAfter = gregapi.GT6Probes.cpCoverSide(tMC.level.getBlockEntity(gregapi.GT6Probes.sCVRPosTwo));
+			gregapi.GT6Probes.sCVRCliAfterDone = true;
+			mCoverProbeDone = true;
+		}
+	}
 }
