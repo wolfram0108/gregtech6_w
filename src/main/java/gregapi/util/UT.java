@@ -2835,8 +2835,13 @@ public class UT {
 			return send(aSound, aVolume, aPitch, aWorld, new BlockPos(aX, aY, aZ));
 		}
 		public static boolean send(String aSound, float aVolume, float aPitch, Level aWorld, BlockPos aCoords) {
-			if (Code.stringInvalid(aSound) || aWorld == null || aWorld.isClientSide()) return F;
+			if (Code.stringInvalid(aSound) || aWorld == null || aWorld.isClientSide()) {
+				// [GT6-SOUNDDIAG] BUG-113 — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6sounddiag.flag")) OUT.println("[GT6-SOUNDDIAG] send ОТКАЗ: звук=" + aSound + " мир=" + (aWorld == null ? "null" : aWorld.isClientSide() ? "клиентский" : "серверный"));
+				return F;
+			}
 			NW_API.sendToAllPlayersInRange(new PacketSound(aSound, aVolume, aPitch, aCoords), aWorld, aCoords);
+			if (gregapi.data.CS.probeFlag("gt6sounddiag.flag")) OUT.println("[GT6-SOUNDDIAG] СЕРВЕР разослал звук " + aSound + " @" + aCoords);
 			return T;
 		}
 		
@@ -2882,6 +2887,11 @@ public class UT {
 			
 			public void play() {
 				PlayedSound tSound = new PlayedSound(mSound, mX, mY, mZ, mTimeUntilNextSound);
+				// [GT6-SOUNDDIAG] BUG-113 — последнее звено: глушилка повторов, резолв события, сам вызов. Снять при уборке фазы.
+				boolean tDiag = gregapi.data.CS.probeFlag("gt6sounddiag.flag");
+				if (tDiag) OUT.println("[GT6-SOUNDDIAG] ОЧЕРЕДЬ->play " + mSound + " · заглушен как повтор=" + sPlayedSounds.contains(tSound)
+					+ " · событие=" + net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse(neoSound(mSound)))
+					+ " · громкость=" + mVolume + " тон=" + mPitch + " мир=" + (mWorld == null ? "null" : mWorld.getClass().getSimpleName()));
 				if (!sPlayedSounds.contains(tSound)) try {
 					sPlayedSounds.add(tSound);
 					// F-sound: neo Level.playSound(double,double,double,String,...) удалён — звук адресуется
@@ -2891,7 +2901,10 @@ public class UT {
 					// F-sound (1:1): легаси 1.7.10 SFX-строки → neo sound-id через neoSound (карта SFX_LEGACY, сверена по SoundEvents.java);
 					// neo-native строки проходят как есть. Раньше легаси не резолвились → все GT6-звуки молчали. Восстановлено.
 					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse(neoSound(mSound)));
-					if (tEvent != null) mWorld.playLocalSound(mX+0.5, mY+0.5, mZ+0.5, tEvent, net.minecraft.sounds.SoundSource.BLOCKS, mVolume, mPitch, T);
+					if (tEvent != null) {
+						mWorld.playLocalSound(mX+0.5, mY+0.5, mZ+0.5, tEvent, net.minecraft.sounds.SoundSource.BLOCKS, mVolume, mPitch, T);
+						if (tDiag) OUT.println("[GT6-SOUNDDIAG]   -> playLocalSound ВЫЗВАН для " + mSound);
+					} else if (tDiag) OUT.println("[GT6-SOUNDDIAG]   -> событие NULL, звука не будет: " + mSound);
 				} catch(Throwable e) {/**/}
 			}
 		}

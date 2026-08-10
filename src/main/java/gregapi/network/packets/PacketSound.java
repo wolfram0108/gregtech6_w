@@ -75,6 +75,8 @@ public class PacketSound extends PacketCoordinates {
 	
 	@Override
 	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
-		UT.Sounds.play(mSound, 2, mVolume, mPitch, mX, mY, mZ);
+		// [GT6-SOUNDDIAG] BUG-113 — снять при уборке фазы
+		boolean tQueued = UT.Sounds.play(mSound, 2, mVolume, mPitch, mX, mY, mZ);
+		if (gregapi.data.CS.probeFlag("gt6sounddiag.flag")) gregapi.data.CS.OUT.println("[GT6-SOUNDDIAG] КЛИЕНТ принял пакет звука " + mSound + " · поставлен в очередь=" + tQueued);
 	}
 }

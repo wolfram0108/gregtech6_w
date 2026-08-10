@@ -228,13 +228,40 @@ public class GT_API extends Abstract_Mod {
 	static {
 		for (String tKey : soundKeysFromAssets()) SOUND_EVENTS.register(tKey, rl -> net.minecraft.sounds.SoundEvent.createVariableRangeEvent(rl));
 	}
-	/** Имена звуков, объявленных модом в {@code assets/<namespace>/sounds.json} — единственный источник истины. */
+	/** Имена звуков, объявленных модом в {@code assets/<namespace>/sounds.json} — единственный источник истины.
+	 *  ⛔ ЧИТАТЬ ЧЕРЕЗ CLASSLOADER НЕЛЬЗЯ: в dev-среде ресурсы лежат в каталоге и {@code getResourceAsStream}
+	 *  их отдаёт, а в собранном jar мод грузится модульным загрузчиком FML, ресурс не выдаётся, список
+	 *  оказывается пустым — и звуки молча не регистрируются. Ровно этим отличался запуск из исходников
+	 *  (звук был) от запуска с jar (звука не было). Штатный путь FML к файлам СВОЕГО мода — ModList/ModFile,
+	 *  он одинаков в обеих средах; classloader остаётся запасным. */
 	private static java.util.List<String> soundKeysFromAssets() {
-		try (java.io.InputStream tIn = GT_API.class.getResourceAsStream("/assets/" + ModIDs.GAPI + "/sounds.json")) {
-			if (tIn == null) return java.util.List.of();
+		String tPath = "assets/" + ModIDs.GAPI + "/sounds.json";
+		java.util.List<String> rKeys = java.util.List.of();
+		try (java.io.InputStream tIn = GT_API.class.getResourceAsStream("/" + tPath)) {
+			if (tIn != null) rKeys = soundKeysFrom(tIn);
+		} catch (Throwable e) {/* запасной путь ниже */}
+		// запасной путь — там, где физически лежит сам класс: каталог в dev-среде, jar в поставке
+		if (rKeys.isEmpty()) try {
+			java.net.URI tSelf = GT_API.class.getProtectionDomain().getCodeSource().getLocation().toURI();
+			java.io.File tRoot = new java.io.File(tSelf);
+			if (tRoot.isDirectory()) {
+				java.io.File tFile = new java.io.File(tRoot, tPath);
+				if (tFile.isFile()) rKeys = soundKeysFrom(new java.io.FileInputStream(tFile));
+			} else {
+				try (java.util.zip.ZipFile tZip = new java.util.zip.ZipFile(tRoot)) {
+					java.util.zip.ZipEntry tEntry = tZip.getEntry(tPath);
+					if (tEntry != null) rKeys = soundKeysFrom(tZip.getInputStream(tEntry));
+				}
+			}
+		} catch (Throwable e) {/* звуков не будет — это видно по строке ниже */}
+		OUT.println("GT6 sounds: объявлено в " + tPath + " и зарегистрировано " + rKeys.size() + " звуков " + rKeys);
+		return rKeys;
+	}
+	private static java.util.List<String> soundKeysFrom(java.io.InputStream aIn) throws java.io.IOException {
+		try (java.io.InputStream tIn = aIn) {
 			com.google.gson.JsonObject tJson = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(tIn, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
 			return java.util.List.copyOf(tJson.keySet());
-		} catch (Throwable e) {return java.util.List.of();}
+		}
 	}
 
 	public static final DeferredRegister<net.minecraft.core.component.DataComponentType<?>> COMPONENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE, ModIDs.GAPI);
