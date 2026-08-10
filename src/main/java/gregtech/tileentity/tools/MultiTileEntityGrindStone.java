@@ -178,7 +178,7 @@ public class MultiTileEntityGrindStone extends TileEntityBase09FacingSingle impl
 			}
 			if (SIDES_VERTICAL[aSide] || ALONG_AXIS[mFacing][aSide]) {
 				// TODO SOUND
-				if (mStone != 0) UT.Sounds.play(SFX.MC_DIG_SAND, 5, 1.0F, 1.0F, getCoords());
+				if (mStone != 0) UT.Sounds.forActor(SFX.MC_DIG_SAND, 5, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // звук ДЕЙСТВИЯ
 			}
 		}
 		return T;

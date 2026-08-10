@@ -273,9 +273,9 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 				}
 				if (mDisplay != 0) {
 					if (mDisplay < -1) {
-						UT.Sounds.play(SFX.MC_LIQUID_WATER, 5, 1.0F, 1.0F, getCoords());
+						UT.Sounds.forActor(SFX.MC_LIQUID_WATER, 5, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // звук ДЕЙСТВИЯ
 					} else {
-						UT.Sounds.play(SFX.MC_DIG_SAND, 5, 1.0F, 1.0F, getCoords());
+						UT.Sounds.forActor(SFX.MC_DIG_SAND, 5, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // звук ДЕЙСТВИЯ
 					}
 				}
 			}

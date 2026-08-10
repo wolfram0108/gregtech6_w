@@ -336,7 +336,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		if (aHoldStack != null) {
 			if (!ST.equal(aHoldStack, slot(31))) {
 				if (!aSubsequentClick && mDoSound) {
-					UT.Sounds.play(SFX.MC_HMM, 50, 1.0F, 1.0F, getCoords());
+					UT.Sounds.forActor(SFX.MC_HMM, 50, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // звук ДЕЙСТВИЯ
 					mDoSound = F;
 				}
 				return aHoldStack;
@@ -344,7 +344,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 			if (aHoldStack.getCount() + slot(31).getCount() > aHoldStack.getMaxStackSize()) return aHoldStack;
 			for (int i : SLOTS_CRAFTING) if (OM.is("gt:autocrafterinfinite", slot(i))) {
 				if (!aSubsequentClick && mDoSound) {
-					UT.Sounds.play(SFX.MC_HMM, 50, 1.0F, 1.0F, getCoords());
+					UT.Sounds.forActor(SFX.MC_HMM, 50, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // звук ДЕЙСТВИЯ
 					mDoSound = F;
 				}
 				return aHoldStack;

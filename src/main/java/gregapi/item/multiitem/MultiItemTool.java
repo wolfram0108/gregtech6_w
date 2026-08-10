@@ -629,7 +629,13 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (!isUsableMeta(aStack)) return null;
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null) return null;
-		if (TOOL_SOUNDS) UT.Sounds.play(tStats.getCraftingSound(), 200, 1, LAST_TOOL_COORDS_BEFORE_DAMAGE);
+		// тот же случай, что в PrefixItem: путь крафта серверный, но крафтящего игрока движок держит для нас
+		// (CommonHooks, ResultSlot.java:89-91) — берём носителя оттуда, а не теряем звук.
+		if (TOOL_SOUNDS) {
+			net.minecraft.world.entity.player.Player tCrafter = net.neoforged.neoforge.common.CommonHooks.getCraftingPlayer();
+			if (tCrafter != null) UT.Sounds.forActor(tStats.getCraftingSound(), 200, 1, tCrafter, UT.Code.roundDown(tCrafter.getX()), UT.Code.roundDown(tCrafter.getY()), UT.Code.roundDown(tCrafter.getZ()));
+			else UT.Sounds.play(tStats.getCraftingSound(), 200, 1, LAST_TOOL_COORDS_BEFORE_DAMAGE);
+		}
 		aStack = ST.amount(1, aStack);
 		doDamage(aStack, tStats.getToolDamagePerContainerCraft(), null, T);
 		return aStack.getCount() > 0 ? aStack : null;

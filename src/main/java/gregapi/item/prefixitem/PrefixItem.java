@@ -183,11 +183,15 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	// @Override
 	public ItemStack getContainerItem(ItemStack aStack) {
 		if (ST.equal(aStack, mContainerItem, T)) return null;
-		// ⚠️ ИЗВЕСТНАЯ ПОТЕРЯ ЗВУКА, названная центром (UT.Sounds): в 1.7.10 getContainerItem звался и на клиенте,
-		// потому клиентский play() работал. В neo getCraftingRemainingItem — серверный, а носителя ни игрока, ни
-		// координат в сигнатуре нет: слать send/forActor не от чего. Не выдумываем источник — оставляем как есть;
-		// потеря больше не молчит (сторож называет это место), и чинится она вместе с приходом контекста крафта.
-		if (mCraftingSound != null) UT.Sounds.play(mCraftingSound, 20, 1.0F);
+		// Звук крафта. В 1.7.10 getContainerItem звался и на клиенте, потому клиентский play() играл сам. В neo
+		// путь серверный (ResultSlot.onTake → getRemainingItems), а игрока в сигнатуре нет — но движок его ДАЁТ:
+		// на время этого вызова NeoForge держит крафтящего игрока в CommonHooks (ResultSlot.java:89-91). Берём
+		//носителя оттуда — это штатный канал под тот же случай, а не выдуманный источник.
+		if (mCraftingSound != null) {
+			net.minecraft.world.entity.player.Player tCrafter = net.neoforged.neoforge.common.CommonHooks.getCraftingPlayer();
+			if (tCrafter == null) UT.Sounds.play(mCraftingSound, 20, 1.0F);
+			else UT.Sounds.forActor(mCraftingSound, 20, 1.0F, tCrafter, UT.Code.roundDown(tCrafter.getX()), UT.Code.roundDown(tCrafter.getY()), UT.Code.roundDown(tCrafter.getZ()));
+		}
 		return mContainerItem != null ? ST.amount(1, mContainerItem) : mPrefix.containerItem() != null ? ST.amount(1, mContainerItem = mPrefix.containerItem()) : null;
 	}
 	
