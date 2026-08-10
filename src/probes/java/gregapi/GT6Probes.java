@@ -16342,17 +16342,26 @@ public final class GT6Probes {
 	private static void gt6SoundChainBreak() {
 		java.io.PrintStream O = gregapi.data.CS.OUT;
 		ServerLevel tLevel = sSCPlayer.level();
-		O.println("[" + SC_M + "] ломаю блок @" + sSCPos + " реальным путём (destroyBlock)");
-		tLevel.destroyBlock(sSCPos, F, sSCPlayer);
+		// ⛔ Level.destroyBlock — НЕ путь добычи игроком: Item.mineBlock оттуда не зовётся, и звук инструмента
+		// при разрушении по построению не может прозвучать. Реальный путь — ServerPlayerGameMode.destroyBlock.
+		// Список звуков чистим ПЕРЕД разрушением, иначе судья засчитает звук от предыдущего поворота ключом.
+		// ⛔ РЕЖИМ ИГРЫ — часть условия, а не фон: в КРЕАТИВЕ звук инструмента не играет и в оригинале
+		// (MultiItemTool.onBlockDestroyed выходит первой строкой по hasInfiniteItems, ориг. :501). Мир стенда
+		// создаётся креативным, поэтому на время замера переводим игрока в ВЫЖИВАНИЕ — иначе судья красен
+		// по построению, как когда-то витрина Jade в креативе.
+		sSCPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+		gregapi.GT6ProbesClient.mSoundsHeard.clear();
+		O.println("[" + SC_M + "] режим=" + sSCPlayer.gameMode.getGameModeForPlayer() + "; ломаю блок @" + sSCPos + " путём ДОБЫЧИ ИГРОКОМ, список звуков очищен");
+		sSCPlayer.gameMode.destroyBlock(sSCPos);
 	}
 
 	private static void gt6SoundChainJudge() {
 		java.io.PrintStream O = gregapi.data.CS.OUT;
 		java.util.List<String> tHeard = new java.util.ArrayList<>(gregapi.GT6ProbesClient.mSoundsHeard);
 		O.println("[" + SC_M + "] звуковая система получила " + tHeard.size() + " звуков: " + tHeard);
-		boolean tWrenchHeard = tHeard.stream().anyMatch(s -> s.contains("gt.wrench"));
+		boolean tWrenchHeard = tHeard.stream().anyMatch(s -> s.contains("gt.wrench")); // после очистки — это звук ИНСТРУМЕНТА ПРИ ДОБЫЧЕ
 		boolean tBreakHeard  = tHeard.stream().anyMatch(s -> s.contains("break") || s.contains("dig") || s.contains("step"));
-		sSCSeq.judge("A. звук КЛЮЧА дошёл до звуковой системы", tWrenchHeard, "gregapi:gt.wrench в списке", tWrenchHeard);
+		sSCSeq.judge("A. звук ключа ПРИ РАЗРУШЕНИИ дошёл до звуковой системы (getMiningSound)", tWrenchHeard, "gregapi:gt.wrench в списке", tWrenchHeard);
 		sSCSeq.judge("B. звук РАЗРУШЕНИЯ блока дошёл до звуковой системы", tBreakHeard, "звук ломания в списке", tBreakHeard);
 		// КОНТРОЛЬ: перехват вообще работает — играем заведомо ванильный звук и убеждаемся, что он попал в список
 		sSCSeq.judge("КОНТРОЛЬ: перехват звуков жив (список не пуст)", !tHeard.isEmpty(), "не пусто", tHeard.size());

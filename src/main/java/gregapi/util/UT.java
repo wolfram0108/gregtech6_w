@@ -2775,6 +2775,20 @@ public class UT {
 			return T;
 		}
 		
+		/** BUG-113: звук ДЕЙСТВУЮЩЕГО инструмента. В 1.7.10 его играл клиентский {@link #play}, потому что
+		 *  {@code onBlockDestroyed}/{@code onLeftClickEntity} звались на ОБЕИХ сторонах. В neo их носители
+		 *  ({@code Item.mineBlock}, {@code hitEntity}) исполняются ТОЛЬКО на сервере, где {@code play} по
+		 *  построению возвращает F — звук молча пропадал (звук поворота ключом жил, звук того же ключа при
+		 *  разрушении блока — нет). Приём выражен один раз здесь: на клиенте играем как прежде, на сервере
+		 *  шлём пакет ТОМУ, кто действует (1:1 по слышимости: в 1.7.10 звук слышал только он). */
+		public static boolean playFor(String aSound, int aTimeUntilNextSound, float aVolume, net.minecraft.world.entity.Entity aPlayer, int aX, int aY, int aZ) {
+			if (Code.stringInvalid(aSound) || aPlayer == null || aPlayer.level() == null) return F;
+			if (aPlayer.level().isClientSide()) return play(aSound, aTimeUntilNextSound, aVolume, aX, aY, aZ);
+			if (!(aPlayer instanceof ServerPlayer)) return F;
+			NW_API.sendToPlayer(new PacketSound(aSound, aVolume, SFX.RANDOM_PITCH, new BlockPos(aX, aY, aZ)), (ServerPlayer)aPlayer);
+			return T;
+		}
+
 		public static boolean send(String aSound, IHasWorldAndCoords aTileEntity) {
 			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aTileEntity.getWorld(), aTileEntity.getCoords());
 		}
