@@ -2182,6 +2182,36 @@ public final class GT6ProbesClient {
 			gregapi.probe.GT6ProbeStand.judge("GT6-SOUNDPROBE", "B. путь ведёт в пространство мода, а не в minecraft:", tWrongSpace == 0, "0", String.valueOf(tWrongSpace));
 			gregapi.probe.GT6ProbeStand.judge("GT6-SOUNDPROBE", "C. файл звука реально существует", tNoFile == 0, "0", String.valueOf(tNoFile));
 			O.println("[GT6-SOUNDPROBE] проверено " + tChecked + " звуков");
+
+			// BUG-113: судьи A-C смотрят РЕСУРСНЫЙ слой (звуковой менеджер клиента), а мод играет звук через
+			// РЕЕСТР — UT.Sounds.SoundWithLocation.play: BuiltInRegistries.SOUND_EVENT.getValue(Identifier).
+			// В 1.7.10 регистрации не было вовсе (хватало sounds.json), потому именно это звено и потерялось:
+			// ресурс на месте, файл на месте, а событие в реестре отсутствует → getValue = null → тишина.
+			int tNoRegistry = 0;
+			for (String tName : new String[] {gregapi.data.CS.SFX.GT_WRENCH, gregapi.data.CS.SFX.GT_SCREWDRIVER, gregapi.data.CS.SFX.GT_BEEP}) {
+				net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(
+					net.minecraft.resources.Identifier.parse(gregapi.util.UT.Sounds.neoSound(tName)));
+				if (tEvent == null) tNoRegistry++;
+				O.println("[GT6-SOUNDPROBE] РЕЕСТР " + tName + " → " + (tEvent == null ? "NULL (звука не будет)" : tEvent.location().toString()));
+			}
+			gregapi.probe.GT6ProbeStand.judge("GT6-SOUNDPROBE", "D. звук резолвится ТЕМ ЖЕ путём, каким мод его играет (реестр)", tNoRegistry == 0, "0", String.valueOf(tNoRegistry));
+
+			// ПОЛНОТА: зарегистрировано ровно то, что объявлено в ассетах (список звуков не дублируется в коде)
+			int tDeclared = 0, tRegistered = 0;
+			try (java.io.InputStream tIn = gregapi.GT_API.class.getResourceAsStream("/assets/gregapi/sounds.json")) {
+				com.google.gson.JsonObject tJson = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(tIn, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+				for (String tKey : tJson.keySet()) {
+					tDeclared++;
+					if (net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.fromNamespaceAndPath("gregapi", tKey)) != null) tRegistered++;
+				}
+			}
+			O.println("[GT6-SOUNDPROBE] ПОЛНОТА: объявлено в sounds.json " + tDeclared + ", зарегистрировано " + tRegistered);
+			gregapi.probe.GT6ProbeStand.judge("GT6-SOUNDPROBE", "E. ПОЛНОТА: зарегистрированы ВСЕ объявленные звуки", tDeclared > 0 && tDeclared == tRegistered, tDeclared, tRegistered);
+
+			// КОНТРОЛЬ измерителя: ванильное имя обязано резолвиться (канал жив), выдуманное — обязано дать null
+			boolean tVanillaOk = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse("minecraft:block.anvil.use")) != null;
+			boolean tBogusNull = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse("gregapi:gt.nosuchsound")) == null;
+			gregapi.probe.GT6ProbeStand.judge("GT6-SOUNDPROBE", "КОНТРОЛЬ: ванильный звук резолвится, выдуманный — нет", tVanillaOk && tBogusNull, "true/true", tVanillaOk + "/" + tBogusNull);
 		} catch (Throwable e) {e.printStackTrace(O);}
 		O.println("========== [GT6-SOUNDPROBE] DONE ==========");
 	}

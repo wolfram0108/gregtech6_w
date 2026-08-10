@@ -219,6 +219,24 @@ public class GT_API extends Abstract_Mod {
 			.noLootTable().sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(1)
 			.build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, rl)));
 
+	/** BUG-113: свои звуки мода. В 1.7.10 звук адресовался ИМЕНЕМ, а объявлялся только в ассетах
+	 *  ({@code assets/gregapi/sounds.json}) — никакой регистрации не требовалось, движок брал запись по имени.
+	 *  В neo имя обязано иметь {@code SoundEvent} в реестре, иначе {@code Registry.getValue} отдаёт null и звук
+	 *  молча не играется (путь проигрывания — {@code UT.Sounds.SoundWithLocation.play}). Ключи берём ИЗ ТОГО ЖЕ
+	 *  ФАЙЛА, что и 1.7.10, — список звуков не дублируется в коде и переживает пополнение ассетов. */
+	public static final DeferredRegister<net.minecraft.sounds.SoundEvent> SOUND_EVENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.SOUND_EVENT, ModIDs.GAPI);
+	static {
+		for (String tKey : soundKeysFromAssets()) SOUND_EVENTS.register(tKey, rl -> net.minecraft.sounds.SoundEvent.createVariableRangeEvent(rl));
+	}
+	/** Имена звуков, объявленных модом в {@code assets/<namespace>/sounds.json} — единственный источник истины. */
+	private static java.util.List<String> soundKeysFromAssets() {
+		try (java.io.InputStream tIn = GT_API.class.getResourceAsStream("/assets/" + ModIDs.GAPI + "/sounds.json")) {
+			if (tIn == null) return java.util.List.of();
+			com.google.gson.JsonObject tJson = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(tIn, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+			return java.util.List.copyOf(tJson.keySet());
+		} catch (Throwable e) {return java.util.List.of();}
+	}
+
 	public static final DeferredRegister<net.minecraft.core.component.DataComponentType<?>> COMPONENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE, ModIDs.GAPI);
 	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<Integer>> SUBTYPE =
 		COMPONENTS.register("subtype", () -> net.minecraft.core.component.DataComponentType.<Integer>builder()
@@ -519,6 +537,7 @@ public class GT_API extends Abstract_Mod {
 		COMPONENTS.register(aModBus); // F12-followup (subtype-meta): регистрация компонента подтипа на mod-bus (RegisterEvent<DataComponentType>)
 		BLOCK_ENTITIES.register(aModBus); // F12-followup (MTE-type-timing): placeholder MTE_TYPE на RegisterEvent<BlockEntityType> (до freeze)
 		ENTITIES.register(aModBus); // F12-entity: EntityType падающего мета-блока (замена EntityRegistry.registerModEntity, оригинал GT_API.java:722)
+		SOUND_EVENTS.register(aModBus); // BUG-113: свои звуки мода (в 1.7.10 хватало sounds.json, в neo нужен SoundEvent в реестре)
 		// F12-followup (block-split, MTE): слив DEFERRED_BLOCK_INIT на RegisterEvent<Block> (реестр разморожен) — единая
 		// точка для подсистем, чьё конструирование блока нельзя выразить одним registerBlockLazy (см. deferBlockInit).
 		aModBus.addListener(GT_API::onRegisterEvent);
