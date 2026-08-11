@@ -351,6 +351,23 @@ public final class GT6ProbeStand {
 		aPlayer.setYRot(aYaw); aPlayer.setYHeadRot(aYaw);
 	}
 
+	/** САМОЗАВЕРШЕНИЕ — ЕДИНЫЙ центр на все стенды (и Seq-овые, и самописные клиентские).
+	 *  Отработавший стенд держал процесс открытым бесконечно, и прогон висел до дедлайна оркестратора:
+	 *  вердикт уже напечатан, а время тратится. Вызывать СРАЗУ после терминального маркера стенда.
+	 *  Флаг {@code run/<стенд>.keepalive} оставляет процесс жить (площадка отдана игроку на приёмку).
+	 *  Пауза 3 с — чтобы поток лога успел дописать вердикт на диск до halt. */
+	public static void selfHalt(String aMarker) {
+		if (gregapi.data.CS.probeFlag(aMarker.toLowerCase().replace("gt6-", "gt6") + ".keepalive")) {
+			O.println("[" + aMarker + "] keepalive: процесс оставлен открытым (флаг), закройте вручную");
+			return;
+		}
+		O.println("[" + aMarker + "] стенд отработал — гашу процесс сам (флаг .keepalive оставляет открытым)");
+		new Thread(() -> {
+			try {Thread.sleep(3000);} catch (InterruptedException e) {/**/}
+			Runtime.getRuntime().halt(0);
+		}, "gt6-probe-shutdown").start();
+	}
+
 	// ================================================================================================
 	// ТИК-МАШИНА — объект-стенд
 	// ================================================================================================
@@ -392,18 +409,7 @@ public final class GT6ProbeStand {
 			if (mDone) return;
 			mDone = true; mDoneTick = mCurrentTick;
 			O.println("========== [" + mMarker + "] DONE (pass=" + passCount + " fail=" + failCount + ") ==========");
-			// САМОЗАВЕРШЕНИЕ. Отработавший стенд держал клиент открытым бесконечно, и гасить процесс приходилось
-			// человеку — при десятке прогонов подряд это чистая потеря его времени. Флаг `<стенд>.keepalive` в
-			// рабочем каталоге оставляет клиент жить (нужно, когда площадка отдаётся игроку на приёмку).
-			if (gregapi.data.CS.probeFlag(mMarker.toLowerCase().replace("gt6-", "gt6") + ".keepalive")) {
-				O.println("[" + mMarker + "] keepalive: клиент оставлен открытым (флаг), закройте вручную");
-				return;
-			}
-			O.println("[" + mMarker + "] стенд отработал — гашу процесс сам (флаг .keepalive оставляет открытым)");
-			new Thread(() -> {
-				try {Thread.sleep(3000);} catch (InterruptedException e) {/**/}
-				Runtime.getRuntime().halt(0);
-			}, "gt6-probe-shutdown").start();
+			selfHalt(mMarker);
 		}
 
 		/** Диспетчер: вызывать из статического tick(...) пробы КАЖДЫЙ серверный тик, пока probeFlag активен. */

@@ -1440,7 +1440,11 @@ public class WD {
 		// источника флагом 2 — осталось 44, флагом 3 — 0. Поэтому: снимаем жидкость — обязаны разбудить соседей.
 		// Условие узкое намеренно: только СНЯТИЕ (ставим воздух) и только если в клетке БЫЛА жидкость, — заливка
 		// ворлдгена (WD.set(..., 0) в океане/реке) не затрагивается, лишних апдейтов при генерации нет (ADAPT-009).
-		if ((aFlags & 1) == 0 && aBlock == NB && !state(aWorld, new BlockPos(aX, aY, aZ)).getFluidState().isEmpty()) aFlags |= 1;
+		// Признак «в клетке БЫЛА жидкость» берётся ТЕМ ЖЕ способом, каким мод опознаёт жидкость везде — по КЛАССУ
+		// блока (liquid(Block) ниже), а не через FluidState. Прежний гейт по FluidState связывал этот фикс с
+		// движковым ответом блока: стоило жидкости GT6 перестать объявлять себя движковой жидкостью — и соседи
+		// переставали просыпаться, а «полублоки» возвращались. Один признак — один носитель.
+		if ((aFlags & 1) == 0 && aBlock == NB && liquid(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock())) aFlags |= 1;
 		if (aRemoveGrassBelow) {
 			Block tBlock = state(aWorld, new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
 			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)

@@ -410,17 +410,42 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// применяет эффекты только для fluid в теге FluidTags.WATER/LAVA (EntityFluidInteraction). Content-жидкость с материалом
 	// water/lava → vanilla WATER/LAVA FluidState по квантам (meta+1=1..8, полный=8) → игрок тонет/горит в ней. Прочие
 	// (газ/материал-специфика) → super=EMPTY: у них GT6-эффекты (bathing/breathing/drown) уже в entityInside/onHeadInside.
+	/**
+	 * ЧЕМ КЛЕТКА ЯВЛЯЕТСЯ ДЛЯ ДВИЖКА. Ровно одна роль: <b>среда для сущностей</b> (погружение, дыхание, течение,
+	 * туман). Движок отбирает среду ТОЛЬКО по тегам жидкости — {@code Entity:251} создаёт трекер с
+	 * {@code FluidTags.WATER}/{@code LAVA}, отбор идёт {@code fluid.is(tag)} ({@code EntityFluidInteraction:121-129}).
+	 * Поэтому: материал воды/лавы 1.7.10 → соответствующая ванильная жидкость (иначе в геотермальной воде нельзя
+	 * плавать); у всех прочих (нефти, газ) среды в 1.7.10 не было — движковой жидкости у них нет.
+	 * <p><b>ПОЧЕМУ НЕ {@code super} (BUG-119).</b> После репарентинга предка на {@code LiquidBlock} (шов F5,
+	 * {@code b483f6b6}) {@code super.getFluidState} перестал быть пустым: он отдаёт {@code fluid.getSource(false)}
+	 * ({@code LiquidBlock:125-127}) — «здесь полная жидкость» при ЛЮБОМ количестве квант. Комментарий, стоявший
+	 * здесь до правки, утверждал обратное («прочие → super = EMPTY») и был верен ровно до смены предка. Цена
+	 * ошибки — ДВЕ геометрии на клетку: движок рисовал жидкость по этому ответу ({@code SectionCompiler:99-104})
+	 * поверх кванта-модели блока ({@code :106}), слоем 8/9 ≈ 0.889 независимо от квант ({@code FlowingFluid:469}),
+	 * и растёкшаяся плёнка выглядела почти полным блоком. Замер стенда {@code gt6fluidlab} до правки: 90 клеток
+	 * с двумя геометриями, наш слой ≈0.14 под движковым 0.888.
+	 * <p>Пустая жидкость у нефтей и газа возвращает и второе 1:1-свойство: движковое удаление клетки
+	 * ({@code Level.removeBlock:295-298} ставит {@code fluidState.createLegacyBlock()}) снова оставляет ВОЗДУХ,
+	 * как {@code setBlockToAir} в 1.7.10, а не клетку той же нефти.
+	 */
 	@Override protected net.minecraft.world.level.material.FluidState getFluidState(BlockState aState) {
-		// SOURCE-ВСЕГДА (НЕ FLOWING): критично. Neo вызывает FluidState.tick() для любого non-EMPTY FLOWING-состояния
-		// (LevelChunk.postProcessGeneration / ServerLevel.tickFluid) → FlowingFluid.getNewLiquid не находит vanilla-источников
-		// (GT6-источник ≠ Blocks.WATER) → EMPTY → level.setBlock(AIR) УДАЛЯЕТ GT6-flowing мгновенно («гейзер появился и пропал»).
-		// isSource-состояния движок НЕ тикает. GT6-flow (updateTick по FLUID_META/quanta) полностью независим от FluidState —
-		// FluidState нужен лишь для физики (тег WATER/LAVA → погружение/тонешь/горишь); визуал BlockBaseFluid — GT6BlockModel.
-		// Исходник Forge 1.7.10 getFluidState НЕ имел (конфликта двух tick-систем не было). Материал water/lava → source-тег.
 		gregapi.block.Material tMat = getMaterial();
-		if (tMat == gregapi.block.Material.water) return net.minecraft.world.level.material.Fluids.WATER.defaultFluidState();
-		if (tMat == gregapi.block.Material.lava ) return net.minecraft.world.level.material.Fluids.LAVA.defaultFluidState();
-		return super.getFluidState(aState);
+		if (tMat != gregapi.block.Material.water && tMat != gregapi.block.Material.lava) return net.minecraft.world.level.material.Fluids.EMPTY.defaultFluidState();
+		// СРЕДА ЕСТЬ — но это СОБСТВЕННАЯ жидкость GT6, а не подмена ванильной (BUG-119, вторая половина).
+		// Принадлежность к воде/лаве выражается ТЕГОМ (data/minecraft/tags/fluid/water.json), и движок отбирает
+		// среду именно по тегу (EntityFluidInteraction:121-129) — плавать в геотермальной воде можно и так.
+		// Подмена же тянула за собой ЧУЖОЕ поведение: клетка объявляла себя ванильной водой, и потому
+		// (1) её рисовал ванильный водяной рендер ПОВЕРХ кванта-модели, (2) движковое удаление оставляло на её
+		// месте настоящий minecraft:water (Level.removeBlock:295-298 ставит fluidState.createLegacyBlock()),
+		// (3) соседняя ванильная вода считала её СВОИМ источником при любом количестве квант, тогда как в 1.7.10
+		// источником была только полная клетка (BlockLiquid:99 + BlockDynamicLiquid:72-79).
+		// Уровень жидкости выводится из ЕДИНСТВЕННОЙ меры — квант блока: полная клетка → источник, иначе поток.
+		net.minecraft.world.level.material.Fluid tOwn = mFluid;
+		if (!(tOwn instanceof net.minecraft.world.level.material.FlowingFluid tFlowing))
+			return (tMat == gregapi.block.Material.water ? net.minecraft.world.level.material.Fluids.WATER : net.minecraft.world.level.material.Fluids.LAVA).defaultFluidState();
+		int tQuanta = (int) gregapi.util.UT.Code.bind(1, quantaPerBlock, aState.getValue(FLUID_META) + 1);
+		if (tQuanta >= quantaPerBlock) return tFlowing.getSource(F);
+		return tFlowing.getFlowing(tQuanta, F);
 	}
 
 	// F5-B block-контракт (проходимость): материал-жидкость/газ (масла/кислоты/газы) — ПРОХОДИМЫ, нельзя стоять на них
@@ -430,7 +455,16 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// F5 surface-B: после репарентинга предка на LiquidBlock его INVISIBLE (:136) перекрывается обратно в MODEL —
 	// различие «чем рисуется» между иерархиями живёт в потомках, как и в 1.7.10 (у водоподобных — ванильная вода,
 	// здесь — своя текстура жидкости).
-	@Override protected net.minecraft.world.level.block.RenderShape getRenderShape(BlockState aState) {return net.minecraft.world.level.block.RenderShape.MODEL;}
+	/** ЕДИНОЕ ПРАВИЛО ВИДА (BUG-119): <b>блок рисует свою модель тогда и только тогда, когда движок не рисует
+	 *  его как жидкость.</b> Движок исполняет ОБА ответа блока независимо — жидкостный проход по {@code FluidState}
+	 *  ({@code SectionCompiler:99-104}) и модельный по {@code RenderShape.MODEL} ({@code :106}); объявить оба
+	 *  значит нарисовать клетку дважды. Правило выражено ЗДЕСЬ, в одном месте, и выводится из того же ответа,
+	 *  которым блок объявляет среду — второго признака «рисовать ли модель» в порту не заводится.
+	 *  Отсюда: нефти и газ (среды нет) рисует модель GT6 кванта-высотой; геотермальная вода (среда есть, своя
+	 *  жидкость GT6 со своей текстурой) рисуется движковым жидкостным проходом по уровню, выведенному из квант. */
+	@Override protected net.minecraft.world.level.block.RenderShape getRenderShape(BlockState aState) {
+		return getFluidState(aState).isEmpty() ? net.minecraft.world.level.block.RenderShape.MODEL : net.minecraft.world.level.block.RenderShape.INVISIBLE;
+	}
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 
@@ -493,7 +527,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
 	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
 	public boolean canCollideCheck(int aMeta, boolean aFullHit) {return aFullHit && aMeta >= 7;}
-	public boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {return mActLikeWeb || !mEffectsBathing.isEmpty() || !mEffectsBreathing.isEmpty();}
+	public boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {return mMediumDragH > 0 || !mEffectsBathing.isEmpty() || !mEffectsBreathing.isEmpty();}
 	public boolean isNormalCube() {return F;}
 	public boolean isOpaqueCube() {return F;}
 	public boolean func_149730_j() {return F;}
@@ -510,11 +544,29 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		return this;
 	}
 	
-	public boolean mActLikeWeb = F;
-	public BlockBaseFluid setWeb() {
-		mActLikeWeb = T;
+	// ================= СРЕДА GT6 (BUG-120): вязкость + плавание — канал МОДА, а не движка =================
+	// Движок 26.1 знает ровно две среды для тел — теги воды и лавы (Entity:251 создаёт трекеры
+	// Set.of(FluidTags.WATER, LAVA), отбор EntityFluidInteraction:121-129); третьей среды не существует.
+	// Физика NeoForge FluidType в 26.1.2 движком НЕ вызывается — их вставка потеряна при переписывании
+	// физики жидкостей Mojang (пометка в самом патче: LivingEntity.java.patch:53 «prior to 26.1-snapshot-8
+	// we called our patched in method…») и объявлена на снос (NeoForge PR #2435). Поэтому среда нефтей —
+	// собственный канал, выросший из setWeb() Грега (ориг. Loader_Blocks:165-166): движковый приём «блок
+	// замедляет того, кто внутри» (makeStuckInBlock — умножает ход и гасит инерцию, Entity.move:728-734,
+	// снимает урон падения, Entity:2874), обобщённый из «паутина: да/нет» в ШКАЛУ вязкости, плюс подъём при
+	// зажатом прыжке — свой аналог движкового подъёма пловца (LivingEntity:3115-3129, jumping → импульс вверх).
+	// Требование пользователя 2026-08-11 (BUG-120, сверх 1:1 — оригинал давал только web у двух тяжёлых):
+	// во ВСЕХ нефтях плаваешь; лёгкие — как вода, тяжёлые — вязнешь. В список воды нефть не входит намеренно:
+	// тег water тащит чужую семантику (туман, лодки, тушение огня в горючей жидкости, зомби→утопленник,
+	// губка/бетон/тростник) — среда мода не трогает ни один водный механизм движка.
+	public float mMediumDragH = 0, mMediumDragV = 0, mMediumRise = 0;
+	/** aDragH/aDragV — множители хода по горизонтали/вертикали (1 = не мешает, паутина = 0.25/0.05);
+	 *  aRise — импульс всплытия за тик при зажатом прыжке (0 = всплытия нет). */
+	public BlockBaseFluid setMedium(double aDragH, double aDragV, double aRise) {
+		mMediumDragH = (float)aDragH; mMediumDragV = (float)aDragV; mMediumRise = (float)aRise;
 		return this;
 	}
+	/** 1.7.10 setWeb: вязнуть как в паутине — константы ванильного WebBlock (WebBlock.java:28,33), без всплытия. */
+	public BlockBaseFluid setWeb() {return setMedium(0.25, 0.05, 0);}
 	
 	public boolean set(Level aWorld, int aX, int aY, int aZ, int aMeta, boolean aBlockUpdate) {
 		if (WD.block(aWorld, aX, aY, aZ) != this) return WD.set(aWorld, aX, aY, aZ, this, aMeta, aBlockUpdate ? 3 : 2);
@@ -526,7 +578,32 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// было onEntityCollidedWithBlock(World,x,y,z,Entity) -> BlockBehaviour.entityInside(BlockState,Level,BlockPos,Entity,InsideBlockEffectApplier,boolean) [BlockBehaviour.java:360];
 	// новые параметры effectApplier/isPrecise (батч damage-эффектов, F16-концепция без 1.7.10-аналога) не используются - GT6 их и раньше не применял.
 	@Override protected void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity, net.minecraft.world.entity.InsideBlockEffectApplier aEffectApplier, boolean aIsPrecise) {
-		if (mActLikeWeb) aEntity.makeStuckInBlock(defaultBlockState(), new Vec3(0.25, 0.05F, 0.25)); // было setInWeb() — 1.7.10 Entity.setInWeb() удалён; Entity.makeStuckInBlock(BlockState,Vec3) — тот же приём/константа, что ванильный WebBlock.entityInside (WebBlock.java:28,33)
+		if (mMediumDragH > 0) {
+			aEntity.makeStuckInBlock(defaultBlockState(), new Vec3(mMediumDragH, mMediumDragV, mMediumDragH)); // было setInWeb() — 1.7.10 Entity.setInWeb() удалён; тот же приём, что ванильный WebBlock.entityInside (WebBlock.java:28,33)
+			// Всплытие: строго ОДИН импульс за тик — от клетки, где стоят ноги (aPos == blockPosition()); без этого
+			// гейта тело, пересекающее две клетки столба, получало бы двойной толчок. Инерцию move гасит сам
+			// (Entity.move:734), поэтому скорость всплытия = (импульс − гравитация) × mMediumDragV, стабильная.
+			if (mMediumRise > 0 && aEntity instanceof LivingEntity tLiving && tLiving.isJumping() && aPos.equals(aEntity.blockPosition())) {
+				// ПЛАВНОСТЬ У ПОВЕРХНОСТИ (живой тест пользователя 2026-08-11): полный импульс у поверхности
+				// ВЫБРАСЫВАЛ тело из жидкости, тик снаружи ронял обратно — дрожь микропрыжками с частотой тиков.
+				// Импульс масштабируется ПОГРУЖЕНИЕМ (архимедово плечо): глубже блока — полный, у поверхности —
+				// убывает до равновесия «импульс = гравитация» (глубина ног ≈ 0.08/mMediumRise), где тело плавно
+				// зависает в поверхности, не выпрыгивая. Побочно верно и для лужи: мелкий слой не поднимает.
+				double tDepth;
+				if (aWorld.getBlockState(aPos.above()).getBlock() == this) tDepth = 1;
+				else tDepth = Math.max(0, Math.min(1, aPos.getY() + (aState.getValue(FLUID_META) + 1) / 8.0 - aEntity.getY()));
+				if (tDepth > 0) {
+					if (tLiving.horizontalCollision) {
+						// ВЫХОД НА БЕРЕГ (живой тест 2026-08-11: равновесное всплытие не даёт запрыгнуть на кромку).
+						// Приём движка для воды 1:1 — LivingEntity.jumpOutOfFluid:2604-2609: упёрся в стену в жидкости
+						// → вертикаль 0.3. Толчок ставится ДО замедлителя, который умножит весь ход на mMediumDragV
+						// (Entity.move:730), поэтому делится на него — на выходе ровно движковые 0.3 в любой нефти.
+						net.minecraft.world.phys.Vec3 tV = tLiving.getDeltaMovement();
+						tLiving.setDeltaMovement(tV.x, 0.3F / mMediumDragV, tV.z);
+					} else tLiving.addDeltaMovement(new Vec3(0, mMediumRise * tDepth, 0));
+				}
+			}
+		}
 		if (!aWorld.isClientSide() && !mEffectsBathing.isEmpty() && aEntity instanceof LivingEntity && !UT.Entities.isWearingFullChemHazmat((LivingEntity)aEntity)) {
 			for (int[] tEffects : mEffectsBathing) UT.Entities.applyPotion(aEntity, tEffects[0], tEffects[1], tEffects[2], F);
 		}

@@ -97,6 +97,16 @@ if (project.hasProperty('gt6probes')) {
     // (@EventBusSubscriber), production-код о них не знает ни строчкой.
     sourceSets.main.java.srcDir('src/probes/java')     // живые стенды (ручная проверка в работающей игре)
     sourceSets.main.java.srcDir('src/gametest/java')   // GameTest'ы движка (runGameTestServer)
+    // ВНЕШНИЕ СТЕНДЫ — лежат в рабочей среде проекта, ВНЕ репозитория мода, и потому не попадают ни в
+    // историю, ни в поставку. Подключаются только под -Pgt6probes, как и остальная оснастка; если каталога
+    // нет (репозиторий клонирован отдельно), сборка идёт без них.
+    file('../stands').listFiles()?.each { d ->
+        File tSrc = new File(d, 'java')
+        if (tSrc.isDirectory()) {
+            sourceSets.main.java.srcDir(tSrc)
+            logger.lifecycle("[gt6probes] внешний стенд подключён: ${d.name}")
+        }
+    }
     ['runClient', 'runData', 'runServer', 'runGameTestServer'].each { rn ->
         tasks.matching { it.name == rn }.configureEach { it.jvmArgs('-Dgt6.probes=true')
             // проброс параметров стендов (напр. -Pgt6.probeArgs=gt6.drainprobe.kind=1)
