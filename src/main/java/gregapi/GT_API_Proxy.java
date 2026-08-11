@@ -342,6 +342,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public void onProxyBeforeServerStarted(Abstract_Mod aMod, ServerStartedEvent aEvent) {
 		SERVER_TIME = 0;
 		MultiTileEntityRegistry.onServerStart();
+		// Сторож паспорта ролей жидкостей (BUG-120): роль «своя жидкость в теге среды» обещана данными
+		// (tags/fluid/water.json) — рассинхрон кода и файла обязан кричать в лог, а не молча убивать плавание.
+		gregapi.block.fluid.BlockFluidBaseGT.validateEngineRoles();
 	}
 	// [GT6-STACKPROBE] снята (§9, уборка BUG-041 — воспроизведение уборки параллельного агента, чей staged-вариант
 	// содержал регресс тик-машины 045 и не был взят; сама уборка — его работа, здесь только повторена).

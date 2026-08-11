@@ -84,7 +84,10 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		// MODCOMPAT-002 (река/океан/болото невидимы на карте): цвет — из того же Material.water (waterColor), которым
 		// блок и объявлен; в 1.7.10 он приходил сам (`recompSrc/.../Block.java:232-235`), в neo дефолт = MapColor.NONE.
 		// Мост и приём общие со всеми иерархиями — gregapi.block.BlockBase.mapColorOf.
-		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aName)))), Material.water), Material.water, aFluid);
+		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aName)))), Material.water), Material.water, aFluid,
+			// ПАСПОРТ РОЛИ (предок): большие воды ОБЯЗАНЫ быть ванильной водой по тождеству — иначе мертвы
+			// 47 веток waterlogging и заморозка (движок отбирает их is(Fluids.WATER), хука нет).
+			gregapi.block.fluid.BlockFluidBaseGT.EngineRole.VANILLA_WATER);
 		mFluid = aFluid;
 		quantaPerBlock = (aFlowsOut ? 8 : 3);
 		quantaPerBlockFloat = quantaPerBlock;
@@ -231,19 +234,11 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		return -1;
 	}
 
-	// F5-B (реверс воды mc26): движок применяет погружение/утопление/плавание/push/current/туман ТОЛЬКО через
-	// getFluidState(pos), и entity отслеживает лишь fluid в теге FluidTags.WATER (EntityFluidInteraction:251 +
-	// getTrackerFor:124 — иначе tracker=null и никаких эффектов; isInWater = isInFluid(FluidTags.WATER)). Мировая
-	// вода GT6 (Ocean/River/Swamp, Material.water) отдаёт vanilla WATER FluidState по своим квантам (meta 0 =
-	// source полный; meta>0 = flowing, amount = quantaPerBlock-meta) → игрок ведёт себя как в воде mc26, включая
-	// весь vanilla-рендер воды. Кванты и разлив остаются на GT6 (updateFlow); vanilla fluid-tick НЕ планируется
-	// (блок не LiquidBlock, scheduleTick — только свой block-tick), двойного разлива нет.
-	@Override protected net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState aState) {
-		int tMeta = aState.getValue(FLUID_META);
-		if (tMeta <= 0) return net.minecraft.world.level.material.Fluids.WATER.defaultFluidState();
-		int tAmount = net.minecraft.util.Mth.clamp(quantaPerBlock - tMeta, 1, 8);
-		return net.minecraft.world.level.material.Fluids.FLOWING_WATER.getFlowing(tAmount, false);
-	}
+	// F5-B (реверс воды mc26): ответ движку «здесь ванильная вода по квантам» даёт ПАСПОРТ РОЛИ в предке
+	// (BlockFluidBaseGT.getFluidState, роль VANILLA_WATER — передана конструктором). Кванты и разлив остаются
+	// на GT6 (updateFlow); vanilla fluid-tick НЕ планируется, двойного разлива нет. Здесь — только шкала квант
+	// семьи Classic: мета 0 = полный ИСТОЧНИК, значение убывает с метой.
+	@Override protected int quantaOfState(net.minecraft.world.level.block.state.BlockState aState) {return quantaPerBlock - aState.getValue(FLUID_META);}
 
 	// F5-B block-контракт: getRenderShape=INVISIBLE / getShape=empty / getCollisionShape / propagatesSkylightDown=false
 	// НАСЛЕДУЮТСЯ от настоящего LiquidBlock (:82,:115,:136,:147) — 4 ручные копии эталона сняты при репарентинге

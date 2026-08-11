@@ -102,7 +102,10 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		// MODCOMPAT-002 (все 10 мировых жидкостей GT6 невидимы на карте): цвет на карте — тот же 1.7.10-дефолт
 		// «из материала» (`recompSrc/.../Block.java:232-235`), в neo его надо задать явно (дефолт = MapColor.NONE
 		// = «пропустить блок»). Мост и источник — общие с остальными иерархиями, см. BlockBase.mapColorOf.
-		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(FL.gas(aFluid) ? 1F : 30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), aMaterial), aMaterial, aFluid);
+		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(FL.gas(aFluid) ? 1F : 30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), aMaterial), aMaterial, aFluid,
+			// ПАСПОРТ РОЛИ (предок): материал воды/лавы 1.7.10 → своя жидкость в теге среды (геотермальная);
+			// прочие (нефти MaterialOil, газ MaterialGas) → движковой жидкости нет, среда — канал setMedium.
+			aMaterial == Material.water || aMaterial == Material.lava ? EngineRole.OWN_TAGGED_FLUID : EngineRole.NO_ENGINE_FLUID);
 		mFluid = aFluid;
 		mAmountPerQuanta = aAmountPerQuanta;
 		gregapi.GT_API.deferItemInit(() -> mQuanta = FL.make(mFluid, mAmountPerQuanta));
@@ -406,65 +409,13 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		return WD.meta(aWorld, aX, aY, aZ)+1;
 	}
 
-	// F5-B2 (реверс воды mc26, content-жидкости): погружение/утопление/push через getFluidState (см. BlockWaterlike). Движок
-	// применяет эффекты только для fluid в теге FluidTags.WATER/LAVA (EntityFluidInteraction). Content-жидкость с материалом
-	// water/lava → vanilla WATER/LAVA FluidState по квантам (meta+1=1..8, полный=8) → игрок тонет/горит в ней. Прочие
-	// (газ/материал-специфика) → super=EMPTY: у них GT6-эффекты (bathing/breathing/drown) уже в entityInside/onHeadInside.
-	/**
-	 * ЧЕМ КЛЕТКА ЯВЛЯЕТСЯ ДЛЯ ДВИЖКА. Ровно одна роль: <b>среда для сущностей</b> (погружение, дыхание, течение,
-	 * туман). Движок отбирает среду ТОЛЬКО по тегам жидкости — {@code Entity:251} создаёт трекер с
-	 * {@code FluidTags.WATER}/{@code LAVA}, отбор идёт {@code fluid.is(tag)} ({@code EntityFluidInteraction:121-129}).
-	 * Поэтому: материал воды/лавы 1.7.10 → соответствующая ванильная жидкость (иначе в геотермальной воде нельзя
-	 * плавать); у всех прочих (нефти, газ) среды в 1.7.10 не было — движковой жидкости у них нет.
-	 * <p><b>ПОЧЕМУ НЕ {@code super} (BUG-119).</b> После репарентинга предка на {@code LiquidBlock} (шов F5,
-	 * {@code b483f6b6}) {@code super.getFluidState} перестал быть пустым: он отдаёт {@code fluid.getSource(false)}
-	 * ({@code LiquidBlock:125-127}) — «здесь полная жидкость» при ЛЮБОМ количестве квант. Комментарий, стоявший
-	 * здесь до правки, утверждал обратное («прочие → super = EMPTY») и был верен ровно до смены предка. Цена
-	 * ошибки — ДВЕ геометрии на клетку: движок рисовал жидкость по этому ответу ({@code SectionCompiler:99-104})
-	 * поверх кванта-модели блока ({@code :106}), слоем 8/9 ≈ 0.889 независимо от квант ({@code FlowingFluid:469}),
-	 * и растёкшаяся плёнка выглядела почти полным блоком. Замер стенда {@code gt6fluidlab} до правки: 90 клеток
-	 * с двумя геометриями, наш слой ≈0.14 под движковым 0.888.
-	 * <p>Пустая жидкость у нефтей и газа возвращает и второе 1:1-свойство: движковое удаление клетки
-	 * ({@code Level.removeBlock:295-298} ставит {@code fluidState.createLegacyBlock()}) снова оставляет ВОЗДУХ,
-	 * как {@code setBlockToAir} в 1.7.10, а не клетку той же нефти.
-	 */
-	@Override protected net.minecraft.world.level.material.FluidState getFluidState(BlockState aState) {
-		gregapi.block.Material tMat = getMaterial();
-		if (tMat != gregapi.block.Material.water && tMat != gregapi.block.Material.lava) return net.minecraft.world.level.material.Fluids.EMPTY.defaultFluidState();
-		// СРЕДА ЕСТЬ — но это СОБСТВЕННАЯ жидкость GT6, а не подмена ванильной (BUG-119, вторая половина).
-		// Принадлежность к воде/лаве выражается ТЕГОМ (data/minecraft/tags/fluid/water.json), и движок отбирает
-		// среду именно по тегу (EntityFluidInteraction:121-129) — плавать в геотермальной воде можно и так.
-		// Подмена же тянула за собой ЧУЖОЕ поведение: клетка объявляла себя ванильной водой, и потому
-		// (1) её рисовал ванильный водяной рендер ПОВЕРХ кванта-модели, (2) движковое удаление оставляло на её
-		// месте настоящий minecraft:water (Level.removeBlock:295-298 ставит fluidState.createLegacyBlock()),
-		// (3) соседняя ванильная вода считала её СВОИМ источником при любом количестве квант, тогда как в 1.7.10
-		// источником была только полная клетка (BlockLiquid:99 + BlockDynamicLiquid:72-79).
-		// Уровень жидкости выводится из ЕДИНСТВЕННОЙ меры — квант блока: полная клетка → источник, иначе поток.
-		net.minecraft.world.level.material.Fluid tOwn = mFluid;
-		if (!(tOwn instanceof net.minecraft.world.level.material.FlowingFluid tFlowing))
-			return (tMat == gregapi.block.Material.water ? net.minecraft.world.level.material.Fluids.WATER : net.minecraft.world.level.material.Fluids.LAVA).defaultFluidState();
-		int tQuanta = (int) gregapi.util.UT.Code.bind(1, quantaPerBlock, aState.getValue(FLUID_META) + 1);
-		if (tQuanta >= quantaPerBlock) return tFlowing.getSource(F);
-		return tFlowing.getFlowing(tQuanta, F);
-	}
+	// ЧЕМ КЛЕТКА ЯВЛЯЕТСЯ ДЛЯ ДВИЖКА (getFluidState) и ЧЕМ РИСУЕТСЯ (getRenderShape) — решает ПАСПОРТ РОЛИ
+	// в предке (BlockFluidBaseGT, BUG-119/120): роль этой семьи выводится из материала 1.7.10 и передаётся
+	// в super конструктором. Здесь остаётся только шкала квант семьи Finite: мета растёт с количеством.
+	@Override protected int quantaOfState(BlockState aState) {return aState.getValue(FLUID_META) + 1;}
 
 	// F5-B block-контракт (проходимость): материал-жидкость/газ (масла/кислоты/газы) — ПРОХОДИМЫ, нельзя стоять на них
 	// как на твёрдом блоке (оригинал: Forge BlockFluidBase — коллайдера нет, canDisplace). getCollisionShape/getShape=empty.
-	// В ОТЛИЧИЕ от BlockWaterlike здесь НЕТ getRenderShape=INVISIBLE: материал-жидкость РИСУЕТСЯ своей текстурой через
-	// GT6BlockModel (IRenderedBlock getTexture→renderTexture→FluidGT), а не через vanilla FluidRenderer.
-	// F5 surface-B: после репарентинга предка на LiquidBlock его INVISIBLE (:136) перекрывается обратно в MODEL —
-	// различие «чем рисуется» между иерархиями живёт в потомках, как и в 1.7.10 (у водоподобных — ванильная вода,
-	// здесь — своя текстура жидкости).
-	/** ЕДИНОЕ ПРАВИЛО ВИДА (BUG-119): <b>блок рисует свою модель тогда и только тогда, когда движок не рисует
-	 *  его как жидкость.</b> Движок исполняет ОБА ответа блока независимо — жидкостный проход по {@code FluidState}
-	 *  ({@code SectionCompiler:99-104}) и модельный по {@code RenderShape.MODEL} ({@code :106}); объявить оба
-	 *  значит нарисовать клетку дважды. Правило выражено ЗДЕСЬ, в одном месте, и выводится из того же ответа,
-	 *  которым блок объявляет среду — второго признака «рисовать ли модель» в порту не заводится.
-	 *  Отсюда: нефти и газ (среды нет) рисует модель GT6 кванта-высотой; геотермальная вода (среда есть, своя
-	 *  жидкость GT6 со своей текстурой) рисуется движковым жидкостным проходом по уровню, выведенному из квант. */
-	@Override protected net.minecraft.world.level.block.RenderShape getRenderShape(BlockState aState) {
-		return getFluidState(aState).isEmpty() ? net.minecraft.world.level.block.RenderShape.MODEL : net.minecraft.world.level.block.RenderShape.INVISIBLE;
-	}
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 
