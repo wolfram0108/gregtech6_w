@@ -60,7 +60,5 @@ public class TileEntityLoaderStub extends TileEntityBase01Root {
 	@Override protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
 		if (mLoadedNBT == null) {super.saveAdditional(output); return;}
 		output.store(mLoadedNBT);
-		// [GT6-MTEAUDIT] DIAG BUG-057 — снять при уборке фазы
-		if (probeFlag("gt6mteauditprobe.flag")) OUT.println("[GT6-MTEAUDIT-DIAG] стаб персистирован БЕЗ потерь @" + getBlockPos().toShortString());
 	}
 }

@@ -1,4 +1,0 @@
-# ФИКСТУРА для ParityDiffTest (имитация дампа порта). id=2 отличается, id=3 отсутствует, id=4 лишний
-1,Iron,SOLID,56
-2,Copper,SOLID,63
-4,Tin,SOLID,119

@@ -260,35 +260,47 @@ Gradle JVM heap, set to 6 GB in `gradle.properties`) — and it takes a while. L
 
 Client and server deliberately use separate game directories, so both can run at once.
 
-There is one opt-in build flag, `-Pgt6probes`, which adds the in-engine verification probes
-(`src/probes/java`) to the build. Without it they are not compiled at all and cannot end up in a
-player's jar; with it, `runClient`/`runServer` can run automated in-game checks.
+There is one opt-in build flag, `-Pgt6probes`, which attaches the in-engine verification stands.
+Those live **outside this repository**, in the developer's working environment (`../stands`); the
+repository contains none of them, so they cannot end up in a player's jar. Given that directory and
+the flag, `runClient`/`runServer` can run automated in-game checks.
 
 ## Tests
 
-```bash
-./gradlew test    # 13 tests, no external data required
-```
+**This repository contains no tests.** Verification is instrumentation, not product: the tests, the
+in-engine stands and the comparison against the original all live beside the repository, in the
+developer's working environment (`../stands/`), and the repository holds only the mod and what it takes
+to build and ship it.
 
-The tests boot the mod inside a headless server and then exercise it: the material and prefix
-generator, recipe matching, a machine running a full processing cycle tick by tick, energy transfer,
-content registration, and the round trip of items through save and load.
+If that directory is present, `./gradlew test` picks the tests up automatically (`build.gradle` attaches
+`../stands/*/test-java`) and runs eight checks: the mod boots in a headless server, the material and
+prefix generator, recipe matching, material fluids, energy transfer and a machine running a full
+processing cycle tick by tick all work at measured levels, and two previously recurring defects — the
+thin collider of GT6 bars and the "zero stack with a remembered type" — stay fixed. Without the
+directory there is nothing to run, and `./gradlew build` simply builds the mod.
+
+What each check asserts, the measured thresholds behind it, and the rule for adding a new one are
+documented with the tests themselves.
 
 ## Development tooling
 
-Two things in this repository are **tools from the porting effort**, not part of the product. They
-are off by default, cost nothing when unused, and exist because a port occasionally has to ask
-questions an ordinary mod never does.
+Three things are **verification tooling**, not part of the product, and this repository holds
+**neither**: they live beside it, in the developer's working environment (`../stands`). Instruments do
+not ship with the mod. Both attach on demand only and cost nothing when unused.
 
 | Tool | What it answers | How to run |
 |---|---|---|
 | **Comparison against the original** | "does the mod still generate exactly what GregTech 6 on 1.7.10 generated?" — materials, items, ore dictionary, recipes, worldgen, names | `./gradlew test -Pgt6.oracle=<path>` |
-| **In-engine probes** | "what does the real engine path actually do here?" — drives real interactions and judges object identity, not pixels | `./gradlew runClient -Pgt6probes` |
+| **In-engine stands** | "what does the real engine path actually do here?" — drives real interactions and judges object identity, not pixels | `./gradlew runClient -Pgt6probes` |
+| **Product tests** | "is the mod alive and are its subsystems working at measured levels?" — eight checks inside a headless server | `./gradlew test` |
 
 The comparison needs dumps taken from a running 1.7.10 installation — roughly 200 MB, produced by a
-separate dumper, and deliberately **not** part of this repository. Without the path, those checks
-simply do not run: the port phase is finished, so the question is asked while investigating a
-difference, not on every build.
+separate dumper, and deliberately **not** part of this repository; that same path also attaches the
+comparison's own code. Without the path, those checks simply do not run: the port phase is finished,
+so the question is asked while investigating a difference, not on every build.
+
+If you cloned only this repository, both tools are absent — that is not a defect: the product does
+not need them, and `gradlew build` builds the mod on its own.
 
 ## Continuous integration
 
@@ -297,13 +309,11 @@ of this repository. It runs **on demand** (Actions → CI → Run workflow) and 
 requests; it deliberately does not fire on every commit, because the build is run locally anyway and
 a duplicate would only add noise.
 
-Four jobs, in parallel:
+Two jobs, in parallel:
 
 | Job | Checks |
 |---|---|
 | **Build** | produces the mod jar, then verifies the jar contains no compile-only stand-in classes for packages the engine owns — shipping those makes the mod fail to load, and it happened once — and that unfinished-work markers left in the source are not accumulating |
-| **Stands** | compiles the in-engine probes, which the normal build does not touch and would otherwise silently rot |
-| **Tests** | runs the test suite and compares the set of failures against a recorded baseline: an unknown failure fails the build, and a suite that did not run at all also fails (a test runner that quietly starts nothing must not read as success) |
 | **Server** | boots a dedicated server and requires it to reach "Done". No unit test can see this: they bring a server up without a world and without the client side, while what actually broke three times in a month was the dedicated server specifically |
 
 Tagging a release (`v<version>`) builds the jar, verifies the tag matches the version in

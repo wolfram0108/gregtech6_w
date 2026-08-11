@@ -91,15 +91,13 @@ tasks.named('test').configure { dependsOn stripCompatMirror }
 // (запуски оркестратора: `gradlew runClient -Pgt6probes …`). Обычный запуск игрока — пробы/автовход-в-мир
 // мертвы, даже если флаг случайно остался (класс сбоя «стухший флаг портит игровой запуск» закрыт механически).
 if (project.hasProperty('gt6probes')) {
-    // ОСНАСТКА ПРОВЕРКИ — два каталога, подключаемые одной строкой каждый (тот же приём, что
-    // src/compat-mirror/java выше). В обычной сборке (jar игрока) они НЕ КОМПИЛИРУЮТСЯ ВООБЩЕ — их нет
-    // в classpath, значит нет и в jar. Обе оснастки автономны: подписываются на события сами
-    // (@EventBusSubscriber), production-код о них не знает ни строчкой.
-    sourceSets.main.java.srcDir('src/probes/java')     // живые стенды (ручная проверка в работающей игре)
-    sourceSets.main.java.srcDir('src/gametest/java')   // GameTest'ы движка (runGameTestServer)
-    // ВНЕШНИЕ СТЕНДЫ — лежат в рабочей среде проекта, ВНЕ репозитория мода, и потому не попадают ни в
-    // историю, ни в поставку. Подключаются только под -Pgt6probes, как и остальная оснастка; если каталога
-    // нет (репозиторий клонирован отдельно), сборка идёт без них.
+    // ОСНАСТКА ПРОВЕРКИ ЖИВЁТ ВНЕ РЕПОЗИТОРИЯ — целиком, без исключений (решение владельца 2026-08-11:
+    // «стендов внутри репозитория больше не будет никогда»). Стенд — прибор, а не продукт: он не уходит
+    // наружу, не попадает ни в историю, ни в jar, и подключается только здесь, под -Pgt6probes.
+    // Лежит в рабочей среде рядом с репозиторием: ../stands/<лаборатория>/java. Каталога нет (репозиторий
+    // склонирован сам по себе) — сборка идёт без оснастки, продукту она не нужна.
+    // Стенды автономны: подписываются на события сами (@EventBusSubscriber), production-код о них не
+    // знает ни строчкой.
     file('../stands').listFiles()?.each { d ->
         File tSrc = new File(d, 'java')
         if (tSrc.isDirectory()) {
@@ -112,7 +110,7 @@ if (project.hasProperty('gt6probes')) {
             // проброс параметров стендов (напр. -Pgt6.probeArgs=gt6.drainprobe.kind=1)
             if (project.hasProperty('gt6.probeArgs')) project.property('gt6.probeArgs').toString().split(',').each { a -> it.jvmArgs('-D' + a) } }
     }
-    logger.lifecycle("[gt6probes] оснастка проверки ВКЛЮЧЕНА: стенды + GameTest'ы (-Dgt6.probes=true)")
+    logger.lifecycle("[gt6probes] оснастка проверки ВКЛЮЧЕНА: внешние стенды (-Dgt6.probes=true)")
 }
 
 // PRODUCTION-JAR: та же JPMS split-package беда, что в run*/test, но БЕЗ фикса ⇒ ломала запуск в реальном
@@ -341,6 +339,25 @@ dependencies {
 //     gradlew test                         -> проверки мода самого по себе (эталон не нужен)
 //     gradlew test -Pgt6.oracle=<путь>     -> плюс сверка с дампами живого 1.7.10
 def oraclePath = project.findProperty('gt6.oracle')
+
+// ТЕСТЫ ТОЖЕ ВНЕ РЕПОЗИТОРИЯ (решение владельца 2026-08-12: «все тесты и стенды за пределами
+// репозитория; в репозитории только согласованный минимум»). Проверка — прибор, а не продукт, и это
+// касается и JUnit-тестов, и машинерии сверки с оригиналом. Обе лежат рядом: ../stands/*/test-java
+// (+ test-resources) и подключаются, если каталог есть. Клонировал только репозиторий — тестов нет
+// вовсе, и `gradlew build` просто собирает мод.
+//
+// Сверка с оригиналом дополнительно закрыта тегом `parity`: её код подключается так же, но сами
+// проверки идут только с путём к дампам живого 1.7.10 (см. блок test ниже).
+file('../stands').listFiles()?.each { d ->
+    File tSrc = new File(d, 'test-java')
+    File tRes = new File(d, 'test-resources')
+    if (tSrc.isDirectory()) {
+        sourceSets.test.java.srcDir(tSrc)
+        logger.lifecycle("[test] внешние тесты подключены: ${d.name}")
+    }
+    if (tRes.isDirectory()) sourceSets.test.resources.srcDir(tRes)
+}
+
 test {
     useJUnitPlatform {
         if (!oraclePath) excludeTags 'parity'

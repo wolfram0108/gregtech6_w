@@ -64,8 +64,6 @@ public class TE_Behavior_Energy_Converter extends TE_Behavior {
 	
 	public boolean doConversion(long aTimer, BlockEntity aEmitter, byte aSide, byte aMode, boolean aNegative) {
 		long tOutput = UT.Code.units(mStorage.mEnergy, mEnergyIN.mRec, mEnergyOUT.mRec, F);
-		// [GT6-ENERGYCHAINPROBE] §6.3 DIAG выход конвертера (только EU-эмиттеры, чтобы не заспамить) — снять при уборке фазы Ф3.1
-		if (mEnergyOUT.mType == gregapi.data.TD.Energy.EU && gregapi.data.CS.probeFlag("gt6energychainprobe.flag") && mStorage.mEnergy > 0) gregapi.data.CS.OUT.println("[GT6-ENERGYCHAINPROBE] DIAG-DOCONV " + aEmitter.getClass().getSimpleName() + " storage=" + mStorage.mEnergy + " tOutput=" + tOutput + " OUTmin/rec/max=" + mEnergyOUT.mMin + "/" + mEnergyOUT.mRec + "/" + mEnergyOUT.mMax + " side=" + aSide);
 		if (aMode > 0) tOutput = Math.min(tOutput, UT.Code.units(mEnergyOUT.mMax, 16, 16-aMode, F));
 		mCanEmitEnergy = (tOutput >= mEnergyOUT.mMin);
 		mFast = (tOutput > mEnergyOUT.mRec);

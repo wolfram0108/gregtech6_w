@@ -1291,10 +1291,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				// FastUtils throws a NullPointer instead of a CME...
 				if (tIterations <= 0) e.printStackTrace(ERR);
 			}
-			// [GT6-SYNCDIAG] BUG-094 (снять при уборке фазы): сервер — сколько sync-BE разослано при отправке чанка
-			if (probeFlag("gt6syncdiag.flag")) OUT.println("[GT6-SYNCDIAG-SRV] чанк " + tChunk.getPos() + " -> " + aEvent.getPlayer().getScoreboardName()
-				+ ": BE в чанке=" + tChunk.getBlockEntities().size() + " sync-разослано=" + tSet.size());
-		} else if (probeFlag("gt6syncdiag.flag")) OUT.println("[GT6-SYNCDIAG-SRV] чанк " + tChunk.getPos() + ": BE в чанке=0 (после reconstruct)");
+		}
 	}
 	
 	// Правка №1 (BUG-106): МИГРАЦИЯ старых миров — сущности руды/породы (материал в mMetaData) переливаются в
