@@ -27,7 +27,7 @@ import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.RedstoneTorchBlock;
 import net.minecraft.world.level.block.FireBlock;
 
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 import gregapi.GT_API;
 import gregapi.block.ItemBlockBase;
 import gregapi.code.*;
@@ -67,7 +67,7 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.EventHooks;
@@ -416,14 +416,14 @@ public class ST {
 	 * {@code DeferredRegister.findItem(...)} (1.7.10 {@code GameRegistry.findItem} мех-переименован в
 	 * несуществующий метод). Реальный neo-путь: {@code BuiltInRegistries.ITEM} — {@code DefaultedRegistry<Item>}
 	 * (сверено: neo-decompiled/net/minecraft/core/registries/BuiltInRegistries.java:185). Его
-	 * {@code getValue(Identifier)} переопределён {@code @NonNull} и вернул бы AIR для неизвестного
-	 * (DefaultedRegistry.java:12) — поэтому сперва {@code containsKey(Identifier)} (Registry.java:104),
-	 * чтобы сохранить оригинальное «null для неизвестного» 1:1. {@code Identifier.fromNamespaceAndPath}
+	 * {@code getValue(ResourceLocation)} переопределён {@code @NonNull} и вернул бы AIR для неизвестного
+	 * (DefaultedRegistry.java:12) — поэтому сперва {@code containsKey(ResourceLocation)} (Registry.java:104),
+	 * чтобы сохранить оригинальное «null для неизвестного» 1:1. {@code ResourceLocation.fromNamespaceAndPath}
 	 * — сверено (используется в DeferredRegister.java:230).
 	 */
 	public static Item findItem(String aModID, String aName) {
 		if (aModID == null || aName == null) return null;
-		Identifier tID = Identifier.fromNamespaceAndPath(aModID, aName);
+		ResourceLocation tID = ResourceLocation.fromNamespaceAndPath(aModID, aName);
 		return BuiltInRegistries.ITEM.containsKey(tID) ? BuiltInRegistries.ITEM.getValue(tID) : null;
 	}
 	/** F12/R7: ЕДИНАЯ точка «item по (modId,name) → ItemStack размера aSize» (был выдуманный
@@ -1258,7 +1258,7 @@ public class ST {
 		// neoforge/common/extensions/IItemStackExtension.java:62, ItemStack implements его — ItemStack.java:103),
 		// проходит через FurnaceFuelBurnTimeEvent — та же роль "кастомный fuel регистрируется модами", что и
 		// 1.7.10 GameRegistry.getFuelValue.
-		net.minecraft.server.MinecraftServer tFuelServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+		net.minecraft.server.MinecraftServer tFuelServer = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
 		long rFuelValue = tFuelServer == null ? 0 : aStack.getBurnTime(null, tFuelServer.fuelValues());
 		if (rFuelValue > 0) return rFuelValue;
 		Item tItem = item_(aStack);
@@ -1397,7 +1397,7 @@ public class ST {
 				// см. generateOneVanillaLoot) → взвешенная выдача таблицы (LootParams(CHEST)) — vanilla-часть
 				// data-driven; GT-добавки уже инъектированы в таблицу пулом gregtech6:<категория> (shim-ChestGenHooks).
 				// Дефолт SIMPLE_DUNGEON для неизвестного имени.
-				net.minecraft.server.MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+				net.minecraft.server.MinecraftServer tServer = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
 				if (tServer != null) {
 					net.minecraft.server.level.ServerLevel tLevel = tServer.overworld();
 					if (tLevel != null) {

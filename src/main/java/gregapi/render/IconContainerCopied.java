@@ -27,7 +27,7 @@ import static gregapi.data.CS.*;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * @author Gregorius Techneticies
@@ -49,7 +49,7 @@ public class IconContainerCopied implements IIconContainer {
 	}
 
 	@Override
-	public Identifier getIcon(int aRenderPass) {
+	public ResourceLocation getIcon(int aRenderPass) {
 		// F3 block-icon-data: было mBlock.getIcon(mSide, mMeta) — Block.getIcon удалён (neo baked-model рендер);
 		// спрайт грани копируемого блока резолвим из его baked BlockStateModel (централизованный §3
 		// GT6QuadBuilder.resolveBlockFaceIcon), mMeta учтён (Flattening-варианты). catch→RENDERING_ERROR — модели могут быть не готовы вне рендер-тика.
@@ -76,7 +76,7 @@ public class IconContainerCopied implements IIconContainer {
 	}
 
 	@Override
-	public Identifier getTextureFile() {
+	public ResourceLocation getTextureFile() {
 		return TextureAtlas.LOCATION_BLOCKS;
 	}
 

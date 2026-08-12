@@ -25,16 +25,16 @@ package gregtech;
 
 import gregapi.util.WD;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.fml.loading.FMLEnvironment;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.FMLPreInitializationEvent;
 import gregapi.api.FMLInitializationEvent;
 import gregapi.api.FMLPostInitializationEvent;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 import gregapi.api.Abstract_Mod;
 import gregapi.api.Abstract_Proxy;
 import gregapi.block.prefixblock.PrefixBlockItem;
@@ -311,7 +311,7 @@ public class GT6_Main extends Abstract_Mod {
 		
 		new Loader_Late_Items_And_Blocks().run();
 		
-		if (MD.IC2C.mLoaded) for (int i = 0; i <= 6; i++) {final var tIMC = ST.save(UT.NBT.makeInt("Key", i), "Value", IL.IC2_Machine.get(1)); net.neoforged.fml.InterModComms.sendTo(MD.IC2C.mID, "generatorDrop", () -> tIMC);}// было FMLInterModComms.sendMessage (1.7.10 FML, удалён -> neo InterModComms.sendTo; i вынесен в effectively-final tIMC для лямбды)
+		if (MD.IC2C.mLoaded) for (int i = 0; i <= 6; i++) {final var tIMC = ST.save(UT.NBT.makeInt("Key", i), "Value", IL.IC2_Machine.get(1)); net.minecraftforge.fml.InterModComms.sendTo(MD.IC2C.mID, "generatorDrop", () -> tIMC);}// было FMLInterModComms.sendMessage (1.7.10 FML, удалён -> neo InterModComms.sendTo; i вынесен в effectively-final tIMC для лямбды)
 		
 		ArrayListNoNulls<Runnable> tList = new ArrayListNoNulls<>(F,
 			new Loader_MultiTileEntities(),
@@ -530,7 +530,7 @@ public class GT6_Main extends Abstract_Mod {
 	}
 
 	@Override
-	public void onModServerStarting2(net.neoforged.neoforge.event.server.ServerStartingEvent aEvent) {
+	public void onModServerStarting2(net.minecraftforge.event.server.ServerStartingEvent aEvent) {
 		for (FluidContainerData tData : FluidContainerRegistry.getRegisteredFluidContainerData()) if (tData.filledContainer.getItem() == Items.POTION && ST.meta_(tData.filledContainer) == 0) {tData.fluid.setAmount(0); break;}
 		
 		
@@ -598,7 +598,7 @@ public class GT6_Main extends Abstract_Mod {
 	
 	@Override
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void onModServerStopping2(net.neoforged.neoforge.event.server.ServerStoppingEvent aEvent) {
+	public void onModServerStopping2(net.minecraftforge.event.server.ServerStoppingEvent aEvent) {
 		try {
 		if (D1 || ORD != System.out) {
 			ORD.println("*");
@@ -679,7 +679,7 @@ public class GT6_Main extends Abstract_Mod {
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
 	
-	@Override public void onModServerStarted2(net.neoforged.neoforge.event.server.ServerStartedEvent aEvent) {
+	@Override public void onModServerStarted2(net.minecraftforge.event.server.ServerStartedEvent aEvent) {
 		// F11-smelting, ВОЗВРАТ 1.7.10-СОСТОЯНИЯ СПИСКА ПЛАВОК.
 		// Оригинал (gregtech6/.../GT_API_Proxy_Client.java:525-529) делал это при входе в мир: список плавок там
 		// был ВАНИЛЬНЫМ singleton'ом, то есть уже содержал ванильные рецепты, а GT6 доливал свои — и печь GT6
@@ -705,7 +705,7 @@ public class GT6_Main extends Abstract_Mod {
 		OUT.println("[GT6] F11-smelting: ванильных плавок перенесено в реестр GT6: " + tImported
 			+ "; витрина печи (JEI) наполнена: " + tShown + " рецептов");
 	}
-	@Override public void onModServerStopped2(net.neoforged.neoforge.event.server.ServerStoppedEvent aEvent) {/**/}
+	@Override public void onModServerStopped2(net.minecraftforge.event.server.ServerStoppedEvent aEvent) {/**/}
 
 	@Override public String getModID() {return MD.GT.mID;}
 	@Override public String getModName() {return MD.GT.mName;}
@@ -713,11 +713,11 @@ public class GT6_Main extends Abstract_Mod {
 	@Override public Abstract_Proxy getProxy() {return gt_proxy;}
 
 	// F12: подписаны в конструкторе (замена @Mod.EventHandler). PreInit→FMLConstructModEvent, Init→FMLCommonSetupEvent, PostInit→FMLLoadCompleteEvent (маппинг как gregapi.GT_API_Post).
-	public void onPreLoad         (FMLConstructModEvent aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
+	public void onPreLoad         (FMLConstructModEvent aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
 	public void onLoad            (FMLCommonSetupEvent  aEvent) {onModInit(new gregapi.api.FMLInitializationEvent());}
 	public void onPostLoad        (FMLLoadCompleteEvent aEvent) {onModPostInit(new gregapi.api.FMLPostInitializationEvent());}
-	public void onServerStarting  (net.neoforged.neoforge.event.server.ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
-	public void onServerStarted   (net.neoforged.neoforge.event.server.ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
-	public void onServerStopping  (net.neoforged.neoforge.event.server.ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
-	public void onServerStopped   (net.neoforged.neoforge.event.server.ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
+	public void onServerStarting  (net.minecraftforge.event.server.ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
+	public void onServerStarted   (net.minecraftforge.event.server.ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
+	public void onServerStopping  (net.minecraftforge.event.server.ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
+	public void onServerStopped   (net.minecraftforge.event.server.ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
 }

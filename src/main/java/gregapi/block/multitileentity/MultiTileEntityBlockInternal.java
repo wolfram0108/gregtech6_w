@@ -64,7 +64,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		// (`gregtech6/.../MultiTileEntityBlockInternal.java:53`), а 1.7.10 брал цвет из материала сам
 		// (`recompSrc/.../Block.java:232-235`) → блок был цвета железа. В neo дефолт = MapColor.NONE, задаём явно
 		// из ТОГО ЖЕ материала тем же мостом, что остальные иерархии (см. BlockBase.mapColorOf).
-		super(gregapi.block.BlockBase.mapColorOf(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), gregapi.block.Material.anvil));
+		super(gregapi.block.BlockBase.mapColorOf(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), gregapi.block.Material.anvil));
 	}
 
 	/** F-bounds (тот же приём, что BlockBase.java/MultiTileEntityBlock.java): последние заданные bounds, neo bounds

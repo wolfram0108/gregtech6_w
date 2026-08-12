@@ -27,7 +27,7 @@ import gregapi.GT_API;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.MD;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 
@@ -37,9 +37,9 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  *
  * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): {@code IIconRegister} (атлас-стежка 1.7.10) удалён в 26.1.2.
- * {@link #registerIcons(Object)} больше не стежёт атлас — строит {@link Identifier} прямо из
+ * {@link #registerIcons(Object)} больше не стежёт атлас — строит {@link ResourceLocation} прямо из
  * {@code mMod:materialicons/mName} (тот же путь, что раньше шёл в registerIcon(String)), форвард-
- * совместимо с будущим {@code Material(Identifier)} (decisions/F3-render.md §2.3).
+ * совместимо с будущим {@code Material(ResourceLocation)} (decisions/F3-render.md §2.3).
  */
 public class TextureSet {
 	public static final List<TextureSet> INSTANCES_ITEM = new ArrayListNoNulls<>();
@@ -88,7 +88,7 @@ public class TextureSet {
 
 	public static class TextureSetIconItem implements IIconContainer, Runnable {
 		private final String mMod, mName;
-		private Identifier mIconColored, mIconOverlay;
+		private ResourceLocation mIconColored, mIconOverlay;
 
 		public TextureSetIconItem(String aMod, String aName) {
 			mName = aName;
@@ -97,9 +97,9 @@ public class TextureSet {
 		}
 
 		@Override
-		public Identifier getIcon(int aRenderPass) {
+		public ResourceLocation getIcon(int aRenderPass) {
 			// F3-render: 1.7.10 icon-load-фаза (sItemIconload) в neo не портирована → ленивое построение при первом рендере.
-			// try/catch: getIcon на render-потоке НЕ должен кидать (Identifier.parse бросает на невалидном пути) → null-safe (putFace пропустит).
+			// try/catch: getIcon на render-потоке НЕ должен кидать (ResourceLocation.parse бросает на невалидном пути) → null-safe (putFace пропустит).
 			if (mIconColored == null) try { registerIcons(null); } catch (Throwable e) {/* невалидный путь → остаётся null */}
 			return aRenderPass == 0 ? mIconColored : mIconOverlay;
 		}
@@ -115,16 +115,16 @@ public class TextureSet {
 		}
 
 		@Override
-		public Identifier getTextureFile() {
+		public ResourceLocation getTextureFile() {
 			return TextureAtlas.LOCATION_ITEMS;
 		}
 
 		@Override
 		public void registerIcons(Object aIconRegister) {
-			// F3 superseded-render: было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую.
-			// lowercase: neo Identifier.assertValidPath запрещает заглавные (имена наборов/файлов GT6 были заглавные, файлы уже переименованы).
-			mIconColored = Identifier.parse((mMod+":materialicons/"+mName).toLowerCase(java.util.Locale.ROOT));
-			mIconOverlay = Identifier.parse((mMod+":materialicons/"+mName+"_OVERLAY").toLowerCase(java.util.Locale.ROOT));
+			// F3 superseded-render: было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — ResourceLocation строим напрямую.
+			// lowercase: neo ResourceLocation.assertValidPath запрещает заглавные (имена наборов/файлов GT6 были заглавные, файлы уже переименованы).
+			mIconColored = ResourceLocation.parse((mMod+":materialicons/"+mName).toLowerCase(java.util.Locale.ROOT));
+			mIconOverlay = ResourceLocation.parse((mMod+":materialicons/"+mName+"_OVERLAY").toLowerCase(java.util.Locale.ROOT));
 		}
 
 		@Override
@@ -145,7 +145,7 @@ public class TextureSet {
 
 	public static class TextureSetIconBlock implements IIconContainer, Runnable {
 		private final String mMod, mName;
-		private Identifier mIconColored, mIconOverlay;
+		private ResourceLocation mIconColored, mIconOverlay;
 
 		public TextureSetIconBlock(String aMod, String aName) {
 			mName = aName;
@@ -154,9 +154,9 @@ public class TextureSet {
 		}
 
 		@Override
-		public Identifier getIcon(int aRenderPass) {
+		public ResourceLocation getIcon(int aRenderPass) {
 			// F3-render: 1.7.10 icon-load-фаза (sBlockIconload) в neo не портирована → ленивое построение при первом рендере.
-			// try/catch: getIcon на render-потоке НЕ должен кидать (Identifier.parse бросает на невалидном пути) → null-safe (putFace пропустит).
+			// try/catch: getIcon на render-потоке НЕ должен кидать (ResourceLocation.parse бросает на невалидном пути) → null-safe (putFace пропустит).
 			if (mIconColored == null) try { registerIcons(null); } catch (Throwable e) {/* невалидный путь → остаётся null */}
 			return aRenderPass == 0 ? mIconColored : mIconOverlay;
 		}
@@ -172,16 +172,16 @@ public class TextureSet {
 		}
 
 		@Override
-		public Identifier getTextureFile() {
+		public ResourceLocation getTextureFile() {
 			return TextureAtlas.LOCATION_BLOCKS;
 		}
 
 		@Override
 		public void registerIcons(Object aIconRegister) {
-			// F3 superseded-render: было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую.
-			// lowercase: neo Identifier.assertValidPath запрещает заглавные (имена наборов/файлов GT6 были заглавные, файлы уже переименованы).
-			mIconColored = Identifier.parse((mMod+":materialicons/"+mName).toLowerCase(java.util.Locale.ROOT));
-			mIconOverlay = Identifier.parse((mMod+":materialicons/"+mName+"_OVERLAY").toLowerCase(java.util.Locale.ROOT));
+			// F3 superseded-render: было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — ResourceLocation строим напрямую.
+			// lowercase: neo ResourceLocation.assertValidPath запрещает заглавные (имена наборов/файлов GT6 были заглавные, файлы уже переименованы).
+			mIconColored = ResourceLocation.parse((mMod+":materialicons/"+mName).toLowerCase(java.util.Locale.ROOT));
+			mIconOverlay = ResourceLocation.parse((mMod+":materialicons/"+mName+"_OVERLAY").toLowerCase(java.util.Locale.ROOT));
 		}
 
 		@Override

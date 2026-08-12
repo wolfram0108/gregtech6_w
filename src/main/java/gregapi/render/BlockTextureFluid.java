@@ -28,10 +28,10 @@ import static gregapi.data.CS.*;
 import gregapi.data.FL;
 import gregapi.fluid.FluidGT;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.IFluidTank;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.IFluidTank;
 
 /**
  * @author Gregorius Techneticies
@@ -47,7 +47,7 @@ import net.neoforged.neoforge.fluids.IFluidTank;
 public class BlockTextureFluid implements ITexture {
 	private final boolean mAllowAlpha;
 	private final int mLuminosity;
-	private final Identifier mIcon;
+	private final ResourceLocation mIcon;
 
 	/**
 	 *  DO NOT MANIPULATE THE VALUES INSIDE THIS ARRAY!!!
@@ -84,7 +84,7 @@ public class BlockTextureFluid implements ITexture {
 		// mLuminosity = aFluid.getFluid().getLuminosity(aFluid) * 16; иконка/цвет — из блока жидкости
 		// либо Fluid.getStillIcon()/getColor(). Всё это теперь хранит FluidGT (см. class javadoc).
 		FluidGT tGT = (aFluid == null) ? null : FluidGT.of(aFluid.getFluid());
-		Identifier tIcon;
+		ResourceLocation tIcon;
 		if (aFluid == null) {
 			mLuminosity = 0;
 			mRGBa = UNCOLOURED;
@@ -106,7 +106,7 @@ public class BlockTextureFluid implements ITexture {
 		// отсутствует и в ресурсах 1.7.10 — там рисовалась missing-шахматкой; резолвер GT6QuadBuilder такие
 		// квады ПРОПУСКАЕТ → жидкость невидима) → water_still, красится mRGBa. Конструктор бежит только под
 		// CODE_CLIENT (все get()-фабрики гейтованы) — client-класс GT6QuadBuilder сервером не линкуется.
-		if (tIcon != null && GT6QuadBuilder.resolveSprite(tIcon) == null) tIcon = Identifier.withDefaultNamespace("block/water_still");
+		if (tIcon != null && GT6QuadBuilder.resolveSprite(tIcon) == null) tIcon = ResourceLocation.withDefaultNamespace("block/water_still");
 		mIcon = tIcon;
 		mAllowAlpha = aAllowAlpha;
 	}
@@ -125,13 +125,13 @@ public class BlockTextureFluid implements ITexture {
 		this(aFluid, F);
 	}
 
-	private Identifier getIcon(int aSide) {
+	private ResourceLocation getIcon(int aSide) {
 		return mIcon;
 	}
 
 	/** Иконка жидкости для fluid-меша ({@link RendererBlockFluid}): GT6-жидкость несёт ОДНУ текстуру
 	 *  (FL.create → CustomIcon("fluids/имя")) — still==flowing, как Forge Fluid.setIcons(still) 1.7.10. */
-	public Identifier icon() {return mIcon;}
+	public ResourceLocation icon() {return mIcon;}
 
 	@Override
 	public void renderXPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {

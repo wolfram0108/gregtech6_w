@@ -31,9 +31,9 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.event.TickEvent.ClientTickEvent;
+import net.minecraftforge.registries.DeferredRegister;
 import gregapi.api.Abstract_Mod;
 import gregapi.block.IBlockBase;
 import gregapi.block.ToolCompat;
@@ -75,7 +75,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
 import net.neoforged.neoforge.client.event.TextureAtlasStitchedEvent;
-import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -130,7 +130,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	public boolean openRecipeGui(String aNameNEI) {return gregapi.jei.GT6_JEI_Plugin.showRecipeCategory(aNameNEI);}
 
 	@Override
-	public void registerClientModels(net.neoforged.bus.api.IEventBus aModBus) {
+	public void registerClientModels(net.minecraftforge.eventbus.api.IEventBus aModBus) {
 		aModBus.addListener(this::onRegisterBlockStateModels);
 		aModBus.addListener(this::onModifyBakingResult);
 		aModBus.addListener(this::onRegisterFluidModels);
@@ -149,11 +149,11 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// Следствие до этой правки: крашеные блоки (BlockColored — цветное стекло и родня) рисовались без цвета,
 	// а биом-оттенок скопированных текстур не работал (метка отложенности в BlockTextureCopied:36 — тот же
 	// канал; слово-маркер здесь НЕ пишем дословно, иначе счётчик меток считает упоминание за метку).
-	private void onRegisterBlockTints(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.BlockTintSources aEvent) {
+	private void onRegisterBlockTints(net.minecraftforge.client.event.RegisterColorHandlersEvent.BlockTintSources aEvent) {
 		java.util.List<net.minecraft.client.color.block.BlockTintSource> tSource = java.util.List.of(new GT6BlockTint());
 		java.util.List<net.minecraft.world.level.block.Block> tBlocks = new java.util.ArrayList<>();
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
-			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			net.minecraft.resources.ResourceLocation tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
 			if (tID == null || !(tID.getNamespace().equals(gregapi.data.CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
 			if (tBlock instanceof gregapi.block.IBlock) tBlocks.add(tBlock);
 		}
@@ -171,7 +171,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			return tBlock.getRenderColor(tMeta);
 		}
 		/** Вопрос с миром — 1.7.10 {@code colorMultiplier(world,x,y,z)} (биом-оттенок и прочее позиционное). */
-		@Override public int colorInWorld(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.client.renderer.block.BlockAndTintGetter aLevel, net.minecraft.core.BlockPos aPos) {
+		@Override public int colorInWorld(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockAndTintGetter aLevel, net.minecraft.core.BlockPos aPos) {
 			return aState.getBlock() instanceof gregapi.block.IBlock tBlock ? tBlock.colorMultiplier(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : color(aState);
 		}
 	}
@@ -206,7 +206,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 
 	// F3-render: MTE-блоки рисует BER (не baked — регион не отдаёт MTE-BE, см. MultiTileEntityBER). Один generic BER на весь
 	// MTE_TYPE (централизация 1:1). Руды/стабы отсеиваются внутри BER (гейт MultiTileEntityBlock+IRenderedBlockObject).
-	private void onRegisterBlockEntityRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers aEvent) {
+	private void onRegisterBlockEntityRenderers(net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers aEvent) {
 		if (gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE != null)
 			aEvent.registerBlockEntityRenderer(gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE, gregapi.render.MultiTileEntityBER::new);
 		// F12-entity: рендерер падающего мета-блока — 1:1 оригинала (:126 registerEntityRenderingHandler(
@@ -225,15 +225,15 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// → onDestroyedByPlayer) и ставит её на Render-потоке → WD.te вечно отдавал призрак сломанного BE → его
 	// ITileEntitySurface-opaque гасил грань соседнего блока до СЛЕДУЮЩЕГО слома (U3 «блуждающая дыра» стен).
 	// Зеркало той же строки оригинала на клиентском тике — жизненный цикл восстановлен 1:1.
-	@net.neoforged.bus.api.SubscribeEvent
-	public void onClientTickFreeLastBrokenTileEntity(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+	@net.minecraftforge.eventbus.api.SubscribeEvent
+	public void onClientTickFreeLastBrokenTileEntity(net.minecraftforge.event.TickEvent.ClientTickEvent.Post aEvent) {
 		gregapi.data.CS.LAST_BROKEN_TILEENTITY.set(null);
 	}
 
 	// НАДЁЖНЫЙ МОСТ синка (пара к буферу NetworkHandler.PENDING): каждый клиент-тик доигрываем координатные
 	// GT6-пакеты, обогнавшие свой чанк при логине (иначе worldgen-MTE стартовой области оставались без клиент-BE).
-	@net.neoforged.bus.api.SubscribeEvent
-	public void onPendingPackets(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+	@net.minecraftforge.eventbus.api.SubscribeEvent
+	public void onPendingPackets(net.minecraftforge.event.TickEvent.ClientTickEvent.Post aEvent) {
 		gregapi.network.NetworkHandler.processPending(Minecraft.getInstance().level);
 	}
 
@@ -241,7 +241,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// ресурсов (ClientLanguage.loadFrom) — вместе с ней исчезают имена GT6, дописанные ранее. Здесь центр доливается
 	// целиком: событие приходит и на первой загрузке, и на каждой перезагрузке (F3+T, смена ресурспака, смена языка).
 	// Сам долив и его обоснование — gregapi.lang.LanguageHandler.injectIntoEngine().
-	@net.neoforged.bus.api.SubscribeEvent
+	@net.minecraftforge.eventbus.api.SubscribeEvent
 	public void onClientResourcesLoaded(net.neoforged.neoforge.client.event.ClientResourceLoadFinishedEvent aEvent) {
 		int tInjected = gregapi.lang.LanguageHandler.injectIntoEngine();
 		if (tInjected > 0) gregapi.data.CS.OUT.println("GT6 localization: имён GT6 дописано в таблицу движка: " + tInjected + (aEvent.isInitial() ? " (первая загрузка ресурсов)" : " (перезагрузка ресурсов)"));
@@ -283,8 +283,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// → getRenderPasses=0 → MTE-блок НЕ рисуется (прозрачный: камни/палки/флюид-источники/машины). Серверная реконструкция
 	// (server-tick) клиент не покрывает — у него ОТДЕЛЬНЫЕ BE. Здесь дренируем клиентскую очередь стабов на client-tick,
 	// заменяя их настоящими MTE (единый механизм GT6WorldgenFeature.reconstructChunkMTEs, теперь Level-обобщённый).
-	@net.neoforged.bus.api.SubscribeEvent
-	public void onClientMTEReconstruct(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+	@net.minecraftforge.eventbus.api.SubscribeEvent
+	public void onClientMTEReconstruct(net.minecraftforge.event.TickEvent.ClientTickEvent.Post aEvent) {
 		if (Minecraft.getInstance().level == null) return;
 		try { gregapi.worldgen.GT6WorldgenFeature.drainClientStubs(); } catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 	}
@@ -295,12 +295,12 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// рендерит жидкости через FluidModel.Unbaked(still, flow, overlay, tintSource) на RegisterFluidModelsEvent (mod-bus).
 	// Централизация 1:1 (одна модель-фабрика на весь мод, как GT6BlockModel/GT6ItemModel). Fallback на воду при null-иконе.
 	private void onRegisterFluidModels(net.neoforged.neoforge.client.event.RegisterFluidModelsEvent aEvent) {
-		net.minecraft.client.resources.model.sprite.Material tWaterStill = new net.minecraft.client.resources.model.sprite.Material(net.minecraft.resources.Identifier.withDefaultNamespace("block/water_still"));
-		net.minecraft.client.resources.model.sprite.Material tWaterFlow  = new net.minecraft.client.resources.model.sprite.Material(net.minecraft.resources.Identifier.withDefaultNamespace("block/water_flow"));
+		net.minecraft.client.resources.model.sprite.Material tWaterStill = new net.minecraft.client.resources.model.sprite.Material(net.minecraft.resources.ResourceLocation.withDefaultNamespace("block/water_still"));
+		net.minecraft.client.resources.model.sprite.Material tWaterFlow  = new net.minecraft.client.resources.model.sprite.Material(net.minecraft.resources.ResourceLocation.withDefaultNamespace("block/water_flow"));
 		int tCount = 0;
 		for (gregapi.fluid.FluidGT tF : gregapi.fluid.FluidGT.BY_NAME.values()) {
 			try {
-				net.minecraft.resources.Identifier tTex = null;
+				net.minecraft.resources.ResourceLocation tTex = null;
 				try { if (tF.mTexture != null) tTex = tF.mTexture.getIcon(0); } catch (Throwable e) {/* невалидная икона → fallback вода */}
 				net.minecraft.client.resources.model.sprite.Material tStill = tTex != null ? new net.minecraft.client.resources.model.sprite.Material(tTex) : tWaterStill;
 				net.minecraft.client.resources.model.sprite.Material tFlow  = tTex != null ? tStill : tWaterFlow;
@@ -322,12 +322,12 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 
 	// Рантайм-инъекция: каждому BlockState каждого GT6-блока-рендера назначаем единственный GT6BlockModel
 	// (модель динамическая — читает блок/позицию/состояние в collectParts, один инстанс на весь мод).
-	private void onModifyBakingResult(net.neoforged.neoforge.client.event.ModelEvent.ModifyBakingResult aEvent) {
+	private void onModifyBakingResult(net.minecraftforge.client.event.ModelEvent.ModifyBakingResult aEvent) {
 		// Правка №3 (BUG-106): атлас/модели пересозданы — старые спрайты в кэшах геометрии мертвы, сбрасываем.
 		gregapi.render.GT6ItemModel.invalidateCaches();
 		net.minecraft.client.resources.model.sprite.Material.Baked tParticle = new net.minecraft.client.resources.model.sprite.Material.Baked(
 			// sprite-id БЕЗ "blocks/" префикса: atlas-source (assets/minecraft/atlases/blocks.json) кладёт textures/blocks/** с prefix:"" → gregtech:system/error (как GT6BlockModel:56). Прежний "blocks/system/error" не находился → "Failed to retrieve texture".
-			aEvent.getTextureGetter().apply(net.minecraft.resources.Identifier.fromNamespaceAndPath("gregtech", "system/error")), false);
+			aEvent.getTextureGetter().apply(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("gregtech", "system/error")), false);
 		java.util.Map<net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.dispatch.BlockStateModel> tMap = aEvent.getBakingResult().blockStateModels();
 		int tCount = 0;
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
@@ -343,10 +343,10 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		// F3-render: ЕДИНАЯ item-модель ВСЕМ GT6-предметам (включая block-предметы: их item-форму рисует GT6ItemModel через
 		// buildInventoryQuads = renderInventoryBlock). Прежде block-предметы пропускались → у них не было item-модели → пурпур.
 		gregapi.render.GT6ItemModel tItemModel = new gregapi.render.GT6ItemModel();
-		java.util.Map<net.minecraft.resources.Identifier, net.minecraft.client.renderer.item.ItemModel> tItemMap = aEvent.getBakingResult().itemStackModels();
+		java.util.Map<net.minecraft.resources.ResourceLocation, net.minecraft.client.renderer.item.ItemModel> tItemMap = aEvent.getBakingResult().itemStackModels();
 		int tItemCount = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
-			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+			net.minecraft.resources.ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null || !isGregNamespace(tKey.getNamespace())) continue;
 			// block-предмет инжектим, если его блок — IRenderedBlock ИЛИ рельс (BlockBaseRail: GT6ItemModel рисует ему плоскую
 			// straight-иконку); прочие block-предметы оставляем дефолтной модели блока.
@@ -360,7 +360,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		gregapi.render.GT6BlockModel tEmptyModel = new gregapi.render.GT6BlockModel(tParticle);
 		int tEmptyCount = 0;
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
-			net.minecraft.resources.Identifier tBKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			net.minecraft.resources.ResourceLocation tBKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
 			if (tBKey == null || !isGregNamespace(tBKey.getNamespace())) continue;
 			for (net.minecraft.world.level.block.state.BlockState tState : tBlock.getStateDefinition().getPossibleStates()) {
 				if (tMap.containsKey(tState) || tState.getRenderShape() != net.minecraft.world.level.block.RenderShape.INVISIBLE) continue;
@@ -385,7 +385,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	}
 
 	@Override
-	public java.io.InputStream getResourceStream(net.minecraft.resources.Identifier aRL) {
+	public java.io.InputStream getResourceStream(net.minecraft.resources.ResourceLocation aRL) {
 		try {
 			java.util.Optional<net.minecraft.server.packs.resources.Resource> tRes = Minecraft.getInstance().getResourceManager().getResource(aRL);
 			if (tRes.isPresent()) return tRes.get().open();
@@ -505,14 +505,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	 *  СВОЙ экземпляр {@code BeaconMenu} по сетевому пакету, серверная подмена слота его не достигает — без
 	 *  этого плеча клиентское предсказание клика отвергало бы стек, который сервер принимает. */
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onScreenOpening(net.neoforged.neoforge.client.event.ScreenEvent.Opening aEvent) {
+	public void onScreenOpening(net.minecraftforge.client.event.ScreenEvent.Opening aEvent) {
 		if (aEvent.getNewScreen() instanceof net.minecraft.client.gui.screens.inventory.BeaconScreen tScreen) GT_API_Proxy.wrapBeaconPaymentSlot(tScreen.getMenu());
 	}
 
 	/**
 	 * 1.7.10 {@code net.minecraftforge.event.entity.player.ItemTooltipEvent}
 	 * держал tooltip как {@code List<String>} напрямую в поле {@code toolTip}; neo-эквивалент
-	 * {@code net.neoforged.neoforge.event.entity.player.ItemTooltipEvent} (`neoforge-decompiled/.../ItemTooltipEvent.java:16-70`)
+	 * {@code net.minecraftforge.event.entity.player.ItemTooltipEvent} (`neoforge-decompiled/.../ItemTooltipEvent.java:16-70`)
 	 * — геттеры, а список типизирован {@code List<Component>} (движко-шов, т.к. рендер текста теперь
 	 * дерево {@code Component}, не сырая строка). Вся GT6-логика ниже (300+ строк) оперирует СТРОКАМИ
 	 * (конкатенация {@code LH.Chat.*} §-кодов, {@code replaceAll}, и т.д.) и передаётся в

@@ -35,7 +35,7 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;
 import static gregapi.data.OP.rockGt;

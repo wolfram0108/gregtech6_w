@@ -47,7 +47,7 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.phys.AABB;
@@ -261,8 +261,8 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	}
 	
 	@Override
-	public ItemUseAnimation getItemUseAction(MultiTileEntityItemInternal aItem, ItemStack aStack) {
-		return ItemUseAnimation.EAT;
+	public UseAnim getItemUseAction(MultiTileEntityItemInternal aItem, ItemStack aStack) {
+		return UseAnim.EAT;
 	}
 	
 	@Override

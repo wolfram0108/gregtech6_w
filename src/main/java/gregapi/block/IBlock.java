@@ -50,7 +50,7 @@ public interface IBlock {
 	 *  ⛔ Носитель канала обязан ОТВЕЧАТЬ, а не бросать: до 2026-07-29 шесть классов бросали здесь
 	 *  {@code UnsupportedOperationException}, и оба центра-потребителя были обвешаны {@code catch (Throwable)} —
 	 *  исключение в живом канале, замазанное на стороне читателя. */
-	default net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {return null;}
+	default net.minecraft.resources.ResourceLocation getIcon(int aSide, int aMeta) {return null;}
 	/** F3 block-render-color (пара к {@link #getIcon}): 1.7.10 {@code Block.getRenderColor(meta)} — тинт блока,
 	 *  и {@code colorMultiplier(world,x,y,z)} — тинт per-позиция. Оба удалены из neo Block. Дефолт — белый
 	 *  ({@code 0x00ffffff} = «без собственного тинта», ровно как отдавал ванильный Block). */

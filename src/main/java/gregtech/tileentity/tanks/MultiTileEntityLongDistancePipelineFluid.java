@@ -55,9 +55,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 import gregapi.fluid.FluidTankInfo;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09FacingSingle implements IFluidHandler, ITileEntityCanDelegate, IMTE_HasMultiBlockMachineRelevantData, ITileEntityMachineBlockUpdateable, ITileEntitySwitchableOnOff {
 	protected boolean mStopped = F;

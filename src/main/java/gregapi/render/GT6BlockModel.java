@@ -27,7 +27,7 @@ import java.util.List;
 
 import com.mojang.serialization.MapCodec;
 
-import net.minecraft.client.renderer.block.BlockAndTintGetter;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.resources.model.ModelBaker;
@@ -35,7 +35,7 @@ import net.minecraft.client.resources.model.SimpleModelWrapper;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.client.resources.model.sprite.MaterialBaker;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -60,7 +60,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 	GT6BlockModel(MaterialBaker aBaker) {
 		net.minecraft.client.resources.model.ModelDebugName tDebugName = getClass()::toString;
 		// sprite-id без blocks/ префикса: atlas-source (assets/minecraft/atlases/blocks.json) кладёт textures/blocks/** с prefix:"" → gregtech:system/error.
-		mParticle = aBaker.get(new Material(Identifier.fromNamespaceAndPath("gregtech", "system/error")), tDebugName);
+		mParticle = aBaker.get(new Material(ResourceLocation.fromNamespaceAndPath("gregtech", "system/error")), tDebugName);
 		mOwner = null;
 	}
 
@@ -109,7 +109,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 				}
 			}
 			if (tCrackQB.isEmpty()) {
-				net.minecraft.resources.Identifier tCrackIcon = null;
+				net.minecraft.resources.ResourceLocation tCrackIcon = null;
 				try {
 					if (mOwner instanceof IRenderedCross tCross) tCrackIcon = tCross.getCrossIcon(null, 0, 0, 0); // контракт aWorld==null + мета в aX (см. buildInventoryQuads)
 					else if (mOwner instanceof gregapi.block.IBlock tGT6) tCrackIcon = tGT6.getIcon(1, 0);
@@ -296,7 +296,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 	public Material.Baked particleMaterial() {
 		try {
 			if (mOwner instanceof gregapi.block.IBlock tGT6) {
-				net.minecraft.resources.Identifier tIcon = tGT6.getIcon(1, 0);
+				net.minecraft.resources.ResourceLocation tIcon = tGT6.getIcon(1, 0);
 				if (tIcon == null) tIcon = gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);
 				if (tIcon != null) {
 					net.minecraft.client.renderer.texture.TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon);
@@ -316,7 +316,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 	public Material.Baked particleMaterial(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState) {
 		try {
 			Block tBlock = aState.getBlock();
-			Identifier tIcon = null;
+			ResourceLocation tIcon = null;
 			// Один вопрос по КОНТРАКТУ вместо двух веток по иерархиям: канал getIcon есть у BlockBase-иерархии,
 			// у ОБЕИХ жидкостных (BlockBaseFluid — своя текстура, BlockWaterlike — ванильная вода) и у MTE.
 			// Прежняя развилка покрывала BlockBase и BlockBaseFluid, а водоподобные (река/океан/болото) не
@@ -338,7 +338,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 
 	/** Unbaked-тип модели для регистрации (RegisterBlockStateModels). blockstate-JSON: {@code {"model":{"type":"gregtech:gt6block"}}}. */
 	public record Unbaked() implements CustomUnbakedBlockStateModel {
-		public static final Identifier ID = Identifier.fromNamespaceAndPath("gregtech", "gt6block");
+		public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("gregtech", "gt6block");
 		public static final MapCodec<Unbaked> MAP_CODEC = MapCodec.unit(Unbaked::new);
 		@Override public BlockStateModel bake(ModelBaker aBaker) {return new GT6BlockModel(aBaker.materials());}
 		@Override public void resolveDependencies(Resolver aResolver) {}

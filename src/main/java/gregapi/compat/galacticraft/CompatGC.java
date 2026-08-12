@@ -25,7 +25,7 @@ package gregapi.compat.galacticraft;
 
 import static gregapi.data.CS.*;
 
-import net.neoforged.bus.api.SubscribeEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import gregapi.compat.CompatBase;
 import gregapi.worldgen.GT6WorldGenerator;
 import micdoodle8.mods.galacticraft.api.event.wgen.GCCoreEventPopulate;

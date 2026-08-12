@@ -41,7 +41,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.AchievementList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
-import net.neoforged.neoforge.event.level.BlockEvent;
+import net.minecraftforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 import java.util.List;

@@ -72,13 +72,13 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 	// Do not change these 7 Functions. Just keep them this way.
 	// F-mod-lifecycle: onModPreInit/onModInit/onModPostInit принимают GT6-mirror FML-события (носители фазы, gregapi.api),
 	// а не neo-события — оборачиваем neo-событие в mirror перед вызовом (тот же приём, что GT_API.onPreLoad/onLoad/onPostLoad).
-	@cpw.mods.fml.common.Mod.EventHandler public final void onPreLoad           (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent    aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onPreLoad           (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent    aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onLoad              (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent       aEvent) {onModInit(new gregapi.api.FMLInitializationEvent());}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onPostLoad          (net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent   aEvent) {onModPostInit(new gregapi.api.FMLPostInitializationEvent());}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarting    (net.neoforged.neoforge.event.server.ServerStartingEvent       aEvent) {onModServerStarting(aEvent);}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarted     (net.neoforged.neoforge.event.server.ServerStartedEvent        aEvent) {onModServerStarted(aEvent);}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopping    (net.neoforged.neoforge.event.server.ServerStoppingEvent       aEvent) {onModServerStopping(aEvent);}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopped     (net.neoforged.neoforge.event.server.ServerStoppedEvent        aEvent) {onModServerStopped(aEvent);}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarting    (net.minecraftforge.event.server.ServerStartingEvent       aEvent) {onModServerStarting(aEvent);}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarted     (net.minecraftforge.event.server.ServerStartedEvent        aEvent) {onModServerStarted(aEvent);}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopping    (net.minecraftforge.event.server.ServerStoppingEvent       aEvent) {onModServerStopping(aEvent);}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopped     (net.minecraftforge.event.server.ServerStoppedEvent        aEvent) {onModServerStopped(aEvent);}
 	
 	// @Override
 	public void onModPreInit2(gregapi.api.FMLPreInitializationEvent aEvent) {
@@ -225,22 +225,22 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 	}
 	
 	@Override
-	public void onModServerStarting2(net.neoforged.neoforge.event.server.ServerStartingEvent aEvent) {
+	public void onModServerStarting2(net.minecraftforge.event.server.ServerStartingEvent aEvent) {
 		// Insert your ServerStarting Code here and not above
 	}
 	
 	@Override
-	public void onModServerStarted2(net.neoforged.neoforge.event.server.ServerStartedEvent aEvent) {
+	public void onModServerStarted2(net.minecraftforge.event.server.ServerStartedEvent aEvent) {
 		// Insert your ServerStarted Code here and not above
 	}
 	
 	@Override
-	public void onModServerStopping2(net.neoforged.neoforge.event.server.ServerStoppingEvent aEvent) {
+	public void onModServerStopping2(net.minecraftforge.event.server.ServerStoppingEvent aEvent) {
 		// Insert your ServerStopping Code here and not above
 	}
 	
 	@Override
-	public void onModServerStopped2(net.neoforged.neoforge.event.server.ServerStoppedEvent aEvent) {
+	public void onModServerStopped2(net.minecraftforge.event.server.ServerStoppedEvent aEvent) {
 		// Insert your ServerStopped Code here and not above
 	}
 }

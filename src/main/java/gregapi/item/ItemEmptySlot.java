@@ -32,7 +32,7 @@ import gregapi.old.Textures;
 import gregapi.util.ST;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * @author Gregorius Techneticies
@@ -45,7 +45,7 @@ public class ItemEmptySlot extends ItemBase {
 	}
 	
 	@Override
-	public Identifier getIconFromDamage(int aMeta) {
+	public ResourceLocation getIconFromDamage(int aMeta) {
 		return Textures.ItemIcons.VOID.getIcon(0);
 	}
 

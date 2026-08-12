@@ -29,17 +29,17 @@ import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.geometry.BakedQuad;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.geometry.QuadCollection;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
+import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
 
 /**
  * F3-render (client): «захватывающий рендерер» — объект {@code aRenderer}, который передаётся в GT6-цепочку
- * {@code ITexture.renderXPos(aRenderer,...) -> ITexture.Util.renderSide(side, Identifier, RGBa, ..., aRenderer, ...)}.
+ * {@code ITexture.renderXPos(aRenderer,...) -> ITexture.Util.renderSide(side, ResourceLocation, RGBa, ..., aRenderer, ...)}.
  * Вместо immediate-mode отрисовки (1.7.10 Tessellator, удалён) он АККУМУЛИРУЕТ per-side full-cube {@link BakedQuad}
  * для декларативной модели {@link GT6BlockModel}. Так GT6 per-side texture-логика (какая иконка/цвет на сторону —
  * решает сам ITexture/тайл) переиспользуется 1:1; переписан только «нарисуй сейчас» → «дай мне quad».
@@ -83,7 +83,7 @@ public final class GT6QuadBuilder {
 	/** Диаг П9: имена спрайтов, НЕ найденных в атласе (грань молча пропускалась → «частично без текстур»). */
 	public static final java.util.Set<String> sMissingSprites = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
-	public void putFace(byte aSide, Identifier aIcon, short[] aRGBa) {
+	public void putFace(byte aSide, ResourceLocation aIcon, short[] aRGBa) {
 		if (aIcon == null || aSide < 0 || aSide > 5) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
 		if (tSprite == null) {if (sMissingSprites.size() < 400) sMissingSprites.add(aIcon.toString()); return;}
@@ -112,15 +112,15 @@ public final class GT6QuadBuilder {
 	public List<BakedQuad> quads() {return mAll;}
 	public boolean isEmpty() {return mAll.isEmpty();}
 
-	private static TextureAtlasSprite sprite(Identifier aIcon) {return resolveSprite(aIcon);}
+	private static TextureAtlasSprite sprite(ResourceLocation aIcon) {return resolveSprite(aIcon);}
 
 	/** Резолв спрайта из block-атласа (по умолчанию — блок-грани через putFace/resolveBlockFaceIcon). */
-	public static TextureAtlasSprite resolveSprite(Identifier aIcon) {return resolveSprite(aIcon, net.minecraft.data.AtlasIds.BLOCKS);}
+	public static TextureAtlasSprite resolveSprite(ResourceLocation aIcon) {return resolveSprite(aIcon, net.minecraft.data.AtlasIds.BLOCKS);}
 
 	/** Резолв спрайта из указанного атласа. GT6-текстуры динамические: блок-грани — в BLOCKS (atlases/blocks.json),
 	 *  item-иконки — в ITEMS (atlases/items.json, textures/items/**). GT6ItemModel резолвит из ITEMS (материал-предметы
 	 *  берут item-версию materialicons, а не блочную; gt.multiitem.* иначе не в атласе → пурпур). */
-	public static TextureAtlasSprite resolveSprite(Identifier aIcon, Identifier aAtlas) {
+	public static TextureAtlasSprite resolveSprite(ResourceLocation aIcon, ResourceLocation aAtlas) {
 		try {
 			net.minecraft.client.renderer.texture.TextureAtlas tAtlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(aAtlas);
 			TextureAtlasSprite tSprite = tAtlas.getSprite(aIcon);
@@ -130,13 +130,13 @@ public final class GT6QuadBuilder {
 		} catch (Throwable e) {return null;}
 	}
 
-	/** F3 block-icon-data: neo-замена удалённого 1.7.10 {@code Block.getIcon(side,meta)} — {@link Identifier} спрайта
+	/** F3 block-icon-data: neo-замена удалённого 1.7.10 {@code Block.getIcon(side,meta)} — {@link ResourceLocation} спрайта
 	 *  грани ВАНИЛЬНОГО блока из его baked {@link net.minecraft.client.renderer.block.dispatch.BlockStateModel} (спрайт
 	 *  quad'а нужной стороны; particle-спрайт — fallback). Централизация §3: единственная точка «скопировать текстуру
 	 *  другого блока» — используют {@link IconContainerCopied} и {@link BlockTextureCopied}. meta 1.7.10 схлопнут в
 	 *  {@code defaultBlockState} (в neo вариантные под-блоки — отдельные Block'и, в вызывателях meta практически 0).
 	 *  aSide 0..5 = {@code Direction.from3DDataValue} (тот же маппинг, что {@link #putFace}); SIDE_ANY/вне диапазона → particle. */
-	public static Identifier resolveBlockFaceIcon(net.minecraft.world.level.block.Block aBlock, int aSide) {
+	public static ResourceLocation resolveBlockFaceIcon(net.minecraft.world.level.block.Block aBlock, int aSide) {
 		return resolveBlockFaceIcon(aBlock, aSide, 0);
 	}
 
@@ -144,7 +144,7 @@ public final class GT6QuadBuilder {
 	 *  dirt 0..2, sand 0..1) в neo — ОТДЕЛЬНЫЕ блоки (Flattening 1.13, таблица Mojang), не meta одного блока → сопоставляем
 	 *  (базовый-neo-блок,meta)→блок-вариант, иначе defaultBlockState базового. Централизация §3: единственная точка учёта meta
 	 *  для {@link BlockTextureCopied}/{@link IconContainerCopied} (их 1.7.10-предок звал getIcon с meta). */
-	public static Identifier resolveBlockFaceIcon(net.minecraft.world.level.block.Block aBlock, int aSide, int aMeta) {
+	public static ResourceLocation resolveBlockFaceIcon(net.minecraft.world.level.block.Block aBlock, int aSide, int aMeta) {
 		// GT6-блок-цель (LIVE-DEFECTS №5): его модель — динамический GT6BlockModel, который БЕЗ level/pos квадов не отдаёт
 		// → baked-путь ниже падал в particle = system/error (жёлто-красный X у камешков на GT6-породах). Родной 1.7.10-канал
 		// Block.getIcon(side,meta) сохранён на BlockBase-иерархии (BlockBaseMeta/Log/Beam/Grass/...) — спрашиваем его напрямую;
@@ -153,7 +153,7 @@ public final class GT6QuadBuilder {
 		// а канал иконки есть у всех — BlockBase, обеих жидкостных иерархий и MTE. Носитель обязан ОТВЕЧАТЬ
 		// (null = «канала нет» → baked-путь ниже), поэтому глушилка catch(Throwable) здесь больше не нужна.
 		if (aBlock instanceof gregapi.block.IBlock tGT6) {
-			Identifier tIcon = tGT6.getIcon(aSide, aMeta);
+			ResourceLocation tIcon = tGT6.getIcon(aSide, aMeta);
 			if (tIcon != null) return tIcon;
 		}
 		net.minecraft.world.level.block.Block tVariant = flattenVariant(aBlock, aMeta);
@@ -223,7 +223,7 @@ public final class GT6QuadBuilder {
 	 *  getInterpolatedU/V) — кванта-высоты/склоны поверхности. Всегда unculled (видимость решает
 	 *  {@link RendererBlockFluid} 1:1-логикой shouldSideBeRendered, а не neo-cull). aBothSides — вторая обратная
 	 *  намотка (1.7.10 рендерил без backface-cull и дублировал winding: поверхность видна из-под жидкости). */
-	public void fluidQuad(float[][] aCorners, Direction aDir, Identifier aIcon, short[] aRGBa, boolean aBothSides) {
+	public void fluidQuad(float[][] aCorners, Direction aDir, ResourceLocation aIcon, short[] aRGBa, boolean aBothSides) {
 		if (aIcon == null || aCorners == null || aCorners.length < 4) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
 		if (tSprite == null) {if (sMissingSprites.size() < 400) sMissingSprites.add(aIcon.toString()); return;}
@@ -258,7 +258,7 @@ public final class GT6QuadBuilder {
 
 	/** F3-render cross-модель (растения/цветы): X-форма из 2 диагональных плоскостей, каждая ДВУСТОРОННЯЯ (unculled,
 	 *  видна с обеих сторон). Текстура полная (UV 0..16 /16f, как vanilla block/cross). Используют IRenderedCross-блоки. */
-	public void crossFace(Identifier aIcon, short[] aRGBa) {
+	public void crossFace(ResourceLocation aIcon, short[] aRGBa) {
 		if (aIcon == null) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
 		if (tSprite == null) return;

@@ -24,7 +24,7 @@
 package gregapi;
 
 import codechicken.nei.recipe.GuiUsageRecipe;
-import net.neoforged.fml.ModList;
+import net.minecraftforge.fml.ModList;
 import gregapi.data.MD;
 import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.tileentity.tools.MultiTileEntityAdvancedCraftingTable.MultiTileEntityGUIClientAdvancedCraftingTable;

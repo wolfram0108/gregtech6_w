@@ -31,14 +31,14 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
-import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.BlockSource;
 import net.minecraft.core.Position;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Level;
 
@@ -50,7 +50,7 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, IItemGT, IItemNoGTOverride {
-	protected Identifier mIcon;
+	protected ResourceLocation mIcon;
 	protected final String mModID;
 	protected final String mName, mTooltip;
 	/** F16: 1.7.10 Item.setMaxStackSize мутировал поле итема. neo Item неизменяем (стек-размер — DataComponent),
@@ -110,7 +110,7 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	public ItemBase(String aModID, String aUnlocalized, String aEnglish, String aEnglishTooltip) {
 		// F1/F16: neo Item.<init> вычисляет descriptionId и требует ID в Properties (иначе "Item id not set"). Задаём ID из
 		// (mModID, mName) — совпадает с DeferredRegister-именем регистрации (ITEMS.register(name, ...) на call-site). setId:660.
-		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModID, aUnlocalized))));
+		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(aModID, aUnlocalized))));
 		if (GAPI.mStartedInit) throw new IllegalStateException("Items can only be initialised within preInit!");
 		mName = aUnlocalized;
 		mModID = aModID;
@@ -189,11 +189,11 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	// не-повреждаемый стек → subtype-мета (центр F1 ST.meta_). Реально-повреждаемые (getMaxDamage>0) — vanilla-ветка.
 	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : ST.meta_(aStack);}
 	public final boolean getShareTag() {return T;} // just to be sure.
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(mModID+":"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
-	public void registerIcons(Object aIconRegister) {mIcon = Identifier.parse((mModID + ":" + mName).toLowerCase(java.util.Locale.ROOT));}
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(mModID+":"+mName) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
+	public void registerIcons(Object aIconRegister) {mIcon = ResourceLocation.parse((mModID + ":" + mName).toLowerCase(java.util.Locale.ROOT));}
 	// F3-render: registerIcons (1.7.10 IIconRegister-хук) в neo НЕ вызывается → mIcon оставался null → GT6ItemModel.resolveIcon
 	// возвращал null → предмет не рисовался (пусто/пурпур). Строим mIcon ЛЕНИВО при первом запросе (тот же путь "modid:name").
-	public Identifier getIconFromDamage(int aMeta) {if (mIcon == null) registerIcons(null); return mIcon;}
+	public ResourceLocation getIconFromDamage(int aMeta) {if (mIcon == null) registerIcons(null); return mIcon;}
 	public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {isItemStackUsable(aStack);}
 	public ItemStack getContainerItem(ItemStack aStack) {return null;}
 	public boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}

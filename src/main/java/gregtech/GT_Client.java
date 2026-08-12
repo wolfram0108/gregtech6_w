@@ -24,8 +24,8 @@
 package gregtech;
 
 import gregapi.api.FMLPreInitializationEvent;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.event.TickEvent.PlayerTickEvent;
 import gregapi.GT_API;
 import gregapi.api.Abstract_Mod;
 import gregapi.config.ConfigCategories;
@@ -36,16 +36,16 @@ import gregtech.entities.projectiles.EntityArrow_Material;
 import gregtech.entities.projectiles.EntityArrow_Potion;
 import gregtech.render.GT_Renderer_Entity_Arrow;
 import gregtech.render.PlayerModelRenderer;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
-import net.neoforged.neoforge.client.event.RenderBlockScreenEffectEvent;
-import net.neoforged.neoforge.client.event.RenderPlayerEvent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.client.event.RenderBlockScreenEffectEvent;
+import net.minecraftforge.client.event.RenderPlayerEvent;
 
 import java.net.URI;
 
@@ -171,10 +171,10 @@ public class GT_Client extends GT_Proxy {
 	}
 	
 	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code new ResourceLocation(String)} (одноаргументный
-	 *  конструктор) — {@code Identifier} конструктор {@code private} в 26.1.2, публичная фабрика для
-	 *  ванильного namespace — {@code Identifier.withDefaultNamespace(path)}
-	 *  (`neo-decompiled/net/minecraft/resources/Identifier.java:49`). */
-	private Identifier WATER_OVERLAY = Identifier.withDefaultNamespace("textures/misc/underwater.png");
+	 *  конструктор) — {@code ResourceLocation} конструктор {@code private} в 26.1.2, публичная фабрика для
+	 *  ванильного namespace — {@code ResourceLocation.withDefaultNamespace(path)}
+	 *  (`neo-decompiled/net/minecraft/resources/ResourceLocation.java:49`). */
+	private ResourceLocation WATER_OVERLAY = ResourceLocation.withDefaultNamespace("textures/misc/underwater.png");
 
 	/**
 	 * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code net.minecraftforge.client.event.RenderBlockOverlayEvent}

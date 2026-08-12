@@ -33,7 +33,7 @@ import gregapi.util.ST;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;
 import static gregapi.data.OP.*;
@@ -1184,7 +1184,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 
 		int tSet = 0, tSkip = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
-			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+			net.minecraft.resources.ResourceLocation tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tID == null || !"minecraft".equals(tID.getNamespace()) || !tID.getPath().contains("copper")) continue;
 			String tBase = tID.getPath();
 			for (boolean tChanged = T; tChanged; ) {

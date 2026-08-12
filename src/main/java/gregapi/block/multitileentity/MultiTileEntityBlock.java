@@ -25,7 +25,7 @@ package gregapi.block.multitileentity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.phys.AABB;
@@ -127,7 +127,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	}
 
 	/** 1.7.10 SoundType.soundName-эквивалент для рег-ключа MTE (сверено по golden-дампу). Прочие SoundType в getOrCreate не
-	 *  встречаются — fallback на break-sound Identifier (проявится в engine-дампе как diff, а не тихо-неверно). */
+	 *  встречаются — fallback на break-sound ResourceLocation (проявится в engine-дампе как diff, а не тихо-неверно). */
 	private static String soundName(SoundType aSoundType) {
 		if (aSoundType == SoundType.WOOL)  return "cloth";
 		if (aSoundType == SoundType.METAL) return "stone";
@@ -173,7 +173,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// (BlockBehaviour:472-478) возвращает false при cache==null => legacySolid=false => blocksMotion()=false =>
 		// ванильная вода считает блок проницаемым (FlowingFluid.canHoldFluid) и УНИЧТОЖАЕТ его при затоплении.
 		// 1.7.10: у MTE твёрдый Material (machine/rock) — вода обтекала. forceSolidOn() (BlockBehaviour:473) => 1:1.
-		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().forceSolidOn().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aRegName))));
+		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().forceSolidOn().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aRegName))));
 		if (!aOpaque) p = p.noOcclusion();
 		// BUG-064 (Jade молчал про инструмент на машинах): в 1.7.10 твёрдость блока спрашивалась ПОЗИЦИОННО —
 		// getBlockHardness(World,x,y,z) (оригинал :299), и GT6 отдавал её из TE, а дефолтом при отсутствии
@@ -698,8 +698,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override public final int getRenderPasses(ItemStack aStack) {return 0;}
 	@Override public final IRenderedBlockObject passRenderingToObject(ItemStack aStack) {return null;}
 	public final void registerBlockIcons(Object aIconRegister) {/**/}
-	public final Identifier getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);}
-	public final Identifier getIcon(int aSide, int aMetaData) {return Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);}
+	public final ResourceLocation getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);}
+	public final ResourceLocation getIcon(int aSide, int aMetaData) {return Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);}
 	// F3-render (отложенная фаза): 1.7.10 Block.getRenderType()/super.getRenderType() удалён из neo (рендер
 	// data-driven через модели/getRenderShape; getRenderType в neo-пайплайне не вызывается — вызыватели ушли,
 	// см. ToolCompat instanceof-миграцию). super.getRenderType() -> -1 («нет кастом-render-ID»); при живом GT6-

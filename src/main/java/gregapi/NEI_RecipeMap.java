@@ -31,7 +31,7 @@ import codechicken.nei.guihook.GuiContainerManager;
 import codechicken.nei.guihook.IContainerInputHandler;
 import codechicken.nei.guihook.IContainerTooltipHandler;
 import codechicken.nei.recipe.*;
-import net.neoforged.fml.InterModComms;
+import net.minecraftforge.fml.InterModComms;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.ItemNBT;
 import gregapi.code.ItemStackContainer;
@@ -53,7 +53,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;

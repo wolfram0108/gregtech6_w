@@ -37,7 +37,7 @@ package net.minecraftforge.fluids;
 
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 /**
  * F-fluid compile-only shim. 1.7.10 Forge {@code net.minecraftforge.fluids.IFluidBlock} удалён в neo —

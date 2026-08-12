@@ -23,19 +23,19 @@
 
 package gregapi.util;
 import gregapi.code.ItemNBT;
-import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.monster.Blaze;
-import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.MagmaCube;
-import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.monster.Slime;
-import net.minecraft.world.entity.monster.zombie.Zombie;
-import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.EnderMan;
@@ -106,12 +106,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.util.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import net.neoforged.neoforge.common.util.FakePlayer;
+import net.minecraftforge.common.util.FakePlayer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.IFluidTank;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.IFluidTank;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.FluidStack;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -1484,15 +1484,15 @@ public class UT {
 		
 		/** estebes helped with the code for this one */
 		public static short[] color(String aResourceLocation) {
-			Identifier aux = null;
+			ResourceLocation aux = null;
 			if (aResourceLocation.contains(":")) {
 				String[] modid_itemid = aResourceLocation.split(":");
-				aux = Identifier.fromNamespaceAndPath(modid_itemid[0], "textures/items/" + modid_itemid[1] + ".png"); // neo: ctor Identifier(String,String) private -> fromNamespaceAndPath (Identifier.java:41)
+				aux = ResourceLocation.fromNamespaceAndPath(modid_itemid[0], "textures/items/" + modid_itemid[1] + ".png"); // neo: ctor ResourceLocation(String,String) private -> fromNamespaceAndPath (ResourceLocation.java:41)
 			} else {
-				aux = Identifier.fromNamespaceAndPath("minecraft", "textures/items/" + aResourceLocation + ".png");
+				aux = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/items/" + aResourceLocation + ".png");
 			}
 			java.awt.image.BufferedImage tIcon = null;
-			// neo: ResourceManager.getResource(Identifier) -> Optional<Resource> (не бросает FileNotFound);
+			// neo: ResourceManager.getResource(ResourceLocation) -> Optional<Resource> (не бросает FileNotFound);
 			// Resource.getInputStream() -> open() (Resource.java). Читаем только если ресурс присутствует.
 			// S6: доступ к client resource manager — через центр (GT_API_Proxy.getResourceStream), на сервере null (не грузим Minecraft).
 			try {java.io.InputStream tStream = gregapi.GT_API.api_proxy.getResourceStream(aux); if (tStream != null) tIcon = javax.imageio.ImageIO.read(tStream);} catch (IOException e) {/**/}
@@ -2797,7 +2797,7 @@ public class UT {
 			// ключа при разрушении). Молчание — худшая часть дефекта: он не виден ни в логе, ни в судье.
 			// Теперь центр называет место потери сам, один раз на место: чинить — переводом на send (звук места)
 			// или forActor (звук действия), которые доставляют пакет с любой стороны.
-			if (!CODE_CLIENT || net.neoforged.fml.util.thread.EffectiveSide.get().isServer()) {
+			if (!CODE_CLIENT || net.minecraftforge.fml.util.thread.EffectiveSide.get().isServer()) {
 				if (Code.stringValid(aSound)) namePlaceOfLostSound(aSound, "клиентский play() из СЕРВЕРНОГО кода");
 				return F;
 			}
@@ -2843,7 +2843,7 @@ public class UT {
 			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aWorld, aCoords);
 		}
 		// F-sound: neo SoundType.getBreakSound()/getStepSound()/… возвращают SoundEvent (record с компонентом
-		// location:Identifier), не легаси-строку 1.7.10 (aBlock.stepSound.getBreakSound() отдавал "dig.stone").
+		// location:ResourceLocation), не легаси-строку 1.7.10 (aBlock.stepSound.getBreakSound() отдавал "dig.stone").
 		// Центр String-based (SFX-константы вида "random.click") — извлекаем движковый ID через
 		// SoundEvent.location().toString() (SoundEvent.java:15, record-компонент; neo несёт корректный neo-путь)
 		// и делегируем в String-перегрузку. Мост под сменённый движком тип звука, не улучшение.
@@ -2939,12 +2939,12 @@ public class UT {
 				if (!sPlayedSounds.contains(tSound)) try {
 					sPlayedSounds.add(tSound);
 					// F-sound: neo Level.playSound(double,double,double,String,...) удалён — звук адресуется
-					// SoundEvent из реестра (Registry.getValue(Identifier), Registry.java:69), проигрывается
+					// SoundEvent из реестра (Registry.getValue(ResourceLocation), Registry.java:69), проигрывается
 					// Level.playLocalSound(...,SoundEvent,SoundSource,...) (Level.java:463). Резолвим mSound как
 					// neo sound-id; neo-native строки играют сразу.
 					// F-sound (1:1): легаси 1.7.10 SFX-строки → neo sound-id через neoSound (карта SFX_LEGACY, сверена по SoundEvents.java);
 					// neo-native строки проходят как есть. Раньше легаси не резолвились → все GT6-звуки молчали. Восстановлено.
-					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse(neoSound(mSound)));
+					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.ResourceLocation.parse(neoSound(mSound)));
 					if (tEvent != null) mWorld.playLocalSound(mX+0.5, mY+0.5, mZ+0.5, tEvent, net.minecraft.sounds.SoundSource.BLOCKS, mVolume, mPitch, T);
 				} catch(Throwable e) {/**/}
 			}
@@ -2996,7 +2996,7 @@ public class UT {
 		}
 		
 		public static boolean isWearingFullHeatHazmat(LivingEntity aEntity) {
-			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == Blaze.class || aEntity.getClass() == net.minecraft.world.entity.monster.zombie.ZombifiedPiglin.class || aEntity.getClass() == MagmaCube.class || aEntity.getClass() == net.minecraft.world.entity.monster.Ghast.class) return T;
+			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == Blaze.class || aEntity.getClass() == net.minecraft.world.entity.monster.ZombifiedPiglin.class || aEntity.getClass() == MagmaCube.class || aEntity.getClass() == net.minecraft.world.entity.monster.Ghast.class) return T;
 			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_HEAT.contains(UT.Entities.getEquipmentInSlot(aEntity, i), T)) return F;
 			return T;
 		}

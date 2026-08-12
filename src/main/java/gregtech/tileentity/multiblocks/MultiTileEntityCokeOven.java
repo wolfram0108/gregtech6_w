@@ -36,7 +36,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.List;
 
@@ -91,7 +91,7 @@ public class MultiTileEntityCokeOven extends TileEntityBase10MultiBlockMachine {
 			int tX = getOffsetXN(mFacing), tY = getOffsetYN(mFacing)-2, tZ = getOffsetZN(mFacing);
 			for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) {
 				DelegatorTileEntity<BlockEntity> tTarget = WD.te(level, tX+i, tY, tZ+j, SIDE_TOP, F);
-				if (tTarget.mTileEntity instanceof IFluidHandler && ((IFluidHandler)tTarget.mTileEntity).fill(new net.neoforged.neoforge.fluids.FluidStack(aOutput.builtInRegistryHolder(), Integer.MAX_VALUE), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE) > 0) {
+				if (tTarget.mTileEntity instanceof IFluidHandler && ((IFluidHandler)tTarget.mTileEntity).fill(new net.minecraftforge.fluids.FluidStack(aOutput.builtInRegistryHolder(), Integer.MAX_VALUE), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE) > 0) {
 					return mFluidOutputTarget = new DelegatorTileEntity<>((IFluidHandler)tTarget.mTileEntity, tTarget);
 				}
 			}

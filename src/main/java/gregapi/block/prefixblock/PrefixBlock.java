@@ -73,7 +73,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Explosion;
@@ -190,7 +190,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	 */
 	// F13/F16/F16: Properties при ctor — sound(step-звук) + noOcclusion для non-opaque (иначе рендер solid + свет блокируется). setId обязателен.
 	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aModIDOwner, String aNameInternal, SoundType aSoundType, boolean aOpaque, String aTool, Material aVanillaMaterial) {
-		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal))))
+		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal))))
 			// Правка №1 (BUG-106): раньше неподвижность для поршней держалась на факте «у блока есть BE» (движок не
 			// толкает блоки с сущностью); с переносом материала в карту чанка сущности нет — запрет объявляем явно,
 			// поведение 1:1 с прежним (и с 1.7.10, где TE-блоки были нетолкаемы).
@@ -316,12 +316,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	// @Override
-	public Identifier getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
+	public ResourceLocation getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		return getIcon(aSide, getMetaDataValue(aWorld, aX, aY, aZ));
 	}
 
 	// @Override
-	public Identifier getIcon(int aSide, int aMetaData) {
+	public ResourceLocation getIcon(int aSide, int aMetaData) {
 		if (mPrefix.mIconIndexBlock >= 0) {
 			OreDictMaterial aMaterial = getMetaMaterial(aMetaData);
 			if (aMaterial != null && aMaterial.mTextureSetsBlock != null)

@@ -24,17 +24,17 @@
 package gregapi;
 
 import appeng.api.AEApi;
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
-import net.neoforged.fml.loading.FMLPaths;
+import net.minecraftforge.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import net.neoforged.neoforge.event.server.ServerStoppedEvent;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.api.Abstract_Proxy;
 import gregapi.api.FMLInitializationEvent;
@@ -804,7 +804,7 @@ public class GT_API_Post extends Abstract_Mod {
 		// (mending:128/frost_walker:96/swift_sneak:99). Custom-энчанты (Magnetization/Cold Touch/railcraft) — из внешних
 		// модов (F10): если мод не загружен, ключа нет в реестре -> идентификация не сработает -> назначение пропущено
 		// (ровно как в 1.7.10 при отсутствии мода); идентификация по path-имени сработает при наличии мода (foreign-gated).
-		net.minecraft.server.MinecraftServer tEnchServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+		net.minecraft.server.MinecraftServer tEnchServer = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
 		if (tEnchServer != null) for (net.minecraft.resources.ResourceKey<Enchantment> tEnchant : tEnchServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).registryKeySet()) {
 			String tEnchName = tEnchant.identifier().getPath();
 			// F10-TF: twilightforest.TFTreasureTable.addEnchantedBook(Enchantment,int) ждёт ОБЪЕКТ Enchantment,

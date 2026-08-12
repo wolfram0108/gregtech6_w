@@ -24,7 +24,7 @@
 package gregtech.loaders.a;
 
 import gregapi.GT_API;
-import net.neoforged.fml.InterModComms;
+import net.minecraftforge.fml.InterModComms;
 import gregapi.block.MaterialGas;
 import gregapi.block.MaterialOil;
 import gregapi.block.fluid.BlockBaseFluid;

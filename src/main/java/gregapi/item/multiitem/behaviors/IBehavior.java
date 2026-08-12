@@ -32,7 +32,7 @@ import gregapi.item.IItemProjectile.EntityProjectile;
 import gregapi.item.multiitem.MultiItem;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
-import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.BlockSource;
 import net.minecraft.core.Position;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;

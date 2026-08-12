@@ -38,7 +38,7 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 
@@ -70,7 +70,7 @@ import static gregapi.data.CS.*;
  */
 @JeiPlugin
 public final class GT6_JEI_Plugin implements IModPlugin {
-	public static final Identifier PLUGIN_UID = Identifier.fromNamespaceAndPath(MD.GT.mID, "jei_plugin");
+	public static final ResourceLocation PLUGIN_UID = ResourceLocation.fromNamespaceAndPath(MD.GT.mID, "jei_plugin");
 
 	/** RecipeMap -> её уникальный JEI-RecipeType. Заполняется в {@link #registerCategories}, читается в {@link #registerRecipes}/{@link #registerRecipeCatalysts}. */
 	private final Map<RecipeMap, RecipeType<Recipe>> mTypes = new LinkedHashMap<>();
@@ -100,7 +100,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	private List<ICraftingRecipeGT> mCraftingRecipes = Collections.emptyList();
 
 	@Override
-	public Identifier getPluginUid() {
+	public ResourceLocation getPluginUid() {
 		return PLUGIN_UID;
 	}
 
@@ -113,7 +113,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		net.minecraft.core.component.DataComponentType<?> tSubtype = gregapi.GT_API.SUBTYPE.get();
 		int tCount = 0, tMetaOnly = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
-			Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+			ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null) continue;
 			String tNs = tKey.getNamespace();
 			if (!tNs.equals(ModIDs.GT) && !tNs.equals("gregtech") && !tNs.equals("gregapi")) continue;
@@ -220,7 +220,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		sRuntime = aRuntime; // BUG-056: единственная дверь к экрану рецептов, см. showRecipeCategory
 		try {
 			mezz.jei.api.runtime.IIngredientManager tManager = aRuntime.getIngredientManager();
-			java.util.Collection<net.neoforged.neoforge.fluids.FluidStack> tFluids = new java.util.ArrayList<>(tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK));
+			java.util.Collection<net.minecraftforge.fluids.FluidStack> tFluids = new java.util.ArrayList<>(tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK));
 			if (!tFluids.isEmpty()) tManager.removeIngredientsAtRuntime(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, tFluids);
 			OUT.println("[GT6-JEI] родной FLUID_STACK-пласт снят из панели: было " + tFluids.size() + ", осталось " + tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK).size() + " (жидкости показывает GT6-дисплей, как NEI 1.7.10)");
 		} catch (Throwable e) {

@@ -23,23 +23,23 @@
 
 package gregtech.entities;
 
-import net.minecraft.world.entity.monster.skeleton.Skeleton;
-import net.minecraft.world.entity.monster.skeleton.WitherSkeleton;
-import net.minecraft.world.entity.monster.zombie.Zombie;
-import net.minecraft.world.entity.animal.equine.Horse;
-import net.minecraft.world.entity.animal.equine.AbstractHorse;
-import net.minecraft.world.entity.animal.equine.Donkey;
-import net.minecraft.world.entity.animal.equine.Mule;
-import net.minecraft.world.entity.animal.equine.ZombieHorse;
-import net.minecraft.world.entity.animal.equine.SkeletonHorse;
-import net.minecraft.world.entity.animal.wolf.Wolf;
-import net.minecraft.world.entity.monster.spider.Spider;
-import net.minecraft.world.entity.animal.sheep.Sheep;
-import net.minecraft.world.entity.animal.pig.Pig;
-import net.minecraft.world.entity.animal.cow.MushroomCow;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.monster.WitherSkeleton;
+import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.animal.horse.Horse;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.animal.horse.Donkey;
+import net.minecraft.world.entity.animal.horse.Mule;
+import net.minecraft.world.entity.animal.horse.ZombieHorse;
+import net.minecraft.world.entity.animal.horse.SkeletonHorse;
+import net.minecraft.world.entity.animal.Wolf;
+import net.minecraft.world.entity.monster.Spider;
+import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.animal.MushroomCow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.monster.zombie.ZombieVillager;
+import net.minecraft.world.entity.monster.ZombieVillager;
 import gregapi.damage.DamageSourceCombat;
 import gregapi.data.*;
 import gregapi.util.OM;
@@ -49,7 +49,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Witch;
-import net.minecraft.world.entity.animal.chicken.Chicken;
+import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Item;
@@ -179,7 +179,7 @@ public class Override_Drops {
 			if (aPlayerKill) {
 			@SuppressWarnings("rawtypes")
 			List tList = aDead.level().getEntities(aDead, aDead.getBoundingBox().inflate(32, 32, 32));
-			for (int i = 0; i < tList.size(); i++) if (tList.get(i) instanceof Player) {for (int j = 0; j < tList.size(); j++) if (tList.get(j) instanceof net.minecraft.world.entity.monster.zombie.ZombifiedPiglin) ((net.minecraft.world.entity.monster.zombie.ZombifiedPiglin)tList.get(j)).hurt(aDead.level().damageSources().playerAttack((Player)tList.get(i)), 0); break;}// было DamageSource.causePlayerDamage (1.7.10 статик удалён) -> neo damageSources().playerAttack(Player)
+			for (int i = 0; i < tList.size(); i++) if (tList.get(i) instanceof Player) {for (int j = 0; j < tList.size(); j++) if (tList.get(j) instanceof net.minecraft.world.entity.monster.ZombifiedPiglin) ((net.minecraft.world.entity.monster.ZombifiedPiglin)tList.get(j)).hurt(aDead.level().damageSources().playerAttack((Player)tList.get(i)), 0); break;}// было DamageSource.causePlayerDamage (1.7.10 статик удалён) -> neo damageSources().playerAttack(Player)
 			
 			if (RNGSUS.nextInt( 2) == 0) aDrops.add(ST.entity(aDead, RNGSUS.nextBoolean()?OP.rockGt.mat(MT.Netherrack, 1):ST.make(Items.FLINT, 1, 0)));
 			if (RNGSUS.nextInt( 3) == 0) aDrops.add(ST.entity(aDead, Items.BONE, 1, 0));
@@ -378,7 +378,7 @@ public class Override_Drops {
 			tReplaceIron = T;
 		} else if ("SuperMutantElite".equalsIgnoreCase(aClass)) {// TODO what drops would even fit for this Mob?
 			tReplaceIron = T;
-		} else if (aDead instanceof net.minecraft.world.entity.monster.zombie.ZombifiedPiglin) {
+		} else if (aDead instanceof net.minecraft.world.entity.monster.ZombifiedPiglin) {
 			tReplaceIron = T;
 			
 			if (MOBS_DROP_JUNK) {

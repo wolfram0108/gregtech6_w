@@ -45,7 +45,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.FoliageColor;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -98,7 +98,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeLeaves.mDefaultStackSize);}
 	// 1:1 (:91 оригинала): выбор fancy/fast-варианта иконки по признаку ванильной листвы; семантика isOpaqueCube
 	// = WD.visOpq (WD.opaque=canOcclude тут врал — см. skipRendering ниже). В neo-ванили листва всегда fancy.
-	@Override public Identifier getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(WD.visOpq(Blocks.OAK_LEAVES)?8:0)].getIcon(0);}
+	@Override public ResourceLocation getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(WD.visOpq(Blocks.OAK_LEAVES)?8:0)].getIcon(0);}
 	public ArrayList<ItemStack> onSheared(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aX, aY, aZ) & 7));}
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : WD.collisionBox(aWorld, aX, aY, aZ, this);}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}

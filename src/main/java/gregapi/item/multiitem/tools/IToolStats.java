@@ -32,7 +32,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
@@ -218,6 +218,6 @@ public interface IToolStats {
 	
 	public int getRenderPasses();
 	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code IIcon getIcon(...)} (тип удалён в 26.1.2) — держатель ссылки на текстуру, тот же F3-канал что {@code gregapi.render.IIconContainer#getIcon(int)}. */
-	public Identifier getIcon(ItemStack aStack, int aRenderPass);
+	public ResourceLocation getIcon(ItemStack aStack, int aRenderPass);
 	public short[] getRGBa(ItemStack aStack, int aRenderPass);
 }

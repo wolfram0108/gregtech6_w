@@ -60,7 +60,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.Container;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -68,10 +68,10 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidContainerItem;
 import vazkii.botania.api.item.IFlowerPlaceable;
 import vazkii.botania.api.subtile.SubTileEntity;
@@ -463,14 +463,14 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	}
 	
 	// @Override
-	public ItemUseAnimation getItemUseAction(ItemStack aStack) {
+	public UseAnim getItemUseAction(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IMTE_GetItemUseAction) {
-			ItemUseAnimation rAction = ((IMTE_GetItemUseAction)tTileEntityContainer.mTileEntity).getItemUseAction(this, aStack);
+			UseAnim rAction = ((IMTE_GetItemUseAction)tTileEntityContainer.mTileEntity).getItemUseAction(this, aStack);
 			updateItemStack(aStack);
 			return rAction;
 		}
-		return ItemUseAnimation.NONE;
+		return UseAnim.NONE;
 	}
 	
 	// @Override
@@ -506,7 +506,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	}
 
 	@Override
-	public ItemUseAnimation getUseAnimation(ItemStack aStack) {
+	public UseAnim getUseAnimation(ItemStack aStack) {
 		return getItemUseAction(aStack); // было Item.getItemUseAction(ItemStack) (1.7.10) -> neo Item.getUseAnimation(ItemStack) (Item.java:317)
 	}
 
@@ -760,7 +760,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public void registerIcons(Object aRegister) {/**/}
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было itemIcon=Items.BREAD.getIconFromDamage(0) (фикс eating-particle 1.7.10) —
 	// и поле Item.itemIcon, и метод Item.getIconFromDamage(int) удалены в 26.1.2 целиком, замены нет до Фазы C.
-	public Identifier getIconFromDamage(int aMeta) {throw new UnsupportedOperationException("F3 dead-interface: 1.7.10 Item.getIconFromDamage(meta) удалён из neo (НЕ @Override; было itemIcon для eating-particle). MTEItemInternal — BlockItem, рендерится моделью блока; GT6ItemModel пропускает BlockItem'ы. Defensive throw.");}
+	public ResourceLocation getIconFromDamage(int aMeta) {throw new UnsupportedOperationException("F3 dead-interface: 1.7.10 Item.getIconFromDamage(meta) удалён из neo (НЕ @Override; было itemIcon для eating-particle). MTEItemInternal — BlockItem, рендерится моделью блока; GT6ItemModel пропускает BlockItem'ы. Defensive throw.");}
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public int getItemEnchantability() {return 0;}

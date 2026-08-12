@@ -41,7 +41,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Level;
 
@@ -75,7 +75,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	public PrefixItem(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterial... aMaterialList) {
 		// F12-followup (item-split): setId в Properties (иначе «Item id not set»); ключ = (владелец, имя), санитизирован,
 		// совпадает с registerItemLazy на call-site. (было super() → super(new Item.Properties()) без id.)
-		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 		mPrefix = aPrefix;
 		mPrefix.mRegisteredPrefixItems.add(this);
 		mNameInternal = aNameInternal;
@@ -145,13 +145,13 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	// не рисовался (пусто/пурпур). Параметр → Object (метод всё равно no-op в neo), рефлексия больше не падает.
 	public void registerIcons(Object aIconRegister) {/**/}
 	public boolean requiresMultipleRenderPasses() {return mPrefix.mIconIndexItem >= 0;}
-	public Identifier getIconIndex(ItemStack aStack) {return getIconFromDamageForRenderPass(ST.meta_(aStack), 0);}
-	public Identifier getIconFromDamage(int aMetaData) {return getIconFromDamageForRenderPass(aMetaData, 0);}
-	public Identifier getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
-	public Identifier getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
+	public ResourceLocation getIconIndex(ItemStack aStack) {return getIconFromDamageForRenderPass(ST.meta_(aStack), 0);}
+	public ResourceLocation getIconFromDamage(int aMetaData) {return getIconFromDamageForRenderPass(aMetaData, 0);}
+	public ResourceLocation getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
+	public ResourceLocation getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
 
 	// @Override
-	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
+	public ResourceLocation getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
 		if (mPrefix.mIconIndexItem >= 0) {
 			if (UT.Code.exists(aMetaData, mMaterialList) && mMaterialList[aMetaData].mTextureSetsItems != null)
 			return mMaterialList[aMetaData] .mTextureSetsItems.get(mPrefix.mIconIndexItem).getIcon(aRenderPass);

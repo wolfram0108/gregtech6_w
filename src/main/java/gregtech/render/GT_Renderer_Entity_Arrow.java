@@ -28,8 +28,8 @@ import static gregapi.data.CS.*;
 import net.minecraft.client.renderer.entity.ArrowRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.ArrowRenderState;
-import net.minecraft.world.entity.projectile.arrow.Arrow;
-import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 {@code RenderArrow.getEntityTexture(Arrow)} (по инстансу
@@ -41,18 +41,18 @@ import net.minecraft.resources.Identifier;
  * переезжает на {@code EntityRenderersEvent.RegisterRenderers}.
  */
 public class GT_Renderer_Entity_Arrow extends ArrowRenderer<Arrow, ArrowRenderState> {
-	private final Identifier mTexture;
+	private final ResourceLocation mTexture;
 
 	// F12-entity/F3-render (ЗАКРЫТО): реальный EntityRendererProvider.Context (не null) — рендерер строится в
 	// EntityRenderersEvent.RegisterRenderers (GT_Client#registerClientRenderers), где Context доступен. 1.7.10
 	// RenderingRegistry.registerEntityRenderingHandler(class, this) удалён — регистрация теперь по EntityType.
 	public GT_Renderer_Entity_Arrow(EntityRendererProvider.Context aContext, String aTextureName) {
 		super(aContext);
-		mTexture = Identifier.parse(RES_PATH_ENTITY+aTextureName+".png");
+		mTexture = ResourceLocation.parse(RES_PATH_ENTITY+aTextureName+".png");
 	}
 
 	@Override
-	protected Identifier getTextureLocation(ArrowRenderState aState) {
+	protected ResourceLocation getTextureLocation(ArrowRenderState aState) {
 		return mTexture;
 	}
 

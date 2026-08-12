@@ -49,7 +49,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -98,7 +98,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		// MODCOMPAT-002: цвет на карте. 1.7.10 BlockFlower наследовал Material.plants (BlockFlower.java:26), а тот
 		// несёт foliageColor — то есть цветы на карте были цвета листвы. В neo дефолт «нет цвета», задаём явно тем
 		// же мостом и из того же материала, что остальные иерархии (см. BlockBase.mapColorOf).
-		super(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY, gregapi.block.BlockBase.mapColorOf(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollision().sound(net.minecraft.world.level.block.SoundType.GRASS).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), gregapi.block.Material.plants));
+		super(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY, gregapi.block.BlockBase.mapColorOf(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollision().sound(net.minecraft.world.level.block.SoundType.GRASS).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), gregapi.block.Material.plants));
 		registerDefaultState(getStateDefinition().any().setValue(META, 0)); // F3-render/meta: дефолт META=0
 		mMaxMeta = (byte)(UT.Code.bind4(aMaxMeta-1)+1);
 		mIcons = aIcons;
@@ -158,14 +158,14 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
 	@Override public Block getBlock() {return this;}
 	@Override public byte maxMeta() {return mMaxMeta;}
-	public Identifier getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
+	public ResourceLocation getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
 
 	// F3-render/meta (IBlockExtendedMetaData): вариант цветка в blockstate-property META; get/setExtendedMetaData —
 	// дефолты интерфейса (консолидация захода #39: зеркало удалено; прежний локальный сеттер гейтился на Level —
 	// дефолт шире и вернее 1:1: пишет и LevelAccessor-регион, и ChunkAccess ворлдгена, как остальная семья).
 	// F3-render (IRenderedCross): текстура cross-модели per-мета (getIcon уже per-мета из mIcons); GT6BlockModel рисует X-форму.
 	// aWorld==null = item-рендер, aX несёт МЕТУ СТЕКА (контракт IRenderedCross; прежде item всегда рисовал мету 0).
-	@Override public Identifier getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ) {
+	@Override public ResourceLocation getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (mIcons == null || mIcons.length == 0) return null;
 		IIconContainer tIcon = mIcons[UT.Code.bind4(aWorld == null ? aX : WD.meta(aWorld, aX, aY, aZ)) % mIcons.length];
 		return tIcon == null ? null : tIcon.getIcon(0);

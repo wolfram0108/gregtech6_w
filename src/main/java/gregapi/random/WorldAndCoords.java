@@ -38,7 +38,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /**
  * @author Gregorius Techneticies
@@ -72,8 +72,8 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 	@Override public BlockPos getCoords() {return new BlockPos(mX, mY, mZ);}
 	@Override public BlockPos getOffset (byte aSide, int aMultiplier) {return new BlockPos(getOffsetX (aSide, aMultiplier), getOffsetY (aSide, aMultiplier), getOffsetZ (aSide, aMultiplier));}
 	@Override public BlockPos getOffsetN(byte aSide, int aMultiplier) {return new BlockPos(getOffsetXN(aSide, aMultiplier), getOffsetYN(aSide, aMultiplier), getOffsetZN(aSide, aMultiplier));}
-	@Override public boolean isServerSide() {return mWorld == null ? net.neoforged.fml.util.thread.EffectiveSide.get().isServer() : !mWorld.isClientSide();}
-	@Override public boolean isClientSide() {return mWorld == null ? net.neoforged.fml.util.thread.EffectiveSide.get().isClient() :  mWorld.isClientSide();}
+	@Override public boolean isServerSide() {return mWorld == null ? net.minecraftforge.fml.util.thread.EffectiveSide.get().isServer() : !mWorld.isClientSide();}
+	@Override public boolean isClientSide() {return mWorld == null ? net.minecraftforge.fml.util.thread.EffectiveSide.get().isClient() :  mWorld.isClientSide();}
 	@Override public int rng(int aRange) {return RNGSUS.nextInt(aRange);}
 	@Override public int getRandomNumber(int aRange) {return RNGSUS.nextInt(aRange);}
 	@Override public BlockEntity getTileEntity   (int aX, int aY, int aZ) {return mWorld==null?null:WD.te(mWorld, aX, aY, aZ, T);}

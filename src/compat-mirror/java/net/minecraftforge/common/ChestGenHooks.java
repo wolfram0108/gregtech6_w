@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.Random;
 
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.ItemStack;
@@ -58,8 +58,8 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.LootTableLoadEvent;
-import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import net.minecraftforge.event.LootTableLoadEvent;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 /** 1.7.10 {@code net.minecraftforge.common.ChestGenHooks} — реестр chest-лута. ЕДИНСТВЕННЫЙ центр адаптации
  *  F-loot (BUG-039): neo сделал лут data-driven (JSON LootTable), 1.7.10-механика «единый взвешенный список
@@ -107,7 +107,7 @@ public class ChestGenHooks {
 
 	/** GT6 chest-категория -> neo vanilla loot-таблица. 9/10 1:1; villageBlacksmith -> weaponsmith (neo раздробил
 	 *  village на 12 таблиц; кузнец=weaponsmith — ближайший 1:1 по содержимому, ADR §3). */
-	private static final Map<String, Identifier> NEO_TABLE = new LinkedHashMap<>();
+	private static final Map<String, ResourceLocation> NEO_TABLE = new LinkedHashMap<>();
 	/** Суммарный вес vanilla-содержимого категории в 1.7.10 (массивы структур + Forge-init enchanted_book: +1 везде,
 	 *  +2 library; кузнец/бонус/диспенсер — без книги). Выведено скриптом из референса (recompSrc:
 	 *  WorldGenDungeons.field_111189_a=119, mineshaftChestContents=79, itemsToGenerateInTemple=72,
@@ -117,16 +117,16 @@ public class ChestGenHooks {
 	 *  ванили», давая GT-предметам ТОЧНО 1.7.10-вероятность на слот (vanilla-часть сундука генерит сам движок). */
 	private static final Map<String, Integer> VANILLA_WEIGHT_1710 = new HashMap<>();
 	static {
-		NEO_TABLE.put(DUNGEON_CHEST           , Identifier.withDefaultNamespace("chests/simple_dungeon"));
-		NEO_TABLE.put(MINESHAFT_CORRIDOR      , Identifier.withDefaultNamespace("chests/abandoned_mineshaft"));
-		NEO_TABLE.put(STRONGHOLD_LIBRARY      , Identifier.withDefaultNamespace("chests/stronghold_library"));
-		NEO_TABLE.put(STRONGHOLD_CROSSING     , Identifier.withDefaultNamespace("chests/stronghold_crossing"));
-		NEO_TABLE.put(STRONGHOLD_CORRIDOR     , Identifier.withDefaultNamespace("chests/stronghold_corridor"));
-		NEO_TABLE.put(PYRAMID_DESERT_CHEST    , Identifier.withDefaultNamespace("chests/desert_pyramid"));
-		NEO_TABLE.put(PYRAMID_JUNGLE_CHEST    , Identifier.withDefaultNamespace("chests/jungle_temple"));
-		NEO_TABLE.put(PYRAMID_JUNGLE_DISPENSER, Identifier.withDefaultNamespace("chests/jungle_temple_dispenser"));
-		NEO_TABLE.put(VILLAGE_BLACKSMITH      , Identifier.withDefaultNamespace("chests/village/village_weaponsmith"));
-		NEO_TABLE.put(BONUS_CHEST             , Identifier.withDefaultNamespace("chests/spawn_bonus_chest"));
+		NEO_TABLE.put(DUNGEON_CHEST           , ResourceLocation.withDefaultNamespace("chests/simple_dungeon"));
+		NEO_TABLE.put(MINESHAFT_CORRIDOR      , ResourceLocation.withDefaultNamespace("chests/abandoned_mineshaft"));
+		NEO_TABLE.put(STRONGHOLD_LIBRARY      , ResourceLocation.withDefaultNamespace("chests/stronghold_library"));
+		NEO_TABLE.put(STRONGHOLD_CROSSING     , ResourceLocation.withDefaultNamespace("chests/stronghold_crossing"));
+		NEO_TABLE.put(STRONGHOLD_CORRIDOR     , ResourceLocation.withDefaultNamespace("chests/stronghold_corridor"));
+		NEO_TABLE.put(PYRAMID_DESERT_CHEST    , ResourceLocation.withDefaultNamespace("chests/desert_pyramid"));
+		NEO_TABLE.put(PYRAMID_JUNGLE_CHEST    , ResourceLocation.withDefaultNamespace("chests/jungle_temple"));
+		NEO_TABLE.put(PYRAMID_JUNGLE_DISPENSER, ResourceLocation.withDefaultNamespace("chests/jungle_temple_dispenser"));
+		NEO_TABLE.put(VILLAGE_BLACKSMITH      , ResourceLocation.withDefaultNamespace("chests/village/village_weaponsmith"));
+		NEO_TABLE.put(BONUS_CHEST             , ResourceLocation.withDefaultNamespace("chests/spawn_bonus_chest"));
 
 		VANILLA_WEIGHT_1710.put(DUNGEON_CHEST           , 120);
 		VANILLA_WEIGHT_1710.put(MINESHAFT_CORRIDOR      ,  80);
@@ -293,7 +293,7 @@ public class ChestGenHooks {
 	 *  на background-executor'е загрузки ресурсов; к этому моменту contents либо пуст (первая загрузка), либо
 	 *  стабилен (data-init давно завершён) — гонки нет. */
 	private static void onLootTableLoad(LootTableLoadEvent aEvent) {
-		for (Map.Entry<String, Identifier> tEntry : NEO_TABLE.entrySet()) {
+		for (Map.Entry<String, ResourceLocation> tEntry : NEO_TABLE.entrySet()) {
 			if (!tEntry.getValue().equals(aEvent.getName())) continue;
 			ChestGenHooks tHook = chestInfo.get(tEntry.getKey());
 			if (tHook != null && !tHook.contents.isEmpty()) injectInto(tHook, aEvent.getTable());
@@ -306,7 +306,7 @@ public class ChestGenHooks {
 	 *  furnace-propertySet (BUG-054). */
 	public static void injectAll(MinecraftServer aServer) {
 		if (aServer == null) return;
-		for (Map.Entry<String, Identifier> tEntry : NEO_TABLE.entrySet()) {
+		for (Map.Entry<String, ResourceLocation> tEntry : NEO_TABLE.entrySet()) {
 			ChestGenHooks tHook = chestInfo.get(tEntry.getKey());
 			if (tHook == null || tHook.contents.isEmpty()) continue;
 			try {

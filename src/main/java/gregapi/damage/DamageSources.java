@@ -38,7 +38,7 @@ import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.TagKey;
@@ -48,10 +48,10 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
+import net.minecraft.world.entity.boss.EnderDragonPart;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.MinecraftServer;
-import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 import static gregapi.data.CS.APRIL_FOOLS;
 import static gregapi.data.CS.F;
@@ -91,7 +91,7 @@ public class DamageSources {
 
 		Kind(String aMsgId, boolean aBypassesArmor, boolean aAbsolute, boolean aCreative, Function<LivingEntity, Component> aDeathMessage) {
 			mMsgId = aMsgId;
-			mKey = ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(MODID, aMsgId));
+			mKey = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(MODID, aMsgId));
 			mTags = tags(aBypassesArmor, aAbsolute, aCreative);
 			mType = new DamageType(aMsgId, DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER, mTags.isEmpty() ? DEFAULT_EXHAUSTION : ZERO_EXHAUSTION, DamageEffects.HURT);
 			mDeathMessage = aDeathMessage;

@@ -30,7 +30,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -47,9 +47,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 
 import static gregapi.data.CS.*;
 
@@ -120,7 +120,7 @@ public class MobEffectsGT {
 	 *  {@code EventHandler.java:403-408} → {@code GT_API_Proxy}. */
 	public static final DeferredHolder<MobEffect, MobEffect> STICKY = EFFECTS.register("sticky",
 		() -> new MobEffectGT6(MobEffectCategory.HARMFUL, 0x9c6800)
-			.addAttributeModifier(Attributes.MOVEMENT_SPEED, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "effect.sticky"), -0.5D, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+			.addAttributeModifier(Attributes.MOVEMENT_SPEED, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "effect.sticky"), -0.5D, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 
 	/** EnviroMine insanity, каденция 30 тиков ({@code EM_StatusManager.java:84-88}): amp≥1 → тошнота 200
 	 *  тиков с шансом 1/(50/(amp+1)); игроку — фантомный жуткий звук в случайной точке ±3 блока с тем же

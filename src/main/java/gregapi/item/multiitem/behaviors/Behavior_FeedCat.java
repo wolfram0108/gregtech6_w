@@ -34,7 +34,7 @@ import gregapi.util.UT;
 import net.minecraft.world.entity.Entity;
 // F-entity-identity: 1.7.10 EntityOcelot БЫЛ приручаемым котом (отдельного Cat до 1.14 не было) -> neo Cat
 // (Cat extends TamableAnimal, Cat.java:69); neo Ocelot extends Animal — НЕ приручаем ("trust", не tame).
-import net.minecraft.world.entity.animal.feline.Cat;
+import net.minecraft.world.entity.animal.Cat;
 // F-entity-ai: 1.7.10 EntityAITasks/EntityAITaskEntry/EntityAITempt удалены -> neo GoalSelector/WrappedGoal/TemptGoal.
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.goal.TemptGoal;

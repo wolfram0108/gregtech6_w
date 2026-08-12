@@ -27,7 +27,7 @@ import gregapi.util.WD;
 import buildcraft.api.core.BuildCraftAPI;
 import buildcraft.core.properties.WorldPropertyIsWood;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
 import gregapi.code.TagData;
 import gregapi.compat.CompatBase;
 import gregapi.data.OP;

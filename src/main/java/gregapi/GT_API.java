@@ -23,22 +23,22 @@
 
 package gregapi;
 
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.InterModComms;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.InterModComms;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
-import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.fml.loading.FMLPaths;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import net.neoforged.neoforge.event.server.ServerStoppedEvent;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 import net.neoforged.api.distmarker.Dist;
 import gregapi.api.Abstract_Mod;
 import gregapi.api.Abstract_Proxy;
@@ -174,7 +174,7 @@ public class GT_API extends Abstract_Mod {
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 net.minecraft.client.renderer.texture.IIconRegister
 	// удалён из движка целиком (атлас-стежка теперь baked-модели, не immediate-mode Icon-регистрация).
 	// Тот же класс проблемы, что gregapi/render/TextureSet.java registerIcons(Object) (уже переведено) —
-	// поле типизировано как Object (та же деградация), консьюмеры (BI/Textures.java) уже переведены на Identifier.
+	// поле типизировано как Object (та же деградация), консьюмеры (BI/Textures.java) уже переведены на ResourceLocation.
 	public static Object sBlockIcons, sItemIcons;
 
 	/**
@@ -212,7 +212,7 @@ public class GT_API extends Abstract_Mod {
 	 *  {@code registerModEntity(PrefixBlockFallingEntity.class, "gt.MetaBlockFallingEntity", 0, this, 160, 1, T)}:
 	 *  trackingRange 160 блоков = 10 чанков ({@code clientTrackingRange}), updateFrequency 1 ({@code updateInterval}).
 	 *  Габарит — как у ванильного FALLING_BLOCK (0.98×0.98, {@code EntityType.java:492}), от которого 1.7.10-класс
-	 *  наследовался. Имя реестра из «gt.MetaBlockFallingEntity» приведено к lowercase (neo Identifier запрещает
+	 *  наследовался. Имя реестра из «gt.MetaBlockFallingEntity» приведено к lowercase (neo ResourceLocation запрещает
 	 *  заглавные) — тот же приём, что у {@code EntitiesGT}. */
 	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<gregapi.block.prefixblock.PrefixBlockFallingEntity>> METABLOCK_FALLING =
 		ENTITIES.register("gt_metablockfallingentity", rl -> net.minecraft.world.entity.EntityType.Builder.<gregapi.block.prefixblock.PrefixBlockFallingEntity>of(gregapi.block.prefixblock.PrefixBlockFallingEntity::new, net.minecraft.world.entity.MobCategory.MISC)
@@ -311,7 +311,7 @@ public class GT_API extends Abstract_Mod {
 	/** Все когда-либо подавленные ключи — для переприменения после /reload (карта датапака пересоздаётся). */
 	public static final java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> SUPPRESSED_DATAPACK_RECIPES = new java.util.HashSet<>();
 
-	public void onDatapackSyncReapplySuppression(net.neoforged.neoforge.event.OnDatapackSyncEvent aEvent) {
+	public void onDatapackSyncReapplySuppression(net.minecraftforge.event.OnDatapackSyncEvent aEvent) {
 		if (aEvent.getPlayer() != null) return; // вход игрока — карта не пересоздавалась; переприменение нужно только на /reload
 		removeDatapackRecipes(aEvent.getPlayerList().getServer(), new java.util.HashSet<>(SUPPRESSED_DATAPACK_RECIPES));
 	}
@@ -353,13 +353,13 @@ public class GT_API extends Abstract_Mod {
 	public static void deferBlockInit(Runnable aInit) {if (aInit != null) DEFERRED_BLOCK_INIT.add(aInit);}
 	/** Активное RegisterEvent&lt;Block&gt; во время слива DEFERRED_BLOCK_INIT; ненулевой ⇒ {@link #registerBlock} регистрирует
 	 *  блок напрямую в реестр этого события (DeferredRegister этой фазы уже обработан). */
-	public static net.neoforged.neoforge.registries.RegisterEvent sBlockRegisterEvent = null;
-	private static void runDeferredBlockInit(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
+	public static net.minecraftforge.registries.RegisterEvent sBlockRegisterEvent = null;
+	private static void runDeferredBlockInit(net.minecraftforge.registries.RegisterEvent aEvent) {
 		sBlockRegisterEvent = aEvent;
 		try {for (Runnable tInit : DEFERRED_BLOCK_INIT) try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_BLOCK_INIT.clear();}
 		finally {sBlockRegisterEvent = null;}
 	}
-	private static void onRegisterEvent(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
+	private static void onRegisterEvent(net.minecraftforge.registries.RegisterEvent aEvent) {
 		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.BLOCK)) runDeferredBlockInit(aEvent);
 	}
 
@@ -425,7 +425,7 @@ public class GT_API extends Abstract_Mod {
 		blocksFor(aModIDOwner).register(sanitizeRegName(aRegistryName), aBlockSupplier);
 	}
 
-	/** neo {@link net.minecraft.resources.Identifier}-путь допускает только [a-z0-9/._-]; GT6-имена предметов содержат
+	/** neo {@link net.minecraft.resources.ResourceLocation}-путь допускает только [a-z0-9/._-]; GT6-имена предметов содержат
 	 *  заглавные (напр. {@code gt.meta.dustSmall}) — санитизируем ТОЛЬКО ключ регистрации (тот же приём, что
 	 *  {@code FluidGT.safeRegName}). Идентичность предмета для oredict/паритета — по объекту/{@code mNameInternal}, не по ключу. */
 	public static String sanitizeRegName(String aName) {
@@ -456,7 +456,7 @@ public class GT_API extends Abstract_Mod {
 			// F12-namespace (MTE): namespace=GT — gt.multitileentity контент GT6 (golden gregtech:), не gregapi. Единственные
 			// вызыватели registerBlock — MTE (ST.register из MultiTileEntityRegistry/MultiTileEntityBlock). Ключ реестра/item-DR
 			// совпадает с setId блока (ModIDs.GT) и ключом предмета (BuiltInRegistries.BLOCK.getKey(block)=GT). ~17k рецептов паритета.
-			sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(ModIDs.GT, sanitizeRegName(aRegistryName)), () -> aBlock);
+			sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(ModIDs.GT, sanitizeRegName(aRegistryName)), () -> aBlock);
 			itemsFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
 			return null;
 		}
@@ -665,9 +665,9 @@ public class GT_API extends Abstract_Mod {
 	private void applyWaterSourceConversionRule(net.minecraft.server.level.ServerLevel aLevel) {
 		try {
 			boolean tWanted = gregapi.data.CS.WATER_SOURCE_CONVERSION;
-			net.minecraft.world.level.gamerules.GameRules tRules = aLevel.getGameRules();
-			if (tRules.get(net.minecraft.world.level.gamerules.GameRules.WATER_SOURCE_CONVERSION) == tWanted) return;
-			tRules.set(net.minecraft.world.level.gamerules.GameRules.WATER_SOURCE_CONVERSION, tWanted, aLevel.getServer());
+			net.minecraft.world.level.GameRules tRules = aLevel.getGameRules();
+			if (tRules.get(net.minecraft.world.level.GameRules.WATER_SOURCE_CONVERSION) == tWanted) return;
+			tRules.set(net.minecraft.world.level.GameRules.WATER_SOURCE_CONVERSION, tWanted, aLevel.getServer());
 			OUT.println("[GT6] бесконечная вода: правило water_source_conversion = " + tWanted + (tWanted ? " (ванильное поведение по настройке)" : " (вода конечна, как в 1.7.10 с GT6)"));
 		} catch (Throwable e) {e.printStackTrace(ERR);}
 	}

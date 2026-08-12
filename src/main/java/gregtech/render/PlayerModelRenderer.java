@@ -23,8 +23,8 @@
 
 package gregtech.render;
 
-import net.minecraft.resources.Identifier;
-import net.neoforged.neoforge.client.event.RenderPlayerEvent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.client.event.RenderPlayerEvent;
 
 import java.util.Collection;
 
@@ -47,9 +47,9 @@ import static gregapi.data.CS.RES_PATH_MODEL;
  * Mojang-плащ не перекрывается (свой плащ у игрока побеждает GT6-шный), двойного рисования нет.
  */
 public class PlayerModelRenderer {
-	// neo Identifier.assertValidPath запрещает заглавные в path (1.7.10 ResourceLocation их допускал) — имена
+	// neo ResourceLocation.assertValidPath запрещает заглавные в path (1.7.10 ResourceLocation их допускал) — имена
 	// плащей-текстур приведены к lowercase (файлы переименованы синхронно). Порядок/логика выбора плаща 1:1.
-	private final Identifier[] mResources = new Identifier[] {Identifier.parse(RES_PATH_MODEL + "braintech.png"), Identifier.parse(RES_PATH_MODEL + "silver.png"), Identifier.parse(RES_PATH_MODEL + "mrbrain.png"), Identifier.parse(RES_PATH_MODEL + "dev.png"), Identifier.parse(RES_PATH_MODEL + "gold.png"), Identifier.parse(RES_PATH_MODEL + "crazy.png"), Identifier.parse(RES_PATH_MODEL + "sus.png")};
+	private final ResourceLocation[] mResources = new ResourceLocation[] {ResourceLocation.parse(RES_PATH_MODEL + "braintech.png"), ResourceLocation.parse(RES_PATH_MODEL + "silver.png"), ResourceLocation.parse(RES_PATH_MODEL + "mrbrain.png"), ResourceLocation.parse(RES_PATH_MODEL + "dev.png"), ResourceLocation.parse(RES_PATH_MODEL + "gold.png"), ResourceLocation.parse(RES_PATH_MODEL + "crazy.png"), ResourceLocation.parse(RES_PATH_MODEL + "sus.png")};
 	private final Collection<String> mSupporterListSilver, mSupporterListGold;
 
 	public PlayerModelRenderer(Collection<String> aSupporterListSilver, Collection<String> aSupporterListGold) {
@@ -57,7 +57,7 @@ public class PlayerModelRenderer {
 		mSupporterListGold   = aSupporterListGold;
 	}
 
-	private Identifier getResource(String aPlayer) {
+	private ResourceLocation getResource(String aPlayer) {
 		aPlayer = aPlayer.toLowerCase();
 		// I sure as fuck won't make a Microsoft Account!
 		if (aPlayer.startsWith("gregori"))            return mResources[6];
@@ -89,7 +89,7 @@ public class PlayerModelRenderer {
 			if (tLevel == null) return;
 			if (!(tLevel.getEntity(tState.id) instanceof net.minecraft.world.entity.player.Player tPlayer)) return;
 			// имя — getScoreboardName(): у Player это имя профиля (приём проекта, EnchantmentEffect_Werewolf:56)
-			Identifier tCape = getResource(tPlayer.getScoreboardName());
+			ResourceLocation tCape = getResource(tPlayer.getScoreboardName());
 			if (tCape == null) tCape = getResource(tPlayer.getUUID().toString());
 			if (tCape == null) return;
 			// ResourceTexture(id, texturePath) — 2-арг конструктор, путь прямой (без авто-«textures/…png»):

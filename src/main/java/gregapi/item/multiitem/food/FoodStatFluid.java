@@ -31,10 +31,10 @@ import gregapi.data.CS.DrinksGT;
 import gregapi.data.FL;
 import gregapi.data.MD;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 public class FoodStatFluid implements IFoodStat {
 	public static final FoodStatFluid INSTANCE = new FoodStatFluid();
@@ -103,11 +103,11 @@ public class FoodStatFluid implements IFoodStat {
 	}
 	
 	@Override
-	public ItemUseAnimation getFoodAction(Item aItem, ItemStack aStack) {
+	public UseAnim getFoodAction(Item aItem, ItemStack aStack) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
 		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
-		if (rStats == null) return ItemUseAnimation.DRINK; // было ItemUseAnimation.drink (1.7.10 enum-конвенция) -> UPPER_CASE (ItemUseAnimation.java:17)
+		if (rStats == null) return UseAnim.DRINK; // было UseAnim.drink (1.7.10 enum-конвенция) -> UPPER_CASE (UseAnim.java:17)
 		return rStats.getFoodAction(aItem, aStack);
 	}
 	

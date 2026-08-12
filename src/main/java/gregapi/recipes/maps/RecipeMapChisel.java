@@ -33,7 +33,7 @@ import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 import java.util.Collection;
 import java.util.List;

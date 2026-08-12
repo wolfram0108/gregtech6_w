@@ -31,8 +31,8 @@ import net.minecraft.world.level.block.LiquidBlock;
 import gregapi.block.Material;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
-import net.minecraft.world.entity.monster.zombie.Zombie;
-import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.Level;
@@ -52,7 +52,7 @@ public class Replacements {
 			Villager aVillager = (Villager)aVictim;
 			Level aWorld = aVillager.level();
 			// neo: villager-зомби — отдельный класс ZombieVillager (1.7.10 Zombie.setVillager(true) удалён). F-ASM: метод мёртв в neo (коремод не применяется) → Mixin, тело портируется на neo-символы для компиляции.
-			net.minecraft.world.entity.monster.zombie.ZombieVillager tZombieVillager = new net.minecraft.world.entity.monster.zombie.ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, aWorld);
+			net.minecraft.world.entity.monster.ZombieVillager tZombieVillager = new net.minecraft.world.entity.monster.ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, aWorld);
 			tZombieVillager.copyPosition(aVillager); // было copyLocationAndAnglesFrom
 			// onSpawnWithEgg/finalizeSpawn (инициализация конверсии) движок делает сам — в neo требует ServerLevelAccessor+EntitySpawnReason, опущено в мёртвом ASM-теле.
 			tZombieVillager.setCanPickUpLoot(false);

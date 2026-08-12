@@ -23,9 +23,9 @@
 
 package gregapi.oredict;
 
-import net.neoforged.fml.ModLoadingContext;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.bus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.*;
 import gregapi.config.Config;

@@ -38,7 +38,7 @@ import mezz.jei.api.recipe.category.AbstractRecipeCategory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,9 +72,9 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 		mMap = aMap;
 		IDrawable tNEI = null, tGui = null;
 		try {
-			tNEI = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse((RES_PATH_GUI + "machines/NEI.png").toLowerCase(java.util.Locale.ROOT)), 0, 5, 176, 161);
+			tNEI = aGuiHelper.createDrawable(net.minecraft.resources.ResourceLocation.parse((RES_PATH_GUI + "machines/NEI.png").toLowerCase(java.util.Locale.ROOT)), 0, 5, 176, 161);
 			String tGuiPath = gregapi.util.UT.Code.stringValid(aMap.mGUIPath) ? aMap.mGUIPath : RES_PATH_GUI + aMap.mNameInternal + ".png";
-			tGui = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse(tGuiPath.toLowerCase(java.util.Locale.ROOT)), 0, 3, 176, 79);
+			tGui = aGuiHelper.createDrawable(net.minecraft.resources.ResourceLocation.parse(tGuiPath.toLowerCase(java.util.Locale.ROOT)), 0, 3, 176, 79);
 		} catch (Throwable e) {ERR.println("JEI: фон категории '" + aMap.mNameInternal + "' не собрался: " + e);}
 		mBackNEI = tNEI; mBackGui = tGui;
 	}

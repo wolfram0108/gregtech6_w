@@ -39,7 +39,7 @@ import gregapi.util.UT.Code;
 import gregapi.util.UT.NBT;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
@@ -49,10 +49,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 import net.minecraftforge.fluids.IFluidContainerItem;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.IFluidTank;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.IFluidTank;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 import java.util.*;
 
@@ -685,12 +685,12 @@ public enum FL {
 	 *  (recompSrc {@code net.minecraftforge.fluids.FluidRegistry:187-190,144}; там же под голыми именами
 	 *  "water"/"lava" лежали и ванильные жидкости). Save-путь {@link #save_} пишет в NBT-ключ
 	 *  {@code FluidName} именно голое имя ({@link FluidGT#nameOf} → для своих жидкостей {@code mName},
-	 *  для ванильных {@code Identifier.getPath()}) — значит load ОБЯЗАН находить голое имя, иначе
+	 *  для ванильных {@code ResourceLocation.getPath()}) — значит load ОБЯЗАН находить голое имя, иначе
 	 *  жидкость теряется при save/load round-trip. Приоритет: (1) свои жидкости — точное GT6-имя через
 	 *  {@link FluidGT#BY_NAME}; (2) реестр neo — голое имя дефолтится в {@code minecraft:<name>}
-	 *  ({@code Identifier.tryParse} → {@code withDefaultNamespace}, `Identifier.java:49,72`; для ванильных
+	 *  ({@code ResourceLocation.tryParse} → {@code withDefaultNamespace}, `ResourceLocation.java:49,72`; для ванильных
 	 *  water/lava это восстанавливает round-trip), namespaced-имя (с ':') парсится как есть.
-	 *  {@code Identifier.tryParse} даёт {@code null} на невалидном имени (не бросает), а
+	 *  {@code ResourceLocation.tryParse} даёт {@code null} на невалидном имени (не бросает), а
 	 *  {@code getOptional} — {@code null}-семантику отсутствия (в отличие от {@code getValue}, который у
 	 *  {@code DefaultedMappedRegistry} на промахе вернул бы {@code Fluids.EMPTY},
 	 *  `DefaultedMappedRegistry.java:47-56`), 1:1 с прежним null-на-отсутствие.
@@ -701,7 +701,7 @@ public enum FL {
 		if (Code.stringInvalid(aFluidName)) return null;
 		FluidGT tGT = FluidGT.BY_NAME.get(aFluidName.toLowerCase());
 		if (tGT != null) return tGT.getFluid();
-		Identifier tId = Identifier.tryParse(aFluidName);
+		ResourceLocation tId = ResourceLocation.tryParse(aFluidName);
 		if (tId != null) {
 			Fluid tFluid = BuiltInRegistries.FLUID.getOptional(tId).orElse(null);
 			if (tFluid != null && tFluid != Fluids.EMPTY) return tFluid;
@@ -1087,7 +1087,7 @@ public enum FL {
 	public static String name(Fluid aFluid, boolean aLocalized) {
 		if (aFluid == null) return "";
 		/** Замена {@code Fluid.getUnlocalizedName()} (Forge-1.7.10, метод на самом Fluid) — в neo
-		 *  unlocalized-имя живёт на {@link net.neoforged.neoforge.fluids.FluidType} и достаётся через
+		 *  unlocalized-имя живёт на {@link net.minecraftforge.fluids.FluidType} и достаётся через
 		 *  реальный {@code FluidType.getDescriptionId()} (`FluidType.java:146-149`), а НЕ реконструируется
 		 *  из имени вручную. */
 		if (!aLocalized) return aFluid.getFluidType().getDescriptionId();
@@ -1303,12 +1303,12 @@ public enum FL {
 	 *  движка; всё остальное БЕЗ своей текстуры (ванильная вода, GT6-воды типа seawater — в 1.7.10 они брали
 	 *  ваниль-иконку воды) — water_still, цвет даёт вызывающий (RGBa центра F5 / водный тинт).
 	 *  Потребители: ItemFluidDisplay.stillIcon (делегат) и BlockTextureFluid — копий не заводить. */
-	public static Identifier stillIcon(Fluid aFluid) {
+	public static ResourceLocation stillIcon(Fluid aFluid) {
 		if (aFluid == null) return null;
 		FluidGT tGT = FluidGT.of(aFluid);
 		if (tGT != null && tGT.mTexture != null) return tGT.mTexture.getIcon(0);
-		if (aFluid.isSame(Fluids.LAVA)) return Identifier.withDefaultNamespace("block/lava_still");
-		return Identifier.withDefaultNamespace("block/water_still");
+		if (aFluid.isSame(Fluids.LAVA)) return ResourceLocation.withDefaultNamespace("block/lava_still");
+		return ResourceLocation.withDefaultNamespace("block/water_still");
 	}
 
 	/** Loads a FluidStack properly. */
@@ -1385,7 +1385,7 @@ public enum FL {
 	
 	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, 1000, 300, null, null, 0, aFluidList);}
 	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, null, null, 0, aFluidList);}
-	// путь текстуры: пробел → «_» (neo Identifier отвергает пробел; имя ЖИДКОСТИ не трогаем — рецепты ссылаются на «molten hsla»)
+	// путь текстуры: пробел → «_» (neo ResourceLocation отвергает пробел; имя ЖИДКОСТИ не трогаем — рецепты ссылаются на «molten hsla»)
 	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, java.util.function.Supplier<ItemStack> aFullContainer, java.util.function.Supplier<ItemStack> aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {return create(aName, new Textures.BlockIcons.CustomIcon("fluids/" + aName.toLowerCase().replace(' ', '_')), aLocalized, aMaterial, null, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);}
 
 	/**

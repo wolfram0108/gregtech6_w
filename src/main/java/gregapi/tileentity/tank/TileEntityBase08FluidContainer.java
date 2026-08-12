@@ -50,7 +50,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.Container;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -58,10 +58,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidBlock;
 import net.minecraftforge.fluids.IFluidContainerItem;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import squeek.applecore.api.food.FoodValues;
 import thaumcraft.common.tiles.TileCrucible;
 
@@ -168,7 +168,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 			if (aStack == null) return T;
 			if (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood() || FoodStatFluid.INSTANCE.alwaysEdible(aStack.getItem(), aStack, aPlayer)) {
 				switch(FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack)) {
-				case EAT : UT.Sounds.send(SFX.MC_EAT  , this, F); break; // было "case eat" (1.7.10 enum-конвенция) -> UPPER_CASE (ItemUseAnimation.java:16)
+				case EAT : UT.Sounds.send(SFX.MC_EAT  , this, F); break; // было "case eat" (1.7.10 enum-конвенция) -> UPPER_CASE (UseAnim.java:16)
 				default  : UT.Sounds.send(SFX.MC_DRINK, this, F); break;
 				}
 				mTank.remove(250);
@@ -370,8 +370,8 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		return isDrinkable() && aStack.getCount() == 1 ? Math.max(FoodStatFluid.INSTANCE.getFoodLevel(aStack.getItem(), aStack, null) * 8, 32) : 0;
 	}
 	
-	public ItemUseAnimation getItemUseAction(MultiTileEntityItemInternal aItem, ItemStack aStack) {
-		return isDrinkable() && aStack.getCount() == 1 ? FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack) : ItemUseAnimation.NONE; // было ItemUseAnimation.none (1.7.10 enum-конвенция) -> UPPER_CASE (ItemUseAnimation.java:15)
+	public UseAnim getItemUseAction(MultiTileEntityItemInternal aItem, ItemStack aStack) {
+		return isDrinkable() && aStack.getCount() == 1 ? FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack) : UseAnim.NONE; // было UseAnim.none (1.7.10 enum-конвенция) -> UPPER_CASE (UseAnim.java:15)
 	}
 	
 	public ItemStack onEaten(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {

@@ -42,7 +42,7 @@ import gregapi.util.ST;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 public class Compat_Recipes_Atum extends CompatMods {
 	public Compat_Recipes_Atum(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}

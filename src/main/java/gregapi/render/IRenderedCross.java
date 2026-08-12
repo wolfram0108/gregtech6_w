@@ -23,7 +23,7 @@
 
 package gregapi.render;
 
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 
@@ -38,7 +38,7 @@ public interface IRenderedCross extends IRenderedBlock {
 	/** Иконка cross-модели (растение) для позиции; per-мета — сам блок читает {@code WD.meta}.
 	 *  {@code aWorld==null} = item-рендер: {@code aX} несёт МЕТУ СТЕКА (1.7.10 renderBlockAsItem рисовал
 	 *  drawCrossedSquares с иконкой по метадате предмета — иначе все варианты выглядят метой 0). */
-	Identifier getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ);
+	ResourceLocation getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ);
 	/** Оттенок cross-модели (0..255 RGBa), {@code null} = белый (без тинта). */
 	default short[] getCrossRGBa(BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 

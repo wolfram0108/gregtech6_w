@@ -28,7 +28,7 @@ import static gregapi.data.CS.*;
 import gregapi.recipes.Recipe;
 import gregapi.tileentity.data.ITileEntityProgress;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 /**
  * @author Gregorius Techneticies

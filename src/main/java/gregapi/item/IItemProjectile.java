@@ -26,7 +26,7 @@ package gregapi.item;
 import gregapi.code.TagData;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
@@ -79,7 +79,7 @@ public interface IItemProjectile {
 		 *  (есть только сеттер, AbstractArrow.java:671) — единственное место чтения на весь мод. */
 		public double getBaseDamageGT() {
 			try {
-				java.lang.reflect.Field tField = net.minecraft.world.entity.projectile.arrow.AbstractArrow.class.getDeclaredField("baseDamage");
+				java.lang.reflect.Field tField = net.minecraft.world.entity.projectile.AbstractArrow.class.getDeclaredField("baseDamage");
 				tField.setAccessible(true);
 				return tField.getDouble(this);
 			} catch (Throwable e) {return 2.0;}

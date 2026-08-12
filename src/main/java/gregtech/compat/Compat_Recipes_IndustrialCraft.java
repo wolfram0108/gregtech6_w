@@ -44,7 +44,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.WeightedRandomChestContent;
 import net.minecraftforge.common.ChestGenHooks;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;
 

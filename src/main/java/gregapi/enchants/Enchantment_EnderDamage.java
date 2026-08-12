@@ -25,7 +25,7 @@ package gregapi.enchants;
 
 import gregapi.data.MD;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.enchantment.Enchantment;
 
@@ -41,5 +41,5 @@ import net.minecraft.world.item.enchantment.Enchantment;
  */
 public class Enchantment_EnderDamage {
 	public static final ResourceKey<Enchantment> KEY =
-		ResourceKey.create(Registries.ENCHANTMENT, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "disjunction"));
+		ResourceKey.create(Registries.ENCHANTMENT, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "disjunction"));
 }

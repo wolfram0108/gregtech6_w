@@ -54,16 +54,16 @@ import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 import java.util.ArrayList;
@@ -324,10 +324,10 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	}
 
 	@Override
-	public ItemUseAnimation getUseAnimation(ItemStack aStack) {
+	public UseAnim getUseAnimation(ItemStack aStack) {
 		IToolStats tStats = getToolStats(aStack);
-		if (tStats != null && tStats.canBlock()) return ItemUseAnimation.BLOCK;
-		return ItemUseAnimation.NONE;
+		if (tStats != null && tStats.canBlock()) return UseAnim.BLOCK;
+		return UseAnim.NONE;
 	}
 	@Override
 	public int getUseDuration(ItemStack aStack, LivingEntity aUser) {
@@ -761,7 +761,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): getRenderPasses(int)/getColorFromItemStack(ItemStack,int)/
 	// getIconIndex/getIconFromDamage/getIconFromDamageForRenderPass/getIcon(...) (1.7.10 multi-pass IIcon
-	// Item-рендер) не существуют в 26.1.2 Item целиком — держатель текстуры теперь Identifier (см.
+	// Item-рендер) не существуют в 26.1.2 Item целиком — держатель текстуры теперь ResourceLocation (см.
 	// gregapi.render.IIconContainer, тот же центр); методы НЕ @Override, тела 1:1 сохранены (внутренние
 	// доменные вычисления, дергают друг друга напрямую внутри этого же класса).
 	public int getRenderPasses(int aMetaData) {
@@ -776,15 +776,15 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return 16777215;
 	}
 
-	public Identifier getIconIndex(ItemStack aStack) {return getIcon(aStack, 0);}
-	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {return getIconFromDamage(aMetaData);}
-	public Identifier getIconFromDamage(int aMetaData) {return getIconIndex(ST.make(this, 1, aMetaData));}
-	public Identifier getIcon(ItemStack aStack, int aRenderPass) {return getIcon(aStack, aRenderPass, null, null, 0);}
-	public Identifier getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {
+	public ResourceLocation getIconIndex(ItemStack aStack) {return getIcon(aStack, 0);}
+	public ResourceLocation getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {return getIconFromDamage(aMetaData);}
+	public ResourceLocation getIconFromDamage(int aMetaData) {return getIconIndex(ST.make(this, 1, aMetaData));}
+	public ResourceLocation getIcon(ItemStack aStack, int aRenderPass) {return getIcon(aStack, aRenderPass, null, null, 0);}
+	public ResourceLocation getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {
 		IToolStats tStats = getToolStatsInternal(aStack);
 		if (tStats == null) return Textures.ItemIcons.VOID.getIcon(0);
 		if (aRenderPass < tStats.getRenderPasses()) {
-			Identifier rIcon = tStats.getIcon(aStack, aRenderPass);
+			ResourceLocation rIcon = tStats.getIcon(aStack, aRenderPass);
 			return rIcon == null ? Textures.ItemIcons.VOID.getIcon(0) : rIcon;
 		}
 		if (aPlayer == null) {

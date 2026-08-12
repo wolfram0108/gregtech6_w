@@ -24,9 +24,9 @@
 package gregapi.compat.thaumcraft;
 
 import gregapi.api.FMLModIdMappingEvent;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.ItemStackContainer;
 import gregapi.compat.CompatBase;
@@ -44,7 +44,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import thaumcraft.api.ThaumcraftApi;
 import thaumcraft.api.ThaumcraftApiHelper;
 import thaumcraft.api.aspects.Aspect;
@@ -139,11 +139,11 @@ public class CompatTC extends CompatBase implements ICompatTC {
 		TC.VITREUS          .mAspect = Aspect.CRYSTAL;
 		TC.VOLATUS          .mAspect = Aspect.FLIGHT;
 		
-		TC.STRONTIO         .mAspect = new Aspect("strontio"    , 0xeec2b3, new Aspect[] {Aspect.MIND, Aspect.ENTROPY}      , Identifier.parse(RES_PATH_ASPECTS + "STRONTIO.png"), 1);
-		TC.NEBRISUM         .mAspect = new Aspect("nebrisum"    , 0xeeee7e, new Aspect[] {Aspect.MINE, Aspect.GREED}        , Identifier.parse(RES_PATH_ASPECTS + "NEBRISUM.png"), 1);
-		TC.ELECTRUM         .mAspect = new Aspect("electrum"    , 0xc0eeee, new Aspect[] {Aspect.ENERGY, Aspect.MECHANISM}  , Identifier.parse(RES_PATH_ASPECTS + "ELECTRUM.png"), 1);
-		TC.MAGNETO          .mAspect = new Aspect("magneto"     , 0xc0c0c0, new Aspect[] {Aspect.METAL, Aspect.TRAVEL}      , Identifier.parse(RES_PATH_ASPECTS + "MAGNETO.png"), 1);
-		TC.RADIO            .mAspect = new Aspect("radio"       , 0xc0ffc0, new Aspect[] {Aspect.LIGHT, Aspect.ENERGY}      , Identifier.parse(RES_PATH_ASPECTS + "RADIO.png"), 1);
+		TC.STRONTIO         .mAspect = new Aspect("strontio"    , 0xeec2b3, new Aspect[] {Aspect.MIND, Aspect.ENTROPY}      , ResourceLocation.parse(RES_PATH_ASPECTS + "STRONTIO.png"), 1);
+		TC.NEBRISUM         .mAspect = new Aspect("nebrisum"    , 0xeeee7e, new Aspect[] {Aspect.MINE, Aspect.GREED}        , ResourceLocation.parse(RES_PATH_ASPECTS + "NEBRISUM.png"), 1);
+		TC.ELECTRUM         .mAspect = new Aspect("electrum"    , 0xc0eeee, new Aspect[] {Aspect.ENERGY, Aspect.MECHANISM}  , ResourceLocation.parse(RES_PATH_ASPECTS + "ELECTRUM.png"), 1);
+		TC.MAGNETO          .mAspect = new Aspect("magneto"     , 0xc0c0c0, new Aspect[] {Aspect.METAL, Aspect.TRAVEL}      , ResourceLocation.parse(RES_PATH_ASPECTS + "MAGNETO.png"), 1);
+		TC.RADIO            .mAspect = new Aspect("radio"       , 0xc0ffc0, new Aspect[] {Aspect.LIGHT, Aspect.ENERGY}      , ResourceLocation.parse(RES_PATH_ASPECTS + "RADIO.png"), 1);
 //      TC.REFLEXIO         .mAspect = new Aspect("reflexio"    , 0xf0f0f0, new Aspect[] {Aspect.ENERGY, Aspect.EXCHANGE}   , new ResourceLocation(RES_PATH_ASPECTS + "REFLEXIO.png"), 1);
 		
 		TC.REFLEXIO         .mAspect = Aspect.EXCHANGE;

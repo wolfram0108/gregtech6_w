@@ -30,9 +30,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 
 /**
  * F12-entity (ЗАКРЫТО): ЦЕНТРАЛЬНАЯ регистрация EntityType мода gregtech — единая точка (тот же приём, что
@@ -66,12 +66,12 @@ public class EntitiesGT {
 	// сущность БЕЗ него крашится при тике ('Can't find attribute minecraft:tempt_range'). Vanilla-виллагер этот атрибут
 	// НЕ несёт (в vanilla он не temptable). Регистрируем tempt_range виллагеру и оцелоту через EntityAttributeModificationEvent
 	// (mod-bus); guard has() — оцелот в vanilla уже temptable (не дублируем, add на существующий кинул бы).
-	private static void onAttributeModification(net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent aEvent) {
+	private static void onAttributeModification(net.minecraftforge.event.entity.EntityAttributeModificationEvent aEvent) {
 		addTemptRange(aEvent, EntityType.VILLAGER);
 		addTemptRange(aEvent, EntityType.OCELOT);
 	}
 
-	private static void addTemptRange(net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent aEvent, EntityType<? extends net.minecraft.world.entity.LivingEntity> aType) {
+	private static void addTemptRange(net.minecraftforge.event.entity.EntityAttributeModificationEvent aEvent, EntityType<? extends net.minecraft.world.entity.LivingEntity> aType) {
 		if (!aEvent.has(aType, net.minecraft.world.entity.ai.attributes.Attributes.TEMPT_RANGE)) aEvent.add(aType, net.minecraft.world.entity.ai.attributes.Attributes.TEMPT_RANGE);
 	}
 }

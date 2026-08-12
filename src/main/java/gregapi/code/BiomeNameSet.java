@@ -95,7 +95,7 @@ public class BiomeNameSet extends AbstractSet<String> {
 		}
 		String rKey = "";
 		try {
-			net.minecraft.server.MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+			net.minecraft.server.MinecraftServer tServer = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
 			if (tServer != null) rKey = tServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getResourceKey(aBiome).map(k -> k.identifier().toString()).orElse("");
 		} catch (Throwable e) {rKey = "";}
 		if (!rKey.isEmpty()) synchronized (BIOME_KEY_CACHE) {BIOME_KEY_CACHE.put(aBiome, rKey);}

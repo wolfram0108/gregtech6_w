@@ -29,9 +29,9 @@ import gregapi.util.UT;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.IFluidTank;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.IFluidTank;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
@@ -49,7 +49,7 @@ import static gregapi.data.CS.T;
  * (`decisions/F5-fluids.md` §4) — меняется ТОЛЬКО внешний фасад:
  * <ul>
  * <li>{@link IFluidTank} — реальный (хоть и {@code @Deprecated(forRemoval=true)}) интерфейс neo
- *     26.1.2 ({@code net.neoforged.neoforge.fluids.IFluidTank.java}), максимально совместимый по
+ *     26.1.2 ({@code net.minecraftforge.fluids.IFluidTank.java}), максимально совместимый по
  *     форме с legacy-потребителями; сигнатуры {@code fill(FluidStack,FluidAction)}/
  *     {@code drain(int,FluidAction)}/{@code drain(FluidStack,FluidAction)} — из декомпила.</li>
  * <li>{@link #asResourceHandler()} — современный фасад, {@code ResourceHandler<FluidResource>} через

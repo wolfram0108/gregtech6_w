@@ -39,7 +39,7 @@ import gregapi.data.RM;
 import gregapi.util.CR;
 import gregapi.util.ST;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 public class Compat_Recipes_GrowthCraft extends CompatMods {
 	public Compat_Recipes_GrowthCraft(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}

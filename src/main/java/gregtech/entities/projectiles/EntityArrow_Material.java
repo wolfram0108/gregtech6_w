@@ -45,8 +45,8 @@ import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
-import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -62,7 +62,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.util.FakePlayerFactory;
+import net.minecraftforge.common.util.FakePlayerFactory;
 
 import java.util.List;
 import java.util.UUID;
@@ -205,7 +205,7 @@ public class EntityArrow_Material extends EntityProjectile {
 					OreDictItemData tData = OM.anydata(mArrow);
 
 					// To make Railcrafts Implosion Enchantment work...
-					if (tShootingEntity instanceof Player) NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.AttackEntityEvent((Player)tShootingEntity, tHitEntity));
+					if (tShootingEntity instanceof Player) NeoForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.AttackEntityEvent((Player)tShootingEntity, tHitEntity));
 
 					float
 					tMagicDamage = tHitEntity instanceof LivingEntity?UT.Enchantments.getDamageBonusVsCreature(mArrow, tHitEntity):0,

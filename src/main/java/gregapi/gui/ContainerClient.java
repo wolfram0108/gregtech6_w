@@ -33,7 +33,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * @author Gregorius Techneticies
@@ -57,7 +57,7 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 
 	public boolean mCrashed = F;
 
-	public Identifier mBackground;
+	public ResourceLocation mBackground;
 
 	public String mNEI = "";
 
@@ -88,7 +88,7 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 		mContainer = aContainer;
 		// F-namespace lowercase: GT6-пути несут заглавные (machines/Oven.png), neo отвергает не-[a-z0-9/._-]
 		// (IdentifierException) — тот же приём, что TextureSet:122 (ассеты на диске уже lowercase).
-		mBackground = Identifier.parse(aBackgroundPath.toLowerCase(java.util.Locale.ROOT));
+		mBackground = ResourceLocation.parse(aBackgroundPath.toLowerCase(java.util.Locale.ROOT));
 		mc = minecraft;
 		fontRendererObj = font;
 		xSize = imageWidth;

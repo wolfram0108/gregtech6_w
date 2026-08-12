@@ -37,7 +37,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import gregapi.recipes.FurnaceRecipes; // F11-smelting: GT6-центр вместо удалённого vanilla FurnaceRecipes
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 import java.util.Collection;
 

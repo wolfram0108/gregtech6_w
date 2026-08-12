@@ -25,10 +25,10 @@ package gregapi.tileentity.base;
 import gregapi.code.ItemNBT;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.IFluidTank;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.IFluidTank;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import gregapi.fluid.FluidTankInfo;
 
 import appeng.api.movable.IMovableTile;
@@ -142,7 +142,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	 *  единственная воронка «картинка секции изменилась», см. MixinLevelRenderer). Валиден, пока
 	 *  {@code mQuadCacheEpoch == MultiTileEntityBER.sQuadEpoch}; сам список может быть null (MTE без квадов).
 	 *  Не сохраняется и не синхронизируется: чисто визуальный кэш, как mRenderAABB выше. */
-	public java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> mQuadCache = null;
+	public java.util.List<net.minecraft.client.renderer.block.model.BakedQuad> mQuadCache = null;
 	public long mQuadCacheEpoch = Long.MIN_VALUE;
 
 	/** If this TileEntity is ticking at all */
@@ -318,8 +318,8 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override public BlockPos getCoords() {return getBlockPos();}
 	@Override public BlockPos getOffset (byte aSide, int aMultiplier) {return new BlockPos(getOffsetX (aSide, aMultiplier), getOffsetY (aSide, aMultiplier), getOffsetZ (aSide, aMultiplier));}
 	@Override public BlockPos getOffsetN(byte aSide, int aMultiplier) {return new BlockPos(getOffsetXN(aSide, aMultiplier), getOffsetYN(aSide, aMultiplier), getOffsetZN(aSide, aMultiplier));}
-	@Override public boolean isServerSide() {return level == null ? net.neoforged.fml.util.thread.EffectiveSide.get().isServer() : !level.isClientSide();}
-	@Override public boolean isClientSide() {return level == null ? net.neoforged.fml.util.thread.EffectiveSide.get().isClient() :  level.isClientSide();}
+	@Override public boolean isServerSide() {return level == null ? net.minecraftforge.fml.util.thread.EffectiveSide.get().isServer() : !level.isClientSide();}
+	@Override public boolean isClientSide() {return level == null ? net.minecraftforge.fml.util.thread.EffectiveSide.get().isClient() :  level.isClientSide();}
 	@Override public boolean openGUI(Player aPlayer) {return openGUI(aPlayer, 0);}
 	/**
 	 * F-GUI (шов «GUI/меню», серверный центр): 1.7.10 {@code aPlayer.openGui(mod,id,world,x,y,z)} диспетчерил

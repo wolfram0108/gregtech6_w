@@ -24,8 +24,8 @@
 package gregapi.render;
 
 import net.minecraft.core.Direction;
-import net.minecraft.resources.Identifier;
-import net.minecraft.client.renderer.block.BlockAndTintGetter;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.BlockAndTintGetter;
 
 /**
  * F3-render рельсов (client): воспроизведение vanilla {@code RenderBlocks.renderBlockRail} — плоский рельс-quad на
@@ -46,7 +46,7 @@ public final class RailRenderer {
 	/** Собрать quad'ы рельса в позиции (x,y,z) по его текущей мете. */
 	public static void collectRailQuads(GT6QuadBuilder aQB, BlockAndTintGetter aLevel, int aX, int aY, int aZ, gregapi.block.misc.BlockBaseRail aRail) {
 		int tMeta = gregapi.util.WD.meta(aLevel, aX, aY, aZ) & 0xFF;
-		Identifier tIcon = aRail.getIcon(0, tMeta); // primary/secondary (straight/turned либо active) выбирает сам блок
+		ResourceLocation tIcon = aRail.getIcon(0, tMeta); // primary/secondary (straight/turned либо active) выбирает сам блок
 		if (tIcon == null) return;
 		// Форма: power/detector — только направление (биты 0-2, углов нет); обычный рельс — мета 0..9.
 		int tShape = (aRail.mPowerRail || aRail.mDetectorRail) ? (tMeta & 7) : (tMeta & 15);

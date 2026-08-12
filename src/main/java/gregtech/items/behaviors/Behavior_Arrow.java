@@ -35,7 +35,7 @@ import gregapi.util.UT;
 import gregapi.util.UT.Enchantments;
 import gregtech.entities.projectiles.EntityArrow_Material;
 import net.minecraft.world.level.block.DispenserBlock;
-import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.BlockSource;
 import net.minecraft.core.Position;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.entity.Entity;
@@ -106,7 +106,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 		if (tEntityArrow != null) {
 			tEntityArrow.shoot(tFacing.getStepX(), (tFacing.getStepY() + 0.1F), tFacing.getStepZ(), mSpeedMultiplier * 1.10F, mPrecision);
 			tEntityArrow.setProjectileStack(aStack);
-			tEntityArrow.pickup = net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.ALLOWED;
+			tEntityArrow.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.ALLOWED;
 			aWorld.addFreshEntity(tEntityArrow);
 			if (aStack.getCount() < 100) aStack.setCount(aStack.getCount()-1);
 			return aStack;

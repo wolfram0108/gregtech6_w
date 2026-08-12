@@ -102,7 +102,7 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		{
 			java.util.Set<Object> tSeenSlabs = new java.util.HashSet<>();
 			for (BlockMetaType tSlab : mSlabs) if (tSlab != null && tSeenSlabs.add(tSlab)) {
-				net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.BLOCK, net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tSlab.mNameInternal))), tSlab);
+				net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.BLOCK, net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tSlab.mNameInternal))), tSlab);
 			}
 		}
 		// F12-followup (block-split): конструкция блока идёт на RegisterEvent (реестр разморожен), но ST.hide/ST.make/рецепты

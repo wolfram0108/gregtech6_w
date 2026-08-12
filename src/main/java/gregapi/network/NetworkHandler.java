@@ -38,7 +38,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -47,7 +47,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -80,7 +80,7 @@ public final class NetworkHandler implements INetworkHandler {
 		mModID = aModID;
 		mChannelName = aChannelName;
 		if (aChannelName.length() > 4) throw new IllegalArgumentException("String for Channel Name must contain 4 Characters or less!");
-		mPayloadType = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(identifierPart(aModID), "network/" + identifierPart(aChannelName)));
+		mPayloadType = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(identifierPart(aModID), "network/" + identifierPart(aChannelName)));
 		mPayloadCodec = GT6Payload.codec(mPayloadType);
 		mPacketTypes = new IPacket[256];
 		for (int i = 0; i < aPacketTypes.length; i++) {

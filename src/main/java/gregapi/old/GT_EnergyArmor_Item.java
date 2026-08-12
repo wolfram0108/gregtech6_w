@@ -36,16 +36,16 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.equipment.ArmorMaterials;
+import net.minecraft.world.item.ArmorMaterials;
 import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.tags.TagKey;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
+import net.minecraftforge.event.entity.living.LivingFallEvent;
 
 /**
  * F13 (документация neo item/armor-компонентной модели): было {@code extends ItemArmor} (1.7.10, armorType/renderIndex
@@ -93,7 +93,7 @@ public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 			.humanoidArmor(ArmorMaterials.DIAMOND, armorTypeFor(aArmorType)) // было ArmorMaterial.DIAMOND (1.7.10 enum) -> neo ArmorMaterials.DIAMOND (ArmorMaterials.java:24)
 			.durability(100) // было setMaxDamage(100); .durability() тоже даёт stacksTo(1), покрывает setMaxStackSize(1) (Item.java:440-444)
 			// было setNoRepair() — пустой (никогда не заполняемый) repair-тег даёт тот же эффект по следствию, приём ItemArmorBase.java:130-133
-			.repairable(TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(ModIDs.GT, "repair/none")));
+			.repairable(TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(ModIDs.GT, "repair/none")));
 	}
 
 	private static ArmorType armorTypeFor(int aArmorType) {

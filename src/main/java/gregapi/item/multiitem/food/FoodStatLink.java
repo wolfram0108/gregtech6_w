@@ -30,11 +30,11 @@ import java.util.List;
 
 import gregapi.data.CS.DrinksGT;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 public class FoodStatLink implements IFoodStat {
 	public final IFoodStat mStats;
@@ -88,7 +88,7 @@ public class FoodStatLink implements IFoodStat {
 	}
 	
 	@Override
-	public ItemUseAnimation getFoodAction(Item aItem, ItemStack aStack) {
+	public UseAnim getFoodAction(Item aItem, ItemStack aStack) {
 		return mStats.getFoodAction(aItem, aStack);
 	}
 	

@@ -41,7 +41,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.Container;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -346,7 +346,7 @@ public interface IMultiTileEntity extends ITileEntitySpecificPlacementBehavior {
 	}
 	
 	public static interface IMTE_GetItemUseAction extends IMultiTileEntity {
-		public ItemUseAnimation getItemUseAction(MultiTileEntityItemInternal aItem, ItemStack aStack);
+		public UseAnim getItemUseAction(MultiTileEntityItemInternal aItem, ItemStack aStack);
 	}
 	
 	public static interface IMTE_OnEaten extends IMultiTileEntity {

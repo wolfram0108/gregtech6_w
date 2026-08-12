@@ -77,7 +77,7 @@ public class GT6ItemTags extends TagsProvider<Item> {
 		int tArrows = 0;
 		for (Item tItem : BuiltInRegistries.ITEM) {
 			if (!(tItem instanceof IItemProjectile tProjectile)) continue;
-			net.minecraft.resources.Identifier tID = BuiltInRegistries.ITEM.getKey(tItem);
+			net.minecraft.resources.ResourceLocation tID = BuiltInRegistries.ITEM.getKey(tItem);
 			if (tID == null || !(tID.getNamespace().equals(CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
 			if (!isArrow(tProjectile, tID)) continue;
 			getOrCreateRawBuilder(ItemTags.ARROWS).addElement(tID);
@@ -93,7 +93,7 @@ public class GT6ItemTags extends TagsProvider<Item> {
 	 *  Поэтому отбор идёт по полю, заданному в конструкторе предмета ({@code PrefixItemProjectile.java:68}) —
 	 *  оно от фазы не зависит. Носитель контракта вне этой иерархии не потеряется молча: он попадёт в
 	 *  предупреждение ниже, и решение по нему принимает человек, а не тихий пропуск. */
-	private static boolean isArrow(IItemProjectile aProjectile, net.minecraft.resources.Identifier aID) {
+	private static boolean isArrow(IItemProjectile aProjectile, net.minecraft.resources.ResourceLocation aID) {
 		if (aProjectile instanceof gregapi.item.prefixitem.PrefixItemProjectile tPrefix)
 			return tPrefix.mProjectileType == TD.Projectiles.ARROW;
 		// Второй носитель контракта — мультипредмет: у него «стрела ли это» решают ПОВЕДЕНИЯ

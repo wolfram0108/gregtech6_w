@@ -41,7 +41,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.particles.ExplosionParticleInfo;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -186,7 +186,7 @@ public class DummyWorld extends Level {
 	public DummyWorld(RegistryAccess aRegistryAccess) {
 		super(
 			new DummyLevelData(),
-			ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("dummy_dimension")),
+			ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("dummy_dimension")),
 			aRegistryAccess,
 			Holder.direct(mDimensionType),
 			F,

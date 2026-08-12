@@ -24,7 +24,7 @@
 package gregtech.loaders.c;
 
 import gregapi.util.CR;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 import gregapi.code.ICondition;
 import gregapi.code.ICondition.And;
 import gregapi.code.ICondition.Nor;
@@ -41,7 +41,7 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregtech.loaders.b.Loader_OreProcessing.OreProcessing_CraftFrom;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;
 import static gregapi.data.OP.*;

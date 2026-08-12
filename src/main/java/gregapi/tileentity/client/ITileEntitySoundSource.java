@@ -36,7 +36,7 @@ import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * @author Gregorius Techneticies
@@ -54,7 +54,7 @@ public interface ITileEntitySoundSource extends ITileEntityUnloadable {
 		public SoundSourceTileEntity(IHasWorldAndCoords aTileEntity, boolean aRunning, String aSoundName, float aSoundStrength, float aSoundModulation) {
 			// SoundEvent из строки-ресурса (createVariableRangeEvent, SoundEvent.java:35); источник BLOCKS (звук машины-блока).
 			// F-sound (1:1): легаси 1.7.10 SFX → neo sound-id через UT.Sounds.neoSound (карта сверена по SoundEvents.java).
-			super(SoundEvent.createVariableRangeEvent(Identifier.parse(gregapi.util.UT.Sounds.neoSound(aSoundName))), SoundSource.BLOCKS, RandomSource.create());
+			super(SoundEvent.createVariableRangeEvent(ResourceLocation.parse(gregapi.util.UT.Sounds.neoSound(aSoundName))), SoundSource.BLOCKS, RandomSource.create());
 			mTileEntity = aTileEntity;
 			mRunning = aRunning;
 			mSoundStrength = aSoundStrength;

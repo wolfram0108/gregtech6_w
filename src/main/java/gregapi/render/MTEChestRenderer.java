@@ -35,7 +35,7 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import static gregapi.data.CS.*;
 
@@ -63,15 +63,15 @@ public class MTEChestRenderer implements BlockEntityRenderer<MultiTileEntityChes
 
 	/** Мост {@code MultiTileEntityChest.onRegistrationClient}: регистрация пары текстур .colored/.plain. */
 	public static void bindTexture(String aTextureName, String aRegistryNameInternal) {
-		RENDERER.mResources.put(aTextureName, new Identifier[] {Identifier.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistryNameInternal + "/" + aTextureName + ".colored.png"), Identifier.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistryNameInternal + "/" + aTextureName + ".plain.png")});
+		RENDERER.mResources.put(aTextureName, new ResourceLocation[] {ResourceLocation.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistryNameInternal + "/" + aTextureName + ".colored.png"), ResourceLocation.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistryNameInternal + "/" + aTextureName + ".plain.png")});
 	}
 
 	private static final MultiTileEntityModelChest sModel = new MultiTileEntityModelChest();
-	public final Map<String, Identifier[]> mResources = new HashMap<>();
+	public final Map<String, ResourceLocation[]> mResources = new HashMap<>();
 
 	/** Состояние кадра спец-рендера сундука (extract на main-thread, submit только читает). */
 	public static class MTEChestRenderState extends BlockEntityRenderState {
-		public float mLidAngleRad; public byte mChestFacing; public int mChestRGBa; public Identifier[] mChestTextures;
+		public float mLidAngleRad; public byte mChestFacing; public int mChestRGBa; public ResourceLocation[] mChestTextures;
 	}
 
 	@Override
@@ -92,7 +92,7 @@ public class MTEChestRenderer implements BlockEntityRenderer<MultiTileEntityChes
 
 	@Override
 	public void submit(MTEChestRenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
-		Identifier[] tLocation = aState.mChestTextures;
+		ResourceLocation[] tLocation = aState.mChestTextures;
 		if (tLocation == null || tLocation.length < 2) return;
 		// матрицы 1:1 с 1.7.10 (translate(0,1,1)+scale(1,-1,-1) — модель и текстуры в перевёрнутой системе 1.7.10)
 		aPoseStack.pushPose();
@@ -123,7 +123,7 @@ public class MTEChestRenderer implements BlockEntityRenderer<MultiTileEntityChes
 			mKnob = mRoot.getChild("knob");
 		}
 
-		public void submit(SubmitNodeCollector aNodes, PoseStack aPoseStack, Identifier aTexture, float aLidAngle, int aLight, int aColor) {
+		public void submit(SubmitNodeCollector aNodes, PoseStack aPoseStack, ResourceLocation aTexture, float aLidAngle, int aLight, int aColor) {
 			aNodes.submitCustomGeometry(aPoseStack, net.minecraft.client.renderer.rendertype.RenderTypes.entityCutout(aTexture), (tPose, tBuffer) -> {
 				// BUG-059: угол крышки ставится ВНУТРИ отложенной лямбды отрисовки. Модель одна (static) на все
 				// сундуки; постановка угла снаружи (в момент submit) означала «в кадре все крышки рисуются углом

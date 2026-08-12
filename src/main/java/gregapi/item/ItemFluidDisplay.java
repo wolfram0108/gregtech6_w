@@ -47,7 +47,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidContainerItem;
 
 import java.util.Collection;
@@ -59,14 +59,14 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItemUpdatable, IItemGT {
-	// F3-render: было IIcon (удалённый 1.7.10-класс) — поле мёртвое (нигде не читается); тип сменён на neo Identifier,
+	// F3-render: было IIcon (удалённый 1.7.10-класс) — поле мёртвое (нигде не читается); тип сменён на neo ResourceLocation,
 	// чтобы убрать ссылку на removed-класс (иначе перечисление методов класса в GT6ItemModel.resolveIcon → NoClassDefFoundError).
-	protected net.minecraft.resources.Identifier mIcon;
+	protected net.minecraft.resources.ResourceLocation mIcon;
 	private final String mName;
 	
 	public ItemFluidDisplay() {
 		// F1/F16: neo Item.<init> требует ID в Properties (descriptionId) — задаём из (GAPI, "gt.display.fluid"), совпадает с DeferredRegister-именем.
-		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath(MD.GAPI.mID, "gt.display.fluid"))));
+		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "gt.display.fluid"))));
 		mName = "gt.display.fluid";
 		LH.add(mName, "Fluid Display");
 		// F12-lazy: САМО-регистрация убрана из конструктора — предмет регистрируется через DeferredRegister-supplier на
@@ -236,16 +236,16 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	// stillIcon ниже используется клиентским каналом IClientFluidTypeExtensions (см. разбор выше).
 	// Реестр мёртвых каналов рефлексию грепом не видит — прежняя метка «разобран» была ложной (2026-07-30).
 	// @Override
-	public net.minecraft.resources.Identifier getIconFromDamage(int aMeta) {
+	public net.minecraft.resources.ResourceLocation getIconFromDamage(int aMeta) {
 		return stillIcon(FL.fluid(aMeta));
 	}
 
 	// getIconIndex(ItemStack) проверяется resolveIcon ПЕРВЫМ — читаем мету родным каналом ST.meta_ (не damage).
-	public net.minecraft.resources.Identifier getIconIndex(ItemStack aStack) {
+	public net.minecraft.resources.ResourceLocation getIconIndex(ItemStack aStack) {
 		return stillIcon(FL.fluid(ST.meta_(aStack)));
 	}
 
-	private static net.minecraft.resources.Identifier stillIcon(net.minecraft.world.level.material.Fluid aFluid) {
+	private static net.minecraft.resources.ResourceLocation stillIcon(net.minecraft.world.level.material.Fluid aFluid) {
 		// BUG-049: локальная копия снята — единый резолвер still-иконки теперь в центре FL.stillIcon
 		// (жидкости без своей текстуры получают water_still вместо null — прежние ваниль-ветки покрыты).
 		return FL.stillIcon(aFluid);

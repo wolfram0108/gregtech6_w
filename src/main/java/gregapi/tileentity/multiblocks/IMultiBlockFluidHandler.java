@@ -25,7 +25,7 @@ package gregapi.tileentity.multiblocks;
 import gregapi.fluid.FluidTankInfo;
 
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 /**
  * @author Gregorius Techneticies
@@ -44,5 +44,5 @@ public interface IMultiBlockFluidHandler extends ITileEntityMultiBlockController
 	 *  содержимое многоблока было видно только на контроллере (репорт игрока: Jade молчит на стенках).
 	 *  Реализация уже есть у всех носителей — {@code TileEntityBase01Root:847} и переопределение
 	 *  {@code TileEntityBase10MultiBlockBase:212}; здесь метод только объявлен в контракте. */
-	public net.neoforged.neoforge.fluids.IFluidTank[] getFluidTanks(MultiTileEntityMultiBlockPart aPart, byte aSide);
+	public net.minecraftforge.fluids.IFluidTank[] getFluidTanks(MultiTileEntityMultiBlockPart aPart, byte aSide);
 }

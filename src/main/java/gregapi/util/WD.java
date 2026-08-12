@@ -30,7 +30,7 @@ import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 // F5: net.minecraftforge.fluids.BlockFluidClassic/BlockFluidFinite удалены (см. liquid_classic/liquid_finite ниже).
 import net.minecraftforge.fluids.IFluidBlock;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import gregapi.GT_API;
@@ -310,7 +310,7 @@ public class WD {
 	 *  перемещения (спешивание/respawn-пакет/inventory-sync/пере-создание сущности) внутри. Целевой мир по int-dim через WD.dimensionId
 	 *  (getAllLevels:1239). resetCamera=F, координаты абсолютные (пустой Set<Relative>). F-dimension caveat: сам move() работает 1:1 (Entity.teleportTo); лишь модовые int-id зависят от WD.dimensionId-карты (foreign-gated). */
 	public static boolean move(Entity aEntity, int aDimension, double aX, double aY, double aZ) {
-		MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+		MinecraftServer tServer = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
 		if (tServer == null || !(aEntity.level() instanceof ServerLevel)) return F;
 		ServerLevel tTargetWorld = null;
 		for (ServerLevel tLevel : tServer.getAllLevels()) if (WD.dimensionId(tLevel) == aDimension) {tTargetWorld = tLevel; break;}
@@ -437,10 +437,10 @@ public class WD {
 			net.minecraft.server.level.ChunkHolder tHolder = tSL.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.pack(aChunkX, aChunkZ));
 			if (tHolder == null) return null;
 			if (tHolder.currentlyLoading != null) return tHolder.currentlyLoading; // neo-патч анти-дедлока: чанк в процессе load
-			net.minecraft.world.level.chunk.ChunkAccess tChunk = tHolder.getChunkIfPresent(net.minecraft.world.level.chunk.status.ChunkStatus.FULL);
+			net.minecraft.world.level.chunk.ChunkAccess tChunk = tHolder.getChunkIfPresent(net.minecraft.world.level.chunk.ChunkStatus.FULL);
 			return tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
 		}
-		return aWorld.getChunkSource().getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, F) instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
+		return aWorld.getChunkSource().getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.ChunkStatus.FULL, F) instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
 	}
 
 	/** ЦЕНТР гейта «блоки здесь тикают» (правка №2в, решение пользователя 2026-08-09: «где замерла вода —
@@ -769,7 +769,7 @@ public class WD {
 			for (Map.Entry<String, VanillaPassport> tEntry : VANILLA_PASSPORT_BY_NAME.entrySet()) try {
 				String tName = tEntry.getKey();
 				VanillaPassport tPassport = tEntry.getValue();
-				net.minecraft.resources.Identifier tID = net.minecraft.resources.Identifier.parse(PASSPORT_RENAMED.getOrDefault(tName, tName));
+				net.minecraft.resources.ResourceLocation tID = net.minecraft.resources.ResourceLocation.parse(PASSPORT_RENAMED.getOrDefault(tName, tName));
 				net.minecraft.core.registries.BuiltInRegistries.BLOCK.getOptional(tID).ifPresent(tBlock -> VANILLA_PASSPORT.put(tBlock, tPassport));
 			} catch (Throwable e) {/* имени нет в neo и адреса ему не задано — обслуживают ветки-обобщения */}
 		}

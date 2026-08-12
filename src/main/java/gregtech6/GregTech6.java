@@ -25,7 +25,7 @@ package gregtech6;
 
 import com.mojang.logging.LogUtils;
 
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 
 import gregapi.network.NetworkHandler;

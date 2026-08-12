@@ -65,8 +65,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -422,7 +422,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	 *  (репорт игрока: навёл Jade на стенку танка — пусто, на главный блок — вода). В 1.7.10 дыры не было,
 	 *  потому что наружу торчал сам {@code IFluidHandler} части с её делегирующими методами. */
 	@Override
-	protected net.neoforged.neoforge.fluids.IFluidTank[] getFluidTanks2(byte aSide) {
+	protected net.minecraftforge.fluids.IFluidTank[] getFluidTanks2(byte aSide) {
 		ITileEntityMultiBlockController tTileEntity = getTarget(T);
 		if (tTileEntity == null && isClientSide()) tTileEntity = findControllerClientSide();
 		if (tTileEntity instanceof IMultiBlockFluidHandler) return ((IMultiBlockFluidHandler)tTileEntity).getFluidTanks(this, aSide);

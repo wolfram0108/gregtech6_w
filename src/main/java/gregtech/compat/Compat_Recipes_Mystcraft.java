@@ -31,7 +31,7 @@ import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
 import gregapi.data.FL;
 import gregapi.data.RM;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 public class Compat_Recipes_Mystcraft extends CompatMods {
 	public Compat_Recipes_Mystcraft(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}

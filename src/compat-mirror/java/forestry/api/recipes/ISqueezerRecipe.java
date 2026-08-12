@@ -36,7 +36,7 @@
 package forestry.api.recipes;
 
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 /** Forestry-mirror (compile-only; настоящий Forestry предоставляет реализацию в рантайме,
  *  вызов гейтится {@code MD.FR.mLoaded}). */

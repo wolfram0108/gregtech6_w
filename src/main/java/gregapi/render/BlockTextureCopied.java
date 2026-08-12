@@ -28,7 +28,7 @@ import static gregapi.data.CS.*;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * @author Gregorius Techneticies
@@ -159,7 +159,7 @@ public class BlockTextureCopied implements ITexture {
 		return UT.Code.getRGBInt(UNCOLOURED);
 	}
 
-	private Identifier getIcon(int aSide) {
+	private ResourceLocation getIcon(int aSide) {
 		// F3 block-icon-data: было mBlock.getIcon(mSide==SIDE_ANY?aSide:mSide, mMeta) + catch→RENDERING_ERROR (1:1) —
 		// Block.getIcon удалён из neo (baked-model рендер); спрайт грани резолвим из baked BlockStateModel ванильного
 		// блока (централизованный GT6QuadBuilder.resolveBlockFaceIcon, §3). mMeta учтён (Flattening-варианты, см. резолвер).

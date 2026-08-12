@@ -33,8 +33,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 
 /**
  * F16-creative-tab (централизация 1:1): 1.7.10 {@code Block/Item.setCreativeTab(CreativeTabs.tabX)} удалён — neo наполняет
@@ -166,7 +166,7 @@ public final class CreativeTabsGT {
 
 	/** F16: регистрируем 7 собственных GT-вкладок в реестр CREATIVE_MODE_TAB. К моменту этого события (после ITEM) OWN_TABS
 	 *  заполнен ctor'ами god-items. Каждая CreativeTab — валидный neo CreativeModeTab (super(builder) с icon+displayItems). */
-	private static void onRegisterTabs(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
+	private static void onRegisterTabs(net.minecraftforge.registries.RegisterEvent aEvent) {
 		if (!aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB)) return;
 		createShellsFromCache(); // F16-shell: вкладки server-start-генератора (MTE) поднимаются из кэша ДО заморозки реестра
 		for (java.util.Map.Entry<String, CreativeTab> tE : OWN_TABS.entrySet()) try {
@@ -182,7 +182,7 @@ public final class CreativeTabsGT {
 			// 1.7.10 такую вкладку показывал пустой — оставляем как есть; в логе о ней пишет только JEI, NEI молчал.
 			if (isTabEmpty(tE.getKey())) continue;
 			aEvent.register(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB,
-				net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tE.getKey())), () -> tTab);
+				net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tE.getKey())), () -> tTab);
 		} catch (Throwable e) {/* boot-safe: сбой одной вкладки не рушит загрузку */}
 	}
 

@@ -22,7 +22,7 @@
  */
 
 package gregtech.items.tools.machine;
-import net.minecraft.world.entity.monster.spider.CaveSpider;
+import net.minecraft.world.entity.monster.CaveSpider;
 
 import gregapi.util.WD;
 import gregapi.data.MT;
@@ -35,8 +35,8 @@ import gregapi.render.IIconContainer;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.monster.spider.CaveSpider;
-import net.minecraft.world.entity.monster.spider.Spider;
+import net.minecraft.world.entity.monster.CaveSpider;
+import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 

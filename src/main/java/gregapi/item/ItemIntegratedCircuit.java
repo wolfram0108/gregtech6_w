@@ -38,7 +38,7 @@ import gregapi.util.ST;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 
@@ -95,14 +95,14 @@ public class ItemIntegratedCircuit extends ItemBase {
 		for (byte i = 0; i < 16; i++) CoverRegistry.put(ST.make(this, 1, i), new CoverSelectorTag(i));
 	}
 	
-	protected Identifier[] mIcons = new Identifier[256];
+	protected ResourceLocation[] mIcons = new ResourceLocation[256];
 
 	private boolean mIconsRegistered = F;
 
 	@Override
 	// F3-render (ленивый триггер, тот же приём, что ItemBase.getIconFromDamage): registerIcons в neo НЕ вызывается →
 	// mIcons оставался null → предмет не рисовался. Наполняем ЛЕНИВО при первом запросе тем же registerIcons-перебором.
-	public Identifier getIconFromDamage(int aMeta) {
+	public ResourceLocation getIconFromDamage(int aMeta) {
 		if (!mIconsRegistered) registerIcons(null);
 		return mIcons[aMeta & 255];
 	}
@@ -125,10 +125,10 @@ public class ItemIntegratedCircuit extends ItemBase {
 	}
 	
 	@Override
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
 	public void registerIcons(Object aIconRegister) {
 		mIconsRegistered = T;
-		for (int i = 0; i < 25/*TODO mIcons.length*/; i++) mIcons[i] = Identifier.parse(mModID + ":" + mName + "/" + (byte)(i&255));
+		for (int i = 0; i < 25/*TODO mIcons.length*/; i++) mIcons[i] = ResourceLocation.parse(mModID + ":" + mName + "/" + (byte)(i&255));
 		// F3-render: «useful hack» диспетчеризации sItemIconload (1.7.10: этот предмет был ДРАЙВЕРОМ item-icon-load-фазы всего
 		// мода) МЁРТВ в neo — GT_API.sItemIconload обнуляется на init (GT_API.java:1050); icon-load-фаза заменена ленивым
 		// построением в TextureSet.java:97 / ItemIcons.getIcon. Убран: ленивый вызов на рендере итерировал бы null → NPE.

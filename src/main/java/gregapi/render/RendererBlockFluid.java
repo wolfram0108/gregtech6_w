@@ -28,7 +28,7 @@ import gregapi.block.fluid.BlockFluidBaseGT;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 
@@ -94,7 +94,7 @@ public class RendererBlockFluid {
 	 *  baked-модель), Tessellator.addVertexWithUV → {@link GT6QuadBuilder#fluidQuad}. */
 	public static void collectFluidQuads(GT6QuadBuilder aQB, BlockGetter aWorld, int aX, int aY, int aZ, BlockBaseFluid aFluid) {
 		if (!(aFluid.renderTexture() instanceof BlockTextureFluid tTex) || !tTex.isValidTexture()) return;
-		Identifier tIcon = tTex.icon();
+		ResourceLocation tIcon = tTex.icon();
 		short[] tRGBa = tTex.mRGBa;
 		int aDir = aFluid.dir();
 

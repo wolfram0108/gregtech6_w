@@ -51,7 +51,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.EnumPlantType;
@@ -112,10 +112,10 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return F;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeSapling.mDefaultStackSize);}
-	@Override public Identifier getIcon(int aSide, int aMeta) {return mIcons[aMeta & 15].getIcon(0);}
+	@Override public ResourceLocation getIcon(int aSide, int aMeta) {return mIcons[aMeta & 15].getIcon(0);}
 	// F3-render (IRenderedCross): та же per-мета иконка, что getIcon выше; aWorld==null = item-рендер,
 	// aX несёт МЕТУ СТЕКА (контракт IRenderedCross, как у BlockBaseFlower).
-	@Override public Identifier getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ) {
+	@Override public ResourceLocation getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (mIcons == null || mIcons.length == 0) return null;
 		gregapi.render.IIconContainer tIcon = mIcons[(aWorld == null ? aX : WD.meta(aWorld, aX, aY, aZ)) & 15];
 		return tIcon == null ? null : tIcon.getIcon(0);

@@ -24,7 +24,7 @@
 package gregapi.code;
 import gregapi.util.WD;
 
-import net.neoforged.fml.ModList;
+import net.minecraftforge.fml.ModList;
 import gregapi.util.ST;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.Item;

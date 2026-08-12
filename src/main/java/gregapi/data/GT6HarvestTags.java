@@ -69,7 +69,7 @@ public class GT6HarvestTags extends TagsProvider<Block> {
 	protected void addTags(HolderLookup.Provider aProvider) {
 		int tTagged = 0, tSkipped = 0, tOverScale = 0;
 		for (Block tBlock : BuiltInRegistries.BLOCK) {
-			net.minecraft.resources.Identifier tID = BuiltInRegistries.BLOCK.getKey(tBlock);
+			net.minecraft.resources.ResourceLocation tID = BuiltInRegistries.BLOCK.getKey(tBlock);
 			if (tID == null || !(tID.getNamespace().equals(CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
 			String tTool = harvestToolOf(tBlock);
 			TagKey<Block> tMineable = mineableTag(tTool);
@@ -95,7 +95,7 @@ public class GT6HarvestTags extends TagsProvider<Block> {
 		java.util.Map<Integer, Integer> tHist = new java.util.TreeMap<>();
 		java.util.Map<String, Integer> tTools = new java.util.TreeMap<>();
 		for (Block tBlock : BuiltInRegistries.BLOCK) {
-			net.minecraft.resources.Identifier tID = BuiltInRegistries.BLOCK.getKey(tBlock);
+			net.minecraft.resources.ResourceLocation tID = BuiltInRegistries.BLOCK.getKey(tBlock);
 			if (tID == null || !(tID.getNamespace().equals(CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
 			tHist.merge(harvestLevelOf(tBlock), 1, Integer::sum);
 			tTools.merge(String.valueOf(harvestToolOf(tBlock)), 1, Integer::sum);

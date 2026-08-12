@@ -25,7 +25,7 @@ package gregapi.data;
 
 import appeng.api.AEApi;
 import com.cricketcraft.chisel.api.carving.CarvingUtils;
-import net.neoforged.fml.InterModComms;
+import net.minecraftforge.fml.InterModComms;
 import ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
 import ganymedes01.etfuturum.recipes.SmokerRecipes;
 import gregapi.code.ArrayListNoNulls;
@@ -46,7 +46,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import gregapi.recipes.FurnaceRecipes; // F11-smelting: 1.7.10 vanilla FurnaceRecipes воссоздан GT6-центром (neo убрал мутабельный список плавок)
 import net.minecraft.nbt.CompoundTag;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 import team.chisel.carving.Carving;
 
 import java.util.Iterator;

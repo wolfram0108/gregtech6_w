@@ -48,15 +48,15 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 import java.util.Arrays;
 import java.util.BitSet;
@@ -73,7 +73,7 @@ import static gregapi.data.CS.*;
 public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	public final BitSet mEnabledItems = new BitSet(32767);
 	public final BitSet mVisibleItems = new BitSet(32767);
-	public final Identifier[][] mIconList = new Identifier[32767][1];
+	public final ResourceLocation[][] mIconList = new ResourceLocation[32767][1];
 	
 	public final HashMap<Short, IFoodStat> mFoodStats = new HashMap<>();
 	public final HashMap<Short, IItemEnergy> mElectricStats = new HashMap<>();
@@ -288,7 +288,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	// finishUsingItem не наступал, вся еда иерархии была несъедобной. Мосты на современные каналы (референс
 	// Item.java:232/317/328); GT6-методы сохранены как тела 1:1 (потребление стека/тара — внутри FoodStat.onEaten:149-153).
 	@Override public int getUseDuration(ItemStack aStack, net.minecraft.world.entity.LivingEntity aEntity) {return getMaxItemUseDuration(aStack);}
-	@Override public ItemUseAnimation getUseAnimation(ItemStack aStack) {return getItemUseAction(aStack);}
+	@Override public UseAnim getUseAnimation(ItemStack aStack) {return getItemUseAction(aStack);}
 	@Override public ItemStack finishUsingItem(ItemStack aStack, Level aWorld, net.minecraft.world.entity.LivingEntity aEntity) {
 		return aEntity instanceof Player tPlayer ? onEaten(aStack, aWorld, tPlayer) : super.finishUsingItem(aStack, aWorld, aEntity);
 	}
@@ -299,9 +299,9 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	}
 	
 	// @Override
-	public ItemUseAnimation getItemUseAction(ItemStack aStack) {
+	public UseAnim getItemUseAction(ItemStack aStack) {
 		IFoodStat tStat = mFoodStats.get((short)getDamage(aStack));
-		return tStat == null ? ItemUseAnimation.NONE : tStat.getFoodAction(this, aStack); // было ItemUseAnimation.none (1.7.10 enum-конвенция) -> UPPER_CASE (ItemUseAnimation.java:15)
+		return tStat == null ? UseAnim.NONE : tStat.getFoodAction(this, aStack); // было UseAnim.none (1.7.10 enum-конвенция) -> UPPER_CASE (UseAnim.java:15)
 	}
 	
 	// @Override
@@ -380,13 +380,13 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	}
 	
 	@Override
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
 	public void registerIcons(Object aIconRegister) {
 		for (short aMeta = 0, tMaxMeta = (short)mEnabledItems.length(); aMeta < tMaxMeta; aMeta++) if (mEnabledItems.get(aMeta)) {
 			for (byte k = 1; k < mIconList[aMeta].length; k++) {
-				mIconList[aMeta][k] = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta + "/" + k);
+				mIconList[aMeta][k] = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta + "/" + k);
 			}
-			mIconList[aMeta][0] = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
+			mIconList[aMeta][0] = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
 		}
 	}
 
@@ -399,7 +399,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	protected void ensureIconsRegistered() {if (!mIconsRegistered) {mIconsRegistered = T; registerIcons(null);}}
 
 	// @Override
-	public Identifier getIconIndex(ItemStack aStack) {
+	public ResourceLocation getIconIndex(ItemStack aStack) {
 		ensureIconsRegistered();
 		short aMetaData = ST.meta_(aStack);
 		if (!UT.Code.exists(aMetaData, mIconList)) return Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
@@ -415,17 +415,17 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	}
 	
 	// @Override
-	public Identifier getIcon(ItemStack aStack, int aRenderPass) {
+	public ResourceLocation getIcon(ItemStack aStack, int aRenderPass) {
 		return getIconIndex(aStack);
 	}
 
 	// @Override
-	public Identifier getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {
+	public ResourceLocation getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {
 		return getIcon(aStack, aRenderPass);
 	}
 
 	@Override
-	public Identifier getIconFromDamage(int aMetaData) {
+	public ResourceLocation getIconFromDamage(int aMetaData) {
 		ensureIconsRegistered();
 		return UT.Code.exists(aMetaData, mIconList) ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 	}
@@ -435,7 +435,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	// GT6ItemModel.iconForPass:227 зовёт getIcon(ItemStack,int):414 рефлексией. Прежняя метка «разобран»
 	// была ложной (2026-07-30).
 	// @Override
-	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
+	public ResourceLocation getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
 		ensureIconsRegistered();
 		return UT.Code.exists(aMetaData, mIconList) ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 	}

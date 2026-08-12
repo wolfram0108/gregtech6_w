@@ -42,17 +42,17 @@ import gregtech.blocks.BlockDiggable;
 import gregtech.tileentity.plants.MultiTileEntityResinHoleRubber;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.animal.golem.IronGolem;
-import net.minecraft.world.entity.monster.skeleton.Skeleton;
-import net.minecraft.world.entity.animal.golem.SnowGolem;
-import net.minecraft.world.entity.animal.equine.Horse;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.animal.SnowGolem;
+import net.minecraft.world.entity.animal.horse.Horse;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
@@ -440,7 +440,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	public boolean bumbleAttack(ItemStack aBumbleBee, short aMetaData, LivingEntity aAttacked) {
 		if (UT.Entities.isWearingFullInsectHazmat(aAttacked)) return F;
 		boolean
-		  tSkeleton = (aAttacked instanceof Skeleton || aAttacked instanceof net.minecraft.world.entity.animal.equine.SkeletonHorse)
+		  tSkeleton = (aAttacked instanceof Skeleton || aAttacked instanceof net.minecraft.world.entity.animal.horse.SkeletonHorse)
 		, tSnowGolem = (aAttacked.getClass() == SnowGolem.class)
 		, tIronGolem = (aAttacked instanceof IronGolem)
 		, tPlayer = (aAttacked instanceof Player)
@@ -646,12 +646,12 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		return F;
 	}
 	
-	public Identifier PRINCESS, QUEEN, SCANNED, DEAD;
+	public ResourceLocation PRINCESS, QUEEN, SCANNED, DEAD;
 
-	@Override public Identifier getIconIndex(ItemStack aStack) {return getIconFromDamage(ST.meta(aStack));}
-	@Override public Identifier getIconFromDamage(int aMetaData) {ensureIconsRegistered(); aMetaData /= 10; aMetaData *= 10; return UT.Code.exists(aMetaData, mIconList) && mIconList[aMetaData][0] != null ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);}
-	@Override public Identifier getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIcon(aStack, aRenderPass);}
-	@Override public Identifier getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
+	@Override public ResourceLocation getIconIndex(ItemStack aStack) {return getIconFromDamage(ST.meta(aStack));}
+	@Override public ResourceLocation getIconFromDamage(int aMetaData) {ensureIconsRegistered(); aMetaData /= 10; aMetaData *= 10; return UT.Code.exists(aMetaData, mIconList) && mIconList[aMetaData][0] != null ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);}
+	@Override public ResourceLocation getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIcon(aStack, aRenderPass);}
+	@Override public ResourceLocation getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
 	
 	public boolean requiresMultipleRenderPasses() {return T;}
 	
@@ -665,20 +665,20 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	}
 	
 	@Override
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
 	public void registerIcons(Object aIconRegister) {
-		PRINCESS    = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_princess");
-		QUEEN       = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_queen");
-		SCANNED     = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_scanned");
-		DEAD        = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_dead");
+		PRINCESS    = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/overlay_princess");
+		QUEEN       = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/overlay_queen");
+		SCANNED     = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/overlay_scanned");
+		DEAD        = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/overlay_dead");
 
 		for (short aMeta = 0, tMaxMeta = (short)mEnabledItems.length(); aMeta < tMaxMeta; aMeta+=10) if (mEnabledItems.get(aMeta)) {
-			mIconList[aMeta][0] = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
+			mIconList[aMeta][0] = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
 		}
 	}
 
 	@Override
-	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
+	public ResourceLocation getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
 		if (aRenderPass == 0) return getIconFromDamage(aMetaData);
 		if (aRenderPass == 1) {
 			switch(aMetaData % 10) {

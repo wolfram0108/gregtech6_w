@@ -25,7 +25,7 @@ package gregapi.data;
 
 import static gregapi.data.CS.*;
 
-import net.neoforged.fml.InterModComms;
+import net.minecraftforge.fml.InterModComms;
 import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.recipes.maps.RecipeMapFuel;
 import gregapi.recipes.maps.RecipeMapFurnaceFuel;

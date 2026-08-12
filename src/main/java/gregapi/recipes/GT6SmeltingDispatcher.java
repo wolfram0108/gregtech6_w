@@ -147,6 +147,6 @@ public final class GT6SmeltingDispatcher extends AbstractCookingRecipe {
 	}
 
 	@Override public net.minecraft.world.item.crafting.RecipeBookCategory recipeBookCategory() {
-		return net.minecraft.world.item.crafting.RecipeBookCategories.FURNACE_MISC; // как SmeltingRecipe при category()=MISC (SmeltingRecipe.java:46)
+		return net.minecraft.client.RecipeBookCategories.FURNACE_MISC; // как SmeltingRecipe при category()=MISC (SmeltingRecipe.java:46)
 	}
 }

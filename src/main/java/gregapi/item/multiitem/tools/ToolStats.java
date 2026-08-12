@@ -46,7 +46,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
@@ -281,7 +281,7 @@ public abstract class ToolStats implements IToolStats {
 	}
 
 	@Override
-	public Identifier getIcon(ItemStack aStack, int aRenderPass) {
+	public ResourceLocation getIcon(ItemStack aStack, int aRenderPass) {
 		switch(aRenderPass) {
 		case 0: return getIcon(F, aStack).getIcon(0);
 		case 1: return getIcon(F, aStack).getIcon(1);

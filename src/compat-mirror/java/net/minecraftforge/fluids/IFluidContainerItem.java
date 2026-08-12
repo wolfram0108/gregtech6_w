@@ -36,7 +36,7 @@
 package net.minecraftforge.fluids;
 
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 /**
  * F5-мост (BUG-045), ЖИВОЙ контракт (не compile-only shim). 1.7.10 Forge

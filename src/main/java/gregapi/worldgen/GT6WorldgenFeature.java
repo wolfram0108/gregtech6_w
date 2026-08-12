@@ -33,7 +33,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.worldgen.BootstrapContext;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BiomeTags;
@@ -46,15 +46,15 @@ import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.placement.BiomeFilter;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.common.data.DatapackBuiltinEntriesProvider;
 import net.minecraft.data.worldgen.placement.OrePlacements;
 import net.neoforged.neoforge.common.world.BiomeModifier;
-import net.neoforged.neoforge.common.world.BiomeModifiers.AddFeaturesBiomeModifier;
-import net.neoforged.neoforge.common.world.BiomeModifiers.RemoveFeaturesBiomeModifier;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.minecraftforge.common.world.ForgeBiomeModifiers.AddFeaturesBiomeModifier;
+import net.minecraftforge.common.world.ForgeBiomeModifiers.RemoveFeaturesBiomeModifier;
+import net.minecraftforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 /**
@@ -100,21 +100,21 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		FEATURES.register("gt6_worldgen", GT6WorldgenFeature::new);
 
 	private static final ResourceKey<ConfiguredFeature<?, ?>> GT6_WORLDGEN_CF =
-		ResourceKey.create(Registries.CONFIGURED_FEATURE, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "gt6_worldgen"));
+		ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "gt6_worldgen"));
 	private static final ResourceKey<PlacedFeature> GT6_WORLDGEN_PF =
-		ResourceKey.create(Registries.PLACED_FEATURE, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "gt6_worldgen"));
+		ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "gt6_worldgen"));
 
 	private static final ResourceKey<BiomeModifier> ADD_GT6_WORLDGEN_OVERWORLD =
-		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_overworld"));
+		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_overworld"));
 	private static final ResourceKey<BiomeModifier> ADD_GT6_WORLDGEN_NETHER =
-		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_nether"));
+		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_nether"));
 	private static final ResourceKey<BiomeModifier> ADD_GT6_WORLDGEN_END =
-		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_end"));
+		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_end"));
 	// F6 §4.2.2: отключение ванильных руд MC26 (GT6 замещает их своими — bedrock-руды + stone-layer перекрытие REPLACEABLE_BLOCKS).
 	private static final ResourceKey<BiomeModifier> REMOVE_VANILLA_ORES_OVERWORLD =
-		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_overworld"));
+		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_overworld"));
 	private static final ResourceKey<BiomeModifier> REMOVE_VANILLA_ORES_NETHER =
-		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_nether"));
+		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_nether"));
 
 	/**
 	 * Датаген-набор: CONFIGURED_FEATURE -> PLACED_FEATURE -> BIOME_MODIFIERS, дословно по паттерну
@@ -237,7 +237,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		// ChunkReq со ссылкой на LEVEL и BlockEntity ПЕРВОГО мира. При выходе они НЕ очищались → второй мир: drainStubs
 		// обрабатывает stale-ChunkReq с мёртвым level → getChunk на нём виснет → freeze после ~9 чанков. Чистим на остановке
 		// сервера (между мирами singleplayer). BlockRiver-статик тоже сбрасываем (PLACEMENT_ALLOWED — не переносить в новый мир).
-		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppingEvent aEvent) -> {
+		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.minecraftforge.event.server.ServerStoppingEvent aEvent) -> {
 			STUB_QUEUE.clear();
 			CLIENT_STUB_QUEUE.clear();
 			WORLDGEN_MTE.clear();
@@ -247,7 +247,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		// Дедлок перезахода (jstack: Server thread мира-2 в getChunk->join): выгрузка чанков мира-1 идёт ПОСЛЕ
 		// ServerStopping -> реквесты добавляются ПОСЛЕ clear выше и переживают сервер. Вторая очистка — на ПОЛНОЙ
 		// остановке (ServerStopped), плюс фильтр stale-реквестов в drainStubs (не полагаться на тайминг очистки).
-		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent aEvent) -> {
+		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.minecraftforge.event.server.ServerStoppedEvent aEvent) -> {
 			STUB_QUEUE.clear();
 			CLIENT_STUB_QUEUE.clear();
 			WORLDGEN_MTE.clear();
@@ -343,7 +343,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		}
 	}
 
-	private static void onChunkLoad(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
+	private static void onChunkLoad(net.minecraftforge.event.level.ChunkEvent.Load aEvent) {
 		net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
 		if (aEvent.getLevel() instanceof ServerLevel tLevel) {
 			// ОТКЛАДЫВАЕМ на server-tick — подмена стаба (setBlockEntity) ВО ВРЕМЯ ChunkEvent.Load (идёт и при save/shutdown) давала
@@ -356,7 +356,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		}
 	}
 
-	private static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post aEvent) {
+	private static void onServerTick(net.minecraftforge.event.TickEvent.ServerTickEvent.Post aEvent) {
 		drainStubs(STUB_QUEUE, 16);
 		drainPendingSync(aEvent.getServer());
 	}
@@ -366,7 +366,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	 *  gameplay-размещении/апдейте, не при worldgen). Здесь ловим МОМЕНТ отправки чанка игроку (ChunkWatchEvent.Sent) и
 	 *  синкаем ему все worldgen-MTE этого чанка (+ переприкрепляем, если BE всё же потерялся кросс-чанк). Точный тайминг,
 	 *  без per-tick overhead. См. sweepWorldgenMTE удалён — был пустой (всё skip-hasBE). */
-	private static void onChunkWatch(net.neoforged.neoforge.event.level.ChunkWatchEvent.Sent aEvent) {
+	private static void onChunkWatch(net.minecraftforge.event.level.ChunkWatchEvent.Sent aEvent) {
 		net.minecraft.world.level.ChunkPos tCP = aEvent.getPos();
 		int tCX = tCP.getMinBlockX() >> 4, tCZ = tCP.getMinBlockZ() >> 4;
 		java.util.Queue<net.minecraft.world.level.block.entity.BlockEntity> tQueue = WORLDGEN_MTE.get(chunkKey(tCX, tCZ));
@@ -392,7 +392,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	}
 
 	/** Выгрузка чанка → снять его записи (при перезагрузке MTE придёт стабом, его подхватит stub-реконструкция). */
-	private static void onChunkUnload(net.neoforged.neoforge.event.level.ChunkEvent.Unload aEvent) {
+	private static void onChunkUnload(net.minecraftforge.event.level.ChunkEvent.Unload aEvent) {
 		if (!(aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel)) return;
 		net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
 		WORLDGEN_MTE.remove(chunkKey(tPos.getMinBlockX() >> 4, tPos.getMinBlockZ() >> 4));
@@ -407,7 +407,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 			// stale-гейт (дедлок перезахода): реквест с level ОСТАНОВЛЕННОГО сервера -> getChunk уходит в вечный
 			// CompletableFuture.join (mainThreadProcessor мёртв, ServerChunkCache.getChunk:147-148). Скип, не дренаж.
 			if (tReq.level() instanceof net.minecraft.server.level.ServerLevel tSL
-			 && tSL.getServer() != net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()) continue;
+			 && tSL.getServer() != net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer()) continue;
 			try { reconstructChunkMTEs(tReq.level(), tReq.blockX() >> 4, tReq.blockZ() >> 4); tM++; }
 			catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 		}
@@ -418,7 +418,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	public static void reconstructChunkMTEs(net.minecraft.world.level.Level aLevel, int aChunkX, int aChunkZ) {
 		// getChunk(cx,cz,FULL,false) — неблокирующий на main-thread (server-tick И client-tick), работает и для ClientLevel
 		// (в отличие от server-only getChunkSource().getChunkNow). null/не-FULL → пропуск (реконструируем при следующем load).
-		net.minecraft.world.level.chunk.ChunkAccess tCA = aLevel.getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false);
+		net.minecraft.world.level.chunk.ChunkAccess tCA = aLevel.getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.ChunkStatus.FULL, false);
 		if (!(tCA instanceof net.minecraft.world.level.chunk.LevelChunk tChunk)) return;
 		java.util.List<net.minecraft.world.level.block.entity.BlockEntity> tStubs = null;
 		for (net.minecraft.world.level.block.entity.BlockEntity tBE : tChunk.getBlockEntities().values())

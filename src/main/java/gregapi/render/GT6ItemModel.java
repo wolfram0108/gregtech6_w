@@ -29,19 +29,19 @@ import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.geometry.BakedQuad;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
+import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
 
 /**
  * F3-render (client): единая item-модель ВСЕХ GT6-предметов (аналог блочной {@link GT6BlockModel} — та же централизация 1:1).
  * neo зовёт {@link #update} → берём per-meta иконку предмета (GT6 {@code getIconIndex(ItemStack)}/{@code getIconFromDamage}
- * возвращают {@link Identifier}, порт сохранил) → плоские front/back-quads из спрайта (стиль item/generated, упрощён до плоскости)
+ * возвращают {@link ResourceLocation}, порт сохранил) → плоские front/back-quads из спрайта (стиль item/generated, упрощён до плоскости)
  * → в render-state. Регистрируется рантайм-инъекцией в {@code itemStackModels()} через {@code ModifyBakingResult} (без тысяч JSON,
  * процедурный мод). Икону резолвим рефлексией (общего интерфейса нет: MultiItem/PrefixItem/ItemBlock — россыпь), boot/render-safe.
  */
@@ -132,7 +132,7 @@ public class GT6ItemModel implements ItemModel {
 			if (tArg != null) {
 				aOutput.appendModelIdentityElement("mte-special:" + tArg.getClass().getName());
 				ItemStackRenderState.LayerRenderState tSpLayer = aOutput.newLayer();
-				net.minecraft.client.resources.model.cuboid.ItemTransforms tSpTr = blockGuiTransforms();
+				net.minecraft.client.renderer.block.model.ItemTransforms tSpTr = blockGuiTransforms();
 				if (tSpTr != null) tSpLayer.setItemTransform(tSpTr.getTransform(aCtx));
 				tSpLayer.setupSpecialModel(MultiTileEntityBER.SPECIAL_ITEM_FORM, tArg);
 				aOutput.setAnimated(); // спец-рендер per-frame (крышка/содержимое) — кэш GUI-атласа не для него
@@ -160,7 +160,7 @@ public class GT6ItemModel implements ItemModel {
 		// трансформации neo рисует его фронтально (видна одна грань; ITEMS_3D-диффуз на неповёрнутой грани тёмный). В 1.7.10
 		// изометрию блока-предмета применял движок (RenderBlocks.renderBlockAsItem), в neo — ItemTransforms модели. Берём
 		// КАНОНИЧЕСКУЮ block-GUI трансформацию (изометрия 30/225, scale 0.625) ИЗ ДВИЖКА (block/block.json), не хардкодим.
-		net.minecraft.client.resources.model.cuboid.ItemTransforms tTr = blockGuiTransforms();
+		net.minecraft.client.renderer.block.model.ItemTransforms tTr = blockGuiTransforms();
 		if (tTr != null) tLayer.setItemTransform(tTr.getTransform(aCtx));
 		if (aStack.hasFoil()) {
 			tLayer.setFoilType(ItemStackRenderState.FoilType.STANDARD);
@@ -175,7 +175,7 @@ public class GT6ItemModel implements ItemModel {
 	/** Рельс в инвентаре: плоская straight-иконка (мета 0, primary) — как ванильный item рельса. Иконка рельса в BLOCKS-атласе
 	 *  (iconsets/rail_*), потому резолв ITEMS→BLOCKS. Переиспользует flat-геометрию (front+back + боковой ободок BUG-031). */
 	private static void renderRailItem(ItemStackRenderState aOutput, gregapi.block.misc.BlockBaseRail aRail, ItemDisplayContext aCtx) {
-		Identifier tIcon = aRail.getIcon(0, 0);
+		ResourceLocation tIcon = aRail.getIcon(0, 0);
 		if (tIcon == null) return;
 		TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
 		if (tSprite == null) tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
@@ -184,7 +184,7 @@ public class GT6ItemModel implements ItemModel {
 		if (tSprite.contents().isAnimated()) aOutput.setAnimated();
 		ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
 		// BUG-112: рельс — плоская иконка и НЕ full3D (в 1.7.10 его ItemBlock не звал setFull3D) → положение «плашмя»
-		net.minecraft.client.resources.model.cuboid.ItemTransforms tRailTr = flatItemTransforms(false);
+		net.minecraft.client.renderer.block.model.ItemTransforms tRailTr = flatItemTransforms(false);
 		if (tRailTr != null) tLayer.setItemTransform(tRailTr.getTransform(aCtx));
 		tLayer.setUsesBlockLight(false); // плоский предмет — full-bright (эталон ItemModelGenerator/GuiLight.FRONT)
 		tLayer.prepareQuadList().addAll(flatQuads(tSprite, -1, true)); // правка №3: геометрия из кэша
@@ -202,7 +202,7 @@ public class GT6ItemModel implements ItemModel {
 		boolean tSkipBars = (aCtx != ItemDisplayContext.GUI);
 		int tPasses = itemRenderPasses(aItem, aStack);
 		for (int tPass = 0; tPass < tPasses; tPass++) {
-			Identifier tIcon = iconForPass(aItem, aStack, tPass);
+			ResourceLocation tIcon = iconForPass(aItem, aStack, tPass);
 			if (tIcon == null) { if (tPass == 0) return; else continue; }
 			if (tSkipBars && isBarOverlayIcon(tIcon)) continue; // GUI-only оверлей прочности/заряда — в мире (руки/земля/рамка) не рисуем
 			TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
@@ -219,7 +219,7 @@ public class GT6ItemModel implements ItemModel {
 			ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
 			// BUG-112: положение в руке/на земле/в рамке. Без трансформа модель рисуется тождественно во всех контекстах —
 			// инструмент и меч лежали в руке не как в 1.7.10. Канал различия — тот же, что и там: isFull3D().
-			net.minecraft.client.resources.model.cuboid.ItemTransforms tFlatTr = flatItemTransforms(isFull3D(aItem));
+			net.minecraft.client.renderer.block.model.ItemTransforms tFlatTr = flatItemTransforms(isFull3D(aItem));
 			if (tFlatTr != null) tLayer.setItemTransform(tFlatTr.getTransform(aCtx));
 			tLayer.setUsesBlockLight(false); // эталон ItemModelGenerator=GuiLight.FRONT: плоский предмет в GUI full-bright; без этого слой block-shade'ится (SOUTH-грань ~0.8) → предмет «затемнён» и цвет искажён тенью
 			if (aStack.hasFoil()) { // 1:1: GT6-1.7.10 рисует глинт по hasEffect (=isItemEnchanted) поверх пассов; канон neo — FoilType на слое + identity + animated (глинт скроллится)
@@ -235,13 +235,13 @@ public class GT6ItemModel implements ItemModel {
 	}
 
 	// Канонические трансформации ванильных моделей — кэш по пути модели; читаются ИЗ ДВИЖКА один раз (после bake).
-	private static final java.util.Map<String, net.minecraft.client.resources.model.cuboid.ItemTransforms> sVanillaTransforms = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final java.util.Map<String, net.minecraft.client.renderer.block.model.ItemTransforms> sVanillaTransforms = new java.util.concurrent.ConcurrentHashMap<>();
 	private static final java.util.Set<String> sVanillaTransformsTried = java.util.concurrent.ConcurrentHashMap.newKeySet();
 	/** ItemTransforms ванильного {@code minecraft:block/block} (его {@code display.gui} — изометрия 30/225, scale 0.625),
 	 *  взятые из движкового {@link net.minecraft.client.resources.model.ResolvedModel} — НЕ хардкод-константа (§«не выдумывать
 	 *  константы»). 1.7.10 применял ту же изометрию в {@code RenderBlocks.renderBlockAsItem}; в neo носитель — ItemTransforms
 	 *  модели. Публичного геттера нет → рефлексия приватного {@code ModelBakery.resolvedModels} (идиома проекта, как iconForPass). */
-	private static net.minecraft.client.resources.model.cuboid.ItemTransforms blockGuiTransforms() {return vanillaTransforms("block/block");}
+	private static net.minecraft.client.renderer.block.model.ItemTransforms blockGuiTransforms() {return vanillaTransforms("block/block");}
 
 	/** Тот же канал, что и в 1.7.10: {@code Item.isFull3D()} (у GT6 его несут {@code MultiItemTool} — все инструменты и
 	 *  мечи — и {@code ItemBase.setFull3D()} — спреи, паяльник от {@code GT_Tool_Item}). Спрашиваем КОНТРАКТ базового
@@ -255,7 +255,7 @@ public class GT6ItemModel implements ItemModel {
 	 *  мечей, и «плашмя» для остальных иконок. В neo носитель этого различия — ItemTransforms модели: ванильные
 	 *  {@code item/handheld} и {@code item/generated} несут ровно те же два положения. Потому берём их ИЗ ДВИЖКА тем же
 	 *  приёмом, что и {@code block/block} выше, — углы не выдумываем. */
-	private static net.minecraft.client.resources.model.cuboid.ItemTransforms flatItemTransforms(boolean aFull3D) {
+	private static net.minecraft.client.renderer.block.model.ItemTransforms flatItemTransforms(boolean aFull3D) {
 		return vanillaTransforms(aFull3D ? "item/handheld" : "item/generated");
 	}
 
@@ -263,8 +263,8 @@ public class GT6ItemModel implements ItemModel {
 	 *  и {@code item/generated} — два положения предмета в руке). Берутся из движкового
 	 *  {@link net.minecraft.client.resources.model.ResolvedModel}, НЕ хардкод-константами (§«не выдумывать константы»).
 	 *  Публичного геттера нет → рефлексия приватного {@code ModelBakery.resolvedModels} (идиома проекта, как iconForPass). */
-	private static net.minecraft.client.resources.model.cuboid.ItemTransforms vanillaTransforms(String aModelPath) {
-		net.minecraft.client.resources.model.cuboid.ItemTransforms rCached = sVanillaTransforms.get(aModelPath);
+	private static net.minecraft.client.renderer.block.model.ItemTransforms vanillaTransforms(String aModelPath) {
+		net.minecraft.client.renderer.block.model.ItemTransforms rCached = sVanillaTransforms.get(aModelPath);
 		if (rCached != null || sVanillaTransformsTried.contains(aModelPath)) return rCached;
 		sVanillaTransformsTried.add(aModelPath);
 		try {
@@ -272,11 +272,11 @@ public class GT6ItemModel implements ItemModel {
 			java.lang.reflect.Field tF = net.minecraft.client.resources.model.ModelBakery.class.getDeclaredField("resolvedModels");
 			tF.setAccessible(true);
 			@SuppressWarnings("unchecked")
-			java.util.Map<net.minecraft.resources.Identifier, net.minecraft.client.resources.model.ResolvedModel> tResolved =
-				(java.util.Map<net.minecraft.resources.Identifier, net.minecraft.client.resources.model.ResolvedModel>) tF.get(tBakery);
-			net.minecraft.client.resources.model.ResolvedModel tModel = tResolved.get(net.minecraft.resources.Identifier.withDefaultNamespace(aModelPath));
+			java.util.Map<net.minecraft.resources.ResourceLocation, net.minecraft.client.resources.model.ResolvedModel> tResolved =
+				(java.util.Map<net.minecraft.resources.ResourceLocation, net.minecraft.client.resources.model.ResolvedModel>) tF.get(tBakery);
+			net.minecraft.client.resources.model.ResolvedModel tModel = tResolved.get(net.minecraft.resources.ResourceLocation.withDefaultNamespace(aModelPath));
 			if (tModel != null) {
-				net.minecraft.client.resources.model.cuboid.ItemTransforms tTr = tModel.getTopTransforms();
+				net.minecraft.client.renderer.block.model.ItemTransforms tTr = tModel.getTopTransforms();
 				if (tTr != null) sVanillaTransforms.put(aModelPath, tTr);
 				return tTr;
 			}
@@ -290,9 +290,9 @@ public class GT6ItemModel implements ItemModel {
 		return 1;
 	}
 	/** Иконка предмета на пасс: GT6 {@code getIcon(stack,pass)} (=getIconFromDamageForRenderPass); fallback pass0 getIconIndex/getIconFromDamage. */
-	private static Identifier iconForPass(Object aItem, ItemStack aStack, int aPass) {
-		try { java.lang.reflect.Method m = cachedMethod(aItem.getClass(), "getIcon", ItemStack.class, int.class); if (m != null) { Object o = m.invoke(aItem, aStack, aPass); if (o instanceof Identifier id) return id; } } catch (Throwable e) {}
-		if (aPass == 0) { Identifier r = tryIcon(aItem, "getIconIndex", ItemStack.class, aStack); if (r == null) r = tryIcon(aItem, "getIconFromDamage", int.class, aStack.getDamageValue()); return r; }
+	private static ResourceLocation iconForPass(Object aItem, ItemStack aStack, int aPass) {
+		try { java.lang.reflect.Method m = cachedMethod(aItem.getClass(), "getIcon", ItemStack.class, int.class); if (m != null) { Object o = m.invoke(aItem, aStack, aPass); if (o instanceof ResourceLocation id) return id; } } catch (Throwable e) {}
+		if (aPass == 0) { ResourceLocation r = tryIcon(aItem, "getIconIndex", ItemStack.class, aStack); if (r == null) r = tryIcon(aItem, "getIconFromDamage", int.class, aStack.getDamageValue()); return r; }
 		return null;
 	}
 	/** GT6 {@code getColorFromItemStack(stack,pass)} → 0xRRGGBB (pass0 = материал-тинт, иначе 0xFFFFFF белый). */
@@ -305,35 +305,35 @@ public class GT6ItemModel implements ItemModel {
 	// IIconContainer'ы, что отдаёт MultiItemTool.getIcon на последних 2 пассах). Не хардкод-строки и не index-эвристика — опора
 	// на существующий центральный реестр текстур. Ленивый кэш (иконки резолвятся лениво getIcon→run() после bake атласа; строим
 	// при первом рендере, идиома sBlockGuiTransforms); кэшируем только непустой (полностью резолвнутый) набор.
-	private static java.util.Set<Identifier> sBarOverlayIcons;
-	private static java.util.Set<Identifier> barOverlayIcons() {
+	private static java.util.Set<ResourceLocation> sBarOverlayIcons;
+	private static java.util.Set<ResourceLocation> barOverlayIcons() {
 		if (sBarOverlayIcons != null) return sBarOverlayIcons;
-		java.util.HashSet<Identifier> tSet = new java.util.HashSet<>();
+		java.util.HashSet<ResourceLocation> tSet = new java.util.HashSet<>();
 		try {
-			for (gregapi.render.IIconContainer c : gregapi.old.Textures.ItemIcons.DURABILITY_BAR) { Identifier i = c.getIcon(0); if (i != null) tSet.add(i); }
-			for (gregapi.render.IIconContainer c : gregapi.old.Textures.ItemIcons.ENERGY_BAR)     { Identifier i = c.getIcon(0); if (i != null) tSet.add(i); }
+			for (gregapi.render.IIconContainer c : gregapi.old.Textures.ItemIcons.DURABILITY_BAR) { ResourceLocation i = c.getIcon(0); if (i != null) tSet.add(i); }
+			for (gregapi.render.IIconContainer c : gregapi.old.Textures.ItemIcons.ENERGY_BAR)     { ResourceLocation i = c.getIcon(0); if (i != null) tSet.add(i); }
 		} catch (Throwable e) {}
 		if (!tSet.isEmpty()) sBarOverlayIcons = tSet;
 		return tSet;
 	}
 	/** BUG-028: иконка пасса — бар-оверлей прочности/заряда (GUI-only)? Мембершип по центральному реестру мода. */
-	private static boolean isBarOverlayIcon(Identifier aIcon) { return aIcon != null && barOverlayIcons().contains(aIcon); }
+	private static boolean isBarOverlayIcon(ResourceLocation aIcon) { return aIcon != null && barOverlayIcons().contains(aIcon); }
 
-	/** Икона предмета: GT6 {@code getIconIndex(ItemStack)} (PrefixItem/MultiItem) → Identifier; иначе {@code getIconFromDamage(int)}.
+	/** Икона предмета: GT6 {@code getIconIndex(ItemStack)} (PrefixItem/MultiItem) → ResourceLocation; иначе {@code getIconFromDamage(int)}.
 	 *  public — переиспользуется скан-оснасткой рендера (GT6RenderProbe) для приёмки «иконки не пурпур». */
-	public static Identifier resolveIcon(ItemStack aItem) {
+	public static ResourceLocation resolveIcon(ItemStack aItem) {
 		Object tItem = aItem.getItem();
-		Identifier r = tryIcon(tItem, "getIconIndex", ItemStack.class, aItem);
+		ResourceLocation r = tryIcon(tItem, "getIconIndex", ItemStack.class, aItem);
 		if (r == null) r = tryIcon(tItem, "getIconFromDamage", int.class, aItem.getDamageValue());
 		return r;
 	}
 
-	private static Identifier tryIcon(Object aTarget, String aMethod, Class<?> aArgType, Object aArg) {
+	private static ResourceLocation tryIcon(Object aTarget, String aMethod, Class<?> aArgType, Object aArg) {
 		try {
 			java.lang.reflect.Method m = cachedMethod(aTarget.getClass(), aMethod, aArgType);
 			if (m == null) return null;
 			Object o = m.invoke(aTarget, aArg);
-			return o instanceof Identifier tId ? tId : null;
+			return o instanceof ResourceLocation tId ? tId : null;
 		} catch (Throwable ignored) {return null;}
 	}
 

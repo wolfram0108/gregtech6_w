@@ -25,7 +25,7 @@ package gregapi.tileentity;
 
 
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
+import net.minecraftforge.event.entity.living.MobSpawnEvent;
 
 /**
  * @author Gregorius Techneticies

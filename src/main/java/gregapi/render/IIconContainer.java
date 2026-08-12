@@ -24,13 +24,13 @@
 package gregapi.render;
 
 import net.neoforged.api.distmarker.Dist;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * @author Gregorius Techneticies
  *
  * F3 (держатель текстуры): 1.7.10 {@code IIcon}/{@code IIconRegister} (immediate-mode атлас-стежка) удалены
- * в 26.1.2 целиком. Фаза baked-рендера ПРОЙДЕНА — держателем стал {@link Identifier}, а резолв в
+ * в 26.1.2 целиком. Фаза baked-рендера ПРОЙДЕНА — держателем стал {@link ResourceLocation}, а резолв в
  * {@code TextureAtlasSprite} централизован в {@code GT6QuadBuilder.resolveSprite}; на этом канале работают
  * {@code GT6BlockModel}/{@code GT6ItemModel} (текстуры мультиблоков — BUG-061, item-модели — BUG-068, оба
  * приняты живым тестом игрока). Долгом это больше не является: интерфейс — и есть neo-поверхность,
@@ -41,7 +41,7 @@ public interface IIconContainer {
 	 * @return держатель ссылки на текстуру для этого Render Pass.
 	 * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code IIcon getIcon(int)}.
 	 */
-	public Identifier getIcon(int aRenderPass);
+	public ResourceLocation getIcon(int aRenderPass);
 
 	/**
 	 * @return if this Render Pass uses Color Modulation.
@@ -61,7 +61,7 @@ public interface IIconContainer {
 	/**
 	 * @return the Default Texture File for this Icon.
 	 */
-	public Identifier getTextureFile();
+	public ResourceLocation getTextureFile();
 
 	/**
 	 * Registers the Icon of this IconContainer.

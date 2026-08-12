@@ -26,10 +26,10 @@ package gregapi.api;
 import gregapi.api.FMLInitializationEvent;
 import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.FMLPreInitializationEvent;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import net.neoforged.neoforge.event.server.ServerStoppedEvent;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 
 /**
  * @author Gregorius Techneticies
@@ -47,7 +47,7 @@ public abstract class Abstract_Proxy {
 	 *  разрулит. Зовётся из конструктора КОНКРЕТНОГО прокси (GT_API_Proxy/GT_Proxy). */
 	protected final void registerSubscribeEvents() {
 		for (java.lang.reflect.Method tMethod : getClass().getMethods()) {
-			net.neoforged.bus.api.SubscribeEvent tAnnotation = tMethod.getAnnotation(net.neoforged.bus.api.SubscribeEvent.class);
+			net.minecraftforge.eventbus.api.SubscribeEvent tAnnotation = tMethod.getAnnotation(net.minecraftforge.eventbus.api.SubscribeEvent.class);
 			if (tAnnotation == null || tMethod.getParameterCount() != 1) continue;
 			Class<?> tParameter = tMethod.getParameterTypes()[0];
 			if (!net.neoforged.bus.api.Event.class.isAssignableFrom(tParameter)) continue;
@@ -55,7 +55,7 @@ public abstract class Abstract_Proxy {
 			// RegisterEvent) НЕЛЬЗЯ вешать на общую NeoForge.EVENT_BUS — neo бросает "IModBusEvent not allowed on the
 			// common bus" при регистрации (крашило runData/runClient на конструкции мода). Они регистрируются на mod-шине
 			// отдельно (registerClientModels/RegisterEvent-хендлеры). Здесь — только game-bus @SubscribeEvent.
-			if (net.neoforged.fml.event.IModBusEvent.class.isAssignableFrom(tParameter)) continue;
+			if (net.minecraftforge.fml.event.IModBusEvent.class.isAssignableFrom(tParameter)) continue;
 			java.util.function.Consumer<net.neoforged.bus.api.Event> tDispatch = aEvent -> {
 				try {tMethod.invoke(this, aEvent);}
 				catch (ReflectiveOperationException e) {throw new RuntimeException("Abstract_Proxy: сбой диспетчеризации события " + tMethod, e);}

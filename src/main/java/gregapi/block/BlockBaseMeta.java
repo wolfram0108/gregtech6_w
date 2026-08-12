@@ -34,7 +34,7 @@ import gregapi.block.Material;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * @author Gregorius Techneticies
@@ -63,7 +63,7 @@ public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi
 	// IBlockExtendedMetaData (консолидация захода #39: прежнее зеркало удалено, один код на всех носителей).
 
 	@Override public byte maxMeta() {return mMaxMeta;}
-	public Identifier getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
+	public ResourceLocation getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
 	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {for (int i = 0; i < maxMeta(); i++) aList.add(ST.make(aItem, 1, i));}
 
 	// F3-render (централизация): BlockBaseMeta-контент (asphalt/concrete/cfoam/glass/…) рендерится единой GT6BlockModel
@@ -89,18 +89,18 @@ public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi
 		if (mIcons == null || mIcons.length == 0) return null;
 		final int tColor = aColor;
 		final short[] tRGBa = tColor == 0xFFFFFF ? null : gregapi.util.UT.Code.getRGBaArray(tColor);
-		final net.minecraft.resources.Identifier tIcon = getIcon(aSide, aMeta);
+		final net.minecraft.resources.ResourceLocation tIcon = getIcon(aSide, aMeta);
 		final gregapi.render.IIconContainer tBase = mIcons[aMeta % mIcons.length];
 		if (tIcon == null || tIcon.equals(tBase.getIcon(0))) return tRGBa == null ? gregapi.render.BlockTextureDefault.get(tBase) : gregapi.render.BlockTextureDefault.get(tBase, tRGBa);
 		return wrap(tIcon, tBase, tRGBa);
 	}
-	private gregapi.render.ITexture wrap(final net.minecraft.resources.Identifier tIcon, final gregapi.render.IIconContainer tBase, short[] aRGBa) {
+	private gregapi.render.ITexture wrap(final net.minecraft.resources.ResourceLocation tIcon, final gregapi.render.IIconContainer tBase, short[] aRGBa) {
 		gregapi.render.IIconContainer tCont = new gregapi.render.IIconContainer() {
-			@Override public net.minecraft.resources.Identifier getIcon(int aRenderPass) {return tIcon;}
+			@Override public net.minecraft.resources.ResourceLocation getIcon(int aRenderPass) {return tIcon;}
 			@Override public boolean isUsingColorModulation(int aRenderPass) {return tBase.isUsingColorModulation(aRenderPass);}
 			@Override public short[] getIconColor(int aRenderPass) {return tBase.getIconColor(aRenderPass);}
 			@Override public int getIconPasses() {return tBase.getIconPasses();}
-			@Override public net.minecraft.resources.Identifier getTextureFile() {return tBase.getTextureFile();}
+			@Override public net.minecraft.resources.ResourceLocation getTextureFile() {return tBase.getTextureFile();}
 			@Override public void registerIcons(Object aIconRegister) {/* атлас-стежка мертва (F3) */}
 		};
 		return aRGBa == null ? gregapi.render.BlockTextureDefault.get(tCont) : gregapi.render.BlockTextureDefault.get(tCont, aRGBa);

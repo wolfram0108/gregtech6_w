@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -122,14 +122,14 @@ public class Compat_Jade implements IWailaPlugin {
 	/** Один тип GT6-инструмента: «подходит ли он этому блоку» решает сам блок своим {@code getHarvestTool}. */
 	private static class GT6ToolHandler implements ToolHandler {
 		private final String mToolType;
-		private final Identifier mUID;
-		private final Identifier mVanillaUID; // не null только у ванильных типов — чей это обработчик у самого Jade
+		private final ResourceLocation mUID;
+		private final ResourceLocation mVanillaUID; // не null только у ванильных типов — чей это обработчик у самого Jade
 		private List<ItemStack> mTools; // лениво: реестр инструментов наполняется позже загрузки плагина
 
-		GT6ToolHandler(String aToolType, Identifier aVanillaUID) {
+		GT6ToolHandler(String aToolType, ResourceLocation aVanillaUID) {
 			mToolType = aToolType;
 			mVanillaUID = aVanillaUID;
-			mUID = Identifier.fromNamespaceAndPath(MD.GT.mID, "tool/" + aToolType);
+			mUID = ResourceLocation.fromNamespaceAndPath(MD.GT.mID, "tool/" + aToolType);
 		}
 
 		@Override
@@ -172,13 +172,13 @@ public class Compat_Jade implements IWailaPlugin {
 		}
 
 		@Override
-		public Identifier getUid() {return mUID;}
+		public ResourceLocation getUid() {return mUID;}
 	}
 
 	/** Нарисовал ли Jade витрину этого блока СВОИМИ силами. Спрашиваем только ЕГО обработчики (перебрать все
 	 *  нельзя — среди них мы сами, вышла бы рекурсия). */
 	private static boolean vanillaJadeAlreadyShowed(BlockState aState, Level aWorld, BlockPos aPos) {
-		for (java.util.Map.Entry<Identifier, ToolHandler> tE : HarvestToolProvider.TOOL_HANDLERS.entrySet()) {
+		for (java.util.Map.Entry<ResourceLocation, ToolHandler> tE : HarvestToolProvider.TOOL_HANDLERS.entrySet()) {
 			if (tE.getKey().getNamespace().equals(MD.GT.mID)) continue; // наш — пропускаем
 			try {if (!tE.getValue().test(aState, aWorld, aPos).isEmpty()) return true;} catch (Throwable e) {/* чужой упал — не наша беда */}
 		}
@@ -227,7 +227,7 @@ public class Compat_Jade implements IWailaPlugin {
 	public enum GT6HarvestLevelProvider implements IBlockComponentProvider {
 		INSTANCE;
 
-		private final Identifier mUID = Identifier.fromNamespaceAndPath(MD.GT.mID, "harvest_level");
+		private final ResourceLocation mUID = ResourceLocation.fromNamespaceAndPath(MD.GT.mID, "harvest_level");
 
 		// MODCOMPAT-014: экран настроек Jade требует перевод у КАЖДОЙ опции плагина и роняет
 		// AssertionError, если его нет — ключ строится как "config.jade.plugin_<namespace>.<path>" из UID
@@ -285,6 +285,6 @@ public class Compat_Jade implements IWailaPlugin {
 		}
 
 		@Override
-		public Identifier getUid() {return mUID;}
+		public ResourceLocation getUid() {return mUID;}
 	}
 }

@@ -30,7 +30,7 @@ import gregapi.util.UT;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -46,9 +46,9 @@ import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
-import net.neoforged.neoforge.fluids.FluidType;
+import net.minecraftforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 import java.util.IdentityHashMap;
@@ -160,7 +160,7 @@ public class FluidGT {
 		return new BaseFlowingFluid.Properties(() -> mType, mSourceHolder::value, mFlowingHolder::value);
 	}
 
-	/** neo {@link Identifier}-путь не допускает пробелы/произвольные символы — санитизация ТОЛЬКО для ключа регистрации. */
+	/** neo {@link ResourceLocation}-путь не допускает пробелы/произвольные символы — санитизация ТОЛЬКО для ключа регистрации. */
 	private static String safeRegName(String aName) {
 		String rName = aName.toLowerCase().replaceAll("[^a-z0-9_.\\-]", "_");
 		return rName.isEmpty() ? "unnamed" : rName;
@@ -210,7 +210,7 @@ public class FluidGT {
 		if (aFluid == null) return null;
 		FluidGT tGT = of(aFluid);
 		if (tGT != null) return tGT.mName;
-		Identifier tId = BuiltInRegistries.FLUID.getKey(aFluid);
+		ResourceLocation tId = BuiltInRegistries.FLUID.getKey(aFluid);
 		return tId == null ? null : tId.getPath();
 	}
 
@@ -238,7 +238,7 @@ public class FluidGT {
 		 * {@code translatable}, чтобы не подменять сырым текстом работу ресурспаков.
 		 */
 		@Override public net.minecraft.network.chat.Component getDescription() {return described();}
-		@Override public net.minecraft.network.chat.Component getDescription(net.neoforged.neoforge.fluids.FluidStack aStack) {return described();}
+		@Override public net.minecraft.network.chat.Component getDescription(net.minecraftforge.fluids.FluidStack aStack) {return described();}
 
 		private net.minecraft.network.chat.Component described() {
 			String tKey = getUnlocalizedName(), tName = LH.get(tKey);

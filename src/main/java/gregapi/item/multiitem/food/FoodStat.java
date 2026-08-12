@@ -34,7 +34,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -47,7 +47,7 @@ public class FoodStat implements IFoodStat {
 	private final int mFoodLevel, mAlcohol, mCaffeine, mDehydration, mSugar, mFat, mRadiation;
 	private final int[] mPotionEffects;
 	private final float mSaturation, mHydration, mTemperature, mTemperatureEffect;
-	private final ItemUseAnimation mAction;
+	private final UseAnim mAction;
 	private final ItemStack mEmptyContainer;
 	private final boolean mAlwaysEdible, mInvisibleParticles, mIsRotten;
 	public boolean mExplosive = F, mMilk = F, mExtinguish = F, mUseAPC = T, mAutoDetectEmpty = F;
@@ -68,7 +68,7 @@ public class FoodStat implements IFoodStat {
 	 * Level of the Effect. [0, 1, 2] are for [I, II, III], negative to remove existing levels.
 	 * The likelihood that this Potion Effect takes place upon being eaten [1 - 100]
 	 */
-	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, int aRadiation, ItemUseAnimation aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
+	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, int aRadiation, UseAnim aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
 		mFoodLevel = aFoodLevel;
 		mSaturation = aSaturation;
 		mHydration = aHydration;
@@ -80,7 +80,7 @@ public class FoodStat implements IFoodStat {
 		mSugar = aSugar;
 		mFat = aFat;
 		mRadiation = aRadiation;
-		mAction = aAction==null?ItemUseAnimation.EAT:aAction;
+		mAction = aAction==null?UseAnim.EAT:aAction;
 		mPotionEffects = aPotionEffects;
 		mEmptyContainer = ST.copy(aEmptyContainer);
 		mInvisibleParticles = aInvisibleParticles;
@@ -89,10 +89,10 @@ public class FoodStat implements IFoodStat {
 		mIsRotten = aIsRotten;
 	}
 	
-	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, ItemUseAnimation aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
+	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, UseAnim aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
 		this(aFoodLevel, aSaturation, aHydration, aTemperature, aTemperatureEffect, aAlcohol, aCaffeine, aDehydration, aSugar, aFat, 0, aAction, aEmptyContainer, aAlwaysEdible, aInvisibleParticles, aIsRotten, aAutoDetectEmpty, aPotionEffects);
 	}
-	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, ItemUseAnimation aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
+	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, UseAnim aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
 		this(aFoodLevel, aSaturation, aHydration, aTemperature, aTemperatureEffect, 0, 0, 0, 0, 0, 0, aAction, aEmptyContainer, aAlwaysEdible, aInvisibleParticles, aIsRotten, aAutoDetectEmpty, aPotionEffects);
 	}
 	
@@ -185,7 +185,7 @@ public class FoodStat implements IFoodStat {
 	}
 	
 	@Override
-	public ItemUseAnimation getFoodAction(Item aItem, ItemStack aStack) {
+	public UseAnim getFoodAction(Item aItem, ItemStack aStack) {
 		return mAction;
 	}
 	

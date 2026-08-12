@@ -26,7 +26,7 @@ package gregapi.item.multiitem.food;
 import java.util.List;
 
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -46,7 +46,7 @@ public interface IFoodStat {
 	/** Warning: the "aPlayer" Parameter may be null! */
 	public boolean isRotten(Item aItem, ItemStack aStack, Player aPlayer);
 	/** Warning: the "aPlayer" Parameter may be null! */
-	public ItemUseAnimation getFoodAction(Item aItem, ItemStack aStack);
+	public UseAnim getFoodAction(Item aItem, ItemStack aStack);
 	/** Warning: the "aPlayer" Parameter may be null! */
 	public boolean useAppleCoreFunctionality(Item aItem, ItemStack aStack, Player aPlayer);
 	

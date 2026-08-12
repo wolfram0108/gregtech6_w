@@ -35,12 +35,12 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import ic2.api.item.IMetalArmor;
-import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.BlockSource;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.Position;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.TagKey;
@@ -48,7 +48,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.equipment.ArmorMaterial;
+import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.level.Level;
@@ -85,10 +85,10 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 	protected final ArmorType mArmorType;
 	// F3-render: 1.7.10 ItemArmorBase.getIconFromDamage→mIcon (registerIcon "modID:armor/<name>/<slot>") утрачен при порте
 	// (registerIcons/IIconRegister-хук мёртв в neo) → GT6ItemModel.resolveIcon возвращал null → броня-предмет не рисовался.
-	// Восстанавливаем 1:1: ленивое построение того же Identifier (armor/<name>/<slot>) при первом запросе.
-	protected net.minecraft.resources.Identifier mIcon;
-	public net.minecraft.resources.Identifier getIconFromDamage(int aMeta) {
-		if (mIcon == null) mIcon = net.minecraft.resources.Identifier.parse((mModID + ":armor/" + mArmorName + "/" + mArmorSlot).toLowerCase(java.util.Locale.ROOT)); // sprite-id БЕЗ "textures/" (items.json prefix:"" → textures/items/armor/<name>/<slot>.png)
+	// Восстанавливаем 1:1: ленивое построение того же ResourceLocation (armor/<name>/<slot>) при первом запросе.
+	protected net.minecraft.resources.ResourceLocation mIcon;
+	public net.minecraft.resources.ResourceLocation getIconFromDamage(int aMeta) {
+		if (mIcon == null) mIcon = net.minecraft.resources.ResourceLocation.parse((mModID + ":armor/" + mArmorName + "/" + mArmorSlot).toLowerCase(java.util.Locale.ROOT)); // sprite-id БЕЗ "textures/" (items.json prefix:"" → textures/items/armor/<name>/<slot>.png)
 		return mIcon;
 	}
 
@@ -141,11 +141,11 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 			0.0F, // knockbackResistance: тот же случай
 			// F13: оригинал getIsRepairable всегда F (не чинится). neo ArmorMaterial ТРЕБУЕТ TagKey<Item> repair-материала →
 			// пустой (никогда не заполняемый) тег «repair/none» = ничего не матчит => не чинится. 1:1 по следствию. Не заглушка.
-			TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(aModID, "repair/none")),
+			TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(aModID, "repair/none")),
 			// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было mArmorTexture-строка (PNG-путь), реальный держатель —
 			// assets/<mModID>/equipment/<aArmorName>.json, клиентский ресурс не порождается этим Java-кодом
 			// (оригинал тоже не порождал PNG из кода — только ссылался строкой).
-			ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.fromNamespaceAndPath(aModID, aArmorName))
+			ResourceKey.create(EquipmentAssets.ROOT_ID, ResourceLocation.fromNamespaceAndPath(aModID, aArmorName))
 		);
 		// R8-фикс (GPT-возврат): humanoidArmor() сам делает durability(type.getDurability(material.durability()))
 		// (Item.java:580) — ArmorType.getDurability(int) УМНОЖАЕТ переданное значение на unitDurability слота
@@ -162,7 +162,7 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 		Item.Properties rProperties = new Item.Properties()
 			// F12-followup (item-split): neo Item требует id в Properties (иначе «Item id not set»); ключ = (modID, unlocalized),
 			// санитизирован, совпадает с именем регистрации registerItemLazy на call-site (как ItemBase:87).
-			.setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModID, gregapi.GT_API.sanitizeRegName(aUnlocalized))))
+			.setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(aModID, gregapi.GT_API.sanitizeRegName(aUnlocalized))))
 			.durability(tType.getDurability(tMaterial.durability()))
 			.attributes(tMaterial.createAttributes(tType))
 			.component(net.minecraft.core.component.DataComponents.EQUIPPABLE, net.minecraft.world.item.equipment.Equippable.builder(tType.getSlot()).setEquipSound(tMaterial.equipSound()).setAsset(tMaterial.assetId()).build())

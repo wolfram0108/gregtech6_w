@@ -49,9 +49,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 import java.util.Random;
 
@@ -619,7 +619,7 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 	public boolean requiresMultipleRenderPasses() {return T;}
 	
 	@Override
-	public Identifier getIcon(ItemStack aStack, int aRenderPass) {
+	public ResourceLocation getIcon(ItemStack aStack, int aRenderPass) {
 		if (aRenderPass == 0) return getIconIndex(aStack);
 		Player aPlayer = GT_API.api_proxy.getThePlayer();
 		if (aPlayer == null) return getIconIndex(aStack);
@@ -650,7 +650,7 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 	}
 	
 	@Override
-	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
+	public ResourceLocation getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
 		if (aRenderPass == 0) return getIconFromDamage(aMetaData);
 		Player aPlayer = GT_API.api_proxy.getThePlayer();
 		if (aPlayer == null) return getIconFromDamage(aMetaData);
