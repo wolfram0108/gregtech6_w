@@ -39,7 +39,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
 
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;

@@ -33,9 +33,10 @@ import gregapi.util.WD;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.PlantType;
 import net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 
@@ -144,8 +145,10 @@ public class BlockFlowersB extends BlockBaseFlower implements Runnable {
 		return WD.oxygen(aWorld, aX, aY, aZ) && WD.canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, Blocks.CACTUS);
 	}
 	
+	// F10: реальная сигнатура net.minecraftforge.common.IPlantable (BlockGetter,BlockPos) — переопределяет
+	// BlockBaseFlower.getPlantType (тот теперь тоже @Override реального интерфейса, унаследованного от FlowerBlock).
 	@Override
-	public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {
-		return EnumPlantType.Desert;
+	public PlantType getPlantType(BlockGetter aWorld, BlockPos aPos) {
+		return PlantType.DESERT;
 	}
 }

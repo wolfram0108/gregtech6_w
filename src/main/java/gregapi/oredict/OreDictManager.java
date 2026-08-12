@@ -45,11 +45,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.MinecraftForge;
-// F5 (bookkeeping восстановлен в FL.FULL_TO_DATA/EMPTY_TO_FLUID_TO_DATA): net.minecraftforge.fluids.FluidContainerRegistry/
+// F5 (bookkeeping восстановлен в FL.FULL_TO_DATA/EMPTY_TO_FLUID_TO_DATA): gt6mirror.minecraftforge.fluids.FluidContainerRegistry/
 // FluidContainerData/FluidContainerRegisterEvent — оригинальный Forge-пакет удалён движком целиком (0 хитов
 // во всех 3 корнях референса neo/neoforge/fml); т.к. ВЕСЬ net.minecraftforge отсутствует на classpath (не
 // split-package), тип compile-mirror-зеркалирован в compat-mirror (F2-приём, см. gregtech.asm-shim) —
-// net.minecraftforge.fluids.FluidContainerRegistry (+ вложенные FluidContainerData/FluidContainerRegisterEvent).
+// gt6mirror.minecraftforge.fluids.FluidContainerRegistry (+ вложенные FluidContainerData/FluidContainerRegisterEvent).
 // Авто-РЕГИСТРАЦИЯ (владелец — gregapi.fluid/FL.reg/set) остаётся no-op (decisions/F5-fluids.md §3,8
 // «авто-реестр бакетов/канистр» — не изобретать новый API), поэтому этот конструктор-цикл и
 // onFluidContainerRegistration ниже компилируются и сохраняют управляющий поток 1:1, но реестр всегда пуст
@@ -57,10 +57,10 @@ import net.minecraftforge.common.MinecraftForge;
 // consumer-файлов" в DEFERRED-LEDGER.md §A — эта строка один из consumer'ов, не отдельная новая находка.
 // FluidStack.amount (1.7.10 public-поле) → neo private+getAmount/setAmount (F5-класс, тот же приём, что уже
 // применяется остальными потребителями FluidStack) — точечно переведено на setAmount(0) ниже.
-import net.minecraftforge.fluids.FluidContainerRegistry;
-import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
-import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerRegisterEvent;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.minecraftforge.fluids.FluidContainerRegistry;
+import gt6mirror.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
+import gt6mirror.minecraftforge.fluids.FluidContainerRegistry.FluidContainerRegisterEvent;
+import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
 import gregapi.oredict.OreDictionary;
 import gregapi.oredict.OreDictionary.OreRegisterEvent;
 

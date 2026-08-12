@@ -54,14 +54,14 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.PlantType;
 import net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 
 import java.util.Random;
 
 import static gregapi.data.CS.*;
-import static net.minecraftforge.common.EnumPlantType.Plains;
+import static net.minecraftforge.common.PlantType.PLAINS;
 
 /**
  * @author Gregorius Techneticies
@@ -213,9 +213,12 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		return T;
 	}
 	
-	public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {return Plains;}
-	public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return this;}
-	public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
+	// F10: реальная сигнатура net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не старый шим
+	// (BlockGetter,int,int,int). getPlant — 1:1 канонический паттерн реального BushBlock.getPlant (forge-1201
+	// decompiled net/minecraft/world/level/block/BushBlock.java:42): состояние по позиции, иначе дефолтное.
+	// getPlantMetadata убран — реальный интерфейс его не содержит (мета внутри BlockState).
+	@Override public PlantType getPlantType(BlockGetter aWorld, BlockPos aPos) {return PLAINS;}
+	@Override public BlockState getPlant(BlockGetter aWorld, BlockPos aPos) {BlockState tState = aWorld.getBlockState(aPos); return tState.getBlock() != this ? defaultBlockState() : tState;}
 	public boolean func_149851_a(Level aWorld, int aX, int aY, int aZ, boolean aIsRemote) {return T;}
 	public boolean func_149852_a(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return aRandom.nextFloat() < 0.45;}
 	public void func_149853_b(Level aWorld, Random aRandom, int aX, int aY, int aZ) {tryGrow(aWorld, aX, aY, aZ, aRandom);}

@@ -49,10 +49,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.FoliageColor;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.IShearable;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.common.IForgeShearable;
 import net.minecraft.core.Direction;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import static gregapi.data.CS.*;
@@ -63,7 +65,7 @@ import static gregapi.data.CS.*;
 @Optional.InterfaceList(value = {
   @Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock", modid = ModIDs.GC)
 })
-public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearable, IOxygenReliantBlock {
+public abstract class BlockBaseLeaves extends BlockBaseTree implements IForgeShearable, IOxygenReliantBlock {
 	public final Block mSaplings;
 	public final Block[] mLogs;
 	public final byte[] mLogMetas;
@@ -93,13 +95,16 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return F;}
 	public boolean isLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
-	public boolean isShearable(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
+	// F10: IShearable-зеркало снято — настоящий net.minecraftforge.common.IForgeShearable (сигнатура
+	// isShearable(ItemStack,Level,BlockPos)/onSheared(Player,ItemStack,Level,BlockPos,int):List<ItemStack>,
+	// оба метода default в интерфейсе — override сохраняет 1.7.10-тело как есть).
+	@Override public boolean isShearable(ItemStack aItem, Level aWorld, BlockPos aPos) {return T;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeLeaves.mDefaultStackSize);}
 	// 1:1 (:91 оригинала): выбор fancy/fast-варианта иконки по признаку ванильной листвы; семантика isOpaqueCube
 	// = WD.visOpq (WD.opaque=canOcclude тут врал — см. skipRendering ниже). В neo-ванили листва всегда fancy.
 	@Override public ResourceLocation getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(WD.visOpq(Blocks.OAK_LEAVES)?8:0)].getIcon(0);}
-	public ArrayList<ItemStack> onSheared(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aX, aY, aZ) & 7));}
+	@Override public List<ItemStack> onSheared(Player aPlayer, ItemStack aItem, Level aWorld, BlockPos aPos, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) & 7));}
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : WD.collisionBox(aWorld, aX, aY, aZ, this);}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
 	public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isClientSide()) {aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 201+RNGSUS.nextInt(100)); return;}}

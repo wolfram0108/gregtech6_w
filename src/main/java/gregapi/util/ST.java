@@ -69,7 +69,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
 import twilightforest.TFAchievementPage;
 
 import java.util.*;
@@ -1379,7 +1379,7 @@ public class ST {
 		net.minecraft.world.level.storage.loot.BuiltInLootTables.DESERT_PYRAMID, net.minecraft.world.level.storage.loot.BuiltInLootTables.JUNGLE_TEMPLE,
 		net.minecraft.world.level.storage.loot.BuiltInLootTables.JUNGLE_TEMPLE_DISPENSER, net.minecraft.world.level.storage.loot.BuiltInLootTables.SPAWN_BONUS_CHEST);
 	public static ItemStack generateOneVanillaLoot() {
-		return net.minecraftforge.common.ChestGenHooks.getOneItem(UT.Code.select("dungeonChest", LOOT_TABLES_VANILLA), RNGSUS);
+		return gt6mirror.minecraftforge.common.ChestGenHooks.getOneItem(UT.Code.select("dungeonChest", LOOT_TABLES_VANILLA), RNGSUS);
 	}
 
 	public static boolean generateLoot(Random aRandom, String aLoot, Container aInv) {
@@ -1393,7 +1393,7 @@ public class ST {
 			} else if (!LOOT_TABLES_VANILLA.contains(aLoot)) {
 				// BUG-039 (F-loot): GT6-категории (gt.gems/gt.misc/...) — содержимое целиком в буфере shim-ChestGenHooks
 				// (net.minecraftforge.common; заполняет Loader_Loot). Строка 1:1 с оригиналом 1.7.10.
-				net.minecraftforge.common.WeightedRandomChestContent.generateChestContents(aRandom, net.minecraftforge.common.ChestGenHooks.getItems(aLoot, aRandom), aInv, net.minecraftforge.common.ChestGenHooks.getCount(aLoot, aRandom));
+				gt6mirror.minecraftforge.common.WeightedRandomChestContent.generateChestContents(aRandom, gt6mirror.minecraftforge.common.ChestGenHooks.getItems(aLoot, aRandom), aInv, gt6mirror.minecraftforge.common.ChestGenHooks.getCount(aLoot, aRandom));
 			} else {
 				// F-loot: ванильные 1.7.10-имена таблиц → индекс в LOOT_TABLES_VANILLA → VANILLA_LOOT_KEYS (1:1 порядок,
 				// см. generateOneVanillaLoot) → взвешенная выдача таблицы (LootParams(CHEST)) — vanilla-часть
@@ -1419,7 +1419,7 @@ public class ST {
 						// Возвращаем 1.7.10-раскладку: единый взвешенный список даёт сама таблица (ваниль + пул
 						// gregtech6:<категория>), а сколько из него взять и куда положить — решает счётчик, как раньше.
 						java.util.List<ItemStack> tPool = tTable.getRandomItems(tParams);
-						for (int tRoll = 0, tCount = net.minecraftforge.common.ChestGenHooks.getCount(aLoot, aRandom); tRoll < tCount && !tPool.isEmpty(); tRoll++) {
+						for (int tRoll = 0, tCount = gt6mirror.minecraftforge.common.ChestGenHooks.getCount(aLoot, aRandom); tRoll < tCount && !tPool.isEmpty(); tRoll++) {
 							ItemStack tPicked = tPool.get(aRandom.nextInt(tPool.size()));
 							if (invalid(tPicked)) continue;
 							aInv.setItem(aRandom.nextInt(aInv.getContainerSize()), tPicked.copy());

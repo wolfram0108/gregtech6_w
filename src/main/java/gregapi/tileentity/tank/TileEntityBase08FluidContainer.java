@@ -60,7 +60,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import squeek.applecore.api.food.FoodValues;
 import thaumcraft.common.tiles.TileCrucible;

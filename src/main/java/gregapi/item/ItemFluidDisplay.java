@@ -48,7 +48,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
 
 import java.util.Collection;
 import java.util.List;

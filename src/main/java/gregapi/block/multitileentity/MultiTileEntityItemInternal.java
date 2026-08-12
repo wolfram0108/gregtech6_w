@@ -72,7 +72,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
 import vazkii.botania.api.item.IFlowerPlaceable;
 import vazkii.botania.api.subtile.SubTileEntity;
 

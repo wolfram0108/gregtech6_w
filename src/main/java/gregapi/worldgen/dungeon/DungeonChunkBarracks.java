@@ -32,7 +32,7 @@ import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.nbt.ListTag;
-import net.minecraftforge.common.ChestGenHooks;
+import gt6mirror.minecraftforge.common.ChestGenHooks;
 
 import static gregapi.data.CS.*;
 

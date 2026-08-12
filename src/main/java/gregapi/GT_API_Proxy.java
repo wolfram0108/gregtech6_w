@@ -157,7 +157,7 @@ import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkWatchEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
 import gregapi.recipes.ShapedOreRecipe;
 import gregapi.recipes.ShapelessOreRecipe;
 import thaumcraft.common.entities.monster.EntityBrainyZombie;

@@ -30,7 +30,7 @@ import gregapi.data.IL;
 import gregapi.data.MD;
 import gregapi.fluid.FluidTankGT;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.common.ChestGenHooks;
+import gt6mirror.minecraftforge.common.ChestGenHooks;
 
 /**
  * @author Gregorius Techneticies

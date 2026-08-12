@@ -38,9 +38,10 @@ import gregapi.block.Material;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.PlantType;
 import net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 
@@ -118,8 +119,9 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 		// BlockSapling/BlockMushroom/… все `extends BlockBush`). Neo-эквивалент — VegetationBlock: `BushBlock`
 		// там сузился до одного блока реестра, и грядка GT6 переставала держать саженцы и цветы (замер `M-84`).
 		if (aPlant == Blocks.SUGAR_CANE || aPlant instanceof net.minecraft.world.level.block.BushBlock) return T;
-		EnumPlantType tType = aPlant.getPlantType(aWorld, aX+aSide.getStepX(), aY+aSide.getStepY(), aZ+aSide.getStepZ());
-		return tType == EnumPlantType.Plains || tType == EnumPlantType.Water || tType == EnumPlantType.Desert || tType == EnumPlantType.Beach;
+		// F10: getPlantType — реальная сигнатура net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не int x,y,z.
+		PlantType tType = aPlant.getPlantType(aWorld, new BlockPos(aX+aSide.getStepX(), aY+aSide.getStepY(), aZ+aSide.getStepZ()));
+		return tType == PlantType.PLAINS || tType == PlantType.WATER || tType == PlantType.DESERT || tType == PlantType.BEACH;
 	}
 	
 	

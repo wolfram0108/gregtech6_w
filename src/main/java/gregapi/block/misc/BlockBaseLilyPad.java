@@ -29,7 +29,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.SoundType;
 
 import static gregapi.data.CS.*;
-import static net.minecraftforge.common.EnumPlantType.*;
+import static net.minecraftforge.common.PlantType.*;
 
 import java.util.List;
 import java.util.Random;
@@ -62,7 +62,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.EnumPlantType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.PlantType;
 import net.minecraftforge.common.IPlantable;
 
 public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRenderedBlock {
@@ -97,9 +98,12 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return F;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
-	public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {return Water;}
-	public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return this;}
-	public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
+	// F10: реальная сигнатура net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не старый шим
+	// (BlockGetter,int,int,int). getPlant — 1:1 канонический паттерн реального BushBlock.getPlant (forge-1201
+	// decompiled net/minecraft/world/level/block/BushBlock.java:42): состояние по позиции, иначе дефолтное.
+	// getPlantMetadata убран — реальный интерфейс его не содержит (мета внутри BlockState).
+	@Override public PlantType getPlantType(BlockGetter aWorld, BlockPos aPos) {return WATER;}
+	@Override public BlockState getPlant(BlockGetter aWorld, BlockPos aPos) {BlockState tState = aWorld.getBlockState(aPos); return tState.getBlock() != this ? defaultBlockState() : tState;}
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.LILY_PAD, aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.LILY_PAD.getExplosionResistance();}
 	@Override public int getItemStackLimit(ItemStack aStack) {return 64;}

@@ -723,7 +723,7 @@ public class GT_API extends Abstract_Mod {
 			// BUG-039 (F-loot, тот же класс тайминга): LootTableLoadEvent отстрелял при загрузке ресурсов ДО этой
 			// data-init (буфер ChestGenHooks был пуст) → догоняющая инъекция GT-пулов в загруженные таблицы.
 			// Идемпотентна (именованный pool); /reload и последующие загрузки покрывает сам LootTableLoadEvent.
-			net.minecraftforge.common.ChestGenHooks.injectAll(tServer);
+			gt6mirror.minecraftforge.common.ChestGenHooks.injectAll(tServer);
 		} else if (aEvent.getLevel() instanceof net.minecraft.world.level.Level tClientLevel && tClientLevel.isClientSide()) {
 			// BUG-094 (дедикейт: камни/палки/машины прозрачны): у клиента, подключённого к ВЫДЕЛЕННОМУ серверу,
 			// ServerLevel не существует → единственный drain выше НИКОГДА не бежал → вся отложенная item-init

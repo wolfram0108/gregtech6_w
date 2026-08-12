@@ -38,7 +38,7 @@ import gregapi.util.UT;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.ListTag;
-import net.minecraftforge.common.ChestGenHooks;
+import gt6mirror.minecraftforge.common.ChestGenHooks;
 import net.minecraftforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;

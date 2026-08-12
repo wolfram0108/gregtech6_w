@@ -98,15 +98,17 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	/** BUG-115: {@code IFluidBlock} вернулся общему предку — {@code getFluid()} снова есть, 1:1 с 1.7.10. */
 	@Override public net.minecraft.world.level.material.FlowingFluid getFluid() {return liquidCarrierFor(mMaterial, mFluid);}
 
+	// F10: реальная сигнатура net.minecraftforge.fluids.IFluidBlock — drain(Level,BlockPos,IFluidHandler.FluidAction),
+	// canDrain(Level,BlockPos); было (Level,int,int,int,boolean aDoDrain) старого шима.
 	@Override
-	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
-		if (aDoDrain) WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
+	public FluidStack drain(Level aWorld, net.minecraft.core.BlockPos aPos, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction aAction) {
+		if (aAction.execute()) WD.set(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), NB, 0, 2);
 		return FL.make(getFluid(), 1000);
 	}
 
 	@Override
-	public boolean canDrain(Level aWorld, int aX, int aY, int aZ) {
-		return WD.meta(aWorld, aX, aY, aZ) == 0;
+	public boolean canDrain(Level aWorld, net.minecraft.core.BlockPos aPos) {
+		return WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) == 0;
 	}
 	
 	/** было Forge {@code BlockFluidClassic.getLargerQuanta(IBlockAccess,x,y,z,compare)} — тело 1:1 (нужно

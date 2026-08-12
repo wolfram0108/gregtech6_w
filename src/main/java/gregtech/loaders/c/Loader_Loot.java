@@ -35,8 +35,8 @@ import gregtech.worldgen.TwilightTreasureReplacer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.ChestGenHooks;
-import net.minecraftforge.common.WeightedRandomChestContent;
+import gt6mirror.minecraftforge.common.ChestGenHooks;
+import gt6mirror.minecraftforge.common.WeightedRandomChestContent;
 import twilightforest.TFTreasure;
 
 import static gregapi.data.CS.*;
@@ -47,7 +47,7 @@ public class Loader_Loot implements Runnable {
 	@Override
 	public void run() {
 		// BUG-039 (F-loot): гейт отложенности СНЯТ — 1.7.10 chest-loot API воспроизведён центрально в shim
-		// net.minecraftforge.common.ChestGenHooks/WeightedRandomChestContent (буфер + инъекция LootPool в
+		// gt6mirror.minecraftforge.common.ChestGenHooks/WeightedRandomChestContent (буфер + инъекция LootPool в
 		// data-driven таблицы движка + getOneItem для мешков/книг/Unboxinator). Этот файл — 1:1 с оригиналом.
 		new ChestGenHooksChestReplacer(ChestGenHooks.DUNGEON_CHEST       , 32745);
 		new ChestGenHooksChestReplacer(ChestGenHooks.MINESHAFT_CORRIDOR  ,   500);

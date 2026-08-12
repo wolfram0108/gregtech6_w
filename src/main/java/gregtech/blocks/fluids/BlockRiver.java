@@ -99,10 +99,13 @@ public class BlockRiver extends BlockWaterlike {
 		return;
 	}
 	
+	// F10: реальная сигнатура net.minecraftforge.fluids.IFluidBlock — drain(Level,BlockPos,IFluidHandler.FluidAction);
+	// было (Level,int,int,int,boolean aDoDrain) старого шима.
 	@Override
-	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
+	public FluidStack drain(Level aWorld, BlockPos aPos, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction aAction) {
+		int aX = aPos.getX(), aY = aPos.getY(), aZ = aPos.getZ();
 		if (!isSourceBlock(aWorld, aX, aY, aZ)) return null;
-		if (aDoDrain) WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
+		if (aAction.execute()) WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 		return FL.Water.make(1000);
 	}
 	

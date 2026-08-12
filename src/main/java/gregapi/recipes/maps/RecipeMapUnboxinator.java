@@ -34,7 +34,7 @@ import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.ChestGenHooks;
+import gt6mirror.minecraftforge.common.ChestGenHooks;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.Collection;

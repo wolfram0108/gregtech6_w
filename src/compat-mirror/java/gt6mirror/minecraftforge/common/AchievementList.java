@@ -33,7 +33,10 @@
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.minecraftforge.common;
+// Пакет gt6mirror.minecraftforge.common (не net.minecraftforge.common): boot-краш ResolutionException —
+// настоящий модуль forge 1.20.1 и модуль gregtech6 экспортировали бы один и тот же пакет net.minecraftforge.*
+// (split-package), JPMS такое не резолвит; тип живой (используется рантаймом), поэтому переупакован, а не удалён.
+package gt6mirror.minecraftforge.common;
 
 import net.minecraft.advancements.Advancement;
 

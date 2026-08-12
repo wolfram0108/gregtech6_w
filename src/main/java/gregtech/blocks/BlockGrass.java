@@ -37,9 +37,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.PlantType;
 import net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 
@@ -102,8 +103,9 @@ public class BlockGrass extends BlockBaseMeta {
 	
 	@Override
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {
-		EnumPlantType tType = aPlant.getPlantType(aWorld, aX+aSide.getStepX(), aY+aSide.getStepY(), aZ+aSide.getStepZ());
-		return tType == EnumPlantType.Plains || (tType == EnumPlantType.Beach && (WD.anywater(aWorld, aX+1, aY, aZ) || WD.anywater(aWorld, aX-1, aY, aZ) || WD.anywater(aWorld, aX, aY, aZ+1) || WD.anywater(aWorld, aX, aY, aZ-1)));
+		// F10: getPlantType — реальная сигнатура net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не int x,y,z.
+		PlantType tType = aPlant.getPlantType(aWorld, new BlockPos(aX+aSide.getStepX(), aY+aSide.getStepY(), aZ+aSide.getStepZ()));
+		return tType == PlantType.PLAINS || (tType == PlantType.BEACH && (WD.anywater(aWorld, aX+1, aY, aZ) || WD.anywater(aWorld, aX-1, aY, aZ) || WD.anywater(aWorld, aX, aY, aZ+1) || WD.anywater(aWorld, aX, aY, aZ-1)));
 	}
 	
 	public static final IconContainerCopied DIRT = new IconContainerCopied(Blocks.DIRT, 0, SIDE_BOTTOM);

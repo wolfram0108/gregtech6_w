@@ -32,6 +32,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -305,12 +307,25 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 
 	/** было Forge {@code BlockFluidBase.getFilledPercentage(World,x,y,z)} (:524-531) — тело 1:1:
 	 *  quanta+1, срез по 1.0 и знак по плотности (у газов плотность отрицательна, доля идёт со знаком минус —
-	 *  так Forge отличал «заполнено снизу» от «заполнено сверху»). */
-	@Override public float getFilledPercentage(Level aWorld, int aX, int aY, int aZ) {
-		int tQuantaRemaining = getQuantaValue(aWorld, aX, aY, aZ) + 1;
+	 *  так Forge отличал «заполнено снизу» от «заполнено сверху»). Реальная сигнатура net.minecraftforge.fluids.
+	 *  IFluidBlock — (Level,BlockPos), не (Level,int,int,int) старого шима. */
+	@Override public float getFilledPercentage(Level aWorld, BlockPos aPos) {
+		int tQuantaRemaining = getQuantaValue(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) + 1;
 		float tRemaining = tQuantaRemaining / quantaPerBlockFloat;
 		if (tRemaining > 1) tRemaining = 1.0F;
 		return tRemaining * (density > 0 ? 1 : -1);
+	}
+
+	/** BUG-115-класс: {@code place} — новая поверхность реального {@code net.minecraftforge.fluids.IFluidBlock}
+	 *  (в 1.7.10-шиме отсутствовала целиком, GT6 её никогда не звала — заполнение блока идёт через штатный
+	 *  {@code BucketItem.emptyContents}, см. {@code Behavior_Bucket_Simple}/{@code Behavior_Bucket_Container}).
+	 *  Реализация здесь — только чтобы удовлетворить абстрактный метод интерфейса честным телом (полный
+	 *  source-блок за 1000 mB, тот же канон, что {@code drain}/{@code canDrain} носителей выше), а не
+	 *  выдуманное частичное заполнение, которого GT6 не имела. Ни один вызыватель её не использует. */
+	@Override public int place(Level aWorld, BlockPos aPos, FluidStack aFluidStack, IFluidHandler.FluidAction aAction) {
+		if (aFluidStack == null || aFluidStack.getAmount() < 1000) return 0;
+		if (aAction.execute()) WD.set(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), this, 0, 3);
+		return 1000;
 	}
 
 	/** было Forge {@code BlockFluidBase.getQuantaPercentage(IBlockAccess,x,y,z)} (:452) — тело 1:1. */

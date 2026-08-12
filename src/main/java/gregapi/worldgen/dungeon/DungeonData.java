@@ -45,7 +45,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.ChestGenHooks;
+import gt6mirror.minecraftforge.common.ChestGenHooks;
 import net.minecraft.world.level.material.Fluid;
 
 import java.util.Random;

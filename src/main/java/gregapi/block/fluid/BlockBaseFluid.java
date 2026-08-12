@@ -130,13 +130,17 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	/** было Forge {@code BlockFluidFinite.canDrain:332-335} — тело 1:1 ({@code return true}); finite-жидкость
 	 *  черпается на любом уровне, в отличие от classic-ветки ({@link gregtech.blocks.fluids.BlockWaterlike}),
 	 *  где GT6 перекрывает его своим «мета 0 = источник». */
-	@Override public boolean canDrain(Level aWorld, int aX, int aY, int aZ) {return T;}
+	// F10: реальная сигнатура net.minecraftforge.fluids.IFluidBlock — canDrain(Level,BlockPos); было
+	// (Level,int,int,int) старого шима.
+	@Override public boolean canDrain(Level aWorld, net.minecraft.core.BlockPos aPos) {return T;}
 
+	// F10: реальная сигнатура — drain(Level,BlockPos,IFluidHandler.FluidAction); было (Level,int,int,int,boolean aDoDrain).
 	@Override
-	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
+	public FluidStack drain(Level aWorld, net.minecraft.core.BlockPos aPos, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction aAction) {
+		int aX = aPos.getX(), aY = aPos.getY(), aZ = aPos.getZ();
 		// Forge royally fucked up again. You check for MetaData FIRST and do the set Block to Air SECOND, like I demonstrate here!!!
 		FluidStack rFluid = FL.mul(mQuanta, WD.meta(aWorld, aX, aY, aZ)+1);
-		if (aDoDrain) {
+		if (aAction.execute()) {
 			WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 			updateFluidBlocks(aWorld, aX, aY, aZ, T);
 		}

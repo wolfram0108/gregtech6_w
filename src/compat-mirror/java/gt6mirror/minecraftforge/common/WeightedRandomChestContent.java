@@ -33,7 +33,10 @@
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.minecraftforge.common;
+// Пакет gt6mirror.minecraftforge.common (не net.minecraftforge.common): boot-краш ResolutionException —
+// настоящий модуль forge 1.20.1 и модуль gregtech6 экспортировали бы один и тот же пакет net.minecraftforge.*
+// (split-package), JPMS такое не резолвит; тип живой (используется рантаймом), поэтому переупакован, а не удалён.
+package gt6mirror.minecraftforge.common;
 
 import java.util.Random;
 
@@ -44,8 +47,9 @@ import net.minecraft.world.item.ItemStack;
  *  BUG-039: класс живёт в {@code net.minecraftforge.common}, а НЕ в оригинальном {@code net.minecraft.util} —
  *  пакетом {@code net.minecraft.*} в рантайме владеет модуль minecraft (JPMS split-package), поэтому build.gradle
  *  исключает {@code net/minecraft/**} из jar и стрипает его из dev-запусков → класс в оригинальном пакете
- *  физически не существует в рантайме (NoClassDefFoundError). Пакет net.minecraftforge никем не занят и уходит
- *  в jar (там же живёт {@link ChestGenHooks}). Тело 1:1; см. decisions/F-loot-chestgen-map.md. */
+ *  физически не существует в рантайме (NoClassDefFoundError). Пакет {@code net.minecraftforge} тоже занят
+ *  реальным модулем forge (тот же класс split-package конфликтов, отсюда перенос в {@code gt6mirror.minecraftforge};
+ *  см. {@link ChestGenHooks}). Тело 1:1; см. decisions/F-loot-chestgen-map.md. */
 public class WeightedRandomChestContent {
 	public ItemStack theItemId;
 	public int theMinimumChanceToGenerateItem;

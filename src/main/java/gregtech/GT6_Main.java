@@ -78,9 +78,9 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraftforge.common.ChestGenHooks;
-import net.minecraftforge.fluids.FluidContainerRegistry;
-import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
+import gt6mirror.minecraftforge.common.ChestGenHooks;
+import gt6mirror.minecraftforge.fluids.FluidContainerRegistry;
+import gt6mirror.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 import gregapi.oredict.OreDictionary;
 
 import java.util.ArrayList;

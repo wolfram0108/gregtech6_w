@@ -46,9 +46,9 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.fluids.FluidContainerRegistry;
-import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.minecraftforge.fluids.FluidContainerRegistry;
+import gt6mirror.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
+import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidTank;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -924,9 +924,10 @@ public enum FL {
 			return gregapi.util.WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) == 0 ? Water.make(1000) : null;
 		}
 		// GT6-жидкости отвечают своим каналом: classic сама гейтит по canDrain, finite отдаёт кванты по мете
+		// F10: реальная сигнатура net.minecraftforge.fluids.IFluidBlock — drain/canDrain(Level,BlockPos[,FluidAction]).
 		if (tBlock instanceof net.minecraftforge.fluids.IFluidBlock tFluidBlock) {
-			if (!tFluidBlock.canDrain(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())) return null;
-			FluidStack rFluid = tFluidBlock.drain(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), F);
+			if (!tFluidBlock.canDrain(aWorld, aPos)) return null;
+			FluidStack rFluid = tFluidBlock.drain(aWorld, aPos, FluidAction.SIMULATE);
 			return rFluid == null || rFluid.getAmount() <= 0 ? null : rFluid;
 		}
 		// ванильные: объём несёт ТОЛЬКО источник (1.7.10 — отдельный блок Blocks.water/lava, ныне FluidState)
@@ -950,8 +951,8 @@ public enum FL {
 		if (rFluid == null) return null;
 		net.minecraft.world.level.block.Block tBlock = aWorld.getBlockState(aPos).getBlock();
 		if (tBlock instanceof net.minecraftforge.fluids.IFluidBlock tFluidBlock) {
-			// у GT6-жидкостей снятие — их собственный drain(..., true): finite ещё и пересчитывает соседей
-			tFluidBlock.drain(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+			// у GT6-жидкостей снятие — их собственный drain(..., EXECUTE): finite ещё и пересчитывает соседей
+			tFluidBlock.drain(aWorld, aPos, FluidAction.EXECUTE);
 		} else {
 			gregapi.util.WD.set(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), gregapi.data.CS.NB, 0, 2);
 		}
@@ -1126,7 +1127,7 @@ public enum FL {
 	// F5, oredict-fluid-container-registry: bookkeeping-реестр (кто какой FluidContainerData зарегистрировал)
 	// восстановлен 1:1 — это GT6-own учёт (читают gregtech.loaders.c.Loader_Recipes_Foreign для
 	// генерации Canner/Squeezer-рецептов, gregapi.NEI_RecipeMap для отображения в NEI), а не Forge-специфичное
-	// поведение. net.minecraftforge.fluids.FluidContainerRegistry (владелец типа FluidContainerData) —
+	// поведение. gt6mirror.minecraftforge.fluids.FluidContainerRegistry (владелец типа FluidContainerData) —
 	// compile-mirror shim (F2-приём, весь пакет net.minecraftforge отсутствует на classpath).
 	public static final Map<ItemStackContainer, FluidContainerData> FULL_TO_DATA = new ItemStackMap<>();
 	public static final Map<ItemStackContainer, Map<String, FluidContainerData>> EMPTY_TO_FLUID_TO_DATA = new ItemStackMap<>();

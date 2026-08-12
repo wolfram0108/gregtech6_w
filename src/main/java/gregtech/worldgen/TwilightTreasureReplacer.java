@@ -35,7 +35,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.ChestGenHooks;
+import gt6mirror.minecraftforge.common.ChestGenHooks;
 import twilightforest.TFTreasure;
 import twilightforest.TFTreasureTable;
 

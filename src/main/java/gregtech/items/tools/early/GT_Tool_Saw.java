@@ -47,7 +47,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.IShearable;
+import net.minecraft.core.BlockPos;
+import net.minecraftforge.common.IForgeShearable;
 import net.minecraftforge.event.level.BlockEvent;
 
 import java.util.ArrayList;
@@ -100,10 +101,13 @@ public class GT_Tool_Saw extends ToolStats {
 	
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch) {
-		if (WD.getMaterial(aBlock) == Material.leaves && aBlock instanceof IShearable) {
+		// F10: IShearable-зеркало снято — настоящий net.minecraftforge.common.IForgeShearable (сигнатура
+		// isShearable(ItemStack,Level,BlockPos)/onSheared(Player,ItemStack,Level,BlockPos,int):List<ItemStack>).
+		if (WD.getMaterial(aBlock) == Material.leaves && aBlock instanceof IForgeShearable) {
 			WD.set(aPlayer.level(), aX, aY, aZ, aBlock, aMetaData, 0);
-			if (((IShearable)aBlock).isShearable(aStack, aPlayer.level(), aX, aY, aZ)) {
-				ArrayList<ItemStack> tDrops = ((IShearable)aBlock).onSheared(aStack, aPlayer.level(), aX, aY, aZ, aFortune);
+			BlockPos tPos = new BlockPos(aX, aY, aZ);
+			if (((IForgeShearable)aBlock).isShearable(aStack, aPlayer.level(), tPos)) {
+				List<ItemStack> tDrops = ((IForgeShearable)aBlock).onSheared(aPlayer, aStack, aPlayer.level(), tPos, aFortune);
 				aDrops.clear();
 				aDrops.addAll(tDrops);
 				/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;

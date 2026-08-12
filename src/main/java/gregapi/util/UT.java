@@ -348,7 +348,7 @@ public class UT {
 
 		@Deprecated public static FluidStack[] copyArray(FluidStack... aFluids) {return FL.copy(aFluids);}
 
-		// F5 (bookkeeping в FL.FULL_TO_DATA/EMPTY_TO_FLUID_TO_DATA): net.minecraftforge.fluids.FluidContainerRegistry/
+		// F5 (bookkeeping в FL.FULL_TO_DATA/EMPTY_TO_FLUID_TO_DATA): gt6mirror.minecraftforge.fluids.FluidContainerRegistry/
 		// FluidContainerData — пакет удалён движком целиком, не существует в neo (не найден ни в одном из
 		// 3 корней референса, тот же класс проблемы, что уже занесён в gregapi/oredict/OreDictManager.java
 		// под меткой fluid-container-registry с приставкой oredict-). Легаси-поля sFilled2Data/sEmpty2Fluid2Data

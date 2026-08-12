@@ -34,7 +34,7 @@ import gregapi.render.IIconContainer;
 import gregtech.items.tools.early.GT_Tool_Knife;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.AchievementList;
+import gt6mirror.minecraftforge.common.AchievementList;
 
 public class GT_Tool_Pocket_Knife extends GT_Tool_Knife {
 	@Override public float getMaxDurabilityMultiplier() {return 4.0F;}

@@ -58,7 +58,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.PlantType;
 import net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 
@@ -649,7 +649,8 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	@Override
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {
 		// было ForgeDirection.offsetX/Y/Z (1.7.10 public-поля) -> neo Direction.getStepX()/getStepY()/getStepZ() [Direction.java:247]
-		return PLANTABLE[WD.meta(aWorld, aX, aY, aZ)] && aPlant.getPlantType(aWorld, aX+aSide.getStepX(), aY+aSide.getStepY(), aZ+aSide.getStepZ()) == EnumPlantType.Cave;
+		// F10: getPlantType — реальная сигнатура net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не int x,y,z.
+		return PLANTABLE[WD.meta(aWorld, aX, aY, aZ)] && aPlant.getPlantType(aWorld, new BlockPos(aX+aSide.getStepX(), aY+aSide.getStepY(), aZ+aSide.getStepZ())) == PlantType.CAVE;
 	}
 	
 	// было IGrowable.func_149851_a/func_149852_a/func_149853_b (1.7.10) -> BonemealableBlock.isValidBonemealTarget

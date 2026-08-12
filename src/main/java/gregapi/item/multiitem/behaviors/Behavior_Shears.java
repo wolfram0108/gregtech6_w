@@ -29,11 +29,12 @@ import gregapi.item.multiitem.MultiItemTool;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.ST;
 import gregapi.util.UT;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.IShearable;
+import net.minecraftforge.common.IForgeShearable;
 
 import java.util.List;
 
@@ -48,13 +49,18 @@ public class Behavior_Shears extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aEntity instanceof IShearable) {
+		// F10: IShearable-зеркало снято — настоящий net.minecraftforge.common.IForgeShearable (сигнатура
+		// isShearable(ItemStack,Level,BlockPos)/onSheared(Player,ItemStack,Level,BlockPos,int):List<ItemStack>,
+		// позиция сущности через BlockPos.containing(entity.position()) — 1:1 канон реального вызывателя
+		// ShearsItem.interactLivingEntity (forge-1201 decompiled net/minecraft/world/item/ShearsItem.java:56-58).
+		if (aEntity instanceof IForgeShearable) {
 			if (aPlayer.level().isClientSide()) return T;
-			if (((IShearable)aEntity).isShearable(aStack, aPlayer.level(), (int)aEntity.getX(), (int)aEntity.getY(), (int)aEntity.getZ()) && ((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
+			BlockPos tPos = BlockPos.containing(aEntity.position());
+			if (((IForgeShearable)aEntity).isShearable(aStack, aPlayer.level(), tPos) && ((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 				int tFortune = UT.NBT.getEnchantmentLevelLootingFortune(aStack);
 				String tClass = UT.Reflection.getLowercaseClass(aEntity);
 				boolean tDropIncrease = ((tFortune > 0) && ("Sheep".equalsIgnoreCase(tClass) || "EntityTFBighorn".equalsIgnoreCase(tClass) || "EntityTaintSheep".equalsIgnoreCase(tClass) || "EntitySheepuff".equalsIgnoreCase(tClass)));
-				for (ItemStack tStack : ((IShearable)aEntity).onSheared(aStack, aPlayer.level(), (int)aEntity.getX(), (int)aEntity.getY(), (int)aEntity.getZ(), tFortune)) {
+				for (ItemStack tStack : ((IForgeShearable)aEntity).onSheared(aPlayer, aStack, aPlayer.level(), tPos, tFortune)) {
 					// 1.7.10 `Blocks.wool` — ОДИН блок с метой-цветом, т.е. проверка ловила шерсть ЛЮБОГО цвета.
 					// В neo семья расщеплена на 16 блоков: сравнение с одним из них дало бы бонус только за белую.
 					// Спрашиваем главу семьи через центр CS.Flattened (тот же приём, что в Behavior_Spray_Color_Remover:107).

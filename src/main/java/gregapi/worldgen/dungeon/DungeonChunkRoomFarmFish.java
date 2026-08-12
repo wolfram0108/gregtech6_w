@@ -34,7 +34,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.Container;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.ChestGenHooks;
+import gt6mirror.minecraftforge.common.ChestGenHooks;
 
 /**
  * @author Gregorius Techneticies

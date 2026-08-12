@@ -53,7 +53,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.PlantType;
 import net.minecraft.core.Direction;
 
 import java.util.List;
@@ -188,9 +188,11 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	@Override public int getItemStackLimit(ItemStack aStack) {return 64;}
 	@Override public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {return aStack;}
 	
-	public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {return EnumPlantType.Plains;}
-	public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return this;}
-	public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
+	// F10: сигнатура реального net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не старый шим
+	// (BlockGetter,int,int,int) — старая форма не была @Override и молча не срабатывала (наследуется от
+	// FlowerBlock/BushBlock). getPlantMetadata убран — реальный интерфейс его не содержит (мета внутри BlockState).
+	@Override public PlantType getPlantType(BlockGetter aWorld, BlockPos aPos) {return PlantType.PLAINS;}
+	@Override public BlockState getPlant(BlockGetter aWorld, BlockPos aPos) {BlockState tState = aWorld.getBlockState(aPos); return tState.getBlock() != this ? defaultBlockState() : tState;}
 	// 1:1 оригинала (:131): кислород + canSustainPlant почвы через ЦЕНТР WD.canSustainPlant — он несёт таблицу
 	// почв 1.7.10 для TriState.DEFAULT. ⛔ Прежняя копия здесь сворачивала toBoolean(T): цветок «стоял» на камне
 	// и в воздухе — снос не работал вовсе (замер gt6flowerprobe, 2026-07-30).
