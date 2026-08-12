@@ -110,14 +110,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public static final net.minecraft.world.level.block.state.properties.BooleanProperty POWERED = net.minecraft.world.level.block.state.properties.BlockStateProperties.POWERED;
 	@Override public Property<RailShape> getShapeProperty() {return SHAPE_PROPERTY;}
 	@Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {builder.add(SHAPE_PROPERTY, POWERED, WATERLOGGED);} // тройка — канон DetectorRailBlock.java:190
-	// F16 impossible-1:1 (1.7.10 не имел codec-регистрации; neo codec — не data-driven для этого класса): 1.7.10 не имел codec-based регистрации (класс отсутствовал как
-	// override-точка) - neo Block.codec() [Block.java:126-129] переабстрагирован BaseRailBlock.codec()
-	// [BaseRailBlock.java:47], требует MapCodec<? extends BaseRailBlock>; GT6 регистрирует блоки процедурно
-	// (ST.register, много-аргументный конструктор), несовместимо с simpleCodec(Function<Properties,B>)
-	// [BlockBehaviour.java:127] (однопараметрический). MapCodec.unit(...) - тот же приём, что F16-decision
-	// (decisions/F16-block-codec.md) уже утвердил для процедурно регистрируемых GT6-блоков (не участвует в
-	// реальной (де)сериализации), живой neo-пример использования — MapCodec.unit(Supplier) [EmptyModel.java:33].
-	@Override public MapCodec<? extends BaseRailBlock> codec() {return MapCodec.unit(() -> this);}
+	// Ветка 1.20.1: метода codec() у BlockBehaviour ещё нет (появился позже) — переопределять нечего.
 
 	// ------------------------------------------------------------------------------------------------------------
 	// BUG-047 мост IBlockExtendedMetaData: мета 1.7.10 ↔ SHAPE+POWERED. Раскладка 1:1 с оригиналом:
@@ -160,7 +153,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		// куда ST.register клал блок), ключ санитизирован. aNameInternal (поле ещё не присвоено на этой строке).
 		// BUG-047: noCollision() — 1:1 vanilla-рельс (Blocks.java:1548) и 1.7.10 BlockRailBase.getCollisionBoundingBoxFromPool=null;
 		// без него рельс порта был твёрдой 2px-плитой (коллизил вагонетку/игрока).
-		super(aPowerRail || aDetectorRail, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollision());
+		super(aPowerRail || aDetectorRail, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollission());
 		mNameInternal = aNameInternal;
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.TRANSPORT);
 		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site; ЗДЕСЬ — только BlockItem через supplier.
@@ -221,7 +214,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 
 	// F3 light-opacity МОСТ (рельсы наследуют ванильный BaseRailBlock, а не BlockBase — свой мост, см. разбор там).
-	@Override protected int getLightBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.lightDampening(getLightOpacity());}
+	@Override public int getLightBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.lightDampening(getLightOpacity());}
 
 	// F3 shade МОСТ (рельсы наследуют ванильный BaseRailBlock, а не BlockBase — свой мост, см. разбор там).
 	@Override public float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
@@ -428,7 +421,15 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	// рельса: quantityDropped=1 × getItemDropped=сам блок × damageDropped=0. Гейт взрыва — тот же шов BUG-024.
 	@Override public List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList(); // гейт взрыва — ЦЕНТР (BUG-024)
-		return java.util.Collections.singletonList(ST.make(this, 1, 0));
+		java.util.List<ItemStack> rDrops = new java.util.ArrayList<>();
+		rDrops.add(ST.make(this, 1, 0));
+		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
+		if (tOrigin == null) return rDrops;
+		// Ветка 1.20.1: собственные блоки GT6 лут-таблиц не имеют, поэтому глобальный модификатор лута
+		// (gregapi/loot/GT6BlockDropsModifier.java) их не видит — обработку дропа зовём из того же ЦЕНТРА напрямую.
+		// Правило одно на оба пути; копии логики не заводится (в 1.7.10 обе ветки шли через HarvestDropsEvent).
+		gregapi.GT_API_Proxy.processBlockDrops(rDrops, aParams.getLevel(), net.minecraft.core.BlockPos.containing(tOrigin), aState, aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY));
+		return rDrops;
 	}
 	
 	public boolean hasComparatorInputOverride() {return mDetectorRail;}
@@ -467,82 +468,21 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		}
 	}
 	
-	/** [BUG-047, метка отложенности F-hook-removed СНЯТА 2026-08-06] Per-rail максимум скорости В КАНАЛЕ ДВИЖКА.
-	 *  1.7.10: {@code EntityMinecart:373-374} — {@code maxSpeed = min(rail.getRailMaxSpeed(...),
-	 *  getCurrentCartSpeedCapOnRail())}, капа минкарта {@code getMaxCartSpeedOnRail() = 1.2f}
-	 *  ({@code EntityMinecart:1335}, инициализация {@code currentSpeedRail} — {@code :61}); водной ветки не было
-	 *  (вода-физика минкартов — движок 1.13+). neo 26.1.2: величина захардкожена
-	 *  {@code OldMinecartBehavior.getMaxSpeed:410-411} (вода 0.2 / суша 0.4) и читается клампом смещения
-	 *  {@code moveAlongTrack:208-211} ДО любого события — потому пост-мост {@code GT_API_Proxy.onMinecartPassBridge}
-	 *  мог только резать вниз (медленные Al 0.2/Bronze 0.3), а Ti 1.2 был недостижим. Восстановление 1:1 —
-	 *  подкласс поведения отвечает движку per-rail величиной в ЕГО ЖЕ канале (второй хардкод того же рода —
-	 *  {@code getKnownMovement:403-407}, кламп ±0.4 для производных систем: снаряды/поводок/частицы — перекрыт
-	 *  той же величиной). Подмену поля {@code AbstractMinecart.behavior} держит
-	 *  {@code GT_API_Proxy.onMinecartJoinBridge} — единственная точка на весь мод. */
-	public static final class GT6MinecartBehavior extends net.minecraft.world.entity.vehicle.minecart.OldMinecartBehavior {
-		/** Капа минкарта 1.7.10: {@code EntityMinecart.getMaxCartSpeedOnRail() = 1.2f} ({@code :1335}) —
-		 *  непреодолима и в оригинале: Adamantium-рельс 4.0 давал минкарту максимум 1.2. */
-		private static final double CART_SPEED_CAP = 1.2;
-		public GT6MinecartBehavior(AbstractMinecart aCart) {super(aCart);}
-		/** GT6-рельс под минкартом → его {@link BlockBaseRail#getRailMaxSpeed}; иначе −1 (не наш случай). */
-		private float railMax() {
-			BlockPos tPos = minecart.getCurrentBlockPosOrRailBelow();
-			if (WD.block(minecart.level(), tPos.getX(), tPos.getY(), tPos.getZ()) instanceof BlockBaseRail tRail)
-				return tRail.getRailMaxSpeed(minecart.level(), minecart, tPos.getX(), tPos.getY(), tPos.getZ());
-			return -1;
-		}
-		@Override public double getMaxSpeed(net.minecraft.server.level.ServerLevel aLevel) {
-			float tRailMax = railMax();
-			return tRailMax < 0 ? super.getMaxSpeed(aLevel) : Math.min(tRailMax, CART_SPEED_CAP);
-		}
-		@Override public net.minecraft.world.phys.Vec3 getKnownMovement(net.minecraft.world.phys.Vec3 aMovement) {
-			float tRailMax = railMax();
-			if (tRailMax < 0) return super.getKnownMovement(aMovement);
-			double tMax = Math.min(tRailMax, CART_SPEED_CAP);
-			// 1:1 к NaN-гарду движка (OldMinecartBehavior.getKnownMovement:403-407), предел — per-rail.
-			return !Double.isNaN(aMovement.x) && !Double.isNaN(aMovement.y) && !Double.isNaN(aMovement.z)
-				? new net.minecraft.world.phys.Vec3(net.minecraft.util.Mth.clamp(aMovement.x, -tMax, tMax), aMovement.y, net.minecraft.util.Mth.clamp(aMovement.z, -tMax, tMax))
-				: net.minecraft.world.phys.Vec3.ZERO;
-		}
+	/** [BUG-047] Per-rail максимум скорости В КАНАЛЕ ДВИЖКА — ветка 1.20.1 отдаёт его тем же способом, что 1.7.10.
+	 *  Оригинал: {@code EntityMinecart:373-374} — {@code maxSpeed = min(rail.getRailMaxSpeed(...),
+	 *  getCurrentCartSpeedCapOnRail())}, капа минкарта {@code getMaxCartSpeedOnRail() = 1.2f} ({@code :1335}).
+	 *  1.20.1: движок сам спрашивает рельсовый блок — {@code AbstractMinecart.java:857-861}
+	 *  ({@code ((BaseRailBlock)state.getBlock()).getRailMaxSpeed(state, level, pos, cart)}), контракт —
+	 *  {@code IForgeBaseRailBlock.java}. Подкласса поведения тележки (сущность 26.x
+	 *  {@code MinecartBehavior}, в 1.20.1 её нет) и подмены поля {@code behavior} не требуется вовсе. */
+	@Override public float getRailMaxSpeed(net.minecraft.world.level.block.state.BlockState aState, Level aWorld, BlockPos aPos, AbstractMinecart aCart) {
+		return getRailMaxSpeed(aWorld, aCart, aPos.getX(), aPos.getY(), aPos.getZ());
 	}
 
-	// @Override
-	public void onMinecartPass(Level aWorld, AbstractMinecart aCart, int aX, int aY, int aZ) {
-		if (mPowerRail) {
-			byte tRailMeta = WD.meta(aWorld, aX, aY, aZ);
-			double tMotion = Math.sqrt(aCart.getDeltaMovement().x*aCart.getDeltaMovement().x + aCart.getDeltaMovement().z*aCart.getDeltaMovement().z);
-			if ((tRailMeta & 8) != 0) {
-				if (tMotion > 0.01) {
-					// было aCart.motionX *= 2; aCart.motionZ *= 2; (1.7.10 мутируемые поля) -> neo Vec3 иммутабелен -
-					// центр WD.setMotionX/setMotionZ (уже используется ниже в этом же методе, WD.java:368,370),
-					// последовательные вызовы читают/пишут независимые оси без потери семантики.
-					net.minecraft.world.phys.Vec3 tMotionVec = aCart.getDeltaMovement();
-					WD.setMotionX(aCart, tMotionVec.x * 2);
-					WD.setMotionZ(aCart, tMotionVec.z * 2);
-				} else {
-					tRailMeta &= 7;
-					if (tRailMeta == 1) {
-							 if (WD.normalCube(WD.block(aWorld, aX-1, aY, aZ), aWorld, aX-1, aY, aZ)) WD.setMotionX(aCart, +0.02);
-						else if (WD.normalCube(WD.block(aWorld, aX+1, aY, aZ), aWorld, aX+1, aY, aZ)) WD.setMotionX(aCart, -0.02);
-					} else if (tRailMeta == 0) {
-							 if (WD.normalCube(WD.block(aWorld, aX, aY, aZ-1), aWorld, aX, aY, aZ-1)) WD.setMotionZ(aCart, +0.02);
-						else if (WD.normalCube(WD.block(aWorld, aX, aY, aZ+1), aWorld, aX, aY, aZ+1)) WD.setMotionZ(aCart, -0.02);
-					}
-				}
-			} else {
-				if (tMotion < 0.03) {
-					WD.setMotionX(aCart, 0);
-					WD.setMotionY(aCart, 0);
-					WD.setMotionZ(aCart, 0);
-				} else {
-					// было aCart.motionX /= 2; ...; aCart.motionZ /= 2; (1.7.10 мутируемые поля) -> тот же центр
-					// WD.setMotionX/Y/Z, порядок трёх присвоений сохранён 1:1.
-					WD.setMotionX(aCart, aCart.getDeltaMovement().x / 2);
-					WD.setMotionY(aCart, 0);
-					WD.setMotionZ(aCart, aCart.getDeltaMovement().z / 2);
-				}
-			}
-		}
+	/** Проход тележки — движковый канал 1.7.10 дословно: {@code AbstractMinecart.java:530} зовёт
+	 *  {@code baserailblock.onMinecartPass(state, level, pos, cart)} ({@code IForgeBaseRailBlock.java:75}). */
+	@Override public void onMinecartPass(net.minecraft.world.level.block.state.BlockState aState, Level aWorld, BlockPos aPos, AbstractMinecart aCart) {
+		onMinecartPass(aWorld, aCart, aPos.getX(), aPos.getY(), aPos.getZ());
 	}
 	
 	@Override public boolean onItemUseFirst(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return F;}

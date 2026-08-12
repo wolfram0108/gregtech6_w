@@ -134,7 +134,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		if (aSoundType == SoundType.STONE) return "stone";
 		if (aSoundType == SoundType.WOOD)  return "wood";
 		if (aSoundType == SoundType.GRASS) return "grass";
-		return aSoundType.getBreakSound().location().toString();
+		return aSoundType.getBreakSound().getLocation().toString();
 	}
 	
 	/**
@@ -411,17 +411,12 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// было aPlayer.getHeldItem() (1.7.10 EntityPlayer no-arg, дефолтная рука) -> neo Player.getMainHandItem() (Player.java:2257)
 	// U4-МОСТ активации (репорты игрока: штабель слитков/монет не пополняется кликом — ставится НОВЫЙ блок выше;
 	// GUI батарейного бокса не открывается): GT6 onBlockActivated ниже — 1:1-порт, но ОСИРОТЕЛ («канал сместился»):
-	// neo зовёт BlockBehaviour.useItemOn (с предметом, ДО установки item'ом — как 1.7.10 activateBlockOrUseItem
-	// звал Block.onBlockActivated до Item.onItemUse) и useWithoutItem (пустая рука). Мостим ОБА в GT6-канал:
-	// true → SUCCESS/SUCCESS_SERVER (клик поглощён, установка не происходит — слиток уходит В штабель).
-	@Override protected net.minecraft.world.InteractionResult useItemOn(ItemStack aStack, BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.InteractionHand aHand, net.minecraft.world.phys.BlockHitResult aHit) {
+	// Ветка 1.20.1: хук снова ОДИН и он публичный — use(BlockState,Level,BlockPos,Player,InteractionHand,BlockHitResult)
+	// (BlockBehaviour.java), ровно как 1.7.10 onBlockActivated (расщепление на useItemOn/useWithoutItem и результат
+	// SUCCESS_SERVER — черты 26.x, в 1.20.1 их нет). true → SUCCESS (клик поглощён, установка не происходит).
+	@Override public net.minecraft.world.InteractionResult use(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.InteractionHand aHand, net.minecraft.world.phys.BlockHitResult aHit) {
 		if (aHand == net.minecraft.world.InteractionHand.MAIN_HAND && bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
-			return aWorld.isClientSide() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.SUCCESS_SERVER;
-		return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
-	}
-	@Override protected net.minecraft.world.InteractionResult useWithoutItem(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.phys.BlockHitResult aHit) {
-		if (bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
-			return aWorld.isClientSide() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.SUCCESS_SERVER;
+			return net.minecraft.world.InteractionResult.SUCCESS;
 		return net.minecraft.world.InteractionResult.PASS;
 	}
 	private boolean bridgeBlockActivated(Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.phys.BlockHitResult aHit) {
@@ -446,15 +441,15 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override public final int getDirectSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_IsProvidingStrongPower ? ((IMTE_IsProvidingStrongPower)aTileEntity).isProvidingStrongPower(UT.Code.side(aSide)) : super.getDirectSignal(aState, aWorld, aPos, aSide);}
 	public final boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return !(aTileEntity instanceof IMTE_CanBlockStay) || ((IMTE_CanBlockStay)aTileEntity).canBlockStay();}
 	// было onFallenUpon(World,x,y,z,Entity,dist) -> Block.fallOn(Level,BlockState,BlockPos,Entity,double) [Block.java:484] - fallDistance теперь double, не float.
-	@Override public final void fallOn(Level aWorld, BlockState aState, BlockPos aPos, Entity aEntity, double aFallDistance) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnFallenUpon) ((IMTE_OnFallenUpon)aTileEntity).onFallenUpon(aEntity, (float)aFallDistance); else super.fallOn(aWorld, aState, aPos, aEntity, aFallDistance);}
+	@Override public final void fallOn(Level aWorld, BlockState aState, BlockPos aPos, Entity aEntity, float aFallDistance) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnFallenUpon) ((IMTE_OnFallenUpon)aTileEntity).onFallenUpon(aEntity, aFallDistance); else super.fallOn(aWorld, aState, aPos, aEntity, aFallDistance);}
 	// F13: 1.7.10 Block.onBlockHarvested/onBlockPreDestroy удалены — neo destroy-пайплайн зовёт playerWillDestroy
 	// (Level,BlockPos,BlockState,Player) перед снятием блока. Ниже neo-хук диспетчит оба TE-хука 1:1. GT6-методы сохранены.
-	@Override public BlockState playerWillDestroy(Level aWorld, BlockPos aPos, BlockState aState, Player aPlayer) {
+	@Override public void playerWillDestroy(Level aWorld, BlockPos aPos, BlockState aState, Player aPlayer) {
 		BlockEntity tTE = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		int tMeta = WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		if (tTE instanceof IMTE_OnBlockHarvested) ((IMTE_OnBlockHarvested)tTE).onBlockHarvested(tMeta, aPlayer);
 		if (tTE instanceof IMTE_OnBlockPreDestroy) ((IMTE_OnBlockPreDestroy)tTE).onBlockPreDestroy(tMeta);
-		return super.playerWillDestroy(aWorld, aPos, aState, aPlayer);
+		super.playerWillDestroy(aWorld, aPos, aState, aPlayer);
 	}
 	public final void onBlockHarvested(Level aWorld, int aX, int aY, int aZ, int aMetaData, Player aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockHarvested) ((IMTE_OnBlockHarvested)aTileEntity).onBlockHarvested(aMetaData, aPlayer);}
 	public final void onBlockPreDestroy(Level aWorld, int aX, int aY, int aZ, int aMetaData) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockPreDestroy) ((IMTE_OnBlockPreDestroy)aTileEntity).onBlockPreDestroy(aMetaData);}
@@ -470,11 +465,13 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// [BlockBehaviour.java:226] / BlockBehaviour.getAnalogOutputSignal(BlockState,Level,BlockPos,Direction) [BlockBehaviour.java:310];
 	// дефолт (без IMTE-хука) = 0, тот же дефолт, что и у движка (BlockBehaviour.java:311).
 	@Override public final boolean hasAnalogOutputSignal(BlockState aState) {return T;}
-	@Override public final int getAnalogOutputSignal(BlockState aState, Level aWorld, BlockPos aPos) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_GetComparatorInputOverride ? ((IMTE_GetComparatorInputOverride)aTileEntity).getComparatorInputOverride(UT.Code.side(aSide)) : aTileEntity instanceof IMTE_IsProvidingWeakPower ? ((IMTE_IsProvidingWeakPower)aTileEntity).isProvidingWeakPower(OPOS[UT.Code.side(aSide)]) : 0;}
-	// было getLightValue(IBlockAccess,x,y,z) -> IBlockExtension.hasDynamicLightEmission(BlockState) [IBlockExtension.java:121] +
-	// IBlockExtension.getLightEmission(BlockState,BlockGetter,BlockPos) [IBlockExtension.java:152]; дефолт (без IMTE-хука) =
+	// Ветка 1.20.1: getAnalogOutputSignal стороны не несёт (BlockBehaviour.java:317) — как и 1.7.10
+	// getComparatorInputOverride(World,x,y,z,side), где side приходил из позиции компаратора. Спрашиваем
+	// сторону SIDE_UNKNOWN — тот же вход, что GT6 даёт остальным бесстороним запросам.
+	@Override public final int getAnalogOutputSignal(BlockState aState, Level aWorld, BlockPos aPos) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_GetComparatorInputOverride ? ((IMTE_GetComparatorInputOverride)aTileEntity).getComparatorInputOverride(SIDE_UNKNOWN) : aTileEntity instanceof IMTE_IsProvidingWeakPower ? ((IMTE_IsProvidingWeakPower)aTileEntity).isProvidingWeakPower(SIDE_UNKNOWN) : 0;}
+	// было getLightValue(IBlockAccess,x,y,z) -> IForgeBlock.getLightEmission(BlockState,BlockGetter,BlockPos);
+	// в 1.20.1 отдельного признака «свет динамический» нет — хук зовётся всегда. Дефолт (без IMTE-хука) =
 	// aState.getLightEmission() (запечённое в Properties значение), тот же дефолт, что вернул бы super.getLightValue.
-	@Override public final boolean hasDynamicLightEmission(BlockState aState) {return T;}
 	// F6-worldgen КРИТ (дедлок): свет-движок зовёт getLightEmission ВО ВРЕМЯ генерации чанка (hasDynamicLightEmission=T) →
 	// обычный WD.te форсит getChunk.join генерируемого чанка → light-поток ждёт сам себя → вечное зависание входа в мир.
 	// Берём BE НЕблокирующе (WD.teNonForcing: только из уже-FULL чанка, иначе null → запечённый дефолт; BE-свет пересчитается после gen).
@@ -484,7 +481,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// НЕ статический BlockTags.CLIMBABLE (тот дефолт интерфейса, для блоков без переопределения) - per-position динамический хук: LivingEntity.onClimbable()
 	// зовёт его напрямую через CommonHooks.isLivingOnLadder(state,level,pos,entity) [LivingEntity.java:1755, CommonHooks.java:404-428], а не через тег -
 	// per-BE логика (Scaffold.mDesign!=3) переносится 1:1, архитектурного разрыва нет. LevelReader extends BlockGetter (сверено) - прямой делегат.
-	@Override public final boolean isLadder(BlockState aState, LevelReader aWorld, BlockPos aPos, LivingEntity aEntity) {return isLadder(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aEntity);}
+	@Override public final boolean isLadder(BlockState aState, LevelReader aWorld, BlockPos aPos, LivingEntity aEntity) {return aWorld instanceof BlockGetter tGetter && isLadder(tGetter, aPos.getX(), aPos.getY(), aPos.getZ(), aEntity);}
 	public final boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsNormalCube ? ((IMTE_IsNormalCube)aTileEntity).isNormalCube() : mNormalCube;}
 	public final boolean isReplaceable(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsReplaceable ? ((IMTE_IsReplaceable)aTileEntity).isReplaceable() : getMaterial().isReplaceable();}
 	public final boolean isBurning(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsBurning && ((IMTE_IsBurning)aTileEntity).isBurning();}
@@ -492,7 +489,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// было removedByPlayer(World,EntityPlayer,x,y,z,willHarvest) -> IBlockExtension.onDestroyedByPlayer
 	// (BlockState,Level,BlockPos,Player,ItemStack,boolean,FluidState) [IBlockExtension.java:238], возвращает
 	// boolean "блок реально уничтожен" - тот же контракт, что и старый removedByPlayer.
-	@Override public final boolean onDestroyedByPlayer(BlockState aBlockState, Level aWorld, BlockPos aPos, Player aPlayer, ItemStack aToolStack, boolean aWillHarvest, FluidState aFluid) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity); return aTileEntity instanceof IMTE_RemovedByPlayer ? ((IMTE_RemovedByPlayer)aTileEntity).removedByPlayer(aWorld, aPlayer, aWillHarvest) : super.onDestroyedByPlayer(aBlockState, aWorld, aPos, aPlayer, aToolStack, aWillHarvest, aFluid);}
+	@Override public final boolean onDestroyedByPlayer(BlockState aBlockState, Level aWorld, BlockPos aPos, Player aPlayer, boolean aWillHarvest, FluidState aFluid) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity); return aTileEntity instanceof IMTE_RemovedByPlayer ? ((IMTE_RemovedByPlayer)aTileEntity).removedByPlayer(aWorld, aPlayer, aWillHarvest) : super.onDestroyedByPlayer(aBlockState, aWorld, aPos, aPlayer, aWillHarvest, aFluid);}
 	public final boolean canCreatureSpawn(MobCategory aType, BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_CanCreatureSpawn && ((IMTE_CanCreatureSpawn)aTileEntity).canCreatureSpawn(aType);}
 	public final boolean isBed(BlockGetter aWorld, int aX, int aY, int aZ, LivingEntity aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsBed && ((IMTE_IsBed)aTileEntity).isBed(aPlayer);}
 	// БАГ-фикс: было instanceof IMTE_VelocityToAddToEntity (не тот интерфейс) при касте к IMTE_GetBedSpawnPosition - исправлено на правильный instanceof.
@@ -517,13 +514,11 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// F13: 1.7.10 Forge Block.isFoliage нет в neo. IMTE_IsFoliage без implementor'ов (0) → мёртвая поверхность.
 	// Дефолт был false (Block.java:2156-2159 recompSrc) - подставлен напрямую вместо super. Не заглушка.
 	public final boolean isFoliage(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsFoliage ? ((IMTE_IsFoliage)aTileEntity).isFoliage() : F;}
-	// было canSustainPlant(IBlockAccess,x,y,z,side,IPlantable) -> IBlockExtension.canSustainPlant(BlockState,BlockGetter,
-	// BlockPos,Direction,BlockState) [IBlockExtension.java:424], IPlantable(1.7.10-параметр)->BlockState(neo), TriState вместо boolean.
-	// net.minecraftforge.common.IPlantable (F10 compile-only shim) остаётся для IMTE-хука; мост BlockState->IPlantable через
-	// instanceof (GT6-плант-блоки реализуют IPlantable напрямую, см. compat-mirror/.../IPlantable.java). Дефолт (не-IPlantable
-	// плант, либо нет IMTE-хука) = TriState.DEFAULT ("плант решает сам") - 1:1 с доком IBlockExtension.canSustainPlant,
-	// заменяет прежнюю материал-зависимую vanilla-логику (та же семантика "движок решит").
-	@Override public final net.minecraft.util.TriState canSustainPlant(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide, BlockState aPlant) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (!(aTileEntity instanceof IMTE_CanSustainPlant) || !(aPlant.getBlock() instanceof IPlantable aPlantable)) return net.minecraft.util.TriState.DEFAULT; return net.minecraft.util.TriState.from(((IMTE_CanSustainPlant)aTileEntity).canSustainPlant(UT.Code.side(aSide), aPlantable));}
+	// Ветка 1.20.1: сигнатура вернулась к 1.7.10 дословно — canSustainPlant(BlockState,BlockGetter,BlockPos,Direction,
+	// IPlantable):boolean (Block.java:514), тип IPlantable снова настоящий (net.minecraftforge.common.IPlantable),
+	// TriState (черта 26.x) не участвует. Дефолт (нет IMTE-хука) = ванильное правило super — та же семантика
+	// «движок решит», что и раньше.
+	@Override public final boolean canSustainPlant(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide, IPlantable aPlantable) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (!(aTileEntity instanceof IMTE_CanSustainPlant)) return super.canSustainPlant(aState, aWorld, aPos, aSide, aPlantable); return ((IMTE_CanSustainPlant)aTileEntity).canSustainPlant(UT.Code.side(aSide), aPlantable);}
 	// F13: 1.7.10 Block.onPlantGrow удалён из neo (нет хука). IMTE_OnPlantGrow без implementor'ов (0) → мёртвая поверхность.
 	// Ванильный дефолт был пуст → отсутствие super-вызова 1:1 эквивалентно "ничего не делать". Не заглушка.
 	public final void onPlantGrow(Level aWorld, int aX, int aY, int aZ, int sX, int sY, int sZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnPlantGrow) ((IMTE_OnPlantGrow)aTileEntity).onPlantGrow(sX, sY, sZ);}
@@ -561,7 +556,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// [IBlockExtension.java:775, Block.java:457]; вызывается из BlockBehaviour.onExplosionHit(...,ServerLevel,...) [BlockBehaviour.java:173-193] (уже сервер-only по типу параметра).
 	// GT6-метод выше УЖЕ сам ставит воздух в fallback-ветке (WD.set(...,NB,0,3)) - эквивалент дефолтного neo-тела (level.setBlock(pos,AIR,3)+wasExploded no-op),
 	// поэтому прямой делегат без вызова super/wasExploded 1:1 воспроизводит оригинал (там GT6 тоже полностью подменял, не звал super).
-	@Override public final void onBlockExploded(BlockState aState, ServerLevel aWorld, BlockPos aPos, Explosion aExplosion) {onBlockExploded(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aExplosion);}
+	@Override public final void onBlockExploded(BlockState aState, Level aWorld, BlockPos aPos, Explosion aExplosion) {onBlockExploded(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aExplosion);}
 	// F13: 1.7.10 Block.getPickBlock(HitResult,World,x,y,z,Player) удалён — neo middle-click идёт через
 	// IBlockExtension.getCloneItemStack(LevelReader,BlockPos,BlockState,boolean,Player). Ниже — этот neo-хук
 	// делегирует в GT6-getPickBlock (TE-диспетчер IMTE_GetPickBlock), восстанавливая поведение 1:1. GT6-методы сохранены.
@@ -593,7 +588,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// реальный neo: EnchantmentHelper.getEnchantmentLevel(Holder<Enchantment>,LivingEntity) по Holder из RegistryAccess
 	// (сверено, EnchantmentHelper.java:292 + Enchantments.SILK_TOUCH/FORTUNE), тот же приём, что уже принят и
 	// одобрен ревизией в GT_API_Proxy.onBlockHarvestingEvent (GT_API_Proxy.java:1450-1451).
-	public final void harvestBlock(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {if (aPlayer == null) aPlayer = LAST_HARVESTING_PLAYER.get(); aPlayer.awardStat(Stats.BLOCK_MINED.get(this), 1); /* было Stats.mineBlockStatArray[getIdFromBlock(this)] (1.7.10 int-ID) -> Stats.BLOCK_MINED.get(Block) [Stats.java:12] + Player.awardStat [Player.java:1413] */ UT.Entities.exhaust(aPlayer, 0.025F); Holder<Enchantment> tSilkTouchHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH); Holder<Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.BLOCK_FORTUNE); boolean aSilkTouch = EnchantmentHelper.getEnchantmentLevel(tSilkTouchHolder, aPlayer) > 0; int aFortune = EnchantmentHelper.getEnchantmentLevel(tFortuneHolder, aPlayer); float aChance = 1.0F; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_GetDrops) {ArrayListNoNulls<ItemStack> tList = ((IMTE_GetDrops)aTileEntity).getDrops(aFortune, aSilkTouch); aChance = WD.fireBlockHarvesting(tList, aWorld, this, aX, aY, aZ, aMeta, aFortune, aChance, aSilkTouch, aPlayer); for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);}}
+	public final void harvestBlock(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {if (aPlayer == null) aPlayer = LAST_HARVESTING_PLAYER.get(); aPlayer.awardStat(Stats.BLOCK_MINED.get(this), 1); /* было Stats.mineBlockStatArray[getIdFromBlock(this)] (1.7.10 int-ID) -> Stats.BLOCK_MINED.get(Block) [Stats.java:12] + Player.awardStat [Player.java:1413] */ UT.Entities.exhaust(aPlayer, 0.025F); Enchantment tSilkTouchHolder = Enchantments.SILK_TOUCH; Enchantment tFortuneHolder = Enchantments.BLOCK_FORTUNE; boolean aSilkTouch = EnchantmentHelper.getEnchantmentLevel(tSilkTouchHolder, aPlayer) > 0; int aFortune = EnchantmentHelper.getEnchantmentLevel(tFortuneHolder, aPlayer); float aChance = 1.0F; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_GetDrops) {ArrayListNoNulls<ItemStack> tList = ((IMTE_GetDrops)aTileEntity).getDrops(aFortune, aSilkTouch); aChance = WD.fireBlockHarvesting(tList, aWorld, this, aX, aY, aZ, aMeta, aFortune, aChance, aSilkTouch, aPlayer); for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);}}
 	public final ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aUnusableMetaData, int aFortune) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_GetDrops) return ((IMTE_GetDrops)aTileEntity).getDrops(aFortune, F); return ST.arraylist();}
 	// F-loot (IMTE_GetDrops-канал, аудит LIVE-DEFECTS.md): 1.7.10 harvestBlock(World,EntityPlayer,x,y,z,meta) БЫЛ реальным Forge/vanilla-override
 	// (оракул: @Override, gregtech6/.../MultiTileEntityBlock.java:261); в neo метода с этим именем/сигнатурой нет вовсе (0 вхождений во всех 3
@@ -660,10 +655,11 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 			return tClass == null ? 0 : tClass.mBlockMetaData;
 		} catch (Throwable e) {return 0;}
 	}
-	// было canHarvestBlock(EntityPlayer,meta) -> IBlockExtension.canHarvestBlock(BlockState,BlockGetter,BlockPos,Player)
-	// [IForgeBlock.java:167-170], дефолт ForgeHooks.isCorrectToolForDrops(state,player) (сам же дефолт интерфейса) - тот же
-	// приём, что вызывался через super раньше (ноль GT6-specific логики в этом методе, чистая passthrough-точка).
-	@Override public final boolean canHarvestBlock(BlockState aState, BlockGetter aWorld, BlockPos aPos, Player aPlayer) {return net.minecraftforge.common.ForgeHooks.isCorrectToolForDrops(aState, aPlayer);}
+	// BUG-071 (ветка 1.20.1): было canHarvestBlock(EntityPlayer,meta) -> IForgeBlock.canHarvestBlock(BlockState,
+	// BlockGetter,BlockPos,Player) [IForgeBlock.java:167-170]. Прежний passthrough в ForgeHooks считал правило БЕЗ
+	// позиции, а подтип MTE живёт в BlockEntity — требуемый уровень вырождался в 0 для всех машин. Зовём центр
+	// (WD.canHarvestBlock), который в 26.x-ветке стоял в обработчике PlayerEvent.HarvestCheck.
+	@Override public final boolean canHarvestBlock(BlockState aState, BlockGetter aWorld, BlockPos aPos, Player aPlayer) {return gregapi.util.WD.canHarvestBlock(aState, aWorld, aPos, aPlayer);}
 	public final boolean hasTileEntity(int aMeta) {return T;}
 	public final boolean canSilkHarvest() {return F;}
 	public final int getRenderBlockPass() {return ITexture.Util.MC_ALPHA_BLENDING?1:0;}
@@ -732,7 +728,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 			ItemStack tHand = aPlayer.getMainHandItem();
 			StringBuilder tSB = new StringBuilder("[GT6-DIG-ZERO] прогресс=0: блок=").append(aTileEntity == null ? "BE-null" : aTileEntity.getClass().getSimpleName())
 				.append(" hardness=").append(tHardness)
-				.append(" playerSpeed=").append(aPlayer.getDestroySpeed(aState, aPos))
+				.append(" playerSpeed=").append(aPlayer.getDestroySpeed(aState))
 				.append(" harvestOK=").append(net.minecraftforge.common.ForgeHooks.isCorrectToolForDrops(aState, aPlayer))
 				.append(" рука=").append(tHand.isEmpty() ? "ПУСТО" : String.valueOf(tHand.getItem()) + "#" + gregapi.util.ST.meta_(tHand));
 			if (gregapi.util.ST.item_(tHand) instanceof gregapi.item.multiitem.MultiItemTool tTool) {
@@ -757,7 +753,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetBlockHardness?((IMTE_GetBlockHardness)aTileEntity).getBlockHardness():1.0F;}
 	// было getExplosionResistance(Entity,World,x,y,z,expX,expY,expZ) -> IBlockExtension.getExplosionResistance
 	// (BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]; Explosion.getDirectSourceEntity()/center() заменяют потерянные параметры
-	@Override public final float getExplosionResistance(BlockState aState, BlockGetter aWorld, BlockPos aPos, Explosion aExplosion) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); Vec3 aCenter = aExplosion.center(); return aTileEntity instanceof IMTE_GetExplosionResistance?((IMTE_GetExplosionResistance)aTileEntity).getExplosionResistance(aExplosion.getDirectSourceEntity(), aCenter.x, aCenter.y, aCenter.z):1.0F;}
+	@Override public final float getExplosionResistance(BlockState aState, BlockGetter aWorld, BlockPos aPos, Explosion aExplosion) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); Vec3 aCenter = aExplosion.getPosition(); return aTileEntity instanceof IMTE_GetExplosionResistance?((IMTE_GetExplosionResistance)aTileEntity).getExplosionResistance(aExplosion.getDirectSourceEntity(), aCenter.x, aCenter.y, aCenter.z):1.0F;}
 	// было onNeighborChange(IBlockAccess,x,y,z,tileX,Y,Z) -> IBlockExtension.onNeighborChange(BlockState,LevelReader,BlockPos,BlockPos) [IBlockExtension.java:534]
 	@Override public final void onNeighborChange(BlockState aState, LevelReader aWorld, BlockPos aPos, BlockPos aNeighbor) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (!LOCK) {LOCK = T; if (aTileEntity instanceof ITileEntity) ((ITileEntity)aTileEntity).onAdjacentBlockChange(aNeighbor.getX(), aNeighbor.getY(), aNeighbor.getZ()); LOCK = F;} if (aTileEntity instanceof IMTE_OnNeighborChange) ((IMTE_OnNeighborChange)aTileEntity).onNeighborChange(aWorld, aNeighbor.getX(), aNeighbor.getY(), aNeighbor.getZ());}
 	// F17-ит.13 «дыра следует за действием»: чистка сирот (BE=null → снести блок) — ТОЛЬКО СЕРВЕР. В 1.7.10 ветка
@@ -768,7 +764,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (!LOCK) {LOCK = T; if (aTileEntity instanceof ITileEntity) ((ITileEntity)aTileEntity).onAdjacentBlockChange(aX, aY, aZ); LOCK = F;} if (aTileEntity instanceof IMTE_OnNeighborBlockChange) ((IMTE_OnNeighborBlockChange)aTileEntity).onNeighborBlockChange(aWorld, aBlock); if (aTileEntity == null && !aWorld.isClientSide()) WD.set(aWorld, aX, aY, aZ, NB, 0, 3);}
 	// F-neighbor (канал сместился): 1.7.10 World.notifyBlocksOfNeighborChange звал Block.onNeighborBlockChange; neo-вход —
 	// BlockBehaviour.neighborChanged. Мост по образцу BlockFluidBaseGT:154; GT6-канал (IMTE_OnNeighborBlockChange + чистка сирот) цел.
-	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
+	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}
 	@Override public final boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return T;}

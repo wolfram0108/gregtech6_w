@@ -250,4 +250,12 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		}
 		return super.getShape(aState, aWorld, aPos, aContext);
 	}
+
+	/** BUG-071 (ветка 1.20.1): право на дроп судит ЦЕНТР {@code WD.canHarvestBlock} — здесь только зов.
+	 *  Дом правила переехал с события {@code PlayerEvent.HarvestCheck} (в 1.20.1 оно не несёт ни мира, ни
+	 *  позиции — {@code PlayerEvent.java:69-81}) в этот хук, который их несёт ({@code IForgeBlock.java:167-170}). */
+	@Override public boolean canHarvestBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.entity.player.Player aPlayer) {
+		return gregapi.util.WD.canHarvestBlock(aState, aWorld, aPos, aPlayer);
+	}
+
 }

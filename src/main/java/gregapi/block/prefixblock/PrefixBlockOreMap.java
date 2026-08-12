@@ -23,19 +23,21 @@
 
 package gregapi.block.prefixblock;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
-
 import it.unimi.dsi.fastutil.ints.Int2ShortOpenHashMap;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.common.capabilities.CapabilityToken;
+import net.minecraftforge.common.capabilities.ICapabilitySerializable;
+import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.neoforged.neoforge.attachment.AttachmentType;
-import net.minecraftforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 /**
  * Правка №1 (BUG-106, решение пользователя 2026-08-09): материал руды/породы хранится НЕ в блок-сущности
@@ -47,14 +49,34 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
  * меняется только контейнер. Блок-стейт невозможен: свойство на 32767 значений порождает у движка
  * квадратичные таблицы переходов (миллиарды ссылок на блок).</p>
  *
- * <p><b>Носитель — штатный NeoForge-attachment на чанке:</b> персист — {@code serialize(CODEC)}
- * (пишется/читается вместе с чанком, и на ProtoChunk ворлдгена, и на LevelChunk), синк клиенту —
- * {@code sync(STREAM_CODEC)} (движок сам шлёт при отправке чанка игроку, {@code AttachmentSync.onChunkSent};
- * точечные изменения — {@code chunk.syncData(TYPE)}).</p>
+ * <p><b>Ветка 1.20.1 — носитель сменился: attachment → capability.</b> {@code AttachmentType} есть только
+ * у NeoForge; в Forge 1.20.1 его роль занимает capability на самом чанке. Проверено по декомпилу:
+ * {@code LevelChunk implements ICapabilityProviderImpl<LevelChunk>} ({@code LevelChunk.java:50}), а персист
+ * ведёт сам движок — {@code ChunkSerializer.java:350} пишет тег {@code ForgeCaps}, {@code :162} читает его
+ * обратно. Своих записей в файл чанка не заводится.</p>
  *
- * <p><b>Потоки:</b> сервер пишет только в main-поток (или в свой ProtoChunk при генерации); клиентские
- * обновления синка заменяют объект карты целиком (StreamCodec-путь создаёт новый экземпляр) — рендер-потоки
- * видят либо старую, либо новую карту, никогда полу-перестроенную.</p>
+ * <p><b>ProtoChunk капабилити не несёт</b> (обе точки {@code ChunkSerializer} явно кастуют к
+ * {@code LevelChunk}; {@code ProtoChunk extends ChunkAccess} без {@code ICapabilityProvider},
+ * {@code ProtoChunk.java:39}). Поэтому фаза ворлдгена возвращается к ФОРМЕ ОРИГИНАЛА 1.7.10 — материал едет
+ * в самой блок-сущности ({@code PrefixBlockTileEntity.mMetaData}), а существующая миграция
+ * ({@code PrefixBlock.migrateChunkOres} на {@code ChunkEvent.Load}) переливает её в карту и снимает
+ * сущность. Порядок доказан декомпилом: {@code ChunkMap.java:706} строит {@code LevelChunk} из прото-чанка
+ * (перенося отложенные сущности, {@code LevelChunk.java:103-107}), {@code :715} зовёт {@code runPostLoad()}
+ * — промоушен ВСЕХ отложенных сущностей ({@code LevelChunk.java:514-518}), {@code :720}
+ * {@code registerAllBlockEntitiesAfterLevelLoad()}, и лишь {@code :722} шлёт {@code ChunkEvent.Load}. То
+ * есть к моменту миграции сущности прото-фазы уже все на месте. Сущность-однодневка живёт от генерации до
+ * первой загрузки чанка — постоянных объектов на рудах не появляется.</p>
+ *
+ * <p><b>Синк клиенту</b> в 26.x вёл движок ({@code sync(STREAM_CODEC)}); в 1.20.1 автосинка капабилити
+ * чанка нет — карта уходит СВОИМ пакетом GT6 ({@code gregapi.network.packets.PacketOreMap}, тот же
+ * байт-конверт и та же таблица ID, что у остальных пакетов мода). Моменты — те же два, что были у
+ * attachment: отправка чанка игроку ({@code ChunkWatchEvent.Watch} — движок сам документирует его как точку
+ * «дослать свои чанковые данные», {@code ChunkWatchEvent.java:64-73}) и точечная запись в живом мире
+ * (бывший {@code chunk.syncData(TYPE)}).</p>
+ *
+ * <p><b>Потоки:</b> сервер пишет только в main-поток (или в блок-сущность своего ProtoChunk при генерации);
+ * клиентский синк заменяет содержимое карты целиком — рендер-потоки видят либо старое, либо новое
+ * состояние, никогда полу-перестроенное.</p>
  */
 public final class PrefixBlockOreMap {
 	/** Ключ позиции внутри чанка: (y+2048)&lt;&lt;8 | localZ&lt;&lt;4 | localX. Смещение +2048 покрывает
@@ -64,7 +86,6 @@ public final class PrefixBlockOreMap {
 	private final Int2ShortOpenHashMap mMap;
 
 	public PrefixBlockOreMap() {mMap = new Int2ShortOpenHashMap(); mMap.defaultReturnValue((short)0);}
-	private PrefixBlockOreMap(Int2ShortOpenHashMap aMap) {mMap = aMap; mMap.defaultReturnValue((short)0);}
 
 	/** 0 = на позиции нет записи (ровно как прежнее «нет сущности» в getMetaDataValue). */
 	public short get(int aX, int aY, int aZ) {return mMap.get(key(aX, aY, aZ));}
@@ -73,37 +94,45 @@ public final class PrefixBlockOreMap {
 	public boolean isEmpty() {return mMap.isEmpty();}
 	public int size() {return mMap.size();}
 
-	// Персист: список long, каждый = (ключ << 16) | (материал & 0xFFFF). Ключ ≤ 20 бит, материал ≤ 16 бит.
-	private static final Codec<PrefixBlockOreMap> ENTRIES_CODEC = Codec.LONG.listOf().xmap(aList -> {
-		Int2ShortOpenHashMap tMap = new Int2ShortOpenHashMap(aList.size());
-		for (long tEntry : aList) tMap.put((int)(tEntry >>> 16), (short)(tEntry & 0xFFFFL));
-		return new PrefixBlockOreMap(tMap);
-	}, aMap -> {
-		List<Long> rList = new ArrayList<>(aMap.mMap.size());
-		for (it.unimi.dsi.fastutil.ints.Int2ShortMap.Entry tEntry : aMap.mMap.int2ShortEntrySet())
-			rList.add(((long)tEntry.getIntKey() << 16) | (tEntry.getShortValue() & 0xFFFFL));
-		return rList;
-	});
-	public static final MapCodec<PrefixBlockOreMap> CODEC = ENTRIES_CODEC.fieldOf("gt6_ore");
+	// Упаковка: одна запись = (ключ << 16) | (материал & 0xFFFF). Ключ ≤ 20 бит, материал ≤ 16 бит.
+	// Та же упаковка, что несли Codec/StreamCodec 26.x-ветки — и на диск, и в провод.
+	public long[] pack() {
+		long[] rEntries = new long[mMap.size()];
+		int i = 0;
+		for (it.unimi.dsi.fastutil.ints.Int2ShortMap.Entry tEntry : mMap.int2ShortEntrySet()) rEntries[i++] = ((long)tEntry.getIntKey() << 16) | (tEntry.getShortValue() & 0xFFFFL);
+		return rEntries;
+	}
+	public void unpack(long[] aEntries) {
+		mMap.clear();
+		for (long tEntry : aEntries) mMap.put((int)(tEntry >>> 16), (short)(tEntry & 0xFFFFL));
+	}
 
-	public static final StreamCodec<RegistryFriendlyByteBuf, PrefixBlockOreMap> STREAM_CODEC = StreamCodec.of((aBuf, aMap) -> {
-		aBuf.writeVarInt(aMap.mMap.size());
-		for (it.unimi.dsi.fastutil.ints.Int2ShortMap.Entry tEntry : aMap.mMap.int2ShortEntrySet()) {
-			aBuf.writeVarInt(tEntry.getIntKey());
-			aBuf.writeShort(tEntry.getShortValue());
-		}
-	}, aBuf -> {
-		int tSize = aBuf.readVarInt();
-		Int2ShortOpenHashMap tMap = new Int2ShortOpenHashMap(tSize);
-		for (int i = 0; i < tSize; i++) tMap.put(aBuf.readVarInt(), aBuf.readShort());
-		return new PrefixBlockOreMap(tMap);
-	});
+	/** Имя массива внутри собственного тега капабилити (сам тег движок кладёт в {@code ForgeCaps}). */
+	public static final String NBT_KEY = "gt6_ore";
+	public static final ResourceLocation ID = new ResourceLocation(gregapi.data.MD.GAPI.mID, "ore_map");
 
-	/** Центральный DeferredRegister attachment-типов GT6 — ЕДИНСТВЕННОЕ место (тот же приём, что
-	 *  GT6WorldgenFeature.FEATURES для Feature-типов). */
-	public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, gregapi.data.MD.GAPI.mID);
-	public static final java.util.function.Supplier<AttachmentType<PrefixBlockOreMap>> TYPE = ATTACHMENTS.register("ore_map",
-		() -> AttachmentType.builder(() -> new PrefixBlockOreMap()).serialize(CODEC, aMap -> !aMap.isEmpty()).sync(STREAM_CODEC).build());
+	public static final Capability<PrefixBlockOreMap> CAP = CapabilityManager.get(new CapabilityToken<PrefixBlockOreMap>() {});
 
-	public static void register(IEventBus aModBus) {ATTACHMENTS.register(aModBus);}
+	/** Провайдер-носитель: одна карта на чанк; персист ведёт движок (ChunkSerializer, тег ForgeCaps). */
+	private static final class Provider implements ICapabilitySerializable<CompoundTag> {
+		private final PrefixBlockOreMap mData = new PrefixBlockOreMap();
+		private final LazyOptional<PrefixBlockOreMap> mOptional = LazyOptional.of(() -> mData);
+
+		@Override public <T> LazyOptional<T> getCapability(Capability<T> aCapability, Direction aSide) {return aCapability == CAP ? mOptional.cast() : LazyOptional.empty();}
+		@Override public CompoundTag serializeNBT() {CompoundTag rNBT = new CompoundTag(); if (!mData.isEmpty()) rNBT.putLongArray(NBT_KEY, mData.pack()); return rNBT;}
+		@Override public void deserializeNBT(CompoundTag aNBT) {mData.unpack(aNBT.getLongArray(NBT_KEY));}
+	}
+
+	/** ЕДИНСТВЕННАЯ точка подписки носителя (та же роль, что была у attachment-реестра 26.x-ветки):
+	 *  объявление капабилити — на мод-шине, прикрепление к чанку — на форж-шине. */
+	public static void register(IEventBus aModBus) {
+		aModBus.addListener((RegisterCapabilitiesEvent aEvent) -> aEvent.register(PrefixBlockOreMap.class));
+		MinecraftForge.EVENT_BUS.addGenericListener(LevelChunk.class, (AttachCapabilitiesEvent<LevelChunk> aEvent) -> aEvent.addCapability(ID, new Provider()));
+	}
+
+	/** Карта чанка, если носитель есть (LevelChunk с прикреплённой капой); иначе null. Чтение не создаёт. */
+	public static PrefixBlockOreMap existing(ChunkAccess aChunk) {
+		if (!(aChunk instanceof LevelChunk tChunk)) return null;
+		return tChunk.getCapability(CAP).orElse(null);
+	}
 }

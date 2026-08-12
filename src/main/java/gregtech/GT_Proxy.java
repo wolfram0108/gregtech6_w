@@ -265,7 +265,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			} else if (aStack.getItem() == Items.FLINT_AND_STEEL) {
 				if (!aEvent.getLevel().isClientSide() && !UT.Entities.hasInfiniteItems(aEvent.getEntity()) && RNGSUS.nextInt(100) >= mFlintChance) {
 					aEvent.setCanceled(T);
-					aStack.hurtAndBreak(1, aEvent.getEntity(), InteractionHand.MAIN_HAND);
+					aStack.hurtAndBreak(1, aEvent.getEntity(), tBroken -> tBroken.broadcastBreakEvent(InteractionHand.MAIN_HAND));
 					if (aStack.getDamageValue() >= aStack.getMaxDamage()) ST.use(aEvent.getEntity(), aStack);
 					return;
 				}
@@ -276,7 +276,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					aEvent.setCanceled(T);
 					UT.Sounds.send(SFX.MC_IGNITE, aEvent.getLevel(), tX, tY, tZ);
 					if (!UT.Entities.hasInfiniteItems(aEvent.getEntity())) {
-						aStack.hurtAndBreak(UT.Code.bindInt(UT.Code.units(tDamage, 10000, 1, T)), aEvent.getEntity(), InteractionHand.MAIN_HAND);
+						aStack.hurtAndBreak(UT.Code.bindInt(UT.Code.units(tDamage, 10000, 1, T)), aEvent.getEntity(), tBroken -> tBroken.broadcastBreakEvent(InteractionHand.MAIN_HAND));
 						if (aStack.getDamageValue() >= aStack.getMaxDamage()) ST.use(aEvent.getEntity(), aStack);
 					}
 					return;

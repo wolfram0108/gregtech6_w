@@ -47,13 +47,11 @@ import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.core.particles.ExplosionParticleInfo;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundExplodePacket;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.util.Mth;
-import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -61,27 +59,23 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.Explosion;
-import net.minecraft.world.level.ServerExplosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 
 /**
  * @author Gregorius Techneticies
  *
- * F-explosion: 1.7.10 {@code extends Explosion} (класс-контейнер полей explosionX/Y/Z, exploder,
- * affectedBlockPositions) -> neo {@code Explosion} стал ЧИСТЫМ интерфейсом (level/center/radius/...), а
- * конкретная реализация {@code ServerExplosion} (единственный класс движка, implements Explosion) требуется
- * ДОСЛОВНО типом в контрактах {@code EventHooks.onExplosionStart/onExplosionDetonate} (принимают ИМЕННО
- * ServerExplosion, не интерфейс) — поэтому ExplosionGT extends ServerExplosion (не implements Explosion
- * напрямую), а все 1.7.10-поля (explosionX/Y/Z, exploder, isFlaming, isSmoking, affectedBlockPositions,
- * explosionSize) воспроизведены как СВОИ private-поля (родитель их не хранит доступно — private final).
+ * Ветка 1.20.1: форма оригинала вернулась — {@code Explosion} снова обычный КЛАСС ({@code Explosion.java:42}),
+ * наследуемый напрямую, как в 1.7.10 (интерфейс + {@code ServerExplosion} — черты 26.x). События берут его же
+ * ({@code ForgeEventFactory.java:543,548}). Собственные 1.7.10-поля (explosionX/Y/Z, exploder, isFlaming,
+ * isSmoking, affectedBlockPositions, explosionSize) сохранены как были — родитель хранит свои приватно.
  */
-public class ExplosionGT extends ServerExplosion {
+public class ExplosionGT extends Explosion {
 	public static ExplosionGT explode(Level aWorld, Entity aEntity, double aX, double aY, double aZ, float aPower, boolean aFlaming, boolean aSmoking) {
 		ExplosionGT tExplosion = new ExplosionGT(aWorld, aEntity, aX, aY, aZ, aPower);
 		tExplosion.isFlaming = aFlaming;
 		tExplosion.isSmoking = aSmoking;
-		if (net.neoforged.neoforge.event.EventHooks.onExplosionStart(aWorld, tExplosion)) return tExplosion;
+		if (net.minecraftforge.event.ForgeEventFactory.onExplosionStart(aWorld, tExplosion)) return tExplosion;
 		tExplosion.doExplosionA();
 		if (aWorld instanceof ServerLevel) {
 			tExplosion.doExplosionB(F);
@@ -89,17 +83,15 @@ public class ExplosionGT extends ServerExplosion {
 			// F-explosion packet (АДАПТИРОВАНО): 1.7.10 S27PacketExplosion → neo ClientboundExplodePacket строится и ШЛЁТСЯ
 			// ниже (реальные ParticleTypes.EXPLOSION*/SoundEvents.GENERIC_EXPLODE по размеру взрыва) → клиент рисует/звучит взрыв.
 			// Caveat (движок-форс): блок-лист→count, точная 1.7.10-формула выбора эффекта не переносится (neo-типизир. payload). Не заглушка.
-			int tBlockCount = tExplosion.affectedBlockPositions.size();
-			ParticleOptions tParticle = tExplosion.explosionSize >= 2 && tExplosion.isSmoking ? ParticleTypes.EXPLOSION_EMITTER : ParticleTypes.EXPLOSION;
-			Holder<SoundEvent> tSound = SoundEvents.GENERIC_EXPLODE;
-			WeightedList<ExplosionParticleInfo> tBlockParticles = WeightedList.of();
+			// Ветка 1.20.1: пакет взрыва снова несёт СПИСОК блоков и вектор отдачи игрока — форма 1.7.10
+			// S27PacketExplosion дословно (ClientboundExplodePacket.java:22), типизированной частице/звуку 26.x места нет.
 			Vec3 tCenter = new Vec3(aX, aY, aZ);
 			@SuppressWarnings("rawtypes")
 			Iterator tIterator = aWorld.players().iterator();
 			while (tIterator.hasNext()) {
 				Player tPlayer = (Player)tIterator.next();
 				if (tPlayer.distanceToSqr(aX, aY, aZ) < 4096) {
-					((ServerPlayer)tPlayer).connection.send(new ClientboundExplodePacket(tCenter, aPower, tBlockCount, Optional.ofNullable((Vec3)tExplosion.func_77277_b().get(tPlayer)), tParticle, tSound, tBlockParticles));
+					((ServerPlayer)tPlayer).connection.send(new ClientboundExplodePacket(aX, aY, aZ, aPower, tExplosion.affectedBlockPositions, tExplosion.getHitPlayers().get(tPlayer)));
 				}
 			}
 		} else {
@@ -109,7 +101,7 @@ public class ExplosionGT extends ServerExplosion {
 	}
 
 	public ExplosionGT(Level aWorld, Entity aEntity, double aX, double aY, double aZ, float aPower) {
-		// F-explosion (neo-модель): взрывы в neo SERVER-AUTHORITATIVE (ServerExplosion создаётся server-side, синк клиенту пакетом
+		// F-explosion (neo-модель): взрывы в neo SERVER-AUTHORITATIVE (net.minecraft.world.level.Explosion создаётся server-side, синк клиенту пакетом
 		// ниже) — это правильная neo-архитектура, не 1.7.10 обе-стороны. Каст (ServerLevel)aWorld безопасен: все вызыватели GT6-взрывов
 		// server-side (Level.explode-путь). Не заглушка.
 		super((ServerLevel)aWorld, aEntity, null, null, new Vec3(aX, aY, aZ), aPower, F, Explosion.BlockInteraction.DESTROY);
@@ -161,7 +153,7 @@ public class ExplosionGT extends ServerExplosion {
 		tSize *= 2;
 		@SuppressWarnings("rawtypes")
 		List tEntities = mWorld.getEntities(exploder, new AABB(UT.Code.roundDown(explosionX - tSize - 1), UT.Code.roundDown(explosionY - tSize - 1), UT.Code.roundDown(explosionZ - tSize - 1), UT.Code.roundDown(explosionX + tSize + 1), UT.Code.roundDown(explosionY + tSize + 1), UT.Code.roundDown(explosionZ + tSize + 1)));
-		net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(mWorld, this, tEntities, affectedBlockPositions);
+		net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(mWorld, this, tEntities, tSize); // 1.20.1: последний аргумент — ДИАМЕТР (ForgeEventFactory.java:548)
 		Vec3 tVec3 = new Vec3(explosionX, explosionY, explosionZ);
 		for (int i1 = 0; i1 < tEntities.size(); ++i1) {
 			Entity tEntity = (Entity)tEntities.get(i1);
@@ -173,9 +165,9 @@ public class ExplosionGT extends ServerExplosion {
 					tKnockX /= tDist;
 					tKnockY /= tDist;
 					tKnockZ /= tDist;
-					double tKnockback = (1 - tEntityDist) * getSeenPercent(tVec3, tEntity);
+					double tKnockback = (1 - tEntityDist) * Explosion.getSeenPercent(tVec3, tEntity);
 					tEntity.hurt(mWorld.damageSources().explosion(this), ((int)((tKnockback * tKnockback + tKnockback) * 4 * tSize + 1)) * TFC_DAMAGE_MULTIPLIER);
-					double tKnockbackResistance = tEntity instanceof LivingEntity ? ((LivingEntity)tEntity).getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE) : 0.0;
+					double tKnockbackResistance = tEntity instanceof LivingEntity ? ((LivingEntity)tEntity).getAttributeValue(Attributes.KNOCKBACK_RESISTANCE /* 1.20.1: отдельного EXPLOSION_KNOCKBACK_RESISTANCE нет — общий атрибут, как в 1.7.10 */) : 0.0;
 					double tBlastProtection = tKnockback * (1.0 - tKnockbackResistance);
 					Vec3 tOldMotion = tEntity.getDeltaMovement();
 					tEntity.setDeltaMovement(tOldMotion.x + tKnockX * tBlastProtection, tOldMotion.y + tKnockY * tBlastProtection, tOldMotion.z + tKnockZ * tBlastProtection);
@@ -231,7 +223,7 @@ public class ExplosionGT extends ServerExplosion {
 				final BlockPos tPos = (BlockPos)tIterator.next();
 				final Block tBlock = WD.block(mWorld, tPos.getX(), tPos.getY(), tPos.getZ());
 				final BlockState tAboveState = gregapi.util.WD.state(mWorld, new BlockPos(tPos.getX(), tPos.getY() - 1, tPos.getZ()));
-				if (WD.getMaterial(tBlock) == Material.air && tAboveState.isSolidRender() && RNGSUS.nextInt(3) == 0) {
+				if (WD.getMaterial(tBlock) == Material.air && tAboveState.isSolidRender(mWorld, new BlockPos(tPos.getX(), tPos.getY() - 1, tPos.getZ())) && RNGSUS.nextInt(3) == 0) {
 					WD.set(mWorld, tPos.getX(), tPos.getY(), tPos.getZ(), Blocks.FIRE, 0, 3);
 				}
 			}

@@ -36,11 +36,8 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterials;
-import net.minecraft.world.item.equipment.ArmorType;
-import net.minecraft.tags.TagKey;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
@@ -48,13 +45,13 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 
 /**
- * F13 (документация neo item/armor-компонентной модели): было {@code extends ItemArmor} (1.7.10, armorType/renderIndex
- * ctor-параметры + мутаторы setMaxStackSize/setMaxDamage/setNoRepair/setUnlocalizedName) — ItemArmor не существует
- * в 26.1.2 (0 в 3 корнях референса), тот же приём, что уже принят в {@code gregapi.item.ItemArmorBase} (см. этот
- * файл): {@code Item.Properties.humanoidArmor(ArmorMaterial,ArmorType)} + {@code .durability}/{@code .repairable}
- * собранные ДО {@code super()} в {@link #makeProperties}, mName-поле вместо мутируемого unlocalizedName.
+ * Ветка 1.20.1: форма оригинала возвращена дословно — {@code extends ArmorItem} ({@code ArmorItem.java:66},
+ * прямой наследник 1.7.10 {@code ItemArmor}), материал {@code ArmorMaterials.DIAMOND} (было
+ * {@code ArmorMaterial.DIAMOND}), {@code setMaxDamage(100)} = {@code .durability(100)},
+ * {@code setNoRepair()} существует в 1.20.1 как есть ({@code Item.java:466}). Мутируемое имя заменено полем
+ * mName, как в остальных предметах ветки.
  */
-public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
+public class GT_EnergyArmor_Item extends ArmorItem /*implements ISpecialArmor*/ {
 	public int mCharge, mTransfer, mTier, mDamageEnergyCost, mSpecials;
 	public boolean mChargeProvider;
 	public double mArmorAbsorbtionPercentage;
@@ -70,7 +67,7 @@ public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 	public GT_EnergyArmor_Item(int aID, String aUnlocalized, String aEnglish, int aCharge, int aTransfer, int aTier, int aDamageEnergyCost, int aSpecials, double aArmorAbsorbtionPercentage, boolean aChargeProvider, int aType, int aArmorIndex) {
 		// aArmorIndex (было renderIndex, 1.7.10 ItemArmor 2й ctor-параметр) — не имеет neo-эквивалента (рендер-модель
 		// теперь EquipmentAssets/ResourceKey, не числовой индекс), не используется, как и раньше не влиял на логику.
-		super(makeProperties(aType));
+		super(ArmorMaterials.DIAMOND, armorTypeFor(aType), makeProperties());
 		mName = aUnlocalized;
 		mArmorType = aType;
 		LH.add(getUnlocalizedName(), aEnglish);
@@ -86,22 +83,18 @@ public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 		MinecraftForge.EVENT_BUS.register(this);
 	}
 
-	/** F13: собирает Properties ДО super() — durability/repair/humanoid-armor одним центром, тем же приёмом, что
-	 *  {@link gregapi.item.ItemArmorBase#makeProperties} (Item.Properties#humanoidArmor, Item.java:579). */
-	private static Item.Properties makeProperties(int aArmorType) {
-		return new Item.Properties()
-			.humanoidArmor(ArmorMaterials.DIAMOND, armorTypeFor(aArmorType)) // было ArmorMaterial.DIAMOND (1.7.10 enum) -> neo ArmorMaterials.DIAMOND (ArmorMaterials.java:24)
-			.durability(100) // было setMaxDamage(100); .durability() тоже даёт stacksTo(1), покрывает setMaxStackSize(1) (Item.java:440-444)
-			// было setNoRepair() — пустой (никогда не заполняемый) repair-тег даёт тот же эффект по следствию, приём ItemArmorBase.java:130-133
-			.repairable(TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(ModIDs.GT, "repair/none")));
+	/** Было {@code setMaxDamage(100)} + {@code setMaxStackSize(1)} + {@code setNoRepair()} — все три мутатора
+	 *  в 1.20.1 выражаются Properties ({@code .durability} сам ставит stacksTo(1), {@code Item.java:445-451}). */
+	private static Item.Properties makeProperties() {
+		return new Item.Properties().durability(100).setNoRepair();
 	}
 
-	private static ArmorType armorTypeFor(int aArmorType) {
+	private static ArmorItem.Type armorTypeFor(int aArmorType) {
 		switch (aArmorType) {
-		case 0: return ArmorType.HELMET;
-		case 1: return ArmorType.CHESTPLATE;
-		case 2: return ArmorType.LEGGINGS;
-		case 3: return ArmorType.BOOTS;
+		case 0: return ArmorItem.Type.HELMET;
+		case 1: return ArmorItem.Type.CHESTPLATE;
+		case 2: return ArmorItem.Type.LEGGINGS;
+		case 3: return ArmorItem.Type.BOOTS;
 		}
 		throw new IllegalArgumentException("Unknown Armor Slot: "+aArmorType);
 	}

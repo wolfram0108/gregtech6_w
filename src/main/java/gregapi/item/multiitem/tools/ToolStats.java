@@ -49,7 +49,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
@@ -112,14 +111,14 @@ public abstract class ToolStats implements IToolStats {
 	public String getDeathMessage() {return "Why is there no custom Death Message for this Tool?";}
 
 	@Override
-	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
+	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch) {
 		return 0;
 	}
 
 	// F9-flatten: 1.7.10 meta-семейства расщеплены на отдельные neo-блоки (флэттенинг, константы verified javap). Порт 1:1
 	// с оригиналом (ToolStats.java:111-145): tallgrass meta1(grass)/2(fern)->SHORT_GRASS/FERN; double_plant meta2/3->TALL_GRASS/
 	// LARGE_FERN. Мод-ветки (TF/Aether/BoP) — F10 (вне scope CHARTER), сохранены 1:1, мёртвы без мода (IL.*.equal=F / MD.BoP.mLoaded=F).
-	public boolean harvestGrass(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
+	public boolean harvestGrass(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch) {
 		if (aBlock == Blocks.GRASS || aBlock == Blocks.FERN) {
 			aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
 		}
@@ -152,7 +151,7 @@ public abstract class ToolStats implements IToolStats {
 
 	// F9-flatten: 1.7.10 tallgrass meta0(dead-shrub) + deadbush -> оба neo Blocks.DEAD_BUSH (оба роняли dead-stick, объединены 1:1).
 	// TF/BoP-ветки — F10 (вне scope), сохранены 1:1, мёртвы без мода. Порт 1:1 с оригиналом (ToolStats.java:148-176).
-	public boolean harvestStick(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
+	public boolean harvestStick(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch) {
 		if (aBlock == Blocks.DEAD_BUSH) {
 			aDrops.add(OP.stick.mat(MT.WOODS.Dead, 1+RNGSUS.nextInt(2+aFortune)));
 			return T;

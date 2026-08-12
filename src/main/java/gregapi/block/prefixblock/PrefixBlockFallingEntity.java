@@ -47,8 +47,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -72,14 +70,12 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	protected Block fallingBlock() {return super.getBlockState().getBlock();}
 
 	/** Записать реальный падающий блок в приватное поле базы штатным путём — её же чтением NBT.
-	 *  {@code readAdditionalSaveData} базы (FallingBlockEntity.java:305-314) — чистые присваивания с дефолтами:
-	 *  Time=0, DropItem=true, остальное по умолчанию, побочных эффектов нет. */
+	 *  Ветка 1.20.1: NBT-канал сущности снова CompoundTag (Entity.java), поэтому промежуточный
+	 *  ValueOutput/ProblemReporter 26.x не нужен — кладём тег прямо, как это делал 1.7.10. */
 	private void initFallingBlock(Level aWorld, net.minecraft.world.level.block.state.BlockState aState) {
-		net.minecraft.util.ProblemReporter.Collector tRep = new net.minecraft.util.ProblemReporter.Collector();
-		net.minecraft.world.level.storage.TagValueOutput tOut =
-			net.minecraft.world.level.storage.TagValueOutput.createWithContext(tRep, aWorld.registryAccess());
-		tOut.store("BlockState", net.minecraft.world.level.block.state.BlockState.CODEC, aState);
-		super.readAdditionalSaveData(net.minecraft.world.level.storage.TagValueInput.create(tRep, aWorld.registryAccess(), tOut.buildResult()));
+		CompoundTag tNBT = UT.NBT.make();
+		tNBT.put("BlockState", net.minecraft.nbt.NbtUtils.writeBlockState(aState));
+		super.readAdditionalSaveData(tNBT);
 	}
 
 	/** Фабрика движка ({@code EntityType.EntityFactory}): вызывается при спавне на клиенте и при загрузке с диска. */
@@ -146,11 +142,11 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 					// placeBlock не вызывался ни разу (короткое замыкание ||). fallingBlock() — РЕАЛЬНЫЙ блок, не визуал.
 					// mBlock == null — страховка чтения старого сейва (см. readAdditionalSaveData): уходим в ветку дропа предметом.
 					if (!WD.canPlaceEntityOnSide(level(), fallingBlock(), aX, aY, aZ, T, 1, null, mStack) || FallingBlock.isFree(WD.block(level(), aX, aY - 1, aZ).defaultBlockState()) || mBlock == null || !mBlock.placeBlock(level(), aX, aY, aZ, (byte)1, ST.meta_(mStack), ItemNBT.get(mStack), T, T)) {
-						if (dropItem) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, tStack);}} else {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, mStack);}
+						if (dropItem) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) {spawnAtLocation(tStack);}} else {spawnAtLocation(mStack);}
 					}
 				}
 			} else if (time > 100 && !level().isClientSide() && (aY < WD.minY(level())+1 || aY > WD.topY(level())) || time > 600) { // BUG-089: было aY < 1 || aY > 256 — границы мира через центр F6-Y-scale
-				if (dropItem) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, tStack);}} else {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, mStack);}
+				if (dropItem) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) {spawnAtLocation(tStack);}} else {spawnAtLocation(mStack);}
 				discard();
 			}
 		}
@@ -158,8 +154,8 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public boolean causeFallDamage(double aFallDistance, float aDamageModifier, DamageSource aDamageSource) {
-		int i = Mth.ceil(aFallDistance - 1.0D);
+	public boolean causeFallDamage(float aFallDistance, float aDamageModifier, DamageSource aDamageSource) {
+		int i = Mth.ceil(aFallDistance - 1.0F);
 		if (i > 0) for (Entity tEntity : new ArrayListNoNulls<Entity>(level().getEntities(this, getBoundingBox()))) {
 			if (tEntity instanceof LivingEntity) tEntity.hurt(damageSources().fallingBlock(this), TFC_DAMAGE_MULTIPLIER * Math.min(Mth.floor((float)i * 2), 40));// было DamageSource.fallingBlock (1.7.10 статик удалён) -> neo damageSources().fallingBlock(Entity=падающий блок=this)
 		}
@@ -167,35 +163,30 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	}
 
 	/**
-	 * F8 (шов «NBT-персистенс Entity», тот же приём моста CompoundTag<->ValueIO, что и F8-TE в
-	 * {@code TileEntityBase01Root.saveAdditional/loadAdditional}): neo зовёт
-	 * {@code addAdditionalSaveData(ValueOutput)}/{@code readAdditionalSaveData(ValueInput)}
-	 * (`neo-decompiled/net/minecraft/world/entity/Entity.java:2121,2123`), а не GT6/1.7.10-модель
-	 * {@code writeEntityToNBT}/{@code readEntityFromNBT}(NBTTagCompound). super.addAdditionalSaveData
-	 * вызывается первым, чтобы сохранить neo-собственные данные FallingBlockEntity (Time/DropItem/
-	 * BlockState/TileEntityData/…, см. FallingBlockEntity.java:290-302).
+	 * Ветка 1.20.1: NBT-канал сущности снова {@code CompoundTag} —
+	 * {@code addAdditionalSaveData(CompoundTag)}/{@code readAdditionalSaveData(CompoundTag)}
+	 * ({@code Entity.java}), то есть форма 1.7.10 {@code writeEntityToNBT}/{@code readEntityFromNBT} дословно;
+	 * мост через ValueOutput/ValueInput (26.x) снят вместе с этими типами. super вызывается первым, чтобы
+	 * сохранить собственные данные FallingBlockEntity (Time/DropItem/BlockState/TileEntityData).
 	 */
 	@Override
-	protected void addAdditionalSaveData(ValueOutput output) {
-		super.addAdditionalSaveData(output);
-		CompoundTag aNBT = UT.NBT.make();
+	protected void addAdditionalSaveData(CompoundTag aNBT) {
+		super.addAdditionalSaveData(aNBT);
 		aNBT.putShort("MetaData", ST.meta_(mStack));
 		if (mBlockNBT != null) aNBT.put("TileEntityData", mBlockNBT);
-		output.store(aNBT);
 		// Реальный падающий блок сохраняет САМА база (пишет своё приватное поле, куда его положил конструктор
 		// через initFallingBlock) — ровно как 1.7.10 сохранял его базовым writeEntityToNBT. Своего ключа не нужно.
 	}
 
 	@Override
-	protected void readAdditionalSaveData(ValueInput input) {
-		super.readAdditionalSaveData(input);
-		CompoundTag aNBT = input.read(MapCodec.assumeMapUnsafe(CompoundTag.CODEC)).orElseGet(UT.NBT::make);
+	protected void readAdditionalSaveData(CompoundTag aNBT) {
+		super.readAdditionalSaveData(aNBT);
 		// 1:1 оригинала (:115-118): блок и стек восстанавливаются из РЕАЛЬНОГО блока (там — super.func_145805_f()),
 		// который база уже подняла из NBT строкой выше. Страховка на не-GT6 блок (чужой или повреждённый сейв):
 		// mBlock остаётся null, и сущность при приземлении уходит в ветку дропа предметом — вместо краха приведения.
 		mBlock = fallingBlock() instanceof IBlockPlacable tPlacable ? tPlacable : null;
 		mStack = ST.make(fallingBlock(), 1, aNBT.getShort("MetaData"));
-		mBlockNBT = aNBT.getCompound("TileEntityData").orElse(null);
+		mBlockNBT = aNBT.contains("TileEntityData") ? aNBT.getCompound("TileEntityData") : null;
 		ItemNBT.set(mStack, mBlockNBT);
 	}
 }

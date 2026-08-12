@@ -64,7 +64,6 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -208,13 +207,13 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	/**
 	 * Called by the Block Harvesting Event within the GT_Proxy
 	 */
-	public void onHarvestBlockEvent(ArrayList<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, int aX, int aY, int aZ, byte aMeta, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
+	public void onHarvestBlockEvent(ArrayList<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, int aX, int aY, int aZ, byte aMeta, int aFortune, boolean aSilkTouch) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null || ST.instaharvest(aBlock, aMeta) || !isItemStackUsable(aStack) || getDigSpeed(aStack, aBlock, aMeta) <= 0) {
 			doDamage(aStack, 0, aPlayer, T);
 			return;
 		}
-		long tDamage = tStats.convertBlockDrops(aDrops, aStack, aPlayer, aBlock, (getToolMaxDamage(aStack) - getToolDamage(aStack)) / tStats.getToolDamagePerDropConversion(), aX, aY, aZ, aMeta, aFortune, aSilkTouch, aEvent);
+		long tDamage = tStats.convertBlockDrops(aDrops, aStack, aPlayer, aBlock, (getToolMaxDamage(aStack) - getToolDamage(aStack)) / tStats.getToolDamagePerDropConversion(), aX, aY, aZ, aMeta, aFortune, aSilkTouch);
 		// 1:1 с 1.7.10 setBlockToAir: ставим именно ВОЗДУХ. neo removeBlock оставляет на месте жидкость клетки
 		// (Level.java:296-298 — fluidState.createLegacyBlock()), а ванильный лёд к этому моменту уже мог смениться
 		// водой (тот же класс ошибки перевода, что был в CoverDrain).

@@ -574,10 +574,13 @@ public class GT_API extends Abstract_Mod {
 		// BlockEntity методом getCapability(Capability, Direction) — единственный мост стоит в общем корне
 		// иерархии (TileEntityBase01Root), а знание «что показать» живёт в gregapi/fluid/GT6FluidCapability.java
 		// и gregapi/tileentity/GT6ItemCapability.java. Это форма 1.7.10: наружный контракт нёс сам TE.
-		// F-attachment: центральный DeferredRegister Entity-attachment-типов (EntityFoodTracker) — тот же
-		// мод-бас, единая точка подписки (gregapi/player/EntityFoodTracker.java; замена 1.7.10
-		// IExtendedEntityProperties, ни один другой файл эту регистрацию не дублирует).
-		gregapi.player.EntityFoodTracker.ATTACHMENTS.register(aModBus);
+		// Ветка 1.20.1: носитель трекера еды — capability на сущности (в 1.7.10 IExtendedEntityProperties,
+		// в 26.x attachment). Единая точка подписки, ни один другой файл её не дублирует
+		// (gregapi/player/EntityFoodTracker.java).
+		gregapi.player.EntityFoodTracker.register(aModBus);
+		// Ветка 1.20.1: доставка обработки дропа ЧУЖИХ блоков — глобальный модификатор лута (событий со списком
+		// дропов у Forge 1.20.1 нет); правило живёт в GT_API_Proxy.processBlockDrops, здесь только реестр кодека.
+		gregapi.loot.GT6BlockDropsModifier.register(aModBus);
 		// F11: центральный крафт-верстак-диспетчер (CustomRecipe SERIALIZERS) — тот же мод-бас, единая точка
 		// подписки (decisions/F11-crafting-recipe.md §7, gregapi/recipes/GT6CraftingDispatcher.java; закрывает
 		// прежний долг F12↔F11 wiring).
@@ -1215,12 +1218,13 @@ public class GT_API extends Abstract_Mod {
 		// [        +127] = PacketConfig
 		// [        +126] = PacketPrefix
 		// [        +125] = PacketItemStackChat
+		// [        +124] = PacketOreMap (ветка 1.20.1: у капабилити чанка нет автосинка, который был у neo-attachment)
 		// [+112 to +119] = PacketBlockEvent
 		// [+104 to +111] = PacketBlockError
 		// [+ 72 to + 79] = PacketDeathPoint
 		// [-120 to + 71] = PacketSyncData
 		// [-128 to -121] = PacketSound
-		NW_API = new NetworkHandler(MD.GAPI.mID, "GAPI", new PacketConfig(), new PacketPrefix(), new PacketItemStackChat()
+		NW_API = new NetworkHandler(MD.GAPI.mID, "GAPI", new PacketConfig(), new PacketPrefix(), new PacketItemStackChat(), new gregapi.network.packets.PacketOreMap()
 		, new PacketBlockEvent                          ( 0), new PacketBlockEvent                          ( 1), new PacketBlockEvent                          ( 2), new PacketBlockEvent                          ( 3), new PacketBlockEvent                          ( 4), new PacketBlockEvent                          ( 5), new PacketBlockEvent                          ( 6), new PacketBlockEvent                          ( 7)
 		, new PacketBlockError                          ( 0), new PacketBlockError                          ( 1), new PacketBlockError                          ( 2), new PacketBlockError                          ( 3), new PacketBlockError                          ( 4), new PacketBlockError                          ( 5), new PacketBlockError                          ( 6), new PacketBlockError                          ( 7)
 		, new PacketDeathPoint                          ( 0), new PacketDeathPoint                          ( 1), new PacketDeathPoint                          ( 2), new PacketDeathPoint                          ( 3), new PacketDeathPoint                          ( 4), new PacketDeathPoint                          ( 5), new PacketDeathPoint                          ( 6), new PacketDeathPoint                          ( 7)

@@ -39,50 +39,58 @@ import net.minecraft.core.BlockSource;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.Position;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ArmorMaterial;
-import net.minecraft.world.item.equipment.ArmorType;
-import net.minecraft.world.item.equipment.EquipmentAssets;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 import static gregapi.data.CS.*;
 
 /**
  * @author Gregorius Techneticies
  *
- * F13 (РЕАЛИЗОВАНО): {@code ItemArmor}/{@code EnumHelper} (1.7.10 armor-модель) заменены на {@code ArmorMaterial}
- * record + {@code Item.Properties.humanoidArmor} (durability/defense/enchantability/equip-слот/repair из одной
- * точки), см. конструктор/makeProperties ниже — армор функционален 1:1. Динамическая защита
- * через {@code ISpecialArmor.getProperties} (нет ни в одном из 3 корней референса — движко-модель Forge-core, НЕ
- * F10 compat-mod) заменена статическими {@code ItemAttributeModifiers} внутри {@link ArmorMaterial#createAttributes}.
- * Данные GT6 (durability/aShields/enchantability) сохранены 1:1 — меняется только канал доставки.
+ * Ветка 1.20.1: возвращена форма оригинала. 1.7.10 звал
+ * {@code super(EnumHelper.addArmorMaterial("armor."+name, aDurability, aShields, aEnchantability), …, aSlot)} —
+ * то есть СВОЙ материал брони с данными GT6 и наследование от {@code ItemArmor}. В 1.20.1 это доступно
+ * дословно: {@code ArmorMaterial} — ИНТЕРФЕЙС ({@code ArmorMaterial.java:6-21}), а не запись 26.x, поэтому
+ * {@link Material} ниже — прямой эквивалент {@code EnumHelper.addArmorMaterial}; носитель — {@code ArmorItem}
+ * ({@code ArmorItem.java:66}), прямой наследник {@code ItemArmor}.
+ *
+ * <p>{@code ISpecialArmor} (динамическая защита оригинала) в 1.20.1 движком удалён; защита идёт атрибутами,
+ * которые {@code ArmorItem} строит из {@code material.getDefenseForType(type)} ({@code ArmorItem.java:70,74-82}).
+ * Массив {@code aShields} GT6 попадает туда без изменения значений — тот же канал, что нёс
+ * {@code getArmorDisplay} оригинала ({@code gt6-original ItemArmorBase.java:138}).</p>
+ *
+ * <p>Прочность абсолютна, как у оригинала ({@code setMaxDamage(aDurability)}): {@code ArmorItem} зовёт
+ * {@code Properties.defaultDurability(...)} ({@code ArmorItem.java:67}), а он не перебивает уже заданное
+ * {@code durability(aDurability)}. Непочинимость ({@code getIsRepairable} = F,
+ * {@code gt6-original :149}) выражена {@code Ingredient.EMPTY} — {@code isValidRepairItem} тогда всегда false
+ * ({@code ArmorItem.java:97-99}). Зачаровываемость 0 работает как есть: {@code ArmorItem.getEnchantmentValue}
+ * просто отдаёт значение материала ({@code :89-91}), никаких требований «&gt;0» в 1.20.1 нет.</p>
  */
 @Optional.InterfaceList(value = {
   @Optional.Interface(iface = "ic2.api.item.IMetalArmor", modid = ModIDs.IC2),
   @Optional.Interface(iface = "forestry.api.apiculture.IArmorApiarist", modid = ModIDs.FR)
 })
-public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IItemNoGTOverride, IMetalArmor, IArmorApiarist {
+public class ItemArmorBase extends ArmorItem implements IItemUpdatable, IItemGT, IItemNoGTOverride, IMetalArmor, IArmorApiarist {
 	protected final String mModID;
 	protected final String mName, mTooltip;
 
 	public int mEnchantability;
 	public boolean mMetalArmor = F, mBeeArmor = F;
 	public String mArmorTexture, mArmorName;
-	/** F13: 1.7.10 ItemArmor.armorType (int 0-3) → neo ArmorType (mArmorType ниже); слот-int сохранён как mArmorSlot. Реализовано. */
+	/** 1.7.10 {@code ItemArmor.armorType} (int 0-3) сохранён как есть; типизированный слот — {@code getType()}. */
 	protected final int mArmorSlot;
-	protected final ArmorType mArmorType;
 	// F3-render: 1.7.10 ItemArmorBase.getIconFromDamage→mIcon (registerIcon "modID:armor/<name>/<slot>") утрачен при порте
 	// (registerIcons/IIconRegister-хук мёртв в neo) → GT6ItemModel.resolveIcon возвращал null → броня-предмет не рисовался.
 	// Восстанавливаем 1:1: ленивое построение того же ResourceLocation (armor/<name>/<slot>) при первом запросе.
@@ -96,12 +104,11 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
 	 */
 	public ItemArmorBase(String aModID, String aUnlocalized, String aEnglish, String aEnglishTooltip, String aArmorName, int aSlot, int[] aShields, int aDurability, int aDamageReduction, int aEnchantability, boolean aMetalArmor, boolean aBeeArmor, Object... aRecipe) {
-		super(makeProperties(aModID, aUnlocalized, aArmorName, aSlot, aShields, aDurability, aEnchantability));
+		super(new Material("armor."+aUnlocalized, aShields, aEnchantability), slotToArmorType(aSlot), new Item.Properties().durability(aDurability));
 		if (GAPI.mStartedInit) throw new IllegalStateException("Items can only be initialised within preInit!");
 		mName = aUnlocalized;
 		mModID = aModID;
 		mArmorSlot = aSlot;
-		mArmorType = slotToArmorType(aSlot);
 		mArmorTexture = mModID+":"+TEX_DIR_ARMOR+aArmorName+"/"+mArmorSlot+".png";
 		mArmorName = aArmorName;
 		mEnchantability = aEnchantability;
@@ -125,82 +132,67 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 	}
 
 	/**
-	 * F13 (РЕАЛИЗОВАНО): neo durability+defense+enchantability+equip-слот+repair одновременно через
-	 * {@link Item.Properties#humanoidArmor(ArmorMaterial, ArmorType)} (Item.java:579). Статический (вызов до super()).
+	 * Прямой эквивалент {@code EnumHelper.addArmorMaterial("armor."+name, aDurability, aShields, aEnchantability)}
+	 * оригинала: {@code ArmorMaterial} в 1.20.1 — интерфейс, поэтому свой материал объявляется как есть.
+	 * Прочность материала здесь не участвует — оригинал задавал её абсолютно ({@code setMaxDamage}), и это
+	 * делает {@code Properties.durability(aDurability)} в конструкторе.
 	 */
-	private static Item.Properties makeProperties(String aModID, String aUnlocalized, String aArmorName, int aSlot, int[] aShields, int aDurability, int aEnchantability) {
-		ArmorType tType = slotToArmorType(aSlot);
-		ArmorMaterial tMaterial = new ArmorMaterial(
-			aDurability,
-			makeDefense(aShields),
-			aEnchantability,
-			// F13: neo ArmorMaterial record ТРЕБУЕТ Holder<SoundEvent> equip-sound (1.7.10 ItemArmor такого концепта не имел) →
-			// движок-форс, выбран нейтральный ванильный дефолт ARMOR_EQUIP_GENERIC. Функционально, не заглушка.
-			SoundEvents.ARMOR_EQUIP_GENERIC,
-			0.0F, // toughness: нет 1:1-концепта в GT6 1.7.10 (введено в ванили позже)
-			0.0F, // knockbackResistance: тот же случай
-			// F13: оригинал getIsRepairable всегда F (не чинится). neo ArmorMaterial ТРЕБУЕТ TagKey<Item> repair-материала →
-			// пустой (никогда не заполняемый) тег «repair/none» = ничего не матчит => не чинится. 1:1 по следствию. Не заглушка.
-			TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(aModID, "repair/none")),
-			// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было mArmorTexture-строка (PNG-путь), реальный держатель —
-			// assets/<mModID>/equipment/<aArmorName>.json, клиентский ресурс не порождается этим Java-кодом
-			// (оригинал тоже не порождал PNG из кода — только ссылался строкой).
-			ResourceKey.create(EquipmentAssets.ROOT_ID, ResourceLocation.fromNamespaceAndPath(aModID, aArmorName))
-		);
-		// R8-фикс (GPT-возврат): humanoidArmor() сам делает durability(type.getDurability(material.durability()))
-		// (Item.java:580) — ArmorType.getDurability(int) УМНОЖАЕТ переданное значение на unitDurability слота
-		// (ArmorType.java:25-27: HELMET=11/CHESTPLATE=16/LEGGINGS=15/BOOTS=13/BODY=16), т.е. итоговый MAX_DAMAGE
-		// стал бы aDurability*unitDurability, а не aDurability. Оригинал (gregtech6/.../ItemArmorBase.java:92)
-		// делал setMaxDamage(aDurability) АБСОЛЮТНО. .durability(aDurability) ниже перезаписывает
-		// DataComponents.MAX_DAMAGE поверх (component()→componentInitializer.andThen(...set(type,value)),
-		// последующий set с тем же DataComponentType в builder'е перезаписывает предыдущий, Item.java:692-695,
-		// DataComponentInitializers.java:123-126) — итоговая прочность == aDurability, 1:1 с оригиналом.
-		// R8-фикс + F-armor-enchant0: 1.7.10 hazmat-броня НЕПОКОРЯЕМА (aEnchantability=0), но neo humanoidArmor() (Item.java:579)
-		// БЕЗУСЛОВНО зовёт enchantable(material.enchantmentValue()) → Enchantable.<init>:18 требует >0 → краш на RegisterEvent<Item>.
-		// Воспроизводим humanoidArmor вручную 1:1, вызывая enchantable ТОЛЬКО при >0 (0 → компонент Enchantable опущен =
-		// непокоряемо, 1:1 со СЛЕДСТВИЕМ оригинала). durability(aDurability) в конце перезаписывает поверх (R8, см. выше).
-		Item.Properties rProperties = new Item.Properties()
-			// F12-followup (item-split): neo Item требует id в Properties (иначе «Item id not set»); ключ = (modID, unlocalized),
-			// санитизирован, совпадает с именем регистрации registerItemLazy на call-site (как ItemBase:87).
-			
-			.durability(tType.getDurability(tMaterial.durability()))
-			.attributes(tMaterial.createAttributes(tType))
-			.component(net.minecraft.core.component.DataComponents.EQUIPPABLE, net.minecraft.world.item.equipment.Equippable.builder(tType.getSlot()).setEquipSound(tMaterial.equipSound()).setAsset(tMaterial.assetId()).build())
-			.repairable(tMaterial.repairIngredient());
-		if (aEnchantability > 0) rProperties.enchantable(aEnchantability);
-		rProperties.durability(aDurability);
-		return rProperties;
+	private static final class Material implements ArmorMaterial {
+		private final String mMaterialName;
+		private final int[] mShields;
+		private final int mEnchantability;
+		private Material(String aName, int[] aShields, int aEnchantability) {mMaterialName = aName; mShields = aShields; mEnchantability = aEnchantability;}
+
+		/** aShields[] — индексы 1:1 с собственным aSlot-соглашением GT6 (0=head, 1=chest, 2=legs, 3=boots;
+		 *  см. gregtech/loaders/a/Loader_Tools.java). Порядок сохранён дословно. */
+		@Override public int getDefenseForType(ArmorItem.Type aType) {
+			int tIndex = armorTypeToSlot(aType);
+			return mShields != null && mShields.length > tIndex ? mShields[tIndex] : 0;
+		}
+		/** Не используется: прочность задана абсолютно (см. javadoc класса). Отдаём 1, чтобы
+		 *  {@code defaultDurability} никогда не занижал уже выставленное значение. */
+		@Override public int getDurabilityForType(ArmorItem.Type aType) {return 1;}
+		@Override public int getEnchantmentValue() {return mEnchantability;}
+		@Override public SoundEvent getEquipSound() {return SoundEvents.ARMOR_EQUIP_GENERIC;}
+		/** Оригинал: {@code getIsRepairable} всегда F. Пустой ингредиент не совпадает ни с чем. */
+		@Override public Ingredient getRepairIngredient() {return Ingredient.EMPTY;}
+		@Override public String getName() {return mMaterialName;}
+		@Override public float getToughness() {return 0.0F;}
+		@Override public float getKnockbackResistance() {return 0.0F;}
 	}
 
-	/** aShields[] — индексы 1:1 с этим же классом собственным aSlot-соглашением (0=head,1=chest,2=legs,3=boots, см. gregtech/loaders/a/Loader_Tools.java); во всех текущих вызовах массив однороден, порядок не влияет на значения. */
-	private static Map<ArmorType, Integer> makeDefense(int[] aShields) {
-		Map<ArmorType, Integer> rMap = new EnumMap<>(ArmorType.class);
-		rMap.put(ArmorType.HELMET    , aShields != null && aShields.length > 0 ? aShields[0] : 0);
-		rMap.put(ArmorType.CHESTPLATE, aShields != null && aShields.length > 1 ? aShields[1] : 0);
-		rMap.put(ArmorType.LEGGINGS  , aShields != null && aShields.length > 2 ? aShields[2] : 0);
-		rMap.put(ArmorType.BOOTS     , aShields != null && aShields.length > 3 ? aShields[3] : 0);
-		return rMap;
-	}
-
-	private static ArmorType slotToArmorType(int aSlot) {
+	private static ArmorItem.Type slotToArmorType(int aSlot) {
 		switch (aSlot) {
-		case 0: return ArmorType.HELMET;
-		case 1: return ArmorType.CHESTPLATE;
-		case 2: return ArmorType.LEGGINGS;
-		case 3: return ArmorType.BOOTS;
+		case 0: return ArmorItem.Type.HELMET;
+		case 1: return ArmorItem.Type.CHESTPLATE;
+		case 2: return ArmorItem.Type.LEGGINGS;
+		case 3: return ArmorItem.Type.BOOTS;
 		}
 		throw new IllegalArgumentException("Unknown Armor Slot: "+aSlot);
 	}
 
-	// F13: neo зовёт appendHoverText (не 1.7.10 addInformation) — мост: GT6-тултип через addInformation → neo builder. ПОДКЛЮЧЕНО.
+	private static int armorTypeToSlot(ArmorItem.Type aType) {
+		switch (aType) {
+		case HELMET    : return 0;
+		case CHESTPLATE: return 1;
+		case LEGGINGS  : return 2;
+		case BOOTS     : return 3;
+		}
+		return 0;
+	}
+
+	// Движок зовёт appendHoverText (не 1.7.10 addInformation) — мост: GT6-тултип через addInformation.
 	@Override @SuppressWarnings({"rawtypes", "unchecked"})
-	public void appendHoverText(ItemStack aStack, net.minecraft.world.item.Item.TooltipContext aCtx, net.minecraft.world.item.component.TooltipDisplay aDisplay, java.util.function.Consumer<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
+	public void appendHoverText(ItemStack aStack, Level aWorld, List<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
 		if (tPlayer == null) return;
 		java.util.List tList = new java.util.ArrayList();
 		try {addInformation(aStack, tPlayer, tList, aFlag.isAdvanced());} catch (Throwable e) {/**/}
-		for (Object o : tList) if (o != null) aBuilder.accept(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
+		for (Object o : tList) if (o != null) aBuilder.add(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
 	}
+
+	/** 1:1 с оригиналом ({@code gt6-original ItemArmorBase.java:136}) — тот же канал Forge, та же строка. */
+	@Override public String getArmorTexture(ItemStack aStack, Entity aEntity, EquipmentSlot aSlot, String aType) {return mArmorTexture;}
 
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
@@ -254,7 +246,7 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 	@Override public void updateItemStack(ItemStack aStack) {isItemStackUsable(aStack);}
 	@Override public void updateItemStack(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {updateItemStack(aStack);}
 
-	/** F1 (1:1): было {@code onCreated(ItemStack,World,EntityPlayer)} → neo {@code Item.onCraftedBy(ItemStack,Player)} (Item.java:310)
-	 *  без Level. Оригинальное тело = только isItemStackUsable(aStack), World НЕ использовался → потеря параметра = ноль потерь, полный 1:1. */
-	@Override public void onCraftedBy(ItemStack aStack, Player aPlayer) {isItemStackUsable(aStack);}
+	/** 1:1: было {@code onCreated(ItemStack,World,EntityPlayer)}; в 1.20.1 сигнатура вернулась дословно —
+	 *  {@code onCraftedBy(ItemStack, Level, Player)} ({@code Item.java:251}). */
+	@Override public void onCraftedBy(ItemStack aStack, Level aWorld, Player aPlayer) {isItemStackUsable(aStack);}
 }

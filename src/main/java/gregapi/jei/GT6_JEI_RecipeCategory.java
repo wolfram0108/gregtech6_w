@@ -80,7 +80,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 	}
 
 	@Override
-	public void draw(Recipe aRecipe, mezz.jei.api.gui.ingredient.IRecipeSlotsView aSlotsView, net.minecraft.client.gui.GuiGraphicsExtractor aGraphics, double aMouseX, double aMouseY) {
+	public void draw(Recipe aRecipe, mezz.jei.api.gui.ingredient.IRecipeSlotsView aSlotsView, net.minecraft.client.gui.GuiGraphics aGraphics, double aMouseX, double aMouseY) {
 		if (mBackNEI != null) mBackNEI.draw(aGraphics, 0, 0);
 		if (mBackGui != null) mBackGui.draw(aGraphics, 0, 3);
 	}

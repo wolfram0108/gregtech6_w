@@ -104,28 +104,32 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		return PLUGIN_UID;
 	}
 
-	/** F1-jei: JEI различает варианты предмета только по ЗАЯВЛЕННЫМ компонентам (registerFromDataComponentTypes);
-	 *  без заявки SUBTYPE все процедурные варианты (itemDamage 1.7.10) схлопываются в один предмет
-	 *  (лог-улика «289 duplicate items», ingredient-лист пуст по моду). Заявляем SUBTYPE всем gt-предметам. */
+	/** Ветка 1.20.1: подтип предмета GT6 снова живёт в damage (шов F8 снят — компонента SUBTYPE в 1.20.1 нет),
+	 *  а JEI этой версии спрашивает подтип строкой через {@code ISubtypeRegistration.registerSubtypeInterpreter(Item,
+	 *  IIngredientSubtypeInterpreter)} ({@code ISubtypeRegistration.class}, javap по jei-1.20.1-common-api-15.48.0.183).
+	 *  Без интерпретатора все процедурные варианты схлопываются в один предмет (улика 26.x-ветки: «289 duplicate items»).
+	 *  Строка подтипа = мета + (если личность предмета включает NBT) сам тег — ровно те два признака, по которым
+	 *  различал варианты NEI 1.7.10. */
 	@Override
 	public void registerItemSubtypes(mezz.jei.api.registration.ISubtypeRegistration aRegistration) {
-		if (!gregapi.GT_API.SUBTYPE.isBound()) return;
-		net.minecraft.core.component.DataComponentType<?> tSubtype = gregapi.GT_API.SUBTYPE.get();
 		int tCount = 0, tMetaOnly = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null) continue;
 			String tNs = tKey.getNamespace();
 			if (!tNs.equals(ModIDs.GT) && !tNs.equals("gregtech") && !tNs.equals("gregapi")) continue;
-			// SUBTYPE (мета 1.7.10) + CUSTOM_DATA (ItemNBT-центр F8: монеты/батареи/сундуки различаются NBT-материалом,
-			// не метой — 1.7.10 NEI различал их по NBT; без заявки — «389 duplicate items» Coins)
 			try {
 				// правило личности — не наше: спрашиваем центр ST (BUG-079), своей копии витрина не держит
-				if (gregapi.util.ST.identityIncludesNBT(tItem)) {aRegistration.registerFromDataComponentTypes(tItem, tSubtype, net.minecraft.core.component.DataComponents.CUSTOM_DATA); tCount++;}
-				else {aRegistration.registerFromDataComponentTypes(tItem, tSubtype); tMetaOnly++;}
+				final boolean tWithNBT = gregapi.util.ST.identityIncludesNBT(tItem);
+				aRegistration.registerSubtypeInterpreter(tItem, (aStack, aContext) -> {
+					String rID = Short.toString(gregapi.util.ST.meta_(aStack));
+					if (tWithNBT && aStack.hasTag()) rID = rID + "|" + aStack.getTag();
+					return rID;
+				});
+				if (tWithNBT) tCount++; else tMetaOnly++;
 			} catch (Throwable e) {/**/}
 		}
-		OUT.println("[GT6-JEI] SUBTYPE+CUSTOM_DATA подтипы заявлены для " + tCount + " предметов, только SUBTYPE — для " + tMetaOnly + " (инструменты).");
+		OUT.println("[GT6-JEI] подтипы мета+NBT заявлены для " + tCount + " предметов, только мета — для " + tMetaOnly + " (инструменты).");
 	}
 
 
@@ -220,9 +224,9 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		sRuntime = aRuntime; // BUG-056: единственная дверь к экрану рецептов, см. showRecipeCategory
 		try {
 			mezz.jei.api.runtime.IIngredientManager tManager = aRuntime.getIngredientManager();
-			java.util.Collection<net.minecraftforge.fluids.FluidStack> tFluids = new java.util.ArrayList<>(tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK));
-			if (!tFluids.isEmpty()) tManager.removeIngredientsAtRuntime(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, tFluids);
-			OUT.println("[GT6-JEI] родной FLUID_STACK-пласт снят из панели: было " + tFluids.size() + ", осталось " + tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK).size() + " (жидкости показывает GT6-дисплей, как NEI 1.7.10)");
+			java.util.Collection<net.minecraftforge.fluids.FluidStack> tFluids = new java.util.ArrayList<>(tManager.getAllIngredients(mezz.jei.api.forge.ForgeTypes.FLUID_STACK));
+			if (!tFluids.isEmpty()) tManager.removeIngredientsAtRuntime(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, tFluids);
+			OUT.println("[GT6-JEI] родной FLUID_STACK-пласт снят из панели: было " + tFluids.size() + ", осталось " + tManager.getAllIngredients(mezz.jei.api.forge.ForgeTypes.FLUID_STACK).size() + " (жидкости показывает GT6-дисплей, как NEI 1.7.10)");
 		} catch (Throwable e) {
 			ERR.println("JEI: не удалось снять родной FLUID_STACK-пласт (дубль жидкостей останется в панели).");
 			e.printStackTrace(ERR);
@@ -234,7 +238,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		for (Map.Entry<RecipeMap, RecipeType<Recipe>> tEntry : mTypes.entrySet()) {
 			try {
 				List<ItemStack> tMachines = tEntry.getKey().mRecipeMachineList;
-				if (!tMachines.isEmpty()) aRegistration.addCraftingStation(tEntry.getValue(), tMachines.toArray(new ItemStack[0]));
+				if (!tMachines.isEmpty()) aRegistration.addRecipeCatalysts(tEntry.getValue(), tMachines.toArray(new ItemStack[0]));
 			} catch (Throwable e) {
 				ERR.println("JEI: RecipeMap '" + tEntry.getKey().mNameInternal + "' failed to register its catalysts, skipping.");
 				e.printStackTrace(ERR);
@@ -243,7 +247,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 
 		if (!mCraftingRecipes.isEmpty()) {
 			try {
-				aRegistration.addCraftingStation(GT6_JEI_CraftingCategory.TYPE, Blocks.CRAFTING_TABLE);
+				aRegistration.addRecipeCatalysts(GT6_JEI_CraftingCategory.TYPE, Blocks.CRAFTING_TABLE);
 			} catch (Throwable e) {
 				ERR.println("JEI: GT6 crafting-table category failed to register its catalyst, skipping.");
 				e.printStackTrace(ERR);

@@ -31,20 +31,22 @@ import java.util.Collection;
 import static gregapi.data.CS.RES_PATH_MODEL;
 
 /**
- * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 {@code RenderPlayer} (immediate-mode: GL11 push/pop-матрицы,
- * ручная интерполяция позиции игрока по SRG-полям {@code field_71091_bM}.., {@code ModelBiped.renderCloak})
- * — весь этот стек удалён в 26.1.2 (decisions/F3-render.md §1). Класс больше не наследует движковый
- * рендерер игрока (тип удалён без замены с той же формой) — держит только чистую бизнес-логику выбора
- * плаща по нику/UUID ({@link #getResource(String)}, БЕЗ ИЗМЕНЕНИЙ). Хук ретипирован на neo-эквивалент
- * {@code RenderPlayerEvent.Pre} (1:1 замена старого {@code RenderPlayerEvent.Specials.Pre}).
- * [Метка отложенности «заглушка хука» СНЯТА 2026-08-06.] Тело оригинала (:69-111) копировало ванильную
- * геометрию плаща руками (immediate-mode, мёртв) — в neo та же функция выражается ДАННЫМИ: подмена
- * {@code AvatarRenderState.skin} (public-поле стейта, пересобирается каждый кадр) на копию с GT6-плащом,
- * рисует сам движковый {@code CapeLayer.submit:44-68}. Условия оригинала несёт движок 1:1: невидимость —
- * {@code !state.isInvisible} (CapeLayer:45), настройка «скрыть плащ» ({@code getHideCape()} оригинала) —
- * {@code state.showCape} (CapeLayer:45); фолбэк выбора по UUID — как оригинал :78. Отличие, осознанное:
- * оригинал рисовал GT6-плащ ПОВЕРХ Mojang-плаща (два слоя друг на друге со сдвигом 0.125) — здесь
- * Mojang-плащ не перекрывается (свой плащ у игрока побеждает GT6-шный), двойного рисования нет.
+ * Ветка 1.20.1: восстановлена ФОРМА ОРИГИНАЛА — GT6 рисует СВОЙ плащ собственной геометрией поверх
+ * игрока, а не подменяет ванильный. Оригинал ({@code gt6-original PlayerModelRenderer.java:76-111})
+ * делал {@code glTranslatef(0,0,0.125)}, считал наклон по интерполированным {@code field_71091_bM..}
+ * и звал {@code ModelBiped.renderCloak}. В 1.20.1 доступны ровно те же три составляющие:
+ * {@code RenderPlayerEvent.Pre} несёт {@code PoseStack}/{@code MultiBufferSource}/{@code packedLight}
+ * ({@code RenderPlayerEvent.java:65,73,83}), поля наклона плаща у игрока публичны
+ * ({@code xCloak/yCloak/zCloak} и их {@code O}-версии), а {@code PlayerModel.renderCloak(PoseStack,
+ * VertexConsumer,int,int)} публичен ({@code PlayerModel.java:90-92}). Формулы наклона взяты дословно
+ * из движкового канона {@code CapeLayer.render} ({@code CapeLayer.java:26-59}) — он и есть тот же
+ * расчёт, что стоял в оригинале построчно.
+ *
+ * <p>Условия оригинала сохранены: невидимость ({@code isInvisible}) и «скрыть плащ»
+ * ({@code getHideCape()} → {@code isModelPartShown(PlayerModelPart.CAPE)}). Модель 26.x-ветки (подмена
+ * {@code PlayerSkin} в render-state) снята вместе с типами, которых в 1.20.1 нет; вместе с ней ушло и
+ * её осознанное отличие «свой плащ игрока побеждает GT6-шный» — теперь, как у Грегориуса, GT6-плащ
+ * рисуется поверх.</p>
  */
 public class PlayerModelRenderer {
 	// neo ResourceLocation.assertValidPath запрещает заглавные в path (1.7.10 ResourceLocation их допускал) — имена
@@ -79,23 +81,43 @@ public class PlayerModelRenderer {
 		return null;
 	}
 
-	/** Плащ GT6 — данными движковому слою (разбор в class javadoc): свой выбор текстуры + ванильный
-	 *  {@code CapeLayer}. Имя игрока — по entity id из стейта (в {@code AvatarRenderState} ника нет). */
-	public void receiveRenderSpecialsEvent(RenderPlayerEvent.Pre<?> aEvent) {
+	/** Плащ GT6 — своей геометрией поверх игрока, дословно как в оригинале (разбор в javadoc класса). */
+	public void receiveRenderSpecialsEvent(RenderPlayerEvent.Pre aEvent) {
 		try {
-			net.minecraft.client.renderer.entity.state.AvatarRenderState tState = aEvent.getRenderState();
-			if (tState.skin == null || tState.skin.cape() != null) return;
-			net.minecraft.client.multiplayer.ClientLevel tLevel = net.minecraft.client.Minecraft.getInstance().level;
-			if (tLevel == null) return;
-			if (!(tLevel.getEntity(tState.id) instanceof net.minecraft.world.entity.player.Player tPlayer)) return;
+			if (!(aEvent.getEntity() instanceof net.minecraft.client.player.AbstractClientPlayer aPlayer)) return;
+			if (aPlayer.isInvisible() || !aPlayer.isModelPartShown(net.minecraft.world.entity.player.PlayerModelPart.CAPE)) return;
+
 			// имя — getScoreboardName(): у Player это имя профиля (приём проекта, EnchantmentEffect_Werewolf:56)
-			ResourceLocation tCape = getResource(tPlayer.getScoreboardName());
-			if (tCape == null) tCape = getResource(tPlayer.getUUID().toString());
-			if (tCape == null) return;
-			// ResourceTexture(id, texturePath) — 2-арг конструктор, путь прямой (без авто-«textures/…png»):
-			// mResources уже несут полный путь вида gregtech:textures/model/<имя>.png (ClientAsset.java:19-27).
-			tState.skin = net.minecraft.world.entity.player.PlayerSkin.insecure(
-				tState.skin.body(), new net.minecraft.core.ClientAsset.ResourceTexture(tCape, tCape), tState.skin.elytra(), tState.skin.model());
+			ResourceLocation tResource = getResource(aPlayer.getScoreboardName());
+			if (tResource == null) tResource = getResource(aPlayer.getUUID().toString());
+			if (tResource == null) return;
+
+			float aPartialTicks = aEvent.getPartialTick();
+			com.mojang.blaze3d.vertex.PoseStack tPose = aEvent.getPoseStack();
+			tPose.pushPose();
+			tPose.translate(0.0F, 0.0F, 0.125F);
+			double d0 = net.minecraft.util.Mth.lerp((double)aPartialTicks, aPlayer.xCloakO, aPlayer.xCloak) - net.minecraft.util.Mth.lerp((double)aPartialTicks, aPlayer.xo, aPlayer.getX());
+			double d1 = net.minecraft.util.Mth.lerp((double)aPartialTicks, aPlayer.yCloakO, aPlayer.yCloak) - net.minecraft.util.Mth.lerp((double)aPartialTicks, aPlayer.yo, aPlayer.getY());
+			double d2 = net.minecraft.util.Mth.lerp((double)aPartialTicks, aPlayer.zCloakO, aPlayer.zCloak) - net.minecraft.util.Mth.lerp((double)aPartialTicks, aPlayer.zo, aPlayer.getZ());
+			float f6 = net.minecraft.util.Mth.rotLerp(aPartialTicks, aPlayer.yBodyRotO, aPlayer.yBodyRot);
+			double d3 = net.minecraft.util.Mth.sin(f6 * ((float)Math.PI / 180F));
+			double d4 = -net.minecraft.util.Mth.cos(f6 * ((float)Math.PI / 180F));
+			float f7 = (float)d1 * 10.0F;
+			f7 = net.minecraft.util.Mth.clamp(f7, -6.0F, 32.0F);
+			float f8 = (float)(d0 * d3 + d2 * d4) * 100.0F;
+			f8 = net.minecraft.util.Mth.clamp(f8, 0.0F, 150.0F);
+			float f9 = (float)(d0 * d4 - d2 * d3) * 100.0F;
+			f9 = net.minecraft.util.Mth.clamp(f9, -20.0F, 20.0F);
+			float f10 = net.minecraft.util.Mth.lerp(aPartialTicks, aPlayer.oBob, aPlayer.bob);
+			f7 += net.minecraft.util.Mth.sin(net.minecraft.util.Mth.lerp(aPartialTicks, aPlayer.walkDistO, aPlayer.walkDist) * 6.0F) * 32.0F * f10;
+			if (aPlayer.isCrouching()) f7 += 25.0F;
+			tPose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(6.0F + f8 / 2.0F + f7));
+			tPose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(f9 / 2.0F));
+			tPose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180.0F - f9 / 2.0F));
+			aEvent.getRenderer().getModel().renderCloak(tPose,
+				aEvent.getMultiBufferSource().getBuffer(net.minecraft.client.renderer.RenderType.entitySolid(tResource)),
+				aEvent.getPackedLight(), net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+			tPose.popPose();
 		} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
 	}
 }

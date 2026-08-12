@@ -731,8 +731,8 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		// RegistryAccess (сверено, EnchantmentHelper.java:292 + Enchantments.SILK_TOUCH/FORTUNE), тот же приём,
 		// что уже принят и одобрен ревизией в GT_API_Proxy.onBlockHarvestingEvent (GT_API_Proxy.java:1450-1451)
 		// и в MultiTileEntityBlock.harvestBlock (тот же класс проблемы).
-		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tSilkTouchHolder = aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH);
-		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE);
+		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tSilkTouchHolder = net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH;
+		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tFortuneHolder = net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE;
 		boolean aSilkTouch = EnchantmentHelper.getEnchantmentLevel(tSilkTouchHolder, aPlayer) > 0;
 		int aFortune = EnchantmentHelper.getEnchantmentLevel(tFortuneHolder, aPlayer);
 		ArrayList<ItemStack> tList = mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, aSilkTouch);
@@ -755,11 +755,16 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		int tFortune = 0; boolean tSilkTouch = F;
 		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);
 		if (tEntity instanceof net.minecraft.world.entity.LivingEntity tLiving) {
-			tFortune = EnchantmentHelper.getEnchantmentLevel(tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE), tLiving);
-			tSilkTouch = EnchantmentHelper.getEnchantmentLevel(tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH), tLiving) > 0;
+			tFortune = EnchantmentHelper.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE, tLiving);
+			tSilkTouch = EnchantmentHelper.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH, tLiving) > 0;
 		}
 		ArrayList<ItemStack> rDrops = mDrops.getDrops(this, tLevel, tX, tY, tZ, tFortune, tSilkTouch);
-		return rDrops == null ? java.util.Collections.emptyList() : rDrops;
+		if (rDrops == null) return java.util.Collections.emptyList();
+		// Ветка 1.20.1: собственные блоки GT6 лут-таблиц не имеют, поэтому глобальный модификатор лута
+		// (gregapi/loot/GT6BlockDropsModifier.java) их не видит — обработку дропа зовём из того же ЦЕНТРА напрямую.
+		// Правило одно на оба пути; копии логики не заводится (в 1.7.10 обе ветки шли через HarvestDropsEvent).
+		gregapi.GT_API_Proxy.processBlockDrops(rDrops, tLevel, new BlockPos(tX, tY, tZ), aState, tEntity);
+		return rDrops;
 	}
 	public final ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aUnusableMetaData, int aFortune) {return mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, F);}
 	public int getExpDrop(BlockGetter aWorld, int aMeta, int aFortune) {return mDrops.getExp(this);}
@@ -917,8 +922,14 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public static short getOreMeta(BlockGetter aWorld, int aX, int aY, int aZ) {
 		net.minecraft.world.level.chunk.ChunkAccess tChunk = oreChunk(aWorld, aX, aZ);
 		if (tChunk == null) return 0;
-		PrefixBlockOreMap tMap = tChunk.getExistingDataOrNull(PrefixBlockOreMap.TYPE.get());
-		return tMap == null ? 0 : tMap.get(aX, aY, aZ);
+		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(tChunk);
+		if (tMap != null) return tMap.get(aX, aY, aZ);
+		// Ветка 1.20.1: у ProtoChunk ворлдгена носителя-капабилити нет — там материал лежит в самой блок-сущности
+		// (форма оригинала 1.7.10), см. PrefixBlockOreMap javadoc. Чтение сущности прото-чанка — обычный поиск в
+		// его карте (ProtoChunk.java:154-156), движковых WARN не печатает.
+		if (tChunk instanceof net.minecraft.world.level.chunk.LevelChunk) return 0;
+		BlockEntity tBE = tChunk.getBlockEntity(new BlockPos(aX, aY, aZ));
+		return tBE instanceof PrefixBlockTileEntity tTE ? tTE.mMetaData : 0;
 	}
 
 	private static net.minecraft.world.level.chunk.ChunkAccess oreChunk(BlockGetter aWorld, int aX, int aZ) {
@@ -934,7 +945,23 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public static void setOreMeta(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, short aMeta) {
 		net.minecraft.world.level.chunk.ChunkAccess tChunk = oreChunk(aWorld, aX, aZ);
 		if (tChunk == null) return;
-		tChunk.getData(PrefixBlockOreMap.TYPE.get()).set(aX, aY, aZ, aMeta);
+		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(tChunk);
+		if (tMap == null) {
+			// Ветка 1.20.1, фаза ворлдгена: ProtoChunk капабилити не несёт, поэтому материал едет в блок-сущности —
+			// ровно так, как его хранил оригинал 1.7.10. Миграция (migrateChunkOres на ChunkEvent.Load) переливает
+			// его в карту и сущность снимает; порядок доказан декомпилом (ChunkMap.java:706-722), см. PrefixBlockOreMap.
+			BlockPos tProtoPos = new BlockPos(aX, aY, aZ);
+			if (aMeta == 0) {tChunk.removeBlockEntity(tProtoPos); return;}
+			BlockEntity tProtoBE = tChunk.getBlockEntity(tProtoPos);
+			if (tProtoBE instanceof PrefixBlockTileEntity tProtoTE) {tProtoTE.mMetaData = aMeta; return;}
+			BlockState tProtoState = tChunk.getBlockState(tProtoPos);
+			if (!(tProtoState.getBlock() instanceof PrefixBlock)) return;
+			PrefixBlockTileEntity tNewTE = new PrefixBlockTileEntity(tProtoPos, tProtoState);
+			tNewTE.mMetaData = aMeta;
+			tChunk.setBlockEntity(tNewTE);
+			return;
+		}
+		tMap.set(aX, aY, aZ, aMeta);
 		tChunk.setUnsaved(true);
 		// Хвост правки №1 (2026-08-10): раз материал записан в карту, сущность/закладка, рождённая движком на
 		// САМ setBlock, снимается тут же — в той же воронке записи. Рождает их контракт «EntityBlock всегда
@@ -945,7 +972,23 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockEntity tBE = tChunk.getBlockEntity(tPos);
 		if (tBE == null || (tBE instanceof PrefixBlockTileEntity tTE && tTE.mItemNBT == null)) tChunk.removeBlockEntity(tPos);
-		if (tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC && aWorld instanceof net.minecraft.server.level.ServerLevel) tLC.syncData(PrefixBlockOreMap.TYPE.get());
+		if (tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC && aWorld instanceof net.minecraft.server.level.ServerLevel tSL) syncOreMap(tSL, tLC);
+	}
+
+	/** Ветка 1.20.1: замена бывшего {@code chunk.syncData(TYPE)} — карта уходит своим пакетом GT6 тем, кто ЧАНК
+	 *  ВИДИТ (тот же {@code PacketDistributor.TRACKING_CHUNK}, что и весь остальной синк мода). */
+	public static void syncOreMap(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.world.level.chunk.LevelChunk aChunk) {
+		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(aChunk);
+		if (tMap == null) return;
+		gregapi.data.CS.NW_API.sendToAllPlayersInRange(new gregapi.network.packets.PacketOreMap(aChunk.getPos().x, aChunk.getPos().z, tMap.pack()), aWorld, aChunk.getPos().getMinBlockX(), aChunk.getPos().getMinBlockZ());
+	}
+
+	/** Ветка 1.20.1: отправка карты ОДНОМУ игроку в момент, когда движок шлёт ему чанк ({@code ChunkWatchEvent.Watch});
+	 *  в 26.x этот момент обслуживал сам attachment-синк. */
+	public static void syncOreMap(net.minecraft.server.level.ServerPlayer aPlayer, net.minecraft.world.level.chunk.LevelChunk aChunk) {
+		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(aChunk);
+		if (tMap == null || tMap.isEmpty()) return;
+		gregapi.data.CS.NW_API.sendToPlayer(new gregapi.network.packets.PacketOreMap(aChunk.getPos().x, aChunk.getPos().z, tMap.pack()), aPlayer);
 	}
 
 	/** Правка №1 (BUG-106): МИГРАЦИЯ старого чанка — сущности руды/породы переливаются в карту чанка и
@@ -953,11 +996,13 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	 *  (канал №8 аудита) живут дальше, но материал дублируется в карту — воронка чтения едина.
 	 *  Зовётся из GT_API_Proxy.onChunkLoadMigrateOres (ChunkEvent.Load, сервер) и напрямую стендом. */
 	public static void migrateChunkOres(net.minecraft.world.level.chunk.LevelChunk aChunk) {
+		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(aChunk);
+		if (tMap == null) return;
 		java.util.List<BlockPos> tLegacy = null;
 		for (java.util.Map.Entry<BlockPos, BlockEntity> tEntry : aChunk.getBlockEntities().entrySet()) {
 			if (!(tEntry.getValue() instanceof PrefixBlockTileEntity tTE)) continue;
 			BlockPos tPos = tEntry.getKey();
-			if (tTE.mMetaData > 0) aChunk.getData(PrefixBlockOreMap.TYPE.get()).set(tPos.getX(), tPos.getY(), tPos.getZ(), tTE.mMetaData);
+			if (tTE.mMetaData > 0) tMap.set(tPos.getX(), tPos.getY(), tPos.getZ(), tTE.mMetaData);
 			if (tTE.mItemNBT == null) {
 				if (tLegacy == null) tLegacy = new java.util.ArrayList<>();
 				tLegacy.add(tPos);
@@ -1030,4 +1075,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	@Override public void receiveDataLong     (BlockGetter aWorld, int aX, int aY, int aZ, long   aData, INetworkHandler aNetworkHandler) {/**/}
 	@Override public void receiveDataByteArray(BlockGetter aWorld, int aX, int aY, int aZ, byte[] aData, INetworkHandler aNetworkHandler) {/**/}
 	@Override public void receiveDataName     (BlockGetter aWorld, int aX, int aY, int aZ, String aData, INetworkHandler aNetworkHandler) {if (UT.Code.stringValid(aData)) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof PrefixBlockTileEntity) {if (((PrefixBlockTileEntity)aTileEntity).mItemNBT == null) ((PrefixBlockTileEntity)aTileEntity).mItemNBT = UT.NBT.make(); ((PrefixBlockTileEntity)aTileEntity).mItemNBT.put("display", UT.NBT.makeString(((PrefixBlockTileEntity)aTileEntity).mItemNBT.getCompound("display"), "Name", aData));}}}
+
+	/** BUG-071 (ветка 1.20.1): право на дроп судит ЦЕНТР {@code WD.canHarvestBlock} — здесь только зов.
+	 *  Дом правила переехал с события {@code PlayerEvent.HarvestCheck} (в 1.20.1 оно не несёт ни мира, ни
+	 *  позиции — {@code PlayerEvent.java:69-81}) в этот хук, который их несёт ({@code IForgeBlock.java:167-170}). */
+	@Override public boolean canHarvestBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.entity.player.Player aPlayer) {
+		return gregapi.util.WD.canHarvestBlock(aState, aWorld, aPos, aPlayer);
+	}
+
 }

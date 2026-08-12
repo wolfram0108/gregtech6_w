@@ -42,7 +42,6 @@ import net.minecraftforge.common.AchievementList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
 import net.minecraftforge.event.level.BlockEvent;
-import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 import java.util.List;
 
@@ -62,7 +61,7 @@ public class GT_Tool_Club extends GT_Tool_HardHammer {
 	@Override public boolean isMiningTool()                                                 {return F;}
 	
 	@Override
-	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
+	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch) {
 		Block aDrop = aDrops.size() == 1 ? ST.block(aDrops.get(0)) : NB;
 		if (aDrop == NB) aDrop = aBlock;
 		if (aDrop == Blocks.STONE || aDrop == Blocks.COBBLESTONE || aDrop == Blocks.MOSSY_COBBLESTONE || gregapi.data.CS.Flattened.headOf(aDrop) == Blocks.STONE_BRICKS || aDrop == Blocks.STONE_BRICK_STAIRS || aDrop == Blocks.COBBLESTONE_WALL || aDrop == Blocks.STONE_BUTTON || aDrop == Blocks.STONE_PRESSURE_PLATE) {
@@ -110,7 +109,7 @@ public class GT_Tool_Club extends GT_Tool_HardHammer {
 			aDrops.add(OP.gemChipped.mat(MT.OREMATS.Cinnabar, 1+RNGSUS.nextInt(4)));
 			return 0;
 		}
-		return super.convertBlockDrops(aDrops, aStack, aPlayer, aBlock, aAvailableDurability, aX, aY, aZ, aMetaData, aFortune, aSilkTouch, aEvent);
+		return super.convertBlockDrops(aDrops, aStack, aPlayer, aBlock, aAvailableDurability, aX, aY, aZ, aMetaData, aFortune, aSilkTouch);
 	}
 	
 	@Override

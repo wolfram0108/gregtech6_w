@@ -30,14 +30,11 @@ import cofh.lib.util.ComparableItem;
 import net.minecraftforge.event.furnace.FurnaceFuelBurnTimeEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraft.util.TriState;
 import net.minecraftforge.eventbus.api.EventPriority;
-import net.neoforged.bus.api.ICancellableEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.event.TickEvent.ServerTickEvent;
 import net.minecraftforge.event.TickEvent.PlayerTickEvent;
 import net.minecraftforge.event.TickEvent.LevelTickEvent;
-import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import ganymedes01.etfuturum.entities.EntityHusk;
 import ganymedes01.etfuturum.entities.EntityStray;
 import ganymedes01.etfuturum.entities.EntityZombieVillager;
@@ -95,7 +92,6 @@ import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.level.block.BaseRailBlock;
 import gregapi.block.Material;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.ItemTags;
@@ -150,15 +146,13 @@ import net.minecraftforge.event.entity.item.ItemExpireEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.event.entity.player.ArrowLooseEvent;
 import net.minecraftforge.event.entity.player.ArrowNockEvent;
-import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkWatchEvent;
 import net.minecraftforge.event.level.LevelEvent;
@@ -371,7 +365,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	
 	// DimensionManager (1.7.10 Forge) neo-эквивалента не имеет (не найден ни в neo-decompiled, ни в neoforge-decompiled, ни в fml-decompiled) —
 	// реальный neo-путь к текущему save-root: ServerLevel.getServer().getWorldPath(LevelResource.ROOT) (сверено, MinecraftServer.java:2058 + LevelResource.java:16).
-	@SubscribeEvent(priority = EventPriority.LOWEST) public void onWorldLoad  (LevelEvent.Load   aEvent) {if (aEvent.level instanceof ServerLevel tLevel) checkSaveLocation(tLevel.getServer().getWorldPath(LevelResource.ROOT).toFile(), F);}
+	@SubscribeEvent(priority = EventPriority.LOWEST) public void onWorldLoad  (LevelEvent.Load   aEvent) {if (aEvent.getLevel() instanceof ServerLevel tLevel) checkSaveLocation(tLevel.getServer().getWorldPath(LevelResource.ROOT).toFile(), F);}
 	//@SubscribeEvent(priority = EventPriority.LOWEST) public void onWorldUnload(WorldEvent.Unload aEvent) {checkSaveLocation(DimensionManager.getCurrentSaveRootDirectory(), F);}
 	//@SubscribeEvent(priority = EventPriority.LOWEST) public void onWorldSave  (WorldEvent.Save   aEvent) {checkSaveLocation(DimensionManager.getCurrentSaveRootDirectory(), F);}
 	
@@ -535,7 +529,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 								ERR.println("Sorry, but this Error is serious enough to justify this Wall-O-Text and the partially allcapsed Language.");
 								ERR.println("Also it is a Ban Reason on the IC2-Forums to seriously post this Text. We all know about its existence.");
 								
-								tOutput.set(DataComponents.CUSTOM_NAME, Component.literal("ERROR!")); // было setStackDisplayName (1.7.10) — neo: DataComponents.CUSTOM_NAME (сверено, ItemStack.java:819)
+								tOutput.setHoverName(Component.literal("ERROR!")); // 1.20.1: канал имени вернулся к форме 1.7.10 setStackDisplayName (ItemStack.java:583)
 								UT.NBT.set(tOutput, UT.NBT.setBoolean(UT.NBT.getNBT(tOutput), "gt.err.oredict.output", T));
 							}
 						} else {
@@ -738,61 +732,22 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// ВЫРЕЗАНЫ из NeoForge 26.1.2 (extensions-каталог: только IBaseRailBlockExtension — isFlexibleRail/canMakeSlopes/
 	// getRailDirection/isValidRailShape; буст движок читает ТОЛЬКО с instanceof PoweredRailBlock —
 	// OldMinecartBehavior:115-116). Мост: EntityTickEvent.Post = раз в тик на сущность ПОСЛЕ движения — та же фаза,
-	// что 1.7.10 хвост EntityMinecart.func_145821_a (вызывал onMinecartPass после moveAlongTrack); позиция рельса —
-	// getCurrentBlockPosOrRailBelow (канал самого движка). Кламп СКОРОСТИ здесь — только ЗАПАСНОЕ плечо (вниз):
-	// основной канал — GT6MinecartBehavior (см. onMinecartJoinBridge ниже), который отвечает движку per-rail
-	// величиной ДО движения; у подменённых минкартов пост-кламп не дублируется.
-	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onMinecartPassBridge(EntityTickEvent.Post aEvent) {
-		if (!(aEvent.getEntity() instanceof net.minecraft.world.entity.vehicle.AbstractMinecart tCart) || tCart.level().isClientSide()) return;
-		BlockPos tRailPos = tCart.getCurrentBlockPosOrRailBelow();
-		if (!(WD.block(tCart.level(), tRailPos.getX(), tRailPos.getY(), tRailPos.getZ()) instanceof gregapi.block.misc.BlockBaseRail tRail)) return;
-		tRail.onMinecartPass(tCart.level(), tCart, tRailPos.getX(), tRailPos.getY(), tRailPos.getZ());
-		if (minecartBehavior(tCart) instanceof gregapi.block.misc.BlockBaseRail.GT6MinecartBehavior) return; // движок уже клампит per-rail
-		float tMax = tRail.getRailMaxSpeed(tCart.level(), tCart, tRailPos.getX(), tRailPos.getY(), tRailPos.getZ());
-		net.minecraft.world.phys.Vec3 tCartMotion = tCart.getDeltaMovement();
-		if (Math.abs(tCartMotion.x) > tMax || Math.abs(tCartMotion.z) > tMax)
-			tCart.setDeltaMovement(net.minecraft.util.Mth.clamp(tCartMotion.x, -tMax, tMax), tCartMotion.y, net.minecraft.util.Mth.clamp(tCartMotion.z, -tMax, tMax));
-	}
+	// Ветка 1.20.1: обоих мостов здесь БОЛЬШЕ НЕТ — оба канала движок отдаёт самому рельсовому блоку, ровно как
+	// в 1.7.10. Проход тележки: AbstractMinecart.java:530 зовёт baserailblock.onMinecartPass(state, level, pos, cart)
+	// (IForgeBaseRailBlock.java:75). Предел скорости на рельсе: AbstractMinecart.java:857-861 зовёт
+	// ((BaseRailBlock)state.getBlock()).getRailMaxSpeed(state, level, pos, cart). Поэтому подмена поведения
+	// тележки (MinecartBehavior — сущность 26.x, в 1.20.1 её не существует) не нужна: оба override стоят в
+	// gregapi/block/misc/BlockBaseRail.java.
 
-	// [BUG-047, метка отложенности F-hook-removed СНЯТА 2026-08-06] Скорости рельсов ВЫШЕ движковых 0.4 (Ti 1.2 и далее):
-	// кламп смещения захардкожен ВНУТРИ OldMinecartBehavior.moveAlongTrack:208-211 через getMaxSpeed:410-411 —
-	// пост-событием не поднимается. Единственная точка per-cart — поле AbstractMinecart.behavior (private final,
-	// AbstractMinecart:62, назначается конструктором); события/расширения на выбор поведения в 26.1.2 нет.
-	// Подмена рефлексией на входе минкарта в мир — приём прецедентен (IItemProjectile → AbstractArrow.baseDamage,
-	// единственное место чтения на весь мод); подкласс — BlockBaseRail.GT6MinecartBehavior (1:1-формула
-	// min(rail, капа-минкарта-1.2) из EntityMinecart:373-374, там же цитаты). Обе стороны: клиентское плечо кроет
-	// getKnownMovement (производные системы). Experimental-физика (NewMinecartBehavior) НЕ подменяется: её модель
-	// скоростей — своя (канона 1.7.10 у неё нет), там остаётся запасной пост-кламп из onMinecartPassBridge.
-	private static java.lang.reflect.Field sMinecartBehaviorField = null;
-	private static Object minecartBehavior(net.minecraft.world.entity.vehicle.AbstractMinecart aCart) {
-		try {
-			if (sMinecartBehaviorField == null) {
-				sMinecartBehaviorField = net.minecraft.world.entity.vehicle.AbstractMinecart.class.getDeclaredField("behavior");
-				sMinecartBehaviorField.setAccessible(true);
-			}
-			return sMinecartBehaviorField.get(aCart);
-		} catch (Throwable e) {return null;}
-	}
-	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onMinecartJoinBridge(EntityJoinLevelEvent aEvent) {
-		if (!(aEvent.getEntity() instanceof net.minecraft.world.entity.vehicle.AbstractMinecart tCart)) return;
-		if (net.minecraft.world.entity.vehicle.AbstractMinecart.useExperimentalMovement(tCart.level())) return;
-		try {
-			Object tBehavior = minecartBehavior(tCart);
-			if (tBehavior == null || tBehavior instanceof gregapi.block.misc.BlockBaseRail.GT6MinecartBehavior) return;
-			sMinecartBehaviorField.set(tCart, new gregapi.block.misc.BlockBaseRail.GT6MinecartBehavior(tCart));
-		} catch (Throwable e) {e.printStackTrace(ERR);}
-	}
 
 	// BUG-090: поведение GT6-зельев-эффектов, жившее в 1.7.10 в обработчиках Immersive Engineering
 	// (EventHandler.java:387-408, декомпил-референс ImmersiveEngineering-1.7.10/ в дереве проекта) — сами
 	// эффекты теперь регистрирует GT6 (gregapi/potion/MobEffectsGT, «функция, не авторство»), обработчики
-	// продублированы 1:1 в этом же едином центре подписки. LivingHurtEvent (1.7.10) в neo не существует —
-	// модифицируемая величина урона до брони = LivingIncomingDamageEvent.setAmount (сверено,
-	// neoforge-decompiled/.../LivingIncomingDamageEvent.java); приоритет LOWEST — как у IE-оригинала.
+	// продублированы 1:1 в этом же едином центре подписки. Ветка 1.20.1: LivingHurtEvent на месте — то есть
+	// носитель тот же, что был у IE в 1.7.10 (в 26.x его роль играл LivingIncomingDamageEvent);
+	// приоритет LOWEST — как у IE-оригинала.
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onLivingHurtPotionsGT(LivingIncomingDamageEvent aEvent) {
+	public void onLivingHurtPotionsGT(LivingHurtEvent aEvent) {
 		MobEffectInstance tEffect;
 		// 1:1 IE EventHandler.java:390-395: урон огнём × (1.5 + amp²·0.5) при эффекте flammable.
 		if (aEvent.getSource().is(DamageTypeTags.IS_FIRE) && (tEffect = aEvent.getEntity().getEffect(gregapi.potion.MobEffectsGT.FLAMMABLE)) != null) {
@@ -818,14 +773,12 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	}
 
 	// Было @SubscribeEvent onLivingUpdate(LivingUpdateEvent) — LivingUpdateEvent (net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent,
-	// 1.7.10) в neo не существует (сверено: net.minecraftforge.event.entity.living.LivingEvent.java содержит только LivingJumpEvent/
-	// LivingVisibilityEvent). Реальный per-tick хук для любой Entity (в т.ч. LivingEntity) — EntityTickEvent.Post, "fired once per game tick,
-	// per entity, after the entity performs work" (сверено, net.neoforged.neoforge.event.tick.EntityTickEvent.java) — вызывается из хвоста
-	// Entity#tick() (не только LivingEntity), поэтому добавлена explicit instanceof-проверка (диспетчер стал шире, тело обработчика — 1:1).
+	// 1.7.10). Ветка 1.20.1: имя вернулось почти дословно — LivingEvent.LivingTickEvent (LivingEvent.java:53),
+	// тот же per-tick хук ровно для LivingEntity, что и LivingUpdateEvent оригинала. Диспетчер снова точный,
+	// instanceof-расширение 26.x (там пришлось брать общий EntityTickEvent) не требуется.
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onLivingUpdate(EntityTickEvent.Post aEvent) {
-		if (!(aEvent.getEntity() instanceof LivingEntity)) return;
-		LivingEntity aEntityLiving = (LivingEntity)aEvent.getEntity();
+	public void onLivingUpdate(LivingEvent.LivingTickEvent aEvent) {
+		LivingEntity aEntityLiving = aEvent.getEntity();
 
 		int
 		tX = UT.Code.roundDown(aEntityLiving.getX()),
@@ -889,9 +842,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (aEntityLiving.invulnerableTime > 0) {
 					// Minoshroom
 					if (MD.TF.mLoaded && aEntityLiving instanceof EntityTFMinoshroom) {
-						// Once damaged, the Minoshroom will not stay bound to its Room! (было detachHome() — 1.7.10 EntityCreature;
-						// neo PathfinderMob/Mob-эквивалент снятия домашней привязки — setHomeTo(BlockPos.ZERO, -1) (сверено, Mob.java: homeRadius==-1 ⇒ isWithinHome() всегда true).
-						((PathfinderMob)aEntityLiving).setHomeTo(BlockPos.ZERO, -1);
+						// Once damaged, the Minoshroom will not stay bound to its Room! (1.7.10 detachHome();
+						// 1.20.1 — PathfinderMob.restrictTo(BlockPos,int) с радиусом -1: PathfinderMob.java, hasRestriction()==false)
+						((PathfinderMob)aEntityLiving).restrictTo(BlockPos.ZERO, -1);
 						// Minoshroom surprise charge through the Fenced Gateways!
 						for (int iX = tX-15, eX = tX+15; iX <= eX; iX++) for (int iZ = tZ-15, eZ = tZ+15; iZ <= eZ; iZ++) for (int iY = tY+1, eY = tY+3; iY <= eY; iY++) {
 							if (WD.block(aEntityLiving.level(), iX, iY, iZ) == Blocks.OAK_FENCE) {
@@ -1016,19 +969,20 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		}
 	}
 	
-	// Было cpw.mods.fml.common.gameevent.PlayerEvent.ItemPickupEvent (1.7.10) — не существует в neo. Реальный neo-эквивалент
-	// "игрок успешно подобрал предмет" — ItemEntityPickupEvent.Post (сверено, net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent.java).
+	// Ветка 1.20.1: событие «игрок успешно подобрал предмет» носит то же имя, что в 1.7.10 —
+	// PlayerEvent.ItemPickupEvent (PlayerEvent.java), с getStack()/getOriginalEntity().
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onPlayerItemPickupEvent(ItemEntityPickupEvent.Post aEvent) {
-		ST.check(aEvent.getPlayer(), aEvent.getItemEntity().getItem());
+	public void onPlayerItemPickupEvent(net.minecraftforge.event.entity.player.PlayerEvent.ItemPickupEvent aEvent) {
+		ST.check(aEvent.getEntity(), aEvent.getStack());
 	}
 
 	private int BEAR_INVENTORY_COOL_DOWN = 5;
 
-	// Было aEvent.phase == Phase.END (1.7.10 TickEvent) — neo PlayerTickEvent раскладывает Pre/Post на подклассы, Post уже "после тика" (сверено, PlayerTickEvent.java).
+	// Ветка 1.20.1: фаза снова поле события — aEvent.phase == Phase.END, как в 1.7.10 (TickEvent.java:24-29).
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onPlayerTickEvent(PlayerTickEvent.Post aEvent) {
-		Player aPlayer = aEvent.getEntity();
+	public void onPlayerTickEvent(PlayerTickEvent aEvent) {
+		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
+		Player aPlayer = aEvent.player;
 		if (!aPlayer.isRemoved()) {
 
 		////if (aPlayer.worldObj.provider instanceof WorldProviderTwilightForest) {
@@ -1261,14 +1215,18 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// getPlayer()/getChunk(); getChunk() отдаёт LevelChunk напрямую, повторный getChunkFromChunkCoords(...) по x/z больше не нужен.
 	// tChunk.isTerrainPopulated (1.7.10 генерация-флаг) в neo не существует (impossible-1:1) — просматриваемые чанки ВСЕГДА
 	// FULL-статуса, проверка не нужна (опущена верно); chunkTileEntityMap → getBlockEntities().
-	// ⚠ КАНОН neo (ChunkWatchEvent.java:64-65): Watch = чанк лишь ПОСТАВЛЕН В ОЧЕРЕДЬ — «must NOT be used to send
-	// additional chunk-related data to the client as the client will not be aware of the chunk yet»; для данных — Sent.
-	// На Watch GT6-пакеты BE прилетали РАНЬШЕ чанка → клиент дропал их (блока ещё нет) → клиент-BE worldgen-MTE
-	// (камешки/палки) не создавался при ПОВТОРНОМ входе в мир → BER рисовать нечего (репорт игрока 2026-07-19).
+	// Ветка 1.20.1: подсобытия Sent у ChunkWatchEvent НЕТ — в этой версии сам Watch и есть «данные чанка ушли
+	// клиенту»: движок документирует его как «fired when a chunk is added to the watched chunks of a ServerPlayer
+	// AND the chunk's data is sent to the client (ChunkMap#playerLoadedChunk) … may be used to send additional
+	// chunk-related data to the client» (ChunkWatchEvent.java:64-73), и он несёт готовый LevelChunk (:88-91).
+	// То есть момент тот же, что обслуживал Sent в 26.x (разделение Watch/Sent появилось позже 1.20.1).
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onChunkWatchEvent(ChunkWatchEvent.Sent aEvent) {
+	public void onChunkWatchEvent(ChunkWatchEvent.Watch aEvent) {
 		LevelChunk tChunk = aEvent.getChunk();
 		if (tChunk == null) return;
+		// Ветка 1.20.1: карта материалов руды (капабилити чанка) автосинка не имеет — досылаем её тем же моментом,
+		// каким её слал neo-attachment (см. PrefixBlockOreMap).
+		gregapi.block.prefixblock.PrefixBlock.syncOreMap(aEvent.getPlayer(), tChunk);
 		// F17: отправка игроку может идти В ТОМ ЖЕ тике, что загрузка чанка, а очередь реконструкции стабов
 		// (STUB_QUEUE) дренируется тиками — ПОСЛЕ отправки. При загрузке чанка MTE-BE рождается как
 		// TileEntityLoaderStub (MTE_TYPE-фабрика, класс из sub-ID недоступен), стаб не ITileEntitySynchronising →
@@ -1312,7 +1270,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	private static void flightWrite(net.minecraft.server.MinecraftServer aServer, String aLine) {
 		if (sFlightBroken) return;
 		try {
-			java.nio.file.Path tDir = aServer.getServerDirectory().resolve("logs");
+			java.nio.file.Path tDir = aServer.getServerDirectory().toPath().resolve("logs"); // 1.20.1: getServerDirectory() отдаёт File
 			java.nio.file.Files.createDirectories(tDir);
 			java.nio.file.Path tFile = tDir.resolve("gt6-flight.csv");
 			if (java.nio.file.Files.exists(tFile) && java.nio.file.Files.size(tFile) > 64L << 20) // ротация 64МБ
@@ -1326,7 +1284,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	private static void flightSample(net.minecraft.server.MinecraftServer aServer) {
 		try {
 			String tNow = java.time.LocalDateTime.now().format(FLIGHT_TS);
-			double tTickMs = aServer.getAverageTickTimeNanos() / 1.0e6;
+			double tTickMs = aServer.getAverageTickTime(); // 1.20.1: getAverageTickTime() уже в миллисекундах
 			Runtime tRt = Runtime.getRuntime();
 			long tUsed = (tRt.totalMemory() - tRt.freeMemory()) >> 20, tMax = tRt.maxMemory() >> 20;
 			StringBuilder tOut = new StringBuilder();
@@ -1492,10 +1450,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		BlockEntity aTileEntity = aWorld.getBlockEntity(aEvent.getPos());
 
-		if (aEvent instanceof PlayerInteractEvent.RightClickBlock aRightClickBlock) { // связывание, т.к. setCanceled объявлен только на конкретных ICancellableEvent-подклассах, не на абстрактном PlayerInteractEvent (сверено, PlayerInteractEvent.java)
+		if (aEvent instanceof PlayerInteractEvent.RightClickBlock aRightClickBlock) {
 			// Fixing a Vanilla Dupe Bug with stacked Music Discs and the Jukebox.
 			if (aTileEntity instanceof JukeboxBlockEntity) {
-				ItemStack tStack = ((JukeboxBlockEntity)aTileEntity).getTheItem(); // было func_145856_a() (1.7.10 SRG) — neo: getTheItem() (сверено, JukeboxBlockEntity.java)
+				ItemStack tStack = ((JukeboxBlockEntity)aTileEntity).getItem(0); // 1.20.1: JukeboxBlockEntity implements Container, пластинка — слот 0 (JukeboxBlockEntity.java)
 				if (tStack != null) tStack.setCount(1);
 				return;
 			}
@@ -1595,7 +1553,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						long tDamage = IBlockToolable.Util.onToolClickWithoutCompat(TOOL_crowbar, Long.MAX_VALUE, 2, aPlayer, tChatReturn, aPlayer.getInventory(), aPlayer.isShiftKeyDown(), aStack, aPlayer.level(), aFace, aX, aY, aZ, 0.5F, 0.5F, 0.5F);
 						UT.Entities.sendchat(aPlayer, tChatReturn, F);
 						if (tDamage > 0) {
-							aStack.hurtAndBreak((int)UT.Code.units(tDamage, 10000, 1, T), aPlayer, InteractionHand.MAIN_HAND); // было damageItem(int,EntityLivingBase) (1.7.10) — neo: hurtAndBreak(int,LivingEntity,InteractionHand) (сверено, ItemStack.java:524)
+							aStack.hurtAndBreak((int)UT.Code.units(tDamage, 10000, 1, T), aPlayer, tBroken -> tBroken.broadcastBreakEvent(InteractionHand.MAIN_HAND)); // было damageItem(int,EntityLivingBase) (1.7.10) — 1.20.1: hurtAndBreak(int,LivingEntity,Consumer<T>) — канал «сломался» вместо руки
 							if (aStack.getDamageValue() >= aStack.getMaxDamage()) ST.use(aPlayer, aStack);
 							aRightClickBlock.setCanceled(T);
 						}
@@ -1607,7 +1565,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						long tDamage = IBlockToolable.Util.onToolClickWithoutCompat(TOOL_scoop, Long.MAX_VALUE, 0, aPlayer, tChatReturn, aPlayer.getInventory(), aPlayer.isShiftKeyDown(), aStack, aWorld, aFace, aX, aY, aZ, 0.5F, 0.5F, 0.5F);
 						UT.Entities.sendchat(aPlayer, tChatReturn, F);
 						if (tDamage > 0) {
-							aStack.hurtAndBreak((int)UT.Code.units(tDamage, 10000, 1, T), aPlayer, InteractionHand.MAIN_HAND); // было damageItem(int,EntityLivingBase) (1.7.10) — neo: hurtAndBreak(int,LivingEntity,InteractionHand) (сверено, ItemStack.java:524)
+							aStack.hurtAndBreak((int)UT.Code.units(tDamage, 10000, 1, T), aPlayer, tBroken -> tBroken.broadcastBreakEvent(InteractionHand.MAIN_HAND)); // было damageItem(int,EntityLivingBase) (1.7.10) — 1.20.1: hurtAndBreak(int,LivingEntity,Consumer<T>) — канал «сломался» вместо руки
 							if (aStack.getDamageValue() >= aStack.getMaxDamage()) ST.use(aPlayer, aStack);
 							aRightClickBlock.setCanceled(T);
 						}
@@ -1619,7 +1577,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						long tDamage = IBlockToolable.Util.onToolClickWithoutCompat(TOOL_igniter, Long.MAX_VALUE, Long.MAX_VALUE, aPlayer, tChatReturn, aPlayer.getInventory(), aPlayer.isShiftKeyDown(), aStack, aWorld, aFace, aX, aY, aZ, 0.5F, 0.5F, 0.5F);
 						UT.Entities.sendchat(aPlayer, tChatReturn, F);
 						if (tDamage > 0) {
-							aStack.hurtAndBreak((int)UT.Code.units(tDamage, 10000, 1, T), aPlayer, InteractionHand.MAIN_HAND); // было damageItem(int,EntityLivingBase) (1.7.10) — neo: hurtAndBreak(int,LivingEntity,InteractionHand) (сверено, ItemStack.java:524)
+							aStack.hurtAndBreak((int)UT.Code.units(tDamage, 10000, 1, T), aPlayer, tBroken -> tBroken.broadcastBreakEvent(InteractionHand.MAIN_HAND)); // было damageItem(int,EntityLivingBase) (1.7.10) — 1.20.1: hurtAndBreak(int,LivingEntity,Consumer<T>) — канал «сломался» вместо руки
 							if (aStack.getDamageValue() >= aStack.getMaxDamage()) ST.use(aPlayer, aStack);
 							UT.Sounds.send(SFX.MC_IGNITE, aWorld, aX, aY, aZ);
 							aRightClickBlock.setCanceled(T);
@@ -1674,7 +1632,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							if (tList != null) for (IBehavior<MultiItem> tBehavior : tList) {
 								if (tBehavior instanceof Behavior_Gun) {
 									if (((Behavior_Gun) tBehavior).reloadGun(tStack, aPlayer, T)) {
-										((ICancellableEvent)aEvent).setCanceled(T); // RightClickBlock и RightClickItem оба реализуют ICancellableEvent (сверено, PlayerInteractEvent.java)
+										aEvent.setCanceled(T); // 1.20.1: setCanceled объявлен на самом Event (@Cancelable), приведения не требуется
 										return;
 									}
 								}
@@ -1686,13 +1644,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		}
 	}
 	
-	// UseHoeEvent (1.7.10, world/x/y/z/entityPlayer поля) не существует в neo — заменён общим BlockToolModificationEvent (ЛЮБАЯ
-	// ItemAbility, не только мотыга — сверено, net.minecraftforge.event.level.BlockEvent.java), поэтому добавлена явная проверка
-	// getItemAbility()==ItemAbilities.HOE_TILL. F6 (1:1): 1.7.10 «Blocks.dirt && metadata!=0» (coarse=1/podzol=2) → в neo это
+	// UseHoeEvent (1.7.10, world/x/y/z/entityPlayer поля) в 1.20.1 не существует — заменён общим BlockToolModificationEvent
+	// (ЛЮБОЕ ToolAction, не только мотыга — BlockEvent.java:432), поэтому добавлена явная проверка
+	// getToolAction()==ToolActions.HOE_TILL. F6 (1:1): 1.7.10 «Blocks.dirt && metadata!=0» (coarse=1/podzol=2) → в neo это
 	// ОТДЕЛЬНЫЕ Block-типы Blocks.COARSE_DIRT/Blocks.PODZOL (не метадата dirt) — точный набор, не переизобретение. Восстановлено.
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onUseHoeEvent(net.minecraftforge.event.level.BlockEvent.BlockToolModificationEvent aEvent) {
-		if (aEvent.getItemAbility() == net.neoforged.neoforge.common.ItemAbilities.HOE_TILL && (aEvent.getState().getBlock() == Blocks.COARSE_DIRT || aEvent.getState().getBlock() == Blocks.PODZOL)) aEvent.setCanceled(T);
+		if (aEvent.getToolAction() == net.minecraftforge.common.ToolActions.HOE_TILL && (aEvent.getState().getBlock() == Blocks.COARSE_DIRT || aEvent.getState().getBlock() == Blocks.PODZOL)) aEvent.setCanceled(T);
 	}
 
 	// F12: blast-resistant-mob-spawners (golden mob_spawner.setResistance(6000000) = blast-immune). neo Properties immutable →
@@ -1703,33 +1661,15 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	}
 	
 	// BUG-071 ПАРНАЯ ПОЛОВИНА МОСТА ДОБЫЧИ (к onBlockBreakSpeedEvent ниже): ПРАВО на дроп.
-	// Дословный перенос Forge 1.7.10 ForgeHooks.canHarvestBlock (recompSrc ForgeHooks.java:95-116) — тот самый метод,
-	// которым 1.7.10 и решал вопрос: материал без требования → можно; нет стека/типа → ванильный вердикт; уровень
-	// инструмента < 0 (класс предмету чужой) → ванильный вердикт; иначе сравнение УРОВНЕЙ.
-	// Почему это вообще понадобилось: в neo правило считается БЕЗ позиции (Item.isCorrectToolForDrops(stack,state)),
-	// а у GT6 подтип блока живёт в BlockEntity — на этом пути мета вырождается в 0, и требуемый уровень становился
-	// нулевым для ВСЕХ руд и машин (BUG-071, замер gt6harvestprobe). Событие HarvestCheck позицию несёт (PlayerEvent
-	// .HarvestCheck:getPos), и движок ходит именно через него: ServerPlayerGameMode:291 → BlockState.canHarvestBlock
-	// (level,pos,player) → IBlockExtension:216 → EventHooks.doPlayerHarvestCheck. Одна точка на весь мод — как и
-	// соседний BreakSpeed-мост, который Грегориус завёл ровно для такой же цели (скорость).
-	// Трогаем ТОЛЬКО блоки GT6 (контракт IBlock): чужие блоки судит движок, как и раньше.
-	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onPlayerHarvestCheckEvent(PlayerEvent.HarvestCheck aEvent) {
-		try {
-			net.minecraft.world.level.block.state.BlockState tState = aEvent.getTargetBlock();
-			Block tBlock = tState.getBlock();
-			if (!(tBlock instanceof gregapi.block.IBlock)) return;
-			if (WD.getMaterial(tBlock).isToolNotRequired()) {aEvent.setCanHarvest(T); return;} // :97-100
-			net.minecraft.core.BlockPos tPos = aEvent.getPos();
-			net.minecraft.world.level.BlockGetter tWorld = aEvent.getLevel();
-			ItemStack tStack = aEvent.getEntity().getMainHandItem();
-			String tTool = WD.harvestTool(tBlock, WD.meta(tWorld, tPos.getX(), tPos.getY(), tPos.getZ()));
-			if (ST.invalid(tStack) || !UT.Code.stringValid(tTool)) return; // :102-107 — ванильный вердикт как есть
-			int tToolLevel = WD.toolLevel(tStack, tTool);
-			if (tToolLevel < 0) return;                                    // :109-113 — класс чужой → ванильный вердикт
-			aEvent.setCanHarvest(tToolLevel >= WD.harvestLevel(tWorld, tPos.getX(), tPos.getY(), tPos.getZ())); // :115
-		} catch (Throwable e) {/* право на дроп не должно ронять разрушение блока */}
-	}
+	// Ветка 1.20.1: обработчика здесь БОЛЬШЕ НЕТ — правило переехало целиком, не сократилось. В 1.20.1
+	// PlayerEvent.HarvestCheck несёт только player + state + success (PlayerEvent.java:69-81): ни getLevel(),
+	// ни getPos(). Без позиции подтип GT6-блока (BlockEntity/карта чанка) недоступен, а именно он и задаёт
+	// требуемый уровень — то есть событие в этой версии НЕ МОЖЕТ быть домом правила ни в каком виде.
+	// Дом — IForgeBlock.canHarvestBlock(BlockState,BlockGetter,BlockPos,Player) (IForgeBlock.java:167-170),
+	// его зовёт тот же движковый путь (Player.hasCorrectToolForDrops -> IForgeBlockState.canHarvestBlock).
+	// Само правило — один центр WD.canHarvestBlock; зовут его пять корней блоков GT6 (все, кто IBlock:
+	// BlockBase, MultiTileEntityBlock, MultiTileEntityBlockInternal, PrefixBlock, BlockFluidBaseGT), то есть
+	// покрытие ровно то же, что давал прежний гейт `instanceof IBlock` в обработчике.
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	@SuppressWarnings("unlikely-arg-type")
@@ -1779,42 +1719,40 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		}
 	}
 
-	// BlockEvent.BreakEvent (1.7.10) не существует в neo (сверено, net.minecraftforge.event.level.BlockEvent.java — нет вложенного
-	// BreakEvent) — расщеплён на BreakBlockEvent (level.block, только cancel-семантика, БЕЗ setExpToDrop) и BlockDropsEvent
-	// (level, несёт getDroppedExperience()/setDroppedExperience(int) — прямой neo-эквивалент старого setExpToDrop). EnchantmentHelper.
-	// getSilkTouchModifier(Player) (1.7.10) удалён — реальный neo: EnchantmentHelper.getItemEnchantmentLevel(Holder<Enchantment>,LivingEntity)
-	// по Holder силы прикосновения из RegistryAccess (сверено, EnchantmentHelper.java:292 + Enchantments.SILK_TOUCH).
+	// Ветка 1.20.1: BlockEvent.BreakEvent на месте и несёт setExpToDrop — то есть форма оригинала 1.7.10 вернулась
+	// дословно (BlockEvent.java:72; расщепление на BreakBlockEvent/BlockDropsEvent было чертой 26.x).
+	// EnchantmentHelper.getSilkTouchModifier(Player) выражается getItemEnchantmentLevel(Enchantment,LivingEntity).
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onBlockBreakingEvent(BlockDropsEvent aEvent) {
+	public void onBlockBreakingEvent(net.minecraftforge.event.level.BlockEvent.BreakEvent aEvent) {
 		if (aEvent.getState().getBlock() instanceof IPrefixBlock) {
-			Holder<Enchantment> tSilkTouch = aEvent.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH);
-			if (aEvent.getBreaker() instanceof LivingEntity aBreaker && EnchantmentHelper.getEnchantmentLevel(tSilkTouch, aBreaker) > 0) aEvent.setDroppedExperience(0);
+			if (net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, aEvent.getPlayer().getMainHandItem()) > 0) aEvent.setExpToDrop(0);
 		}
 	}
 
-	// BlockEvent.HarvestDropsEvent (1.7.10: List<ItemStack> drops, block/blockMetadata/world/x/y/z/harvester/isSilkTouching/fortuneLevel)
-	// не существует в neo — заменён BlockDropsEvent (сверено, net.neoforged.neoforge.event.level.BlockDropsEvent.java), несущим
-	// List<ItemEntity> (не ItemStack) и без отдельных isSilkTouching/fortuneLevel/blockMetadata полей. gregapi.item.multiitem.MultiItemTool
-	// (не мой файл) УЖЕ портирован на этот случай — onHarvestBlockEvent(ArrayList<ItemStack>,...,Player,...,BlockDropsEvent) и
-	// canCollectDropsDirectly(ItemStack,Block,byte) сохраняют старую форму именно как ArrayList<ItemStack> (сверено, MultiItemTool.java) —
-	// поэтому здесь строится локальный ArrayList<ItemStack>-мост поверх ItemEntity-дропов, вся 1.7.10-логика выполняется на нём 1:1,
-	// затем список ItemEntity синхронизируется обратно. isSilkTouching/fortuneLevel считаются через EnchantmentHelper по инструменту.
-	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onBlockHarvestingEvent(BlockDropsEvent aEvent) {
-		ArrayListNoNulls<ItemStack> aDropStacks = new ArrayListNoNulls<>();
-		for (ItemEntity tDropEntity : aEvent.getDrops()) aDropStacks.add(tDropEntity.getItem());
-
-		Level aWorld = aEvent.getLevel();
-		int aX = aEvent.getPos().getX(), aY = aEvent.getPos().getY(), aZ = aEvent.getPos().getZ();
-		// F13-контракт (BUG-016): 1.7.10 HarvestDropsEvent.blockMetadata = мета РАЗРУШЕННОГО блока; в neo блок к этому
-		// моменту уже удалён из мира (meta(aWorld,...)=0 всегда) — мета берётся из снимка состояния события.
-		byte aBlockMeta = WD.meta(aEvent.getState());
-		Entity aHarvesterEntity = aEvent.getBreaker();
-		Holder<Enchantment> tSilkTouchHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH);
-		Holder<Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.BLOCK_FORTUNE);
+	/**
+	 * ЦЕНТР ОБРАБОТКИ ДРОПА БЛОКА — один на весь мод (1.7.10 {@code BlockEvent.HarvestDropsEvent}).
+	 *
+	 * <p><b>Ветка 1.20.1: событие такого рода в движке отсутствует вовсе</b> — ни {@code HarvestDropsEvent}
+	 * (снят движком после 1.7.10), ни {@code BlockDropsEvent} (появился только у NeoForge). Единственный хук
+	 * Forge 1.20.1, получающий СПИСОК ItemStack-дропов произвольного блока, — глобальный модификатор лута
+	 * ({@code net/minecraftforge/common/loot/LootModifier.java:68}, зовётся из
+	 * {@code ForgeHooks.java:1187-1188}). Он покрывает всё, что дропается лут-таблицей, то есть ванильные и
+	 * чужие блоки. Собственные блоки GT6 лут-таблиц не имеют (их {@code getDrops(BlockState,LootParams.Builder)}
+	 * отдаёт список сам — {@code BlockBase}, {@code PrefixBlock}, {@code BlockBaseRail}) и зовут этот центр
+	 * напрямую. Два вызывателя, ОДНО правило — копии логики не заводится.</p>
+	 *
+	 * <p>Список — {@code List<ItemStack>}, как у оригинала (26.x-ветка перекладывала его из {@code ItemEntity}
+	 * и обратно; здесь перекладывать нечего). {@code isSilkTouching}/{@code fortuneLevel} считаются по добытчику,
+	 * как считала 26.x-ветка; мета — из снимка {@code BlockState} (BUG-016: блока в мире уже нет).</p>
+	 */
+	public static void processBlockDrops(java.util.List<ItemStack> aDropStacks_, Level aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, Entity aHarvesterEntity) {
+		int aX = aPos.getX(), aY = aPos.getY(), aZ = aPos.getZ();
+		byte aBlockMeta = WD.meta(aState);
+		// MultiItemTool.onHarvestBlockEvent требует ArrayList (форма оригинала) — мост-обёртка, содержимое общее
+		ArrayList<ItemStack> aDropStacks = aDropStacks_ instanceof ArrayList<ItemStack> tList ? tList : new ArrayList<>(aDropStacks_);
 
 		Iterator<ItemStack> aDrops = aDropStacks.iterator();
-		Block aBlock = (aEvent.getState().getBlock() == Blocks.REDSTONE_ORE ? Blocks.REDSTONE_ORE : aEvent.getState().getBlock() == Blocks.REDSTONE_LAMP ? Blocks.REDSTONE_LAMP : aEvent.getState().getBlock() == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore ? BlocksGT.EtFu_Deepslate_Redstone_Ore : aEvent.getState().getBlock());
+		Block aBlock = (aState.getBlock() == Blocks.REDSTONE_ORE ? Blocks.REDSTONE_ORE : aState.getBlock() == Blocks.REDSTONE_LAMP ? Blocks.REDSTONE_LAMP : aState.getBlock() == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore ? BlocksGT.EtFu_Deepslate_Redstone_Ore : aState.getBlock());
 
 		while (aDrops.hasNext()) {
 			ItemStack aDrop = aDrops.next();
@@ -1823,14 +1761,14 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (FORCE_GRAVEL_NO_FLINT && aBlock == Blocks.GRAVEL && ST.item_(aDrop) == Items.FLINT) ST.set(aDrop, ST.make(Blocks.GRAVEL, 1, 0), T, F);
 		}
 
-		if (aBlock == null) {aEvent.getDrops().clear(); for (ItemStack tStack : aDropStacks) if (ST.valid(tStack)) aEvent.getDrops().add(new ItemEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, tStack)); return;}
+		if (aBlock == null) return;
 
 		if (aBlock == Blocks.COARSE_DIRT) for (int i = 0, j = aDropStacks.size(); i < j; i++) if (ST.block(aDropStacks.get(0)) == Blocks.DIRT) {
 			aDropStacks.set(i, ST.make(Blocks.COARSE_DIRT, aDropStacks.get(i).getCount(), 0));
 		}
 
-		boolean aIsSilkTouching = aHarvesterEntity instanceof LivingEntity aHarvesterLiving0 && EnchantmentHelper.getEnchantmentLevel(tSilkTouchHolder, aHarvesterLiving0) > 0;
-		int aFortuneLevel = aHarvesterEntity instanceof LivingEntity aHarvesterLiving1 ? EnchantmentHelper.getEnchantmentLevel(tFortuneHolder, aHarvesterLiving1) : 0;
+		boolean aIsSilkTouching = aHarvesterEntity instanceof LivingEntity aHarvesterLiving0 && EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, aHarvesterLiving0) > 0;
+		int aFortuneLevel = aHarvesterEntity instanceof LivingEntity aHarvesterLiving1 ? EnchantmentHelper.getEnchantmentLevel(Enchantments.BLOCK_FORTUNE, aHarvesterLiving1) : 0;
 
 		if (IL.TF_Mushgloom_Huge.equal(aBlock)) {
 			aDropStacks.clear();
@@ -1846,7 +1784,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				tCanCollect = (ST.item_(aTool) instanceof MultiItemTool && ((MultiItemTool)ST.item_(aTool)).canCollectDropsDirectly(aTool, aBlock, aBlockMeta));
 
 				if (ST.item_(aTool) instanceof MultiItemTool) {
-					((MultiItemTool)ST.item_(aTool)).onHarvestBlockEvent(aDropStacks, aTool, aHarvester, aBlock, aX, aY, aZ, aBlockMeta, aFortuneLevel, aIsSilkTouching, aEvent);
+					((MultiItemTool)ST.item_(aTool)).onHarvestBlockEvent(aDropStacks, aTool, aHarvester, aBlock, aX, aY, aZ, aBlockMeta, aFortuneLevel, aIsSilkTouching);
 				}
 
 				for (ItemStack tDrop : aDropStacks) {
@@ -1880,7 +1818,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				// EntityItem — потому и промахнулся греп). Синтетический ItemEntity (ST.entity_ НЕ спавнит в мир —
 				// ST.java:615, без addFreshEntity → дюпа нет) постится в ItemEntityPickupEvent.Pre — 1:1-аналог 1.7.10
 				// EntityItemPickupEvent («спросить другие моды, не перехватят ли подбор», сверено ItemEntityPickupEvent.java).
-				// Маппинг движка (F-адаптация на его уровне): Result.ALLOW → canPickup()==TriState.TRUE; isDead → isRemoved().
+				// Ветка 1.20.1: событие снова EntityItemPickupEvent с Result.ALLOW — форма 1.7.10 дословно (isDead → isRemoved()).
 				// Строки оригинала isDead=F/=T опущены: ST.entity-синтетик по дефолту не removed и в мир не добавлен
 				// (эфемерен, GC) — поведение тождественно. Не перехватил никто → ST.add кладёт в инвентарь игрока (+звук).
 				if (tCanCollect && !aDropStacks.isEmpty()) {
@@ -1892,10 +1830,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							aDrop = ST.update(aDrop, aWorld, aX, aY, aZ);
 							ItemEntity tEntity = ST.entity(aHarvester, aDrop);
 							if (tEntity != null) {
-								ItemEntityPickupEvent.Pre tEvent = new ItemEntityPickupEvent.Pre(aHarvester, tEntity);
-								ST.set(aDrop, tEvent.getItemEntity().getItem(), T, T);
+								net.minecraftforge.event.entity.player.EntityItemPickupEvent tEvent = new net.minecraftforge.event.entity.player.EntityItemPickupEvent(aHarvester, tEntity);
+								ST.set(aDrop, tEvent.getItem().getItem(), T, T);
 								MinecraftForge.EVENT_BUS.post(tEvent);
-								if (tEvent.canPickup() == TriState.TRUE || tEntity.isRemoved() || aDrop.getCount() <= 0 || ST.invalid(aDrop)) {
+								if (tEvent.getResult() == net.minecraftforge.eventbus.api.Event.Result.ALLOW || tEntity.isRemoved() || aDrop.getCount() <= 0 || ST.invalid(aDrop)) {
 									aDrops.remove();
 								} else if (ST.add(aHarvester, aDrop)) {
 									aDrops.remove();
@@ -1912,8 +1850,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			ST.denull(aHarvester);
 		}
 
-		aEvent.getDrops().clear();
-		for (ItemStack tStack : aDropStacks) if (ST.valid(tStack)) aEvent.getDrops().add(new ItemEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, tStack));
+		// список правился на месте — снимаем опустевшие записи, как это делал конвейер 1.7.10
+		aDropStacks.removeIf(tStack -> !ST.valid(tStack));
+		if (aDropStacks != aDropStacks_) {aDropStacks_.clear(); aDropStacks_.addAll(aDropStacks);}
 	}
 	
 	// EntityJoinLevelEvent.entity (1.7.10 через словарь-переименование) — приватное поле в neo, getEntity() (сверено, EntityEvent.java).
@@ -2058,7 +1997,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		// worldgen-потока → "Loading terrain…" висит навсегда (стек: NaturalSpawner.spawnMobsForChunkGeneration →
 		// onCheckSpawnEvent → WD.opq → Level.getBlockState → getChunk.join). GT6-защиты спавна — ГЕЙМПЛЕЙНЫЕ (ген-фаза
 		// ставит лишь стартовых пассивных мобов); в ген-контексте хендлер пропускаем, обычный спавн (ServerLevel) — 1:1.
-		if (aEvent.getSpawnType() == net.minecraft.world.entity.EntitySpawnReason.CHUNK_GENERATION) return;
+		if (aEvent.getSpawnType() == net.minecraft.world.entity.MobSpawnType.CHUNK_GENERATION) return;
 		Class<? extends LivingEntity> aMobClass = aEvent.getEntity().getClass();
 		Level aWorld = aEvent.getEntity().level();
 		int aX = UT.Code.roundDown(aEvent.getX()), aY = (int)UT.Code.bind(WD.minY(aWorld), WD.topY(aWorld), UT.Code.roundDown(aEvent.getY())), aZ = UT.Code.roundDown(aEvent.getZ()); // BUG-089: было bind(0, getHeight()) — спавн на Y<0 кламплся к нулю, проверки судили чужую позицию
@@ -2089,9 +2028,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (UT.Code.inside(  0,  48, aX) && UT.Code.inside(-64, -16, aZ)) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
 			}
 			if (GENERATE_STREETS && (UT.Code.inside(-48, 48, aX) || UT.Code.inside(-48, 48, aZ))) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
-			// EVENTS: 1.7.10 World.getWorldInfo().getSpawnX()/getSpawnZ() → neo Level.getLevelData().getRespawnData().globalPos().pos()
-			// (мислейбл был: «методов нет» — на деле переименовано в RespawnData). SPAWN_ZONE_MOB_PROTECTION восстановлено 1:1.
-			net.minecraft.core.BlockPos tSpawn = aWorld.getLevelData().getRespawnData().globalPos().pos();
+			// Ветка 1.20.1: форма 1.7.10 дословно — LevelData.getXSpawn()/getYSpawn()/getZSpawn() (LevelData.java:10-34).
+			net.minecraft.core.BlockPos tSpawn = new net.minecraft.core.BlockPos(aWorld.getLevelData().getXSpawn(), aWorld.getLevelData().getYSpawn(), aWorld.getLevelData().getZSpawn());
 			if (SPAWN_ZONE_MOB_PROTECTION && UT.Code.inside(-144, 144, aX-tSpawn.getX()) && UT.Code.inside(-144, 144, aZ-tSpawn.getZ()) && WD.opq(aWorld, aX, 0, aZ, F, F)) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
 		}
 
@@ -2173,7 +2111,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FLAMING_ARROWS, aEvent.getBow());
 			if (tLevel > 0) tArrowEntity.setSecondsOnFire(tLevel * 100);
 
-			aEvent.getBow().hurtAndBreak(1, aPlayer, InteractionHand.MAIN_HAND); // было damageItem(int,EntityLivingBase) (1.7.10) — neo: hurtAndBreak(int,LivingEntity,InteractionHand) (сверено, ItemStack.java:524)
+			aEvent.getBow().hurtAndBreak(1, aPlayer, tBroken -> tBroken.broadcastBreakEvent(InteractionHand.MAIN_HAND)); // было damageItem(int,EntityLivingBase) (1.7.10) — 1.20.1: hurtAndBreak(int,LivingEntity,Consumer<T>) — канал «сломался» вместо руки
 			aEvent.getBow().getItem();
 			UT.Sounds.send("random.bow", 1.0F, 1.0F / (RNGSUS.nextFloat() * 0.4F + 1.2F) + tSpeed * 0.5F, aPlayer);
 

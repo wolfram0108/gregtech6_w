@@ -322,11 +322,16 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		int tX = net.minecraft.util.Mth.floor(tOrigin.x), tY = net.minecraft.util.Mth.floor(tOrigin.y), tZ = net.minecraft.util.Mth.floor(tOrigin.z);
 		int tFortune = 0;
 		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);
-		if (tEntity instanceof net.minecraft.world.entity.LivingEntity tLiving) tFortune = net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantmentLevel(tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE), tLiving);
+		if (tEntity instanceof net.minecraft.world.entity.LivingEntity tLiving) tFortune = net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE, tLiving);
 		// BUG-026 (тот же F13-класс, что BUG-016): сухое/заплесневелое/сгнившее сено давало мокрый Grass Bale (вариант .0),
 		// т.к. WD.meta(мир) читал уже-air = 0. Мета из снимка aState — тот же готовый мост WD.meta(BlockState) (WD.java:828).
 		ArrayList<ItemStack> rDrops = getDrops(tLevel, tX, tY, tZ, WD.meta(aState), tFortune);
-		return rDrops == null ? java.util.Collections.emptyList() : rDrops;
+		if (rDrops == null) return java.util.Collections.emptyList();
+		// Ветка 1.20.1: собственные блоки GT6 лут-таблиц не имеют, поэтому глобальный модификатор лута
+		// (gregapi/loot/GT6BlockDropsModifier.java) их не видит — обработку дропа зовём из того же ЦЕНТРА напрямую.
+		// Правило одно на оба пути; копии логики не заводится (в 1.7.10 обе ветки шли через HarvestDropsEvent).
+		gregapi.GT_API_Proxy.processBlockDrops(rDrops, tLevel, new BlockPos(tX, tY, tZ), aState, tEntity);
+		return rDrops;
 	}
 	// 1.7.10 Block.getDrops(World,x,y,z,meta,fortune) дефолт: quantityDropped копий ST(getItemDropped,1,damageDropped).
 	// Наследники (BlockBaseLeaves/Stones/RockOres/Grass/Path/...) переопределяют; базовый = блок роняет себя (лог/камень/земля).
@@ -483,4 +488,12 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	}
 	
 	public final int quantityDropped(Random aRandom) {return quantityDropped(0, 0, aRandom);}
+
+	/** BUG-071 (ветка 1.20.1): право на дроп судит ЦЕНТР {@code WD.canHarvestBlock} — здесь только зов.
+	 *  Дом правила переехал с события {@code PlayerEvent.HarvestCheck} (в 1.20.1 оно не несёт ни мира, ни
+	 *  позиции — {@code PlayerEvent.java:69-81}) в этот хук, который их несёт ({@code IForgeBlock.java:167-170}). */
+	@Override public boolean canHarvestBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.entity.player.Player aPlayer) {
+		return gregapi.util.WD.canHarvestBlock(aState, aWorld, aPos, aPlayer);
+	}
+
 }

@@ -203,7 +203,7 @@ public class WD {
 		// (VoxelShape.java:39,81); пустой шейп = старое null-возврату (нет коллизии).
 		VoxelShape tObstrShape = tObstrState.getCollisionShape(aWorld, tObstrPos);
 		if (tObstrShape.isEmpty()) return F;
-		AABB tBoundingBox = tObstrShape.move(tObstrPos).bounds();
+		AABB tBoundingBox = tObstrShape.move(tObstrPos.getX(), tObstrPos.getY(), tObstrPos.getZ()).bounds();
 		switch(aSide) {
 		case 0: return tBoundingBox.maxY-aY > PX_N[4] && tBoundingBox.maxX-aX > PX_P[2] && tBoundingBox.minX-aX < PX_N[2] && tBoundingBox.maxZ-aZ > PX_P[2] && tBoundingBox.minZ-aZ < PX_N[2];
 		case 1: return tBoundingBox.minY-aY < PX_P[4] && tBoundingBox.maxX-aX > PX_P[2] && tBoundingBox.minX-aX < PX_N[2] && tBoundingBox.maxZ-aZ > PX_P[2] && tBoundingBox.minZ-aZ < PX_N[2];
@@ -227,7 +227,7 @@ public class WD {
 		float  tX     =  Mth.sin(-tYaw   * 0.017453292F - (float)Math.PI);
 		float  tW     = -Mth.cos(-tPitch * 0.017453292F);
 		float  tY     =  Mth.sin(-tPitch * 0.017453292F);
-		double tReach = (aPlayer instanceof ServerPlayer ? ((ServerPlayer)aPlayer).blockInteractionRange() : 5);
+		double tReach = 5; // 1.20.1: атрибута/метода дальности ещё нет, движковая константа — 5 (как и фолбэк 26.x-ветки)
 		// было aWorld.func_147447_a(from,to,stopOnLiquid,ignoreBlockWithoutBoundingBox,returnLastUncollidableBlock=F) —
 		// neo: BlockGetter.clip(ClipContext) (BlockGetter.java:65). stopOnLiquid=aFlag -> ClipContext.Fluid.ANY/NONE
 		// (ClipContext.java:96-110, ANY подбирает любую непустую FluidState, NONE — никогда); Block.OUTLINE — тот же
@@ -315,7 +315,13 @@ public class WD {
 		ServerLevel tTargetWorld = null;
 		for (ServerLevel tLevel : tServer.getAllLevels()) if (WD.dimensionId(tLevel) == aDimension) {tTargetWorld = tLevel; break;}
 		if (tTargetWorld == null || tTargetWorld == aEntity.level()) return F;
-		return aEntity.teleportTo(tTargetWorld, aX+0.5, aY+0.5, aZ+0.5, java.util.Set.<net.minecraft.world.entity.Relative>of(), aEntity.getYRot(), aEntity.getXRot(), F);
+		// Ветка 1.20.1: Set<Relative> (26.x) не существует; перенос между мирами — teleportTo(ServerLevel,x,y,z,Set,yaw,pitch)
+		// тоже отсутствует. Форма 1.7.10 — сменить измерение и поставить координаты (ServerLevel.java / Entity.java).
+		if (aEntity instanceof net.minecraft.server.level.ServerPlayer tSP) {tSP.teleportTo(tTargetWorld, aX+0.5, aY+0.5, aZ+0.5, aEntity.getYRot(), aEntity.getXRot()); return T;}
+		net.minecraft.world.entity.Entity tMoved = aEntity.changeDimension(tTargetWorld);
+		if (tMoved == null) return F;
+		tMoved.moveTo(aX+0.5, aY+0.5, aZ+0.5, aEntity.getYRot(), aEntity.getXRot());
+		return T;
 	}
 	
 	
@@ -409,8 +415,8 @@ public class WD {
 		// Для ещё-генерируемого чанка вернёт ProtoChunk (не LevelChunk) → null → запечённый дефолт (анти-дедлок сохранён).
 		// BE читаем из карты чанка (getBlockEntities().get) — чистое чтение без side-effect-создания BE с чужого потока.
 		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
-			net.minecraft.server.level.ChunkHolder tHolder = tSL.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.pack(aX >> 4, aZ >> 4));
-			net.minecraft.world.level.chunk.ChunkAccess tChunk = tHolder == null ? null : tHolder.getLatestChunk();
+			net.minecraft.server.level.ChunkHolder tHolder = tSL.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.asLong(aX >> 4, aZ >> 4));
+			net.minecraft.world.level.chunk.ChunkAccess tChunk = tHolder == null ? null : tHolder.getLastAvailable(); // 1.20.1: ChunkHolder.getLastAvailable()
 			// FULL-чанк может прийти обёрнутым в ImposterProtoChunk — разворачиваем (getWrapped:255).
 			if (tChunk instanceof net.minecraft.world.level.chunk.ImposterProtoChunk tIPC) tChunk = tIPC.getWrapped();
 			return tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC.getBlockEntities().get(new BlockPos(aX, aY, aZ)) : null;
@@ -434,10 +440,11 @@ public class WD {
 	 *  null = чанк не загружен до FULL → для читателей это «воздух/нет», контракт 1.7.10 blockExists+EmptyChunk. */
 	public static net.minecraft.world.level.chunk.LevelChunk chunkNow(Level aWorld, int aChunkX, int aChunkZ) {
 		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
-			net.minecraft.server.level.ChunkHolder tHolder = tSL.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.pack(aChunkX, aChunkZ));
+			net.minecraft.server.level.ChunkHolder tHolder = tSL.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.asLong(aChunkX, aChunkZ));
 			if (tHolder == null) return null;
-			if (tHolder.currentlyLoading != null) return tHolder.currentlyLoading; // neo-патч анти-дедлока: чанк в процессе load
-			net.minecraft.world.level.chunk.ChunkAccess tChunk = tHolder.getChunkIfPresent(net.minecraft.world.level.chunk.ChunkStatus.FULL);
+			// Ветка 1.20.1: поле currentlyLoading у ChunkHolder package-private (обходной путь 26.x недоступен);
+			// лок-фри взгляд даёт getFullChunkNow() — «FULL-чанк уже есть, иначе null», ровно нужный смысл.
+			net.minecraft.world.level.chunk.ChunkAccess tChunk = tHolder.getFullChunkNow();
 			return tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
 		}
 		return aWorld.getChunkSource().getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.ChunkStatus.FULL, F) instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
@@ -488,8 +495,8 @@ public class WD {
 	 *  добавляя свои гейты (MTE — per-TE IMTE_GetPlayerRelativeBlockHardness) поверх. hardness<0 = неразрушим. */
 	public static float destroyProgress(float aHardness, net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos) {
 		if (aHardness < 0) return 0.0F;
-		int tDivider = net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos) ? 30 : 100;
-		return aPlayer.getDestroySpeed(aState, aPos) / aHardness / (float)tDivider;
+		int tDivider = canHarvestBlock(aState, aWorld, aPos, aPlayer) ? 30 : 100; // тот же центр права на дроп, что и у блоков GT6
+		return aPlayer.getDestroySpeed(aState) / aHardness / (float)tDivider;
 	}
 	/** F9-harvest-level ЦЕНТР: 1.7.10 Block.getHarvestLevel(int aMeta) (числовой требуемый уровень добычи 0=дерево/
 	 *  1=камень/2=железо/3=алмаз) удалён по ИМЕНИ, но способность есть под tag-моделью neo. GT6-блок хранит свой уровень
@@ -587,6 +594,41 @@ public class WD {
 		VanillaPassport tPassport = vanillaPassport(aBlock);
 		return tPassport != null && tPassport.mTool() != null ? tPassport.mTool() : "";
 	}
+	/**
+	 * BUG-071 ЦЕНТР ПРАВА НА ДРОП — один на весь мод. Дословный перенос Forge 1.7.10
+	 * {@code ForgeHooks.canHarvestBlock} ({@code gt6-original build/tmp/recompSrc/net/minecraftforge/common/
+	 * ForgeHooks.java:95-116}): материал без требования → можно; нет стека / класс инструмента блоку не задан →
+	 * ванильный вердикт; уровень инструмента &lt; 0 (класс предмету чужой) → ванильный вердикт; иначе сравнение
+	 * УРОВНЕЙ по позиции.
+	 *
+	 * <p><b>Ветка 1.20.1 — сменился ДОМ, не правило.</b> В 26.x единственной точкой был обработчик события
+	 * {@code PlayerEvent.HarvestCheck}, потому что там событие несло мир и позицию. В 1.20.1 оно их не несёт вовсе
+	 * ({@code PlayerEvent.java:69-81} — только player + state + success), а мир с позицией даёт другой хук того же
+	 * движка: {@code IForgeBlock.canHarvestBlock(BlockState, BlockGetter, BlockPos, Player)}
+	 * ({@code IForgeBlock.java:167-170}), и именно через него движок и спрашивает
+	 * ({@code Player.hasCorrectToolForDrops(state, level, pos)} → {@code IForgeBlockState.canHarvestBlock}).
+	 * Поэтому правило переехало сюда, а корни блоков GT6 его лишь зовут.</p>
+	 *
+	 * <p>Зачем оно вообще: без позиции правило считается как {@code Item.isCorrectToolForDrops(stack, state)}, а у
+	 * GT6 подтип блока живёт в BlockEntity/карте чанка — на этом пути мета вырождается в 0, и требуемый уровень
+	 * становился нулевым для ВСЕХ руд и машин (BUG-071, замер gt6harvestprobe).</p>
+	 */
+	public static boolean canHarvestBlock(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.entity.player.Player aPlayer) {
+		try {
+			Block tBlock = aState.getBlock();
+			if (getMaterial(tBlock).isToolNotRequired()) return T;                                                        // :97-100
+			ItemStack tStack = aPlayer.getMainHandItem();
+			String tTool = harvestTool(tBlock, meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));
+			if (gregapi.util.ST.invalid(tStack) || !UT.Code.stringValid(tTool)) return net.minecraftforge.common.ForgeHooks.isCorrectToolForDrops(aState, aPlayer); // :102-107
+			int tToolLevel = toolLevel(tStack, tTool);
+			if (tToolLevel < 0) return net.minecraftforge.common.ForgeHooks.isCorrectToolForDrops(aState, aPlayer);        // :109-113 — класс чужой
+			return tToolLevel >= harvestLevel(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());                              // :115
+		} catch (Throwable e) {
+			// право на дроп не должно ронять разрушение блока — падаем на ванильный вердикт
+			return net.minecraftforge.common.ForgeHooks.isCorrectToolForDrops(aState, aPlayer);
+		}
+	}
+
 	/** F-motion: 1.7.10 WD.motionX(Entity)/Y/Z (public поля) -> neo Vec3 getDeltaMovement()/setDeltaMovement (Entity.java).
 	 *  Покомпонентная запись обязана сохранять две другие оси -> централизуем здесь ОДИН раз (философия §2). */
 	public static double motionX(Entity aEntity) {return aEntity.getDeltaMovement().x;}
@@ -624,8 +666,9 @@ public class WD {
 	public static boolean canSustainPlant(LevelAccessor aWorld, int aX, int aY, int aZ, Direction aSide, Block aPlant) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockState tSoil = state(aWorld, tPos);
-		net.minecraft.util.TriState tDecision = tSoil.getBlock().canSustainPlant(tSoil, aWorld, tPos, aSide, aPlant.defaultBlockState());
-		if (tDecision != net.minecraft.util.TriState.DEFAULT) return tDecision.isTrue();
+		// Ветка 1.20.1: хук отдаёт boolean и принимает IPlantable (Block.java:514) — форма 1.7.10 дословно;
+		// «плант решает сам» (TriState.DEFAULT 26.x) выражается тем, что при false мы идём дальше по своим правилам.
+		if (aPlant instanceof net.minecraftforge.common.IPlantable tPlantable && tSoil.getBlock().canSustainPlant(tSoil, aWorld, tPos, aSide, tPlantable)) return T;
 		Block tSelf = tSoil.getBlock(), tHead = gregapi.data.CS.Flattened.headOf(tSelf);
 		if (tHead == null) tHead = tSelf;
 		if (aPlant == Blocks.CACTUS)      return tSelf == Blocks.CACTUS || tHead == Blocks.SAND;  // кактус-на-кактусе (:2222) + Desert (:2239)
@@ -641,10 +684,11 @@ public class WD {
 		// Plains (:2243) — дефолтный тип BlockBush 1.7.10 (цветы, саженцы, травы)
 		return tSelf == Blocks.GRASS_BLOCK || tHead == Blocks.DIRT || tSelf == Blocks.FARMLAND;
 	}
-	/** F-spawn: 1.7.10 World.setSpawnLocation(x,y,z) -> neo ServerLevel.setRespawnData(RespawnData) (ServerLevel:1507;
-	 *  spawn = GlobalPos+yaw/pitch). Централизованный переходник (worldgen задаёт мир-спавн). Чтение — getRespawnData().pos(). */
+	/** F-spawn: 1.7.10 {@code World.setSpawnLocation(x,y,z)}. Ветка 1.20.1: форма сохранилась почти дословно —
+	 *  {@code ServerLevel.setDefaultSpawnPos(BlockPos, float)} (записи RespawnData из 26.x здесь нет).
+	 *  Централизованный переходник (worldgen задаёт мир-спавн). */
 	public static void setSpawnLocation(LevelAccessor aWorld, int aX, int aY, int aZ) {
-		if (aWorld instanceof net.minecraft.server.level.ServerLevel sl) sl.setRespawnData(new net.minecraft.world.level.storage.LevelData.RespawnData(net.minecraft.core.GlobalPos.of(sl.dimension(), new BlockPos(aX, aY, aZ)), 0.0F, 0.0F));
+		if (aWorld instanceof net.minecraft.server.level.ServerLevel sl) sl.setDefaultSpawnPos(new BlockPos(aX, aY, aZ), 0.0F);
 	}
 	/** F-worldgen: 1.7.10 {@code Arrays.fill(chunk.getBiomeArray(), (byte)Biome.X.biomeID)} — byte-массив биомов удалён;
 	 *  neo хранит биомы в per-section {@code PalettedContainer<Holder<Biome>>} (RO), единственный сеттер —
@@ -1137,7 +1181,7 @@ public class WD {
 			if (tChunk != null) {
 				// П5-замер: статус чанка-приёмника в момент BE-записи (гипотеза сирот: пишем в недогенерированный сосед → его поздние стадии затирают блок)
 				if (aTileEntity instanceof gregapi.block.multitileentity.IMultiTileEntity) {
-					String tStatus = String.valueOf(tChunk.getPersistedStatus());
+					String tStatus = String.valueOf(tChunk.getStatus() /* 1.20.1: ChunkAccess.getStatus() */);
 					sWgBEStatus.merge(tStatus, 1L, Long::sum);
 					if (!"minecraft:full".equals(tStatus) && sWgBESamples.size() < 60)
 						sWgBESamples.add(new Object[]{new BlockPos(aX, aY, aZ), aTileEntity.getClass().getSimpleName(), String.valueOf(block(aWorld, aX, aY, aZ)), tStatus});
@@ -1600,9 +1644,9 @@ public class WD {
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			BlockState tCurChunk = aChunk.getBlockState(tChunkSetPos);
 			BlockState tNewChunk = ((IBlockExtendedMetaData)aBlock).getStateForExtendedMetaData(tCurChunk.getBlock() == aBlock ? tCurChunk : aBlock.defaultBlockState(), Code.bind4(aMeta));
-			if (tNewChunk != null) return aChunk.setBlockState(tChunkSetPos, tNewChunk, Block.UPDATE_ALL) != null;
+			if (tNewChunk != null) return aChunk.setBlockState(tChunkSetPos, tNewChunk, F) != null;
 		}
-		boolean rSet = aChunk.setBlockState(tChunkSetPos, aBlock.defaultBlockState(), Block.UPDATE_ALL) != null;
+		boolean rSet = aChunk.setBlockState(tChunkSetPos, aBlock.defaultBlockState(), F) != null;
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			byte tNewMeta = Code.bind4(aMeta);
 			// мета-канал IBlockExtendedMetaData принимает BlockGetter (IBlockExtendedMetaData.java:28-29); сам ChunkAccess
@@ -1618,7 +1662,7 @@ public class WD {
 	public static boolean set(ChunkAccess aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
 			Block tBlock = aChunk.getBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ)).getBlock(); // было aChunk.getBlock(x,y-1,z)
-			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aChunk.setBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), Block.UPDATE_ALL); // было aChunk.func_150807_a(x,y-1,z,Blocks.DIRT,0)
+			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aChunk.setBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), F); // было aChunk.func_150807_a(x,y-1,z,Blocks.DIRT,0)
 		}
 		return set(aChunk, aX, aY, aZ, aBlock, aMeta);
 	}
@@ -1807,7 +1851,7 @@ public class WD {
 	// если сосед isOpaqueCube() (ПОЛНЫЙ непрозрачный куб). Порт ошибочно взял canOcclude() (WD.opaque) — а он TRUE и для слабов/
 	// лестниц/заборов (они окклюдят ЧАСТИЧНО) → грань GT6-блока против них скрывалась. Верный neo-эквивалент isOpaqueCube =
 	// BlockState.isSolidRender() (=Block.isShapeFullBlock(occlusionShape), BlockBehaviour.java:499) — TRUE только для ПОЛНОГО куба.
-	public static boolean visOpq(Block aBlock) {return aBlock.defaultBlockState().isSolidRender() || VISUALLY_OPAQUE_BLOCKS.contains(aBlock);}
+	public static boolean visOpq(Block aBlock) {return aBlock.defaultBlockState().isSolidRender(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO) || VISUALLY_OPAQUE_BLOCKS.contains(aBlock);} // 1.20.1: isSolidRender берёт (BlockGetter,BlockPos); безпозиционный запрос движок делает через EmptyBlockGetter (BlockBehaviour.java:916)
 	
 	public static boolean occ(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return opq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && opq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && opq(aWorld, aX, aY+1, aZ, T, aDefault) && opq(aWorld, aX, aY-1, aZ, T, aDefault) && opq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && opq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
 	public static boolean opq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? opq(state(aWorld, tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)

@@ -46,8 +46,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.event.RenderBlockScreenEffectEvent;
 import net.minecraftforge.client.event.RenderPlayerEvent;
-
-import java.net.URI;
+import net.minecraftforge.event.TickEvent;
 
 import static gregapi.data.CS.*;
 
@@ -88,7 +87,8 @@ public class GT_Client extends GT_Proxy {
 	private boolean FIRST_CLIENT_PLAYER_TICK = T;
 	
 	/**
-	 * F3 (baked-рендер клиента), шов закрыт: было {@code cpw.mods.fml.common.gameevent.TickEvent.PlayerTickEvent}
+	 * Ветка 1.20.1: форма события вернулась к оригиналу ({@code TickEvent.java:24-29,110-118} — поля
+	 * player/phase/side на месте, фаза END как была). Было {@code cpw.mods.fml.common.gameevent.TickEvent.PlayerTickEvent}
 	 * с публичными полями {@code player}/{@code phase}/{@code side} — neo {@code PlayerTickEvent.Post}
 	 * (`neoforge-decompiled/net/neoforged/neoforge/event/tick/PlayerTickEvent.java:38-46`, "после тика" = старый
 	 * {@code END}) с геттером {@code getEntity()}; фильтр стороны — {@code getEntity().level().isClientSide()}
@@ -107,9 +107,9 @@ public class GT_Client extends GT_Proxy {
 	 * файл" (было {@code ClickEvent.Action.OPEN_FILE}) восстановлена как {@code new ClickEvent.OpenFile(String)}).
 	 */
 	@SubscribeEvent
-	public void onPlayerTickEventClient(PlayerTickEvent.Post aEvent) {
-		Player tPlayer = aEvent.getEntity();
-		if (!tPlayer.isDeadOrDying() && tPlayer.level().isClientSide() && CLIENT_TIME > 20) {
+	public void onPlayerTickEventClient(TickEvent.PlayerTickEvent aEvent) {
+		Player tPlayer = aEvent.player;
+		if (!tPlayer.isDeadOrDying() && aEvent.phase == TickEvent.Phase.END && aEvent.side.isClient() && CLIENT_TIME > 20) {
 			if (tPlayer == GT_API.api_proxy.getThePlayer()) {
 				if (FIRST_CLIENT_PLAYER_TICK) {
 					FIRST_CLIENT_PLAYER_TICK = F;
@@ -118,16 +118,16 @@ public class GT_Client extends GT_Proxy {
 						tPlayer.sendSystemMessage(Component.literal(mMessage));
 						tPlayer.sendSystemMessage(Component.literal(LH.Chat.DGRAY + ""));
 						tLink = Component.literal(LH.Chat.DGRAY + "disable message in the clientside gregtech.cfg");
-						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenFile(ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
+						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
 						tPlayer.sendSystemMessage(tLink);
 					}
 					if (mVersionOutdated) {
 						tPlayer.sendSystemMessage(Component.literal("Major GT6 Update released, for details visit"));
 						tLink = Component.literal(LH.Chat.BLUE + "https://gregtech.mechaenetia.com/1.7.10");
-						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenUrl(URI.create("https://gregtech.mechaenetia.com/1.7.10"))));
+						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gregtech.mechaenetia.com/1.7.10")));
 						tPlayer.sendSystemMessage(tLink);
 						tLink = Component.literal(LH.Chat.DGRAY + "disable checker in the clientside gregtech.cfg");
-						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenFile(ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
+						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
 						tPlayer.sendSystemMessage(tLink);
 					}
 					if (MD.IC2.mLoaded && !MD.IC2C.mLoaded) {
@@ -137,7 +137,7 @@ public class GT_Client extends GT_Proxy {
 								tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + "Please update IndustrialCraft!"));
 								// IC2 Site doesn't support https.
 								tLink = Component.literal(LH.Chat.BLUE + "http://ic2api.player.to:8080/job/IC2_experimental/827/");
-								tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenUrl(URI.create("http://ic2api.player.to:8080/job/IC2_experimental/827/"))));
+								tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "http://ic2api.player.to:8080/job/IC2_experimental/827/")));
 								tPlayer.sendSystemMessage(tLink);
 							}
 						} catch(Throwable e) {/**/}
@@ -156,7 +156,7 @@ public class GT_Client extends GT_Proxy {
 						tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + "Warning! CustomOreGen will screw up all GregTech Worldgen with its Default Configs!"));
 						tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + "If you don't even use CustomOreGen, I would highly recommend you to remove it."));
 						tLink = Component.literal(LH.Chat.DGRAY + "disable warning in the clientside gregtech.cfg");
-						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenFile(ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
+						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
 						tPlayer.sendSystemMessage(tLink);
 					}
 					if (WOODMANS_BDAY) {
@@ -188,20 +188,29 @@ public class GT_Client extends GT_Proxy {
 	@SubscribeEvent
 	public void receiveRenderEvent(RenderBlockScreenEffectEvent aEvent) {
 		if (aEvent.getBlockState().getBlock() == BlocksGT.Swamp) {
-			// 1.7.10 квад болотной пелены дословно (цвет (0, brightness/2, 0, 0.75), UV от yaw/pitch,
-			// плоскость z=-0.5) через канон ScreenEffectRenderer.renderFluid (26.1.2: buffer+RenderTypes.blockScreenEffect).
+			// Ветка 1.20.1: рисование снова immediate-mode, как в 1.7.10. Квад дословно по оригиналу
+			// (gt6-original GT_Client.java:131-149); канон вызова — ScreenEffectRenderer.renderFluid (ScreenEffectRenderer.java:104-128):
+			// тот же шейдер position_tex, тот же формат, тот же порядок вершин. Цвет (0, brightness/2, 0, 0.75) идёт
+			// через RenderSystem.setShaderColor — тем же приёмом, каким его задаёт сам движок (там же, :111), вместо GL11.
 			try {
 				net.minecraft.world.entity.player.Player tPlayer = GT_API.api_proxy.getThePlayer();
 				if (tPlayer != null) {
 					float tBright = tPlayer.getLightLevelDependentMagicValue(); // было getBrightness(partialTicks)
-					int tColor = net.minecraft.util.ARGB.colorFromFloat(0.75F, 0F, tBright / 2F, 0F);
 					float tUo = -tPlayer.getYRot() / 64F, tVo = tPlayer.getXRot() / 64F;
 					org.joml.Matrix4f tPose = aEvent.getPoseStack().last().pose();
-					com.mojang.blaze3d.vertex.VertexConsumer tBuf = aEvent.getBufferSource().getBuffer(net.minecraft.client.renderer.rendertype.RenderTypes.blockScreenEffect(WATER_OVERLAY));
-					tBuf.addVertex(tPose, -1, -1, -0.5F).setUv(4 + tUo, 4 + tVo).setColor(tColor);
-					tBuf.addVertex(tPose,  1, -1, -0.5F).setUv(    tUo, 4 + tVo).setColor(tColor);
-					tBuf.addVertex(tPose,  1,  1, -0.5F).setUv(    tUo,     tVo).setColor(tColor);
-					tBuf.addVertex(tPose, -1,  1, -0.5F).setUv(4 + tUo,     tVo).setColor(tColor);
+					com.mojang.blaze3d.systems.RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexShader);
+					com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, WATER_OVERLAY);
+					com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+					com.mojang.blaze3d.systems.RenderSystem.setShaderColor(0F, tBright / 2F, 0F, 0.75F);
+					com.mojang.blaze3d.vertex.BufferBuilder tBuf = com.mojang.blaze3d.vertex.Tesselator.getInstance().getBuilder();
+					tBuf.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_TEX);
+					tBuf.vertex(tPose, -1, -1, -0.5F).uv(4 + tUo, 4 + tVo).endVertex();
+					tBuf.vertex(tPose,  1, -1, -0.5F).uv(    tUo, 4 + tVo).endVertex();
+					tBuf.vertex(tPose,  1,  1, -0.5F).uv(    tUo,     tVo).endVertex();
+					tBuf.vertex(tPose, -1,  1, -0.5F).uv(4 + tUo,     tVo).endVertex();
+					com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(tBuf.end());
+					com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+					com.mojang.blaze3d.systems.RenderSystem.disableBlend();
 				}
 			} catch (Throwable e) {e.printStackTrace(ERR);}
 			aEvent.setCanceled(T);
@@ -209,12 +218,12 @@ public class GT_Client extends GT_Proxy {
 	}
 
 	@SubscribeEvent
-	public void receiveRenderEvent(RenderPlayerEvent.Pre<?> aEvent) {
+	public void receiveRenderEvent(RenderPlayerEvent.Pre aEvent) {
 //      if (UT.Entities.getFullInvisibility(aEvent.entityPlayer)) {aEvent.setCanceled(true); return;}
 	}
 
 	@SubscribeEvent
-	public void receiveRenderSpecialsEvent(RenderPlayerEvent.Pre<?> aEvent) {
+	public void receiveRenderSpecialsEvent(RenderPlayerEvent.Pre aEvent) {
 		mPlayerRenderer.receiveRenderSpecialsEvent(aEvent);
 	}
 	/*

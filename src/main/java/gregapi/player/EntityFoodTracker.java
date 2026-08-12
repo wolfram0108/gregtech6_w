@@ -31,30 +31,39 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.attachment.IAttachmentHolder;
-import net.neoforged.neoforge.attachment.IAttachmentSerializer;
-
-import net.minecraftforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.common.capabilities.CapabilityToken;
+import net.minecraftforge.common.capabilities.ICapabilitySerializable;
+import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.event.AttachCapabilitiesEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
 
 import static gregapi.data.CS.*;
 
 /**
  * @author Gregorius Techneticies
  *
- * F-attachment: 1.7.10 {@code IExtendedEntityProperties} (реализовывался этим же классом, "gt.props.food"
- * ключ через {@code Entity.registerExtendedProperties}/{@code getExtendedProperties}) удалён из движка
- * целиком. Neo-эквивалент — data attachment ({@code net.neoforged.neoforge.attachment.AttachmentType<T>},
- * verified {@code AttachmentType.java}/{@code IAttachmentHolder.java}/{@code IAttachmentSerializer.java}):
- * ЭТОТ класс — хранимые данные (носитель), НЕ дескриптор типа, поэтому {@code implements AttachmentType}
- * убран (AttachmentType — не интерфейс, а final-класс-дескриптор, см. AttachmentType.java:59); вместо
- * этого он РЕГИСТРИРУЕТСЯ как {@code AttachmentType<EntityFoodTracker>} через {@link #ATTACHMENTS}
- * (тот же паттерн, что {@code gregapi.fluid.FluidGT}/{@code gregapi.worldgen.GT6WorldgenFeature} —
- * {@code DeferredRegister.create(NeoForgeRegistries.Keys.X, MD.GAPI.mID)} + {@code .register(aModBus)}
- * из {@code GT_API}-конструктора).
+ * Ветка 1.20.1: 1.7.10 {@code IExtendedEntityProperties} (его реализовывал ЭТОТ же класс, ключ
+ * "gt.props.food" через {@code Entity.registerExtendedProperties}/{@code getExtendedProperties}) движком
+ * удалён; {@code AttachmentType} 26.x-ветки есть только у NeoForge. В Forge 1.20.1 роль обоих занимает
+ * capability на сущности — {@code AttachCapabilitiesEvent<Entity>} + {@code ICapabilitySerializable}
+ * ({@code AttachCapabilitiesEvent.java:24,55}; живой образец той же версии —
+ * {@code Applied-Energistics-2-1.20.1 InitCapabilities.java:54-70}). Персист ведёт сам движок: тег
+ * capability лежит в {@code ForgeCaps} сущности, поэтому обёртка "gt.props.food" из 1.7.10 не нужна —
+ * её роль исполняет ключ {@link #ID}.
+ *
+ * <p><b>Носитель прикрепляется ТОЛЬКО игроку</b> — это 1:1 с оригиналом: там {@code add()} звался лишь из
+ * {@code EntityJoinWorldEvent} под {@code instanceof EntityPlayer} ({@code gt6-original GT_API_Proxy.java:1536}),
+ * а {@code get()} на мобе возвращал {@code null}. Разница видима: {@code UT.applyRadioactivity}
+ * ({@code UT.java:3105}) при непустом трекере копит радиацию в нём ВМЕСТО наложения зелий — прикрепи мы
+ * трекер мобам, поведение изменилось бы молча.</p>
  */
 public class EntityFoodTracker {
 	public static ArrayListNoNulls<EntityFoodTracker> TICK_LIST = new ArrayListNoNulls<>();
@@ -62,60 +71,46 @@ public class EntityFoodTracker {
 	public byte mAlcohol = 0, mCaffeine = 0, mDehydration = 0, mSugar = 0, mFat = 0, mRadiation = 0;
 	public final LivingEntity mEntity;
 
-	/** F-attachment: сериализатор NBT для трекера (см. saveNBTData/loadNBTData ниже). Контракт
-	 *  IAttachmentSerializer.write() уже пишет в ValueOutput, СКОПИРОВАННЫЙ под ключ этого attachment-типа
-	 *  (AttachmentHolder.serializeAttachments), поэтому обёртка "gt.props.food" из 1.7.10 больше не нужна —
-	 *  сам контракт её обеспечивает. write()==false = "не сериализовывать" (1:1 эквивалент 1.7.10
-	 *  aNBT.removeTag(...) при пустом наборе полей). */
-	private static final IAttachmentSerializer<EntityFoodTracker> SERIALIZER = new IAttachmentSerializer<EntityFoodTracker>() {
-		@Override
-		public EntityFoodTracker read(IAttachmentHolder aHolder, ValueInput aInput) {
-			EntityFoodTracker rTracker = new EntityFoodTracker((LivingEntity)aHolder);
-			rTracker.loadNBTData(aInput);
-			return rTracker;
-		}
-		@Override
-		public boolean write(EntityFoodTracker aTracker, ValueOutput aOutput) {
-			return aTracker.saveNBTData(aOutput);
-		}
-	};
+	public static final ResourceLocation ID = new ResourceLocation(MD.GAPI.mID, "food_tracker");
+	public static final Capability<EntityFoodTracker> CAP = CapabilityManager.get(new CapabilityToken<EntityFoodTracker>() {});
 
-	/** F-attachment: центральный DeferredRegister — ЕДИНСТВЕННОЕ место, где GT6 регистрирует Entity-
-	 *  attachment-типы в neo. {@code .register(aModBus)} зовётся из центрального @Mod-конструктора
-	 *  ({@code gregapi.GT_API#GT_API(IEventBus)}, тем же мод-басом, что FluidGT/GT6WorldgenFeature/…). */
-	public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, MD.GAPI.mID);
+	/** Носитель: одна запись на сущность-игрока; персист ведёт движок (тег capability внутри ForgeCaps). */
+	private static final class Provider implements ICapabilitySerializable<CompoundTag> {
+		private final EntityFoodTracker mData;
+		private final LazyOptional<EntityFoodTracker> mOptional;
+		private Provider(LivingEntity aEntity) {mData = new EntityFoodTracker(aEntity); mOptional = LazyOptional.of(() -> mData);}
 
-	/** Дефолт-конструктор (для свежих сущностей, ни разу не сохранявшихся) И read()-конструктор (для
-	 *  загруженных с диска) — ОБА идут через {@code new EntityFoodTracker(LivingEntity)}, который сам
-	 *  регистрирует себя в {@link #TICK_LIST} (см. конструктор ниже) — не важно, каким из двух путей
-	 *  экземпляр создан, он всегда попадёт в тик-лист ровно один раз. */
-	public static final net.minecraftforge.registries.RegistryObject<AttachmentType<EntityFoodTracker>> TYPE = ATTACHMENTS.register("food_tracker",
-		() -> AttachmentType.<EntityFoodTracker>builder(aHolder -> new EntityFoodTracker((LivingEntity)aHolder)).serialize(SERIALIZER).build());
+		@Override public <T> LazyOptional<T> getCapability(Capability<T> aCapability, Direction aSide) {return aCapability == CAP ? mOptional.cast() : LazyOptional.empty();}
+		@Override public CompoundTag serializeNBT() {CompoundTag rNBT = new CompoundTag(); mData.saveNBTData(rNBT); return rNBT;}
+		@Override public void deserializeNBT(CompoundTag aNBT) {mData.loadNBTData(aNBT);}
+	}
+
+	/** ЕДИНСТВЕННАЯ точка подписки носителя (та же роль, что был у attachment-реестра 26.x-ветки):
+	 *  объявление капабилити — на мод-шине, прикрепление к сущности — на форж-шине. */
+	public static void register(IEventBus aModBus) {
+		aModBus.addListener((RegisterCapabilitiesEvent aEvent) -> aEvent.register(EntityFoodTracker.class));
+		MinecraftForge.EVENT_BUS.addGenericListener(net.minecraft.world.entity.Entity.class, (AttachCapabilitiesEvent<net.minecraft.world.entity.Entity> aEvent) -> {
+			if (aEvent.getObject() instanceof Player tPlayer) aEvent.addCapability(ID, new Provider(tPlayer));
+		});
+	}
 
 	public EntityFoodTracker(LivingEntity aEntity) {
 		mEntity = aEntity;
-		// F-attachment: 1.7.10 ванильный фреймворк сам звал IExtendedEntityProperties.init(Entity,World)
-		// сразу после registerExtendedProperties; у neo AttachmentType нет эквивалентного авто-хука
-		// (defaultValueSupplier/IAttachmentSerializer только возвращают значение, ничего не зовут на нём) —
-		// зовём явно здесь, чтобы КАЖДЫЙ сконструированный трекер (свежий через getData() ИЛИ
-		// восстановленный из NBT через read()) попадал в TICK_LIST ровно один раз.
-		init(aEntity, aEntity.level());
+		// Конструктор — дословно оригинальный (только присваивание). init() зовёт add() из EntityJoinLevelEvent,
+		// ровно как 1.7.10-фреймворк звал IExtendedEntityProperties.init сразу после registerExtendedProperties.
 	}
 
-	/** F-attachment: см. IAttachmentSerializer.write() выше — false = не сериализовывать (1:1 эквивалент
-	 *  1.7.10 aNBT.removeTag("gt.props.food") при полностью нулевом наборе полей). */
-	public boolean saveNBTData(ValueOutput aNBT) {
-		boolean rAny = F;
-		if (mAlcohol     != 0) {aNBT.putByte("a", mAlcohol    ); rAny = T;}
-		if (mCaffeine    != 0) {aNBT.putByte("c", mCaffeine   ); rAny = T;}
-		if (mSugar       != 0) {aNBT.putByte("s", mSugar      ); rAny = T;}
-		if (mDehydration != 0) {aNBT.putByte("d", mDehydration); rAny = T;}
-		if (mFat         != 0) {aNBT.putByte("f", mFat        ); rAny = T;}
-		if (mRadiation   != 0) {aNBT.putByte("r", mRadiation  ); rAny = T;}
-		return rAny;
+	/** 1:1 с оригиналом: пустые поля просто не пишутся (там это выражалось removeTag("gt.props.food")). */
+	public void saveNBTData(CompoundTag aNBT) {
+		if (mAlcohol     != 0) aNBT.putByte("a", mAlcohol    );
+		if (mCaffeine    != 0) aNBT.putByte("c", mCaffeine   );
+		if (mSugar       != 0) aNBT.putByte("s", mSugar      );
+		if (mDehydration != 0) aNBT.putByte("d", mDehydration);
+		if (mFat         != 0) aNBT.putByte("f", mFat        );
+		if (mRadiation   != 0) aNBT.putByte("r", mRadiation  );
 	}
 
-	public void loadNBTData(ValueInput aNBT) {
+	public void loadNBTData(CompoundTag aNBT) {
 		mAlcohol     = aNBT.getByte("a");
 		mCaffeine    = aNBT.getByte("c");
 		mDehydration = aNBT.getByte("d");
@@ -124,7 +119,10 @@ public class EntityFoodTracker {
 		mRadiation   = aNBT.getByte("r");
 	}
 
-	public void init(Entity aEntity, Level aWorld) {TICK_LIST.add(this);}
+	/** Оригинал звал это один раз на регистрацию свойств. Носитель-capability переживает смену измерения
+	 *  (тот же экземпляр ServerPlayer заходит в мир повторно), поэтому вход в тик-лист защищён от дубля —
+	 *  без защиты все эффекты трекера применялись бы дважды. */
+	public void init(Entity aEntity, Level aWorld) {if (!TICK_LIST.contains(this)) TICK_LIST.add(this);}
 	public void changeAlcohol    (long aAmount) {mAlcohol     = UT.Code.bind7(mAlcohol     + aAmount);}
 	public void changeCaffeine   (long aAmount) {mCaffeine    = UT.Code.bind7(mCaffeine    + aAmount);}
 	public void changeDehydration(long aAmount) {mDehydration = UT.Code.bind7(mDehydration + aAmount);}
@@ -260,25 +258,20 @@ public class EntityFoodTracker {
 		}
 	}
 
+	/** Было {@code registerExtendedProperties("gt.props.food", new EntityFoodTracker(aEntity))} + вызов
+	 *  {@code init} фреймворком. Сам объект в 1.20.1 уже создан провайдером капабилити при конструировании
+	 *  сущности, поэтому здесь остаётся ровно вторая половина оригинала — вход в тик-лист. */
 	public static void add(LivingEntity aEntity) {
 		if (aEntity == null || aEntity.level().isClientSide()) return;
-		// F-attachment: было registerExtendedProperties("gt.props.food", new EntityFoodTracker(aEntity))
-		// (1.7.10, безусловно НОВЫЙ объект) -> neo IAttachmentHolder.getData(AttachmentType<T>) (Entity
-		// extends AttachmentHolder implements IAttachmentHolder, AttachmentHolder.java:74) — на СВЕЖЕЙ
-		// (только что сконструированной) сущности карта аттачментов пуста, поэтому getData() тоже
-		// безусловно уходит в defaultValueSupplier и строит новый EntityFoodTracker (см. TYPE выше);
-		// getExistingDataOrNull() НЕ используется здесь намеренно (это create-точка, не read-точка).
-		aEntity.getData(TYPE.get());
+		EntityFoodTracker tTracker = get(aEntity);
+		if (tTracker != null) tTracker.init(aEntity, aEntity.level());
 	}
 
+	/** Было {@code getExtendedProperties(String)} (возвращал Object + instanceof). Капабилити уже
+	 *  типизирована ключом {@link #CAP}, а отсутствие носителя (любая не-игрок сущность) даёт {@code null} —
+	 *  та же семантика, что у оригинала. */
 	public static EntityFoodTracker get(Entity aEntity) {
 		if (aEntity == null || aEntity.level().isClientSide()) return null;
-		// было getExtendedProperties(String) (1.7.10, возвращал Object, требовал instanceof-проверку) ->
-		// neo IAttachmentHolder.getExistingDataOrNull(AttachmentType<T>) (AttachmentHolder.java:87) — уже
-		// статически типизирован под EntityFoodTracker (по самому ключу TYPE), instanceof-проверка снята
-		// как ставшая невозможной (никакой другой тип под этим TYPE в принципе не хранится), и, что
-		// критично, НЕ создаёт запись при отсутствии (get-or-null, не get-or-create — та же семантика,
-		// что и раньше: null для сущностей, для которых add() не звался).
-		return aEntity.getExistingDataOrNull(TYPE.get());
+		return aEntity.getCapability(CAP).orElse(null);
 	}
 }

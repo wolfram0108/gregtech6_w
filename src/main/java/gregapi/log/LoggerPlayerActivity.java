@@ -58,11 +58,12 @@ public class LoggerPlayerActivity implements Runnable {
 		if (tAction != null && aEvent.getEntity() != null && aEvent.getLevel() != null && !aEvent.getLevel().isClientSide() && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";"+tAction+";"+aEvent.getEntity().getName().getString()+";DIM:"+WD.dimensionId(aEvent.getLevel())+";"+aEvent.getPos().getX()+";"+aEvent.getPos().getY()+";"+aEvent.getPos().getZ()+";|;"+aEvent.getPos().getX()/10+";"+aEvent.getPos().getY()/10+";"+aEvent.getPos().getZ()/10);
 	}
 	
-	// F7-event: 1.7.10 BlockEvent.HarvestDropsEvent -> neo BlockDropsEvent (event/level). harvester->getBreaker():Entity,
-	// world->getLevel():ServerLevel, x/y/z->getPos().
+	// Ветка 1.20.1: журналируется САМА добыча (кто, где) — событий со списком дропов в этой версии нет, а лог их и
+	// не читал. Носитель — BlockEvent.BreakEvent (BlockEvent.java:72), несущий игрока, мир и позицию: ровно те три
+	// величины, что писала строка. harvester->getPlayer(), world->getLevel():LevelAccessor, x/y/z->getPos().
 	@SubscribeEvent
-	public void onBlockHarvestingEvent(net.neoforged.neoforge.event.level.BlockDropsEvent aEvent) {
-		if (aEvent.getBreaker() != null && !aEvent.getLevel().isClientSide() && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";HARVEST_BLOCK;"+aEvent.getBreaker().getName().getString()+";DIM:"+WD.dimensionId(aEvent.getLevel())+";"+aEvent.getPos().getX()+";"+aEvent.getPos().getY()+";"+aEvent.getPos().getZ()+";|;"+aEvent.getPos().getX()/10+";"+aEvent.getPos().getY()/10+";"+aEvent.getPos().getZ()/10);
+	public void onBlockHarvestingEvent(net.minecraftforge.event.level.BlockEvent.BreakEvent aEvent) {
+		if (aEvent.getPlayer() != null && !aEvent.getLevel().isClientSide() && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";HARVEST_BLOCK;"+aEvent.getPlayer().getName().getString()+";DIM:"+WD.dimensionId(aEvent.getPlayer().level())+";"+aEvent.getPos().getX()+";"+aEvent.getPos().getY()+";"+aEvent.getPos().getZ()+";|;"+aEvent.getPos().getX()/10+";"+aEvent.getPos().getY()/10+";"+aEvent.getPos().getZ()/10);
 	}
 	
 	@Override

@@ -39,7 +39,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.level.BlockEvent;
-import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 import java.util.List;
 
@@ -85,7 +84,7 @@ public class GT_Tool_BranchCutter extends ToolStats {
 	@Override public boolean isGrafter()                                                    {return T;}
 	
 	@Override
-	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
+	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch) {
 		// F-harvest: 1.7.10 HarvestDropsEvent.dropChance (шанс выпадения ванильного дропа) удалён — neo BlockDropsEvent
 		// роняет getDrops() всегда (dropChance=1.0 эквивалент), а кастомный дроп задаётся aDrops ниже -> буст-строка no-op.
 		// 1.7.10: `Blocks.leaves` = дуб/ель/берёза/джунгли (мета 0-3), `Blocks.leaves2` = акация/тёмный дуб.

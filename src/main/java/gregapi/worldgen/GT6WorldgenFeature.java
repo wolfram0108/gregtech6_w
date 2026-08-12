@@ -363,10 +363,10 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 
 	/** КЛИЕНТ-СИНК worldgen-MTE. КОРЕНЬ прозрачности: сервер ИМЕЕТ BE worldgen-MTE (source/rock/redstonelight), но клиент
 	 *  НЕ получает (chunk-пакет не несёт MTE-BE — getUpdatePacket=null; а GT6-синк getClientDataPacket зовётся только при
-	 *  gameplay-размещении/апдейте, не при worldgen). Здесь ловим МОМЕНТ отправки чанка игроку (ChunkWatchEvent.Sent) и
+	 *  gameplay-размещении/апдейте, не при worldgen). Здесь ловим МОМЕНТ отправки чанка игроку (ChunkWatchEvent.Watch) и
 	 *  синкаем ему все worldgen-MTE этого чанка (+ переприкрепляем, если BE всё же потерялся кросс-чанк). Точный тайминг,
 	 *  без per-tick overhead. См. sweepWorldgenMTE удалён — был пустой (всё skip-hasBE). */
-	private static void onChunkWatch(net.minecraftforge.event.level.ChunkWatchEvent.Sent aEvent) {
+	private static void onChunkWatch(net.minecraftforge.event.level.ChunkWatchEvent.Watch aEvent) {
 		net.minecraft.world.level.ChunkPos tCP = aEvent.getPos();
 		int tCX = tCP.getMinBlockX() >> 4, tCZ = tCP.getMinBlockZ() >> 4;
 		java.util.Queue<net.minecraft.world.level.block.entity.BlockEntity> tQueue = WORLDGEN_MTE.get(chunkKey(tCX, tCZ));
