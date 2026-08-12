@@ -4,6 +4,11 @@
       "type": "minecraft:directory",
       "source": "blocks",
       "prefix": ""
+    },
+    {
+      "type": "minecraft:directory",
+      "source": "items",
+      "prefix": "items/"
     }
   ]
 }

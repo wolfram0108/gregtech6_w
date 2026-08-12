@@ -329,7 +329,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	
 	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code TileEntityRendererDispatcher.instance.renderTileEntityAt(...)}
 	 *  (пакет {@code net.minecraft.client.renderer.tileentity} удалён целиком, замены нет — item-рендер
-	 *  теперь {@code ItemStackRenderState}/{@code ItemModelResolver}, decisions/F3-render.md §2.5/§3
+	 *  теперь {@code BlockEntityWithoutLevelRenderer} (BEWLR), decisions/F3-render.md §2.5/§3
 	 *  "IItemRenderer"); параметр ретипирован {@code Object} (см. {@link gregapi.render.IRenderedBlockObject}). */
 	@Override
 	public boolean renderItem(Block aBlock, Object aRenderer) {

@@ -26,35 +26,43 @@ package gregapi.render;
 import java.util.List;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.QuadInstance;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Sheets;
-import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
-import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.phys.Vec3;
 
 import gregapi.block.multitileentity.MultiTileEntityBlock;
 import gregapi.tileentity.base.TileEntityBase01Root;
 
 /**
  * F3-render КОРЕНЬ прозрачности MTE (машины/трубы/декор): geometry MTE-блоков живёт на клиент-BE (IRenderedBlockObject:
- * getRenderPasses/getTexture/box), а neo section-compile регион (worker-снапшот) BE НЕ отдаёт (доказано probe:
- * getBlockEntity=null 100%), и ModelData-мост удалён в 26.x. Потому MTE рисуются НЕ через baked {@link GT6BlockModel}
- * (он их пропускает), а через ЭТОТ BlockEntityRenderer: {@link #extractRenderState} на main-thread берёт ЖИВОЙ BE и строит
- * quads той же логикой GT6 ({@link GT6BlockModel#buildRendererQuads}, переиспользование 1:1), {@link #submit} эмитит их через
- * {@code submitCustomGeometry}. Один generic BER на весь {@code MTE_TYPE} — централизация 1:1 (аналог единого GT6-рендерера).
- * Руды ({@code PrefixBlockTileEntity}) и стабы отсеиваются гейтом (их рисует baked-модель). См. память gt6-neoforge-2612 п.7.
+ * getRenderPasses/getTexture/box), а регион чанк-компиляции (worker-снапшот) BE НЕ отдаёт (доказано probe:
+ * getBlockEntity=null 100%). Потому MTE рисуются НЕ через baked {@link GT6BlockModel} (он их пропускает), а через
+ * ЭТОТ {@link BlockEntityRenderer}: {@link #render} на main-thread берёт ЖИВОЙ BE и строит quads той же логикой GT6
+ * ({@link GT6BlockModel#buildRendererQuads}, переиспользование 1:1). Один generic BER на весь {@code MTE_TYPE} —
+ * централизация 1:1 (аналог единого GT6-рендерера). Руды ({@code PrefixBlockTileEntity}) и стабы отсеиваются гейтом
+ * (их рисует baked-модель).
+ *
+ * <p><b>Ветка 1.20.1.</b> BER здесь однопараметрический и БЕЗ промежуточного render-state: движок зовёт
+ * {@code render(be, partialTick, PoseStack, MultiBufferSource, light, overlay)} ({@code BlockEntityRenderer.java:12}),
+ * то есть сбор геометрии и её выдача снова в одном вызове, как в 1.7.10 TESR. Два следствия:
+ * <ul>
+ *   <li>рамка отсечения объявляется не рендерером, а САМИМ BE — {@code IForgeBlockEntity.getRenderBoundingBox()}
+ *       ({@code IForgeBlockEntity.java:105}); BUG-063 живёт там ({@code TileEntityBase01Root.getRenderBoundingBox});</li>
+ *   <li>трещины на живой геометрии эмитить вручную НЕ нужно: движок сам оборачивает буфер BE декалью
+ *       ({@code LevelRenderer.java:1246-1257} — {@code SheetedDecalTextureGenerator} для типов с
+ *       {@code affectsCrumbling()}, а {@code Sheets.cutoutBlockSheet()} = {@code entityCutout}, у которого этот
+ *       флаг {@code true}: {@code RenderType.java:43-46}). Класса дефекта «трещин нет» здесь не существует.</li>
+ * </ul>
  */
-public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01Root, MultiTileEntityBER.MTERenderState> {
+public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01Root> {
 
-	public MultiTileEntityBER(BlockEntityRendererProvider.Context aContext) {/* per-BE геометрия строится в extractRenderState; ресурсы контекста тут не нужны */}
+	public MultiTileEntityBER(BlockEntityRendererProvider.Context aContext) {/* per-BE геометрия строится в render; ресурсы контекста тут не нужны */}
 
 	/** F3-render дистанция (репорт игрока: MTE «пропадают вдалеке»): дефолт BER = 64 блока, но в 1.7.10 MTE были
 	 *  chunk-геометрией и рисовались на ВСЮ дистанцию прорисовки. 1:1 по следствию: радиус = renderDistance чанков. */
@@ -62,39 +70,16 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 		return net.minecraft.client.Minecraft.getInstance().options.renderDistance().get() * 16;
 	}
 
-	/** BUG-063 (репорт игрока: «как только центральный нижний блок выходит за границы экрана, весь тигель сразу
-	 *  пропадает»): neo отсекает рисунок BE по ЭТОЙ рамке ({@code BlockEntityRenderDispatcher:90}), а её умолчание —
-	 *  куб самого блока ({@code IBlockEntityRendererExtension:20-22}). У GT6 геометрия за свой блок выходит штатно
-	 *  (тигель рисует всю структуру 3×3×3 из контроллера — {@code MultiTileEntityCrucible:648-653}; лопасти турбины,
-	 *  коннекторы труб), а в 1.7.10 такого узла не было вовсе: MTE рисовались мэшем чанка и отсекались секцией 16³
-	 *  ({@code RendererBlockTextured implements ISimpleBlockRenderingHandler}), TESR же имели дефолт INFINITE
-	 *  ({@code recompSrc TileEntity:399-420}). Рамку НЕ ЗАДАЁМ константой — у GT6 боксы вычисляются в рантайме;
-	 *  берём ФАКТИЧЕСКУЮ геометрию прошлого кадра ({@link gregapi.render.GT6QuadBuilder#drawnBounds}), а пока она
-	 *  неизвестна — один кадр без отсечения, чтобы extract состоялся и рамка стала известна (дистанция при этом
-	 *  по-прежнему режет: фрустум проверяется ДО shouldRender). Приём канонический: так же объявляют рамку маяк
-	 *  (луч в небо), сундук (крышка) и поршень ({@code BeaconRenderer:221}, {@code ChestRenderer:136}, {@code PistonHeadRenderer:96}). */
-	@Override
-	@SuppressWarnings({"rawtypes", "unchecked"})
-	public net.minecraft.world.phys.AABB getRenderBoundingBox(TileEntityBase01Root aBE) {
-		net.minecraft.world.phys.AABB rBox = aBE.mRenderAABB;
-		BlockEntityRenderer tSpecial = SPECIAL_RENDERERS.get(aBE.getClass());
-		if (tSpecial != null) try {
-			net.minecraft.world.phys.AABB tSpecialBox = tSpecial.getRenderBoundingBox(aBE);
-			rBox = rBox == null ? tSpecialBox : (tSpecialBox == null ? rBox : rBox.minmax(tSpecialBox));
-		} catch (Throwable e) {/* чужая рамка не должна ронять кадр */}
-		return rBox == null ? net.minecraft.world.phys.AABB.INFINITE : rBox;
-	}
-
 	// F3-render спец-рендеры (1.7.10 ClientRegistry.bindTileEntitySpecialRenderer = vanilla-диспетчер по КЛАССУ TE;
-	// в neo BER регистрируется по BlockEntityType, а у всех MTE он ОДИН — MTE_TYPE) → диспетч по классу живёт здесь,
-	// в едином BER: реестр класс→рендерер, extract/submit делегируются. Оба живых TESR GT6 (Chest/MassStorage) идут сюда.
+	// здесь BER регистрируется по BlockEntityType, а у всех MTE он ОДИН — MTE_TYPE) → диспетч по классу живёт здесь,
+	// в едином BER: реестр класс→рендерер, render делегируется. Оба живых TESR GT6 (Chest/MassStorage) идут сюда.
 	@SuppressWarnings("rawtypes")
 	private static final java.util.Map<Class<?>, BlockEntityRenderer> SPECIAL_RENDERERS = new java.util.HashMap<>();
 	public static void bindSpecialRenderer(Class<?> aTileEntityClass, @SuppressWarnings("rawtypes") BlockEntityRenderer aRenderer) {SPECIAL_RENDERERS.put(aTileEntityClass, aRenderer);}
 
 	/** Диаг-счётчики судьи П2 (спец-рендер реально вызван движком). */
-	public static final java.util.concurrent.atomic.AtomicLong sSpecialExtract = new java.util.concurrent.atomic.AtomicLong(), sSpecialSubmit = new java.util.concurrent.atomic.AtomicLong(), sSpecialItemForm = new java.util.concurrent.atomic.AtomicLong();
-	/** Диаг-счётчики кэша квадов (BUG-106 №4): extract'ы рендер-объектов / реальные пересборки / кэш-хиты. */
+	public static final java.util.concurrent.atomic.AtomicLong sSpecialSubmit = new java.util.concurrent.atomic.AtomicLong(), sSpecialItemForm = new java.util.concurrent.atomic.AtomicLong();
+	/** Диаг-счётчики кэша квадов (BUG-106 №4): вызовы рендера рендер-объектов / реальные пересборки / кэш-хиты. */
 	public static final java.util.concurrent.atomic.AtomicLong sQuadExtracts = new java.util.concurrent.atomic.AtomicLong(), sQuadBuilds = new java.util.concurrent.atomic.AtomicLong(), sQuadCacheHits = new java.util.concurrent.atomic.AtomicLong();
 
 	/** BUG-106 №4 — кэш квадов BER. Эпоха рендера: {@code allChanged()} (перешив атласа/моделей — F3+T, F3+A,
@@ -103,9 +88,8 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 	 *  сигнал, по которому в 1.7.10 пересобирался мэш с геометрией MTE (recompSrc RenderGlobal.markBlockForUpdate →
 	 *  markBlockRangeForRenderUpdate ±1). Всё общение клиента о смене облика уже проходит через неё:
 	 *  каждый receiveData*-диспетчер ({@code MultiTileEntityBlock:265-325}) кончается {@code WD.update} →
-	 *  {@code ClientLevel.sendBlockUpdated:701} → {@code LevelRenderer.blockChanged:1432} → setSectionDirty;
-	 *  прямые setBlock и свет — туда же ({@code viewArea.setDirty} зовётся ТОЛЬКО из setSectionDirty:1481).
-	 *  Залипание кэша возможно лишь там, где залипал бы и мэш 1.7.10 — 1:1 по следствию. */
+	 *  {@code ClientLevel.sendBlockUpdated} → {@code LevelRenderer.blockChanged} → setSectionDirty;
+	 *  прямые setBlock и свет — туда же. Залипание кэша возможно лишь там, где залипал бы и мэш 1.7.10 — 1:1 по следствию. */
 	public static long sQuadEpoch = 0;
 
 	/** Сброс кэша квадов у всех MTE секции (зовёт MixinLevelRenderer из setSectionDirty, main-thread). */
@@ -121,124 +105,110 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 
 	/** Полный сброс (зовёт MixinLevelRenderer из allChanged, main-thread). */
 	public static void onRenderAllChanged() {sQuadEpoch++;}
-	/** Счётчик crack-decal сабмитов (судья трещин). */
-	public static final java.util.concurrent.atomic.AtomicLong sCrackSubmits = new java.util.concurrent.atomic.AtomicLong();
 
 	public static boolean hasSpecialRenderer(Class<?> aTileEntityClass) {return SPECIAL_RENDERERS.containsKey(aTileEntityClass);}
 
 	/** Item-форма TESR-классов: 1.7.10 renderItem звал renderTileEntityAt(this,0,0,0,0) на canonical-TE (данные из NBT
-	 *  стека); neo-носитель — special-model слой предмета ({@code LayerRenderState.setupSpecialModel}) → ЭТОТ адаптер:
-	 *  тот же зарегистрированный спец-рендерер (диспетч по классу), extract с detached-BE (fullbright по extractBase). */
-	public static final net.minecraft.client.renderer.special.SpecialModelRenderer<net.minecraft.world.level.block.entity.BlockEntity> SPECIAL_ITEM_FORM = new net.minecraft.client.renderer.special.SpecialModelRenderer<net.minecraft.world.level.block.entity.BlockEntity>() {
+	 *  стека); носитель 1.20.1 — {@code BlockEntityWithoutLevelRenderer}, куда движок уходит, когда item-модель
+	 *  объявила {@code isCustomRenderer()} ({@code ItemRenderer.render} → {@code IClientItemExtensions.getCustomRenderer()}).
+	 *  Внутри — тот же зарегистрированный спец-рендерер (диспетч по классу), рисующий detached-BE. */
+	/** Мост из common-класса предмета MTE ({@code MultiTileEntityItemInternal.initializeClient}) — тот же приём, что
+	 *  {@code MTEChestRenderer.bindFirst}: клиентский код живёт в клиентском файле (BUG-092), common-класс зовёт его
+	 *  ленивым invokestatic. Через этот канал движок и находит BEWLR item-формы. */
+	public static void bindItemExtensions(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> aConsumer) {
+		aConsumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+			@Override public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {return specialItemForm();}
+		});
+	}
+
+	private static SpecialItemForm sItemForm;
+	/** Ленивая выдача BEWLR: конструктор {@code BlockEntityWithoutLevelRenderer} требует живых узлов Minecraft,
+	 *  а класс BER грузится раньше их готовности — инстанс создаём при первом обращении с клиента. */
+	public static SpecialItemForm specialItemForm() {
+		if (sItemForm == null) sItemForm = new SpecialItemForm();
+		return sItemForm;
+	}
+
+	/** BEWLR item-формы MTE со спец-рендером. Отдельный класс, потому что 1.20.1 требует наследника
+	 *  {@link net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer}, а не анонимного интерфейса. */
+	public static final class SpecialItemForm extends net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer {
+		private SpecialItemForm() {
+			super(net.minecraft.client.Minecraft.getInstance().getBlockEntityRenderDispatcher(), net.minecraft.client.Minecraft.getInstance().getEntityModels());
+		}
+
 		@Override
 		@SuppressWarnings("unchecked")
-		public void submit(net.minecraft.world.level.block.entity.BlockEntity aBE, PoseStack aPoseStack, SubmitNodeCollector aNodes, int aLight, int aOverlay, boolean aFoil, int aOutline) {
-			if (aBE == null) return;
-			@SuppressWarnings("rawtypes") BlockEntityRenderer tRenderer = SPECIAL_RENDERERS.get(aBE.getClass());
+		public void renderByItem(net.minecraft.world.item.ItemStack aStack, net.minecraft.world.item.ItemDisplayContext aContext, PoseStack aPoseStack, MultiBufferSource aBuffer, int aLight, int aOverlay) {
+			net.minecraft.world.level.block.entity.BlockEntity tBE = extractSpecialItemForm(aStack);
+			if (tBE == null) return;
+			@SuppressWarnings("rawtypes") BlockEntityRenderer tRenderer = SPECIAL_RENDERERS.get(tBE.getClass());
 			if (tRenderer == null) return;
 			try {
-				BlockEntityRenderState tState = (BlockEntityRenderState)tRenderer.createRenderState();
-				tRenderer.extractRenderState(aBE, tState, 0, Vec3.ZERO, null);
-				tState.lightCoords = aLight;
-				tRenderer.submit(tState, aPoseStack, aNodes, null);
+				tRenderer.render(tBE, 0F, aPoseStack, aBuffer, aLight, aOverlay);
 				sSpecialItemForm.incrementAndGet();
 			} catch (Throwable e) {/* item-форма не должна ронять рендер */}
 		}
-		@Override public void getExtents(java.util.function.Consumer<org.joml.Vector3fc> aOutput) {
-			for (int x = 0; x <= 1; x++) for (int y = 0; y <= 1; y++) for (int z = 0; z <= 1; z++) aOutput.accept(new org.joml.Vector3f(x, y, z));
-		}
-		@Override public net.minecraft.world.level.block.entity.BlockEntity extractArgument(net.minecraft.world.item.ItemStack aStack) {
-			try {
+
+	}
+
+	/** Стек → canonical-TE со спец-рендером (или null). Тот же центр рождения detached-TE, что у обычного item-рендера.
+	 *  Статический: item-модель спрашивает «нужен ли спец-рендер» ДО того, как BEWLR понадобится. */
+	public static net.minecraft.world.level.block.entity.BlockEntity extractSpecialItemForm(net.minecraft.world.item.ItemStack aStack) {
+		try {
 				if (aStack.getItem() instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tMTE) {
 					gregapi.block.multitileentity.MultiTileEntityContainer tCont = tMTE.mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 					// BUG-078: ВТОРОЙ путь рождения detached-TE (предметы со своим рендерером: сундук, масстораж).
 					// Компенсация item-facing берётся из того же центра, что и у обычного item-рендера.
 					if (tCont != null && tCont.mTileEntity != null && SPECIAL_RENDERERS.containsKey(tCont.mTileEntity.getClass())) return gregapi.block.multitileentity.MultiTileEntityRegistry.applyItemFacing(tCont.mTileEntity);
-				}
-			} catch (Throwable e) {/**/}
-			return null;
-		}
-	};
-
-	/** Снапшот геометрии, собранной на main-thread (thread-safe: submit его лишь читает). */
-	public static class MTERenderState extends BlockEntityRenderState {
-		public List<BakedQuad> mQuads;
-		@SuppressWarnings("rawtypes") public BlockEntityRenderer mSpecialRenderer;
-		public BlockEntityRenderState mSpecialState;
+			}
+		} catch (Throwable e) {/**/}
+		return null;
 	}
 
-	@Override public MTERenderState createRenderState() {return new MTERenderState();}
-
 	@Override
-	@SuppressWarnings("unchecked")
-	public void extractRenderState(TileEntityBase01Root aBE, MTERenderState aState, float aPartialTicks, Vec3 aCameraPos, ModelFeatureRenderer.CrumblingOverlay aBreakProgress) {
-		BlockEntityRenderer.super.extractRenderState(aBE, aState, aPartialTicks, aCameraPos, aBreakProgress); // база: blockPos/lightCoords/breakProgress
-		aState.mQuads = null;
-		aState.mSpecialRenderer = null; aState.mSpecialState = null;
+	public void render(TileEntityBase01Root aBE, float aPartialTicks, PoseStack aPoseStack, MultiBufferSource aBuffer, int aLight, int aOverlay) {
 		Block tBlock = aBE.getBlockState().getBlock();
-		// Только MTE-блоки с render-объектом: руды(PrefixBlock/PrefixBlockTileEntity) и стабы(TileEntityLoaderStub, render-данных нет) → baked/пусто.
-		// BUG-063: рамку отсечения гейт-отсеянным ставим ЗДЕСЬ — иначе она навсегда осталась бы неизвестной,
-		// а неизвестная = «не отсекать» (см. getRenderBoundingBox). Их геометрия — обычный куб блока.
+		// Только MTE-блоки с render-объектом: руды(PrefixBlock/PrefixBlockTileEntity) и стабы(TileEntityLoaderStub,
+		// render-данных нет) → baked/пусто. BUG-063: рамку отсечения гейт-отсеянным ставим ЗДЕСЬ — иначе она
+		// навсегда осталась бы неизвестной, а неизвестная = «не отсекать». Их геометрия — обычный куб блока.
 		if (aBE.getLevel() == null || !(aBE instanceof IRenderedBlockObject tRenderer) || !(tBlock instanceof MultiTileEntityBlock)) {
 			aBE.mRenderAABB = new net.minecraft.world.phys.AABB(aBE.getBlockPos());
 			return;
 		}
 		sQuadExtracts.incrementAndGet();
+		List<BakedQuad> tQuads;
 		// BUG-106 №4: кэш-хит — облик с кадра построения не менялся (сигнала setSectionDirty не было, см. sQuadEpoch
 		// выше). mRenderAABB остаётся от кадра построения, спец-рендер (аниматика TESR) идёт живым ниже, как всегда.
 		if (aBE.mQuadCacheEpoch == sQuadEpoch) {
-			aState.mQuads = aBE.mQuadCache;
+			tQuads = aBE.mQuadCache;
 			sQuadCacheHits.incrementAndGet();
 		} else {
 			aBE.mRenderAABB = new net.minecraft.world.phys.AABB(aBE.getBlockPos());
 			BlockPos tPos = aBE.getBlockPos();
 			GT6QuadBuilder tQB = new GT6QuadBuilder();
 			try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* render-логика конкретного MTE не должна ронять кадр */}
-			if (!tQB.isEmpty()) aState.mQuads = tQB.quads();
+			tQuads = tQB.isEmpty() ? null : tQB.quads();
 			// BUG-063: рамка = ФАКТИЧЕСКИ нарисованное этим BE (quads строятся в локальных координатах блока → сдвигаем в мир).
 			float[] tDrawn = tQB.drawnBounds();
 			if (tDrawn != null) aBE.mRenderAABB = new net.minecraft.world.phys.AABB(
 				  tPos.getX() + Math.min(tDrawn[0], 0F), tPos.getY() + Math.min(tDrawn[1], 0F), tPos.getZ() + Math.min(tDrawn[2], 0F)
 				, tPos.getX() + Math.max(tDrawn[3], 1F), tPos.getY() + Math.max(tDrawn[4], 1F), tPos.getZ() + Math.max(tDrawn[5], 1F));
-			aBE.mQuadCache = aState.mQuads; // null = «квадов нет» — тоже кэшируется (валидность судит эпоха)
+			aBE.mQuadCache = tQuads; // null = «квадов нет» — тоже кэшируется (валидность судит эпоха)
 			aBE.mQuadCacheEpoch = sQuadEpoch;
 			sQuadBuilds.incrementAndGet();
 		}
+		if (tQuads != null && !tQuads.isEmpty()) {
+			// quads GT6QuadBuilder — уже в локальных координатах блока 0..1 (как baked-модель); PoseStack на входе
+			// уже сдвинут в позицию блока (LevelRenderer:1244). cutoutBlockSheet несёт affectsCrumbling=true —
+			// трещины разрушения движок домешивает сам (см. javadoc класса), вручную их эмитить не нужно.
+			VertexConsumer tConsumer = aBuffer.getBuffer(Sheets.cutoutBlockSheet());
+			PoseStack.Pose tPose = aPoseStack.last();
+			for (BakedQuad tQuad : tQuads) tConsumer.putBulkData(tPose, tQuad, 1F, 1F, 1F, aLight, aOverlay);
+		}
 		@SuppressWarnings("rawtypes") BlockEntityRenderer tSpecial = SPECIAL_RENDERERS.get(aBE.getClass());
 		if (tSpecial != null) try {
-			aState.mSpecialRenderer = tSpecial;
-			aState.mSpecialState = (BlockEntityRenderState)tSpecial.createRenderState();
-			tSpecial.extractRenderState(aBE, aState.mSpecialState, aPartialTicks, aCameraPos, aBreakProgress);
-			sSpecialExtract.incrementAndGet();
-		} catch (Throwable e) {aState.mSpecialRenderer = null; aState.mSpecialState = null;}
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	public void submit(MTERenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
-		final List<BakedQuad> tQuads = aState.mQuads;
-		if (tQuads != null && !tQuads.isEmpty()) {
-			final QuadInstance tQI = new QuadInstance(); // color=-1 (белый, не перетинтит baked-цвет quad'а); light из позиции блока
-			tQI.setLightCoords(aState.lightCoords);
-			// quads GT6QuadBuilder — уже в локальных координатах блока 0..1 (как baked-модель); PoseStack на submit уже в позиции блока.
-			aNodes.submitCustomGeometry(aPoseStack, Sheets.cutoutBlockSheet(), (tPose, tBuffer) -> {
-				for (BakedQuad tQuad : tQuads) tBuffer.putBakedQuad(tPose, tQuad, tQI);
-			});
-			// F3-render ТРЕЩИНЫ по ЖИВОЙ геометрии (репорт игрока: «в оригинале трещины ложились прямо на поверхность
-			// трубы/камня/верёвки»): submitCustomGeometry crumbling не несёт (он только у submitModel,
-			// ModelFeatureRenderer:112) → эмитим сами ТЕ ЖЕ quads через SheetedDecalTextureGenerator (UV из позиции,
-			// как ванильный BE-crumbling) в DESTROY_TYPES[progress]. breakProgress кладёт движок
-			// (LevelRenderer:939-945 → extractRenderState → BlockEntityRenderState.breakProgress).
-			final net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay tBreak = aState.breakProgress;
-			if (tBreak != null) {
-				sCrackSubmits.incrementAndGet();
-				aNodes.submitCustomGeometry(aPoseStack, net.minecraft.client.resources.model.ModelBakery.DESTROY_TYPES.get(tBreak.progress()), (tPose, tBuffer) -> {
-					com.mojang.blaze3d.vertex.VertexConsumer tDecal = new com.mojang.blaze3d.vertex.SheetedDecalTextureGenerator(tBuffer, tBreak.cameraPose(), 1.0F);
-					for (BakedQuad tQuad : tQuads) tDecal.putBakedQuad(tPose, tQuad, tQI);
-				});
-			}
-		}
-		if (aState.mSpecialRenderer != null && aState.mSpecialState != null)
-			try {aState.mSpecialRenderer.submit(aState.mSpecialState, aPoseStack, aNodes, aCamera); sSpecialSubmit.incrementAndGet();} catch (Throwable e) {/* спец-рендер не должен ронять кадр */}
+			tSpecial.render(aBE, aPartialTicks, aPoseStack, aBuffer, aLight, aOverlay);
+			sSpecialSubmit.incrementAndGet();
+		} catch (Throwable e) {/* спец-рендер не должен ронять кадр */}
 	}
 }

@@ -116,7 +116,7 @@ public class TextureSet {
 
 		@Override
 		public ResourceLocation getTextureFile() {
-			return TextureAtlas.LOCATION_ITEMS;
+			return gregapi.render.GT6QuadBuilder.LOCATION_ITEMS;
 		}
 
 		@Override

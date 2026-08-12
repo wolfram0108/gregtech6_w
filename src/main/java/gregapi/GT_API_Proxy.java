@@ -355,7 +355,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 	/**
 	 * F3-render (client): единая точка подписки клиентских модель-типов на mod-bus. На сервере no-op
-	 * (общий код не грузит client-only классы). Клиент-прокси регистрирует {@code GT6BlockModel.Unbaked}
+	 * (общий код не грузит client-only классы). Клиент-прокси инжектит {@code GT6BlockModel}/{@code GT6ItemModel}
 	 * через {@code RegisterBlockStateModels} (decisions/F3-render.md §2.1). Централизация 1:1 — один тип на весь мод.
 	 */
 	public void registerClientModels(net.minecraftforge.eventbus.api.IEventBus aModBus) {/* server: no-op */}

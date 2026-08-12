@@ -24,7 +24,7 @@
 package gregapi.tileentity.render;
 
 import gregapi.tileentity.ITileEntityUnloadable;
-import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
+import net.minecraftforge.client.event.RenderHighlightEvent;
 
 /**
  * @author Gregorius Techneticies
@@ -32,7 +32,7 @@ import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
  * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 {@code net.minecraftforge.client.event.DrawBlockHighlightEvent}
  * (immediate-mode, поля {@code player}/{@code target}/{@code currentItem}/{@code partialTicks}) удалён
  * целиком в 26.1.2 — событие пересобрано вокруг {@code BlockOutlineRenderState}
- * (`neoforge-decompiled/net/neoforged/neoforge/client/event/ExtractBlockOutlineRenderStateEvent.java:33-145`,
+ * (`neoforge-decompiled/net/neoforged/neoforge/client/event/RenderHighlightEvent.Block.java:33-145`,
  * `getBlockPos/getBlockState/getHitResult/getCollisionContext`, БЕЗ прямого держателя игрока/предмета
  * в руке/partialTicks). Сигнатура метода вынужденно ретипирована на новый класс события (F, тип-шов);
  * реализации ниже по цепочке — компилируемая заглушка, реальная перерисовка wrench-overlay это
@@ -40,5 +40,5 @@ import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
  */
 public interface ITileEntityOnDrawBlockHighlight extends ITileEntityUnloadable {
 	/** Gets called Client Side, when you mouse over this TileEntity. return true to prevent other things from rendering. */
-	public boolean onDrawBlockHighlight(ExtractBlockOutlineRenderStateEvent aEvent);
+	public boolean onDrawBlockHighlight(RenderHighlightEvent.Block aEvent);
 }

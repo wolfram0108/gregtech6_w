@@ -35,8 +35,8 @@ import net.minecraft.world.level.BlockGetter;
  * F3-render: в 1.7.10 диспетчер реализовывал {@code ISimpleBlockRenderingHandler}+{@code IItemRenderer}
  * (immediate-mode {@code RenderBlocks}/{@code Tesselator}/{@code GL11}) — стек удалён в 26.1.2. РЕАЛИЗОВАНА
  * замена (decisions/F3-render.md §8): логика {@code renderWorldBlock} воспроизведена 1:1 в
- * {@link GT6BlockModel}{@code .collectParts} (DynamicBlockStateModel), item-рендер — {@link GT6ItemModel}
- * ({@code ItemStackRenderState}), регистрация — {@code RegisterBlockStateModels}+{@code ModifyBakingResult}.
+ * {@link GT6BlockModel} ({@code BakedModel} + Forge {@code ModelData}), item-рендер — {@link GT6ItemModel}
+ * ({@code BakedModel} + {@code ItemOverrides}), регистрация — рантайм-инъекция в {@code ModelEvent.ModifyBakingResult}.
  * Этот класс держит лишь серверную поверхность: {@code mRenderID}/{@code INSTANCE} (11+ мест как "есть ли
  * рендерер"/"id рендер-типа") — no-op-совместимость; реальный рендер — в GT6BlockModel/GT6ItemModel.
  */

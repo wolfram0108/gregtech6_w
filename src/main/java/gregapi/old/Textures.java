@@ -865,7 +865,7 @@ public class Textures {
 
 		@Override
 		public ResourceLocation getTextureFile() {
-			return TextureAtlas.LOCATION_ITEMS;
+			return gregapi.render.GT6QuadBuilder.LOCATION_ITEMS;
 		}
 
 		@Override
@@ -901,7 +901,7 @@ public class Textures {
 
 			@Override
 			public ResourceLocation getTextureFile() {
-				return TextureAtlas.LOCATION_ITEMS;
+				return gregapi.render.GT6QuadBuilder.LOCATION_ITEMS;
 			}
 			@Override
 			public short[] getIconColor(int aRenderPass) {

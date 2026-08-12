@@ -221,6 +221,16 @@ public class FluidGT {
 		@Override public int getViscosity()   {return mViscosity;}
 		@Override public int getLightLevel()  {return mLuminosity;}
 
+		/** F3/F5-render (ветка 1.20.1): still/flow-текстура и тинт жидкости берутся движком ОТСЮДА —
+		 *  {@code IClientFluidTypeExtensions} ({@code FluidType.java:899}), отдельного события регистрации
+		 *  моделей жидкостей в 1.20.1 нет. Тело — ленивый invokestatic в клиентский центр мода (BUG-092:
+		 *  клиентские типы в теле common-класса валят линковку на выделенном сервере); величины (mTexture,
+		 *  mRGBa) остаются здесь и не дублируются. */
+		@Override
+		public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions> aConsumer) {
+			gregapi.GT_API_Proxy_Client.bindFluidClientExtensions(FluidGT.this, aConsumer);
+		}
+
 		/**
 		 * ИМЯ ЖИДКОСТИ ЧЕРЕЗ ДВИЖКОВЫЙ КАНАЛ (BUG-082) — 1:1 приём оригинала: там сам носитель отдавал GT6-имя
 		 * движку, {@code FluidGT.getLocalizedName(FluidStack) → LH.get(getUnlocalizedName())}

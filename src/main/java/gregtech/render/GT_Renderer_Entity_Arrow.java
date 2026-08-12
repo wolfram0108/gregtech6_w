@@ -27,20 +27,19 @@ import static gregapi.data.CS.*;
 
 import net.minecraft.client.renderer.entity.ArrowRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.state.ArrowRenderState;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 {@code RenderArrow.getEntityTexture(Arrow)} (по инстансу
- * сущности) заменён в 26.1.2 на {@code ArrowRenderer<T,S>.getTextureLocation(S state)} (по render-state,
- * `neo-decompiled/net/minecraft/client/renderer/entity/ArrowRenderer.java:17-36`) — движко-шов, тот же
- * держатель {@code mTexture} возвращается независимо от параметра, семантика 1:1. Конструктор требует
+ * F3-render (entity): 1.7.10 {@code RenderArrow.getEntityTexture(Arrow)} — текстура по инстансу сущности.
+ * Ветка 1.20.1: контракт ТОТ ЖЕ — {@code ArrowRenderer<T extends AbstractArrow>.getTextureLocation(T entity)}
+ * ({@code ArrowRenderer.java:17}), промежуточного render-state (26.x {@code ArrowRenderState}) здесь нет,
+ * то есть форма вернулась к оригинальной 1.7.10 дословно. Конструктор требует
  * {@code EntityRendererProvider.Context} (недоступен в этой legacy-точке регистрации через F10-зеркало
  * {@code RenderingRegistry}, decisions/F3-render.md §2.5/§6) — {@code null}, реальная регистрация
  * переезжает на {@code EntityRenderersEvent.RegisterRenderers}.
  */
-public class GT_Renderer_Entity_Arrow extends ArrowRenderer<Arrow, ArrowRenderState> {
+public class GT_Renderer_Entity_Arrow extends ArrowRenderer<Arrow> {
 	private final ResourceLocation mTexture;
 
 	// F12-entity/F3-render (ЗАКРЫТО): реальный EntityRendererProvider.Context (не null) — рендерер строится в
@@ -52,12 +51,7 @@ public class GT_Renderer_Entity_Arrow extends ArrowRenderer<Arrow, ArrowRenderSt
 	}
 
 	@Override
-	protected ResourceLocation getTextureLocation(ArrowRenderState aState) {
+	public ResourceLocation getTextureLocation(Arrow aArrow) {
 		return mTexture;
-	}
-
-	@Override
-	public ArrowRenderState createRenderState() {
-		return new ArrowRenderState();
 	}
 }

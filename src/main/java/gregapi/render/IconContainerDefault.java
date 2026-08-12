@@ -43,7 +43,7 @@ public class IconContainerDefault implements IIconContainer {
 	}
 
 	public IconContainerDefault(ResourceLocation aIcon, short[] aRGBa, boolean aIsBlockTexture) {
-		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = (aIsBlockTexture ? TextureAtlas.LOCATION_BLOCKS : TextureAtlas.LOCATION_ITEMS);
+		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = (aIsBlockTexture ? TextureAtlas.LOCATION_BLOCKS : gregapi.render.GT6QuadBuilder.LOCATION_ITEMS);
 	}
 
 	public IconContainerDefault(ResourceLocation aIcon, short[] aRGBa) {
@@ -55,7 +55,7 @@ public class IconContainerDefault implements IIconContainer {
 	}
 
 	public IconContainerDefault(ResourceLocation aIcon, boolean aIsBlockTexture) {
-		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = (aIsBlockTexture ? TextureAtlas.LOCATION_BLOCKS : TextureAtlas.LOCATION_ITEMS);
+		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = (aIsBlockTexture ? TextureAtlas.LOCATION_BLOCKS : gregapi.render.GT6QuadBuilder.LOCATION_ITEMS);
 	}
 
 	public IconContainerDefault(ResourceLocation aIcon) {

@@ -56,6 +56,15 @@ public interface IBlock {
 	 *  ({@code 0x00ffffff} = «без собственного тинта», ровно как отдавал ванильный Block). */
 	default int getRenderColor(int aMeta) {return 0x00ffffff;}
 	default int colorMultiplier(net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {return getRenderColor(gregapi.util.WD.meta(aWorld, aX, aY, aZ));}
+	/** F3 render-pass (ветка 1.20.1): 1.7.10 {@code Block.getRenderBlockPass()} — 0 = обычный проход (alpha-test,
+	 *  «дырявые» текстуры решёток/труб/шипов), 1 = проход с блендингом (стёкла, жидкости). Метод жил на ванильном
+	 *  Block, и GT6-иерархии его перекрывали (BlockMetaType, MultiTileEntityBlock[Internal], PrefixBlock,
+	 *  BlockBaseFluid, BlockWaterlike, BlockGlassClear/Glow). В Block'е 1.20.1 канала нет — слой выбирает МОДЕЛЬ
+	 *  ({@code IForgeBakedModel.getRenderTypes(state, rand, ModelData)} → {@code ChunkRenderTypeSet}), и читает она
+	 *  ровно этот контракт: 0 → {@code RenderType.cutout()}, 1 → {@code RenderType.translucent()}.
+	 *  Объявлен здесь по той же причине, что {@link #getIcon} и {@link #getRenderBounds()} — общего Block-предка
+	 *  у иерархий GT6 нет. Дефолт 0 = обычный проход (дефолт ванильного Block 1.7.10). */
+	default int getRenderBlockPass() {return 0;}
 	/** F-tool (читают ЦЕНТРЫ WD.harvestTool/WD.harvestLevel): 1.7.10 Forge держал getHarvestTool(int)/getHarvestLevel(int)
 	 *  на САМОМ Block — каждая GT6-иерархия отвечала своими полями (BlockBase.mTool, MTE-Block.mTool, PrefixBlock.mTool,
 	 *  Rail=crowbar). neo эту точку удалил; контракт восстанавливает её на едином IBlock (общего Block-предка у иерархий

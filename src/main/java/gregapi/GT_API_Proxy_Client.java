@@ -73,8 +73,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
-import net.neoforged.neoforge.client.event.TextureAtlasStitchedEvent;
+import net.minecraftforge.client.event.RenderHighlightEvent;
+import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 
 import java.util.ArrayList;
@@ -131,12 +131,15 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 
 	@Override
 	public void registerClientModels(net.minecraftforge.eventbus.api.IEventBus aModBus) {
-		aModBus.addListener(this::onRegisterBlockStateModels);
+		// Ветка 1.20.1: точки регистрации рендера — те же три события мод-шины, что назвал F3-render.md §4.6
+		// (модели, BER, тинты); отдельного «RegisterBlockStateModels» здесь нет — GT6 не держит blockstate-JSON
+		// и всегда инжектил модель рантаймом, так что канал у него один — ModifyBakingResult.
+		// Модели жидкостей регистрируются не событием, а расширением типа жидкости (см. bindFluidClientExtensions).
 		aModBus.addListener(this::onModifyBakingResult);
-		aModBus.addListener(this::onRegisterFluidModels);
 		aModBus.addListener(this::onRegisterBlockEntityRenderers);
-		aModBus.addListener(this::onRegisterMenuScreens);
+		aModBus.addListener(this::onClientSetup);
 		aModBus.addListener(this::onRegisterBlockTints);
+		aModBus.addListener(this::registerClientResourceListener);
 	}
 
 	// ===== F3 tint ЦЕНТР: цвет блоков GT6 ====================================================================
@@ -149,30 +152,31 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// Следствие до этой правки: крашеные блоки (BlockColored — цветное стекло и родня) рисовались без цвета,
 	// а биом-оттенок скопированных текстур не работал (метка отложенности в BlockTextureCopied:36 — тот же
 	// канал; слово-маркер здесь НЕ пишем дословно, иначе счётчик меток считает упоминание за метку).
-	private void onRegisterBlockTints(net.minecraftforge.client.event.RegisterColorHandlersEvent.BlockTintSources aEvent) {
-		java.util.List<net.minecraft.client.color.block.BlockTintSource> tSource = java.util.List.of(new GT6BlockTint());
+	private void onRegisterBlockTints(net.minecraftforge.client.event.RegisterColorHandlersEvent.Block aEvent) {
 		java.util.List<net.minecraft.world.level.block.Block> tBlocks = new java.util.ArrayList<>();
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
 			net.minecraft.resources.ResourceLocation tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
 			if (tID == null || !(tID.getNamespace().equals(gregapi.data.CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
 			if (tBlock instanceof gregapi.block.IBlock) tBlocks.add(tBlock);
 		}
-		if (!tBlocks.isEmpty()) aEvent.register(tSource, tBlocks.toArray(new net.minecraft.world.level.block.Block[0]));
+		if (!tBlocks.isEmpty()) aEvent.register(new GT6BlockTint(), tBlocks.toArray(new net.minecraft.world.level.block.Block[0]));
 		gregapi.data.CS.OUT.println("[F3-tint] источник цвета зарегистрирован для блоков GT6: " + tBlocks.size());
 	}
 
-	/** Переходник «вопрос движка о цвете» → «1.7.10-методы блока GT6». Один на весь мод; величины живут в блоках. */
-	private static final class GT6BlockTint implements net.minecraft.client.color.block.BlockTintSource {
-		/** Вопрос без мира — 1.7.10 {@code getRenderColor(meta)}. Подтип берём СУЩЕСТВУЮЩИМ центром мета↔BlockState
-		 *  ({@code IBlockExtendedMetaData.getExtendedMetaData}), а не своим разбором свойств. */
-		@Override public int color(net.minecraft.world.level.block.state.BlockState aState) {
+	/** Переходник «вопрос движка о цвете» → «1.7.10-методы блока GT6». Один на весь мод; величины живут в блоках.
+	 *  Ветка 1.20.1: носитель — {@code BlockColor} с ОДНИМ методом {@code getColor(state, level, pos, tintIndex)},
+	 *  где отсутствие мира выражено {@code null}-аргументами ({@code BlockColor.java:11}); две ветки 26.x
+	 *  ({@code color(state)} / {@code colorInWorld(...)}) сходятся в него по тому же признаку. */
+	private static final class GT6BlockTint implements net.minecraft.client.color.block.BlockColor {
+		@Override
+		public int getColor(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockAndTintGetter aLevel, net.minecraft.core.BlockPos aPos, int aTintIndex) {
 			if (!(aState.getBlock() instanceof gregapi.block.IBlock tBlock)) return 16777215;
+			// Вопрос с миром — 1.7.10 colorMultiplier(world,x,y,z) (биом-оттенок и прочее позиционное).
+			if (aLevel != null && aPos != null) return tBlock.colorMultiplier(aLevel, aPos.getX(), aPos.getY(), aPos.getZ());
+			// Вопрос без мира — 1.7.10 getRenderColor(meta). Подтип берём СУЩЕСТВУЮЩИМ центром мета↔BlockState
+			// (IBlockExtendedMetaData.getExtendedMetaData), а не своим разбором свойств.
 			int tMeta = aState.getBlock() instanceof gregapi.block.IBlockExtendedMetaData tMetaBlock ? tMetaBlock.getExtendedMetaData(aState) : 0;
 			return tBlock.getRenderColor(tMeta);
-		}
-		/** Вопрос с миром — 1.7.10 {@code colorMultiplier(world,x,y,z)} (биом-оттенок и прочее позиционное). */
-		@Override public int colorInWorld(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockAndTintGetter aLevel, net.minecraft.core.BlockPos aPos) {
-			return aState.getBlock() instanceof gregapi.block.IBlock tBlock ? tBlock.colorMultiplier(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : color(aState);
 		}
 	}
 
@@ -180,9 +184,16 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// «no screen for menu type»). Фабрика маршрутизирует в ЕДИНЫЙ GT6-центр getGUIClient (тот же, что строил экран в
 	// 1.7.10 — per-machine ContainerClient-подкласс+текстура); fallback (getGUIClient=null/исключение) — обёртка
 	// neo-реконструированного menu базовым ContainerClient (без краша).
-	private void onRegisterMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent aEvent) {
+	private void onClientSetup(net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent aEvent) {
+		// Ветка 1.20.1: отдельного события регистрации экранов нет — привязка делается статическим
+		// MenuScreens.register в client-setup (канон Forge 1.20.1), поэтому кладём её в enqueueWork
+		// (MenuScreens не потокобезопасен, а событие приходит на параллельном лоадере).
+		aEvent.enqueueWork(this::registerMenuScreens);
+	}
+
+	private void registerMenuScreens() {
 		if (gregapi.gui.ContainerCommon.MENU_TYPE == null) return;
-		aEvent.<gregapi.gui.ContainerCommon, gregapi.gui.ContainerClient>register(gregapi.gui.ContainerCommon.MENU_TYPE.get(), (aMenu, aInv, aTitle) -> {
+		net.minecraft.client.gui.screens.MenuScreens.<gregapi.gui.ContainerCommon, gregapi.gui.ContainerClient>register(gregapi.gui.ContainerCommon.MENU_TYPE.get(), (aMenu, aInv, aTitle) -> {
 			// исключение отсюда = дисконнект (neoforge ClientPayloadHandler.createMenuScreen catch→disconnect) → тотальный null-гейт
 			if (aMenu == null) aMenu = new gregapi.gui.ContainerCommon(0, aInv);
 			// containerId-мост (корень «слот есть на сервере, но не отображается»): getGUIClient строит СВЕЖИЙ
@@ -226,14 +237,16 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// ITileEntitySurface-opaque гасил грань соседнего блока до СЛЕДУЮЩЕГО слома (U3 «блуждающая дыра» стен).
 	// Зеркало той же строки оригинала на клиентском тике — жизненный цикл восстановлен 1:1.
 	@net.minecraftforge.eventbus.api.SubscribeEvent
-	public void onClientTickFreeLastBrokenTileEntity(net.minecraftforge.event.TickEvent.ClientTickEvent.Post aEvent) {
+	public void onClientTickFreeLastBrokenTileEntity(net.minecraftforge.event.TickEvent.ClientTickEvent aEvent) {
+		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return; // 1.20.1: фаза — поле события (форма 1.7.10), отдельного .Post-типа нет
 		gregapi.data.CS.LAST_BROKEN_TILEENTITY.set(null);
 	}
 
 	// НАДЁЖНЫЙ МОСТ синка (пара к буферу NetworkHandler.PENDING): каждый клиент-тик доигрываем координатные
 	// GT6-пакеты, обогнавшие свой чанк при логине (иначе worldgen-MTE стартовой области оставались без клиент-BE).
 	@net.minecraftforge.eventbus.api.SubscribeEvent
-	public void onPendingPackets(net.minecraftforge.event.TickEvent.ClientTickEvent.Post aEvent) {
+	public void onPendingPackets(net.minecraftforge.event.TickEvent.ClientTickEvent aEvent) {
+		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
 		gregapi.network.NetworkHandler.processPending(Minecraft.getInstance().level);
 	}
 
@@ -241,10 +254,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// ресурсов (ClientLanguage.loadFrom) — вместе с ней исчезают имена GT6, дописанные ранее. Здесь центр доливается
 	// целиком: событие приходит и на первой загрузке, и на каждой перезагрузке (F3+T, смена ресурспака, смена языка).
 	// Сам долив и его обоснование — gregapi.lang.LanguageHandler.injectIntoEngine().
-	@net.minecraftforge.eventbus.api.SubscribeEvent
-	public void onClientResourcesLoaded(net.neoforged.neoforge.client.event.ClientResourceLoadFinishedEvent aEvent) {
-		int tInjected = gregapi.lang.LanguageHandler.injectIntoEngine();
-		if (tInjected > 0) gregapi.data.CS.OUT.println("GT6 localization: имён GT6 дописано в таблицу движка: " + tInjected + (aEvent.isInitial() ? " (первая загрузка ресурсов)" : " (перезагрузка ресурсов)"));
+	// Ветка 1.20.1: отдельного «ресурсы загружены» события нет — сигнал берётся штатным слушателем перезагрузки
+	// ресурсов (RegisterClientReloadListenersEvent, мод-шина): он вызывается и на первой загрузке, и на каждой
+	// последующей — ровно тот набор моментов, что нёс ClientResourceLoadFinishedEvent.
+	public void registerClientResourceListener(net.minecraftforge.client.event.RegisterClientReloadListenersEvent aEvent) {
+		aEvent.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) aManager -> {
+			int tInjected = gregapi.lang.LanguageHandler.injectIntoEngine();
+			if (tInjected > 0) gregapi.data.CS.OUT.println("GT6 localization: имён GT6 дописано в таблицу движка: " + tInjected);
+		});
 	}
 
 	/**
@@ -284,40 +301,38 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// (server-tick) клиент не покрывает — у него ОТДЕЛЬНЫЕ BE. Здесь дренируем клиентскую очередь стабов на client-tick,
 	// заменяя их настоящими MTE (единый механизм GT6WorldgenFeature.reconstructChunkMTEs, теперь Level-обобщённый).
 	@net.minecraftforge.eventbus.api.SubscribeEvent
-	public void onClientMTEReconstruct(net.minecraftforge.event.TickEvent.ClientTickEvent.Post aEvent) {
+	public void onClientMTEReconstruct(net.minecraftforge.event.TickEvent.ClientTickEvent aEvent) {
+		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
 		if (Minecraft.getInstance().level == null) return;
 		try { gregapi.worldgen.GT6WorldgenFeature.drainClientStubs(); } catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 	}
 
 
-	// F5/F3-render (client): единый динамический FluidModel ВСЕМ GT6-жидкостям (замена «Missing FluidModel» на реальный
-	// рендер). GT6-жидкость = still/flow-текстура (mTexture, IIconContainer) + цвет (mRGBa, тинтит серый молтен). neo 26
-	// рендерит жидкости через FluidModel.Unbaked(still, flow, overlay, tintSource) на RegisterFluidModelsEvent (mod-bus).
-	// Централизация 1:1 (одна модель-фабрика на весь мод, как GT6BlockModel/GT6ItemModel). Fallback на воду при null-иконе.
-	private void onRegisterFluidModels(net.neoforged.neoforge.client.event.RegisterFluidModelsEvent aEvent) {
-		net.minecraft.client.resources.model.sprite.Material tWaterStill = new net.minecraft.client.resources.model.sprite.Material(net.minecraft.resources.ResourceLocation.withDefaultNamespace("block/water_still"));
-		net.minecraft.client.resources.model.sprite.Material tWaterFlow  = new net.minecraft.client.resources.model.sprite.Material(net.minecraft.resources.ResourceLocation.withDefaultNamespace("block/water_flow"));
-		int tCount = 0;
-		for (gregapi.fluid.FluidGT tF : gregapi.fluid.FluidGT.BY_NAME.values()) {
-			try {
-				net.minecraft.resources.ResourceLocation tTex = null;
-				try { if (tF.mTexture != null) tTex = tF.mTexture.getIcon(0); } catch (Throwable e) {/* невалидная икона → fallback вода */}
-				net.minecraft.client.resources.model.sprite.Material tStill = tTex != null ? new net.minecraft.client.resources.model.sprite.Material(tTex) : tWaterStill;
-				net.minecraft.client.resources.model.sprite.Material tFlow  = tTex != null ? tStill : tWaterFlow;
-				short[] tRGBa = tF.getRGBa();
-				int tTint = (tRGBa != null && tRGBa.length >= 3) ? (0xFF000000 | ((tRGBa[0]&0xFF)<<16) | ((tRGBa[1]&0xFF)<<8) | (tRGBa[2]&0xFF)) : 0xFFFFFFFF;
-				net.minecraft.client.renderer.block.FluidModel.Unbaked tModel = new net.minecraft.client.renderer.block.FluidModel.Unbaked(tStill, tFlow, null, net.neoforged.neoforge.client.fluid.FluidTintSources.constant(tTint));
-				net.minecraft.world.level.material.Fluid tSource  = tF.mSourceHolder.get();
-				net.minecraft.world.level.material.Fluid tFlowing = tF.mFlowingHolder.isPresent() ? tF.mFlowingHolder.get() : tSource;
-				aEvent.register(tModel, tSource, tFlowing);
-				tCount++;
-			} catch (Throwable e) {/* сбой одной жидкости не рушит остальные */}
-		}
-		gregapi.data.CS.OUT.println("[GT6] F3-render: FluidModel зарегистрированы для " + tCount + " GT6-жидкостей.");
-	}
-
-	private void onRegisterBlockStateModels(net.neoforged.neoforge.client.event.RegisterBlockStateModels aEvent) {
-		aEvent.registerModel(gregapi.render.GT6BlockModel.Unbaked.ID, gregapi.render.GT6BlockModel.Unbaked.MAP_CODEC);
+	// F5/F3-render (client): рендер ВСЕХ GT6-жидкостей. GT6-жидкость = still/flow-текстура (mTexture, IIconContainer)
+	// + цвет (mRGBa, тинтит серый молтен). Ветка 1.20.1: движок берёт эти три величины не из модели и не из события,
+	// а из расширения ТИПА жидкости — {@code IClientFluidTypeExtensions} ({@code FluidType.initializeClient},
+	// FluidType.java:899), поэтому здесь живёт ЕДИНЫЙ переходник, а зовёт его сам GTFluidType (тот же приём ленивого
+	// invokestatic из common-класса, что у item-расширений MTE). Централизация 1:1 — одна фабрика на весь мод,
+	// как GT6BlockModel/GT6ItemModel. Fallback на воду при null-иконе.
+	public static void bindFluidClientExtensions(gregapi.fluid.FluidGT aFluid, java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions> aConsumer) {
+		aConsumer.accept(new net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions() {
+			private net.minecraft.resources.ResourceLocation texture() {
+				try { if (aFluid.mTexture != null) { net.minecraft.resources.ResourceLocation t = aFluid.mTexture.getIcon(0); if (t != null) return t; } } catch (Throwable e) {/* невалидная икона → fallback вода */}
+				return null;
+			}
+			@Override public net.minecraft.resources.ResourceLocation getStillTexture() {
+				net.minecraft.resources.ResourceLocation t = texture();
+				return t != null ? t : net.minecraft.resources.ResourceLocation.withDefaultNamespace("block/water_still");
+			}
+			@Override public net.minecraft.resources.ResourceLocation getFlowingTexture() {
+				net.minecraft.resources.ResourceLocation t = texture();
+				return t != null ? t : net.minecraft.resources.ResourceLocation.withDefaultNamespace("block/water_flow");
+			}
+			@Override public int getTintColor() {
+				short[] tRGBa = aFluid.getRGBa();
+				return (tRGBa != null && tRGBa.length >= 3) ? (0xFF000000 | ((tRGBa[0]&0xFF)<<16) | ((tRGBa[1]&0xFF)<<8) | (tRGBa[2]&0xFF)) : 0xFFFFFFFF;
+			}
+		});
 	}
 
 	// Рантайм-инъекция: каждому BlockState каждого GT6-блока-рендера назначаем единственный GT6BlockModel
@@ -325,25 +340,25 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	private void onModifyBakingResult(net.minecraftforge.client.event.ModelEvent.ModifyBakingResult aEvent) {
 		// Правка №3 (BUG-106): атлас/модели пересозданы — старые спрайты в кэшах геометрии мертвы, сбрасываем.
 		gregapi.render.GT6ItemModel.invalidateCaches();
-		net.minecraft.client.resources.model.sprite.Material.Baked tParticle = new net.minecraft.client.resources.model.sprite.Material.Baked(
-			// sprite-id БЕЗ "blocks/" префикса: atlas-source (assets/minecraft/atlases/blocks.json) кладёт textures/blocks/** с prefix:"" → gregtech:system/error (как GT6BlockModel:56). Прежний "blocks/system/error" не находился → "Failed to retrieve texture".
-			aEvent.getTextureGetter().apply(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("gregtech", "system/error")), false);
-		java.util.Map<net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.dispatch.BlockStateModel> tMap = aEvent.getBakingResult().blockStateModels();
+		gregapi.render.GT6BlockModel.invalidateParticle();
+		// Ветка 1.20.1: карта результата ОДНА и общая — ключ блока это ModelResourceLocation состояния
+		// (BlockModelShaper.stateToModelLocation, BlockModelShaper.java:52), ключ предмета — «<id>#inventory»
+		// (ModelResourceLocation.java:26; ItemModelShaper ищет модель именно по нему).
+		java.util.Map<net.minecraft.resources.ResourceLocation, net.minecraft.client.resources.model.BakedModel> tMap = aEvent.getModels();
 		int tCount = 0;
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
-			// GT6BlockModel — и IRenderedBlock, и BlockBaseRail (рельсы: своя рельс-ветка в collectParts, плоский quad по мете).
+			// GT6BlockModel — и IRenderedBlock, и BlockBaseRail (рельсы: своя рельс-ветка, плоский quad по мете).
 			if (!(tBlock instanceof gregapi.render.IRenderedBlock) && !(tBlock instanceof gregapi.block.misc.BlockBaseRail)) continue;
-			// per-БЛОК инстанс (не общий): модель обязана знать владельца для breaking-пути движка
-			// (тот зовёт collectParts с AIR-state — форма трещин иначе неведома; GT6BlockModel.mOwner).
-			gregapi.render.GT6BlockModel tModel = new gregapi.render.GT6BlockModel(tParticle, tBlock);
+			// per-BlockState инстанс: модель обязана знать владельца там, где движок контекста мира НЕ даёт
+			// (breaking-оверлей, статический запрос модели), и мету — для спрайта крошки (getParticleIcon без pos).
 			for (net.minecraft.world.level.block.state.BlockState tState : tBlock.getStateDefinition().getPossibleStates()) {
-				tMap.put(tState, tModel); tCount++;
+				tMap.put(net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(tState), new gregapi.render.GT6BlockModel(tBlock, tState));
+				tCount++;
 			}
 		}
 		// F3-render: ЕДИНАЯ item-модель ВСЕМ GT6-предметам (включая block-предметы: их item-форму рисует GT6ItemModel через
 		// buildInventoryQuads = renderInventoryBlock). Прежде block-предметы пропускались → у них не было item-модели → пурпур.
 		gregapi.render.GT6ItemModel tItemModel = new gregapi.render.GT6ItemModel();
-		java.util.Map<net.minecraft.resources.ResourceLocation, net.minecraft.client.renderer.item.ItemModel> tItemMap = aEvent.getBakingResult().itemStackModels();
 		int tItemCount = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			net.minecraft.resources.ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
@@ -351,20 +366,21 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			// block-предмет инжектим, если его блок — IRenderedBlock ИЛИ рельс (BlockBaseRail: GT6ItemModel рисует ему плоскую
 			// straight-иконку); прочие block-предметы оставляем дефолтной модели блока.
 			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && !(tBI.getBlock() instanceof gregapi.render.IRenderedBlock) && !(tBI.getBlock() instanceof gregapi.block.misc.BlockBaseRail)) continue;
-			tItemMap.put(tKey, tItemModel); tItemCount++;
+			tMap.put(new net.minecraft.client.resources.model.ModelResourceLocation(tKey, "inventory"), tItemModel); tItemCount++;
 		}
 		// Гигиена («Missing model for variant»): GT6-блоки с RenderShape.INVISIBLE (fluid-блоки river/ocean/swamp — сам блок
 		// невидим 1:1 к vanilla LiquidBlock, вода рисуется FluidState/F5-подсистемой) не имеют baked-модели → ModelManager сыпал
 		// предупреждение на КАЖДЫЙ их BlockState-вариант (48 шт). Кладём пустую модель (тот же GT6BlockModel: для не-IRenderedBlock
-		// collectParts отдаёт пусто) — движок находит модель, предупреждение уходит; визуал не меняется (блок и так INVISIBLE).
-		gregapi.render.GT6BlockModel tEmptyModel = new gregapi.render.GT6BlockModel(tParticle);
+		// геометрия пуста) — движок находит модель, предупреждение уходит; визуал не меняется (блок и так INVISIBLE).
+		gregapi.render.GT6BlockModel tEmptyModel = new gregapi.render.GT6BlockModel();
 		int tEmptyCount = 0;
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
 			net.minecraft.resources.ResourceLocation tBKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
 			if (tBKey == null || !isGregNamespace(tBKey.getNamespace())) continue;
 			for (net.minecraft.world.level.block.state.BlockState tState : tBlock.getStateDefinition().getPossibleStates()) {
-				if (tMap.containsKey(tState) || tState.getRenderShape() != net.minecraft.world.level.block.RenderShape.INVISIBLE) continue;
-				tMap.put(tState, tEmptyModel); tEmptyCount++;
+				net.minecraft.client.resources.model.ModelResourceLocation tStateKey = net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(tState);
+				if (tMap.containsKey(tStateKey) || tState.getRenderShape() != net.minecraft.world.level.block.RenderShape.INVISIBLE) continue;
+				tMap.put(tStateKey, tEmptyModel); tEmptyCount++;
 			}
 		}
 		gregapi.data.CS.OUT.println("[GT6] F3-render: GT6BlockModel injected into " + tCount + " block-states, GT6ItemModel into " + tItemCount + " items, " + tEmptyCount + " invisible-block placeholders.");
@@ -497,7 +513,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	 * Обработчик оставлен пустым 1:1 к точке подписки оригинала.
 	 */
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onTextureStitchedPre(TextureAtlasStitchedEvent aEvent) {
+	public void onTextureStitchedPre(TextureStitchEvent.Post aEvent) {
 		//
 	}
 
@@ -643,7 +659,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			 * (`neo-decompiled/net/minecraft/world/level/block/entity/FuelValues.java:38`), инстанс с клиентского
 			 * {@code Minecraft.getInstance().level} (ближайший клиентский эквивалент world-контекста). */
 			Level tClientLevel = Minecraft.getInstance().level;
-			long tBurnValue = tClientLevel == null ? 0 : tClientLevel.fuelValues().burnDuration(ST.amount(1, aEvent.getItemStack()));
+			long tBurnValue = tClientLevel == null ? 0 : net.minecraftforge.common.ForgeHooks.getBurnTime(ST.amount(1, aEvent.getItemStack()), null);
 			if (tBurnValue > 0) aToolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FURNACE_FUEL) + LH.Chat.WHITE + tBurnValue + " ("+(tBurnValue*EU_PER_FURNACE_TICK)+LH.Chat._RED+"HU"+LH.Chat.WHITE+")");
 
 			if (tData != null) {
@@ -846,11 +862,11 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	 *  с полем {@code phase}/сравнением {@code == ServerTickEvent.END} (тип+поле удалены, F10-зеркало
 	 *  `compat-mirror/java/cpw/mods/fml/common/gameevent/TickEvent.java` — тип-пустышка, поведение живёт
 	 *  здесь) — neo раздельно шлёт {@code ClientTickEvent.Pre}/{@code .Post}
-	 *  (`neoforge-decompiled/net/neoforged/neoforge/client/event/ClientTickEvent.java:24-38`);
-	 *  {@code .Post} = "после тика" 1:1 равно старому {@code END}-фазе — сигнатура ретипирована,
-	 *  условие-обёртка снята (уже подразумевается типом события), тело БЕЗ ИЗМЕНЕНИЙ. */
+	 *  (`forge-1201-decompiled/net/minecraftforge/event/TickEvent.java:24-29`) — в 1.20.1 фаза снова ПОЛЕ
+	 *  события ({@code phase}), как в 1.7.10, поэтому вернулось и условие-обёртка; тело БЕЗ ИЗМЕНЕНИЙ. */
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
-	public void onClientTickEvent(ClientTickEvent.Post aEvent) {
+	public void onClientTickEvent(ClientTickEvent aEvent) {
+		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return; // 1.20.1: фаза — поле события (форма 1.7.10)
 		{
 			if (CLIENT_TIME == 10) {
 				// ЗАКРЫТО, тело переехало на серверную сторону — {@code gregtech.GT6_Main.onModServerStarted2}:
@@ -963,24 +979,24 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	}
 	
 	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): см. javadoc {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight}
-	 *  — {@link ExtractBlockOutlineRenderStateEvent} не несёт {@code player}/{@code currentItem}/{@code partialTicks}
+	 *  — {@link RenderHighlightEvent.Block} не несёт {@code player}/{@code currentItem}/{@code partialTicks}
 	 *  старого события. Игрок восстановлен через {@code Minecraft.getInstance().player} (тот же центральный
 	 *  паттерн, что {@link #getThePlayer()}); {@code sideHit} — из {@code getHitResult().getDirection()};
 	 *  {@code partialTicks} недостижим (0 — нейтрально, единственный потребитель {@link RenderHelper#drawWrenchOverlay}
 	 *  уже no-op, см. его javadoc). Ветвление/делегирование в {@link ITileEntityOnDrawBlockHighlight} — БЕЗ ИЗМЕНЕНИЙ. */
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onDrawBlockHighlight(ExtractBlockOutlineRenderStateEvent aEvent) {
+	public void onDrawBlockHighlight(RenderHighlightEvent.Block aEvent) {
 		Player tPlayer = Minecraft.getInstance().player;
 		if (tPlayer == null) return;
-		byte tSide = (byte)aEvent.getHitResult().getDirection().ordinal();
+		byte tSide = (byte)aEvent.getTarget().getDirection().ordinal();
 		Block
 		aBlock = ST.block(tPlayer.getMainHandItem());
 		if (aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mIsSlab) {
 			RenderHelper.drawWrenchOverlay(aEvent, (byte)0, tSide);
 			return;
 		}
-		aBlock = WD.block(tPlayer.level(), aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ());
-		BlockEntity aTileEntity = WD.te(tPlayer.level(), aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ(), T);
+		aBlock = WD.block(tPlayer.level(), aEvent.getTarget().getBlockPos().getX(), aEvent.getTarget().getBlockPos().getY(), aEvent.getTarget().getBlockPos().getZ());
+		BlockEntity aTileEntity = WD.te(tPlayer.level(), aEvent.getTarget().getBlockPos().getX(), aEvent.getTarget().getBlockPos().getY(), aEvent.getTarget().getBlockPos().getZ(), T);
 		if (!(aTileEntity instanceof ITileEntityOnDrawBlockHighlight) || !((ITileEntityOnDrawBlockHighlight)aTileEntity).onDrawBlockHighlight(aEvent)) {
 			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable)) && ST.valid(tPlayer.getMainHandItem()) && ToolsGT.contains(TOOL_wrench, tPlayer.getMainHandItem())) {
 				RenderHelper.drawWrenchOverlay(aEvent, (byte)0, tSide);

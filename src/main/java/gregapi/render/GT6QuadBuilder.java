@@ -24,17 +24,16 @@
 package gregapi.render;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.resources.model.geometry.QuadCollection;
-import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
 
 /**
@@ -48,7 +47,32 @@ import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
  * См. decisions/F3-render.md §2 (AE2 QuartzGlassModel/CubeBuilder-паттерн).
  */
 public final class GT6QuadBuilder {
-	private final QuadCollection.Builder mQuads = new QuadCollection.Builder();
+	/** F3-render (1.20.1): носитель результата вместо удалённого движкового {@code QuadCollection}. В 1.20.1
+	 *  {@code BakedModel.getQuads(state, side, rand)} сам разделяет геометрию: {@code side != null} — грани,
+	 *  которые скрывает сосед (аналог {@code addCulledFace}), {@code side == null} — всегда видимые
+	 *  ({@code addUnculledFace}). Держим ровно эти два ведра — форма ответа модели, не новая абстракция. */
+	public static final class QuadSet {
+		private static final List<BakedQuad> EMPTY = Collections.emptyList();
+		final List<BakedQuad>[] mCulled;
+		final List<BakedQuad> mUnculled;
+		@SuppressWarnings("unchecked")
+		QuadSet(List<BakedQuad>[] aCulled, List<BakedQuad> aUnculled) {mCulled = aCulled; mUnculled = aUnculled;}
+		/** aSide == null → всегда видимые грани; иначе — cull-aware грани этой стороны. */
+		public List<BakedQuad> getQuads(Direction aSide) {
+			if (aSide == null) return mUnculled;
+			List<BakedQuad> r = mCulled[aSide.get3DDataValue()];
+			return r == null ? EMPTY : r;
+		}
+		public boolean isEmpty() {
+			if (!mUnculled.isEmpty()) return false;
+			for (List<BakedQuad> t : mCulled) if (t != null && !t.isEmpty()) return false;
+			return true;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private final List<BakedQuad>[] mCulled = new List[6];
+	private final List<BakedQuad> mUnculled = new ArrayList<>();
 	private final List<BakedQuad> mAll = new ArrayList<>();
 	/** Текущие render-bounds {minX,minY,minZ,maxX,maxY,maxZ} (1.7.10 RenderBlocks.setRenderBoundsFromBlock, обновляется per-pass). */
 	private final float[] mBounds = {0, 0, 0, 1, 1, 1};
@@ -91,7 +115,7 @@ public final class GT6QuadBuilder {
 		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa);
 		if (tQuad == null) return;
 		// full-cube грань — cull-aware (сосед скроет её); sub-cube (спайк/бар/провод) — всегда видима.
-		if (mFullCube) mQuads.addCulledFace(tDir, tQuad); else mQuads.addUnculledFace(tQuad);
+		if (mFullCube) addCulled(tDir, tQuad); else mUnculled.add(tQuad);
 		mAll.add(tQuad);
 		// BUG-063: границы копим по РЕАЛЬНО выданной грани (а не по каждому объявленному боксу) — тогда рамка
 		// отсечения совпадает с тем, что видит игрок, и не раздувается проходами, у которых текстуры не нашлось.
@@ -108,25 +132,51 @@ public final class GT6QuadBuilder {
 	 *  либо null, если не выдано ни одной грани. */
 	public float[] drawnBounds() {return mDrawnAny ? mDrawn : null;}
 
-	public QuadCollection build() {return mQuads.build();}
+	private void addCulled(Direction aDir, BakedQuad aQuad) {
+		int i = aDir.get3DDataValue();
+		if (mCulled[i] == null) mCulled[i] = new ArrayList<>();
+		mCulled[i].add(aQuad);
+	}
+
+	public QuadSet build() {return new QuadSet(mCulled, mUnculled);}
 	public List<BakedQuad> quads() {return mAll;}
 	public boolean isEmpty() {return mAll.isEmpty();}
 
 	private static TextureAtlasSprite sprite(ResourceLocation aIcon) {return resolveSprite(aIcon);}
 
-	/** Резолв спрайта из block-атласа (по умолчанию — блок-грани через putFace/resolveBlockFaceIcon). */
-	public static TextureAtlasSprite resolveSprite(ResourceLocation aIcon) {return resolveSprite(aIcon, net.minecraft.data.AtlasIds.BLOCKS);}
+	// F3-render (1.20.1): в 1.20.1 атлас БЛОКОВ ОДИН и он же держит иконки предметов (vanilla
+	// assets/minecraft/atlases/blocks.json перечисляет и block/, и item/) — раздельных AtlasIds.BLOCKS/ITEMS,
+	// как в 26.x, здесь нет. Разделение GT6 (блок-текстуры textures/blocks/**, item-иконки textures/items/**)
+	// сохранено ПРЕФИКСОМ sprite-id в atlas-source: blocks → prefix "" (id `gregtech:materialicons/...`, как
+	// строит getIcon), items → prefix "items/" (id `gregtech:items/materialicons/...`), иначе одноимённые
+	// materialicons/iconsets обеих папок столкнулись бы в одном атласе. Перевод id ↔ ведро живёт ТОЛЬКО здесь.
+	/** Ведро атласа: блок-текстуры (sprite-id как есть). */
+	public static final int ATLAS_BLOCKS = 0;
+	/** Ведро атласа: item-иконки (sprite-id получает префикс {@code items/}). */
+	public static final int ATLAS_ITEMS = 1;
 
-	/** Резолв спрайта из указанного атласа. GT6-текстуры динамические: блок-грани — в BLOCKS (atlases/blocks.json),
-	 *  item-иконки — в ITEMS (atlases/items.json, textures/items/**). GT6ItemModel резолвит из ITEMS (материал-предметы
-	 *  берут item-версию materialicons, а не блочную; gt.multiitem.* иначе не в атласе → пурпур). */
-	public static TextureAtlasSprite resolveSprite(ResourceLocation aIcon, ResourceLocation aAtlas) {
+	/** «Атлас предметов» как ЗНАЧЕНИЕ канала {@code IIconContainer.getTextureFile()} (1.7.10
+	 *  {@code TextureMap.locationItemsTexture}, 26.x {@code gregapi.render.GT6QuadBuilder.LOCATION_ITEMS}). В 1.20.1 отдельного
+	 *  items-атласа не существует — иконки предметов лежат в block-атласе под префиксом {@code items/} (см.
+	 *  {@link #ATLAS_ITEMS}), поэтому значение служит МАРКЕРОМ ведра, а не адресом текстуры. Канал сохранён
+	 *  ради 1:1 состава контракта: читателей у него в моде нет (греп {@code getTextureFile} — только объявления). */
+	public static final ResourceLocation LOCATION_ITEMS = ResourceLocation.withDefaultNamespace("textures/atlas/items.png");
+
+	/** Резолв спрайта из block-атласа (по умолчанию — блок-грани через putFace/resolveBlockFaceIcon). */
+	public static TextureAtlasSprite resolveSprite(ResourceLocation aIcon) {return resolveSprite(aIcon, ATLAS_BLOCKS);}
+
+	/** Резолв спрайта из указанного ведра. GT6-текстуры динамические: блок-грани — textures/blocks/**,
+	 *  item-иконки — textures/items/** (материал-предметы берут item-версию materialicons, а не блочную;
+	 *  gt.multiitem.* иначе не в атласе → пурпур). Оба ведра лежат в одном block-атласе 1.20.1. */
+	public static TextureAtlasSprite resolveSprite(ResourceLocation aIcon, int aAtlasBucket) {
+		if (aIcon == null) return null;
 		try {
-			net.minecraft.client.renderer.texture.TextureAtlas tAtlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(aAtlas);
-			TextureAtlasSprite tSprite = tAtlas.getSprite(aIcon);
-			// getSprite возвращает MISSING-спрайт (не null) при отсутствии (TextureAtlas.java:255) → приводим к null: даёт
+			TextureAtlas tAtlas = Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
+			if (tAtlas == null) return null;
+			TextureAtlasSprite tSprite = tAtlas.getSprite(aAtlasBucket == ATLAS_ITEMS ? aIcon.withPrefix("items/") : aIcon);
+			// getSprite возвращает MISSING-спрайт (не null) при отсутствии (TextureAtlas.java:125-128) → приводим к null: даёт
 			// работать fallback (ITEMS→BLOCKS в GT6ItemModel) и пропуск грани в putFace вместо пурпур-квада; детекция пурпура.
-			return tSprite == tAtlas.missingSprite() ? null : tSprite;
+			return tSprite == null || MissingTextureAtlasSprite.getLocation().equals(tSprite.contents().name()) ? null : tSprite;
 		} catch (Throwable e) {return null;}
 	}
 
@@ -158,17 +208,16 @@ public final class GT6QuadBuilder {
 		}
 		net.minecraft.world.level.block.Block tVariant = flattenVariant(aBlock, aMeta);
 		net.minecraft.world.level.block.state.BlockState tState = (tVariant != null ? tVariant : aBlock).defaultBlockState();
-		net.minecraft.client.renderer.block.BlockStateModelSet tSet = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
+		// 1.20.1: baked-модель блока берётся у BlockModelShaper (ModelManager.java:73), сама модель отдаёт
+		// per-side квады (BakedModel.getQuads(state,side,rand)) и particle-спрайт (getParticleIcon) —
+		// это те же два канала, что в 26.x давали BlockStateModelSet/BlockStateModelPart.
+		net.minecraft.client.resources.model.BakedModel tModel = Minecraft.getInstance().getBlockRenderer().getBlockModel(tState);
 		if (aSide >= 0 && aSide <= 5) {
 			Direction tDir = Direction.from3DDataValue(aSide);
-			List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> tParts = new ArrayList<>();
-			tSet.get(tState).collectParts(net.minecraft.util.RandomSource.create(42L), tParts);
-			for (net.minecraft.client.renderer.block.dispatch.BlockStateModelPart tPart : tParts) {
-				List<BakedQuad> tQuads = tPart.getQuads(tDir);
-				if (tQuads != null && !tQuads.isEmpty()) return tQuads.get(0).materialInfo().sprite().contents().name();
-			}
+			List<BakedQuad> tQuads = tModel.getQuads(tState, tDir, net.minecraft.util.RandomSource.create(42L));
+			if (tQuads != null && !tQuads.isEmpty()) return tQuads.get(0).getSprite().contents().name();
 		}
-		return tSet.getParticleMaterial(tState).sprite().contents().name();
+		return tModel.getParticleIcon().contents().name();
 	}
 
 	/** Flattening 1.13 (таблица Mojang): 1.7.10 meta-варианты ванильных блоков → отдельные neo-блоки. Возвращает
@@ -200,23 +249,27 @@ public final class GT6QuadBuilder {
 		int a = aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? (aRGBa[3] & 0xFF) : 255;
 		float[][] c = corners(aDir, mBounds);
 		if (mUVRotate[aDir.get3DDataValue()] == 1) rotateUV1(aDir, c, mBounds);
-		net.minecraft.world.phys.Vec3 n = aDir.getUnitVec3();
-		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
-		tBuilder.setSprite(new Material.Baked(aSprite, false));
+		org.joml.Vector3f n = aDir.step();
+		QuadBakingVertexConsumer.Buffered tBuilder = new QuadBakingVertexConsumer.Buffered();
+		tBuilder.setSprite(aSprite);
 		tBuilder.setDirection(aDir);
-		// КРИТ (инвертированные нормали — 'видно блок изнутри'): neo выводит нормаль/facing грани ИЗ winding вершин
+		tBuilder.setTintIndex(-1);   // тинт УЖЕ запечён в вершины (RGBa GT6); tintIndex по умолчанию 0 → движок домножил бы ЕЩЁ раз через BlockColors
+		tBuilder.setShade(true);     // грань блока затеняется по направлению — 1:1 1.7.10 renderStandardBlock (per-face множители яркости)
+		tBuilder.setHasAmbientOcclusion(true);
+		// КРИТ (инвертированные нормали — 'видно блок изнутри'): движок выводит нормаль/facing грани ИЗ winding вершин
 		// (FaceBakery.computeQuadNormal), а corners давал CW-порядок (нормаль внутрь) → GPU back-face-cull скрывал грань
 		// снаружи. Реверсируем порядок вершин (3→0) → нормаль наружу, грань видима снаружи. UV/позиция per-vertex сохранены.
 		for (int i = 3; i >= 0; i--) {
-			tBuilder.addVertex(c[i][0], c[i][1], c[i][2]);
-			tBuilder.setColor(r, g, b, a);
-			tBuilder.setNormal((float)n.x, (float)n.y, (float)n.z);
-			// КРИТ (прозрачные/мусорные блоки): corners даёт u,v в 0..16 (block-texture конвенция), а neo getU/getV(offset)
+			tBuilder.vertex(c[i][0], c[i][1], c[i][2]);
+			tBuilder.color(r, g, b, a);
+			tBuilder.normal(n.x(), n.y(), n.z());
+			// КРИТ (прозрачные/мусорные блоки): corners даёт u,v в 0..16 (block-texture конвенция), а getU/getV(offset)
 			// ждут offset 0..1 (u0+(u1-u0)*offset) → без /16 UV в 16× мимо спрайта = сэмпл вне текстуры (прозрачные щели
 			// атласа) → блок прозрачный. GT6ItemModel.flatFace уже делит на 16f — блочный путь этого не делал. Нормализуем.
-			tBuilder.setUv(aSprite.getU(c[i][3] / 16f), aSprite.getV(c[i][4] / 16f));
+			tBuilder.uv(aSprite.getU(c[i][3] / 16f), aSprite.getV(c[i][4] / 16f));
+			tBuilder.endVertex();
 		}
-		return tBuilder.bakeQuad();
+		return tBuilder.getQuad();
 	}
 
 	/** F3-fluid: quad жидкости с произвольными вершинами {x,y,z,u,v} (u,v в texel-единицах 0..16, как 1.7.10
@@ -229,10 +282,10 @@ public final class GT6QuadBuilder {
 		if (tSprite == null) {if (sMissingSprites.size() < 400) sMissingSprites.add(aIcon.toString()); return;}
 		mFullCube = false;
 		BakedQuad tQuad = vertexQuad(aCorners, tSprite, aRGBa, aDir, false);
-		if (tQuad != null) {mQuads.addUnculledFace(tQuad); mAll.add(tQuad);}
+		if (tQuad != null) {mUnculled.add(tQuad); mAll.add(tQuad);}
 		if (aBothSides) {
 			BakedQuad tBack = vertexQuad(aCorners, tSprite, aRGBa, aDir.getOpposite(), true);
-			if (tBack != null) {mQuads.addUnculledFace(tBack); mAll.add(tBack);}
+			if (tBack != null) {mUnculled.add(tBack); mAll.add(tBack);}
 		}
 	}
 	/** Один quad по 4 вершинам {x,y,z,u,v} (u,v 0..16) с tint; aReverse — обратная намотка. */
@@ -241,19 +294,23 @@ public final class GT6QuadBuilder {
 		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
 		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
 		int a = aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? (aRGBa[3] & 0xFF) : 255;
-		net.minecraft.world.phys.Vec3 n = aDir.getUnitVec3();
-		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
-		tBuilder.setSprite(new Material.Baked(aSprite, false));
+		org.joml.Vector3f n = aDir.step();
+		QuadBakingVertexConsumer.Buffered tBuilder = new QuadBakingVertexConsumer.Buffered();
+		tBuilder.setSprite(aSprite);
 		tBuilder.setDirection(aDir);
+		tBuilder.setTintIndex(-1);
+		tBuilder.setShade(true);
+		tBuilder.setHasAmbientOcclusion(true);
 		int[] tOrder = aReverse ? new int[]{3,2,1,0} : new int[]{0,1,2,3};
 		for (int idx = 0; idx < 4; idx++) {
 			int i = tOrder[idx];
-			tBuilder.addVertex(aCorners[i][0], aCorners[i][1], aCorners[i][2]);
-			tBuilder.setColor(r, g, b, a);
-			tBuilder.setNormal((float)n.x, (float)n.y, (float)n.z);
-			tBuilder.setUv(aSprite.getU(aCorners[i][3] / 16f), aSprite.getV(aCorners[i][4] / 16f));
+			tBuilder.vertex(aCorners[i][0], aCorners[i][1], aCorners[i][2]);
+			tBuilder.color(r, g, b, a);
+			tBuilder.normal(n.x(), n.y(), n.z());
+			tBuilder.uv(aSprite.getU(aCorners[i][3] / 16f), aSprite.getV(aCorners[i][4] / 16f));
+			tBuilder.endVertex();
 		}
-		return tBuilder.bakeQuad();
+		return tBuilder.getQuad();
 	}
 
 	/** F3-render cross-модель (растения/цветы): X-форма из 2 диагональных плоскостей, каждая ДВУСТОРОННЯЯ (unculled,
@@ -269,7 +326,7 @@ public final class GT6QuadBuilder {
 	private void addCrossPlane(float[][] aCorners, TextureAtlasSprite aSprite, short[] aRGBa) {
 		for (boolean tReverse : new boolean[]{false, true}) { // front + back = плоскость видна с обеих сторон
 			BakedQuad tQuad = planeQuad(aCorners, aSprite, aRGBa, tReverse);
-			if (tQuad != null) {mQuads.addUnculledFace(tQuad); mAll.add(tQuad);}
+			if (tQuad != null) {mUnculled.add(tQuad); mAll.add(tQuad);}
 		}
 	}
 	/** Один quad произвольной плоскости (4 вершины) с полной UV + tint. aReverse — обратная намотка (задняя сторона). */
@@ -284,22 +341,24 @@ public final class GT6QuadBuilder {
 		float nx = aCorners[1][2]-aCorners[0][2], nz = -(aCorners[1][0]-aCorners[0][0]); // нормаль плоскости в XZ (для освещения; cull отключён)
 		float nlen = (float)Math.sqrt(nx*nx+nz*nz); if (nlen > 0) {nx/=nlen; nz/=nlen;}
 		if (aReverse) {nx = -nx; nz = -nz;}
-		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
-		tBuilder.setSprite(new Material.Baked(aSprite, false));
+		QuadBakingVertexConsumer.Buffered tBuilder = new QuadBakingVertexConsumer.Buffered();
+		tBuilder.setSprite(aSprite);
 		tBuilder.setDirection(Direction.UP);
+		tBuilder.setTintIndex(-1);
 		// 1:1 vanilla block/cross-модель («затемнённые цветы», репорт игрока): "shade": false + "ambientocclusion": false —
 		// без направленного затенения по нормали (XZ-нормаль давала ×0.6-0.8) и без AO; 1.7.10 рисовал cross ровным светом.
 		tBuilder.setShade(false);
-		tBuilder.setAmbientOcclusion(false);
+		tBuilder.setHasAmbientOcclusion(false);
 		int[] tOrder = aReverse ? new int[]{3,2,1,0} : new int[]{0,1,2,3};
 		for (int idx = 0; idx < 4; idx++) {
 			int i = tOrder[idx];
-			tBuilder.addVertex(aCorners[i][0], aCorners[i][1], aCorners[i][2]);
-			tBuilder.setColor(r, g, b, a);
-			tBuilder.setNormal(nx, 0, nz);
-			tBuilder.setUv(aSprite.getU(tUV[i][0] / 16f), aSprite.getV(tUV[i][1] / 16f));
+			tBuilder.vertex(aCorners[i][0], aCorners[i][1], aCorners[i][2]);
+			tBuilder.color(r, g, b, a);
+			tBuilder.normal(nx, 0, nz);
+			tBuilder.uv(aSprite.getU(tUV[i][0] / 16f), aSprite.getV(tUV[i][1] / 16f));
+			tBuilder.endVertex();
 		}
-		return tBuilder.bakeQuad();
+		return tBuilder.getQuad();
 	}
 
 	/** F3-render PILLAR: вариант 1 поворота UV — ДОСЛОВНО из 1.7.10 RenderBlocks (ветки uvRotate*==1 в

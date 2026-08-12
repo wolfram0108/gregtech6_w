@@ -35,7 +35,7 @@ import net.minecraft.resources.ResourceLocation;
  * F3-render: в 1.7.10 этот интерфейс дёргал по каждой стороне immediate-mode рендерер
  * (RenderBlocks/Tessellator/GL11/IIcon) — стек удалён в 26.1.2. РЕАЛИЗОВАНА замена (decisions/F3-render.md §8):
  * {@code aRenderer} = {@link GT6QuadBuilder}, per-side {@code renderXPos/...} → {@code Util.renderSide} →
- * {@code putFace(side, ResourceLocation, RGBa)} строит BakedQuad; сборка в {@link GT6BlockModel} (DynamicBlockStateModel).
+ * {@code putFace(side, ResourceLocation, RGBa)} строит BakedQuad; сборка в {@link GT6BlockModel} (BakedModel + ModelData).
  * {@code IIcon} → {@link ResourceLocation}. immediate-mode AO/Tessellator заменён декларативным baked-путём.
  */
 public interface ITexture {

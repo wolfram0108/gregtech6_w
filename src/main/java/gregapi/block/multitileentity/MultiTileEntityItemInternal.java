@@ -116,6 +116,15 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	// тот же мост, что ItemBase:145/PrefixItem:213/ItemBlockBase. Без него — сырой ключ "item.gregtech.gt.multitileentity".
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 
+	// F3-render (ветка 1.20.1): item-форма MTE со СВОИМ рендером (сундук, масс-хранилище) рисуется BEWLR'ом —
+	// движок берёт его отсюда (IForgeItem.initializeClient, Item.java:400-408, вызов защищён Dist.CLIENT).
+	// Тело — ленивый invokestatic в клиентский центр (BUG-092: клиентские типы в common-классе валят линковку
+	// на выделенном сервере), тот же приём, что MTEChestRenderer.bindFirst.
+	@Override
+	public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> aConsumer) {
+		gregapi.render.MultiTileEntityBER.bindItemExtensions(aConsumer);
+	}
+
 	// F13: neo зовёт appendHoverText (не 1.7.10 addInformation) — мост как ItemBlockBase:65 (собираем GT6-тултип через
 	// addInformation ниже). Без него у машин нет характеристик (ёмкость/прочность/EU из NBT-параметров).
 	@Override @SuppressWarnings({"rawtypes", "unchecked"})

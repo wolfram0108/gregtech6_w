@@ -48,9 +48,11 @@ public class RenderHelper {
 
 	/** F3-render, ЖИВОЙ wrench-overlay (сетка зон клика инструментом по грани). 1.7.10: сырой GL11 в кадре
 	 *  DrawBlockHighlightEvent — translate в центр блока + CCL {@code Rotation.sideRotations[aSide]} + рисование
-	 *  в локальной плоскости y=-0.5025 (RenderHelper:98-449 оригинала). neo: {@code CustomBlockOutlineRenderer}
-	 *  из {@code ExtractBlockOutlineRenderStateEvent} (вызов — LevelRenderer:1068), линии — канон
-	 *  ShapeRenderer.renderShape:12 ({@code RenderTypes.lines()}, addVertex+setColor+setNormal+setLineWidth).
+	 *  в локальной плоскости y=-0.5025 (RenderHelper:98-449 оригинала).
+	 *  <p>Ветка 1.20.1: носитель — {@code RenderHighlightEvent.Block} ({@code RenderHighlightEvent.java:107}), и он
+	 *  НЕМЕДЛЕННЫЙ: даёт готовые {@code PoseStack} и {@code MultiBufferSource} прямо в кадре отрисовки выделения —
+	 *  то есть та же семантика, что у 1.7.10 (нарисовал тут же), без отложенного {@code CustomBlockOutlineRenderer}
+	 *  26.x. Линии — канон {@code LevelRenderer.renderShape} ({@code RenderType.lines()}, vertex+color+normal).
 	 *  Базисы граней — 1:1 из байткода CCL Rotation.sideRotations (Matrix4-инициализаторы); геометрия
 	 *  (112 отрезков) — дословная транскрипция glVertex3d-пар оригинала. Дыхание цвета — CLIENT_TIME, как было. */
 	private static final double[][][] WRENCH_SIDE_BASIS = { // [aSide][локальная ось X/Y/Z][мировой вектор x,y,z]
@@ -63,34 +65,30 @@ public class RenderHelper {
 	};
 	private interface WrenchLine {void line(double aX1, double aZ1, double aX2, double aZ2);}
 
-	public static void drawWrenchOverlay(net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent aEvent, byte aConnections, byte aSide) {
+	public static void drawWrenchOverlay(net.minecraftforge.client.event.RenderHighlightEvent.Block aEvent, byte aConnections, byte aSide) {
 		if (gregapi.data.CS.SIDES_INVALID[aSide]) return;
-		final int fX = aEvent.getBlockPos().getX(), fY = aEvent.getBlockPos().getY(), fZ = aEvent.getBlockPos().getZ();
-		final int fConnections = aConnections & 255; final byte fSide = aSide;
-		aEvent.addCustomRenderer((aState, aBuffer, aPose, aTranslucent, aLevelState) -> {
-			// рисуем в том же пассе, где ванила рисует свой outline этого блока (state.isTranslucent-гейт LevelRenderer:1074)
-			if (aState.isTranslucent() != aTranslucent) return false;
-			try { drawWrenchOverlayNow(aBuffer, aPose, aLevelState, fX, fY, fZ, fConnections, fSide); } catch (Throwable e) {/* косметика не смеет ронять кадр */}
-			return false; // ванильный outline НЕ подавляем — 1.7.10 рисовал ПОВЕРХ выделения
-		});
+		net.minecraft.core.BlockPos tPos = aEvent.getTarget().getBlockPos();
+		try {
+			drawWrenchOverlayNow(aEvent.getMultiBufferSource(), aEvent.getPoseStack(), aEvent.getCamera().getPosition(),
+				tPos.getX(), tPos.getY(), tPos.getZ(), aConnections & 255, aSide);
+		} catch (Throwable e) {/* косметика не смеет ронять кадр */}
 	}
 
-	private static void drawWrenchOverlayNow(net.minecraft.client.renderer.MultiBufferSource.BufferSource aBuffer, com.mojang.blaze3d.vertex.PoseStack aPose,
-			net.minecraft.client.renderer.state.level.LevelRenderState aLevelState, int aX, int aY, int aZ, int aConnections, byte aSide) {
-		net.minecraft.world.phys.Vec3 tCam = aLevelState.cameraRenderState.pos;
+	private static void drawWrenchOverlayNow(net.minecraft.client.renderer.MultiBufferSource aBuffer, com.mojang.blaze3d.vertex.PoseStack aPose,
+			net.minecraft.world.phys.Vec3 tCam, int aX, int aY, int aZ, int aConnections, byte aSide) {
 		final double tCX = aX + 0.5 - tCam.x, tCY = aY + 0.5 - tCam.y, tCZ = aZ + 0.5 - tCam.z;
 		final double[][] tM = WRENCH_SIDE_BASIS[aSide]; final double tLY = -0.5025; // локальная плоскость чуть снаружи грани, как glTranslated(0,-0.5025,0)
 		double tColorD = (CLIENT_TIME % 42 < 21 ? 0.25 + ((CLIENT_TIME % 21) / 40.0) : 0.75 - ((CLIENT_TIME % 21) / 40.0));
 		int tGray = (int)(tColorD * 255.0);
-		final int tColor = net.minecraft.util.ARGB.color(127, tGray, tGray, tGray); // glColor4d(t,t,t,0.5)
-		final com.mojang.blaze3d.vertex.VertexConsumer tVC = aBuffer.getBuffer(net.minecraft.client.renderer.rendertype.RenderTypes.lines());
+		final int tColor = net.minecraft.util.FastColor.ARGB32.color(127, tGray, tGray, tGray); // glColor4d(t,t,t,0.5)
+		final com.mojang.blaze3d.vertex.VertexConsumer tVC = aBuffer.getBuffer(net.minecraft.client.renderer.RenderType.lines());
 		final com.mojang.blaze3d.vertex.PoseStack.Pose tPose = aPose.last();
 		WrenchLine tLine = (aX1, aZ1, aX2, aZ2) -> {
 			double x1 = tCX + tM[0][0]*aX1 + tM[1][0]*tLY + tM[2][0]*aZ1, y1 = tCY + tM[0][1]*aX1 + tM[1][1]*tLY + tM[2][1]*aZ1, z1 = tCZ + tM[0][2]*aX1 + tM[1][2]*tLY + tM[2][2]*aZ1;
 			double x2 = tCX + tM[0][0]*aX2 + tM[1][0]*tLY + tM[2][0]*aZ2, y2 = tCY + tM[0][1]*aX2 + tM[1][1]*tLY + tM[2][1]*aZ2, z2 = tCZ + tM[0][2]*aX2 + tM[1][2]*tLY + tM[2][2]*aZ2;
 			org.joml.Vector3f tNormal = new org.joml.Vector3f((float)(x2-x1), (float)(y2-y1), (float)(z2-z1)).normalize();
-			tVC.addVertex(tPose, (float)x1, (float)y1, (float)z1).setColor(tColor).setNormal(tPose, tNormal).setLineWidth(2.0F);
-			tVC.addVertex(tPose, (float)x2, (float)y2, (float)z2).setColor(tColor).setNormal(tPose, tNormal).setLineWidth(2.0F);
+			tVC.vertex(tPose.pose(), (float)x1, (float)y1, (float)z1).color(tColor).normal(tPose.normal(), tNormal.x(), tNormal.y(), tNormal.z()).endVertex();
+			tVC.vertex(tPose.pose(), (float)x2, (float)y2, (float)z2).color(tColor).normal(tPose.normal(), tNormal.x(), tNormal.y(), tNormal.z()).endVertex();
 		};
 		// ===== дословная транскрипция вершин оригинала (пары glVertex3d → отрезки), локальные (x,z) =====
 		tLine.line(0.50, -0.25, -0.50, -0.25);

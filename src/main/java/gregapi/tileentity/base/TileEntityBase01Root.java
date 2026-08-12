@@ -90,7 +90,7 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
+import net.minecraftforge.client.event.RenderHighlightEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.core.Direction;
 import net.minecraftforge.fluids.*;
@@ -144,6 +144,24 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	 *  Не сохраняется и не синхронизируется: чисто визуальный кэш, как mRenderAABB выше. */
 	public java.util.List<net.minecraft.client.renderer.block.model.BakedQuad> mQuadCache = null;
 	public long mQuadCacheEpoch = Long.MIN_VALUE;
+
+	/** BUG-063 (репорт игрока: «как только центральный нижний блок выходит за границы экрана, весь тигель сразу
+	 *  пропадает»). Ветка 1.20.1: рамку отсечения рисунка BE объявляет САМ BE — {@code IForgeBlockEntity.getRenderBoundingBox()}
+	 *  ({@code IForgeBlockEntity.java:105}), а движок проверяет её до отрисовки ({@code LevelRenderer.java:1241}).
+	 *  (В 26.x носителем был метод рендерера, отсюда прежняя ссылка на BER.) Умолчание Forge — куб самого блока,
+	 *  а геометрия GT6 за свой блок выходит штатно (тигель рисует всю структуру 3×3×3 из контроллера —
+	 *  {@code MultiTileEntityCrucible:648-653}; лопасти турбины, коннекторы труб); в 1.7.10 узла не было вовсе:
+	 *  MTE рисовались мэшем чанка и отсекались секцией 16³, а TESR имели дефолт INFINITE
+	 *  ({@code recompSrc TileEntity:399-420}). Рамку НЕ ЗАДАЁМ константой — у GT6 боксы вычисляются в рантайме;
+	 *  берём ФАКТИЧЕСКУЮ геометрию прошлого кадра ({@link gregapi.render.GT6QuadBuilder#drawnBounds}), а пока она
+	 *  неизвестна — не отсекаем, чтобы первый кадр состоялся и рамка стала известна (дистанция при этом
+	 *  по-прежнему режет: {@code BlockEntityRenderer.shouldRender}). Приём канонический: так же объявляют рамку
+	 *  маяк, сундук и поршень. */
+	@Override
+	public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+		net.minecraft.world.phys.AABB rBox = mRenderAABB;
+		return rBox == null ? INFINITE_EXTENT_AABB : rBox;
+	}
 
 	/** If this TileEntity is ticking at all */
 	public final boolean mIsTicking;
@@ -1200,15 +1218,15 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code DrawBlockHighlightEvent} (тип удалён, см.
 	 *  {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight} javadoc). */
-	public boolean onDrawBlockHighlight2(ExtractBlockOutlineRenderStateEvent aEvent) {return F;}
+	public boolean onDrawBlockHighlight2(RenderHighlightEvent.Block aEvent) {return F;}
 
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): новое {@link ExtractBlockOutlineRenderStateEvent} не несёт
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): новое {@link RenderHighlightEvent.Block} не несёт
 	 *  {@code player}/{@code currentItem}/{@code partialTicks} 1.7.10-события (см. javadoc интерфейса
 	 *  {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight}) — wrench-overlay решение по
 	 *  предмету в руке недостижимо из этого события до BER-пути (decisions/F3-render.md §2.5/§2.7);
 	 *  тело — компилируемая заглушка, сигнатура/структура (делегат в {@code onDrawBlockHighlight2})
 	 *  сохранены. */
-	public final boolean onDrawBlockHighlight(ExtractBlockOutlineRenderStateEvent aEvent) {
+	public final boolean onDrawBlockHighlight(RenderHighlightEvent.Block aEvent) {
 		FORCE_FULL_SELECTION_BOXES = F;
 		// 1:1 с оригиналом (TileEntityBase01Root:995-1005): предмет в руке — 1.7.10-событие несло currentItem,
 		// neo-событие не несёт, поэтому игрок берётся у мода.
@@ -1219,7 +1237,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		// это неверно: в dev-режиме класс проверяется целиком при трансформации (NeoForgeDevDistCleaner.handlesClass),
 		// и весь TileEntityBase01Root на выделенном сервере не грузился → падал GT_API.<clinit> → мод не стартовал
 		// вовсе. Центр для этого в моде уже был (GT_API_Proxy:230 / GT_API_Proxy_Client:299), здесь он и используется.
-		byte tSide = (byte)aEvent.getHitResult().getDirection().ordinal();
+		byte tSide = (byte)aEvent.getTarget().getDirection().ordinal();
 		if (!SIDES_VALID[tSide] || onDrawBlockHighlight2(aEvent)) return T;
 		net.minecraft.world.entity.player.Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
 		ItemStack tHeld = tPlayer == null ? null : tPlayer.getMainHandItem();

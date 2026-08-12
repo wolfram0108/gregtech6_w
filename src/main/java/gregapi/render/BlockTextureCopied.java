@@ -147,8 +147,8 @@ public class BlockTextureCopied implements ITexture {
 	 *  Модовые блоки: 1.7.10 диспатчил виртуально и чужие переопределения работали; в neo канала нет ни у кого —
 	 *  восстановимы только ванильные данные, чужие получают дефолт (граница шва, честно). */
 	private static int vanillaRenderColor(Block aBlock, int aMeta) {
-		if (aBlock == Blocks.SPRUCE_LEAVES) return net.minecraft.world.level.FoliageColor.FOLIAGE_EVERGREEN & 0xFFFFFF;
-		if (aBlock == Blocks.BIRCH_LEAVES)  return net.minecraft.world.level.FoliageColor.FOLIAGE_BIRCH & 0xFFFFFF;
+		if (aBlock == Blocks.SPRUCE_LEAVES) return net.minecraft.world.level.FoliageColor.getEvergreenColor() & 0xFFFFFF;
+		if (aBlock == Blocks.BIRCH_LEAVES)  return net.minecraft.world.level.FoliageColor.getBirchColor() & 0xFFFFFF;
 		if (aBlock == Blocks.OAK_LEAVES || aBlock == Blocks.JUNGLE_LEAVES || aBlock == Blocks.ACACIA_LEAVES || aBlock == Blocks.DARK_OAK_LEAVES || aBlock == Blocks.VINE)
 			return net.minecraft.world.level.FoliageColor.get(0.5, 1.0) & 0xFFFFFF;
 		if (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.GRASS || aBlock == Blocks.FERN)
