@@ -52,7 +52,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.Container;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 // FORCED-ADAPTATION(F18-achievements): net.minecraft.stats.AchievementList + Player.triggerAchievement удалены в neo (data-driven advancements, award() навязывает побочки — не 1:1). Косметические триггеры сняты ниже. Решение: decisions/F18-achievements.md.
@@ -357,7 +357,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		// FMLCommonHandler удалён, событие в neo не публикуется (нет ни шины, ни слушателей — вызов был бы чистым
 		// no-op). BUG-039-аудит: сам вызов СНЯТ — mirror-класс cpw.* JPMS-вырезан из рантайм-jar (build.gradle:156),
 		// линковка кидала NoClassDefFoundError в catch на КАЖДОМ крафте (тихий лог-спам). Восстановление хука для
-		// других модов — вместе с реальной 3x3-передачей (CraftingInput.of вместо EMPTY), отдельный шов при возврате
+		// других модов — вместе с реальной 3x3-передачей (CraftingContainer.of вместо EMPTY), отдельный шов при возврате
 		// крафт-события.
 		
 		ItemStack[] tRecipeStacks = {ST.amount(1, slot(21)), ST.amount(1, slot(22)), ST.amount(1, slot(23)), ST.amount(1, slot(24)), ST.amount(1, slot(25)), ST.amount(1, slot(26)), ST.amount(1, slot(27)), ST.amount(1, slot(28)), ST.amount(1, slot(29))};
@@ -419,7 +419,8 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		
 		if (aHoldStack == null) aHoldStack = ST.copy(slot(31)); else aHoldStack.setCount(aHoldStack.getCount()+(slot(31).getCount()));
 		
-		aHoldStack.onCraftedBy(aPlayer, slot(31).getCount()); // neo ItemStack.onCraftedBy(Player,int) — 1.7.10 onCrafting(World,EntityPlayer,int) уронил Level-аргумент (ItemStack.java neo).
+		// 1.20.1 сохранил форму 1.7.10 onCrafting(World,EntityPlayer,int) дословно: onCraftedBy(Level,Player,int) (ItemStack.java:486).
+		aHoldStack.onCraftedBy(getWorld(), aPlayer, slot(31).getCount());
 		
 		ST.check(aPlayer, aHoldStack);
 		

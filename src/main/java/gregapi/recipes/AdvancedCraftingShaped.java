@@ -31,7 +31,7 @@ import gregapi.item.multiitem.MultiItemTool;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
@@ -47,7 +47,7 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 	private final net.minecraft.world.item.enchantment.Enchantment[] mEnchantmentsAdded;
 	private final int[] mEnchantmentLevelsAdded;
 	
-	public AdvancedCraftingShaped(ItemStack aResult, boolean aDismantleAble, boolean aRemovableByGT, boolean aKeepingNBT, boolean aAutoCraftable, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object... aRecipe) {
+	public AdvancedCraftingShaped(ItemStack aResult, boolean aDismantleAble, boolean aRemovableByGT, boolean aKeepingNBT, boolean aAutoCraftable, net.minecraft.world.item.enchantment.Enchantment[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object... aRecipe) {
 		super(aResult, aRecipe);
 		mEnchantmentsAdded = aEnchantmentsAdded;
 		mEnchantmentLevelsAdded = aEnchantmentLevelsAdded;
@@ -58,13 +58,13 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 	}
 	
 	@Override
-	public boolean matches(CraftingInput aGrid, Level aWorld) {
+	public boolean matches(CraftingContainer aGrid, Level aWorld) {
 		if (mKeepingNBT) {
 			ItemStack tStack = null;
 			// F11: Forge InventoryCrafting.getSizeInventory()/getStackInSlot(i) удалены; neo-эквивалент —
-			// CraftingInput.size()/getItem(i). getItem(i) никогда не null (пустой слот = ItemStack.EMPTY), поэтому
-			// занятость слота проверяется ST.valid(...), а не сравнением с null (CraftingInput.java:85-96).
-			for (int i = 0; i < aGrid.size(); i++) {
+			// CraftingContainer.size()/getItem(i). getItem(i) никогда не null (пустой слот = ItemStack.EMPTY), поэтому
+			// занятость слота проверяется ST.valid(...), а не сравнением с null (CraftingContainer.java:85-96).
+			for (int i = 0; i < aGrid.getContainerSize(); i++) {
 				ItemStack tSlot = aGrid.getItem(i);
 				if (ST.valid(tSlot) && (ItemNBT.get(tSlot) != null)) {
 					if (tStack != null) {
@@ -78,16 +78,16 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 	}
 	
 	@Override
-	public ItemStack getCraftingResult(CraftingInput aGrid) {
+	public ItemStack getCraftingResult(CraftingContainer aGrid) {
 		ItemStack rStack = super.getCraftingResult(aGrid);
 		if (rStack != null) {
 			// Update the Stack
 			ST.update(rStack);
 			
 			// Keeping NBT
-			// F11: CraftingInput.size()/getItem(i) (getStackInSlot/getSizeInventory удалены); ST.valid(...)
+			// F11: CraftingContainer.size()/getItem(i) (getStackInSlot/getSizeInventory удалены); ST.valid(...)
 			// заменяет "!= null" (getItem(i) всегда non-null, пустой слот = ItemStack.EMPTY).
-			if (mKeepingNBT) for (int i = 0; i < aGrid.size(); i++) {
+			if (mKeepingNBT) for (int i = 0; i < aGrid.getContainerSize(); i++) {
 				ItemStack tSlot = aGrid.getItem(i);
 				if (ST.valid(tSlot) && (ItemNBT.get(tSlot) != null)) {
 					UT.NBT.set(rStack, (CompoundTag)ItemNBT.get(tSlot).copy());
@@ -99,7 +99,7 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 			if (rStack.getItem() instanceof IItemEnergy) {
 				for (TagData tEnergyType : ((IItemEnergy)rStack.getItem()).getEnergyTypes(rStack)) {
 					long tCharge = 0;
-					for (int i = 0; i < aGrid.size(); i++) {
+					for (int i = 0; i < aGrid.getContainerSize(); i++) {
 						ItemStack tSlot = aGrid.getItem(i);
 						if (ST.valid(tSlot) && tSlot.getItem() instanceof IItemEnergy && !(tSlot.getItem() instanceof IItemGTContainerTool)) {
 							tCharge += ((IItemEnergy)tSlot.getItem()).getEnergyStored(tEnergyType, tSlot);
@@ -113,9 +113,9 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 			if (mDismantleable) {
 				CompoundTag rNBT = ItemNBT.get(rStack), tNBT = UT.NBT.make();
 				if (rNBT == null) rNBT = UT.NBT.make();
-				// F11 (АДАПТИРОВАНО): 1.7.10 InventoryCrafting фикс-9 (3x3); neo CraftingInput подрезается до габарита
-				// (F11-crafting-recipe.md §7) — Math.min(9,size()) сохраняет 1:1 для полной 3x3 и не переполняется на меньшей. Не заглушка.
-				for (int i = 0, j = Math.min(9, aGrid.size()); i < j; i++) {
+				// 1.7.10 InventoryCrafting фикс-9 (3x3). В 1.20.1 сетка тоже приходит целиком, но её габарит задаёт стол
+				// (верстак 3x3, инвентарь игрока 2x2) — Math.min(9, getContainerSize()) даёт 1:1 на 3x3 и не выходит за границы меньшей.
+				for (int i = 0, j = Math.min(9, aGrid.getContainerSize()); i < j; i++) {
 					ItemStack tStack = aGrid.getItem(i);
 					if (ST.valid(tStack) && ST.container(tStack, T) == null && !(tStack.getItem() instanceof MultiItemTool)) {
 						tStack = ST.amount(1, tStack);

@@ -33,7 +33,7 @@ import gregapi.oredict.event.IOreDictListenerEvent;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import gregapi.recipes.ShapelessOreRecipe;
@@ -97,12 +97,12 @@ public class AdvancedCraftingTool extends ShapelessOreRecipe implements ICraftin
 	}
 	
 	@Override
-	public boolean matches(CraftingInput aGrid, Level aWorld) {
+	public boolean matches(CraftingContainer aGrid, Level aWorld) {
 		ItemStack tStack = null;
 		OreDictMaterial rHead = null, rRod = null;
-		// F11: Forge InventoryCrafting.getSizeInventory()/getStackInSlot(i) удалены; neo-эквивалент —
-		// CraftingInput.size()/getItem(i) (neo-decompiled/.../item/crafting/CraftingInput.java:85-96).
-		for (int i = 0; i < aGrid.size(); i++) {
+		// 1.20.1: InventoryCrafting → CraftingContainer, getSizeInventory()/getStackInSlot(i) →
+		// getContainerSize()/getItem(i) (forge-1201-decompiled net/minecraft/world/Container.java).
+		for (int i = 0; i < aGrid.getContainerSize(); i++) {
 			tStack = aGrid.getItem(i);
 			if (ST.valid(tStack)) {
 				OreDictItemData tData = OM.anydata_(tStack);
@@ -122,10 +122,10 @@ public class AdvancedCraftingTool extends ShapelessOreRecipe implements ICraftin
 	}
 	
 	@Override
-	public ItemStack getCraftingResult(CraftingInput aGrid) {
+	public ItemStack getCraftingResult(CraftingContainer aGrid) {
 		ItemStack tStack = null;
 		OreDictMaterial rHead = null, rRod = null;
-		for (int i = 0; i < aGrid.size(); i++) {
+		for (int i = 0; i < aGrid.getContainerSize(); i++) {
 			tStack = aGrid.getItem(i);
 			if (ST.valid(tStack)) {
 				OreDictItemData tData = OM.anydata_(tStack);

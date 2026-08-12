@@ -65,12 +65,10 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.event.EventHooks;
 import net.minecraftforge.fluids.IFluidContainerItem;
 import twilightforest.TFAchievementPage;
 
@@ -358,46 +356,16 @@ public class ST {
 		GT_API.registerItem(aItem, aRegistryName);
 	}
 
-	/** F16/F10 (1:1): 1.7.10 Item.setMaxStackSize(n) мутировал итем в рантайме. neo: GT6-итем (ItemBase) хранит поле +
-	 *  override getMaxStackSize; ВАНИЛЬНЫЙ/форейн итем неизменяем (стек-размер = дефолт-компонент MAX_STACK_SIZE) —
-	 *  штатно меняется через neo ModifyDefaultComponentsEvent. Копим намерение в карту; ПОДКЛЮЧЕНО:
-	 *  applyVanillaComponentOverrides (ниже, подписан на mod-bus в GT_API) применяет её на событии. Вызыватели —
-	 *  форейн-итемы (TC/TF) под .exists(): в этой сборке форейн-моды отсутствуют → карта пуста → применять нечего (F10). */
-	public static final java.util.Map<Item, Integer> VANILLA_STACKSIZE_OVERRIDES = new java.util.IdentityHashMap<>();
+	/** F16 (1:1): 1.7.10 {@code Item.setMaxStackSize(n)} мутировал предел стека предмета в рантайме — включая ЧУЖОЙ
+	 *  (ванильный/форейн). В 1.20.1 это {@code private final int maxStackSize} (forge-1201-decompiled Item.java:63),
+	 *  публичного сеттера нет — private/final снят Access Transformer'ом ветки
+	 *  ({@code src/main/resources/META-INF/accesstransformer.cfg}, ADR F2 §2.3, прямой наследник gregtech_at.cfg),
+	 *  и запись идёт ПРЯМО в поле, как звал оригинал. Ни карты отложенных намерений, ни рефлексии здесь больше нет.
+	 *  GT6-итем (ItemBase) держит своё поле + override getMaxStackSize (F16-шов) — ветка сохранена. */
 	public static Item setMaxStackSize(Item aItem, int aSize) {
 		if (aItem instanceof gregapi.item.ItemBase) return ((gregapi.item.ItemBase)aItem).setMaxStackSize(aSize);
-		if (aItem != null) VANILLA_STACKSIZE_OVERRIDES.put(aItem, aSize);
+		if (aItem != null) aItem.maxStackSize = aSize;
 		return aItem;
-	}
-
-	/** F16/F10: применяет vanilla/форейн stack-size-override на ModifyDefaultComponentsEvent (mod-bus, GT_API). Тайминг-безопасно:
-	 *  прямые vanilla-твики (golden ST.forceProperMaxStacksizes 1:1) применяются в самом хендлере (не зависят от порядка загрузки).
-	 *  craftRemainder так НЕ применить — craftingRemainingItem у neo Item иммутабельное поле (не компонент), см. setContainerItem. */
-	public static void applyVanillaComponentOverrides(net.neoforged.neoforge.event.ModifyDefaultComponentsEvent aEvent) {
-		// BUG-021 v3 (тайминг): прежний носитель applyAllStackSizes — onModPostInit2Deferred (server-start), а ЭТО
-		// событие — mod-load (RegistrationEvents.init, ПОСЛЕ CommonSetup: CommonModLoader.java:74-78) → карта применялась
-		// ПУСТОЙ, все vanilla-стаки GT6 (жемчуг/пластинки/лёд/глина/… из OreDictPrefix.applyStackSizes) были мертвы.
-		// Конфиг stacksizes.cfg прочитан ещё в onModPreInit2 (GT_API:817) → наполняем карту ЗДЕСЬ, до применения.
-		// Повторный вызов на server-start (GT_API:1140, 1:1-место) остаётся — идемпотентен (та же величина).
-		gregapi.oredict.OreDictPrefix.applyAllStackSizes();
-		// Форма оригинала (gt6-original ST.forceProperMaxStacksizes): 1.7.10 звал item.setMaxStackSize(n) прямо на
-		// ванильном предмете. В 1.20.1 предел стека — `private final int maxStackSize` предмета, компонента
-		// MAX_STACK_SIZE и события ModifyDefaultComponentsEvent (обе вещи 26.x) не существует. Правим тем же
-		// центром рефлексии GT6, что и setMaxDamage выше — одно место на весь мод.
-		for (java.util.Map.Entry<Item, Integer> tE : VANILLA_STACKSIZE_OVERRIDES.entrySet()) setMaxStackSize(tE.getKey(), tE.getValue());
-		setMaxStackSize(net.minecraft.world.item.Items.POTION, 1);
-		for (Item tItem : new Item[]{net.minecraft.world.item.Items.GLASS_BOTTLE, net.minecraft.world.item.Items.CAKE, net.minecraft.world.item.Items.STICK, net.minecraft.world.item.Items.WRITTEN_BOOK, net.minecraft.world.item.Items.WRITABLE_BOOK, net.minecraft.world.item.Items.ENCHANTED_BOOK, net.minecraft.world.item.Items.SNOWBALL, net.minecraft.world.item.Items.EGG})
-			setMaxStackSize(tItem, 64);
-		// 1.7.10 bed→64 / wooden_door+iron_door→8; после флэттенинга это семейства предметов — проходим реестр.
-		for (Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
-			if (tItem instanceof net.minecraft.world.item.BedItem) setMaxStackSize(tItem, 64);
-			else if (tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof net.minecraft.world.level.block.DoorBlock) setMaxStackSize(tItem, 8);
-		}
-	}
-
-	/** Единая точка правки предела стека чужого предмета — см. setMaxDamage выше про AT-канон. */
-	public static void setMaxStackSize(Item aItem, int aMaxStackSize) {
-		if (aItem != null) UT.Reflection.setField(net.minecraft.world.item.Item.class, aItem, "maxStackSize", aMaxStackSize, T);
 	}
 
 	/** F8 read-modify-write: 1.7.10 `stack.getTagCompound().putX(k,v)` мутировал ЖИВОЙ тег стека. neo CustomData
@@ -478,18 +446,16 @@ public class ST {
 		if (valid(aStack) && aItem != null) UT.Reflection.setField(aStack, "item", aItem.builtInRegistryHolder());
 		return aStack;
 	}
-	/** F12-vanilla-durability ЦЕНТР: 1.7.10 {@code Item.setMaxDamage(int)} мутировал durability (GT config
-	 *  SmallerVanillaToolDurability урезает vanilla-инструменты). neo: {@code MAX_DAMAGE} = DataComponent на
-	 *  {@code builtInRegistryHolder().components()} (Holder.java:133). Публичный {@code Holder.Reference.bindComponents}
-	 *  (Holder.java:262) — БЕЗ reflection: пересобрать component-map с новым MAX_DAMAGE. GT6-item durability = ItemBase.mMaxDamage (F12). */
+	/** F12-vanilla-durability ЦЕНТР: 1.7.10 {@code Item.setMaxDamage(int)} мутировал durability чужого предмета
+	 *  (GT config SmallerVanillaToolDurability урезает vanilla-инструменты). В 1.20.1 это
+	 *  {@code private final int maxDamage} (forge-1201-decompiled Item.java:64) — публичного сеттера нет.
+	 *  Канонический для GT6 путь правки чужого приватного члена — Access Transformer (ADR F2 §2.3, прямой
+	 *  наследник {@code gregtech_at.cfg} оригинала): {@code src/main/resources/META-INF/accesstransformer.cfg}
+	 *  снимает private/final с {@code Item.maxDamage}/{@code Item.maxStackSize}, и запись идёт ПРЯМО в поле —
+	 *  ровно как звал 1.7.10. Рефлексии здесь больше нет. GT6-item durability = ItemBase.mMaxDamage (F12). */
 	public static void setMaxDamage(Item aItem, int aMaxDamage) {
 		if (aItem == null) return;
-		// 1.7.10 звал публичный Item.setMaxDamage(int). В 1.20.1 это `private final int maxDamage` (Item.java:64) —
-		// сеттера нет; канонический путь правки чужого приватного члена у GT6 — Access Transformer (F2 §2.3, прямой
-		// наследник gregtech_at.cfg). AT — решение уровня сборки, потому пока идём ЧЕРЕЗ СВОЙ ЖЕ центр рефлексии
-		// GT6 (UT.Reflection.setField, тот же приём, каким оригинал правил чужие поля), с логом при отказе —
-		// поведение не теряется молча. См. «на решение оркестратору».
-		UT.Reflection.setField(net.minecraft.world.item.Item.class, aItem, "maxDamage", aMaxDamage, T);
+		aItem.maxDamage = aMaxDamage;
 	}
 
 	public static ItemStack update (ItemStack aStack) {
@@ -1379,11 +1345,20 @@ public class ST {
 		if (aStack != null) try {codechicken.nei.api.API.hideItem(aStack);} catch(Throwable e) {/**/}
 	}
 	
-	// F16 ПОДКЛЮЧЕНО (1:1 golden forceProperMaxStacksizes): GT6-смена стека vanilla-предметов (setMaxStackSize —
-	// рантайм-мутатор, удалён; стек-лимит = DataComponents.MAX_STACK_SIZE на регистрации) реализована в
-	// applyVanillaComponentOverrides (выше) через ModifyDefaultComponentsEvent: potion→1; glass_bottle/cake/stick/
-	// written_book/writable_book/enchanted_book/snowball/egg→64; все кровати→64; все двери→8. Не заглушка.
+	// F16 (1:1 golden ST.forceProperMaxStacksizes): форма оригинала восстановлена дословно — прямые вызовы
+	// setMaxStackSize на ванильных предметах в тех же 1:1-точках фаз (GT_API:520 и :1402, ср. gt6-original
+	// GT_API.java:201 и :806). Отложенная карта + ModifyDefaultComponentsEvent 26.x сняты: обе появились ТОЛЬКО
+	// потому, что предел стека там был иммутабельным компонентом. С AT поле снова мутируется прямо, как в 1.7.10,
+	// значит и класс дефекта BUG-021-v3 (карта применялась пустой из-за порядка событий) в этой ветке не существует.
 	public static boolean forceProperMaxStacksizes() {
+		setMaxStackSize(net.minecraft.world.item.Items.POTION, 1);
+		for (Item tItem : new Item[]{net.minecraft.world.item.Items.GLASS_BOTTLE, net.minecraft.world.item.Items.CAKE, net.minecraft.world.item.Items.STICK, net.minecraft.world.item.Items.WRITTEN_BOOK, net.minecraft.world.item.Items.WRITABLE_BOOK, net.minecraft.world.item.Items.ENCHANTED_BOOK, net.minecraft.world.item.Items.SNOWBALL, net.minecraft.world.item.Items.EGG})
+			setMaxStackSize(tItem, 64);
+		// 1.7.10 bed→64 / wooden_door+iron_door→8; после флэттенинга это семейства предметов — проходим реестр.
+		for (Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			if (tItem instanceof net.minecraft.world.item.BedItem) setMaxStackSize(tItem, 64);
+			else if (tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof net.minecraft.world.level.block.DoorBlock) setMaxStackSize(tItem, 8);
+		}
 		return T;
 	}
 	

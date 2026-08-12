@@ -23,20 +23,21 @@
 
 package gregapi.recipes;
 
-import com.mojang.serialization.MapCodec;
 import gregapi.data.CS;
 import gregapi.data.MD;
 import gregapi.util.CR;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 
@@ -47,11 +48,16 @@ import static gregapi.data.CS.T;
  * @author Gregorius Techneticies
  *
  * F11 (decisions/F11-crafting-recipe.md §4,§5) — ЕДИНСТВЕННАЯ точка входа процедурно генерируемого
- * крафта GT6 в ванильный верстак neo. Neo наполняет {@code RecipeManager} ТОЛЬКО из датапак-JSON
- * (`RecipeManager.java:74`, рантайм-{@code addRecipe} удалён) — штатный путь динамического код-рецепта
- * без ингредиентов в JSON — {@code CustomRecipe} (эталон AE2 {@code appeng.recipes.game.FacadeRecipe},
- * `Applied-Energistics-2/.../FacadeRecipe.java:36-90`). Сигнатуры {@code Recipe}/{@code CraftingRecipe}/
- * {@code CustomRecipe} — {@code neo-decompiled/.../item/crafting/{Recipe,CraftingRecipe,CustomRecipe}.java}.
+ * крафта GT6 в ванильный верстак. Движок наполняет {@code RecipeManager} ТОЛЬКО из датапак-JSON
+ * (forge-1201-decompiled {@code RecipeManager.java:49,53}, рантайм-{@code addRecipe} удалён ещё в 1.12) —
+ * штатный путь динамического код-рецепта без ингредиентов в JSON — {@code CustomRecipe} (эталон той же
+ * версии: AE2-1.20.1 {@code appeng/recipes/game/FacadeRecipe.java:36-86} + заглушка
+ * {@code data/ae2/recipes/special/facade.json}).
+ *
+ * <p>Контракт 1.20.1 отличается от 26.x: {@code Recipe<C extends Container>} (не {@code RecipeInput}),
+ * обёртки «рецепт+id» нет — id носит сам рецепт ({@code CustomRecipe.getId()},
+ * {@code net/minecraft/world/item/crafting/CustomRecipe.java:14}); сетка — {@code CraftingContainer}
+ * (прямой наследник 1.7.10 {@code InventoryCrafting}), {@code assemble} берёт {@code RegistryAccess}.</p>
  *
  * <p>Диспетчер сам НЕ хранит рецептов и НЕ переписывает генерацию: {@link #matches}/{@link #assemble}
  * перебирают собственный ПОСТОЯННЫЙ буфер GT6 ({@link CR#BUFFER}, наполняемый процедурно как раньше) и
@@ -60,38 +66,32 @@ import static gregapi.data.CS.T;
  * порядок самого буфера (F11 §4.3: {@code RecipeSorter} отброшен, замены не требует).</p>
  *
  * <p>{@link #register(IEventBus)} вызывается из {@code GT_API}-конструктора (тот же мод-бас, на который
- * подписаны {@code ITEMS}/{@code BLOCKS}/{@code GT6WorldgenFeature}/{@code FluidGT} — F12↔F11 стык закрыт,
- * паттерн зеркалит {@code gregapi.worldgen.GT6WorldgenFeature.register(IEventBus)}); плюс ОДНА JSON-заглушка
- * {@code data/gregapi/recipe/special/gt6_crafting_dispatcher.json} (аналог AE2
- * {@code data/ae2/recipe/special/facade.json}) — уже добавлена рядом с этим классом.</p>
+ * подписаны {@code ITEMS}/{@code BLOCKS}); плюс ОДНА JSON-заглушка
+ * {@code data/gregapi/recipes/special/gt6_crafting_dispatcher.json}.</p>
  */
 public final class GT6CraftingDispatcher extends CustomRecipe {
-	public static final MapCodec<GT6CraftingDispatcher> CODEC = MapCodec.unit(GT6CraftingDispatcher::new);
+	public static final SimpleCraftingRecipeSerializer<GT6CraftingDispatcher> SERIALIZER = new SimpleCraftingRecipeSerializer<>(GT6CraftingDispatcher::new);
 
-	public static final StreamCodec<RegistryFriendlyByteBuf, GT6CraftingDispatcher> STREAM_CODEC = new StreamCodec<>() {
-		@Override public GT6CraftingDispatcher decode(RegistryFriendlyByteBuf aBuf) {return new GT6CraftingDispatcher();}
-		@Override public void encode(RegistryFriendlyByteBuf aBuf, GT6CraftingDispatcher aRecipe) {/* без данных, как AE2 FacadeRecipe */}
-	};
-
-	public static final RecipeSerializer<GT6CraftingDispatcher> SERIALIZER = new RecipeSerializer<>(CODEC, STREAM_CODEC);
-
-	/** Центральный DeferredRegister — ЕДИНСТВЕННОЕ место, где GT6 регистрирует крафт-верстак-сериализатор в neo. */
+	/** Центральный DeferredRegister — ЕДИНСТВЕННОЕ место, где GT6 регистрирует рецепт-сериализаторы. */
 	public static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS =
-		DeferredRegister.create(Registries.RECIPE_SERIALIZER, MD.GAPI.mID);
+		DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, MD.GAPI.mID);
 
 	static {
 		SERIALIZERS.register("gt6_crafting_dispatcher", () -> SERIALIZER);
 		SERIALIZERS.register("gt6_smelting_dispatcher", () -> GT6SmeltingDispatcher.SERIALIZER); // F11-smelting (BUG-023): печь — тем же центральным реестром
 	}
 
-	/** F11: точка подписки на мод-шину, зеркало {@code GT6WorldgenFeature.register(IEventBus)} (F6-переходник,
-	 *  `GT6WorldgenFeature.java:158-163`). Вызывается из {@code GT_API}-конструктора (`GT_API.java`, F12↔F11 стык). */
+	/** F11: точка подписки на мод-шину. Вызывается из {@code GT_API}-конструктора (F12↔F11 стык). */
 	public static void register(IEventBus aModBus) {
 		SERIALIZERS.register(aModBus);
 	}
 
+	public GT6CraftingDispatcher(ResourceLocation aID, CraftingBookCategory aCategory) {
+		super(aID, aCategory);
+	}
+
 	@Override
-	public boolean matches(CraftingInput aGrid, Level aLevel) {
+	public boolean matches(CraftingContainer aGrid, Level aLevel) {
 		List<ICraftingRecipeGT> tList = CR.list();
 		for (int i = 0, j = tList.size(); i < j; i++) {
 			ICraftingRecipeGT tRecipe = tList.get(i);
@@ -101,34 +101,36 @@ public final class GT6CraftingDispatcher extends CustomRecipe {
 	}
 
 	@Override
-	public ItemStack assemble(CraftingInput aGrid) {
-		// F11: Recipe.assemble(T input) не получает Level (neo-decompiled/.../item/crafting/Recipe.java:27);
-		// ни один порт-ированный ICraftingRecipeGT.matches(...) не разыменовывает aWorld (AdvancedCrafting*/
-		// Shaped/Shapeless/1ToY/XToY/Tool читают только сетку) — CS.DW (dummy world) как в остальном CR.java
-		// (см. CR.get/CR.remove) вместо null, дословный повторный перебор буфера в поиске совпавшего рецепта.
+	public ItemStack assemble(CraftingContainer aGrid, RegistryAccess aRegistries) {
+		// Level в assemble не передаётся (Recipe.java:15); ни один ICraftingRecipeGT.matches его не
+		// разыменовывает (Shaped/Shapeless/1ToY/XToY/Tool читают только сетку) — CS.DW (dummy world),
+		// как и в остальном CR.java (CR.get/CR.remove).
 		List<ICraftingRecipeGT> tList = CR.list();
 		for (int i = 0, j = tList.size(); i < j; i++) {
 			ICraftingRecipeGT tRecipe = tList.get(i);
-			// F8 (BUG-002): статический mOutput рецепта зачарован ОДИН раз на запуск (isItemStackUsable, гейт "ench") ->
-			// после перезахода в мир его Holder.Reference протухает (динреестры пересозданы) и валит сетевой кодек слота
-			// по идентичности. Освежаем holder'ы копии результата реестром ТЕКУЩЕГО сервера — единая воронка всех
-			// GT6-крафтов (F11-центр), см. UT.NBT.refreshEnchantments.
+			// refreshEnchantments — центр-воронка всех GT6-крафтов; в 1.20.1 реестр чар статический, класса
+			// дефекта BUG-002 нет, и метод сведён к тождеству (UT.java:2322) — вызыватель сохранён как точка.
 			if (tRecipe != null && tRecipe.matches(aGrid, CS.DW)) return gregapi.util.UT.NBT.refreshEnchantments(tRecipe.getCraftingResult(aGrid));
 		}
 		return ItemStack.EMPTY;
 	}
 
+	/** Буфер несёт рецепты любых габаритов (от 1 клетки) — отбор по размеру делает сам рецепт в {@code matches}. */
+	@Override
+	public boolean canCraftInDimensions(int aWidth, int aHeight) {
+		return aWidth * aHeight >= 1;
+	}
+
 	// BUG-022: 1.7.10 остаток крафта = per-item Forge-канал hasContainerItem/getContainerItem (SlotCrafting звал для
 	// КАЖДОГО слота; GT6-инструменты давали копию с износом doDamage(getToolDamagePerContainerCraft) — MultiItemTool:579,
-	// бутылки/каны/prefix — свои). В neo модель per-recipe (CraftingRecipe.getRemainingItems:22, дефолт читает только
-	// компонентный getCraftingRemainder — про GT6-канал не знает) → инструмент-ингредиент потреблялся целиком. Мост в
-	// ЕДИНОЙ воронке всех GT6-крафтов (F11-центр): GT6-предметы — через живой ItemBase-канал (:175, слепок 1.7.10),
-	// прочие — vanilla-семантика defaultCraftingReminder 1:1. Отклонение-форс движка: neo кладёт остаток обратно В СЕТКУ
-	// (ResultSlot:105), 1.7.10 doesContainerItemLeaveCraftingGrid=F отдавал в инвентарь — канала больше нет.
+	// бутылки/каны/prefix — свои). Дефолт Recipe.getRemainingItems (Recipe.java:20-31) читает только
+	// hasCraftingRemainingItem предмета — про GT6-канал не знает → инструмент-ингредиент потреблялся бы целиком.
+	// Мост в ЕДИНОЙ воронке всех GT6-крафтов (F11-центр): GT6-предметы — через живой ItemBase-канал (слепок 1.7.10),
+	// прочие — ванильная семантика 1:1.
 	@Override
-	public net.minecraft.core.NonNullList<ItemStack> getRemainingItems(CraftingInput aGrid) {
-		net.minecraft.core.NonNullList<ItemStack> rRemaining = net.minecraft.core.NonNullList.withSize(aGrid.size(), ItemStack.EMPTY);
-		for (int i = 0; i < aGrid.size(); i++) {
+	public net.minecraft.core.NonNullList<ItemStack> getRemainingItems(CraftingContainer aGrid) {
+		net.minecraft.core.NonNullList<ItemStack> rRemaining = net.minecraft.core.NonNullList.withSize(aGrid.getContainerSize(), ItemStack.EMPTY);
+		for (int i = 0; i < aGrid.getContainerSize(); i++) {
 			ItemStack tStack = aGrid.getItem(i);
 			if (tStack.isEmpty()) continue;
 			if (tStack.getItem() instanceof gregapi.item.ItemBase tItem) {
@@ -136,16 +138,15 @@ public final class GT6CraftingDispatcher extends CustomRecipe {
 					ItemStack tRemainder = tItem.getContainerItem(tStack);
 					if (gregapi.util.ST.valid(tRemainder)) rRemaining.set(i, tRemainder);
 				}
-			} else {
-				net.minecraft.world.item.ItemStackTemplate tRemainder = tStack.getCraftingRemainder();
-				if (tRemainder != null) rRemaining.set(i, tRemainder.create());
+			} else if (tStack.hasCraftingRemainingItem()) {
+				rRemaining.set(i, tStack.getCraftingRemainingItem());
 			}
 		}
 		return rRemaining;
 	}
 
 	@Override
-	public RecipeSerializer<? extends CustomRecipe> getSerializer() {
+	public RecipeSerializer<?> getSerializer() {
 		return SERIALIZER;
 	}
 }

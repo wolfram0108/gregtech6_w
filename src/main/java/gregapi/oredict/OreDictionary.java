@@ -324,14 +324,17 @@ public class OreDictionary {
 		final java.util.Map<String, java.util.Set<net.minecraft.world.item.Item>> tOutputsBySignature = new java.util.HashMap<>();
 
 		int tReplaced = 0;
-		for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : aServer.getRecipeManager().getRecipes()) {
+		// 1.20.1: обёртки «рецепт+id» нет — getRecipes() отдаёт сами рецепты, id носит рецепт (Recipe.java:52).
+		for (net.minecraft.world.item.crafting.Recipe<?> tAny : aServer.getRecipeManager().getRecipes()) {
 			try {
-				if (tHolder.value() instanceof net.minecraft.world.item.crafting.ShapedRecipe tShaped) {
-					ItemStack tOutput = tShaped.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY); // result.create(), input не читается (референс ShapedRecipe.java:68-70)
+				if (tAny instanceof net.minecraft.world.item.crafting.ShapedRecipe tShaped) {
+					ItemStack tOutput = tShaped.getResultItem(aServer.registryAccess()); // номинальный выход = 1.7.10 getRecipeOutput (Recipe.java:19)
 					if (ST.invalid(tOutput) || tExclusions.contains(tOutput.getItem())) continue;
-					int tWidth = tShaped.pattern.width(), tHeight = tShaped.pattern.height();
+					// габарит паттерна — Forge-канал IShapedRecipe (getRecipeWidth/Height): сами поля width/height
+					// у ShapedRecipe package-private (ShapedRecipe.java:39-40).
+					int tWidth = tShaped.getRecipeWidth(), tHeight = tShaped.getRecipeHeight();
 					StringBuilder tSignature = new StringBuilder(tWidth + "x" + tHeight + ":");
-					Object[] tCells = replaceIngredients(tShaped.pattern.ingredients(), tReplacements, tSignature);
+					Object[] tCells = replaceIngredients(tShaped.getIngredients(), tReplacements, tSignature);
 					if (tCells == null) continue; // ни одной замены либо custom-ингредиент — рецепт не наш (1:1 containsMatch)
 					// Синтез Forge-формата (строки + пары символ→ингредиент) для конструктора ShapedOreRecipe.
 					java.util.List<Object> tArgs = new java.util.ArrayList<>();
@@ -352,22 +355,19 @@ public class OreDictionary {
 					tArgs.add(0, tRows);
 					gregapi.recipes.ShapedOreRecipe tRecipe = new gregapi.recipes.ShapedOreRecipe(tOutput, tArgs.toArray());
 					tRecipe.mVanillaReplacement = true; // статус Forge-замены 1.7.10: обрабатывается сканом Loader_Recipes_Replace
-					tRecipe.mSourceId = (net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>)(net.minecraft.resources.ResourceKey<?>)tHolder.id();
+					tRecipe.mSourceId = tAny.getId();
 					tBySignature.computeIfAbsent(tSignature.toString(), k -> new java.util.ArrayList<>()).add(tRecipe);
 					tOutputsBySignature.computeIfAbsent(tSignature.toString(), k -> new java.util.HashSet<>()).add(tOutput.getItem());
-				} else if (tHolder.value() instanceof net.minecraft.world.item.crafting.ShapelessRecipe tShapeless) {
-					ItemStack tOutput = tShapeless.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY);
+				} else if (tAny instanceof net.minecraft.world.item.crafting.ShapelessRecipe tShapeless) {
+					ItemStack tOutput = tShapeless.getResultItem(aServer.registryAccess());
 					if (ST.invalid(tOutput) || tExclusions.contains(tOutput.getItem())) continue;
-					net.minecraft.world.item.crafting.PlacementInfo tPlacement = tShapeless.placementInfo();
-					if (tPlacement.isImpossibleToPlace()) continue;
-					java.util.List<java.util.Optional<net.minecraft.world.item.crafting.Ingredient>> tIngredients = new java.util.ArrayList<>();
-					for (net.minecraft.world.item.crafting.Ingredient tIn : tPlacement.ingredients()) tIngredients.add(java.util.Optional.of(tIn));
+					// 1.20.1: PlacementInfo (26.x) нет — список ингредиентов даёт сам рецепт (ShapelessRecipe.java:54-56).
 					StringBuilder tRawSignature = new StringBuilder();
-					Object[] tCells = replaceIngredients(tIngredients, tReplacements, tRawSignature);
+					Object[] tCells = replaceIngredients(tShapeless.getIngredients(), tReplacements, tRawSignature);
 					if (tCells == null) continue;
 					gregapi.recipes.ShapelessOreRecipe tRecipe = new gregapi.recipes.ShapelessOreRecipe(tOutput, tCells);
 					tRecipe.mVanillaReplacement = true;
-					tRecipe.mSourceId = (net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>)(net.minecraft.resources.ResourceKey<?>)tHolder.id();
+					tRecipe.mSourceId = tAny.getId();
 					// shapeless: порядок ячеек значения не имеет — сигнатура нормализуется сортировкой, иначе
 					// одинаковые по сути сетки разошлись бы по разным группам и коллизия осталась бы незамеченной.
 					String[] tParts = tRawSignature.toString().split("\\|", -1);
@@ -393,16 +393,19 @@ public class OreDictionary {
 	 * {@code ItemStack}/{@code List<ItemStack>} членов как есть. {@code null}-возврат = «рецепт не кандидат»
 	 * (ни одной замены — 1:1 с Forge {@code containsMatch}, — либо custom-ингредиент, которого в 1.7.10 не было).
 	 */
-	private static Object[] replaceIngredients(java.util.List<java.util.Optional<net.minecraft.world.item.crafting.Ingredient>> aIngredients, Map<net.minecraft.world.item.Item, String> aReplacements, StringBuilder aSignature) {
+	private static Object[] replaceIngredients(java.util.List<net.minecraft.world.item.crafting.Ingredient> aIngredients, Map<net.minecraft.world.item.Item, String> aReplacements, StringBuilder aSignature) {
 		Object[] rCells = new Object[aIngredients.size()];
 		boolean tAnyReplaced = false;
 		for (int i = 0; i < rCells.length; i++) {
 			if (i > 0) aSignature.append('|');
-			java.util.Optional<net.minecraft.world.item.crafting.Ingredient> tOpt = aIngredients.get(i);
-			if (tOpt.isEmpty()) continue;
-			net.minecraft.world.item.crafting.Ingredient tIn = tOpt.get();
-			if (tIn.isCustom()) return null;
-			java.util.List<net.minecraft.world.item.Item> tItems = tIn.items().map(net.minecraft.core.Holder::value).toList();
+			// 1.20.1: пустая ячейка паттерна — Ingredient.EMPTY (Ingredient.java:39,118), а не Optional.empty;
+			// «чужой» ингредиент опознаётся Forge-признаком isVanilla (Ingredient.java:144-147).
+			net.minecraft.world.item.crafting.Ingredient tIn = aIngredients.get(i);
+			if (tIn == null || tIn.isEmpty()) continue;
+			if (!tIn.isVanilla()) return null;
+			java.util.LinkedHashSet<net.minecraft.world.item.Item> tSet = new java.util.LinkedHashSet<>();
+			for (ItemStack tStack : tIn.getItems()) if (!tStack.isEmpty()) tSet.add(tStack.getItem());
+			java.util.List<net.minecraft.world.item.Item> tItems = new java.util.ArrayList<>(tSet);
 			if (tItems.isEmpty()) return null;
 			String tOreName = null;
 			for (net.minecraft.world.item.Item tItem : tItems) if ((tOreName = aReplacements.get(tItem)) != null) break;

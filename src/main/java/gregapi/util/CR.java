@@ -35,7 +35,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.ShapedRecipe;
@@ -219,7 +219,7 @@ public class CR {
 	 * , 'y' = OreDictToolNames.chisel
 	 * , 'z' = OreDictToolNames.bendingcylinder
 	 */
-	public static boolean shaped(ItemStack aResult, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object[] aRecipe) {return shaped(aResult, aEnchantmentsAdded, aEnchantmentLevelsAdded, F, T, F, F, F, F, F, F, F, F, F, F, T, F, F, aRecipe);}
+	public static boolean shaped(ItemStack aResult, net.minecraft.world.item.enchantment.Enchantment[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object[] aRecipe) {return shaped(aResult, aEnchantmentsAdded, aEnchantmentLevelsAdded, F, T, F, F, F, F, F, F, F, F, F, F, T, F, F, aRecipe);}
 	
 	/**
 	 * Regular Crafting Recipes. Deletes conflicting Recipes too.
@@ -282,7 +282,7 @@ public class CR {
 	 * , 'y' = OreDictToolNames.chisel
 	 * , 'z' = OreDictToolNames.bendingcylinder
 	 */
-	public static boolean shaped(ItemStack aResult, long aBitMask, Object[] aRecipe) {return shaped(aResult, new net.minecraft.resources.ResourceKey[0], new int[0], (aBitMask & MIR) != 0, (aBitMask & BUF) != 0, (aBitMask & KEEPNBT) != 0, (aBitMask & DISMANTLE) != 0, (aBitMask & NO_REM) == 0, (aBitMask & REV) != 0, (aBitMask & DEL_OTHER_RECIPES) != 0, (aBitMask & DEL_OTHER_RECIPES_IF_SAME_NBT) != 0, (aBitMask & DEL_OTHER_SHAPED_RECIPES) != 0, (aBitMask & DEL_OTHER_NATIVE_RECIPES) != 0, (aBitMask & NO_COLLISION_CHECK) == 0, (aBitMask & ONLY_IF_HAS_OTHER_RECIPES) != 0, (aBitMask & ONLY_IF_HAS_RESULT) != 0, (aBitMask & DEL_IF_NO_DYES) != 0, (aBitMask & NO_AUTO) != 0, aRecipe);}
+	public static boolean shaped(ItemStack aResult, long aBitMask, Object[] aRecipe) {return shaped(aResult, new Enchantment[0], new int[0], (aBitMask & MIR) != 0, (aBitMask & BUF) != 0, (aBitMask & KEEPNBT) != 0, (aBitMask & DISMANTLE) != 0, (aBitMask & NO_REM) == 0, (aBitMask & REV) != 0, (aBitMask & DEL_OTHER_RECIPES) != 0, (aBitMask & DEL_OTHER_RECIPES_IF_SAME_NBT) != 0, (aBitMask & DEL_OTHER_SHAPED_RECIPES) != 0, (aBitMask & DEL_OTHER_NATIVE_RECIPES) != 0, (aBitMask & NO_COLLISION_CHECK) == 0, (aBitMask & ONLY_IF_HAS_OTHER_RECIPES) != 0, (aBitMask & ONLY_IF_HAS_RESULT) != 0, (aBitMask & DEL_IF_NO_DYES) != 0, (aBitMask & NO_AUTO) != 0, aRecipe);}
 	
 	public static boolean shaped(ItemStack aResult, long aBitMask, String aRecipeA, String aRecipeB, String aRecipeC, char aC1, Object aO1, char aC2, Object aO2, char aC3, Object aO3, char aC4, Object aO4, char aC5, Object aO5, char aC6, Object aO6, char aC7, Object aO7, char aC8, Object aO8, char aC9, Object aO9) {return shaped(aResult, aBitMask, new Object[] {aRecipeA, aRecipeB, aRecipeC, aC1, aO1, aC2, aO2, aC3, aO3, aC4, aO4, aC5, aO5, aC6, aO6, aC7, aO7, aC8, aO8, aC9, aO9});}
 	public static boolean shaped(ItemStack aResult, long aBitMask, String aRecipeA, String aRecipeB, String aRecipeC, char aC1, Object aO1, char aC2, Object aO2, char aC3, Object aO3, char aC4, Object aO4, char aC5, Object aO5, char aC6, Object aO6, char aC7, Object aO7, char aC8, Object aO8) {return shaped(aResult, aBitMask, new Object[] {aRecipeA, aRecipeB, aRecipeC, aC1, aO1, aC2, aO2, aC3, aO3, aC4, aO4, aC5, aO5, aC6, aO6, aC7, aO7, aC8, aO8});}
@@ -303,7 +303,7 @@ public class CR {
 	public static boolean shaped(ItemStack aResult, long aBitMask, String aRecipeA, char aC1, Object aO1, char aC2, Object aO2) {return shaped(aResult, aBitMask, new Object[] {aRecipeA, aC1, aO1, aC2, aO2});}
 	public static boolean shaped(ItemStack aResult, long aBitMask, String aRecipeA, char aC1, Object aO1) {return shaped(aResult, aBitMask, new Object[] {aRecipeA, aC1, aO1});}
 	
-	private static boolean shaped(ItemStack aResult, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, boolean aMirrored, boolean aBuffered, boolean aKeepNBT, boolean aDismantleable, boolean aRemovable, boolean aReversible, boolean aRemoveAllOthersWithSameOutput, boolean aRemoveAllOthersWithSameOutputIfTheyHaveSameNBT, boolean aRemoveAllOtherShapedsWithSameOutput, boolean aRemoveAllOtherNativeRecipes, boolean aCheckForCollisions, boolean aOnlyAddIfThereIsAnyRecipeOutputtingThis, boolean aOnlyAddIfResultIsNotNull, boolean aDeleteOnlyIfNoDyeInvolved, boolean aNotAutoCraftable, Object[] aRecipe) {
+	private static boolean shaped(ItemStack aResult, net.minecraft.world.item.enchantment.Enchantment[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, boolean aMirrored, boolean aBuffered, boolean aKeepNBT, boolean aDismantleable, boolean aRemovable, boolean aReversible, boolean aRemoveAllOthersWithSameOutput, boolean aRemoveAllOthersWithSameOutputIfTheyHaveSameNBT, boolean aRemoveAllOtherShapedsWithSameOutput, boolean aRemoveAllOtherNativeRecipes, boolean aCheckForCollisions, boolean aOnlyAddIfThereIsAnyRecipeOutputtingThis, boolean aOnlyAddIfResultIsNotNull, boolean aDeleteOnlyIfNoDyeInvolved, boolean aNotAutoCraftable, Object[] aRecipe) {
 		if (aOnlyAddIfResultIsNotNull && ST.invalid(aResult)) return F;
 		if (aRecipe == null || aRecipe.length <= 0) return F;
 		
@@ -459,13 +459,13 @@ public class CR {
 	}
 	
 	/** Shapeless Crafting Recipes. Deletes conflicting Recipes too. */
-	public static boolean shapeless(ItemStack aResult, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object[] aRecipe) {return shapeless(aResult, aEnchantmentsAdded, aEnchantmentLevelsAdded, T, F, F, F, F, F, F, F, F, aRecipe);}
+	public static boolean shapeless(ItemStack aResult, net.minecraft.world.item.enchantment.Enchantment[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object[] aRecipe) {return shapeless(aResult, aEnchantmentsAdded, aEnchantmentLevelsAdded, T, F, F, F, F, F, F, F, F, aRecipe);}
 	/** Shapeless Crafting Recipes. Deletes conflicting Recipes too. */
 	public static boolean shapeless(ItemStack aResult, Object[] aRecipe) {return shapeless(aResult, DEF, aRecipe);}
 	/** Shapeless Crafting Recipes. Deletes conflicting Recipes too. */
-	public static boolean shapeless(ItemStack aResult, long aBitMask, Object[] aRecipe) {return shapeless(aResult, new net.minecraft.resources.ResourceKey[0], new int[0], (aBitMask & BUF) != 0, (aBitMask & KEEPNBT) != 0, (aBitMask & DISMANTLE) != 0, (aBitMask & NO_REM) == 0, (aBitMask & NO_AUTO) != 0, (aBitMask & DEL_OTHER_RECIPES) != 0, (aBitMask & DEL_OTHER_RECIPES_IF_SAME_NBT) != 0, (aBitMask & DEL_OTHER_SHAPED_RECIPES) != 0, (aBitMask & DEL_OTHER_NATIVE_RECIPES) != 0, aRecipe);}
+	public static boolean shapeless(ItemStack aResult, long aBitMask, Object[] aRecipe) {return shapeless(aResult, new Enchantment[0], new int[0], (aBitMask & BUF) != 0, (aBitMask & KEEPNBT) != 0, (aBitMask & DISMANTLE) != 0, (aBitMask & NO_REM) == 0, (aBitMask & NO_AUTO) != 0, (aBitMask & DEL_OTHER_RECIPES) != 0, (aBitMask & DEL_OTHER_RECIPES_IF_SAME_NBT) != 0, (aBitMask & DEL_OTHER_SHAPED_RECIPES) != 0, (aBitMask & DEL_OTHER_NATIVE_RECIPES) != 0, aRecipe);}
 	
-	private static boolean shapeless(ItemStack aResult, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, boolean aBuffered, boolean aKeepNBT, boolean aDismantleable, boolean aRemovable, boolean aNotAutoCraftable, boolean aRemoveAllOthersWithSameOutput, boolean aRemoveAllOthersWithSameOutputIfTheyHaveSameNBT, boolean aRemoveAllOtherShapedsWithSameOutput, boolean aRemoveAllOtherNativeRecipes, Object[] aRecipe) {
+	private static boolean shapeless(ItemStack aResult, net.minecraft.world.item.enchantment.Enchantment[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, boolean aBuffered, boolean aKeepNBT, boolean aDismantleable, boolean aRemovable, boolean aNotAutoCraftable, boolean aRemoveAllOthersWithSameOutput, boolean aRemoveAllOthersWithSameOutputIfTheyHaveSameNBT, boolean aRemoveAllOtherShapedsWithSameOutput, boolean aRemoveAllOtherNativeRecipes, Object[] aRecipe) {
 		if (aRecipe == null || aRecipe.length <= 0) return F;
 		if (aRecipe.length > 9) throw new IllegalArgumentException("Shapeless Recipe has more than 9 Inputs! This would crash NEI!");
 		
@@ -539,7 +539,7 @@ public class CR {
 		
 		if (aWorld == null) aWorld = CS.DW;
 		
-		CraftingInput aCrafting = crafting(aRecipe);
+		CraftingContainer aCrafting = crafting(aRecipe);
 		
 		if (aAllowCache && sLastRecipe != null && sLastRecipe.matches(aCrafting, aWorld)) return sLastRecipe.getCraftingResult(aCrafting);
 		
@@ -550,14 +550,16 @@ public class CR {
 		// В neo они живут в датапак-RecipeManager (на mod-init пуст, поэтому не в BUFFER) — консультируем его
 		// здесь же, в едином центре подбора (тот же смысл «глобального списка», 1:1 поведение стола).
 		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
-			java.util.Optional<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> tVanilla =
+			// 1.20.1: обёртки «рецепт+id» нет (RecipeHolder появился в 1.20.2) — getRecipeFor отдаёт сам рецепт
+			// (forge-1201-decompiled RecipeManager.java:60-63), assemble берёт RegistryAccess (Recipe.java:15).
+			java.util.Optional<net.minecraft.world.item.crafting.CraftingRecipe> tVanilla =
 				tSL.getServer().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, aCrafting, tSL);
-			if (tVanilla.isPresent()) return tVanilla.get().value().assemble(aCrafting);
+			if (tVanilla.isPresent()) return tVanilla.get().assemble(aCrafting, tSL.registryAccess());
 		}
 
 		int tIndex = 0;
 		ItemStack tStack1 = null, tStack2 = null;
-		for (int i = 0, j = aCrafting.size(); i < j; i++) {
+		for (int i = 0, j = aCrafting.getContainerSize(); i < j; i++) {
 			ItemStack tStack = aCrafting.getItem(i);
 			if (!tStack.isEmpty()) {
 				if (tIndex == 0) tStack1 = tStack;
@@ -568,9 +570,9 @@ public class CR {
 		
 		if (tIndex == 2) {
 			assert tStack1 != null && tStack2 != null;
-			// F11: Item.isRepairable() (1.7.10, no-arg) удалён; neo-эквивалент — isCombineRepairable(ItemStack)
-			// (neo-decompiled/.../item/Item.java:375-377).
-			if (tStack1.getItem() == tStack2.getItem() && tStack1.getItem().isCombineRepairable(tStack1)) {
+			// 1.7.10 Item.isRepairable() (no-arg) в 1.20.1 принимает стек, тело то же — `canRepair && isDamageable(stack)`
+			// (forge-1201-decompiled Item.java:342-344 == recompSrc Item.isRepairable()).
+			if (tStack1.getItem() == tStack2.getItem() && tStack1.getItem().isRepairable(tStack1)) {
 				int tNewDamage = ST.meta_(tStack1)+ST.meta_(tStack2)+(tStack1.getMaxDamage()/-20)-tStack1.getMaxDamage();
 				return ST.make(tStack1.getItem(), 1, tNewDamage<0?0:tNewDamage);
 			}
@@ -584,7 +586,7 @@ public class CR {
 	/** Gives you a copy of the Output from a Crafting Recipe. Used for Recipe Detection. */
 	public static ItemStack get(boolean aUncopiedStack, ItemStack... aRecipe) {
 		if (!ST.hasValid(aRecipe)) return null;
-		CraftingInput aCrafting = crafting(aRecipe);
+		CraftingContainer aCrafting = crafting(aRecipe);
 		List<ICraftingRecipeGT> tList = list();
 		for (int i = 0; i < tList.size(); i++) try {if (tList.get(i).matches(aCrafting, CS.DW)) return aUncopiedStack ? ST.valisize(tList.get(i).getRecipeOutput()) : ST.copy(ST.valisize(tList.get(i).getCraftingResult(aCrafting)));} catch(Throwable e) {e.printStackTrace(ERR);}
 		return null;
@@ -595,18 +597,29 @@ public class CR {
 	/** Gives you a list of the Outputs from a Crafting Recipe. If you have multiple Mods, which add Bronze Armor for example */
 	public static List<ItemStack> outputs(List<ICraftingRecipeGT> aList, boolean aDeleteFromList, ItemStack... aRecipe) {
 		if (aList == null || !ST.hasValid(aRecipe)) return Collections.emptyList();
-		CraftingInput aCrafting = crafting(aRecipe);
+		CraftingContainer aCrafting = crafting(aRecipe);
 		ArrayList<ItemStack> rList = ST.arraylist();
 		for (int i = 0; i < aList.size(); i++) try {if (aList.get(i).matches(aCrafting, CS.DW)) rList.add(ST.copy(ST.valisize((aDeleteFromList ? aList.remove(i--) : aList.get(i)).getCraftingResult(aCrafting))));} catch(Throwable e) {e.printStackTrace(ERR);}
 		return rList;
 	}
 	
-	/** F11: строит neo {@code CraftingInput} 3×3 из массива стеков (пустые → {@code ItemStack.EMPTY}). */
-	public static CraftingInput crafting(ItemStack... aRecipe) {
-		List<ItemStack> tItems = new ArrayList<>(9);
-		for (int i = 0; i < 9; i++) tItems.add(i < aRecipe.length && aRecipe[i] != null ? aRecipe[i] : ItemStack.EMPTY);
-		return CraftingInput.of(3, 3, tItems);
+	/** F11 (форма оригинала): 1.7.10 строил {@code new InventoryCrafting(new Container(){canInteractWith=F}, 3, 3)}
+	 *  и раскладывал стеки по слотам (gt6-original {@code CR.java:577-580}). В 1.20.1 контракт сетки жив —
+	 *  {@code CraftingContainer} (интерфейс, {@code getWidth}/{@code getHeight}/{@code getItems}), рабочая
+	 *  реализация — {@code TransientCraftingContainer(AbstractContainerMenu, w, h, NonNullList)}
+	 *  (forge-1201-decompiled {@code net/minecraft/world/inventory/TransientCraftingContainer.java:21}).
+	 *  Меню-пустышка — тот же приём, что контейнер-пустышка оригинала: наружу оно не отдаётся,
+	 *  {@code slotsChanged} у базового меню пуст, ctor берёт {@code @Nullable MenuType}. */
+	public static CraftingContainer crafting(ItemStack... aRecipe) {
+		net.minecraft.core.NonNullList<ItemStack> tItems = net.minecraft.core.NonNullList.withSize(9, ItemStack.EMPTY);
+		for (int i = 0; i < 9; i++) tItems.set(i, i < aRecipe.length && aRecipe[i] != null ? aRecipe[i] : ItemStack.EMPTY);
+		return new net.minecraft.world.inventory.TransientCraftingContainer(DUMMY_MENU, 3, 3, tItems);
 	}
+	/** Пустышка-владелец сетки — 1:1 анонимный {@code Container} оригинала ({@code canInteractWith → F}). */
+	private static final AbstractContainerMenu DUMMY_MENU = new AbstractContainerMenu(null, -1) {
+		@Override public ItemStack quickMoveStack(Player aPlayer, int aSlot) {return ItemStack.EMPTY;}
+		@Override public boolean stillValid(Player aPlayer) {return F;}
+	};
 	
 	/** F11: собственный ПОСТОЯННЫЙ буфер крафт-рецептов GT6 (не neo {@code RecipeManager} — тот наполняется
 	 *  датапаком на старте сервера, на mod-init пуст). Диспетчер-{@code CustomRecipe} читает этот буфер. */
@@ -742,7 +755,7 @@ public class CR {
 		if (!ST.hasValid(aRecipe)) return null;
 		DATAPACK_REMOVALS.add(aRecipe.clone());
 		ItemStack rReturn = null, tReturn = null;
-		CraftingInput aCrafting = crafting(aRecipe);
+		CraftingContainer aCrafting = crafting(aRecipe);
 		List<ICraftingRecipeGT> tList = list();
 		for (int i = 0; i < tList.size(); i++) {try {for (; i < tList.size(); i++) {
 			if ((!(tList.get(i) instanceof ICraftingRecipeGT) || ((ICraftingRecipeGT)tList.get(i)).isRemovableByGT()) && tList.get(i).matches(aCrafting, CS.DW)) {

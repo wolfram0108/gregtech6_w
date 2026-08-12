@@ -1031,47 +1031,32 @@ public class Loader_Recipes_Vanilla implements Runnable {
 	 *
 	 * <p>{@code DEF_REM} снимает ванильный рецепт с тем же выходом — включая датапак-плечо
 	 * ({@code CR.remout:665} → {@code CR.DATAPACK_REMOVALS_OUT} → {@code GT_API.removeDatapackRecipes}).
+	 *
+	 * <p><b>Ветка 1.20.1.</b> «Медный век» — контент 26.1.2: в 1.20.1 из перечисленного существуют только
+	 * {@code copper_block}, {@code copper_ingot}, {@code raw_copper}, {@code raw_copper_block},
+	 * {@code lightning_rod}, {@code spyglass}, {@code brush} и породные формы (cut/slab/stairs/окисление).
+	 * Медных решётки, двери, люка, сундука, брони, инструментов, цепи, факела, фонаря и САМОРОДКА нет —
+	 * рецепты под них сняты (того контента не было и в 1.7.10, снятие = возврат к оригиналу, как
+	 * {@code Blocks.BUSH}/{@code SHORT_DRY_GRASS} в волне 4). Остальное — без изменений; паспорт материала
+	 * {@link #copperItemData()} идёт ПО РЕЕСТРУ и отсутствующие формы просто не встречает.
 	 */
 	private static void copperAge() {
-		final Object tIngot = ingot.dat(ANY.Cu), tNugget = nugget.dat(ANY.Cu);
+		final Object tIngot = ingot.dat(ANY.Cu);
 
 		// Вход в медный век: девять грегских слитков дают ванильный медный блок. Отсюда весь остальной
 		// медный контент 26.1.2 берётся ванильными путями без нашего участия.
 		CR.shaped(ST.make(Items.COPPER_BLOCK          , 1, 0), DEF_REM    , "XXX", "XXX", "XXX", 'X', tIngot);
 
 		// Изделия, которые в ванили требуют слиток меди.
-		CR.shaped(ST.make(Items.COPPER_BARS.unaffected(),16,0), DEF_REM    , "XXX", "XXX"       , 'X', tIngot);
-		CR.shaped(ST.make(Items.COPPER_DOOR           , 3, 0), DEF_REM    , "XX" , "XX" , "XX" , 'X', tIngot);
-		CR.shaped(ST.make(Items.COPPER_TRAPDOOR       , 1, 0), DEF_REM    , "XX" , "XX"        , 'X', tIngot);
-		CR.shaped(ST.make(Items.COPPER_CHEST          , 1, 0), DEF_REM    , "XXX", "XCX", "XXX", 'X', tIngot, 'C', ST.make(Blocks.CHEST, 1, 0));
-		CR.shaped(ST.make(Items.COPPER_HELMET         , 1, 0), DEF_REM    , "XXX", "X X"       , 'X', tIngot);
-		CR.shaped(ST.make(Items.COPPER_CHESTPLATE     , 1, 0), DEF_REM    , "X X", "XXX", "XXX", 'X', tIngot);
-		CR.shaped(ST.make(Items.COPPER_LEGGINGS       , 1, 0), DEF_REM    , "XXX", "X X", "X X", 'X', tIngot);
-		CR.shaped(ST.make(Items.COPPER_BOOTS          , 1, 0), DEF_REM    , "X X", "X X"       , 'X', tIngot);
 		CR.shaped(ST.make(Items.LIGHTNING_ROD         , 1, 0), DEF_REM    , "X"  , "X"  , "X"  , 'X', tIngot);
 		CR.shaped(ST.make(Items.SPYGLASS              , 1, 0), DEF_REM    , " A ", " X ", " X ", 'X', tIngot, 'A', ST.make(Items.AMETHYST_SHARD, 1, 0));
 		CR.shaped(ST.make(Items.BRUSH                 , 1, 0), DEF_REM    , "F"  , "X"  , "S"  , 'X', tIngot, 'F', ST.make(Items.FEATHER, 1, 0), 'S', ST.make(Items.STICK, 1, 0));
 
-		// Изделия на медном самородке — у GT6 своя форма nugget, берём её.
-		CR.shaped(ST.make(Items.COPPER_CHAIN.unaffected(), 1, 0), DEF_REM , "N"  , "X"  , "N"  , 'X', tIngot, 'N', tNugget);
-		// Ванильный рецепт торча даёт выбор «уголь ИЛИ древесный уголь» одним ключом — у нас это два
-		// рецепта; ванильный снимается первым из них.
-		CR.shaped(ST.make(Items.COPPER_TORCH          , 4, 0), DEF_REM    , "N"  , "C"  , "S"  , 'N', tNugget, 'C', ST.make(Items.COAL    , 1, 0), 'S', ST.make(Items.STICK, 1, 0));
-		CR.shaped(ST.make(Items.COPPER_TORCH          , 4, 0), DEF        , "N"  , "C"  , "S"  , 'N', tNugget, 'C', ST.make(Items.CHARCOAL, 1, 0), 'S', ST.make(Items.STICK, 1, 0));
-		CR.shaped(ST.make(Items.COPPER_LANTERN.unaffected(), 1, 0), DEF_REM, "NNN", "NTN", "NNN", 'N', tNugget, 'T', ST.make(Items.COPPER_TORCH, 1, 0));
 
-		// Инструменты: ванильный рецепт стоит на теге, который подтип GT6 выразить не может (см. javadoc).
-		CR.shaped(ST.make(Items.COPPER_PICKAXE        , 1, 0), DEF_REM    , "XXX", " S ", " S ", 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
-		CR.shaped(ST.make(Items.COPPER_SWORD          , 1, 0), DEF_REM    , "X"  , "X"  , "S"  , 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
-		CR.shaped(ST.make(Items.COPPER_SHOVEL         , 1, 0), DEF_REM    , "X"  , "S"  , "S"  , 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
-		CR.shaped(ST.make(Items.COPPER_AXE            , 1, 0), DEF_REM|MIR, "XX" , "XS" , " S" , 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
-		CR.shaped(ST.make(Items.COPPER_HOE            , 1, 0), DEF_REM|MIR, "XX" , " S" , " S" , 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
-		CR.shaped(ST.make(Items.COPPER_SPEAR          , 1, 0), DEF_REM|MIR, "  X", " S ", "S  ", 'X', tIngot, 'S', ST.make(Items.STICK, 1, 0));
 
 		// Ванильный слиток меди и его спутники в обращение не вводятся: рецептов, дающих их, не остаётся.
 		// (Плавка руды/сырца сюда не входит — она датапак-рецепт типа smelting, см. «Не сделано» в ADAPT-014.)
 		CR.delate(ST.make(Items.COPPER_INGOT     , 1, 0));
-		CR.delate(ST.make(Items.COPPER_NUGGET    , 1, 0));
 		CR.delate(ST.make(Items.RAW_COPPER_BLOCK , 1, 0));
 
 		// --- УТЕЧКА МАТЕРИАЛА: ванильная медь достижима МИМО рецептов ---------------------------------------
@@ -1098,12 +1083,9 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		copperItemData();
 
 		ItemStack tGTIngot  = ingot .mat(MT.Cu, 1);
-		ItemStack tGTNugget = nugget.mat(MT.Cu, 1);
 		gregapi.oredict.OreDictManager.INSTANCE.registerOre(ingot , MT.Cu, ST.make(Items.COPPER_INGOT , 1, 0));
-		gregapi.oredict.OreDictManager.INSTANCE.registerOre(nugget, MT.Cu, ST.make(Items.COPPER_NUGGET, 1, 0));
 		gregapi.oredict.OreDictManager.INSTANCE.registerOre(oreRaw, MT.Cu, ST.make(Items.RAW_COPPER   , 1, 0));
 		if (ST.valid(tGTIngot )) gregapi.oredict.OreDictManager.INSTANCE.setTarget(ingot , MT.Cu, tGTIngot , T, T);
-		if (ST.valid(tGTNugget)) gregapi.oredict.OreDictManager.INSTANCE.setTarget(nugget, MT.Cu, tGTNugget, T, T);
 
 	}
 

@@ -31,7 +31,7 @@ import gregapi.item.multiitem.MultiItemTool;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
@@ -47,7 +47,7 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 	private final net.minecraft.world.item.enchantment.Enchantment[] mEnchantmentsAdded;
 	private final int[] mEnchantmentLevelsAdded;
 	
-	public AdvancedCraftingShapeless(ItemStack aResult, boolean aDismantleAble, boolean aRemovableByGT, boolean aKeepingNBT, boolean aAutoCraftable, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object... aRecipe) {
+	public AdvancedCraftingShapeless(ItemStack aResult, boolean aDismantleAble, boolean aRemovableByGT, boolean aKeepingNBT, boolean aAutoCraftable, net.minecraft.world.item.enchantment.Enchantment[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object... aRecipe) {
 		super(aResult, aRecipe);
 		mEnchantmentsAdded = aEnchantmentsAdded;
 		mEnchantmentLevelsAdded = aEnchantmentLevelsAdded;
@@ -58,12 +58,12 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 	}
 	
 	@Override
-	public boolean matches(CraftingInput aGrid, Level aWorld) {
+	public boolean matches(CraftingContainer aGrid, Level aWorld) {
 		if (mKeepingNBT) {
 			ItemStack tStack = null, tMainInput = ((getInput().get(0) instanceof ItemStack) ? (ItemStack)getInput().get(0) : null);
 			// F11: Forge InventoryCrafting.getSizeInventory()/getStackInSlot(i) удалены; neo-эквивалент —
-			// CraftingInput.size()/getItem(i). Занятость слота — ST.valid(...) (getItem(i) всегда non-null).
-			for (int i = 0; i < aGrid.size(); i++) {
+			// CraftingContainer.size()/getItem(i). Занятость слота — ST.valid(...) (getItem(i) всегда non-null).
+			for (int i = 0; i < aGrid.getContainerSize(); i++) {
 				ItemStack tSlot = aGrid.getItem(i);
 				if (ST.valid(tSlot)) {
 					if (tMainInput == null) {
@@ -86,18 +86,18 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 	}
 	
 	@Override
-	public ItemStack getCraftingResult(CraftingInput aGrid) {
+	public ItemStack getCraftingResult(CraftingContainer aGrid) {
 		ItemStack rStack = super.getCraftingResult(aGrid);
 		if (rStack != null) {
 			// Update the Stack
 			ST.update(rStack);
 			
 			// Keeping NBT
-			// F11: CraftingInput.size()/getItem(i) (getStackInSlot/getSizeInventory удалены); ST.valid(...)
+			// F11: CraftingContainer.size()/getItem(i) (getStackInSlot/getSizeInventory удалены); ST.valid(...)
 			// заменяет "!= null" (getItem(i) всегда non-null, пустой слот = ItemStack.EMPTY).
 			if (mKeepingNBT) {
 				ItemStack tMainInput = ((getInput().get(0) instanceof ItemStack) ? (ItemStack)getInput().get(0) : null);
-				for (int i = 0; i < aGrid.size(); i++) {
+				for (int i = 0; i < aGrid.getContainerSize(); i++) {
 					ItemStack tSlot = aGrid.getItem(i);
 					if (ST.valid(tSlot) && (ItemNBT.get(tSlot) != null) && (tMainInput == null || ST.equal_(tSlot, tMainInput, T))) {
 						UT.NBT.set(rStack, (CompoundTag)ItemNBT.get(tSlot).copy());
@@ -110,7 +110,7 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 			if (rStack.getItem() instanceof IItemEnergy) {
 				for (TagData tEnergyType : ((IItemEnergy)rStack.getItem()).getEnergyTypes(rStack)) {
 					long tCharge = 0;
-					for (int i = 0; i < aGrid.size(); i++) {
+					for (int i = 0; i < aGrid.getContainerSize(); i++) {
 						ItemStack tSlot = aGrid.getItem(i);
 						if (ST.valid(tSlot) && tSlot.getItem() instanceof IItemEnergy && !(tSlot.getItem() instanceof IItemGTContainerTool)) {
 							tCharge += ((IItemEnergy)tSlot.getItem()).getEnergyStored(tEnergyType, tSlot);
@@ -124,9 +124,9 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 			if (mDismantleable) {
 				CompoundTag rNBT = ItemNBT.get(rStack), tNBT = UT.NBT.make();
 				if (rNBT == null) rNBT = UT.NBT.make();
-				// F11 (АДАПТИРОВАНО): см. AdvancedCraftingShaped — Math.min(9,size()) охраняет подрезанную neo-сетку
+				// См. AdvancedCraftingShaped: Math.min(9, getContainerSize()) — граница меньшей сетки (инвентарь игрока 2x2)
 				// (F11-crafting-recipe.md §7), 1:1 для полного 3x3. Не заглушка.
-				for (int i = 0, j = Math.min(9, aGrid.size()); i < j; i++) {
+				for (int i = 0, j = Math.min(9, aGrid.getContainerSize()); i < j; i++) {
 					ItemStack tStack = aGrid.getItem(i);
 					if (ST.valid(tStack) && ST.container(tStack, true) == null && !(tStack.getItem() instanceof MultiItemTool)) {
 						tStack = ST.amount(1, tStack);

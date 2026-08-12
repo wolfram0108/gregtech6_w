@@ -32,7 +32,7 @@ import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import gregapi.recipes.ShapedOreRecipe;
@@ -166,14 +166,14 @@ public class AdvancedCraftingXToY implements ICraftingRecipeGT {
 	}
 	
 	@Override
-	public boolean matches(CraftingInput aGrid, Level aWorld) {
-		// F11: обход-хак Thaumcraft (контейнер крафта рефлексией по 1.7.10-полю) удалён — neo CraftingInput
+	public boolean matches(CraftingContainer aGrid, Level aWorld) {
+		// F11: обход-хак Thaumcraft (контейнер крафта рефлексией по 1.7.10-полю) удалён — neo CraftingContainer
 		// не несёт контейнер; Thaumcraft — внешний мод (отложено, F10).
 
 		ItemStack tStack = null;
 		OreDictMaterial rMaterial = null;
 		
-		int tInventorySize = aGrid.size(), tCounter = 0; // F11: сетка neo подрезана — семантику под parity (ADR §7)
+		int tInventorySize = aGrid.getContainerSize(), tCounter = 0; // сетка приходит целиком, как 1.7.10 InventoryCrafting
 		if (tInventorySize < mInputCount) return F;
 		for (int i = 0; i < tInventorySize; i++) {
 			tStack = aGrid.getItem(i);
@@ -191,8 +191,8 @@ public class AdvancedCraftingXToY implements ICraftingRecipeGT {
 	}
 	
 	@Override
-	public ItemStack getCraftingResult(CraftingInput aGrid) {
-		for (int i = 0, j = aGrid.size(); i < j; i++) {
+	public ItemStack getCraftingResult(CraftingContainer aGrid) {
+		for (int i = 0, j = aGrid.getContainerSize(); i < j; i++) {
 			OreDictItemData tData = OM.anydata(aGrid.getItem(i));
 			if (tData == null || tData.mMaterial == null || !mCondition.isTrue(tData.mMaterial.mMaterial)) continue;
 			return mOutput.mat(tData.mMaterial.mMaterial, mOutputCount);

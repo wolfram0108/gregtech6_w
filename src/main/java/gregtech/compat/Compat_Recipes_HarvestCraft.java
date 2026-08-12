@@ -72,7 +72,9 @@ public class Compat_Recipes_HarvestCraft extends CompatMods {
 		ArrayList<ItemStack> tListFoodOliveOil = OreDictionary.getOres("foodOliveoil"), tListFoodCookingOil = OreDictionary.getOres("listAllcookingoil");
 		for (ICraftingRecipeGT tRecipe : CR.list()) if (tRecipe.getClass() == ShapelessOreRecipe.class) {
 			ItemStack tOutput = tRecipe.getRecipeOutput();
-			if (ST.valid(tOutput) && tOutput.has(net.minecraft.core.component.DataComponents.FOOD)) {
+			// F8: компонента FOOD в 1.20.1 нет — еда опознаётся тем же каналом, что в 1.7.10 — свойствами предмета
+			// (IForgeItem.getFoodProperties(stack, entity), тот же центр, что у ST в части А).
+			if (ST.valid(tOutput) && tOutput.getFoodProperties(null) != null) {
 				List<Object> tInputs = ((ShapelessOreRecipe)tRecipe).getInput();
 				int tSize = tInputs.size();
 				if (tSize > 2) for (int i = 0; i < tSize; i++) {

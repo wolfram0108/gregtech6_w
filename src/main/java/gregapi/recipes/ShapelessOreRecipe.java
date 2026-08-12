@@ -26,7 +26,7 @@ package gregapi.recipes;
 import gregapi.oredict.OreDictionary;
 import gregapi.util.ST;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ import static gregapi.data.CS.*;
 /**
  * F11 ПЕРЕХОДНИК — замена Forge {@code net.minecraftforge.oredict.ShapelessOreRecipe} (см.
  * {@code decisions/F11-crafting-recipe.md}). Дословный аналог Forge-семантики бесформенного ore-рецепта,
- * но сетка — neo {@code CraftingInput} ({@code getItem}/{@code size}), сравнение стеков — GT6 {@code ST.equal}
+ * но сетка — neo {@code CraftingContainer} ({@code getItem}/{@code size}), сравнение стеков — GT6 {@code ST.equal}
  * (учитывает материал-компонент, F1), ore-имена — F4 {@code OreDictionary.getOres}.
  *
  * <p>Каждый вход — {@code ItemStack} (точный) либо {@code List<ItemStack>} (ore-альтернативы). Это тот же
@@ -51,7 +51,7 @@ public class ShapelessOreRecipe implements ICraftingRecipeGT {
 	protected final List<Object> mInput = new ArrayList<>();
 	/** F4 роль-C: ore-версия ванильного датапак-рецепта (см. {@code ShapedOreRecipe.mVanillaReplacement}). */
 	public boolean mVanillaReplacement = F;
-	public net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> mSourceId = null;
+	public net.minecraft.resources.ResourceLocation mSourceId = null;
 
 	public ShapelessOreRecipe(ItemStack aResult, Object... aRecipe) {
 		mOutput = ST.copy(aResult);
@@ -76,9 +76,9 @@ public class ShapelessOreRecipe implements ICraftingRecipeGT {
 	}
 
 	@Override
-	public boolean matches(CraftingInput aGrid, Level aWorld) {
+	public boolean matches(CraftingContainer aGrid, Level aWorld) {
 		List<Object> tRequired = new ArrayList<>(mInput);
-		for (int i = 0; i < aGrid.size(); i++) {
+		for (int i = 0; i < aGrid.getContainerSize(); i++) {
 			ItemStack tSlot = aGrid.getItem(i);
 			if (!tSlot.isEmpty()) {
 				boolean tFound = F;
@@ -92,7 +92,7 @@ public class ShapelessOreRecipe implements ICraftingRecipeGT {
 	}
 
 	@Override
-	public ItemStack getCraftingResult(CraftingInput aGrid) {return ST.copy(mOutput);}
+	public ItemStack getCraftingResult(CraftingContainer aGrid) {return ST.copy(mOutput);}
 
 	/** @return список входов ({@code ItemStack} / {@code List<ItemStack>}) — как у Forge-{@code getInput()}. */
 	public List<Object> getInput() {return mInput;}

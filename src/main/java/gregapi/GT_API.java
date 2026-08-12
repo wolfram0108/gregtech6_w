@@ -296,24 +296,25 @@ public class GT_API extends Abstract_Mod {
 	 *  private-поле {@code RecipeManager.recipes} подменяется рефлексией — приём прецедентен (подмена
 	 *  {@code AbstractMinecart.behavior}, JDK 25 пишет private instance-поля). Зовётся ДО finalizeRecipeLoading. */
 	/** Все когда-либо подавленные ключи — для переприменения после /reload (карта датапака пересоздаётся). */
-	public static final java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> SUPPRESSED_DATAPACK_RECIPES = new java.util.HashSet<>();
+	public static final java.util.Set<net.minecraft.resources.ResourceLocation> SUPPRESSED_DATAPACK_RECIPES = new java.util.HashSet<>();
 
 	public void onDatapackSyncReapplySuppression(net.minecraftforge.event.OnDatapackSyncEvent aEvent) {
 		if (aEvent.getPlayer() != null) return; // вход игрока — карта не пересоздавалась; переприменение нужно только на /reload
 		removeDatapackRecipes(aEvent.getPlayerList().getServer(), new java.util.HashSet<>(SUPPRESSED_DATAPACK_RECIPES));
 	}
 
-	public static void removeDatapackRecipes(net.minecraft.server.MinecraftServer aServer, java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> aRemove) {
+	public static void removeDatapackRecipes(net.minecraft.server.MinecraftServer aServer, java.util.Set<net.minecraft.resources.ResourceLocation> aRemove) {
 		if (aServer == null || aRemove == null || aRemove.isEmpty()) return;
 		SUPPRESSED_DATAPACK_RECIPES.addAll(aRemove);
 		try {
+			// 1.20.1: пересборка списка рецептов — ПУБЛИЧНЫЙ API движка, replaceRecipes(Iterable<Recipe<?>>)
+			// (forge-1201-decompiled RecipeManager.java:173); рефлексия на приватное поле, нужная в 26.x, не нужна.
+			// Обёртки «рецепт+id» нет — id носит сам рецепт (Recipe.getId(), Recipe.java:52).
 			net.minecraft.world.item.crafting.RecipeManager tRM = aServer.getRecipeManager();
-			java.util.List<net.minecraft.world.item.crafting.RecipeHolder<?>> tKeep = new java.util.ArrayList<>();
+			java.util.List<net.minecraft.world.item.crafting.Recipe<?>> tKeep = new java.util.ArrayList<>();
 			int tBefore = 0;
-			for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : tRM.recipeMap().values()) {tBefore++; if (!aRemove.contains(tHolder.id())) tKeep.add(tHolder);}
-			java.lang.reflect.Field tField = net.minecraft.world.item.crafting.RecipeManager.class.getDeclaredField("recipes");
-			tField.setAccessible(true);
-			tField.set(tRM, net.minecraft.world.item.crafting.RecipeMap.create(tKeep));
+			for (net.minecraft.world.item.crafting.Recipe<?> tRecipe : tRM.getRecipes()) {tBefore++; if (!aRemove.contains(tRecipe.getId())) tKeep.add(tRecipe);}
+			tRM.replaceRecipes(tKeep);
 			OUT.println("GT_API: datapack recipes suppressed (F11-recipe-scan): " + (tBefore - tKeep.size()) + " of " + aRemove.size() + " requested.");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
@@ -594,8 +595,9 @@ public class GT_API extends Abstract_Mod {
 		api_proxy.registerClientModels(aModBus);
 		// F16-creative-tab: единый хендлер наполнения вкладок (замена россыпи setCreativeTab) — тот же мод-бас.
 		gregapi.item.CreativeTabsGT.register(aModBus);
-		// F16/F10: применение накопленных vanilla/форейн stack-size-override (ST.setMaxStackSize) через ModifyDefaultComponentsEvent.
-		aModBus.addListener(gregapi.util.ST::applyVanillaComponentOverrides);
+		// F16: отдельного носителя stack-size-override здесь больше нет. С Access Transformer'ом ветки
+		// ST.setMaxStackSize снова мутирует поле предмета прямо (как 1.7.10), и вызовы стоят в 1:1-точках фаз
+		// (ST.forceProperMaxStacksizes — GT_API:520 и :1402; OreDictPrefix.applyAllStackSizes — GT_API:1400).
 		// GameTest'ы (проверка механик в РЕАЛЬНОМ мире) — ОСНАСТКА, а не поставка: живут в src/gametest/java,
 		// подключаются флагом -Pgt6probes и подписываются на мод-шину сами (@EventBusSubscriber). Отсюда их
 		// больше не зовут — production-код об оснастке не знает.
@@ -686,26 +688,27 @@ public class GT_API extends Abstract_Mod {
 			// removeDatapackRecipes, что Replace. Собственный GT6CraftingDispatcher исключён (он матчится на
 			// те же сетки — подавили бы сами себя).
 			if (tServer != null) try {
-				java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> tRemove = new java.util.HashSet<>();
+				java.util.Set<net.minecraft.resources.ResourceLocation> tRemove = new java.util.HashSet<>();
 				for (net.minecraft.world.item.ItemStack[] tGrid : gregapi.util.CR.DATAPACK_REMOVALS) {
-					net.minecraft.world.item.crafting.CraftingInput tInput = gregapi.util.CR.crafting(tGrid);
-					for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : tServer.getRecipeManager().recipeMap().values()) {
-						if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
-						if (tHolder.value() instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
-						try {if (tCraft.matches(tInput, tServer.overworld())) tRemove.add(tHolder.id());} catch(Throwable e) {/*чужой рецепт упал на matches — не наш суд*/}
+					net.minecraft.world.inventory.CraftingContainer tInput = gregapi.util.CR.crafting(tGrid);
+					for (net.minecraft.world.item.crafting.Recipe<?> tAny : tServer.getRecipeManager().getRecipes()) {
+						if (!(tAny instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
+						if (tAny instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
+						try {if (tCraft.matches(tInput, tServer.overworld())) tRemove.add(tAny.getId());} catch(Throwable e) {/*чужой рецепт упал на matches — не наш суд*/}
 					}
 				}
 				// Второе плечо ТОГО ЖЕ класса — снятие по ВЫХОДУ (CR.delate/CR.remout, см. CR.DATAPACK_REMOVALS_OUT).
 				// Суд ровно тот, что был у 1.7.10-remout: сравнение выхода рецепта с накопленным, NBT игнорируется.
-				// Выход берётся assemble(EMPTY) — тем же приёмом, что роль-C (OreDictionary.initVanillaRecipeReplacements).
+				// Выход берётся getResultItem(registryAccess) — прямой наследник 1.7.10 IRecipe.getRecipeOutput()
+				// (forge-1201-decompiled Recipe.java:19), тем же приёмом, что роль-C (OreDictionary.initVanillaRecipeReplacements).
 				for (net.minecraft.world.item.ItemStack tOut : gregapi.util.CR.DATAPACK_REMOVALS_OUT) {
-					for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : tServer.getRecipeManager().recipeMap().values()) {
-						if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
-						if (tHolder.value() instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
+					for (net.minecraft.world.item.crafting.Recipe<?> tAny : tServer.getRecipeManager().getRecipes()) {
+						if (!(tAny instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
+						if (tAny instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
 						try {
-							net.minecraft.world.item.ItemStack tResult = tCraft.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY);
-							if (gregapi.util.ST.valid(tResult) && gregapi.util.ST.equal(tResult, tOut, T)) tRemove.add(tHolder.id());
-						} catch(Throwable e) {/*чужой рецепт упал на assemble — не наш суд*/}
+							net.minecraft.world.item.ItemStack tResult = tCraft.getResultItem(tServer.registryAccess());
+							if (gregapi.util.ST.valid(tResult) && gregapi.util.ST.equal(tResult, tOut, T)) tRemove.add(tAny.getId());
+						} catch(Throwable e) {/*чужой рецепт упал на getResultItem — не наш суд*/}
 					}
 				}
 				gregapi.util.CR.DATAPACK_REMOVALS_OUT.clear();

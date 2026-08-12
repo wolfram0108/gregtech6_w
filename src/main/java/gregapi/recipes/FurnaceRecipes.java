@@ -30,6 +30,7 @@ import java.util.Map;
 
 import gregapi.util.ST;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 
 /**
  * F11-smelting ЦЕНТР. 1.7.10 vanilla {@code net.minecraft.item.crafting.FurnaceRecipes} — мутабельный singleton
@@ -117,22 +118,22 @@ public class FurnaceRecipes {
 		try {
 			net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
 			if (tLevel == null) return 0;
-			// ⛔ Обходим как RecipeHolder<?> и фильтруем instanceof: в реестре типа SMELTING лежит НЕ ТОЛЬКО
-			// ванильный SmeltingRecipe, но и собственный мост GT6 — GT6SmeltingDispatcher (BUG-023), который
-			// отдаёт GT6-плавки ванильной печи. Типизированный обход ронял ClassCastException прямо на нём,
-			// цикл обрывался на середине (перенеслось 149 из всех, булыжник и прочее за ним — нет).
+			// ⛔ Фильтруем instanceof: в реестре типа SMELTING лежит НЕ ТОЛЬКО ванильный SmeltingRecipe, но и
+			// собственный мост GT6 — GT6SmeltingDispatcher (BUG-023), который отдаёт GT6-плавки ванильной печи.
 			// Диспетчер здесь пропускаем осознанно: он не носитель данных, а переходник в ЭТОТ же реестр.
-			for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder
-				: tLevel.recipeAccess().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.SMELTING)) {
-				if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.SmeltingRecipe tRecipe)) continue;
-				for (net.minecraft.core.Holder<net.minecraft.world.item.Item> tItem : tRecipe.input().items().toList()) {
-					ItemStack tIn = new ItemStack(tItem);
+			// 1.20.1: обёртки «рецепт+id» нет — getAllRecipesFor отдаёт сами рецепты
+			// (forge-1201-decompiled RecipeManager.java:96-98).
+			for (net.minecraft.world.item.crafting.Recipe<?> tAny
+				: tLevel.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING)) {
+				if (!(tAny instanceof net.minecraft.world.item.crafting.SmeltingRecipe tRecipe)) continue;
+				for (Ingredient tIngredient : tRecipe.getIngredients()) for (ItemStack tItem : tIngredient.getItems()) {
+					ItemStack tIn = ST.amount(1, tItem);
 					if (ST.invalid(tIn)) continue;
 					// GT6 приоритетнее: свою плавку не перекрываем
 					if (ST.valid(getSmeltingResult(tIn))) continue;
-					ItemStack tOut = tRecipe.assemble(new net.minecraft.world.item.crafting.SingleRecipeInput(tIn));
+					ItemStack tOut = tRecipe.assemble(new net.minecraft.world.SimpleContainer(tIn), tLevel.registryAccess());
 					if (ST.invalid(tOut)) continue;
-					func_151394_a(tIn, ST.copy(tOut), tRecipe.experience());
+					func_151394_a(tIn, ST.copy(tOut), tRecipe.getExperience());
 					rAdded++;
 				}
 			}

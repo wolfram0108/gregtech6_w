@@ -83,8 +83,8 @@ public class GT_ModHandler {
 	  @Deprecated public static void addCoolant(String fluidName, int energy) {/**/}
 	}
 	
-	@Deprecated public static boolean addCraftingRecipe(ItemStack aResult, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object[] aRecipe) {return CR.shaped(aResult, aEnchantmentsAdded, aEnchantmentLevelsAdded, aRecipe);}
-	@Deprecated public static boolean addShapelessEnchantingRecipe(ItemStack aResult, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object[] aRecipe) {return CR.shapeless(aResult, aEnchantmentsAdded, aEnchantmentLevelsAdded, aRecipe);}
+	@Deprecated public static boolean addCraftingRecipe(ItemStack aResult, net.minecraft.world.item.enchantment.Enchantment[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object[] aRecipe) {return CR.shaped(aResult, aEnchantmentsAdded, aEnchantmentLevelsAdded, aRecipe);}
+	@Deprecated public static boolean addShapelessEnchantingRecipe(ItemStack aResult, net.minecraft.world.item.enchantment.Enchantment[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object[] aRecipe) {return CR.shapeless(aResult, aEnchantmentsAdded, aEnchantmentLevelsAdded, aRecipe);}
 	@Deprecated public static ItemStack removeRecipe(ItemStack... aRecipe) {return CR.remove(aRecipe);}
 	@Deprecated public static boolean removeRecipeByOutput(ItemStack aOutput) {return CR.remout(aOutput, T, F, F, F);}
 	@Deprecated public static boolean removeRecipeByOutput(ItemStack aOutput, boolean aIgnoreNBT, boolean aNotRemoveShapelessRecipes, boolean aOnlyRemoveNativeHandlers, boolean aDontRemoveDyeingRecipes) {return CR.remout(aOutput, aIgnoreNBT, aNotRemoveShapelessRecipes, aOnlyRemoveNativeHandlers, aDontRemoveDyeingRecipes);}

@@ -42,7 +42,7 @@ import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -86,9 +86,9 @@ public class RecipeMapAutocrafting extends RecipeMap {
 			}
 		}
 
-		// F11: Forge InventoryCrafting(Container,w,h)+setInventorySlotContents(...) удалены; neo-эквивалент —
-		// иммутабельный CraftingInput.of(...), уже централизован в CR.crafting(ItemStack...) (CR.java:573-578).
-		CraftingInput tCraftInv = CR.crafting(tBlueprint);
+		// Сетка строится ЕДИНСТВЕННЫМ центром GT6 — CR.crafting(ItemStack...), форма оригинала
+		// (gt6-original CR.java:577-580: InventoryCrafting 3x3 над контейнером-пустышкой).
+		CraftingContainer tCraftInv = CR.crafting(tBlueprint);
 
 		ICraftingRecipeGT tIRecipe = null;
 

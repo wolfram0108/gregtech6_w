@@ -35,7 +35,7 @@ import gregapi.oredict.OreDictPrefix;
 import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import gregapi.recipes.ShapedOreRecipe;
@@ -144,14 +144,14 @@ public class AdvancedCrafting1ToY implements ICraftingRecipeGT {
 	}
 	
 	@Override
-	public boolean matches(CraftingInput aGrid, Level aWorld) {
+	public boolean matches(CraftingContainer aGrid, Level aWorld) {
 		ItemStack tStack = null;
 		OreDictMaterial rMaterial = null;
 		
 		// Смысл этого рецепта — В МЕСТЕ предмета на сетке (mEmpty = сколько пустых клеток перед ним). В 1.20.1
 		// сетка приходит рецепту целиком, вместе с пустыми клетками (CraftingMenu.java:25,62), — признак цел,
 		// как в 1.7.10, и читается прямо из сетки. Тело ниже — дословно 1.7.10 (AdvancedCrafting1ToY:177-191).
-		int tInventorySize = aGrid.size(), tCounter = 0, tEmpty = 0;
+		int tInventorySize = aGrid.getContainerSize(), tCounter = 0, tEmpty = 0;
 		if (tInventorySize < 1+mEmpty) return F;
 		for (int i = 0; i < tInventorySize; i++) {
 			tStack = aGrid.getItem(i);
@@ -169,8 +169,8 @@ public class AdvancedCrafting1ToY implements ICraftingRecipeGT {
 	}
 	
 	@Override
-	public ItemStack getCraftingResult(CraftingInput aGrid) {
-		for (int i = 0, j = aGrid.size(); i < j; i++) {
+	public ItemStack getCraftingResult(CraftingContainer aGrid) {
+		for (int i = 0, j = aGrid.getContainerSize(); i < j; i++) {
 			OreDictItemData tData = OM.anydata(aGrid.getItem(i));
 			if (tData == null || tData.mMaterial == null || !mCondition.isTrue(tData.mMaterial.mMaterial)) continue;
 			return mOutput.mat(tData.mMaterial.mMaterial, mOutputCount);

@@ -41,7 +41,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.ShapedRecipe;
@@ -133,7 +133,7 @@ public class Loader_Recipes_Replace implements Runnable {
 		List<ItemStack> tStickList = OreDictionary.getOres(OD.stickWood.toString());
 		HashSetNoNulls<Object> tAlreadyScannedItems = new HashSetNoNulls<>();
 		ArrayListNoNulls<RecipeReplacement> tList = new ArrayListNoNulls<>();
-		java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> tSuppress = new java.util.HashSet<>();
+		java.util.Set<net.minecraft.resources.ResourceLocation> tSuppress = new java.util.HashSet<>();
 		List<ICraftingRecipeGT> tRecipeList = CR.list(); // CR.list() отдаёт GT6-буфер ICraftingRecipeGT (не neo Recipe)
 		boolean tUseProgressBar = UT.LoadingBar.start("Looking up Recipes", tRecipeList.size());
 		for (int l = 0; l < tRecipeList.size(); l++) {
@@ -276,11 +276,10 @@ public class Loader_Recipes_Replace implements Runnable {
 		if (aRecipe == null || aStacks == null) return null;
 		boolean tAny = F; for (ItemStack s : aStacks) if (s != null) {tAny = T; break;}
 		if (!tAny) return null;
-		// neo CraftingInput иммутабелен (нет setItem/публичного ctor) -> фабрика CraftingInput.of(w,h,List). GT6-рецепт
-		// собирается через свои matches/getCraftingResult (ICraftingRecipeGT), а не neo assemble (provider не нужен).
-		java.util.List<ItemStack> tItems = new java.util.ArrayList<>();
-		for (int j = 0; j < 9; j++) tItems.add(j < aStacks.length && aStacks[j] != null ? aStacks[j] : ItemStack.EMPTY);
-		CraftingInput aCrafting = CraftingInput.of(3, 3, tItems);
+		// Сетка 3×3 строится ЕДИНСТВЕННЫМ центром GT6 — CR.crafting(ItemStack...) (форма оригинала
+		// gt6-original CR.java:577-580); локальной копии сборки здесь больше нет. GT6-рецепт судится своими
+		// matches/getCraftingResult (ICraftingRecipeGT), а не ванильным assemble.
+		CraftingContainer aCrafting = gregapi.util.CR.crafting(aStacks);
 		if (!aRecipe.matches(aCrafting, DW)) return null;
 		ItemStack rOutput = aRecipe.getCraftingResult(aCrafting);
 		if (rOutput == null || rOutput.getCount() <= 0) return null;
