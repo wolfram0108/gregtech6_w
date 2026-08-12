@@ -1485,12 +1485,16 @@ public class UT {
 		/** estebes helped with the code for this one */
 		public static short[] color(String aResourceLocation) {
 			Identifier aux = null;
+			// BUG-122 (вторая точка класса): имя приходит СНАРУЖИ, а конструктор fromNamespaceAndPath БРОСАЕТ
+			// на недопустимом пути (Identifier.java:268 assertValidPath) — tryBuild возвращает null, как
+			// возвращал null весь этот метод для неизвестного ресурса и в 1.7.10.
 			if (aResourceLocation.contains(":")) {
 				String[] modid_itemid = aResourceLocation.split(":");
-				aux = Identifier.fromNamespaceAndPath(modid_itemid[0], "textures/items/" + modid_itemid[1] + ".png"); // neo: ctor Identifier(String,String) private -> fromNamespaceAndPath (Identifier.java:41)
+				aux = Identifier.tryBuild(modid_itemid[0], "textures/items/" + modid_itemid[1] + ".png"); // neo: ctor Identifier(String,String) private (Identifier.java:41)
 			} else {
-				aux = Identifier.fromNamespaceAndPath("minecraft", "textures/items/" + aResourceLocation + ".png");
+				aux = Identifier.tryBuild("minecraft", "textures/items/" + aResourceLocation + ".png");
 			}
+			if (aux == null) return null;
 			java.awt.image.BufferedImage tIcon = null;
 			// neo: ResourceManager.getResource(Identifier) -> Optional<Resource> (не бросает FileNotFound);
 			// Resource.getInputStream() -> open() (Resource.java). Читаем только если ресурс присутствует.
