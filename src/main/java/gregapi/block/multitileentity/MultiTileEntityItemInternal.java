@@ -246,11 +246,11 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 				try {
 					if (!aWorld.isClientSide()) {
 						// было World.notifyBlockChange(x,y,z,Block) -> тело делегировало notifyBlocksOfNeighborChange (recompSrc
-						// World.java:695-698) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338], тот же
+						// World.java:695-698) -> Level.updateNeighborsAt(BlockPos, Block) [Level.java:338], тот же
 						// форс-эквивалент, что уже принят в MultiTileEntityBlockInternal.placeBlock.
-						aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), tReplacedBlock, null);
-						// было World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338]
-						aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), aMTEContainer.mBlock, null);
+						aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), tReplacedBlock);
+						// было World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos, Block) [Level.java:338]
+						aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), aMTEContainer.mBlock);
 					}
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				try {

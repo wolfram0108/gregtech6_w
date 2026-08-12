@@ -238,7 +238,7 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	// source полный; meta>0 = flowing, amount = quantaPerBlock-meta) → игрок ведёт себя как в воде mc26, включая
 	// весь vanilla-рендер воды. Кванты и разлив остаются на GT6 (updateFlow); vanilla fluid-tick НЕ планируется
 	// (блок не LiquidBlock, scheduleTick — только свой block-tick), двойного разлива нет.
-	@Override protected net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState aState) {
+	@Override public net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState aState) {
 		int tMeta = aState.getValue(FLUID_META);
 		if (tMeta <= 0) return net.minecraft.world.level.material.Fluids.WATER.defaultFluidState();
 		int tAmount = net.minecraft.util.Mth.clamp(quantaPerBlock - tMeta, 1, 8);
@@ -307,7 +307,7 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}
 	// getLightOpacity() — в общем предке BlockFluidBaseGT (F3 light-opacity ЦЕНТР): значение 1.7.10 у обеих
-	// иерархий одинаково, копия здесь была дублем; движок спрашивает его через getLightDampening(BlockState).
+	// иерархий одинаково, копия здесь была дублем; движок спрашивает его через getLightBlock(BlockState,BlockGetter,BlockPos).
 	/** 1:1 оригинала (:200): {@code Blocks.water.getIcon(aSide, aMeta)} — водоподобные рисуются ВАНИЛЬНОЙ водой,
 	 *  не иконкой своей жидкости. Тот же спрайт уже держит центр {@link gregapi.render.BlockTextureFluid}
 	 *  (см. {@link #renderTexture()}) — спрашиваем его, чтобы «какая текстура» осталось в одном месте. */

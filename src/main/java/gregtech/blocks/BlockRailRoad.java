@@ -82,7 +82,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	// BUG-047: 1:1 с 1.7.10 — onBlockAdded/func_150052_a у рода NO-OP (дорожная разметка НЕ выравнивается по соседям
 	// и не имеет детектора) — гасим vanilla-выравнивание моста BlockBaseRail.onPlace. Бит 8 = вариант разметки, форма
 	// ставится только placement'ом (мета 0/1/8/9) и резчиками (toggle ^8) — мост меты наследуется.
-	@Override protected void onPlace(net.minecraft.world.level.block.state.BlockState aState, Level aWorld, BlockPos aPos, net.minecraft.world.level.block.state.BlockState aOldState, boolean aMovedByPiston) {/* NO-OP */}
+	@Override public void onPlace(net.minecraft.world.level.block.state.BlockState aState, Level aWorld, BlockPos aPos, net.minecraft.world.level.block.state.BlockState aOldState, boolean aMovedByPiston) {/* NO-OP */}
 	
 	
 	protected void func_150052_a(Level aWorld, int aX, int aY, int aZ, boolean p_150052_5_) {

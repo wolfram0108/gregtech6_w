@@ -187,10 +187,10 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 			mSide == SIDE_Z_NEG ? 0.5 : 1.0));
 		return mSlabShape;
 	}
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		return mIsSlab ? slabShape() : super.getShape(aState, aWorld, aPos, aContext);
 	}
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		return mIsSlab ? slabShape() : super.getCollisionShape(aState, aWorld, aPos, aContext);
 	}
 
@@ -205,11 +205,11 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 	@Override public boolean canPlaceLiquid(net.minecraft.world.entity.LivingEntity aUser, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.material.Fluid aFluid) {
 		return mIsSlab && net.minecraft.world.level.block.SimpleWaterloggedBlock.super.canPlaceLiquid(aUser, aWorld, aPos, aState, aFluid);
 	}
-	@Override protected net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState aState) {
+	@Override public net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState aState) {
 		return aState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && aState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)
 			? net.minecraft.world.level.material.Fluids.WATER.getSource(false) : super.getFluidState(aState);
 	}
-	@Override protected net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.LevelReader aWorld, net.minecraft.world.level.ScheduledTickAccess aTicks, net.minecraft.core.BlockPos aPos, net.minecraft.core.Direction aDir, net.minecraft.core.BlockPos aNeighbourPos, net.minecraft.world.level.block.state.BlockState aNeighbourState, net.minecraft.util.RandomSource aRandom) {
+	@Override public net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.LevelReader aWorld, net.minecraft.world.level.ScheduledTickAccess aTicks, net.minecraft.core.BlockPos aPos, net.minecraft.core.Direction aDir, net.minecraft.core.BlockPos aNeighbourPos, net.minecraft.world.level.block.state.BlockState aNeighbourState, net.minecraft.util.RandomSource aRandom) {
 		if (aState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && aState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED))
 			aTicks.scheduleTick(aPos, net.minecraft.world.level.material.Fluids.WATER, net.minecraft.world.level.material.Fluids.WATER.getTickDelay(aWorld));
 		return super.updateShape(aState, aWorld, aTicks, aPos, aDir, aNeighbourPos, aNeighbourState, aRandom);

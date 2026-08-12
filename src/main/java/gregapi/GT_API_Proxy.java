@@ -371,7 +371,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	
 	// DimensionManager (1.7.10 Forge) neo-эквивалента не имеет (не найден ни в neo-decompiled, ни в neoforge-decompiled, ни в fml-decompiled) —
 	// реальный neo-путь к текущему save-root: ServerLevel.getServer().getWorldPath(LevelResource.ROOT) (сверено, MinecraftServer.java:2058 + LevelResource.java:16).
-	@SubscribeEvent(priority = EventPriority.LOWEST) public void onWorldLoad  (LevelEvent.Load   aEvent) {if (aEvent.getLevel() instanceof ServerLevel tLevel) checkSaveLocation(tLevel.getServer().getWorldPath(LevelResource.ROOT).toFile(), F);}
+	@SubscribeEvent(priority = EventPriority.LOWEST) public void onWorldLoad  (LevelEvent.Load   aEvent) {if (aEvent.level instanceof ServerLevel tLevel) checkSaveLocation(tLevel.getServer().getWorldPath(LevelResource.ROOT).toFile(), F);}
 	//@SubscribeEvent(priority = EventPriority.LOWEST) public void onWorldUnload(WorldEvent.Unload aEvent) {checkSaveLocation(DimensionManager.getCurrentSaveRootDirectory(), F);}
 	//@SubscribeEvent(priority = EventPriority.LOWEST) public void onWorldSave  (WorldEvent.Save   aEvent) {checkSaveLocation(DimensionManager.getCurrentSaveRootDirectory(), F);}
 	
@@ -401,7 +401,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			// Making sure it is being free'd up in order to prevent exploits or Garbage Collection mishaps.
 			LAST_BROKEN_TILEENTITY.set(null);
 
-			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
+			if (aEvent.phase == net.minecraftforge.event.TickEvent.Phase.START) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
 				gt6ChunkFinishTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -617,7 +617,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						// в активную очередь до оттаивания (в замороженном мире соседям нечего пересчитывать).
 						if (tTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)tTileEntity).isDead()) continue;
 						if (!WD.blockTicking(tTileEntity)) {DELAYED_BLOCK_UPDATES.add(tTileEntity); continue;}
-						tTileEntity.getWorld().updateNeighborsAt(new BlockPos(tTileEntity.getX(), tTileEntity.getY(), tTileEntity.getZ()), tTileEntity.getBlock(tTileEntity.getCoords()), null);
+						tTileEntity.getWorld().updateNeighborsAt(new BlockPos(tTileEntity.getX(), tTileEntity.getY(), tTileEntity.getZ()), tTileEntity.getBlock(tTileEntity.getCoords()));
 					} catch(Throwable e) {
 						if (tTileEntity instanceof ITileEntityErrorable) ((ITileEntityErrorable)tTileEntity).setError("Delayed Block Update - " + e);
 						e.printStackTrace(ERR);
@@ -687,7 +687,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				}
 			}
 			
-			if (aEvent instanceof ServerTickEvent.Post) { // было aEvent.phase == ServerTickEvent.END
+			if (aEvent.phase == net.minecraftforge.event.TickEvent.Phase.END) { // было aEvent.phase == ServerTickEvent.END
 				for (int i = 0; i < SERVER_TICK_POST.size(); i++) {
 					ITileEntityServerTickPost tTileEntity = SERVER_TICK_POST.get(i);
 					if (tTileEntity.isDead()) {
@@ -913,7 +913,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public void onWorldTick(LevelTickEvent aEvent) {
 		TOOL_SOUNDS = TOOL_SOUNDS_SETTING;
 
-		if (aEvent.getLevel() instanceof ServerLevel aServerLevel && aEvent instanceof LevelTickEvent.Post) { // getEntities() без аргументов объявлен на ServerLevel, не Level (сверено, ServerLevel.java:1753)
+		if (aEvent.level instanceof ServerLevel aServerLevel && aEvent.phase == net.minecraftforge.event.TickEvent.Phase.END) { // getEntities() без аргументов объявлен на ServerLevel, не Level (сверено, ServerLevel.java:1753)
 			ArrayListNoNulls<ExperienceOrb> tOrbs = (XP_ORB_COMBINING && SERVER_TIME % 40 == 31 ? new ArrayListNoNulls<ExperienceOrb>(128) : null);
 			// BUG-103 (класс «состав сущностей меняется во время обхода»): удалять ПРЯМО В ЦИКЛЕ нельзя. По коду
 			// движка discard() → Callback.onRemove → stopTracking → onTrackingEnd → ChunkMap.removeEntity (правит
@@ -988,18 +988,18 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 			if (tOrbs != null && tOrbs.size() > 32) for (ExperienceOrb aOrb : tOrbs) {
 				if (aOrb.getValue() >= Short.MAX_VALUE) continue;
-				if (aOrb.getValue() <= 0) {aOrb.setValue(0); aOrb.discard(); continue;}
+				if (aOrb.getValue() <= 0) {aOrb.value = 0; aOrb.discard(); continue;}
 				for (ExperienceOrb tOrb : tOrbs) if (aOrb != tOrb && !tOrb.isRemoved() && tOrb.getValue() > 0 && tOrb.getValue() < Short.MAX_VALUE && aOrb.distanceToSqr(tOrb) <= 3) {
 					// EVENTS impossible-1:1: neo ExperienceOrb.age приватно, без public-сеттера — перенос возраста при слиянии
 					// орбов (1.7.10 xpOrbAge public) не выразим; слияние значения работает, возраст сохраняет выживший орб (age
 					// влияет лишь на despawn-таймер, ~5 мин) → шаг пропущен, слияние XP функционально.
 					if (aOrb.getValue() + tOrb.getValue() > Short.MAX_VALUE) {
-						tOrb.setValue(tOrb.getValue() - (Short.MAX_VALUE - aOrb.getValue()));
-						aOrb.setValue(Short.MAX_VALUE);
+						tOrb.value = tOrb.getValue() - (Short.MAX_VALUE - aOrb.getValue());
+						aOrb.value = Short.MAX_VALUE;
 						break;
 					}
-					aOrb.setValue(aOrb.getValue() + tOrb.getValue());
-					tOrb.setValue(0);
+					aOrb.value = aOrb.getValue() + tOrb.getValue();
+					tOrb.value = 0;
 					tOrb.discard();
 					break;
 				}
@@ -1275,7 +1275,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		// рассылка проходила мимо; тикающие MTE дозревали от своих тиков, notick (стены) — никогда. Синхронная
 		// реконструкция стабов ЭТОГО чанка существующим единым механизмом ДО рассылки: порядок «BE реальны →
 		// синк» гарантирован по построению для ВСЕХ MTE.
-		gregapi.worldgen.GT6WorldgenFeature.reconstructChunkMTEs(tChunk.getLevel(), tChunk.getPos().x(), tChunk.getPos().z());
+		gregapi.worldgen.GT6WorldgenFeature.reconstructChunkMTEs(tChunk.getLevel(), tChunk.getPos().x, tChunk.getPos().z);
 		if (tChunk.getBlockEntities() != null && tChunk.getBlockEntities().size() > 0) {
 			byte tIterations = 8;
 			HashSetNoNulls<Object> tSet = new HashSetNoNulls<>();
@@ -1661,8 +1661,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (ST.valid(aStack)) {
 				// Make sure that shelvable Items don't do a Rightclick Action instead of being shelved.
 				if (aEvent instanceof PlayerInteractEvent.RightClickBlock aRightClickBlock && aTileEntity instanceof ITileEntityBookShelf && ((ITileEntityBookShelf)aTileEntity).isShelfFace(aFace)) {
-					aRightClickBlock.setUseBlock(TriState.TRUE);  // было aEvent.useBlock = Result.ALLOW
-					if (BooksGT.BOOK_REGISTER.containsKey(aStack, T)) aRightClickBlock.setUseItem(TriState.FALSE); // было aEvent.useItem = Result.DENY
+					aRightClickBlock.setUseBlock(net.minecraftforge.eventbus.api.Event.Result.ALLOW);  // было aEvent.useBlock = Result.ALLOW
+					if (BooksGT.BOOK_REGISTER.containsKey(aStack, T)) aRightClickBlock.setUseItem(net.minecraftforge.eventbus.api.Event.Result.DENY); // было aEvent.useItem = Result.DENY
 					return;
 				}
 				// Reload Guns with the potential Ammo in this Slot if applicable. Ugly Code, I know.
@@ -2050,7 +2050,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// WD.dimensionId(World)==0 (1.7.10) → Level.dimension()==Level.OVERWORLD (сверено, Level.java).
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onCheckSpawnEvent(MobSpawnEvent.PositionCheck aEvent) {
-		if (aEvent.getResult() == MobSpawnEvent.PositionCheck.Result.FAIL) return;
+		if (aEvent.getResult() == net.minecraftforge.eventbus.api.Event.Result.DENY) return;
 		// F6 neo-async-chunkgen (impossible-1:1; ОБЕЗВРЕЖЕН DEADLOCK создания мира, пойман jstack'ом): при спавне мобов
 		// ВО ВРЕМЯ ГЕНЕРАЦИИ чанка (EntitySpawnReason.CHUNK_GENERATION) neo передаёт WorldGenRegion, но GT6-защиты спавна
 		// читают блоки/свет через aEvent.getEntity().level() = ИСТИННЫЙ ServerLevel → getBlockState форсит
@@ -2063,7 +2063,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		Level aWorld = aEvent.getEntity().level();
 		int aX = UT.Code.roundDown(aEvent.getX()), aY = (int)UT.Code.bind(WD.minY(aWorld), WD.topY(aWorld), UT.Code.roundDown(aEvent.getY())), aZ = UT.Code.roundDown(aEvent.getZ()); // BUG-089: было bind(0, getHeight()) — спавн на Y<0 кламплся к нулю, проверки судили чужую позицию
 
-		if (SPAWN_NO_BATS && aMobClass == Bat.class && WD.block(aWorld, aX, aY-2, aZ) != Blocks.STONE && WD.block(aWorld, aX, aY+2, aZ) != Blocks.STONE) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
+		if (SPAWN_NO_BATS && aMobClass == Bat.class && WD.block(aWorld, aX, aY-2, aZ) != Blocks.STONE && WD.block(aWorld, aX, aY+2, aZ) != Blocks.STONE) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
 
 		if (SPAWN_HOSTILES_ONLY_IN_DARKNESS && WD.dimOverworldLike(aWorld)) try {
 			// F-light: 1.7.10 Chunk.getBlockStorageArray()[section].getExtBlocklightValue(...) (per-section блок-свет)
@@ -2071,28 +2071,28 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			// (LevelReader.java:174 использует тот же getBrightness).
 			if (aWorld.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, new BlockPos(aX, aY, aZ)) > 0) {
 				// Vanilla Mobs only, just in case.
-				if (aMobClass == Creeper.class || aMobClass == EnderMan.class || aMobClass == Skeleton.class || aMobClass == Zombie.class || aMobClass == Spider.class || aMobClass == Witch.class || aMobClass == Bat.class) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
+				if (aMobClass == Creeper.class || aMobClass == EnderMan.class || aMobClass == Skeleton.class || aMobClass == Zombie.class || aMobClass == Spider.class || aMobClass == Witch.class || aMobClass == Bat.class) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
 				// Well, that Zombie is kindof like Vanilla, so it counts.
-				if (MD.TC.mLoaded) if (aEvent.getEntity() instanceof EntityBrainyZombie) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
+				if (MD.TC.mLoaded) if (aEvent.getEntity() instanceof EntityBrainyZombie) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
 				// TODO Add Drowned and other Et Futurum Requiem Mobs once they are released.
 				// EVENTS foreign-gated (Et Futurum Requiem не портирован на neo; instanceq-классы не существуют): ganymedes01.etfuturum.entities.{EntityHusk,EntityStray,EntityZombieVillager}
 				// (1.7.10-era библиотека, не портирована на neo) не наследуются от современного net.minecraft.world.entity.Mob —
 				// instanceof неконвертируемы (hard compile error), не просто раннтайм-false; требует апдейта самой EtFu-библиотеки.
-				// if (MD.EtFu.mLoaded) if (aEvent.getEntity() instanceof EntityZombieVillager || aEvent.getEntity() instanceof EntityStray || aEvent.getEntity() instanceof EntityHusk) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
+				// if (MD.EtFu.mLoaded) if (aEvent.getEntity() instanceof EntityZombieVillager || aEvent.getEntity() instanceof EntityStray || aEvent.getEntity() instanceof EntityHusk) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
 			}
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 
 		if (aWorld.dimension() == Level.OVERWORLD && aY >= WD.waterLevel(aWorld) - 16) {
 			if (GENERATE_BIOMES) {
-				if (UT.Code.inside(-96,  95, aX) && UT.Code.inside(-96,  95, aZ)) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
+				if (UT.Code.inside(-96,  95, aX) && UT.Code.inside(-96,  95, aZ)) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
 			} else if (GENERATE_NEXUS) {
-				if (UT.Code.inside(  0,  48, aX) && UT.Code.inside(-64, -16, aZ)) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
+				if (UT.Code.inside(  0,  48, aX) && UT.Code.inside(-64, -16, aZ)) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
 			}
-			if (GENERATE_STREETS && (UT.Code.inside(-48, 48, aX) || UT.Code.inside(-48, 48, aZ))) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
+			if (GENERATE_STREETS && (UT.Code.inside(-48, 48, aX) || UT.Code.inside(-48, 48, aZ))) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
 			// EVENTS: 1.7.10 World.getWorldInfo().getSpawnX()/getSpawnZ() → neo Level.getLevelData().getRespawnData().globalPos().pos()
 			// (мислейбл был: «методов нет» — на деле переименовано в RespawnData). SPAWN_ZONE_MOB_PROTECTION восстановлено 1:1.
 			net.minecraft.core.BlockPos tSpawn = aWorld.getLevelData().getRespawnData().globalPos().pos();
-			if (SPAWN_ZONE_MOB_PROTECTION && UT.Code.inside(-144, 144, aX-tSpawn.getX()) && UT.Code.inside(-144, 144, aZ-tSpawn.getZ()) && WD.opq(aWorld, aX, 0, aZ, F, F)) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
+			if (SPAWN_ZONE_MOB_PROTECTION && UT.Code.inside(-144, 144, aX-tSpawn.getX()) && UT.Code.inside(-144, 144, aZ-tSpawn.getZ()) && WD.opq(aWorld, aX, 0, aZ, F, F)) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
 		}
 
 		//if (aEvent.entity instanceof EntityMob && !(aEvent.entity instanceof IBossDisplayData) && ((EntityMob)aEvent.entity).getCanSpawnHere()) mMobsToFastDespawn.add((EntityLiving)aEvent.entityLiving);
@@ -2109,7 +2109,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				// интегратором к HEAD (71c8179) — контент-файл несёт другие незакрытые жилы (WD raw-coord
 				// block-API), распространение вне этого захода центров (задача #18); implementer сейчас
 				// НЕ реализует обновлённый интерфейс (другой класс проблем, известен).
-				if (tTileEntity.inhibitMobSpawn(aEvent, aWorld, aX, aY, aZ)) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
+				if (tTileEntity.inhibitMobSpawn(aEvent, aWorld, aX, aY, aZ)) {aEvent.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY); return;}
 			} catch(Throwable e) {
 				MOB_SPAWN_INHIBITORS.remove(i--);
 				tTileEntity.setError("Spawn Inhibitor - " + e);
@@ -2260,7 +2260,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
 		int tTasks = RECHUNK_PLANTS; // растительность проверяется в каждом свежем чанке
 		// редстоун — только в данж-области, она детерминирована якорной формулой
-		if (gregapi.worldgen.dungeon.WorldgenDungeonGT.isDungeonAreaChunk(tLevel, tPos.x(), tPos.z())) tTasks |= RECHUNK_REDSTONE;
+		if (gregapi.worldgen.dungeon.WorldgenDungeonGT.isDungeonAreaChunk(tLevel, tPos.x, tPos.z)) tTasks |= RECHUNK_REDSTONE;
 		sChunkFinishQueue.add(new Object[] {tLevel, tPos, tTasks});
 	}
 
@@ -2271,7 +2271,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel)tJob[0];
 			net.minecraft.world.level.ChunkPos tPos = (net.minecraft.world.level.ChunkPos)tJob[1];
 			int tTasks = (Integer)tJob[2];
-			net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(tPos.x(), tPos.z());
+			net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(tPos.x, tPos.z);
 			if (tChunk == null) {sChunkFinishQueue.add(tJob); return;} // ещё не FULL — попробуем следующим тиком
 			if ((tTasks & RECHUNK_PLANTS) != 0) {
 				try {gregapi.util.WD.dropUnsupportedPlants(tLevel, tChunk);} catch (Throwable e) {e.printStackTrace(ERR);}
@@ -2280,12 +2280,12 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				try {
 					int tY0 = gregapi.util.WD.remapY(tLevel, 20);
 					for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) for (int y = tY0-12; y <= tY0+14; y++) {
-						BlockPos tBP = new BlockPos((tPos.x() << 4) + x, y, (tPos.z() << 4) + z);
+						BlockPos tBP = new BlockPos((tPos.x << 4) + x, y, (tPos.z << 4) + z);
 						net.minecraft.world.level.block.Block tBlock = tChunk.getBlockState(tBP).getBlock();
 						if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WIRE || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WALL_TORCH
 						 || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_TORCH || tBlock == net.minecraft.world.level.block.Blocks.STICKY_PISTON
 						 || tBlock == net.minecraft.world.level.block.Blocks.PISTON || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP) {
-							tLevel.updateNeighborsAt(tBP, tBlock, null);
+							tLevel.updateNeighborsAt(tBP, tBlock);
 						}
 					}
 				} catch (Throwable e) {e.printStackTrace(ERR);}

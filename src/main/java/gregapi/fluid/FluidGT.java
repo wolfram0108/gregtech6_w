@@ -269,7 +269,7 @@ public class FluidGT {
 		@Override public Item getBucket() {return Items.AIR;}
 		@Override protected boolean canBeReplacedWith(FluidState aState, BlockGetter aLevel, BlockPos aPos, Fluid aOther, Direction aDirection) {return aDirection == Direction.DOWN && !isSame(aOther);}
 		@Override public int getTickDelay(LevelReader aLevel) {return 5;}
-		@Override protected float getExplosionResistance() {return 1.0F;}
+		@Override public float getExplosionResistance() {return 1.0F;}
 		/** Блочная форма жидкости для движковых подмен: MapItem (пиксель карты, :197), Level.destroyBlock (:298),
 		 *  BucketItem, FallingBlockEntity и пр. Эталон — {@code WaterFluid.createLegacyBlock} (:97-99): жидкость
 		 *  отдаёт СВОЙ блок. У мировых жидкостей GT6 блочная форма живёт в реестре {@code FL.BLOCKS}

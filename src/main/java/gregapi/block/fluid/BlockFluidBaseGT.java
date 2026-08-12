@@ -187,10 +187,10 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	// F-tick жидкостей: 1.7.10 World.scheduleBlockUpdate → Block.updateTick; neo — BlockBehaviour.tick.
 	// onBlockAdded (Forge BlockFluidBase) планировал первый тик — neo onPlace 1:1.
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, java.util.Random aRandom) {/* переопределяют BlockBaseFluid/Ocean/River/Swamp */}
-	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+	@Override public void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), gregapi.util.UT.Code.random(aRandom)); // конвертер — ЦЕНТР UT.Code.random
 	}
-	@Override protected void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {
+	@Override public void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {
 		onBlockAdded(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());
 	}
 	/** было Forge {@code BlockFluidBase.onBlockAdded(World,x,y,z)} (:227-230) — тело 1:1. Диспатч из onPlace
@@ -199,7 +199,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate);
 	}
-	@Override protected void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
+	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}
 
@@ -208,7 +208,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	// первые два уже перекрыты GT6-каналами выше; updateShape перекрывается здесь (тело = дефолт
 	// BlockBehaviour.updateShape «вернуть состояние без изменений», как было до репарентинга). Без этого
 	// FlowingFluid.tick ванили работал бы ПОВЕРХ GT6-квант — двойной разлив.
-	@Override protected BlockState updateShape(BlockState aState, net.minecraft.world.level.LevelReader aWorld, net.minecraft.world.level.ScheduledTickAccess aTicks, BlockPos aPos, net.minecraft.core.Direction aDirection, BlockPos aNeighborPos, BlockState aNeighborState, net.minecraft.util.RandomSource aRandom) {
+	@Override public BlockState updateShape(BlockState aState, net.minecraft.world.level.LevelReader aWorld, net.minecraft.world.level.ScheduledTickAccess aTicks, BlockPos aPos, net.minecraft.core.Direction aDirection, BlockPos aNeighborPos, BlockState aNeighborState, net.minecraft.util.RandomSource aRandom) {
 		return aState;
 	}
 
@@ -216,7 +216,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	// (LavaFluid.randomTick), которых у GT6-жидкостей 1.7.10 не было (своя flammability в updateTick).
 	// Дефолт до репарентинга = F (randomTicks() в Properties не ставится); потомок с СОБСТВЕННЫМ
 	// random-каналом переопределяет сам (в 1.7.10 у жидкостей GT6 его не было ни у одной).
-	@Override protected boolean isRandomlyTicking(BlockState aState) {return F;}
+	@Override public boolean isRandomlyTicking(BlockState aState) {return F;}
 
 	/** F5 surface-B, ведро 1:1 с ванилью 1.7.10 ({@code recompSrc/.../ItemBucket.java:85-98}): материал water
 	 *  + мета 0 → {@code setBlockToAir} + ведро воды; материал lava + мета 0 → ведро лавы; ИНАЧЕ — не
@@ -394,8 +394,8 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	// 1.7.10 спрашивал у блока getLightOpacity(), и ОБЕ жидкостные иерархии отвечали одинаково —
 	// LIGHT_OPACITY_WATER=3 (gregtech6/.../BlockWaterlike.java:199 и .../BlockBaseFluid.java:367). В порте это
 	// значение лежало КОПИЕЙ в обоих потомках, а движок его не спрашивал вовсе: neo считает затухание из
-	// BlockState — LightEngine.getOpacity:85-87 берёт state.getLightDampening(), а тот заполняется ОДИН раз при
-	// сборке состояния (BlockBehaviour.java:518) вызовом блочного getLightDampening(BlockState). Методы
+	// BlockState — LightEngine.getOpacity:85-87 берёт state.getLightBlock(), а тот заполняется ОДИН раз при
+	// сборке состояния (BlockBehaviour.java:518) вызовом блочного getLightBlock(BlockState,BlockGetter,BlockPos). Методы
 	// 1.7.10-сигнатуры остались без вызывателей => вода GT6 не затемняла глубину: дефолт давал 1 вместо 3
 	// (BlockBehaviour.java:290-295: не solid + propagatesSkylightDown=false → 1).
 	// Мост объявлен ОДИН РАЗ здесь, в общем предке обеих иерархий, обе копии значения сняты.
@@ -403,7 +403,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	// (BlockOcean:164 — «источник, над ним два воздуха, снизу пропускает свет → 16»; BlockSwamp:198 — «сверху
 	// болото → 255») спрашивали СОСЕДЕЙ, чего в этом канале нет. Выразимое по состоянию переносим (BlockSwamp),
 	// невыразимое идёт в реестр отложенного, а не в тихую заглушку.
-	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return getLightOpacity(aState);}
+	@Override protected int getLightBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return getLightOpacity(aState);}
 
 	/** Затухание света для конкретного состояния. Общее значение обеих иерархий 1.7.10 — {@code LIGHT_OPACITY_WATER}. */
 	public int getLightOpacity(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.LIGHT_OPACITY_WATER;}
@@ -414,7 +414,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	// нормальным кубом жидкость не считалась и соседей не тушила (Block.java:1334-1337, 502-504). В neo признак
 	// сменился на коллизию (BlockBehaviour:306-308), поэтому значение доводится мостом; объявлено ОДИН РАЗ здесь,
 	// в общем предке, копии из обоих потомков сняты. Разбор канала — BlockBase.
-	@Override protected float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+	@Override public float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
 
 	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
 	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}

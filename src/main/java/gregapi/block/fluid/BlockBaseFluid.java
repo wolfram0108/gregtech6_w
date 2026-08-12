@@ -410,7 +410,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// применяет эффекты только для fluid в теге FluidTags.WATER/LAVA (EntityFluidInteraction). Content-жидкость с материалом
 	// water/lava → vanilla WATER/LAVA FluidState по квантам (meta+1=1..8, полный=8) → игрок тонет/горит в ней. Прочие
 	// (газ/материал-специфика) → super=EMPTY: у них GT6-эффекты (bathing/breathing/drown) уже в entityInside/onHeadInside.
-	@Override protected net.minecraft.world.level.material.FluidState getFluidState(BlockState aState) {
+	@Override public net.minecraft.world.level.material.FluidState getFluidState(BlockState aState) {
 		// SOURCE-ВСЕГДА (НЕ FLOWING): критично. Neo вызывает FluidState.tick() для любого non-EMPTY FLOWING-состояния
 		// (LevelChunk.postProcessGeneration / ServerLevel.tickFluid) → FlowingFluid.getNewLiquid не находит vanilla-источников
 		// (GT6-источник ≠ Blocks.WATER) → EMPTY → level.setBlock(AIR) УДАЛЯЕТ GT6-flowing мгновенно («гейзер появился и пропал»).
@@ -430,9 +430,9 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// F5 surface-B: после репарентинга предка на LiquidBlock его INVISIBLE (:136) перекрывается обратно в MODEL —
 	// различие «чем рисуется» между иерархиями живёт в потомках, как и в 1.7.10 (у водоподобных — ванильная вода,
 	// здесь — своя текстура жидкости).
-	@Override protected net.minecraft.world.level.block.RenderShape getRenderShape(BlockState aState) {return net.minecraft.world.level.block.RenderShape.MODEL;}
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
+	@Override public net.minecraft.world.level.block.RenderShape getRenderShape(BlockState aState) {return net.minecraft.world.level.block.RenderShape.MODEL;}
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 
 	@Override public Block getBlock() {return this;}
 	public final String getUnlocalizedName() {return FL.name(mFluid, F);} // было mFluid.getUnlocalizedName() (Forge Fluid) — FL.name(Fluid,boolean) центр (F5, см. BlockWaterlike)
@@ -483,7 +483,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		return T;
 	}
 	// getLightOpacity() — в общем предке BlockFluidBaseGT (F3 light-opacity ЦЕНТР): значение 1.7.10 у обеих
-	// иерархий одинаково, копия здесь была дублем; движок спрашивает его через getLightDampening(BlockState).
+	// иерархий одинаково, копия здесь была дублем; движок спрашивает его через getLightBlock(BlockState,BlockGetter,BlockPos).
 	
 	// F-fire мост: было Forge Block.getFlammability/getFireSpreadSpeed(IBlockAccess,x,y,z,side) — в neo канал огня
 	// живёт в IBlockExtension.getFlammability/getFireSpreadSpeed(BlockState,BlockGetter,BlockPos,Direction)
@@ -523,9 +523,9 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	}
 	
 	/** This Function has been named wrong. It should be onEntityOverlapWithBlock */
-	// было onEntityCollidedWithBlock(World,x,y,z,Entity) -> BlockBehaviour.entityInside(BlockState,Level,BlockPos,Entity,InsideBlockEffectApplier,boolean) [BlockBehaviour.java:360];
+	// было onEntityCollidedWithBlock(World,x,y,z,Entity) -> BlockBehaviour.entityInside(BlockState,Level,BlockPos,Entity) [BlockBehaviour.java:393];
 	// новые параметры effectApplier/isPrecise (батч damage-эффектов, F16-концепция без 1.7.10-аналога) не используются - GT6 их и раньше не применял.
-	@Override protected void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity, net.minecraft.world.entity.InsideBlockEffectApplier aEffectApplier, boolean aIsPrecise) {
+	@Override public void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity) {
 		if (mActLikeWeb) aEntity.makeStuckInBlock(defaultBlockState(), new Vec3(0.25, 0.05F, 0.25)); // было setInWeb() — 1.7.10 Entity.setInWeb() удалён; Entity.makeStuckInBlock(BlockState,Vec3) — тот же приём/константа, что ванильный WebBlock.entityInside (WebBlock.java:28,33)
 		if (!aWorld.isClientSide() && !mEffectsBathing.isEmpty() && aEntity instanceof LivingEntity && !UT.Entities.isWearingFullChemHazmat((LivingEntity)aEntity)) {
 			for (int[] tEffects : mEffectsBathing) UT.Entities.applyPotion(aEntity, tEffects[0], tEffects[1], tEffects[2], F);

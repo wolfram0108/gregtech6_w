@@ -372,7 +372,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		});
 	}
 
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (aWorld == null) return super.getCollisionShape(aState, aWorld, aPos, aContext);
 		BlockEntity tTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		if (tTileEntity instanceof IMTE_AddCollisionBoxesToList tMulti) {
@@ -387,7 +387,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		}
 		return super.getCollisionShape(aState, aWorld, aPos, aContext); // TE null/без интерфейсов → полный куб (1:1 pool-фолбэк)
 	}
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (aWorld instanceof Level tLevel) {
 			BlockEntity tTileEntity = WD.te(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 			if (tTileEntity instanceof IMTE_GetSelectedBoundingBoxFromPool tSel) {
@@ -400,7 +400,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_UpdateTick) ((IMTE_UpdateTick)aTileEntity).updateTick(aRandom);}
 	public final void onBlockDestroyedByPlayer(Level aWorld, int aX, int aY, int aZ, int aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockDestroyedByPlayer) ((IMTE_OnBlockDestroyedByPlayer)aTileEntity).onBlockDestroyedByPlayer(aRandom);}
 	// было onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167]
-	@Override protected final void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnBlockAdded) ((IMTE_OnBlockAdded)aTileEntity).onBlockAdded();}
+	@Override public final void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnBlockAdded) ((IMTE_OnBlockAdded)aTileEntity).onBlockAdded();}
 	// было super.dropXpOnBlockBreak(...) (1.7.10 Block, УДАЛЁН из neo целиком). Дефолт inline-порт 1:1 вместо
 	// super-вызова (Block.java:843-854 recompSrc): цикл EntityXPOrb-спавна -> neo ExperienceOrb.award(ServerLevel,Vec3,int)
 	// (ExperienceOrb.java:190, тот же split-алгоритм внутри award/awardWithDirection).
@@ -433,17 +433,17 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final boolean onBlockActivated(Level aWorld, int aX, int aY, int aZ, Player aPlayer, int aSide, float aHitX, float aHitY, float aHitZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aPlayer != null && IL.TC_Thaumometer.equal(aPlayer.getMainHandItem(), T, T) && (!(aTileEntity instanceof ITileEntityBookShelf) || !((ITileEntityBookShelf)aTileEntity).isShelfFace(UT.Code.side(aSide)))) return F; return aTileEntity instanceof IMTE_OnBlockActivated && ((IMTE_OnBlockActivated)aTileEntity).onBlockActivated(aPlayer, UT.Code.side(aSide), aHitX, aHitY, aHitZ);}
 	public final void onEntityWalking(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnEntityWalking) ((IMTE_OnEntityWalking)aTileEntity).onEntityWalking(aEntity);}
 	// было onBlockClicked(World,x,y,z,EntityPlayer) -> BlockBehaviour.attack(BlockState,Level,BlockPos,Player) [BlockBehaviour.java:353]
-	@Override protected final void attack(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnBlockClicked) ((IMTE_OnBlockClicked)aTileEntity).onBlockClicked(aPlayer); else super.attack(aState, aWorld, aPos, aPlayer);}
+	@Override public final void attack(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnBlockClicked) ((IMTE_OnBlockClicked)aTileEntity).onBlockClicked(aPlayer); else super.attack(aState, aWorld, aPos, aPlayer);}
 	// F13: 1.7.10 Block.velocityToAddToEntity удалён (ванильный дефолт был пуст; эффект имели лишь BlockPistonMoving/Portal) —
 	// нет neo-хука. TE-интерфейс IMTE_VelocityToAddToEntity без implementor'ов (0, сверено) → мёртвая поверхность, не заглушка.
 	public final void velocityToAddToEntity(Level aWorld, int aX, int aY, int aZ, Entity aEntity, Vec3 aVector) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_VelocityToAddToEntity) ((IMTE_VelocityToAddToEntity)aTileEntity).velocityToAddToEntity(aEntity, aVector);}
 	// было isProvidingWeakPower(IBlockAccess,x,y,z,side) -> BlockBehaviour.getSignal(BlockState,BlockGetter,BlockPos,Direction) [BlockBehaviour.java:356]
-	@Override protected final int getSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_IsProvidingWeakPower ? ((IMTE_IsProvidingWeakPower)aTileEntity).isProvidingWeakPower(UT.Code.side(aSide)) : super.getSignal(aState, aWorld, aPos, aSide);}
-	// было onEntityCollidedWithBlock(World,x,y,z,Entity) -> BlockBehaviour.entityInside(BlockState,Level,BlockPos,Entity,InsideBlockEffectApplier,boolean) [BlockBehaviour.java:360];
+	@Override public final int getSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_IsProvidingWeakPower ? ((IMTE_IsProvidingWeakPower)aTileEntity).isProvidingWeakPower(UT.Code.side(aSide)) : super.getSignal(aState, aWorld, aPos, aSide);}
+	// было onEntityCollidedWithBlock(World,x,y,z,Entity) -> BlockBehaviour.entityInside(BlockState,Level,BlockPos,Entity) [BlockBehaviour.java:393];
 	// новые параметры effectApplier/isPrecise (батч damage-эффектов, F16-концепция без 1.7.10-аналога) не используются - GT6 их и раньше не применял.
-	@Override protected final void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity, net.minecraft.world.entity.InsideBlockEffectApplier aEffectApplier, boolean aIsPrecise) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnEntityCollidedWithBlock) ((IMTE_OnEntityCollidedWithBlock)aTileEntity).onEntityCollidedWithBlock(aEntity); else super.entityInside(aState, aWorld, aPos, aEntity, aEffectApplier, aIsPrecise);}
+	@Override public final void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnEntityCollidedWithBlock) ((IMTE_OnEntityCollidedWithBlock)aTileEntity).onEntityCollidedWithBlock(aEntity); else super.entityInside(aState, aWorld, aPos, aEntity);}
 	// было isProvidingStrongPower(IBlockAccess,x,y,z,side) -> BlockBehaviour.getDirectSignal(BlockState,BlockGetter,BlockPos,Direction) [BlockBehaviour.java:363]
-	@Override protected final int getDirectSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_IsProvidingStrongPower ? ((IMTE_IsProvidingStrongPower)aTileEntity).isProvidingStrongPower(UT.Code.side(aSide)) : super.getDirectSignal(aState, aWorld, aPos, aSide);}
+	@Override public final int getDirectSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_IsProvidingStrongPower ? ((IMTE_IsProvidingStrongPower)aTileEntity).isProvidingStrongPower(UT.Code.side(aSide)) : super.getDirectSignal(aState, aWorld, aPos, aSide);}
 	public final boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return !(aTileEntity instanceof IMTE_CanBlockStay) || ((IMTE_CanBlockStay)aTileEntity).canBlockStay();}
 	// было onFallenUpon(World,x,y,z,Entity,dist) -> Block.fallOn(Level,BlockState,BlockPos,Entity,double) [Block.java:484] - fallDistance теперь double, не float.
 	@Override public final void fallOn(Level aWorld, BlockState aState, BlockPos aPos, Entity aEntity, double aFallDistance) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnFallenUpon) ((IMTE_OnFallenUpon)aTileEntity).onFallenUpon(aEntity, (float)aFallDistance); else super.fallOn(aWorld, aState, aPos, aEntity, aFallDistance);}
@@ -469,8 +469,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// было hasComparatorInputOverride()/getComparatorInputOverride(World,x,y,z,side) -> BlockBehaviour.hasAnalogOutputSignal(BlockState)
 	// [BlockBehaviour.java:226] / BlockBehaviour.getAnalogOutputSignal(BlockState,Level,BlockPos,Direction) [BlockBehaviour.java:310];
 	// дефолт (без IMTE-хука) = 0, тот же дефолт, что и у движка (BlockBehaviour.java:311).
-	@Override protected final boolean hasAnalogOutputSignal(BlockState aState) {return T;}
-	@Override protected final int getAnalogOutputSignal(BlockState aState, Level aWorld, BlockPos aPos, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_GetComparatorInputOverride ? ((IMTE_GetComparatorInputOverride)aTileEntity).getComparatorInputOverride(UT.Code.side(aSide)) : aTileEntity instanceof IMTE_IsProvidingWeakPower ? ((IMTE_IsProvidingWeakPower)aTileEntity).isProvidingWeakPower(OPOS[UT.Code.side(aSide)]) : 0;}
+	@Override public final boolean hasAnalogOutputSignal(BlockState aState) {return T;}
+	@Override public final int getAnalogOutputSignal(BlockState aState, Level aWorld, BlockPos aPos) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_GetComparatorInputOverride ? ((IMTE_GetComparatorInputOverride)aTileEntity).getComparatorInputOverride(UT.Code.side(aSide)) : aTileEntity instanceof IMTE_IsProvidingWeakPower ? ((IMTE_IsProvidingWeakPower)aTileEntity).isProvidingWeakPower(OPOS[UT.Code.side(aSide)]) : 0;}
 	// было getLightValue(IBlockAccess,x,y,z) -> IBlockExtension.hasDynamicLightEmission(BlockState) [IBlockExtension.java:121] +
 	// IBlockExtension.getLightEmission(BlockState,BlockGetter,BlockPos) [IBlockExtension.java:152]; дефолт (без IMTE-хука) =
 	// aState.getLightEmission() (запечённое в Properties значение), тот же дефолт, что вернул бы super.getLightValue.
@@ -551,7 +551,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// как это делал 1.7.10-оригинал через aWorld.getTileEntity(aX-OFFX[side],...). F3 functional-adapted (neo skipRendering сигнатура потеряла World/BlockPos → per-TE culling недостижим; используется vanilla-дефолт super.skipRendering, 1:1 по следствию):
 	// custom per-TE диспетчеризация недостижима без позиции; используем ванильный дефолт (тот же fallback,
 	// что и в старой ветке super.shouldSideBeRendered, просто под новым именем/полярностью).
-	@Override protected final boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return super.skipRendering(aState, aNeighbor, aDir);}
+	@Override public final boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return super.skipRendering(aState, aNeighbor, aDir);}
 	public final void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_SetBlockBoundsBasedOnState) ((IMTE_SetBlockBoundsBasedOnState)aTileEntity).setBlockBoundsBasedOnState(this); else if (aTileEntity == null) setBlockBounds(-999, -999, -999, -998, -998, -998); else setBlockBounds(0, 0, 0, 1, 1, 1);}
 	public final AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity == null ? new AABB(-999, -999, -999, -998, -998, -998) : aTileEntity instanceof IMTE_GetSelectedBoundingBoxFromPool ? ((IMTE_GetSelectedBoundingBoxFromPool)aTileEntity).getSelectedBoundingBoxFromPool() : new AABB(aX, aY, aZ, aX+1, aY+1, aZ+1);}
 	// было randomDisplayTick(World,x,y,z,Random) -> Block.animateTick(BlockState,Level,BlockPos,RandomSource) [Block.java:355]
@@ -626,13 +626,13 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// F3 shade МОСТ (иерархия MTE — отдельная от BlockBase, наследует Block напрямую; разбор канала — в BlockBase).
 	// Машины/трубы/каверы без mOpaque и без mNormalCube в 1.7.10 соседей не затемняли, а neo-дефолт судит по
 	// коллизии и тушил бы ими всё вокруг до 0.2.
-	@Override protected float getShadeBrightness(BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+	@Override public float getShadeBrightness(BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
 
 	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
 	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
 	public final boolean isNormalCube()  {return mNormalCube;}
 	// было canProvidePower() -> BlockBehaviour.isSignalSource(BlockState) [BlockBehaviour.java:218]
-	@Override protected final boolean isSignalSource(BlockState aState) {return !mNormalCube;}
+	@Override public final boolean isSignalSource(BlockState aState) {return !mNormalCube;}
 	@Override public final Block getBlock() {return this;}
 	public final String getUnlocalizedName() {return mNameInternal;}
 	// LOCALIZATION (РЕАЛИЗОВАНО): 1.7.10 vanilla Block.getLocalizedName() @Override удалён из neo (нет метода) → @Override снят,
@@ -708,7 +708,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override public final IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T); return tTileEntity instanceof IRenderedBlockObject ? (IRenderedBlockObject)tTileEntity : null;}
 	// было onBlockEventReceived(World,x,y,z,id,data) -> BlockBehaviour.triggerEvent(BlockState,Level,BlockPos,int,int)
 	// [BlockBehaviour.java:206]; TileEntity.receiveClientEvent(id,data) -> BlockEntity.triggerEvent(int,int) [BlockEntity.java:270]
-	@Override protected final boolean triggerEvent(BlockState aState, Level aWorld, BlockPos aPos, int aID, int aParam) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity == null || aTileEntity.triggerEvent(aID, aParam);}
+	@Override public final boolean triggerEvent(BlockState aState, Level aWorld, BlockPos aPos, int aID, int aParam) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity == null || aTileEntity.triggerEvent(aID, aParam);}
 	// было getPlayerRelativeBlockHardness(EntityPlayer,World,x,y,z) -> BlockBehaviour.getDestroyProgress
 	// (BlockState,Player,BlockGetter,BlockPos) [BlockBehaviour.java:340]
 	// F-hardness (найдено по живому репорту «машины ломаются рукой»): БЫЛО — TE-гейт поверх super.getDestroyProgress,
@@ -719,7 +719,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// ?30:100) — рука на машине-с-инструментом = /100 и полная твёрдость, как в 1.7.10) → затем TE-гейт
 	// IMTE_GetPlayerRelativeBlockHardness (TileEntityBase01Root:1108 allowInteraction → max(v,1e-4) | 0).
 	private static long sLastDigZeroDiag = 0;
-	@Override protected final float getDestroyProgress(BlockState aState, Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
+	@Override public final float getDestroyProgress(BlockState aState, Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
 		BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		float tHardness = aTileEntity instanceof IMTE_GetBlockHardness ? ((IMTE_GetBlockHardness)aTileEntity).getBlockHardness() : 1.0F;
 		float tOriginal = WD.destroyProgress(tHardness, aPlayer, aState, aWorld, aPos); // vanilla-формула — ЦЕНТР WD.destroyProgress
@@ -768,7 +768,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (!LOCK) {LOCK = T; if (aTileEntity instanceof ITileEntity) ((ITileEntity)aTileEntity).onAdjacentBlockChange(aX, aY, aZ); LOCK = F;} if (aTileEntity instanceof IMTE_OnNeighborBlockChange) ((IMTE_OnNeighborBlockChange)aTileEntity).onNeighborBlockChange(aWorld, aBlock); if (aTileEntity == null && !aWorld.isClientSide()) WD.set(aWorld, aX, aY, aZ, NB, 0, 3);}
 	// F-neighbor (канал сместился): 1.7.10 World.notifyBlocksOfNeighborChange звал Block.onNeighborBlockChange; neo-вход —
 	// BlockBehaviour.neighborChanged. Мост по образцу BlockFluidBaseGT:154; GT6-канал (IMTE_OnNeighborBlockChange + чистка сирот) цел.
-	@Override protected void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
+	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}
 	@Override public final boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return T;}

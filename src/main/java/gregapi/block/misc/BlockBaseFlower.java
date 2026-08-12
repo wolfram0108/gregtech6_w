@@ -139,10 +139,10 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 
 	// F3 light-opacity МОСТ (цветы наследуют ванильный FlowerBlock, а не BlockBase — свой мост, см. разбор там).
-	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
+	@Override public int getLightBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.lightDampening(getLightOpacity());}
 
 	// F3 shade МОСТ (цветы наследуют ванильный FlowerBlock, а не BlockBase — свой мост, см. разбор там).
-	@Override protected float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+	@Override public float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
 
 	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
 	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
@@ -209,7 +209,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	// gt6flowerprobe показывал «дроп-сущностей 0», но судил только снос — слепота исправлена). Формула дропа —
 	// дефолт 1.7.10 Block.getDrops: quantityDropped копий ST(getItemDropped, 1, damageDropped) из СОБСТВЕННЫХ
 	// методов ниже (:132-149, 1:1 оригинала :97-101). Мета — из СНИМКА aState (BUG-016/026).
-	@Override protected java.util.List<ItemStack> getDrops(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
+	@Override public java.util.List<ItemStack> getDrops(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
 		if (tOrigin == null) return super.getDrops(aState, aParams);
 		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList();
@@ -230,11 +230,11 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	//      (регион генерации) → ванильное правило почвы, приём как isFireSource у PrefixBlock;
 	//  (2) isRandomlyTicking + randomTick → checkAndDropBlock: random-плечо 1:1 (BlockBush:22,:62-64) —
 	//      кислород меняется и без обновления соседей.
-	@Override protected boolean canSurvive(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.LevelReader aWorld, BlockPos aPos) {
+	@Override public boolean canSurvive(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.LevelReader aWorld, BlockPos aPos) {
 		return aWorld instanceof Level tLevel ? canBlockStay(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : super.canSurvive(aState, aWorld, aPos);
 	}
-	@Override protected boolean isRandomlyTicking(net.minecraft.world.level.block.state.BlockState aState) {return T;}
-	@Override protected void randomTick(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+	@Override public boolean isRandomlyTicking(net.minecraft.world.level.block.state.BlockState aState) {return T;}
+	@Override public void randomTick(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 		checkAndDropBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());
 	}
 	public void checkAndDropBlock(Level aWorld, int aX, int aY, int aZ) {
@@ -262,7 +262,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		if (tBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;
 		// было tBlock != Blocks.tallgrass (1.7.10 единый BlockTallGrass, meta grass/fern) -> neo раздвоил на
-		// Blocks.SHORT_GRASS/Blocks.FERN, оба instanceof TallGrassBlock [TallGrassBlock.java:15, Blocks.java:707-732] -
+		// Blocks.GRASS/Blocks.FERN, оба instanceof TallGrassBlock [TallGrassBlock.java:15, Blocks.java:707-732] -
 		// instanceof как 1:1-эквивалент identity-проверки единого класса (второй tBlock!=DEAD_BUSH дубль-баг порта устранён).
 		} else if (tBlock != Blocks.VINE && !(tBlock instanceof net.minecraft.world.level.block.TallGrassBlock) && tBlock != Blocks.DEAD_BUSH && !WD.replaceable(tBlock, aWorld, aX, aY, aZ)) {
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];

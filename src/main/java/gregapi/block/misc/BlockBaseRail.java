@@ -210,10 +210,10 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public boolean isOpaqueCube() {return F;}
 	// F-occlusion мост (тот же приём, что BlockBase — рельс вне той иерархии, extends BaseRailBlock):
 	// не-opaque → occlusion-форма пуста (сосед не вырезается) + свет проходит.
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(net.minecraft.world.level.block.state.BlockState aState) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(net.minecraft.world.level.block.state.BlockState aState) {
 		return net.minecraft.world.phys.shapes.Shapes.empty();
 	}
-	@Override protected boolean propagatesSkylightDown(net.minecraft.world.level.block.state.BlockState aState) {return true;}
+	@Override public boolean propagatesSkylightDown(net.minecraft.world.level.block.state.BlockState aState) {return true;}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
 	public int damageDropped(int aMeta) {return 0;}
 	public int quantityDropped(Random par1Random) {return 1;}
@@ -221,10 +221,10 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 
 	// F3 light-opacity МОСТ (рельсы наследуют ванильный BaseRailBlock, а не BlockBase — свой мост, см. разбор там).
-	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
+	@Override protected int getLightBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.lightDampening(getLightOpacity());}
 
 	// F3 shade МОСТ (рельсы наследуют ванильный BaseRailBlock, а не BlockBase — свой мост, см. разбор там).
-	@Override protected float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+	@Override public float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
 
 	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
 	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
@@ -321,9 +321,9 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 				flag1 = T;
 			}
 			if (flag1) {
-				aWorld.updateNeighborsAt(new BlockPos(aX, aY - 1, aZ), this, null);
+				aWorld.updateNeighborsAt(new BlockPos(aX, aY - 1, aZ), this);
 				if (aData == 2 || aData == 3 || aData == 4 || aData == 5) {
-					aWorld.updateNeighborsAt(new BlockPos(aX, aY + 1, aZ), this, null);
+					aWorld.updateNeighborsAt(new BlockPos(aX, aY + 1, aZ), this);
 				}
 			}
 		}
@@ -331,10 +331,10 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	
 	public int tickRate(Level aWorld) {return 20;}
 	// было canProvidePower() -> BlockBehaviour.isSignalSource(BlockState) [BlockBehaviour.java:218]
-	@Override protected boolean isSignalSource(BlockState aState) {return mDetectorRail;}
+	@Override public boolean isSignalSource(BlockState aState) {return mDetectorRail;}
 
-	// было onEntityCollidedWithBlock(World,x,y,z,Entity) -> BlockBehaviour.entityInside(BlockState,Level,BlockPos,Entity,InsideBlockEffectApplier,boolean) [BlockBehaviour.java:360]
-	@Override protected void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity, net.minecraft.world.entity.InsideBlockEffectApplier aEffectApplier, boolean aIsPrecise) {
+	// было onEntityCollidedWithBlock(World,x,y,z,Entity) -> BlockBehaviour.entityInside(BlockState,Level,BlockPos,Entity) [BlockBehaviour.java:393]
+	@Override public void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity) {
 		if (mDetectorRail && !aWorld.isClientSide()) {
 			int l = WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());
 			if ((l & 8) == 0) func_150054_a(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), l);
@@ -350,9 +350,9 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	}
 	
 	// было isProvidingWeakPower(IBlockAccess,x,y,z,side) -> BlockBehaviour.getSignal(BlockState,BlockGetter,BlockPos,Direction) [BlockBehaviour.java:356]
-	@Override protected int getSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return mDetectorRail ? (WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) & 8) != 0 ? 15 : 0 : 0;}
+	@Override public int getSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return mDetectorRail ? (WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) & 8) != 0 ? 15 : 0 : 0;}
 	// было isProvidingStrongPower(IBlockAccess,x,y,z,side) -> BlockBehaviour.getDirectSignal(BlockState,BlockGetter,BlockPos,Direction) [BlockBehaviour.java:363]
-	@Override protected int getDirectSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return mDetectorRail ? (WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) & 8) == 0 ? 0 : (aSide == Direction.UP ? 15 : 0) : 0;}
+	@Override public int getDirectSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return mDetectorRail ? (WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) & 8) == 0 ? 0 : (aSide == Direction.UP ? 15 : 0) : 0;}
 	
 	private void func_150054_a(Level aWorld, int aX, int aY, int aZ, int aMetaData) {
 		boolean flag = (aMetaData & 8) != 0;
@@ -363,8 +363,8 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		if (!list.isEmpty()) flag1 = T;
 		if (flag1 && !flag) {
 			WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMetaData | 8, 3, F);
-			aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), this, null);
-			aWorld.updateNeighborsAt(new BlockPos(aX, aY - 1, aZ), this, null);
+			aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), this);
+			aWorld.updateNeighborsAt(new BlockPos(aX, aY - 1, aZ), this);
 			// было World.markBlockRangeForRenderUpdate(x0,y0,z0,x1,y1,z1) -> Level.setBlocksDirty(BlockPos,BlockState,BlockState)
 			// [Level.java:335, реальный neo-приём для detector-rail - см. DetectorRailBlock.checkPressed]; GT6 не отслеживает
 			// раздельно old/new BlockState (meta не проецирована на реальный BlockState, F13-модель меты) - тот же приём,
@@ -373,14 +373,14 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		}
 		if (!flag1 && flag) {
 			WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMetaData & 7, 3, F);
-			aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), this, null);
-			aWorld.updateNeighborsAt(new BlockPos(aX, aY - 1, aZ), this, null);
+			aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), this);
+			aWorld.updateNeighborsAt(new BlockPos(aX, aY - 1, aZ), this);
 			{BlockPos tPos = new BlockPos(aX, aY, aZ); BlockState tState = aWorld.getBlockState(tPos); aWorld.setBlocksDirty(tPos, tState, tState);}
 		}
 		if (flag1) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate(aWorld));
-		// было World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338];
-		// тот же приём, что уже используется в этом файле выше (updateNeighborsAt(...,this,null)).
-		aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), this, null);
+		// было World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos, Block) [Level.java:338];
+		// тот же приём, что уже используется в этом файле выше (updateNeighborsAt(..., this)).
+		aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), this);
 	}
 	
 	// было onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167].
@@ -390,7 +390,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	// (BaseRailBlock.java:64-77 ≡ 1.7.10 onBlockAdded: func_150052_a + if(field_150053_a) onNeighborBlockChange).
 	// Гард !oldState.is(...) — vanilla (мета-запись того же блока выравнивание НЕ перезапускает, 1:1 Chunk-семантика).
 	// Детектор-надстройка — 1:1 хвост оригинала. BlockRailRoad переопределяет NO-OP (разметка не выравнивается).
-	@Override protected void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {
+	@Override public void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {
 		if (!aOldState.is(aState.getBlock())) updateState(aState, aWorld, aPos, aMovedByPiston);
 		if (mDetectorRail) func_150054_a(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));
 	}
@@ -406,19 +406,19 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 
 	// BUG-047: neo scheduled-tick канал = tick(BlockState,ServerLevel,BlockPos,RandomSource) — приём BlockBase:310-312
 	// (updateTick без моста был сиротой → детектор никогда не гас: scheduleTick из func_150054_a бил в неперекрытый tick()).
-	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+	@Override public void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), UT.Code.random(aRandom)); // конвертер — ЦЕНТР UT.Code.random
 	}
 
 	// BUG-047: было hasComparatorInputOverride/getComparatorInputOverride (1.7.10) → neo hasAnalogOutputSignal/
 	// getAnalogOutputSignal (канон DetectorRailBlock.java:142,147; сигнатура с Direction — тело GT6 сторону игнорирует, 1:1).
-	@Override protected boolean hasAnalogOutputSignal(BlockState aState) {return hasComparatorInputOverride();}
-	@Override protected int getAnalogOutputSignal(BlockState aState, Level aWorld, BlockPos aPos, Direction aSide) {return getComparatorInputOverride(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), 0);}
+	@Override public boolean hasAnalogOutputSignal(BlockState aState) {return hasComparatorInputOverride();}
+	@Override public int getAnalogOutputSignal(BlockState aState, Level aWorld, BlockPos aPos) {return getComparatorInputOverride(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), 0);}
 
 	// BUG-047 F12/F9-hardness: рельс ВНЕ BlockBase-иерархии → мост getDestroyProgress локально (зеркало
 	// MultiTileEntityBlockInternal:172-176; формула — ЦЕНТР WD.destroyProgress). Без моста Properties.destroyTime=0 →
 	// мгновенный слом рукой (getBlockHardness был мёртв).
-	@Override protected float getDestroyProgress(BlockState aState, Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
+	@Override public float getDestroyProgress(BlockState aState, Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
 		if (!(aWorld instanceof Level tLevel)) return super.getDestroyProgress(aState, aPlayer, aWorld, aPos);
 		return WD.destroyProgress(getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()), aPlayer, aState, aWorld, aPos);
 	}
@@ -426,7 +426,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	// BUG-047 дроп-мост (класс BUG-006, зеркало BlockBase.getDrops:215-231 — рельс вне той иерархии, loot-таблицы нет →
 	// neo-дефолт дропал ПУСТО, в т.ч. при потере опоры через vanilla neighborChanged→dropResources). 1.7.10-семантика
 	// рельса: quantityDropped=1 × getItemDropped=сам блок × damageDropped=0. Гейт взрыва — тот же шов BUG-024.
-	@Override protected List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
+	@Override public List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList(); // гейт взрыва — ЦЕНТР (BUG-024)
 		return java.util.Collections.singletonList(ST.make(this, 1, 0));
 	}
@@ -555,7 +555,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		if (tBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;
 		// было tBlock != Blocks.tallgrass (1.7.10 единый BlockTallGrass, meta grass/fern) -> neo раздвоил на
-		// Blocks.SHORT_GRASS/Blocks.FERN, оба instanceof TallGrassBlock [TallGrassBlock.java:15, Blocks.java:707-732] -
+		// Blocks.GRASS/Blocks.FERN, оба instanceof TallGrassBlock [TallGrassBlock.java:15, Blocks.java:707-732] -
 		// instanceof как 1:1-эквивалент identity-проверки единого класса (второй tBlock!=DEAD_BUSH дубль-баг порта устранён).
 		} else if (tBlock != Blocks.VINE && !(tBlock instanceof TallGrassBlock) && tBlock != Blocks.DEAD_BUSH && !WD.replaceable(tBlock, aWorld, aX, aY, aZ)) {
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];

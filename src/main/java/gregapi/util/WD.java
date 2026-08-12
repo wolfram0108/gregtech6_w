@@ -1034,15 +1034,14 @@ public class WD {
 		if (aBlock instanceof net.minecraft.world.level.block.FlowerPotBlock)                                    return gregapi.block.Material.circuits;
 		// BUG-012: 1.7.10 BlockTallGrass (короткая трава/папоротник) и BlockDeadBush = Material.vine
 		// (BlockTallGrass:33/BlockDeadBush:23 референса 1.7.10) — гейт ножа/косы/меча принимает vine.
-		// ADAPT-006: Blocks.BUSH (нов. контент 26.1.2, в 1.7.10 не было) — в ту же группу «короткая трава», режется ножом в сено.
-		// ADAPT-007: Blocks.SHORT_DRY_GRASS (нов. контент, одноблочный) — сюда же; спец-дроп сухого сена в harvestGrass.
-		if (aBlock == Blocks.SHORT_GRASS || aBlock == Blocks.FERN || aBlock == Blocks.DEAD_BUSH || aBlock == Blocks.BUSH || aBlock == Blocks.SHORT_DRY_GRASS) return gregapi.block.Material.vine;
+		// ADAPT-006/007 (BUSH, SHORT_DRY_GRASS) — контент, добавленный движком в 26.1.2; в 1.20.1 его нет,
+		// в оригинале 1.7.10 тоже не было — ветки сняты, состав группы вернулся к оригинальному.
+		if (aBlock == Blocks.GRASS || aBlock == Blocks.FERN || aBlock == Blocks.DEAD_BUSH) return gregapi.block.Material.vine;
 		// BUG-012: 1.7.10 BlockDoublePlant (все 6: подсолнух/сирень/высокая трава/большой папоротник/куст роз/пион)
 		// и BlockLilyPad (BlockBush:30) = Material.plants (BlockDoublePlant:37 референса 1.7.10).
 		if (tState.is(net.minecraft.tags.BlockTags.SAPLINGS) || tState.is(net.minecraft.tags.BlockTags.SMALL_FLOWERS) || tState.is(net.minecraft.tags.BlockTags.FLOWERS) || tState.is(net.minecraft.tags.BlockTags.CROPS)
 		 || aBlock == Blocks.SUGAR_CANE || aBlock == Blocks.SUNFLOWER || aBlock == Blocks.LILAC || aBlock == Blocks.ROSE_BUSH || aBlock == Blocks.PEONY
-		 // ADAPT-007: Blocks.TALL_DRY_GRASS (нов. контент, двублочный) — в ту же группу, что TALL_GRASS/LARGE_FERN.
-		 || aBlock == Blocks.TALL_GRASS || aBlock == Blocks.LARGE_FERN || aBlock == Blocks.LILY_PAD || aBlock == Blocks.TALL_DRY_GRASS) return gregapi.block.Material.plants;
+		 || aBlock == Blocks.TALL_GRASS || aBlock == Blocks.LARGE_FERN || aBlock == Blocks.LILY_PAD) return gregapi.block.Material.plants;
 		return gregapi.block.Material.rock;
 	}
 
@@ -1246,7 +1245,7 @@ public class WD {
 	 *  а вырос только Overworld (−64/384). Без этого гейта ремап тянул бы окна к ЧУЖОМУ уровню моря измерения
 	 *  (незер: {@code sea_level=32}, `NoiseGeneratorSettings.java:110`) и СЖИМАЛ подземную часть вместо растяжения. */
 	private static boolean sameAsOldWorld(net.minecraft.world.level.LevelHeightAccessor aWorld) {
-		return aWorld.getMinY() == OLD_BOTTOM && aWorld.getMaxY() == OLD_TOP;
+		return minY(aWorld) == OLD_BOTTOM && maxY(aWorld) == OLD_TOP;
 	}
 	/** §4.1 sea-anchored: старый абсолютный Y (мир [0..255], море 62) → новый Y (мир [minY..maxY], море getSeaLevel),
 	 *  раздельно по подземной [0..62]→[minY..sea] и надземной [62..255]→[sea..maxY] части (море — якорь, не дно). */
@@ -1573,7 +1572,7 @@ public class WD {
 				.setValue(net.minecraft.world.level.block.CocoaBlock.AGE, Math.min(2, tMeta >> 2));
 		// Грядка: мета = влажность (1.7.10 clamp 7).
 		if (aBlock == Blocks.FARMLAND && tMeta != 0)
-			return Blocks.FARMLAND.defaultBlockState().setValue(net.minecraft.world.level.block.FarmlandBlock.MOISTURE, Math.min(net.minecraft.world.level.block.FarmlandBlock.MAX_MOISTURE, tMeta));
+			return Blocks.FARMLAND.defaultBlockState().setValue(net.minecraft.world.level.block.FarmBlock.MOISTURE, Math.min(net.minecraft.world.level.block.FarmBlock.MAX_MOISTURE, tMeta));
 		// Наковальня: мета&3 = горизонтальный facing (повреждение из меты>>2 в данже не встречается).
 		if (aBlock instanceof net.minecraft.world.level.block.AnvilBlock)
 			return aBlock.defaultBlockState().setValue(net.minecraft.world.level.block.AnvilBlock.FACING, DIR_1710_HORIZ[tMeta & 3]);
@@ -1858,7 +1857,7 @@ public class WD {
 	// сузился до ОДНОГО блока реестра из 1875 при 72 у `VegetationBlock` (замер `M-84`). С прежним признаком
 	// 58 растений — саженцы всех пород, одуванчик, факелоцвет — переставали быть «легко вытесняемыми», хотя
 	// в оригинале ими были. Тот же переход уже сделан в `dropUnsupportedPlants` ниже: признак один на файл.
-	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof net.minecraft.world.level.block.VegetationBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || state(aWorld, new BlockPos(aX, aY, aZ)).canBeReplaced();}
+	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof net.minecraft.world.level.block.BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || state(aWorld, new BlockPos(aX, aY, aZ)).canBeReplaced();}
 
 	/** Клетка годится под ПОВЕРХНОСТНЫЙ объект вордгена (камешек-индикатор, палка, куст, цветок, саженец).
 	 *
@@ -1918,7 +1917,7 @@ public class WD {
 		for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) for (int tY = tTop; tY >= tBottom; tY--) {
 			BlockPos tPos = new BlockPos(tMinX+i, tY, tMinZ+j);
 			BlockState tState = aChunk.getBlockState(tPos);
-			if (!(tState.getBlock() instanceof net.minecraft.world.level.block.VegetationBlock) || tState.canSurvive(aWorld, tPos)) continue;
+			if (!(tState.getBlock() instanceof net.minecraft.world.level.block.BushBlock) || tState.canSurvive(aWorld, tPos)) continue;
 			aWorld.setBlock(tPos, Blocks.AIR.defaultBlockState(), 2);
 			rDropped++;
 		}

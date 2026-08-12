@@ -186,8 +186,8 @@ public class GT_API extends Abstract_Mod {
 	 * Supplier; оборачиваем уже созданный экземпляр в Supplier, возвращающий его же — при однократной
 	 * загрузке мода (без hot-reload реестров) это эквивалентно оригинальному поведению.
 	 */
-	public static final DeferredRegister.Items  ITEMS  = DeferredRegister.createItems (ModIDs.GAPI);
-	public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(ModIDs.GAPI);
+	public static final DeferredRegister<net.minecraft.world.item.Item>  ITEMS  = DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.ITEMS, ModIDs.GAPI);
+	public static final DeferredRegister<net.minecraft.world.level.block.Block> BLOCKS = DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.BLOCKS, ModIDs.GAPI);
 
 	/** F12-followup (subtype-meta): GT6 1.7.10 хранит ПОДТИП предмета в damage-value (getItemDamage 0..32767) — meta-предметы
 	 *  (PrefixItem/MultiItem, maxDamage=0) держат тысячи подтипов на одном Item через meta. neo клампит setDamageValue к
@@ -215,9 +215,9 @@ public class GT_API extends Abstract_Mod {
 	 *  наследовался. Имя реестра из «gt.MetaBlockFallingEntity» приведено к lowercase (neo ResourceLocation запрещает
 	 *  заглавные) — тот же приём, что у {@code EntitiesGT}. */
 	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.world.entity.EntityType<gregapi.block.prefixblock.PrefixBlockFallingEntity>> METABLOCK_FALLING =
-		ENTITIES.register("gt_metablockfallingentity", rl -> net.minecraft.world.entity.EntityType.Builder.<gregapi.block.prefixblock.PrefixBlockFallingEntity>of(gregapi.block.prefixblock.PrefixBlockFallingEntity::new, net.minecraft.world.entity.MobCategory.MISC)
+		ENTITIES.register("gt_metablockfallingentity", () -> net.minecraft.world.entity.EntityType.Builder.<gregapi.block.prefixblock.PrefixBlockFallingEntity>of(gregapi.block.prefixblock.PrefixBlockFallingEntity::new, net.minecraft.world.entity.MobCategory.MISC)
 			.noLootTable().sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(1)
-			.build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, rl)));
+			.build("gt_metablockfallingentity"));
 
 	/** BUG-113: свои звуки мода. В 1.7.10 звук адресовался ИМЕНЕМ, а объявлялся только в ассетах
 	 *  ({@code assets/gregapi/sounds.json}) — никакой регистрации не требовалось, движок брал запись по имени.
@@ -226,7 +226,7 @@ public class GT_API extends Abstract_Mod {
 	 *  ФАЙЛА, что и 1.7.10, — список звуков не дублируется в коде и переживает пополнение ассетов. */
 	public static final DeferredRegister<net.minecraft.sounds.SoundEvent> SOUND_EVENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.SOUND_EVENT, ModIDs.GAPI);
 	static {
-		for (String tKey : soundKeysFromAssets()) SOUND_EVENTS.register(tKey, rl -> net.minecraft.sounds.SoundEvent.createVariableRangeEvent(rl));
+		for (String tKey : soundKeysFromAssets()) SOUND_EVENTS.register(tKey, () -> net.minecraft.sounds.SoundEvent.createVariableRangeEvent(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(ModIDs.GAPI, tKey)));
 	}
 	/** Имена звуков, объявленных модом в {@code assets/<namespace>/sounds.json} — единственный источник истины.
 	 *  ⛔ ЧИТАТЬ ЧЕРЕЗ CLASSLOADER НЕЛЬЗЯ: в dev-среде ресурсы лежат в каталоге и {@code getResourceAsStream}
@@ -369,18 +369,18 @@ public class GT_API extends Abstract_Mod {
 	 */
 	private static IEventBus sModBus = null;
 	/**
-	 * F12: по одному {@code DeferredRegister.Items} на неймспейс-владелец. GT6 позволяет создавать
+	 * F12: по одному {@code DeferredRegister<net.minecraft.world.item.Item>} на неймспейс-владелец. GT6 позволяет создавать
 	 * Item под чужим modId (аддоны через {@code PrefixItem}), а {@code DeferredRegister} привязан к
 	 * одному неймспейсу — поэтому центр держит карту неймспейс→реестр. Это по-прежнему ОДИН центр
 	 * (весь мод сюда обращается), просто с учётом неймспейса, как было в {@code GameRegistry.registerItem(item,name,modId)}.
 	 */
-	private static final Map<String, DeferredRegister.Items> ITEMS_BY_NS = new HashMap<>();
+	private static final Map<String, DeferredRegister<net.minecraft.world.item.Item>> ITEMS_BY_NS = new HashMap<>();
 	static {ITEMS_BY_NS.put(ModIDs.GAPI, ITEMS);}
 
-	private static DeferredRegister.Items itemsFor(String aNamespace) {
-		DeferredRegister.Items rReg = ITEMS_BY_NS.get(aNamespace);
+	private static DeferredRegister<net.minecraft.world.item.Item> itemsFor(String aNamespace) {
+		DeferredRegister<net.minecraft.world.item.Item> rReg = ITEMS_BY_NS.get(aNamespace);
 		if (rReg == null) {
-			rReg = DeferredRegister.createItems(aNamespace);
+			rReg = DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.ITEMS, aNamespace);
 			if (sModBus != null) rReg.register(sModBus);
 			ITEMS_BY_NS.put(aNamespace, rReg);
 		}
@@ -389,7 +389,7 @@ public class GT_API extends Abstract_Mod {
 
 	/** F12/R3-мост, вызывается из {@code gregapi.util.ST.register(Item, String)}: регистрация под
 	 *  неймспейсом GAPI (был прямой выдуманный {@code DeferredRegister.registerItem(...)}). */
-	public static DeferredItem<Item> registerItem(Item aItem, String aRegistryName) {
+	public static net.minecraftforge.registries.RegistryObject<Item> registerItem(Item aItem, String aRegistryName) {
 		return registerItem(aItem, aRegistryName, ModIDs.GAPI);
 	}
 
@@ -397,7 +397,7 @@ public class GT_API extends Abstract_Mod {
 	 *  3-арг {@code DeferredRegister.registerItem(item, name, modId)} из {@code PrefixItem}/{@code ItemFluidDisplay};
 	 *  соответствует оригиналу {@code GameRegistry.registerItem(item, name, modId)}). Централизовано —
 	 *  весь мод регистрирует Item только через этот метод. */
-	public static DeferredItem<Item> registerItem(Item aItem, String aRegistryName, String aModIDOwner) {
+	public static net.minecraftforge.registries.RegistryObject<Item> registerItem(Item aItem, String aRegistryName, String aModIDOwner) {
 		return itemsFor(aModIDOwner).register(aRegistryName, () -> aItem);
 	}
 
@@ -405,15 +405,15 @@ public class GT_API extends Abstract_Mod {
 	 *  {@code Item.<init>}→{@code createIntrusiveHolder} валиден), а не эагерно в preInit (реестр заморожен → freeze). Call-site:
 	 *  {@code GT_API.registerItemLazy(modId, name, () -> Field = new ItemX(...))} — supplier строит предмет, присваивает поле и
 	 *  возвращает его. Тот же приём, что fluid-split (FluidGT source-supplier). Заменяет эагер {@code new ItemX()} + self-register. */
-	public static DeferredItem<Item> registerItemLazy(String aModIDOwner, String aRegistryName, java.util.function.Supplier<? extends Item> aSupplier) {
+	public static net.minecraftforge.registries.RegistryObject<Item> registerItemLazy(String aModIDOwner, String aRegistryName, java.util.function.Supplier<? extends Item> aSupplier) {
 		return itemsFor(aModIDOwner).register(sanitizeRegName(aRegistryName), aSupplier);
 	}
 
-	private static final Map<String, DeferredRegister.Blocks> BLOCKS_BY_NS = new HashMap<>();
+	private static final Map<String, DeferredRegister<net.minecraft.world.level.block.Block>> BLOCKS_BY_NS = new HashMap<>();
 	static {BLOCKS_BY_NS.put(ModIDs.GAPI, BLOCKS);}
-	private static DeferredRegister.Blocks blocksFor(String aNamespace) {
-		DeferredRegister.Blocks rReg = BLOCKS_BY_NS.get(aNamespace);
-		if (rReg == null) {rReg = DeferredRegister.createBlocks(aNamespace); if (sModBus != null) rReg.register(sModBus); BLOCKS_BY_NS.put(aNamespace, rReg);}
+	private static DeferredRegister<net.minecraft.world.level.block.Block> blocksFor(String aNamespace) {
+		DeferredRegister<net.minecraft.world.level.block.Block> rReg = BLOCKS_BY_NS.get(aNamespace);
+		if (rReg == null) {rReg = DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.BLOCKS, aNamespace); if (sModBus != null) rReg.register(sModBus); BLOCKS_BY_NS.put(aNamespace, rReg);}
 		return rReg;
 	}
 
@@ -448,7 +448,7 @@ public class GT_API extends Abstract_Mod {
 		return new BlockItem(aBlock, new net.minecraft.world.item.Item.Properties());
 	}
 
-	public static DeferredBlock<Block> registerBlock(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {
+	public static net.minecraftforge.registries.RegistryObject<Block> registerBlock(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {
 		if (sBlockRegisterEvent != null) {
 			// F12-followup (block-split, MTE): вызвано из deferBlockInit во время RegisterEvent<Block> — блок УЖЕ построен
 			// (реестр разморожен), регистрируем его напрямую в реестр события (ключ санитизирован, совпадает с setId блока);
@@ -460,7 +460,7 @@ public class GT_API extends Abstract_Mod {
 			itemsFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
 			return null;
 		}
-		DeferredBlock<Block> rBlock = blocksFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> aBlock);
+		net.minecraftforge.registries.RegistryObject<Block> rBlock = blocksFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> aBlock);
 		itemsFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
 		return rBlock;
 	}
@@ -1389,11 +1389,11 @@ public class GT_API extends Abstract_Mod {
 		// postInit» (CS.java:1690): проставляем id и привязываем Holder в единую карту канала applyPotion(int).
 		// Гейт `< 0` сохраняет приоритет чужого мода, если тот когда-либо оживёт. RADIATION/DEHYDRATION/
 		// HYPOTHERMIA/HEATSTROKE/FROSTBITE остаются отрицательными намеренно — разбор в MobEffectsGT (javadoc).
-		if (PotionsGT.ID_FLAMMABLE  < 0) UT.Entities.bindPotionID(PotionsGT.ID_FLAMMABLE  = gregapi.potion.MobEffectsGT.ID_FLAMMABLE , gregapi.potion.MobEffectsGT.FLAMMABLE );
-		if (PotionsGT.ID_SLIPPERY   < 0) UT.Entities.bindPotionID(PotionsGT.ID_SLIPPERY   = gregapi.potion.MobEffectsGT.ID_SLIPPERY  , gregapi.potion.MobEffectsGT.SLIPPERY  );
-		if (PotionsGT.ID_CONDUCTIVE < 0) UT.Entities.bindPotionID(PotionsGT.ID_CONDUCTIVE = gregapi.potion.MobEffectsGT.ID_CONDUCTIVE, gregapi.potion.MobEffectsGT.CONDUCTIVE);
-		if (PotionsGT.ID_STICKY     < 0) UT.Entities.bindPotionID(PotionsGT.ID_STICKY     = gregapi.potion.MobEffectsGT.ID_STICKY    , gregapi.potion.MobEffectsGT.STICKY    );
-		if (PotionsGT.ID_INSANITY   < 0) UT.Entities.bindPotionID(PotionsGT.ID_INSANITY   = gregapi.potion.MobEffectsGT.ID_INSANITY  , gregapi.potion.MobEffectsGT.INSANITY  );
+		if (PotionsGT.ID_FLAMMABLE  < 0) UT.Entities.bindPotionID(PotionsGT.ID_FLAMMABLE  = gregapi.potion.MobEffectsGT.ID_FLAMMABLE , gregapi.potion.MobEffectsGT.FLAMMABLE.get() );
+		if (PotionsGT.ID_SLIPPERY   < 0) UT.Entities.bindPotionID(PotionsGT.ID_SLIPPERY   = gregapi.potion.MobEffectsGT.ID_SLIPPERY  , gregapi.potion.MobEffectsGT.SLIPPERY.get()  );
+		if (PotionsGT.ID_CONDUCTIVE < 0) UT.Entities.bindPotionID(PotionsGT.ID_CONDUCTIVE = gregapi.potion.MobEffectsGT.ID_CONDUCTIVE, gregapi.potion.MobEffectsGT.CONDUCTIVE.get());
+		if (PotionsGT.ID_STICKY     < 0) UT.Entities.bindPotionID(PotionsGT.ID_STICKY     = gregapi.potion.MobEffectsGT.ID_STICKY    , gregapi.potion.MobEffectsGT.STICKY.get()    );
+		if (PotionsGT.ID_INSANITY   < 0) UT.Entities.bindPotionID(PotionsGT.ID_INSANITY   = gregapi.potion.MobEffectsGT.ID_INSANITY  , gregapi.potion.MobEffectsGT.INSANITY.get()  );
 
 		EnergyCompat.checkAvailabilities();
 		ToolCompat.checkAvailabilities();

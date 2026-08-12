@@ -128,7 +128,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// Properties.noCollission не должны отвердеть. Кэш-ветка (EmptyBlockGetter при построении BlockState-кэша:
 	// снег/isFaceSturdy/suffocation) — сначала форма ИЗ СОСТОЯНИЯ (shapeFromState), и лишь если её нет —
 	// статические bounds: зеркало 1.7.10, где эти проверки тоже читали статический mBoundingBox.
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (!hasCollision) return net.minecraft.world.phys.shapes.Shapes.empty();
 		net.minecraft.world.phys.shapes.VoxelShape tFromState = shapeFromState(aState, T);
 		if (tFromState != null) return tFromState;
@@ -145,7 +145,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// Мост neo №2: getShape (outline/таргетинг/raytrace) = 1:1 семантика 1.7.10 Block.collisionRayTrace (recompSrc:
 	// СНАЧАЛА setBlockBoundsBasedOnState, ЗАТЕМ статические bounds). Пустой результат (гонка render-мутации bounds)
 	// → полный куб, не empty: empty-outline делает блок неприцеливаемым.
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		// BUG-076: форма из состояния — единственный путь, который верен и в кэше (мира нет), и в живом мире.
 		// Семьи, которым нужна ещё и мировая логика (у решётки — «игрок держит такой же блок в руке → полный
 		// куб для удобства достройки»), решают это внутри своей реализации хука.
@@ -235,10 +235,10 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// getOcclusionShape; дефолт = ПОЛНЫЙ куб → не-полные блоки глушили рендер за собой). Мост: не-opaque →
 	// occlusion-форма ПУСТА (сосед рисуется) и свет проходит (1.7.10 lightOpacity = isOpaqueCube?255:0).
 	// Кэш состояний строится ПОСЛЕ ctor (initCache) → override и per-класс isOpaqueCube резолвятся корректно.
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(BlockState aState) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(BlockState aState) {
 		return isOpaqueCube() ? super.getOcclusionShape(aState) : net.minecraft.world.phys.shapes.Shapes.empty();
 	}
-	@Override protected boolean propagatesSkylightDown(BlockState aState) {
+	@Override public boolean propagatesSkylightDown(BlockState aState) {
 		return !isOpaqueCube() || super.propagatesSkylightDown(aState);
 	}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return isSideSolid(WD.meta(aWorld, aX, aY, aZ), UT.Code.side(aDirection));}
@@ -260,7 +260,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	 */
 	public boolean shouldSideBeRendered(BlockState aState, BlockState aNeighbor, byte aSide) {return T;}
 
-	@Override protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {if (!shouldSideBeRendered(aState, aNeighbor, UT.Code.side(aDir))) return T; return isOpaqueCube() ? WD.visOpq(aNeighbor.getBlock()) : super.skipRendering(aState, aNeighbor, aDir);}
+	@Override public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {if (!shouldSideBeRendered(aState, aNeighbor, UT.Code.side(aDir))) return T; return isOpaqueCube() ? WD.visOpq(aNeighbor.getBlock()) : super.skipRendering(aState, aNeighbor, aDir);}
 	public int damageDropped(int aMeta) {return aMeta;}
 	public int quantityDropped(int aMeta, int aFortune, Random aRandom) {return 1;}
 	public ItemStack createStackedBlock(int aMeta) {return ST.make(this, 1, damageDropped(aMeta));}
@@ -284,12 +284,12 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// F3 light-opacity МОСТ (корень иерархии BlockBase — сюда сходятся BlockBaseSealable/Meta/Tree/MetaType,
 	// стекло, листва, саженцы, решётки, шипы, кувшинки, дорожки). В 1.7.10 движок спрашивал getLightOpacity()
 	// у блока; в neo затухание берётся из состояния — LightEngine.getOpacity:85-87 читает
-	// state.getLightDampening(). Без моста значения GT6 до движка не доходили: он подставлял свой дефолт
+	// state.getLightBlock(). Без моста значения GT6 до движка не доходили: он подставлял свой дефолт
 	// (BlockBehaviour:290-295), из-за чего листва гасила 0 вместо 1, дорожка 0/1 вместо 3 и т.д.
 	// Значение НЕ дублируется — берётся из того же getLightOpacity(), перевод шкалы 1.7.10→neo в одном месте
 	// (CS.lightDampening). Момент вызова безопасен: initCache идёт ПОСЛЕ регистрации блоков
 	// (neo-decompiled/.../Blocks.java:7221-7228), поэтому поля потомков уже заполнены.
-	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
+	@Override public int getLightBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.lightDampening(getLightOpacity());}
 
 	// F3 shade МОСТ (репорт игрока сверкой с 1.7.10: камень ПОД стеклом GT6 заметно темнеет, в оригинале
 	// стекло на камне почти незаметно). Затенение соседних граней в 1.7.10 задавал getAmbientOcclusionLightValue()
@@ -299,7 +299,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// (BlockBehaviour:306-308). Признаки расходятся ровно на блоках GT6 с полной коллизией и
 	// renderAsNormalBlock()==F: стёкла, дорожки, половинки — в 1.7.10 они не затемняли ничего, а neo-дефолт
 	// тушил ими соседей до 0.2. Мост задаёт 1.7.10-признак; величины не дублируются — перевод в CS.shadeBrightness.
-	@Override protected float getShadeBrightness(BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+	@Override public float getShadeBrightness(BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
 
 	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — признак «нормальный куб» для
 	 *  затенения соседей. Тело 1:1; {@code renderAsNormalBlock()} виртуален, поэтому переопределения потомков
@@ -313,7 +313,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// сохраняет dropResources+BlockDropsEvent+onBlockHarvestingEvent — это 1:1 порт 1.7.10 HarvestDropsEvent:
 	// unification/leafdecay/silk/fortune). Блок уже air на этом хуке → мету берём из СНИМКА aState (WD.meta(BlockState),
 	// фикс BUG-016/BUG-026), а НЕ из мира: WD.meta(мир) вернул бы 0 и вся BlockBaseMeta-семья дропала бы вариант .0.
-	@Override protected List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
+	@Override public List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
 		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
 		if (tOrigin == null) return super.getDrops(aState, aParams);
@@ -351,7 +351,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// F12/F9-hardness: getDestroySpeed(BlockGetter,BlockPos) возвращает лишь запечённый Properties.destroyTime (не зовёт Block,
 	// neo Properties immutable → runtime setHardness невозможен), НО getDestroyProgress(state,player,world,pos) — overridable
 	// динамический хук. Подключаем GT6-getBlockHardness (субклассы дают vanilla/GT6-значения) по vanilla-формуле — 1:1.
-	@Override protected float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {
+	@Override public float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {
 		if (!(aWorld instanceof Level tLevel)) return super.getDestroyProgress(aState, aPlayer, aWorld, aPos);
 		return WD.destroyProgress(getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()), aPlayer, aState, aWorld, aPos); // vanilla-формула — ЦЕНТР WD.destroyProgress
 	}
@@ -361,11 +361,11 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public final void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {if (useGravity(WD.meta(aWorld, aX, aY, aZ))) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2); onNeighborBlockChange2(aWorld, aX, aY, aZ, aBlock);}
 	// F-neighbor (канал сместился): 1.7.10 World.notifyBlocksOfNeighborChange звал Block.onNeighborBlockChange; neo-вход —
 	// BlockBehaviour.neighborChanged. Мост по образцу BlockFluidBaseGT:154; GT6-канал (гравитация + onNeighborBlockChange2) цел.
-	@Override protected void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
+	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}
 	// было onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167]
-	@Override protected final void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {if (useGravity(WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()))) aWorld.scheduleTick(aPos, this, 2); onBlockAdded2(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());}
+	@Override public final void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {if (useGravity(WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()))) aWorld.scheduleTick(aPos, this, 2); onBlockAdded2(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());}
 	public ResourceLocation getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return getIcon(aSide, WD.meta(aWorld, aX, aY, aZ));}
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было наследуемое vanilla Block.getIcon(int,int) (1.7.10, удалено в 26.1.2
 	// целиком вместе со всем IIcon-атласом) — GT6 полагался на полиморфную диспетчеризацию к этому методу движка.
@@ -411,7 +411,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// BUG-005: neo scheduled-tick канал = tick(BlockState,ServerLevel,BlockPos,RandomSource) (образец BlockFluidBaseGT:142).
 	// updateTick был СИРОТОЙ (1.7.10-сигнатура «// @Override», никто не звал) → распад листвы/рост саженцев/гравитация/
 	// мшистость всей семьи BlockBase были МЕРТВЫ (scheduleTick бил в неперекрытый neo tick()). Мост 1:1: java.util.Random из RandomSource.
-	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+	@Override public void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), UT.Code.random(aRandom)); // конвертер — ЦЕНТР UT.Code.random
 	}
 	// Random-плечо ТОГО ЖЕ канала: в 1.7.10 updateTick был ОДНИМ на scheduled И random тики (World звал его по
@@ -419,7 +419,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// (BlockBehaviour:334-335) — мост BUG-005 покрывал только scheduled, и у носителей isRandomlyTicking
 	// (саженец: setTickRandomly(true) 1.7.10 BlockBaseSapling:65) случайный тик бил в пустоту — деревья из
 	// саженцев GT6 не росли. Канал сведён обратно в один, 1:1 с 1.7.10.
-	@Override protected void randomTick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+	@Override public void randomTick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 		tick(aState, aWorld, aPos, aRandom);
 	}
 	public final void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {

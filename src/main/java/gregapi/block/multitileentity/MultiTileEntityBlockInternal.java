@@ -84,7 +84,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	// F3 shade МОСТ (внутренний MTE-блок — восьмая точка канала, наследует Block напрямую; разбор — в BlockBase).
 	// В 1.7.10 он был нормальным кубом (материал anvil + ванильный дефолт renderAsNormalBlock()==T) и затемнял
 	// соседей; в neo форма динамическая (dynamicShape, из BE), поэтому neo-дефолт по коллизии дал бы 1.0.
-	@Override protected float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+	@Override public float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
 
 	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
 	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
@@ -184,11 +184,11 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 			// updateNeighborsAt — Level-only; при worldgen (не-Level) уведомление соседей не нужно/невозможно (регион ещё генерится).
 			if (aWorld instanceof Level tLevelNU && !tLevelNU.isClientSide() && aCauseBlockUpdates) {
 				// было World.notifyBlockChange(x,y,z,Block) -> тело делегировало notifyBlocksOfNeighborChange (recompSrc
-				// World.java:695-698) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338], тот же
+				// World.java:695-698) -> Level.updateNeighborsAt(BlockPos, Block) [Level.java:338], тот же
 				// форс-эквивалент, что уже принят для соседнего func_147453_f ниже (см. decisions/DEFERRED-LEDGER.md §B).
-				tLevelNU.updateNeighborsAt(new BlockPos(aX, aY, aZ), tReplacedBlock, null);
-				// было World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338]
-				tLevelNU.updateNeighborsAt(new BlockPos(aX, aY, aZ), aMTEContainer.mBlock, null);
+				tLevelNU.updateNeighborsAt(new BlockPos(aX, aY, aZ), tReplacedBlock);
+				// было World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos, Block) [Level.java:338]
+				tLevelNU.updateNeighborsAt(new BlockPos(aX, aY, aZ), aMTEContainer.mBlock);
 			}
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		try {
@@ -210,7 +210,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {BlockEntity tBE = WD.te(aWorld, aX, aY, aZ, T); return tBE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetBlockHardness tH ? tH.getBlockHardness() : 1.0F;}
 	// F-hardness (зеркало MultiTileEntityBlock.getDestroyProgress — Properties.destroyTime не задан (0) → без моста
 	// МГНОВЕННЫЙ слом рукой): 1.7.10 blockStrength с PER-TE hardness (NBT_HARDNESS) → TE-гейт allowInteraction.
-	@Override protected float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos) {
+	@Override public float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos) {
 		BlockEntity tBE = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		float tHardness = tBE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetBlockHardness tH ? tH.getBlockHardness() : 1.0F;
 		float tOriginal = WD.destroyProgress(tHardness, aPlayer, aState, aWorld, aPos); // vanilla-формула — ЦЕНТР WD.destroyProgress
@@ -219,7 +219,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	// F-shape (см. MultiTileEntityBlock:265 — тот же приём для ВТОРОЙ MTE-блок-иерархии Internal; обе extends vanilla Block,
 	// общего GT6-предка нет → мост дублируется, как useOn-мост на корнях-предметах). BE-AABB (абсолютная, box()=pos+bounds) →
 	// относительный VoxelShape; null коллизия (MTE-Rock) → empty (снег не ляжет, камешек проходим). getShape — маленький outline.
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		// БЕЗ гейта instanceof Level (зеркало MultiTileEntityBlock): движок зовёт и с chunk-BlockGetter
 		// (BlockCollisions.isSuffocating:90) — гейт отдавал полный куб → выталкивание из проходимых MTE.
 		if (aWorld != null) {
@@ -240,7 +240,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		}
 		return super.getCollisionShape(aState, aWorld, aPos, aContext);
 	}
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (aWorld instanceof Level tLevel) {
 			BlockEntity tBE = WD.te(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 			if (tBE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetSelectedBoundingBoxFromPool tS) {

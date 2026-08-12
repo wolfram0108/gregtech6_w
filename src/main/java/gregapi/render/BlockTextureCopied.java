@@ -151,7 +151,7 @@ public class BlockTextureCopied implements ITexture {
 		if (aBlock == Blocks.BIRCH_LEAVES)  return net.minecraft.world.level.FoliageColor.FOLIAGE_BIRCH & 0xFFFFFF;
 		if (aBlock == Blocks.OAK_LEAVES || aBlock == Blocks.JUNGLE_LEAVES || aBlock == Blocks.ACACIA_LEAVES || aBlock == Blocks.DARK_OAK_LEAVES || aBlock == Blocks.VINE)
 			return net.minecraft.world.level.FoliageColor.get(0.5, 1.0) & 0xFFFFFF;
-		if (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.SHORT_GRASS || aBlock == Blocks.FERN)
+		if (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.GRASS || aBlock == Blocks.FERN)
 			return net.minecraft.world.level.GrassColor.getDefaultColor() & 0xFFFFFF;
 		if (aBlock == Blocks.LILY_PAD) return 2129968;
 		if (aBlock == Blocks.PUMPKIN_STEM || aBlock == Blocks.MELON_STEM || aBlock == Blocks.ATTACHED_PUMPKIN_STEM || aBlock == Blocks.ATTACHED_MELON_STEM)

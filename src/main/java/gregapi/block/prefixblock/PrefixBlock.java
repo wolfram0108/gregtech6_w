@@ -431,7 +431,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	// F-neighbor (канал сместился): 1.7.10 World.notifyBlocksOfNeighborChange звал Block.onNeighborBlockChange; neo-вход —
 	// BlockBehaviour.neighborChanged. Мост по образцу BlockFluidBaseGT:154.
-	@Override protected void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
+	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}
 	
@@ -667,7 +667,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// updateTick ничего не переопределяет («// @Override» ниже) и движком не зовётся. Без моста три ветки
 	// scheduleUpdateIfNeeded (:423-438) били в пустоту: ГРАВИТАЦИЯ мета-блоков, самовозгорание пыли и
 	// взрыв горючих/щелочных материалов при нагреве. Конвертер RandomSource→java.util.Random — центр UT.Code.random.
-	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+	@Override public void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 
 		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), UT.Code.random(aRandom));
 	}
@@ -745,7 +745,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// что BlockBase.getDrops:214 (neo getDrops(state,params) → GT6 mDrops), + silk/fortune из THIS_ENTITY — 1:1 семантика
 	// harvestBlock:648-650. Материал жив через LAST_BROKEN_TILEENTITY (onDestroyedByPlayer выше). dropResources дальше сам
 	// поднимает BlockDropsEvent → onBlockHarvestingEvent (unification/blockToSilk) — конвейер 1.7.10 HarvestDropsEvent цел.
-	@Override protected java.util.List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
+	@Override public java.util.List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
 		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
 		if (tOrigin == null) return super.getDrops(aState, aParams);
@@ -814,12 +814,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		if (mShapeCache == null) mShapeCache = net.minecraft.world.phys.shapes.Shapes.create(new AABB(mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ));
 		return mShapeCache;
 	}
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (!hasCollision) return net.minecraft.world.phys.shapes.Shapes.empty();
 		if (mMinX <= 0 && mMinY <= 0 && mMinZ <= 0 && mMaxX >= 1 && mMaxY >= 1 && mMaxZ >= 1) return super.getCollisionShape(aState, aWorld, aPos, aContext);
 		return subCubeShape();
 	}
-	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (mMinX <= 0 && mMinY <= 0 && mMinZ <= 0 && mMaxX >= 1 && mMaxY >= 1 && mMaxZ >= 1) return super.getShape(aState, aWorld, aPos, aContext);
 		net.minecraft.world.phys.shapes.VoxelShape rShape = subCubeShape();
 		return rShape.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.block() : rShape;
@@ -827,7 +827,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// F12/F9-hardness (BUG-020): в 1.7.10 getBlockHardness был @Override реального Forge-хука — движок звал его сам.
 	// В neo канал сместился в getDestroyProgress (Properties.destroyTime у PrefixBlock не задан = 0 → блок ломался
 	// мгновенно, mBaseHardness руд не участвовал). Мост тем же приёмом, что BlockBase:248 (vanilla-формула, 1:1).
-	@Override protected float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
+	@Override public float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
 		if (!(aWorld instanceof Level tLevel)) return super.getDestroyProgress(aState, aPlayer, aWorld, aPos);
 		return WD.destroyProgress(getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()), aPlayer, aState, aWorld, aPos); // vanilla-формула — ЦЕНТР WD.destroyProgress
 	}
@@ -857,12 +857,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// F3 light-opacity МОСТ (иерархия руд/дроблёнки — отдельная от BlockBase, наследует Block напрямую):
 	// значение GT6 доводится до движкового канала затухания, см. разбор в BlockBase. Поле mOpaque читать
 	// безопасно — initCache вызывается после регистрации блоков (neo-decompiled/.../Blocks.java:7221-7228).
-	@Override protected int getLightDampening(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.lightDampening(getLightOpacity());}
+	@Override public int getLightBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.lightDampening(getLightOpacity());}
 
 	// F3 shade МОСТ (иерархия руд/дроблёнки — отдельная от BlockBase, наследует Block напрямую; разбор канала —
 	// в BlockBase). В 1.7.10 признак не зависел от размера бокса, поэтому руда с урезанной геометрией
 	// (mMinX..mMaxZ) затемняла соседей наравне с полным кубом, а neo-дефолт по коллизии её бы уже не считал.
-	@Override protected float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
+	@Override public float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
 
 	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
 	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
@@ -882,7 +882,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// F3 functional-adapted (neo skipRendering сигнатура потеряла World/BlockPos → per-TE culling недостижим; используется vanilla-дефолт super.skipRendering, 1:1 по следствию): побочный эффект setBlockBoundsBasedOnState
 	// недостижим без позиции; используем ванильный дефолт (тот же fallback, что и в старой ветке
 	// super.shouldSideBeRendered, просто под новым именем/полярностью).
-	@Override protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return super.skipRendering(aState, aNeighbor, aDir);}
+	@Override public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return super.skipRendering(aState, aNeighbor, aDir);}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return T;}
 	@Override public boolean usesRenderPass(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return T;}
 	@Override public Block getBlock() {return this;}

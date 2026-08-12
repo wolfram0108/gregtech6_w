@@ -87,7 +87,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	}
 
 	// было setTickRandomly(true) — см. комментарий в конструкторе выше.
-	@Override protected boolean isRandomlyTicking(BlockState aState) {return T;}
+	@Override public boolean isRandomlyTicking(BlockState aState) {return T;}
 
 	public abstract boolean grow(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, byte aMeta, Random aRandom);
 

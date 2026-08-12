@@ -255,11 +255,11 @@ public class CS {
 
 	/**
 	 * F3 light-opacity ЦЕНТР ПЕРЕВОДА ШКАЛЫ: значение 1.7.10 {@code getLightOpacity()} → neo
-	 * {@code getLightDampening(BlockState)}.
+	 * {@code getLightBlock(BlockState,BlockGetter,BlockPos)}.
 	 *
 	 * <p>В 1.7.10 непрозрачность вычиталась из уровня света (0..15), а {@code 255} был сентинелом «гасит
 	 * полностью»; в neo тот же смысл несёт значение шкалы 0..15 ({@code LightEngine.getOpacity:85-87} берёт
-	 * {@code state.getLightDampening()} и вычитает его). Поэтому величины до 15 переносятся КАК ЕСТЬ
+	 * {@code state.getLightBlock()} и вычитает его). Поэтому величины до 15 переносятся КАК ЕСТЬ
 	 * (вода 3, листва 1, прозрачное 0), а всё, что 15 и выше — включая 255 — становится 15.
 	 *
 	 * <p>Перевод живёт здесь, рядом с самими константами, чтобы у него было ОДНО место на весь мод:
@@ -1927,7 +1927,7 @@ public class CS {
 			Blocks.WHITE_TERRACOTTA, Blocks.ORANGE_TERRACOTTA, Blocks.MAGENTA_TERRACOTTA, Blocks.LIGHT_BLUE_TERRACOTTA, Blocks.YELLOW_TERRACOTTA, Blocks.LIME_TERRACOTTA, Blocks.PINK_TERRACOTTA, Blocks.GRAY_TERRACOTTA,
 			Blocks.LIGHT_GRAY_TERRACOTTA, Blocks.CYAN_TERRACOTTA, Blocks.PURPLE_TERRACOTTA, Blocks.BLUE_TERRACOTTA, Blocks.BROWN_TERRACOTTA, Blocks.GREEN_TERRACOTTA, Blocks.RED_TERRACOTTA, Blocks.BLACK_TERRACOTTA};
 		/** 1.7.10 {@code tallgrass:0..2}. */
-		public static final Block[] TALLGRASS = {Blocks.DEAD_BUSH, Blocks.SHORT_GRASS, Blocks.FERN};
+		public static final Block[] TALLGRASS = {Blocks.DEAD_BUSH, Blocks.GRASS, Blocks.FERN};
 		/** 1.7.10 {@code Items.skull:0..5} — GT6 зовёт черепа именно как ПРЕДМЕТ (дроп мобов
 		 *  {@code Override_Drops:774-789}, данные {@code LoaderItemData:2472}, {@code ST.skull(player)} с метой 3);
 		 *  у БЛОКА черепа мета 1.7.10 значила положение (пол/стена), а тип жил в TileEntitySkull — поэтому
