@@ -29,6 +29,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
@@ -97,7 +98,10 @@ import static gregapi.data.CS.*;
 @Mod(ModIDs.GAPI_POST)
 public class GT_API_Post extends Abstract_Mod {
 	@SuppressWarnings("unused")
-	public GT_API_Post(IEventBus aModBus) {
+	// javafml 1.20.1 конструирует @Mod-класс БЕЗАРГУМЕНТНЫМ конструктором; мод-шина берётся из
+	// контекста загрузки (форма 1.20.1, тем же приёмом, что gregapi.GT_API).
+	public GT_API_Post() {
+		IEventBus aModBus = FMLJavaModLoadingContext.get().getModEventBus();
 		GAPI_POST = this;
 
 		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на мод-шину напрямую, тем же
@@ -120,13 +124,13 @@ public class GT_API_Post extends Abstract_Mod {
 
 	// PreInit. Замена {@code @Mod.EventHandler onPreLoad(FMLPreInitializationEvent)}: подписан в
 	// конструкторе на FMLConstructModEvent (мод-шина). Тот же приём, что gregapi.GT_API#onPreLoad.
-	public void onPreLoad(FMLConstructModEvent aModEvent) {onModPreInit(new FMLPreInitializationEvent(FMLPaths.CONFIGDIR.get().toFile()));}
+	public void onPreLoad(FMLConstructModEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModPreInit(new FMLPreInitializationEvent(FMLPaths.CONFIGDIR.get().toFile())));}
 	// Init. Замена {@code @Mod.EventHandler onLoad(FMLInitializationEvent)}: подписан на FMLCommonSetupEvent.
-	public void onLoad(FMLCommonSetupEvent aModEvent) {onModInit(new FMLInitializationEvent());}
+	public void onLoad(FMLCommonSetupEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModInit(new FMLInitializationEvent()));}
 	// PostInit. Замена {@code @Mod.EventHandler onPostLoad(FMLPostInitializationEvent)}: подписан на
 	// FMLLoadCompleteEvent. Здесь же (через Abstract_Mod.onModPostInit, когда финализированы все GT-API-моды)
 	// срабатывает CR.stopBuffering() — стык с F11 (gregapi/api/Abstract_Mod.java:288), точка вызова не тронута.
-	public void onPostLoad(FMLLoadCompleteEvent aModEvent) {onModPostInit(new FMLPostInitializationEvent());}
+	public void onPostLoad(FMLLoadCompleteEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModPostInit(new FMLPostInitializationEvent()));}
 
 	// Серверные фазы — подписаны в конструкторе на MinecraftForge.EVENT_BUS (игровая шина), не на мод-шину.
 	public void onServerStarting  (ServerStartingEvent aEvent) {onModServerStarting(aEvent);}

@@ -263,6 +263,15 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
+// РЕМАППИНГ ЧУЖИХ МОДОВ ДЛЯ DEV-РАНТАЙМА (boot-ступень 6). Production-jar'ы модов (Jade, JEI)
+// зовут движок SRG-именами (m_XXXXX_), а dev-рантайм этой сборки — named (official): без ремапа
+// первый же вызов даёт NoSuchMethodError (пойман живьём: Jade WailaConfig → StringRepresentable).
+// Механизм — штатный у плагина legacyforge (ModDevGradle LEGACY.md §Remapping Mod Dependencies,
+// строки 70-91): createRemappingConfiguration(localRuntime) создаёт конфигурацию modLocalRuntime,
+// зависимости которой ремапятся SRG→official и попадают в localRuntime. ⚠️ mod-конфигурации
+// НЕтранзитивны (там же) — транзитивные зависимости модов при нужде добавлять руками.
+obfuscation.createRemappingConfiguration(configurations.localRuntime)
+
 dependencies {
     // JEI (аналог NEI) — инструмент визуальной приёмки. Координаты выверены по AE2, метаданные резолвятся.
     // compileOnly-строки временно закомментированы: скачивание jar с maven.blamejared.com в этой среде
@@ -272,7 +281,7 @@ dependencies {
     // подтянет полный JEI при запуске игры для приёмки визуала).
     compileOnly "mezz.jei:jei-${jei_minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${jei_minecraft_version}-forge-api:${jei_version}"
-    localRuntime "mezz.jei:jei-${jei_minecraft_version}-forge:${jei_version}"
+    modLocalRuntime "mezz.jei:jei-${jei_minecraft_version}-forge:${jei_version}"
 
     // Jade — ТОЛЬКО compileOnly: плагин совместимости (gregtech/compat/Compat_Jade.java) реализует его
     // интерфейс ToolHandler, чтобы показывать НАСТОЯЩИЕ инструменты GT6 (гаечный ключ на машинах, лом, кусачки),
@@ -281,9 +290,10 @@ dependencies {
     // Версия под 1.20.1 подобрана из исходников контракта (reference/mods/Jade-src-1.20.1,
     // ветка 1.20-forge, gradle.properties: 11.13.3 / MC 1.20.1) — не с потолка.
     compileOnly "maven.modrinth:jade:${jade_version}"
-    // localRuntime — чтобы стенд gt6jadeprobe мог спросить РЕАЛЬНЫЙ Jade тем же вызовом, каким он рисует
-    // тултип (HarvestToolProvider.getTool). На jar игрока не влияет: localRuntime — только dev-запуски.
-    localRuntime "maven.modrinth:jade:${jade_version}"
+    // modLocalRuntime (ремап SRG→named, см. блок obfuscation выше) — чтобы стенд gt6jadeprobe мог
+    // спросить РЕАЛЬНЫЙ Jade тем же вызовом, каким он рисует тултип (HarvestToolProvider.getTool).
+    // На jar игрока не влияет: попадает только в localRuntime = dev-запуски.
+    modLocalRuntime "maven.modrinth:jade:${jade_version}"
 
     // JourneyMap (MODCOMPAT-002) — ТОЛЬКО для стенда gt6jmprobe: судья спрашивает РЕАЛЬНЫЙ JourneyMap тем же
     // каналом, каким тот решает судьбу блока на карте (BlockMD.get → isIgnore/getTextureColor/getAlpha;

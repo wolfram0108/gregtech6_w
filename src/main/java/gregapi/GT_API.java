@@ -29,6 +29,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.common.MinecraftForge;
@@ -454,7 +455,13 @@ public class GT_API extends Abstract_Mod {
 	private LoggerPlayerActivity mPlayerLogger;
 
 	@SuppressWarnings("unchecked")
-	public GT_API(IEventBus aModBus) {
+	// javafml 1.20.1 конструирует @Mod-класс БЕЗАРГУМЕНТНЫМ конструктором
+	// (FMLModContainer.constructMod → modClass.getDeclaredConstructor()); аргумент IEventBus появился
+	// только в 26.x. Мод-шина берётся из контекста загрузки — форма 1.20.1, сверена с живым образцом
+	// (reference/mods/Applied-Energistics-2-1.20.1/.../AppEngBase.java:125) и с членом
+	// FMLJavaModLoadingContext.getModEventBus()Lnet/minecraftforge/eventbus/api/IEventBus;.
+	public GT_API() {
+		IEventBus aModBus = FMLJavaModLoadingContext.get().getModEventBus();
 		GAPI = this;
 		
 		if (!MD.ENCHIRIDION.mLoaded) MD.MaCu.mLoaded = F;
@@ -748,7 +755,9 @@ public class GT_API extends Abstract_Mod {
 	 * контента внутри PreInit работает); формально относительно
 	 * FMLConstructModEvent на всех сборках; сверить при первой реальной регистрации через ITEMS/BLOCKS.
 	 */
-	public void onPreLoad(FMLConstructModEvent aModEvent) {
+	public void onPreLoad(FMLConstructModEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, this::onPreLoadPhase);}
+	/** Тело фазы PreInit; запускается центром {@code Abstract_Mod#runPhaseInModLoadOrder} в порядке загрузки модов. */
+	private void onPreLoadPhase() {
 		FMLPreInitializationEvent aEvent = new FMLPreInitializationEvent(FMLPaths.CONFIGDIR.get().toFile());
 
 		DirectoriesGT.CONFIG = aEvent.getModConfigurationDirectory();
@@ -770,7 +779,9 @@ public class GT_API extends Abstract_Mod {
 	 * Init. Замена {@code @Mod.EventHandler onLoad(FMLInitializationEvent)}: подписан в конструкторе на
 	 * {@link FMLCommonSetupEvent} (мод-шина).
 	 */
-	public void onLoad(FMLCommonSetupEvent aModEvent) {
+	public void onLoad(FMLCommonSetupEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, this::onLoadPhase);}
+	/** Тело фазы Init; запускается центром {@code Abstract_Mod#runPhaseInModLoadOrder} в порядке загрузки модов. */
+	private void onLoadPhase() {
 		// F1/F12/F16 boot-timing: ore-target'ы + рецепты создают ItemStack (ST.make(Blocks/Items)) — onLoad(CommonSetup) НЕ
 		// пост-bind (Holder.components привязывает ReloadableServerResources на server-start). Оборачиваем в deferItemInit →
 		// выполнится в onModServerStarting2 (post-bind). НЕ в паритет-данных (ore-targets/recipes ≠ material/prefix scalar).
@@ -824,7 +835,7 @@ public class GT_API extends Abstract_Mod {
 	// PostInit: подписан в конструкторе на FMLLoadCompleteEvent (мод-шина) — родное neo-событие
 	// заменяет старую FML 1.7.10 сложность вокруг loadComplete (комментарий оракула выше снят вместе
 	// с @Mod.EventHandler-диспетчером, который и был источником проблемы).
-	public void onPostLoad(FMLLoadCompleteEvent aModEvent) {onModPostInit(new FMLPostInitializationEvent());}
+	public void onPostLoad(FMLLoadCompleteEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModPostInit(new FMLPostInitializationEvent()));}
 
 	@Override public String getModID() {return MD.GAPI.mID;}
 	@Override public String getModName() {return MD.GAPI.mName;}

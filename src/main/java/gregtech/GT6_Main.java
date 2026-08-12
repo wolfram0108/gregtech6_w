@@ -27,6 +27,7 @@ import gregapi.util.WD;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -106,7 +107,10 @@ public class GT6_Main extends Abstract_Mod {
 	// мода (после class-init) — тот же тайминг, class-init не тянет client-render раньше времени.
 	public static GT_Proxy gt_proxy;
 
-	public GT6_Main(IEventBus aModBus) {
+	// javafml 1.20.1 конструирует @Mod-класс БЕЗАРГУМЕНТНЫМ конструктором; мод-шина берётся из
+	// контекста загрузки (форма 1.20.1, тем же приёмом, что gregapi.GT_API).
+	public GT6_Main() {
+		IEventBus aModBus = FMLJavaModLoadingContext.get().getModEventBus();
 		GT = this;
 		gt_proxy = FMLEnvironment.dist.isClient() ? new GT_Client() : new GT_Server();
 		NW_GT = new NetworkHandler(MD.GT.mID, "GREG");
@@ -713,9 +717,9 @@ public class GT6_Main extends Abstract_Mod {
 	@Override public Abstract_Proxy getProxy() {return gt_proxy;}
 
 	// F12: подписаны в конструкторе (замена @Mod.EventHandler). PreInit→FMLConstructModEvent, Init→FMLCommonSetupEvent, PostInit→FMLLoadCompleteEvent (маппинг как gregapi.GT_API_Post).
-	public void onPreLoad         (FMLConstructModEvent aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
-	public void onLoad            (FMLCommonSetupEvent  aEvent) {onModInit(new gregapi.api.FMLInitializationEvent());}
-	public void onPostLoad        (FMLLoadCompleteEvent aEvent) {onModPostInit(new gregapi.api.FMLPostInitializationEvent());}
+	public void onPreLoad         (FMLConstructModEvent aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().toFile())));}
+	public void onLoad            (FMLCommonSetupEvent  aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModInit(new gregapi.api.FMLInitializationEvent()));}
+	public void onPostLoad        (FMLLoadCompleteEvent aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModPostInit(new gregapi.api.FMLPostInitializationEvent()));}
 	public void onServerStarting  (net.minecraftforge.event.server.ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
 	public void onServerStarted   (net.minecraftforge.event.server.ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
 	public void onServerStopping  (net.minecraftforge.event.server.ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}

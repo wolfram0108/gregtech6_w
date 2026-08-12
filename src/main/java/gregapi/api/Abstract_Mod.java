@@ -26,10 +26,14 @@ package gregapi.api;
 import static gregapi.data.CS.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import gregapi.api.FMLInitializationEvent;
 import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.FMLPreInitializationEvent;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.event.lifecycle.ParallelDispatchEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
@@ -150,8 +154,53 @@ public abstract class Abstract_Mod {
 		for (Runnable tRunnable : aList) try {tRunnable.run();} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
 	
+	// ------------------------------ порядок фаз загрузки (Forge 1.20.1) ------------------------------
+
+	/**
+	 * Отложенные тела фаз одной стадии загрузки: класс события стадии → (modId GT-мода → тело фазы).
+	 * {@link ConcurrentHashMap}, потому что складывают сюда параллельные потоки загрузчика (см. ниже).
+	 */
+	private static final Map<Class<?>, Map<String, Runnable>> sPhaseTasks = new ConcurrentHashMap<>();
+
+	/**
+	 * ЕДИНАЯ точка запуска фазы загрузки GT-мода. Весь мод обращается только сюда — из
+	 * {@code onPreLoad}/{@code onLoad}/{@code onPostLoad} всех @Mod-классов GT6.
+	 *
+	 * <p><b>Зачем.</b> FML 1.7.10 гонял фазы (PreInit/Init/PostInit) ПОСЛЕДОВАТЕЛЬНО, в порядке загрузки
+	 * модов: GAPI → GAPI_POST → GT. Весь монолит на этот порядок опирается (например
+	 * {@code GT6_Main.onModPreInit2} читает {@code ConfigsGT.GREGTECH}, который создаёт
+	 * {@code GT_API.onModPreInit2}). Forge 1.20.1 такого порядка не даёт: события стадий —
+	 * {@code ParallelTransition} с {@code ThreadSelector.PARALLEL}
+	 * ({@code forge-1201-decompiled/net/minecraftforge/fml/core/ModStateProvider.java:56,79,124} +
+	 * {@code ParallelTransition.java:32}), а раздача идёт через {@code ModList.futureVisitor}, который
+	 * просто {@code gather}-ит фьючерсы ВСЕХ контейнеров без рёбер между ними (fmlcore 47.4.22,
+	 * {@code ModList.futureVisitor}/{@code gather}). Зависимо-упорядоченная параллельная раздача
+	 * ({@code LoadingModList.getDependencies(IModInfo)}), на которую опирается ветка 26.x, в
+	 * {@code fmlloader} 1.20.1 ОТСУТСТВУЕТ (есть только в fml1206/fml1211/fml2612). Отсюда падение
+	 * boot-ступени 5: фаза GT стартовала раньше фазы GAPI.
+	 *
+	 * <p><b>Как.</b> Тело фазы не исполняется в параллельном диспетче, а откладывается в очередь
+	 * СВОЕЙ стадии ({@link ParallelDispatchEvent#enqueueWork}). Очередь стадии крутится ОДНИМ потоком
+	 * и ПОСЛЕ того, как параллельная раздача этой стадии завершилась целиком
+	 * ({@code ParallelTransition.finalActivityGenerator}: {@code stage.getDeferredWorkQueue().runTasks()}
+	 * после {@code prev}). Первое же тело, дошедшее до очереди, прогоняет ВСЕ накопленные тела стадии в
+	 * порядке загрузки модов движка — {@link ModList#forEachModInOrder} идёт по
+	 * {@code sortedContainers}, то есть по результату {@code ModSorter} из объявленных зависимостей
+	 * ({@code mods.toml}: gregapi → gregapi_post → gregtech). Это ровно семантика FML 1.7.10:
+	 * один поток, все моды, порядок загрузки.
+	 */
+	public static void runPhaseInModLoadOrder(ParallelDispatchEvent aModEvent, Abstract_Mod aMod, Runnable aPhase) {
+		Map<String, Runnable> tTasks = sPhaseTasks.computeIfAbsent(aModEvent.getClass(), aKey -> new ConcurrentHashMap<>());
+		tTasks.put(aMod.getModID(), aPhase);
+		aModEvent.enqueueWork(() -> {
+			List<Runnable> tOrdered = new ArrayListNoNulls<>();
+			ModList.get().forEachModInOrder(aContainer -> {Runnable tPhase = tTasks.remove(aContainer.getModId()); if (tPhase != null) tOrdered.add(tPhase);});
+			for (Runnable tPhase : tOrdered) tPhase.run();
+		});
+	}
+
 	// Just add Calls to these from within your Mods load phases.
-	
+
 	public void onModPreInit(FMLPreInitializationEvent aEvent) {
 		if (mStartedPreInit) return;
 		try {

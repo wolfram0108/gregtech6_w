@@ -25,7 +25,6 @@ package gregtech6;
 
 import com.mojang.logging.LogUtils;
 
-import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 
 import org.slf4j.Logger;
@@ -64,7 +63,10 @@ public class GregTech6 {
 
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public GregTech6(IEventBus modEventBus) {
+    // javafml 1.20.1 конструирует @Mod-класс БЕЗАРГУМЕНТНЫМ конструктором
+    // (FMLModContainer.constructMod → modClass.getDeclaredConstructor()); аргументы IEventBus/ModContainer
+    // появились только в 26.x. Мод-шина, кому она нужна, берётся из FMLJavaModLoadingContext.get().
+    public GregTech6() {
         LOGGER.info("[GregTech6] entrypoint loaded — content registration centralised in GT_API (F12) / FluidGT (F5)");
     }
 }
