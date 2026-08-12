@@ -78,3 +78,7 @@ oracle/
 __pycache__/
 *.pyc
 scratchpad/
+
+### Паспорт рабочей среды — не продукт ###
+# см. пояснение в ветке main
+/PASSPORT.md

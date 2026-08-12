@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.141'
+    id 'net.neoforged.moddev.legacyforge' version '2.0.141'
     id 'idea'
 }
 
@@ -27,6 +27,16 @@ sourceSets.main.resources {
     // "src/generated/**/.cache" не срабатывал: кэш датагена уезжал в jar (найдено сверкой артефакта
     // из чистого клона с локальным — у постороннего jar оказался чище на 4 записи).
     exclude("**/.cache/**")
+    // ИСПОЛНЯЕМЫЕ СКРИПТЫ В ДЕРЕВЕ АССЕТОВ. Оригинал GT6 хранит РЯДОМ с текстурами личную оснастку
+    // художника: перетащил PNG на copy_into_dull.bat — тот раскопировал иконку по подпапкам
+    // DULL/FINE/FLINT/… (12 таких файлов в textures/{blocks,items}/materialicons и .../randomtools).
+    // Мод их не читает НИКОГДА — это инструмент подготовки ассетов, а не ресурс. В исходниках они
+    // остаются (репозиторий — зеркало оригинала 1:1), но в поставку не идут: площадки раздачи модов
+    // отклоняют архив с исполняемыми расширениями целиком, и весь jar становится непубликуемым.
+    // Отсекается КЛАСС расширений, а не сегодняшние двенадцать файлов: любой новый скрипт, который
+    // приедет с ассетами оригинала, отсеется молча и заранее.
+    exclude("**/*.bat", "**/*.cmd", "**/*.com", "**/*.exe", "**/*.msi", "**/*.scr",
+            "**/*.vbs", "**/*.ps1", "**/*.sh", "**/*.bin", "**/*.dll", "**/*.so")
 }
 
 // F10 (decisions/F10-external-mod-compat.md §3.2): ЦЕНТРАЛЬНОЕ ЗЕРКАЛО чужих API — единственная точка,
@@ -81,12 +91,17 @@ tasks.named('test').configure { dependsOn stripCompatMirror }
 // (запуски оркестратора: `gradlew runClient -Pgt6probes …`). Обычный запуск игрока — пробы/автовход-в-мир
 // мертвы, даже если флаг случайно остался (класс сбоя «стухший флаг портит игровой запуск» закрыт механически).
 if (project.hasProperty('gt6probes')) {
-    // ОСНАСТКА ПРОВЕРКИ — два каталога, подключаемые одной строкой каждый (тот же приём, что
-    // src/compat-mirror/java выше). В обычной сборке (jar игрока) они НЕ КОМПИЛИРУЮТСЯ ВООБЩЕ — их нет
-    // в classpath, значит нет и в jar. Обе оснастки автономны: подписываются на события сами
-    // (@EventBusSubscriber), production-код о них не знает ни строчкой.
-    sourceSets.main.java.srcDir('src/probes/java')     // живые стенды (ручная проверка в работающей игре)
-    sourceSets.main.java.srcDir('src/gametest/java')   // GameTest'ы движка (runGameTestServer)
+    // ОСНАСТКА ПРОВЕРКИ ЖИВЁТ ВНЕ РЕПОЗИТОРИЯ (решение владельца 2026-08-12: в репозитории только
+    // продукт). Каталоги `src/probes` и `src/gametest` удалены из этой ветки 2026-08-12: там лежал
+    // снимок стендов под neo-API 26.1.2, унесённый при отпочковании ветки, — 17 из 18 файлов
+    // побайтово совпадали с версией main перед выносом. Под Forge 1.20.1 инструментарий ещё только
+    // предстоит построить; история снимка — в коммите 3f76fc66^ на main.
+    //
+    // Свой каталог, а НЕ общий ../stands: там оснастка под 26.1.2, её код не собирается на 1.20.1.
+    // Нет каталога — гейт просто ничего не подключает, сборка продукта этим не задета.
+    file('../stands-1.20.1').listFiles()?.each { d ->
+        if (new File(d, 'java').isDirectory()) sourceSets.main.java.srcDir("${d}/java")
+    }
     ['runClient', 'runData', 'runServer', 'runGameTestServer'].each { rn ->
         tasks.matching { it.name == rn }.configureEach { it.jvmArgs('-Dgt6.probes=true')
             // проброс параметров стендов (напр. -Pgt6.probeArgs=gt6.drainprobe.kind=1)
@@ -153,11 +168,11 @@ base {
 }
 
 // Mojang ships Java 25 to end users in 26.1.2, so mods should target Java 25.
-java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)   // Forge 1.20.1 = Java 17
 
-neoForge {
-    // Specify the version of NeoForge to use.
-    version = project.neo_version
+legacyForge {
+    // Forge 1.20.1 (последняя ветка на пакетах net.minecraftforge)
+    version = project.forge_version
 
     // This line is optional. Access Transformers are automatically detected
     // accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
@@ -237,11 +252,7 @@ neoForge {
         }
     }
 
-    // Юнит-тесты ModDevGradle: настраивает sourceSet 'test' с Minecraft на classpath.
-    unitTest {
-        enable()
-        testedMod = mods."${mod_id}"
-    }
+    // [1.20.1 замер] unitTest{} у legacyForge-расширения нет — блок снят: цель прогона компиляция ядра.
 }
 
 // Sets up a dependency configuration called 'localRuntime'.
@@ -260,24 +271,24 @@ dependencies {
     // до blamejared будет стабильна. localRuntime оставлен (он на runtime-пути, компиляцию не трогает;
     // подтянет полный JEI при запуске игры для приёмки визуала).
     compileOnly "mezz.jei:jei-${jei_minecraft_version}-common-api:${jei_version}"
-    compileOnly "mezz.jei:jei-${jei_minecraft_version}-neoforge-api:${jei_version}"
-    localRuntime "mezz.jei:jei-${jei_minecraft_version}-neoforge:${jei_version}"
+    compileOnly "mezz.jei:jei-${jei_minecraft_version}-forge-api:${jei_version}"
+    localRuntime "mezz.jei:jei-${jei_minecraft_version}-forge:${jei_version}"
 
     // Jade — ТОЛЬКО compileOnly: плагин совместимости (gregtech/compat/Compat_Jade.java) реализует его
     // интерфейс ToolHandler, чтобы показывать НАСТОЯЩИЕ инструменты GT6 (гаечный ключ на машинах, лом, кусачки),
     // которых ванильными тегами выразить нельзя. В jar игрока Jade не тянется; без Jade класс плагина просто
     // не загружается (Jade сам ищет @WailaPlugin), поэтому production-код на него НЕ ссылается.
-    compileOnly "maven.modrinth:jade:${jade_version}"
+    // [1.20.1 замер] compileOnly снят: версия под 1.20.1 не подобрана
     // localRuntime — чтобы стенд gt6jadeprobe мог спросить РЕАЛЬНЫЙ Jade тем же вызовом, каким он рисует
     // тултип (HarvestToolProvider.getTool). На jar игрока не влияет: localRuntime — только dev-запуски.
-    localRuntime "maven.modrinth:jade:${jade_version}"
+    // [1.20.1 замер] localRuntime снят: версия под 1.20.1 не подобрана
 
     // JourneyMap (MODCOMPAT-002) — ТОЛЬКО для стенда gt6jmprobe: судья спрашивает РЕАЛЬНЫЙ JourneyMap тем же
     // каналом, каким тот решает судьбу блока на карте (BlockMD.get → isIgnore/getTextureColor/getAlpha;
     // декомпил-референс: journeymap-decompiled/). Production-код на него НЕ ссылается; исходники мода закрыты
     // (ARR), поэтому compileOnly идёт с того же Modrinth-maven, что и Jade.
-    compileOnly "maven.modrinth:journeymap:${journeymap_version}"
-    localRuntime "maven.modrinth:journeymap:${journeymap_version}"
+    // [1.20.1 замер] compileOnly снят: версия под 1.20.1 не подобрана
+    // [1.20.1 замер] localRuntime снят: версия под 1.20.1 не подобрана
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
@@ -299,9 +310,7 @@ dependencies {
     testImplementation platform("org.junit:junit-bom:${junit_version}")
     testImplementation "org.junit.jupiter:junit-jupiter"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
-    // NeoForge test framework — юнит-тесты в контексте MC-сервера (headless-реестры),
-    // класс помечается @ExtendWith(EphemeralTestServerProvider.class).
-    testImplementation "net.neoforged:testframework:${neo_version}"
+    // [1.20.1 замер] testframework NeoForge под 1.20.1 не существует — снят: цель прогона компиляция ядра.
 }
 
 // ДВА РЕЖИМА ПРОЕКТА — разделены намеренно (см. README «Development tooling»).
@@ -320,6 +329,14 @@ dependencies {
 // не наследует и не стартует вовсе (проверено). Один механизм вместо двух:
 //     gradlew test                         -> проверки мода самого по себе (эталон не нужен)
 //     gradlew test -Pgt6.oracle=<путь>     -> плюс сверка с дампами живого 1.7.10
+//
+// ⚠️ В ЭТОЙ ВЕТКЕ ТЕСТОВ ПОКА НЕТ. `src/test` удалён 2026-08-12 вместе со снимком оснастки 26.1.2;
+// набор под Forge 1.20.1 предстоит построить. Код тестов подключается снаружи, как на main:
+// ../stands-1.20.1/*/test-java. Нет каталога — `gradlew test` просто ничего не находит.
+file('../stands-1.20.1').listFiles()?.each { d ->
+    if (new File(d, 'test-java').isDirectory()) sourceSets.test.java.srcDir("${d}/test-java")
+}
+
 def oraclePath = project.findProperty('gt6.oracle')
 test {
     useJUnitPlatform {
@@ -343,7 +360,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
     var replaceProperties = [
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
-            neo_version            : neo_version,
+            forge_version          : forge_version,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : mod_license,
@@ -358,7 +375,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 // this works with both building through Gradle and the IDE.
 sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
-neoForge.ideSyncTask generateModMetadata
+legacyForge.ideSyncTask generateModMetadata
 
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
@@ -377,6 +394,11 @@ publishing {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
     options.compilerArgs << '-Xmaxerrs' << '100000' // ВРЕМЕННО (порт ядра): снять потолок в 100 ошибок, чтобы видеть хвост по всем швам
+    // [1.20.1 замер] javac ОТДЕЛЬНЫМ процессом со своей памятью: при десятках тысяч ошибок компилятор
+    // держит их все в куче и роняет сам демон Gradle (проверено: OutOfMemoryError в daemon-28324.out.log,
+    // после чего прогон висит, не завершаясь). Форк отделяет память компилятора от памяти демона.
+    options.fork = true
+    options.forkOptions.memoryMaximumSize = '12g'
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
