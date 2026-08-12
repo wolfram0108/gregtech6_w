@@ -1,4 +1,4 @@
-# This is an example neoforge.mods.toml file. It contains the data relating to the loading mods.
+# This is the mods.toml of the 1.20.1 branch (Forge). It contains the data relating to the loading mods.
 # There are several mandatory fields (#mandatory), and many more that are optional (#optional).
 # The overall format is standard TOML format, v0.5.0.
 # Note that there are a couple of TOML lists in this file.
@@ -40,7 +40,7 @@ authors="Gregorius Techneticies (GregTech 6); NeoForge port by wolfram0108"
 credits="Ported from GregTech 6 for Minecraft 1.7.10 by Gregorius Techneticies."
 
 description='''
-GregTech 6 ported to Minecraft 26.1.2 / NeoForge.
+GregTech 6 ported to Minecraft 1.20.1 / Forge.
 
 An industrial process mod: ores are materials with composition, melting points and by-products,
 processed through chains of machines from a hand hammer up to multiblock reactors and pressurised
@@ -132,7 +132,7 @@ config="gregapi.mixins.json"
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.${mod_id}]] #optional
     # the modid of the dependency
-    modId="neoforge" #mandatory
+    modId="forge" #mandatory
     # The type of the dependency. Can be one of "required", "optional", "incompatible" or "discouraged" (case insensitive).
     # 'required' requires the mod to exist, 'optional' does not
     # 'incompatible' will prevent the game from loading when the mod exists, and 'discouraged' will show a warning
