@@ -147,6 +147,22 @@ public class OreDictionary {
 	 * Порядок цветов {@code dyes[]} и инверсия {@code 15 - i} для стекла — дословно из Forge-исходника
 	 * ({@code :154-186}), не из памяти: у красителя и стекла ряды идут навстречу друг другу.</p>
 	 *
+	 * <p><b>Список 1.7.10 продолжен новым ванильным содержимым (Э1-bis), а не переосмыслен.</b> Forge-список
+	 * перечислял ВСЁ, из чего в 1.7.10 состояла ванильная материальная часть: руды, блоки-хранилища, слитки,
+	 * самородки, самоцветы. После 1.7.10 движок добавил в эти же ряды новых членов (deepslate- и незер-варианты
+	 * руд, самородок железа, аметист, незерит, древние обломки, сырая руда и её блок), и без них словарь GT6
+	 * остаётся замороженным на 2014 годе: до этой правки правильный ответ приходил только через тег-мост
+	 * ({@link OreDictTags}), то есть ЗАВИСЕЛ от того, объявил ли кто-то конвенционный тег. Правило добавления
+	 * жёсткое и проверяемое: (а) имя берётся ТОЛЬКО у Грега — либо это уже существующее имя семьи из списка выше
+	 * (новый член вписывается в него), либо его собственное правило {@code префикс + mNameInternal материала}
+	 * при УЖЕ существующих {@link gregapi.data.OP}-префиксе и {@link gregapi.data.MT}-материале; (б) новых
+	 * префиксов и материалов не заводится; (в) ванильная медь сюда не попадает — её целиком ведёт ADAPT-014
+	 * ({@code Loader_Recipes_Vanilla.copperAge/copperItemData}), включая осознанное решение оставить целью
+	 * унификации грегский слиток. Ванильные сущности, для которых у Грега имени НЕТ (смола {@code resin_clump}
+	 * и её блок, осколок и кристаллы призмарина, почкующийся аметист и друза, соты, эхо-осколок, окисленные и
+	 * вощёные формы меди) либо чья ёмкость его префиксу противоречит ({@code amethyst_block} — четыре осколка
+	 * против девяти у {@code blockGem}), не регистрируются вовсе — выдумывать имя запрещено.
+	 *
 	 * <p>Идемпотентно ({@code sHasInit}) — как {@code hasInit} у Forge; повторные и пересекающиеся с GT6
 	 * записи дополнительно снимает дедуп {@link #registerOre} (тот же hash-бакет, что у оригинала).
 	 * Блок {@code replacements}/{@code exclusions} Forge-оригинала ({@code :136-190}) — роль-C, перенесён
@@ -175,6 +191,26 @@ public class OreDictionary {
 		registerOre("oreEmerald"   , ST.make(Blocks.EMERALD_ORE     , 1, 0));
 		registerOre("oreQuartz"    , ST.make(Blocks.NETHER_QUARTZ_ORE, 1, 0));
 		registerOre("oreCoal"      , ST.make(Blocks.COAL_ORE        , 1, 0));
+		// РАСЩЕПЛЁННЫЕ СЕМЬИ РУД (движок, а не мод): в 1.7.10 у каждой руды был ОДИН блок, в 26.1 их несколько,
+		// и семью объявляет САМ движок — data/minecraft/tags/block/iron_ores.json = {iron_ore, deepslate_iron_ore},
+		// gold_ores.json = {gold_ore, nether_gold_ore, deepslate_gold_ore}, и так все восемь. Новые члены идут под
+		// ТЕМ ЖЕ именем, что уже перечисленный выше первый член — тот же приём, что применён здесь к sandstone/sand
+		// (:278-282) и к брёвнам/доскам/листве (:177-183), где 1.7.10 обходился одной wildcard-записью.
+		// У префикса OP.ore своя ветка разбора: она НЕ ставит цель унификации, а лишь выдаёт паспорт
+		// (OreDictManager.java:466-467 addItemData_), поэтому состав целей этими строками не меняется.
+		registerOre("oreGold"      , ST.make(Blocks.DEEPSLATE_GOLD_ORE    , 1, 0));
+		registerOre("oreGold"      , ST.make(Blocks.NETHER_GOLD_ORE       , 1, 0));
+		registerOre("oreIron"      , ST.make(Blocks.DEEPSLATE_IRON_ORE    , 1, 0));
+		registerOre("oreLapis"     , ST.make(Blocks.DEEPSLATE_LAPIS_ORE   , 1, 0));
+		registerOre("oreDiamond"   , ST.make(Blocks.DEEPSLATE_DIAMOND_ORE , 1, 0));
+		registerOre("oreRedstone"  , ST.make(Blocks.DEEPSLATE_REDSTONE_ORE, 1, 0));
+		registerOre("oreEmerald"   , ST.make(Blocks.DEEPSLATE_EMERALD_ORE , 1, 0));
+		registerOre("oreCoal"      , ST.make(Blocks.DEEPSLATE_COAL_ORE    , 1, 0));
+		// Древние обломки — незер-руда, ровно как незерский кварц выше; у Грега это материал MT.AncientDebris
+		// (MT.java:1837 «Ancient Debris», внутреннее имя = AncientDebris — пробелы снимает OreDictMaterial.sanitize:212;
+		// put(MD.NePl, COMMON_ORE) — в 1.7.10 этот контент давал бэкпорт-мод Netherite Plus). Что руда/самородок/слиток
+		// ИМЕННО этого материала — незеритовое семейство, Грег говорит сам: LanguageHandler.java:314-326.
+		registerOre("oreAncientDebris", ST.make(Blocks.ANCIENT_DEBRIS, 1, 0));
 		registerOre("blockGold"    , ST.make(Blocks.GOLD_BLOCK      , 1, 0));
 		registerOre("blockIron"    , ST.make(Blocks.IRON_BLOCK      , 1, 0));
 		registerOre("blockLapis"   , ST.make(Blocks.LAPIS_BLOCK     , 1, 0));
@@ -183,6 +219,19 @@ public class OreDictionary {
 		registerOre("blockEmerald" , ST.make(Blocks.EMERALD_BLOCK   , 1, 0));
 		registerOre("blockQuartz"  , ST.make(Blocks.QUARTZ_BLOCK    , 1, 0));
 		registerOre("blockCoal"    , ST.make(Blocks.COAL_BLOCK      , 1, 0));
+		// НОВЫЕ ванильные блоки-хранилища (1.16-1.17) — продолжение ровно этого списка. Имена — то же правило
+		// «префикс + материал»: blockNetherite и blockRaw<Материал> уже живут в языке Грега как ключи его же
+		// пере-регистраций (LoaderOreDictReRegistrations.java:246 blockNetherite -> blockIngotNetherite;
+		// OP.java:349 blockRaw = "New Vanilla Storage Block for Ores" — префикс заведён Грегом ИМЕННО под этот
+		// ванильный блок из будущего). Ёмкость сходится с блочными префиксами Грега (9 единиц): ванильные
+		// рецепты netherite_block и raw_*_block — 3x3 (data/minecraft/recipe/netherite_block.json,
+		// raw_iron_block.json). ⛔ amethyst_block сюда НЕ входит: его ванильный рецепт 2x2 = ЧЕТЫРЕ осколка
+		// (recipe/amethyst_block.json), а blockGem у Грега — девять (OP.java:350 setMaterialStats(U*9)); имя
+		// blockAmethyst разбирается в blockGem+Amethyst и объявило бы неверную массу, попутно перехватив цель
+		// унификации грегского «Block of Amethyst». Соответствия у Грега для «блока из четырёх» нет — не заводим.
+		registerOre("blockNetherite", ST.make(Blocks.NETHERITE_BLOCK, 1, 0));
+		registerOre("blockRawIron"  , ST.make(Blocks.RAW_IRON_BLOCK , 1, 0));
+		registerOre("blockRawGold"  , ST.make(Blocks.RAW_GOLD_BLOCK , 1, 0));
 
 		// стекло: бесцветное + весь цветной ряд (1.7.10 — одна wildcard-запись stained_glass:W)
 		registerOre("blockGlassColorless", ST.make(Blocks.GLASS     , 1, 0));
@@ -198,6 +247,20 @@ public class OreDictionary {
 		registerOre("ingotBrick"     , ST.make(net.minecraft.world.item.Items.BRICK         , 1, 0));
 		registerOre("ingotBrickNether", ST.make(net.minecraft.world.item.Items.NETHER_BRICK , 1, 0));
 		registerOre("nuggetGold"     , ST.make(net.minecraft.world.item.Items.GOLD_NUGGET   , 1, 0));
+		// НОВЫЕ ванильные предметы-материалы (1.11-1.17) — продолжение того же списка теми же именами Грега:
+		// nuggetIron рядом с nuggetGold, gemAmethyst рядом с gemDiamond/gemEmerald/gemQuartz, ingotNetherite
+		// (ключ пере-регистрации LoaderOreDictReRegistrations.java:107), «Netherite Scrap» = ingot материала
+		// AncientDebris (LanguageHandler.java:326 — Грег сам зовёт этим именем ИМЕННО ингот этого материала),
+		// oreRaw<Материал> для сырой руды (OP.java:137 — «The Vanilla "Raw Ore" Item from the Future»).
+		// Медь в этот список НЕ входит намеренно: ванильное медное семейство целиком ведёт ADAPT-014
+		// (Loader_Recipes_Vanilla.java:1073-1105) — там оно и опознаётся, и СОЗНАТЕЛЬНО оставляет целью
+		// унификации грегский слиток; дублировать его здесь значило бы перехватить паспорта первым.
+		registerOre("nuggetIron"     , ST.make(net.minecraft.world.item.Items.IRON_NUGGET   , 1, 0));
+		registerOre("gemAmethyst"    , ST.make(net.minecraft.world.item.Items.AMETHYST_SHARD, 1, 0));
+		registerOre("ingotNetherite" , ST.make(net.minecraft.world.item.Items.NETHERITE_INGOT, 1, 0));
+		registerOre("ingotAncientDebris", ST.make(net.minecraft.world.item.Items.NETHERITE_SCRAP, 1, 0));
+		registerOre("oreRawIron"     , ST.make(net.minecraft.world.item.Items.RAW_IRON      , 1, 0));
+		registerOre("oreRawGold"     , ST.make(net.minecraft.world.item.Items.RAW_GOLD      , 1, 0));
 		registerOre("gemDiamond"     , ST.make(net.minecraft.world.item.Items.DIAMOND       , 1, 0));
 		registerOre("gemEmerald"     , ST.make(net.minecraft.world.item.Items.EMERALD       , 1, 0));
 		registerOre("gemQuartz"      , ST.make(net.minecraft.world.item.Items.QUARTZ        , 1, 0));
