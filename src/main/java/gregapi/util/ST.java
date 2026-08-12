@@ -254,13 +254,12 @@ public class ST {
 	public static int count(ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || aStack.getCount() < 0 ? 0 : (zerosize(aStack) ? 0 : aStack.getCount());}
 	/** F-size0-catalyst, канал маркера. В 26.x им был компонент GT_API.ZEROSIZE; в 1.20.1 компонентов нет —
 	 *  маркер лежит в NBT самого стека под ключом {@code CS.NBT_ZEROSIZE} (тот же приём, каким GT6 хранит
-	 *  все свои признаки на предмете). Читается/пишется ТОЛЬКО здесь. */
-	public static boolean zerosize(ItemStack aStack) {CompoundTag tNBT = ItemNBT.get(aStack); return tNBT != null && tNBT.getBoolean(CS.NBT_ZEROSIZE);}
-	private static void zerosize(ItemStack aStack, boolean aFlag) {
-		CompoundTag tNBT = ItemNBT.get(aStack);
-		if (aFlag) {if (tNBT == null) tNBT = UT.NBT.make(); tNBT.putBoolean(CS.NBT_ZEROSIZE, true); ItemNBT.set(aStack, tNBT);}
-		else if (tNBT != null && tNBT.contains(CS.NBT_ZEROSIZE)) {tNBT.remove(CS.NBT_ZEROSIZE); ItemNBT.set(aStack, tNBT);}
-	}
+	 *  все свои признаки на предмете). Читается/пишется ТОЛЬКО здесь.
+	 *  <p>В 1.7.10 это было ПОЛЕ стека ({@code stackSize == 0}), а не его NBT, поэтому маркер идёт мимо
+	 *  «предметного NBT» — через {@code ItemNBT.field} (тот же приём, что подтип через {@code meta_}).
+	 *  Иначе {@code ST.hasNBT} у любого size-0-стека давал бы true, чего 1.7.10 не давал (см. ItemNBT). */
+	public static boolean zerosize(ItemStack aStack) {return ItemNBT.field(aStack, CS.NBT_ZEROSIZE);}
+	private static void zerosize(ItemStack aStack, boolean aFlag) {ItemNBT.field(aStack, CS.NBT_ZEROSIZE, aFlag);}
 
 	public static ItemStack size (long aSize, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : size_(aSize, aStack);}
 	// aSize<=0 = GT6-катализатор: держим count=1 (иначе neo → EMPTY/AIR, идентичность теряется) + маркер ZEROSIZE; логический
