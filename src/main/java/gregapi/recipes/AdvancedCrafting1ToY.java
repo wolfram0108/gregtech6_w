@@ -148,15 +148,13 @@ public class AdvancedCrafting1ToY implements ICraftingRecipeGT {
 		ItemStack tStack = null;
 		OreDictMaterial rMaterial = null;
 		
-		// BUG-099: смысл этого рецепта — В МЕСТЕ предмета на сетке (mEmpty = сколько пустых клеток перед ним),
-		// а движок 26.1.2 отдаёт сетку, подрезанную до габарита занятых клеток, — признак до рецепта не доходит.
-		// Спрашиваем ПОЛНУЮ сетку у центра (снимок кладёт единственная вставка мода в движок, CR.fullGrid);
-		// её нет — работаем по подрезанной, как раньше. Тело ниже — дословно 1.7.10 (AdvancedCrafting1ToY:177-191).
-		java.util.List<ItemStack> tCells = gregapi.util.CR.fullGrid(aGrid);
-		int tInventorySize = tCells != null ? tCells.size() : aGrid.size(), tCounter = 0, tEmpty = 0;
+		// Смысл этого рецепта — В МЕСТЕ предмета на сетке (mEmpty = сколько пустых клеток перед ним). В 1.20.1
+		// сетка приходит рецепту целиком, вместе с пустыми клетками (CraftingMenu.java:25,62), — признак цел,
+		// как в 1.7.10, и читается прямо из сетки. Тело ниже — дословно 1.7.10 (AdvancedCrafting1ToY:177-191).
+		int tInventorySize = aGrid.size(), tCounter = 0, tEmpty = 0;
 		if (tInventorySize < 1+mEmpty) return F;
 		for (int i = 0; i < tInventorySize; i++) {
-			tStack = tCells != null ? tCells.get(i) : aGrid.getItem(i);
+			tStack = aGrid.getItem(i);
 			if (ST.valid(tStack)) {
 				OreDictItemData tData = OM.anydata_(tStack);
 				if (tData == null || tData.mPrefix != mInput) return F;

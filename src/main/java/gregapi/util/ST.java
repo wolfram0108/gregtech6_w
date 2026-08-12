@@ -201,11 +201,14 @@ public class ST {
 	public static Block block_(long aID) {return BuiltInRegistries.BLOCK.byId((int)aID);}
 	
 	public static short     meta (ItemStack aStack) {return aStack == null ? 0 : meta_(aStack);}
-	// F12-followup (subtype-meta): GT6-подтип хранится в компоненте GT_API.SUBTYPE (не в damage-value — тот клампится к
-	// [0,maxDamage], у meta-предметов maxDamage=0 → схлопывание в 0). meta-0 = компонент отсутствует (дефолт 0, стек с ванилла).
-	public static short     meta_(ItemStack aStack) {return gregapi.GT_API.SUBTYPE.isBound() ? (short)(int)aStack.getOrDefault(gregapi.GT_API.SUBTYPE.get(), 0) : 0;}
+	// F1/F8: подтип снова живёт в damage — как в оригинале 1.7.10 (getItemDamage/setItemDamage). В 26.x это было
+	// невозможно (движок клампил damage к [0,maxDamage], у meta-предметов maxDamage=0 → схлопывание), потому и
+	// заводился компонент SUBTYPE. В 1.20.1 ограничения нет: IForgeItem.setDamage клампит ТОЛЬКО по нулю
+	// (IForgeItem.java:472-475), читает getTag().getInt("Damage") (:435-438), а "Damage" лежит ВНУТРИ tag, который
+	// целиком участвует в ItemStack.isSameItemSameTags → идентичность/стакание/матчинг как в 1.7.10.
+	public static short     meta_(ItemStack aStack) {return UT.Code.bindShort(aStack.getDamageValue());}
 	public static ItemStack meta (ItemStack aStack, long aMeta) {return aStack == null ? null : meta_(aStack, aMeta);}
-	public static ItemStack meta_(ItemStack aStack, long aMeta) {int tMeta = (short)aMeta; if (gregapi.GT_API.SUBTYPE.isBound()) {if (tMeta != 0) aStack.set(gregapi.GT_API.SUBTYPE.get(), tMeta); else aStack.remove(gregapi.GT_API.SUBTYPE.get());} return aStack;}
+	public static ItemStack meta_(ItemStack aStack, long aMeta) {aStack.setDamageValue(UT.Code.bindShort(aMeta)); return aStack;}
 
 	/**
 	 * BUG-079, ЕДИНСТВЕННЫЙ ответ на вопрос «что делает предмет ОТДЕЛЬНЫМ предметом для внешней витрины».
@@ -238,16 +241,26 @@ public class ST {
 	// F-size0-catalyst: логический размер. GT6 size-0-стек (катализатор) хранится в neo как count=1 + маркер GT_API.ZEROSIZE
 	// (neo не держит count<=0 без превращения в AIR/EMPTY). size() отдаёт 0 для маркированных → recipe-matching/consume/дамп
 	// видят логический 0. Совпадает со старым поведением size(AIR-катализатор)=0 → существующие вызыватели не затронуты.
-	public static byte      size (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null || aStack.getCount() < 0 ? 0 : (gregapi.GT_API.ZEROSIZE.isBound() && aStack.has(gregapi.GT_API.ZEROSIZE.get()) ? 0 : UT.Code.bindByte(aStack.getCount()));}
+	public static byte      size (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null || aStack.getCount() < 0 ? 0 : (zerosize(aStack) ? 0 : UT.Code.bindByte(aStack.getCount()));}
 	/** F15-size0 (BUG-015 v2): ЛОГИЧЕСКИЙ count как int, без byte-клампа ST.size — читатель поля 1.7.10 stackSize
 	 *  для больших стеков (масстораж держит тысячи). ZEROSIZE-призрак («тип запомнен, штук 0») читается как 0. */
-	public static int count(ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || aStack.getCount() < 0 ? 0 : (gregapi.GT_API.ZEROSIZE.isBound() && aStack.has(gregapi.GT_API.ZEROSIZE.get()) ? 0 : aStack.getCount());}
+	public static int count(ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || aStack.getCount() < 0 ? 0 : (zerosize(aStack) ? 0 : aStack.getCount());}
+	/** F-size0-catalyst, канал маркера. В 26.x им был компонент GT_API.ZEROSIZE; в 1.20.1 компонентов нет —
+	 *  маркер лежит в NBT самого стека под ключом {@code CS.NBT_ZEROSIZE} (тот же приём, каким GT6 хранит
+	 *  все свои признаки на предмете). Читается/пишется ТОЛЬКО здесь. */
+	public static boolean zerosize(ItemStack aStack) {CompoundTag tNBT = ItemNBT.get(aStack); return tNBT != null && tNBT.getBoolean(CS.NBT_ZEROSIZE);}
+	private static void zerosize(ItemStack aStack, boolean aFlag) {
+		CompoundTag tNBT = ItemNBT.get(aStack);
+		if (aFlag) {if (tNBT == null) tNBT = UT.NBT.make(); tNBT.putBoolean(CS.NBT_ZEROSIZE, true); ItemNBT.set(aStack, tNBT);}
+		else if (tNBT != null && tNBT.contains(CS.NBT_ZEROSIZE)) {tNBT.remove(CS.NBT_ZEROSIZE); ItemNBT.set(aStack, tNBT);}
+	}
+
 	public static ItemStack size (long aSize, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : size_(aSize, aStack);}
 	// aSize<=0 = GT6-катализатор: держим count=1 (иначе neo → EMPTY/AIR, идентичность теряется) + маркер ZEROSIZE; логический
 	// размер читается через ST.size(). aSize>=1 — обычный setCount + снять маркер (если стек переиспользуется).
 	public static ItemStack size_(long aSize, ItemStack aStack) {
-		if (aSize <= 0) {aStack.setCount(1); if (gregapi.GT_API.ZEROSIZE.isBound()) aStack.set(gregapi.GT_API.ZEROSIZE.get(), net.minecraft.util.Unit.INSTANCE);}
-		else {aStack.setCount((int)aSize); if (gregapi.GT_API.ZEROSIZE.isBound() && aStack.has(gregapi.GT_API.ZEROSIZE.get())) aStack.remove(gregapi.GT_API.ZEROSIZE.get());}
+		if (aSize <= 0) {aStack.setCount(1); zerosize(aStack, T);}
+		else {aStack.setCount((int)aSize); zerosize(aStack, F);}
 		return aStack;
 	}
 	
@@ -276,11 +289,11 @@ public class ST {
 	}
 	
 	public static ItemStack name (ItemStack aStack, String aName) {return aStack == null || aName == null ? aStack : name_(aStack, aName);}
-	public static ItemStack name_(ItemStack aStack, String aName) {aStack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal(aName)); return aStack;}
-	/** F1/F8-стык: было {@code ItemStack.setStackDisplayName(...)} — в neo нет; когда имя уже {@code Component}
+	public static ItemStack name_(ItemStack aStack, String aName) {aStack.setHoverName(net.minecraft.network.chat.Component.literal(aName)); return aStack;}
+	/** Было {@code ItemStack.setStackDisplayName(String)} (1.7.10) — в 1.20.1 это {@code setHoverName(Component)}
 	 *  (напр. {@code getDisplayName()} в neo возвращает Component, а не String 1.7.10) — ставим CUSTOM_NAME напрямую,
-	 *  сохраняя форматирование (не через literal(String), что теряло бы стиль). Центр тот же — {@code DataComponents.CUSTOM_NAME}. */
-	public static ItemStack name_(ItemStack aStack, net.minecraft.network.chat.Component aName) {aStack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, aName); return aStack;}
+	 *  сохраняя форматирование (не через literal(String), что теряло бы стиль). Пишет в тот же tag.display.Name, что и оригинал. */
+	public static ItemStack name_(ItemStack aStack, net.minecraft.network.chat.Component aName) {aStack.setHoverName(aName); return aStack;}
 
 	public static CompoundTag nbt (ItemStack aStack) {return aStack == null ? null : nbt_(aStack);}
 	public static CompoundTag nbt_(ItemStack aStack) {return ItemNBT.get(aStack);}
@@ -367,16 +380,24 @@ public class ST {
 		// Конфиг stacksizes.cfg прочитан ещё в onModPreInit2 (GT_API:817) → наполняем карту ЗДЕСЬ, до применения.
 		// Повторный вызов на server-start (GT_API:1140, 1:1-место) остаётся — идемпотентен (та же величина).
 		gregapi.oredict.OreDictPrefix.applyAllStackSizes();
-		// форейн-мод override'ы (карта, если форейн-предмет присутствует)
-		for (java.util.Map.Entry<Item, Integer> tE : VANILLA_STACKSIZE_OVERRIDES.entrySet())
-			aEvent.modify(tE.getKey(), b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, tE.getValue()));
-		// golden ST.forceProperMaxStacksizes() 1:1: GT6 менял стек vanilla-предметов (potion→1; glass_bottle/cake/stick/книги/
-		// snowball/egg→64; bed→64; двери→8). 1.7.10 «bed»/«wooden_door» флэттились в neo → применяем ко ВСЕМ вариантам класса.
-		aEvent.modify(net.minecraft.world.item.Items.POTION, b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, 1));
+		// Форма оригинала (gt6-original ST.forceProperMaxStacksizes): 1.7.10 звал item.setMaxStackSize(n) прямо на
+		// ванильном предмете. В 1.20.1 предел стека — `private final int maxStackSize` предмета, компонента
+		// MAX_STACK_SIZE и события ModifyDefaultComponentsEvent (обе вещи 26.x) не существует. Правим тем же
+		// центром рефлексии GT6, что и setMaxDamage выше — одно место на весь мод.
+		for (java.util.Map.Entry<Item, Integer> tE : VANILLA_STACKSIZE_OVERRIDES.entrySet()) setMaxStackSize(tE.getKey(), tE.getValue());
+		setMaxStackSize(net.minecraft.world.item.Items.POTION, 1);
 		for (Item tItem : new Item[]{net.minecraft.world.item.Items.GLASS_BOTTLE, net.minecraft.world.item.Items.CAKE, net.minecraft.world.item.Items.STICK, net.minecraft.world.item.Items.WRITTEN_BOOK, net.minecraft.world.item.Items.WRITABLE_BOOK, net.minecraft.world.item.Items.ENCHANTED_BOOK, net.minecraft.world.item.Items.SNOWBALL, net.minecraft.world.item.Items.EGG})
-			aEvent.modify(tItem, b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, 64));
-		aEvent.modifyMatching((tItem, tComps) -> tItem instanceof net.minecraft.world.item.BedItem, b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, 64)); // 1.7.10 bed→64 (все цвета)
-		aEvent.modifyMatching((tItem, tComps) -> tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof net.minecraft.world.level.block.DoorBlock, b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, 8)); // 1.7.10 wooden_door+iron_door→8 (все двери)
+			setMaxStackSize(tItem, 64);
+		// 1.7.10 bed→64 / wooden_door+iron_door→8; после флэттенинга это семейства предметов — проходим реестр.
+		for (Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			if (tItem instanceof net.minecraft.world.item.BedItem) setMaxStackSize(tItem, 64);
+			else if (tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof net.minecraft.world.level.block.DoorBlock) setMaxStackSize(tItem, 8);
+		}
+	}
+
+	/** Единая точка правки предела стека чужого предмета — см. setMaxDamage выше про AT-канон. */
+	public static void setMaxStackSize(Item aItem, int aMaxStackSize) {
+		if (aItem != null) UT.Reflection.setField(net.minecraft.world.item.Item.class, aItem, "maxStackSize", aMaxStackSize, T);
 	}
 
 	/** F8 read-modify-write: 1.7.10 `stack.getTagCompound().putX(k,v)` мутировал ЖИВОЙ тег стека. neo CustomData
@@ -463,8 +484,12 @@ public class ST {
 	 *  (Holder.java:262) — БЕЗ reflection: пересобрать component-map с новым MAX_DAMAGE. GT6-item durability = ItemBase.mMaxDamage (F12). */
 	public static void setMaxDamage(Item aItem, int aMaxDamage) {
 		if (aItem == null) return;
-		net.minecraft.core.Holder.Reference<Item> tHolder = aItem.builtInRegistryHolder();
-		tHolder.bindComponents(net.minecraft.core.component.DataComponentMap.builder().addAll(tHolder.components()).set(net.minecraft.core.component.DataComponents.MAX_DAMAGE, aMaxDamage).build());
+		// 1.7.10 звал публичный Item.setMaxDamage(int). В 1.20.1 это `private final int maxDamage` (Item.java:64) —
+		// сеттера нет; канонический путь правки чужого приватного члена у GT6 — Access Transformer (F2 §2.3, прямой
+		// наследник gregtech_at.cfg). AT — решение уровня сборки, потому пока идём ЧЕРЕЗ СВОЙ ЖЕ центр рефлексии
+		// GT6 (UT.Reflection.setField, тот же приём, каким оригинал правил чужие поля), с логом при отказе —
+		// поведение не теряется молча. См. «на решение оркестратору».
+		UT.Reflection.setField(net.minecraft.world.item.Item.class, aItem, "maxDamage", aMaxDamage, T);
 	}
 
 	public static ItemStack update (ItemStack aStack) {
@@ -517,7 +542,7 @@ public class ST {
 		aStack.setCount((int)(aStack.getCount()-(aAmount))); // aAmount long -> явный cast (setCount(int))
 		if (!(aPlayer instanceof Player)) return T;
 		if (aStack.getCount() <= 0) {
-			if (aTriggerEvent) EventHooks.onPlayerDestroyItem((Player)aPlayer, aStack, null); // neo: +@Nullable InteractionHand (EventHooks:235); generic decr без hand-контекста -> null
+			if (aTriggerEvent) net.minecraftforge.event.ForgeEventFactory.onPlayerDestroyItem((Player)aPlayer, aStack, null); // ForgeEventFactory.java:192; generic decr без hand-контекста -> null
 			if (aRemove) for (int i = 0; i < ((Player)aPlayer).getInventory().items.size(); i++) {
 				if (((Player)aPlayer).getInventory().items.get(i) == aStack) {
 					((Player)aPlayer).getInventory().items.set(i, ItemStack.EMPTY); // граница vanilla NonNullList требует non-null (было null=1.7.10 empty)
@@ -585,16 +610,18 @@ public class ST {
 	// и т.п. в 1.7.10 не регистрировалось); неизвестная мета → null = прежний путь без компонента, не выдумываем.
 	private static ItemStack legacyPotion(Item aItem, long aSize, long aMeta) {
 		if (aItem != Items.POTION && aItem != Items.SPLASH_POTION && aItem != Items.LINGERING_POTION) return null;
-		net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> tKind = legacyPotionKind(aMeta);
+		net.minecraft.world.item.alchemy.Potion tKind = legacyPotionKind(aMeta);
 		if (tKind == null) return null;
 		// lingering — отдельный ПРЕДМЕТ уже на входе (тара EtFu-ветки замощена на ваниль, Loader_Fluids:344);
 		// взрывной бит меты предмет не меняет — у lingering его в метах не было
 		ItemStack rStack = new ItemStack(aItem == Items.POTION && (aMeta & 0x4000) != 0 ? Items.SPLASH_POTION : aItem, UT.Code.bindInt(aSize));
-		rStack.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, new net.minecraft.world.item.alchemy.PotionContents(tKind));
+		// 1.20.1: варево ставится в NBT-канал через PotionUtils.setPotion (PotionUtils.java:127) — как 1.7.10 ItemPotion-мета.
+		net.minecraft.world.item.alchemy.PotionUtils.setPotion(rStack, tKind);
 		meta_(rStack, UT.Code.bindShort(aMeta));
 		return rStack;
 	}
-	private static net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> legacyPotionKind(long aMeta) {
+	// 1.20.1: Potions.X — сам объект Potion (Potions.java:14), не Holder (Holder-слой был только в 26.x).
+	private static net.minecraft.world.item.alchemy.Potion legacyPotionKind(long aMeta) {
 		boolean tStrong = (aMeta & 0x20) != 0, tLong = (aMeta & 0x40) != 0;
 		switch ((int)(aMeta & 15)) {
 		case  1: return tStrong ? net.minecraft.world.item.alchemy.Potions.STRONG_REGENERATION : tLong ? net.minecraft.world.item.alchemy.Potions.LONG_REGENERATION : net.minecraft.world.item.alchemy.Potions.REGENERATION;
@@ -1142,7 +1169,7 @@ public class ST {
 		// BUG-022 v2: симметрично ST.container — 1.7.10 звал полиморфный hasContainerItem (GT6-бутылки/каны/prefix),
 		// компонентный канал ниже покрывает только vanilla. Спрашиваем ВСЕ GT-корни через единую точку выше.
 		if (gtContainerItem(aStack) != null) return F;
-		if (item_(aStack).getCraftingRemainder(aStack) != null) return F;
+		if (item_(aStack).hasCraftingRemainingItem(aStack)) return F; // IForgeItem.java:253
 		if (ItemsGT.CONTAINER_DURABILITY.contains(aStack, T)) return F;
 		if (IL.Cell_Empty.equal(aStack, F, T) || IL.SC2_Teapot_Empty.equal(aStack, F, T) || IL.SC2_Teacup_Empty.equal(aStack, F, T)) return T;
 		if (IL.Cell_Empty.equal(aStack, T, T) || IL.SC2_Teapot_Empty.equal(aStack, T, T) || IL.SC2_Teacup_Empty.equal(aStack, T, T)) return F;
@@ -1161,7 +1188,7 @@ public class ST {
 		// (vanilla ведро и т.п.) — следом, 1:1 порядок оригинала.
 		ItemStack tGTContainer = gtContainerItem(aStack); // все GT-корни разом (см. gtContainerItem)
 		if (tGTContainer != null) return copy(tGTContainer);
-		if (item_(aStack).getCraftingRemainder(aStack) != null) return copy(item_(aStack).getCraftingRemainder(aStack).create());
+		if (item_(aStack).hasCraftingRemainingItem(aStack)) return copy(item_(aStack).getCraftingRemainingItem(aStack)); // IForgeItem.java:237,253
 		// These are all special Cases, in which it is intended to have only GT Blocks outputting those Container Items.
 		if (IL.Cell_Empty.exists()) {
 			if (IL.Cell_Empty.equal(aStack, F, T)) return NI;
@@ -1204,19 +1231,18 @@ public class ST {
 	public static boolean edible(ItemStack aStack) {
 		if (invalid(aStack)) return F;
 		if (item_(aStack) instanceof MultiItemRandom) return ((MultiItemRandom)item_(aStack)).mFoodStats.get(meta_(aStack)) != null;
-		return aStack.has(DataComponents.FOOD); // было: item_(aStack) instanceof ItemFood — класс удалён в neo (REMAP-RULES §C-bis)
+		return item_(aStack).getFoodProperties(aStack, null) != null; // IForgeItem.java:850 (в 1.7.10 — instanceof ItemFood)
 	}
-	/** F-armor-detection: 1.7.10 класс ItemArmor удалён -> броня определяется компонентом DataComponents.EQUIPPABLE
-	 *  (Equippable.slot(), EquipmentSlot.isArmor()=HUMANOID_ARMOR|ANIMAL_ARMOR, EquipmentSlot.java:73). Центр item-домена. */
+	/** В 1.20.1 класс брони на месте (ArmorItem) — форма оригинала 1.7.10 (instanceof ItemArmor) восстановлена;
+	 *  компонент EQUIPPABLE, которым это выражалось в 26.x, здесь не существует. Центр item-домена. */
 	public static boolean armor(ItemStack aStack) {
 		if (invalid(aStack)) return F;
-		net.minecraft.world.item.equipment.Equippable tEquippable = aStack.get(DataComponents.EQUIPPABLE);
-		return tEquippable != null && tEquippable.slot().isArmor();
+		return item_(aStack) instanceof net.minecraft.world.item.ArmorItem;
 	}
 
 	public static int food(ItemStack aStack) {
 		if (invalid(aStack)) return 0;
-		if (aStack.has(DataComponents.FOOD)) {try {return aStack.get(DataComponents.FOOD).nutrition();} catch(Throwable e) {return 1;}}
+		{net.minecraft.world.food.FoodProperties tFood = item_(aStack).getFoodProperties(aStack, null); if (tFood != null) {try {return tFood.getNutrition();} catch(Throwable e) {return 1;}}}
 		if (item_(aStack) instanceof MultiItemRandom) {
 			IFoodStat tStat = ((MultiItemRandom)item_(aStack)).mFoodStats.get(meta_(aStack));
 			return tStat == null ? 0 : tStat.getFoodLevel(item_(aStack), aStack, null);
@@ -1225,7 +1251,7 @@ public class ST {
 	}
 	public static float saturation(ItemStack aStack) {
 		if (invalid(aStack)) return 0;
-		if (aStack.has(DataComponents.FOOD)) {try {return aStack.get(DataComponents.FOOD).saturation();} catch(Throwable e) {return 0.5F;}}
+		{net.minecraft.world.food.FoodProperties tFood = item_(aStack).getFoodProperties(aStack, null); if (tFood != null) {try {return tFood.getSaturationModifier();} catch(Throwable e) {return 0.5F;}}}
 		if (item_(aStack) instanceof MultiItemRandom) {
 			IFoodStat tStat = ((MultiItemRandom)item_(aStack)).mFoodStats.get(meta_(aStack));
 			return tStat == null ? 0 : tStat.getSaturation(item_(aStack), aStack, null);
@@ -1258,8 +1284,9 @@ public class ST {
 		// neoforge/common/extensions/IItemStackExtension.java:62, ItemStack implements его — ItemStack.java:103),
 		// проходит через FurnaceFuelBurnTimeEvent — та же роль "кастомный fuel регистрируется модами", что и
 		// 1.7.10 GameRegistry.getFuelValue.
-		net.minecraft.server.MinecraftServer tFuelServer = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
-		long rFuelValue = tFuelServer == null ? 0 : aStack.getBurnTime(null, tFuelServer.fuelValues());
+		// 1.20.1: время горения спрашивается у ForgeHooks.getBurnTime(stack, recipeType) (ForgeHooks.java:1132) —
+		// он же прогоняет FurnaceFuelBurnTimeEvent, то есть та же роль, что 1.7.10 GameRegistry.getFuelValue.
+		long rFuelValue = net.minecraftforge.common.ForgeHooks.getBurnTime(aStack, null);
 		if (rFuelValue > 0) return rFuelValue;
 		Item tItem = item_(aStack);
 		// F9 redundant (1:1 покрыт выше): 1.7.10 давал 200 fuel деревянным vanilla-инструментам через instanceof
@@ -1370,7 +1397,7 @@ public class ST {
 	// stats-loot: 1.7.10 ChestGenHooks.getOneItem(random-vanilla-table, RNGSUS). BUG-039: форма оригинала
 	// восстановлена дословно — серверный семпл живёт ТОЛЬКО в центре shim-ChestGenHooks (итоговая таблица
 	// vanilla+GT-пул; вне сервера null — как оригинал вне мира). Локальный дубль семпл-логики убран.
-	private static final java.util.List<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> VANILLA_LOOT_KEYS = java.util.Arrays.asList(
+	private static final java.util.List<net.minecraft.resources.ResourceLocation> VANILLA_LOOT_KEYS = java.util.Arrays.asList(
 		net.minecraft.world.level.storage.loot.BuiltInLootTables.SIMPLE_DUNGEON, net.minecraft.world.level.storage.loot.BuiltInLootTables.VILLAGE_WEAPONSMITH,
 		net.minecraft.world.level.storage.loot.BuiltInLootTables.ABANDONED_MINESHAFT, net.minecraft.world.level.storage.loot.BuiltInLootTables.STRONGHOLD_LIBRARY,
 		net.minecraft.world.level.storage.loot.BuiltInLootTables.STRONGHOLD_CROSSING, net.minecraft.world.level.storage.loot.BuiltInLootTables.STRONGHOLD_CORRIDOR,
@@ -1402,8 +1429,8 @@ public class ST {
 					net.minecraft.server.level.ServerLevel tLevel = tServer.overworld();
 					if (tLevel != null) {
 						int tIndex = LOOT_TABLES_VANILLA.indexOf(aLoot);
-						net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable> tKey = (tIndex >= 0 && tIndex < VANILLA_LOOT_KEYS.size()) ? VANILLA_LOOT_KEYS.get(tIndex) : net.minecraft.world.level.storage.loot.BuiltInLootTables.SIMPLE_DUNGEON;
-						net.minecraft.world.level.storage.loot.LootTable tTable = tServer.reloadableRegistries().getLootTable(tKey);
+						net.minecraft.resources.ResourceLocation tKey = (tIndex >= 0 && tIndex < VANILLA_LOOT_KEYS.size()) ? VANILLA_LOOT_KEYS.get(tIndex) : net.minecraft.world.level.storage.loot.BuiltInLootTables.SIMPLE_DUNGEON;
+						net.minecraft.world.level.storage.loot.LootTable tTable = tServer.getLootData().getLootTable(tKey); // MinecraftServer.java:1465
 						net.minecraft.world.level.storage.loot.LootParams tParams = new net.minecraft.world.level.storage.loot.LootParams.Builder(tLevel)
 							.withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, net.minecraft.world.phys.Vec3.ZERO)
 							.create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.CHEST);
@@ -1690,7 +1717,7 @@ public class ST {
 		// Has to use setTagCompound instead of putting it into make()
 		// because it would delete certain Tags on load, making stuff like unscanned Forestry Bees unstackable.
 		// But update_() will still delete a completely empty NBT later on.
-		ItemNBT.set(rStack, aNBT.getCompound("tag").orElse(null));
+		ItemNBT.set(rStack, aNBT.contains("tag") ? aNBT.getCompound("tag") : null); // getCompound при отсутствии даёт ПУСТОЙ тег, оригинал ждал null
 		// Does anyone even migrate IC2exp Items anymore? This is only used when updating from IC2-Non-Exp to IC2-Exp.
 	//  if (item_(rStack).getClass().getName().startsWith("ic2.core.migration")) item_(rStack).onUpdate(rStack, DW, null, 0, F); // I do not think this could possibly happen anymore
 		return update_(OM.get_(rStack));

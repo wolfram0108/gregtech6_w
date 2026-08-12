@@ -23,37 +23,29 @@
 
 package gregapi.code;
 
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
 
 /**
- * F8 — центральный мост ItemStack↔NBT (см. `decisions/F8-nbt-data-components.md`,
- * `REMAP-RULES.md` §C3). В 1.7.10 "предметный NBT" был сырым mutable-полем `NBTTagCompound`
- * прямо на `ItemStack` (`getTagCompound`/`setTagCompound`/`hasTagCompound`). В neo 26.1.2 этих
- * методов больше нет — канал заменён на `DataComponents.CUSTOM_DATA` (обёртка `CustomData`,
- * см. `neo-decompiled/net/minecraft/world/item/component/CustomData.java`).
+ * F8 — центральный мост ItemStack↔NBT (см. `decisions/F8-nbt-data-components.md`).
+ * В 1.7.10 «предметный NBT» был сырым mutable-полем `NBTTagCompound` прямо на `ItemStack`
+ * (`getTagCompound`/`setTagCompound`/`hasTagCompound`). В 26.1.2 канал был заменён на
+ * `DataComponents.CUSTOM_DATA` (иммутабельная обёртка `CustomData`) — отсюда и брался этот мост.
  * <p>
- * Этот класс воспроизводит старую 1.7.10-семантику 1:1 поверх нового канала:
- * <ul>
- *   <li>{@link #get(ItemStack)} == старое `ItemNBT.get(stack)` (null, если тега нет).</li>
- *   <li>{@link #set(ItemStack, CompoundTag)} == старое `stack.setTagCompound(nbt)`.</li>
- *   <li>{@link #has(ItemStack)} == старое `(ItemNBT.get(stack) != null)`.</li>
- * </ul>
+ * В 1.20.1 сырой тег предмета живёт снова на самом стеке — `ItemStack.getTag()/getOrCreateTag()/
+ * setTag()/hasTag()` (`forge-1201-decompiled/net/minecraft/world/item/ItemStack.java:507,512,516`),
+ * то есть ровно как в оригинале. Мост сохранён (весь мод ходит через него — один центр), но тело
+ * сведено к форме 1.7.10.
  * <p>
- * ВАЖНО — КОНТРАКТ «мутировал → закоммить»: `CustomData` внутри иммутабельна (каждый `get`/
- * `copyTag` отдаёт КОПИЮ) — в отличие от оригинала 1.7.10, где возвращённый тег был тем же самым
- * объектом, что хранился в стеке (прямая мутация без повторного `setTagCompound` там сохранялась).
- * Любой код, который мутирует тег, полученный из {@link #get(ItemStack)} (или из транзитивных
- * обёрток `UT.NBT.get`/`getNBT`/`getOrCreate`), ОБЯЗАН записать его обратно через
- * {@link #set(ItemStack, CompoundTag)} / `UT.NBT.set` — иначе изменение потеряется. Это относится
- * и к геттероподобным именам: `getOrCreate` тоже возвращает DETACHED-копию.
+ * <b>Ловушка иммутабельности из ADR §3-bis здесь ОТСУТСТВУЕТ.</b> `getTag()` отдаёт ЖИВОЙ объект
+ * тега стека (а не копию, как `CustomData.copyTag()`), поэтому прямая мутация сохраняется сама —
+ * как в 1.7.10. Требование «мутировал → закоммить через {@link #set}» перестаёт быть обязательным;
+ * существующие commit-вызовы по дереву остаются корректными (повторная запись того же объекта
+ * безвредна), потому ни одно место вызова не правится.
  * <p>
- * Известные точки, где повторная запись логически невозможна без смены контракта вызывающего
- * (ЗАКРЫТЫ write-back ItemNBT.set — см. память gt6-stub-drops-data-lesson; заметка историческая): `MultiItemTool.setToolDamage`/`isItemStackUsable`,
- * `Behavior_Sonictron.setCurrentIndex`/`setTickTimer` — они возвращают мутируемый тег наружу, а
- * вызывающий его не коммитит. Разбор — `decisions/F8-nbt-data-components.md` §7.
+ * Семантика 1:1 c 1.7.10 сохранена: {@link #get} отдаёт null, если тега нет или он пуст;
+ * {@link #set} с null/пустым тегом снимает тег (нормализация GT6 — `UT.NBT.set` всегда стрипает
+ * пустые теги); {@link #has} — есть непустой тег.
  *
  * @author Gregorius Techneticies
  */
@@ -62,22 +54,18 @@ public final class ItemNBT {
 
 	public static CompoundTag get(ItemStack aStack) {
 		if (aStack == null || aStack.isEmpty()) return null;
-		CustomData tData = aStack.get(DataComponents.CUSTOM_DATA);
-		return tData == null || tData.isEmpty() ? null : tData.copyTag();
+		CompoundTag rNBT = aStack.getTag();
+		return rNBT == null || rNBT.isEmpty() ? null : rNBT;
 	}
 
 	public static void set(ItemStack aStack, CompoundTag aNBT) {
 		if (aStack == null || aStack.isEmpty()) return;
-		if (aNBT == null || aNBT.isEmpty()) {
-			aStack.remove(DataComponents.CUSTOM_DATA);
-		} else {
-			aStack.set(DataComponents.CUSTOM_DATA, CustomData.of(aNBT));
-		}
+		aStack.setTag(aNBT == null || aNBT.isEmpty() ? null : aNBT);
 	}
 
 	public static boolean has(ItemStack aStack) {
 		if (aStack == null || aStack.isEmpty()) return false;
-		CustomData tData = aStack.get(DataComponents.CUSTOM_DATA);
-		return tData != null && !tData.isEmpty();
+		CompoundTag tNBT = aStack.getTag();
+		return tNBT != null && !tNBT.isEmpty();
 	}
 }

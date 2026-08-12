@@ -626,22 +626,11 @@ public class CR {
 	// (крафт исполняется в потоке своей стороны, клиентский и серверный не пересекаются) и отдаётся ТОЛЬКО той
 	// подрезанной сетке, из которой снимок и сделан — сверка по тождеству ссылки, чужой снимок не подставится.
 	// Снимка нет (вставка не применилась, вход собран не движком) → рецепт работает как прежде, по подрезанной.
-	// ==========================================================================================================
-	private static final ThreadLocal<Object[]> FULL_GRID = new ThreadLocal<>();
+	// BUG-099 снят вместе с причиной: в 1.20.1 движок отдаёт рецепту ПОЛНУЮ сетку (CraftingMenu.java:25,62 —
+	// TransientCraftingContainer 3x3 идёт в getRecipeFor как есть), подрезки до габарита занятых клеток нет.
+	// Позиционный признак AdvancedCrafting1ToY доходит сам, как в 1.7.10 → снимок полной сетки (ThreadLocal
+	// FULL_GRID) и единственная вставка мода в движок (gregapi.mixin.MixinCraftingInput) не нужны и удалены.
 
-	/** Вызывается вставкой в движок: запомнить полную сетку, из которой получена подрезанная {@code aCropped}. */
-	public static void rememberFullGrid(net.minecraft.world.item.crafting.CraftingInput aCropped, int aWidth, int aHeight, List<ItemStack> aFullCells) {
-		if (aCropped == null || aFullCells == null) {FULL_GRID.remove(); return;}
-		FULL_GRID.set(new Object[] {aCropped, aFullCells});
-	}
-
-	/** Полная сетка для этой подрезанной, либо {@code null}: клетки в порядке 1.7.10 {@code getStackInSlot(i)}. */
-	@SuppressWarnings("unchecked")
-	public static List<ItemStack> fullGrid(net.minecraft.world.item.crafting.CraftingInput aCropped) {
-		Object[] tSnapshot = FULL_GRID.get();
-		if (tSnapshot == null || tSnapshot[0] != aCropped) return null;
-		return (List<ItemStack>)tSnapshot[1];
-	}
 	
 	/**
 	 * Checks if this Item has a Crafting Recipe.

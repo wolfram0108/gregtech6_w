@@ -1290,6 +1290,7 @@ public class CS {
 	/** A Set of different NBT Keys I use for Stuff. */
 	public static final String
 	  NBT_HIDDEN                    = "gt.hidden"                   // Boolean
+	, NBT_ZEROSIZE                  = "gt.zerosize"                 // Boolean; маркер size-0-катализатора (F-size0-catalyst, центр ST.size_)
 	, NBT_COLOR                     = "gt.color"                    // Integer
 	, NBT_PAINTED                   = "gt.painted"                  // Boolean
 	, NBT_TEXTURE                   = "gt.texture"                  // String

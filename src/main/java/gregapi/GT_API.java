@@ -264,23 +264,10 @@ public class GT_API extends Abstract_Mod {
 		}
 	}
 
-	public static final DeferredRegister<net.minecraft.core.component.DataComponentType<?>> COMPONENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE, ModIDs.GAPI);
-	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.core.component.DataComponentType<Integer>> SUBTYPE =
-		COMPONENTS.register("subtype", () -> net.minecraft.core.component.DataComponentType.<Integer>builder()
-			.persistent(com.mojang.serialization.Codec.INT)
-			.networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.VAR_INT)
-			.build());
-
-	/** F-size0-catalyst: GT6 использует стек размера 0 как катализатор ("вход нужен, но не расходуется": extruder-shape/mold).
-	 *  1.7.10 держал stackSize=0 с сохранённым item; neo count<=0 → isEmpty → getItem=AIR, copy→EMPTY (item теряется).
-	 *  Адаптация (центр ST.size_): size-0-стек хранится как count=1 + этот маркер; {@link gregapi.util.ST#size(ItemStack)}
-	 *  отдаёт 0 для маркированных → recipe-matching/consume/дамп видят логический 0, идентичность сохранена. ST.equal
-	 *  сравнивает только item+meta+nbt (не произвольные компоненты) → маркер прозрачен для сравнений. См. decisions/F-size0-catalyst. */
-	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.core.component.DataComponentType<net.minecraft.util.Unit>> ZEROSIZE =
-		COMPONENTS.register("zerosize", () -> net.minecraft.core.component.DataComponentType.<net.minecraft.util.Unit>builder()
-			.persistent(net.minecraft.util.Unit.CODEC)
-			.networkSynchronized(net.minecraft.network.codec.StreamCodec.unit(net.minecraft.util.Unit.INSTANCE))
-			.build());
+	// F8/F1: компонентов SUBTYPE и ZEROSIZE (и самого реестра DATA_COMPONENT_TYPE) в 1.20.1 не существует.
+	// Подтип предмета вернулся в damage — центр `ST.meta_` (damage-канал 1.7.10 здесь полностью жив,
+	// IForgeItem.java:435-438,472-475); маркер size-0-катализатора вернулся в NBT стека — центр `ST.size_`
+	// (ключ CS.NBT_ZEROSIZE). Оба канала — те же, что в оригинале, поэтому отдельных сущностей не нужно.
 
 	/** F1/F12/F16 item-model сепарация: GT6-предметы делали OreDict-данные+рецепты (ST.make = стек себя) В КОНСТРУКТОРЕ, но
 	 *  neo конструирует предмет @RegisterEvent (реестр открыт для intrusive-holder), а стеки можно только @пост-freeze
@@ -558,7 +545,6 @@ public class GT_API extends Abstract_Mod {
 		sModBus = aModBus;
 		ITEMS .register(aModBus);
 		BLOCKS.register(aModBus);
-		COMPONENTS.register(aModBus); // F12-followup (subtype-meta): регистрация компонента подтипа на mod-bus (RegisterEvent<DataComponentType>)
 		BLOCK_ENTITIES.register(aModBus); // F12-followup (MTE-type-timing): placeholder MTE_TYPE на RegisterEvent<BlockEntityType> (до freeze)
 		ENTITIES.register(aModBus); // F12-entity: EntityType падающего мета-блока (замена EntityRegistry.registerModEntity, оригинал GT_API.java:722)
 		SOUND_EVENTS.register(aModBus); // BUG-113: свои звуки мода (в 1.7.10 хватало sounds.json, в neo нужен SoundEvent в реестре)
