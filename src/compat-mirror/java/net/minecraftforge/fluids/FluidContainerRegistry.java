@@ -36,8 +36,8 @@
 package net.minecraftforge.fluids;
 
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.bus.api.Event;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.ArrayList;
@@ -57,7 +57,7 @@ import java.util.List;
  * как ЛИТЕРАЛ item-метаданных (напр. {@code gregtech.items.MultiItemTechnological}), не только через сам реестр.
  * <p>
  * {@link #registerFluidContainer(FluidContainerData)} реализован честно (реальный локальный список + рассылка
- * события через {@code NeoForge.EVENT_BUS}, тот же приём, что {@code gregapi.oredict.OreDictionary.OreRegisterEvent}),
+ * события через {@code MinecraftForge.EVENT_BUS}, тот же приём, что {@code gregapi.oredict.OreDictionary.OreRegisterEvent}),
  * но в этом заходе его никто не зовёт: единственный вызыватель в GT6 — {@code gregapi.data.FL.reg/set(FluidContainerData,...)}
  * — остаётся no-op-заглушкой (F5-решение «не изобретать новый API» уже принято ДО этого захода) — реестр всегда
  * пуст в рантайме, {@link #getRegisteredFluidContainerData()} честно отражает это.
@@ -74,7 +74,7 @@ public class FluidContainerRegistry {
 	public static FluidContainerData registerFluidContainer(FluidContainerData aData) {
 		if (aData != null) {
 			DATA.add(aData);
-			NeoForge.EVENT_BUS.post(new FluidContainerRegisterEvent(aData));
+			MinecraftForge.EVENT_BUS.post(new FluidContainerRegisterEvent(aData));
 		}
 		return aData;
 	}

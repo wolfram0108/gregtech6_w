@@ -25,7 +25,7 @@ package gregtech.blocks.tree;
 
 import net.minecraft.world.level.block.SoundType;
 import gregapi.util.WD;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.block.tree.BlockBaseLeaves;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.CS.*;

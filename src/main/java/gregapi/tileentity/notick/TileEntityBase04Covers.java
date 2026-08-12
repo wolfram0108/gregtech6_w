@@ -24,7 +24,7 @@
 package gregapi.tileentity.notick;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.cover.CoverData;

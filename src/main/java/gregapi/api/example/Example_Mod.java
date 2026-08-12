@@ -72,9 +72,9 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 	// Do not change these 7 Functions. Just keep them this way.
 	// F-mod-lifecycle: onModPreInit/onModInit/onModPostInit принимают GT6-mirror FML-события (носители фазы, gregapi.api),
 	// а не neo-события — оборачиваем neo-событие в mirror перед вызовом (тот же приём, что GT_API.onPreLoad/onLoad/onPostLoad).
-	@cpw.mods.fml.common.Mod.EventHandler public final void onPreLoad           (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent    aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onLoad              (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent       aEvent) {onModInit(new gregapi.api.FMLInitializationEvent());}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onPostLoad          (net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent   aEvent) {onModPostInit(new gregapi.api.FMLPostInitializationEvent());}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onPreLoad           (net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent    aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onLoad              (net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent       aEvent) {onModInit(new gregapi.api.FMLInitializationEvent());}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onPostLoad          (net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent   aEvent) {onModPostInit(new gregapi.api.FMLPostInitializationEvent());}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarting    (net.minecraftforge.event.server.ServerStartingEvent       aEvent) {onModServerStarting(aEvent);}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarted     (net.minecraftforge.event.server.ServerStartedEvent        aEvent) {onModServerStarted(aEvent);}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopping    (net.minecraftforge.event.server.ServerStoppingEvent       aEvent) {onModServerStopping(aEvent);}

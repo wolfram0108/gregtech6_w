@@ -59,7 +59,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  *
- * F8 (переклассифицировано): {@code Enchantments.FORTUNE}/{@code Enchantments.LOOTING} (статические
+ * F8 (переклассифицировано): {@code Enchantments.BLOCK_FORTUNE}/{@code Enchantments.MOB_LOOTING} (статические
  * инстансы 1.7.10) удалены — зачарования data-driven, {@code Holder<Enchantment>} требует живой
  * {@code RegistryAccess}, недоступный в статическом контексте (тот же класс проблемы, что
  * {@code UT.NBT.getEnchantmentLevelLootingFortune}) — деградация до пустого массива.
@@ -264,7 +264,7 @@ public abstract class ToolStats implements IToolStats {
 		// If you work so hard that your Tool breaks, you should probably take a break yourself. :P
 		// ADAPT-002: Mining Fatigue при поломке инструмента ослаблен III→I (amplifier 2→0) по запросу игрока. Weakness 1:1 (III).
 		UT.Entities.applyPotion(aPlayer, MobEffects.WEAKNESS.value()      ,  300, 2, F);
-		UT.Entities.applyPotion(aPlayer, MobEffects.MINING_FATIGUE.value(), 1200, 0, F);
+		UT.Entities.applyPotion(aPlayer, MobEffects.DIG_SLOWDOWN.value(), 1200, 0, F);
 	}
 
 	public IIconContainer getIcon(boolean aIsToolHead, ItemStack aStack) {

@@ -24,7 +24,7 @@
 package gregapi.compat.forestry;
 import gregapi.util.WD;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import forestry.api.farming.Farmables;
 import forestry.api.farming.ICrop;
 import forestry.api.farming.IFarmable;

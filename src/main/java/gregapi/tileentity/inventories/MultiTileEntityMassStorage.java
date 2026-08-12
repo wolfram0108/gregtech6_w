@@ -23,7 +23,7 @@
 
 package gregapi.tileentity.inventories;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetMaxStackSize;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_OnRegistrationFirstClient;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_SyncDataInteger;

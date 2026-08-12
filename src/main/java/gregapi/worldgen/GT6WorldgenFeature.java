@@ -49,7 +49,7 @@ import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.common.data.DatapackBuiltinEntriesProvider;
 import net.minecraft.data.worldgen.placement.OrePlacements;
-import net.neoforged.neoforge.common.world.BiomeModifier;
+import net.minecraftforge.common.world.BiomeModifier;
 import net.minecraftforge.common.world.ForgeBiomeModifiers.AddFeaturesBiomeModifier;
 import net.minecraftforge.common.world.ForgeBiomeModifiers.RemoveFeaturesBiomeModifier;
 import net.minecraftforge.data.event.GatherDataEvent;
@@ -229,15 +229,15 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		// F6-worldgen: сама ГЕНЕРАЦИЯ руд/слоёв/деревьев теперь в Feature.place (стадия FEATURES, WorldGenLevel) — серверно-тиковый
 		// обход СНЯТ. На game-шине остаётся ТОЛЬКО load-реконструкция MTE-стабов (отдельный механизм, F-tileentity-construction):
 		// ChunkEvent.Load ловит стабы → server-tick заменяет реальными MTE (FULL-чанк, setBlockEntity безопасен вне save-цикла).
-		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkLoad);
-		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkUnload);
-		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkWatch);
-		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onServerTick);
+		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkLoad);
+		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkUnload);
+		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkWatch);
+		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(GT6WorldgenFeature::onServerTick);
 		// КРИТ (второй мир виснет): static-очереди worldgen (STUB_QUEUE/CLIENT_STUB_QUEUE/WORLDGEN_MTE/PENDING_SYNC) держат
 		// ChunkReq со ссылкой на LEVEL и BlockEntity ПЕРВОГО мира. При выходе они НЕ очищались → второй мир: drainStubs
 		// обрабатывает stale-ChunkReq с мёртвым level → getChunk на нём виснет → freeze после ~9 чанков. Чистим на остановке
 		// сервера (между мирами singleplayer). BlockRiver-статик тоже сбрасываем (PLACEMENT_ALLOWED — не переносить в новый мир).
-		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.minecraftforge.event.server.ServerStoppingEvent aEvent) -> {
+		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.event.server.ServerStoppingEvent aEvent) -> {
 			STUB_QUEUE.clear();
 			CLIENT_STUB_QUEUE.clear();
 			WORLDGEN_MTE.clear();
@@ -247,7 +247,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		// Дедлок перезахода (jstack: Server thread мира-2 в getChunk->join): выгрузка чанков мира-1 идёт ПОСЛЕ
 		// ServerStopping -> реквесты добавляются ПОСЛЕ clear выше и переживают сервер. Вторая очистка — на ПОЛНОЙ
 		// остановке (ServerStopped), плюс фильтр stale-реквестов в drainStubs (не полагаться на тайминг очистки).
-		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.minecraftforge.event.server.ServerStoppedEvent aEvent) -> {
+		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.event.server.ServerStoppedEvent aEvent) -> {
 			STUB_QUEUE.clear();
 			CLIENT_STUB_QUEUE.clear();
 			WORLDGEN_MTE.clear();

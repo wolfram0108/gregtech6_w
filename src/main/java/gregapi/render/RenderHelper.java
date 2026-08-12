@@ -23,7 +23,7 @@
 
 package gregapi.render;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.world.entity.player.Player;

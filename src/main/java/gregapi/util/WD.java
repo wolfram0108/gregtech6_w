@@ -111,7 +111,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fluids.*;
 import thaumcraft.api.nodes.INode;
 
@@ -2313,7 +2313,7 @@ public class WD {
 		
 		BlockScanningEvent tEvent = new BlockScanningEvent(aWorld, aPlayer, aX, aY, aZ, aSide, aScanLevel, aBlock, aTileEntity, rList, aClickX, aClickY, aClickZ);
 		tEvent.mEUCost = rEUAmount;
-		NeoForge.EVENT_BUS.post(tEvent);
+		MinecraftForge.EVENT_BUS.post(tEvent);
 		if (!tEvent.isCanceled()) aList.addAll(rList);
 		return tEvent.mEUCost;
 	}

@@ -23,7 +23,7 @@
 
 package gregapi.block.multitileentity.example;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityBlockInternal;
 import gregapi.block.multitileentity.MultiTileEntityContainer;

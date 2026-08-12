@@ -24,14 +24,14 @@
 package gregapi;
 
 import cofh.lib.util.ComparableItem;
-// net.neoforged.fml.Logging (был импорт, .severe(String) вызывался) — не логгер, а контейнер log4j Marker-констант
+// net.minecraftforge.fml.Logging (был импорт, .severe(String) вызывался) — не логгер, а контейнер log4j Marker-констант
 // (сверено, fml-decompiled/net/neoforged/fml/Logging.java) — .severe(...) там не существует; заменено на уже
 // централизованный ERR.println(...) (gregapi.data.CS), используемый рядом с тем же текстом.
 import net.minecraftforge.event.furnace.FurnaceFuelBurnTimeEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraft.util.TriState;
-import net.neoforged.bus.api.EventPriority;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.neoforged.bus.api.ICancellableEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.event.TickEvent.ServerTickEvent;
@@ -143,7 +143,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.storage.LevelResource;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityEvent.EntityConstructing;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.item.ItemExpireEvent;
@@ -161,7 +161,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkWatchEvent;
-import net.neoforged.neoforge.event.level.LevelEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidContainerItem;
 import gregapi.recipes.ShapedOreRecipe;
@@ -185,7 +185,7 @@ import static gregapi.data.CS.*;
  * (1.7.10 {@code IFuelHandler}/{@code IWorldGenerator} механически переименованы словарём типов в
  * события/классы движка — компилироваться так не может). Оба механизма 1.7.10 — не "регистрация в
  * реестр", а подписка на диспетчер интерфейсов; их neo-эквивалент — обычные {@code @SubscribeEvent}
- * на этом же классе, который УЖЕ регистрируется на {@code NeoForge.EVENT_BUS} ниже (единый центр
+ * на этом же классе, который УЖЕ регистрируется на {@code MinecraftForge.EVENT_BUS} ниже (единый центр
  * подписки, не рассыпаны по местам). Тело {@link #getBurnTime(net.minecraft.world.item.ItemStack)}
  * не тронуто (1:1) — только подключено через {@link #onFurnaceFuelBurnTime(FurnaceFuelBurnTimeEvent)}.
  * WorldGen-часть: F6 разработан ({@code decisions/F6-worldgen.md}) — старый метод-заглушка {@code generate}
@@ -233,7 +233,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 	/**
 	 * F12/R3-мост: заменяет выдуманный {@code DeferredRegister.registerFuelHandler(this)}. Событие
-	 * {@link FurnaceFuelBurnTimeEvent} летит на {@code NeoForge.EVENT_BUS} (сверено, javadoc класса
+	 * {@link FurnaceFuelBurnTimeEvent} летит на {@code MinecraftForge.EVENT_BUS} (сверено, javadoc класса
 	 * события) — этот же bus уже слушает {@code this} (см. конструктор), поэтому достаточно
 	 * {@code @SubscribeEvent}, без отдельной регистрации.
 	 */
@@ -1155,10 +1155,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							OreDictItemData tData = OM.anydata_(tStack);
 							if (tData != null && tData.validMaterial()) {
 								if ((tData.mMaterial.mMaterial == MT.Bedrockium || tData.mMaterial.mMaterial == MT.Neutronium) && (tData.validPrefix() || tData.mByProducts.length <= 0)) {
-									// EVENTS: 1.7.10 Potion.moveSlowdown → neo MobEffects.SLOWNESS (Holder, существует — ренейм, не удаление).
+									// EVENTS: 1.7.10 Potion.moveSlowdown → neo MobEffects.MOVEMENT_SLOWDOWN (Holder, существует — ренейм, не удаление).
 									// getActivePotionEffect→getEffect. Восстановлено 1:1 (applyPotion(Entity,Holder,...) уже поддержан, UT.java:3036).
 									net.minecraft.world.effect.MobEffectInstance tEffect = null;
-									UT.Entities.applyPotion(aPlayer, net.minecraft.world.effect.MobEffects.SLOWNESS, Math.max(140, ((tEffect = aPlayer.getEffect(net.minecraft.world.effect.MobEffects.SLOWNESS))==null?0:tEffect.getDuration())), 3, F);
+									UT.Entities.applyPotion(aPlayer, net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, Math.max(140, ((tEffect = aPlayer.getEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN))==null?0:tEffect.getDuration())), 3, F);
 								}
 								if (tData.mMaterial.mMaterial == MT.Craponite) {
 									tCraponite++;
@@ -1390,7 +1390,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				// EVENTS: Potion.weakness/digSlowdown → neo MobEffects.WEAKNESS/MINING_FATIGUE (Holder, существуют). Восстановлено 1:1.
 				// ADAPT-002: Mining Fatigue при поломке инструмента ослаблен III→I (amplifier 2→0) по запросу игрока. Weakness 1:1 (III).
 				UT.Entities.applyPotion(aPlayer, net.minecraft.world.effect.MobEffects.WEAKNESS      ,  300, 2, F);
-				UT.Entities.applyPotion(aPlayer, net.minecraft.world.effect.MobEffects.MINING_FATIGUE, 1200, 0, F);
+				UT.Entities.applyPotion(aPlayer, net.minecraft.world.effect.MobEffects.DIG_SLOWDOWN, 1200, 0, F);
 			}
 		}
 		//
@@ -1811,7 +1811,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		byte aBlockMeta = WD.meta(aEvent.getState());
 		Entity aHarvesterEntity = aEvent.getBreaker();
 		Holder<Enchantment> tSilkTouchHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH);
-		Holder<Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
+		Holder<Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.BLOCK_FORTUNE);
 
 		Iterator<ItemStack> aDrops = aDropStacks.iterator();
 		Block aBlock = (aEvent.getState().getBlock() == Blocks.REDSTONE_ORE ? Blocks.REDSTONE_ORE : aEvent.getState().getBlock() == Blocks.REDSTONE_LAMP ? Blocks.REDSTONE_LAMP : aEvent.getState().getBlock() == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore ? BlocksGT.EtFu_Deepslate_Redstone_Ore : aEvent.getState().getBlock());
@@ -1894,7 +1894,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							if (tEntity != null) {
 								ItemEntityPickupEvent.Pre tEvent = new ItemEntityPickupEvent.Pre(aHarvester, tEntity);
 								ST.set(aDrop, tEvent.getItemEntity().getItem(), T, T);
-								NeoForge.EVENT_BUS.post(tEvent);
+								MinecraftForge.EVENT_BUS.post(tEvent);
 								if (tEvent.canPickup() == TriState.TRUE || tEntity.isRemoved() || aDrop.getCount() <= 0 || ST.invalid(aDrop)) {
 									aDrops.remove();
 								} else if (ST.add(aHarvester, aDrop)) {
@@ -2166,11 +2166,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			//                                                        тем же расчётом, что в 1.7.10 — EntityArrow_Material:250-253);
 			//   Flame  1.7.10 setFire(lvl*100) в СЕКУНДАХ         -> igniteForSeconds(lvl*100), Entity.java:630 — ставит огонь
 			//                                                        только если дольше текущего, семантика setFire сохранена.
-			int tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.POWER, aEvent.getBow());
+			int tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.POWER_ARROWS, aEvent.getBow());
 			if (tLevel > 0) tArrowEntity.setBaseDamage(tArrowEntity.getBaseDamageGT() + tLevel * 0.5D + 0.5D);
-			tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.PUNCH, aEvent.getBow());
+			tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.PUNCH_ARROWS, aEvent.getBow());
 			if (tLevel > 0) tArrowEntity.setKnockbackStrength(tLevel);
-			tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FLAME, aEvent.getBow());
+			tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FLAMING_ARROWS, aEvent.getBow());
 			if (tLevel > 0) tArrowEntity.igniteForSeconds(tLevel * 100);
 
 			aEvent.getBow().hurtAndBreak(1, aPlayer, InteractionHand.MAIN_HAND); // было damageItem(int,EntityLivingBase) (1.7.10) — neo: hurtAndBreak(int,LivingEntity,InteractionHand) (сверено, ItemStack.java:524)

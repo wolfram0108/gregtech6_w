@@ -23,7 +23,7 @@
 
 package gregapi.item;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.code.TagData;
 import gregapi.data.LH;
 import gregapi.lang.LanguageHandler;

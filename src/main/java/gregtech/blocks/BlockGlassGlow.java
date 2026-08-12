@@ -24,7 +24,7 @@
 package gregtech.blocks;
 
 import net.minecraft.world.level.block.SoundType;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.block.metatype.BlockColored;
 import gregapi.block.metatype.BlockMetaType;
 import gregapi.block.metatype.ItemBlockMetaType;

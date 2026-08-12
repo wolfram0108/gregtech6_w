@@ -29,7 +29,7 @@ import java.util.ArrayList;
 
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import gregapi.util.UT;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 
@@ -42,7 +42,7 @@ public class LoggerPlayerActivity implements Runnable {
 	public static PrintStream mLog = null;
 	
 	public LoggerPlayerActivity(PrintStream aLog) {
-		NeoForge.EVENT_BUS.register(this);
+		MinecraftForge.EVENT_BUS.register(this);
 		mLog = aLog;
 	}
 	

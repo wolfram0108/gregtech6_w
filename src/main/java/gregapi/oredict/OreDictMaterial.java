@@ -1239,7 +1239,7 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 	}
 	
 	public OreDictMaterial addEnchantmentForFishing(ResourceKey<Enchantment> aEnchantment, int aEnchantmentLevel) {
-		mEnchantmentFishing.add(new ObjectStack<>(aEnchantment, aEnchantment == Enchantments.LURE ? Math.min(5, aEnchantmentLevel) : aEnchantmentLevel));
+		mEnchantmentFishing.add(new ObjectStack<>(aEnchantment, aEnchantment == Enchantments.FISHING_SPEED ? Math.min(5, aEnchantmentLevel) : aEnchantmentLevel));
 		return this;
 	}
 	

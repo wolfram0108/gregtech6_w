@@ -25,8 +25,8 @@ package gregapi.oredict;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.bus.api.Event;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.common.MinecraftForge;
 
 import gregapi.util.ST;
 
@@ -62,13 +62,13 @@ import java.util.Map;
  * стороны считает мету равной — это НЕ Forge-семантика (у Forge wildcard-бакет и конкретный-meta-бакет
  * РАЗНЫЕ, схлопывания нет). Заменено точным hash-бакет-критерием Forge: тот же Item И (обе meta ==
  * {@link #WILDCARD_VALUE}, либо обе meta численно равны — без permissive-wildcard-стороны). Рассылка —
- * через {@code NeoForge.EVENT_BUS.post(...)}, на который {@code OreDictManager} подписан
- * ({@code @SubscribeEvent onOreRegistration1} + {@code NeoForge.EVENT_BUS.register(this)}, {@code :121}).
+ * через {@code MinecraftForge.EVENT_BUS.post(...)}, на который {@code OreDictManager} подписан
+ * ({@code @SubscribeEvent onOreRegistration1} + {@code MinecraftForge.EVENT_BUS.register(this)}, {@code :121}).
  * Свои ore GregTech6 ДОПОЛНИТЕЛЬНО прогоняет через РЕПЛЕЙ в конструкторе ({@code OreDictManager:118}) —
  * это покрывает записи, существовавшие ДО создания {@code OreDictManager}; сама рассылка здесь покрывает
  * все записи ПОСЛЕ (ровно как в оригинале, где реплей и живая {@code EVENT_BUS.post} — два разных
  * источника одного потока). Требование движка: {@code IEventBus.post(T)} принимает только
- * {@code T extends net.neoforged.bus.api.Event} (реально проверено в реализации шины —
+ * {@code T extends net.minecraftforge.eventbus.api.Event} (реально проверено в реализации шины —
  * {@code fml-decompiled/.../bus/EventBus.java:143}, кидает {@code IllegalArgumentException} на
  * {@code register(this)} для не-{@code Event} параметра {@code @SubscribeEvent}-метода) — поэтому
  * {@code OreRegisterEvent} здесь наследует {@code Event} (движко-форсированный тип-шов, не отсебятина).</p>
@@ -93,7 +93,7 @@ public class OreDictionary {
 		for (ItemStack tExisting : tList) if (sameHashBucket(tExisting, aStack)) return;
 		ItemStack tOre = aStack.copy();
 		tList.add(tOre);
-		NeoForge.EVENT_BUS.post(new OreRegisterEvent(aName, tOre));
+		MinecraftForge.EVENT_BUS.post(new OreRegisterEvent(aName, tOre));
 	}
 
 	/** УЛИКА R8-2: Forge hash-бакет 1:1 ({@code registerOreImpl:543-546} — meta подмешивается в hash

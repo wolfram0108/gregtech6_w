@@ -28,7 +28,7 @@ import static gregapi.data.CS.*;
 
 import java.util.List;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.util.UT;
@@ -44,7 +44,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 
 /**
@@ -83,7 +83,7 @@ public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 		mArmorAbsorbtionPercentage = aArmorAbsorbtionPercentage;
 		
 		
-		NeoForge.EVENT_BUS.register(this);
+		MinecraftForge.EVENT_BUS.register(this);
 	}
 
 	/** F13: собирает Properties ДО super() — durability/repair/humanoid-armor одним центром, тем же приёмом, что

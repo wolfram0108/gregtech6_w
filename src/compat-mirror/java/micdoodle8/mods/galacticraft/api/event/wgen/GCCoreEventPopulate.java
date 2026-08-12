@@ -39,7 +39,7 @@ package micdoodle8.mods.galacticraft.api.event.wgen;
  *  CompatGC.populate (worldObj/chunkX/chunkZ). Post extends neo Event (bus.api.Event) чтобы годиться
  *  обработчику; без GC событие не публикуется. См. compat-mirror/README.md. */
 public class GCCoreEventPopulate {
-	public static class Post extends net.neoforged.bus.api.Event {
+	public static class Post extends net.minecraftforge.eventbus.api.Event {
 		public net.minecraft.world.level.Level worldObj;
 		public int chunkX, chunkZ;
 	}

@@ -25,12 +25,12 @@ package gregapi;
 
 import appeng.api.AEApi;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.loading.FMLPaths;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
@@ -107,10 +107,10 @@ public class GT_API_Post extends Abstract_Mod {
 		aModBus.addListener(this::onPostLoad);
 
 		// Серверные фазы — на игровой шине, не на мод-шине (как в gregapi.GT_API).
-		NeoForge.EVENT_BUS.addListener(this::onServerStarting);
-		NeoForge.EVENT_BUS.addListener(this::onServerStarted);
-		NeoForge.EVENT_BUS.addListener(this::onServerStopping);
-		NeoForge.EVENT_BUS.addListener(this::onServerStopped);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
 	}
 
 	@Override public String getModID() {return MD.GAPI_POST.mID;}
@@ -128,7 +128,7 @@ public class GT_API_Post extends Abstract_Mod {
 	// срабатывает CR.stopBuffering() — стык с F11 (gregapi/api/Abstract_Mod.java:288), точка вызова не тронута.
 	public void onPostLoad(FMLLoadCompleteEvent aModEvent) {onModPostInit(new FMLPostInitializationEvent());}
 
-	// Серверные фазы — подписаны в конструкторе на NeoForge.EVENT_BUS (игровая шина), не на мод-шину.
+	// Серверные фазы — подписаны в конструкторе на MinecraftForge.EVENT_BUS (игровая шина), не на мод-шину.
 	public void onServerStarting  (ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
 	public void onServerStarted   (ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
 	public void onServerStopping  (ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}

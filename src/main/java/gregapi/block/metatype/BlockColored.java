@@ -28,7 +28,7 @@ import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.data.LH;
 import gregapi.oredict.OreDictItemData;
 import gregapi.oredict.OreDictMaterial;

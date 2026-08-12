@@ -23,7 +23,7 @@
 
 package gregapi.old;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 
 /**
  * Redstone Circuit Control Code

@@ -23,7 +23,7 @@
 
 package gregtech.items;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.block.metatype.BlockStones;
 import gregapi.block.multitileentity.MultiTileEntityBlock;
 import gregapi.code.ItemNBT;

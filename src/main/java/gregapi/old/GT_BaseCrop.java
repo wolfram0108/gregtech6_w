@@ -27,7 +27,7 @@ import static gregapi.data.CS.*;
 
 import java.util.ArrayList;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.LH;
 import gregapi.util.ST;

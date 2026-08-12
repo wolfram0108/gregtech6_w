@@ -25,7 +25,7 @@ package gregapi.item;
 
 import java.util.List;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.data.CS.ItemsGT;
 import gregapi.data.MD;
 import gregapi.old.Textures;

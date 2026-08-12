@@ -44,7 +44,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 // F5 (bookkeeping восстановлен в FL.FULL_TO_DATA/EMPTY_TO_FLUID_TO_DATA): net.minecraftforge.fluids.FluidContainerRegistry/
 // FluidContainerData/FluidContainerRegisterEvent — оригинальный Forge-пакет удалён движком целиком (0 хитов
 // во всех 3 корнях референса neo/neoforge/fml); т.к. ВЕСЬ net.minecraftforge отсутствует на classpath (не
@@ -134,7 +134,7 @@ public final class OreDictManager {
 		for (String tOreName : OreDictionary.getOreNames()) for (ItemStack tOreStack : OreDictionary.getOres(tOreName, F)) onOreRegistration1(new OreRegisterEvent(tOreName, tOreStack));
 		for (FluidContainerData tData : FluidContainerRegistry.getRegisteredFluidContainerData()) onFluidContainerRegistration(new FluidContainerRegisterEvent(tData));
 		mIsRunningInIterationMode = F;
-		NeoForge.EVENT_BUS.register(this);
+		MinecraftForge.EVENT_BUS.register(this);
 	}
 	
 	/**

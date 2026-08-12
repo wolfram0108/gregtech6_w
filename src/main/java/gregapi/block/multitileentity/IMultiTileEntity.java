@@ -25,7 +25,7 @@ package gregapi.block.multitileentity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.api.Optional;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.CS.ModIDs;
 import gregapi.network.INetworkHandler;

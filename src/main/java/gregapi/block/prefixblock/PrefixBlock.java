@@ -732,7 +732,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		// что уже принят и одобрен ревизией в GT_API_Proxy.onBlockHarvestingEvent (GT_API_Proxy.java:1450-1451)
 		// и в MultiTileEntityBlock.harvestBlock (тот же класс проблемы).
 		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tSilkTouchHolder = aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH);
-		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FORTUNE);
+		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE);
 		boolean aSilkTouch = EnchantmentHelper.getEnchantmentLevel(tSilkTouchHolder, aPlayer) > 0;
 		int aFortune = EnchantmentHelper.getEnchantmentLevel(tFortuneHolder, aPlayer);
 		ArrayList<ItemStack> tList = mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, aSilkTouch);
@@ -755,7 +755,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		int tFortune = 0; boolean tSilkTouch = F;
 		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);
 		if (tEntity instanceof net.minecraft.world.entity.LivingEntity tLiving) {
-			tFortune = EnchantmentHelper.getEnchantmentLevel(tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FORTUNE), tLiving);
+			tFortune = EnchantmentHelper.getEnchantmentLevel(tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE), tLiving);
 			tSilkTouch = EnchantmentHelper.getEnchantmentLevel(tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH), tLiving) > 0;
 		}
 		ArrayList<ItemStack> rDrops = mDrops.getDrops(this, tLevel, tX, tY, tZ, tFortune, tSilkTouch);

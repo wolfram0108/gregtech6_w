@@ -23,7 +23,7 @@
 
 package gregapi.item;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.GT_API;
 import gregapi.api.Abstract_Mod;
 import gregapi.cover.CoverRegistry;

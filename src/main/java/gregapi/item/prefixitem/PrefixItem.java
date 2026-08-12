@@ -23,7 +23,7 @@
 
 package gregapi.item.prefixitem;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.GT_API;
 import gregapi.code.ModData;
 import gregapi.data.*;

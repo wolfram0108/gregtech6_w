@@ -38,7 +38,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.DispenserBlock;
 
-import net.neoforged.fml.Logging;
+import net.minecraftforge.fml.Logging;
 import forestry.apiculture.tiles.TileCandle;
 import gregapi.data.*;
 import gregapi.item.multiitem.MultiItemTool;
@@ -433,7 +433,7 @@ public class ToolCompat {
 		}
 		
 		} catch(Throwable e) {
-			ERR.println(String.format("Exception occured when ToolCompat was used at the Coordinates: [%d;%d;%d] at '%s' with TileEntity '%s' using the Tool '%s' %s", aX, aY, aZ, aBlock.getDescriptionId(), aTileEntity.getClass(), aTool, e.toString())); // F2/logging: было Logging.severe(printf) — neo net.neoforged.fml.Logging = контейнер Marker'ов без .severe(); маршрут в централизованный ERR.println (GT_API_Proxy:25)
+			ERR.println(String.format("Exception occured when ToolCompat was used at the Coordinates: [%d;%d;%d] at '%s' with TileEntity '%s' using the Tool '%s' %s", aX, aY, aZ, aBlock.getDescriptionId(), aTileEntity.getClass(), aTool, e.toString())); // F2/logging: было Logging.severe(printf) — neo net.minecraftforge.fml.Logging = контейнер Marker'ов без .severe(); маршрут в централизованный ERR.println (GT_API_Proxy:25)
 			e.printStackTrace(ERR);
 		}
 		return 0;

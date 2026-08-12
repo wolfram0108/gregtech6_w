@@ -25,7 +25,7 @@ package gregapi.tileentity.client;
 
 import static gregapi.data.CS.*;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.random.IHasWorldAndCoords;
 import gregapi.tileentity.ITileEntityUnloadable;
 // F3-client-sound: 1.7.10 client.audio.ISound/ITickableSound удалены -> neo resources.sounds.SoundInstance/

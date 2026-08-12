@@ -47,7 +47,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.context.UseOnContext;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.GT_API;
 import gregapi.code.*;
 import gregapi.damage.DamageSources;
@@ -2223,7 +2223,7 @@ public class UT {
 		public static int getEnchantmentLevelDestruction   (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.destruction, aStack) : 0;}
 		public static int getEnchantmentLevelWrecking      (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.wrecking   , aStack) : 0;}
 		public static int getEnchantmentLevelImplosion     (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.implosion  , aStack) : 0;}
-		// F8: "fortune"/"looting" в neo — ResourceKey<Enchantment> (Enchantments.FORTUNE/LOOTING,
+		// F8: "fortune"/"looting" в neo — ResourceKey<Enchantment> (Enchantments.BLOCK_FORTUNE/LOOTING,
 		// neo-decompiled …/Enchantments.java:105,110), не готовые экземпляры Enchantment. RegistryAccess НЕ
 		// нужен — тот же приём, что getEnchantmentXP(ItemStack) выше: реальные зачарования стека уже лежат
 		// в типизированном DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS как Holder<Enchantment>
@@ -2234,7 +2234,7 @@ public class UT {
 		public static int getEnchantmentLevelLootingFortune(ItemStack aStack) {
 			ItemEnchantments tEnchantments = aStack.getOrDefault(EnchantmentHelper.getComponentType(aStack), ItemEnchantments.EMPTY);
 			int rLevel = 0;
-			for (Holder<Enchantment> tEnchantment : tEnchantments.keySet()) if (tEnchantment.is(net.minecraft.world.item.enchantment.Enchantments.FORTUNE) || tEnchantment.is(net.minecraft.world.item.enchantment.Enchantments.LOOTING)) rLevel = Math.max(rLevel, tEnchantments.getLevel(tEnchantment));
+			for (Holder<Enchantment> tEnchantment : tEnchantments.keySet()) if (tEnchantment.is(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE) || tEnchantment.is(net.minecraft.world.item.enchantment.Enchantments.MOB_LOOTING)) rLevel = Math.max(rLevel, tEnchantments.getLevel(tEnchantment));
 			return rLevel;
 		}
 
@@ -2249,7 +2249,7 @@ public class UT {
 			if (aEnchantment == null) return 0;
 			return aStack.getEnchantmentLevel(Holder.direct(aEnchantment));
 		}
-		// F8: ванильные/GT6-энчанты в neo адресуются ResourceKey<Enchantment> (Enchantments.FLAME/POWER/…,
+		// F8: ванильные/GT6-энчанты в neo адресуются ResourceKey<Enchantment> (Enchantments.FLAMING_ARROWS/POWER/…,
 		// Enchantment_EnderDamage.KEY), НЕ объектом Enchantment — 1.7.10 передавал сюда статический
 		// Enchantment.X, которого в новой registry-driven модели нет. Тот же приём, что
 		// getEnchantmentLevelLootingFortune выше: чары стека уже разрешены движком в Holder<Enchantment>
@@ -3168,9 +3168,9 @@ public class UT {
 				if (tTracker != null) {tTracker.changeRadiation(aLevel * aAmountOfItems); return T;}
 				
 				MobEffectInstance tEffect;
-				applyPotion(aEntity, MobEffects.SLOWNESS    , aLevel * 140 * aAmountOfItems + Math.max(0, ((tEffect = ((LivingEntity)aEntity).getEffect(MobEffects.SLOWNESS                       ))==null?0:tEffect.getDuration())), (int)UT.Code.bind(0, 5, (5L*aLevel) / 7), F);
-				applyPotion(aEntity, MobEffects.MINING_FATIGUE     , aLevel * 150 * aAmountOfItems + Math.max(0, ((tEffect = ((LivingEntity)aEntity).getEffect(MobEffects.MINING_FATIGUE                        ))==null?0:tEffect.getDuration())), (int)UT.Code.bind(0, 5, (5L*aLevel) / 7), F);
-				applyPotion(aEntity, MobEffects.NAUSEA       , aLevel * 130 * aAmountOfItems + Math.max(0, ((tEffect = ((LivingEntity)aEntity).getEffect(MobEffects.NAUSEA                          ))==null?0:tEffect.getDuration())), (int)UT.Code.bind(0, 5, (5L*aLevel) / 7), F);
+				applyPotion(aEntity, MobEffects.MOVEMENT_SLOWDOWN    , aLevel * 140 * aAmountOfItems + Math.max(0, ((tEffect = ((LivingEntity)aEntity).getEffect(MobEffects.MOVEMENT_SLOWDOWN                       ))==null?0:tEffect.getDuration())), (int)UT.Code.bind(0, 5, (5L*aLevel) / 7), F);
+				applyPotion(aEntity, MobEffects.DIG_SLOWDOWN     , aLevel * 150 * aAmountOfItems + Math.max(0, ((tEffect = ((LivingEntity)aEntity).getEffect(MobEffects.DIG_SLOWDOWN                        ))==null?0:tEffect.getDuration())), (int)UT.Code.bind(0, 5, (5L*aLevel) / 7), F);
+				applyPotion(aEntity, MobEffects.CONFUSION       , aLevel * 130 * aAmountOfItems + Math.max(0, ((tEffect = ((LivingEntity)aEntity).getEffect(MobEffects.CONFUSION                          ))==null?0:tEffect.getDuration())), (int)UT.Code.bind(0, 5, (5L*aLevel) / 7), F);
 				applyPotion(aEntity, MobEffects.WEAKNESS        , aLevel * 150 * aAmountOfItems + Math.max(0, ((tEffect = ((LivingEntity)aEntity).getEffect(MobEffects.WEAKNESS                           ))==null?0:tEffect.getDuration())), (int)UT.Code.bind(0, 5, (5L*aLevel) / 7), F);
 				applyPotion(aEntity, MobEffects.HUNGER          , aLevel * 130 * aAmountOfItems + Math.max(0, ((tEffect = ((LivingEntity)aEntity).getEffect(MobEffects.HUNGER                             ))==null?0:tEffect.getDuration())), (int)UT.Code.bind(0, 5, (5L*aLevel) / 7), F);
 				if (PotionsGT.ID_RADIATION >= 0) {
@@ -3201,17 +3201,17 @@ public class UT {
 		// HEALTH_BOOST`), но GT6 нигде не использует (grep=0) — не добавлен (не выдумывать неиспользуемое).
 		private static final Map<Integer, Holder<MobEffect>> VANILLA_POTION_IDS = new HashMap<>();
 		static {
-			VANILLA_POTION_IDS.put( 1, MobEffects.SPEED);            // moveSpeed        — MultiItemFood.java:565, Loader_Fluids.java:247
-			VANILLA_POTION_IDS.put( 2, MobEffects.SLOWNESS);         // moveSlowdown     — MultiItemFood.java:930, Loader_Fluids.java:283
-			VANILLA_POTION_IDS.put( 3, MobEffects.HASTE);            // digSpeed         — MultiItemFood.java:862
-			VANILLA_POTION_IDS.put( 4, MobEffects.MINING_FATIGUE);   // digSlowdown      — MultiItemFood.java:938 (Pill_Cure_All)
-			VANILLA_POTION_IDS.put( 5, MobEffects.STRENGTH);         // damageBoost      — Loader_Fluids.java:253
-			VANILLA_POTION_IDS.put( 6, MobEffects.INSTANT_HEALTH);   // heal             — MultiItemFood.java:565
-			VANILLA_POTION_IDS.put( 7, MobEffects.INSTANT_DAMAGE);   // harm             — MultiItemFood.java:938 (Pill_Cure_All)
-			VANILLA_POTION_IDS.put( 8, MobEffects.JUMP_BOOST);       // jump             — Loader_Fluids.java:243
-			VANILLA_POTION_IDS.put( 9, MobEffects.NAUSEA);           // confusion        — MultiItemFood.java:324
+			VANILLA_POTION_IDS.put( 1, MobEffects.MOVEMENT_SPEED);            // moveSpeed        — MultiItemFood.java:565, Loader_Fluids.java:247
+			VANILLA_POTION_IDS.put( 2, MobEffects.MOVEMENT_SLOWDOWN);         // moveSlowdown     — MultiItemFood.java:930, Loader_Fluids.java:283
+			VANILLA_POTION_IDS.put( 3, MobEffects.DIG_SPEED);            // digSpeed         — MultiItemFood.java:862
+			VANILLA_POTION_IDS.put( 4, MobEffects.DIG_SLOWDOWN);   // digSlowdown      — MultiItemFood.java:938 (Pill_Cure_All)
+			VANILLA_POTION_IDS.put( 5, MobEffects.DAMAGE_BOOST);         // damageBoost      — Loader_Fluids.java:253
+			VANILLA_POTION_IDS.put( 6, MobEffects.HEAL);   // heal             — MultiItemFood.java:565
+			VANILLA_POTION_IDS.put( 7, MobEffects.HARM);   // harm             — MultiItemFood.java:938 (Pill_Cure_All)
+			VANILLA_POTION_IDS.put( 8, MobEffects.JUMP);       // jump             — Loader_Fluids.java:243
+			VANILLA_POTION_IDS.put( 9, MobEffects.CONFUSION);           // confusion        — MultiItemFood.java:324
 			VANILLA_POTION_IDS.put(10, MobEffects.REGENERATION);     // regeneration     — MultiItemFood.java:302, Loader_Fluids.java:259, Loader_Blocks.java:146
-			VANILLA_POTION_IDS.put(11, MobEffects.RESISTANCE);       // resistance       — Loader_Blocks.java:146
+			VANILLA_POTION_IDS.put(11, MobEffects.DAMAGE_RESISTANCE);       // resistance       — Loader_Blocks.java:146
 			VANILLA_POTION_IDS.put(12, MobEffects.FIRE_RESISTANCE);  // fireResistance   — Loader_Fluids.java:271
 			VANILLA_POTION_IDS.put(13, MobEffects.WATER_BREATHING);  // waterBreathing   — Loader_Fluids.java:287
 			VANILLA_POTION_IDS.put(14, MobEffects.INVISIBILITY);     // invisibility     — Loader_Fluids.java:291
@@ -3322,41 +3322,41 @@ public class UT {
 		public static byte pot2(Object aEntity, Holder<MobEffect> aPotion) {return (byte)(pot(aEntity, aPotion)+3);}
 		
 		// Used where the Vanilla return Value is important.
-		public static byte potStrength         (Object aEntity) {return pot (aEntity, MobEffects.STRENGTH );}
+		public static byte potStrength         (Object aEntity) {return pot (aEntity, MobEffects.DAMAGE_BOOST );}
 		public static byte potWeakness         (Object aEntity) {return pot (aEntity, MobEffects.WEAKNESS    );}
-		public static byte potHaste            (Object aEntity) {return pot (aEntity, MobEffects.HASTE    );}
-		public static byte potFatique          (Object aEntity) {return pot (aEntity, MobEffects.MINING_FATIGUE );}
-		public static byte potSpeed            (Object aEntity) {return pot (aEntity, MobEffects.SPEED   );}
-		public static byte potSlowness         (Object aEntity) {return pot (aEntity, MobEffects.SLOWNESS);}
+		public static byte potHaste            (Object aEntity) {return pot (aEntity, MobEffects.DIG_SPEED    );}
+		public static byte potFatique          (Object aEntity) {return pot (aEntity, MobEffects.DIG_SLOWDOWN );}
+		public static byte potSpeed            (Object aEntity) {return pot (aEntity, MobEffects.MOVEMENT_SPEED   );}
+		public static byte potSlowness         (Object aEntity) {return pot (aEntity, MobEffects.MOVEMENT_SLOWDOWN);}
 		
 		// Used where 0 should mean no Potion.
-		public static byte pot0Strength        (Object aEntity) {return pot0(aEntity, MobEffects.STRENGTH );}
+		public static byte pot0Strength        (Object aEntity) {return pot0(aEntity, MobEffects.DAMAGE_BOOST );}
 		public static byte pot0Weakness        (Object aEntity) {return pot0(aEntity, MobEffects.WEAKNESS    );}
-		public static byte pot0Haste           (Object aEntity) {return pot0(aEntity, MobEffects.HASTE    );}
-		public static byte pot0Fatique         (Object aEntity) {return pot0(aEntity, MobEffects.MINING_FATIGUE );}
-		public static byte pot0Speed           (Object aEntity) {return pot0(aEntity, MobEffects.SPEED   );}
-		public static byte pot0Slowness        (Object aEntity) {return pot0(aEntity, MobEffects.SLOWNESS);}
+		public static byte pot0Haste           (Object aEntity) {return pot0(aEntity, MobEffects.DIG_SPEED    );}
+		public static byte pot0Fatique         (Object aEntity) {return pot0(aEntity, MobEffects.DIG_SLOWDOWN );}
+		public static byte pot0Speed           (Object aEntity) {return pot0(aEntity, MobEffects.MOVEMENT_SPEED   );}
+		public static byte pot0Slowness        (Object aEntity) {return pot0(aEntity, MobEffects.MOVEMENT_SLOWDOWN);}
 		
 		// Used for places where 2x, 3x and 4x multipliers need to be factored in. So the Base Value without Potion is 1.
-		public static byte pot1Strength        (Object aEntity) {return pot1(aEntity, MobEffects.STRENGTH );}
+		public static byte pot1Strength        (Object aEntity) {return pot1(aEntity, MobEffects.DAMAGE_BOOST );}
 		public static byte pot1Weakness        (Object aEntity) {return pot1(aEntity, MobEffects.WEAKNESS    );}
-		public static byte pot1Haste           (Object aEntity) {return pot1(aEntity, MobEffects.HASTE    );}
-		public static byte pot1Fatique         (Object aEntity) {return pot1(aEntity, MobEffects.MINING_FATIGUE );}
-		public static byte pot1Speed           (Object aEntity) {return pot1(aEntity, MobEffects.SPEED   );}
-		public static byte pot1Slowness        (Object aEntity) {return pot1(aEntity, MobEffects.SLOWNESS);}
+		public static byte pot1Haste           (Object aEntity) {return pot1(aEntity, MobEffects.DIG_SPEED    );}
+		public static byte pot1Fatique         (Object aEntity) {return pot1(aEntity, MobEffects.DIG_SLOWDOWN );}
+		public static byte pot1Speed           (Object aEntity) {return pot1(aEntity, MobEffects.MOVEMENT_SPEED   );}
+		public static byte pot1Slowness        (Object aEntity) {return pot1(aEntity, MobEffects.MOVEMENT_SLOWDOWN);}
 		
 		// Used for places where 1.5x, 2x and 2.5x multipliers need to be factored in more. So the Base Value without Potion is 2.
-		public static byte pot2Strength        (Object aEntity) {return pot2(aEntity, MobEffects.STRENGTH );}
+		public static byte pot2Strength        (Object aEntity) {return pot2(aEntity, MobEffects.DAMAGE_BOOST );}
 		public static byte pot2Weakness        (Object aEntity) {return pot2(aEntity, MobEffects.WEAKNESS    );}
-		public static byte pot2Haste           (Object aEntity) {return pot2(aEntity, MobEffects.HASTE    );}
-		public static byte pot2Fatique         (Object aEntity) {return pot2(aEntity, MobEffects.MINING_FATIGUE );}
-		public static byte pot2Speed           (Object aEntity) {return pot2(aEntity, MobEffects.SPEED   );}
-		public static byte pot2Slowness        (Object aEntity) {return pot2(aEntity, MobEffects.SLOWNESS);}
+		public static byte pot2Haste           (Object aEntity) {return pot2(aEntity, MobEffects.DIG_SPEED    );}
+		public static byte pot2Fatique         (Object aEntity) {return pot2(aEntity, MobEffects.DIG_SLOWDOWN );}
+		public static byte pot2Speed           (Object aEntity) {return pot2(aEntity, MobEffects.MOVEMENT_SPEED   );}
+		public static byte pot2Slowness        (Object aEntity) {return pot2(aEntity, MobEffects.MOVEMENT_SLOWDOWN);}
 		
 		// Will return 0 if neither, otherwise will return the good one as positive and the bad one as negative.
-		public static byte potStrengthWeakness (Object aEntity) {return UT.Code.bindByte(pot0(aEntity, MobEffects.STRENGTH ) - pot0(aEntity, MobEffects.WEAKNESS    ));}
-		public static byte potHasteFatique     (Object aEntity) {return UT.Code.bindByte(pot0(aEntity, MobEffects.HASTE    ) - pot0(aEntity, MobEffects.MINING_FATIGUE ));}
-		public static byte potSpeedSlowness    (Object aEntity) {return UT.Code.bindByte(pot0(aEntity, MobEffects.SPEED   ) - pot0(aEntity, MobEffects.SLOWNESS));}
+		public static byte potStrengthWeakness (Object aEntity) {return UT.Code.bindByte(pot0(aEntity, MobEffects.DAMAGE_BOOST ) - pot0(aEntity, MobEffects.WEAKNESS    ));}
+		public static byte potHasteFatique     (Object aEntity) {return UT.Code.bindByte(pot0(aEntity, MobEffects.DIG_SPEED    ) - pot0(aEntity, MobEffects.DIG_SLOWDOWN ));}
+		public static byte potSpeedSlowness    (Object aEntity) {return UT.Code.bindByte(pot0(aEntity, MobEffects.MOVEMENT_SPEED   ) - pot0(aEntity, MobEffects.MOVEMENT_SLOWDOWN));}
 		
 		public static long getDurabilityUse(Object aEntity, long aOriginalDurabilityUsed) {
 			return UT.Code.divup(aOriginalDurabilityUsed * pot1Fatique(aEntity), pot1Haste(aEntity));

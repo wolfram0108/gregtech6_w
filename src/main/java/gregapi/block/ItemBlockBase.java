@@ -24,7 +24,7 @@
 package gregapi.block;
 import gregapi.util.WD;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.data.LH;
 import gregapi.data.MD;
 import gregapi.item.IItemGT;

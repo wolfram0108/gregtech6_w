@@ -186,7 +186,7 @@ public class MobEffectsGT {
 		@Override public boolean applyEffectTick(ServerLevel aWorld, LivingEntity aEntity, int aAmplifier) {
 			RandomSource tRNG = aEntity.getRandom();
 			int tChance = Math.max(1, 50 / (aAmplifier + 1));
-			if (aAmplifier >= 1 && tRNG.nextInt(tChance) == 0) UT.Entities.applyPotion(aEntity, MobEffects.NAUSEA, 200, 0, F);
+			if (aAmplifier >= 1 && tRNG.nextInt(tChance) == 0) UT.Entities.applyPotion(aEntity, MobEffects.CONFUSION, 200, 0, F);
 			if (aEntity instanceof ServerPlayer tPlayer && tRNG.nextInt(tChance) == 0) {
 				float tX = (tRNG.nextInt(6) - 3) * tRNG.nextFloat(), tY = (tRNG.nextInt(6) - 3) * tRNG.nextFloat(), tZ = (tRNG.nextInt(6) - 3) * tRNG.nextFloat();
 				float tPitch = tRNG.nextBoolean() ? 0.2F : (tRNG.nextFloat() - tRNG.nextFloat()) * 0.2F + 1.0F;

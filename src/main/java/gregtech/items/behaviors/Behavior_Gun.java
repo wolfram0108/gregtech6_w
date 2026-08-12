@@ -120,7 +120,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		// Are we shooting from under Water?
 		boolean tWater = WD.liquid(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ());
 		// Bullet related Stats
-		int tFireAspect = UT.NBT.getEnchantmentLevel(Enchantments.FLAME, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aBullet);
+		int tFireAspect = UT.NBT.getEnchantmentLevel(Enchantments.FLAMING_ARROWS, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aBullet);
 		
 		// Make a List of all possible Targets.
 		List tEntities = aPlayer.level().getEntities(aPlayer, new AABB(Math.min(tPos.x, tAim.x)-2, Math.min(tPos.y, tAim.y)-2, Math.min(tPos.z, tAim.z)-2, Math.max(tPos.x, tAim.x)+2, Math.max(tPos.y, tAim.y)+2, Math.max(tPos.z, tAim.z)+2));
@@ -134,7 +134,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		}
 		
 		// Actually do the shooting now!
-		long tPower = mPower + 2000L*UT.NBT.getEnchantmentLevel(Enchantments.POWER, aGun);
+		long tPower = mPower + 2000L*UT.NBT.getEnchantmentLevel(Enchantments.POWER_ARROWS, aGun);
 		for (int i = 1, ii = aCoords.size()-1; i < ii; i++) {
 			
 			if (tPower<=0) {
@@ -291,8 +291,8 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		tDamage = tSpeedFactor * Math.max(0, tGunMat.mToolQuality*0.5F + tMassFactor);
 		int
 		tImplosion  =      UT.NBT.getEnchantmentLevelImplosion(aBullet),
-		tFireDamage = 4 * (UT.NBT.getEnchantmentLevel(Enchantments.FLAME, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aBullet)),
-		tKnockback  =     (UT.NBT.getEnchantmentLevel(Enchantments.PUNCH, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.KNOCKBACK , aBullet));
+		tFireDamage = 4 * (UT.NBT.getEnchantmentLevel(Enchantments.FLAMING_ARROWS, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aBullet)),
+		tKnockback  =     (UT.NBT.getEnchantmentLevel(Enchantments.PUNCH_ARROWS, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.KNOCKBACK , aBullet));
 		
 		if (tImplosion  > 0 && UT.Entities.isExplosiveCreature(aTarget)) tMagicDamage += 1.5F*tImplosion;
 		if (tFireDamage > 0) aTarget.igniteForSeconds(tFireDamage);
@@ -308,7 +308,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			tMagicDamage *= mMagic;
 			
 			if (aPlayer.level() instanceof ServerLevel) {
-				if (UT.NBT.getEnchantmentLevel(Enchantments.LOOTING, aBullet) > 0) {
+				if (UT.NBT.getEnchantmentLevel(Enchantments.MOB_LOOTING, aBullet) > 0) {
 					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.level(), new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getName().getString()));
 					tPlayer.getInventory().setSelectedSlot(0);
 					tPlayer.getInventory().setItem(0, aBullet);
@@ -383,7 +383,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		}
 		shoot(aGun, ST.amount(1, aBullet), aPlayer);
 		UT.Sounds.send(SFX.MC_FIREWORK_BLAST_FAR, 128, aPlayer);
-		if (!UT.Entities.hasInfiniteItems(aPlayer) && RNGSUS.nextInt(1+UT.NBT.getEnchantmentLevel(Enchantments.INFINITY, aGun)) == 0) {
+		if (!UT.Entities.hasInfiniteItems(aPlayer) && RNGSUS.nextInt(1+UT.NBT.getEnchantmentLevel(Enchantments.INFINITY_ARROWS, aGun)) == 0) {
 			OreDictItemData tData = OM.anydata(aBullet);
 			aBullet.setCount(aBullet.getCount()-1);
 			ST.save(aNBT, NBT_AMMO, aBullet.getCount() > 0 ? aBullet : NI);

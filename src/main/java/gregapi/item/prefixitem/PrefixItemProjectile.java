@@ -25,7 +25,7 @@ package gregapi.item.prefixitem;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.enchantment.Enchantments;
 
-import net.neoforged.fml.Logging;
+import net.minecraftforge.fml.Logging;
 import gregapi.code.ModData;
 import gregapi.code.ObjectStack;
 import gregapi.code.TagData;
@@ -149,7 +149,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 				// долетит до стека и энчанты будут добавляться повторно (см. ItemNBT.java, паттерн Behavior_Arrow).
 				UT.NBT.set(aStack, tNBT);
 				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : mMaterialList[aMetaData].mEnchantmentAmmo) {
-					UT.NBT.addEnchantment(aStack, tEnchantment.mObject, tEnchantment.mObject == Enchantments.LOOTING ? tEnchantment.mAmount * mLootingMultiplier : tEnchantment.mAmount);
+					UT.NBT.addEnchantment(aStack, tEnchantment.mObject, tEnchantment.mObject == Enchantments.MOB_LOOTING ? tEnchantment.mAmount * mLootingMultiplier : tEnchantment.mAmount);
 				}
 			}
 		}

@@ -57,7 +57,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.LootTableLoadEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
@@ -164,7 +164,7 @@ public class ChestGenHooks {
 		addInfo(VILLAGE_BLACKSMITH      ,  3,  9);
 		addInfo(BONUS_CHEST             , 10, 10);
 		addInfo(DUNGEON_CHEST           ,  8,  8);
-		NeoForge.EVENT_BUS.addListener(ChestGenHooks::onLootTableLoad);
+		MinecraftForge.EVENT_BUS.addListener(ChestGenHooks::onLootTableLoad);
 	}
 
 	private static void addInfo(String aCategory, int aMin, int aMax) {

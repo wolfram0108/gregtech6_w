@@ -61,7 +61,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.FakePlayerFactory;
 
 import java.util.List;
@@ -205,7 +205,7 @@ public class EntityArrow_Material extends EntityProjectile {
 					OreDictItemData tData = OM.anydata(mArrow);
 
 					// To make Railcrafts Implosion Enchantment work...
-					if (tShootingEntity instanceof Player) NeoForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.AttackEntityEvent((Player)tShootingEntity, tHitEntity));
+					if (tShootingEntity instanceof Player) MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.AttackEntityEvent((Player)tShootingEntity, tHitEntity));
 
 					float
 					tMagicDamage = tHitEntity instanceof LivingEntity?UT.Enchantments.getDamageBonusVsCreature(mArrow, tHitEntity):0,
@@ -233,7 +233,7 @@ public class EntityArrow_Material extends EntityProjectile {
 
 						if (tFireDamage > 0 && !(tHitEntity instanceof EnderMan)) tHitEntity.igniteForSeconds(tFireDamage);
 
-						if (!(tHitEntity instanceof Player) && UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.LOOTING, mArrow) > 0) {
+						if (!(tHitEntity instanceof Player) && UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.MOB_LOOTING, mArrow) > 0) {
 							Player tPlayer = null;
 							if (level() instanceof ServerLevel) tPlayer = FakePlayerFactory.get((ServerLevel)level(), new GameProfile(new UUID(0, 0), tShootingEntity instanceof LivingEntity?((LivingEntity)tShootingEntity).getName().getString():"Arrow"));
 							if (tPlayer != null) {

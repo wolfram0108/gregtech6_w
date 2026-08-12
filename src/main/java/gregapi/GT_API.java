@@ -25,13 +25,13 @@ package gregapi;
 
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.InterModComms;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
@@ -39,7 +39,7 @@ import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.minecraftforge.registries.DeferredRegister;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.api.Abstract_Mod;
 import gregapi.api.Abstract_Proxy;
 import gregapi.api.FMLInitializationEvent;
@@ -623,15 +623,15 @@ public class GT_API extends Abstract_Mod {
 		aModBus.addListener(this::onPostLoad);
 
 		// Серверные фазы GT6 (Abstract_Mod уже на родных событиях neo) — на игровой шине, не на мод-шине.
-		NeoForge.EVENT_BUS.addListener(this::onServerStarting);
-		NeoForge.EVENT_BUS.addListener(this::onServerStarted);
-		NeoForge.EVENT_BUS.addListener(this::onServerStopping);
-		NeoForge.EVENT_BUS.addListener(this::onServerStopped);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
 		// BUG-033 (КОРЕНЬ): отложенная item-init должна добежать ДО пре-генерации стартовой зоны — см. onLevelLoadEarlyItemInit.
-		NeoForge.EVENT_BUS.addListener(this::onLevelLoadEarlyItemInit);
+		MinecraftForge.EVENT_BUS.addListener(this::onLevelLoadEarlyItemInit);
 		// F11-recipe-scan (граница M-52): /reload пересоздаёт RecipeMap датапака — подавление Replace
 		// переприменяется на OnDatapackSyncEvent (player==null = reload; стреляет ДО отправки рецептов клиенту).
-		NeoForge.EVENT_BUS.addListener(this::onDatapackSyncReapplySuppression);
+		MinecraftForge.EVENT_BUS.addListener(this::onDatapackSyncReapplySuppression);
 	}
 
 	/** BUG-033 fix (КОРЕНЬ стартовой зоны) + F12 refinement. **ЕДИНАЯ авторитетная точка исполнения отложенной
@@ -672,7 +672,7 @@ public class GT_API extends Abstract_Mod {
 		} catch (Throwable e) {e.printStackTrace(ERR);}
 	}
 
-	public void onLevelLoadEarlyItemInit(net.neoforged.neoforge.event.level.LevelEvent.Load aEvent) {
+	public void onLevelLoadEarlyItemInit(net.minecraftforge.event.level.LevelEvent.Load aEvent) {
 		if (aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel && tLevel.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
 			applyWaterSourceConversionRule(tLevel);
 			runDeferredItemInit();
@@ -846,7 +846,7 @@ public class GT_API extends Abstract_Mod {
 	@Override public String getModNameForLog() {return "GT_API";}
 	@Override public Abstract_Proxy getProxy() {return api_proxy;}
 
-	// Серверные фазы — подписаны в конструкторе на NeoForge.EVENT_BUS (игровая шина), не на мод-шину.
+	// Серверные фазы — подписаны в конструкторе на MinecraftForge.EVENT_BUS (игровая шина), не на мод-шину.
 	public void onServerStarting  (ServerStartingEvent aEvent) {
 		// ЦЕНТР ЛОКАЛИЗАЦИИ (BUG-082), СЕРВЕРНОЕ ПЛЕЧО. В 1.7.10 впрыск имён жил в общем коде
 		// (LanguageRegistry.injectLanguage — обе стороны), поэтому серверные строки тоже были человеческими.

@@ -23,7 +23,7 @@
 
 package gregapi.item.multiitem;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import enviromine.handlers.EM_StatusManager;
 import enviromine.trackers.EnviroDataTracker;
 import gregapi.code.ArrayListNoNulls;

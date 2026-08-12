@@ -26,7 +26,7 @@ package gregapi.block.multitileentity;
 import net.minecraft.core.BlockPos;
 
 import gregapi.api.Optional;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.TagData;

@@ -38,7 +38,7 @@ import net.minecraftforge.event.server.ServerStoppingEvent;
  */
 public abstract class Abstract_Proxy {
 	/** F7 (централизованно, «одно место»): регистрация {@code @SubscribeEvent}-методов прокси на
-	 *  {@code NeoForge.EVENT_BUS} через per-method {@code addListener} — обходит запрет neo на
+	 *  {@code MinecraftForge.EVENT_BUS} через per-method {@code addListener} — обходит запрет neo на
 	 *  {@code register(this)}, когда обработчики лежат на СУПЕРтипе (base-прокси держит их
 	 *  централизованно, а инстанс — Server/Client-подкласс; {@code EventBus.checkSupertypes} иначе бьёт
 	 *  IllegalArgumentException). {@code getClass().getMethods()} берёт РАНТАЙМ-тип → ловит base+подкласс
@@ -50,13 +50,13 @@ public abstract class Abstract_Proxy {
 			net.minecraftforge.eventbus.api.SubscribeEvent tAnnotation = tMethod.getAnnotation(net.minecraftforge.eventbus.api.SubscribeEvent.class);
 			if (tAnnotation == null || tMethod.getParameterCount() != 1) continue;
 			Class<?> tParameter = tMethod.getParameterTypes()[0];
-			if (!net.neoforged.bus.api.Event.class.isAssignableFrom(tParameter)) continue;
+			if (!net.minecraftforge.eventbus.api.Event.class.isAssignableFrom(tParameter)) continue;
 			// F7 bus-раздел (форс движка): mod-bus события (IModBusEvent, напр. TextureAtlasStitchedEvent/ModelEvent/
-			// RegisterEvent) НЕЛЬЗЯ вешать на общую NeoForge.EVENT_BUS — neo бросает "IModBusEvent not allowed on the
+			// RegisterEvent) НЕЛЬЗЯ вешать на общую MinecraftForge.EVENT_BUS — neo бросает "IModBusEvent not allowed on the
 			// common bus" при регистрации (крашило runData/runClient на конструкции мода). Они регистрируются на mod-шине
 			// отдельно (registerClientModels/RegisterEvent-хендлеры). Здесь — только game-bus @SubscribeEvent.
 			if (net.minecraftforge.fml.event.IModBusEvent.class.isAssignableFrom(tParameter)) continue;
-			java.util.function.Consumer<net.neoforged.bus.api.Event> tDispatch = aEvent -> {
+			java.util.function.Consumer<net.minecraftforge.eventbus.api.Event> tDispatch = aEvent -> {
 				try {tMethod.invoke(this, aEvent);}
 				catch (ReflectiveOperationException e) {throw new RuntimeException("Abstract_Proxy: сбой диспетчеризации события " + tMethod, e);}
 			};
@@ -64,14 +64,14 @@ public abstract class Abstract_Proxy {
 				for (Class<?> tSub : tParameter.getDeclaredClasses()) {
 					if (!java.lang.reflect.Modifier.isAbstract(tSub.getModifiers()) && tParameter.isAssignableFrom(tSub)) {
 						@SuppressWarnings({"unchecked", "rawtypes"})
-						Class<net.neoforged.bus.api.Event> tSubType = (Class) tSub;
-						net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(tAnnotation.priority(), tAnnotation.receiveCanceled(), tSubType, tDispatch);
+						Class<net.minecraftforge.eventbus.api.Event> tSubType = (Class) tSub;
+						net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(tAnnotation.priority(), tAnnotation.receiveCanceled(), tSubType, tDispatch);
 					}
 				}
 			} else {
 				@SuppressWarnings({"unchecked", "rawtypes"})
-				Class<net.neoforged.bus.api.Event> tEventType = (Class) tParameter;
-				net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(tAnnotation.priority(), tAnnotation.receiveCanceled(), tEventType, tDispatch);
+				Class<net.minecraftforge.eventbus.api.Event> tEventType = (Class) tParameter;
+				net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(tAnnotation.priority(), tAnnotation.receiveCanceled(), tEventType, tDispatch);
 			}
 		}
 	}

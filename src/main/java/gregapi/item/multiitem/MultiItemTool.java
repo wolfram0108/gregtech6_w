@@ -24,7 +24,7 @@
 package gregapi.item.multiitem;
 import net.minecraft.resources.ResourceKey;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.ItemNBT;
 import gregapi.code.ItemStackSet;

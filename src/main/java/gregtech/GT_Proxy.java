@@ -26,7 +26,7 @@ package gregtech;
 import net.minecraft.core.BlockPos;
 
 import gregapi.api.FMLPreInitializationEvent;
-import net.neoforged.bus.api.EventPriority;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import gregapi.GT_API;
@@ -71,7 +71,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.HitResult;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
@@ -102,7 +102,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	public int mSkeletonsShootGTArrows = 16, mFlintChance = 30;
 	
 	public GT_Proxy() {
-		// neo: единая NeoForge.EVENT_BUS; ORE_GEN_BUS/TERRAIN_GEN_BUS и FML-шина удалены движком (см. F-event-model кластер A).
+		// neo: единая MinecraftForge.EVENT_BUS; ORE_GEN_BUS/TERRAIN_GEN_BUS и FML-шина удалены движком (см. F-event-model кластер A).
 		// F7 (централизованно, Abstract_Proxy): register(this) запрещён neo — @SubscribeEvent на супертипе GT_Proxy, а
 		// инстанс — GT_Server/GT_Client-подкласс; per-method addListener обходит проверку иерархии. Одно место на весь мод.
 		registerSubscribeEvents();
@@ -431,7 +431,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 		// neo: LivingDropsEvent больше не несёт lootingLevel (лутинг ушёл в loot-таблицы). Восстанавливаем 1:1 —
 		// уровень Looting оружия убийцы (тот же смысл, что старый event.lootingLevel), через центр UT.NBT.getEnchantmentLevel.
 		int tLooting = 0;
-		if (aEvent.getSource().getEntity() instanceof LivingEntity tKiller) tLooting = UT.NBT.getEnchantmentLevel(Enchantments.LOOTING, tKiller.getMainHandItem());
+		if (aEvent.getSource().getEntity() instanceof LivingEntity tKiller) tLooting = UT.NBT.getEnchantmentLevel(Enchantments.MOB_LOOTING, tKiller.getMainHandItem());
 		Override_Drops.handleDrops(aEvent.getEntity(), UT.Reflection.getLowercaseClass(aEvent.getEntity()), aEvent.getDrops(), aEvent.getSource(), tLooting, aEvent.getEntity().isOnFire(), aEvent.isRecentlyHit());
 	}
 

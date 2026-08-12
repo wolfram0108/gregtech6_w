@@ -33,7 +33,7 @@ import gregapi.fluid.FluidTankInfo;
 
 import appeng.api.movable.IMovableTile;
 import gregapi.api.Optional;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.block.multitileentity.IMultiTileEntity;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetLightValue;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_IsProvidingStrongPower;
@@ -91,7 +91,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.core.Direction;
 import net.minecraftforge.fluids.*;
 
@@ -539,7 +539,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Optional.Method(modid = ModIDs.IC2)
 	private void loadIntoEnet() {
 		if (this instanceof IEnergyTile && (isEnergyType(TD.Energy.EU, SIDE_ANY, T) || isEnergyType(TD.Energy.EU, SIDE_ANY, F))) {
-			NeoForge.EVENT_BUS.post(new EnergyTileLoadEvent((IEnergyTile)this));
+			MinecraftForge.EVENT_BUS.post(new EnergyTileLoadEvent((IEnergyTile)this));
 			mIsAddedToEnet = T;
 		} else {
 			mDoEnetCheck = F;
@@ -548,7 +548,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	@Optional.Method(modid = ModIDs.IC2)
 	private void unloadFromEnet() {
-		NeoForge.EVENT_BUS.post(new EnergyTileUnloadEvent((IEnergyTile)this));
+		MinecraftForge.EVENT_BUS.post(new EnergyTileUnloadEvent((IEnergyTile)this));
 		mIsAddedToEnet = F;
 	}
 	

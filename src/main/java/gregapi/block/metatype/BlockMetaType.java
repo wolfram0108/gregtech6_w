@@ -32,7 +32,7 @@ import static gregapi.data.CS.*;
 import java.util.List;
 import java.util.Random;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.block.BlockBaseMeta;
 import gregapi.data.OP;
 import gregapi.data.RM;

@@ -41,7 +41,7 @@ import ic2.api.energy.tile.IEnergyTile;
  *  unloadFromEnet() (под @Optional.Method(IC2)). Реальный IC2-класс — конкретный Forge-Event с ctor(IEnergyTile);
  *  здесь extends neo Event (bus.api.Event), чтобы годиться post(); без IC2 подписчиков нет → no-op.
  *  См. compat-mirror/README.md. */
-public class EnergyTileUnloadEvent extends net.neoforged.bus.api.Event {
+public class EnergyTileUnloadEvent extends net.minecraftforge.eventbus.api.Event {
 	public final IEnergyTile tile;
 	public EnergyTileUnloadEvent(IEnergyTile aTile) {tile = aTile;}
 }

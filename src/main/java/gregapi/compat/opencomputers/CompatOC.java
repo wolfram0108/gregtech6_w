@@ -23,7 +23,7 @@
 
 package gregapi.compat.opencomputers;
 
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import gregapi.compat.CompatBase;
 import gregapi.computer.IComputerizable;
 import gregapi.computer.ICoverComputerizable;

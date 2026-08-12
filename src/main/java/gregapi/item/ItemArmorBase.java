@@ -24,7 +24,7 @@
 package gregapi.item;
 
 import gregapi.api.Optional;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import forestry.api.apiculture.IArmorApiarist;
 import gregapi.data.CS.*;
 import gregapi.data.LH;

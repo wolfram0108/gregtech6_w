@@ -28,7 +28,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 
 import gregapi.api.Optional;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.MD;
 import gregapi.data.OP;

@@ -24,13 +24,13 @@
 package gregtech;
 
 import gregapi.util.WD;
-import net.neoforged.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.FMLPreInitializationEvent;
 import gregapi.api.FMLInitializationEvent;
 import gregapi.api.FMLPostInitializationEvent;
@@ -118,10 +118,10 @@ public class GT6_Main extends Abstract_Mod {
 		aModBus.addListener(this::onPreLoad);
 		aModBus.addListener(this::onLoad);
 		aModBus.addListener(this::onPostLoad);
-		NeoForge.EVENT_BUS.addListener(this::onServerStarting);
-		NeoForge.EVENT_BUS.addListener(this::onServerStarted);
-		NeoForge.EVENT_BUS.addListener(this::onServerStopping);
-		NeoForge.EVENT_BUS.addListener(this::onServerStopped);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
 	}
 	
 	@Override

@@ -41,7 +41,7 @@ import ic2.api.energy.tile.IEnergyTile;
  *  loadIntoEnet() (под @Optional.Method(IC2)). Реальный IC2-класс — конкретный Forge-Event с ctor(IEnergyTile);
  *  здесь extends neo Event (bus.api.Event), чтобы годиться post(); без IC2 подписчиков нет → no-op.
  *  См. compat-mirror/README.md. */
-public class EnergyTileLoadEvent extends net.neoforged.bus.api.Event {
+public class EnergyTileLoadEvent extends net.minecraftforge.eventbus.api.Event {
 	public final IEnergyTile tile;
 	public EnergyTileLoadEvent(IEnergyTile aTile) {tile = aTile;}
 }
