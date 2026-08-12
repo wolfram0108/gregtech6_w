@@ -160,7 +160,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		// куда ST.register клал блок), ключ санитизирован. aNameInternal (поле ещё не присвоено на этой строке).
 		// BUG-047: noCollision() — 1:1 vanilla-рельс (Blocks.java:1548) и 1.7.10 BlockRailBase.getCollisionBoundingBoxFromPool=null;
 		// без него рельс порта был твёрдой 2px-плитой (коллизил вагонетку/игрока).
-		super(aPowerRail || aDetectorRail, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollision().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		super(aPowerRail || aDetectorRail, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollision());
 		mNameInternal = aNameInternal;
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.TRANSPORT);
 		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site; ЗДЕСЬ — только BlockItem через supplier.

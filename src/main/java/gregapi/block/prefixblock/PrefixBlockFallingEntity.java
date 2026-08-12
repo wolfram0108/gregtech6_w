@@ -194,7 +194,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 		// который база уже подняла из NBT строкой выше. Страховка на не-GT6 блок (чужой или повреждённый сейв):
 		// mBlock остаётся null, и сущность при приземлении уходит в ветку дропа предметом — вместо краха приведения.
 		mBlock = fallingBlock() instanceof IBlockPlacable tPlacable ? tPlacable : null;
-		mStack = ST.make(fallingBlock(), 1, aNBT.getShortOr("MetaData", (short)0));
+		mStack = ST.make(fallingBlock(), 1, aNBT.getShort("MetaData"));
 		mBlockNBT = aNBT.getCompound("TileEntityData").orElse(null);
 		ItemNBT.set(mStack, mBlockNBT);
 	}

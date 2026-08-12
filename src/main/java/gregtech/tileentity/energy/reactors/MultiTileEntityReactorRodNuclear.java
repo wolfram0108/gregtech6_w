@@ -51,14 +51,14 @@ public class MultiTileEntityReactorRodNuclear extends MultiTileEntityReactorRodB
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mDurability = aNBT.getLongOr(aNBT.contains(NBT_DURABILITY) ? NBT_DURABILITY : NBT_MAXDURABILITY, 0L);
-		if (aNBT.contains(NBT_NUCLEAR_SELF    )) mNeutronSelf  = aNBT.getIntOr(NBT_NUCLEAR_SELF , 0);
-		if (aNBT.contains(NBT_NUCLEAR_OTHER   )) mNeutronOther = aNBT.getIntOr(NBT_NUCLEAR_OTHER, 0);
-		if (aNBT.contains(NBT_NUCLEAR_DIV     )) mNeutronDiv   = aNBT.getIntOr(NBT_NUCLEAR_DIV  , 0);
-		if (aNBT.contains(NBT_NUCLEAR_MAX     )) mNeutronMax   = aNBT.getIntOr(NBT_NUCLEAR_MAX, 0);
-		if (aNBT.contains(NBT_NUCLEAR_MOD     )) mModerated    = aNBT.getBooleanOr(NBT_NUCLEAR_MOD, false);
-		if (aNBT.contains(NBT_NUCLEAR_MOD+".o")) oModerated    = aNBT.getBooleanOr(NBT_NUCLEAR_MOD+".o", false);
-		if (aNBT.contains(NBT_VALUE           )) mDepleted     = aNBT.getShortOr(NBT_VALUE, (short)0);
+		mDurability = aNBT.getLong(aNBT.contains(NBT_DURABILITY) ? NBT_DURABILITY : NBT_MAXDURABILITY);
+		if (aNBT.contains(NBT_NUCLEAR_SELF    )) mNeutronSelf  = aNBT.getInt(NBT_NUCLEAR_SELF);
+		if (aNBT.contains(NBT_NUCLEAR_OTHER   )) mNeutronOther = aNBT.getInt(NBT_NUCLEAR_OTHER);
+		if (aNBT.contains(NBT_NUCLEAR_DIV     )) mNeutronDiv   = aNBT.getInt(NBT_NUCLEAR_DIV);
+		if (aNBT.contains(NBT_NUCLEAR_MAX     )) mNeutronMax   = aNBT.getInt(NBT_NUCLEAR_MAX);
+		if (aNBT.contains(NBT_NUCLEAR_MOD     )) mModerated    = aNBT.getBoolean(NBT_NUCLEAR_MOD);
+		if (aNBT.contains(NBT_NUCLEAR_MOD+".o")) oModerated    = aNBT.getBoolean(NBT_NUCLEAR_MOD+".o");
+		if (aNBT.contains(NBT_VALUE           )) mDepleted     = aNBT.getShort(NBT_VALUE);
 	}
 	
 	@Override

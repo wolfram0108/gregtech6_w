@@ -446,12 +446,12 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		, tPlayer = (aAttacked instanceof Player)
 		;
 		switch(aMetaData / 100) {
-		default: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))  );
-		case   9: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*2);
-		case   6: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*4);
+		default: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.hurt(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))  );
+		case   9: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.hurt(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*2);
+		case   6: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.hurt(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*4);
 		case   8: return F;
-		case   3: if (!tSkeleton && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage().setFireDamage(), (1+((aMetaData / 10) % 10))*2)) {aAttacked.setRemainingFireTicks((1+((aMetaData / 10) % 10))*10*20); return T;} return F;
-		case 105: case 200: case 201: case 202: case 203: return !tPlayer && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*10);
+		case   3: if (!tSkeleton && !tIronGolem && aAttacked.hurt(DamageSources.getBumbleDamage().setFireDamage(), (1+((aMetaData / 10) % 10))*2)) {aAttacked.setRemainingFireTicks((1+((aMetaData / 10) % 10))*10*20); return T;} return F;
+		case 105: case 200: case 201: case 202: case 203: return !tPlayer && aAttacked.hurt(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*10);
 		}
 	}
 	
@@ -504,7 +504,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		String tTooltip = getFlowerTooltip(aMeta);
 		if (UT.Code.stringValid(tTooltip)) aList.add(LH.Chat.CYAN + "Requirement:" + LH.Chat._WHITE + tTooltip);
 		CompoundTag aBumbleTag = null;
-		if (ItemNBT.has(aStack)) aBumbleTag = ItemNBT.get(aStack).getCompoundOrEmpty("gt.bumble");
+		if (ItemNBT.has(aStack)) aBumbleTag = ItemNBT.get(aStack).getCompound("gt.bumble");
 		if (aBumbleTag == null || aBumbleTag.isEmpty()) {
 			aList.add(LH.Chat.BLINKING_RED + "No Genetic Data to display");
 			aList.add(LH.Chat.CYAN + "Generates random 'Outsider-Plains-Biome' Genes when used");

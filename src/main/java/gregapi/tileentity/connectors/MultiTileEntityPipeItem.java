@@ -89,14 +89,14 @@ public class MultiTileEntityPipeItem extends TileEntityBase10ConnectorRendered i
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_OPAQUE)) mBlocking = aNBT.getBoolean(NBT_OPAQUE).orElse(false);
-		if (aNBT.contains("gt.olast")) oLastReceivedFrom = aNBT.getByte("gt.olast").orElse((byte)0);
-		if (aNBT.contains("gt.mlast")) mLastReceivedFrom = aNBT.getByte("gt.mlast").orElse((byte)0);
-		if (aNBT.contains(NBT_INPUT)) mDisabledInputs = aNBT.getByte(NBT_INPUT).orElse((byte)0);
-		if (aNBT.contains(NBT_OUTPUT)) mDisabledOutputs = aNBT.getByte(NBT_OUTPUT).orElse((byte)0);
-		if (aNBT.contains("gt.mtransfer")) mTransferredItems = aNBT.getLong("gt.mtransfer").orElse(0L);
-		if (aNBT.contains(NBT_PIPESIZE)) mStepSize = aNBT.getLong(NBT_PIPESIZE).orElse(0L);
-		if (aNBT.contains(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER).orElse((byte)0);
+		if (aNBT.contains(NBT_OPAQUE)) mBlocking = aNBT.getBoolean(NBT_OPAQUE);
+		if (aNBT.contains("gt.olast")) oLastReceivedFrom = aNBT.getByte("gt.olast");
+		if (aNBT.contains("gt.mlast")) mLastReceivedFrom = aNBT.getByte("gt.mlast");
+		if (aNBT.contains(NBT_INPUT)) mDisabledInputs = aNBT.getByte(NBT_INPUT);
+		if (aNBT.contains(NBT_OUTPUT)) mDisabledOutputs = aNBT.getByte(NBT_OUTPUT);
+		if (aNBT.contains("gt.mtransfer")) mTransferredItems = aNBT.getLong("gt.mtransfer");
+		if (aNBT.contains(NBT_PIPESIZE)) mStepSize = aNBT.getLong(NBT_PIPESIZE);
+		if (aNBT.contains(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER);
 		
 		if (level != null && isServerSide() && mHasToAddTimer) {
 			GT_API_Proxy.SERVER_TICK_PRE.add(this);

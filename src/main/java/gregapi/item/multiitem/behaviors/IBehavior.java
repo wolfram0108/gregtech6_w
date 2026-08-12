@@ -76,10 +76,10 @@ public interface IBehavior<E extends Item> {
 		
 		@Override
 		public ItemStack onDispense(MultiItem aItem, BlockSource aSource, ItemStack aStack) {
-			Direction enumfacing = aSource.state().getValue(DispenserBlock.FACING); // F-dispenser: func_149937_b(metadata) -> facing в BlockState (BlockSource=record, DispenserBlock.java:50).
+			Direction enumfacing = aSource.getBlockState().getValue(DispenserBlock.FACING); // F-dispenser: func_149937_b(metadata) -> facing в BlockState (BlockSource=record, DispenserBlock.java:50).
 			Position iposition = DispenserBlock.getDispensePosition(aSource);
 			ItemStack itemstack1 = aStack.split(1);
-			DefaultDispenseItemBehavior.spawnItem(aSource.level(), itemstack1, 6, enumfacing, iposition); // F-dispenser: doDispense -> spawnItem (DefaultDispenseItemBehavior.java:30).
+			DefaultDispenseItemBehavior.spawnItem(aSource.getLevel(), itemstack1, 6, enumfacing, iposition); // F-dispenser: doDispense -> spawnItem (DefaultDispenseItemBehavior.java:30).
 			return aStack;
 		}
 	}

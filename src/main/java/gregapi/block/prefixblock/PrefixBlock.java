@@ -190,7 +190,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	 */
 	// F13/F16/F16: Properties при ctor — sound(step-звук) + noOcclusion для non-opaque (иначе рендер solid + свет блокируется). setId обязателен.
 	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aModIDOwner, String aNameInternal, SoundType aSoundType, boolean aOpaque, String aTool, Material aVanillaMaterial) {
-		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal))))
+		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType)
 			// Правка №1 (BUG-106): раньше неподвижность для поршней держалась на факте «у блока есть BE» (движок не
 			// толкает блоки с сущностью); с переносом материала в карту чанка сущности нет — запрет объявляем явно,
 			// поведение 1:1 с прежним (и с 1.7.10, где TE-блоки были нетолкаемы).
@@ -935,7 +935,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		net.minecraft.world.level.chunk.ChunkAccess tChunk = oreChunk(aWorld, aX, aZ);
 		if (tChunk == null) return;
 		tChunk.getData(PrefixBlockOreMap.TYPE.get()).set(aX, aY, aZ, aMeta);
-		tChunk.markUnsaved();
+		tChunk.setUnsaved(true);
 		// Хвост правки №1 (2026-08-10): раз материал записан в карту, сущность/закладка, рождённая движком на
 		// САМ setBlock, снимается тут же — в той же воронке записи. Рождает их контракт «EntityBlock всегда
 		// создаёт» (newBlockEntity обязан быть non-null, см. :788): ветка «ворлдген в живой чанк» кладёт живую
@@ -965,7 +965,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		}
 		if (tLegacy != null) {
 			for (BlockPos tPos : tLegacy) aChunk.removeBlockEntity(tPos);
-			aChunk.markUnsaved();
+			aChunk.setUnsaved(true);
 		}
 	}
 
@@ -1000,7 +1000,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		PrefixBlockTileEntity rTileEntity = new PrefixBlockTileEntity(new net.minecraft.core.BlockPos(aX, aY, aZ), defaultBlockState());
 		if (aNBT != null) rTileEntity.readFromNBT(aNBT);
 		rTileEntity.mMetaData = aMetaData;
-		rTileEntity.mItemNBT = aNBT == null ? null : aNBT.contains("gt.nbt.drop") ? aNBT.getCompoundOrEmpty("gt.nbt.drop") : aNBT;
+		rTileEntity.mItemNBT = aNBT == null ? null : aNBT.contains("gt.nbt.drop") ? aNBT.getCompound("gt.nbt.drop") : aNBT;
 		return rTileEntity;
 	}
 	
@@ -1029,5 +1029,5 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	@Override public void receiveDataInteger  (BlockGetter aWorld, int aX, int aY, int aZ, int    aData, INetworkHandler aNetworkHandler) {/**/}
 	@Override public void receiveDataLong     (BlockGetter aWorld, int aX, int aY, int aZ, long   aData, INetworkHandler aNetworkHandler) {/**/}
 	@Override public void receiveDataByteArray(BlockGetter aWorld, int aX, int aY, int aZ, byte[] aData, INetworkHandler aNetworkHandler) {/**/}
-	@Override public void receiveDataName     (BlockGetter aWorld, int aX, int aY, int aZ, String aData, INetworkHandler aNetworkHandler) {if (UT.Code.stringValid(aData)) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof PrefixBlockTileEntity) {if (((PrefixBlockTileEntity)aTileEntity).mItemNBT == null) ((PrefixBlockTileEntity)aTileEntity).mItemNBT = UT.NBT.make(); ((PrefixBlockTileEntity)aTileEntity).mItemNBT.put("display", UT.NBT.makeString(((PrefixBlockTileEntity)aTileEntity).mItemNBT.getCompoundOrEmpty("display"), "Name", aData));}}}
+	@Override public void receiveDataName     (BlockGetter aWorld, int aX, int aY, int aZ, String aData, INetworkHandler aNetworkHandler) {if (UT.Code.stringValid(aData)) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof PrefixBlockTileEntity) {if (((PrefixBlockTileEntity)aTileEntity).mItemNBT == null) ((PrefixBlockTileEntity)aTileEntity).mItemNBT = UT.NBT.make(); ((PrefixBlockTileEntity)aTileEntity).mItemNBT.put("display", UT.NBT.makeString(((PrefixBlockTileEntity)aTileEntity).mItemNBT.getCompound("display"), "Name", aData));}}}
 }

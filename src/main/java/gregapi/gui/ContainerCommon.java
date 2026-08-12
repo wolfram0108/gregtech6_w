@@ -45,7 +45,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.registries.DeferredHolder;
+
 import net.minecraftforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
@@ -88,7 +88,7 @@ public class ContainerCommon extends AbstractContainerMenu {
 	 *  регистрации кодек/реестр-хелпера — {@code gregapi/enchants/EnchantsGT6.java:93-94}, тот же
 	 *  {@code DeferredRegister.create(Registries.X, MD.GAPI.mID)}). {@code IMenuTypeExtension.create(IContainerFactory)}
 	 *  — `neoforge-decompiled/net/neoforged/neoforge/common/extensions/IMenuTypeExtension.java:25-27`. */
-	public static final DeferredHolder<MenuType<?>, MenuType<ContainerCommon>> MENU_TYPE =
+	public static final net.minecraftforge.registries.RegistryObject<MenuType<ContainerCommon>> MENU_TYPE =
 		MENU_TYPES.register("container_common", () -> IMenuTypeExtension.create(ContainerCommon::createFromNetwork));
 
 	/** Стык для интегратора: вызвать рядом с {@code EnchantsGT6.register(aModBus)}/{@code GT6WorldgenFeature.register(aModBus)}
@@ -704,7 +704,7 @@ public class ContainerCommon extends AbstractContainerMenu {
 	 *  {@code count==0} (не то же самое, что синглтон {@code ItemStack.EMPTY}) в «пусто», а оригинал
 	 *  {@code getItemStack() != null} этот случай считал присутствующим.
 	 *  Сканирование инвентаря на debug-предметы ({@code ST.check}) — 1:1, {@code mainInventory}→
-	 *  {@code getInventory().getNonEquipmentItems()} (`Inventory.java:90`), {@code armorInventory}→
+	 *  {@code getInventory().items} (`Inventory.java:90`), {@code armorInventory}→
 	 *  {@code getItemBySlot(EquipmentSlot)} по тому же порядку FEET/LEGS/CHEST/HEAD, что уже установлен
 	 *  центром брони (`gregapi/GT_API_Proxy.java:994`). */
 	private static final EquipmentSlot[] ARMOR_SLOTS = {EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD};
@@ -713,7 +713,7 @@ public class ContainerCommon extends AbstractContainerMenu {
 	public void removed(Player aPlayer) {
 		try {
 			mTileEntity.closeInventoryGUI();
-			for (ItemStack tStack : aPlayer.getInventory().getNonEquipmentItems()) {
+			for (ItemStack tStack : aPlayer.getInventory().items) {
 				ST.check(aPlayer, tStack);
 			}
 			for (EquipmentSlot tArmorSlot : ARMOR_SLOTS) {

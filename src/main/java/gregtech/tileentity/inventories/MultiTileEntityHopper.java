@@ -69,8 +69,8 @@ public class MultiTileEntityHopper extends TileEntityBase09FacingSingle implemen
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mMode = aNBT.getByteOr(NBT_MODE, (byte)0);
-		mExactMode = aNBT.getBooleanOr(NBT_MODE+".a", false);
+		mMode = aNBT.getByte(NBT_MODE);
+		mExactMode = aNBT.getBoolean(NBT_MODE+".a");
 	}
 	
 	@Override

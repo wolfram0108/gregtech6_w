@@ -81,7 +81,7 @@ public class GT6WorldGenerator {
 				// 1.7.10 не возвращает null для загруженного чанка — фолбэк на hell/sky/plains поэтому исчез
 				// (недостижим на практике; см. F6-примечание ниже, если когда-либо словим NPE/ISE здесь). Имя биома
 				// (для BiomeNameSet) берётся из самого Holder через `unwrapKey()` (Holder.java:40, паттерн
-				// `unwrapKey().map(k->k.identifier().toString())` — как в самом Holder.java:47) — биом
+				// `unwrapKey().map(k->k.location().toString())` — как в самом Holder.java:47) — биом
 				// НЕ built-in реестр (data-driven/datapack), `BuiltInRegistries.BIOME` не существует.
 				// Y для биом-грида (R8-БРАК-ФИКС 2026-07-11): оригинал звал биом 2D (`getBiomeGenForWorldCoords`
 				// внутри принимал только x,z, Y игнорировался — 1.7.10 биомы плоские). Раньше здесь ошибочно
@@ -107,7 +107,7 @@ public class GT6WorldGenerator {
 					// джиттера; quart-координаты мира = блок >>2, Y — поверхность колонки).
 					Holder<Biome> tBiomeHolder = tChunk.getNoiseBiome(tX >> 2, mWorld.getHeight(Heightmap.Types.WORLD_SURFACE, tX, tZ) >> 2, tZ >> 2);
 					tBiomes[i][j] = tBiomeHolder.value();
-					tBiomeHolder.unwrapKey().ifPresent(k -> tBiomeNames.add(k.identifier().toString()));
+					tBiomeHolder.unwrapKey().ifPresent(k -> tBiomeNames.add(k.location().toString()));
 				}
 				
 				GENERATING_SPECIAL = F;
@@ -162,8 +162,8 @@ public class GT6WorldGenerator {
 				// на лету — прямого ручного "сброса" в neo нет и, судя по всему, не нужен (движок сам
 				// пересчитывает высоты после генерации), но поведенчески не подтверждено.
 				// F6: было `tChunk.isModified = T` (публичное поле-флаг) — реальный neo-эквивалент
-				// `LevelChunk.markUnsaved()` (LevelChunk.java:178, вызывает `ChunkAccess.markUnsaved()`).
-				tChunk.markUnsaved();
+				// `LevelChunk.setUnsaved(true)` (LevelChunk.java:178, вызывает `ChunkAccess.setUnsaved(true)`).
+				tChunk.setUnsaved(true);
 			}
 		}
 	}
@@ -216,7 +216,7 @@ public class GT6WorldGenerator {
 		// Y (тот же R8-фикс, что и в WorldGenContainer.run() выше): не `WD.waterLevel` (GT6-высота воды по
 		// измерению) — высота ПОВЕРХНОСТИ колонки (aX+7,aZ+7) через `Level.getHeight(Heightmap.Types,x,z)`.
 		Holder<Biome> aBiomeHolder = aWorld.getBiome(new BlockPos(aX+7, aWorld.getHeight(Heightmap.Types.WORLD_SURFACE, aX+7, aZ+7), aZ+7));
-		String aBiomeName = aBiomeHolder.unwrapKey().map(k -> k.identifier().toString()).orElse("");
+		String aBiomeName = aBiomeHolder.unwrapKey().map(k -> k.location().toString()).orElse("");
 		if (BIOMES_VOID.contains(aBiomeName)) return;
 
 		if (BIOMES_EREBUS.contains(aBiomeName)) {

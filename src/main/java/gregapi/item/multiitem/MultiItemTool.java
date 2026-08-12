@@ -269,7 +269,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 			// Enchantments.FIRE_ASPECT в neo = ResourceKey (не удалён); ported UT.NBT.getEnchantmentLevel читает уровень со стека.
 			int tFireAspect = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT, aStack);
 			boolean tIgnitesFire = !aEntity.isOnFire() && tFireAspect > 0 && aEntity instanceof LivingEntity;
-			if (tIgnitesFire) aEntity.igniteForSeconds(1);
+			if (tIgnitesFire) aEntity.setSecondsOnFire(1);
 			if (aEntity.skipAttackInteraction(aPlayer)) {
 				if (tIgnitesFire) aEntity.clearFire();
 			} else {
@@ -295,13 +295,13 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 					// на клиенте кидал ClassCastException (BUG-003) — tRealHit по формуле :268 истинен и на клиенте.
 					if (tRealHit && MD.BTL.mLoaded && aEntity.getClass().getName().startsWith("thebetweenlands") && getPrimaryMaterial(aStack).contains(TD.Properties.BETWEENLANDS)) {
 						float tDamageToDeal = tFullDamage;
-						while (tDamageToDeal > 0 && aEntity.hurtOrSimulate(tSource, Math.min(tDamageToDeal, 12) / 0.3F)) {
+						while (tDamageToDeal > 0 && aEntity.hurt(tSource, Math.min(tDamageToDeal, 12) / 0.3F)) {
 							tDamageToDeal -= 12;
 							if (tDamageToDeal > 0) aEntity.invulnerableTime = 0; // 1.7.10 hurtResistantTime=0 (было УРОНЕНО в порту) — сброс invuln-фреймов, чтобы следующий 12-урон прошёл (обход BTL-кэпа 40); invulnerableTime = переименованное поле
 						}
 						tRealHit &= (tDamageToDeal < tFullDamage);
 					} else if (tRealHit) {
-						tRealHit &= aEntity.hurtOrSimulate(tSource, tFullDamage);
+						tRealHit &= aEntity.hurt(tSource, tFullDamage);
 					}
 					// Only damage the Tool and perform its Specials, when you actually do hit the thing.
 					// So Serverside always, and Clientside only if the Mob isn't in its invulnerability Frames.
@@ -385,10 +385,10 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public static final OreDictMaterial getPrimaryMaterial(ItemStack aStack, OreDictMaterial aDefault) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			aNBT = aNBT.getCompoundOrEmpty("GT.ToolStats");
+			aNBT = aNBT.getCompound("GT.ToolStats");
 			if (!aNBT.isEmpty()) {
-				if (aNBT.contains("a")) return OreDictMaterial.get(aNBT.getShortOr ("a", (short)0), aDefault);
-				if (aNBT.contains("b")) return OreDictMaterial.get(aNBT.getStringOr("b", ""), aDefault);
+				if (aNBT.contains("a")) return OreDictMaterial.get(aNBT.getShort("a"), aDefault);
+				if (aNBT.contains("b")) return OreDictMaterial.get(aNBT.getString("b"), aDefault);
 			}
 		}
 		return aDefault;
@@ -398,10 +398,10 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public static final OreDictMaterial getSecondaryMaterial(ItemStack aStack, OreDictMaterial aDefault) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			aNBT = aNBT.getCompoundOrEmpty("GT.ToolStats");
+			aNBT = aNBT.getCompound("GT.ToolStats");
 			if (!aNBT.isEmpty()) {
-				if (aNBT.contains("c")) return OreDictMaterial.get(aNBT.getShortOr ("c", (short)0), aDefault);
-				if (aNBT.contains("d")) return OreDictMaterial.get(aNBT.getStringOr("d", ""), aDefault);
+				if (aNBT.contains("c")) return OreDictMaterial.get(aNBT.getShort("c"), aDefault);
+				if (aNBT.contains("d")) return OreDictMaterial.get(aNBT.getString("d"), aDefault);
 			}
 		}
 		return aDefault;
@@ -411,9 +411,9 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public IItemEnergy getEnergyStats(ItemStack aStack) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			aNBT = aNBT.getCompoundOrEmpty("GT.ToolStats");
+			aNBT = aNBT.getCompound("GT.ToolStats");
 			if (!aNBT.isEmpty()) {
-				if (aNBT.getBooleanOr("e", F)) return EnergyStat.makeTool(TD.Energy.EU, aNBT.getLongOr("f", 0L), aNBT.getLongOr("g", 0L), 64, ST.make(this, 1, getUnusableMeta(aStack)), ST.make(this, 1, getUsableMeta(aStack)), ST.make(this, 1, getUsableMeta(aStack)));
+				if (aNBT.getBoolean("e")) return EnergyStat.makeTool(TD.Energy.EU, aNBT.getLong("f"), aNBT.getLong("g"), 64, ST.make(this, 1, getUnusableMeta(aStack)), ST.make(this, 1, getUsableMeta(aStack)), ST.make(this, 1, getUsableMeta(aStack)));
 			}
 		}
 		return null;
@@ -428,18 +428,18 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public static final long getToolMaxDamage(ItemStack aStack) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			aNBT = aNBT.getCompoundOrEmpty("GT.ToolStats");
-			if (aNBT.contains("j")) return Math.max(1, aNBT.getLongOr("j", 0L));
-			return Math.max(1, aNBT.getLongOr("MaxDamage", 0L));
+			aNBT = aNBT.getCompound("GT.ToolStats");
+			if (aNBT.contains("j")) return Math.max(1, aNBT.getLong("j"));
+			return Math.max(1, aNBT.getLong("MaxDamage"));
 		}
 		return 1;
 	}
 	public static final long getToolDamage(ItemStack aStack) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			aNBT = aNBT.getCompoundOrEmpty("GT.ToolStats");
-			if (aNBT.contains("k")) return aNBT.getLongOr("k", 0L);
-			return aNBT.getLongOr("Damage", 0L);
+			aNBT = aNBT.getCompound("GT.ToolStats");
+			if (aNBT.contains("k")) return aNBT.getLong("k");
+			return aNBT.getLong("Damage");
 		}
 		return 0;
 	}
@@ -449,7 +449,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public static final boolean setToolDamage(ItemStack aStack, long aDamage) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			CompoundTag tStats = aNBT.getCompoundOrEmpty("GT.ToolStats");
+			CompoundTag tStats = aNBT.getCompound("GT.ToolStats");
 			UT.NBT.setNumber(tStats, "k", aDamage);
 			aNBT.put("GT.ToolStats", tStats);
 			ItemNBT.set(aStack, aNBT);
@@ -712,11 +712,11 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		aNBT.put("ench", new ListTag());
 		ItemNBT.set(aStack, aNBT);
 		
-		List<ObjectStack<ResourceKey<Enchantment>>> tEnchantments = new ArrayListNoNulls<>();
+		List<ObjectStack<Enchantment>> tEnchantments = new ArrayListNoNulls<>();
 		// Get Material Specific Enchantments for applicable Tool Classes.
-		if (tStats.isMiningTool  ()) for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMaterial.mEnchantmentTools  ) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
-		if (tStats.isWeapon      ()) for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMaterial.mEnchantmentWeapons) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
-		if (tStats.isRangedWeapon()) for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMaterial.mEnchantmentRanged ) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
+		if (tStats.isMiningTool  ()) for (ObjectStack<Enchantment> tEnchantment : aMaterial.mEnchantmentTools  ) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
+		if (tStats.isWeapon      ()) for (ObjectStack<Enchantment> tEnchantment : aMaterial.mEnchantmentWeapons) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
+		if (tStats.isRangedWeapon()) for (ObjectStack<Enchantment> tEnchantment : aMaterial.mEnchantmentRanged ) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
 		
 		// Get Tool Specific Enchantments.
 		ResourceKey<Enchantment>[] tEnchants = tStats.getEnchantments(aStack, aMaterial); // F-enchant-key: getEnchantments -> ResourceKey<Enchantment>[] (модель энчантов = ResourceKey).
@@ -724,14 +724,14 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		
 		for (int i = 0; i < tEnchants.length; i++) if (tLevels[i] > 0) {
 			boolean temp = T;
-			for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tEnchantments) if (tEnchantment.mObject == tEnchants[i]) {
+			for (ObjectStack<Enchantment> tEnchantment : tEnchantments) if (tEnchantment.mObject == tEnchants[i]) {
 				tEnchantment.mAmount = 1+Math.max(tEnchantment.mAmount, tLevels[i]);
 				temp = F;
 				break;
 			}
 			if (temp) tEnchantments.add(new ObjectStack<>(tEnchants[i], tLevels[i]));
 		}
-		for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tEnchantments) UT.NBT.addEnchantment(aStack, tEnchantment.mObject, tEnchantment.amountShort());
+		for (ObjectStack<Enchantment> tEnchantment : tEnchantments) UT.NBT.addEnchantment(aStack, tEnchantment.mObject, tEnchantment.amountShort());
 		return T;
 	}
 	

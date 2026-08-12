@@ -61,7 +61,7 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.contains("gt.spring")) mFluid = FL.load(aNBT, "gt.spring");
-		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBooleanOr(NBT_ACTIVE, false);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
 	}
 	
 	@Override

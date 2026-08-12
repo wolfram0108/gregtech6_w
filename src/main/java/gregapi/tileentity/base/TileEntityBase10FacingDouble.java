@@ -50,7 +50,7 @@ public abstract class TileEntityBase10FacingDouble extends TileEntityBase09Facin
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_FAC2NG)) mSecondFacing = aNBT.getByte(NBT_FAC2NG).orElse((byte)0);
+		if (aNBT.contains(NBT_FAC2NG)) mSecondFacing = aNBT.getByte(NBT_FAC2NG);
 	}
 	
 	@Override

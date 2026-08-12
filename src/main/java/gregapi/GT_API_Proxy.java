@@ -1049,7 +1049,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			
 			for (Object tPotion : aPlayer.getActiveEffects()) { // было getActivePotionEffects() (1.7.10) — neo: getActiveEffects() (сверено, LivingEntity.java:994)
 				if (tPotion instanceof MobEffectInstance && ((MobEffectInstance)tPotion).getDuration() <= 0) {
-					aPlayer.removeEffect(((MobEffectInstance)tPotion).getEffect()); // было removePotionEffect(int)/getPotionID() — neo: removeEffect(Holder<MobEffect>)/getEffect() (сверено, LivingEntity.java:1079 + MobEffectInstance.java:192)
+					aPlayer.removeEffect(((MobEffectInstance)tPotion).getEffect()); // было removePotionEffect(int)/getPotionID() — neo: removeEffect(MobEffect)/getEffect() (сверено, LivingEntity.java:1079 + MobEffectInstance.java:192)
 					break;
 				}
 			}
@@ -1203,7 +1203,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 									// ENCHANT: Enchantment_WerewolfDamage.INSTANCE (1.7.10 Java-объект чара) заменён на
 									// ResourceKey<Enchantment> KEY (см. gregapi/enchants/Enchantment_WerewolfDamage.java) —
 									// resolve через живой RegistryAccess сервера (тот же приём, что SILK_TOUCH/FORTUNE выше в этом файле).
-									ST.give(tPlayer, UT.NBT.addEnchantment(ST.make(Items.COOKIE, 1, 0, "Jr. Cookie"), Enchantment_WerewolfDamage.KEY, 1), F);
+									ST.give(tPlayer, UT.NBT.addEnchantment(ST.make(Items.COOKIE, 1, 0, "Jr. Cookie"), Enchantment_WerewolfDamage.INSTANCE, 1), F);
 									UT.Entities.chat(tPlayer, Component.literal(CHAT_GREG + "Have a Jr. Cookie. Please tell Fatass to clean his Inventory, or smack him with it."));
 								} else if ("CrazyJ1984".equalsIgnoreCase(tPlayer.getScoreboardName())) {
 									ItemStack tArrow = ST.update(OP.arrowGtWood.mat(MT.Craponite, 1), aPlayer);
@@ -1334,7 +1334,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				int tEntities = 0; for (@SuppressWarnings("unused") Object tE : tLevel.getAllEntities()) tEntities++;
 				net.minecraft.server.level.ServerPlayer tFirst = tLevel.players().isEmpty() ? null : tLevel.players().get(0);
 				tOut.append(tNow).append(";срез;").append(String.format(java.util.Locale.ROOT, "%.1f", tTickMs)).append(';').append(tUsed).append(';').append(tMax)
-					.append(';').append(tLevel.dimension().identifier()).append(';').append(tLevel.getChunkSource().getLoadedChunksCount())
+					.append(';').append(tLevel.dimension().location()).append(';').append(tLevel.getChunkSource().getLoadedChunksCount())
 					.append(';').append(tEntities).append(';').append(tLevel.players().size())
 					.append(';').append(tFirst == null ? "-" : tFirst.blockPosition().toShortString().replace(',', ' ')).append(";-\n");
 			}
@@ -1398,7 +1398,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		// Only work on Vanilla-Sized Player Inventories!
 		if (tInv.getContainerSize() != 36) return;
 		//
-		int tSlot = tInv.getSelectedSlot();
+		int tSlot = tInv.selected;
 		// There cant be any Inventory Row above this one.
 		if (tSlot >= 27) return;
 		// Refill, but only if the Slot in the Hotbar is Empty.
@@ -1456,8 +1456,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 		CompoundTag tNBT = ItemNBT.get(aEvent.getItem());
 		if (tNBT != null && tNBT.contains(NBT_EFFECTS)) { // было hasKey/getCompoundTag/getInteger (1.7.10) — neo CompoundTag: contains/getCompoundOrEmpty/getInt(Optional<Integer>) (сверено, CompoundTag.java)
-			tNBT = tNBT.getCompoundOrEmpty(NBT_EFFECTS);
-			if (RNGSUS.nextInt(100) < tNBT.getInt("chance").orElse(0)) UT.Entities.applyPotion(aPlayer, tNBT.getInt("id").orElse(0), tNBT.getInt("time").orElse(0), tNBT.getInt("lvl").orElse(0), F);
+			tNBT = tNBT.getCompound(NBT_EFFECTS);
+			if (RNGSUS.nextInt(100) < tNBT.getInt("chance")) UT.Entities.applyPotion(aPlayer, tNBT.getInt("id"), tNBT.getInt("time"), tNBT.getInt("lvl"), F);
 		}
 
 		if (aEvent.getItem().getItem() == Items.APPLE) {
@@ -1488,7 +1488,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		// There has been plenty of Bugs in various Mods, because of forgetting to mark things.
 		WD.mark(aWorld, aX, aZ);
 
-		ItemStack aStack = aPlayer.getInventory().getSelectedItem();
+		ItemStack aStack = aPlayer.getInventory().getSelected();
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		BlockEntity aTileEntity = aWorld.getBlockEntity(aEvent.getPos());
 
@@ -2171,7 +2171,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.PUNCH_ARROWS, aEvent.getBow());
 			if (tLevel > 0) tArrowEntity.setKnockbackStrength(tLevel);
 			tLevel = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FLAMING_ARROWS, aEvent.getBow());
-			if (tLevel > 0) tArrowEntity.igniteForSeconds(tLevel * 100);
+			if (tLevel > 0) tArrowEntity.setSecondsOnFire(tLevel * 100);
 
 			aEvent.getBow().hurtAndBreak(1, aPlayer, InteractionHand.MAIN_HAND); // было damageItem(int,EntityLivingBase) (1.7.10) — neo: hurtAndBreak(int,LivingEntity,InteractionHand) (сверено, ItemStack.java:524)
 			aEvent.getBow().getItem();
@@ -2200,7 +2200,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		if (aBlock instanceof BlockBasePlanks                                ) return (3 * TICKS_PER_SMELT) / 2;
 		if (aBlock instanceof BlockBaseSapling                               ) return      TICKS_PER_SMELT  / 2;
 		if (aBlock instanceof BlockBaseBeam || aBlock instanceof BlockBaseLog) return  6 * TICKS_PER_SMELT     ;
-		long rFuelValue = UT.NBT.getNBT(aFuel).getLong(NBT_FUEL_VALUE).orElse(0L); // было прямое сравнение с long (1.7.10) — neo CompoundTag.getLong возвращает Optional<Long> (сверено, CompoundTag.java:331)
+		long rFuelValue = UT.NBT.getNBT(aFuel).getLong(NBT_FUEL_VALUE); // было прямое сравнение с long (1.7.10) — neo CompoundTag.getLong возвращает Optional<Long> (сверено, CompoundTag.java:331)
 		if (aFuel.getItem() instanceof MultiItemRandom) {
 			Short tFuelValue = ((MultiItemRandom)aFuel.getItem()).mBurnValues.get(ST.meta_(aFuel));
 			if (tFuelValue != null) rFuelValue = Math.max(rFuelValue, tFuelValue);

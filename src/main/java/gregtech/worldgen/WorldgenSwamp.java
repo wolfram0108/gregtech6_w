@@ -80,7 +80,7 @@ public class WorldgenSwamp extends WorldgenObject {
 					BlockSwamp.PLACEMENT_ALLOWED = T;
 					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.Swamp, 0, 0)) {
 						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
-						aChunk.markUnsaved();
+						aChunk.setUnsaved(true);
 						return F;
 					}
 					BlockSwamp.PLACEMENT_ALLOWED = F;

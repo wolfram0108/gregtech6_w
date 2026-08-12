@@ -47,12 +47,12 @@ public class MultiTileEntityClassContainer {
 		mBlockMetaData = (byte)aBlockMetaData;
 		mStackSize = (byte)aStackSize;
 		mParameters = aParameters==null?UT.NBT.make():aParameters;
-		mHidden = mParameters.getBoolean(NBT_HIDDEN).orElse(false);
+		mHidden = mParameters.getBoolean(NBT_HIDDEN);
 		mID = (short)aID;
 		mCreativeTabID = (short)aCreativeTabID;
 		mBlock = aBlock;
 		mClass = aClass;
-		if (mParameters.contains(NBT_MATERIAL) && !mParameters.contains(NBT_COLOR)) mParameters.putInt(NBT_COLOR, UT.Code.getRGBInt(OreDictMaterial.get(mParameters.getString(NBT_MATERIAL).orElse("")).fRGBaSolid));
+		if (mParameters.contains(NBT_MATERIAL) && !mParameters.contains(NBT_COLOR)) mParameters.putInt(NBT_COLOR, UT.Code.getRGBInt(OreDictMaterial.get(mParameters.getString(NBT_MATERIAL)).fRGBaSolid));
 		try {mCanonicalTileEntity = aClass.newInstance();} catch (Throwable e) {throw new IllegalArgumentException(e);}
 		if (mCanonicalTileEntity instanceof IMultiTileEntity) ((IMultiTileEntity)mCanonicalTileEntity).initFromNBT(mParameters, mID, (short)-1);
 	}

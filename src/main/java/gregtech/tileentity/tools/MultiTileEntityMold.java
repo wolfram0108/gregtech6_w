@@ -96,11 +96,11 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains("gt.mold")) mShape = aNBT.getIntOr("gt.mold", 0);
-		if (aNBT.contains(NBT_MODE)) mUseRedstone = aNBT.getBooleanOr(NBT_MODE, false);
-		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBooleanOr(NBT_ACIDPROOF, false);
-		if (aNBT.contains(NBT_CONNECTION)) mAutoPullDirections = aNBT.getByteOr(NBT_CONNECTION, (byte)0);
-		if (aNBT.contains(NBT_TEMPERATURE)) mTemperature = aNBT.getLongOr(NBT_TEMPERATURE, 0L);
+		if (aNBT.contains("gt.mold")) mShape = aNBT.getInt("gt.mold");
+		if (aNBT.contains(NBT_MODE)) mUseRedstone = aNBT.getBoolean(NBT_MODE);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
+		if (aNBT.contains(NBT_CONNECTION)) mAutoPullDirections = aNBT.getByte(NBT_CONNECTION);
+		if (aNBT.contains(NBT_TEMPERATURE)) mTemperature = aNBT.getLong(NBT_TEMPERATURE);
 		mContent = OreDictMaterialStack.load(NBT_MATERIALS, aNBT);
 	}
 	
@@ -304,7 +304,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 			if (tData != null) for (Advancement tAchievement : tData.mMaterial.mMaterial.mAchievementsForCreation) ST.achieve(aPlayer, tAchievement);
 			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15-граница: движок EMPTY -> GT6 null (тело 1:1 рассуждает null-семантикой)
 			if (aStack == null) {
-				aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), tOutputStack);
+				aPlayer.getInventory().setItem(aPlayer.getInventory().selected, tOutputStack);
 				slotKill(0);
 				if (aCauseDamage) UT.Entities.applyTemperatureDamage(aPlayer, mTemperature, 1, 5.0F);
 				return T;

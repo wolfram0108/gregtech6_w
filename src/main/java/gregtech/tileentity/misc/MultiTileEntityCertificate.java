@@ -79,7 +79,7 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 			try {aNBT = NbtIo.read(aTargetFile.toPath());} catch (Throwable e) {e.printStackTrace(ERR);}
 			if (aNBT != null) for (int i = 0; i < Integer.MAX_VALUE; i++) {
 				if (!aNBT.contains(""+i)) break;
-				String tString = aNBT.getStringOr(""+i, "");
+				String tString = aNBT.getString(""+i);
 				if (!ALREADY_RECEIVED.contains(tString)) ALREADY_RECEIVED.add(tString);
 			}
 		}
@@ -96,7 +96,7 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 	
 	public static ItemStack getCertificate(int aAmount, String aName) {
 		CompoundTag tNBT = UT.NBT.make();
-		if (UT.Code.stringValid(aName)) tNBT.put("display", UT.NBT.makeString(tNBT.getCompoundOrEmpty("display"), "Name", aName));
+		if (UT.Code.stringValid(aName)) tNBT.put("display", UT.NBT.makeString(tNBT.getCompound("display"), "Name", aName));
 		return MTE_REGISTRY.getItem(INSTANCE.getMultiTileEntityID(), aAmount, tNBT);
 	}
 	
@@ -135,7 +135,7 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
 			// This is simply a helper Function for quickly getting Registry Names of Items.
-			if (D1) for (ItemStack tStack : aPlayer.getInventory().getNonEquipmentItems()) if (ST.valid(tStack)) {
+			if (D1) for (ItemStack tStack : aPlayer.getInventory().items) if (ST.valid(tStack)) {
 				DEB.println("ST.make(\"" + ST.regName(tStack) + "\"      , 1, " + ST.meta_(tStack) + ");                            // " + ST.namesAndSizes(tStack));
 			}
 			// Now for the actual thing that this needs to do on Rightclick.

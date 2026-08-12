@@ -100,7 +100,7 @@ public class StoneLayerOres {
 	private transient int mRemapKey = Integer.MIN_VALUE, mRemapMinY, mRemapMaxY;
 	private transient long mRemapChance;
 	private void ensureRemap(WorldGenLevel aWorld) {
-		int tKey = aWorld.getMinY() * 1000003 + aWorld.getSeaLevel();
+		int tKey = WD.minY(aWorld) * 1000003 + aWorld.getSeaLevel();
 		if (tKey == mRemapKey) return;
 		mRemapKey = tKey;
 		mRemapMinY = WD.remapY(aWorld, mMinY);

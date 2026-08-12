@@ -1,55 +1,46 @@
-/**
- * Copyright (c) 2026 wolfram0108
- *
- * Written in 2026 for the GregTech 6 NeoForge port
- * (https://github.com/wolfram0108/gregtech6_w). Not part of the original GregTech 6
- * by Gregorius Techneticies; distributed under the same licence as the work it extends.
- *
- * This file is part of GregTech.
- *
- * GregTech is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * GregTech is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
- */
+/**
+ * Copyright (c) 2026 wolfram0108
+ *
+ * Written in 2026 for the GregTech 6 NeoForge port
+ * (https://github.com/wolfram0108/gregtech6_w). Not part of the original GregTech 6
+ * by Gregorius Techneticies; distributed under the same licence as the work it extends.
+ *
+ * This file is part of GregTech.
+ *
+ * GregTech is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GregTech is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 package gregapi.enchants;
 
-import com.mojang.serialization.MapCodec;
-
 import gregapi.util.UT;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.enchantment.EnchantedItemInUse;
-import net.minecraft.world.item.enchantment.effects.EnchantmentEntityEffect;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * @author Gregorius Techneticies
  *
- * 1:1-перенос игровой логики {@code Enchantment_Radioactivity.func_151367_b}
- * (`gregtech6/src/main/java/gregapi/enchants/Enchantment_Radioactivity.java:84-86`) — только
- * механизм-носитель сменён, см. {@link EnchantmentEffect_Werewolf}. Делегат {@code UT.Entities.
- * applyRadioactivity(aHurtEntity, aLevel, 1)} не изменён (сигнатура/аргументы дословны).
+ * Игровая логика чара {@code Enchantment_Radioactivity} (оригинал 1.7.10 —
+ * {@code gregapi/enchants/Enchantment_Radioactivity.java:84-86}, метод {@code func_151367_b}).
+ * В 26.x-версии порта тело жило в record-е {@code EnchantmentEntityEffect} (движок диспетчерил чары
+ * data-driven); в 1.20.1 движковая модель чар снова императивная — {@code Enchantment.doPostHurt}
+ * ({@code forge-1201-decompiled/.../enchantment/Enchantment.java:121}), поэтому носитель снова
+ * обычный метод, вызываемый из {@link Enchantment_Radioactivity}. Значения не изменены.
  */
-public record EnchantmentEffect_Radioactivity() implements EnchantmentEntityEffect {
-	public static final MapCodec<EnchantmentEffect_Radioactivity> CODEC = MapCodec.unit(new EnchantmentEffect_Radioactivity());
+public final class EnchantmentEffect_Radioactivity {
+	private EnchantmentEffect_Radioactivity() {}
 
-	@Override
-	public void apply(ServerLevel serverLevel, int enchantmentLevel, EnchantedItemInUse item, Entity entity, Vec3 position) {
-		UT.Entities.applyRadioactivity(entity, enchantmentLevel, 1);
-	}
-
-	@Override
-	public MapCodec<EnchantmentEffect_Radioactivity> codec() {
-		return CODEC;
+	public static void apply(Entity aEntity, int aLevel) {
+		UT.Entities.applyRadioactivity(aEntity, aLevel, 1);
 	}
 }

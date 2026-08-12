@@ -72,8 +72,8 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		ItemStack tBucket = ST.make(Items.BUCKET, 1, 0);
 		
-		Direction aFacing = aSource.state().getValue(DispenserBlock.FACING); // F-dispenser: func_149937_b(metadata) -> facing из BlockState (BlockSource=record, pos()/state())
-		Level aWorld = aSource.level();
+		Direction aFacing = aSource.getBlockState().getValue(DispenserBlock.FACING); // F-dispenser: func_149937_b(metadata) -> facing из BlockState (BlockSource=record, pos()/state())
+		Level aWorld = aSource.getLevel();
 		int aX = aSource.pos().getX() + aFacing.getStepX(), aY = aSource.pos().getY() + aFacing.getStepY(), aZ = aSource.pos().getZ() + aFacing.getStepZ(); // getXInt/getFrontOffsetX -> pos().getX()/getStepX()
 		
 		if (mFluid == null) {

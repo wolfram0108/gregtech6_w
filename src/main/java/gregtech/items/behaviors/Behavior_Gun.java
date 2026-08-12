@@ -270,12 +270,12 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		// Player specific immunities, and I guess friendly fire prevention too.
 		if (aTarget instanceof Player && (((Player)aTarget).getAbilities().invulnerable || !aPlayer.canHarmPlayer((Player)aTarget))) return F;
 		// Endermen require Disjunction Enchantment on the Bullet, or having a Weakness Potion Effect on them.
-		// F-entity: getActivePotionEffect(MobEffect)->getEffect(Holder<MobEffect>) (LivingEntity.java:1006),
-		// weakness->MobEffects.WEAKNESS (MobEffects.java:75, Holder<MobEffect>). teleportRandomly() удалён
+		// F-entity: getActivePotionEffect(MobEffect)->getEffect(MobEffect) (LivingEntity.java:1006),
+		// weakness->MobEffects.WEAKNESS (MobEffects.java:75, MobEffect). teleportRandomly() удалён
 		// (EnderMan.teleport() стал protected) — воспроизводим 1:1 через ПУБЛИЧНЫЙ LivingEntity.randomTeleport
 		// (LivingEntity.java:3705, аналог 1.7.10 teleportTo) с той же random-offset формулой, что neo
 		// EnderMan.teleport() (EnderMan.java:258-260): getX()+(rand-0.5)*64 / getY()+rand(64)-32 / getZ()+(rand-0.5)*64.
-		if (aTarget instanceof EnderMan && ((EnderMan)aTarget).getEffect(MobEffects.WEAKNESS) == null && UT.NBT.getEnchantmentLevel(Enchantment_EnderDamage.KEY, aBullet) <= 0) for (int i = 0; i < 64; ++i) if (((EnderMan)aTarget).randomTeleport(aTarget.getX() + (RNGSUS.nextDouble()-0.5D)*64.0D, aTarget.getY() + (RNGSUS.nextInt(64)-32), aTarget.getZ() + (RNGSUS.nextDouble()-0.5D)*64.0D, T)) return F;
+		if (aTarget instanceof EnderMan && ((EnderMan)aTarget).getEffect(MobEffects.WEAKNESS) == null && UT.NBT.getEnchantmentLevel(Enchantment_EnderDamage.INSTANCE, aBullet) <= 0) for (int i = 0; i < 64; ++i) if (((EnderMan)aTarget).randomTeleport(aTarget.getX() + (RNGSUS.nextDouble()-0.5D)*64.0D, aTarget.getY() + (RNGSUS.nextInt(64)-32), aTarget.getZ() + (RNGSUS.nextDouble()-0.5D)*64.0D, T)) return F;
 		// EntityLivingBase, Ender Dragon and End Crystals only.
 		if (!(aTarget instanceof LivingEntity || aTarget instanceof EnderDragonPart || aTarget instanceof EndCrystal)) return F;
 	//  // To make Railcrafts Damage Enchantments work... // I later figured I'd just hardcode it in.
@@ -287,7 +287,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		float
 		tMassFactor = (tData!=null&&tData.nonemptyMaterial() ? (float)tData.mMaterial.weight() / 50.0F : 1),
 		tSpeedFactor = Math.min(2.0F, aPower/5000.0F),
-		tMagicDamage = (aTarget instanceof LivingEntity ? UT.Enchantments.getDamageBonusVsCreature(aBullet, aTarget) : aTarget instanceof EnderDragonPart ? UT.NBT.getEnchantmentLevel(Enchantment_EnderDamage.KEY, aBullet) : 0),
+		tMagicDamage = (aTarget instanceof LivingEntity ? UT.Enchantments.getDamageBonusVsCreature(aBullet, aTarget) : aTarget instanceof EnderDragonPart ? UT.NBT.getEnchantmentLevel(Enchantment_EnderDamage.INSTANCE, aBullet) : 0),
 		tDamage = tSpeedFactor * Math.max(0, tGunMat.mToolQuality*0.5F + tMassFactor);
 		int
 		tImplosion  =      UT.NBT.getEnchantmentLevelImplosion(aBullet),
@@ -295,7 +295,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		tKnockback  =     (UT.NBT.getEnchantmentLevel(Enchantments.PUNCH_ARROWS, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.KNOCKBACK , aBullet));
 		
 		if (tImplosion  > 0 && UT.Entities.isExplosiveCreature(aTarget)) tMagicDamage += 1.5F*tImplosion;
-		if (tFireDamage > 0) aTarget.igniteForSeconds(tFireDamage);
+		if (tFireDamage > 0) aTarget.setSecondsOnFire(tFireDamage);
 		
 		Player tPlayer = aPlayer;
 		
@@ -331,7 +331,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		// Smite Bullets will break one Lich Shield each, in order to make this somewhat beatable in Multiplayer.
 		if (MD.TF.mLoaded && aTarget instanceof EntityTFLich && UT.NBT.getEnchantmentLevel(Enchantments.SMITE, aBullet) > 0) tDamageSource.setDamageBypassesArmor();
 		
-		if (aTarget.hurtOrSimulate(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
+		if (aTarget.hurt(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
 			// F-entity: 1.7.10 instance-поле LivingEntity.maxHurtResistantTime удалено — neo хранит длительность
 			// i-frames константой LivingEntity.INVULNERABLE_DURATION=20 (LivingEntity.java:173, protected static
 			// final). Обе ветки тернара были 20 (non-living тоже 20) → сворачивается в 20 (воспроизведение, не улучшение).
@@ -410,12 +410,12 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		CompoundTag aNBT = UT.NBT.getOrCreate(aGun);
 		ItemStack aBullet = ST.load(aNBT, NBT_AMMO);
 		if (ST.valid(aBullet) && aBullet.getCount() > 0) return F;
-		if (isProjectile(aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot()))) {
-			int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot()).getCount());
+		if (isProjectile(aPlayer.getInventory().getItem(aPlayer.getInventory().selected))) {
+			int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().getItem(aPlayer.getInventory().selected).getCount());
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
-			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot())));
+			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(aPlayer.getInventory().selected)));
 			UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
-			aPlayer.getInventory().removeItem(aPlayer.getInventory().getSelectedSlot(), tConsumed);
+			aPlayer.getInventory().removeItem(aPlayer.getInventory().selected, tConsumed);
 			ST.update(aPlayer);
 			return T;
 		}

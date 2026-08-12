@@ -69,10 +69,10 @@ public abstract class MultiTileEntitySensorTE extends MultiTileEntitySensor impl
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mCurrentMax = aNBT.getIntOr("gt.sensor.max", 0);
-		mCurrentValue = aNBT.getIntOr("gt.sensor.value", 0);
-		mIndex = aNBT.getIntOr("gt.sensor.index", 0);
-		mValues = aNBT.getIntArray("gt.sensor.array").orElse(ZL_INTEGER);
+		mCurrentMax = aNBT.getInt("gt.sensor.max");
+		mCurrentValue = aNBT.getInt("gt.sensor.value");
+		mIndex = aNBT.getInt("gt.sensor.index");
+		mValues = aNBT.getIntArray("gt.sensor.array");
 		if (mValues.length < 1) mValues = new int[1];
 		
 		if (level != null && isServerSide() && mHasToAddTimer) {

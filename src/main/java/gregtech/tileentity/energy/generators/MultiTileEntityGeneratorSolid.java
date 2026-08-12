@@ -69,13 +69,13 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mEnergy = aNBT.getLongOr(NBT_ENERGY, 0L);
-		mBurning = aNBT.getBooleanOr(NBT_ACTIVE, false);
+		mEnergy = aNBT.getLong(NBT_ENERGY);
+		mBurning = aNBT.getBoolean(NBT_ACTIVE);
 		mOutput1 = ST.load(aNBT, NBT_INV_OUT + ".1");
-		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLongOr(NBT_OUTPUT, 0L);
-		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP).orElse("")); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
-		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShortOr(NBT_EFFICIENCY, (short)0));
-		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_EMITTED, ""));
+		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
+		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 	}
 	
 	@Override
@@ -188,20 +188,20 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15-граница: движок EMPTY -> GT6 null (тело 1:1 рассуждает null-семантикой)
 			if (aStack == null) {
 				if (slotHas(1)) {
-					aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), slot(1));
+					aPlayer.getInventory().setItem(aPlayer.getInventory().selected, slot(1));
 					slotKill(1);
 					if (mBurning) UT.Entities.applyHeatDamage(aPlayer, Math.max(1.0F, Math.min(5.0F, mRate / 20.0F)));
 					return T;
 				}
 				if (!mBurning && slotHas(0)) {
-					aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), slot(0));
+					aPlayer.getInventory().setItem(aPlayer.getInventory().selected, slot(0));
 					slotKill(0);
 					return T;
 				}
 			} else if (!slotHas(0)) {
 				if (canInsertItem2(0, aStack, SIDE_INSIDE)) {
 					slot(0, aStack);
-					aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), ST.nn(NI)); // F15-граница: GT6 null -> движок EMPTY (setItem(null) на NonNullList кидает NPE, глотался catch(Throwable) -> печь и рука делили один ItemStack = BUG-046)
+					aPlayer.getInventory().setItem(aPlayer.getInventory().selected, ST.nn(NI)); // F15-граница: GT6 null -> движок EMPTY (setItem(null) на NonNullList кидает NPE, глотался catch(Throwable) -> печь и рука делили один ItemStack = BUG-046)
 					return T;
 				}
 			} else if (ST.equal(aStack, slot(0))) {

@@ -121,50 +121,50 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mGUITexture = mRecipes.mGUIPath;
-		mEnergy = aNBT.getLong(NBT_ENERGY).orElse(0L);
-		if (aNBT.contains(NBT_ACTIVE)) mCouldUseRecipe = mActive = aNBT.getBoolean(NBT_ACTIVE).orElse(false);
-		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED).orElse(false);
-		if (aNBT.contains(NBT_RUNNING)) mRunning = aNBT.getBoolean(NBT_RUNNING).orElse(false);
-		if (aNBT.contains(NBT_STATE+".new")) mStateNew = aNBT.getBoolean(NBT_STATE+".new").orElse(false);
-		if (aNBT.contains(NBT_STATE+".old")) mStateOld = aNBT.getBoolean(NBT_STATE+".old").orElse(false);
-		if (aNBT.contains(NBT_NEEDS_IGNITION)) mRequiresIgnition = aNBT.getBoolean(NBT_NEEDS_IGNITION).orElse(false);
-		if (aNBT.contains(NBT_CHEAP_OVERCLOCKING)) mCheapOverclocking = aNBT.getBoolean(NBT_CHEAP_OVERCLOCKING).orElse(false);
-		if (aNBT.contains(NBT_NO_CONSTANT_POWER)) mNoConstantEnergy = aNBT.getBoolean(NBT_NO_CONSTANT_POWER).orElse(false);
-		if (aNBT.contains(NBT_SPECIAL_IS_START_ENERGY)) mSpecialIsStartEnergy = aNBT.getBoolean(NBT_SPECIAL_IS_START_ENERGY).orElse(false);
-		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY).orElse((short)0));
-		if (aNBT.contains(NBT_INPUT)) {mInput = aNBT.getLong(NBT_INPUT).orElse(0L); mInputMin = mInput / 2; mInputMax = mInput * 2;}
-		if (aNBT.contains(NBT_INPUT_MIN)) {mInputMin = aNBT.getLong(NBT_INPUT_MIN).orElse(0L);}
-		if (aNBT.contains(NBT_INPUT_MAX)) {mInputMax = aNBT.getLong(NBT_INPUT_MAX).orElse(0L);}
-		if (aNBT.contains(NBT_MINENERGY)) {mMinEnergy = aNBT.getLong(NBT_MINENERGY).orElse(0L);}
-		if (aNBT.contains(NBT_PARALLEL)) {mParallel = Math.max(1, aNBT.getIntOr(NBT_PARALLEL, 0));}
-		if (aNBT.contains(NBT_PARALLEL_DURATION)) mParallelDuration = aNBT.getBoolean(NBT_PARALLEL_DURATION).orElse(false);
-		if (aNBT.contains(NBT_USE_OUTPUT_TANK)) mCanUseOutputTanks = aNBT.getBoolean(NBT_USE_OUTPUT_TANK).orElse(false);
-		if (aNBT.contains(NBT_PROGRESS)) {mProgress = aNBT.getLong(NBT_PROGRESS).orElse(0L);}
-		if (aNBT.contains(NBT_MAXPROGRESS)) {mMaxProgress = aNBT.getLong(NBT_MAXPROGRESS).orElse(0L);}
-		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE).orElse((byte)0);
-		if (aNBT.contains(NBT_IGNITION)) mIgnited = aNBT.getByte(NBT_IGNITION).orElse((byte)0);
-		if (aNBT.contains(NBT_INV_SIDE_IN)) mItemInputs = (byte)(aNBT.getByte(NBT_INV_SIDE_IN).orElse((byte)0) | SBIT_A);
-		if (aNBT.contains(NBT_INV_SIDE_OUT)) mItemOutputs = (byte)(aNBT.getByte(NBT_INV_SIDE_OUT).orElse((byte)0) | SBIT_A);
-		if (aNBT.contains(NBT_INV_SIDE_AUTO_IN)) mItemAutoInput = aNBT.getByte(NBT_INV_SIDE_AUTO_IN).orElse((byte)0);
-		if (aNBT.contains(NBT_INV_SIDE_AUTO_OUT)) mItemAutoOutput = aNBT.getByte(NBT_INV_SIDE_AUTO_OUT).orElse((byte)0);
-		if (aNBT.contains(NBT_INV_DISABLED_IN)) mDisabledItemInput = aNBT.getBoolean(NBT_INV_DISABLED_IN).orElse(false);
-		if (aNBT.contains(NBT_INV_DISABLED_OUT)) mDisabledItemOutput = aNBT.getBoolean(NBT_INV_DISABLED_OUT).orElse(false);
-		if (aNBT.contains(NBT_TANK_SIDE_IN)) mFluidInputs = (byte)(aNBT.getByte(NBT_TANK_SIDE_IN).orElse((byte)0) | SBIT_A);
-		if (aNBT.contains(NBT_TANK_SIDE_OUT)) mFluidOutputs = (byte)(aNBT.getByte(NBT_TANK_SIDE_OUT).orElse((byte)0) | SBIT_A);
-		if (aNBT.contains(NBT_TANK_SIDE_AUTO_IN)) mFluidAutoInput = aNBT.getByte(NBT_TANK_SIDE_AUTO_IN).orElse((byte)0);
-		if (aNBT.contains(NBT_TANK_SIDE_AUTO_OUT)) mFluidAutoOutput = aNBT.getByte(NBT_TANK_SIDE_AUTO_OUT).orElse((byte)0);
-		if (aNBT.contains(NBT_TANK_DISABLED_IN)) mDisabledFluidInput = aNBT.getBoolean(NBT_TANK_DISABLED_IN).orElse(false);
-		if (aNBT.contains(NBT_TANK_DISABLED_OUT)) mDisabledFluidOutput = aNBT.getBoolean(NBT_TANK_DISABLED_OUT).orElse(false);
-		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED).orElse(""));
-		if (aNBT.contains(NBT_ENERGY_ACCEPTED_2)) mEnergyTypeCharged = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED_2).orElse(""));
-		if (aNBT.contains(NBT_ENERGY_ACCEPTED_SIDES)) mEnergyInputs = (byte)(aNBT.getByte(NBT_ENERGY_ACCEPTED_SIDES).orElse((byte)0) | SBIT_A);
-		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED).orElse(""));
-		if (aNBT.contains(NBT_ENERGY_EMITTED_SIDES)) mEnergyOutput = aNBT.getByte(NBT_ENERGY_EMITTED_SIDES).orElse((byte)0);
-		if (aNBT.contains(NBT_OUTPUT)) mOutputEnergy = aNBT.getLong(NBT_OUTPUT).orElse(0L);
-		if (aNBT.contains(NBT_INPUT_EU)) mChargeRequirement = aNBT.getLong(NBT_INPUT_EU).orElse(0L);
+		mEnergy = aNBT.getLong(NBT_ENERGY);
+		if (aNBT.contains(NBT_ACTIVE)) mCouldUseRecipe = mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_RUNNING)) mRunning = aNBT.getBoolean(NBT_RUNNING);
+		if (aNBT.contains(NBT_STATE+".new")) mStateNew = aNBT.getBoolean(NBT_STATE+".new");
+		if (aNBT.contains(NBT_STATE+".old")) mStateOld = aNBT.getBoolean(NBT_STATE+".old");
+		if (aNBT.contains(NBT_NEEDS_IGNITION)) mRequiresIgnition = aNBT.getBoolean(NBT_NEEDS_IGNITION);
+		if (aNBT.contains(NBT_CHEAP_OVERCLOCKING)) mCheapOverclocking = aNBT.getBoolean(NBT_CHEAP_OVERCLOCKING);
+		if (aNBT.contains(NBT_NO_CONSTANT_POWER)) mNoConstantEnergy = aNBT.getBoolean(NBT_NO_CONSTANT_POWER);
+		if (aNBT.contains(NBT_SPECIAL_IS_START_ENERGY)) mSpecialIsStartEnergy = aNBT.getBoolean(NBT_SPECIAL_IS_START_ENERGY);
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
+		if (aNBT.contains(NBT_INPUT)) {mInput = aNBT.getLong(NBT_INPUT); mInputMin = mInput / 2; mInputMax = mInput * 2;}
+		if (aNBT.contains(NBT_INPUT_MIN)) {mInputMin = aNBT.getLong(NBT_INPUT_MIN);}
+		if (aNBT.contains(NBT_INPUT_MAX)) {mInputMax = aNBT.getLong(NBT_INPUT_MAX);}
+		if (aNBT.contains(NBT_MINENERGY)) {mMinEnergy = aNBT.getLong(NBT_MINENERGY);}
+		if (aNBT.contains(NBT_PARALLEL)) {mParallel = Math.max(1, aNBT.getInt(NBT_PARALLEL));}
+		if (aNBT.contains(NBT_PARALLEL_DURATION)) mParallelDuration = aNBT.getBoolean(NBT_PARALLEL_DURATION);
+		if (aNBT.contains(NBT_USE_OUTPUT_TANK)) mCanUseOutputTanks = aNBT.getBoolean(NBT_USE_OUTPUT_TANK);
+		if (aNBT.contains(NBT_PROGRESS)) {mProgress = aNBT.getLong(NBT_PROGRESS);}
+		if (aNBT.contains(NBT_MAXPROGRESS)) {mMaxProgress = aNBT.getLong(NBT_MAXPROGRESS);}
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
+		if (aNBT.contains(NBT_IGNITION)) mIgnited = aNBT.getByte(NBT_IGNITION);
+		if (aNBT.contains(NBT_INV_SIDE_IN)) mItemInputs = (byte)(aNBT.getByte(NBT_INV_SIDE_IN) | SBIT_A);
+		if (aNBT.contains(NBT_INV_SIDE_OUT)) mItemOutputs = (byte)(aNBT.getByte(NBT_INV_SIDE_OUT) | SBIT_A);
+		if (aNBT.contains(NBT_INV_SIDE_AUTO_IN)) mItemAutoInput = aNBT.getByte(NBT_INV_SIDE_AUTO_IN);
+		if (aNBT.contains(NBT_INV_SIDE_AUTO_OUT)) mItemAutoOutput = aNBT.getByte(NBT_INV_SIDE_AUTO_OUT);
+		if (aNBT.contains(NBT_INV_DISABLED_IN)) mDisabledItemInput = aNBT.getBoolean(NBT_INV_DISABLED_IN);
+		if (aNBT.contains(NBT_INV_DISABLED_OUT)) mDisabledItemOutput = aNBT.getBoolean(NBT_INV_DISABLED_OUT);
+		if (aNBT.contains(NBT_TANK_SIDE_IN)) mFluidInputs = (byte)(aNBT.getByte(NBT_TANK_SIDE_IN) | SBIT_A);
+		if (aNBT.contains(NBT_TANK_SIDE_OUT)) mFluidOutputs = (byte)(aNBT.getByte(NBT_TANK_SIDE_OUT) | SBIT_A);
+		if (aNBT.contains(NBT_TANK_SIDE_AUTO_IN)) mFluidAutoInput = aNBT.getByte(NBT_TANK_SIDE_AUTO_IN);
+		if (aNBT.contains(NBT_TANK_SIDE_AUTO_OUT)) mFluidAutoOutput = aNBT.getByte(NBT_TANK_SIDE_AUTO_OUT);
+		if (aNBT.contains(NBT_TANK_DISABLED_IN)) mDisabledFluidInput = aNBT.getBoolean(NBT_TANK_DISABLED_IN);
+		if (aNBT.contains(NBT_TANK_DISABLED_OUT)) mDisabledFluidOutput = aNBT.getBoolean(NBT_TANK_DISABLED_OUT);
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED_2)) mEnergyTypeCharged = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED_2));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED_SIDES)) mEnergyInputs = (byte)(aNBT.getByte(NBT_ENERGY_ACCEPTED_SIDES) | SBIT_A);
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		if (aNBT.contains(NBT_ENERGY_EMITTED_SIDES)) mEnergyOutput = aNBT.getByte(NBT_ENERGY_EMITTED_SIDES);
+		if (aNBT.contains(NBT_OUTPUT)) mOutputEnergy = aNBT.getLong(NBT_OUTPUT);
+		if (aNBT.contains(NBT_INPUT_EU)) mChargeRequirement = aNBT.getLong(NBT_INPUT_EU);
 		
 		long tCapacity = 1000;
-		if (aNBT.contains(NBT_TANK_CAPACITY)) tCapacity = UT.Code.bindInt(aNBT.getLong(NBT_TANK_CAPACITY).orElse(0L));
+		if (aNBT.contains(NBT_TANK_CAPACITY)) tCapacity = UT.Code.bindInt(aNBT.getLong(NBT_TANK_CAPACITY));
 		mTanksInput = new FluidTankGT[mRecipes.mInputFluidCount];
 		for (int i = 0; i < mTanksInput.length; i++) mTanksInput[i] = new FluidTankGT(tCapacity).setCapacity(mRecipes, mParallel * 2L).readFromNBT(aNBT, NBT_TANK+".in."+i);
 		mTanksOutput = new FluidTankGT[mRecipes.mOutputFluidCount];
@@ -177,11 +177,11 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 		
 		if (CODE_CLIENT) {
 			if (aNBT.contains(NBT_GUI)) {
-				mGUITexture = aNBT.getString(NBT_GUI).orElse("");
+				mGUITexture = aNBT.getString(NBT_GUI);
 				if (!mGUITexture.endsWith(".png")) mGUITexture += ".png";
 			}
 			if (GT_API.sBlockIcons == null && aNBT.contains(NBT_TEXTURE)) {
-				String tTextureName = aNBT.getString(NBT_TEXTURE).orElse("");
+				String tTextureName = aNBT.getString(NBT_TEXTURE);
 				mTexturesMaterial = new IIconContainer[] {
 				new Textures.BlockIcons.CustomIcon("machines/basicmachines/"+tTextureName+"/colored/bottom"),
 				new Textures.BlockIcons.CustomIcon("machines/basicmachines/"+tTextureName+"/colored/top"),
@@ -531,7 +531,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	
 	@Override
 	public ItemStack[] getDefaultInventory(CompoundTag aNBT) {
-		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP).orElse("")); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
 		ACCESSIBLE_SLOTS = UT.Code.getAscendingArray(mRecipes.mInputItemsCount + mRecipes.mOutputItemsCount);
 		ACCESSIBLE_INPUTS = UT.Code.getAscendingArray(mRecipes.mInputItemsCount);
 		ACCESSIBLE_OUTPUTS = new int[mRecipes.mOutputItemsCount];

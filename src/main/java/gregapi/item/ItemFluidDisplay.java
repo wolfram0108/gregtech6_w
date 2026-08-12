@@ -66,7 +66,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	
 	public ItemFluidDisplay() {
 		// F1/F16: neo Item.<init> требует ID в Properties (descriptionId) — задаём из (GAPI, "gt.display.fluid"), совпадает с DeferredRegister-именем.
-		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "gt.display.fluid"))));
+		super(new Item.Properties());
 		mName = "gt.display.fluid";
 		LH.add(mName, "Fluid Display");
 		// F12-lazy: САМО-регистрация убрана из конструктора — предмет регистрируется через DeferredRegister-supplier на
@@ -115,10 +115,10 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 				tGas = FL.gas(tFluid);
 				tTemperature = FL.temperature(tFluid);
 			} else {
-				tAmount = aNBT.getLong("a").orElse(0L);
+				tAmount = aNBT.getLong("a");
 				tFluid = FL.make(aFluid, (int)tAmount);
-				tGas = aNBT.getBoolean("s").orElse(false);
-				tTemperature = aNBT.getLong("h").orElse(0L);
+				tGas = aNBT.getBoolean("s");
+				tTemperature = aNBT.getLong("h");
 			}
 			
 			if (tAmount > 0) {
@@ -365,7 +365,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	public void updateItemStack(ItemStack aStack) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null && aNBT.contains("f")) {
-			String aName = aNBT.getString("f").orElse("");
+			String aName = aNBT.getString("f");
 			if (UT.Code.stringInvalid(aName)) return;
 			String tName = FluidsGT.FLUID_RENAMINGS.get(aName);
 			if (UT.Code.stringValid(tName)) aName = tName;
@@ -390,7 +390,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		FluidStack rFluid = null;
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			long tAmount = aNBT.getLong("a").orElse(0L);
+			long tAmount = aNBT.getLong("a");
 			if (tAmount > 0) rFluid = FL.make(tFluid, tAmount);
 		}
 		return rFluid == null ? FL.make(tFluid, 0) : rFluid;

@@ -158,7 +158,7 @@ public class EnergyStat implements IItemEnergy {
 	public long getEnergyStored(TagData aEnergyType, ItemStack aStack) {
 		if (aEnergyType != mType && aEnergyType != null) return 0;
 		CompoundTag tNBT = ItemNBT.get(aStack);
-		return tNBT==null?0:tNBT.getLong(NBT_ENERGY).orElse(0L);
+		return tNBT==null?0:tNBT.getLong(NBT_ENERGY);
 	}
 	
 	@Override public long getEnergyCapacity             (TagData aEnergyType, ItemStack aStack) {return aEnergyType == mType || aEnergyType == null ? mCapacity : 0;}

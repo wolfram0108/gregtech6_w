@@ -98,15 +98,15 @@ public class FluidTankGT implements IFluidTank {
 	public FluidTankGT(FluidStack aFluid, long aAmount, long aCapacity) {mFluid = aFluid; mCapacity = aCapacity; mAmount = (aFluid == null ? 0 : aAmount);}
 	public FluidTankGT(Fluid aFluid, long aAmount) {this(FL.make(aFluid, aAmount)); mAmount = aAmount;}
 	public FluidTankGT(Fluid aFluid, long aAmount, long aCapacity) {this(FL.make(aFluid, aAmount), aCapacity); mAmount = aAmount;}
-	public FluidTankGT(CompoundTag aNBT, long aCapacity) {mCapacity = aCapacity; if (aNBT != null && !aNBT.isEmpty()) {mFluid = FL.load_(aNBT); mAmount = (isEmpty() ? 0 : aNBT.contains("LAmount") ? aNBT.getLongOr("LAmount", 0L) : mFluid.getAmount());}}
-	public FluidTankGT(CompoundTag aNBT, String aKey, long aCapacity) {this(aNBT.contains(aKey) ? aNBT.getCompoundOrEmpty(aKey) : null, aCapacity);}
+	public FluidTankGT(CompoundTag aNBT, long aCapacity) {mCapacity = aCapacity; if (aNBT != null && !aNBT.isEmpty()) {mFluid = FL.load_(aNBT); mAmount = (isEmpty() ? 0 : aNBT.contains("LAmount") ? aNBT.getLong("LAmount") : mFluid.getAmount());}}
+	public FluidTankGT(CompoundTag aNBT, String aKey, long aCapacity) {this(aNBT.contains(aKey) ? aNBT.getCompound(aKey) : null, aCapacity);}
 
 	public FluidTankGT readFromNBT(CompoundTag aNBT, String aKey) {
 		if (aNBT.contains(aKey)) {
-			CompoundTag tNBT = aNBT.getCompoundOrEmpty(aKey);
+			CompoundTag tNBT = aNBT.getCompound(aKey);
 			if (!tNBT.isEmpty()) {
 				mFluid = FL.load_(tNBT);
-				mAmount = (isEmpty() ? 0 : tNBT.contains("LAmount") ? tNBT.getLongOr("LAmount", 0L) : mFluid.getAmount());
+				mAmount = (isEmpty() ? 0 : tNBT.contains("LAmount") ? tNBT.getLong("LAmount") : mFluid.getAmount());
 				syncCapabilityView();
 			}
 		}

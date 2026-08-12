@@ -57,7 +57,7 @@ public abstract class MultiTileEntityLargeTurbine extends TileEntityBase11MultiB
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_DESIGN)) mTurbineWalls = aNBT.getShortOr(NBT_DESIGN, (short)0);
+		if (aNBT.contains(NBT_DESIGN)) mTurbineWalls = aNBT.getShort(NBT_DESIGN);
 	}
 	
 	@Override

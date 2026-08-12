@@ -67,10 +67,10 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_PROGRESS)) mLife = aNBT.getLongOr(NBT_PROGRESS, 0L);
-		if (aNBT.contains(NBT_COOLDOWN)) mBreedingCountDown = aNBT.getLongOr(NBT_COOLDOWN, 0L);
+		if (aNBT.contains(NBT_PROGRESS)) mLife = aNBT.getLong(NBT_PROGRESS);
+		if (aNBT.contains(NBT_COOLDOWN)) mBreedingCountDown = aNBT.getLong(NBT_COOLDOWN);
 		if (aNBT.contains(NBT_INV_OUT)) {
-			mOffSpring = new ItemStack[aNBT.getIntOr(NBT_INV_OUT, 0)];
+			mOffSpring = new ItemStack[aNBT.getInt(NBT_INV_OUT)];
 			for (int i = 0; i < mOffSpring.length; i++) mOffSpring[i] = ST.load(aNBT, NBT_INV_OUT+"."+i);
 		}
 	}
@@ -384,7 +384,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 			if (level.isThundering() && !Util.getStormproof(aBumbleTag)) return F;
 			if (level.isRaining() && mHumidity > 0 && !Util.getRainproof(aBumbleTag)) return F;
 		}
-		return level.isBrightOutside() ? Util.getDayActive(aBumbleTag) : Util.getNightActive(aBumbleTag);
+		return level.isDay() ? Util.getDayActive(aBumbleTag) : Util.getNightActive(aBumbleTag);
 	}
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.bumbliary";}

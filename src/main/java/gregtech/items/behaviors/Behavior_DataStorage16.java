@@ -42,12 +42,12 @@ public class Behavior_DataStorage16 extends AbstractBehaviorDefault {
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		if (aStack != null) {
 			if (ItemNBT.has(aStack) && ItemNBT.get(aStack).contains(NBT_USB_DRIVE)) {
-				CompoundTag tDrive = ItemNBT.get(aStack).getCompoundOrEmpty(NBT_USB_DRIVE);
+				CompoundTag tDrive = ItemNBT.get(aStack).getCompound(NBT_USB_DRIVE);
 				if (tDrive.isEmpty()) {
 					aList.add(LH.Chat.CYAN + "Uncleanly Formatted");
 				} else {
 					for (byte i = 0; i < 16; i++) {
-						CompoundTag tUSB = tDrive.getCompoundOrEmpty(NBT_USB_DATA+i);
+						CompoundTag tUSB = tDrive.getCompound(NBT_USB_DATA+i);
 						if (tUSB == null || tUSB.isEmpty()) {
 							aList.add(LH.Chat.DGRAY + "Data Slot "+i+" is Empty");
 						} else {

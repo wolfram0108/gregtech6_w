@@ -143,12 +143,12 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		short aMetaData = ST.meta_(aStack);
 		if (UT.Code.exists(aMetaData, mMaterialList) && !mMaterialList[aMetaData].mEnchantmentAmmo.isEmpty()) {
 			CompoundTag tNBT = UT.NBT.getOrCreate(aStack);
-			if (!tNBT.getBoolean("gt.u").orElse(false)) {
+			if (!tNBT.getBoolean("gt.u")) {
 				tNBT.putBoolean("gt.u", T);
 				// F8: getOrCreate → detached-копия; коммитим флаг "gt.u" ДО addEnchantment, иначе он не
 				// долетит до стека и энчанты будут добавляться повторно (см. ItemNBT.java, паттерн Behavior_Arrow).
 				UT.NBT.set(aStack, tNBT);
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : mMaterialList[aMetaData].mEnchantmentAmmo) {
+				for (ObjectStack<Enchantment> tEnchantment : mMaterialList[aMetaData].mEnchantmentAmmo) {
 					UT.NBT.addEnchantment(aStack, tEnchantment.mObject, tEnchantment.mObject == Enchantments.MOB_LOOTING ? tEnchantment.mAmount * mLootingMultiplier : tEnchantment.mAmount);
 				}
 			}
@@ -156,9 +156,9 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 	}
 	
 	public ItemStack onDispense(BlockSource aSource, ItemStack aStack) {
-		Level aWorld = aSource.level();
+		Level aWorld = aSource.getLevel();
 		Position tPosition = DispenserBlock.getDispensePosition(aSource);
-		Direction tFacing = aSource.state().getValue(DispenserBlock.FACING); // было func_149937_b(getBlockMetadata()) -> BlockSource.state()/DispenserBlock.FACING, приём ItemArmorBase.java:187
+		Direction tFacing = aSource.getBlockState().getValue(DispenserBlock.FACING); // было func_149937_b(getBlockMetadata()) -> BlockSource.state()/DispenserBlock.FACING, приём ItemArmorBase.java:187
 		EntityProjectile tProjectile = getProjectile(mProjectileType, aStack, aWorld, tPosition.x(), tPosition.y(), tPosition.z()); // было Position.getX/getY/getZ() -> x()/y()/z() (Position.java:4-8)
 		if (tProjectile != null) {
 			tProjectile.shoot(tFacing.getStepX(), (tFacing.getStepY() + 0.1F), tFacing.getStepZ(), mSpeedMultiplier * 1.10F, mPrecision); // было setThrowableHeading(...)/Direction.getFrontOffsetX|Y|Z() -> Projectile.shoot(double,double,double,float,float) (Projectile.java:141), Direction.getStepX|Y|Z() (Direction.java:247-255)
@@ -170,10 +170,10 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		}
 
 		// Default Item Dropping.
-		Direction enumfacing = aSource.state().getValue(DispenserBlock.FACING);
+		Direction enumfacing = aSource.getBlockState().getValue(DispenserBlock.FACING);
 		Position iposition = DispenserBlock.getDispensePosition(aSource);
 		ItemStack itemstack1 = aStack.split(1);
-		DefaultDispenseItemBehavior.spawnItem(aSource.level(), itemstack1, 6, enumfacing, iposition); // было doDispense -> spawnItem (DefaultDispenseItemBehavior.java:30)
+		DefaultDispenseItemBehavior.spawnItem(aSource.getLevel(), itemstack1, 6, enumfacing, iposition); // было doDispense -> spawnItem (DefaultDispenseItemBehavior.java:30)
 		return aStack;
 	}
 

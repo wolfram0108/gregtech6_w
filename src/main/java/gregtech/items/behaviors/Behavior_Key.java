@@ -52,7 +52,7 @@ public class Behavior_Key extends AbstractBehaviorDefault {
 		DelegatorTileEntity<BlockEntity> aTileEntity = WD.te(aWorld, aX, aY, aZ, aSide, T);
 		if (aTileEntity.mTileEntity instanceof ITileEntityKeyInteractable) {
 			CompoundTag tNBT = UT.NBT.getNBT(aStack);
-			long tKeyID = tNBT.getLongOr(NBT_KEY, 0L);
+			long tKeyID = tNBT.getLong(NBT_KEY);
 			if (tKeyID != 0) return ((ITileEntityKeyInteractable)aTileEntity.mTileEntity).useKey(aPlayer, aSide, hitX, hitY, hitZ, tKeyID);
 			tKeyID = ((ITileEntityKeyInteractable)aTileEntity.mTileEntity).getKeyID();
 			if (tKeyID == 0) {
@@ -74,7 +74,7 @@ public class Behavior_Key extends AbstractBehaviorDefault {
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.key"));
 		CompoundTag tNBT = ItemNBT.get(aStack);
-		if (tNBT != null && tNBT.contains(NBT_KEY)) aList.add("Key ID: " + UT.Code.makeString(tNBT.getLongOr(NBT_KEY, 0L))); else aList.add("*BLANK*");
+		if (tNBT != null && tNBT.contains(NBT_KEY)) aList.add("Key ID: " + UT.Code.makeString(tNBT.getLong(NBT_KEY))); else aList.add("*BLANK*");
 		return aList;
 	}
 }

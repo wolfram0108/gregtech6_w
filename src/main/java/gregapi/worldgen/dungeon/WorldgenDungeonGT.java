@@ -338,7 +338,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		// FarmMobs кладёт башню в клетку коридора, коридор вырезает себя в ней ПОЗЖЕ — порядок записей воспроизводится
 		// внутри каждого чанка координатным гейтом низов DungeonData). markUnsaved — только свой чанк.
 		for (int i = 1; i < tRoomLayout.length-1; i++) for (int j = 1; j < tRoomLayout[i].length-1; j++) if (tRoomLayout[i][j] > 0) {
-			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).markUnsaved();
+			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).setUnsaved(true);
 
 			int tConnectionCount = 0;
 			for (byte tSide : ALL_SIDES_HORIZONTAL) if (tRoomLayout[i+OFFX[tSide]][j+OFFZ[tSide]] != 0) tConnectionCount++;
@@ -365,10 +365,10 @@ public class WorldgenDungeonGT extends WorldgenObject {
 				break;
 			}
 
-			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).markUnsaved();
+			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).setUnsaved(true);
 		}
 		for (int i = 1; i < tRoomLayout.length-1; i++) for (int j = 1; j < tRoomLayout[i].length-1; j++) if (tRoomLayout[i][j] < 0) {
-			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).markUnsaved();
+			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).setUnsaved(true);
 
 			int tConnectionCount = 0;
 			for (byte tSide : ALL_SIDES_HORIZONTAL) if (tRoomLayout[i+OFFX[tSide]][j+OFFZ[tSide]] != 0) tConnectionCount++;
@@ -381,7 +381,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 			case   -1: try {BARRACKS.generate(aData);} catch(Throwable e) {e.printStackTrace(ERR);} break;
 			}
 
-			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).markUnsaved();
+			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).setUnsaved(true);
 		}
 		// F6-worldgen (пост-световой цикл 1.7.10 СНЯТ): (1) в пирамиде MC26 шаги INITIALIZE_LIGHT/LIGHT идут ПОСЛЕ
 		// FEATURES (ChunkPyramid.java:36-37) — свет чанка полностью пересчитывается движком после фич, ручной

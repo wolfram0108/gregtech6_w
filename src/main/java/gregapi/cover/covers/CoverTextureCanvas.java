@@ -53,7 +53,7 @@ public class CoverTextureCanvas extends AbstractCoverDefault {
 	
 	@Override
 	public void onCoverPlaced(byte aSide, CoverData aData, Entity aPlayer, ItemStack aCover) {
-		if (aCover != null && ItemNBT.has(aCover)) aData.visual(aSide, (short)((ItemNBT.get(aCover).getIntOr(NBT_CANVAS_BLOCK, 0) << 4) | (ItemNBT.get(aCover).getIntOr(NBT_CANVAS_META, 0) & 15)));
+		if (aCover != null && ItemNBT.has(aCover)) aData.visual(aSide, (short)((ItemNBT.get(aCover).getInt(NBT_CANVAS_BLOCK) << 4) | (ItemNBT.get(aCover).getInt(NBT_CANVAS_META) & 15)));
 		if (aPlayer != null) UT.Sounds.send(SFX.MC_DIG_CLOTH, 1.0F, -1.0F, aData.mTileEntity);
 	}
 	
@@ -65,7 +65,7 @@ public class CoverTextureCanvas extends AbstractCoverDefault {
 		if (aStack != null && ItemNBT.has(aStack) && ItemNBT.get(aStack).contains(NBT_CANVAS_BLOCK)) {
 			// F-registry: 1.7.10 Block.getBlockById(int) удалён -> neo BuiltInRegistries.BLOCK.byId(int) (DefaultedMappedRegistry:64,
 			// plain block-id -> Block, missing->AIR). Легаси-NBT id блока (canvas); межверсийная id-семантика — legacy-NBT-compat.
-			aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(net.minecraft.core.registries.BuiltInRegistries.BLOCK.byId(ItemNBT.get(aStack).getIntOr(NBT_CANVAS_BLOCK, 0)), 1, ItemNBT.get(aStack).getIntOr(NBT_CANVAS_META, 0) & 15)));
+			aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(net.minecraft.core.registries.BuiltInRegistries.BLOCK.byId(ItemNBT.get(aStack).getInt(NBT_CANVAS_BLOCK)), 1, ItemNBT.get(aStack).getInt(NBT_CANVAS_META) & 15)));
 		}
 		super.addToolTips(aList, aStack, aF3_H);
 	}

@@ -47,9 +47,8 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.minecraftforge.fluids.FluidType;
-import net.neoforged.neoforge.registries.DeferredHolder;
+
 import net.minecraftforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -98,7 +97,7 @@ public class FluidGT {
 	 *  {@code .register(modEventBus)} для обоих вызывается из центрального @Mod-конструктора
 	 *  ({@code gregapi.GT_API#GT_API(IEventBus)}, тем же мод-басом, что {@code ITEMS}/{@code BLOCKS}/
 	 *  {@code GT6WorldgenFeature} — F12↔F5 стык закрыт). */
-	public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, MD.GAPI.mID);
+	public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.FLUID_TYPES, MD.GAPI.mID);
 	public static final DeferredRegister<Fluid>      FLUIDS      = DeferredRegister.create(BuiltInRegistries.FLUID, MD.GAPI.mID);
 
 	/** GT6-имя (часто БЕЗ namespace, иногда с пробелами — напр. "rc jet fuel") -> config-holder FluidGT. */
@@ -123,9 +122,9 @@ public class FluidGT {
 	private int  mLuminosity = 0;
 
 	private final FluidType mType;
-	public final DeferredHolder<FluidType, FluidType> mTypeHolder;
-	public final DeferredHolder<Fluid, Source>        mSourceHolder;
-	public final DeferredHolder<Fluid, FlowingFluid>  mFlowingHolder;
+	public final net.minecraftforge.registries.RegistryObject<FluidType> mTypeHolder;
+	public final net.minecraftforge.registries.RegistryObject<Source>        mSourceHolder;
+	public final net.minecraftforge.registries.RegistryObject<FlowingFluid>  mFlowingHolder;
 
 	public FluidGT(String aName, IIconContainer aTexture, short[] aRGBa, long aTemperatureK, boolean aGaseous) {
 		mName = aName.toLowerCase();
@@ -170,8 +169,8 @@ public class FluidGT {
 	public String getLocalizedName()   {return LH.get(getUnlocalizedName());}
 
 	/** Source-fluid — вложенный {@link Source}, привязан после RegisterEvent (резолв holder'а). */
-	public Fluid getFluid()        {return mSourceHolder.value();}
-	public Fluid getFlowingFluid() {return mFlowingHolder.isBound() ? mFlowingHolder.value() : mSourceHolder.value();}
+	public Fluid getFluid()        {return mSourceHolder.get();}
+	public Fluid getFlowingFluid() {return mFlowingHolder.isPresent() ? mFlowingHolder.get() : mSourceHolder.get();}
 	public FluidType getFluidType() {return mType;}
 
 	public boolean isGaseous() {return mGaseous;}
@@ -197,8 +196,8 @@ public class FluidGT {
 		if (BY_FLUID_CACHE == null || BY_FLUID_CACHE.size() < BY_NAME.size()) {
 			Map<Fluid, FluidGT> tMap = new IdentityHashMap<>();
 			for (FluidGT tGT : BY_NAME.values()) {
-				if (tGT.mSourceHolder.isBound())  tMap.put(tGT.mSourceHolder.value(),  tGT);
-				if (tGT.mFlowingHolder.isBound()) tMap.put(tGT.mFlowingHolder.value(), tGT);
+				if (tGT.mSourceHolder.isPresent())  tMap.put(tGT.mSourceHolder.get(),  tGT);
+				if (tGT.mFlowingHolder.isPresent()) tMap.put(tGT.mFlowingHolder.get(), tGT);
 			}
 			BY_FLUID_CACHE = tMap;
 		}
@@ -282,7 +281,7 @@ public class FluidGT {
 			Block tBlock = gregapi.data.FL.BLOCKS.get(gregapi.data.FL.regName(this));
 			return tBlock == null ? Blocks.AIR.defaultBlockState() : tBlock.defaultBlockState();
 		}
-		@Override public boolean isSame(Fluid aFluid) {return aFluid == this || (mFlowingHolder != null && mFlowingHolder.isBound() && aFluid == mFlowingHolder.value());}
+		@Override public boolean isSame(Fluid aFluid) {return aFluid == this || (mFlowingHolder != null && mFlowingHolder.isPresent() && aFluid == mFlowingHolder.get());}
 		@Override public FluidType getFluidType() {return mType;}
 	}
 }

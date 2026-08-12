@@ -71,16 +71,16 @@ public class MultiTileEntityEngineSteam extends TileEntityBase09FacingSingle imp
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mEnergy = aNBT.getLongOr(NBT_ENERGY, 0L);
-		if (aNBT.contains(NBT_VISUAL)) mState = aNBT.getByteOr(NBT_VISUAL, (byte)0);
-		if (aNBT.contains(NBT_PISTON)) mPiston = aNBT.getByteOr(NBT_PISTON, (byte)0);
-		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBooleanOr(NBT_ACTIVE, false);
-		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBooleanOr(NBT_STOPPED, false);
-		if (aNBT.contains(NBT_CAPACITY)) mCapacity = aNBT.getLongOr(NBT_CAPACITY, 0L);
-		if (aNBT.contains(NBT_ACTIVE_ENERGY)) mEmitsEnergy = aNBT.getBooleanOr(NBT_ACTIVE_ENERGY, false);
-		if (aNBT.contains(NBT_OUTPUT)) mOutput = aNBT.getLongOr(NBT_OUTPUT, 0L);
-		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShortOr(NBT_EFFICIENCY, (short)0));
-		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_EMITTED, ""));
+		mEnergy = aNBT.getLong(NBT_ENERGY);
+		if (aNBT.contains(NBT_VISUAL)) mState = aNBT.getByte(NBT_VISUAL);
+		if (aNBT.contains(NBT_PISTON)) mPiston = aNBT.getByte(NBT_PISTON);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_CAPACITY)) mCapacity = aNBT.getLong(NBT_CAPACITY);
+		if (aNBT.contains(NBT_ACTIVE_ENERGY)) mEmitsEnergy = aNBT.getBoolean(NBT_ACTIVE_ENERGY);
+		if (aNBT.contains(NBT_OUTPUT)) mOutput = aNBT.getLong(NBT_OUTPUT);
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 		mTank.readFromNBT(aNBT, NBT_TANK+"."+0).setCapacity(STEAM_PER_WATER * mOutput * 2);
 	}
 	

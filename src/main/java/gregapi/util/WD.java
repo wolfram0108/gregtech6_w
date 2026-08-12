@@ -328,7 +328,7 @@ public class WD {
 		// помечать незачем — его состояние уже на диске.
 		net.minecraft.world.level.chunk.LevelChunk aChunk = chunkNow((Level)aWorld, aX >> 4, aZ >> 4);
 		if (aChunk == null) return F;
-		aChunk.markUnsaved(); // было aChunk.markUnsaved() — neo: LevelChunk.markUnsaved() (см. Level.java:868 aWorld.getChunkAt(pos).markUnsaved())
+		aChunk.setUnsaved(true); // было aChunk.setUnsaved(true) — neo: LevelChunk.setUnsaved(true) (см. Level.java:868 aWorld.getChunkAt(pos).setUnsaved(true))
 		return T;
 	}
 	/** Marks a Chunk dirty so it is saved */
@@ -672,7 +672,7 @@ public class WD {
 		if (tKey == Level.OVERWORLD) return 0;
 		if (tKey == Level.NETHER) return -1;
 		if (tKey == Level.END) return 1;
-		return tKey == null ? 0 : tKey.identifier().hashCode(); // neo ResourceKey: location()->identifier() (ResourceKey.java:55); null-ключ (экзотический LevelAccessor без Level/ServerLevelAccessor) -> 0 как overworld-дефолт
+		return tKey == null ? 0 : tKey.location().hashCode(); // neo ResourceKey: location()->identifier() (ResourceKey.java:52); null-ключ (экзотический LevelAccessor без Level/ServerLevelAccessor) -> 0 как overworld-дефолт
 	}
 	/** F9: 1.7.10 WD.getMaterial(Block) удалён в neo (класс Material убран). GT6-блок (BlockBase) хранит портированный
 	 *  gregapi.block.Material; ванильные блоки 1.7.10 отвечают ТОЧНЫМИ данными оригинала — паспорт
@@ -1144,7 +1144,7 @@ public class WD {
 						sWgBESamples.add(new Object[]{new BlockPos(aX, aY, aZ), aTileEntity.getClass().getSimpleName(), String.valueOf(block(aWorld, aX, aY, aZ)), tStatus});
 				}
 				tChunk.setBlockEntity(aTileEntity); // было tChunk.func_150812_a(x&15,y,z&15,te)/addAndRegisterBlockEntity (LevelChunk-only) — neo: ChunkAccess.setBlockEntity(BlockEntity), позиция из te.getBlockPos()
-				tChunk.markUnsaved(); // было tChunk.markUnsaved()
+				tChunk.setUnsaved(true); // было tChunk.setUnsaved(true)
 				// F6-worldgen КРОСС-ЧАНК BE-ПЕРСИСТ (ЦЕНТР): worldgen кладёт MTE и в СОСЕДНИЕ чанки региона; в модели neo
 				// Feature.place BE-запись в уже-финализированный сосед-LevelChunk НЕ персистит (центр-ProtoChunk персистит) →
 				// srvBE=null постоянно (клиент: источники/камни/redstonelight/листва прозрачны). WD.te — ЕДИНСТВЕННАЯ точка
@@ -1236,11 +1236,11 @@ public class WD {
 	// worldgen-Y проходят через ЭТОТ центр, не копипастом по файлам — эталон section-index уже в WorldgenStoneLayers.
 	private static final int OLD_BOTTOM = 0, OLD_TOP = 255, SEA_OLD = 62;
 	/** Нижняя граница мира (worldgen: заменяет жёсткий 0 / бедрок-якорь). */
-	public static int minY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMinY();}
+	public static int minY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMinBuildHeight();}
 	/** Верхняя граница мира ВКЛючительно (worldgen: заменяет жёсткий 255). */
-	public static int maxY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMaxY();}
-	/** maxY+1 = старая семантика {@code World.getHeight()} (был 256). MC26 no-arg getHeight()=COUNT(384) ≠ верх — заменять этим. */
-	public static int topY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMaxY()+1;}
+	public static int maxY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMaxBuildHeight()-1;}
+	/** maxY+1 = старая семантика {@code World.getHeight()} (был 256). 1.20.1 getMaxBuildHeight() ИСКЛЮЧИТЕЛЬНЫЙ — это ровно maxY+1. */
+	public static int topY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMaxBuildHeight();}
 	/** Измерение по границам совпадает со старым миром 1.7.10 [0..255] → растягивать НЕЧЕГО (тождественный ремап).
 	 *  Незер и Энд в MC26 именно такие: {@code min_y=0, height=256} (`neo-decompiled/…/data/worldgen/DimensionTypes.java:72-73,105-106`),
 	 *  а вырос только Overworld (−64/384). Без этого гейта ремап тянул бы окна к ЧУЖОМУ уровню моря измерения
@@ -1252,7 +1252,7 @@ public class WD {
 	 *  раздельно по подземной [0..62]→[minY..sea] и надземной [62..255]→[sea..maxY] части (море — якорь, не дно). */
 	public static int remapY(LevelAccessor aWorld, int aOldY) {
 		if (sameAsOldWorld(aWorld)) return aOldY;
-		int tSea = aWorld.getSeaLevel(), tMinY = aWorld.getMinY(), tMaxY = aWorld.getMaxY();
+		int tSea = aWorld.getSeaLevel(), tMinY = minY(aWorld), tMaxY = maxY(aWorld);
 		if (aOldY <= SEA_OLD) return tMinY + Math.round((aOldY - OLD_BOTTOM) * (tSea - tMinY) / (float)(SEA_OLD - OLD_BOTTOM));
 		return tSea + Math.round((aOldY - SEA_OLD) * (tMaxY - tSea) / (float)(OLD_TOP - SEA_OLD));
 	}
@@ -1281,7 +1281,7 @@ public class WD {
 	 *  BE (материал руды терялся → серое вкрапление) + печатал Throwable-стектрейс каждой (спам ×десятки тысяч). Позиция на
 	 *  загрузке легитимна (сохранена движком), а minY без level не узнать → безопасно пропустить (проверим при наличии level). */
 	public static boolean tileYInvalid(LevelAccessor aLevel, int aY) {
-		return aLevel != null && aY < aLevel.getMinY();
+		return aLevel != null && aY < minY(aLevel);
 	}
 
 	/** @return the regular Temperature of the World at this Location according to Gregs calculations. In Kelvin, ofcourse. */
@@ -1914,7 +1914,7 @@ public class WD {
 		// иерархия разделилась — DoublePlantBlock extends VegetationBlock, BushBlock extends VegetationBlock,
 		// и двублочные растения (ровно наш случай) под instanceof BushBlock НЕ попадают. Замерено: с фильтром
 		// по BushBlock уборка просмотрела 1 кустовой блок при 2395 двойных растениях в тех же чанках.
-		int tTop = Math.min(aChunk.getMaxY(), 200), tBottom = Math.max(aChunk.getMinY()+1, 40);
+		int tTop = Math.min(maxY(aChunk), 200), tBottom = Math.max(minY(aChunk)+1, 40);
 		for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) for (int tY = tTop; tY >= tBottom; tY--) {
 			BlockPos tPos = new BlockPos(tMinX+i, tY, tMinZ+j);
 			BlockState tState = aChunk.getBlockState(tPos);
@@ -1926,7 +1926,7 @@ public class WD {
 	}
 
 	// было aWorld.getBiomeGenForCoords(x,z) — LevelReader.getBiome(BlockPos) (LevelReader.java:42); F6-центр
-	// BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам (unwrapKey().identifier()), сырой
+	// BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам (unwrapKey().location()), сырой
 	// .value().biomeName (мёртвое 1.7.10-поле) больше не нужен — gregapi/code/BiomeNameSet.java.
 	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ              ) {int tLevel = waterLevel(aWorld); return                                                                                       UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));}
 	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {int tLevel = waterLevel(aWorld); return waterstream(aBlock) || ((aBlock == Blocks.WATER || aBlock == Blocks.WATER) && UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ))));}

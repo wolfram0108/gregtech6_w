@@ -1312,7 +1312,7 @@ public enum FL {
 	}
 
 	/** Loads a FluidStack properly. */
-	public static FluidStack load (CompoundTag aNBT, String aTagName) {return aNBT == null ? null : load(aNBT.getCompoundOrEmpty(aTagName));}
+	public static FluidStack load (CompoundTag aNBT, String aTagName) {return aNBT == null ? null : load(aNBT.getCompound(aTagName));}
 	/** Loads a FluidStack properly. */
 	public static FluidStack load (CompoundTag aNBT) {return aNBT == null || aNBT.isEmpty() ? null : load_(aNBT);}
 	/** Loads a FluidStack properly.
@@ -1322,7 +1322,7 @@ public enum FL {
 	 *  статическом контексте без Level/RegistryAccess под рукой — не восстанавливается, только имя+объём. */
 	public static FluidStack load_(CompoundTag aNBT) {
 		if (aNBT == null) return null;
-		String aName = aNBT.getStringOr("FluidName", "");
+		String aName = aNBT.getString("FluidName");
 		if (Code.stringInvalid(aName)) return null;
 		String tName = FluidsGT.FLUID_RENAMINGS.get(aName);
 		Fluid aFluid;
@@ -1332,13 +1332,13 @@ public enum FL {
 			aFluid = fluid(aName);
 		}
 		if (aFluid == null) {
-			if (FL.LubRoCant      .is(aName)) return FL.Lubricant    .make(aNBT.getIntOr("Amount", 0));
-			if (FL.Reikanol       .is(aName)) return FL.BioEthanol   .make(aNBT.getIntOr("Amount", 0));
-			if (FL.Liquid_Reikygen.is(aName)) return FL.Oxygen       .make(aNBT.getIntOr("Amount", 0));
-			if (FL.Reikygen       .is(aName)) return FL.Liquid_Oxygen.make(aNBT.getIntOr("Amount", 0));
+			if (FL.LubRoCant      .is(aName)) return FL.Lubricant    .make(aNBT.getInt("Amount"));
+			if (FL.Reikanol       .is(aName)) return FL.BioEthanol   .make(aNBT.getInt("Amount"));
+			if (FL.Liquid_Reikygen.is(aName)) return FL.Oxygen       .make(aNBT.getInt("Amount"));
+			if (FL.Reikygen       .is(aName)) return FL.Liquid_Oxygen.make(aNBT.getInt("Amount"));
 			return null;
 		}
-		return new FluidStack(aFluid, aNBT.getIntOr("Amount", 0));
+		return new FluidStack(aFluid, aNBT.getInt("Amount"));
 	}
 
 	/** Saves a FluidStack properly. */

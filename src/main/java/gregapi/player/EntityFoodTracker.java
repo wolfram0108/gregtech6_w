@@ -36,7 +36,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.attachment.IAttachmentHolder;
 import net.neoforged.neoforge.attachment.IAttachmentSerializer;
-import net.neoforged.neoforge.registries.DeferredHolder;
+
 import net.minecraftforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
@@ -89,7 +89,7 @@ public class EntityFoodTracker {
 	 *  загруженных с диска) — ОБА идут через {@code new EntityFoodTracker(LivingEntity)}, который сам
 	 *  регистрирует себя в {@link #TICK_LIST} (см. конструктор ниже) — не важно, каким из двух путей
 	 *  экземпляр создан, он всегда попадёт в тик-лист ровно один раз. */
-	public static final DeferredHolder<AttachmentType<?>, AttachmentType<EntityFoodTracker>> TYPE = ATTACHMENTS.register("food_tracker",
+	public static final net.minecraftforge.registries.RegistryObject<AttachmentType<EntityFoodTracker>> TYPE = ATTACHMENTS.register("food_tracker",
 		() -> AttachmentType.<EntityFoodTracker>builder(aHolder -> new EntityFoodTracker((LivingEntity)aHolder)).serialize(SERIALIZER).build());
 
 	public EntityFoodTracker(LivingEntity aEntity) {
@@ -116,12 +116,12 @@ public class EntityFoodTracker {
 	}
 
 	public void loadNBTData(ValueInput aNBT) {
-		mAlcohol     = aNBT.getByteOr("a", (byte)0);
-		mCaffeine    = aNBT.getByteOr("c", (byte)0);
-		mDehydration = aNBT.getByteOr("d", (byte)0);
-		mSugar       = aNBT.getByteOr("s", (byte)0);
-		mFat         = aNBT.getByteOr("f", (byte)0);
-		mRadiation   = aNBT.getByteOr("r", (byte)0);
+		mAlcohol     = aNBT.getByte("a");
+		mCaffeine    = aNBT.getByte("c");
+		mDehydration = aNBT.getByte("d");
+		mSugar       = aNBT.getByte("s");
+		mFat         = aNBT.getByte("f");
+		mRadiation   = aNBT.getByte("r");
 	}
 
 	public void init(Entity aEntity, Level aWorld) {TICK_LIST.add(this);}

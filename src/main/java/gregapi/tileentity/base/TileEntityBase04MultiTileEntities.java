@@ -90,8 +90,8 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 		// Check if this is a World/Chunk Loading Process calling readFromNBT.
 		if (mMTEID == W || mMTERegistry == W) {
 			// Yes it is, so read the ID Tags first.
-			mMTEID = aNBT.getShort(NBT_MTE_ID).orElse((short)0);
-			mMTERegistry = aNBT.getShort(NBT_MTE_REG).orElse((short)0);
+			mMTEID = aNBT.getShort(NBT_MTE_ID);
+			mMTERegistry = aNBT.getShort(NBT_MTE_REG);
 			// And add additional Default Parameters, in case the Mod updated with new ones.
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(mMTERegistry);
 			if (tRegistry != null) {
@@ -109,7 +109,7 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 		// make sure Y is not negative because this causes crashes.
 		if (WD.tileYInvalid(getLevel(), getBlockPos().getY())) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this); // было Y<0 — порог = дно мира getMinY() (бедрок MC26 Y=−64 легитимен)
 		// read the custom Name.
-		if (aNBT.contains("display")) mCustomName = aNBT.getCompoundOrEmpty("display").getString("Name").orElse("");
+		if (aNBT.contains("display")) mCustomName = aNBT.getCompound("display").getString("Name");
 		// And now your custom readFromNBT.
 		try {readFromNBT2(aNBT);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
@@ -123,7 +123,7 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 		aNBT.putShort(NBT_MTE_ID, mMTEID);
 		aNBT.putShort(NBT_MTE_REG, mMTERegistry);
 		// write the Custom Name
-		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundOrEmpty("display"), "Name", mCustomName));
+		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompound("display"), "Name", mCustomName));
 		if (isPainted()) {aNBT.putInt(NBT_COLOR, getPaint()); aNBT.putBoolean(NBT_PAINTED, T);}
 		// write the rest
 		try {writeToNBT2(aNBT);} catch(Throwable e) {e.printStackTrace(ERR);}
@@ -133,8 +133,8 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	
 	@Override
 	public CompoundTag writeItemNBT(CompoundTag aNBT) {
-		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundOrEmpty("display"), "Name", mCustomName));
-		if (UT.Code.stringValid(ERROR_MESSAGE) && isClientSide()) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundOrEmpty("display"), "Name", ERROR_MESSAGE));
+		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompound("display"), "Name", mCustomName));
+		if (UT.Code.stringValid(ERROR_MESSAGE) && isClientSide()) aNBT.put("display", UT.NBT.makeString(aNBT.getCompound("display"), "Name", ERROR_MESSAGE));
 		if (isPainted()) {aNBT.putInt(NBT_COLOR, getPaint()); aNBT.putBoolean(NBT_PAINTED, T);}
 		return aNBT;
 	}

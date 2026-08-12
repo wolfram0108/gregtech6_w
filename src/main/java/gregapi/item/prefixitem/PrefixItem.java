@@ -75,7 +75,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	public PrefixItem(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterial... aMaterialList) {
 		// F12-followup (item-split): setId в Properties (иначе «Item id not set»); ключ = (владелец, имя), санитизирован,
 		// совпадает с registerItemLazy на call-site. (было super() → super(new Item.Properties()) без id.)
-		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		super(new Item.Properties());
 		mPrefix = aPrefix;
 		mPrefix.mRegisteredPrefixItems.add(this);
 		mNameInternal = aNameInternal;

@@ -69,7 +69,7 @@ public class MultiTileEntityQueueHopper extends TileEntityBase09FacingSingle imp
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mMode = aNBT.getByteOr(NBT_MODE, (byte)0);
+		mMode = aNBT.getByte(NBT_MODE);
 		if (mMode <= 0) mMode = 64;
 	}
 	

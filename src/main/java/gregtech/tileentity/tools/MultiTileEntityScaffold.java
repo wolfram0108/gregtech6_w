@@ -62,7 +62,7 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_DESIGN)) mDesign = aNBT.getByteOr(NBT_DESIGN, (byte)0);
+		if (aNBT.contains(NBT_DESIGN)) mDesign = aNBT.getByte(NBT_DESIGN);
 	}
 	
 	@Override

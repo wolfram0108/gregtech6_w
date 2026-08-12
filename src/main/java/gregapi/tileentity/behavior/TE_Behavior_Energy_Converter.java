@@ -52,8 +52,8 @@ public class TE_Behavior_Energy_Converter extends TE_Behavior {
 	
 	@Override
 	public void load(CompoundTag aNBT) {
-		mEmitsEnergy = aNBT.getBoolean(NBT_ACTIVE_ENERGY).orElse(false);
-		mCanEmitEnergy = aNBT.getBoolean(NBT_CAN_ENERGY).orElse(false);
+		mEmitsEnergy = aNBT.getBoolean(NBT_ACTIVE_ENERGY);
+		mCanEmitEnergy = aNBT.getBoolean(NBT_CAN_ENERGY);
 	}
 	
 	@Override

@@ -62,7 +62,7 @@ public class EntityArrow_Potion extends EntityArrow_Material {
 
 	@Override public void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput aNBT) {
 		super.readAdditionalSaveData(aNBT);
-		setPotions(aNBT.getIntArray("mPotions").orElse(new int[0])); // neo ValueInput.getIntArray -> Optional<int[]>
+		setPotions(aNBT.getIntArray("mPotions")); // neo ValueInput.getIntArray -> Optional<int[]>
 	}
 	
 	@Override

@@ -55,7 +55,7 @@ import static gregapi.data.CS.*;
  * {@code gregtech6/build/tmp/recompSrc/net/minecraft/potion/Potion.java} (комментарий с именем эффекта
  * перед каждым числом — не выдумано, взято из оракула). Канал рабочий: {@code UT.Entities.applyPotion
  * (Entity,int aID,...)} (gregapi/util/UT.java) мапит id через {@code VANILLA_POTION_IDS} (напр. 10 то
- * есть {@code MobEffects.REGENERATION}) на реальный {@code Holder<MobEffect>} — R8-переревизия (GPT)
+ * есть {@code MobEffects.REGENERATION}) на реальный {@code MobEffect} — R8-переревизия (GPT)
  * потребовала полного аудита: таблица покрывает ВСЕ vanilla id, реально используемые в GT6 (1-20,22,23,
  * включая 23 = saturation/field_76443_y в Pill_Cure_All), сверенные тем же оракулом. Деградируют ТОЛЬКО
  * незарегистрированные кастом-зелья чужих модов {@code PotionsGT.ID_*} (id меньше 0, silent no-op —

@@ -31,7 +31,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredHolder;
+
 import net.minecraftforge.registries.DeferredRegister;
 
 /**
@@ -45,12 +45,12 @@ import net.minecraftforge.registries.DeferredRegister;
 public class EntitiesGT {
 	public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, ModIDs.GT);
 
-	public static final DeferredHolder<EntityType<?>, EntityType<EntityArrow_Material>> ARROW_MATERIAL =
+	public static final net.minecraftforge.registries.RegistryObject<EntityType<EntityArrow_Material>> ARROW_MATERIAL =
 		ENTITY_TYPES.register("gt_entity_arrow", rl -> EntityType.Builder.<EntityArrow_Material>of(EntityArrow_Material::new, MobCategory.MISC)
 			.noLootTable().sized(0.5F, 0.5F).eyeHeight(0.13F).clientTrackingRange(10).updateInterval(1)
 			.build(ResourceKey.create(Registries.ENTITY_TYPE, rl)));
 
-	public static final DeferredHolder<EntityType<?>, EntityType<EntityArrow_Potion>> ARROW_POTION =
+	public static final net.minecraftforge.registries.RegistryObject<EntityType<EntityArrow_Potion>> ARROW_POTION =
 		ENTITY_TYPES.register("gt_entity_arrow_potion", rl -> EntityType.Builder.<EntityArrow_Potion>of(EntityArrow_Potion::new, MobCategory.MISC)
 			.noLootTable().sized(0.5F, 0.5F).eyeHeight(0.13F).clientTrackingRange(10).updateInterval(1)
 			.build(ResourceKey.create(Registries.ENTITY_TYPE, rl)));

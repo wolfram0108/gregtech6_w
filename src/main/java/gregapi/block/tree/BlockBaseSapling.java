@@ -153,11 +153,12 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 			return F;
 		}
 		// 1.7.10 TerrainGen.saplingGrowTree(World,Random,x,y,z) — veto-событие роста дерева — СПОСОБНОСТЬ ЕСТЬ в neo:
-		// EventHooks.fireBlockGrowFeature(LevelAccessor,RandomSource,BlockPos,@Nullable Holder<ConfiguredFeature>)
-		// (neoforge EventHooks.java:770; тот же путь, что vanilla TreeGrower). GT6 растит императивно (свой grow(),
+		// ForgeEventFactory.blockGrowFeature(LevelAccessor,RandomSource,BlockPos,@Nullable Holder<ConfiguredFeature>)
+		// (ForgeEventFactory.java:760; тот же путь, что vanilla AbstractTreeGrower.java:26-28 — гейт по Result.DENY,
+		// событие в 1.20.1 не cancellable). GT6 растит императивно (свой grow(),
 		// ConfiguredFeature нет) -> holder=null (@Nullable допускает); интересует только отмена (isCanceled), ровно как
 		// оригинал возвращал allow/veto. RandomSource = aWorld.getRandom() (aRandom тут java.util.Random). Реальный порт.
-		return !net.neoforged.neoforge.event.EventHooks.fireBlockGrowFeature(aWorld, aWorld.getRandom(), new net.minecraft.core.BlockPos(aX, aY, aZ), null).isCanceled() && grow(aWorld, aX, aY, aZ, aMeta, aRandom);
+		return net.minecraftforge.event.ForgeEventFactory.blockGrowFeature(aWorld, aWorld.getRandom(), new net.minecraft.core.BlockPos(aX, aY, aZ), null).getResult() != net.minecraftforge.eventbus.api.Event.Result.DENY && grow(aWorld, aX, aY, aZ, aMeta, aRandom);
 	}
 	
 	public int getMaxHeight(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, int aMaxTreeHeight) {

@@ -55,7 +55,7 @@ public abstract class TileEntityBase10MultiBlockMachine extends MultiTileEntityB
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_STATE+".str")) mStructureOkay = aNBT.getBoolean(NBT_STATE+".str").orElse(false);
+		if (aNBT.contains(NBT_STATE+".str")) mStructureOkay = aNBT.getBoolean(NBT_STATE+".str");
 	}
 	
 	@Override

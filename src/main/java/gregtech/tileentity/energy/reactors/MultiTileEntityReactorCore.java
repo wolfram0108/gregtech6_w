@@ -69,15 +69,15 @@ public abstract class MultiTileEntityReactorCore extends TileEntityBase10FacingD
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mMode = aNBT.getByte(NBT_MODE).orElse((byte)0);
-		mEnergy = aNBT.getLong(NBT_ENERGY).orElse(0L);
-		mRunning = aNBT.getBoolean(NBT_ACTIVE).orElse(false);
-		mStopped = aNBT.getBoolean(NBT_STOPPED).orElse(false);
+		mMode = aNBT.getByte(NBT_MODE);
+		mEnergy = aNBT.getLong(NBT_ENERGY);
+		mRunning = aNBT.getBoolean(NBT_ACTIVE);
+		mStopped = aNBT.getBoolean(NBT_STOPPED);
 		mTanks[0].readFromNBT(aNBT, NBT_TANK+".0");
 		mTanks[1].readFromNBT(aNBT, NBT_TANK+".1");
 		for (int i = 0; i < 4; i++) {
-			mNeutronCounts[i] = aNBT.getIntOr(NBT_VALUE+".m."+i, 0);
-			oNeutronCounts[i] = aNBT.getIntOr(NBT_VALUE+".o."+i, 0);
+			mNeutronCounts[i] = aNBT.getInt(NBT_VALUE+".m."+i);
+			oNeutronCounts[i] = aNBT.getInt(NBT_VALUE+".o."+i);
 		}
 		
 		if (level != null && isServerSide() && mHasToAddTimer) {

@@ -82,7 +82,7 @@ public class WorldgenRiver extends WorldgenObject {
 					BlockRiver.PLACEMENT_ALLOWED = T;
 					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.River, 0, 0)) {
 						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
-						aChunk.markUnsaved();
+						aChunk.setUnsaved(true);
 						return F;
 					}
 					BlockRiver.PLACEMENT_ALLOWED = F;

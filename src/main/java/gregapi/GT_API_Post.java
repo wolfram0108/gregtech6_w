@@ -797,20 +797,15 @@ public class GT_API_Post extends Abstract_Mod {
 			BlocksGT.FLOWERS.add(ST.block(MD.BOTA, "shinyFlower"       ));
 		}
 		
-		// F5-enchant-identity: 1.7.10 итерация Enchantment.enchantmentsList + идентификация по getName() ("enchantment.X")
-		// -> neo: итерация реестра Registries.ENCHANTMENT (registryKeySet:Registry.java:96), идентичность по ключу
-		// ResourceKey.location().getPath(). Валюта GT6-модели энчантов = ResourceKey<Enchantment> (OreDictMaterial:322/1206),
-		// потому tEnchant тут — ResourceKey (совпадает с addEnchantmentFor*). Vanilla-ключи выверены по neo Enchantments.java
-		// (mending:128/frost_walker:96/swift_sneak:99). Custom-энчанты (Magnetization/Cold Touch/railcraft) — из внешних
-		// модов (F10): если мод не загружен, ключа нет в реестре -> идентификация не сработает -> назначение пропущено
-		// (ровно как в 1.7.10 при отсутствии мода); идентификация по path-имени сработает при наличии мода (foreign-gated).
-		net.minecraft.server.MinecraftServer tEnchServer = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
-		if (tEnchServer != null) for (net.minecraft.resources.ResourceKey<Enchantment> tEnchant : tEnchServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).registryKeySet()) {
-			String tEnchName = tEnchant.identifier().getPath();
-			// F10-TF: twilightforest.TFTreasureTable.addEnchantedBook(Enchantment,int) ждёт ОБЪЕКТ Enchantment,
-			// а итератор даёт ResourceKey<Enchantment> — резолвим через реестр (сервер уже в scope, тот же
-			// приём, что UT.addEnchantment). GT6-методы material.addEnchantmentFor* принимают ResourceKey (не трогаем).
-			Enchantment tEnchValue = tEnchServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(tEnchant).value();
+		// Форма оригинала (gt6-original …/GT_API_Post.java:735) восстановлена: реестр чар в 1.20.1 снова СТАТИЧЕСКИЙ
+		// (BuiltInRegistries.ENCHANTMENT, Enchantment.java:27-29), сервер для обхода не нужен, а элемент обхода — сам
+		// ОБЪЕКТ Enchantment, то есть та же валюта, что у material.addEnchantmentFor* и у TFTreasureTable.addEnchantedBook.
+		// Отличие от 1.7.10 ровно одно: идентичность по path-имени ключа реестра ("magnetization") вместо getName()
+		// ("enchantment.Magnetization") — числовых id и плоских имён в 1.20.1 нет. Custom-энчанты внешних модов (F10):
+		// мод не загружен -> записи в реестре нет -> назначение пропущено, ровно как в 1.7.10.
+		for (java.util.Map.Entry<net.minecraft.resources.ResourceKey<Enchantment>, Enchantment> tEnchEntry : net.minecraftforge.registries.ForgeRegistries.ENCHANTMENTS.getEntries()) {
+			Enchantment tEnchant = tEnchEntry.getValue(), tEnchValue = tEnchant;
+			String tEnchName = tEnchEntry.getKey().location().getPath();
 			if ("magnetization".equalsIgnoreCase(tEnchName)) { // F10 foreign-gated: Magneticraft-энчант, идентификация по path-имени (сработает при наличии мода)
 				for (OreDictMaterial tMaterial : MT.ALL_MATERIALS_REGISTERED_HERE) {
 					if (tMaterial == MT.NeodymiumMagnetic) {

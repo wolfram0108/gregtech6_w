@@ -52,7 +52,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	public ItemBlockBase(Block aBlock) {
 		// F12-followup (item-split): neo Item требует id в Properties (иначе «Item id not set»); BlockItem делит id с блоком —
 		// производим из ключа уже-зарегистрированного блока (конструкция item идёт на RegisterEvent<Item>, после блока).
-		super(aBlock, new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock))));
+		super(aBlock, new Item.Properties());
 		mPlaceable = (IBlockBase)aBlock;
 		setMaxDamage(0);
 		setHasSubtypes(T);

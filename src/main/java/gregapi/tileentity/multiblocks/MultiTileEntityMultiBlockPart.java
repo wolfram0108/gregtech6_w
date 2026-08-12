@@ -133,14 +133,14 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X).orElse(0L)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y).orElse(0L)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z).orElse(0L)));}
-		if (aNBT.contains(NBT_DESIGN)) mDesign = UT.Code.unsignB(aNBT.getByte(NBT_DESIGN).orElse((byte)0));
-		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getIntOr(NBT_MODE, 0);
+		if (aNBT.contains(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
+		if (aNBT.contains(NBT_DESIGN)) mDesign = UT.Code.unsignB(aNBT.getByte(NBT_DESIGN));
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getInt(NBT_MODE);
 		
 		if (CODE_CLIENT) {
 			if (GT_API.sBlockIcons == null && aNBT.contains(NBT_TEXTURE)) {
-				String tTextureName = aNBT.getString(NBT_TEXTURE).orElse("");
-				mTextures = new IIconContainer[UT.Code.bind8(aNBT.getShort(NBT_DESIGNS).orElse((short)0))+1][6];
+				String tTextureName = aNBT.getString(NBT_TEXTURE);
+				mTextures = new IIconContainer[UT.Code.bind8(aNBT.getShort(NBT_DESIGNS))+1][6];
 				for (short i = 0; i < mTextures.length; i++) {mTextures[i] = new IIconContainer[] {
 				new Textures.BlockIcons.CustomIcon("machines/multiblockparts/"+tTextureName+"/"+i+"/colored/bottom"),
 				new Textures.BlockIcons.CustomIcon("machines/multiblockparts/"+tTextureName+"/"+i+"/colored/top"),

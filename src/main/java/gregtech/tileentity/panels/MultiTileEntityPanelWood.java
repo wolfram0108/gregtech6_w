@@ -46,7 +46,7 @@ public class MultiTileEntityPanelWood extends MultiTileEntityPanel implements IM
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mIndex = (short)(aNBT.getShortOr(NBT_TEXTURE, (short)0) % PlankData.PLANK_ICONS.length);
+		mIndex = (short)(aNBT.getShort(NBT_TEXTURE) % PlankData.PLANK_ICONS.length);
 	}
 	
 	@Override

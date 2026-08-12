@@ -59,7 +59,7 @@ public class MultiTileEntityDrawerQuad extends TileEntityBase09FacingSingle impl
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_MODE)) mSidedAccess = aNBT.getBooleanOr(NBT_MODE, false);
+		if (aNBT.contains(NBT_MODE)) mSidedAccess = aNBT.getBoolean(NBT_MODE);
 	}
 	
 	@Override

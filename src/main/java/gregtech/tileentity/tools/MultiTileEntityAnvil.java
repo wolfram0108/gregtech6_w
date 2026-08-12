@@ -73,7 +73,7 @@ public class MultiTileEntityAnvil extends TileEntityBase09FacingSingle implement
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_DURABILITY)) mDurability = aNBT.getLongOr(NBT_DURABILITY, 0L);
+		if (aNBT.contains(NBT_DURABILITY)) mDurability = aNBT.getLong(NBT_DURABILITY);
 		// To make onTick actually update the Visual Data once.
 		updateInventory();
 	}
@@ -243,7 +243,7 @@ public class MultiTileEntityAnvil extends TileEntityBase09FacingSingle implement
 					return T;
 				}
 				if (ST.valid(aStack)) {
-					if (((ToolsGT.contains(TOOL_hammer, aStack) && !slotHas(0) && !slotHas(1)) || RM.Anvil.containsInput(aStack, this, NI) || RM.AnvilBendSmall.containsInput(aStack, this, NI) || RM.AnvilBendBig.containsInput(aStack, this, NI)) && ST.move(aPlayer.getInventory(), this, aPlayer.getInventory().getSelectedSlot(), tSlot) > 0) playClick();
+					if (((ToolsGT.contains(TOOL_hammer, aStack) && !slotHas(0) && !slotHas(1)) || RM.Anvil.containsInput(aStack, this, NI) || RM.AnvilBendSmall.containsInput(aStack, this, NI) || RM.AnvilBendBig.containsInput(aStack, this, NI)) && ST.move(aPlayer.getInventory(), this, aPlayer.getInventory().selected, tSlot) > 0) playClick();
 					return T;
 				}
 				if (slotHas(tSlot) && ST.give(aPlayer, slot(tSlot), T, level, getBlockPos().getX()+0.5, getBlockPos().getY()+1.2, getBlockPos().getZ()+0.5)) {

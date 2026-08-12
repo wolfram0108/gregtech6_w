@@ -173,7 +173,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// (BlockBehaviour:472-478) возвращает false при cache==null => legacySolid=false => blocksMotion()=false =>
 		// ванильная вода считает блок проницаемым (FlowingFluid.canHoldFluid) и УНИЧТОЖАЕТ его при затоплении.
 		// 1.7.10: у MTE твёрдый Material (machine/rock) — вода обтекала. forceSolidOn() (BlockBehaviour:473) => 1:1.
-		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().forceSolidOn().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aRegName))));
+		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().forceSolidOn().sound(aSoundType);
 		if (!aOpaque) p = p.noOcclusion();
 		// BUG-064 (Jade молчал про инструмент на машинах): в 1.7.10 твёрдость блока спрашивалась ПОЗИЦИОННО —
 		// getBlockHardness(World,x,y,z) (оригинал :299), и GT6 отдавал её из TE, а дефолтом при отсутствии
@@ -661,9 +661,9 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		} catch (Throwable e) {return 0;}
 	}
 	// было canHarvestBlock(EntityPlayer,meta) -> IBlockExtension.canHarvestBlock(BlockState,BlockGetter,BlockPos,Player)
-	// [IBlockExtension.java:215], дефолт EventHooks.doPlayerHarvestCheck(...) (сам же дефолт интерфейса) - тот же
+	// [IForgeBlock.java:167-170], дефолт ForgeHooks.isCorrectToolForDrops(state,player) (сам же дефолт интерфейса) - тот же
 	// приём, что вызывался через super раньше (ноль GT6-specific логики в этом методе, чистая passthrough-точка).
-	@Override public final boolean canHarvestBlock(BlockState aState, BlockGetter aWorld, BlockPos aPos, Player aPlayer) {return EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos);}
+	@Override public final boolean canHarvestBlock(BlockState aState, BlockGetter aWorld, BlockPos aPos, Player aPlayer) {return net.minecraftforge.common.ForgeHooks.isCorrectToolForDrops(aState, aPlayer);}
 	public final boolean hasTileEntity(int aMeta) {return T;}
 	public final boolean canSilkHarvest() {return F;}
 	public final int getRenderBlockPass() {return ITexture.Util.MC_ALPHA_BLENDING?1:0;}
@@ -733,7 +733,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 			StringBuilder tSB = new StringBuilder("[GT6-DIG-ZERO] прогресс=0: блок=").append(aTileEntity == null ? "BE-null" : aTileEntity.getClass().getSimpleName())
 				.append(" hardness=").append(tHardness)
 				.append(" playerSpeed=").append(aPlayer.getDestroySpeed(aState, aPos))
-				.append(" harvestOK=").append(net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos))
+				.append(" harvestOK=").append(net.minecraftforge.common.ForgeHooks.isCorrectToolForDrops(aState, aPlayer))
 				.append(" рука=").append(tHand.isEmpty() ? "ПУСТО" : String.valueOf(tHand.getItem()) + "#" + gregapi.util.ST.meta_(tHand));
 			if (gregapi.util.ST.item_(tHand) instanceof gregapi.item.multiitem.MultiItemTool tTool) {
 				gregapi.item.multiitem.tools.IToolStats tStats = tTool.getToolStats(tHand);

@@ -122,12 +122,12 @@ public final class OreDictMaterialStack implements Cloneable {
 	}
 	
 	public static OreDictMaterialStack load(CompoundTag aNBT) {
-		if (aNBT.contains("i")) return new OreDictMaterialStack(OreDictMaterial.MATERIAL_ARRAY[aNBT.getShort("i").orElse((short)0)], aNBT.getLong("a").orElse(0L));
-		return new OreDictMaterialStack(OreDictMaterial.get(aNBT.getString("m").orElse("")), aNBT.getLong("a").orElse(0L));
+		if (aNBT.contains("i")) return new OreDictMaterialStack(OreDictMaterial.MATERIAL_ARRAY[aNBT.getShort("i")], aNBT.getLong("a"));
+		return new OreDictMaterialStack(OreDictMaterial.get(aNBT.getString("m")), aNBT.getLong("a"));
 	}
 	
 	public static OreDictMaterialStack load(String aTagName, CompoundTag aNBT) {
-		return load(aNBT.getCompoundOrEmpty(aTagName));
+		return load(aNBT.getCompound(aTagName));
 	}
 	
 	public static CompoundTag saveList(List<OreDictMaterialStack> aList) {
@@ -152,7 +152,7 @@ public final class OreDictMaterialStack implements Cloneable {
 	public static List<OreDictMaterialStack> loadList(CompoundTag aNBT) {
 		ArrayListNoNulls<OreDictMaterialStack> rList = new ArrayListNoNulls<>();
 		if (aNBT == null) return rList;
-		for (int i = 0, j = aNBT.getIntOr("size", 0); i < j; i++) {
+		for (int i = 0, j = aNBT.getInt("size"); i < j; i++) {
 			OreDictMaterialStack tStack = load(""+i, aNBT);
 			if (tStack.mMaterial != MT.NULL) rList.add(tStack);
 		}
@@ -160,6 +160,6 @@ public final class OreDictMaterialStack implements Cloneable {
 	}
 	
 	public static List<OreDictMaterialStack> loadList(String aTagName, CompoundTag aNBT) {
-		return loadList(aNBT.getCompoundOrEmpty(aTagName));
+		return loadList(aNBT.getCompound(aTagName));
 	}
 }

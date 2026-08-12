@@ -80,11 +80,11 @@ public class MultiTileEntityCoin extends TileEntityBase04MultiTileEntities imple
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		for (int i = 0; i < mShape[0].length; i++) mShape[0][i] = UT.Code.getBitsS(aNBT.getShortOr("gt.coin.shape.0."+i, (short)0));
-		for (int i = 0; i < mShape[1].length; i++) mShape[1][i] = UT.Code.getBitsS(aNBT.getShortOr("gt.coin.shape.1."+i, (short)0));
-		for (int i = 0; i < mCoinStackSizes.length; i++) mCoinStackSizes[i] = aNBT.getByteOr("gt.coin.stacksize."+i, (byte)0);
-		mIsUnique = aNBT.getBooleanOr("gt.coin.unique", false);
-		mMaterial = OreDictMaterial.get(aNBT.getStringOr(NBT_MATERIAL, ""));
+		for (int i = 0; i < mShape[0].length; i++) mShape[0][i] = UT.Code.getBitsS(aNBT.getShort("gt.coin.shape.0."+i));
+		for (int i = 0; i < mShape[1].length; i++) mShape[1][i] = UT.Code.getBitsS(aNBT.getShort("gt.coin.shape.1."+i));
+		for (int i = 0; i < mCoinStackSizes.length; i++) mCoinStackSizes[i] = aNBT.getByte("gt.coin.stacksize."+i);
+		mIsUnique = aNBT.getBoolean("gt.coin.unique");
+		mMaterial = OreDictMaterial.get(aNBT.getString(NBT_MATERIAL));
 	}
 	
 	@Override

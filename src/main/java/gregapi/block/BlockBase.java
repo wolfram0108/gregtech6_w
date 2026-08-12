@@ -178,7 +178,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// Material.isToolNotRequired). Породы/кирпичи (Material.rock) → только кирка (рука ломает /100 БЕЗ дропа);
 	// дерево/ткань/земля (isToolNotRequired) — рука дропает /30. Без гейта ВСЯ семья дропалась рукой — щедрее канона.
 	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aNameInternal, Material aMaterial, SoundType aSoundType) {
-		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).lightLevel(BlockBase::lightOf).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal))));
+		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).lightLevel(BlockBase::lightOf);
 		if (aMaterial != null && !aMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();
 		p = mapColorOf(p, aMaterial);
 		return p;

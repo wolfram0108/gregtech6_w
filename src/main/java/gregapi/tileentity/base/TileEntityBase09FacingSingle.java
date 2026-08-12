@@ -63,7 +63,7 @@ public abstract class TileEntityBase09FacingSingle extends TileEntityBase08Direc
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_FACING)) mFacing = aNBT.getByte(NBT_FACING).orElse((byte)0);
+		if (aNBT.contains(NBT_FACING)) mFacing = aNBT.getByte(NBT_FACING);
 	}
 	
 	@Override

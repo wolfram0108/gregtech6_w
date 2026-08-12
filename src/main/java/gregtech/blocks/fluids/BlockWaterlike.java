@@ -84,7 +84,7 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		// MODCOMPAT-002 (река/океан/болото невидимы на карте): цвет — из того же Material.water (waterColor), которым
 		// блок и объявлен; в 1.7.10 он приходил сам (`recompSrc/.../Block.java:232-235`), в neo дефолт = MapColor.NONE.
 		// Мост и приём общие со всеми иерархиями — gregapi.block.BlockBase.mapColorOf.
-		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aName)))), Material.water), Material.water, aFluid);
+		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(30F), Material.water), Material.water, aFluid);
 		mFluid = aFluid;
 		quantaPerBlock = (aFlowsOut ? 8 : 3);
 		quantaPerBlockFloat = quantaPerBlock;

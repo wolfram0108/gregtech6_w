@@ -56,12 +56,12 @@ public abstract class MultiTileEntityTank extends TileEntityBase10MultiBlockBase
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_DESIGN)) mTankWalls = aNBT.getShortOr(NBT_DESIGN, (short)0);
-		if (aNBT.contains(NBT_GASPROOF)) mGasProof = aNBT.getBooleanOr(NBT_GASPROOF, false);
-		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBooleanOr(NBT_ACIDPROOF, false);
-		if (aNBT.contains(NBT_MAGICPROOF)) mMagicProof = aNBT.getBooleanOr(NBT_MAGICPROOF, false);
-		if (aNBT.contains(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBooleanOr(NBT_PLASMAPROOF, false);
-		mTank.setCapacity(aNBT.getLongOr(NBT_TANK_CAPACITY, 0L));
+		if (aNBT.contains(NBT_DESIGN)) mTankWalls = aNBT.getShort(NBT_DESIGN);
+		if (aNBT.contains(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
+		if (aNBT.contains(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF);
+		if (aNBT.contains(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF);
+		mTank.setCapacity(aNBT.getLong(NBT_TANK_CAPACITY));
 		mTank.readFromNBT(aNBT, NBT_TANK);
 	}
 	

@@ -31,7 +31,7 @@ import net.minecraft.nbt.CompoundTag;
  */
 public interface ITileEntityUSBPort extends ITileEntityUnloadable {
 	/**
-	 * @return the Data Tag that is contained inside the "gt.usb.data" Tag of an USB Sticks NBTTagCompound. So "ItemNBT.get(tItemStackUSB).getCompoundOrEmpty(NBT_USB_DATA)".
+	 * @return the Data Tag that is contained inside the "gt.usb.data" Tag of an USB Sticks NBTTagCompound. So "ItemNBT.get(tItemStackUSB).getCompound(NBT_USB_DATA)".
 	 */
 	public CompoundTag getUSBData(byte aSide, int aUSBTier);
 	

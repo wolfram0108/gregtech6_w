@@ -68,9 +68,9 @@ public class MultiTileEntityGearBox extends TileEntityBase07Paintable implements
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_STOPPED)) mJammed = aNBT.getBooleanOr(NBT_STOPPED, false);
-		if (aNBT.contains(NBT_CONNECTION)) mAxleGear = UT.Code.unsignB(aNBT.getByteOr(NBT_CONNECTION, (byte)0));
-		if (aNBT.contains(NBT_INPUT)) mMaxThroughPut = aNBT.getLongOr(NBT_INPUT, 0L);
+		if (aNBT.contains(NBT_STOPPED)) mJammed = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_CONNECTION)) mAxleGear = UT.Code.unsignB(aNBT.getByte(NBT_CONNECTION));
+		if (aNBT.contains(NBT_INPUT)) mMaxThroughPut = aNBT.getLong(NBT_INPUT);
 		mGearsWork = checkGears();
 	}
 	

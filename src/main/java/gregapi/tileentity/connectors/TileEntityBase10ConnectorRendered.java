@@ -63,13 +63,13 @@ public abstract class TileEntityBase10ConnectorRendered extends TileEntityBase09
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_DIAMETER)) mDiameter = Math.max(PX_P[2], Math.min(PX_N[0], (float)(double)aNBT.getDouble(NBT_DIAMETER).orElse(0D)));
-		if (aNBT.contains(NBT_TRANSPARENT)) mTransparent = aNBT.getBoolean(NBT_TRANSPARENT).orElse(false);
-		if (aNBT.contains(NBT_CONTACTDAMAGE)) mContactDamage = aNBT.getBoolean(NBT_CONTACTDAMAGE).orElse(false);
-		if (aNBT.contains(NBT_FOAMDRIED)) mFoamDried = aNBT.getBoolean(NBT_FOAMDRIED).orElse(false);
-		if (aNBT.contains(NBT_FOAMED)) mFoam = aNBT.getBoolean(NBT_FOAMED).orElse(false);
-		if (aNBT.contains(NBT_OWNABLE)) mOwnable = aNBT.getBoolean(NBT_OWNABLE).orElse(false);
-		if (aNBT.contains(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getString(NBT_OWNER).orElse(""));
+		if (aNBT.contains(NBT_DIAMETER)) mDiameter = Math.max(PX_P[2], Math.min(PX_N[0], (float)(double)aNBT.getDouble(NBT_DIAMETER)));
+		if (aNBT.contains(NBT_TRANSPARENT)) mTransparent = aNBT.getBoolean(NBT_TRANSPARENT);
+		if (aNBT.contains(NBT_CONTACTDAMAGE)) mContactDamage = aNBT.getBoolean(NBT_CONTACTDAMAGE);
+		if (aNBT.contains(NBT_FOAMDRIED)) mFoamDried = aNBT.getBoolean(NBT_FOAMDRIED);
+		if (aNBT.contains(NBT_FOAMED)) mFoam = aNBT.getBoolean(NBT_FOAMED);
+		if (aNBT.contains(NBT_OWNABLE)) mOwnable = aNBT.getBoolean(NBT_OWNABLE);
+		if (aNBT.contains(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getString(NBT_OWNER));
 		mIsGlowing = mMaterial.contains(TD.Properties.GLOWING);
 	}
 	

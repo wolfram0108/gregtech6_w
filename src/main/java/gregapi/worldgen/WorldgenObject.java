@@ -77,10 +77,10 @@ public abstract class WorldgenObject {
 		if (tAllowed != null) return tAllowed && mEnabled;
 		// F6: было `aWorld.provider.getDimensionName().replaceAll(" ", "_")` (человекочитаемое имя измерения,
 		// напр. "The Nether"->"The_Nether") — WorldProvider удалён. Ключ конфига заменён на идентификатор
-		// измерения ("namespace:path", напр. "minecraft:the_nether") через реальный ResourceKey.identifier()
-		// (Level.java:1030, ResourceKey.java:55) — тоже стабильная человекочитаемая строка для конфиг-файла,
+		// измерения ("namespace:path", напр. "minecraft:the_nether") через реальный ResourceKey.location()
+		// (Level.java:1030, ResourceKey.java:52) — тоже стабильная человекочитаемая строка для конфиг-файла,
 		// но без риска коллизии между одноимёнными измерениями разных модов.
-		boolean tValue = getConfigFile().get(mCategory+".dim", tDim.identifier().toString(), T);
+		boolean tValue = getConfigFile().get(mCategory+".dim", tDim.location().toString(), T);
 		mDimEnabled.put(tDim, tValue);
 		return tValue && mEnabled;
 	}

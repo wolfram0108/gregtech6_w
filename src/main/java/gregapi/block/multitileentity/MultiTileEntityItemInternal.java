@@ -101,7 +101,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 
 	public MultiTileEntityItemInternal(Block aBlock) {
 		// F12-followup (item-split): id в Properties из ключа блока (BlockItem делит id с блоком; конструкция на RegisterEvent<Item>).
-		super(aBlock, new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock))));
+		super(aBlock, new Item.Properties());
 		setMaxDamage(0);
 		setHasSubtypes(T);
 		mBlock = (MultiTileEntityBlockInternal)aBlock;

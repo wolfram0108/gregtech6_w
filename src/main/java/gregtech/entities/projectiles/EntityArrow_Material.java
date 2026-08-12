@@ -148,9 +148,9 @@ public class EntityArrow_Material extends EntityProjectile {
 			int j = WD.meta(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 			if (tBlock != mHitBlock || j != mHitBlockMeta) {
 				inGround = F;
-				WD.setMotionX(this, WD.motionX(this) * (getRandom().nextFloat() * 0.2F));
-				WD.setMotionY(this, WD.motionY(this) * (getRandom().nextFloat() * 0.2F));
-				WD.setMotionZ(this, WD.motionZ(this) * (getRandom().nextFloat() * 0.2F));
+				WD.setMotionX(this, WD.motionX(this) * (random.nextFloat() * 0.2F));
+				WD.setMotionY(this, WD.motionY(this) * (random.nextFloat() * 0.2F));
+				WD.setMotionZ(this, WD.motionZ(this) * (random.nextFloat() * 0.2F));
 				mTicksAlive = 0;
 				ticksInAir = 0;
 			}
@@ -231,7 +231,7 @@ public class EntityArrow_Material extends EntityProjectile {
 						tFireDamage  = tDamages[3];
 						tHitTimer    = tDamages[4];
 
-						if (tFireDamage > 0 && !(tHitEntity instanceof EnderMan)) tHitEntity.igniteForSeconds(tFireDamage);
+						if (tFireDamage > 0 && !(tHitEntity instanceof EnderMan)) tHitEntity.setSecondsOnFire(tFireDamage);
 
 						if (!(tHitEntity instanceof Player) && UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.MOB_LOOTING, mArrow) > 0) {
 							Player tPlayer = null;
@@ -249,7 +249,7 @@ public class EntityArrow_Material extends EntityProjectile {
 						// To make Looting work at all...
 						DamageSource tDamageSource = damageSources().arrow(this, tShootingEntity==null?this:tShootingEntity);
 
-						if (tDamage + tMagicDamage > 0 && tHitEntity.hurtOrSimulate(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
+						if (tDamage + tMagicDamage > 0 && tHitEntity.hurt(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
 							if (tHitEntity instanceof LivingEntity) {
 								if (tHitTimer >= 0) tHitEntity.invulnerableTime = tHitTimer;
 
@@ -275,8 +275,8 @@ public class EntityArrow_Material extends EntityProjectile {
 							// F-enchant-crit-visual impossible-1:1: 1.7.10 Player.onEnchantmentCritical(entity) — клиент-визуал крит-энчант-частиц, удалён в neo без прямого аналога. GT6-урон сохранён 1:1, потерян лишь визуал.
 
 							if (!(tHitEntity instanceof EnderMan) || ((EnderMan)tHitEntity).getEffect(MobEffects.WEAKNESS) != null) {
-								if (tFireDamage > 0) tHitEntity.igniteForSeconds(tFireDamage);
-								playSound(SoundEvents.ARROW_HIT, 1.0F, 1.2F / (getRandom().nextFloat() * 0.2F + 0.9F));
+								if (tFireDamage > 0) tHitEntity.setSecondsOnFire(tFireDamage);
+								playSound(SoundEvents.ARROW_HIT, 1.0F, 1.2F / (random.nextFloat() * 0.2F + 0.9F));
 								discard();
 							}
 						} else {
@@ -300,7 +300,7 @@ public class EntityArrow_Material extends EntityProjectile {
 					WD.setMotionZ(this, (float)(tVector.getLocation().z - getZ()));
 					float f2 = (float)Math.sqrt(WD.motionX(this) * WD.motionX(this) + WD.motionY(this) * WD.motionY(this) + WD.motionZ(this) * WD.motionZ(this));
 					setPos(getX() - WD.motionX(this) / f2 * 0.05000000074505806D, getY() - WD.motionY(this) / f2 * 0.05000000074505806D, getZ() - WD.motionZ(this) / f2 * 0.05000000074505806D);
-					playSound(SoundEvents.ARROW_HIT, 1.0F, 1.2F / (getRandom().nextFloat() * 0.2F + 0.9F));
+					playSound(SoundEvents.ARROW_HIT, 1.0F, 1.2F / (random.nextFloat() * 0.2F + 0.9F));
 					inGround = true;
 					shakeTime = 7;
 					setCritArrow(false);
@@ -363,23 +363,23 @@ public class EntityArrow_Material extends EntityProjectile {
 	@Override
 	public void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput aNBT) {
 		super.readAdditionalSaveData(aNBT);
-		mHitBlockX = aNBT.getShortOr("xTile", (short)0);
-		mHitBlockY = aNBT.getShortOr("yTile", (short)0);
-		mHitBlockZ = aNBT.getShortOr("zTile", (short)0);
-		mTicksAlive = aNBT.getShortOr("life", (short)0);
-		mHitBlock = Block.stateById(aNBT.getByteOr("inTile", (byte)0) & 255).getBlock();
-		mHitBlockMeta = aNBT.getByteOr("inData", (byte)0) & 255;
-		shakeTime = aNBT.getByteOr("shake", (byte)0) & 255;
-		inGround = aNBT.getByteOr("inGround", (byte)0) == 1;
-		setBaseDamage(aNBT.getDoubleOr("damage", 0.0D));
-		pickup = AbstractArrow.Pickup.byOrdinal(aNBT.getByteOr("pickup", (byte)0));
+		mHitBlockX = aNBT.getShort("xTile");
+		mHitBlockY = aNBT.getShort("yTile");
+		mHitBlockZ = aNBT.getShort("zTile");
+		mTicksAlive = aNBT.getShort("life");
+		mHitBlock = Block.stateById(aNBT.getByte("inTile") & 255).getBlock();
+		mHitBlockMeta = aNBT.getByte("inData") & 255;
+		shakeTime = aNBT.getByte("shake") & 255;
+		inGround = aNBT.getByte("inGround") == 1;
+		setBaseDamage(aNBT.getDouble("damage"));
+		pickup = AbstractArrow.Pickup.byOrdinal(aNBT.getByte("pickup"));
 		mArrow = aNBT.read("mArrow", ItemStack.CODEC).orElse(null);
 	}
 
 	@Override
 	public void playerTouch(Player aPlayer) {
 		if (!level().isClientSide() && inGround && shakeTime <= 0 && pickup == AbstractArrow.Pickup.ALLOWED && aPlayer.getInventory().add(getArrowItem())) {
-			playSound(SoundEvents.ITEM_PICKUP, 0.2F, ((getRandom().nextFloat() - getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
+			playSound(SoundEvents.ITEM_PICKUP, 0.2F, ((random.nextFloat() - random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
 			aPlayer.take(this, 1);
 			discard();
 		}

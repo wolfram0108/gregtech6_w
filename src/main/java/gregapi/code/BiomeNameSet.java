@@ -45,7 +45,7 @@ public class BiomeNameSet extends AbstractSet<String> {
 	 * биома 1.7.10) удалено, биомы в neo data-driven и собственного display-name поля не несут. Идентичность
 	 * биома в neo — реестровый ключ ({@code identifier().toString()}, "namespace:path"), тот же приём, что
 	 * уже применяет диспетчер {@code GT6WorldGenerator.java:96-98,204-205}: {@code Holder<Biome>.unwrapKey()}
-	 * (Holder.java:40) -> {@code ResourceKey<Biome>.identifier()} (ResourceKey.java:55) -> {@code
+	 * (Holder.java:40) -> {@code ResourceKey<Biome>.location()} (ResourceKey.java:52) -> {@code
 	 * Identifier.toString()} (Identifier.java:126, "namespace:path"). {@code ResourceKey<Biome>} напрямую
 	 * (как датаген-константы {@code net.minecraft.world.level.biome.Biomes.RIVER/...}, используемые в
 	 * {@code CS.java}-наборах {@code BIOMES_*}) резолвится тем же {@code identifier()}.
@@ -64,8 +64,8 @@ public class BiomeNameSet extends AbstractSet<String> {
 	 * классов ... их generate-сигнатуры не тронуты") — не расширяем сейчас поверх границы этой задачи.
 	 */
 	public static String biomeKeyName(Object aName) {
-		if (aName instanceof Holder<?> aHolder) return aHolder.unwrapKey().map(k -> k.identifier().toString()).orElse("");
-		if (aName instanceof ResourceKey<?> aKey) return aKey.identifier().toString();
+		if (aName instanceof Holder<?> aHolder) return aHolder.unwrapKey().map(k -> k.location().toString()).orElse("");
+		if (aName instanceof ResourceKey<?> aKey) return aKey.location().toString();
 		if (aName instanceof Biome aBiome) return keyOfBiome(aBiome);
 		return aName.toString();
 	}
@@ -96,7 +96,7 @@ public class BiomeNameSet extends AbstractSet<String> {
 		String rKey = "";
 		try {
 			net.minecraft.server.MinecraftServer tServer = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
-			if (tServer != null) rKey = tServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getResourceKey(aBiome).map(k -> k.identifier().toString()).orElse("");
+			if (tServer != null) rKey = tServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getResourceKey(aBiome).map(k -> k.location().toString()).orElse("");
 		} catch (Throwable e) {rKey = "";}
 		if (!rKey.isEmpty()) synchronized (BIOME_KEY_CACHE) {BIOME_KEY_CACHE.put(aBiome, rKey);}
 		return rKey;

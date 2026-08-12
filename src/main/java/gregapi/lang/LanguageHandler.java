@@ -261,7 +261,7 @@ public class LanguageHandler {
 		if (ST.invalid(aStack)) return "null";
 		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT != null && tNBT.contains("display")) {
-			String tName = tNBT.getCompoundOrEmpty("display").getStringOr("Name", "");
+			String tName = tNBT.getCompound("display").getString("Name");
 			if (UT.Code.stringValid(tName)) {
 				return tName;
 			}

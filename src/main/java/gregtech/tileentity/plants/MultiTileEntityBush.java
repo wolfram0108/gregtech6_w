@@ -67,8 +67,8 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		mBerry = ST.load(aNBT, NBT_VALUE);
-		mStage = aNBT.getByteOr(NBT_STATE, (byte)0);
-		mGrowth = aNBT.getByteOr(NBT_PROGRESS, (byte)0);
+		mStage = aNBT.getByte(NBT_STATE);
+		mGrowth = aNBT.getByte(NBT_PROGRESS);
 		super.readFromNBT2(aNBT);
 	}
 	

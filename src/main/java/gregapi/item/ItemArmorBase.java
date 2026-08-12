@@ -162,7 +162,7 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 		Item.Properties rProperties = new Item.Properties()
 			// F12-followup (item-split): neo Item требует id в Properties (иначе «Item id not set»); ключ = (modID, unlocalized),
 			// санитизирован, совпадает с именем регистрации registerItemLazy на call-site (как ItemBase:87).
-			.setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(aModID, gregapi.GT_API.sanitizeRegName(aUnlocalized))))
+			
 			.durability(tType.getDurability(tMaterial.durability()))
 			.attributes(tMaterial.createAttributes(tType))
 			.component(net.minecraft.core.component.DataComponents.EQUIPPABLE, net.minecraft.world.item.equipment.Equippable.builder(tType.getSlot()).setEquipSound(tMaterial.equipSound()).setAsset(tMaterial.assetId()).build())
@@ -215,10 +215,10 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 	}
 
 	public ItemStack onDispense(BlockSource aSource, ItemStack aStack) {
-		Direction tFacing = aSource.state().getValue(net.minecraft.world.level.block.DispenserBlock.FACING);
+		Direction tFacing = aSource.getBlockState().getValue(net.minecraft.world.level.block.DispenserBlock.FACING);
 		Position tPosition = net.minecraft.world.level.block.DispenserBlock.getDispensePosition(aSource);
 		ItemStack tSplit = aStack.split(1);
-		DefaultDispenseItemBehavior.spawnItem(aSource.level(), tSplit, 6, tFacing, tPosition);
+		DefaultDispenseItemBehavior.spawnItem(aSource.getLevel(), tSplit, 6, tFacing, tPosition);
 		return aStack;
 	}
 

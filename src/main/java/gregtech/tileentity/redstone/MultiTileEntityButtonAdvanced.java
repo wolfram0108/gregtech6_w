@@ -63,15 +63,15 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mInverted     = aNBT.getBooleanOr(NBT_MODE, false);
-		mLampMode     = aNBT.getBooleanOr(NBT_MODE+".lamp", false);
-		mGlowInverted = aNBT.getBooleanOr(NBT_VISUAL, false);
-		mActive       = aNBT.getBooleanOr(NBT_ACTIVE, false);
-		if (aNBT.contains(NBT_PROGRESS)) mLength = aNBT.getLongOr(NBT_PROGRESS, 0L);
-		if (aNBT.contains(NBT_MAXPROGRESS)) mMaxLength = aNBT.getLongOr(NBT_MAXPROGRESS, 0L);
-		if (aNBT.contains(NBT_REDSTONE)) mStrength = aNBT.getByteOr(NBT_REDSTONE, (byte)0);
-		if (aNBT.contains(NBT_TEXTURE+".0")) mType = aNBT.getByteOr(NBT_TEXTURE+".0", (byte)0);
-		if (aNBT.contains(NBT_TEXTURE+".1")) mIndex = aNBT.getByteOr(NBT_TEXTURE+".1", (byte)0);
+		mInverted     = aNBT.getBoolean(NBT_MODE);
+		mLampMode     = aNBT.getBoolean(NBT_MODE+".lamp");
+		mGlowInverted = aNBT.getBoolean(NBT_VISUAL);
+		mActive       = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_PROGRESS)) mLength = aNBT.getLong(NBT_PROGRESS);
+		if (aNBT.contains(NBT_MAXPROGRESS)) mMaxLength = aNBT.getLong(NBT_MAXPROGRESS);
+		if (aNBT.contains(NBT_REDSTONE)) mStrength = aNBT.getByte(NBT_REDSTONE);
+		if (aNBT.contains(NBT_TEXTURE+".0")) mType = aNBT.getByte(NBT_TEXTURE+".0");
+		if (aNBT.contains(NBT_TEXTURE+".1")) mIndex = aNBT.getByte(NBT_TEXTURE+".1");
 	}
 	
 	@Override

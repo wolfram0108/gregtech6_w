@@ -70,7 +70,7 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByteOr(NBT_MODE, (byte)0);
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
 		if (aNBT.contains(NBT_MATERIALS)) mContent = OreDictMaterialStack.load(NBT_MATERIALS, aNBT);
 	}
 	
@@ -133,7 +133,7 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 	
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (isServerSide() && SIDES_TOP[aSide] && canInsertItem2(0, aPlayer.getInventory().getSelectedItem(), aSide)) ST.move(aPlayer.getInventory(), this, aPlayer.getInventory().getSelectedSlot(), 0);
+		if (isServerSide() && SIDES_TOP[aSide] && canInsertItem2(0, aPlayer.getInventory().getSelected(), aSide)) ST.move(aPlayer.getInventory(), this, aPlayer.getInventory().selected, 0);
 		return T;
 	}
 	

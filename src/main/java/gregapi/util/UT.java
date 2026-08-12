@@ -663,32 +663,32 @@ public class UT {
 			}
 			if (!aMat.mEnchantmentTools  .isEmpty()) {
 				tPage = "Tool Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentTools  ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentTools  ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentWeapons.isEmpty()) {
 				tPage = "Weapon Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentWeapons) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentWeapons) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentAmmo   .isEmpty()) {
 				tPage = "Ammo Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentAmmo   ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentAmmo   ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentRanged .isEmpty()) {
 				tPage = "Ranged Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentRanged ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentRanged ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentFishing.isEmpty()) {
 				tPage = "Fishing Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentFishing) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentFishing) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentArmors .isEmpty()) {
 				tPage = "Armor Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentArmors ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentArmors ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			
@@ -1882,7 +1882,7 @@ public class UT {
 			ArrayList<String> tTagsToRemove = new ArrayListNoNulls<>();
 			for (Object tKey : aNBT.keySet()) {
 				Tag tValue = aNBT.get((String)tKey);
-				if (tValue == null || (tValue instanceof CompoundTag && ((CompoundTag)tValue).isEmpty()) || (tValue instanceof NumericTag && ((NumericTag)tValue).intValue() == 0) || (tValue instanceof StringTag && Code.stringInvalid(((StringTag)tValue).value()))) tTagsToRemove.add((String)tKey);
+				if (tValue == null || (tValue instanceof CompoundTag && ((CompoundTag)tValue).isEmpty()) || (tValue instanceof NumericTag && ((NumericTag)tValue).getAsInt() == 0) || (tValue instanceof StringTag && Code.stringInvalid(((StringTag)tValue).getAsString()))) tTagsToRemove.add((String)tKey);
 			}
 			for (Object tKey : tTagsToRemove) aNBT.remove((String)tKey);
 			ItemNBT.set(aStack, aNBT.isEmpty()?null:aNBT);
@@ -1916,14 +1916,14 @@ public class UT {
 		}
 		public static String getPunchCardData(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			return tNBT.getStringOr("gt.punchcard", "");
+			return tNBT.getString("gt.punchcard");
 		}
 		public static CompoundTag setPunchCardData(CompoundTag aNBT, String aPunchCardData) {
 			aNBT.putString("gt.punchcard", aPunchCardData);
 			return aNBT;
 		}
 		public static String getPunchCardData(CompoundTag aNBT) {
-			return aNBT.getStringOr("gt.punchcard", "");
+			return aNBT.getString("gt.punchcard");
 		}
 		
 		public static CompoundTag setBlueprintCrafting(ItemStack aStack, ItemStack... aBlueprint) {
@@ -1946,7 +1946,7 @@ public class UT {
 			return aNBT;
 		}
 		public static ItemStack[] getBlueprintCrafting(CompoundTag aNBT) {
-			CompoundTag tList = aNBT.contains("gt.blueprint.craft")?aNBT.getCompoundOrEmpty("gt.blueprint.craft"):null;
+			CompoundTag tList = aNBT.contains("gt.blueprint.craft")?aNBT.getCompound("gt.blueprint.craft"):null;
 			if (tList != null) {
 				ItemStack[] rRecipe = new ItemStack[9];
 				for (int i = 0; i < rRecipe.length; i++) rRecipe[i] = ST.amount(1, ST.load(tList, ""+i));
@@ -1963,14 +1963,14 @@ public class UT {
 		}
 		public static long getLighterFuel(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			return tNBT.getLongOr("gt.lighter", 0L);
+			return tNBT.getLong("gt.lighter");
 		}
 		public static CompoundTag setLighterFuel(CompoundTag aNBT, long aFuel) {
 			setNumber(aNBT, "gt.lighter", aFuel);
 			return aNBT;
 		}
 		public static long getLighterFuel(CompoundTag aNBT) {
-			return aNBT.getLongOr("gt.lighter", 0L);
+			return aNBT.getLong("gt.lighter");
 		}
 
 		public static CompoundTag setMapID(ItemStack aStack, short aMapID) {
@@ -1982,7 +1982,7 @@ public class UT {
 		public static short getMapID(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
 			if (!tNBT.contains("map_id")) return -1;
-			return tNBT.getShortOr("map_id", (short)0);
+			return tNBT.getShort("map_id");
 		}
 		public static CompoundTag setMapID(CompoundTag aNBT, short aMapID) {
 			aNBT.putShort("map_id", aMapID);
@@ -1990,7 +1990,7 @@ public class UT {
 		}
 		public static short getMapID(CompoundTag aNBT) {
 			if (!aNBT.contains("map_id")) return -1;
-			return aNBT.getShortOr("map_id", (short)0);
+			return aNBT.getShort("map_id");
 		}
 
 		public static CompoundTag setMagicMapID(ItemStack aStack, short aMapID) {
@@ -2002,7 +2002,7 @@ public class UT {
 		public static short getMagicMapID(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
 			if (!tNBT.contains("magic_map_id")) return -1;
-			return tNBT.getShortOr("magic_map_id", (short)0);
+			return tNBT.getShort("magic_map_id");
 		}
 		public static CompoundTag setMagicMapID(CompoundTag aNBT, short aMapID) {
 			aNBT.putShort("magic_map_id", aMapID);
@@ -2010,7 +2010,7 @@ public class UT {
 		}
 		public static short getMagicMapID(CompoundTag aNBT) {
 			if (!aNBT.contains("magic_map_id")) return -1;
-			return aNBT.getShortOr("magic_map_id", (short)0);
+			return aNBT.getShort("magic_map_id");
 		}
 
 		public static CompoundTag setMazeMapID(ItemStack aStack, short aMapID) {
@@ -2022,7 +2022,7 @@ public class UT {
 		public static short getMazeMapID(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
 			if (!tNBT.contains("maze_map_id")) return -1;
-			return tNBT.getShortOr("maze_map_id", (short)0);
+			return tNBT.getShort("maze_map_id");
 		}
 		public static CompoundTag setMazeMapID(CompoundTag aNBT, short aMapID) {
 			aNBT.putShort("maze_map_id", aMapID);
@@ -2030,7 +2030,7 @@ public class UT {
 		}
 		public static short getMazeMapID(CompoundTag aNBT) {
 			if (!aNBT.contains("maze_map_id")) return -1;
-			return aNBT.getShortOr("maze_map_id", (short)0);
+			return aNBT.getShort("maze_map_id");
 		}
 
 		public static CompoundTag setOreMapID(ItemStack aStack, short aMapID) {
@@ -2042,7 +2042,7 @@ public class UT {
 		public static short getOreMapID(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
 			if (!tNBT.contains("ore_map_id")) return -1;
-			return tNBT.getShortOr("ore_map_id", (short)0);
+			return tNBT.getShort("ore_map_id");
 		}
 		public static CompoundTag setOreMapID(CompoundTag aNBT, short aMapID) {
 			aNBT.putShort("ore_map_id", aMapID);
@@ -2050,7 +2050,7 @@ public class UT {
 		}
 		public static short getOreMapID(CompoundTag aNBT) {
 			if (!aNBT.contains("ore_map_id")) return -1;
-			return aNBT.getShortOr("ore_map_id", (short)0);
+			return aNBT.getShort("ore_map_id");
 		}
 
 		public static CompoundTag setBookMapping(ItemStack aStack, String aTitle) {
@@ -2061,14 +2061,14 @@ public class UT {
 		}
 		public static String getBookMapping(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			return tNBT.getStringOr("book", "");
+			return tNBT.getString("book");
 		}
 		public static CompoundTag setBookMapping(CompoundTag aNBT, String aTitle) {
 			aNBT.putString("book", aTitle);
 			return aNBT;
 		}
 		public static String getBookMapping(CompoundTag aNBT) {
-			return aNBT.getStringOr("book", "");
+			return aNBT.getString("book");
 		}
 
 		public static CompoundTag setBookTitle(ItemStack aStack, String aTitle) {
@@ -2079,14 +2079,14 @@ public class UT {
 		}
 		public static String getBookTitle(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			return tNBT.getStringOr("title", "");
+			return tNBT.getString("title");
 		}
 		public static CompoundTag setBookTitle(CompoundTag aNBT, String aTitle) {
 			aNBT.putString("title", aTitle);
 			return aNBT;
 		}
 		public static String getBookTitle(CompoundTag aNBT) {
-			return aNBT.getStringOr("title", "");
+			return aNBT.getString("title");
 		}
 
 		public static CompoundTag setBookAuthor(ItemStack aStack, String aAuthor) {
@@ -2097,27 +2097,27 @@ public class UT {
 		}
 		public static String getBookAuthor(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			return tNBT.getStringOr("author", "");
+			return tNBT.getString("author");
 		}
 		public static CompoundTag setBookAuthor(CompoundTag aNBT, String aAuthor) {
 			aNBT.putString("author", aAuthor);
 			return aNBT;
 		}
 		public static String getBookAuthor(CompoundTag aNBT) {
-			return aNBT.getStringOr("author", "");
+			return aNBT.getString("author");
 		}
 		
 		public static List<String> getDataToolTip(CompoundTag aData, List<String> aList, boolean aAllDetails) {
 			if (aData.contains(NBT_REACTOR_SETUP)) {
-				aList.add(LH.Chat.CYAN + "Reactor Setup: " + aData.getStringOr(NBT_REACTOR_SETUP_NAME, ""));
+				aList.add(LH.Chat.CYAN + "Reactor Setup: " + aData.getString(NBT_REACTOR_SETUP_NAME));
 				return aList;
 			}
 			if (aData.contains(NBT_CANVAS_BLOCK)) {
-				aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(ST.block_(aData.getIntOr(NBT_CANVAS_BLOCK, 0)), 1, aData.getIntOr(NBT_CANVAS_META, 0))));
+				aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(ST.block_(aData.getInt(NBT_CANVAS_BLOCK)), 1, aData.getInt(NBT_CANVAS_META))));
 				return aList;
 			}
 			if (aData.contains(NBT_REPLICATOR_DATA)) {
-				short tIndex = aData.getShortOr(NBT_REPLICATOR_DATA, (short)0);
+				short tIndex = aData.getShort(NBT_REPLICATOR_DATA);
 				if (Code.exists(tIndex, OreDictMaterial.MATERIAL_ARRAY)) {
 					OreDictMaterial tMaterial = OreDictMaterial.MATERIAL_ARRAY[tIndex];
 					if (tMaterial.contains(TD.Processing.UUM)) {
@@ -2142,19 +2142,19 @@ public class UT {
 				return aList;
 			}
 			if (IL.GC_Schematic_1.exists() && aData.contains("gc_schematics_1")) {
-				aList.add(LH.Chat.CYAN + IL.GC_Schematic_1.getWithMeta(1, aData.getShortOr("gc_schematics_1", (short)0)).getDisplayName());
+				aList.add(LH.Chat.CYAN + IL.GC_Schematic_1.getWithMeta(1, aData.getShort("gc_schematics_1")).getDisplayName());
 				return aList;
 			}
 			if (IL.GC_Schematic_2.exists() && aData.contains("gc_schematics_2")) {
-				aList.add(LH.Chat.CYAN + IL.GC_Schematic_2.getWithMeta(1, aData.getShortOr("gc_schematics_2", (short)0)).getDisplayName());
+				aList.add(LH.Chat.CYAN + IL.GC_Schematic_2.getWithMeta(1, aData.getShort("gc_schematics_2")).getDisplayName());
 				return aList;
 			}
 			if (IL.GC_Schematic_3.exists() && aData.contains("gc_schematics_3")) {
-				aList.add(LH.Chat.CYAN + IL.GC_Schematic_3.getWithMeta(1, aData.getShortOr("gc_schematics_3", (short)0)).getDisplayName());
+				aList.add(LH.Chat.CYAN + IL.GC_Schematic_3.getWithMeta(1, aData.getShort("gc_schematics_3")).getDisplayName());
 				return aList;
 			}
 			if (IL.IE_Blueprint_Projectiles_Common.exists() && aData.contains("ie_blueprint")) {
-				short tMeta = aData.getShortOr("ie_blueprint", (short)0);
+				short tMeta = aData.getShort("ie_blueprint");
 				aList.add(LH.Chat.CYAN + IL.IE_Blueprint_Projectiles_Common.getWithMeta(1, tMeta).getDisplayName());
 				switch(tMeta) {
 				case 0: aList.add(LH.Chat.GREEN + "Common Projectiles"); break;
@@ -2223,178 +2223,110 @@ public class UT {
 		public static int getEnchantmentLevelDestruction   (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.destruction, aStack) : 0;}
 		public static int getEnchantmentLevelWrecking      (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.wrecking   , aStack) : 0;}
 		public static int getEnchantmentLevelImplosion     (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.implosion  , aStack) : 0;}
-		// F8: "fortune"/"looting" в neo — ResourceKey<Enchantment> (Enchantments.BLOCK_FORTUNE/LOOTING,
-		// neo-decompiled …/Enchantments.java:105,110), не готовые экземпляры Enchantment. RegistryAccess НЕ
-		// нужен — тот же приём, что getEnchantmentXP(ItemStack) выше: реальные зачарования стека уже лежат
-		// в типизированном DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS как Holder<Enchantment>
-		// (разрешены движком заранее); сравниваем Holder С ResourceKey через Holder.is(ResourceKey)
-		// (Holder.java:25), не резолвим ResourceKey->Holder сами. Полное имя класса (без import) — простое
-		// имя "Enchantments" в файле уже занято вложенным UT.Enchantments (BULLSHIT-диспетчер ниже),
-		// member-тип экранирует top-level импорт (JLS 6.4.1).
-		public static int getEnchantmentLevelLootingFortune(ItemStack aStack) {
-			ItemEnchantments tEnchantments = aStack.getOrDefault(EnchantmentHelper.getComponentType(aStack), ItemEnchantments.EMPTY);
-			int rLevel = 0;
-			for (Holder<Enchantment> tEnchantment : tEnchantments.keySet()) if (tEnchantment.is(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE) || tEnchantment.is(net.minecraft.world.item.enchantment.Enchantments.MOB_LOOTING)) rLevel = Math.max(rLevel, tEnchantments.getLevel(tEnchantment));
-			return rLevel;
-		}
+		// 1.20.1: "fortune"/"looting" — снова готовые объекты Enchantment (Enchantments.BLOCK_FORTUNE/MOB_LOOTING,
+		// forge-1201-decompiled …/Enchantments.java:27,32), реестр/Holder не нужны — форма оригинала 1:1
+		// (gt6-original …/UT.java:2350). Полное имя класса (без import) — простое имя "Enchantments" в файле уже
+		// занято вложенным UT.Enchantments (BULLSHIT-диспетчер ниже), member-тип экранирует top-level импорт (JLS 6.4.1).
+		public static int getEnchantmentLevelLootingFortune(ItemStack aStack) {return Math.max(getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE, aStack), getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.MOB_LOOTING, aStack));}
 
-		// F8: aEnchantment передан ЗНАЧЕНИЕМ (не Holder) — 1.7.10 адресовал зачарования числовым
-		// effectId в статическом массиве Enchantment.enchantmentsList; в neo Enchantment — record без
-		// effectId, зачарования на стеке идентифицируются Holder<Enchantment>. Holder.direct(aEnchantment)
-		// оборачивает переданное значение 1:1 (равенство по значению record), затем читаем ЧЕРЕЗ
-		// ItemStack.getEnchantmentLevel(Holder) — geймплейный аналог старого
-		// EnchantmentHelper.getEnchantmentLevel(effectId, stack). Проверка "effectId < 0" убрана —
-		// поля effectId в новой модели не существует, null-guard сохранён.
+		// 1.20.1: чары стека снова лежат сырым ListTag "Enchantments" в NBT (ItemStack.java:93,549), а сам чар —
+		// объект реестра. Оригинал звал EnchantmentHelper.getEnchantmentLevel(effectId, stack) — прямой аналог
+		// ItemStack.getEnchantmentLevel(Enchantment) (Forge-расширение, EnchantmentHelper.java:64-66). Проверка
+		// "effectId < 0" снята: числовых effectId в 1.20.1 нет, null-guard сохранён.
 		public static int getEnchantmentLevel(Enchantment aEnchantment, ItemStack aStack) {
-			if (aEnchantment == null) return 0;
-			return aStack.getEnchantmentLevel(Holder.direct(aEnchantment));
+			if (aEnchantment == null || ST.invalid(aStack)) return 0;
+			return aStack.getEnchantmentLevel(aEnchantment);
 		}
-		// F8: ванильные/GT6-энчанты в neo адресуются ResourceKey<Enchantment> (Enchantments.FLAMING_ARROWS/POWER/…,
-		// Enchantment_EnderDamage.KEY), НЕ объектом Enchantment — 1.7.10 передавал сюда статический
-		// Enchantment.X, которого в новой registry-driven модели нет. Тот же приём, что
-		// getEnchantmentLevelLootingFortune выше: чары стека уже разрешены движком в Holder<Enchantment>
-		// (типизированный DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS), сравниваем Holder С ResourceKey
-		// через Holder.is(ResourceKey) (Holder.java:25) — реестр/сервер не нужны. Перегрузка не конфликтует
-		// с Enchantment-версией выше: разные типы первого параметра (кастомные Enchantment-объекты F10 ещё
-		// идут туда).
-		public static int getEnchantmentLevel(ResourceKey<Enchantment> aEnchantment, ItemStack aStack) {
-			if (aEnchantment == null) return 0;
-			ItemEnchantments tEnchantments = aStack.getOrDefault(EnchantmentHelper.getComponentType(aStack), ItemEnchantments.EMPTY);
-			int rLevel = 0;
-			for (Holder<Enchantment> tEnchantment : tEnchantments.keySet()) if (tEnchantment.is(aEnchantment)) rLevel = Math.max(rLevel, tEnchantments.getLevel(tEnchantment));
-			return rLevel;
-		}
+		// Гейт вернулся к оригинальному (gt6-original …/UT.java:2356): в 1.20.1 чары снова живут ВНУТРИ общего
+		// NBT-тега стека ("Enchantments", ItemStack.java:93), поэтому "нет тега вообще" ⇒ "нет чар" — снова верно.
 		public static int getEnchantmentXP(ItemStack aStack) {
-			// УЛИКА R8 (доработка): оригинальный гейт был `!(ItemNBT.get(aStack) != null)` (1.7.10 — "ench"
-			// жил ВНУТРИ общего NBT-тега стека, поэтому "нет тега вообще" ⇒ "нет чар"). F8 переносит
-			// чары на ОТДЕЛЬНЫЙ канал DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS, независимый от
-			// CUSTOM_DATA (см. gregapi.code.ItemNBT javadoc) — `!ItemNBT.has(aStack)` (CUSTOM_DATA-гейт)
-			// был НЕВЕРНЫМ 1:1-переводом: стек без CUSTOM_DATA, но с реальными чарами в ENCHANTMENTS,
-			// молча получал 0 XP. Гейт переведён на настоящий канал зачарований —
-			// EnchantmentHelper.hasAnyEnchantments (neo-decompiled …/EnchantmentHelper.java:97-100,
-			// проверяет ОБА канала ENCHANTMENTS/STORED_ENCHANTMENTS, тот же движковый метод, что и
-			// ItemStack.isEnchanted() использует для ENCHANTMENTS).
-			if (ST.invalid(aStack) || !EnchantmentHelper.hasAnyEnchantments(aStack) || ST.isGT_(aStack) || (COMPAT_EU_ITEM != null && COMPAT_EU_ITEM.is(aStack))) return 0;
-			// F8: "ench" читается движком ТОЛЬКО из типизированного DataComponents.ENCHANTMENTS/
-			// STORED_ENCHANTMENTS (не сырого CUSTOM_DATA-тега) — читаем реальные зачарования стека
-			// напрямую, а не делегируем в getEnchantmentXP(CompoundTag) (тот работал по легаси
-			// числовым id, которых в этом канале никогда не было и нет).
-			ItemEnchantments tEnchantments = aStack.getOrDefault(EnchantmentHelper.getComponentType(aStack), ItemEnchantments.EMPTY);
-			if (tEnchantments.isEmpty()) return 0;
+			if (ST.invalid(aStack) || !aStack.hasTag() || ST.isGT_(aStack) || (COMPAT_EU_ITEM != null && COMPAT_EU_ITEM.is(aStack))) return 0;
+			return getEnchantmentXP(getNBT(aStack));
+		}
+		// Восстановлено 1:1 (в 26.x деградировало до 0 — там формат был недостижим). Отличие от 1.7.10 ровно одно:
+		// id чара в записи — строковый ResourceLocation, а не short-индекс Enchantment.enchantmentsList
+		// (EnchantmentHelper.getEnchantmentId(CompoundTag), EnchantmentHelper.java:52-55); уровень читается тем же
+		// движковым хелпером (EnchantmentHelper.java:48-50). Проклятия и формула divup(rXP,2) — как в оригинале,
+		// getMinEnchantability -> getMinCost (Enchantment.java:62).
+		public static int getEnchantmentXP(CompoundTag aNBT) {
+			if (!aNBT.contains("Enchantments", 9)) return 0;
 			int rXP = 0;
-			for (Holder<Enchantment> tEnchantment : tEnchantments.keySet()) {
-				if (tEnchantment.is(EnchantmentTags.CURSE)) return 0;
-				rXP += tEnchantment.value().getMinCost(tEnchantments.getLevel(tEnchantment));
+			net.minecraft.nbt.ListTag aList = aNBT.getList("Enchantments", 10);
+			for (int i = 0; i < aList.size(); i++) {
+				CompoundTag tEnchantmentTag = aList.getCompound(i);
+				Enchantment tEnchantment = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(EnchantmentHelper.getEnchantmentId(tEnchantmentTag));
+				if (tEnchantment == null) continue;
+				if (UT.Reflection.getLowercaseClass(tEnchantment).contains("curse")) return 0;
+				rXP += tEnchantment.getMinCost(EnchantmentHelper.getEnchantmentLevel(tEnchantmentTag));
 			}
 			return UT.Code.bindInt(UT.Code.divup(rXP, 2));
 		}
-		// F8 impossible-1:1: легаси-формат ListTag{id:short,lvl:short} по числовому ID
-		// зачарования невосстановим — в neo зачарования регистро-driven (Holder<Enchantment>), числовых
-		// ID нет (Enchantment.enchantmentsList удалён из движка целиком, не только переименован). Эта
-		// перегрузка больше не вызывается изнутри дерева (getEnchantmentXP(ItemStack) выше читает
-		// типизированный компонент напрямую) — сохранена как публичный API 1:1, деградирует до 0 до шва
-		// ENCHANT (STATE.md "Не начато").
-		public static int getEnchantmentXP(CompoundTag aNBT) {
-			return 0;
-		}
 		public static ItemStack removeEnchantments(ItemStack aStack) {
-			// F8: чары читаются движком из типизированного DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS —
-			// канал отдельный от CUSTOM_DATA. Снимаем реальный компонент (это и есть рабочая замена
-			// старого aNBT.remove("ench")), и следом — легаси-ключ "ench" под CUSTOM_DATA (defensive,
-			// getOrCreate возвращает detached-копию; commit через set — эквивалент старого check).
-			aStack.remove(EnchantmentHelper.getComponentType(aStack));
-			CompoundTag tNBT = getOrCreate(aStack);
-			removeEnchantments(tNBT);
-			return set(aStack, tNBT);
+			removeEnchantments(getOrCreate(aStack));
+			return check(aStack);
 		}
 		public static void removeEnchantments(CompoundTag aNBT) {
-			aNBT.remove("ench");
+			// ключ списка чар в 1.20.1 — "Enchantments" (ItemStack.TAG_ENCH, ItemStack.java:93); в 1.7.10 был "ench".
+			aNBT.remove("Enchantments");
 		}
 		// F8: маршрут на типизированный DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS (см. javadoc
 		// getEnchantmentLevel выше про Holder.direct). ItemEnchantments.Mutable.set(holder, level)
 		// заменяет существующую запись ИЛИ добавляет новую — 1:1 замена ручного скана списка "найти id,
 		// обновить lvl, иначе добавить". Каст (byte)aLevel сохраняет ОРИГИНАЛЬНУЮ 1.7.10-усечку уровня
 		// (исходный код тоже писал lvl как (byte)aLevel, несмотря на short-поле) — не улучшение, воспроизведение.
-		/** F8 (enchant-registry, класс «протухший Holder» BUG-002; живой тест данжей #39: краш энкода
-		 *  container_set_content «Can't find id for sharpness» при открытии сундука): шаблоны GT-лута
-		 *  (инструменты/мечи) зачаровываются на data-init ПЕРВОГО мира сессии — Holder.Reference из его
-		 *  datapack-реестра протухает при смене мира, пакет-кодек не находит id. Пере-резолв компонента
-		 *  по ResourceKey в реестре ТЕКУЩЕГО сервера; direct-holder'ы (без ключа) сохраняются как есть.
-		 *  Сохранённые в NBT стеки не страдают (NBT-загрузка резолвит по текущему реестру) — протухание
-		 *  живёт только в памяти сессии (шаблоны лут-буферов). */
+		/** BUG-002 (протухший Holder) — дефект НЕВОЗМОЖЕН в 1.20.1: чары здесь снова СТАТИЧЕСКИЙ реестр
+		 *  (BuiltInRegistries.ENCHANTMENT / ForgeRegistries.ENCHANTMENTS, Enchantment.java:27-29), а не
+		 *  динамический пер-серверный, и в NBT стека лежит строковый id, а не ссылка на объект реестра
+		 *  (ItemStack.java:549, EnchantmentHelper.java:52-55). Пере-резолвить нечего. Оригинал 1.7.10 этих
+		 *  методов не имел вовсе (появились только под neo-модель) — сохранены как no-op ради вызывателей
+		 *  (ST.java, GT6CraftingDispatcher.java), поведение стека не меняется. */
 		public static ItemStack freshenEnchantments(ItemStack aStack) {
-			if (ST.invalid(aStack)) return aStack;
-			MinecraftServer tServer = ServerLifecycleHooks.getCurrentServer();
-			if (tServer == null) return aStack;
-			DataComponentType<ItemEnchantments> tType = EnchantmentHelper.getComponentType(aStack);
-			ItemEnchantments tOld = aStack.get(tType);
-			if (tOld == null || tOld.isEmpty()) return aStack;
-			net.minecraft.core.HolderLookup.RegistryLookup<Enchantment> tLookup = tServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
-			ItemEnchantments.Mutable tNew = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
-			for (Holder<Enchantment> tHolder : tOld.keySet()) {
-				int tLevel = tOld.getLevel(tHolder);
-				java.util.Optional<net.minecraft.resources.ResourceKey<Enchantment>> tKey = tHolder.unwrapKey();
-				if (tKey.isPresent()) {
-					java.util.Optional<Holder.Reference<Enchantment>> tFresh = tLookup.get(tKey.get());
-					if (tFresh.isPresent()) tNew.set(tFresh.get(), tLevel);
-				} else tNew.set(tHolder, tLevel);
+			return aStack;
+		}
+
+		// Форма оригинала (gt6-original …/UT.java:2379-2404) восстановлена: список чар снова живёт в NBT стека
+		// ключом "Enchantments" (ItemStack.java:93,820-828). Отличие ровно одно — id записи строковый
+		// (EnchantmentHelper.storeEnchantment/getEnchantmentId, EnchantmentHelper.java:37-55), а не short-индекс
+		// удалённого Enchantment.enchantmentsList. Дедуп «нашли тот же id — обновили lvl, иначе добавили» и
+		// оригинальная усечка (byte)aLevel сохранены дословно (движковый ItemStack.enchant дедупа НЕ делает).
+		public static ItemStack addEnchantment(ItemStack aStack, Enchantment aEnchantment, long aLevel) {
+			if (aEnchantment == null || ST.invalid(aStack)) return aStack;
+			net.minecraft.resources.ResourceLocation tID = EnchantmentHelper.getEnchantmentId(aEnchantment);
+			if (tID == null) return aStack;
+			CompoundTag tNBT = getOrCreate(aStack);
+			if (!tNBT.contains("Enchantments", 9)) tNBT.put("Enchantments", new net.minecraft.nbt.ListTag());
+			net.minecraft.nbt.ListTag tList = tNBT.getList("Enchantments", 10);
+			
+			boolean temp = T;
+			
+			for (int i = 0; i < tList.size(); i++) {
+				CompoundTag tEnchantmentTag = tList.getCompound(i);
+				if (tID.equals(EnchantmentHelper.getEnchantmentId(tEnchantmentTag))) {
+					EnchantmentHelper.setEnchantmentLevel(tEnchantmentTag, (byte)aLevel);
+					temp = F;
+					break;
+				}
 			}
-			aStack.set(tType, tNew.toImmutable());
-			return aStack;
+			
+			if (temp) tList.add(EnchantmentHelper.storeEnchantment(tID, (byte)aLevel));
+			
+			return set(aStack, tNBT);
 		}
 
-		public static ItemStack addEnchantment(ItemStack aStack, ResourceKey<Enchantment> aEnchantment, long aLevel) {
-			// F8 (enchant-registry, форс движка): энчанты стали registry-driven Holder — резолвим ключ через
-			// server-реестр (в 1.7.10 был статический объект Enchantment.X). Нет сервера => энчантовать нечем.
-			MinecraftServer tServer = ServerLifecycleHooks.getCurrentServer();
-			if (tServer == null) return aStack;
-			// F8 robustness: getOrThrow → get (Optional). Если ключ энчанта не в реестре (напр. кастом gregapi-энчант ещё
-			// не привязан/не зарегистрирован в этом контексте), НЕ роняем — как в 1.7.10 несуществующим энчантом просто
-			// не зачаровать (тогда объект был бы null). getOrThrow здесь каскадно рушил ВЕСЬ deferItemInit-Runnable
-			// (getToolWithStats радиоактивного материала → toolhead + масса tool-рецептов терялись целиком).
-			java.util.Optional<Holder.Reference<Enchantment>> tOpt = tServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).get(aEnchantment);
-			if (tOpt.isEmpty()) return aStack;
-			Holder<Enchantment> tHolder = tOpt.get();
-			DataComponentType<ItemEnchantments> tType = EnchantmentHelper.getComponentType(aStack);
-			ItemEnchantments.Mutable tMutable = new ItemEnchantments.Mutable(aStack.getOrDefault(tType, ItemEnchantments.EMPTY));
-			tMutable.set(tHolder, (byte)aLevel);
-			aStack.set(tType, tMutable.toImmutable());
-			return aStack;
-		}
-
-		/** F8 (enchant-registry, протухшие holder'ы — BUG-002): в 1.7.10 Enchantment был статическим синглтоном, и вшить
-		 *  его в долгоживущий стек было безопасно. В neo энчанты — ДИНАМИЧЕСКИЙ пер-серверный реестр: Holder.Reference,
-		 *  вшитый в статический стек (результат рецепта mOutput, зачарован один раз на запуск через isItemStackUsable с
-		 *  гейтом "ench"), после перезахода в мир не находится сетевым кодеком ПО ИДЕНТИЧНОСТИ (Registry.getId(value),
-		 *  Registry.java:151) -> EncoderException container_set_slot -> дисконнект. Пересобирает компонент энчантов
-		 *  holder'ами ТЕКУЩЕГО сервера по ResourceKey (тот же путь резолва, что addEnchantment выше). Holder без ключа
-		 *  или ключ вне реестра — переносится как есть. Нет сервера/энчантов — no-op. */
+		/** BUG-002 (протухший Holder) — дефект НЕВОЗМОЖЕН в 1.20.1: чары здесь снова СТАТИЧЕСКИЙ реестр
+		 *  (BuiltInRegistries.ENCHANTMENT / ForgeRegistries.ENCHANTMENTS, Enchantment.java:27-29), а не
+		 *  динамический пер-серверный, и в NBT стека лежит строковый id, а не ссылка на объект реестра
+		 *  (ItemStack.java:549, EnchantmentHelper.java:52-55). Пере-резолвить нечего. Оригинал 1.7.10 этих
+		 *  методов не имел вовсе (появились только под neo-модель) — сохранены как no-op ради вызывателей
+		 *  (ST.java, GT6CraftingDispatcher.java), поведение стека не меняется. */
 		public static ItemStack refreshEnchantments(ItemStack aStack) {
-			if (aStack == null || aStack.isEmpty()) return aStack;
-			MinecraftServer tServer = ServerLifecycleHooks.getCurrentServer();
-			if (tServer == null) return aStack;
-			DataComponentType<ItemEnchantments> tType = EnchantmentHelper.getComponentType(aStack);
-			ItemEnchantments tOld = aStack.getOrDefault(tType, ItemEnchantments.EMPTY);
-			if (tOld.isEmpty()) return aStack;
-			net.minecraft.core.HolderLookup.RegistryLookup<Enchantment> tReg = tServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
-			ItemEnchantments.Mutable tNew = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
-			for (Holder<Enchantment> tHolder : tOld.keySet()) {
-				int tLevel = tOld.getLevel(tHolder);
-				Holder<Enchantment> tFresh = tHolder.unwrapKey().<Holder<Enchantment>>flatMap(k -> tReg.get(k).map(h -> h)).orElse(tHolder);
-				tNew.set(tFresh, tLevel);
-			}
-			aStack.set(tType, tNew.toImmutable());
 			return aStack;
 		}
 
-		/** было {@code aEnchantment.getTranslatedName(aLevel)} (1.7.10 Enchantment) — neo: имя энчанта с уровнем через
-		 *  static {@code Enchantment.getFullname(Holder<Enchantment>, level)} (neo Enchantment.java:185); ключ резолвим
-		 *  через server-реестр (тот же путь, что addEnchantment выше). Нет сервера => путь ключа как fallback. */
-		public static String enchantName(ResourceKey<Enchantment> aEnchantment, int aLevel) {
-			MinecraftServer tServer = ServerLifecycleHooks.getCurrentServer();
-			if (tServer == null) return aEnchantment.identifier().toString();
-			Holder<Enchantment> tHolder = tServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(aEnchantment);
-			return Enchantment.getFullname(tHolder, aLevel).getString();
+		/** было {@code aEnchantment.getTranslatedName(aLevel)} (1.7.10) — в 1.20.1 тот же метод зовётся
+		 *  {@code Enchantment.getFullname(int)} и возвращает {@code Component} ({@code Enchantment.java:99}). */
+		public static String enchantName(Enchantment aEnchantment, int aLevel) {
+			return aEnchantment == null ? "" : aEnchantment.getFullname(aLevel).getString();
 		}
 	}
 	
@@ -2422,15 +2354,23 @@ public class UT {
 			return EnchantmentHelper.modifyDamage(tSL, aStack, aTarget, tSL.damageSources().generic(), 0.0F);
 		}
 
-		// F8 impossible-1:1: тот же класс проблемы, что NBT.getEnchantmentXP(CompoundTag)
-		// выше — легаси "ench" NBTTagList{id:short,lvl:short} по числовому effectId (ItemStack.
-		// getEnchantmentTagList()/ListTag.tagCount()/getCompoundTagAt(int)) и статический реестр
-		// Enchantment.enchantmentsList[id] удалены из движка целиком (не переименованы; зачарования
-		// теперь registry-driven Holder<Enchantment>, читаются через DataComponents.ENCHANTMENTS — см.
-		// NBT.getEnchantmentXP(ItemStack) выше). Не найдено ни в одном из 3 корней референса.
-		// Деградация до no-op — до шва ENCHANT (STATE.md "Не начато").
+		// Восстановлено 1:1 (gt6-original …/UT.java:2413-2427; в 26.x деградировало до no-op): список чар стека
+		// снова читается сырым — ItemStack.getEnchantmentTags() (ItemStack.java:549), запись разбирается
+		// движковыми хелперами (EnchantmentHelper.java:48-55). Отличие от оригинала ровно одно: id строковый,
+		// поэтому вместо Enchantment.enchantmentsList[short] — BuiltInRegistries.ENCHANTMENT.get(ResourceLocation).
+		// try/catch вокруг тела — как в оригинале.
 		private static void applyBullshit(IBullshit aBullshitModifier, ItemStack aStack) {
-			//
+			if (aStack == null || aStack.isEmpty()) return;
+			net.minecraft.nbt.ListTag tList = aStack.getEnchantmentTags();
+			for (int i = 0; i < tList.size(); i++) {
+				try {
+					CompoundTag tTag = tList.getCompound(i);
+					Enchantment tEnchantment = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(EnchantmentHelper.getEnchantmentId(tTag));
+					if (tEnchantment != null) aBullshitModifier.calculateModifier(tEnchantment, EnchantmentHelper.getEnchantmentLevel(tTag));
+				} catch(Throwable e) {
+					//
+				}
+			}
 		}
 
 		private static void applyArrayOfBullshit(IBullshit aBullshitModifier, ItemStack[] aStacks) {
@@ -2471,11 +2411,9 @@ public class UT {
 
 			@Override
 			public void calculateModifier(Enchantment aEnchantment, int aLevel) {
-				// F-enchant SUPERSEDED (не заглушка): 1.7.10 звал виртуальный Enchantment.func_151367_b (onEntityDamaged),
-				// удалённый из neo Enchantment (record без поведенческих методов). Эффекты кастом-энчантов GT6 перенесены
-				// 1:1 в EnchantmentEffect_{Ender,Slime,Werewolf,Radioactivity} (gregapi/enchants) и привязаны через
-				// EnchantsGT6.bootstrap(.withEffect(EnchantmentEffectComponents.POST_ATTACK, EnchantmentTarget.ATTACKER/VICTIM,…));
-				// движок диспетчерит их сам при POST_ATTACK. Этот путь (applyBullshitA) — мёртвый 1:1-остаток структуры GT6, безвреден.
+				// 1.7.10 func_151367_b (gt6-original …/recompSrc/…/Enchantment.java:182) = 1.20.1 doPostHurt
+				// (Enchantment.java:121) — виртуальный колбэк снова на месте, путь восстановлен 1:1.
+				aEnchantment.doPostHurt(mPlayer, mEntity, aLevel);
 			}
 		}
 
@@ -2486,9 +2424,9 @@ public class UT {
 
 			@Override
 			public void calculateModifier(Enchantment aEnchantment, int aLevel) {
-				// F-enchant SUPERSEDED (не заглушка): 1.7.10 звал виртуальный Enchantment.func_151368_a (onUserHurt); ни один
-				// кастом-энчант GT6 его НЕ переопределял (сверено с референсом), а ванильный Thorns-диспетч движок neo делает
-				// сам data-driven (EnchantmentEffectComponents.POST_ATTACK). Мёртвый 1:1-остаток структуры GT6, безвреден.
+				// 1.7.10 func_151368_a (gt6-original …/recompSrc/…/Enchantment.java:180) = 1.20.1 doPostAttack
+				// (Enchantment.java:118) — виртуальный колбэк снова на месте, путь восстановлен 1:1.
+				aEnchantment.doPostAttack(mPlayer, mEntity, aLevel);
 			}
 		}
 		
@@ -2944,7 +2882,7 @@ public class UT {
 					// neo sound-id; neo-native строки играют сразу.
 					// F-sound (1:1): легаси 1.7.10 SFX-строки → neo sound-id через neoSound (карта SFX_LEGACY, сверена по SoundEvents.java);
 					// neo-native строки проходят как есть. Раньше легаси не резолвились → все GT6-звуки молчали. Восстановлено.
-					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.ResourceLocation.parse(neoSound(mSound)));
+					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.get(net.minecraft.resources.ResourceLocation.parse(neoSound(mSound)));
 					if (tEvent != null) mWorld.playLocalSound(mX+0.5, mY+0.5, mZ+0.5, tEvent, net.minecraft.sounds.SoundSource.BLOCKS, mVolume, mPitch, T);
 				} catch(Throwable e) {/**/}
 			}
@@ -3082,17 +3020,17 @@ public class UT {
 		public static int getRadioactivityLevel(ItemStack aStack, OreDictItemData aData) {
 			long rLevel = 0;
 			if (aData != null && aData.validMaterial()) {
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentTools  ) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentWeapons) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentAmmo   ) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentRanged ) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentFishing) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentArmors ) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentTools  ) if (Enchantment_Radioactivity.INSTANCE.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentWeapons) if (Enchantment_Radioactivity.INSTANCE.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentAmmo   ) if (Enchantment_Radioactivity.INSTANCE.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentRanged ) if (Enchantment_Radioactivity.INSTANCE.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentFishing) if (Enchantment_Radioactivity.INSTANCE.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentArmors ) if (Enchantment_Radioactivity.INSTANCE.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
 			}
 			// F8 (1:1): было EnchantmentHelper.getEnchantmentLevel(Enchantment_Radioactivity.INSTANCE.effectId, aStack) —
 			// вклад НАДЕТОЙ Radioactivity-чары (в дополнение к GT6-материалу выше). Enchantment_Radioactivity теперь
 			// registry-driven (KEY, забутстрапена EnchantsGT6) → ported UT.NBT.getEnchantmentLevel(KEY, стек) читает уровень.
-			rLevel = Math.max(rLevel, NBT.getEnchantmentLevel(Enchantment_Radioactivity.KEY, aStack));
+			rLevel = Math.max(rLevel, NBT.getEnchantmentLevel(Enchantment_Radioactivity.INSTANCE, aStack));
 			return Code.bindInt(rLevel);
 		}
 		
@@ -3199,7 +3137,7 @@ public class UT {
 		// RecipeMapBath.java`, читается назад через `GT_API_Proxy.java:1128`) — все текут в этот же
 		// int-канал `applyPotion(Entity,int,...)`. id 21 (healthBoost) в neo есть (`MobEffects.
 		// HEALTH_BOOST`), но GT6 нигде не использует (grep=0) — не добавлен (не выдумывать неиспользуемое).
-		private static final Map<Integer, Holder<MobEffect>> VANILLA_POTION_IDS = new HashMap<>();
+		private static final Map<Integer, MobEffect> VANILLA_POTION_IDS = new HashMap<>();
 		static {
 			VANILLA_POTION_IDS.put( 1, MobEffects.MOVEMENT_SPEED);            // moveSpeed        — MultiItemFood.java:565, Loader_Fluids.java:247
 			VANILLA_POTION_IDS.put( 2, MobEffects.MOVEMENT_SLOWDOWN);         // moveSlowdown     — MultiItemFood.java:930, Loader_Fluids.java:283
@@ -3225,7 +3163,7 @@ public class UT {
 			VANILLA_POTION_IDS.put(23, MobEffects.SATURATION);       // saturation (field_76443_y) — MultiItemFood.java:938 (Pill_Cure_All)
 		}
 
-		// F8: GT6-внутренний id-простор зелий (== 1.7.10 Potion.X.id). neo MobEffects.X — это Holder<MobEffect> без
+		// F8: GT6-внутренний id-простор зелий (== 1.7.10 Potion.X.id). neo MobEffects.X — это MobEffect без
 		// числового `.id`, но GT сериализует id в NBT ("gt.effects"→"id") и читает обратно через applyPotion(int)→
 		// VANILLA_POTION_IDS. Значит запись обязана писать те же ключи карты выше. Единый источник — здесь, не россыпь
 		// литералов по потребителям (RecipeMapBath NBT-запись, EntityFoodTracker id-overload). Значения — ключи карты.
@@ -3241,7 +3179,7 @@ public class UT {
 		 *  on API postInit» (`CS.java:1690`): PotionsGT.ID_* проставляются в GT_API.onModPostInit2Deferred, id
 		 *  GT6-собственных эффектов (MobEffectsGT) идут этим же путём и резолвятся тем же applyPotion(int).
 		 *  Карта остаётся единственным местом конверсии id→Holder на весь мод. */
-		public static void bindPotionID(int aID, Holder<MobEffect> aPotion) {
+		public static void bindPotionID(int aID, MobEffect aPotion) {
 			if (aID >= 0 && aPotion != null) VANILLA_POTION_IDS.put(aID, aPotion);
 		}
 
@@ -3249,13 +3187,10 @@ public class UT {
 		 *  Кастом-id чужих модов (не в карте) → null — 1:1 деградация «зелье не зарегистрировано» (как оригинал при
 		 *  отсутствии мода: тихий пропуск). Централизует бывший `getEffect(MobEffect.potionTypes[id])`. */
 		public static MobEffectInstance getEffectByID(LivingEntity aEntity, int aID) {
-			Holder<MobEffect> tPotion = VANILLA_POTION_IDS.get(aID);
+			MobEffect tPotion = VANILLA_POTION_IDS.get(aID);
 			return tPotion == null ? null : aEntity.getEffect(tPotion);
 		}
 
-		// F8: aPotion передан ЗНАЧЕНИЕМ (не Holder) — тот же приём, что NBT.getEnchantmentLevel(Enchantment,...)
-		// выше: Holder.direct(aPotion) оборачивает переданный объект 1:1, дальше единый Holder-путь ниже.
-		public static boolean applyPotion(Entity aEntity, MobEffect aPotion, int aDuration, int aLevel, boolean aInvisibleParticles) {return aPotion != null && applyPotion(aEntity, Holder.direct(aPotion), aDuration, aLevel, aInvisibleParticles);}
 		public static boolean applyPotion(Entity aEntity, int aID, int aDuration, int aLevel, boolean aInvisibleParticles) {
 			if (aID < -1) switch(aID) {
 				case - 2: aID = PotionsGT.ID_RADIATION  ; break;
@@ -3270,7 +3205,7 @@ public class UT {
 				case -11: aID = PotionsGT.ID_STICKY     ; break;
 			}
 			if (aID < 0) return F;
-			// vanilla id (1-20,22,23) → реальный Holder<MobEffect> из VANILLA_POTION_IDS выше, полный
+			// vanilla id (1-20,22,23) → реальный MobEffect из VANILLA_POTION_IDS выше, полный
 			// аудит по факту использования (см. javadoc карты) — деградации для них НЕТ.
 			// 1:1 с оригиналом (не долг): ID этих эффектов и в 1.7.10 приходили ИЗ ЧУЖИХ МОДОВ на postInit —
 			// gregtech6/src/main/java/gregapi/GT_API.java:776-783 (ic2.api.info.Info.POTION_RADIATION.id,
@@ -3288,18 +3223,18 @@ public class UT {
 			// никогда не накладывает (только снятие Pill_Cure_All — no-op, 1:1 с «мод не установлен»).
 			// Для незарегистрированных id `VANILLA_POTION_IDS.get(aID)` вернёт null — тихий пропуск,
 			// как оригинал при `aID < 0`.
-			Holder<MobEffect> tPotion = VANILLA_POTION_IDS.get(aID);
+			MobEffect tPotion = VANILLA_POTION_IDS.get(aID);
 			return tPotion != null && applyPotion(aEntity, tPotion, aDuration, aLevel, aInvisibleParticles);
 		}
-		/** Замена 1.7.10 {@code Potion.getLiquidColor()}: цвет зелья по 1.7.10 vanilla-id через neo {@link MobEffect#getColor()}
+		/** Замена 1.7.10 {@code Potion.getLiquidColor()}: цвет зелья по 1.7.10 vanilla-id через {@link MobEffect#getColor()}
 		 *  из той же карты {@link #VANILLA_POTION_IDS} (конверсия с движком централизована в одном месте). 1.7.10
 		 *  {@code Potion(id, isBad, color)} — тот же {@code color} служил liquidColor ⇒ neo effect-color = faithful 1:1.
 		 *  Неизвестный/кастом-id (нет в карте) ⇒ 0 (как оригинал при отсутствии зелья). */
 		public static int potionColor(int aID) {
-			Holder<MobEffect> tPotion = VANILLA_POTION_IDS.get(aID);
-			return tPotion == null ? 0 : tPotion.value().getColor();
+			MobEffect tPotion = VANILLA_POTION_IDS.get(aID);
+			return tPotion == null ? 0 : tPotion.getColor();
 		}
-		public static boolean applyPotion(Entity aEntity, Holder<MobEffect> aPotion, int aDuration, int aLevel, boolean aInvisibleParticles) {
+		public static boolean applyPotion(Entity aEntity, MobEffect aPotion, int aDuration, int aLevel, boolean aInvisibleParticles) {
 			if (aDuration <= 0 || !(aEntity instanceof LivingEntity)) return F;
 			if (aLevel >= 0) {
 				((LivingEntity)aEntity).addEffect(new MobEffectInstance(aPotion, aDuration, aLevel, aInvisibleParticles, T));
@@ -3309,7 +3244,7 @@ public class UT {
 			return T;
 		}
 		
-		public static byte pot (Object aEntity, Holder<MobEffect> aPotion) {
+		public static byte pot (Object aEntity, MobEffect aPotion) {
 			if (aPotion != null && aEntity instanceof LivingEntity) {
 				MobEffectInstance tEffect = ((LivingEntity)aEntity).getEffect(aPotion);
 				// Limit the output value to six bit, which should be more than enough for Potions, and prevent Byte Math Issues.
@@ -3317,9 +3252,9 @@ public class UT {
 			}
 			return -1;
 		}
-		public static byte pot0(Object aEntity, Holder<MobEffect> aPotion) {return (byte)(pot(aEntity, aPotion)+1);}
-		public static byte pot1(Object aEntity, Holder<MobEffect> aPotion) {return (byte)(pot(aEntity, aPotion)+2);}
-		public static byte pot2(Object aEntity, Holder<MobEffect> aPotion) {return (byte)(pot(aEntity, aPotion)+3);}
+		public static byte pot0(Object aEntity, MobEffect aPotion) {return (byte)(pot(aEntity, aPotion)+1);}
+		public static byte pot1(Object aEntity, MobEffect aPotion) {return (byte)(pot(aEntity, aPotion)+2);}
+		public static byte pot2(Object aEntity, MobEffect aPotion) {return (byte)(pot(aEntity, aPotion)+3);}
 		
 		// Used where the Vanilla return Value is important.
 		public static byte potStrength         (Object aEntity) {return pot (aEntity, MobEffects.DAMAGE_BOOST );}
@@ -3424,9 +3359,9 @@ public class UT {
 		public static boolean consumeCurrentItem(Player aPlayer) {
 			if (aPlayer == null) return F;
 			if (hasInfiniteItems(aPlayer)) return T;
-			ItemStack aStack = aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot());
+			ItemStack aStack = aPlayer.getInventory().getItem(aPlayer.getInventory().selected);
 			if (ST.invalid(aStack)) return F;
-			if (aStack.getCount() != NEI_INFINITE) {aStack.setCount(aStack.getCount()-1); if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), ST.nn(NI));} // F15-граница: setItem(null) на NonNullList кидает NPE
+			if (aStack.getCount() != NEI_INFINITE) {aStack.setCount(aStack.getCount()-1); if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().selected, ST.nn(NI));} // F15-граница: setItem(null) на NonNullList кидает NPE
 			ST.give(aPlayer, ST.container(aStack, T), F);
 			return T;
 		}

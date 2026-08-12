@@ -77,14 +77,14 @@ public class MultiTileEntityBoilerTank extends TileEntityBase09FacingSingle impl
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mEnergy = aNBT.getLongOr(NBT_ENERGY, 0L);
-		if (aNBT.contains(NBT_VISUAL)) mBarometer = aNBT.getByteOr(NBT_VISUAL, (byte)0);
-		if (aNBT.contains(NBT_OUTPUT_SU)) mOutput = aNBT.getLongOr(NBT_OUTPUT_SU, 0L);
+		mEnergy = aNBT.getLong(NBT_ENERGY);
+		if (aNBT.contains(NBT_VISUAL)) mBarometer = aNBT.getByte(NBT_VISUAL);
+		if (aNBT.contains(NBT_OUTPUT_SU)) mOutput = aNBT.getLong(NBT_OUTPUT_SU);
 		mTanks[1].setCapacity(mCapacity = mOutput * 10000);
-		if (aNBT.contains(NBT_CAPACITY)) mCapacity = aNBT.getLongOr(NBT_CAPACITY, 0L);
-		if (aNBT.contains(NBT_CAPACITY_SU)) mTanks[1].setCapacity(aNBT.getLongOr(NBT_CAPACITY_SU, 0L));
-		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShortOr(NBT_EFFICIENCY, (short)0));
-		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_ACCEPTED, ""));
+		if (aNBT.contains(NBT_CAPACITY)) mCapacity = aNBT.getLong(NBT_CAPACITY);
+		if (aNBT.contains(NBT_CAPACITY_SU)) mTanks[1].setCapacity(aNBT.getLong(NBT_CAPACITY_SU));
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 		for (int i = 0; i < mTanks.length; i++) mTanks[i].readFromNBT(aNBT, NBT_TANK+"."+i);
 	}
 	

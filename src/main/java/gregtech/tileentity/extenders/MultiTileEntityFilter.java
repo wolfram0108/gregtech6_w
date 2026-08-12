@@ -71,7 +71,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_INVERTED)) mInverted = aNBT.getBooleanOr(NBT_INVERTED, false);
+		if (aNBT.contains(NBT_INVERTED)) mInverted = aNBT.getBoolean(NBT_INVERTED);
 		for (int i = 0; i < mFilter.length; i++) mFilter[i] = ST.load(aNBT, NBT_INV_FILTER+"."+i);
 	}
 	

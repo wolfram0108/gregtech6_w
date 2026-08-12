@@ -73,7 +73,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 			Enchantments.applyBullshitA((LivingEntity)aEntity, aPlayer, aStack);
 			Enchantments.applyBullshitB(aPlayer, aEntity, aStack);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
-			if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), ST.nn(NI)); // F15-граница: GT6 null -> движок EMPTY
+			if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().selected, ST.nn(NI)); // F15-граница: GT6 null -> движок EMPTY
 			return F;
 		}
 		return F;
@@ -83,7 +83,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 	public boolean isItemStackUsable(MultiItem aItem, ItemStack aStack) {
 		if (mEnchantment != null && mLevel > 0) {
 			CompoundTag tNBT = UT.NBT.getNBT(aStack);
-			if (!tNBT.getBooleanOr("gt.u", false)) {
+			if (!tNBT.getBoolean("gt.u")) {
 				tNBT.putBoolean("gt.u", T);
 				UT.NBT.set(aStack, tNBT);
 				UT.NBT.addEnchantment(aStack, mEnchantment, mLevel);
@@ -99,9 +99,9 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 	
 	@Override
 	public ItemStack onDispense(MultiItem aItem, BlockSource aSource, ItemStack aStack) {
-		Level aWorld = aSource.level();
+		Level aWorld = aSource.getLevel();
 		Position tPosition = DispenserBlock.getDispensePosition(aSource);
-		Direction tFacing = aSource.state().getValue(net.minecraft.world.level.block.DispenserBlock.FACING);
+		Direction tFacing = aSource.getBlockState().getValue(net.minecraft.world.level.block.DispenserBlock.FACING);
 		EntityProjectile tEntityArrow = getProjectile(aItem, TD.Projectiles.ARROW, aStack, aWorld, tPosition.x(), tPosition.y(), tPosition.z());
 		if (tEntityArrow != null) {
 			tEntityArrow.shoot(tFacing.getStepX(), (tFacing.getStepY() + 0.1F), tFacing.getStepZ(), mSpeedMultiplier * 1.10F, mPrecision);

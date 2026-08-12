@@ -62,11 +62,11 @@ public abstract class MultiTileEntitySensor extends TileEntityBase10FacingDouble
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE).orElse((byte)0);
-		if (aNBT.contains(NBT_VISUAL)) mDisplayedNumber = UT.Code.unsignS(aNBT.getShort(NBT_VISUAL).orElse((short)0));
-		if (aNBT.contains(NBT_VALUE)) mSetNumber = UT.Code.unsignS(aNBT.getShort(NBT_VALUE).orElse((short)0)); else mSetNumber = mDisplayedNumber;
-		if (aNBT.contains(NBT_CONNECTION)) mSecondFacing = aNBT.getByte(NBT_CONNECTION).orElse((byte)0);
-		if (aNBT.contains(NBT_REDSTONE)) mRedstone = aNBT.getByte(NBT_REDSTONE).orElse((byte)0);
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
+		if (aNBT.contains(NBT_VISUAL)) mDisplayedNumber = UT.Code.unsignS(aNBT.getShort(NBT_VISUAL));
+		if (aNBT.contains(NBT_VALUE)) mSetNumber = UT.Code.unsignS(aNBT.getShort(NBT_VALUE)); else mSetNumber = mDisplayedNumber;
+		if (aNBT.contains(NBT_CONNECTION)) mSecondFacing = aNBT.getByte(NBT_CONNECTION);
+		if (aNBT.contains(NBT_REDSTONE)) mRedstone = aNBT.getByte(NBT_REDSTONE);
 	}
 	
 	@Override

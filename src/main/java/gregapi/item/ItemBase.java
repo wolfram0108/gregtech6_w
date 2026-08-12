@@ -110,7 +110,7 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	public ItemBase(String aModID, String aUnlocalized, String aEnglish, String aEnglishTooltip) {
 		// F1/F16: neo Item.<init> вычисляет descriptionId и требует ID в Properties (иначе "Item id not set"). Задаём ID из
 		// (mModID, mName) — совпадает с DeferredRegister-именем регистрации (ITEMS.register(name, ...) на call-site). setId:660.
-		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(aModID, aUnlocalized))));
+		super(new Item.Properties());
 		if (GAPI.mStartedInit) throw new IllegalStateException("Items can only be initialised within preInit!");
 		mName = aUnlocalized;
 		mModID = aModID;
@@ -156,10 +156,10 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	}
 	
 	public ItemStack onDispense(BlockSource aSource, ItemStack aStack) {
-		Direction enumfacing = aSource.state().getValue(DispenserBlock.FACING); // было func_149937_b(getBlockMetadata()) -> BlockSource.state()/DispenserBlock.FACING, приём ItemArmorBase.java:187
+		Direction enumfacing = aSource.getBlockState().getValue(DispenserBlock.FACING); // было func_149937_b(getBlockMetadata()) -> BlockSource.state()/DispenserBlock.FACING, приём ItemArmorBase.java:187
 		Position iposition = DispenserBlock.getDispensePosition(aSource);
 		ItemStack itemstack1 = aStack.split(1);
-		DefaultDispenseItemBehavior.spawnItem(aSource.level(), itemstack1, 6, enumfacing, iposition); // было doDispense -> spawnItem (DefaultDispenseItemBehavior.java:30)
+		DefaultDispenseItemBehavior.spawnItem(aSource.getLevel(), itemstack1, 6, enumfacing, iposition); // было doDispense -> spawnItem (DefaultDispenseItemBehavior.java:30)
 		return aStack;
 	}
 

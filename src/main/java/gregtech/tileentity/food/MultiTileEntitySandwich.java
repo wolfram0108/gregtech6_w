@@ -70,7 +70,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_REDSTONE)) mRedstone = aNBT.getBooleanOr(NBT_REDSTONE, false);
+		if (aNBT.contains(NBT_REDSTONE)) mRedstone = aNBT.getBoolean(NBT_REDSTONE);
 		
 		for (int i = 0; i < mStacks.length; i++) mStacks[i] = ST.load(aNBT, "sandwich."+i);
 		

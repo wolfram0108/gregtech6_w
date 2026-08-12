@@ -63,8 +63,8 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_MODE)) mAutoPull = aNBT.getBooleanOr(NBT_MODE, false);
-		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBooleanOr(NBT_ACIDPROOF, false);
+		if (aNBT.contains(NBT_MODE)) mAutoPull = aNBT.getBoolean(NBT_MODE);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
 	}
 	
 	@Override

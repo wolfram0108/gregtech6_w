@@ -68,8 +68,8 @@ public class MultiTileEntityFilterPrefix extends MultiTileEntityExtender impleme
 	
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
-		if (aNBT.contains(NBT_INVERTED)) mInverted = aNBT.getBooleanOr(NBT_INVERTED, false);
-		mFilter = OreDictPrefix.sPrefixes.get(aNBT.getString(NBT_INV_FILTER).orElse(""));
+		if (aNBT.contains(NBT_INVERTED)) mInverted = aNBT.getBoolean(NBT_INVERTED);
+		mFilter = OreDictPrefix.sPrefixes.get(aNBT.getString(NBT_INV_FILTER));
 		super.readFromNBT2(aNBT);
 	}
 	

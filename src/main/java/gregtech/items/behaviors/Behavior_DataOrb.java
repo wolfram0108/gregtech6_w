@@ -56,13 +56,13 @@ public class Behavior_DataOrb extends AbstractBehaviorDefault {
 	public static String getDataName(ItemStack aStack) {
 		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) return "";
-		return tNBT.getStringOr("mDataName", "");
+		return tNBT.getString("mDataName");
 	}
 	
 	public static String getDataTitle(ItemStack aStack) {
 		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) return "";
-		return tNBT.getStringOr("mDataTitle", "");
+		return tNBT.getString("mDataTitle");
 	}
 	
 	public static CompoundTag setDataName(ItemStack aStack, String aDataName) {
@@ -86,10 +86,10 @@ public class Behavior_DataOrb extends AbstractBehaviorDefault {
 		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) return tInventory;
 		
-		ListTag tNBT_ItemList = tNBT.getListOrEmpty("Inventory");
+		ListTag tNBT_ItemList = tNBT.getList("Inventory", 10);
 		for (int i = 0; i < tNBT_ItemList.size(); i++) {
-			CompoundTag tag = tNBT_ItemList.getCompoundOrEmpty(i);
-			byte slot = tag.getByteOr("Slot", (byte)0);
+			CompoundTag tag = tNBT_ItemList.getCompound(i);
+			byte slot = tag.getByte("Slot");
 			if (slot >= 0 && slot < tInventory.length) {
 				tInventory[slot] = ST.load(tag);
 			}

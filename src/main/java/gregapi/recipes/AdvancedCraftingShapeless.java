@@ -44,7 +44,7 @@ import static gregapi.data.CS.*;
  */
 public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICraftingRecipeGT {
 	public final boolean mDismantleable, mRemovableByGT, mAutoCraftable, mKeepingNBT;
-	private final net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] mEnchantmentsAdded;
+	private final net.minecraft.world.item.enchantment.Enchantment[] mEnchantmentsAdded;
 	private final int[] mEnchantmentLevelsAdded;
 	
 	public AdvancedCraftingShapeless(ItemStack aResult, boolean aDismantleAble, boolean aRemovableByGT, boolean aKeepingNBT, boolean aAutoCraftable, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] aEnchantmentsAdded, int[] aEnchantmentLevelsAdded, Object... aRecipe) {

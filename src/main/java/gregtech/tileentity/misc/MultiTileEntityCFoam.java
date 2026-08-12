@@ -60,9 +60,9 @@ public class MultiTileEntityCFoam extends TileEntityBase07Paintable implements I
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_FOAMDRIED)) mFoamDried = aNBT.getBooleanOr(NBT_FOAMDRIED, false);
-		if (aNBT.contains(NBT_OWNABLE)) mOwnable = aNBT.getBooleanOr(NBT_OWNABLE, false);
-		if (aNBT.contains(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getStringOr(NBT_OWNER, ""));
+		if (aNBT.contains(NBT_FOAMDRIED)) mFoamDried = aNBT.getBoolean(NBT_FOAMDRIED);
+		if (aNBT.contains(NBT_OWNABLE)) mOwnable = aNBT.getBoolean(NBT_OWNABLE);
+		if (aNBT.contains(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getString(NBT_OWNER));
 	}
 	
 	@Override

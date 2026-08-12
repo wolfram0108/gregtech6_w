@@ -102,7 +102,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		// MODCOMPAT-002 (все 10 мировых жидкостей GT6 невидимы на карте): цвет на карте — тот же 1.7.10-дефолт
 		// «из материала» (`recompSrc/.../Block.java:232-235`), в neo его надо задать явно (дефолт = MapColor.NONE
 		// = «пропустить блок»). Мост и источник — общие с остальными иерархиями, см. BlockBase.mapColorOf.
-		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(FL.gas(aFluid) ? 1F : 30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), aMaterial), aMaterial, aFluid);
+		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(FL.gas(aFluid) ? 1F : 30F), aMaterial), aMaterial, aFluid);
 		mFluid = aFluid;
 		mAmountPerQuanta = aAmountPerQuanta;
 		gregapi.GT_API.deferItemInit(() -> mQuanta = FL.make(mFluid, mAmountPerQuanta));

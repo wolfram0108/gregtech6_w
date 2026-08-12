@@ -214,7 +214,7 @@ public class GT_API extends Abstract_Mod {
 	 *  Габарит — как у ванильного FALLING_BLOCK (0.98×0.98, {@code EntityType.java:492}), от которого 1.7.10-класс
 	 *  наследовался. Имя реестра из «gt.MetaBlockFallingEntity» приведено к lowercase (neo ResourceLocation запрещает
 	 *  заглавные) — тот же приём, что у {@code EntitiesGT}. */
-	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<gregapi.block.prefixblock.PrefixBlockFallingEntity>> METABLOCK_FALLING =
+	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.world.entity.EntityType<gregapi.block.prefixblock.PrefixBlockFallingEntity>> METABLOCK_FALLING =
 		ENTITIES.register("gt_metablockfallingentity", rl -> net.minecraft.world.entity.EntityType.Builder.<gregapi.block.prefixblock.PrefixBlockFallingEntity>of(gregapi.block.prefixblock.PrefixBlockFallingEntity::new, net.minecraft.world.entity.MobCategory.MISC)
 			.noLootTable().sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(1)
 			.build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, rl)));
@@ -265,7 +265,7 @@ public class GT_API extends Abstract_Mod {
 	}
 
 	public static final DeferredRegister<net.minecraft.core.component.DataComponentType<?>> COMPONENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE, ModIDs.GAPI);
-	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<Integer>> SUBTYPE =
+	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.core.component.DataComponentType<Integer>> SUBTYPE =
 		COMPONENTS.register("subtype", () -> net.minecraft.core.component.DataComponentType.<Integer>builder()
 			.persistent(com.mojang.serialization.Codec.INT)
 			.networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.VAR_INT)
@@ -276,7 +276,7 @@ public class GT_API extends Abstract_Mod {
 	 *  Адаптация (центр ST.size_): size-0-стек хранится как count=1 + этот маркер; {@link gregapi.util.ST#size(ItemStack)}
 	 *  отдаёт 0 для маркированных → recipe-matching/consume/дамп видят логический 0, идентичность сохранена. ST.equal
 	 *  сравнивает только item+meta+nbt (не произвольные компоненты) → маркер прозрачен для сравнений. См. decisions/F-size0-catalyst. */
-	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<net.minecraft.util.Unit>> ZEROSIZE =
+	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.core.component.DataComponentType<net.minecraft.util.Unit>> ZEROSIZE =
 		COMPONENTS.register("zerosize", () -> net.minecraft.core.component.DataComponentType.<net.minecraft.util.Unit>builder()
 			.persistent(net.minecraft.util.Unit.CODEC)
 			.networkSynchronized(net.minecraft.network.codec.StreamCodec.unit(net.minecraft.util.Unit.INSTANCE))
@@ -445,7 +445,7 @@ public class GT_API extends Abstract_Mod {
 			BlockItem rItem = (BlockItem)UT.Reflection.callConstructor(aItemClass, 0, null, T, aBlock);
 			if (rItem != null) return rItem;
 		}
-		return new BlockItem(aBlock, new net.minecraft.world.item.Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock))));
+		return new BlockItem(aBlock, new net.minecraft.world.item.Item.Properties());
 	}
 
 	public static DeferredBlock<Block> registerBlock(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {

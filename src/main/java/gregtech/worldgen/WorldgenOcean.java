@@ -82,7 +82,7 @@ public class WorldgenOcean extends WorldgenObject {
 					BlockOcean.PLACEMENT_ALLOWED = T;
 					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.Ocean, 0, 0)) {
 						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
-						aChunk.markUnsaved();
+						aChunk.setUnsaved(true);
 						return F;
 					}
 					BlockOcean.PLACEMENT_ALLOWED = F;

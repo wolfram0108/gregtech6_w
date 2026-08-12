@@ -51,9 +51,9 @@ public class LoaderItemList implements Runnable {
 	
 	@Override
 	public void run() {
-		BlocksGT.EtFu_Beetroot_Crop              = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MD.EtFu.mID, "beetroots"));
-		BlocksGT.EtFu_Deepslate_Redstone_Ore     = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MD.EtFu.mID, "deepslate_redstone_ore"));
-		BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MD.EtFu.mID, "deepslate_lit_redstone_ore"));
+		BlocksGT.EtFu_Beetroot_Crop              = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MD.EtFu.mID, "beetroots"));
+		BlocksGT.EtFu_Deepslate_Redstone_Ore     = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MD.EtFu.mID, "deepslate_redstone_ore"));
+		BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MD.EtFu.mID, "deepslate_lit_redstone_ore"));
 		
 		GarbageGT.BLACKLIST.add(ST.make(MD.TC, "ItemThaumonomicon"              , 1,42));
 		GarbageGT.BLACKLIST.add(ST.make(MD.RT, "opSpectreKey"                   , 1, W));

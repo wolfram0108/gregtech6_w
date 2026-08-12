@@ -236,7 +236,7 @@ public abstract class ToolStats implements IToolStats {
 
 	@Override
 	public void afterDealingDamage(float aNormalDamage, float aMagicDamage, int aFireAspect, boolean aCriticalHit, Entity aEntity, ItemStack aStack, Player aPlayer) {
-		if (aEntity instanceof LivingEntity && aFireAspect > 0) aEntity.igniteForSeconds(aFireAspect * 4);
+		if (aEntity instanceof LivingEntity && aFireAspect > 0) aEntity.setSecondsOnFire(aFireAspect * 4);
 		// F8 (1:1): 1.7.10 tKnockback = sprint + getKnockbackModifier(player,entity) (уровень Knockback-чары). neo-эквивалент —
 		// EnchantmentHelper.modifyKnockback(sl,weapon,victim,source,base) [EnchantmentHelper.java:217]: base=0 → чистый вклад
 		// Knockback-чары со стека. server-only (нужен ServerLevel). Было утеряно — восстановлено. Спринт-компонент 1:1.
@@ -263,8 +263,8 @@ public abstract class ToolStats implements IToolStats {
 	public void afterBreaking(ItemStack aStack, Player aPlayer) {
 		// If you work so hard that your Tool breaks, you should probably take a break yourself. :P
 		// ADAPT-002: Mining Fatigue при поломке инструмента ослаблен III→I (amplifier 2→0) по запросу игрока. Weakness 1:1 (III).
-		UT.Entities.applyPotion(aPlayer, MobEffects.WEAKNESS.value()      ,  300, 2, F);
-		UT.Entities.applyPotion(aPlayer, MobEffects.DIG_SLOWDOWN.value(), 1200, 0, F);
+		UT.Entities.applyPotion(aPlayer, MobEffects.WEAKNESS      ,  300, 2, F);
+		UT.Entities.applyPotion(aPlayer, MobEffects.DIG_SLOWDOWN, 1200, 0, F);
 	}
 
 	public IIconContainer getIcon(boolean aIsToolHead, ItemStack aStack) {

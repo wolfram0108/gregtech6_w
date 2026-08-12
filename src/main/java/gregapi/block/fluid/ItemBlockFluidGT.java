@@ -56,7 +56,7 @@ public class ItemBlockFluidGT extends BlockItem {
 	public ItemBlockFluidGT(Block aBlock) {
 		// F12-followup (item-split): id в Properties обязателен и производится из ключа уже зарегистрированного
 		// блока — тот же приём, что в ItemBlockBase:51 (предмет конструируется на RegisterEvent<Item>, после блока).
-		super(aBlock, new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock))));
+		super(aBlock, new Item.Properties());
 	}
 
 	/** Имя — из таблицы GT6 (как у всех прочих предметов мода); если его там нет, поведение движка не меняем. */

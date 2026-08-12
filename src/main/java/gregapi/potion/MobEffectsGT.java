@@ -48,7 +48,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredHolder;
+
 import net.minecraftforge.registries.DeferredRegister;
 
 import static gregapi.data.CS.*;
@@ -99,26 +99,26 @@ public class MobEffectsGT {
 
 	/** IE flammable: сам по тику ничего не делает ({@code IEPotions.java:116-129} — performEffect пуст для
 	 *  него), поведение целиком в обработчике урона ({@code EventHandler.java:390-395} → {@code GT_API_Proxy}). */
-	public static final DeferredHolder<MobEffect, MobEffect> FLAMMABLE = EFFECTS.register("flammable",
+	public static final net.minecraftforge.registries.RegistryObject<MobEffect> FLAMMABLE = EFFECTS.register("flammable",
 		() -> new MobEffectGT6(MobEffectCategory.HARMFUL, 0x8f3f1f));
 
 	/** IE slippery: каждый тик на земле скользит + 1/300 шанс выронить предмет из руки
 	 *  ({@code IEPotions.java:118-128}: tick=0 → isReady всегда T). */
-	public static final DeferredHolder<MobEffect, MobEffect> SLIPPERY = EFFECTS.register("slippery",
+	public static final net.minecraftforge.registries.RegistryObject<MobEffect> SLIPPERY = EFFECTS.register("slippery",
 		() -> new MobEffectSlippery(MobEffectCategory.HARMFUL, 0x171003));
 
 	/** IE conductive: сам по тику ничего не делает; в 1.7.10 усиливал урон типа "flux" (IE-электричество,
 	 *  {@code EventHandler.java:396-401}) — обработчик продублирован 1:1 в {@code GT_API_Proxy}; в сборке
 	 *  без IE-машин источника "flux"-урона нет, как не было и в 1.7.10 (GT6-электроурон шёл каналом
 	 *  IC2-или-heat, {@code DamageSources.getElectricDamage}). */
-	public static final DeferredHolder<MobEffect, MobEffect> CONDUCTIVE = EFFECTS.register("conductive",
+	public static final net.minecraftforge.registries.RegistryObject<MobEffect> CONDUCTIVE = EFFECTS.register("conductive",
 		() -> new MobEffectGT6(MobEffectCategory.HARMFUL, 0x690000));
 
 	/** IE sticky: атрибут скорости −50 % × (amp+1), op 2 = MULTIPLY_TOTAL ({@code IEPotions.java:38}
 	 *  {@code func_111184_a(movementSpeed, uuid, -0.5D, 2)}; neo масштабирует amount×(amplifier+1) —
 	 *  {@code MobEffect.AttributeTemplate.create}, тот же закон, что 1.7.10). Ослабление прыжка —
 	 *  {@code EventHandler.java:403-408} → {@code GT_API_Proxy}. */
-	public static final DeferredHolder<MobEffect, MobEffect> STICKY = EFFECTS.register("sticky",
+	public static final net.minecraftforge.registries.RegistryObject<MobEffect> STICKY = EFFECTS.register("sticky",
 		() -> new MobEffectGT6(MobEffectCategory.HARMFUL, 0x9c6800)
 			.addAttributeModifier(Attributes.MOVEMENT_SPEED, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "effect.sticky"), -0.5D, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 
@@ -126,7 +126,7 @@ public class MobEffectsGT {
 	 *  тиков с шансом 1/(50/(amp+1)); игроку — фантомный жуткий звук в случайной точке ±3 блока с тем же
 	 *  шансом ({@code EnviroPotion.java:153-287}). Ветка amp≥2 (fake-death GUI EnviroMine) не переносится:
 	 *  GUI чужого мода без эквивалента, GT6-потребители кладут максимум amp 1 ({@code Loader_Fluids.java:517,636}). */
-	public static final DeferredHolder<MobEffect, MobEffect> INSANITY = EFFECTS.register("insanity",
+	public static final net.minecraftforge.registries.RegistryObject<MobEffect> INSANITY = EFFECTS.register("insanity",
 		() -> new MobEffectInsanity(MobEffectCategory.HARMFUL, 5578058));
 
 	/** Порядок 1:1 со switch 0-15 {@code EnviroPotion.java:187-269} (имена звуков 1.7.10 → neo-эквиваленты

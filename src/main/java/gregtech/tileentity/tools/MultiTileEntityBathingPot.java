@@ -77,10 +77,10 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP).orElse("")); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
 		
 		int tCapacity = 1000;
-		if (aNBT.contains(NBT_TANK_CAPACITY)) tCapacity = UT.Code.bindInt(aNBT.getLongOr(NBT_TANK_CAPACITY, 0L));
+		if (aNBT.contains(NBT_TANK_CAPACITY)) tCapacity = UT.Code.bindInt(aNBT.getLong(NBT_TANK_CAPACITY));
 		mTanksInput = new FluidTankGT[mRecipes.mInputFluidCount];
 		for (int i = 0; i < mTanksInput.length; i++) mTanksInput[i] = new FluidTankGT(tCapacity).readFromNBT(aNBT, NBT_TANK+".in."+i);
 		mTanksOutput = new FluidTankGT[mRecipes.mOutputFluidCount];
@@ -232,7 +232,7 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 			}
 			if (SIDES_TOP[aSide] && aHitX > PX_P[2] && aHitX < PX_N[2] && aHitZ > PX_P[2] && aHitZ < PX_N[2]) {
 				if (aStack != null) for (byte i = 0; i < 6; i++) {
-					if (ST.move(aPlayer.getInventory(), this, aPlayer.getInventory().getSelectedSlot(), i) > 0) return T;
+					if (ST.move(aPlayer.getInventory(), this, aPlayer.getInventory().selected, i) > 0) return T;
 				}
 				if (aStack != null) for (FluidTankGT tTank : mTanksOutput) if ((tStack = FL.fill(tTank, ST.amount(1, aStack), T, T, T, T)) != null) {
 					aStack.setCount(aStack.getCount()-1);
@@ -256,7 +256,7 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 					return T;
 				}
 				if (aStack != null) for (byte i = 0; i < 6; i++) {
-					if (ST.move(aPlayer.getInventory(), this, aPlayer.getInventory().getSelectedSlot(), i) > 0) return T;
+					if (ST.move(aPlayer.getInventory(), this, aPlayer.getInventory().selected, i) > 0) return T;
 				}
 			}
 			if (slot(6) == null && slot(7) == null && slot(8) == null && slot(9) == null && slot(10) == null && slot(11) == null) for (int i = 0; i < 6; i++) if (ST.add(aPlayer, slot(i), T)) {

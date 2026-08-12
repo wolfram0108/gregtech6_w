@@ -86,13 +86,13 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 	public static int getCurrentIndex(ItemStack aStack) {
 		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
-		return tNBTTagCompound.getIntOr("mCurrentIndex", 0);
+		return tNBTTagCompound.getInt("mCurrentIndex");
 	}
 
 	public static int getTickTimer(ItemStack aStack) {
 		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
-		return tNBTTagCompound.getIntOr("mTickTimer", 0);
+		return tNBTTagCompound.getInt("mTickTimer");
 	}
 
 	// F8-nbt: neo CustomData копирует тег на get() → мутацию надо вернуть в стек через ItemNBT.set (в 1.7.10 живой тег сохранял
@@ -119,10 +119,10 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) return tInventory;
 		
-		ListTag tNBT_ItemList = tNBT.getListOrEmpty("Inventory");
+		ListTag tNBT_ItemList = tNBT.getList("Inventory", 10);
 		for (int i = 0; i < tNBT_ItemList.size(); i++) {
-			CompoundTag tag = tNBT_ItemList.getCompoundOrEmpty(i);
-			byte slot = tag.getByteOr("Slot", (byte)0);
+			CompoundTag tag = tNBT_ItemList.getCompound(i);
+			byte slot = tag.getByte("Slot");
 			if (slot >= 0 && slot < tInventory.length) {
 				tInventory[slot] = ST.load(tag);
 			}

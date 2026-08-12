@@ -77,13 +77,13 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_MODE+".16.blocked")) mBlocked16 = aNBT.getBoolean(NBT_MODE+".16.blocked").orElse(false);
-		if (aNBT.contains(NBT_MODE+".36.blocked")) mBlocked36 = aNBT.getBoolean(NBT_MODE+".36.blocked").orElse(false);
-		if (aNBT.contains(NBT_MODE+".16.filter")) mFilter16 = aNBT.getBoolean(NBT_MODE+".16.filter").orElse(false);
-		if (aNBT.contains(NBT_MODE+".36.filter")) mFilter36 = aNBT.getBoolean(NBT_MODE+".36.filter").orElse(false);
-		if (aNBT.contains(NBT_FLUSH)) mFlushMode = aNBT.getBoolean(NBT_FLUSH).orElse(false);
+		if (aNBT.contains(NBT_MODE+".16.blocked")) mBlocked16 = aNBT.getBoolean(NBT_MODE+".16.blocked");
+		if (aNBT.contains(NBT_MODE+".36.blocked")) mBlocked36 = aNBT.getBoolean(NBT_MODE+".36.blocked");
+		if (aNBT.contains(NBT_MODE+".16.filter")) mFilter16 = aNBT.getBoolean(NBT_MODE+".16.filter");
+		if (aNBT.contains(NBT_MODE+".36.filter")) mFilter36 = aNBT.getBoolean(NBT_MODE+".36.filter");
+		if (aNBT.contains(NBT_FLUSH)) mFlushMode = aNBT.getBoolean(NBT_FLUSH);
 		if (CODE_CLIENT && aNBT.contains(NBT_GUI)) {
-			mGUITexture = aNBT.getString(NBT_GUI).orElse("");
+			mGUITexture = aNBT.getString(NBT_GUI);
 			if (!mGUITexture.endsWith(".png")) mGUITexture += ".png";
 		}
 	}

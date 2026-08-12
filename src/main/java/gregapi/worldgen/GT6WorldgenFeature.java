@@ -53,7 +53,7 @@ import net.minecraftforge.common.world.BiomeModifier;
 import net.minecraftforge.common.world.ForgeBiomeModifiers.AddFeaturesBiomeModifier;
 import net.minecraftforge.common.world.ForgeBiomeModifiers.RemoveFeaturesBiomeModifier;
 import net.minecraftforge.data.event.GatherDataEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
+
 import net.minecraftforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
@@ -96,7 +96,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	/** Центральный DeferredRegister — ЕДИНСТВЕННОЕ место, где GT6 регистрирует Feature-типы в neo. */
 	public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(Registries.FEATURE, MD.GAPI.mID);
 
-	public static final DeferredHolder<Feature<?>, GT6WorldgenFeature> GT6_WORLDGEN =
+	public static final net.minecraftforge.registries.RegistryObject<GT6WorldgenFeature> GT6_WORLDGEN =
 		FEATURES.register("gt6_worldgen", GT6WorldgenFeature::new);
 
 	private static final ResourceKey<ConfiguredFeature<?, ?>> GT6_WORLDGEN_CF =
@@ -445,8 +445,8 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 			if (tN <= 20 || tN % 500 == 0) gregapi.data.CS.OUT.println("[GT6-WG] шелуха BUG-057 вычищена @" + tHuskPos.toShortString() + ", всего=" + tN);
 			return;
 		}
-		short tReg = tNBT.getShort(gregapi.data.CS.NBT_MTE_REG).orElse((short)0);
-		short tID  = tNBT.getShort(gregapi.data.CS.NBT_MTE_ID ).orElse((short)0);
+		short tReg = tNBT.getShort(gregapi.data.CS.NBT_MTE_REG);
+		short tID  = tNBT.getShort(gregapi.data.CS.NBT_MTE_ID );
 		gregapi.block.multitileentity.MultiTileEntityRegistry tRegistry = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry(tReg);
 		if (tRegistry == null) {
 			// [GT6-MTEAUDIT] DIAG (§6.3) BUG-057 — снять при уборке фазы: стаб с потерянным/нулевым reg НЕ реконструируется и остаётся навсегда

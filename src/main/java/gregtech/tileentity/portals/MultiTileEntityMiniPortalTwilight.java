@@ -117,7 +117,7 @@ public class MultiTileEntityMiniPortalTwilight extends MultiTileEntityMiniPortal
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
-			ItemStack aStack = aPlayer.getInventory().getSelectedItem();
+			ItemStack aStack = aPlayer.getInventory().getSelected();
 			if (ST.valid(aStack) && aStack.getCount() > 0 && OM.is_("gemAnyDiamond", aStack)) {
 				setPortalActive();
 				if (mTarget != null) UT.Entities.sendchat(aPlayer, "X: " + mTarget.getBlockPos().getX() + "   Y: " + mTarget.getBlockPos().getY() + "   Z: " + mTarget.getBlockPos().getZ());

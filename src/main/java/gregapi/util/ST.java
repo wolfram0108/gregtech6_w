@@ -424,7 +424,7 @@ public class ST {
 	public static Item findItem(String aModID, String aName) {
 		if (aModID == null || aName == null) return null;
 		ResourceLocation tID = ResourceLocation.fromNamespaceAndPath(aModID, aName);
-		return BuiltInRegistries.ITEM.containsKey(tID) ? BuiltInRegistries.ITEM.getValue(tID) : null;
+		return BuiltInRegistries.ITEM.containsKey(tID) ? BuiltInRegistries.ITEM.get(tID) : null;
 	}
 	/** F12/R7: ЕДИНАЯ точка «item по (modId,name) → ItemStack размера aSize» (был выдуманный
 	 *  {@code DeferredRegister.findItemStack(...)}). null, если item не зарегистрирован — как в оригинале. */
@@ -518,9 +518,9 @@ public class ST {
 		if (!(aPlayer instanceof Player)) return T;
 		if (aStack.getCount() <= 0) {
 			if (aTriggerEvent) EventHooks.onPlayerDestroyItem((Player)aPlayer, aStack, null); // neo: +@Nullable InteractionHand (EventHooks:235); generic decr без hand-контекста -> null
-			if (aRemove) for (int i = 0; i < ((Player)aPlayer).getInventory().getNonEquipmentItems().size(); i++) {
-				if (((Player)aPlayer).getInventory().getNonEquipmentItems().get(i) == aStack) {
-					((Player)aPlayer).getInventory().getNonEquipmentItems().set(i, ItemStack.EMPTY); // граница vanilla NonNullList требует non-null (было null=1.7.10 empty)
+			if (aRemove) for (int i = 0; i < ((Player)aPlayer).getInventory().items.size(); i++) {
+				if (((Player)aPlayer).getInventory().items.get(i) == aStack) {
+					((Player)aPlayer).getInventory().items.set(i, ItemStack.EMPTY); // граница vanilla NonNullList требует non-null (было null=1.7.10 empty)
 					break;
 				}
 			}
@@ -1441,7 +1441,7 @@ public class ST {
 				}
 				// Мод EtFu вне сборки: ветка целиком под гейтом IL.EtFu_Sus_Stew.exists() (LoaderItemList.java:1444)
 				// — недостижима. 1.7.10 Potion-эффекты как сырой NBT-список ("EffectId"/"EffectDuration"
-				// с числовым .id) — в neo эффекты registry-объекты (MobEffects.<ИМЯ>, Holder<MobEffect>, без .id), а
+				// с числовым .id) — в neo эффекты registry-объекты (MobEffects.<ИМЯ>, MobEffect, без .id), а
 				// формат хранения эффектов на стаке — DataComponents (не произвольный "Effects" ListTag). Оригинал:
 				// if (IL.EtFu_Sus_Stew.exists() && item_(tStack) == Items.MUSHROOM_STEW) {
 				//     ListTag tList = new ListTag();
@@ -1483,7 +1483,7 @@ public class ST {
 			//aStack.stackSize -= 64;
 			//}
 			
-			for (int i = 0; i < 36; i++) if (!(aPlayer instanceof Player) || i != ((Player)aPlayer).getInventory().getSelectedSlot()) {
+			for (int i = 0; i < 36; i++) if (!(aPlayer instanceof Player) || i != ((Player)aPlayer).getInventory().selected) {
 				ItemStack tStack = aInv.getItem(i);
 				if (equal(tStack, aStack) && aStack.getCount() + tStack.getCount() <= tStack.getMaxStackSize()) {
 					tStack.setCount(tStack.getCount()+(aStack.getCount()));
@@ -1492,9 +1492,9 @@ public class ST {
 				}
 			}
 			if (aCurrentSlotFirst && aPlayer instanceof Player) {
-				ItemStack tStack = aInv.getItem(((Player)aPlayer).getInventory().getSelectedSlot());
+				ItemStack tStack = aInv.getItem(((Player)aPlayer).getInventory().selected);
 				if (tStack == null || tStack.getCount() == 0) {
-					aInv.setItem(((Player)aPlayer).getInventory().getSelectedSlot(), aStack);
+					aInv.setItem(((Player)aPlayer).getInventory().selected, aStack);
 					update(aPlayer);
 					return T;
 				} else if (equal(tStack, aStack) && aStack.getCount() + tStack.getCount() <= tStack.getMaxStackSize()) {
@@ -1503,7 +1503,7 @@ public class ST {
 					return T;
 				}
 			}
-			for (int i = 0; i < 36; i++) if (!(aPlayer instanceof Player) || i != ((Player)aPlayer).getInventory().getSelectedSlot()) {
+			for (int i = 0; i < 36; i++) if (!(aPlayer instanceof Player) || i != ((Player)aPlayer).getInventory().selected) {
 				ItemStack tStack = aInv.getItem(i);
 				if (tStack == null || tStack.getCount() <= 0) {
 					aInv.setItem(i, aStack);
@@ -1512,9 +1512,9 @@ public class ST {
 				}
 			}
 			if (!aCurrentSlotFirst && aPlayer instanceof Player) {
-				ItemStack tStack = aInv.getItem(((Player)aPlayer).getInventory().getSelectedSlot());
+				ItemStack tStack = aInv.getItem(((Player)aPlayer).getInventory().selected);
 				if (tStack == null || tStack.getCount() == 0) {
-					aInv.setItem(((Player)aPlayer).getInventory().getSelectedSlot(), aStack);
+					aInv.setItem(((Player)aPlayer).getInventory().selected, aStack);
 					update(aPlayer);
 					return T;
 				} else if (equal(tStack, aStack) && aStack.getCount() + tStack.getCount() <= tStack.getMaxStackSize()) {
@@ -1663,11 +1663,11 @@ public class ST {
 	
 	/** Loads an ItemStack properly. */
 	public static ItemStack load(CompoundTag aNBT, String aTagName) {
-		return aNBT == null ? null : load(aNBT.getCompoundOrEmpty(aTagName), NI);
+		return aNBT == null ? null : load(aNBT.getCompound(aTagName), NI);
 	}
 	/** Loads an ItemStack properly. */
 	public static ItemStack load(CompoundTag aNBT, String aTagName, ItemStack aDefault) {
-		return aNBT == null ? null : load(aNBT.getCompoundOrEmpty(aTagName), aDefault);
+		return aNBT == null ? null : load(aNBT.getCompound(aTagName), aDefault);
 	}
 	
 	/** Loads an ItemStack properly. */
@@ -1680,10 +1680,10 @@ public class ST {
 		// BUG-077: Count<=0 — это «ноль с памятью типа» (1.7.10 писал stackSize=0). Собрать стек с нулём в neo
 		// нельзя (получится EMPTY, идентичность потеряется), поэтому строим на 1 и помечаем ZEROSIZE-призраком
 		// через центр size_ — ровно то представление, которым GT6-код пользуется в рантайме (ST.count даст 0).
-		int tCount = aNBT.getIntOr("Count", 0);
-		ItemStack rStack = make(Item.byId(aNBT.getShortOr("id",(short)0)), tCount <= 0 ? 1 : tCount, aNBT.getShortOr("Damage",(short)0));
+		int tCount = aNBT.getInt("Count");
+		ItemStack rStack = make(Item.byId(aNBT.getShort("id")), tCount <= 0 ? 1 : tCount, aNBT.getShort("Damage"));
 		if (rStack == null) if (aNBT.contains("od")) {
-			rStack = OreDictManager.INSTANCE.getStack(aNBT.getStringOr("od",""), tCount <= 0 ? 1 : tCount);
+			rStack = OreDictManager.INSTANCE.getStack(aNBT.getString("od"), tCount <= 0 ? 1 : tCount);
 			if (rStack == null) return aDefault == null ? null : update_(OM.get_(aDefault));
 		} else return aDefault == null ? null : update_(OM.get_(aDefault));
 		if (tCount <= 0) size_(0, rStack);

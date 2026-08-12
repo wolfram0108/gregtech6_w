@@ -60,9 +60,9 @@ public class MultiTileEntityLightningRod extends TileEntityBase10MultiBlockBase 
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mEnergy = aNBT.getLongOr(NBT_ENERGY, 0L);
-		mCapacity = aNBT.getLongOr(NBT_CAPACITY, 0L);
-		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_EMITTED, ""));
+		mEnergy = aNBT.getLong(NBT_ENERGY);
+		mCapacity = aNBT.getLong(NBT_CAPACITY);
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 	}
 	
 	@Override

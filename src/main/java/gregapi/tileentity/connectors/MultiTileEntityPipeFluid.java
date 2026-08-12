@@ -108,25 +108,25 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains("gt.mtransfer")) mTransferredAmount = aNBT.getLong("gt.mtransfer").orElse(0L);
-		if (aNBT.contains(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER).orElse((byte)0);
-		if (aNBT.contains(NBT_OPAQUE)) mBlocking = aNBT.getBoolean(NBT_OPAQUE).orElse(false);
-		if (aNBT.contains(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF).orElse(false);
-		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF).orElse(false);
-		if (aNBT.contains(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF).orElse(false);
-		if (aNBT.contains(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF).orElse(false);
-		if (aNBT.contains(NBT_TANK_CAPACITY)) mCapacity = aNBT.getLong(NBT_TANK_CAPACITY).orElse(0L);
-		if (aNBT.contains(NBT_TEMPERATURE)) mMaxTemperature = aNBT.getLong(NBT_TEMPERATURE).orElse(0L);
+		if (aNBT.contains("gt.mtransfer")) mTransferredAmount = aNBT.getLong("gt.mtransfer");
+		if (aNBT.contains(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER);
+		if (aNBT.contains(NBT_OPAQUE)) mBlocking = aNBT.getBoolean(NBT_OPAQUE);
+		if (aNBT.contains(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
+		if (aNBT.contains(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF);
+		if (aNBT.contains(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF);
+		if (aNBT.contains(NBT_TANK_CAPACITY)) mCapacity = aNBT.getLong(NBT_TANK_CAPACITY);
+		if (aNBT.contains(NBT_TEMPERATURE)) mMaxTemperature = aNBT.getLong(NBT_TEMPERATURE);
 		if (aNBT.contains(NBT_TANK_COUNT)) {
-			mTanks = new FluidTankGT[Math.max(1, aNBT.getIntOr(NBT_TANK_COUNT, 0))];
+			mTanks = new FluidTankGT[Math.max(1, aNBT.getInt(NBT_TANK_COUNT))];
 			mLastReceivedFrom = new byte[mTanks.length];
 			for (int i = 0; i < mTanks.length; i++) {
 				mTanks[i] = new FluidTankGT(aNBT, NBT_TANK+"."+i, mCapacity).setIndex(i);
-				mLastReceivedFrom[i] = aNBT.getByte("gt.mlast."+i).orElse((byte)0);
+				mLastReceivedFrom[i] = aNBT.getByte("gt.mlast."+i);
 			}
 		} else {
 			mTanks = new FluidTankGT(aNBT, NBT_TANK+"."+0, mCapacity).AS_ARRAY;
-			mLastReceivedFrom = new byte[] {aNBT.getByte("gt.mlast.0").orElse((byte)0)};
+			mLastReceivedFrom = new byte[] {aNBT.getByte("gt.mlast.0")};
 		}
 		
 		if (level != null && isServerSide() && mHasToAddTimer) {
