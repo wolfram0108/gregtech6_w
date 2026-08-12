@@ -23,6 +23,7 @@
 
 package gregapi.load;
 
+import gregapi.compat.AE2Names;
 import gregapi.data.MD;
 import gregapi.data.MT;
 import gregapi.data.OP;
@@ -830,7 +831,13 @@ public class LoaderUnificationTargets implements Runnable {
 		OreDictManager.INSTANCE.setTarget(OP.blockSolid     , MT.STONES.SkyStone        , MD.AE, "tile.BlockSkyStone", 1);
 		OreDictManager.INSTANCE.setTarget(OP.dust           , MT.STONES.SkyStone        , MD.AE, "item.ItemMultiMaterial", 45);
 		OreDictManager.INSTANCE.setTarget(OP.gem            , MT.ChargedCertusQuartz    , MD.AE, "item.ItemMultiMaterial", 1);
+		// Э2 (центр адресации gregapi.compat.AE2Names): рудных блоков сертуса в AE2 26.1 нет вовсе — источник
+		// кристалла там budding-цепь метеорита. Цель унификации без носителя ставить нечем, и штатная жалоба
+		// setTarget «Item does not exist for Unification Target» здесь была бы ложной тревогой: носителя нет
+		// не по ошибке, а по устройству новой версии. Пропускаем ТИХО — руды сертуса у GT6 свои (Loader_Worldgen:480).
+		if (AE2Names.has("tile.OreQuartzCharged", 0))
 		OreDictManager.INSTANCE.setTarget(OP.oreVanillastone, MT.ChargedCertusQuartz    , MD.AE, "tile.OreQuartzCharged" , 0);
+		if (AE2Names.has("tile.OreQuartz", 0))
 		OreDictManager.INSTANCE.setTarget(OP.oreVanillastone, MT.CertusQuartz           , MD.AE, "tile.OreQuartz"        , 0);
 		OreDictManager.INSTANCE.setTarget(OP.oreVanillastone, MT.Draconium              , MD.DE, "draconiumOre", 0);
 		OreDictManager.INSTANCE.setTarget(OP.crushed        , MT.Draconium              , MD.DE, "draconiumBlend", 0);
