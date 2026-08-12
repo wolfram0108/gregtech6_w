@@ -41,10 +41,8 @@ import gregapi.network.IPacket;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
@@ -95,7 +93,7 @@ public class PacketItemStackChat implements IPacket {
 		if (tLength <= 0) return null;
 		byte[] tData = new byte[tLength];
 		aData.readFully(tData);
-		try {return NbtIo.readCompressed(new ByteArrayInputStream(tData), NbtAccounter.create(2097152L));} catch (IOException e) {e.printStackTrace(ERR);}
+		try {return NbtIo.readCompressed(new ByteArrayInputStream(tData));} catch (IOException e) {e.printStackTrace(ERR);}
 		return null;
 	}
 
@@ -103,7 +101,7 @@ public class PacketItemStackChat implements IPacket {
 	@SuppressWarnings("unchecked")
 	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
 		DISPLAY_TEMP_TOOLTIP = F;
-		List<Component> tList = mStack.getTooltipLines(Item.TooltipContext.of(null, GT_API.api_proxy.getThePlayer()), GT_API.api_proxy.getThePlayer(), TooltipFlag.NORMAL);
+		List<Component> tList = mStack.getTooltipLines(GT_API.api_proxy.getThePlayer(), TooltipFlag.NORMAL);
 		DISPLAY_TEMP_TOOLTIP = T;
 		if (tList != null && !tList.isEmpty()) {
 			UT.Entities.chat(GT_API.api_proxy.getThePlayer(), tList, F);

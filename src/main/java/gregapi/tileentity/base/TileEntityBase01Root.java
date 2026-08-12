@@ -545,6 +545,10 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// @Override
 	public void clearRemoved() {
 		super.clearRemoved();
+		// Парно к invalidateCaps(): ожил носитель — оживает и капа. Ванильный clearRemoved 1.20.1 caps не
+		// трогает (BlockEntity.java:182-184), а Forge для этого и держит reviveCaps (CapabilityProvider.java:172).
+		reviveCaps();
+		mCapsValid = T;
 		setAlive();
 	}
 	
@@ -794,14 +798,6 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	protected IFluidTank getFluidTankDrainable(byte aSide, FluidStack aFluidToDrain) {return null;}
 	protected IFluidTank[] getFluidTanks(byte aSide) {return ZL_FT;}
 
-	/** MODCOMPAT-001 П2 (F5-capability): те же side-aware танки, что видит внутренний тракт, — наружу, для
-	 *  регистрации {@code Capabilities.Fluid.BLOCK} ({@link gregapi.fluid.GT6FluidCapability}). Отдельный
-	 *  публичный вход, потому что {@link #getFluidTanks(byte)} protected и переопределяется наследниками
-	 *  (в т.ч. ковер-оверрайдом {@code TileEntityBase06Covers:375}) — капа обязана видеть ровно результат
-	 *  этой цепочки, а не свою копию правил. {@code null} = sideless-запрос = {@code SIDE_ANY}, родная
-	 *  GT6-конвенция (та же, что у унаследованных neo-мостов ниже). */
-	public final IFluidTank[] getFluidTanksForCapability(Direction aDirection) {return getFluidTanks(UT.Code.side(aDirection));}
-
 	public int fill(Direction aDirection, FluidStack aFluid, boolean aDoFill) {
 		if (aFluid == null || aFluid.getAmount() <= 0) return 0;
 		IFluidTank tTank = getFluidTankFillable(UT.Code.side(aDirection), aFluid);
@@ -849,17 +845,17 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		return rInfo;
 	}
 
-	// F5-capability мост (decisions/F5-fluids.md): neo IFluidHandler (SIDELESS) — концертные методы
-	// поверх GT6-своих side-aware fill/drain/getTankInfo/canFill выше. Оригинал 1.7.10 реализовывал
-	// Forge-sided net.minecraftforge.fluids.IFluidHandler (6 side-методов); порт механически переименовал
-	// import в neo capability IFluidHandler (7 sideless-методов, ИНОЙ контракт — мис-порт). Leaf-TE,
-	// объявляющие `implements IFluidHandler` (MultiTileEntityBasicMachine/AdvancedCraftingTable/PipeFluid/
-	// MultiBlockPart), НАСЛЕДУЮТ эти 7 мостов ОТСЮДА — контракт закрыт ЦЕНТРАЛЬНО, без дублирования и без
-	// смены семантики не-fluid TE (те интерфейс не объявляют, лишних вызовов нет). sideless neo-вызов =
-	// сторона null -> UT.Code.side(null)=SIDE_ANY(6), родная GT6-конвенция «любая сторона». @Override не
+	// F5-мост «интерфейс 1.20.1» (decisions/F5-fluids.md): Forge-1.20.1 IFluidHandler — SIDELESS, семь
+	// методов (forge-1201-decompiled/net/minecraftforge/fluids/capability/IFluidHandler.java:19-108), тогда
+	// как оригинал 1.7.10 реализовывал ШЕСТЬ side-методов того же имени. Leaf-TE, объявляющие
+	// `implements IFluidHandler` (MultiTileEntityBasicMachine/AdvancedCraftingTable/PipeFluid/MultiBlockPart),
+	// НАСЛЕДУЮТ эти семь концертных мостов ОТСЮДА — контракт закрыт ЦЕНТРАЛЬНО, без дублирования и без смены
+	// семантики не-fluid TE (те интерфейс не объявляют, лишних вызовов нет). Здесь сторона неизвестна, поэтому
+	// null -> UT.Code.side(null)=SIDE_ANY(6), родная GT6-конвенция «любая сторона». СТОРОННИЙ вид на танки
+	// идёт НЕ сюда, а через капу (getCapability ниже), где сторона известна и не схлопывается. @Override не
 	// ставится намеренно: TE01Root сам IFluidHandler не объявляет — методы удовлетворяют интерфейс leaf-TE
-	// через наследование концертных членов (легальный Java-путь). FluidStack.EMPTY вместо null: neo
-	// IFluidHandler.drain обязан вернуть непустой стек-объект (FluidStack.java, контракт).
+	// через наследование концертных членов (легальный Java-путь). FluidStack.EMPTY вместо null:
+	// IFluidHandler.drain обязан вернуть непустой стек-объект (IFluidHandler.java:88,104 — @NotNull).
 	public int getTanks() {FluidTankInfo[] t = getTankInfo((Direction)null); return t == null ? 0 : t.length;}
 	public FluidStack getFluidInTank(int aTank) {FluidTankInfo[] t = getTankInfo((Direction)null); return t != null && aTank >= 0 && aTank < t.length && t[aTank] != null && t[aTank].fluid != null ? t[aTank].fluid : FluidStack.EMPTY;}
 	public int getTankCapacity(int aTank) {FluidTankInfo[] t = getTankInfo((Direction)null); return t != null && aTank >= 0 && aTank < t.length && t[aTank] != null ? t[aTank].capacity : 0;}
@@ -867,6 +863,68 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public int fill(FluidStack aFluid, FluidAction aAction) {return fill((Direction)null, aFluid, aAction.execute());}
 	public FluidStack drain(FluidStack aFluid, FluidAction aAction) {FluidStack r = drain((Direction)null, aFluid, aAction.execute()); return r == null ? FluidStack.EMPTY : r;}
 	public FluidStack drain(int aMaxDrain, FluidAction aAction) {FluidStack r = drain((Direction)null, aMaxDrain, aAction.execute()); return r == null ? FluidStack.EMPTY : r;}
+
+	// ==================== ЕДИНЫЙ МОСТ КАПАБИЛИТИ (F5, ветка 1.20.1) ====================
+	//
+	// В 1.7.10 «наружу видно» задавалось объявлением интерфейса на самом TE (IFluidHandler,
+	// IInventory/ISidedInventory) — одно решение на всю иерархию. В 26.x эту роль отняло событие
+	// RegisterCapabilitiesEvent (регистрация провайдеров по блокам), в 1.20.1 — метод самого
+	// BlockEntity: getCapability(Capability, Direction) -> LazyOptional
+	// (forge-1201-decompiled/.../common/capabilities/ICapabilityProvider.java:26; образец той же версии —
+	// AE2 SkyStoneTankBlockEntity.java:66-72, ChestBlockEntity.java:740-749).
+	//
+	// Мост ОДИН и стоит здесь, в общем корне всей GT6-иерархии BlockEntity, — россыпи по наследникам нет.
+	// Что показать, решает сам мод своими же side-aware методами; правила капа не копирует (см. javadoc
+	// gregapi/fluid/GT6FluidCapability.java и gregapi/tileentity/GT6ItemCapability.java).
+	//
+	// Сторона запроса ЖИВЁТ: она связывается с хендлером (fluid) и с обёрткой (item), а не схлопывается в
+	// SIDE_ANY — это и есть форма 1.7.10, где сторона была параметром каждого метода интерфейса.
+	// Индекс кэша — UT.Code.side(side): 0..5 стороны, 6 = null = SIDE_ANY.
+	private final net.minecraftforge.common.util.LazyOptional<?>[] mFluidCaps = new net.minecraftforge.common.util.LazyOptional<?>[7], mItemCaps = new net.minecraftforge.common.util.LazyOptional<?>[7];
+	/** Зеркало приватного {@code CapabilityProvider.valid}: после инвалидации капа больше не выдаётся
+	 *  (контракт {@code CapabilityProvider.java:160-166}), пока {@link #clearRemoved()} не оживит носитель. */
+	private boolean mCapsValid = T;
+
+	@Override
+	public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> aCapability, Direction aSide) {
+		if (mCapsValid) {
+			if (aCapability == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
+				// «Танков нет» = капы нет: пустой танк и отсутствие танков — разные ответы (как и в ветке 26.x).
+				if (!gregapi.fluid.GT6FluidCapability.hasTanks(this, aSide)) return net.minecraftforge.common.util.LazyOptional.empty();
+				return cachedCap(mFluidCaps, aSide, () -> gregapi.fluid.GT6FluidCapability.handlerOf(this, aSide));
+			}
+			if (aCapability == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) {
+				if (!gregapi.tileentity.GT6ItemCapability.hasInventory(this)) return net.minecraftforge.common.util.LazyOptional.empty();
+				return cachedCap(mItemCaps, aSide, () -> gregapi.tileentity.GT6ItemCapability.handlerOf(this, aSide));
+			}
+		}
+		return super.getCapability(aCapability, aSide);
+	}
+
+	/** Один и тот же {@code LazyOptional} на сторону — консьюмеру движок разрешает его кэшировать и слушать
+	 *  инвалидацию ({@code ICapabilityProvider.java:19-21}), поэтому новый объект на каждый запрос выдавать нельзя. */
+	@SuppressWarnings("unchecked")
+	private <T> net.minecraftforge.common.util.LazyOptional<T> cachedCap(net.minecraftforge.common.util.LazyOptional<?>[] aCache, Direction aSide, net.minecraftforge.common.util.NonNullSupplier<Object> aFactory) {
+		int tIndex = UT.Code.side(aSide);
+		net.minecraftforge.common.util.LazyOptional<?> rCap = aCache[tIndex];
+		if (rCap == null) aCache[tIndex] = rCap = net.minecraftforge.common.util.LazyOptional.of(aFactory);
+		return (net.minecraftforge.common.util.LazyOptional<T>)rCap;
+	}
+
+	/** Обязательна: снятый/выгруженный BE не должен раздавать живые хендлеры (движок зовёт её из
+	 *  {@code BlockEntity.setRemoved:173} и {@code onChunkUnloaded:179}). Образец — Forge-контракт
+	 *  {@code CapabilityProvider.invalidateCaps()}. */
+	@Override
+	public void invalidateCaps() {
+		super.invalidateCaps();
+		mCapsValid = F;
+		invalidateCapArray(mFluidCaps);
+		invalidateCapArray(mItemCaps);
+	}
+
+	private static void invalidateCapArray(net.minecraftforge.common.util.LazyOptional<?>[] aCache) {
+		for (int i = 0; i < aCache.length; i++) if (aCache[i] != null) {aCache[i].invalidate(); aCache[i] = null;}
+	}
 
 	// A Default implementation of the MultiBlock related Fluid Tank behaviour.
 	

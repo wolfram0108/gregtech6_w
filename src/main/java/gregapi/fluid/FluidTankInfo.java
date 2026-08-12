@@ -28,16 +28,17 @@ import net.minecraftforge.fluids.IFluidTank;
 
 /**
  * F5 компат-заглушка: Forge-1.7.10 {@code net.minecraftforge.fluids.FluidTankInfo} — простая
- * неизменяемая пара (жидкость, ёмкость), которую отдавал {@code IFluidHandler.getTankInfo()}. В neo
- * 26.1.2 прямого аналога нет (заменено transfer-API {@code ResourceHandler}, не возвращающим такую
- * пару напрямую) — воспроизведена по фактическому использованию в дереве (2-арг конструктор,
+ * неизменяемая пара (жидкость, ёмкость), которую отдавал {@code IFluidHandler.getTankInfo()}. Ни в
+ * Forge 1.20.1 (греп по {@code forge-1201-decompiled/net/minecraftforge/fluids/} — класса нет: там
+ * {@code IFluidHandler} отдаёт содержимое поштучно через {@code getFluidInTank}/{@code getTankCapacity}),
+ * ни в 26.x прямого аналога нет — воспроизведена по фактическому использованию в дереве (2-арг конструктор,
  * поля {@code fluid}/{@code capacity}: {@code gregapi.data.CS.java:834}, {@code FluidTankGT.getInfo()}).
  * [Метка отложенности «consumer-файлы не мигрированы» СНЯТА 2026-08-06 — пережила собственный фикс:
  * в оригинале ровно 14 вызывателей {@code getTankInfo}, в порте у всех 14 есть плечо — 12 ходят через
- * ЦЕНТР шва {@code FL.getTankInfo} ({@code FL.java:944}, side-aware поверх neo-API), сенсоры
+ * ЦЕНТР шва {@code FL.getTankInfo} ({@code FL.java:944}, side-aware поверх движкового API), сенсоры
  * Fluidometer/Bucketometer/KiloBucketometer, BasicMachine:705, WD:2061, Bridge/Extender/MiniPortal/
  * LongDistancePipelineFluid; 1 — контракт {@code IMultiBlockFluidHandler} (1:1 с оригиналом :396);
- * 1 — {@code MultiTileEntityPipeFluid:506-511}, длина берётся из neo-API напрямую (документировано там).]
+ * 1 — {@code MultiTileEntityPipeFluid:506-511}, длина берётся из движкового API напрямую (документировано там).]
  */
 public final class FluidTankInfo {
 	public final FluidStack fluid;
@@ -49,7 +50,8 @@ public final class FluidTankInfo {
 	}
 
 	/** Forge-1.7.10 {@code FluidTankInfo(IFluidTank)} = пара (текущая жидкость, ёмкость бака).
-	 *  neo IFluidTank сохранил {@code getFluid()}/{@code getCapacity()} — 1:1. */
+	 *  Forge 1.20.1 сохранил {@code IFluidTank.getFluid()}/{@code getCapacity()} дословно
+	 *  ({@code forge-1201-decompiled/net/minecraftforge/fluids/IFluidTank.java}) — 1:1. */
 	public FluidTankInfo(IFluidTank aTank) {
 		this(aTank.getFluid(), aTank.getCapacity());
 	}

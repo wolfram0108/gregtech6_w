@@ -25,13 +25,12 @@ package gregapi.network;
 
 import java.util.UUID;
 
-import gregapi.network.NetworkHandler.GT6Payload;
 import gregapi.network.NetworkHandler.TargetPoint;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.network.simple.SimpleChannel;
 
 /**
  * @author Gregorius Techneticies
@@ -57,5 +56,5 @@ public interface INetworkHandler {
 	public void sendToAllPlayersInRangeExcept(IPacket aPacket, UUID aPlayer, Level aWorld, BlockPos aCoords);
 
 	/** For very advanced usage only! */
-	public CustomPacketPayload.Type<GT6Payload> getChannel(Dist aSide);
+	public SimpleChannel getChannel(Dist aSide);
 }

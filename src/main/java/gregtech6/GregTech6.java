@@ -28,7 +28,6 @@ import com.mojang.logging.LogUtils;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 
-import gregapi.network.NetworkHandler;
 import org.slf4j.Logger;
 
 /**
@@ -46,8 +45,10 @@ import org.slf4j.Logger;
  *
  * <p><b>Централизация (F12).</b> Регистрация контента теперь идёт ТОЛЬКО через центры:
  * {@code gregapi.GT_API} (Item/Block, F12) и {@code gregapi.fluid.FluidGT} (Fluid, F5). Здесь ничего
- * не регистрируется. Единственная оставшаяся привязка к мод-шине — подписка neo-payload'ов сети
- * (F7, {@code NetworkHandler::registerPayloadHandlers}), это не R3-регистрация контента.</p>
+ * не регистрируется. Привязок к мод-шине здесь больше нет вовсе: сетевой канал (F7) на 1.20.1 строится
+ * в конструкторе {@code gregapi.network.NetworkHandler} ({@code NetworkRegistry.newSimpleChannel}),
+ * как в оригинале 1.7.10 — событие регистрации payload'ов, под которое стояла подписка в ветке 26.x,
+ * в 1.20.1 не существует.</p>
  *
  * <p>Осиротевший ассет {@code block.gregtech6.test_block} в
  * {@code assets/gregtech6/lang/en_us.json} остаётся безвредным (неиспользуемый ключ локализации);
@@ -64,8 +65,6 @@ public class GregTech6 {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public GregTech6(IEventBus modEventBus) {
-        // F7 (сеть): регистрация neo-payload'ов — не R3-регистрация контента, оставлена как есть.
-        modEventBus.addListener(NetworkHandler::registerPayloadHandlers);
         LOGGER.info("[GregTech6] entrypoint loaded — content registration centralised in GT_API (F12) / FluidGT (F5)");
     }
 }

@@ -26,16 +26,11 @@ package gregapi.fluid;
 import gregapi.data.FL;
 import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.util.UT;
-import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidTank;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.fluid.FluidResource;
-import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
-import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,34 +41,26 @@ import static gregapi.data.CS.T;
 /**
  * F5 центральный переходник — танк GT6. Внутренняя логика (fill/drain/capacity/voidExcess/
  * preventDraining/адаптивная ёмкость по {@code RecipeMap.mMinInputTankSizes}) сохранена 1:1
- * (`decisions/F5-fluids.md` §4) — меняется ТОЛЬКО внешний фасад:
- * <ul>
- * <li>{@link IFluidTank} — реальный (хоть и {@code @Deprecated(forRemoval=true)}) интерфейс neo
- *     26.1.2 ({@code net.minecraftforge.fluids.IFluidTank.java}), максимально совместимый по
- *     форме с legacy-потребителями; сигнатуры {@code fill(FluidStack,FluidAction)}/
- *     {@code drain(int,FluidAction)}/{@code drain(FluidStack,FluidAction)} — из декомпила.</li>
- * <li>{@link #asResourceHandler()} — современный фасад, {@code ResourceHandler<FluidResource>} через
- *     {@code Capabilities.Fluid.BLOCK/ITEM}, ровно как решение F5 §4 и образец AE2
- *     {@code SkyStoneTankBlockEntity.java:27,56} требуют. Реализация — не самодельная транзакционная
- *     логика (риск незаметно сломать rollback), а обёртка над готовым, транзакционно-безопасным
- *     {@link FluidStacksResourceHandler} (referenced, не изобретено) с двусторонней синхронизацией
- *     против {@link #mFluid}/{@link #mAmount}.</li>
- * </ul>
+ * (`decisions/F5-fluids.md` §4).
+ *
+ * <p><b>Ветка 1.20.1: фасада больше нет — интерфейс вернулся к оригинальному.</b> В 1.7.10 танк
+ * реализовывал {@code net.minecraftforge.fluids.IFluidTank}, и это был ЕДИНСТВЕННЫЙ его наружный
+ * контракт. Тот же интерфейс живёт в Forge 1.20.1 дословно
+ * ({@code forge-1201-decompiled/net/minecraftforge/fluids/IFluidTank.java}: {@code getFluid}/
+ * {@code getFluidAmount}/{@code getCapacity}/{@code isFluidValid}/{@code fill(FluidStack,FluidAction)}/
+ * {@code drain(int,FluidAction)}/{@code drain(FluidStack,FluidAction)}) — значит танк снова просто танк.
+ * Второй фасад ({@code ResourceHandler<FluidResource>} поверх {@code FluidStacksResourceHandler} с
+ * двусторонней синхронизацией и защитой от реентрантности) существовал ТОЛЬКО потому, что transfer-API
+ * 26.x не понимал {@code IFluidTank}; в 1.20.1 его нет, и вместе с ним снята вся эта машинерия.
+ * Наружный, side-aware вид на танки строит не танк, а капа-мост базового TileEntity
+ * ({@code TileEntityBase01Root.getCapability} → {@code gregapi/fluid/GT6FluidCapability.java}) —
+ * ровно как в 1.7.10, где наружу смотрел TE, а не сам танк.
  *
  * <p>Трение long-vs-int (`decisions/F5-fluids.md` §4, §8): {@link #mAmount} остаётся {@code long}
- * (GT6 объёмы огромны), на границе с {@link FluidStack}/{@link FluidResource} (оба {@code int})
- * клампится через {@link UT.Code#bindInt}, ровно как раньше.
- *
- * <p>// F5 long-amount (АДАПТИРОВАНО, движок-форс): клампинг на границе через {@link UT.Code#bindInt}
- * (режет к {@code Integer.MAX_VALUE}) — функционально; структурное ограничение движка:
- * {@code ResourceHandler<FluidResource>}/{@link FluidStack} физически {@code int}, тогда
- * как {@link #mAmount}/{@link #mCapacity} — {@code long}; НИ ОДИН вызов {@link #asResourceHandler()}
- * (insert/extract/getCapacity) не может атомарно перенести/сообщить больше {@code Integer.MAX_VALUE}
- * за раз, даже если внутреннее состояние танка (long) способно хранить больше. NBT-round-trip не
- * страдает ({@code writeToNBT}/{@code readFromNBT} хранят полный {@code long} через {@code "LAmount"}),
- * страдает только ОДНОМОМЕНТНЫЙ перенос через capability-границу — решение (разбиение на несколько
- * insert-вызовов транспортом/явный overflow-протокол) не определено ни в одном из 3 корней референса
- * (`decisions/F5-fluids.md` §8, «long vs int объём: … спроектировать при этапе 6»).
+ * (GT6 объёмы огромны), на границе с {@link FluidStack} ({@code int}) клампится через
+ * {@link UT.Code#bindInt} — ровно как в 1.7.10, где {@code FluidStack.amount} тоже был {@code int}.
+ * Единственный страдающий канал — ОДНОМОМЕНТНЫЙ перенос свыше {@code Integer.MAX_VALUE}; NBT-round-trip
+ * не страдает ({@code writeToNBT}/{@code readFromNBT} хранят полный {@code long} через {@code "LAmount"}).
  */
 public class FluidTankGT implements IFluidTank {
 	public final FluidTankGT[] AS_ARRAY = new FluidTankGT[] {this};
@@ -86,10 +73,6 @@ public class FluidTankGT implements IFluidTank {
 	private long mAdjustableMultiplier = 1;
 	/** Gives you a Tank Index in case there is multiple Tanks on a TileEntity that cares. */
 	public int mIndex = 0;
-
-	/** Современный facade-объект (см. javadoc класса) — построен один раз, живёт с танком. */
-	private FluidStacksResourceHandler mCapabilityView;
-	private boolean mSyncingCapability = F;
 
 	public FluidTankGT() {mCapacity = Long.MAX_VALUE;}
 	public FluidTankGT(long aCapacity) {mCapacity = aCapacity;}
@@ -107,7 +90,6 @@ public class FluidTankGT implements IFluidTank {
 			if (!tNBT.isEmpty()) {
 				mFluid = FL.load_(tNBT);
 				mAmount = (isEmpty() ? 0 : tNBT.contains("LAmount") ? tNBT.getLong("LAmount") : mFluid.getAmount());
-				syncCapabilityView();
 			}
 		}
 		return this;
@@ -165,7 +147,7 @@ public class FluidTankGT implements IFluidTank {
 	public FluidStack drain(int aDrained, boolean aDoDrain) {
 		if (isEmpty() || aDrained <= 0) return null;
 		if (mAmount < aDrained) aDrained = (int)mAmount;
-		FluidStack rFluid = mFluid.copyWithAmount(aDrained);
+		FluidStack rFluid = new FluidStack(mFluid, aDrained);
 		if (aDoDrain) {
 			mAmount -= aDrained;
 			if (mAmount <= 0) {
@@ -175,7 +157,6 @@ public class FluidTankGT implements IFluidTank {
 					setEmpty();
 				}
 			}
-			syncCapabilityView();
 		}
 		return rFluid;
 	}
@@ -196,7 +177,6 @@ public class FluidTankGT implements IFluidTank {
 				setEmpty();
 			}
 		}
-		syncCapabilityView();
 		return T;
 	}
 
@@ -211,7 +191,6 @@ public class FluidTankGT implements IFluidTank {
 				setEmpty();
 			}
 		}
-		syncCapabilityView();
 		return aDrained;
 	}
 
@@ -221,11 +200,9 @@ public class FluidTankGT implements IFluidTank {
 		if (mAmount + aFilled > tCapacity) {
 			if (!mVoidExcess) aFilled = tCapacity - mAmount;
 			mAmount = tCapacity;
-			syncCapabilityView();
 			return aFilled;
 		}
 		mAmount += aFilled;
-		syncCapabilityView();
 		return aFilled;
 	}
 
@@ -235,7 +212,6 @@ public class FluidTankGT implements IFluidTank {
 			mFluid = aFluid.copy();
 			mChangedFluids = T;
 			mAmount = Math.min(capacity(aFluid), aFilled);
-			syncCapabilityView();
 			return mVoidExcess ? aFilled : mAmount;
 		}
 		return contains(aFluid) ? add(aFilled) : 0;
@@ -249,7 +225,6 @@ public class FluidTankGT implements IFluidTank {
 				mFluid = aFluid.copy();
 				mChangedFluids = T;
 				mAmount = Math.min(capacity(aFluid), aFluid.getAmount());
-				syncCapabilityView();
 				return mVoidExcess ? aFluid.getAmount() : (int)mAmount;
 			}
 			if (!contains(aFluid)) return 0;
@@ -258,7 +233,6 @@ public class FluidTankGT implements IFluidTank {
 				mAmount += aFluid.getAmount();
 				tFilled = aFluid.getAmount();
 			} else mAmount = tCapacity;
-			syncCapabilityView();
 			return mVoidExcess ? aFluid.getAmount() : (int)tFilled;
 		}
 		return UT.Code.bindInt(isEmpty() ? mVoidExcess ? aFluid.getAmount() : Math.min(capacity(aFluid), aFluid.getAmount()) : contains(aFluid) ? mVoidExcess ? aFluid.getAmount() : Math.min(capacity(aFluid) - mAmount, aFluid.getAmount()) : 0);
@@ -277,7 +251,6 @@ public class FluidTankGT implements IFluidTank {
 				mChangedFluids = T;
 				mAmount = aFluid.getAmount();
 				if (mAmount > tCapacity) mAmount = tCapacity;
-				syncCapabilityView();
 				return T;
 			}
 			return F;
@@ -285,12 +258,10 @@ public class FluidTankGT implements IFluidTank {
 		if (contains(aFluid)) {
 			if (mAmount + aFluid.getAmount() <= capacity()) {
 				mAmount += aFluid.getAmount();
-				syncCapabilityView();
 				return T;
 			}
 			if (mVoidExcess) {
 				mAmount = capacity();
-				syncCapabilityView();
 				return T;
 			}
 		}
@@ -308,7 +279,6 @@ public class FluidTankGT implements IFluidTank {
 				mChangedFluids = T;
 				mAmount = aFluid.getAmount() * aMultiplier;
 				if (mAmount > tCapacity) mAmount = tCapacity;
-				syncCapabilityView();
 				return T;
 			}
 			return F;
@@ -316,12 +286,10 @@ public class FluidTankGT implements IFluidTank {
 		if (contains(aFluid)) {
 			if (mAmount + aFluid.getAmount() * aMultiplier <= capacity()) {
 				mAmount += aFluid.getAmount() * aMultiplier;
-				syncCapabilityView();
 				return T;
 			}
 			if (mVoidExcess) {
 				mAmount = capacity();
-				syncCapabilityView();
 				return T;
 			}
 		}
@@ -333,7 +301,6 @@ public class FluidTankGT implements IFluidTank {
 		if (mFluid != null) mChangedFluids = T;
 		mFluid  = null;
 		mAmount = 0;
-		syncCapabilityView();
 		return this;
 	}
 	/** Sets Fluid Content, taking Amount from the Fluid Parameter  */
@@ -342,7 +309,6 @@ public class FluidTankGT implements IFluidTank {
 		if (!FL.equal(mFluid, aFluid)) mChangedFluids = T;
 		mFluid  = aFluid;
 		mAmount = mFluid.getAmount();
-		syncCapabilityView();
 		return this;
 	}
 	/** Sets Fluid Content and Amount */
@@ -351,7 +317,6 @@ public class FluidTankGT implements IFluidTank {
 		if (!FL.equal(mFluid, aFluid)) mChangedFluids = T;
 		mFluid  = aFluid;
 		mAmount = aAmount;
-		syncCapabilityView();
 		return this;
 	}
 	/** Sets Fluid Content, taking Amount from the Tank Parameter  */
@@ -360,7 +325,6 @@ public class FluidTankGT implements IFluidTank {
 		if (!FL.equal(mFluid, aTank.mFluid)) mChangedFluids = T;
 		mFluid  = FL.amount(aTank.mFluid, aTank.mAmount);
 		mAmount = aTank.mAmount;
-		syncCapabilityView();
 		return this;
 	}
 	/** Sets the Tank Index for easier Reverse Mapping. */
@@ -429,7 +393,7 @@ public class FluidTankGT implements IFluidTank {
 	public FluidStack make(int aAmount) {return FL.make(fluid(), aAmount);}
 
 	public FluidStack get() {return mFluid;}
-	public FluidStack get(long aMax) {return isEmpty() || aMax <= 0 ? null : mFluid.copyWithAmount(UT.Code.bindInt(mAmount < aMax ? mAmount : aMax));}
+	public FluidStack get(long aMax) {return isEmpty() || aMax <= 0 ? null : new FluidStack(mFluid, UT.Code.bindInt(mAmount < aMax ? mAmount : aMax));}
 
 	@Override public FluidStack getFluid() {if (mFluid != null) mFluid.setAmount(UT.Code.bindInt(mAmount)); return mFluid;}
 	@Override public int getFluidAmount() {return UT.Code.bindInt(mAmount);}
@@ -438,120 +402,4 @@ public class FluidTankGT implements IFluidTank {
 	/** @deprecated см. {@link FluidTankInfo} — форж-1.7.10 совместимость, не часть текущего IFluidTank. */
 	@Deprecated public FluidTankInfo getInfo() {return new FluidTankInfo(isEmpty() ? null : mFluid.copy(), UT.Code.bindInt(capacity()));}
 
-	// ======================== Современный фасад: ResourceHandler<FluidResource> ========================
-
-	/**
-	 * {@code ResourceHandler<FluidResource>} — то, что консьюмер регистрирует через
-	 * {@code Capabilities.Fluid.BLOCK/ITEM} в своём {@code RegisterCapabilitiesEvent}
-	 * (AE2 {@code InitCapabilityProviders.java:99,150,161}). Транзакционная семантика (snapshot/rollback) —
-	 * из {@link FluidStacksResourceHandler}/{@link net.neoforged.neoforge.transfer.StacksResourceHandler}
-	 * (NeoForge, не самодельная): журналируемый слот откатывается при abort'е, а {@code onRootCommit}→
-	 * {@code onContentsChanged}→{@link #pullFromCapabilityView()} переносит содержимое в {@link #mFluid}/
-	 * {@link #mAmount} ТОЛЬКО при commit'е (`StacksResourceHandler.java:295-298`). Push —
-	 * {@link #syncCapabilityView()}; защита от реентрантности — {@link #mSyncingCapability}.
-	 *
-	 * <p>Три спец-флага танка GT6 воспроизводятся 1:1 поверх этого журналируемого слота, НЕ ломая rollback
-	 * (прямой вызов {@code drain()}/{@code fill(...,T)} мутировал бы {@link #mFluid}/{@link #mAmount} вне
-	 * журнала и порушил бы откат):
-	 * <ul>
-	 * <li><b>адаптивная ёмкость</b> — {@code getCapacity(index, resource)} проводит ресурс в
-	 *     {@link #capacity(Fluid)} (fluid-specific по {@code mAdjustableCapacity}); стандартный фасад брал
-	 *     константу (`StacksResourceHandler.java:192`).</li>
-	 * <li><b>{@code mVoidExcess}</b> — {@code insert} использует GT6 {@link #fill(FluidStack, boolean)} в
-	 *     режиме simulate ТОЛЬКО как оракул «подходит ли жидкость / стоит ли voidExcess-исключение» (он и
-	 *     есть источник accept-all: при voidExcess отчитывается о ВСЁМ {@code amount}, оригинал
-	 *     {@code FluidTankGT.java:190,198}). Физически прожурналированное количество берётся из
-	 *     ФАКТИЧЕСКОГО возврата {@code super.insert(...)} ({@code min(amount, capacity-current)},
-	 *     `StacksResourceHandler.java:245`) — НЕ игнорируется. Без {@code mVoidExcess} метод возвращает
-	 *     ровно то, что реально осело в журнале (что и означает контракт {@code ResourceHandler.insert}:
-	 *     «The amount that was inserted», `ResourceHandler.java:155`); с {@code mVoidExcess} — по GT6 1:1
-	 *     отчёт полный, а излишек сверх реально прожурналированного воду в void (в слот сверх ёмкости
-	 *     ничего не пишется).</li>
-	 * <li><b>{@code mPreventDraining}</b> — сохранение ТИПА жидкости при опустошении (оригинал
-	 *     {@code FluidTankGT.java:120-125}: {@code mAmount=0}, {@code mFluid} НЕ зануляется) реализовано на
-	 *     commit-пути в {@link #pullFromCapabilityView()}: neo-слот физически не хранит «тип + 0 объём»
-	 *     (FluidStack объёма 0 == EMPTY), поэтому тип удерживается в GT6-состоянии, а не в слоте.</li>
-	 * </ul>
-	 */
-	public ResourceHandler<FluidResource> asResourceHandler() {
-		if (mCapabilityView == null) {
-			mCapabilityView = new FluidStacksResourceHandler(NonNullList.withSize(1, FluidStack.EMPTY), UT.Code.bindInt(capacity())) {
-				// neo реально передаёт ресурс в getCapacity(index, resource) (StacksResourceHandler.java:192,
-				// вызовы из getCapacityAsLong:233 и insert:245) — проводим его в fluid-specific ёмкость 1:1,
-				// как внутренняя логика танка (capacity(Fluid) → capacity_ по mAdjustableCapacity, строки ~382).
-				@Override protected int getCapacity(int aIndex, FluidResource aResource) {return UT.Code.bindInt(aResource == null || aResource.isEmpty() ? capacity() : capacity(aResource.getFluid()));}
-
-				// mVoidExcess 1:1 (оригинал FluidTankGT.java:190,198): fill(sim) — ТОЛЬКО оракул matching/
-				// voidExcess (0, если жидкость не подходит под текущее содержимое танка). Реально
-				// прожурналированное количество — ФАКТИЧЕСКИЙ возврат super.insert (min(amount,
-				// capacity-current), StacksResourceHandler.java:245); он НЕ игнорируется (устраняет улику
-				// GPT-ревизии: "insert-транзакция игнорировала результат super"). При voidExcess отчёт
-				// GT6-1:1 полный (aAmount, излишек сверх tJournaled воду в void, в журнал не пишется);
-				// без voidExcess отчёт РОВНО tJournaled — точное соответствие контракту ResourceHandler.insert.
-				@Override public int insert(int aIndex, FluidResource aResource, int aAmount, TransactionContext aTx) {
-					if (aResource == null || aResource.isEmpty() || aAmount <= 0) return 0;
-					int tAccepted = fill(aResource.toStack(aAmount), F); // GT6 simulate: voidExcess/adaptive-cap/matching 1:1
-					if (tAccepted <= 0) return 0;
-					int tJournaled = super.insert(aIndex, aResource, aAmount, aTx); // фактически прожурналированное (rollback-safe)
-					return mVoidExcess ? tAccepted : tJournaled; // voidExcess: tAccepted==aAmount здесь всегда (fill(sim)-формула выше)
-				}
-
-				// Извлечение по объёму уже 1:1 со стандартным (min(amount, current), StacksResourceHandler.java:266),
-				// он и есть GT6 drain-объём (оригинал FluidTankGT.java:116,128); проводим через super для
-				// журналируемого отката. Сохранение ТИПА жидкости при mPreventDraining (оригинал
-				// FluidTankGT.java:120-125) выполняется на commit-пути в pullFromCapabilityView() — см. javadoc
-				// фасада (слот не может хранить тип с нулевым объёмом).
-				@Override public int extract(int aIndex, FluidResource aResource, int aAmount, TransactionContext aTx) {
-					return super.extract(aIndex, aResource, aAmount, aTx);
-				}
-
-				@Override protected void onContentsChanged(int aIndex, FluidStack aPreviousContents) {pullFromCapabilityView();}
-			};
-			syncCapabilityView();
-		}
-		return mCapabilityView;
-	}
-
-	/** GT6-состояние ({@link #mFluid}/{@link #mAmount}) -> capability-слот. */
-	private void syncCapabilityView() {
-		if (mCapabilityView == null || mSyncingCapability) return;
-		mSyncingCapability = T;
-		try {
-			FluidStack tView = isEmpty() ? FluidStack.EMPTY : mFluid.copyWithAmount(UT.Code.bindInt(mAmount));
-			mCapabilityView.set(0, FluidResource.of(tView), tView.getAmount());
-		} finally {
-			mSyncingCapability = F;
-		}
-	}
-
-	/** capability-слот -> GT6-состояние ({@link #mFluid}/{@link #mAmount}); вызывается NeoForge при
-	 *  изменении слота ИЗВНЕ (сторонний мод/труба через {@link ResourceHandler}). */
-	private void pullFromCapabilityView() {
-		if (mSyncingCapability) return;
-		mSyncingCapability = T;
-		try {
-			FluidResource tResource = mCapabilityView.getResource(0);
-			int tAmount = mCapabilityView.getAmountAsInt(0);
-			if (tResource == null || tResource.isEmpty() || tAmount <= 0) {
-				// mPreventDraining 1:1 (оригинал FluidTankGT.java:120-125): при опустошении сохраняем ТИП
-				// жидкости, обнуляя только количество (mAmount=0), а не зануляя mFluid через setEmpty().
-				// mChangedFluids НЕ выставляем: тип не менялся (в GT6 drain по этой ветке setEmpty не зовётся,
-				// а amount-only изменения флаг смены жидкости не поднимают).
-				if (mPreventDraining && mFluid != null) {
-					mAmount = 0;
-				} else {
-					if (mFluid != null) mChangedFluids = T;
-					mFluid = null;
-					mAmount = 0;
-				}
-			} else {
-				FluidStack tStack = tResource.toStack(tAmount);
-				if (!FL.equal(mFluid, tStack)) mChangedFluids = T;
-				mFluid = tStack;
-				mAmount = tAmount;
-			}
-		} finally {
-			mSyncingCapability = F;
-		}
-	}
 }

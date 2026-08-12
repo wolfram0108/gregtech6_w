@@ -569,17 +569,11 @@ public class GT_API extends Abstract_Mod {
 		// подписки (decisions/F5-fluids.md §3, gregapi/fluid/FluidGT.java; закрывает прежний долг F12↔F5 wiring).
 		gregapi.fluid.FluidGT.FLUID_TYPES.register(aModBus);
 		gregapi.fluid.FluidGT.FLUIDS.register(aModBus);
-		// F5-capability (MODCOMPAT-001 П2): регистрация Capabilities.Fluid.BLOCK для ВСЕЙ GT6-TE-иерархии —
-		// возврат стандартного канала, который в 1.7.10 давал `implements IFluidHandler` на самих TE
-		// (gregapi/fluid/GT6FluidCapability.java). Без неё танки GT6 снаружи не существуют: ни чужие насосы/
-		// трубы, ни тултип-моды их не видят.
-		gregapi.fluid.GT6FluidCapability.register(aModBus);
-		// Тот же класс потери для ПРЕДМЕТОВ: в 1.7.10 базовые TE объявляли IInventory/ISidedInventory, и этого
-		// хватало чужой воронке/трубе/тултип-моду; в neo снаружи виден только зарегистрированный
-		// Capabilities.Item.BLOCK, а регистрации не было (grep = 0). Ванильные Container/WorldlyContainer у TE
-		// перенесены 1:1 — здесь они лишь объявляются наружу штатными обёртками движка
-		// (gregapi/tileentity/GT6ItemCapability.java).
-		gregapi.tileentity.GT6ItemCapability.register(aModBus);
+		// F5-capability: подписки на мод-шину здесь БОЛЬШЕ НЕТ. В 26.x капы объявлялись событием
+		// RegisterCapabilitiesEvent (регистрация провайдеров по блокам); в 1.20.1 капу объявляет сам
+		// BlockEntity методом getCapability(Capability, Direction) — единственный мост стоит в общем корне
+		// иерархии (TileEntityBase01Root), а знание «что показать» живёт в gregapi/fluid/GT6FluidCapability.java
+		// и gregapi/tileentity/GT6ItemCapability.java. Это форма 1.7.10: наружный контракт нёс сам TE.
 		// F-attachment: центральный DeferredRegister Entity-attachment-типов (EntityFoodTracker) — тот же
 		// мод-бас, единая точка подписки (gregapi/player/EntityFoodTracker.java; замена 1.7.10
 		// IExtendedEntityProperties, ни один другой файл эту регистрацию не дублирует).

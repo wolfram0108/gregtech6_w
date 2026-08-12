@@ -45,7 +45,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
-import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.fluids.FluidType;
 
 import net.minecraftforge.registries.DeferredRegister;
@@ -81,10 +81,10 @@ import java.util.Map;
  *
  * <p>Референс сигнатур (НЕ выдумано):
  * <ul>
- * <li>{@code Fluid} abstract surface + {@code createIntrusiveHolder}-поле — {@code neo-decompiled/net/minecraft/world/level/material/Fluid.java:27-153}.</li>
+ * <li>{@code Fluid} abstract surface + {@code createIntrusiveHolder}-поле — {@code forge-1201-decompiled/net/minecraft/world/level/material/Fluid.java}.</li>
  * <li>{@code FlowingFluid} abstract surface/source-flowing contract — {@code .../FlowingFluid.java:35,248,254,269,283,345,429,474}.</li>
- * <li>{@code RegisterEvent.register}=={@code Registry.register(reg,name,supplier.get())} — {@code neoforge-decompiled/.../registries/RegisterEvent.java:46-48}; {@code DeferredRegister} зовёт supplier на RegisterEvent — {@code DeferredRegister.java:42-43,214-234}.</li>
- * <li>{@link BaseFlowingFluid.Properties}/{@code .Flowing} — {@code neoforge-decompiled/net/neoforged/neoforge/fluids/BaseFlowingFluid.java:175-221}.</li>
+ * <li>{@code DeferredRegister} зовёт supplier на {@code RegisterEvent} — {@code forge-1201-decompiled/net/minecraftforge/registries/DeferredRegister.java}; для жидкостей ключ реестра берётся у {@code ForgeRegistries.FLUIDS} (в 26.x на его месте стоял {@code BuiltInRegistries.FLUID}).</li>
+ * <li>{@link ForgeFlowingFluid.Properties}/{@code .Flowing} — {@code forge-1201-decompiled/net/minecraftforge/fluids/ForgeFlowingFluid.java:154-241}.</li>
  * </ul>
  *
  * <p>Клиентский рендер и мировые water-блоки (Ocean/River/Swamp) — вне области этого переходника
@@ -98,7 +98,7 @@ public class FluidGT {
 	 *  ({@code gregapi.GT_API#GT_API(IEventBus)}, тем же мод-басом, что {@code ITEMS}/{@code BLOCKS}/
 	 *  {@code GT6WorldgenFeature} — F12↔F5 стык закрыт). */
 	public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.FLUID_TYPES, MD.GAPI.mID);
-	public static final DeferredRegister<Fluid>      FLUIDS      = DeferredRegister.create(BuiltInRegistries.FLUID, MD.GAPI.mID);
+	public static final DeferredRegister<Fluid>      FLUIDS      = DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.FLUIDS, MD.GAPI.mID);
 
 	/** GT6-имя (часто БЕЗ namespace, иногда с пробелами — напр. "rc jet fuel") -> config-holder FluidGT. */
 	public static final Map<String, FluidGT> BY_NAME = new LinkedHashMap<>();
@@ -139,7 +139,7 @@ public class FluidGT {
 		// FluidType не интрузивен → его можно держать эагерно. mType — эагер, mSource/mFlowing — отложенная конструкция.
 		mTypeHolder    = FLUID_TYPES.register(tRegName, () -> mType);
 		mSourceHolder  = FLUIDS.register(tRegName, () -> new Source());
-		mFlowingHolder = FLUIDS.register(tRegName + "_flowing", () -> new BaseFlowingFluid.Flowing(fluidProperties()));
+		mFlowingHolder = FLUIDS.register(tRegName + "_flowing", () -> new ForgeFlowingFluid.Flowing(fluidProperties()));
 
 		BY_NAME.put(mName, this);
 		BY_FLUID_CACHE = null;
@@ -151,12 +151,12 @@ public class FluidGT {
 	// В neo 26.1.2 такого реестра НЕТ (жидкости — неизменяемые registry-объекты; чужой мод не может подменить mGas/
 	// mTemperature под ногами) → сама угроза устранена движком, защитный ре-апплай не нужен (осознанно не воспроизведён).
 
-	private BaseFlowingFluid.Properties fluidProperties() {
+	private ForgeFlowingFluid.Properties fluidProperties() {
 		// 1:1 с оригиналом: .block()/.bucket() у контент-жидкостей не задаются — в 1.7.10 Fluid.setBlock не
 		// вызывался НИ РАЗУ во всём моде (греп gregapi/data/FL.java + gregapi/fluid/* оригинала — 0 совпадений),
 		// у контент-жидкостей GT6 не было ни блока, ни ведра. Мировые water-блоки — отдельная иерархия
 		// (decisions/F5-fluids.md §5).
-		return new BaseFlowingFluid.Properties(() -> mType, mSourceHolder::value, mFlowingHolder::value);
+		return new ForgeFlowingFluid.Properties(() -> mType, mSourceHolder::get, mFlowingHolder::get);
 	}
 
 	/** neo {@link ResourceLocation}-путь не допускает пробелы/произвольные символы — санитизация ТОЛЬКО для ключа регистрации. */
@@ -267,7 +267,7 @@ public class FluidGT {
 
 		@Override public Fluid getFlowing() {return getFlowingFluid();}
 		@Override public Fluid getSource() {return this;}
-		@Override protected boolean canConvertToSource(ServerLevel aLevel) {return false;}
+		@Override protected boolean canConvertToSource(net.minecraft.world.level.Level aLevel) {return false;} // 1.20.1: аргумент Level, не ServerLevel (FlowingFluid/ForgeFlowingFluid.java:79)
 		@Override protected void beforeDestroyingBlock(LevelAccessor aLevel, BlockPos aPos, BlockState aState) {
 			BlockEntity tBlockEntity = aState.hasBlockEntity() ? aLevel.getBlockEntity(aPos) : null;
 			Block.dropResources(aState, aLevel, aPos, tBlockEntity);
@@ -285,7 +285,7 @@ public class FluidGT {
 		 *  отдаёт СВОЙ блок. У мировых жидкостей GT6 блочная форма живёт в реестре {@code FL.BLOCKS}
 		 *  ({@code BlockBaseFluid:110}); контент-жидкость без мировой формы — AIR (1:1: в 1.7.10 Fluid.setBlock
 		 *  не звался, см. fluidProperties). LEVEL ванильного эталона не переносим — у GT6-блока канал LEVEL мёртв
-		 *  (кванты в FLUID_META), defaultBlockState = полный источник. Flowing-плечо (BaseFlowingFluid.Flowing,
+		 *  (кванты в FLUID_META), defaultBlockState = полный источник. Flowing-плечо (ForgeFlowingFluid.Flowing,
 		 *  block=null → AIR) недостижимо: FluidState GT6-блоков всегда source (BlockBaseFluid.getFluidState). */
 		@Override protected BlockState createLegacyBlock(FluidState aState) {
 			Block tBlock = gregapi.data.FL.BLOCKS.get(gregapi.data.FL.regName(this));

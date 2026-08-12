@@ -678,7 +678,7 @@ public enum FL {
 
 	/** F5 (функционально): обратный поиск fluid по int-id через neo BuiltInRegistries.FLUID.get(byId) — работает. GT6 1.7.10
 	 *  полагался на плотную нумерацию от старта; registry-position несемантична (как fluidId в дампе). Не заглушка. */
-	public static Fluid fluid (int aID) {return aID < 0 ? null : BuiltInRegistries.FLUID.get(aID).<Fluid>map(Holder::value).orElse(null);}
+	public static Fluid fluid (int aID) {return aID < 0 ? null : BuiltInRegistries.FLUID.byId(aID);}
 	public static Fluid fluid (String aFluidName) {return Code.stringInvalid(aFluidName) ? null : fluid_(aFluidName);}
 	/** Заменяет 1.7.10 {@code FluidRegistry.getFluid(String)}, которое было {@code fluids.get(fluidName)}
 	 *  по карте, ключёванной {@code fluid.getName()} — т.е. поиском по "голому" имени БЕЗ namespace
@@ -715,7 +715,10 @@ public enum FL {
 	 *  neo-хелперы, замена старого сравнения по публичному полю {@code .tag} (которого в neo нет). */
 	public static boolean equal(FluidStack aFluid1, FluidStack aFluid2, boolean aIgnoreNBT) {
 		if (aFluid1 == null || aFluid2 == null) return F;
-		return aIgnoreNBT ? FluidStack.isSameFluid(aFluid1, aFluid2) : FluidStack.isSameFluidSameComponents(aFluid1, aFluid2);
+		// Форма оригинала 1.7.10 дословно (gt6-original FL.java:655): жидкость + (при !aIgnoreNBT) равенство
+		// тегов. В 1.20.1 тег вернулся на FluidStack, а сравнение тегов даёт FluidStack.areFluidStackTagsEqual
+		// (FluidStack.java:273 — то же тело: null==null либо equals).
+		return aFluid1.getFluid() == aFluid2.getFluid() && (aIgnoreNBT || FluidStack.areFluidStackTagsEqual(aFluid1, aFluid2));
 	}
 
 	/** aFluid != Fluids.EMPTY — neo-сентинел «нет жидкости» (1:1 замена прежнего 1.7.10 null-на-отсутствие,
@@ -968,15 +971,14 @@ public enum FL {
 	public static FluidStack make_(String aFluidName, long aAmount, String aReplacementFluidName) {FluidStack rFluid = make(aFluidName, aAmount); return rFluid == null ? make_(aReplacementFluidName, aAmount) : rFluid;}
 	public static FluidStack make_(String aFluidName, long aAmount, String aReplacementFluidName, long aReplacementAmount) {FluidStack rFluid = make(aFluidName, aAmount); return rFluid == null ? make_(aReplacementFluidName, aReplacementAmount) : rFluid;}
 
-	/** Замена {@code new FluidStack(existingStack, newAmount)} (копирующий конструктор с новой
-	 *  ёмкостью 1.7.10) — у real neo {@link FluidStack} такого конструктора нет, вместо него
-	 *  {@link FluidStack#copyWithAmount(int)} (реальный метод, `FluidStack.java:255`). */
+	/** Копирующий конструктор с новой ёмкостью — форма 1.7.10 дословно: в Forge 1.20.1
+	 *  {@code new FluidStack(FluidStack, int)} на месте ({@code FluidStack.java:87}). */
 	/** F-fluid-temperature ЦЕНТР: 1.7.10 {@code Fluid.setTemperature(int)} — GT6 задаёт температуру своих molten-жидкостей.
 	 *  neo {@code net.minecraft.world.level.material.Fluid} сеттера НЕ имеет; GT6-жидкость = {@link FluidGT} (свой
 	 *  {@code setTemperature}, FluidGT:176). Контент зовёт на статик-типе {@code Fluid} → централизуем instanceof-каст
 	 *  (no-op для vanilla-жидкости — безопасно; GT6 задаёт temperature только своим FluidGT). */
 	public static void setTemperature(Fluid aFluid, long aTemperatureK) {FluidGT tGT = FluidGT.of(aFluid); if (tGT != null) tGT.setTemperature(aTemperatureK);}
-	public static FluidStack amount(FluidStack aFluid, long aAmount) {return aFluid == null ? null : aFluid.copyWithAmount(Code.bindInt(aAmount));}
+	public static FluidStack amount(FluidStack aFluid, long aAmount) {return aFluid == null ? null : new FluidStack(aFluid, Code.bindInt(aAmount));}
 
 	public static FluidStack mul(FluidStack aFluid, long aMultiplier) {return aFluid == null ? null : amount(aFluid, (long)aFluid.getAmount() * aMultiplier);}
 	public static FluidStack mul(FluidStack aFluid, long aMultiplier, long aDivider, boolean aRoundUp) {return aFluid == null ? null : amount(aFluid, Code.units(aFluid.getAmount(), aDivider, aMultiplier, aRoundUp));}
@@ -1025,13 +1027,13 @@ public enum FL {
 	public static boolean canFill(IFluidHandler aFluidHandler, byte aSide, Fluid aFluid) {
 		if (aFluidHandler == null || aFluid == null) return F;
 		if (aFluidHandler instanceof gregapi.tileentity.base.TileEntityBase01Root tGT) return tGT.canFill(FORGE_DIR[aSide], aFluid);
-		return aFluidHandler.fill(new FluidStack(aFluid.builtInRegistryHolder(), Integer.MAX_VALUE), FluidAction.SIMULATE) > 0;
+		return aFluidHandler.fill(new FluidStack(aFluid, Integer.MAX_VALUE), FluidAction.SIMULATE) > 0;
 	}
 	public static boolean canFill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, Fluid aFluid) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler tHandler && canFill(tHandler, aDelegator.mSideOfTileEntity, aFluid);}
 	public static boolean canDrain(IFluidHandler aFluidHandler, byte aSide, Fluid aFluid) {
 		if (aFluidHandler == null || aFluid == null) return F;
 		if (aFluidHandler instanceof gregapi.tileentity.base.TileEntityBase01Root tGT) return tGT.canDrain(FORGE_DIR[aSide], aFluid);
-		FluidStack tDrained = aFluidHandler.drain(new FluidStack(aFluid.builtInRegistryHolder(), Integer.MAX_VALUE), FluidAction.SIMULATE);
+		FluidStack tDrained = aFluidHandler.drain(new FluidStack(aFluid, Integer.MAX_VALUE), FluidAction.SIMULATE);
 		return tDrained != null && !tDrained.isEmpty();
 	}
 	public static boolean canDrain (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, Fluid aFluid) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler tHandler && canDrain(tHandler, aDelegator.mSideOfTileEntity, aFluid);}

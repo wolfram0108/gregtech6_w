@@ -24,9 +24,9 @@
 package gregapi.network;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
@@ -34,10 +34,7 @@ import com.google.common.io.ByteStreams;
 
 import gregapi.util.UT;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.PacketFlow;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -46,24 +43,52 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.minecraftforge.network.simple.SimpleChannel;
 
 /**
+ * F7 центральный переходник — СЕТЬ (ветка бэкпорта 1.20.1).
+ *
+ * <p><b>Что заменено.</b> Ветка 26.x стояла на payload-системе NeoForge ({@code CustomPacketPayload} +
+ * {@code PayloadRegistrar} на {@code RegisterPayloadHandlersEvent} + {@code StreamCodec} над
+ * {@code RegistryFriendlyByteBuf}). В 1.20.1 такой системы нет вовсе; канал строится
+ * {@code NetworkRegistry.newSimpleChannel(name, версия, clientAccepted, serverAccepted)}
+ * ({@code forge-1201-decompiled/net/minecraftforge/network/NetworkRegistry.java:102}), сообщение
+ * регистрируется {@code SimpleChannel.registerMessage(index, class, encoder, decoder, consumer)}
+ * ({@code simple/SimpleChannel.java:71}), приём идёт через {@code NetworkEvent.Context}
+ * ({@code NetworkEvent.java:151-232}), отправка — через {@code PacketDistributor}
+ * ({@code PacketDistributor.java:39-87}).
+ *
+ * <p><b>Центр остался один и вернулся к форме Грегориуса.</b> На канал регистрируется РОВНО ОДИН тип
+ * сообщения — байт-конверт {@link GT6Payload}; идентичность пакета внутри несёт первый байт
+ * ({@link IPacket#getPacketID()}) и таблица {@code mPacketTypes[256]}. Это дословно схема 1.7.10:
+ * там транспорт тоже видел один {@code FMLProxyPacket} с сырым {@code byte[]}, а разбор делал сам мод
+ * (оригинал {@code NetworkHandler.encode/decode:80-93}). Схема «именованный {@code Type<>} на каждый
+ * пакет», которую пришлось завести в 26.x, здесь не нужна — числовые ID снова работают, и вместе с ними
+ * вернулась родная проверка версии протокола (сообщение «Your Version … does not match»), усиленная
+ * протокольной строкой самого канала.
+ *
+ * <p><b>Момент создания канала — конструктор</b>, как в оригинале ({@code NetworkRegistry.INSTANCE.newChannel}
+ * там стоит в том же конструкторе). Это допустимо: реестр каналов Forge запирается только в фазе
+ * {@code COMPLETE} ({@code ForgeStatesProvider.java:27} — {@code NETLOCK}), а GT6 строит хендлеры на
+ * {@code FMLConstructModEvent}; живой образец той же версии — AE2 ({@code AppEngBase.java:204}).
+ * Отдельной подписки на событие регистрации (как было в 26.x) больше не существует.
+ *
  * @author Gregorius Techneticies
  */
 public final class NetworkHandler implements INetworkHandler {
+	/** Протокольная строка канала: стороны обязаны совпасть, иначе Forge не пустит подключение
+	 *  ({@code NetworkRegistry.java:102} — предикаты clientAccepted/serverAccepted). Прямой наследник
+	 *  1.7.10-проверки версии, которую GT6 делал сам в {@link #decode}. */
 	private static final String NETWORK_VERSION = "1";
-	private static final List<NetworkHandler> HANDLERS = new ArrayList<>();
 
 	private final IPacket[] mPacketTypes;
 	private final String mModID;
 	private final String mChannelName;
-	private final CustomPacketPayload.Type<GT6Payload> mPayloadType;
-	private final StreamCodec<RegistryFriendlyByteBuf, GT6Payload> mPayloadCodec;
+	private final SimpleChannel mChannel;
 
 	/**
 	 * Just instantiate your Network Handler once with this simple Constructor and everything else should be done.
@@ -73,43 +98,32 @@ public final class NetworkHandler implements INetworkHandler {
 	 * For an example look into the Main File (GT_API), where I initialise the API Network Handler.
 	 *
 	 * @param aModID the ID of your Mod.
-	 * @param aChannelName Name of your Channel (use 4 Characters or less, we don't want to Lag out the Connection), the GT Channel is called "GREG" and the API Channel is called "GAPI".
+	 * @param aChannelName Name of your Channel (use 4 Characters or less, we do not want to Lag out the Connection), the GT Channel is called "GREG" and the API Channel is called "GAPI".
 	 * @param aPacketTypes An Array of your Packet Types (an empty instance of every Packet you want to use for decoding). Remember that "getPacketID" must return a for your Handler individual Number. All 256 Byte Values are possible. Yes I mean the negative ones.
 	 */
 	public NetworkHandler(String aModID, String aChannelName, IPacket... aPacketTypes) {
 		mModID = aModID;
 		mChannelName = aChannelName;
 		if (aChannelName.length() > 4) throw new IllegalArgumentException("String for Channel Name must contain 4 Characters or less!");
-		mPayloadType = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(identifierPart(aModID), "network/" + identifierPart(aChannelName)));
-		mPayloadCodec = GT6Payload.codec(mPayloadType);
 		mPacketTypes = new IPacket[256];
 		for (int i = 0; i < aPacketTypes.length; i++) {
 			int tID = UT.Code.unsignB(aPacketTypes[i].getPacketID());
 			if (mPacketTypes[tID] == null) mPacketTypes[tID] = aPacketTypes[i]; else throw new IllegalArgumentException("Duplicate Packet ID! " + tID);
 		}
-		synchronized(HANDLERS) {
-			HANDLERS.add(this);
-		}
-	}
-
-	public static void registerPayloadHandlers(RegisterPayloadHandlersEvent aEvent) {
-		List<NetworkHandler> tHandlers;
-		synchronized(HANDLERS) {
-			tHandlers = new ArrayList<>(HANDLERS);
-		}
-		PayloadRegistrar tRegistrar = aEvent.registrar(NETWORK_VERSION);
-		for (NetworkHandler tHandler : tHandlers) tHandler.registerPayload(tRegistrar);
-		// F7-lifecycle (boot-подтверждено: NetworkHandler создаются вовремя)
-	}
-
-	private void registerPayload(PayloadRegistrar aRegistrar) {
-		aRegistrar.playBidirectional(mPayloadType, mPayloadCodec, this::handlePayload, this::handlePayload);
+		// Канал заводится ПРЯМО В КОНСТРУКТОРЕ — как в 1.7.10 (см. javadoc класса: NETLOCK стоит в фазе COMPLETE).
+		mChannel = NetworkRegistry.newSimpleChannel(new ResourceLocation(identifierPart(aModID), "network/" + identifierPart(aChannelName)), () -> NETWORK_VERSION, NETWORK_VERSION::equals, NETWORK_VERSION::equals);
+		// Один тип сообщения на канал, двусторонний (направление не задаём) — форма FMLEmbeddedChannel оригинала.
+		mChannel.registerMessage(0, GT6Payload.class, GT6Payload::write, GT6Payload::read, this::handlePayload);
 	}
 
 	// [GT6-SYNCDIAG] BUG-094 (снять при уборке фазы): клиент — счётчики приёма GT6-пакетов
 	private static final java.util.concurrent.atomic.AtomicLong sDiagReceived = new java.util.concurrent.atomic.AtomicLong(), sDiagQueued = new java.util.concurrent.atomic.AtomicLong(), sDiagProcessed = new java.util.concurrent.atomic.AtomicLong();
 
-	private void handlePayload(GT6Payload aPayload, IPayloadContext aContext) {
+	private void handlePayload(GT6Payload aPayload, Supplier<NetworkEvent.Context> aContextSupplier) {
+		NetworkEvent.Context aContext = aContextSupplier.get();
+		// 1.20.1 требует явной отметки: неотмеченный пакет Forge считает необработанным и пишет в лог
+		// (NetworkEvent.Context.setPacketHandled, NetworkEvent.java:196). В 26.x отметки не было — там её вёл движок.
+		aContext.setPacketHandled(true);
 		IPacket tPacket = decode(aPayload.data());
 		if (tPacket == null) {
 			if (gregapi.data.CS.probeFlag("gt6syncdiag.flag")) gregapi.data.CS.OUT.println("[GT6-SYNCDIAG-NET] decode=null (канал " + mChannelName + ")");
@@ -167,9 +181,14 @@ public final class NetworkHandler implements INetworkHandler {
 		if (tReady != null) for (PendingPacket tP : tReady) try {tP.mPacket.process(aWorld, tP.mHandler);} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
 	}
 
-	private BlockGetter getProcessingWorld(IPayloadContext aContext) {
-		if (aContext.flow() != PacketFlow.CLIENTBOUND) return null;
-		Player tPlayer = aContext.player();
+	/** 1:1 с оригиналом: серверный приёмник отдавал {@code null} ({@code HandlerServer.channelRead0}),
+	 *  клиентский — мир игрока ({@code Minecraft.getMinecraft().thePlayer.worldObj}). Игрок берётся ЧЕРЕЗ ЦЕНТР
+	 *  side-разделения мода ({@code GT_API_Proxy.getThePlayer}: сервер отдаёт null, клиентский прокси —
+	 *  {@code Minecraft.getInstance().player}), а не прямым обращением к клиентскому классу из общего кода —
+	 *  тот же запрет, на котором ловили BUG-084. */
+	private BlockGetter getProcessingWorld(NetworkEvent.Context aContext) {
+		if (aContext.getDirection().getReceptionSide() != LogicalSide.CLIENT) return null;
+		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
 		return tPlayer == null ? null : tPlayer.level();
 	}
 
@@ -177,7 +196,7 @@ public final class NetworkHandler implements INetworkHandler {
 		ByteArrayDataOutput rOut = ByteStreams.newDataOutput();
 		rOut.writeByte(aPacket.getPacketID());
 		rOut.write(aPacket.encode().toByteArray());
-		return new GT6Payload(mPayloadType, rOut.toByteArray());
+		return new GT6Payload(rOut.toByteArray());
 	}
 
 	private IPacket decode(byte[] aData) {
@@ -194,19 +213,20 @@ public final class NetworkHandler implements INetworkHandler {
 	@Override
 	public void sendToServer(IPacket aPacket) {
 		if (aPacket == null) return;
-		ClientPacketDistributor.sendToServer(payload(aPacket));
+		mChannel.sendToServer(payload(aPacket));
 	}
 
 	@Override
 	public void sendToPlayer(IPacket aPacket, ServerPlayer aPlayer) {
 		if (aPacket == null || aPlayer == null) return;
-		PacketDistributor.sendToPlayer(aPlayer, payload(aPacket));
+		mChannel.send(PacketDistributor.PLAYER.with(() -> aPlayer), payload(aPacket));
 	}
 
 	@Override
 	public void sendToAllAround(IPacket aPacket, TargetPoint aPosition) {
 		if (aPacket == null || aPosition == null || aPosition.mLevel == null) return;
-		PacketDistributor.sendToPlayersNear(aPosition.mLevel, aPosition.mExcluded, aPosition.mX, aPosition.mY, aPosition.mZ, aPosition.mRange, payload(aPacket));
+		PacketDistributor.TargetPoint tTarget = new PacketDistributor.TargetPoint(aPosition.mExcluded, aPosition.mX, aPosition.mY, aPosition.mZ, aPosition.mRange, aPosition.mLevel.dimension());
+		mChannel.send(PacketDistributor.NEAR.with(() -> tTarget), payload(aPacket));
 	}
 
 	@Override public void sendToAllPlayersInRange(IPacket aPacket, Level aWorld, BlockPos aCoords) {sendToAllPlayersInRange(aPacket, aWorld, aCoords.getX(), aCoords.getZ());}
@@ -214,7 +234,10 @@ public final class NetworkHandler implements INetworkHandler {
 		if (aPacket == null) return;
 		ServerLevel tWorld = serverWorld(aWorld);
 		if (tWorld == null) return;
-		PacketDistributor.sendToPlayersTrackingChunk(tWorld, chunk(aX, aZ), payload(aPacket));
+		// TRACKING_CHUNK рассылает ровно тем, кто ЧАНК ВИДИТ ({@code PacketDistributor.java:238-243} —
+		// chunkMap.getPlayers(chunk.getPos(), false)); это и есть проверка isPlayerWatchingChunk оригинала.
+		ChunkPos tChunk = chunk(aX, aZ);
+		mChannel.send(PacketDistributor.TRACKING_CHUNK.with(() -> tWorld.getChunk(tChunk.x, tChunk.z)), payload(aPacket));
 	}
 
 	@Override public void sendToPlayerIfInRange(IPacket aPacket, UUID aPlayer, Level aWorld, BlockPos aCoords) {sendToPlayerIfInRange(aPacket, aPlayer, aWorld, aCoords.getX(), aCoords.getZ());}
@@ -224,7 +247,7 @@ public final class NetworkHandler implements INetworkHandler {
 		if (tWorld == null) return;
 		ChunkPos tChunk = chunk(aX, aZ);
 		for (ServerPlayer tPlayer : tWorld.getChunkSource().chunkMap.getPlayers(tChunk, false)) if (aPlayer.equals(tPlayer.getUUID())) {
-			PacketDistributor.sendToPlayer(tPlayer, payload(aPacket));
+			mChannel.send(PacketDistributor.PLAYER.with(() -> tPlayer), payload(aPacket));
 			return;
 		}
 	}
@@ -236,12 +259,14 @@ public final class NetworkHandler implements INetworkHandler {
 		if (tWorld == null) return;
 		ChunkPos tChunk = chunk(aX, aZ);
 		GT6Payload tPayload = payload(aPacket);
-		for (ServerPlayer tPlayer : tWorld.getChunkSource().chunkMap.getPlayers(tChunk, false)) if (aPlayer == null || !aPlayer.equals(tPlayer.getUUID())) PacketDistributor.sendToPlayer(tPlayer, tPayload);
+		for (ServerPlayer tPlayer : tWorld.getChunkSource().chunkMap.getPlayers(tChunk, false)) if (aPlayer == null || !aPlayer.equals(tPlayer.getUUID())) mChannel.send(PacketDistributor.PLAYER.with(() -> tPlayer), tPayload);
 	}
 
+	/** 1.7.10 отдавал ОТДЕЛЬНЫЙ {@code FMLEmbeddedChannel} на сторону; в 1.20.1 канал один на обе стороны,
+	 *  поэтому аргумент остаётся ради совместимости сигнатуры и на выбор не влияет. */
 	@Override
-	public CustomPacketPayload.Type<GT6Payload> getChannel(Dist aSide) {
-		return mPayloadType;
+	public SimpleChannel getChannel(Dist aSide) {
+		return mChannel;
 	}
 
 	public String getChannelName() {
@@ -253,7 +278,7 @@ public final class NetworkHandler implements INetworkHandler {
 	}
 
 	private static ChunkPos chunk(int aX, int aZ) {
-		return ChunkPos.containing(new BlockPos(aX, 0, aZ));
+		return new ChunkPos(new BlockPos(aX, 0, aZ)); // 1.20.1: конструктор от BlockPos (ChunkPos.java:32) — форма 1.7.10 getChunkFromBlockCoords
 	}
 
 	private static String identifierPart(String aName) {
@@ -266,16 +291,14 @@ public final class NetworkHandler implements INetworkHandler {
 		return rName.length() <= 0 ? "gt6" : rName.toString();
 	}
 
-	public record GT6Payload(CustomPacketPayload.Type<GT6Payload> type, byte[] data) implements CustomPacketPayload {
-		public static StreamCodec<RegistryFriendlyByteBuf, GT6Payload> codec(CustomPacketPayload.Type<GT6Payload> aType) {
-			return StreamCodec.ofMember(GT6Payload::write, aBuffer -> read(aType, aBuffer));
+	/** Байт-конверт GT6: ровно то, чем в 1.7.10 был {@code FMLProxyPacket} — сырой {@code byte[]}, первый байт
+	 *  которого есть {@link IPacket#getPacketID()}. Своей структуры не несёт, разбор делает сам мод ({@link #decode}). */
+	public record GT6Payload(byte[] data) {
+		public static GT6Payload read(FriendlyByteBuf aBuffer) {
+			return new GT6Payload(aBuffer.readByteArray());
 		}
 
-		private static GT6Payload read(CustomPacketPayload.Type<GT6Payload> aType, RegistryFriendlyByteBuf aBuffer) {
-			return new GT6Payload(aType, aBuffer.readByteArray());
-		}
-
-		public void write(RegistryFriendlyByteBuf aBuffer) {
+		public void write(FriendlyByteBuf aBuffer) {
 			aBuffer.writeByteArray(data);
 		}
 	}
