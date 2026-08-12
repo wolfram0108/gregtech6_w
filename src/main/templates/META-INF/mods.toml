@@ -4,6 +4,12 @@
 # Note that there are a couple of TOML lists in this file.
 # Find more information on toml format here:  https://github.com/toml-lang/toml
 
+# Загрузчик мода — на Forge 1.20.1 оба поля ОБЯЗАТЕЛЬНЫ (26.x давал им дефолты, отсюда их не было
+# в шаблоне): без них dedicated падает InvalidModFileException «Missing ModLoader in file».
+# Диапазон — мажор Forge 47.x, тот же принцип, что versionRange зависимости ниже.
+modLoader="javafml" #mandatory
+loaderVersion="[47,)" #mandatory
+
 # The license for you mod. This is mandatory metadata and allows for easier comprehension of your redistributive properties.
 # Review your options at https://choosealicense.com/. All rights reserved is the default copyright stance, and is thus the default here.
 license="${mod_license}"
@@ -97,14 +103,14 @@ Content of GregTech 6: materials, machines, worldgen, recipes. Part of the GregT
 # {@code "required-after:"+GAPI}) — с обеих сторон связки, как в оригинале.
 [[dependencies.gregapi]]
     modId="gregapi_post"
-    type="required"
+    mandatory=true
     versionRange="[${mod_version},)"
     ordering="BEFORE"
     side="BOTH"
 
 [[dependencies.gregapi_post]]
     modId="gregapi"
-    type="required"
+    mandatory=true
     versionRange="[${mod_version},)"
     ordering="AFTER"
     side="BOTH"
@@ -112,7 +118,7 @@ Content of GregTech 6: materials, machines, worldgen, recipes. Part of the GregT
 # GT-мод грузится ПОСЛЕ gregapi_post (ordering=AFTER ⇒ ребро gregapi_post→gregtech в ModSorter).
 [[dependencies.gregtech]]
     modId="gregapi_post"
-    type="required"
+    mandatory=true
     versionRange="[${mod_version},)"
     ordering="AFTER"
     side="BOTH"
@@ -136,7 +142,7 @@ config="gregapi.mixins.json"
     # The type of the dependency. Can be one of "required", "optional", "incompatible" or "discouraged" (case insensitive).
     # 'required' requires the mod to exist, 'optional' does not
     # 'incompatible' will prevent the game from loading when the mod exists, and 'discouraged' will show a warning
-    type="required" #mandatory
+    mandatory=true #mandatory — формат Forge 1.20.1; type="required" появился позже (neo)
     # Optional field describing why the dependency is required or why it is incompatible
     # reason="..."
     # The version range of the dependency
@@ -151,7 +157,7 @@ config="gregapi.mixins.json"
 # Here's another dependency
 [[dependencies.${mod_id}]]
     modId="minecraft"
-    type="required"
+    mandatory=true
     # This version range declares a minimum of the current minecraft version up to but not including the next major version
     versionRange="${minecraft_version_range}"
     ordering="NONE"
