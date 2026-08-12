@@ -170,5 +170,83 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 			RM.LaserEngraver.addRecipe2(T,512,512, OP.blockSolid.mat(tMat, 1), ST.amount(0, aEvent.mStack), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 19));
 		}});
 		}};
+
+		// ================================================================================================
+		// Э3b: ГАШЕНИЕ РЕЦЕПТОВ AE2, ДУБЛИРУЮЩИХ МАШИНЫ GT6.
+		//
+		// Приём — Грегов: «стереть чужой реестр» (для IC2 это DISABLE_ALL_*_RECIPES, GT_API:1143-1152), просто
+		// на новом носителе: в 26.1 рецепты чужих машин лежат в ДАТАПАКЕ, рантайм-удаления у RecipeManager нет,
+		// поэтому стирание идёт единственным центром порта — GT_API.removeDatapackRecipes (доказан 21/21 на
+		// ванильных заменах), в том же отложенном окне скана, которым пользуется Loader_Recipes_Replace:132,271.
+		// Своего механизма не заводится, ключ подавления переживает релог и /reload (GT_API:738, :314).
+		//
+		// ⛔ ОТБОР. Гасится ТОЛЬКО тот дубль, чей путь GT6 к тому же выходу НЕ ПОЗЖЕ по тиру, чем путь AE2 —
+		// иначе гашение запирает прогрессию. Проверено по каждому кандидату; отвергнутые перечислены ниже
+		// поимённо, чтобы следующий заход не начинал разбор заново:
+		//
+		//  • inscriber/sky_stone_dust — ОСТАВЛЕН: у GT6 ступка даёт из небесного камня blockDust (сжатую
+		//    форму), а самой пыли ae2:sky_dust достигает только Unboxinator/Mixer, то есть машина под током;
+		//    инскрайбер же крутится РУКОЯТЬЮ (InscriberBlockEntity.getCrankable:522) — путь AE2 РАНЬШЕ.
+		//  • inscriber/ender_dust      — ОСТАВЛЕН: ступка жемчуг Края не берёт вовсе, у GT6 это Shredder
+		//    (машина под током) либо Centrifuge — путь GT6 ПОЗЖЕ ручной рукояти инскрайбера.
+		//  • компрессия кристаллов в блок (decorative/quartz_block, decorative/fluix_block) — ОСТАВЛЕНА:
+		//    у AE2 это верстак, у GT6 — Compressor (машина под током). Путь GT6 ПОЗЖЕ.
+		//  • network/parts/cable_anchor (ae2:quartz_cutting) — ОСТАВЛЕН: у AE2 это нож в сетке (2 палки +
+		//    слиток + 2 самоцвета), у GT6 — Cutter под током и со смазкой. Путь GT6 ПОЗЖЕ. Сами ножи Грег
+		//    бережёт и от замены рецепта (Loader_Recipes_Replace:112-113).
+		//  • smelting/silicon_from_certus_quartz_dust и blasting/… — ОСТАВЛЕНЫ: это ЕДИНСТВЕННЫЙ путь к
+		//    ae2:silicon, на нём висит вход инскрайбера #c:silicon. Гашение стёрло бы кремний из игры.
+		//  • формы кварца и флюикса (block_cutter/** и парные shaped/**) — ОСТАВЛЕНЫ: машинами GT6 они не
+		//    производятся вовсе, и это не пробел, а материальная модель Грега (блок кварца/флюикса у него —
+		//    ГЕМ-ХРАНИЛИЩЕ, LoaderItemData:2118-2129, а хранилищам он форм не режет, только раскалывает их
+		//    обратно). Гашение удалило бы их из игры совсем.
+		//  • кварцевое стекло и лампа — гасить НЕ НАДО, уже погашено выше строками 51-52: CR.DEF_REM_REV_NCC
+		//    зовёт CR.remout, а тот кладёт выход в CR.DATAPACK_REMOVALS_OUT, и датапак-оригинал AE2 снимает
+		//    ТОТ ЖЕ центр removeDatapackRecipes (GT_API:721-731). Это собственное замещение Грега 1:1.
+		//
+		// Управление — секция «ae2» конфига GregTech.cfg, по узлам (образец — секция «ic2», GT_API:1123-1152).
+		// Ось «наполнять чужую машину» (ENABLE_ADDING_*) у AE2 26.1 НОСИТЕЛЯ НЕ ИМЕЕТ: в 1.7.10 её давал
+		// Java-API мельницы (IGrinderRecipeHandler, снят в Э0 вместе с самой мельницей), а рецепты инскрайбера
+		// 26.1 — датапак, дописывать который мод не может; поэтому у узлов есть только ось «стереть».
+		// Конфиг спрашивается ЗДЕСЬ, внутри окна скана: в окне onPostLoad (runDeferredItemInit) запись новых
+		// ключей в файл подавлена (Config.java:111), и ключ не появился бы в GregTech.cfg.
+		// ================================================================================================
+		gregapi.GT_API.deferRecipeScan(() -> {
+			java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> tSuppress = new java.util.HashSet<>();
+
+			// УЗЕЛ 1 «дробление кристалла в пыль». AE2 26.1 делает пыль ИНСКРАЙБЕРОМ (5 слитков железа +
+			// 2 поршня + слиток меди, крутится рукоятью). GT6 делает ту же пыль РУЧНОЙ СТУПКОЙ (керамическая
+			// чаша + слиток, MultiTileEntity «Mortar», Loader_MultiTileEntities:2188) — путь GT6 РАНЬШЕ, и
+			// выход тот же самый предмет: после унификации OP.dust.mat(MT.CertusQuartz) физически ЕСТЬ
+			// ae2:certus_quartz_dust. По умолчанию T — это и есть работа этапа: заводское дробление у AE2
+			// снимается, остаётся дробление GT6.
+			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllInscriberDustRecipes", T)) {
+				suppressAE(tSuppress, "inscriber/certus_quartz_dust");
+				suppressAE(tSuppress, "inscriber/fluix_dust");
+			}
+
+			// УЗЕЛ 6-bis «раскол блока обратно в самоцветы». AE2 разбирает блок в сетке (shapeless), GT6 —
+			// РУЧНЫМ МОЛОТОМ по блоку (RM.smash → RM.Hammer, спрашивает GT_Tool_HardHammer:103), то есть путь
+			// GT6 НЕ ПОЗЖЕ и узел принцип проходит. Но по умолчанию F: в 1.7.10 эти четыре shapeless-рецепта
+			// существовали (AE2 rv3, misc/deconstruction.recipe) и Грег их НЕ снимал — он только добавил свои
+			// RM.smash (строки 123-134). Ставить T значило бы разойтись с оригиналом без нужды; рубильник дан
+			// сборщику. Перечислены ровно те четыре блока, для которых у GT6 есть свой раскол; на quartz_bricks,
+			// cut_quartz_block и smooth_quartz_block рецепта GT6 нет — их гашение стёрло бы разбор совсем.
+			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllCrystalDeconstructionRecipes", F)) {
+				suppressAE(tSuppress, "misc/deconstruction_certus_quartz_block");
+				suppressAE(tSuppress, "misc/deconstruction_certus_quartz_pillar");
+				suppressAE(tSuppress, "misc/deconstruction_chiseled_certus_quartz");
+				suppressAE(tSuppress, "misc/deconstruction_fluix_block");
+			}
+
+			OUT.println("GT_Mod: AE Duplicate Recipes to suppress: " + tSuppress.size() + " " + tSuppress);
+			gregapi.GT_API.removeDatapackRecipes(gregapi.GT_API.sCurrentServerForRecipeScan, tSuppress);
+		});
+	}
+
+	/** Ключ датапак-рецепта AE2 по пути его файла ({@code data/<неймспейс AE2>/recipe/<путь>.json}).
+	 *  Неймспейс берётся у {@code MD.AE}, а не строкой: имя мода — уже централизованное знание. */
+	private static void suppressAE(java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> aSet, String aPath) {
+		aSet.add(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, net.minecraft.resources.Identifier.fromNamespaceAndPath(MD.AE.mID, aPath)));
 	}
 }
