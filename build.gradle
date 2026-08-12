@@ -278,10 +278,12 @@ dependencies {
     // интерфейс ToolHandler, чтобы показывать НАСТОЯЩИЕ инструменты GT6 (гаечный ключ на машинах, лом, кусачки),
     // которых ванильными тегами выразить нельзя. В jar игрока Jade не тянется; без Jade класс плагина просто
     // не загружается (Jade сам ищет @WailaPlugin), поэтому production-код на него НЕ ссылается.
-    // [1.20.1 замер] compileOnly снят: версия под 1.20.1 не подобрана
+    // Версия под 1.20.1 подобрана из исходников контракта (reference/mods/Jade-src-1.20.1,
+    // ветка 1.20-forge, gradle.properties: 11.13.3 / MC 1.20.1) — не с потолка.
+    compileOnly "maven.modrinth:jade:${jade_version}"
     // localRuntime — чтобы стенд gt6jadeprobe мог спросить РЕАЛЬНЫЙ Jade тем же вызовом, каким он рисует
     // тултип (HarvestToolProvider.getTool). На jar игрока не влияет: localRuntime — только dev-запуски.
-    // [1.20.1 замер] localRuntime снят: версия под 1.20.1 не подобрана
+    localRuntime "maven.modrinth:jade:${jade_version}"
 
     // JourneyMap (MODCOMPAT-002) — ТОЛЬКО для стенда gt6jmprobe: судья спрашивает РЕАЛЬНЫЙ JourneyMap тем же
     // каналом, каким тот решает судьбу блока на карте (BlockMD.get → isIgnore/getTextureColor/getAlpha;
