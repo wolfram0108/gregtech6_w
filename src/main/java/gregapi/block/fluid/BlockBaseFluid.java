@@ -123,7 +123,9 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	}
 	
 	/** BUG-115: {@code IFluidBlock} вернулся общему предку — {@code getFluid()} снова есть, 1:1 с 1.7.10. */
-	@Override public Fluid getFluid() {return mFluid;}
+	// В 1.20.1 LiquidBlock.getFluid() объявлен как FlowingFluid (LiquidBlock.java:175), а Forge-IFluidBlock.getFluid() —
+	// как Fluid: ковариантный возврат покрывает оба. Носитель берём ЦЕНТРОМ базы (liquidCarrierFor), своей копии не заводим.
+	@Override public net.minecraft.world.level.material.FlowingFluid getFluid() {return liquidCarrierFor(mMaterial, mFluid);}
 
 	/** было Forge {@code BlockFluidFinite.canDrain:332-335} — тело 1:1 ({@code return true}); finite-жидкость
 	 *  черпается на любом уровне, в отличие от classic-ветки ({@link gregtech.blocks.fluids.BlockWaterlike}),
@@ -390,7 +392,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// F3 functional-adapted (neo skipRendering сигнатура потеряла World/BlockPos → per-TE culling недостижим; используется vanilla-дефолт super.skipRendering, 1:1 по следствию): ITileEntitySurface-проверка соседа недостижима -
 	// новая сигнатура не передаёт позицию соседа для WD.te-поиска; используется дефолт "не ITileEntitySurface" ветки.
 	@Override
-	protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
+	public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
 		Block aBlock = aNeighbor.getBlock();
 		if (aBlock == NB) return F;
 		if (aBlock == this || WD.getMaterial(aBlock) == Material.water || WD.visOpq(aBlock)) return T;

@@ -156,12 +156,12 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	
 	// F13: neo зовёт appendHoverText (не 1.7.10 addInformation) — мост: GT6-тултип через addInformation → neo builder.
 	@Override @SuppressWarnings({"rawtypes", "unchecked"})
-	public void appendHoverText(ItemStack aStack, net.minecraft.world.item.Item.TooltipContext aCtx, net.minecraft.world.item.component.TooltipDisplay aDisplay, java.util.function.Consumer<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
+	public void appendHoverText(ItemStack aStack, net.minecraft.world.level.Level aWorld, java.util.List<net.minecraft.network.chat.Component> aTooltips, net.minecraft.world.item.TooltipFlag aFlag) {
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
 		if (tPlayer == null) return;
 		java.util.List tList = new java.util.ArrayList();
 		try {addInformation(aStack, tPlayer, tList, aFlag.isAdvanced());} catch (Throwable e) {/**/}
-		for (Object o : tList) if (o != null) aBuilder.accept(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
+		for (Object o : tList) if (o != null) aTooltips.add(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
 	}
 
 	// @Override

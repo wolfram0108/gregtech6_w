@@ -94,7 +94,7 @@ import static gregapi.data.CS.*;
  * инициализируется последним среди совместимых модов) теперь даёт {@code ordering}-граф в
  * {@code neoforge.mods.toml}, читаемый {@code ModSorter}.
  */
-@Mod(value = ModIDs.GAPI_POST, depends = {ModIDs.GAPI})
+@Mod(ModIDs.GAPI_POST)
 public class GT_API_Post extends Abstract_Mod {
 	@SuppressWarnings("unused")
 	public GT_API_Post(IEventBus aModBus) {

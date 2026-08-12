@@ -402,7 +402,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 	public byte getExtenderTargetSide(byte aSide) {return OPOS[aSide];}
 	
 	@Override public boolean stillValid(Player aPlayer) {return aPlayer.distanceToSqr(getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5) <= 64;}
-	@Override public void startOpen(net.minecraft.world.entity.ContainerUser aUser) {/**/}
-	@Override public void stopOpen(net.minecraft.world.entity.ContainerUser aUser) {/**/}
+	@Override public void startOpen(net.minecraft.world.entity.player.Player aUser) {/**/}
+	@Override public void stopOpen(net.minecraft.world.entity.player.Player aUser) {/**/}
 	@Override public boolean canDrop(int aInventorySlot) {return F;}
 }

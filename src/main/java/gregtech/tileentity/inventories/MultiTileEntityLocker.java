@@ -88,7 +88,7 @@ public class MultiTileEntityLocker extends TileEntityBase09FacingSingle implemen
 	@Override public boolean canDrop(int aSlot) {return T;}
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[4];}
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return UT.Code.getAscendingArray(invsize());}
-	@Override public boolean canInsertItem2 (int aSlot, ItemStack aStack, byte aSide) {if (ST.valid(aStack)) try {net.minecraft.world.item.equipment.Equippable tEq = aStack.get(net.minecraft.core.component.DataComponents.EQUIPPABLE); return tEq != null && tEq.slot() == ARMOR_SLOTS[aSlot];} catch(Throwable e) {e.printStackTrace(ERR);} return F;}
+	@Override public boolean canInsertItem2 (int aSlot, ItemStack aStack, byte aSide) {if (ST.valid(aStack)) try {return net.minecraft.world.entity.LivingEntity.getEquipmentSlotForItem(aStack) == ARMOR_SLOTS[aSlot];} catch(Throwable e) {e.printStackTrace(ERR);} return F;}
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return T;}
 	@Override public boolean getStateRunningPassively   () {return UT.Code.containsSomething(getInventory());}
 	@Override public boolean getStateRunningPossible    () {return UT.Code.containsSomething(getInventory());}

@@ -94,13 +94,13 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  *
  * F12 (decisions/F12-registration-lifecycle.md §4,4.4): контент-мод GT переведён на реальный neo-{@code @Mod}
- * (value=gregtech) + конструктор-подписки фаз, как {@code gregapi.GT_API_Post}. {@code @SidedProxy}→{@code FMLEnvironment.getDist()},
+ * (value=gregtech) + конструктор-подписки фаз, как {@code gregapi.GT_API_Post}. {@code @SidedProxy}→{@code FMLEnvironment.dist},
  * {@code @Mod.EventHandler}→подписка на шину. Теперь его lifecycle (Loader_Fluids/Items/PrefixBlocks/…) реально
  * запускается движком (был мёртвый {@code cpw.mods.fml} — neo его игнорировал, загрузчики не бежали).
  */
-@Mod(value = ModIDs.GT, depends = {ModIDs.GAPI_POST})
+@Mod(ModIDs.GT)
 public class GT6_Main extends Abstract_Mod {
-	// F12: замена @SidedProxy (neo не имеет annotation-диспетчера сторон) — сторона по FMLEnvironment.getDist(), как gregapi.GT_API#api_proxy.
+	// F12: замена @SidedProxy (neo не имеет annotation-диспетчера сторон) — сторона по FMLEnvironment.dist, как gregapi.GT_API#api_proxy.
 	// Присваивается в конструкторе (не инлайн в статик-инициализаторе поля): клиентский GT_Client в конструкции
 	// строит PlayerModelRenderer (client-render), а @SidedProxy оригинала инъектировался FML при конструировании
 	// мода (после class-init) — тот же тайминг, class-init не тянет client-render раньше времени.
@@ -108,7 +108,7 @@ public class GT6_Main extends Abstract_Mod {
 
 	public GT6_Main(IEventBus aModBus) {
 		GT = this;
-		gt_proxy = FMLEnvironment.getDist().isClient() ? new GT_Client() : new GT_Server();
+		gt_proxy = FMLEnvironment.dist.isClient() ? new GT_Client() : new GT_Server();
 		NW_GT = new NetworkHandler(MD.GT.mID, "GREG");
 		// F12-entity: центральная регистрация EntityType мода (EntitiesGT.ARROW_*) на мод-шину + клиентские
 		// рендереры сущностей через EntityRenderersEvent (registerClientRenderers — no-op на сервере).
@@ -658,7 +658,7 @@ public class GT6_Main extends Abstract_Mod {
 			ORD.println("Biomes:");
 			ORD.println("*"); ORD.println("*"); ORD.println("*");
 			
-			net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> tBiomeReg = aEvent.getServer().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME);
+			net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> tBiomeReg = aEvent.getServer().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME);
 			for (java.util.Map.Entry<net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome>, net.minecraft.world.level.biome.Biome> tE : tBiomeReg.entrySet()) {
 				ORD.println(tE.getKey().toString());
 			}
@@ -667,7 +667,7 @@ public class GT6_Main extends Abstract_Mod {
 			ORD.println("Enchantments:");
 			ORD.println("*"); ORD.println("*"); ORD.println("*");
 			
-			net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> tEnchReg = aEvent.getServer().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+			net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> tEnchReg = aEvent.getServer().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
 			for (java.util.Map.Entry<net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>, net.minecraft.world.item.enchantment.Enchantment> tE : tEnchReg.entrySet()) {
 				ORD.println(tE.getKey().toString());
 			}

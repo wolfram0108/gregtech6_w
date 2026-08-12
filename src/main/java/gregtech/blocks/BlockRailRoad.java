@@ -107,7 +107,8 @@ public class BlockRailRoad extends BlockBaseRail {
 		return ToolCompat.onToolClick(this, aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 	}
 	
-	@Override
+	// GT6-форма (1.7.10): движковый хук onMinecartPass(BlockState,Level,BlockPos,AbstractMinecart) объявлен
+	// в BlockBaseRail и делегирует сюда — здесь @Override не применим.
 	public void onMinecartPass(Level aWorld, AbstractMinecart aCart, int aX, int aY, int aZ) {
 		double tMotion = Math.sqrt(WD.motionX(aCart)*WD.motionX(aCart) + WD.motionZ(aCart)*WD.motionZ(aCart));
 		if (tMotion > 0.01) {

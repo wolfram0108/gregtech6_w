@@ -234,11 +234,11 @@ public class ToolCompat {
 					Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k);
 					BlockPos tActPos = new BlockPos(aX+i, aY+j, aZ+k);
 					// было func_149851_a(World,x,y,z,isClient) — neo BonemealableBlock.isValidBonemealTarget(LevelReader,BlockPos,BlockState) (BonemealableBlock.java:14)
-					if (tBlock.getClass() == aBlock.getClass() && !((BonemealableBlock)tBlock).isValidBonemealTarget(aWorld, tActPos, aWorld.getBlockState(tActPos))) {
+					if (tBlock.getClass() == aBlock.getClass() && !((BonemealableBlock)tBlock).isValidBonemealTarget(aWorld, tActPos, aWorld.getBlockState(tActPos), aWorld.isClientSide())) {
 						// было tBlock.onBlockActivated(World,x,y,z,player,side,hitX,hitY,hitZ) — neo BlockState.useWithoutItem(Level,Player,BlockHitResult) (BlockBehaviour.java:783);
 						// точный ванильный порядок диспетчеризации (useItemOn затем useWithoutItem, см. ServerPlayerGameMode.java:395-402) не воспроизведён —
 						// useWithoutItem ближайший по семантике одиночный вызов "активации блока вне зависимости от предмета в руке".
-						aWorld.getBlockState(tActPos).useWithoutItem(aWorld, aEntityPlayer, new BlockHitResult(new Vec3(aX+i+aHitX, aY+j+aHitY, aZ+k+aHitZ), FORGE_DIR[aSide], tActPos, F));
+						aWorld.getBlockState(tActPos).use(aWorld, aEntityPlayer, net.minecraft.world.InteractionHand.MAIN_HAND, new BlockHitResult(new Vec3(aX+i+aHitX, aY+j+aHitY, aZ+k+aHitZ), FORGE_DIR[aSide], tActPos, F));
 						tDamage += 10000;
 					}
 					if (tMeta != WD.meta(aWorld, aX+i, aY+j, aZ+k) || tBlock != WD.block(aWorld, aX+i, aY+j, aZ+k)) {

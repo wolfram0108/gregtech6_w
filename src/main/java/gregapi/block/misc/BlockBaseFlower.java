@@ -98,7 +98,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		// MODCOMPAT-002: цвет на карте. 1.7.10 BlockFlower наследовал Material.plants (BlockFlower.java:26), а тот
 		// несёт foliageColor — то есть цветы на карте были цвета листвы. В neo дефолт «нет цвета», задаём явно тем
 		// же мостом и из того же материала, что остальные иерархии (см. BlockBase.mapColorOf).
-		super(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY, gregapi.block.BlockBase.mapColorOf(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollision().sound(net.minecraft.world.level.block.SoundType.GRASS), gregapi.block.Material.plants));
+		super(net.minecraft.world.effect.MobEffects.SATURATION, 0, gregapi.block.BlockBase.mapColorOf(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollission().sound(net.minecraft.world.level.block.SoundType.GRASS), gregapi.block.Material.plants));
 		registerDefaultState(getStateDefinition().any().setValue(META, 0)); // F3-render/meta: дефолт META=0
 		mMaxMeta = (byte)(UT.Code.bind4(aMaxMeta-1)+1);
 		mIcons = aIcons;
@@ -115,7 +115,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {/* IBlock-хук; F-shape отложена core-wide, FlowerBlock несёт свой neo SHAPE */}
 	@Override public float[] getRenderBounds() {return null;/* цветы — cross-рендер (IRenderedCross), bounds не хранят */}
 	// neo BonemealableBlock: GT6-цветы декоративны — костная мука неприменима (как ванильные одиночные цветы).
-	@Override public boolean isValidBonemealTarget(net.minecraft.world.level.LevelReader aWorld, BlockPos aPos, BlockState aState) {return F;}
+	@Override public boolean isValidBonemealTarget(net.minecraft.world.level.LevelReader aWorld, BlockPos aPos, BlockState aState, boolean aIsClient) {return F;}
 	@Override public boolean isBonemealSuccess(net.minecraft.world.level.Level aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {return F;}
 	@Override public void performBonemeal(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {/**/}
 	@Override public String name(byte aMeta) {return mNameInternal + "." + aMeta;}

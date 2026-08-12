@@ -66,12 +66,12 @@ public class WorldgenBlackSand extends WorldgenObject {
 				byte tMeta = WD.meta(aWorld, tX+i, tY, tZ+j);
 				if (tBlock == BlocksGT.Sands && tMeta == aMeta) {tGenerated++; continue;}
 				// F6: было `!tBlock.isOpaqueCube()` (1.7.10 Block-уровневый метод, удалён движком). 1:1-замена —
-				// `BlockState.isSolidRender()` (объявление `BlockBehaviour.java:654`, поле `solidRender` там же
+				// `BlockState.isSolidRender(aWorld, tPos)` (объявление `BlockBehaviour.java:654`, поле `solidRender` там же
 				// строится как "occlusion shape — полный куб" (`BlockBehaviour.java:499`) — тот же смысл, что у
 				// старого isOpaqueCube: цельный непрозрачный для рендера/освещения блок). Старый метод был
 				// block-уровневым, без учёта состояния/меты — берём `defaultBlockState()` (тоже без учёта меты,
 				// как и раньше).
-				if (!tBlock.defaultBlockState().isSolidRender()) {if (tGenerated > 0) break; continue;}
+				if (!tBlock.defaultBlockState().isSolidRender(aWorld, new net.minecraft.core.BlockPos(tX+i, tY, tZ+j))) {if (tGenerated > 0) break; continue;}
 				// F6: `Blocks.DIRT/gravel/sand/clay` — старые 1.7.10-имена полей (нижний регистр); реальные
 				// поля neo — `Blocks.DIRT/GRAVEL/SAND/CLAY` (`Blocks.java:85,322,342,2099`), то же переименование,
 				// что применено волной 1 по всему остальному дереву.

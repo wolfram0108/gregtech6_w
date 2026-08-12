@@ -29,7 +29,6 @@ import gregapi.util.UT;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
 
 import static gregapi.data.CS.*;
 
@@ -47,9 +46,12 @@ public class TileEntityLoaderStub extends TileEntityBase01Root {
 
 	@Override public String getTileEntityName() {return "gt.te.loader";}
 
-	// Захват сырого NBT (без прогона readFromNBT — заглушка не знает конкретный класс MTE); реконструкция — на ChunkEvent.Load.
-	@Override protected void loadAdditional(ValueInput input) {
-		mLoadedNBT = input.read(MapCodec.assumeMapUnsafe(CompoundTag.CODEC)).orElseGet(UT.NBT::make);
+	// Захват сырого NBT (заглушка не знает конкретный класс MTE — конкретный readFromNBT прогонять некому);
+	// реконструкция — на ChunkEvent.Load. super.load зовём: в 1.20.1 именно BlockEntity.load разбирает
+	// форжевые ForgeData/ForgeCaps (BlockEntity.java:53-56), а базовый GT6-readFromNBT ограничен проверкой Y.
+	@Override public void load(CompoundTag aNBT) {
+		super.load(aNBT);
+		mLoadedNBT = aNBT.copy();
 	}
 
 	/** LOAD-путь БЕЗ ПОТЕРЬ (корень BUG-057): чанк может сохраниться РАНЬШЕ, чем реконструкция стаба добежит
@@ -57,9 +59,9 @@ public class TileEntityLoaderStub extends TileEntityBase01Root {
 	 *  Базовый {@code saveAdditional} прогонял GT6-мост {@code writeToNBT}, который для стаба писал только id/x/y/z —
 	 *  {@code gt.mte.reg}/{@code gt.mte.id} и все данные MTE стирались с диска НАВСЕГДА (блок навсегда прозрачен).
 	 *  Стаб — прозрачный переносчик: возвращает захваченный NBT на диск ровно как прочитал (идемпотентный round-trip). */
-	@Override protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
-		if (mLoadedNBT == null) {super.saveAdditional(output); return;}
-		output.store(mLoadedNBT);
+	@Override protected void saveAdditional(CompoundTag aNBT) {
+		if (mLoadedNBT == null) {super.saveAdditional(aNBT); return;}
+		aNBT.merge(mLoadedNBT);
 		// [GT6-MTEAUDIT] DIAG BUG-057 — снять при уборке фазы
 		if (probeFlag("gt6mteauditprobe.flag")) OUT.println("[GT6-MTEAUDIT-DIAG] стаб персистирован БЕЗ потерь @" + getBlockPos().toShortString());
 	}

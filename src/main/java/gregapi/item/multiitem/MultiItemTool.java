@@ -329,7 +329,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return UseAnim.NONE;
 	}
 	@Override
-	public int getUseDuration(ItemStack aStack, LivingEntity aUser) {
+	public int getUseDuration(ItemStack aStack) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && tStats.canBlock()) return 72000;
 		return 0;
@@ -631,7 +631,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		// тот же случай, что в PrefixItem: путь крафта серверный, но крафтящего игрока движок держит для нас
 		// (CommonHooks, ResultSlot.java:89-91) — берём носителя оттуда, а не теряем звук.
 		if (TOOL_SOUNDS) {
-			net.minecraft.world.entity.player.Player tCrafter = net.neoforged.neoforge.common.CommonHooks.getCraftingPlayer();
+			net.minecraft.world.entity.player.Player tCrafter = net.minecraftforge.common.ForgeHooks.getCraftingPlayer();
 			if (tCrafter != null) UT.Sounds.forActor(tStats.getCraftingSound(), 200, 1, tCrafter, UT.Code.roundDown(tCrafter.getX()), UT.Code.roundDown(tCrafter.getY()), UT.Code.roundDown(tCrafter.getZ()));
 			else UT.Sounds.play(tStats.getCraftingSound(), 200, 1, LAST_TOOL_COORDS_BEFORE_DAMAGE);
 		}
@@ -718,7 +718,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (tStats.isRangedWeapon()) for (ObjectStack<Enchantment> tEnchantment : aMaterial.mEnchantmentRanged ) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
 		
 		// Get Tool Specific Enchantments.
-		ResourceKey<Enchantment>[] tEnchants = tStats.getEnchantments(aStack, aMaterial); // F-enchant-key: getEnchantments -> ResourceKey<Enchantment>[] (модель энчантов = ResourceKey).
+		Enchantment[] tEnchants = tStats.getEnchantments(aStack, aMaterial); // валюта чар в 1.20.1 — сам Enchantment (форма 1.7.10).
 		int[] tLevels = tStats.getEnchantmentLevels(aStack, aMaterial);
 		
 		for (int i = 0; i < tEnchants.length; i++) if (tLevels[i] > 0) {

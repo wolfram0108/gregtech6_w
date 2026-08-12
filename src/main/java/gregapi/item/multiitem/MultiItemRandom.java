@@ -287,7 +287,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	// движок их не звал, у предметов нет CONSUMABLE-компонента → getUseDuration дефолт 0 → жевание не стартовало,
 	// finishUsingItem не наступал, вся еда иерархии была несъедобной. Мосты на современные каналы (референс
 	// Item.java:232/317/328); GT6-методы сохранены как тела 1:1 (потребление стека/тара — внутри FoodStat.onEaten:149-153).
-	@Override public int getUseDuration(ItemStack aStack, net.minecraft.world.entity.LivingEntity aEntity) {return getMaxItemUseDuration(aStack);}
+	@Override public int getUseDuration(ItemStack aStack) {return getMaxItemUseDuration(aStack);}
 	@Override public UseAnim getUseAnimation(ItemStack aStack) {return getItemUseAction(aStack);}
 	@Override public ItemStack finishUsingItem(ItemStack aStack, Level aWorld, net.minecraft.world.entity.LivingEntity aEntity) {
 		return aEntity instanceof Player tPlayer ? onEaten(aStack, aWorld, tPlayer) : super.finishUsingItem(aStack, aWorld, aEntity);

@@ -23,7 +23,6 @@
 
 package gregapi.damage;
 
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
@@ -53,6 +52,6 @@ public class DamageSourceCombat extends DamageSources.GregTechDamageSource {
 		ItemStack tStack = tEntity instanceof LivingEntity ? ((LivingEntity)tEntity).getMainHandItem() : ItemStack.EMPTY;
 		String tKey = "death.attack." + getMsgId();
 		String tItemKey = tKey + ".item";
-		return !tStack.isEmpty() && tStack.has(DataComponents.CUSTOM_NAME) && Language.getInstance().has(tItemKey) ? Component.translatable(tItemKey, aTarget.getDisplayName(), tEntity.getDisplayName(), tStack.getDisplayName()) : Component.translatable(tKey, aTarget.getDisplayName(), tEntity.getDisplayName());
+		return !tStack.isEmpty() && tStack.hasCustomHoverName() && Language.getInstance().has(tItemKey) ? Component.translatable(tItemKey, aTarget.getDisplayName(), tEntity.getDisplayName(), tStack.getDisplayName()) : Component.translatable(tKey, aTarget.getDisplayName(), tEntity.getDisplayName());
 	}
 }

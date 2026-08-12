@@ -252,8 +252,8 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 		@Override public int getShiftClickSlotCount() {return 0;}
 		
 		@Override
-		public void clicked(int aSlotIndex, int aMouseclick, net.minecraft.world.inventory.ContainerInput aType, Player aPlayer) {
-			int aShifthold = aType.id();
+		public void clicked(int aSlotIndex, int aMouseclick, net.minecraft.world.inventory.ClickType aType, Player aPlayer) {
+			int aShifthold = aType.ordinal();
 			if (aSlotIndex < 0 || aSlotIndex >= slots.size()) {super.clicked(aSlotIndex, aMouseclick, aType, aPlayer); return;}
 			if (aSlotIndex >= mTileEntity.getSizeInventoryGUI()) {
 				if (aShifthold != 1) {super.clicked(aSlotIndex, aMouseclick, aType, aPlayer); return;}

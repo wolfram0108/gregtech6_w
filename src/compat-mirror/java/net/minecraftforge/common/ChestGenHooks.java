@@ -270,7 +270,7 @@ public class ChestGenHooks {
 			if (tServer == null) return null;
 			net.minecraft.server.level.ServerLevel tLevel = tServer.overworld();
 			if (tLevel == null) return null;
-			LootTable tTable = tServer.reloadableRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, NEO_TABLE.get(category)));
+			LootTable tTable = tServer.getLootData().getLootTable(NEO_TABLE.get(category));
 			LootParams tParams = new LootParams.Builder(tLevel)
 				.withParameter(LootContextParams.ORIGIN, net.minecraft.world.phys.Vec3.ZERO)
 				.create(LootContextParamSets.CHEST);
@@ -310,7 +310,7 @@ public class ChestGenHooks {
 			ChestGenHooks tHook = chestInfo.get(tEntry.getKey());
 			if (tHook == null || tHook.contents.isEmpty()) continue;
 			try {
-				LootTable tTable = aServer.reloadableRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, tEntry.getValue()));
+				LootTable tTable = aServer.getLootData().getLootTable(tEntry.getValue());
 				if (tTable != null && tTable != LootTable.EMPTY) injectInto(tHook, tTable);
 			} catch (Throwable e) {
 				e.printStackTrace();
@@ -337,21 +337,18 @@ public class ChestGenHooks {
 					.setWeight(Math.max(1, tContent.itemWeight))
 					.apply(SetItemCountFunction.setCount(UniformGenerator.between(
 						tContent.theMinimumChanceToGenerateItem, Math.max(tContent.theMinimumChanceToGenerateItem, tContent.theMaximumChanceToGenerateItem))));
-			// Identity GT6-предметов живёт в data-компонентах стека (мета MultiItem, реестр/ID MultiTileEntity —
-			// монеты/мешки/книги/сундуки), а LootItem.lootTableItem несёт только тип Item: без переноса патча
-			// выпадали «голые» дефолты (стек монет → «сундуки», gt.meta.* → «Empty»-пустышки; живой репорт игрока).
-			// Переносим ВЕСЬ DataComponentPatch стека штатными SetComponentsFunction (по компоненту — публичный API).
-			for (Map.Entry<net.minecraft.core.component.DataComponentType<?>, java.util.Optional<?>> tComp : tContent.theItemId.getComponentsPatch().entrySet()) {
-				if (tComp.getValue().isEmpty()) continue; // удаление компонента loot-функцией не выражается; у буфер-стеков не встречается
-				applyComponent(tItem, tComp.getKey(), tComp.getValue().get());
-			}
+			// Identity GT6-предметов в ветке 1.20.1 живёт в NBT-теге стека (мета MultiItem, реестр/ID
+			// MultiTileEntity — монеты/мешки/книги/сундуки), а LootItem.lootTableItem несёт только тип Item: без
+			// переноса выпадали бы «голые» дефолты. Переносим тег штатной SetNbtFunction (SetNbtFunction.java:34) —
+			// это ровно тот же стек, что нёс WeightedRandomChestContent 1.7.10. Отдельная лут-функция под damage
+			// НЕ нужна и была бы ВРЕДНА: подтип лежит ВНУТРИ того же тега (IForgeItem.setDamage:472 —
+			// getOrCreateTag().putInt("Damage")), а SetItemDamageFunction трактует значение как ДОЛЮ от maxDamage
+			// (SetItemDamageFunction.java:41) и у мета-предметов GT6 (maxDamage=0) обнулила бы подтип молча.
+			if (tContent.theItemId.getTag() != null)
+				tItem.apply(net.minecraft.world.level.storage.loot.functions.SetNbtFunction.setTag(tContent.theItemId.getTag().copy()));
 			tPool.add(tItem);
 		}
 		aTable.addPool(tPool.build());
 	}
 
-	@SuppressWarnings("unchecked")
-	private static <T> void applyComponent(net.minecraft.world.level.storage.loot.entries.LootPoolSingletonContainer.Builder<?> aEntry, net.minecraft.core.component.DataComponentType<T> aType, Object aValue) {
-		aEntry.apply(net.minecraft.world.level.storage.loot.functions.SetComponentsFunction.setComponent(aType, (T)aValue));
-	}
 }

@@ -31,20 +31,20 @@ import gregapi.util.WD;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.ContainerListener;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
+import net.minecraftforge.common.extensions.IForgeMenuType;
 
 import net.minecraftforge.registries.DeferredRegister;
 
@@ -86,10 +86,10 @@ public class ContainerCommon extends AbstractContainerMenu {
 
 	/** ЕДИНСТВЕННЫЙ {@link MenuType} мода для {@link ContainerCommon} и его наследников (эталон паттерна
 	 *  регистрации кодек/реестр-хелпера — {@code gregapi/enchants/EnchantsGT6.java:93-94}, тот же
-	 *  {@code DeferredRegister.create(Registries.X, MD.GAPI.mID)}). {@code IMenuTypeExtension.create(IContainerFactory)}
-	 *  — `neoforge-decompiled/net/neoforged/neoforge/common/extensions/IMenuTypeExtension.java:25-27`. */
+	 *  {@code DeferredRegister.create(Registries.X, MD.GAPI.mID)}). {@code IForgeMenuType.create(IContainerFactory)}
+	 *  — `forge-1201-decompiled/net/minecraftforge/common/extensions/IForgeMenuType.java:17`. */
 	public static final net.minecraftforge.registries.RegistryObject<MenuType<ContainerCommon>> MENU_TYPE =
-		MENU_TYPES.register("container_common", () -> IMenuTypeExtension.create(ContainerCommon::createFromNetwork));
+		MENU_TYPES.register("container_common", () -> IForgeMenuType.create(ContainerCommon::createFromNetwork));
 
 	/** Стык для интегратора: вызвать рядом с {@code EnchantsGT6.register(aModBus)}/{@code GT6WorldgenFeature.register(aModBus)}
 	 *  в {@code GT_API.java:345-348} (тот же мод-бас) — вне зоны этого захода, файл не тронут намеренно. */
@@ -126,7 +126,7 @@ public class ContainerCommon extends AbstractContainerMenu {
 	 * {@code TileEntityBase01Root.openGUI}), находит TE через {@code WD.te(...)} и зовёт ТОТ ЖЕ
 	 * {@code getGUIServer(guiId, player)}, что и серверное открытие — единый маршрут (постановка задачи, п.3).
 	 */
-	public static ContainerCommon createFromNetwork(int aWindowID, Inventory aInv, RegistryFriendlyByteBuf aData) {
+	public static ContainerCommon createFromNetwork(int aWindowID, Inventory aInv, FriendlyByteBuf aData) {
 		BlockPos tPos = aData.readBlockPos();
 		int tGUIID = aData.readInt();
 		BlockEntity tTileEntity = WD.te(aInv.player.level(), tPos, T);
@@ -480,10 +480,10 @@ public class ContainerCommon extends AbstractContainerMenu {
 	 * зовёт {@code setCarried(...)} где надо, а {@code broadcastChanges()} синхронизирует его на клиент.
 	 */
 	@Override
-	public void clicked(int aIndex, int aMouse, ContainerInput aType, Player aPlayer) {
+	public void clicked(int aIndex, int aMouse, ClickType aType, Player aPlayer) {
 		mTileEntity.markDirtyGUI();
 		Slot aSlot = (aIndex >= 0 && aIndex < slots.size()) ? getSlot(aIndex) : null;
-		int aShift = aType.id();
+		int aShift = aType.ordinal();
 
 		try {
 			if (aSlot instanceof Slot_Base && mTileEntity.interceptClick(mGUIID, (Slot_Base)aSlot, aIndex, aSlot.getSlotIndex(), aPlayer, aShift == 1, aMouse != 0, aMouse, aShift)) {

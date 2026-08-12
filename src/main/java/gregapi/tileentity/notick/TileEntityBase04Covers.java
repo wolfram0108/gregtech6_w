@@ -390,7 +390,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	@Override public ItemStack getItem(int aSlot) {return getStackInSlot(aSlot);}
 	/** F15/F-break (тот же приём, что TileEntityBase05Inventories): neo BlockEntity.preRemoveSideEffects вытряхивает
 	 *  Container через vanilla Containers.dropContents — NPE на GT6-null-слотах + двойной дроп; дроп владеет GT6 breakBlock. */
-	@Override public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {/* дроп — GT6 breakBlock */}
+	public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {/* дроп — GT6 breakBlock */}
 	@Override public void setItem(int aSlot, ItemStack aStack) {setInventorySlotContents(aSlot, aStack);}
 	@Override public ItemStack removeItem(int aSlot, int aDecrement) {return decrStackSize(aSlot, aDecrement);}
 	@Override public ItemStack removeItemNoUpdate(int aSlot) {return getStackInSlotOnClosing(aSlot);}

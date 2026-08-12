@@ -51,7 +51,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 	public static Behavior_Arrow DEFAULT_PLASTIC = new Behavior_Arrow(EntityArrow_Material.class, 1.50F, 6.0F);
 	
 	private final int mLevel;
-	private final net.minecraft.resources.ResourceKey<Enchantment> mEnchantment; // neo: энчант адресуется ResourceKey (UT.NBT.addEnchantment)
+	private final Enchantment mEnchantment;
 	private final float mSpeedMultiplier, mPrecision;
 	private final Class<? extends EntityArrow_Material> mArrow;
 	
@@ -59,7 +59,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 		this(aArrow, aSpeed, aPrecision, null, 0);
 	}
 	
-	public Behavior_Arrow(Class<? extends EntityArrow_Material> aArrow, float aSpeed, float aPrecision, net.minecraft.resources.ResourceKey<Enchantment> aEnchantment, int aLevel) {
+	public Behavior_Arrow(Class<? extends EntityArrow_Material> aArrow, float aSpeed, float aPrecision, Enchantment aEnchantment, int aLevel) {
 		mArrow = aArrow;
 		mSpeedMultiplier = aSpeed;
 		mPrecision = aPrecision;

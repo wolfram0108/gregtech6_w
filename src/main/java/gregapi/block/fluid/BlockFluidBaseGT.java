@@ -127,7 +127,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	 *  отдаёт — идентичность без физики). Порядок реестров гарантирует связанность GT6-жидкостей к моменту
 	 *  конструирования блоков: FLUID регистрируется ДО BLOCK ({@code BuiltInRegistries.java:178,180} +
 	 *  {@code GameData.getRegistrationOrder} — ванильный порядок). */
-	private static net.minecraft.world.level.material.FlowingFluid liquidCarrierFor(Material aMaterial, net.minecraft.world.level.material.Fluid aFluid) {
+	protected static net.minecraft.world.level.material.FlowingFluid liquidCarrierFor(Material aMaterial, net.minecraft.world.level.material.Fluid aFluid) {
 		if (aMaterial == Material.water) return net.minecraft.world.level.material.Fluids.WATER;
 		if (aMaterial == Material.lava ) return net.minecraft.world.level.material.Fluids.LAVA;
 		if (aFluid instanceof net.minecraft.world.level.material.FlowingFluid tFlowing) return tFlowing;
@@ -199,7 +199,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate);
 	}
-	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
+	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, BlockPos aFromPos, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}
 
@@ -208,7 +208,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	// первые два уже перекрыты GT6-каналами выше; updateShape перекрывается здесь (тело = дефолт
 	// BlockBehaviour.updateShape «вернуть состояние без изменений», как было до репарентинга). Без этого
 	// FlowingFluid.tick ванили работал бы ПОВЕРХ GT6-квант — двойной разлив.
-	@Override public BlockState updateShape(BlockState aState, net.minecraft.world.level.LevelReader aWorld, net.minecraft.world.level.ScheduledTickAccess aTicks, BlockPos aPos, net.minecraft.core.Direction aDirection, BlockPos aNeighborPos, BlockState aNeighborState, net.minecraft.util.RandomSource aRandom) {
+	@Override public BlockState updateShape(BlockState aState, net.minecraft.core.Direction aDirection, BlockState aNeighborState, net.minecraft.world.level.LevelAccessor aWorld, BlockPos aPos, BlockPos aNeighborPos) {
 		return aState;
 	}
 
@@ -223,7 +223,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	 *  черпается и блок НЕ трогается (нефти/газы вычерпывались только GT6-механикой drain()). Канал читают
 	 *  {@code BucketItem} (ведро игрока) и {@code SpongeBlock:66} (губка). LEVEL-тело предка (:249-256)
 	 *  не годится: читает мёртвый LEVEL и отдаёт ведро {@code fluid.getBucket()} без материального гейта. */
-	@Override public net.minecraft.world.item.ItemStack pickupBlock(net.minecraft.world.entity.LivingEntity aUser, net.minecraft.world.level.LevelAccessor aLevel, BlockPos aPos, BlockState aState) {
+	@Override public net.minecraft.world.item.ItemStack pickupBlock(net.minecraft.world.level.LevelAccessor aLevel, BlockPos aPos, BlockState aState) {
 		if (aState.getValue(FLUID_META) != 0) return net.minecraft.world.item.ItemStack.EMPTY;
 		net.minecraft.world.item.Item tBucket = mMaterial == Material.water ? net.minecraft.world.item.Items.WATER_BUCKET : mMaterial == Material.lava ? net.minecraft.world.item.Items.LAVA_BUCKET : null;
 		if (tBucket == null) return net.minecraft.world.item.ItemStack.EMPTY;
@@ -293,7 +293,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	// ================= BUG-115: поверхность IFluidBlock (см. шапку класса) =================
 	/** Жидкость блока. В 1.7.10 приходила от Forge-предка ({@code BlockFluidBase.getFluid()}); здесь её знают
 	 *  сами носители — оба подкласса уже хранят её в собственном {@code mFluid}, второго хранилища не заводим. */
-	@Override public abstract net.minecraft.world.level.material.Fluid getFluid();
+	@Override public abstract net.minecraft.world.level.material.FlowingFluid getFluid();
 
 	/** {@code drain} НЕ объявляем: тела уже есть у обоих носителей ({@link gregtech.blocks.fluids.BlockWaterlike},
 	 *  {@link BlockBaseFluid}) — 1:1 с 1.7.10, где они были {@code @Override} этого же интерфейса. */
@@ -403,7 +403,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	// (BlockOcean:164 — «источник, над ним два воздуха, снизу пропускает свет → 16»; BlockSwamp:198 — «сверху
 	// болото → 255») спрашивали СОСЕДЕЙ, чего в этом канале нет. Выразимое по состоянию переносим (BlockSwamp),
 	// невыразимое идёт в реестр отложенного, а не в тихую заглушку.
-	@Override protected int getLightBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return getLightOpacity(aState);}
+	@Override public int getLightBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return getLightOpacity(aState);}
 
 	/** Затухание света для конкретного состояния. Общее значение обеих иерархий 1.7.10 — {@code LIGHT_OPACITY_WATER}. */
 	public int getLightOpacity(net.minecraft.world.level.block.state.BlockState aState) {return gregapi.data.CS.LIGHT_OPACITY_WATER;}

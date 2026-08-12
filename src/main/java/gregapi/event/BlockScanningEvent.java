@@ -30,7 +30,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
 
-public class BlockScanningEvent extends net.minecraftforge.event.level.LevelEvent implements net.neoforged.bus.api.ICancellableEvent {
+@net.minecraftforge.eventbus.api.Cancelable
+public class BlockScanningEvent extends net.minecraftforge.event.level.LevelEvent {
 	
 	public final Player mPlayer;
 	public final int mX, mY, mZ, mScanLevel;

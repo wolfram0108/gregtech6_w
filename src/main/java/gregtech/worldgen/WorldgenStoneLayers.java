@@ -86,7 +86,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 			boolean tCanPlaceRocks = F;
 			OreDictMaterial tLastRock = MT.STONES.Deepslate, tLastOre = null;
 			
-			for (int tY = aChunk.getMinY()+1; tY < tMaxHeight; tY++) {
+			for (int tY = aChunk.getMinBuildHeight()+1; tY < tMaxHeight; tY++) {
 				// F6-Y-scale (КРИТ, чинит «GT6-камень/руды пластами в воздухе»): getSections()[0] = секция getMinSectionY()
 				// (мир с ненулевым min-Y, MC 26), а НЕ y=0. Старое `aStorages[tY>>4]` читало блок на мир-Y = tY-|minY|
 				// (глубокий камень), тогда как запись WD.set/placeBlock идёт на АБСОЛЮТНЫЙ tY → GT6-слой садился в воздух

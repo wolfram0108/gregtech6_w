@@ -888,7 +888,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			// читаем его здесь тем же вектором и коэффициентом; выброс предмета остаётся серверным.
 			{
 				net.minecraft.client.player.LocalPlayer tSlipperyPlayer = Minecraft.getInstance().player;
-				if (tSlipperyPlayer != null && tSlipperyPlayer.onGround() && tSlipperyPlayer.hasEffect(gregapi.potion.MobEffectsGT.SLIPPERY))
+				if (tSlipperyPlayer != null && tSlipperyPlayer.onGround() && tSlipperyPlayer.hasEffect(gregapi.potion.MobEffectsGT.SLIPPERY.get()))
 					tSlipperyPlayer.moveRelative(0.005F, new net.minecraft.world.phys.Vec3(0, 0, 1));
 			}
 

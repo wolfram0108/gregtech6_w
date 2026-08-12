@@ -46,14 +46,14 @@ public class EntitiesGT {
 	public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, ModIDs.GT);
 
 	public static final net.minecraftforge.registries.RegistryObject<EntityType<EntityArrow_Material>> ARROW_MATERIAL =
-		ENTITY_TYPES.register("gt_entity_arrow", rl -> EntityType.Builder.<EntityArrow_Material>of(EntityArrow_Material::new, MobCategory.MISC)
-			.noLootTable().sized(0.5F, 0.5F).eyeHeight(0.13F).clientTrackingRange(10).updateInterval(1)
-			.build(ResourceKey.create(Registries.ENTITY_TYPE, rl)));
+		ENTITY_TYPES.register("gt_entity_arrow", () -> EntityType.Builder.<EntityArrow_Material>of(EntityArrow_Material::new, MobCategory.MISC)
+			.sized(0.5F, 0.5F).clientTrackingRange(10).updateInterval(1)
+			.build("gt_entity_arrow"));
 
 	public static final net.minecraftforge.registries.RegistryObject<EntityType<EntityArrow_Potion>> ARROW_POTION =
-		ENTITY_TYPES.register("gt_entity_arrow_potion", rl -> EntityType.Builder.<EntityArrow_Potion>of(EntityArrow_Potion::new, MobCategory.MISC)
-			.noLootTable().sized(0.5F, 0.5F).eyeHeight(0.13F).clientTrackingRange(10).updateInterval(1)
-			.build(ResourceKey.create(Registries.ENTITY_TYPE, rl)));
+		ENTITY_TYPES.register("gt_entity_arrow_potion", () -> EntityType.Builder.<EntityArrow_Potion>of(EntityArrow_Potion::new, MobCategory.MISC)
+			.sized(0.5F, 0.5F).clientTrackingRange(10).updateInterval(1)
+			.build("gt_entity_arrow_potion"));
 
 	/** Подписка DeferredRegister на мод-шину (вызывается из конструктора GT6_Main, как остальные центральные реестры). */
 	public static void register(IEventBus aModBus) {
@@ -72,6 +72,7 @@ public class EntitiesGT {
 	}
 
 	private static void addTemptRange(net.minecraftforge.event.entity.EntityAttributeModificationEvent aEvent, EntityType<? extends net.minecraft.world.entity.LivingEntity> aType) {
-		if (!aEvent.has(aType, net.minecraft.world.entity.ai.attributes.Attributes.TEMPT_RANGE)) aEvent.add(aType, net.minecraft.world.entity.ai.attributes.Attributes.TEMPT_RANGE);
+		// Ветка 1.20.1: атрибута minecraft:tempt_range не существует, TemptGoal этой версии радиус не спрашивает
+		// (TemptGoal.java) — класса дефекта «Can't find attribute tempt_range» нет, регистрировать нечего.
 	}
 }

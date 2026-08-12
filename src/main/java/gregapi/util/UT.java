@@ -77,10 +77,7 @@ import mods.railcraft.common.items.enchantment.RailcraftEnchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.tags.EntityTypeTags;
@@ -483,7 +480,7 @@ public class UT {
 			ListTag tNBTList = new ListTag();
 			for (short i = 0; i < aPages.length; i++) {
 				if (aPages[i].length() < 256) {
-					tNBTList.add(new StringTag(aPages[i].replaceAll("¶", "\n")));
+					tNBTList.add(StringTag.valueOf(aPages[i].replaceAll("¶", "\n")));
 				} else if (aLogging) {
 					ERR.println("WARNING: String for Page of written Book too long! ->\n" + aPages[i]);
 				}
@@ -1733,7 +1730,7 @@ public class UT {
 			if (aNBT1 == null) return aNBT2==null?make():(CompoundTag)aNBT2.copy();
 			CompoundTag rNBT = (CompoundTag)aNBT1.copy();
 			if (aNBT2 == null) return rNBT;
-			for (Object tKey : aNBT2.keySet()) if (!rNBT.contains(tKey.toString())) rNBT.put(tKey.toString(), aNBT2.get(tKey.toString()));
+			for (Object tKey : aNBT2.getAllKeys()) if (!rNBT.contains(tKey.toString())) rNBT.put(tKey.toString(), aNBT2.get(tKey.toString()));
 			return rNBT;
 		}
 
@@ -1880,7 +1877,7 @@ public class UT {
 		public static ItemStack set(ItemStack aStack, CompoundTag aNBT) {
 			if (aNBT == null || aNBT.isEmpty()) {ItemNBT.set(aStack, null); return aStack;}
 			ArrayList<String> tTagsToRemove = new ArrayListNoNulls<>();
-			for (Object tKey : aNBT.keySet()) {
+			for (Object tKey : aNBT.getAllKeys()) {
 				Tag tValue = aNBT.get((String)tKey);
 				if (tValue == null || (tValue instanceof CompoundTag && ((CompoundTag)tValue).isEmpty()) || (tValue instanceof NumericTag && ((NumericTag)tValue).getAsInt() == 0) || (tValue instanceof StringTag && Code.stringInvalid(((StringTag)tValue).getAsString()))) tTagsToRemove.add((String)tKey);
 			}
@@ -2337,21 +2334,15 @@ public class UT {
 		private static final BullshitIteratorA mBullshitIteratorA = new BullshitIteratorA();
 		private static final BullshitIteratorB mBullshitIteratorB = new BullshitIteratorB();
 
-		// F8 (creature-bonus, форс движка): 1.7.10 EnchantmentHelper.func_152377_a(stack, creatureAttribute)
-		// (getEnchantmentModifierForCreature) + EntityLivingBase.getCreatureAttribute() удалены из neo целиком —
-		// урон-бонус чар (Smite/Bane/Sharpness-эквиваленты) стал data-driven damage-effect'ами, применяемыми
-		// движком через EnchantmentHelper.modifyDamage (neo-decompiled EnchantmentHelper.java:195). Считать
-		// creature-тип вручную нельзя (MobType удалён) — делегируем движку: modifyDamage с base=0 возвращает
-		// чистую прибавку чар против КОНКРЕТНОЙ жертвы (entity-type-условия движок проверяет сам). Эффекты
-		// server-only => нет ServerLevel => 0. Централизовано: оба вызывателя (Behavior_Gun, EntityArrow_Material)
-		// идут сюда, вместо дублирования func_152377_a per-file.
-		// F8 functional-adapted (engine-model-разница, паритет-судья подтверждает): neo modifyDamage включает и общий Sharpness-бонус, тогда как
-		// 1.7.10 func_152377_a возвращал ТОЛЬКО creature-conditional (Smite/Bane) — расхождение модели движка;
-		// финальный паритет-судья подтверждает баланс (компилятор это не ловит).
+		// Ветка 1.20.1: обе половины модели 1.7.10 на месте — EnchantmentHelper.getDamageBonus(ItemStack, MobType)
+		// (EnchantmentHelper.java:164) и LivingEntity.getMobType() (LivingEntity.java:1850). Это дословный
+		// эквивалент func_152377_a(stack, getCreatureAttribute()), поэтому тело центра возвращено к форме
+		// оригинала (gt6-original Behavior_Gun.java:267, EntityArrow_Material.java:177). Расхождение модели
+		// движка, отмеченное в 26.x-ветке (modifyDamage включал общий Sharpness-бонус), здесь отсутствует.
+		// Центр сохранён: оба вызывателя (Behavior_Gun, EntityArrow_Material) идут сюда.
 		public static float getDamageBonusVsCreature(ItemStack aStack, Entity aTarget) {
 			if (aTarget == null || aStack == null || aStack.isEmpty()) return 0;
-			if (!(aTarget.level() instanceof net.minecraft.server.level.ServerLevel tSL)) return 0;
-			return EnchantmentHelper.modifyDamage(tSL, aStack, aTarget, tSL.damageSources().generic(), 0.0F);
+			return aTarget instanceof LivingEntity ? EnchantmentHelper.getDamageBonus(aStack, ((LivingEntity)aTarget).getMobType()) : 0;
 		}
 
 		// Восстановлено 1:1 (gt6-original …/UT.java:2413-2427; в 26.x деградировало до no-op): список чар стека
@@ -2786,7 +2777,7 @@ public class UT {
 		// SoundEvent.location().toString() (SoundEvent.java:15, record-компонент; neo несёт корректный neo-путь)
 		// и делегируем в String-перегрузку. Мост под сменённый движком тип звука, не улучшение.
 		public static boolean send(net.minecraft.sounds.SoundEvent aSound, Level aWorld, BlockPos aCoords) {
-			return aSound == null ? F : send(aSound.location().toString(), aWorld, aCoords);
+			return aSound == null ? F : send(aSound.getLocation().toString(), aWorld, aCoords);
 		}
 		public static boolean send(String aSound, float aVolume, IHasWorldAndCoords aTileEntity) {
 			return send(aSound, aVolume, SFX.RANDOM_PITCH, aTileEntity.getWorld(), aTileEntity.getCoords());
@@ -3097,10 +3088,10 @@ public class UT {
 		}
 		
 		public static boolean applyRadioactivity(Entity aEntity, int aLevel, int aAmountOfItems) {
-			// F-entity: MobType/getCreatureAttribute() удалён — тип существа теперь EntityType-теги. Радиация не
-			// действует на нежить/членистоногих: !is(EntityTypeTags.UNDEAD/ARTHROPOD) (Entity.is(TagKey), идиома
-			// LivingEntity.canBreatheUnderwater:395; EntityTypeTags.java:11,30).
-			if (aLevel > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && !((LivingEntity)aEntity).is(EntityTypeTags.UNDEAD) && !((LivingEntity)aEntity).is(EntityTypeTags.ARTHROPOD) && !isWearingFullRadioHazmat(((LivingEntity)aEntity))) {
+			// Ветка 1.20.1: MobType/getMobType() на месте (MobType.java:5-6, LivingEntity.java:1850) — это
+			// прямой эквивалент 1.7.10 EnumCreatureAttribute/getCreatureAttribute(), поэтому восстановлена
+			// форма оригинала дословно (gt6-original UT.java:3034).
+			if (aLevel > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && ((LivingEntity)aEntity).getMobType() != net.minecraft.world.entity.MobType.UNDEAD && ((LivingEntity)aEntity).getMobType() != net.minecraft.world.entity.MobType.ARTHROPOD && !isWearingFullRadioHazmat(((LivingEntity)aEntity))) {
 				
 				EntityFoodTracker tTracker = EntityFoodTracker.get(aEntity);
 				if (tTracker != null) {tTracker.changeRadiation(aLevel * aAmountOfItems); return T;}

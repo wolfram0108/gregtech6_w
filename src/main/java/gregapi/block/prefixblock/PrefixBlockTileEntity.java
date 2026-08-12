@@ -59,7 +59,7 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	// F3-render #2 (руда рендерилась материалом «none»): getUpdateTag по умолчанию ПУСТ (BlockEntity:245) → на загрузке чанка
 	// клиент НЕ получал mMetaData (материал руды) → рендер материала «none» / «загрузка». saveCustomOnly отдаёт данные через
 	// saveAdditional→writeToNBT (mMetaData «m»); клиент применяет через handleUpdateTag→loadWithComponents→loadAdditional→readFromNBT.
-	@Override public net.minecraft.nbt.CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider aProvider) {return saveCustomOnly(aProvider);}
+	@Override public net.minecraft.nbt.CompoundTag getUpdateTag() {return saveWithoutMetadata();}
 
 	// F3-render (руды-материал): GT6-оптимизация mBlocked (не синкать окклюдированные руды кастом-пакетом) НЕСОВМЕСТИМА с neo —
 	// клиенту нужны данные BE (mMetaData=материал) на chunk-load, иначе вкрапление серое. Возвращаем СТАНДАРТНЫЙ neo BE-пакет

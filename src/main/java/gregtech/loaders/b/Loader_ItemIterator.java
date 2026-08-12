@@ -64,8 +64,8 @@ public class Loader_ItemIterator implements Runnable {
 			if (tBlock instanceof SlabBlock && WD.opaque(tBlock)) ST.hide(tBlock);
 			
 			// IC2 Food Cans.
-			if (tCheckCans && tItem.components().has(net.minecraft.core.component.DataComponents.FOOD) && tItem != IL.IC2_Food_Can_Filled.item() && tItem != IL.IC2_Food_Can_Spoiled.item()) {
-				int tFoodValue = ST.make(tItem, 1, 0).get(net.minecraft.core.component.DataComponents.FOOD).nutrition();
+			if (tCheckCans && tItem.isEdible() && tItem != IL.IC2_Food_Can_Filled.item() && tItem != IL.IC2_Food_Can_Spoiled.item()) {
+				int tFoodValue = tItem.getFoodProperties().getNutrition();
 				if (tFoodValue > 0) RM.Canner.addRecipe2(T, 16, 16L*tFoodValue, ST.make(tItem, 1, W), IL.IC2_Food_Can_Empty.get(tFoodValue), IL.IC2_Food_Can_Filled.get(tFoodValue), ST.container(ST.make(tItem, 1, 0), T));
 			}
 			

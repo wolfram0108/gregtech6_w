@@ -80,7 +80,6 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.core.Direction;
-import net.neoforged.neoforge.event.EventHooks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -431,7 +430,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	// F-neighbor (канал сместился): 1.7.10 World.notifyBlocksOfNeighborChange звал Block.onNeighborBlockChange; neo-вход —
 	// BlockBehaviour.neighborChanged. Мост по образцу BlockFluidBaseGT:154.
-	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
+	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, BlockPos aFromPos, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}
 	
@@ -463,7 +462,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// (setBlock air + wasExploded), цепная детонация EXPLOSIVE/FLAMMABLE-руд не срабатывала. Мост тем же приёмом, что
 	// MultiTileEntityBlock:502. Порядок vanilla (BlockBehaviour.onExplosionHit:173-193): дропы через loot-канал ДО этого
 	// хука (BE ещё жив), затем удаление здесь. GT6-версия не звала super (1.7.10 onBlockDestroyedByExplosion) — 1:1.
-	@Override public void onBlockExploded(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, Explosion aExplosion) {
+	@Override public void onBlockExploded(BlockState aState, Level aWorld, BlockPos aPos, Explosion aExplosion) {
 		onBlockExploded(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aExplosion);
 	}
 	// @Override
@@ -492,7 +491,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// было onBlockEventReceived(World,x,y,z,id,data) -> BlockBehaviour.triggerEvent(BlockState,Level,BlockPos,int,int)
 	// [BlockBehaviour.java:206]; TileEntity.receiveClientEvent(id,data) -> BlockEntity.triggerEvent(int,int) [BlockEntity.java:270]
 	@Override
-	protected boolean triggerEvent(BlockState aState, Level aWorld, BlockPos aPos, int aID, int aParam) {
+	public boolean triggerEvent(BlockState aState, Level aWorld, BlockPos aPos, int aID, int aParam) {
 		BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		return aTileEntity == null || aTileEntity.triggerEvent(aID, aParam);
 	}
@@ -507,9 +506,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	
 	// F13: 1.7.10 Block.getPickBlock удалён — neo middle-click через IBlockExtension.getCloneItemStack; ниже neo-хук
 	// делегирует в GT6-getPickBlock (getItemStackFromBlock), восстанавливая поведение 1:1. GT6-метод сохранён.
-	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, boolean aIncludeData, Player aPlayer) {
+	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.block.state.BlockState aState, HitResult aTarget, net.minecraft.world.level.BlockGetter aLevel, net.minecraft.core.BlockPos aPos, Player aPlayer) {
 		ItemStack r = getItemStackFromBlock(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), SIDE_UNKNOWN);
-		return ST.valid(r) ? r : super.getCloneItemStack(aLevel, aPos, aState, aIncludeData, aPlayer);
+		return ST.valid(r) ? r : super.getCloneItemStack(aState, aTarget, aLevel, aPos, aPlayer);
 	}
 	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
 		return getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN);
@@ -527,10 +526,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// BUG-020 (дроп руды): breakBlock выше — мёртвый 1.7.10-хук (никто не зовёт) → LAST_BROKEN_TILEENTITY не ставился →
 	// Drops.getDrops (:67 WD.te) на loot-этапе (BE уже снят движком) не находил материал. Мост тем же приёмом, что
 	// MultiTileEntityBlock.onDestroyedByPlayer:433 — LAST_BROKEN ставится ДО снятия блока, тик-конец его чистит (Proxy:911).
-	@Override public boolean onDestroyedByPlayer(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, ItemStack aToolStack, boolean aWillHarvest, net.minecraft.world.level.material.FluidState aFluid) {
+	@Override public boolean onDestroyedByPlayer(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, boolean aWillHarvest, net.minecraft.world.level.material.FluidState aFluid) {
 		BlockEntity aTileEntity = teOrCarrier(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()); // правка №1: носитель из карты
 		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
-		return super.onDestroyedByPlayer(aState, aWorld, aPos, aPlayer, aToolStack, aWillHarvest, aFluid);
+		return super.onDestroyedByPlayer(aState, aWorld, aPos, aPlayer, aWillHarvest, aFluid);
 	}
 	
 	@Override
@@ -674,9 +673,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 
 	// Правка №1: уборка карты при снятии блока любым путём (игрок/взрыв/поршень-невозможен/WD.set) — иначе
 	// записи копились бы под чужими блоками. Дроп не страдает: материал к тому моменту уже в LAST_BROKEN-носителе.
-	@Override protected void affectNeighborsAfterRemoval(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, boolean aMovedByPiston) {
-		setOreMeta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), (short)0);
-		super.affectNeighborsAfterRemoval(aState, aWorld, aPos, aMovedByPiston);
+	@Override public void onRemove(BlockState aState, Level aWorld, BlockPos aPos, BlockState aNewState, boolean aMovedByPiston) {
+		if (!aState.is(aNewState.getBlock())) setOreMeta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), (short)0);
+		super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston);
 	}
 
 	// @Override
@@ -731,10 +730,8 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		// RegistryAccess (сверено, EnchantmentHelper.java:292 + Enchantments.SILK_TOUCH/FORTUNE), тот же приём,
 		// что уже принят и одобрен ревизией в GT_API_Proxy.onBlockHarvestingEvent (GT_API_Proxy.java:1450-1451)
 		// и в MultiTileEntityBlock.harvestBlock (тот же класс проблемы).
-		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tSilkTouchHolder = net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH;
-		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tFortuneHolder = net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE;
-		boolean aSilkTouch = EnchantmentHelper.getEnchantmentLevel(tSilkTouchHolder, aPlayer) > 0;
-		int aFortune = EnchantmentHelper.getEnchantmentLevel(tFortuneHolder, aPlayer);
+		boolean aSilkTouch = EnchantmentHelper.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH, aPlayer) > 0;
+		int aFortune = EnchantmentHelper.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE, aPlayer);
 		ArrayList<ItemStack> tList = mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, aSilkTouch);
 		float aChance = WD.fireBlockHarvesting(tList, aWorld, this, aX, aY, aZ, 0, aFortune, 1.0F, aSilkTouch, aPlayer);
 		for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);

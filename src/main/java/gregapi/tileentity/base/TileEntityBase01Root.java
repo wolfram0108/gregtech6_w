@@ -79,10 +79,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.common.extensions.ValueInputExtension;
-import net.neoforged.neoforge.common.extensions.ValueOutputExtension;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
@@ -193,7 +189,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// падал NPE (BlockEntity.loadStatic:206) на ЛЮБОМ сохранённом GT6-TE. Диспетчер по блоку: PrefixBlock-руды дают
 	// PrefixBlockTileEntity(pos,state) СРАЗУ (класс выводится из блока; loadAdditional дочитает mMetaData=материал); прочие
 	// GT6-TE (MTE-машины, класс = sub-ID из NBT, недоступен здесь) → TileEntityLoaderStub, реконструкция на ChunkEvent.Load.
-	public static BlockEntityType<TileEntityBase01Root> createType() {return MTE_TYPE = new BlockEntityType<TileEntityBase01Root>((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> aState.getBlock() instanceof gregapi.block.prefixblock.PrefixBlock ? new gregapi.block.prefixblock.PrefixBlockTileEntity(aPos, aState) : new TileEntityLoaderStub(aPos, aState), java.util.Set.<Block>of()) {
+	public static BlockEntityType<TileEntityBase01Root> createType() {return MTE_TYPE = new BlockEntityType<TileEntityBase01Root>((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> aState.getBlock() instanceof gregapi.block.prefixblock.PrefixBlock ? new gregapi.block.prefixblock.PrefixBlockTileEntity(aPos, aState) : new TileEntityLoaderStub(aPos, aState), java.util.Set.<Block>of(), (com.mojang.datafixers.types.Type<?>)null) {
 		// F-tileentity-construction: MTE_TYPE — ОБЩИЙ placeholder-тип всей GT6-TE-иерархии (динамические блоки, valid-блоки
 		// не применимы). neo BlockEntityType.isValid(state) = validBlocks.contains(block) → пустой Set → всегда false →
 		// LevelChunk.setBlockEntity отклоняет TE («state ... does not allow it», TE не регистрируется). Override → true
@@ -236,7 +232,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// F12-followup (MTE-type): neo BlockEntity.<init> валидирует state против type.isValid(state); placeholder MTE_TYPE не
 	// имеет valid-блоков (Set.of()) → канонический инстанс (AIR-state) не прошёл бы → «Invalid block entity state».
 	// GT6 MTE — динамическая система (тип общий на всю иерархию, valid-блоки не применимы) → валидацию отключаем.
-	@Override public boolean isValidBlockState(net.minecraft.world.level.block.state.BlockState aState) {return true;}
+	public boolean isValidBlockState(net.minecraft.world.level.block.state.BlockState aState) {return true;}
 	
 	@Override
 	public void onTileEntityPlaced() {
@@ -272,36 +268,29 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	}
 
 	/**
-	 * F8 (шов «NBT-персистенс TileEntity», центр моста CompoundTag<->ValueIO — см.
-	 * decisions/F8-nbt-data-components.md §4.1): neo зовёт {@code saveAdditional(ValueOutput)}/
-	 * {@code loadAdditional(ValueInput)} (`neo-decompiled/net/minecraft/world/level/block/entity/
-	 * BlockEntity.java:101,115`), а не GT6-модель {@code writeToNBT}/{@code readFromNBT}(CompoundTag).
-	 * Единственный мост на весь мод - здесь, на корне TE-иерархии: собираем/разбираем CompoundTag
-	 * через {@link ValueOutputExtension#store(CompoundTag)} / {@link ValueInputExtension#keySet()}
-	 * (тот же приём: `input.read(MapCodec.assumeMapUnsafe(CompoundTag.CODEC))`, дословно как в
-	 * `neoforge-decompiled/net/neoforged/neoforge/common/extensions/ValueInputExtension.java:27`),
-	 * и прогоняем существующую GT6-цепочку writeToNBT/readFromNBT -> writeToNBT2/readFromNBT2 без
-	 * изменений. super.saveAdditional/super.loadAdditional вызываются первыми, чтобы сохранить
-	 * neo-собственные данные (NeoForgeData/attachments), как это делает эталон AE2
-	 * (`AEBaseBlockEntity.java:143,184`).
+	 * Ветка 1.20.1 (шов «NBT-персистенс TileEntity»): моста CompoundTag&lt;-&gt;ValueIO не требуется —
+	 * движок этой версии зовёт {@code saveAdditional(CompoundTag)}
+	 * (`forge-1201-decompiled/net/minecraft/world/level/block/entity/BlockEntity.java:58`) и
+	 * {@code load(CompoundTag)} (`:53`), то есть ровно {@code writeToNBT}/{@code readFromNBT} 1.7.10.
+	 * Поэтому GT6-цепочка writeToNBT/readFromNBT -&gt; writeToNBT2/readFromNBT2 подключена НАПРЯМУЮ,
+	 * без промежуточного тега; ValueOutputExtension/ValueInputExtension и MapCodec-разбор сняты вместе
+	 * с моделью 26.x. Точка одна и та же — корень TE-иерархии. {@code super} зовётся первым, чтобы
+	 * сохранить форжевые данные (ForgeCaps/ForgeData), как это делает эталон AE2 (`AEBaseBlockEntity`).
 	 */
 	@Override
-	protected void saveAdditional(ValueOutput output) {
-		super.saveAdditional(output);
+	protected void saveAdditional(CompoundTag aNBT) {
+		super.saveAdditional(aNBT);
 		// [GT6-MTEAUDIT] DIAG (§6.3) BUG-057 — снять при уборке фазы: если на диск уходит НЕреконструированный стаб,
 		// базовый writeToNBT пишет только id/x/y/z -> gt.mte.reg/gt.mte.id стираются = потеря identity навсегда.
 		if (this instanceof TileEntityLoaderStub && gregapi.data.CS.probeFlag("gt6mteauditprobe.flag"))
 			gregapi.data.CS.OUT.println("[GT6-MTEAUDIT-DIAG] СОХРАНЯЕТСЯ СТАБ @" + getBlockPos().toShortString() + " — identity будет стёрта (mLoadedNBT " + (((TileEntityLoaderStub)this).mLoadedNBT == null ? "null" : "ЕСТЬ, но не пишется") + ")");
-		CompoundTag tNBT = UT.NBT.make();
-		writeToNBT(tNBT);
-		output.store(tNBT);
+		writeToNBT(aNBT);
 	}
 
 	@Override
-	protected void loadAdditional(ValueInput input) {
-		super.loadAdditional(input);
-		CompoundTag tNBT = input.read(MapCodec.assumeMapUnsafe(CompoundTag.CODEC)).orElseGet(UT.NBT::make);
-		readFromNBT(tNBT);
+	public void load(CompoundTag aNBT) {
+		super.load(aNBT);
+		readFromNBT(aNBT);
 	}
 
 	// F6-worldgen КЛИЕНТ-СИНК: сознательно НЕ переопределяем getUpdateTag на корне всех MTE. Проверено механикой (4 прогона
@@ -350,7 +339,8 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	 */
 	@Override public boolean openGUI(Player aPlayer, int aID) {
 		if (aPlayer == null) return F;
-		aPlayer.openMenu(new GT6MenuProvider(level, getBlockPos(), aID), aBuf -> {aBuf.writeBlockPos(getBlockPos()); aBuf.writeInt(aID);});
+		if (!(aPlayer instanceof net.minecraft.server.level.ServerPlayer tSP)) return F;
+		net.minecraftforge.network.NetworkHooks.openScreen(tSP, new GT6MenuProvider(level, getBlockPos(), aID), aBuf -> {aBuf.writeBlockPos(getBlockPos()); aBuf.writeInt(aID);});
 		return T;
 	}
 	@Override public int getRandomNumber(int aRange) {return RNGSUS.nextInt(aRange);}
@@ -789,7 +779,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		// neo BlockState.hasAnalogOutputSignal()/getAnalogOutputSignal(Level,BlockPos,Direction) (BlockBehaviour:628/632).
 		BlockPos tPos = new BlockPos(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide));
 		net.minecraft.world.level.block.state.BlockState tState = gregapi.util.WD.state(level, tPos);
-		return tState.hasAnalogOutputSignal()?UT.Code.bind4(tState.getAnalogOutputSignal(level, tPos, FORGE_DIR[OPOS[aSide]])):getRedstoneIncoming(aSide);
+		return tState.hasAnalogOutputSignal()?UT.Code.bind4(tState.getAnalogOutputSignal(level, tPos)):getRedstoneIncoming(aSide);
 	}
 	
 	// A Default implementation of the Fluid Tank behaviour, so that every TileEntity can use this to simplify its Code.

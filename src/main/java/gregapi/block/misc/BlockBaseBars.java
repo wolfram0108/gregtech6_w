@@ -277,10 +277,10 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	// GT_API_Proxy_Client:93 ставит T, GT_API_Proxy_Server:32 ставит F, и побеждает тот, кто
 	// инициализировался последним. Из-за этого канал молча отдавал null, рендер подставлял серую
 	// CFoam-заглушку, и крошка решёток/шипов оставалась серой (найдено живым тестом игрока).
-	// Физическая сторона — FMLEnvironment.getDist().isClient(), тот же канон, что в GT_API:378.
+	// Физическая сторона — FMLEnvironment.dist.isClient(), тот же канон, что в GT_API:378.
 	// Гейт обязателен: resolveBlockFaceIcon трогает Minecraft.getInstance(), а на выделенном сервере
 	// этого класса нет (класс дефекта BUG-084 — клиентский тип в общем коде).
-	public ResourceLocation getIcon(int aSide, int aMeta) {return net.minecraftforge.fml.loading.FMLEnvironment.getDist().isClient() ? gregapi.render.GT6QuadBuilder.resolveBlockFaceIcon(net.minecraft.world.level.block.Blocks.IRON_BARS, 2, 0) : null;}
+	public ResourceLocation getIcon(int aSide, int aMeta) {return net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient() ? gregapi.render.GT6QuadBuilder.resolveBlockFaceIcon(net.minecraft.world.level.block.Blocks.IRON_BARS, 2, 0) : null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return F;}

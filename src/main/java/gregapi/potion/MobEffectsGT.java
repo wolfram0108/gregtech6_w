@@ -118,9 +118,14 @@ public class MobEffectsGT {
 	 *  {@code func_111184_a(movementSpeed, uuid, -0.5D, 2)}; neo масштабирует amount×(amplifier+1) —
 	 *  {@code MobEffect.AttributeTemplate.create}, тот же закон, что 1.7.10). Ослабление прыжка —
 	 *  {@code EventHandler.java:403-408} → {@code GT_API_Proxy}. */
+	/** UUID модификатора атрибута: в 1.20.1 addAttributeModifier принимает СТРОКУ-UUID (MobEffect.java:154),
+	 *  а не ResourceLocation. Значение выведено детерминированно из имени эффекта (nameUUIDFromBytes), чтобы
+	 *  не заводить магическую константу и не разъехаться между запусками/сохранениями. */
+	private static final String STICKY_MODIFIER_UUID = java.util.UUID.nameUUIDFromBytes((MD.GAPI.mID + ":effect.sticky").getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
+
 	public static final net.minecraftforge.registries.RegistryObject<MobEffect> STICKY = EFFECTS.register("sticky",
 		() -> new MobEffectGT6(MobEffectCategory.HARMFUL, 0x9c6800)
-			.addAttributeModifier(Attributes.MOVEMENT_SPEED, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "effect.sticky"), -0.5D, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+			.addAttributeModifier(Attributes.MOVEMENT_SPEED, STICKY_MODIFIER_UUID, -0.5D, AttributeModifier.Operation.MULTIPLY_TOTAL));
 
 	/** EnviroMine insanity, каденция 30 тиков ({@code EM_StatusManager.java:84-88}): amp≥1 → тошнота 200
 	 *  тиков с шансом 1/(50/(amp+1)); игроку — фантомный жуткий звук в случайной точке ±3 блока с тем же
@@ -137,7 +142,7 @@ public class MobEffectsGT {
 	private static Holder<SoundEvent>[] sounds() {
 		if (SOUNDS == null) SOUNDS = new Holder[] {
 			  SoundEvents.AMBIENT_CAVE                                                    // ambient.cave.cave
-			, SoundEvents.GENERIC_EXPLODE                                                 // random.explode
+			, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.GENERIC_EXPLODE)      // random.explode
 			, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.CREEPER_PRIMED)      // creeper.primed
 			, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.ZOMBIE_AMBIENT)      // mob.zombie.say
 			, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.ENDERMAN_AMBIENT)    // mob.endermen.idle
@@ -164,26 +169,25 @@ public class MobEffectsGT {
 	private static class MobEffectSlippery extends MobEffect {
 		private MobEffectSlippery(MobEffectCategory aCategory, int aColor) {super(aCategory, aColor);}
 		// IEPotion(id,bad,colour,tick=0,halveTick=F,icon): isReady при tickrate 0 отдаёт T каждый тик (IEPotions.java:108-114).
-		@Override public boolean shouldApplyEffectTickThisTick(int aTickCount, int aAmplifier) {return T;}
-		@Override public boolean applyEffectTick(ServerLevel aWorld, LivingEntity aEntity, int aAmplifier) {
+		@Override public boolean isDurationEffectTick(int aTickCount, int aAmplifier) {return T;}
+		@Override public void applyEffectTick(LivingEntity aEntity, int aAmplifier) {
 			// 1:1 IEPotions.java:118-128: moveFlying(0,1,0.005F) → moveRelative (тот же вектор «вперёд» и коэффициент).
 			if (aEntity.onGround()) aEntity.moveRelative(0.005F, new Vec3(0, 0, 1));
 			if (aEntity.getRandom().nextInt(300) == 0) {
 				ItemStack tHeld = aEntity.getMainHandItem();
 				if (!tHeld.isEmpty()) {
-					ItemEntity tDropped = aEntity.spawnAtLocation(aWorld, tHeld.copy(), 1.0F);
+					ItemEntity tDropped = aEntity.spawnAtLocation(tHeld.copy(), 1.0F);
 					if (tDropped != null) tDropped.setPickUpDelay(20);
 					aEntity.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
 				}
 			}
-			return T;
 		}
 	}
 
 	private static class MobEffectInsanity extends MobEffect {
 		private MobEffectInsanity(MobEffectCategory aCategory, int aColor) {super(aCategory, aColor);}
-		@Override public boolean shouldApplyEffectTickThisTick(int aTickCount, int aAmplifier) {return aTickCount % 30 == 0;}
-		@Override public boolean applyEffectTick(ServerLevel aWorld, LivingEntity aEntity, int aAmplifier) {
+		@Override public boolean isDurationEffectTick(int aTickCount, int aAmplifier) {return aTickCount % 30 == 0;}
+		@Override public void applyEffectTick(LivingEntity aEntity, int aAmplifier) {
 			RandomSource tRNG = aEntity.getRandom();
 			int tChance = Math.max(1, 50 / (aAmplifier + 1));
 			if (aAmplifier >= 1 && tRNG.nextInt(tChance) == 0) UT.Entities.applyPotion(aEntity, MobEffects.CONFUSION, 200, 0, F);
@@ -192,7 +196,6 @@ public class MobEffectsGT {
 				float tPitch = tRNG.nextBoolean() ? 0.2F : (tRNG.nextFloat() - tRNG.nextFloat()) * 0.2F + 1.0F;
 				tPlayer.connection.send(new ClientboundSoundPacket(sounds()[tRNG.nextInt(16)], SoundSource.AMBIENT, aEntity.getX() + tX, aEntity.getY() + tY, aEntity.getZ() + tZ, 1.0F, tPitch, tRNG.nextLong()));
 			}
-			return T;
 		}
 	}
 

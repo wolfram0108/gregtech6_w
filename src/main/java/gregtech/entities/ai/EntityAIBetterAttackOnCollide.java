@@ -153,7 +153,7 @@ public class EntityAIBetterAttackOnCollide extends Goal {
 				}
 			}
 			
-			if (tAttacking) mCreature.doHurtTarget((net.minecraft.server.level.ServerLevel)mWorld, tTarget);
+			if (tAttacking) mCreature.doHurtTarget(tTarget);
 			
 			// TODO: playSound("creeper.primed", 1, 0.5);
 		}

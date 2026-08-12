@@ -104,7 +104,9 @@ public class ExplosionGT extends Explosion {
 		// F-explosion (neo-модель): взрывы в neo SERVER-AUTHORITATIVE (net.minecraft.world.level.Explosion создаётся server-side, синк клиенту пакетом
 		// ниже) — это правильная neo-архитектура, не 1.7.10 обе-стороны. Каст (ServerLevel)aWorld безопасен: все вызыватели GT6-взрывов
 		// server-side (Level.explode-путь). Не заглушка.
-		super((ServerLevel)aWorld, aEntity, null, null, new Vec3(aX, aY, aZ), aPower, F, Explosion.BlockInteraction.DESTROY);
+		// Ветка 1.20.1: Explosion — обычный класс над Level (не ServerLevel), координаты тремя double
+		// (Explosion.java:74) — форма 1.7.10.
+		super(aWorld, aEntity, null, null, aX, aY, aZ, aPower, F, Explosion.BlockInteraction.DESTROY);
 		mWorld = aWorld;
 		explosionX = aX; explosionY = aY; explosionZ = aZ;
 		explosionSize = aPower;

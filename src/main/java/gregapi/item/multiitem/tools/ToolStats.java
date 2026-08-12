@@ -65,7 +65,7 @@ import static gregapi.data.CS.*;
  */
 public abstract class ToolStats implements IToolStats {
 	public static final Enchantment[] FORTUNE_ENCHANTMENT = new Enchantment[0];
-	public static final net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] LOOTING_ENCHANTMENT = new net.minecraft.resources.ResourceKey[0];
+	public static final net.minecraft.world.item.enchantment.Enchantment[] LOOTING_ENCHANTMENT = new net.minecraft.world.item.enchantment.Enchantment[0];
 
 	@Override public int getToolDamagePerBlockBreak()                                       {return 100;}
 	@Override public int getToolDamagePerDropConversion()                                   {return 100;}
@@ -188,7 +188,7 @@ public abstract class ToolStats implements IToolStats {
 	}
 
 	@Override
-	public net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] getEnchantments(ItemStack aStack, OreDictMaterial aMaterial) {
+	public net.minecraft.world.item.enchantment.Enchantment[] getEnchantments(ItemStack aStack, OreDictMaterial aMaterial) {
 		return ZL_ENCHANTMENT;
 	}
 
@@ -230,7 +230,7 @@ public abstract class ToolStats implements IToolStats {
 		// F8 (1:1): 1.7.10 tKnockback = sprint + getKnockbackModifier(player,entity) (уровень Knockback-чары). neo-эквивалент —
 		// EnchantmentHelper.modifyKnockback(sl,weapon,victim,source,base) [EnchantmentHelper.java:217]: base=0 → чистый вклад
 		// Knockback-чары со стека. server-only (нужен ServerLevel). Было утеряно — восстановлено. Спринт-компонент 1:1.
-		int tKnockback = (aPlayer.isSprinting()?1:0) + (aEntity instanceof LivingEntity && aEntity.level() instanceof net.minecraft.server.level.ServerLevel tSL ? (int)net.minecraft.world.item.enchantment.EnchantmentHelper.modifyKnockback(tSL, aStack, aEntity, tSL.damageSources().playerAttack(aPlayer), 0.0F) : 0);
+		int tKnockback = (aPlayer.isSprinting()?1:0) + net.minecraft.world.item.enchantment.EnchantmentHelper.getKnockbackBonus(aPlayer);
 		if (tKnockback > 0) {
 			aEntity.push(-Mth.sin((float)(aPlayer.getYRot() * Math.PI / 180)) * tKnockback * 0.5, 0.1, Mth.cos((float)(aPlayer.getYRot() * Math.PI / 180)) * tKnockback * 0.5);
 			Vec3 tMotion = aPlayer.getDeltaMovement();

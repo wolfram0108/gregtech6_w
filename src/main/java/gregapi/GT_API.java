@@ -36,8 +36,6 @@ import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredItem;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.api.distmarker.Dist;
 import gregapi.api.Abstract_Mod;
@@ -150,7 +148,7 @@ import static gregapi.data.CS.*;
  * см. комментарий там же. {@code depends()} здесь остаётся как НЕЗАВИСИМЫЙ REQUIRED-гейт
  * (не грузить entrypoint, если GAPI_POST отсутствует в списке модов), а не как источник порядка.
  */
-@Mod(value = ModIDs.GAPI, depends = {ModIDs.GAPI_POST})
+@Mod(ModIDs.GAPI)
 public class GT_API extends Abstract_Mod {
 	/**
 	 * Замена {@code @SidedProxy}: neo не имеет annotation-диспетчера сторон, поэтому сторона выбирается
@@ -216,7 +214,7 @@ public class GT_API extends Abstract_Mod {
 	 *  заглавные) — тот же приём, что у {@code EntitiesGT}. */
 	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.world.entity.EntityType<gregapi.block.prefixblock.PrefixBlockFallingEntity>> METABLOCK_FALLING =
 		ENTITIES.register("gt_metablockfallingentity", () -> net.minecraft.world.entity.EntityType.Builder.<gregapi.block.prefixblock.PrefixBlockFallingEntity>of(gregapi.block.prefixblock.PrefixBlockFallingEntity::new, net.minecraft.world.entity.MobCategory.MISC)
-			.noLootTable().sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(1)
+			.sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(1)
 			.build("gt_metablockfallingentity"));
 
 	/** BUG-113: свои звуки мода. В 1.7.10 звук адресовался ИМЕНЕМ, а объявлялся только в ассетах
@@ -465,7 +463,7 @@ public class GT_API extends Abstract_Mod {
 		MT.init();
 		// Замена @SidedProxy: строим сторонний прокси здесь, ПОСЛЕ MT.init() (клиентский прокси в ctor читает
 		// MT.*.mRGBa), а не инлайн в статик-инициализаторе поля — иначе class-init тянул MT до STACKMAPS и падал NPE.
-		api_proxy = FMLEnvironment.getDist().isClient() ? new GT_API_Proxy_Client() : new GT_API_Proxy_Server();
+		api_proxy = FMLEnvironment.dist.isClient() ? new GT_API_Proxy_Client() : new GT_API_Proxy_Server();
 		BI.BAROMETER.toString();
 		OP.ore.toString();
 		
@@ -651,8 +649,8 @@ public class GT_API extends Abstract_Mod {
 		try {
 			boolean tWanted = gregapi.data.CS.WATER_SOURCE_CONVERSION;
 			net.minecraft.world.level.GameRules tRules = aLevel.getGameRules();
-			if (tRules.get(net.minecraft.world.level.GameRules.WATER_SOURCE_CONVERSION) == tWanted) return;
-			tRules.set(net.minecraft.world.level.GameRules.WATER_SOURCE_CONVERSION, tWanted, aLevel.getServer());
+			if (tRules.getBoolean(net.minecraft.world.level.GameRules.RULE_WATER_SOURCE_CONVERSION) == tWanted) return;
+			tRules.getRule(net.minecraft.world.level.GameRules.RULE_WATER_SOURCE_CONVERSION).set(tWanted, aLevel.getServer());
 			OUT.println("[GT6] бесконечная вода: правило water_source_conversion = " + tWanted + (tWanted ? " (ванильное поведение по настройке)" : " (вода конечна, как в 1.7.10 с GT6)"));
 		} catch (Throwable e) {e.printStackTrace(ERR);}
 	}
@@ -718,9 +716,10 @@ public class GT_API extends Abstract_Mod {
 				tRemove.addAll(SUPPRESSED_DATAPACK_RECIPES);
 				removeDatapackRecipes(tServer, tRemove);
 			} catch(Throwable e) {e.printStackTrace(ERR);}
-			// BUG-054: пересборка propertySets ПОСЛЕ наполнения FurnaceRecipes (drain выше) — и после подавления
-			// датапак-рецептов сканом (той же пересборкой соберутся дисплеи без подавленных). Идемпотентен.
-			if (tServer != null) tServer.getRecipeManager().finalizeRecipeLoading(tLevel.enabledFeatures());
+			// Ветка 1.20.1: пересобирать нечего — статического RecipePropertySet, ради которого стоял
+			// finalizeRecipeLoading, в этой версии не существует; shift-click-гейт печи живой
+			// (AbstractFurnaceMenu.canSmelt:145-146 → getRecipeFor → matches). Класс дефекта BUG-054 отсутствует
+			// (разбор — journal шов-работа №1, Б-3).
 			// BUG-039 (F-loot, тот же класс тайминга): LootTableLoadEvent отстрелял при загрузке ресурсов ДО этой
 			// data-init (буфер ChestGenHooks был пуст) → догоняющая инъекция GT-пулов в загруженные таблицы.
 			// Идемпотентна (именованный pool); /reload и последующие загрузки покрывает сам LootTableLoadEvent.

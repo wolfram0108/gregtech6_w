@@ -110,10 +110,11 @@ public class EntityArrow_Material extends EntityProjectile {
 	public EntityArrow_Material(Arrow aArrow, ItemStack aStack) {
 		this(EntitiesGT.ARROW_MATERIAL.get(), aArrow.level());
 		setOwner(aArrow.getOwner());
-		// F-entity-nbt: neo save/load через ValueOutput/ValueInput (не CompoundTag) — мост TagValueOutput/TagValueInput (как ядро Behavior_CureZombie).
-		net.minecraft.world.level.storage.TagValueOutput tOut = net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING, aArrow.registryAccess());
-		aArrow.saveWithoutId(tOut);
-		load(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, registryAccess(), tOut.buildResult()));
+		// Ветка 1.20.1: моста ValueOutput/ValueInput нет — форма оригинала 1.7.10 дословно
+		// (gt6-original EntityArrow_Material.java:87-88 writeToNBT/readFromNBT).
+		CompoundTag tNBT = UT.NBT.make();
+		aArrow.saveWithoutId(tNBT);
+		load(tNBT);
 		setProjectileStack(aStack);
 	}
 
@@ -211,7 +212,7 @@ public class EntityArrow_Material extends EntityProjectile {
 					tMagicDamage = tHitEntity instanceof LivingEntity?UT.Enchantments.getDamageBonusVsCreature(mArrow, tHitEntity):0,
 					tDamage = UT.Code.roundUp((float)Math.sqrt(WD.motionX(this)*WD.motionX(this) + WD.motionY(this)*WD.motionY(this) + WD.motionZ(this)*WD.motionZ(this)) * (getBaseDamageGT() + Math.max(0, tData != null && tData.validMaterial() ? tData.mMaterial.mMaterial.mToolQuality-1 : 0)));
 
-					if (isCritArrow()) tDamage += getRandom().nextInt((int)(tDamage / 2.0 + 2.0));
+					if (isCritArrow()) tDamage += random.nextInt((int)(tDamage / 2.0 + 2.0));
 
 					int
 					tImplosion  = UT.NBT.getEnchantmentLevelImplosion(mArrow),
@@ -237,7 +238,7 @@ public class EntityArrow_Material extends EntityProjectile {
 							Player tPlayer = null;
 							if (level() instanceof ServerLevel) tPlayer = FakePlayerFactory.get((ServerLevel)level(), new GameProfile(new UUID(0, 0), tShootingEntity instanceof LivingEntity?((LivingEntity)tShootingEntity).getName().getString():"Arrow"));
 							if (tPlayer != null) {
-								tPlayer.getInventory().setSelectedSlot(0);
+								tPlayer.getInventory().selected = 0;
 								tPlayer.getInventory().setItem(0, getArrowItem());
 								// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Arrow would do ZERO Damage.
 								if (WD.dimTF(level())) tPlayer.getAbilities().instabuild = T;
@@ -268,7 +269,7 @@ public class EntityArrow_Material extends EntityProjectile {
 								Enchantments.applyBullshitB(tShootingEntity instanceof LivingEntity?(LivingEntity)tShootingEntity:null, tHitLivingEntity                          , mArrow);
 
 								if (tShootingEntity != null && tHitLivingEntity != tShootingEntity && tHitLivingEntity instanceof Player && tShootingEntity instanceof ServerPlayer) {
-									((ServerPlayer)tShootingEntity).connection.send(new net.minecraft.network.protocol.game.ClientboundGameEventPacket(net.minecraft.network.protocol.game.ClientboundGameEventPacket.PLAY_ARROW_HIT_SOUND, 0.0F));
+									((ServerPlayer)tShootingEntity).connection.send(new net.minecraft.network.protocol.game.ClientboundGameEventPacket(net.minecraft.network.protocol.game.ClientboundGameEventPacket.ARROW_HIT_PLAYER, 0.0F));
 								}
 							}
 
@@ -345,7 +346,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	}
 
 	@Override
-	public void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput aNBT) {
+	public void addAdditionalSaveData(net.minecraft.nbt.CompoundTag aNBT) {
 		super.addAdditionalSaveData(aNBT);
 		aNBT.putShort("xTile", (short)mHitBlockX);
 		aNBT.putShort("yTile", (short)mHitBlockY);
@@ -357,11 +358,11 @@ public class EntityArrow_Material extends EntityProjectile {
 		aNBT.putByte("inGround", (byte)(inGround ? 1 : 0));
 		aNBT.putByte("pickup", (byte)pickup.ordinal());
 		aNBT.putDouble("damage", getBaseDamageGT());
-		if (ST.valid(mArrow)) aNBT.store("mArrow", ItemStack.CODEC, mArrow);
+		if (ST.valid(mArrow)) aNBT.put("mArrow", mArrow.save(UT.NBT.make()));
 	}
 
 	@Override
-	public void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput aNBT) {
+	public void readAdditionalSaveData(net.minecraft.nbt.CompoundTag aNBT) {
 		super.readAdditionalSaveData(aNBT);
 		mHitBlockX = aNBT.getShort("xTile");
 		mHitBlockY = aNBT.getShort("yTile");
@@ -373,7 +374,7 @@ public class EntityArrow_Material extends EntityProjectile {
 		inGround = aNBT.getByte("inGround") == 1;
 		setBaseDamage(aNBT.getDouble("damage"));
 		pickup = AbstractArrow.Pickup.byOrdinal(aNBT.getByte("pickup"));
-		mArrow = aNBT.read("mArrow", ItemStack.CODEC).orElse(null);
+		mArrow = aNBT.contains("mArrow") ? ItemStack.of(aNBT.getCompound("mArrow")) : null;
 	}
 
 	@Override

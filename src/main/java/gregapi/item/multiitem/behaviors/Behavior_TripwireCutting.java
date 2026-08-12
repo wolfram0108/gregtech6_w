@@ -60,7 +60,7 @@ public class Behavior_TripwireCutting extends AbstractBehaviorDefault {
 				// (BlockState,Level,BlockPos,Player,ItemStack,boolean,FluidState) [IBlockExtension.java:238]
 				BlockPos aBlockPos = new BlockPos(aX, aY, aZ);
 				BlockState aBlockState = aWorld.getBlockState(aBlockPos);
-				if (Blocks.TRIPWIRE.onDestroyedByPlayer(aBlockState, aWorld, aBlockPos, aPlayer, aPlayer.getMainHandItem(), T, aWorld.getFluidState(aBlockPos))) {
+				if (Blocks.TRIPWIRE.onDestroyedByPlayer(aBlockState, aWorld, aBlockPos, aPlayer, T, aWorld.getFluidState(aBlockPos))) {
 					// F13 (1:1): 1.7.10 harvestBlock(World,Player,x,y,z,meta) ронял дроп tripwire (струну). Восстановлено ниже через
 					// neo Block.dropResources(state,level,pos,be,breaker,tool) [Block.java:398] — loot по инструменту игрока.
 					// onDestroyedByPlayer уже снёс блок в air; дропаем по захваченному aBlockState. Дроп восстановлен 1:1,

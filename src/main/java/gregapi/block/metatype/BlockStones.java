@@ -656,7 +656,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	// (LevelReader,BlockPos,BlockState)/isBonemealSuccess(Level,RandomSource,BlockPos,BlockState)/performBonemeal
 	// (ServerLevel,RandomSource,BlockPos,BlockState) [BonemealableBlock.java:14-18]; координаты через aPos.getX/Y/Z(),
 	// тот же приём, что и весь остальной файл.
-	@Override public boolean isValidBonemealTarget(LevelReader aWorld, BlockPos aPos, BlockState aState) {return MOSSY[WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())];}
+	@Override public boolean isValidBonemealTarget(LevelReader aWorld, BlockPos aPos, BlockState aState, boolean aIsClient) {return MOSSY[WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())];}
 	@Override public boolean isBonemealSuccess(Level aWorld, RandomSource aRandom, BlockPos aPos, BlockState aState) {return MOSSY[WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())];}
 	@Override public void performBonemeal(ServerLevel aWorld, RandomSource aRandom, BlockPos aPos, BlockState aState) {
 		int aX = aPos.getX(), aY = aPos.getY(), aZ = aPos.getZ();

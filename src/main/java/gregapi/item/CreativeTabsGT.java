@@ -207,7 +207,7 @@ public final class CreativeTabsGT {
 		// BUG-030: ванильный сеттер вкладки КИДАЕТСЯ на дубле (IllegalArgumentException «already exists») и обрывал
 		// ВСЁ наполнение; 1.7.10-канал (NEI getSubItems) дубли терпел. Дедуп той же идентичностью, что у вкладки
 		// (ItemStackLinkedSet.TYPE_AND_TAG:9 — item+компоненты), ДО accept — остальные стеки доезжают.
-		java.util.Set<ItemStack> tSeen = net.minecraft.world.item.ItemStackLinkedSet.createTypeAndComponentsSet();
+		java.util.Set<ItemStack> tSeen = net.minecraft.world.item.ItemStackLinkedSet.createTypeAndTagSet();
 		for (Item tItem : aMembers) try {
 			// BUG-010: ST.hidden — центральная замена мёртвого NEI-канала ST.hide (скрытые слэб-варианты и пр.)
 			for (ItemStack tStack : enumerate(tItem, tItem, aTab)) if (tStack != null && !tStack.isEmpty() && !gregapi.util.ST.hidden(tStack) && tSeen.add(tStack)) aOutput.accept(tStack);
@@ -216,7 +216,7 @@ public final class CreativeTabsGT {
 
 	private static void onBuildContents(BuildCreativeModeTabContentsEvent aEvent) {
 		// BUG-030: дедуп идентичностью вкладки (см. populate) — дубль между/внутри назначений ронял всё наполнение вкладки.
-		java.util.Set<ItemStack> tSeen = net.minecraft.world.item.ItemStackLinkedSet.createTypeAndComponentsSet();
+		java.util.Set<ItemStack> tSeen = net.minecraft.world.item.ItemStackLinkedSet.createTypeAndTagSet();
 		for (Object[] tA : ASSIGNMENTS) {
 			if (!tA[1].equals(aEvent.getTabKey())) continue;
 			try {

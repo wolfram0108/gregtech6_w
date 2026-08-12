@@ -37,7 +37,7 @@ package cpw.mods.fml.common;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.inventory.CraftingContainer;
 import cpw.mods.fml.relauncher.Side;
 
 /** F10 ЗЕРКАЛО (compile-only) — legacy Forge/FML 1.7.10 (пакет cpw.mods.fml не существует
@@ -50,7 +50,7 @@ public class FMLCommonHandler {
 
 	public Side getEffectiveSide() {return Side.SERVER;}
 
-	public void firePlayerCraftingEvent(Player aPlayer, ItemStack aCrafted, CraftingInput aCraftMatrix) {}
+	public void firePlayerCraftingEvent(Player aPlayer, ItemStack aCrafted, CraftingContainer aCraftMatrix) {}
 
 	public void firePlayerChangedDimensionEvent(Object aPlayer, int aFrom, int aTo) {}
 }

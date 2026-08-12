@@ -31,7 +31,6 @@ import gregapi.tileentity.ITileEntityInventoryGUI;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.world.entity.ContainerUser;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
@@ -110,8 +109,8 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	@Override public boolean stillValid(Player aPlayer) {return !isDead() && allowInteraction(aPlayer) && aPlayer.distanceToSqr(getBlockPos().getX() + 0.5D, getBlockPos().getY() + 0.5D, getBlockPos().getZ() + 0.5D) <= 64D;}
 	public void openInventory () {/**/}
 	public void closeInventory() {/**/}
-	@Override public void startOpen(ContainerUser aContainerUser) {openInventory();}
-	@Override public void stopOpen(ContainerUser aContainerUser) {closeInventory();}
+	@Override public void startOpen(net.minecraft.world.entity.player.Player aPlayer) {openInventory();}
+	@Override public void stopOpen(net.minecraft.world.entity.player.Player aPlayer) {closeInventory();}
 	@Override public int getMaxStackSize() {return 64;}
 	@Override public void setChanged() {super.setChanged(); updateInventory();}
 	@Override public boolean isEmpty() {return invempty();}
@@ -152,7 +151,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	 *  не переопределены). Тело дропа при этом ЦЕЛО и 1:1 (breakBlock() ниже, со своими правилами canDrop/breakDrop/
 	 *  debug-стеков) — не хватало только моста. Мост здесь: этот хук движок зовёт ровно там, где ваниль вытряхивает
 	 *  содержимое, поэтому дроп по-прежнему принадлежит GT6, а не ванили. */
-	@Override public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {
+	public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {
 		try {breakBlock();} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);} // дроп содержимого не должен ронять удаление блока
 	}
 	public String getInventoryName() {String rName = getCustomName(); if (UT.Code.stringValid(rName)) return rName; MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID()); return tRegistry==null?getClass().getName():tRegistry.getLocal(getMultiTileEntityID());}

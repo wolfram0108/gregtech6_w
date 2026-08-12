@@ -128,7 +128,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	// F13: neo зовёт appendHoverText (не 1.7.10 addInformation) — мост как ItemBlockBase:65 (собираем GT6-тултип через
 	// addInformation ниже). Без него у машин нет характеристик (ёмкость/прочность/EU из NBT-параметров).
 	@Override @SuppressWarnings({"rawtypes", "unchecked"})
-	public void appendHoverText(ItemStack aStack, net.minecraft.world.item.Item.TooltipContext aCtx, net.minecraft.world.item.component.TooltipDisplay aDisplay, java.util.function.Consumer<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
+	public void appendHoverText(ItemStack aStack, net.minecraft.world.level.Level aWorld, java.util.List<net.minecraft.network.chat.Component> aTooltips, net.minecraft.world.item.TooltipFlag aFlag) {
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
 		if (tPlayer == null) return;
 		java.util.List tList = new java.util.ArrayList();
@@ -138,7 +138,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		// (глотался catch'ами ниже — спам-трейс + обрубленный тултип). Подкладываем имя в [0] и не выгружаем его.
 		tList.add(getItemStackDisplayName(aStack));
 		try {addInformation(aStack, tPlayer, tList, aFlag.isAdvanced());} catch (Throwable e) {/**/}
-		for (int i = 1; i < tList.size(); i++) {Object o = tList.get(i); if (o != null) aBuilder.accept(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));}
+		for (int i = 1; i < tList.size(); i++) {Object o = tList.get(i); if (o != null) aTooltips.add(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));}
 	}
 
 	// @Override
@@ -328,7 +328,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	// мир берётся оттуда же, чем это делает сам движок — player.level(), Item.java:311). Приём взят у брата
 	// ItemArmorBase:255. Без моста у свежескрафченной машины не звался IMTE_OnCrafted.onCrafted и не
 	// обновлялся NBT предмета (updateItemStack) — то есть личность блока в стеке оставалась незаполненной.
-	@Override public void onCraftedBy(ItemStack aStack, Player aPlayer) {onCreated(aStack, aPlayer.level(), aPlayer);}
+	@Override public void onCraftedBy(ItemStack aStack, Level aWorld, Player aPlayer) {onCreated(aStack, aWorld, aPlayer);}
 	
 	@Override
 	public OreDictItemData getOreDictItemData(ItemStack aStack) {
@@ -501,17 +501,17 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	// возвратом (контракт 1.7.10 onItemRightClick) -> setItemInHand + SUCCESS; иначе PASS (1.7.10 не различал,
 	// мутации in-place уже применены). MAIN_HAND в TE-делегате 1:1 (1.7.10 offhand не имел).
 	@Override
-	public InteractionResult use(Level aWorld, Player aPlayer, InteractionHand aHand) {
+	public net.minecraft.world.InteractionResultHolder<ItemStack> use(Level aWorld, Player aPlayer, InteractionHand aHand) {
 		ItemStack aStack = aPlayer.getItemInHand(aHand);
 		ItemStack rStack = onItemRightClick(aStack, aWorld, aPlayer);
-		if (rStack != aStack) {aPlayer.setItemInHand(aHand, rStack); return InteractionResult.SUCCESS;}
-		if (aPlayer.isUsingItem()) return InteractionResult.CONSUME;
-		return InteractionResult.PASS;
+		if (rStack != aStack) {aPlayer.setItemInHand(aHand, rStack); return net.minecraft.world.InteractionResultHolder.success(rStack);}
+		if (aPlayer.isUsingItem()) return net.minecraft.world.InteractionResultHolder.consume(aStack);
+		return net.minecraft.world.InteractionResultHolder.pass(aStack);
 	}
 
 	@Override
-	public int getUseDuration(ItemStack aStack, LivingEntity aEntity) {
-		return getMaxItemUseDuration(aStack); // было Item.getMaxItemUseDuration(ItemStack) (1.7.10) -> neo Item.getUseDuration(ItemStack,LivingEntity) (Item.java:328)
+	public int getUseDuration(ItemStack aStack) {
+		return getMaxItemUseDuration(aStack); // 1.20.1 Item.getUseDuration(ItemStack) — форма 1.7.10 getMaxItemUseDuration
 	}
 
 	@Override

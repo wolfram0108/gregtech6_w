@@ -42,7 +42,7 @@ public class MultiTileEntityChronometer extends MultiTileEntitySensorTE {
 	
 	@Override
 	public long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator) {
-		return (((aDelegator.mWorld.getDefaultClockTime()+6000)%24000)*60)/1000;
+		return (((aDelegator.mWorld.getDayTime()+6000)%24000)*60)/1000;
 	}
 	
 	@Override

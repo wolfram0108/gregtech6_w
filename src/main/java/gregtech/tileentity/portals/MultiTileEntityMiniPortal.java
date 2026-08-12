@@ -518,6 +518,6 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	}
 
 	@Override public boolean stillValid(Player aPlayer) {return aPlayer.distanceToSqr(getBlockPos().getX() + 0.5D, getBlockPos().getY() + 0.5D, getBlockPos().getZ() + 0.5D) <= 64D;}
-	@Override public void startOpen(net.minecraft.world.entity.ContainerUser aUser) {/**/}
-	@Override public void stopOpen(net.minecraft.world.entity.ContainerUser aUser) {/**/}
+	@Override public void startOpen(net.minecraft.world.entity.player.Player aUser) {/**/}
+	@Override public void stopOpen(net.minecraft.world.entity.player.Player aUser) {/**/}
 }

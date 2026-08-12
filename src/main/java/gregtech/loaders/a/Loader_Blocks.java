@@ -154,8 +154,8 @@ public class Loader_Blocks implements Runnable {
 		// InterModProcessEvent, ПОСЛЕ RegisterEvent<Block>; синхронный ST.regName здесь дал бы null (поля ленивые).
 		InterModComms.sendTo(MD.IC2C.mID, "watergen", () -> {
 			ListTag tNBTList = new ListTag();
-			tNBTList.add(new StringTag(ST.regName(BlocksGT.River)));
-			tNBTList.add(new StringTag(ST.regName(BlocksGT.Ocean)));
+			tNBTList.add(StringTag.valueOf(ST.regName(BlocksGT.River)));
+			tNBTList.add(StringTag.valueOf(ST.regName(BlocksGT.Ocean)));
 			return UT.NBT.make("blocks", tNBTList);
 		});
 		

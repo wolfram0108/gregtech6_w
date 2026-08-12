@@ -317,6 +317,19 @@ public class DummyWorld extends Level {
 		return List.of();
 	}
 
+	// BlockAndTintGetter.getShade(Direction, boolean) — в 1.20.1 abstract на уровне Level
+	// (BlockAndTintGetter.java:8). Дамми не рисуется: отдаём «без затенения», как ванильный
+	// путь при shade==false (ClientLevel.java:717-718).
+	@Override public float getShade(net.minecraft.core.Direction aDirection, boolean aShade) {
+		return 1.0F;
+	}
+
+	// LevelReader.enabledFeatures() — в 1.20.1 abstract (в 26.x его в контракте нет).
+	// Дамми не несёт датапак-состояния: отдаём ванильный набор по умолчанию, как FeatureFlags.DEFAULT_FLAGS.
+	@Override public net.minecraft.world.flag.FeatureFlagSet enabledFeatures() {
+		return net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS;
+	}
+
 	@Override protected LevelEntityGetter<Entity> getEntities() {
 		return null;
 	}

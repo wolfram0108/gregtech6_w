@@ -310,9 +310,9 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			if (aPlayer.level() instanceof ServerLevel) {
 				if (UT.NBT.getEnchantmentLevel(Enchantments.MOB_LOOTING, aBullet) > 0) {
 					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.level(), new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getName().getString()));
-					tPlayer.getInventory().setSelectedSlot(0);
+					tPlayer.getInventory().selected = 0;
 					tPlayer.getInventory().setItem(0, aBullet);
-					tPlayer.snapTo(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.getYRot(), aPlayer.getXRot());
+					tPlayer.moveTo(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.getYRot(), aPlayer.getXRot());
 					// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Bullet would do ZERO Damage.
 					if (WD.dimTF(aPlayer.level())) tPlayer.getAbilities().instabuild = T;
 					tPlayer.discard();
@@ -341,7 +341,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			if (aTarget instanceof LivingEntity)
 			UT.Enchantments.applyBullshitA((LivingEntity)aTarget, aPlayer, aBullet);
 			UT.Enchantments.applyBullshitB(                  aPlayer, aTarget, aBullet);
-			if (aTarget instanceof Player && aPlayer instanceof ServerPlayer) ((ServerPlayer)aPlayer).connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.PLAY_ARROW_HIT_SOUND, 0.0F));
+			if (aTarget instanceof Player && aPlayer instanceof ServerPlayer) ((ServerPlayer)aPlayer).connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.ARROW_HIT_PLAYER, 0.0F));
 			if (tMagicDamage > 0.0F) aPlayer.magicCrit(aTarget);
 			return T;
 		}

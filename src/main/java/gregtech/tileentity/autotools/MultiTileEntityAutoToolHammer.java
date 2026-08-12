@@ -101,7 +101,7 @@ public class MultiTileEntityAutoToolHammer extends TileEntityBase09FacingSingle 
 								float tHardness = WD.hardness(tBlock, tD.mWorld, tD.mX, tD.mY, tD.mZ);
 								if (tHardness >= 0 && tHardness * 50 <= mEnergy) {
 									List<ItemStack> tDrops = tD.mWorld instanceof net.minecraft.server.level.ServerLevel tSL ? net.minecraft.world.level.block.Block.getDrops(tSL.getBlockState(new net.minecraft.core.BlockPos(tD.mX, tD.mY, tD.mZ)), tSL, new net.minecraft.core.BlockPos(tD.mX, tD.mY, tD.mZ), WD.te(tD.mWorld, tD.mX, tD.mY, tD.mZ, T)) : new java.util.ArrayList<>(); // было Block.getDrops(world,x,y,z,meta,fortune) (1.7.10) -> neo static Block.getDrops(state,ServerLevel,pos,BE)
-									GT_Tool_HardHammer.INSTANCE.convertBlockDrops(tDrops, null, null, tBlock, Long.MAX_VALUE, tD.mX, tD.mY, tD.mZ, tMetaData, 0, F, null);
+									GT_Tool_HardHammer.INSTANCE.convertBlockDrops(tDrops, null, null, tBlock, Long.MAX_VALUE, tD.mX, tD.mY, tD.mZ, tMetaData, 0, F);
 									tD.mWorld.destroyBlock(new net.minecraft.core.BlockPos(tD.mX, tD.mY, tD.mZ), F);
 									for (ItemStack tStack : tDrops) ST.drop(tD.mWorld, tD.mX+0.5, tD.mY+0.5, tD.mZ+0.5, tStack);
 									mSendSound = 1;

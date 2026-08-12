@@ -170,7 +170,7 @@ public class FoodStat implements IFoodStat {
 			}
 			if (mExplosive) {
 				gregapi.random.ExplosionGT.explode(aPlayer.level(), aPlayer, aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), 4, T, T);
-				aPlayer.hurtServer((ServerLevel)aPlayer.level(), DamageSources.getExplodingDamage(), Float.MAX_VALUE);
+				aPlayer.hurt(DamageSources.getExplodingDamage(), Float.MAX_VALUE);
 			}
 			EntityFoodTracker tTracker = EntityFoodTracker.get(aPlayer);
 			if (tTracker != null) {

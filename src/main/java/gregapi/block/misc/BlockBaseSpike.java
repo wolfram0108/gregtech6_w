@@ -148,7 +148,7 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0)); aList.add(ST.make(aItem, 1, 6)); aList.add(ST.make(aItem, 1, 7)); aList.add(ST.make(aItem, 1, 8)); aList.add(ST.make(aItem, 1, 14)); aList.add(ST.make(aItem, 1, 15));}
 
 	// F13: neo middle-click через IBlockExtension.getCloneItemStack — делегируем в GT6-getPickBlock (meta-specific), 1:1.
-	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, boolean aIncludeData, Player aPlayer) {
+	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.phys.HitResult aTarget, net.minecraft.world.level.BlockGetter aLevel, net.minecraft.core.BlockPos aPos, Player aPlayer) {
 		int aMeta = WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ());
 		return ST.make(this, 1, (aMeta & 7) < 6 ? aMeta & 8 : aMeta);
 	}
@@ -247,10 +247,10 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	// GT_API_Proxy_Client:93 ставит T, GT_API_Proxy_Server:32 ставит F, и побеждает тот, кто
 	// инициализировался последним. Из-за этого канал молча отдавал null, рендер подставлял серую
 	// CFoam-заглушку, и крошка решёток/шипов оставалась серой (найдено живым тестом игрока).
-	// Физическая сторона — FMLEnvironment.getDist().isClient(), тот же канон, что в GT_API:378.
+	// Физическая сторона — FMLEnvironment.dist.isClient(), тот же канон, что в GT_API:378.
 	// Гейт обязателен: resolveBlockFaceIcon трогает Minecraft.getInstance(), а на выделенном сервере
 	// этого класса нет (класс дефекта BUG-084 — клиентский тип в общем коде).
-	public ResourceLocation getIcon(int aSide, int aMeta) {return net.minecraftforge.fml.loading.FMLEnvironment.getDist().isClient() ? gregapi.render.GT6QuadBuilder.resolveBlockFaceIcon(net.minecraft.world.level.block.Blocks.IRON_BARS, 2, 0) : null;}
+	public ResourceLocation getIcon(int aSide, int aMeta) {return net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient() ? gregapi.render.GT6QuadBuilder.resolveBlockFaceIcon(net.minecraft.world.level.block.Blocks.IRON_BARS, 2, 0) : null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return F;}

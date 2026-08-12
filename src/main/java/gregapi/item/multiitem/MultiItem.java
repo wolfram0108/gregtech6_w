@@ -314,8 +314,8 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	// EquipmentSlot (nullable). Единственный носитель канала в моде — Behavior_Sonictron:68, и он ни слот, ни
 	// «в руке» не читает: своё состояние берёт из NBT стека (getTickTimer/getCurrentIndex). Поэтому индекс
 	// передаётся нейтральным 0, а «в руке» выражается точно — основная рука. Без моста Сониктрон не тикал вовсе.
-	@Override public void inventoryTick(ItemStack aStack, net.minecraft.server.level.ServerLevel aLevel, Entity aOwner, net.minecraft.world.entity.EquipmentSlot aSlot) {
-		onUpdate(aStack, aLevel, aOwner, 0, aSlot == net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+	@Override public void inventoryTick(ItemStack aStack, Level aLevel, Entity aOwner, int aSlot, boolean aSelected) {
+		onUpdate(aStack, aLevel, aOwner, aSlot, aSelected);
 	}
 	
 	public FluidStack getFluid(ItemStack aStack) {return getFluidContent(aStack);}

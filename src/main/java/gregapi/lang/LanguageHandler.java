@@ -143,7 +143,6 @@ public class LanguageHandler {
 		@Override public boolean has(String aKey) {return mDelegate.has(aKey) || mOwn.containsKey(aKey);}
 		@Override public boolean isDefaultRightToLeft() {return mDelegate.isDefaultRightToLeft();}
 		@Override public net.minecraft.util.FormattedCharSequence getVisualOrder(net.minecraft.network.chat.FormattedText aText) {return mDelegate.getVisualOrder(aText);}
-		@Override public net.minecraft.network.chat.Component getComponent(String aKey) {return mDelegate.getComponent(aKey);}
 
 		/** Объединённая карта строится ОДИН раз на состав и переиспользуется: её просит {@code I18n} при смене языка
 		 *  ({@code neo-decompiled/…/I18n.java:18} — {@code injectTranslations(locale.getLanguageData())}), а ключей

@@ -33,10 +33,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderOwner;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstrapContext;
+import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
@@ -98,7 +96,7 @@ public class DamageSources {
 		}
 	}
 
-	public static void bootstrap(BootstrapContext<DamageType> aContext) {
+	public static void bootstrap(BootstapContext<DamageType> aContext) {
 		for (Kind tKind : Kind.values()) aContext.register(tKind.mKey, tKind.mType);
 	}
 

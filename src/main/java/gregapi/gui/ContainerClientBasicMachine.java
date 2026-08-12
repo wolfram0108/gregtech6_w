@@ -73,9 +73,9 @@ public class ContainerClientBasicMachine extends ContainerClient {
 	 * экран рецептов реально открылся; иначе управление уходит дальше по штатной цепочке.
 	 */
 	@Override
-	public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent aEvent, boolean aDoubleClick) {
-		if (isOverProgressBar(aEvent.x(), aEvent.y()) && openRecipesForThisGUI()) return true;
-		return super.mouseClicked(aEvent, aDoubleClick);
+	public boolean mouseClicked(double aMouseX, double aMouseY, int aButton) {
+		if (isOverProgressBar(aMouseX, aMouseY) && openRecipesForThisGUI()) return true;
+		return super.mouseClicked(aMouseX, aMouseY, aButton);
 	}
 	
 	@Override

@@ -202,17 +202,20 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		super.createBlockStateDefinition(aBuilder);
 		if (SLAB_CTOR_CTX.get()[0]) aBuilder.add(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
 	}
-	@Override public boolean canPlaceLiquid(net.minecraft.world.entity.LivingEntity aUser, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.material.Fluid aFluid) {
-		return mIsSlab && net.minecraft.world.level.block.SimpleWaterloggedBlock.super.canPlaceLiquid(aUser, aWorld, aPos, aState, aFluid);
+	@Override public boolean canPlaceLiquid(net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.material.Fluid aFluid) {
+		return mIsSlab && net.minecraft.world.level.block.SimpleWaterloggedBlock.super.canPlaceLiquid(aWorld, aPos, aState, aFluid);
 	}
 	@Override public net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState aState) {
 		return aState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && aState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)
 			? net.minecraft.world.level.material.Fluids.WATER.getSource(false) : super.getFluidState(aState);
 	}
-	@Override public net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.LevelReader aWorld, net.minecraft.world.level.ScheduledTickAccess aTicks, net.minecraft.core.BlockPos aPos, net.minecraft.core.Direction aDir, net.minecraft.core.BlockPos aNeighbourPos, net.minecraft.world.level.block.state.BlockState aNeighbourState, net.minecraft.util.RandomSource aRandom) {
+	// Ветка 1.20.1: updateShape(state, direction, neighbourState, LevelAccessor, pos, neighbourPos)
+	// (BlockBehaviour.java:140) — ScheduledTickAccess отдельной сущностью не выделен, планирование
+	// тика идёт прямо по LevelAccessor.scheduleTick, как в ванильном SlabBlock этой версии.
+	@Override public net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.core.Direction aDir, net.minecraft.world.level.block.state.BlockState aNeighbourState, net.minecraft.world.level.LevelAccessor aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.core.BlockPos aNeighbourPos) {
 		if (aState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && aState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED))
-			aTicks.scheduleTick(aPos, net.minecraft.world.level.material.Fluids.WATER, net.minecraft.world.level.material.Fluids.WATER.getTickDelay(aWorld));
-		return super.updateShape(aState, aWorld, aTicks, aPos, aDir, aNeighbourPos, aNeighbourState, aRandom);
+			aWorld.scheduleTick(aPos, net.minecraft.world.level.material.Fluids.WATER, net.minecraft.world.level.material.Fluids.WATER.getTickDelay(aWorld));
+		return super.updateShape(aState, aDir, aNeighbourState, aWorld, aPos, aNeighbourPos);
 	}
 
 	// Рендер слэба вообще не должен зависеть от гоночных общих полей: bounds статичны → отдаём их напрямую.
@@ -245,21 +248,17 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		//
 	}
 	
-	// Подключение канала «клик по блоку» (2026-07-30, реестр мёртвых каналов). Канал СМЕСТИЛСЯ: в 1.7.10
-	// движок звал Block.onBlockActivated, в neo — BlockBehaviour.useItemOn (с предметом) и useWithoutItem
-	// (пустая рука). Мост тот же, что у брата MultiTileEntityBlock:365-381, включая порядок диспетчеризации.
+	// Подключение канала «клик по блоку» (2026-07-30, реестр мёртвых каналов). Ветка 1.20.1: канал ОДИН —
+	// BlockBehaviour.use(BlockState,Level,BlockPos,Player,InteractionHand,BlockHitResult) (BlockBehaviour.java:172),
+	// ровно как 1.7.10 onBlockActivated; расщепления на useItemOn/useWithoutItem и результата SUCCESS_SERVER
+	// в этой версии нет. Мост тот же, что у брата MultiTileEntityBlock:417.
 	// Мост стоит ЗДЕСЬ, а не в корне BlockBase: в оригинале правило живёт у BlockMetaType:142 и
 	// BlockStones:557, в базе его нет; BlockStones наследует этот класс, поэтому один мост покрывает оба.
 	// Без моста тело ниже не звалось никем: половинка GT6 не собиралась в целый блок кликом второй половинки,
 	// и правило BlockStones (:573) тоже молчало.
-	@Override protected net.minecraft.world.InteractionResult useItemOn(net.minecraft.world.item.ItemStack aStack, net.minecraft.world.level.block.state.BlockState aState, Level aWorld, net.minecraft.core.BlockPos aPos, Player aPlayer, net.minecraft.world.InteractionHand aHand, net.minecraft.world.phys.BlockHitResult aHit) {
+	@Override public net.minecraft.world.InteractionResult use(net.minecraft.world.level.block.state.BlockState aState, Level aWorld, net.minecraft.core.BlockPos aPos, Player aPlayer, net.minecraft.world.InteractionHand aHand, net.minecraft.world.phys.BlockHitResult aHit) {
 		if (aHand == net.minecraft.world.InteractionHand.MAIN_HAND && bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
-			return aWorld.isClientSide() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.SUCCESS_SERVER;
-		return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
-	}
-	@Override protected net.minecraft.world.InteractionResult useWithoutItem(net.minecraft.world.level.block.state.BlockState aState, Level aWorld, net.minecraft.core.BlockPos aPos, Player aPlayer, net.minecraft.world.phys.BlockHitResult aHit) {
-		if (bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
-			return aWorld.isClientSide() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.SUCCESS_SERVER;
+			return net.minecraft.world.InteractionResult.SUCCESS;
 		return net.minecraft.world.InteractionResult.PASS;
 	}
 	private boolean bridgeBlockActivated(Level aWorld, net.minecraft.core.BlockPos aPos, Player aPlayer, net.minecraft.world.phys.BlockHitResult aHit) {
@@ -303,7 +302,7 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 	 * потому что этот мост переопределяет предковый.
 	 */
 	@Override
-	protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
+	public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
 		byte aSide = UT.Code.side(aDir);
 		// сперва — правило семьи (стёкла/дорожка): «не рисовать» у них выражается через контракт выше
 		if (!shouldSideBeRendered(aState, aNeighbor, aSide)) return T;

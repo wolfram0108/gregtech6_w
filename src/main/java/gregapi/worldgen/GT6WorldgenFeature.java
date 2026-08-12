@@ -32,7 +32,7 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.worldgen.BootstrapContext;
+import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -55,7 +55,6 @@ import net.minecraftforge.common.world.ForgeBiomeModifiers.RemoveFeaturesBiomeMo
 import net.minecraftforge.data.event.GatherDataEvent;
 
 import net.minecraftforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 /**
  * F6 центральный переходник — ЕДИНСТВЕННОЕ место мода, которое регистрирует GT6-ворлдген (жилы/слои/малые
@@ -105,16 +104,16 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "gt6_worldgen"));
 
 	private static final ResourceKey<BiomeModifier> ADD_GT6_WORLDGEN_OVERWORLD =
-		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_overworld"));
+		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_overworld"));
 	private static final ResourceKey<BiomeModifier> ADD_GT6_WORLDGEN_NETHER =
-		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_nether"));
+		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_nether"));
 	private static final ResourceKey<BiomeModifier> ADD_GT6_WORLDGEN_END =
-		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_end"));
+		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_end"));
 	// F6 §4.2.2: отключение ванильных руд MC26 (GT6 замещает их своими — bedrock-руды + stone-layer перекрытие REPLACEABLE_BLOCKS).
 	private static final ResourceKey<BiomeModifier> REMOVE_VANILLA_ORES_OVERWORLD =
-		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_overworld"));
+		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_overworld"));
 	private static final ResourceKey<BiomeModifier> REMOVE_VANILLA_ORES_NETHER =
-		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_nether"));
+		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_nether"));
 
 	/**
 	 * Датаген-набор: CONFIGURED_FEATURE -> PLACED_FEATURE -> BIOME_MODIFIERS, дословно по паттерну
@@ -133,11 +132,10 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 				List.of(BiomeFilter.biome()))))
 		// ENCHANT: та же датапак-точка (DatapackBuiltinEntriesProvider ниже) регистрирует 4 GT6-чара —
 		// центр gregapi/enchants/EnchantsGT6.java (стык, подключён интегратором).
-		.add(Registries.ENCHANTMENT, gregapi.enchants.EnchantsGT6::bootstrap)
 		// BUG-004: DAMAGE_TYPE — та же датапак-точка регистрирует 13 GT6-типов урона (exploded/spike/heat/frost/...).
 		// Раньше DamageSources.bootstrap был написан, но НЕ подключён → типы не в реестре → краш кодека при уроне.
 		.add(Registries.DAMAGE_TYPE, gregapi.damage.DamageSources::bootstrap)
-		.add(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ctx -> {
+		.add(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ctx -> {
 			HolderSet<PlacedFeature> tPlaced = HolderSet.direct(ctx.lookup(Registries.PLACED_FEATURE).getOrThrow(GT6_WORLDGEN_PF));
 			// ADAPT-009/флора: шаг UNDERGROUND_ORES → TOP_LAYER_MODIFICATION = ВОССТАНОВЛЕНИЕ порядка 1.7.10
 			// (Forge IWorldGenerator вызывался ПОСЛЕ ВСЕЙ ванильной populate-фазы). На UNDERGROUND_ORES GT6-вода
@@ -161,7 +159,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 					tPF.getOrThrow(OrePlacements.ORE_IRON_UPPER), tPF.getOrThrow(OrePlacements.ORE_IRON_MIDDLE), tPF.getOrThrow(OrePlacements.ORE_IRON_SMALL),
 					tPF.getOrThrow(OrePlacements.ORE_GOLD), tPF.getOrThrow(OrePlacements.ORE_GOLD_LOWER), tPF.getOrThrow(OrePlacements.ORE_GOLD_EXTRA),
 					tPF.getOrThrow(OrePlacements.ORE_REDSTONE), tPF.getOrThrow(OrePlacements.ORE_REDSTONE_LOWER),
-					tPF.getOrThrow(OrePlacements.ORE_DIAMOND), tPF.getOrThrow(OrePlacements.ORE_DIAMOND_MEDIUM), tPF.getOrThrow(OrePlacements.ORE_DIAMOND_LARGE), tPF.getOrThrow(OrePlacements.ORE_DIAMOND_BURIED),
+					tPF.getOrThrow(OrePlacements.ORE_DIAMOND), tPF.getOrThrow(OrePlacements.ORE_DIAMOND_LARGE), tPF.getOrThrow(OrePlacements.ORE_DIAMOND_BURIED),
 					tPF.getOrThrow(OrePlacements.ORE_LAPIS), tPF.getOrThrow(OrePlacements.ORE_LAPIS_BURIED),
 					tPF.getOrThrow(OrePlacements.ORE_COPPER), tPF.getOrThrow(OrePlacements.ORE_COPPER_LARGE),
 					tPF.getOrThrow(OrePlacements.ORE_EMERALD),
@@ -205,7 +203,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		return true;
 	}
 
-	private void onGatherData(GatherDataEvent.Client aEvent) {
+	private void onGatherData(GatherDataEvent aEvent) {
 		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<DatapackBuiltinEntriesProvider>) aOutput ->
 			new DatapackBuiltinEntriesProvider(aOutput, aEvent.getLookupProvider(), BUILDER, Set.of(MD.GAPI.mID)));
 		// F12-harvest: перенос GT6-данных о добыче (getHarvestTool/getHarvestLevel — те же методы, что в 1.7.10)
@@ -260,7 +258,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	// (спаун шёл по Material.water). Каноничный neo-мост: RegisterSpawnPlacementsEvent c Operation.OR добавляет водным
 	// мобам predicate, где верх/низ проверяются по ТЕГУ FluidTags.WATER (GT6-вода его несёт через getFluidState), а не по
 	// конкретному Blocks.WATER. OR не ломает vanilla-спаун (в vanilla-воде работает исходный predicate) — только расширяет.
-	public static void onRegisterSpawnPlacements(net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent aEvent) {
+	public static void onRegisterSpawnPlacements(net.minecraftforge.event.entity.SpawnPlacementRegisterEvent aEvent) {
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.COD);
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.SALMON);
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.PUFFERFISH);
@@ -273,20 +271,20 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.DOLPHIN);
 	}
 
-	private static <T extends net.minecraft.world.entity.Entity> void addGT6WaterSpawn(net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent aEvent, net.minecraft.world.entity.EntityType<T> aType) {
-		aEvent.register(aType, GT6WorldgenFeature::gt6WaterSpawnPredicate, net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent.Operation.OR);
+	private static <T extends net.minecraft.world.entity.Entity> void addGT6WaterSpawn(net.minecraftforge.event.entity.SpawnPlacementRegisterEvent aEvent, net.minecraft.world.entity.EntityType<T> aType) {
+		aEvent.register(aType, GT6WorldgenFeature::gt6WaterSpawnPredicate, net.minecraftforge.event.entity.SpawnPlacementRegisterEvent.Operation.OR);
 	}
 
 	// Копия vanilla WaterAnimal.checkSurfaceWaterAnimalSpawnRules (seaLevel-13..seaLevel), НО above по тегу FluidTags.WATER
 	// (GT6-вода удовлетворяет) вместо getBlockState(above).is(Blocks.WATER). Below и так был по тегу — не трогаем.
-	private static <T extends net.minecraft.world.entity.Entity> boolean gt6WaterSpawnPredicate(net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.level.ServerLevelAccessor aLevel, net.minecraft.world.entity.EntitySpawnReason aReason, net.minecraft.core.BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+	private static <T extends net.minecraft.world.entity.Entity> boolean gt6WaterSpawnPredicate(net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.level.ServerLevelAccessor aLevel, net.minecraft.world.entity.MobSpawnType aReason, net.minecraft.core.BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 		int tSea = aLevel.getSeaLevel();
 		return aPos.getY() >= tSea - 13 && aPos.getY() <= tSea
 			&& aLevel.getFluidState(aPos.below()).is(net.minecraft.tags.FluidTags.WATER)
 			&& aLevel.getFluidState(aPos.above()).is(net.minecraft.tags.FluidTags.WATER);
 	}
 
-	private static void onGatherDataStatic(GatherDataEvent.Client aEvent) {
+	private static void onGatherDataStatic(GatherDataEvent aEvent) {
 		GT6_WORLDGEN.get().onGatherData(aEvent);
 	}
 
@@ -356,7 +354,8 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		}
 	}
 
-	private static void onServerTick(net.minecraftforge.event.TickEvent.ServerTickEvent.Post aEvent) {
+	private static void onServerTick(net.minecraftforge.event.TickEvent.ServerTickEvent aEvent) {
+		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
 		drainStubs(STUB_QUEUE, 16);
 		drainPendingSync(aEvent.getServer());
 	}
@@ -451,7 +450,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		if (tRegistry == null) {
 			// [GT6-MTEAUDIT] DIAG (§6.3) BUG-057 — снять при уборке фазы: стаб с потерянным/нулевым reg НЕ реконструируется и остаётся навсегда
 			if (gregapi.data.CS.probeFlag("gt6mteauditprobe.flag"))
-				gregapi.data.CS.OUT.println("[GT6-MTEAUDIT-DIAG] reconstruct FAIL: реестр null (reg=" + tReg + " id=" + tID + ") @" + aStub.getBlockPos().toShortString() + " ключи=" + tNBT.keySet());
+				gregapi.data.CS.OUT.println("[GT6-MTEAUDIT-DIAG] reconstruct FAIL: реестр null (reg=" + tReg + " id=" + tID + ") @" + aStub.getBlockPos().toShortString() + " ключи=" + tNBT.getAllKeys());
 			return;
 		}
 		net.minecraft.core.BlockPos tPos = aStub.getBlockPos();

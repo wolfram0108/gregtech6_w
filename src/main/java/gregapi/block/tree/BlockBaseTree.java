@@ -59,8 +59,12 @@ public abstract class BlockBaseTree extends BlockBaseMeta {
 	// BlockStateBase:748). Без моста тело ниже не звалось НИКЕМ: срубленный ствол GT6 не запускал распад
 	// листвы вокруг — листья оставались висеть в воздухе. Подтип берём тем же центром мета↔BlockState, что и
 	// остальной порт (IBlockExtendedMetaData), а не своим разбором свойств.
-	@Override protected void affectNeighborsAfterRemoval(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aLevel, BlockPos aPos, boolean aMovedByPiston) {
-		breakBlock(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), getExtendedMetaData(aState));
+	// Ветка 1.20.1: носитель момента «блок снят» — onRemove (BlockBehaviour.java:163). Он зовётся и на смене
+	// состояния того же блока, поэтому гейт на смену БЛОКА (ванильная идиома) — иначе breakBlock срабатывал бы
+	// на каждом изменении property, чего 1.7.10-хук не делал.
+	@Override public void onRemove(net.minecraft.world.level.block.state.BlockState aState, Level aLevel, BlockPos aPos, net.minecraft.world.level.block.state.BlockState aNewState, boolean aMovedByPiston) {
+		if (!aState.is(aNewState.getBlock())) breakBlock(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), getExtendedMetaData(aState));
+		super.onRemove(aState, aLevel, aPos, aNewState, aMovedByPiston);
 	}
 
 	// @Override

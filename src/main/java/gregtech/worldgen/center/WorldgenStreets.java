@@ -320,44 +320,44 @@ public class WorldgenStreets extends WorldgenObject {
 					tTileEntity = WD.te(aWorld, -1, mHeight+1, -1, T);
 					if (tTileEntity instanceof BeaconBlockEntity) {
 						CompoundTag tNBT = UT.NBT.make();
-						tNBT = tTileEntity.saveWithoutMetadata(aWorld.registryAccess());
+						tNBT = tTileEntity.saveWithoutMetadata();
 						tNBT.putInt("Primary", /*moveSpeed*/1);
 						tNBT.putInt("Secondary", /*moveSpeed*/1);
 						tNBT.putInt("Levels", 4);
-						tTileEntity.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, aWorld.registryAccess(), tNBT));
+						tTileEntity.load(tNBT);
 					}
 					
 					WD.set(aWorld, -1, mHeight+1, 0, Blocks.BEACON, 0, 3);
 					tTileEntity = WD.te(aWorld, -1, mHeight+1, 0, T);
 					if (tTileEntity instanceof BeaconBlockEntity) {
 						CompoundTag tNBT = UT.NBT.make();
-						tNBT = tTileEntity.saveWithoutMetadata(aWorld.registryAccess());
+						tNBT = tTileEntity.saveWithoutMetadata();
 						tNBT.putInt("Primary", /*digSpeed*/3);
 						tNBT.putInt("Secondary", /*digSpeed*/3);
 						tNBT.putInt("Levels", 4);
-						tTileEntity.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, aWorld.registryAccess(), tNBT));
+						tTileEntity.load(tNBT);
 					}
 					
 					WD.set(aWorld, 0, mHeight+1, -1, Blocks.BEACON, 0, 3);
 					tTileEntity = WD.te(aWorld, 0, mHeight+1, -1, T);
 					if (tTileEntity instanceof BeaconBlockEntity) {
 						CompoundTag tNBT = UT.NBT.make();
-						tNBT = tTileEntity.saveWithoutMetadata(aWorld.registryAccess());
+						tNBT = tTileEntity.saveWithoutMetadata();
 						tNBT.putInt("Primary", /*damageBoost*/5);
 						tNBT.putInt("Secondary", /*damageBoost*/5);
 						tNBT.putInt("Levels", 4);
-						tTileEntity.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, aWorld.registryAccess(), tNBT));
+						tTileEntity.load(tNBT);
 					}
 					
 					WD.set(aWorld, 0, mHeight+1, 0, Blocks.BEACON, 0, 3);
 					tTileEntity = WD.te(aWorld, 0, mHeight+1, 0, T);
 					if (tTileEntity instanceof BeaconBlockEntity) {
 						CompoundTag tNBT = UT.NBT.make();
-						tNBT = tTileEntity.saveWithoutMetadata(aWorld.registryAccess());
+						tNBT = tTileEntity.saveWithoutMetadata();
 						tNBT.putInt("Primary", /*resistance*/11);
 						tNBT.putInt("Secondary", /*regeneration*/10);
 						tNBT.putInt("Levels", 4);
-						tTileEntity.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, aWorld.registryAccess(), tNBT));
+						tTileEntity.load(tNBT);
 					}
 				}
 				

@@ -348,10 +348,10 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			if (aEvent.getEntity() instanceof Mob tMob) {
 				GoalSelector tGoals = tMob.goalSelector;
 				if (aEvent.getEntity() instanceof Villager) {
-					tGoals.addGoal(3, new TemptGoal((PathfinderMob)aEvent.getEntity(), 0.6D, s -> s.is(Items.EMERALD), F));
+					tGoals.addGoal(3, new TemptGoal((PathfinderMob)aEvent.getEntity(), 0.6D, net.minecraft.world.item.crafting.Ingredient.of(Items.EMERALD), F));
 				}
 				if (aEvent.getEntity() instanceof Ocelot) {
-					if (ItemsGT.CANS != null) tGoals.addGoal(3, new TemptGoal((PathfinderMob)aEvent.getEntity(), 0.6D, s -> s.is(ItemsGT.CANS), T));
+					if (ItemsGT.CANS != null) tGoals.addGoal(3, new TemptGoal((PathfinderMob)aEvent.getEntity(), 0.6D, net.minecraft.world.item.crafting.Ingredient.of(ItemsGT.CANS), T));
 				}
 				if (aEvent.getEntity() instanceof Zombie) {
 					// 1.7.10 подменял ванильный EntityAIAttackOnCollide на GT-версию; neo: находим обёртку MeleeAttackGoal

@@ -257,8 +257,8 @@ public class MultiTileEntityFilterPrefix extends MultiTileEntityExtender impleme
 		}
 		
 		@Override
-		public void clicked(int aSlotIndex, int aMouseclick, net.minecraft.world.inventory.ContainerInput aType, Player aPlayer) {
-			int aShifthold = aType.id();
+		public void clicked(int aSlotIndex, int aMouseclick, net.minecraft.world.inventory.ClickType aType, Player aPlayer) {
+			int aShifthold = aType.ordinal();
 			if (aSlotIndex < 0 || aSlotIndex >= mTileEntity.getSizeInventoryGUI()) {super.clicked(aSlotIndex, aMouseclick, aType, aPlayer); return;}
 			
 			ItemStack tStack = getCarried();

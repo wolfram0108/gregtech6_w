@@ -442,10 +442,9 @@ public class WD {
 		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
 			net.minecraft.server.level.ChunkHolder tHolder = tSL.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.asLong(aChunkX, aChunkZ));
 			if (tHolder == null) return null;
-			// Ветка 1.20.1: поле currentlyLoading у ChunkHolder package-private (обходной путь 26.x недоступен);
-			// лок-фри взгляд даёт getFullChunkNow() — «FULL-чанк уже есть, иначе null», ровно нужный смысл.
-			net.minecraft.world.level.chunk.ChunkAccess tChunk = tHolder.getFullChunkNow();
-			return tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
+			// Ветка 1.20.1: лок-фри взгляд даёт ChunkHolder.getFullChunk() (ChunkHolder.java:111) —
+			// getNow над FULL-future, БЕЗ join и БЕЗ thread-гейта: «FULL-чанк уже есть, иначе null».
+			return tHolder.getFullChunk();
 		}
 		return aWorld.getChunkSource().getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.ChunkStatus.FULL, F) instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
 	}

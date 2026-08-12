@@ -750,13 +750,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public void onLivingHurtPotionsGT(LivingHurtEvent aEvent) {
 		MobEffectInstance tEffect;
 		// 1:1 IE EventHandler.java:390-395: урон огнём × (1.5 + amp²·0.5) при эффекте flammable.
-		if (aEvent.getSource().is(DamageTypeTags.IS_FIRE) && (tEffect = aEvent.getEntity().getEffect(gregapi.potion.MobEffectsGT.FLAMMABLE)) != null) {
+		if (aEvent.getSource().is(DamageTypeTags.IS_FIRE) && (tEffect = aEvent.getEntity().getEffect(gregapi.potion.MobEffectsGT.FLAMMABLE.get())) != null) {
 			int tAmp = tEffect.getAmplifier();
 			aEvent.setAmount(aEvent.getAmount() * (1.5F + tAmp*tAmp*0.5F));
 		}
 		// 1:1 IE EventHandler.java:396-401: урон типа "flux" (IE-электричество) × тот же множитель при
 		// conductive. В сборке без IE-машин источника "flux"-урона нет — как и в 1.7.10 (см. MobEffectsGT).
-		if ("flux".equals(aEvent.getSource().getMsgId()) && (tEffect = aEvent.getEntity().getEffect(gregapi.potion.MobEffectsGT.CONDUCTIVE)) != null) {
+		if ("flux".equals(aEvent.getSource().getMsgId()) && (tEffect = aEvent.getEntity().getEffect(gregapi.potion.MobEffectsGT.CONDUCTIVE.get())) != null) {
 			int tAmp = tEffect.getAmplifier();
 			aEvent.setAmount(aEvent.getAmount() * (1.5F + tAmp*tAmp*0.5F));
 		}
@@ -765,7 +765,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// 1:1 IE EventHandler.java:403-408: sticky ослабляет прыжок — motionY -= (amp+1)·0.3.
 	@SubscribeEvent
 	public void onLivingJumpPotionsGT(LivingEvent.LivingJumpEvent aEvent) {
-		MobEffectInstance tEffect = aEvent.getEntity().getEffect(gregapi.potion.MobEffectsGT.STICKY);
+		MobEffectInstance tEffect = aEvent.getEntity().getEffect(gregapi.potion.MobEffectsGT.STICKY.get());
 		if (tEffect != null) {
 			net.minecraft.world.phys.Vec3 tMotion = aEvent.getEntity().getDeltaMovement();
 			aEvent.getEntity().setDeltaMovement(tMotion.x, tMotion.y - (tEffect.getAmplifier()+1)*0.3F, tMotion.z);

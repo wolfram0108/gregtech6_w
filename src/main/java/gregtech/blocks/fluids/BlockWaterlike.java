@@ -96,7 +96,7 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	}
 
 	/** BUG-115: {@code IFluidBlock} вернулся общему предку — {@code getFluid()} снова есть, 1:1 с 1.7.10. */
-	@Override public Fluid getFluid() {return mFluid;}
+	@Override public net.minecraft.world.level.material.FlowingFluid getFluid() {return liquidCarrierFor(mMaterial, mFluid);}
 
 	@Override
 	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {

@@ -142,7 +142,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		if (tState.getBlock() != this) return;
 		BlockState tNew = getStateForExtendedMetaData(tState, aMetaData);
 		if (aWorld instanceof net.minecraft.world.level.LevelAccessor tLA) tLA.setBlock(tPos, tNew, 3);
-		else if (aWorld instanceof net.minecraft.world.level.chunk.ChunkAccess tChunk) tChunk.setBlockState(tPos, tNew, Block.UPDATE_ALL);
+		else if (aWorld instanceof net.minecraft.world.level.chunk.ChunkAccess tChunk) tChunk.setBlockState(tPos, tNew, F);
 	}
 
 	/** @param aSpeed is usually 0.4F */
@@ -203,10 +203,10 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public boolean isOpaqueCube() {return F;}
 	// F-occlusion мост (тот же приём, что BlockBase — рельс вне той иерархии, extends BaseRailBlock):
 	// не-opaque → occlusion-форма пуста (сосед не вырезается) + свет проходит.
-	@Override public net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(net.minecraft.world.level.block.state.BlockState aState) {
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos) {
 		return net.minecraft.world.phys.shapes.Shapes.empty();
 	}
-	@Override public boolean propagatesSkylightDown(net.minecraft.world.level.block.state.BlockState aState) {return true;}
+	@Override public boolean propagatesSkylightDown(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos) {return true;}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
 	public int damageDropped(int aMeta) {return 0;}
 	public int quantityDropped(Random par1Random) {return 1;}
@@ -479,10 +479,44 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		return getRailMaxSpeed(aWorld, aCart, aPos.getX(), aPos.getY(), aPos.getZ());
 	}
 
-	/** Проход тележки — движковый канал 1.7.10 дословно: {@code AbstractMinecart.java:530} зовёт
-	 *  {@code baserailblock.onMinecartPass(state, level, pos, cart)} ({@code IForgeBaseRailBlock.java:75}). */
+	/** Проход тележки — движковый канал 1.7.10 дословно:
+	 *  {@code IForgeBaseRailBlock.onMinecartPass(state, level, pos, cart)} ({@code IForgeBaseRailBlock.java:75}). */
 	@Override public void onMinecartPass(net.minecraft.world.level.block.state.BlockState aState, Level aWorld, BlockPos aPos, AbstractMinecart aCart) {
 		onMinecartPass(aWorld, aCart, aPos.getX(), aPos.getY(), aPos.getZ());
+	}
+
+	// @Override (GT6-форма 1.7.10; тело — дословно gt6-original BlockBaseRail.java:292, мутируемые поля
+	// motionX/Y/Z заменены центром WD.setMotionX/Y/Z, как во всём порте)
+	public void onMinecartPass(Level aWorld, AbstractMinecart aCart, int aX, int aY, int aZ) {
+		if (mPowerRail) {
+			byte tRailMeta = WD.meta(aWorld, aX, aY, aZ);
+			double tMotion = Math.sqrt(WD.motionX(aCart)*WD.motionX(aCart) + WD.motionZ(aCart)*WD.motionZ(aCart));
+			if ((tRailMeta & 8) != 0) {
+				if (tMotion > 0.01) {
+					WD.setMotionX(aCart, WD.motionX(aCart) * 2);
+					WD.setMotionZ(aCart, WD.motionZ(aCart) * 2);
+				} else {
+					tRailMeta &= 7;
+					if (tRailMeta == 1) {
+							 if (WD.normalCube(WD.block(aWorld, aX-1, aY, aZ), aWorld, aX-1, aY, aZ)) WD.setMotionX(aCart, +0.02);
+						else if (WD.normalCube(WD.block(aWorld, aX+1, aY, aZ), aWorld, aX+1, aY, aZ)) WD.setMotionX(aCart, -0.02);
+					} else if (tRailMeta == 0) {
+							 if (WD.normalCube(WD.block(aWorld, aX, aY, aZ-1), aWorld, aX, aY, aZ-1)) WD.setMotionZ(aCart, +0.02);
+						else if (WD.normalCube(WD.block(aWorld, aX, aY, aZ+1), aWorld, aX, aY, aZ+1)) WD.setMotionZ(aCart, -0.02);
+					}
+				}
+			} else {
+				if (tMotion < 0.03) {
+					WD.setMotionX(aCart, 0);
+					WD.setMotionY(aCart, 0);
+					WD.setMotionZ(aCart, 0);
+				} else {
+					WD.setMotionX(aCart, WD.motionX(aCart) / 2);
+					WD.setMotionY(aCart, 0);
+					WD.setMotionZ(aCart, WD.motionZ(aCart) / 2);
+				}
+			}
+		}
 	}
 	
 	@Override public boolean onItemUseFirst(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return F;}

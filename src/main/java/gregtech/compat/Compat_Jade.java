@@ -109,12 +109,16 @@ public class Compat_Jade implements IWailaPlugin {
 	 */
 	private static final String[] VANILLA_TOOL_TYPES = {CS.TOOL_pickaxe, CS.TOOL_axe, CS.TOOL_shovel};
 
+	/** Префикс имени наших обработчиков в карте Jade (ключ карты — String,
+	 *  HarvestToolProvider.java:47): отличает свои записи от ванильных при обходе. */
+	private static final String NAME_PREFIX = MD.GT.mID + ":";
+
 	@Override
 	public void registerClient(IWailaClientRegistration aRegistration) {
 		// GT6-типы: ванильного обработчика для них не существует в принципе (нет ни тега, ни предмета)
-		for (String tToolType : GT6_TOOL_TYPES   ) HarvestToolProvider.registerHandler(() -> new GT6ToolHandler(tToolType, null));
+		for (String tToolType : GT6_TOOL_TYPES   ) HarvestToolProvider.registerHandler(new GT6ToolHandler(tToolType, null));
 		// Ванильные типы: подстраховываем ТОЛЬКО там, где обработчик самого Jade промолчал — иначе значок задвоится
-		for (String tToolType : VANILLA_TOOL_TYPES) HarvestToolProvider.registerHandler(() -> new GT6ToolHandler(tToolType, snownee.jade.api.JadeIds.JADE(tToolType)));
+		for (String tToolType : VANILLA_TOOL_TYPES) HarvestToolProvider.registerHandler(new GT6ToolHandler(tToolType, tToolType));
 		// BUG-070 п.2/п.3 — строка «какой уровень нужен» и «что в руке»: у Jade такой строки нет ни для кого
 		aRegistration.registerBlockComponent(GT6HarvestLevelProvider.INSTANCE, Block.class);
 	}
@@ -122,14 +126,14 @@ public class Compat_Jade implements IWailaPlugin {
 	/** Один тип GT6-инструмента: «подходит ли он этому блоку» решает сам блок своим {@code getHarvestTool}. */
 	private static class GT6ToolHandler implements ToolHandler {
 		private final String mToolType;
-		private final ResourceLocation mUID;
-		private final ResourceLocation mVanillaUID; // не null только у ванильных типов — чей это обработчик у самого Jade
+		private final String mName;
+		private final String mVanillaName; // не null только у ванильных типов — чей это обработчик у самого Jade
 		private List<ItemStack> mTools; // лениво: реестр инструментов наполняется позже загрузки плагина
 
-		GT6ToolHandler(String aToolType, ResourceLocation aVanillaUID) {
+		GT6ToolHandler(String aToolType, String aVanillaName) {
 			mToolType = aToolType;
-			mVanillaUID = aVanillaUID;
-			mUID = ResourceLocation.fromNamespaceAndPath(MD.GT.mID, "tool/" + aToolType);
+			mVanillaName = aVanillaName;
+			mName = NAME_PREFIX + aToolType;
 		}
 
 		@Override
@@ -148,12 +152,12 @@ public class Compat_Jade implements IWailaPlugin {
 			// второй такой же значок был бы дублем — молчим. Прежняя проверка «есть ли ванильный тег» была КОПИЕЙ
 			// его политики и на ней же ошиблась: у мелкой руды тег есть, но Jade намеренно пропускает блоки,
 			// ломающиеся мгновенно (SimpleToolHandler:44), — и тултип оставался пустым, хотя инструмент известен.
-			if (mVanillaUID != null) {
-				ToolHandler tVanilla = HarvestToolProvider.TOOL_HANDLERS.get(mVanillaUID);
+			if (mVanillaName != null) {
+				ToolHandler tVanilla = HarvestToolProvider.TOOL_HANDLERS.get(mVanillaName);
 				if (tVanilla != null && !tVanilla.test(aState, aWorld, aPos).isEmpty()) return ItemStack.EMPTY;
 			}
 			List<ItemStack> tTools = getTools();
-			return tTools.isEmpty() ? ItemStack.EMPTY : tTools.getFirst();
+			return tTools.isEmpty() ? ItemStack.EMPTY : tTools.get(0);
 		}
 
 		@Override
@@ -172,14 +176,14 @@ public class Compat_Jade implements IWailaPlugin {
 		}
 
 		@Override
-		public ResourceLocation getUid() {return mUID;}
+		public String getName() {return mName;}
 	}
 
 	/** Нарисовал ли Jade витрину этого блока СВОИМИ силами. Спрашиваем только ЕГО обработчики (перебрать все
 	 *  нельзя — среди них мы сами, вышла бы рекурсия). */
 	private static boolean vanillaJadeAlreadyShowed(BlockState aState, Level aWorld, BlockPos aPos) {
-		for (java.util.Map.Entry<ResourceLocation, ToolHandler> tE : HarvestToolProvider.TOOL_HANDLERS.entrySet()) {
-			if (tE.getKey().getNamespace().equals(MD.GT.mID)) continue; // наш — пропускаем
+		for (java.util.Map.Entry<String, ToolHandler> tE : HarvestToolProvider.TOOL_HANDLERS.entrySet()) {
+			if (tE.getKey().startsWith(NAME_PREFIX)) continue; // наш — пропускаем
 			try {if (!tE.getValue().test(aState, aWorld, aPos).isEmpty()) return true;} catch (Throwable e) {/* чужой упал — не наша беда */}
 		}
 		return false;
@@ -256,7 +260,7 @@ public class Compat_Jade implements IWailaPlugin {
 			// значок был бы дублем.
 			try {
 				if (aAccessor.getBlockState().getDestroyProgress(aAccessor.getPlayer(), tWorld, tPos) <= 0) {
-					java.util.List<snownee.jade.api.ui.Element> tTools = HarvestToolProvider.INSTANCE.getText(aAccessor, aConfig);
+					java.util.List<snownee.jade.api.ui.IElement> tTools = HarvestToolProvider.INSTANCE.getText(aAccessor, aConfig);
 					if (!tTools.isEmpty()) aTooltip.add(tTools);
 				}
 			} catch (Throwable e) {/* витрина Jade недоступна — строка тира ниже всё равно будет */}

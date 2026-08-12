@@ -112,7 +112,7 @@ public interface IToolStats {
 	public String getEntityHitSound();
 	public String getBreakingSound();
 	
-	public net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] getEnchantments(ItemStack aStack, OreDictMaterial aMaterial);
+	public net.minecraft.world.item.enchantment.Enchantment[] getEnchantments(ItemStack aStack, OreDictMaterial aMaterial);
 	public int[] getEnchantmentLevels(ItemStack aStack, OreDictMaterial aMaterial);
 	
 	/**

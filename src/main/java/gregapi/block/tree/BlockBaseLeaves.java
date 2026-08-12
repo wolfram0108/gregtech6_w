@@ -120,7 +120,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	// visOpq(OAK_LEAVES) при noOcclusion ванильной листвы = false всегда — постоянный fancy, 1:1 с neo-ванилью
 	// (динамический fast-режим листвы 1.7.10 в движке отсутствует).
 	@Override
-	protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
+	public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
 		Block aBlock = aNeighbor.getBlock();
 		return WD.visOpq(aBlock) || (WD.visOpq(Blocks.OAK_LEAVES) && aBlock instanceof BlockBaseLeaves);
 	}
@@ -164,9 +164,9 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	// было ColorizerFoliage.getFoliageColor(temp,rain) (1.7.10, тип удалён) -> FoliageColor.get(double,double)
 	// [neo-decompiled/net/minecraft/world/level/FoliageColor.java:14], идентичная формула/буфер пикселей.
 	public int getBlockColor() {return FoliageColor.get(0.5, 1.0);}
-	// было ColorizerFoliage.getFoliageColorBasic() (константа 4764952, тип удалён) -> FoliageColor.FOLIAGE_DEFAULT
+	// было ColorizerFoliage.getFoliageColorBasic() (константа 4764952, тип удалён) -> FoliageColor.getDefaultColor()
 	// [neo-decompiled/net/minecraft/world/level/FoliageColor.java:6] (=0xFF48B518, младшие 24 бита совпадают: 0x48B518=4764952).
-	public int getRenderColor(int p_149741_1_) {return FoliageColor.FOLIAGE_DEFAULT;}
+	public int getRenderColor(int p_149741_1_) {return FoliageColor.getDefaultColor();}
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		// было aWorld.getBiomeGenForCoords(x,z) (2D, IBlockAccess несла getBiome сама) — BlockGetter самого getBiome
 		// не несёт (LevelReader.getBiome(BlockPos)); рендер вызывает colorMultiplier всегда с реальным Level (тот же

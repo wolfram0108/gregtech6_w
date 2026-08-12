@@ -62,7 +62,7 @@ public class GT6HarvestTags extends TagsProvider<Block> {
 	private static final TagKey<?>[] NEEDS_BY_LEVEL = {null, BlockTags.NEEDS_STONE_TOOL, BlockTags.NEEDS_IRON_TOOL, BlockTags.NEEDS_DIAMOND_TOOL};
 
 	public GT6HarvestTags(PackOutput aOutput, CompletableFuture<HolderLookup.Provider> aLookup) {
-		super(aOutput, BuiltInRegistries.BLOCK.key(), aLookup, MD.GAPI.mID);
+		super(aOutput, BuiltInRegistries.BLOCK.key(), aLookup, MD.GAPI.mID, null);
 	}
 
 	@Override

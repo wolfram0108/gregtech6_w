@@ -63,12 +63,13 @@ public class Behavior_CureZombie extends AbstractBehaviorDefault {
 					// который ЦЕНТРАЛИЗОВАННО делает ВСЁ ручное (флаг DATA_CONVERTING_ID + removeEffect(WEAKNESS) +
 					// addEffect(STRENGTH, time, min(diff.getId()-1,0)) + broadcastEntityEvent(16), строки 200-207) — ручные строки
 					// СНЯТЫ (движок их поглотил, 1:1 по эффекту, включая тот же min(diff-1,0)-амплитудный расчёт).
-					// save/load через ValueOutput/ValueInput (NBT-рефактор) -> мост TagValueOutput/TagValueInput(CompoundTag).
-					net.minecraft.world.level.storage.TagValueOutput tOut = net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING, tZombie.registryAccess());
-					tZombie.saveWithoutId(tOut);
-					CompoundTag tNBT = tOut.buildResult();
+					// Ветка 1.20.1: моста ValueOutput/ValueInput нет — save/load сущности снова идут
+					// сырым CompoundTag, ровно как writeToNBT/readFromNBT в 1.7.10
+					// (Entity.saveWithoutId:1598, Entity.load:1687 в forge-1201-decompiled).
+					CompoundTag tNBT = UT.NBT.make();
+					tZombie.saveWithoutId(tNBT);
 					tNBT.putInt("ConversionTime", tCureTime);
-					tZombie.load(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, tZombie.registryAccess(), tNBT));
+					tZombie.load(tNBT);
 				}
 				return T;
 			}

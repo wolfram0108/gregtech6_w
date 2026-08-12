@@ -41,7 +41,7 @@ public interface IBlockExtendedMetaData {
 		net.minecraft.world.level.block.state.BlockState tNew = getStateForExtendedMetaData(tState, aMetaData);
 		if (tNew == null) return;
 		if (aWorld instanceof net.minecraft.world.level.LevelAccessor tLA) tLA.setBlock(tPos, tNew, 3);
-		else if (aWorld instanceof net.minecraft.world.level.chunk.ChunkAccess tChunk) tChunk.setBlockState(tPos, tNew, net.minecraft.world.level.block.Block.UPDATE_ALL);
+		else if (aWorld instanceof net.minecraft.world.level.chunk.ChunkAccess tChunk) tChunk.setBlockState(tPos, tNew, false);
 	}
 	public default short getExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ) {
 		net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(new net.minecraft.core.BlockPos(aX, aY, aZ));

@@ -96,7 +96,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		grow(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()), UT.Code.random(aRandom)); // конвертер — ЦЕНТР UT.Code.random
 	}
 	@Override public boolean isBonemealSuccess(Level aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {return aRandom.nextFloat() < 0.45F;} // ванильный шанс сапплинга (SaplingBlock)
-	@Override public boolean isValidBonemealTarget(net.minecraft.world.level.LevelReader aWorld, BlockPos aPos, BlockState aState) {return T;} // сапплинг всегда bonemeal-цель
+	@Override public boolean isValidBonemealTarget(net.minecraft.world.level.LevelReader aWorld, BlockPos aPos, BlockState aState, boolean aIsClient) {return T;} // сапплинг всегда bonemeal-цель
 	
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	@Override public int damageDropped(int aMeta) {return aMeta & 7;}
@@ -193,7 +193,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		if (aBlock instanceof gregapi.block.misc.BlockBaseRail) return ((gregapi.block.misc.BlockBaseRail)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.misc.BlockBaseFlower) return ((gregapi.block.misc.BlockBaseFlower)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) return ((gregapi.block.multitileentity.MultiTileEntityBlock)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
-		return !aBlock.defaultBlockState().isSolidRender();
+		return !aBlock.defaultBlockState().isSolidRender(aWorld, new net.minecraft.core.BlockPos(aX, aY, aZ));
 	}
 	
 	// было Block.canPlaceBlockAt(World,x,y,z) (1.7.10, дефолт world.getBlock(x,y,z).isReplaceable(...), Block.java:1046-1049)

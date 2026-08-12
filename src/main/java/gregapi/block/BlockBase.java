@@ -235,11 +235,11 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// getOcclusionShape; дефолт = ПОЛНЫЙ куб → не-полные блоки глушили рендер за собой). Мост: не-opaque →
 	// occlusion-форма ПУСТА (сосед рисуется) и свет проходит (1.7.10 lightOpacity = isOpaqueCube?255:0).
 	// Кэш состояний строится ПОСЛЕ ctor (initCache) → override и per-класс isOpaqueCube резолвятся корректно.
-	@Override public net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(BlockState aState) {
-		return isOpaqueCube() ? super.getOcclusionShape(aState) : net.minecraft.world.phys.shapes.Shapes.empty();
+	@Override public net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos) {
+		return isOpaqueCube() ? super.getOcclusionShape(aState, aWorld, aPos) : net.minecraft.world.phys.shapes.Shapes.empty();
 	}
-	@Override public boolean propagatesSkylightDown(BlockState aState) {
-		return !isOpaqueCube() || super.propagatesSkylightDown(aState);
+	@Override public boolean propagatesSkylightDown(BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos) {
+		return !isOpaqueCube() || super.propagatesSkylightDown(aState, aWorld, aPos);
 	}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return isSideSolid(WD.meta(aWorld, aX, aY, aZ), UT.Code.side(aDirection));}
 	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
@@ -273,9 +273,9 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// `createStackedBlock(meta)` через `damageDropped` (оригинал BlockBase:82,84); тело перенесено 1:1 (строка выше),
 	// но мост в движок к нему подключён не был. Подключаем ЗДЕСЬ, в корне иерархии — одним местом на брёвна, балки,
 	// доски, плиты, камни и листву (тот же приём, что уже применён точечно: BlockBaseSpike:137, MultiTileEntityBlock:506).
-	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, net.minecraft.core.BlockPos aPos, BlockState aState, boolean aIncludeData, Player aPlayer) {
+	@Override public ItemStack getCloneItemStack(BlockState aState, net.minecraft.world.phys.HitResult aTarget, net.minecraft.world.level.BlockGetter aLevel, net.minecraft.core.BlockPos aPos, Player aPlayer) {
 		ItemStack rStack = createStackedBlock(WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()));
-		return rStack == null || rStack.isEmpty() ? super.getCloneItemStack(aLevel, aPos, aState, aIncludeData, aPlayer) : rStack;
+		return rStack == null || rStack.isEmpty() ? super.getCloneItemStack(aState, aTarget, aLevel, aPos, aPlayer) : rStack;
 	}
 
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
@@ -366,7 +366,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public final void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {if (useGravity(WD.meta(aWorld, aX, aY, aZ))) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2); onNeighborBlockChange2(aWorld, aX, aY, aZ, aBlock);}
 	// F-neighbor (канал сместился): 1.7.10 World.notifyBlocksOfNeighborChange звал Block.onNeighborBlockChange; neo-вход —
 	// BlockBehaviour.neighborChanged. Мост по образцу BlockFluidBaseGT:154; GT6-канал (гравитация + onNeighborBlockChange2) цел.
-	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
+	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, BlockPos aFromPos, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}
 	// было onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167]

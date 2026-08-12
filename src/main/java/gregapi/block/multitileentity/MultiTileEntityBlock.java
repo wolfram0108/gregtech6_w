@@ -88,7 +88,6 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
-import net.neoforged.neoforge.event.EventHooks;
 
 import java.util.*;
 
@@ -481,7 +480,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// НЕ статический BlockTags.CLIMBABLE (тот дефолт интерфейса, для блоков без переопределения) - per-position динамический хук: LivingEntity.onClimbable()
 	// зовёт его напрямую через CommonHooks.isLivingOnLadder(state,level,pos,entity) [LivingEntity.java:1755, CommonHooks.java:404-428], а не через тег -
 	// per-BE логика (Scaffold.mDesign!=3) переносится 1:1, архитектурного разрыва нет. LevelReader extends BlockGetter (сверено) - прямой делегат.
-	@Override public final boolean isLadder(BlockState aState, LevelReader aWorld, BlockPos aPos, LivingEntity aEntity) {return aWorld instanceof BlockGetter tGetter && isLadder(tGetter, aPos.getX(), aPos.getY(), aPos.getZ(), aEntity);}
+	@Override public final boolean isLadder(BlockState aState, LevelReader aWorld, BlockPos aPos, LivingEntity aEntity) {return isLadder(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aEntity);}
 	public final boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsNormalCube ? ((IMTE_IsNormalCube)aTileEntity).isNormalCube() : mNormalCube;}
 	public final boolean isReplaceable(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsReplaceable ? ((IMTE_IsReplaceable)aTileEntity).isReplaceable() : getMaterial().isReplaceable();}
 	public final boolean isBurning(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsBurning && ((IMTE_IsBurning)aTileEntity).isBurning();}
@@ -529,7 +528,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// было getEnchantPowerBonus(World,x,y,z) -> IBlockExtension.getEnchantPowerBonus(BlockState,BlockGetter,BlockPos) [IBlockExtension.java:520].
 	// aWorld тут только BlockGetter (слабее прежнего World) - существующий 1.7.10-метод выше типизирован Level; делегируем только
 	// когда действительно Level (как getCollisionShape/receiveData в этом файле), иначе дефолт 0 (тот же дефолт, что даёт IMTE-диспетчер без TE).
-	@Override public final float getEnchantPowerBonus(BlockState aState, BlockGetter aWorld, BlockPos aPos) {return aWorld instanceof Level tLevel ? getEnchantPowerBonus(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : 0;}
+	@Override public final float getEnchantPowerBonus(BlockState aState, net.minecraft.world.level.LevelReader aWorld, BlockPos aPos) {return aWorld instanceof Level tLevel ? getEnchantPowerBonus(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : 0;}
 	public final boolean recolourBlock(Level aWorld, int aX, int aY, int aZ, Direction aSide, int aColor) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_RecolourBlock && ((IMTE_RecolourBlock)aTileEntity).recolourBlock(UT.Code.side(aSide), (byte)aColor);}
 	public final boolean shouldCheckWeakPower(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_ShouldCheckWeakPower ? ((IMTE_ShouldCheckWeakPower)aTileEntity).shouldCheckWeakPower(UT.Code.side(aSide)) : isNormalCube(aWorld, aX, aY, aZ);}
 	// было shouldCheckWeakPower(IBlockAccess,x,y,z,side) -> IBlockExtension.shouldCheckWeakPower(BlockState,SignalGetter,BlockPos,Direction) [IBlockExtension.java:544].
@@ -560,10 +559,10 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// F13: 1.7.10 Block.getPickBlock(HitResult,World,x,y,z,Player) удалён — neo middle-click идёт через
 	// IBlockExtension.getCloneItemStack(LevelReader,BlockPos,BlockState,boolean,Player). Ниже — этот neo-хук
 	// делегирует в GT6-getPickBlock (TE-диспетчер IMTE_GetPickBlock), восстанавливая поведение 1:1. GT6-методы сохранены.
-	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, boolean aIncludeData, Player aPlayer) {
+	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.phys.HitResult aTarget, net.minecraft.world.level.BlockGetter aLevel, net.minecraft.core.BlockPos aPos, Player aPlayer) {
 		BlockEntity tTE = WD.te(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		ItemStack r = tTE instanceof IMTE_GetPickBlock ? ((IMTE_GetPickBlock)tTE).getPickBlock(null) : null;
-		return ST.valid(r) ? r : super.getCloneItemStack(aLevel, aPos, aState, aIncludeData, aPlayer);
+		return ST.valid(r) ? r : super.getCloneItemStack(aState, aTarget, aLevel, aPos, aPlayer);
 	}
 	public final ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetPickBlock?((IMTE_GetPickBlock)aTileEntity).getPickBlock(aTarget):null;}
 	public final ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ                      ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetPickBlock?((IMTE_GetPickBlock)aTileEntity).getPickBlock(aTarget):null;}
@@ -764,7 +763,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (!LOCK) {LOCK = T; if (aTileEntity instanceof ITileEntity) ((ITileEntity)aTileEntity).onAdjacentBlockChange(aX, aY, aZ); LOCK = F;} if (aTileEntity instanceof IMTE_OnNeighborBlockChange) ((IMTE_OnNeighborBlockChange)aTileEntity).onNeighborBlockChange(aWorld, aBlock); if (aTileEntity == null && !aWorld.isClientSide()) WD.set(aWorld, aX, aY, aZ, NB, 0, 3);}
 	// F-neighbor (канал сместился): 1.7.10 World.notifyBlocksOfNeighborChange звал Block.onNeighborBlockChange; neo-вход —
 	// BlockBehaviour.neighborChanged. Мост по образцу BlockFluidBaseGT:154; GT6-канал (IMTE_OnNeighborBlockChange + чистка сирот) цел.
-	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, boolean aMovedByPiston) {
+	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, BlockPos aFromPos, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}
 	@Override public final boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return T;}

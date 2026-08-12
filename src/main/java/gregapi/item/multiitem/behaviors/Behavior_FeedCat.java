@@ -55,12 +55,12 @@ public class Behavior_FeedCat extends AbstractBehaviorDefault {
 					UT.Entities.consumeCurrentItem(aPlayer);
 					if (!aPlayer.level().isClientSide()) {
 						if (RNGSUS.nextInt(3) == 0) {
-							tCat.setTame(T, true);
+							tCat.setTame(T);
 							// 1.7.10 setTameSkin(1+rng(3)) — int-скин 0-3. neo: модель сменилась на registry Holder<CatVariant>
 							// (setVariant private, Cat.java:121) -> публичный путь Entity.setComponent (Entity.java:4064) +
 							// случайный вариант из реестра (оригинал тоже рандомил скин при приручении).
-							tCat.setComponent(net.minecraft.core.component.DataComponents.CAT_VARIANT, tCat.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.CAT_VARIANT).getRandom(tCat.getRandom()).orElseThrow());
-							tCat.setOwner(aPlayer); // 1.7.10 func_152115_b(uuid)=setOwnerUUID(player.uuid); neo setOwner(LivingEntity) ставит владельца по сущности (TamableAnimal.java:163).
+							tCat.setVariant(net.minecraft.core.registries.BuiltInRegistries.CAT_VARIANT.getRandom(tCat.getRandom()).orElseThrow().value());
+							tCat.setOwnerUUID(aPlayer.getUUID()); // 1:1 с 1.7.10 func_152115_b(player.getUniqueID()) — TamableAnimal.java:137
 							for (int i = 0; i < 7; ++i) aEntity.level().addParticle(net.minecraft.core.particles.ParticleTypes.HEART, aEntity.getX() + (RNGSUS.nextFloat() * aEntity.getBbWidth() * 2.0F) - aEntity.getBbWidth(), aEntity.getY() + 0.5D + (RNGSUS.nextFloat() * aEntity.getBbHeight()), aEntity.getZ() + (RNGSUS.nextFloat() * aEntity.getBbWidth() * 2.0F) - aEntity.getBbWidth(), RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D);
 							tCat.level().broadcastEntityEvent(aEntity, (byte)7);
 						} else {

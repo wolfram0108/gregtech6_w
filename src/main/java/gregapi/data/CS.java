@@ -941,7 +941,7 @@ public class CS {
 	/** Zero-Length Array to save on Memory. */ public static final TagData                 [] ZL_TD                = new TagData[0], ZL_TAGDATA = ZL_TD;
 	/** Zero-Length Array to save on Memory. */ public static final OreDictMaterial         [] ZL_MT                = new OreDictMaterial[0], ZL_MATERIAL = ZL_MT;
 	/** Zero-Length Array to save on Memory. */ public static final OreDictMaterialStack    [] ZL_MS                = new OreDictMaterialStack[0], ZL_MATERIALSTACK = ZL_MS;
-	/** Zero-Length Array to save on Memory. */ public static final net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] ZL_ENCHANTMENT = new net.minecraft.resources.ResourceKey[0];
+	/** Zero-Length Array to save on Memory. */ public static final net.minecraft.world.item.enchantment.Enchantment[] ZL_ENCHANTMENT = new net.minecraft.world.item.enchantment.Enchantment[0];
 	/** Zero-Length Array to save on Memory. */ public static final FluidTank               [] ZL_FLUIDTANK         = new FluidTank[0];
 	/** Zero-Length Array to save on Memory. */ public static final IFluidTank              [] ZL_IFLUIDTANK        = new IFluidTank[0];
 	/** Zero-Length Array to save on Memory. */ public static final FluidTankInfo           [] ZL_FLUIDTANKINFO     = new FluidTankInfo[0], L1_FLUIDTANKINFO_DUMMY = new FluidTankInfo[] {new FluidTankInfo(null, Integer.MAX_VALUE)};
@@ -1595,13 +1595,13 @@ public class CS {
 			if (!aTargetFile.exists()) {try {aTargetFile.createNewFile();} catch (Throwable e) {e.printStackTrace(ERR);}}
 			CompoundTag aNBT = UT.NBT.make();
 			for (int i = 0; i < GARBAGE_ITEMS.size(); i++) ST.save(aNBT, ""+i, GARBAGE_ITEMS.get(i));
-			try {NbtIo.write(aNBT, aTargetFile.toPath());} catch (Throwable e) {e.printStackTrace(ERR);}
+			try {NbtIo.write(aNBT, aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
 			
 			aTargetFile = new File(new File(aSaveLocation, "gregtech"), "endergarbage.fluids.dat");
 			if (!aTargetFile.exists()) {try {aTargetFile.createNewFile();} catch (Throwable e) {e.printStackTrace(ERR);}}
 			aNBT = UT.NBT.make();
 			for (int i = 0; i < GARBAGE_FLUIDS.size(); i++) GARBAGE_FLUIDS.get(i).writeToNBT(aNBT, ""+i);
-			try {NbtIo.write(aNBT, aTargetFile.toPath());} catch (Throwable e) {e.printStackTrace(ERR);}
+			try {NbtIo.write(aNBT, aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
 		}
 		
 		public static void onServerLoad(File aSaveLocation) {
@@ -1609,7 +1609,7 @@ public class CS {
 			File aTargetFile = new File(new File(aSaveLocation, "gregtech"), "endergarbage.items.dat");
 			if (aTargetFile.exists()) {
 				CompoundTag aNBT = UT.NBT.make();
-				try {aNBT = NbtIo.read(aTargetFile.toPath());} catch (Throwable e) {e.printStackTrace(ERR);}
+				try {aNBT = NbtIo.read(aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
 				for (int i = 0; i < Integer.MAX_VALUE; i++) {
 					if (!aNBT.contains(""+i)) break;
 					ItemStack aStack = ST.load(aNBT, ""+i);
@@ -1622,7 +1622,7 @@ public class CS {
 			aTargetFile = new File(new File(aSaveLocation, "gregtech"), "endergarbage.fluids.dat");
 			if (aTargetFile.exists()) {
 				CompoundTag aNBT = UT.NBT.make();
-				try {aNBT = NbtIo.read(aTargetFile.toPath());} catch (Throwable e) {e.printStackTrace(ERR);}
+				try {aNBT = NbtIo.read(aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
 				for (int i = 0; i < Integer.MAX_VALUE; i++) {
 					if (!aNBT.contains(""+i)) break;
 					FluidTankGT tTank = new FluidTankGT().setPreventDraining().setVoidExcess();

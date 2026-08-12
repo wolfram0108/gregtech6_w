@@ -66,7 +66,7 @@ import gregapi.item.IItemProjectile;
  */
 public class GT6ItemTags extends TagsProvider<Item> {
 	public GT6ItemTags(PackOutput aOutput, CompletableFuture<HolderLookup.Provider> aLookup) {
-		super(aOutput, Registries.ITEM, aLookup, CS.ModIDs.GT);
+		super(aOutput, Registries.ITEM, aLookup, CS.ModIDs.GT, null);
 	}
 
 	@Override
