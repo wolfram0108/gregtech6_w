@@ -530,11 +530,14 @@ public class WD {
 	}
 	/** F-block-resistance ЦЕНТР: 1.7.10 {@code Block.setResistance(float)} — RUNTIME-правка explosion-resistance (GT усиливает
 	 *  vanilla-блоки против взрывов, глобально на общий Block-объект). neo {@code BlockBehaviour.explosionResistance} =
-	 *  {@code protected final float} (BlockBehaviour.java:90, присвоено в конструкторе — не inline-константа) → сеттера нет.
-	 *  Единственный 1:1: reflection на final-поле суперкласса BlockBehaviour через центр {@link UT.Reflection#setField}
-	 *  (безопасный try/catch). GT6-1.7.10 делал ровно эту глобальную мутацию vanilla-блока. */
+	 *  {@code protected final float} (BlockBehaviour.java:81, присвоено в конструкторе — не inline-константа) → сеттера нет.
+	 *  Поле открыто Access Transformer'ом и пишется ПРЯМО — канон GT6 (ADR F2 §2.3), тот же приём, что у
+	 *  {@code Item.maxDamage} в {@code ST.setMaxDamage}. Рефлексии здесь больше нет: на 1.20.1 {@code Field.set}
+	 *  в final-поле не проходит вовсе (тот же класс дефекта, что дал 29 молчаливых отказов в {@code ST.setItem}).
+	 *  Читается поле живьём — {@code Block.getExplosionResistance()} → {@code return this.explosionResistance}
+	 *  (Block.java:336-337). GT6-1.7.10 делал ровно эту глобальную мутацию vanilla-блока. */
 	public static void setResistance(Block aBlock, float aResistance) {
-		UT.Reflection.setField(net.minecraft.world.level.block.state.BlockBehaviour.class, aBlock, "explosionResistance", aResistance);
+		if (aBlock != null) aBlock.explosionResistance = aResistance;
 	}
 	/** F-tool ЦЕНТР: 1.7.10 {@code Block.getHarvestTool(int aMeta)} (Forge-точка на vanilla Block, строка-тип
 	 *  инструмента "pickaxe"/"shovel"/"axe"...) удалён по ИМЕНИ; GT6-блок хранит ({@code BlockBase.getHarvestTool(meta)}),

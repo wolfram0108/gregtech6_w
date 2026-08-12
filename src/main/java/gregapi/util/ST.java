@@ -437,22 +437,29 @@ public class ST {
 	public static ItemStack set(ItemStack aSetStack, ItemStack aToStack, boolean aCheckStacksize, boolean aCheckNBT) {
 		if (aSetStack == aToStack) return aSetStack;
 		if (invalid(aSetStack) || invalid(aToStack)) return null;
-		// F-item-final ЦЕНТР: 1.7.10 aSetStack.func_150996_a(Item) — in-place смена Item существующего стека. neo
-		// ItemStack.item = private final Holder<Item> (ItemStack.java:156) — прямого сеттера нет, а transmuteCopy даёт
-		// КОПИЮ (не 1:1: весь GT6 опирается на in-place мутацию по ссылке). Единственный 1:1-путь — reflection на final-поле
-		// через центр UT.Reflection.setField (безопасный try/catch-фолбэк: при неудаче item не сменится = прежнее поведение).
-		// Holder нового предмета = Item.builtInRegistryHolder() (Item.java:153). NeoForge runtime = official mappings → поле "item".
-		UT.Reflection.setField(aSetStack, "item", item_(aToStack).builtInRegistryHolder());
+		// 1.7.10 звал здесь aSetStack.func_150996_a(Item) — ровно то, что делает setItem ниже (единый центр,
+		// как и в оригинале, где обе точки звали один и тот же метод движка).
+		setItem(aSetStack, item_(aToStack));
 		if (aCheckStacksize) aSetStack.setCount(aToStack.getCount());
 		meta_(aSetStack, meta_(aToStack));
 		if (aCheckNBT) ItemNBT.set(aSetStack, ItemNBT.get(aToStack));
 		return aSetStack;
 	}
-	/** F-item-final ЦЕНТР: 1.7.10 {@code ItemStack.func_150996_a(Item)} — in-place смена ТОЛЬКО Item (count/meta/NBT сохранены).
-	 *  neo {@code ItemStack.item} = private final Holder<Item> — reflection на final-поле через центр {@link UT.Reflection#setField}
-	 *  (безопасный try/catch-фолбэк). Holder предмета = {@code Item.builtInRegistryHolder()}. Отличается от {@link #set}: тот копирует всё. */
+	/** F-item-final ЦЕНТР: 1.7.10 {@code ItemStack.func_150996_a(Item)} — in-place смена ТОЛЬКО Item (count/meta/NBT
+	 *  сохранены). Отличается от {@link #set}: тот копирует всё.
+	 *
+	 *  <p>Оригинал (recompSrc {@code net/minecraft/item/ItemStack.java:895-899}) писал пару полей:
+	 *  {@code this.delegate = item.delegate; this.field_151002_e = item;}. В 1.20.1 публичного сеттера нет,
+	 *  а {@code transmuteCopy} даёт КОПИЮ (не 1:1: GT6 мутирует стек по ссылке). Носитель личности здесь
+	 *  ровно один — {@code delegate}: {@code getItem()} = {@code this.delegate.get()}
+	 *  ({@code ItemStack.java:217}), а поле {@code item} внутри {@code ItemStack} не читается вовсе —
+	 *  кормод Forge переписывает каждое его обращение на {@code getItem()}
+	 *  ({@code coremods/field_to_method.js}, секция {@code itemstack}). Поле открыто Access Transformer'ом
+	 *  и пишется ПРЯМО, как {@code Item.maxDamage} в {@link #setMaxDamage} (канон GT6, ADR F2 §2.3);
+	 *  рефлексия давала лишь молчаливый отказ (29 за старт). Holder берётся тем же выражением, что и
+	 *  конструктор стека ({@code ItemStack.java:148} — {@code ForgeRegistries.ITEMS.getDelegateOrThrow}).</p> */
 	public static ItemStack setItem(ItemStack aStack, Item aItem) {
-		if (valid(aStack) && aItem != null) UT.Reflection.setField(aStack, "item", aItem.builtInRegistryHolder());
+		if (valid(aStack) && aItem != null) aStack.delegate = net.minecraftforge.registries.ForgeRegistries.ITEMS.getDelegateOrThrow(aItem);
 		return aStack;
 	}
 	/** F12-vanilla-durability ЦЕНТР: 1.7.10 {@code Item.setMaxDamage(int)} мутировал durability чужого предмета

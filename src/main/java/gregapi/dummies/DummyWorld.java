@@ -111,17 +111,23 @@ public class DummyWorld extends Level {
 	// (`gregapi/util/WD.java`, дефолт оверворлда 62) — переиспользуем центр вместо новой константы.
 	private static int mSeaLevel() {return WD.waterLevel();}
 
-	// Минимальный самодостаточный DimensionType: значения дословно с ванильного OVERWORLD
-	// (`forge-1201-decompiled/net/minecraft/data/worldgen/DimensionTypes.java:12`), без обращения к реестрам
-	// (которых у офлайн-дамми нет). 15 компонент записи — `DimensionType.java:24`.
-	private static final DimensionType mDimensionType = new DimensionType(
-		OptionalLong.empty(), T, F, F, T, 1.0D, T, F,
-		-64, 384, 384,
-		BlockTags.INFINIBURN_OVERWORLD,
-		BuiltinDimensionTypes.OVERWORLD_EFFECTS,
-		0.0F,
-		new DimensionType.MonsterSettings(F, T, UniformInt.of(0, 7), 0)
-	);
+	/**
+	 * Тип измерения дамми-мира — ЗАРЕГИСТРИРОВАННЫЙ ванильный OVERWORLD, взятый из реестра живого сервера.
+	 *
+	 * <p>Своей копии {@code DimensionType} здесь быть не может: {@code Level} требует Holder С КЛЮЧОМ —
+	 * {@code this.dimensionTypeId = p_270240_.unwrapKey().orElseThrow(() -> new IllegalArgumentException(
+	 * "Dimension must be registered, got " + p_270240_))} ({@code Level.java:123-126}). У {@code Holder.direct(…)}
+	 * ключа нет по определению, поэтому конструирование падало КАЖДЫЙ старт (3 раза за запуск — по разу на
+	 * GT-мод), и {@code CS.DW} оставался null: сверка совпадения рецептов шла без мира.
+	 *
+	 * <p>Значения прежней ручной копии были и так «дословно с ванильного OVERWORLD» — то есть копия дублировала
+	 * факт движка. Берём сам факт: реестр приходит от сервера тем же параметром {@code aRegistryAccess}, ради
+	 * которого он и заводился. 1.7.10 давал дамми ровно такой же безымянный overworld-подобный провайдер
+	 * ({@code gt6-original/…/DummyWorld.java:82} — {@code new WorldProvider() {…}}).
+	 */
+	private static Holder<DimensionType> overworldType(RegistryAccess aRegistryAccess) {
+		return aRegistryAccess.registryOrThrow(Registries.DIMENSION_TYPE).getHolderOrThrow(BuiltinDimensionTypes.OVERWORLD);
+	}
 
 	// WritableLevelData в 1.20.1 — покоординатный спавн (setXSpawn/…/setSpawnAngle), а не запись RespawnData,
 	// как было в 26.x (`WritableLevelData.java`); читающая половина — `LevelData.java:10-34`.
@@ -179,7 +185,7 @@ public class DummyWorld extends Level {
 			new DummyLevelData(),
 			ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("dummy_dimension")),
 			aRegistryAccess,
-			Holder.direct(mDimensionType),
+			overworldType(aRegistryAccess),
 			(Supplier<ProfilerFiller>)() -> InactiveProfiler.INSTANCE,
 			F,
 			F,
