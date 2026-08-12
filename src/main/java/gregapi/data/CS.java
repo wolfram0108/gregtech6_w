@@ -980,7 +980,13 @@ public class CS {
 	/** Вода восстанавливается сама (ванильный бесконечный источник). В GT6 этого нет НИКОГДА — вода конечна,
 	 *  это канон мода, а не настройка порта. Дефолт F восстанавливает канон; T возвращает ваниль. Канал движка
 	 *  26.1.2 — правило мира water_source_conversion (ставит GT_API.applyWaterSourceConversionRule). */
-	, WATER_SOURCE_CONVERSION = F;
+	, WATER_SOURCE_CONVERSION = F
+	/** ADAPT-019, мастер-ключ ae2/ReplaceMeteoriteGeneration (GregTech.cfg): GT6 замещает генерацию AE2.
+	 *  Двигает ОБЕ стороны сразу — «есть метеорит — нет жилы, нет метеорита — есть жила»: T = метеориты AE2
+	 *  погашены (встроенный пак ae2replacegen, GT_API.onAddPackFinders) И заведена бедрок-жила метеоритного
+	 *  железа (Loader_Worldgen); F = метеориты живут, жила не заводится. Без AE2 в сборке всегда T (метеоритов
+	 *  нет, жила нужна — на ней пять сплавов MT). Значение ставит GT_API.onModPreInit2 по образцу флагов ic2. */
+	, AE2_REPLACE_METEORITE_GENERATION = T;
 	/** Date based Shenanigans */
 	@SuppressWarnings("deprecation")
 	public static boolean

@@ -638,6 +638,36 @@ public class GT_API extends Abstract_Mod {
 		// F11-recipe-scan (граница M-52): /reload пересоздаёт RecipeMap датапака — подавление Replace
 		// переприменяется на OnDatapackSyncEvent (player==null = reload; стреляет ДО отправки рецептов клиенту).
 		NeoForge.EVENT_BUS.addListener(this::onDatapackSyncReapplySuppression);
+		// ADAPT-019: условный встроенный датапак ae2replacegen (гашение метеоритов AE2) — мод-шина.
+		aModBus.addListener(this::onAddPackFinders);
+	}
+
+	/**
+	 * ADAPT-019 (слой AE2): подключение встроенного датапака {@code resources/ae2replacegen} — remove-тег,
+	 * опустошающий {@code ae2:has_meteorites} (единственную генерацию AE2 26.1). Пак подключается ТОЛЬКО при
+	 * {@code CS.AE2_REPLACE_METEORITE_GENERATION} (мастер-ключ {@code ae2/ReplaceMeteoriteGeneration},
+	 * читается в {@link #onModPreInit2} по образцу флагов ic2) — вторая половина того же ключа заводит
+	 * бедрок-жилу метеоритного железа в {@code Loader_Worldgen}: есть метеорит — нет жилы, нет метеорита —
+	 * есть жила. У самого AE2 26.1 рубильника генерации больше не существует (в rv3 был —
+	 * {@code AEFeature.MeteoriteWorldGen}, {@code Registration.java:705}; в 26.1 структура регистрируется
+	 * безусловно, {@code InitStructures.java:54}) — поэтому рычаг наш.
+	 *
+	 * <p><b>Тайминг:</b> событие стреляет при создании {@code PackRepository}
+	 * ({@code ResourcePackLoader.populatePackRepository:82} ← патч {@code ServerPacksSource}) — то есть при
+	 * создании мира/старте сервера, много позже чтения {@code GregTech.cfg} в preInit2; флаг к этому моменту
+	 * всегда выставлен. {@code Pack.Position.TOP} ставит пак ВЫШЕ встроенных паков модов — remove применяется
+	 * после датапака самого AE2 (порядок доказывается судьёй {@code gt6ae2gen}: тег пуст в живом реестре).
+	 */
+	public void onAddPackFinders(net.neoforged.neoforge.event.AddPackFindersEvent aEvent) {
+		if (aEvent.getPackType() != net.minecraft.server.packs.PackType.SERVER_DATA) return;
+		if (!MD.AE.mLoaded || !AE2_REPLACE_METEORITE_GENERATION) return;
+		aEvent.addPackFinders(
+			net.minecraft.resources.Identifier.fromNamespaceAndPath(ModIDs.GAPI, "ae2replacegen"),
+			net.minecraft.server.packs.PackType.SERVER_DATA,
+			net.minecraft.network.chat.Component.literal("GT6: AE2 generation replaced by GregTech"),
+			net.minecraft.server.packs.repository.PackSource.BUILT_IN,
+			T, // alwaysActive: пак не предмет выбора игрока — им управляет ключ конфига
+			net.minecraft.server.packs.repository.Pack.Position.TOP);
 	}
 
 	/** BUG-033 fix (КОРЕНЬ стартовой зоны) + F12 refinement. **ЕДИНАЯ авторитетная точка исполнения отложенной
@@ -1162,7 +1192,12 @@ public class GT_API extends Abstract_Mod {
 		DISABLE_ALL_IC2_CENTRIFUGE_RECIPES      = F;
 		ENABLE_ADDING_IC2_CENTRIFUGE_RECIPES    = F;
 		}
-		
+
+		// ADAPT-019, тот же приём, что флаги ic2 выше: ключ читается ТОЛЬКО при живом AE2 (без него в конфиг
+		// не пишется), без AE2 флаг всегда T — метеоритов нет, жила метеоритного железа нужна (пять сплавов MT).
+		// Потребители флага: GT_API.onAddPackFinders (пак-гашение метеоритов) и Loader_Worldgen (жила).
+		AE2_REPLACE_METEORITE_GENERATION        = !MD.AE.mLoaded || ConfigsGT.GREGTECH.get("ae2", "ReplaceMeteoriteGeneration", T);
+
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDOUT"             , F)) System.out.close();
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDERR"             , F)) System.err.close();
 		// F12: 1.7.10 Blocks.mob_spawner.setHardness(500)/setResistance(6000000) — runtime-мутация vanilla-блока (neo Properties

@@ -766,6 +766,11 @@ public class Loader_Worldgen implements Runnable {
 		// (LoaderUnificationTargets:58-61,369-371), которых на 26.1 нет; базовый источник — камни WorldgenRocks и
 		// лут gt.misc — остаётся, это промышленный этаж под Bedrock Drill. Вероятность и образец — ancientdebris
 		// (строка ниже, ≈4000); цветок — железный, тот же, что у гематита.
+		// Мастер-ключ ae2/ReplaceMeteoriteGeneration (решение пользователя 2026-08-13): есть метеорит — нет жилы,
+		// нет метеорита — есть жила. При F жила НЕ ЗАВОДИТСЯ ВОВСЕ (не «Enabled=F»): свой ключ Enabled
+		// персистится в WorldGenerationNew.cfg при первом же запуске, и связь через дефолт молча отвалилась бы.
+		// Вторая половина ключа — пак ae2replacegen (GT_API.onAddPackFinders). Без AE2 флаг всегда T.
+		if (AE2_REPLACE_METEORITE_GENERATION)
 		new WorldgenOresBedrock("ore.bedrock.meteoriciron" , T, T,   4000, MT.MeteoricIron        , BlocksGT.FlowersA, 7, GEN_FLOOR);
 		new WorldgenOresBedrock("ore.bedrock.voidquartz"   , T, T,   4000, MT.VoidQuartz                                , GEN_NETHER);
 		new WorldgenOresBedrock("ore.bedrock.glowstone"    , T, T,   4000, MT.Glowstone                                 , GEN_NETHER);
