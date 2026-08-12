@@ -762,6 +762,11 @@ public class Loader_Worldgen implements Runnable {
 		new WorldgenOresBedrock("ore.bedrock.bauxite"      , T, T,   2000, MT.OREMATS.Bauxite     , BlocksGT.FlowersA, 7, GEN_FLOOR); // TODO Aluminium Flower
 		new WorldgenOresBedrock("ore.bedrock.cassiterite"  , T, T,   2000, MT.OREMATS.Cassiterite , BlocksGT.FlowersA, 7, GEN_FLOOR); // TODO Tin Flower
 		new WorldgenOresBedrock("ore.bedrock.chalcopyrite" , T, T,   2000, MT.OREMATS.Chalcopyrite, BlocksGT.FlowersA, 2, GEN_FLOOR);
+		// ADAPT-019 (слой AE2): жила СВЕРХ оригинала. В 1.7.10 метеоритное железо поставляли GalactiCraft и HBM
+		// (LoaderUnificationTargets:58-61,369-371), которых на 26.1 нет; базовый источник — камни WorldgenRocks и
+		// лут gt.misc — остаётся, это промышленный этаж под Bedrock Drill. Вероятность и образец — ancientdebris
+		// (строка ниже, ≈4000); цветок — железный, тот же, что у гематита.
+		new WorldgenOresBedrock("ore.bedrock.meteoriciron" , T, T,   4000, MT.MeteoricIron        , BlocksGT.FlowersA, 7, GEN_FLOOR);
 		new WorldgenOresBedrock("ore.bedrock.voidquartz"   , T, T,   4000, MT.VoidQuartz                                , GEN_NETHER);
 		new WorldgenOresBedrock("ore.bedrock.glowstone"    , T, T,   4000, MT.Glowstone                                 , GEN_NETHER);
 		new WorldgenOresBedrock("ore.bedrock.gloomstone"   , T, T,   4000, MT.Gloomstone                                , GEN_NETHER);

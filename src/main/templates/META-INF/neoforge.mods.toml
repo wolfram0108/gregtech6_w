@@ -157,6 +157,41 @@ config="gregapi.mixins.json"
     ordering="NONE"
     side="BOTH"
 
+# AE2 — опциональная зависимость слоя совместимости (ADAPT-017…020). ordering=AFTER несёт СМЫСЛ, а не
+# вежливость: датапак-теги применяются в порядке загрузки модов (ResourcePackLoader.findResourcePacks ->
+# ModList.getModFiles, LinkedHashMap), и наш remove-файл data/ae2/tags/worldgen/biome/has_meteorites.json
+# обязан лечь ПОСЛЕ записи AE2 (TagLoader: values::remove в порядке записей) — иначе гашение метеорита молчит.
+# ⚠️ Ребро объявлено у ВСЕХ ЧЕТЫРЁХ наших модов: файл встаёт в список паков по ПЕРВОМУ из своих модов в
+# отсортированном порядке (ModSorter.java:191 — map(getOwningFile).distinct), и зависимость у одного
+# gregtech6 файл после ae2 не сдвигает (проверено прогоном: gregapi всплывал раньше ae2).
+[[dependencies.${mod_id}]]
+    modId="ae2"
+    type="optional"
+    versionRange="[26.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.gregapi]]
+    modId="ae2"
+    type="optional"
+    versionRange="[26.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.gregapi_post]]
+    modId="ae2"
+    type="optional"
+    versionRange="[26.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.gregtech]]
+    modId="ae2"
+    type="optional"
+    versionRange="[26.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares
 # that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't
 # stop your mod loading on the server for example.
