@@ -234,8 +234,8 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	public final String getUnlocalizedName() {return mNameInternal;}
 	public final Item setUnlocalizedName(String aName) {return this;}
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
-	// F1-контракт (1.7.10 itemDamage==meta): meta = mID материала; neo-дефолт getDamage читает DAMAGE-компонент (0). Как на прочих корнях.
-	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : ST.meta_(aStack);}
+	// F1-контракт (1.7.10 itemDamage==meta): meta = mID материала. Переопределения getDamage(ItemStack) здесь НЕТ и быть
+	// не должно — дефолт Forge уже отдаёт его из сырого "Damage", а само-вызов через ST.meta_ замыкает движок (см. ST.meta_).
 	// F13-мост appendHoverText → addInformation (как ItemBlockBase:65).
 	@Override @SuppressWarnings({"rawtypes", "unchecked"})
 	public void appendHoverText(ItemStack aStack, net.minecraft.world.level.Level aWorld, java.util.List<net.minecraft.network.chat.Component> aTooltips, net.minecraft.world.item.TooltipFlag aFlag) {

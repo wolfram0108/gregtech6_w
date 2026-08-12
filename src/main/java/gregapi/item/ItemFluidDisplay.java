@@ -286,8 +286,8 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		return tFluid == null ? "INVALID FLUID ID!!!" : FL.name(tFluid, T);
 	}
 
-	// F1-контракт (1.7.10 itemDamage==meta): meta = fluid-ID; neo-дефолт getDamage читает DAMAGE-компонент (0). Как на прочих корнях.
-	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : ST.meta_(aStack);}
+	// F1-контракт (1.7.10 itemDamage==meta): meta = fluid-ID. Переопределения getDamage(ItemStack) здесь НЕТ и быть
+	// не должно — дефолт Forge уже отдаёт его из сырого "Damage", а само-вызов через ST.meta_ замыкает движок (см. ST.meta_).
 
 	// LOCALIZATION-display: мост getName → GT6-имя (как ItemBase:145); без него дисплей жидкости — сырой ключ.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}

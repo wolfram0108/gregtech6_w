@@ -107,10 +107,9 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		mBlock = (MultiTileEntityBlockInternal)aBlock;
 	}
 	
-	// F1-контракт (1.7.10 itemDamage==meta): дословный GT6-код (getUnlocalizedName и др.) зовёт getDamage за ПОДТИПОМ
-	// (ID машины); neo-дефолт (IItemExtension) читает DAMAGE-компонент = 0 у meta-предметов → все имена/данные с ID 0.
-	// Восстанавливаем контракт корня: не-повреждаемый стек → subtype-мета (центр F1 ST.meta_). Как на прочих корнях иерархии.
-	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : gregapi.util.ST.meta_(aStack);}
+	// F1-контракт (1.7.10 itemDamage==meta): переопределения getDamage(ItemStack) здесь НЕТ и быть не должно —
+	// дефолт Forge уже отдаёт подтип (ID машины) из сырого "Damage", а само-вызов через ST.meta_ замыкает движок
+	// (см. gregapi.util.ST#meta_).
 
 	// LOCALIZATION-display: neo берёт имя через getName(ItemStack) — мост в GT6-имя (LH через getItemStackDisplayName);
 	// тот же мост, что ItemBase:145/PrefixItem:213/ItemBlockBase. Без него — сырой ключ "item.gregtech.gt.multitileentity".

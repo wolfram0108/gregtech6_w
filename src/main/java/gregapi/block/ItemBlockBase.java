@@ -145,9 +145,8 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
 	// LOCALIZATION-display: neo getName(ItemStack) → GT6-имя (LH.get); иначе raw-ключ из vanilla-lang.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
-	// F1-контракт (1.7.10 itemDamage==meta): дословный GT6-код зовёт getDamage за подтипом блока; neo-дефолт читает
-	// DAMAGE-компонент (0 у meta-предметов). Восстанавливаем на корне (как ItemBase/MTE): не-повреждаемый → ST.meta_.
-	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : ST.meta_(aStack);}
+	// F1-контракт (1.7.10 itemDamage==meta): переопределения getDamage(ItemStack) здесь НЕТ и быть не должно —
+	// дефолт Forge уже отдаёт подтип из сырого "Damage", а само-вызов через ST.meta_ замыкает движок (см. ST.meta_).
 	public boolean placeBlockAt(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMetaData) {return WD.set(aWorld, aX, aY, aZ, getBlock(), aMetaData, 3);}
 	// BUG-021 v2: мост neo per-stack канала на 1.7.10-хук ниже — без него ВСЯ блок-иерархия (BlockBase/слэбы/планки/
 	// логи/листва/саженцы/BlockStones — их getItemStackLimit с OP.*.mDefaultStackSize) стакалась по vanilla-дефолту 64.

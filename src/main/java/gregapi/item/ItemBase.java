@@ -184,10 +184,8 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	// LOCALIZATION-display: neo берёт имя через getName(ItemStack) (не 1.7.10 getItemStackDisplayName) — мост в GT6-имя
 	// (LH.get). Без этого neo брал бы из vanilla-lang (куда BACKUPMAP не попадает) → показывались raw-ключи.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
-	// F1-контракт (1.7.10 itemDamage==meta): дословный GT6-код зовёт getDamage за подтипом; neo-дефолт (IItemExtension)
-	// читает DAMAGE-компонент (0 у meta-предметов, у GT-инструментов прочность в NBT). Восстанавливаем на корне:
-	// не-повреждаемый стек → subtype-мета (центр F1 ST.meta_). Реально-повреждаемые (getMaxDamage>0) — vanilla-ветка.
-	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : ST.meta_(aStack);}
+	// F1-контракт (1.7.10 itemDamage==meta): переопределения getDamage(ItemStack) здесь НЕТ и быть не должно —
+	// дефолт Forge уже отдаёт подтип из сырого "Damage", а само-вызов через ST.meta_ замыкает движок (см. ST.meta_).
 	public final boolean getShareTag() {return T;} // just to be sure.
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(mModID+":"+mName) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
 	public void registerIcons(Object aIconRegister) {mIcon = ResourceLocation.parse((mModID + ":" + mName).toLowerCase(java.util.Locale.ROOT));}

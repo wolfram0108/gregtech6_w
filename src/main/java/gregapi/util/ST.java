@@ -204,6 +204,15 @@ public class ST {
 	// заводился компонент SUBTYPE. В 1.20.1 ограничения нет: IForgeItem.setDamage клампит ТОЛЬКО по нулю
 	// (IForgeItem.java:472-475), читает getTag().getInt("Damage") (:435-438), а "Damage" лежит ВНУТРИ tag, который
 	// целиком участвует в ItemStack.isSameItemSameTags → идентичность/стакание/матчинг как в 1.7.10.
+	//
+	// ⛔ СЛЕДСТВИЕ, НАРУШЕНИЕ КОТОРОГО = StackOverflowError: Item.getDamage(ItemStack) ПЕРЕОПРЕДЕЛЯТЬ НЕЛЬЗЯ.
+	// getDamageValue ниже — не источник значения, а ДЕЛЕГАТ в этот самый хук (ItemStack.java:319
+	// `return this.getItem().getDamage(this)`; ровно так же было в 1.7.10 — ItemStack.java:260
+	// `return getItem().getDamage(this)`). Источник — сырое NBT: дефолт IForgeItem.getDamage возвращает
+	// getTag().getInt("Damage") (IForgeItem.java:435-438), что и есть аналог поля stack.itemDamage
+	// оригинала (Item.java:1317 `return stack.itemDamage`). Оригинал 1.7.10 этот хук НЕ переопределял
+	// нигде, и на 1.20.1 переопределять его незачем: дефолт уже отдаёт подтип. Переопределение,
+	// зовущее meta_/getDamageValue, замыкает движок на себя — компилятор такой цикл не видит.
 	public static short     meta_(ItemStack aStack) {return UT.Code.bindShort(aStack.getDamageValue());}
 	public static ItemStack meta (ItemStack aStack, long aMeta) {return aStack == null ? null : meta_(aStack, aMeta);}
 	public static ItemStack meta_(ItemStack aStack, long aMeta) {aStack.setDamageValue(UT.Code.bindShort(aMeta)); return aStack;}
