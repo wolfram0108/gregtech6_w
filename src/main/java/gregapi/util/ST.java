@@ -423,7 +423,16 @@ public class ST {
 	 */
 	public static Item findItem(String aModID, String aName) {
 		if (aModID == null || aName == null) return null;
-		Identifier tID = Identifier.fromNamespaceAndPath(aModID, aName);
+		// Э0 миссии AE2: было fromNamespaceAndPath — оно ШВЫРЯЕТ IdentifierException на пути, недопустимом в
+		// 26.1 (Identifier.java:268 assertValidPath; заглавные буквы запрещены). Сюда приходят имена предметов
+		// 1.7.10 как есть («item.ItemMultiMaterial», «tile.BlockQuartzGlass» — в 1.7.10 они были законны), и
+		// первое же такое имя роняло ВЕСЬ загрузчик-вызыватель (LoaderItemList, LoaderBookList,
+		// Loader_Recipes_Replace — их try/catch стоит вокруг всего run()). Пока ни один MD.X.mLoaded не был T,
+		// ST.make отсекала это раньше (ST.java:621) и швов не было видно; с подключением AE2 — стало видно.
+		// tryBuild — тот же конструктор, но @Nullable вместо броска (Identifier.java:57) ⇒ неизвестное имя
+		// снова даёт null, ровно как GameRegistry.findItem в 1.7.10.
+		Identifier tID = Identifier.tryBuild(aModID, aName);
+		if (tID == null) return null;
 		return BuiltInRegistries.ITEM.containsKey(tID) ? BuiltInRegistries.ITEM.getValue(tID) : null;
 	}
 	/** F12/R7: ЕДИНАЯ точка «item по (modId,name) → ItemStack размера aSize» (был выдуманный
@@ -642,7 +651,13 @@ public class ST {
 	public static ItemStack mkic(String aItem                , long aSize, long aMeta                                   ) {return     meta(mkic(aItem, aSize), aMeta);}
 	public static ItemStack mkic(String aItem                , long aSize            , ItemStack aReplacement           ) {return get(     mkic(aItem, aSize)        , aReplacement);}
 	public static ItemStack mkic(String aItem                , long aSize, long aMeta, Object    aReplacement           ) {return get(meta(mkic(aItem, aSize), aMeta), aReplacement);}
-	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {return     meta(make(aModID, aItem, aSize), aMeta);}
+	// Э2 (слой совместимости AE2): ЕДИНСТВЕННАЯ точка, где имя предмета 1.7.10 превращается в стек, —
+	// сюда сходятся ВСЕ пути адресации чужого мода (ST.block/ST.item ModData-варианты, OM.data,
+	// OreDictManager.setTarget, ItemStackMap.put, ItemStackSet.add). AE2 26.1 переименовал свои предметы
+	// целиком (мета-подтипы rv2 стали отдельными id), поэтому пара «имя+мета» разрешается таблицей центра
+	// gregapi.compat.AE2Names; знает он только имена AE2 — для всех прочих модов путь прежний, verbatim.
+	// Тот же приём и то же место, что у ванильной развёртки меты (CS.Flattened в ST.make_ строкой ниже).
+	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {if (gregapi.compat.AE2Names.owns(aModID, aItem)) return gregapi.compat.AE2Names.make(aItem, aSize, aMeta); return     meta(make(aModID, aItem, aSize), aMeta);}
 	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta, Object    aReplacement           ) {return get(meta(make(aModID, aItem, aSize), aMeta), aReplacement);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta                                   ) {return make(item(aItemID), aSize, aMeta);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta              , CompoundTag aNBT) {return make(item(aItemID), aSize, aMeta, aNBT);}
