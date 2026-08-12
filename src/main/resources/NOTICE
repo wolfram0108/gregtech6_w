@@ -60,8 +60,8 @@ a logo ever be added.
 4. Compile-time stand-ins for third-party mod APIs
 --------------------------------------------------
 
-The jar contains 244 classes in 28 package names owned by other projects: ic2, thaumcraft,
-forestry, codechicken, buildcraft, appeng, cofh, micdoodle8, net.minecraftforge and others.
+The jar contains 239 classes in 27 package names owned by other projects: ic2, thaumcraft,
+forestry, codechicken, buildcraft, cofh, micdoodle8, net.minecraftforge and others.
 
 These are NOT those projects' code. Every one of them was written from scratch for this port
 and declares only what GregTech 6 itself implements or calls — typically an empty interface.

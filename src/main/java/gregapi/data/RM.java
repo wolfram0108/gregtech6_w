@@ -23,7 +23,6 @@
 
 package gregapi.data;
 
-import appeng.api.AEApi;
 import com.cricketcraft.chisel.api.carving.CarvingUtils;
 import net.neoforged.fml.InterModComms;
 import ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
@@ -966,16 +965,18 @@ public class RM {
 		if (ST.invalid(aInput) || ST.invalid(aOutput1)) return F;
 		RM.Mortar  .addRecipe1(T, 16, 16*aPower, aInput, aOutput1, aOutput2);
 		RM.Shredder.addRecipe1(T, 16, 16*aPower, aInput, aOutput1, aOutput2);
-		ae_grinder   (UT.Code.bindInt(   5*aPower), aInput, aOutput1, aOutput2, 1.0F);
+		// Э0 (AE2 26.1): строка ae_grinder(5*aPower, …) снята — у AE2 26.1 нет кварцевой мельницы вовсе
+		// (0 совпадений grindstone в её дереве), реестр рецептов, который она наполняла, исчез вместе с ней.
 		te_pulverizer(UT.Code.bindInt(1000*aPower), aInput, aOutput1, aOutput2);
 		ic2_macerator(aInput, aOutput1);
 		return T;
 	}
 	
-	public static boolean ae_grinder(int aTurns, ItemStack aInput, ItemStack aOutput) {if (MD.AE.mLoaded && ST.valid(aInput) && ST.valid(aOutput)) try {AEApi.instance().registries().grinder().addRecipe(ST.copy_(aInput), ST.copy_(aOutput), Math.max(1, aTurns)); return T;} catch(Throwable e) {e.printStackTrace(ERR);} return F;}
-	public static boolean ae_grinder(int aTurns, ItemStack aInput, ItemStack aOutput, ItemStack aOutput2, float aChance2) {if (MD.AE.mLoaded && ST.valid(aInput) && ST.valid(aOutput)) try {AEApi.instance().registries().grinder().addRecipe(ST.copy_(aInput), ST.copy_(aOutput), ST.copy(aOutput2), aChance2, Math.max(1, aTurns)); return T;} catch(Throwable e) {e.printStackTrace(ERR);} return F;}
-	public static boolean ae_grinder(int aTurns, ItemStack aInput, ItemStack aOutput, ItemStack aOutput2, float aChance2, ItemStack aOutput3, float aChance3) {if (MD.AE.mLoaded && ST.valid(aInput) && ST.valid(aOutput)) try {AEApi.instance().registries().grinder().addRecipe(ST.copy_(aInput), ST.copy_(aOutput), ST.copy(aOutput2), aChance2, ST.copy(aOutput3), aChance3, Math.max(1, aTurns)); return T;} catch(Throwable e) {e.printStackTrace(ERR);} return F;}
-	
+	// Э0 (AE2 26.1): три метода ae_grinder(…) сняты вместе со своим носителем. Они писали в реестр
+	// AEApi.instance().registries().grinder() — кварцевую мельницу AE2 rv2; в AE2 26.1 машины нет,
+	// как нет и самого AEApi. Их место в цепочке дробления заняли Mortar/Shredder выше (Грег звал их
+	// в том же mortarize) — центр GT6 остался, ушёл только чужой приёмник.
+
 	public static boolean pulverizing(ItemStack aInput, ItemStack aOutput1) {return pulverizing(aInput, aOutput1, null, 0, F);}
 	public static boolean pulverizing(ItemStack aInput, ItemStack aOutput1, ItemStack aOutput2) {return pulverizing(aInput, aOutput1, aOutput2, 100, F);}
 	public static boolean pulverizing(ItemStack aInput, ItemStack aOutput1, ItemStack aOutput2, int aChance) {return pulverizing(aInput, aOutput1, aOutput2, aChance, F);}

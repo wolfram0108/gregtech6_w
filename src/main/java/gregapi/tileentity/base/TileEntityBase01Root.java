@@ -31,7 +31,6 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import gregapi.fluid.FluidTankInfo;
 
-import appeng.api.movable.IMovableTile;
 import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;
 import gregapi.block.multitileentity.IMultiTileEntity;
@@ -106,10 +105,12 @@ import static gregapi.data.CS.*;
  * 
  * The Functions all TileEntities should have.
  */
-@Optional.InterfaceList(value = {
-  @Optional.Interface(iface = "appeng.api.movable.IMovableTile", modid = ModIDs.AE)
-})
-public abstract class TileEntityBase01Root extends BlockEntity implements ITileEntity, ITileEntityGUI, IMovableTile {
+// Э0 (AE2 26.1): снят @Optional.Interface appeng.api.movable.IMovableTile — интерфейса в AE2 26.1 НЕТ
+// (пакет appeng.api.movable там несёт BlockEntityMoveStrategies/IBlockEntityMoveStrategy). Пока его роль
+// исполняло зеркало src/compat-mirror/java/appeng/, а с подключением настоящего jar AE2 пакет appeng.*
+// оказался бы в ДВУХ модулях сразу (ModuleClassLoader.java:76-78 packageLookup.put — один молча затирает
+// другой). Методы prepareToMove()/doneMoving() — код самого GT6, остаются как обычные (см. ниже).
+public abstract class TileEntityBase01Root extends BlockEntity implements ITileEntity, ITileEntityGUI {
 	/** If this TileEntity checks for the Chunk to be loaded before returning World based values. If this is set to T, this TileEntity will not cause worfin' Chunks, uhh I mean orphan Chunks. */
 	public boolean mIgnoreUnloadedChunks = T;
 	
@@ -1045,9 +1046,12 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public void onCoordinateChange() {/**/}
 	
 	// AE Stuff
-	
-	@Override public boolean prepareToMove() {return T;}
-	@Override public void doneMoving() {onCoordinateChange();}
+
+	// Э0 (AE2 26.1): @Override снят вместе с implements IMovableTile (см. заголовок класса) — тела методов
+	// Грега 1:1 на месте, doneMoving() переопределён в TileEntityBase02AdjacentTEBuffer:172. Привязка к
+	// движущей механике AE2 26.1 (IBlockEntityMoveStrategy) — этап Э6.
+	public boolean prepareToMove() {return T;}
+	public void doneMoving() {onCoordinateChange();}
 	
 	// Fire Stuff
 	

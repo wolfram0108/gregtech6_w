@@ -297,6 +297,19 @@ dependencies {
     compileOnly "maven.modrinth:journeymap:${journeymap_version}"
     localRuntime "maven.modrinth:journeymap:${journeymap_version}"
 
+    // Applied Energistics 2 (миссия «слой совместимости GT6 ⇄ AE2», этап Э0). GT6 знает AE2 с 1.7.10:
+    // gregtech/compat/Compat_Recipes_AppliedEnergistics.java задаёт прессы, резку, sky stone; MD.AE.mLoaded
+    // сторожит все эти пути. Тот же приём, что у Jade/JourneyMap — Modrinth-maven, compileOnly + localRuntime.
+    // ⚠ ПАКЕТ appeng.* ТЕПЕРЬ ПРИНАДЛЕЖИТ ЭТОМУ JAR. Зеркала src/compat-mirror/java/appeng/ удалены (Э0):
+    // ModuleClassLoader.java:76-78 (fml) кладёт packageLookup.put(pk, moduleInfo) — при совпадении пакета в
+    // двух модулях один МОЛЧА затирает другой, порядок обхода недетерминирован. Новые зеркала в appeng.* класть
+    // НЕЛЬЗЯ: код должен ходить в настоящий API AE2.
+    compileOnly "maven.modrinth:ae2:${ae2_version}"
+    localRuntime "maven.modrinth:ae2:${ae2_version}"
+    // GuideME — обязательная зависимость AE2 (её neoforge.mods.toml: modId="guideme"); Modrinth-maven pom
+    // транзитивных зависимостей не несёт, поэтому объявляется здесь. Только runtime: наш код её не трогает.
+    localRuntime "maven.modrinth:guideme:${guideme_version}"
+
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
     // The group id is ignored when searching -- in this case, it is "blank"

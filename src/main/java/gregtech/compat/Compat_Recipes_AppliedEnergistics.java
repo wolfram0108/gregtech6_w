@@ -26,6 +26,7 @@ package gregtech.compat;
 import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
+import gregapi.compat.AE2Names;
 import gregapi.compat.CompatMods;
 import gregapi.data.*;
 import gregapi.oredict.OreDictMaterial;
@@ -42,16 +43,19 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 	public Compat_Recipes_AppliedEnergistics(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
 	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing AE Recipes.");
-		RM.ae_grinder(5, ST.make(MD.AE, "item.ItemMultiMaterial", 1, 10), OP.dustSmall.mat(MT.CertusQuartz, 2));
-		RM.ae_grinder(5, ST.make(MD.AE, "item.ItemMultiMaterial", 1, 11), OP.dustSmall.mat(MT.NetherQuartz, 2));
-		RM.ae_grinder(5, ST.make(MD.AE, "item.ItemMultiMaterial", 1, 12), OP.dustSmall.mat(MT.Fluix, 2));
-		
+		// Э0 (AE2 26.1): три строки RM.ae_grinder(5, …) сняты — кварцевой мельницы у AE2 26.1 нет.
+
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(IL.AE_Cutter_Certus.wild(1), OP.ingot.mat(MT.Fe, 1)), ST.array(ST.make(MD.AE, "item.ItemMultiMaterial", 0, 21)), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(IL.AE_Cutter_Quartz.wild(1), OP.ingot.mat(MT.Fe, 1)), ST.array(ST.make(MD.AE, "item.ItemMultiMaterial", 0, 21)), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
 		
 		CR.shaped(ST.make(MD.AE, "tile.BlockQuartzGlass", 4, 0), CR.DEF_REM_REV_NCC, "QGQ", "GQG", "QGQ", 'G', OD.blockGlassColorless, 'Q', OP.dust.dat(ANY.Quartz));
 		CR.shaped(ST.make(MD.AE, "tile.BlockQuartzLamp" , 1, 0), CR.DEF_REM_REV_NCC, "GQG", 'G', OP.dust.dat(ANY.Glowstone), 'Q', ST.make(MD.AE, "tile.BlockQuartzGlass", 1, 0));
 		
+		// Э2 (центр адресации gregapi.compat.AE2Names): у меты 10 — «очищенного» кристалла сертуса — носителя в
+		// AE2 26.1 НЕТ (объявлен AEItemIds.java:203, но не зарегистрирован). Запись пропускается ТИХО: подача
+		// null входом дала бы «ERROR: Recipe has no Inputs!». Тот же выход (печать 16) остаётся достижим
+		// строкой ниже — через грегскую пластину сертуса, которую Грег и поставил вторым путём.
+		if (AE2Names.has("item.ItemMultiMaterial", 10))
 		RM.Press        .addRecipe2(T, 16,   64, ST.make(MD.AE, "item.ItemMultiMaterial", 0, 13), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 10), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 16));
 		RM.Press        .addRecipe2(T, 16,   64, ST.make(MD.AE, "item.ItemMultiMaterial", 0, 13), OP.plateGem.mat(MT.CertusQuartz            , 1), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 16));
 		for (OreDictMaterial tMat : ANY.Diamond.mToThis)
@@ -83,16 +87,29 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 		RM.Press        .addRecipeX(T, 16,   64, ST.array(ST.make(MD.AE, "item.ItemMultiMaterial", 1, 17), OM.dust(MT.Redstone), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 20)), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 24));
 		RM.Press        .addRecipeX(T, 16,   64, ST.array(ST.make(MD.AE, "item.ItemMultiMaterial", 1, 18), OM.dust(MT.Redstone), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 20)), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 22));
 		
+		// Э2: семян кристаллов (item.ItemCrystalSeed) в AE2 26.1 нет вовсе — рост заменён budding-блоками.
+		// Три рецепта автоклава «семя + пар + вода → очищенный кристалл» опираются на носитель И на входе,
+		// И на выходе (меты 10/11/12 — те же «очищенные»), поэтому вся тройка тихо не регистрируется.
+		if (AE2Names.has("item.ItemCrystalSeed", 0)) {
 		RM.Autoclave    .addRecipe2(T,  0, 1500, ST.make(MD.AE, "item.ItemCrystalSeed", 1,    0), ST.tag(2), FL.Steam.make(48000), FL.DistW.make(225), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 10));
 		RM.Autoclave    .addRecipe2(T,  0, 1500, ST.make(MD.AE, "item.ItemCrystalSeed", 1,  600), ST.tag(2), FL.Steam.make(48000), FL.DistW.make(225), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 11));
 		RM.Autoclave    .addRecipe2(T,  0, 1500, ST.make(MD.AE, "item.ItemCrystalSeed", 1, 1200), ST.tag(2), FL.Steam.make(48000), FL.DistW.make(225), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 12));
+		}
 		
 		RM.Compressor   .addRecipe1(T, 16,   16, OP.gem.mat(MT.CertusQuartz                 , 4), ST.make(MD.AE, "tile.BlockQuartz", 1, 0));
+		// Э2: три сжатия «8 очищенных кристаллов → блок» пропускаются тихо — носителя у мет 10/12/11 нет
+		// (см. AE2Names). Обе плитки (кварц AE2 и ванильный кварцевый блок) остаются достижимы строками
+		// с грегскими гемами, которые Грег и поставил рядом.
+		if (AE2Names.has("item.ItemMultiMaterial", 10))
 		RM.Compressor   .addRecipe1(T, 16,   16, ST.make(MD.AE, "item.ItemMultiMaterial", 8, 10), ST.make(MD.AE, "tile.BlockQuartz", 1, 0));
 		RM.Compressor   .addRecipe1(T, 16,   16, OP.gem.mat(MT.Fluix                        , 4), ST.make(MD.AE, "tile.BlockFluix", 1, 0));
+		if (AE2Names.has("item.ItemMultiMaterial", 12))
 		RM.Compressor   .addRecipe1(T, 16,   16, ST.make(MD.AE, "item.ItemMultiMaterial", 8, 12), ST.make(MD.AE, "tile.BlockFluix", 1, 0));
+		if (AE2Names.has("item.ItemMultiMaterial", 11))
 		RM.Compressor   .addRecipe1(T, 16,   16, ST.make(MD.AE, "item.ItemMultiMaterial", 8, 11), ST.make(Blocks.QUARTZ_BLOCK, 1, 0));
 		
+		// Э2: выход у всех шести смешиваний — семя кристалла, носителя нет (см. выше). Тихо пропускаем.
+		if (AE2Names.has("item.ItemCrystalSeed", 0)) {
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.CertusQuartz), ST.make(Blocks.SAND, 1, W), ST.make(MD.AE, "item.ItemCrystalSeed", 2,    0));
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.NetherQuartz), ST.make(Blocks.SAND, 1, W), ST.make(MD.AE, "item.ItemCrystalSeed", 2,  600));
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.Fluix       ), ST.make(Blocks.SAND, 1, W), ST.make(MD.AE, "item.ItemCrystalSeed", 2, 1200));
@@ -100,6 +117,7 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.CertusQuartz), IL.AETHER_Sand     .get(1), ST.make(MD.AE, "item.ItemCrystalSeed", 2,    0));
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.NetherQuartz), IL.AETHER_Sand     .get(1), ST.make(MD.AE, "item.ItemCrystalSeed", 2,  600));
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.Fluix       ), IL.AETHER_Sand     .get(1), ST.make(MD.AE, "item.ItemCrystalSeed", 2, 1200));
+		}
 		}
 		
 		RM.smash(ST.make(MD.AE, "tile.BlockQuartz"              , 1, W), OP.gem.mat(MT.CertusQuartz, 4));
@@ -132,66 +150,9 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 		
 		
 		new OreDictListenerEvent_Names() {@Override public void addAllListeners() {
-		addListener("gemCertusQuartz", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.CertusQuartz, 1));
-		}});
-		addListener("gemNetherQuartz", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.NetherQuartz, 1));
-		}});
-		addListener("gemVoidQuartz", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.VoidQuartz, 1));
-		}});
-		addListener("gemMilkyQuartz", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.MilkyQuartz, 1));
-		}});
-		addListener("gemFluix", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Fluix, 1));
-		}});
-		addListener("gemCoal", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder( 5, aEvent.mStack, OP.dust.mat(MT.Coal, 1));
-		}});
-		addListener("gemCharcoal", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder( 5, aEvent.mStack, OP.dust.mat(MT.Charcoal, 1));
-		}});
-		addListener("gemSulfur", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder( 5, aEvent.mStack, OP.dust.mat(MT.S, 1));
-		}});
-		addListener("gemSaltpeter", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder( 5, aEvent.mStack, OP.dust.mat(MT.KNO3, 1));
-		}});
-		addListener("ingotCopper", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Cu, 1));
-		}});
-		addListener("ingotTin", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Sn, 1));
-		}});
-		addListener("ingotLead", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Pb, 1));
-		}});
-		addListener("ingotBismuth", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Bi, 1));
-		}});
-		addListener("ingotZinc", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Zn, 1));
-		}});
-		addListener("ingotBrass", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Brass, 1));
-		}});
-		addListener("ingotBronze", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(20, aEvent.mStack, OP.dust.mat(MT.Bronze, 1));
-		}});
-		addListener("ingotGold", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(20, aEvent.mStack, OP.dust.mat(MT.Au, 1));
-		}});
-		addListener("ingotPlatinum", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(20, aEvent.mStack, OP.dust.mat(MT.Pt, 1));
-		}});
-		addListener("ingotNickel", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(20, aEvent.mStack, OP.dust.mat(MT.Ni, 1));
-		}});
-		addListener("ingotIron", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(20, aEvent.mStack, OP.dust.mat(MT.Fe, 1));
-		}});
+		// Э0 (AE2 26.1): 20 слушателей (gemCertusQuartz…ingotIron), тело которых состояло ТОЛЬКО из вызова
+		// мельницы AE2, сняты вместе с ней — без вызова слушатель пуст. Четыре слушателя по линзам ниже
+		// живы: они кормят RM.LaserEngraver, машину самого GT6.
 		addListener(DYE_OREDICTS_LENS[DYE_INDEX_White], new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			for (OreDictMaterial tMat : ANY.Fe.mToThis) if (tMat != MT.Enori)
 			RM.LaserEngraver.addRecipe2(T,512,512, OP.blockSolid.mat(tMat, 1), ST.amount(0, aEvent.mStack), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 13));
