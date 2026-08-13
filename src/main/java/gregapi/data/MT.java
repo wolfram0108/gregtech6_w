@@ -3892,13 +3892,17 @@ public class MT {
 		MoonTurf     = stone    ( 8514, "Moon Turf"               , 207, 207, 207, 255)                                                                                                                                                                      .aspects(TC.ALIENIS     , 1).qual(1, 3.0, 16, 1).setGenerifying(Stone).addSourceOf(He,He_3),
 		MarsRock     = stone    ( 8515, "Mars Stone"              , 189,  77,  77, 255, MELTING, MOLTEN)                                                                                                                                                     .aspects(TC.ALIENIS     , 1).qual(1, 5.0, 32, 1).setGenerifying(Stone).setLocal("Mars"),
 		MarsSand     = stone    ( 8516, "Mars Sand"               , 207,  66,  66, 255)                                                                                                                                                                      .aspects(TC.ALIENIS     , 1).qual(1, 3.0, 16, 1).setGenerifying(Stone),
-		// ADAPT-019 (слой AE2): строка дословно оригинал MT.java:3803 — БЕЗ рецепта тигля. Добавленный было
-		// .alloySimple() (ecd0ff9b) снят: живой стенд gt6skystoneprobe доказал, что сплавление этих компонентов
-		// в тигле невозможно по правилам самого Грега (обсидиан при 1300 K перерождается в лаву, перидот при
-		// 1525 K отсеивается «не плавится» — к 2200 K половины состава уже нет). Промышленный синтез у Грега
-		// свой и оригинальный: Смеситель, пыли по этому же setMcfg → 9 пыли SkyStone (Loader_Recipes_Other:247,
-		// 1:1 с оригиналом), дальше пыль плавится в тигле и льётся в формы.
-		SkyStone     = stonecent( 8528, "Sky Stone"               ,  81,  92,  96, 255)                                                            .setMcfg( 0, Peridot        , 2*U, RareEarth        , 1*U, MeteoricIron     , 1*U, Obsidian         , 5*U).aspects(TC.VOLATUS     , 1).qual(1, 5.0, 64, 2).setGenerifying(Stone).heat(2200),
+		// ADAPT-019 (слой AE2). СПЛАВЛЕНИЯ компонентов нет и не будет: добавленный было .alloySimple()
+		// (ecd0ff9b) снят, живой стенд gt6skystoneprobe доказал, что оно невозможно по правилам самого Грега
+		// (обсидиан при 1300 K перерождается в лаву, перидот при 1525 K отсеивается «не плавится» — к 2200 K
+		// половины состава уже нет). Промышленный синтез у Грега свой: Смеситель, пыли по этому же setMcfg →
+		// 9 пыли SkyStone (loaders/c/Loader_Recipes_Other:251, 1:1 с оригиналом).
+		// ЗАВОДСКОЙ ПУТЬ «пыль → блок» (решение пользователя 2026-08-13) — двумя тегами, дословно тем же
+		// приёмом, каким Грег дал его соседям по семье камней: MoonRock (:3891) и MarsRock (:3893) несут
+		// ровно MELTING, MOLTEN. Никаких новых сущностей и констант: MELTING (TD.Processing) пускает материал
+		// в тигель (RecipeMapCrucible:123), MOLTEN (TD.ItemGenerator) заводит ему расплав (Loader_Fluids:696).
+		// Температура 2200 K уже стояла в строке — её не трогаем.
+		SkyStone     = stonecent( 8528, "Sky Stone"               ,  81,  92,  96, 255, MELTING, MOLTEN)                                           .setMcfg( 0, Peridot        , 2*U, RareEarth        , 1*U, MeteoricIron     , 1*U, Obsidian         , 5*U).aspects(TC.VOLATUS     , 1).qual(1, 5.0, 64, 2).setGenerifying(Stone).heat(2200),
 		Holystone    = stone    ( 8522, "Holystone"               , 172, 172, 172, 255)                                                                                                                                                                      .aspects(TC.LUX         , 1).qual(1, 5.0,128, 1).setGenerifying(Stone).heat(2000),
 		Livingrock   = stone    ( 8521, "Livingrock"              , 195, 205, 195, 255)                                                                                                                                                                      .aspects(TC.VICTUS      , 1).qual(1, 5.0,128, 2).setGenerifying(Stone).heat(1800),
 		Deadrock     = stone    ( 8523, "Deadrock"                , 153, 153, 168, 255, UNBURNABLE)                                                                                                                                                          .aspects(TC.MORTUUS     , 1).qual(1, 5.0,128, 2).setGenerifying(Stone).heat(1800),
