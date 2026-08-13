@@ -495,7 +495,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public InteractionResult use(Level aWorld, Player aPlayer, InteractionHand aHand) {
 		ItemStack aStack = aPlayer.getItemInHand(aHand);
 		ItemStack rStack = onItemRightClick(aStack, aWorld, aPlayer);
-		if (rStack != aStack) {aPlayer.setItemInHand(aHand, rStack); return InteractionResult.SUCCESS;}
+		if (rStack != aStack) {aPlayer.setItemInHand(aHand, gregapi.util.ST.nn(rStack)); return InteractionResult.SUCCESS;} // F15: контракт 1.7.10 может вернуть null — в руку движка только через центр
 		if (aPlayer.isUsingItem()) return InteractionResult.CONSUME;
 		return InteractionResult.PASS;
 	}
