@@ -22,7 +22,13 @@
  */
 
 package gregapi.block;
-import net.minecraft.world.level.block.PumpkinBlock;
+// F4-flattening, «признак сменил носитель»: в 1.7.10 BlockPumpkin — это НАПРАВЛЕННАЯ вырезанная тыква
+// (и lit_pumpkin от неё же). Движок 1.13+ разделил их: PumpkinBlock — неразрезанная, extends Block, свойства
+// направления у неё НЕТ ВООБЩЕ (neo PumpkinBlock:24); направление живёт у CarvedPumpkinBlock
+// (extends HorizontalDirectionalBlock, neo CarvedPumpkinBlock:31-33), и им же является JACK_O_LANTERN.
+// Порт взял одноимённый класс, из-за чего все ветки поворота тыквы были мертвы: instanceof не срабатывал
+// никогда. Поймано живым стендом gt6ae2wrench (цель «юг», тыква вставала на «восток» запасным циклом).
+import net.minecraft.world.level.block.CarvedPumpkinBlock;
 import net.minecraft.world.level.block.HopperBlock;
 import net.minecraft.world.level.block.FurnaceBlock;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
@@ -79,8 +85,8 @@ import static gregapi.data.CS.*;
  * For Internal Use.
  */
 public class ToolCompat {
-	public static boolean GC_BLOCKADVANCED = F, IC_WRENCHABLE = F, IC_CROPTILE = F;
-	
+	public static boolean GC_BLOCKADVANCED = F, IC_WRENCHABLE = F, IC_CROPTILE = F, AE_BASEBLOCKENTITY = F;
+
 	public static void checkAvailabilities() {
 		try {
 			BlockAdvanced.class.getCanonicalName();
@@ -93,6 +99,13 @@ public class ToolCompat {
 		try {
 			ICropTile.class.getCanonicalName();
 			IC_CROPTILE = T;
+		} catch(Throwable e) {/**/}
+		try {
+			// Слой совместимости с AE2: её блоки обслуживает ключ ГРЕГА (см. плечо в onToolClick).
+			// AE2 подключена compileOnly (build.gradle:307), поэтому в чистой сборке класса нет — признак
+			// берётся его наличием, ровно тем же приёмом, что у трёх флагов выше.
+			appeng.blockentity.AEBaseBlockEntity.class.getCanonicalName();
+			AE_BASEBLOCKENTITY = T;
 		} catch(Throwable e) {/**/}
 	}
 	
@@ -287,7 +300,7 @@ public class ToolCompat {
 			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
 				if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1) % 6, 3, F)) return 2000;
 			}
-			if (aBlock instanceof PumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
+			if (aBlock instanceof CarvedPumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ((aMeta-1)%4)+2, 3, F)) return 2500;
 			}
 			if (aBlock instanceof HopperBlock) {
@@ -346,7 +359,7 @@ public class ToolCompat {
 			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
 				if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1) % 6, 3, F)) return 2000;
 			}
-			if (aBlock instanceof PumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
+			if (aBlock instanceof CarvedPumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ((aMeta-1)%4)+2, 3, F)) return 2500;
 			}
 			if (aBlock instanceof HopperBlock) {
@@ -385,7 +398,47 @@ public class ToolCompat {
 					}
 				}
 			}
-			
+
+			// ПЛЕЧО AE2 — ключ Грега обслуживает блоки Applied Energistics. Решение пользователя: «машины из
+			// мода, такие как хранилища и подобные, должны поворачиваться греговским ключом… У Грега поворот
+			// реализован значительно правильнее». Кварцевые ключи AE2 при этом погашены узлом
+			// DisableAllQuartzToolRecipes (Compat_Recipes_AppliedEnergistics), то есть ключ в сборке один — наш.
+			// ⛔ Тег c:tools/wrench (ConventionTags:157, спрашивается InteractionUtil:38-39,:51) НЕ заводится:
+			// у GT6 ВСЕ инструменты — одна запись реестра gt.metatool.01 (Loader_Tools:119), а тип лежит на
+			// мете стека (CS.ToolsGT:2135-2136), поэтому тег на записи пометил бы ключом и меч, и кирку.
+			// Обслуживаем сами, публичным API AE2, тем же приёмом и в том же месте, что плечи GC и IC2 выше.
+			if (AE_BASEBLOCKENTITY && aEntityPlayer != null && aTileEntity instanceof appeng.blockentity.AEBaseBlockEntity tAEEntity) {
+				BlockPos tPosAE = new BlockPos(aX, aY, aZ);
+				if (!appeng.util.Platform.hasPermissions(new appeng.api.util.DimensionalBlockPos(aWorld, tPosAE), aEntityPlayer)) return 0;
+				if (aSneaking) {
+					// РАЗБОР С СОХРАНЕНИЕМ СОДЕРЖИМОГО. Зовём метод самого AE2, а не ломаем блок: он выгружает
+					// настройки (exportSettings, SettingsFrom.DISMANTLE_ITEM) и внутренний инвентарь
+					// (addAdditionalDrops) — AEBaseBlockEntity:450-478, — а у кабельной шины и сундука
+					// переопределён своим правильным способом (CableBusBlockEntity:326, SkyStoneChestBlockEntity:128).
+					// ⚠ ПРИНЯТАЯ КОСМЕТИЧЕСКАЯ ЦЕНА: AE2 глушит частицы и звук слома флагом
+					// WrenchHook.IS_DISASSEMBLING — приватный ThreadLocal (WrenchHook:27), читается в
+					// AEBaseBlock:120-123. Извне он недоступен, поэтому частицы слома будут видны; звук
+					// компенсируем ровно тем, что играет сам AE2 (WrenchHook:74-76).
+					if (tAEEntity.disassembleWithWrench(aEntityPlayer, aWorld, new BlockHitResult(new Vec3(aX+aHitX, aY+aHitY, aZ+aHitZ), FORGE_DIR[aSide], tPosAE, F), aStack).consumesAction()) {
+						aWorld.playSound(aEntityPlayer, tPosAE, net.minecraft.sounds.SoundEvents.ITEM_FRAME_REMOVE_ITEM, net.minecraft.sounds.SoundSource.BLOCKS, 0.7F, 1.0F);
+						return 10000;
+					}
+					return 0;
+				}
+				// ПОВОРОТ — семантикой ГРЕГА, не AE2. У AE2 это круговое вращение вокруг нажатой грани
+				// (WrenchHook:83-92, BlockOrientation.rotateClockwiseAround). У Грега сторона вычисляется по
+				// ТОЧКЕ ПОПАДАНИЯ — aTargetSide выше, UT.Code.getSideWrenching(aSide,aHitX,aHitY,aHitZ), девять
+				// зон грани, — и блок встаёт ЛИЦОМ на неё: не «щёлкай, пока не встанет», а «ткни, куда повернуть».
+				// Циклический поворот AE2 намеренно НЕ воспроизводится. Разворот вокруг оси (spin) сохраняем.
+				BlockState tStateAE = aWorld.getBlockState(tPosAE);
+				appeng.api.orientation.IOrientationStrategy tStrategyAE = appeng.api.orientation.IOrientationStrategy.get(tStateAE);
+				if (tStrategyAE.allowsPlayerRotation()) {
+					BlockState tNewAE = tStrategyAE.setOrientation(tStateAE, FORGE_DIR[aTargetSide], appeng.api.orientation.BlockOrientation.get(tStrategyAE, tStateAE).getSpin());
+					if (tNewAE != tStateAE && tNewAE.canSurvive(aWorld, tPosAE) && WD.set(aWorld, aX, aY, aZ, tNewAE, 3)) return 10000;
+				}
+				return 0;
+			}
+
 			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock instanceof gregapi.block.tree.BlockBaseLog || aBlock instanceof gregapi.block.tree.BlockBaseBeam || aBlock instanceof gregapi.block.misc.BlockBaseBale /* было aBlock.getRenderType()==PILLAR_RENDER — Forge-render-hook удалён из движка; ровно эти 3 класса возвращали PILLAR_RENDER(31) в оригинале (grep getRenderType по gregtech6/), instanceof — точный 1:1 эквивалент */) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
@@ -398,7 +451,7 @@ public class ToolCompat {
 			}
 			
 			if (aMeta == aTargetSide) {
-				if (aBlock instanceof PumpkinBlock || aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof HopperBlock || aBlock instanceof EnderChestBlock) {
+				if (aBlock instanceof CarvedPumpkinBlock || aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof HopperBlock || aBlock instanceof EnderChestBlock) {
 					if (WD.set(aWorld, aX, aY, aZ, NB, 0, 3)) {
 						ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, ST.make(aBlock, 1, 0));
 						return 10000;
@@ -408,7 +461,7 @@ public class ToolCompat {
 				if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
 					if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aTargetSide, 3, F)) return 10000;
 				}
-				if (aBlock instanceof PumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
+				if (aBlock instanceof CarvedPumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
 					if (SIDES_HORIZONTAL[aTargetSide] && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aTargetSide, 3, F)) return 10000;
 				}
 				if (aBlock instanceof HopperBlock) {

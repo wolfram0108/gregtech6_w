@@ -989,5 +989,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		}
 	}
 	
-	private static List<Block> ROTATABLE_VANILLA_BLOCKS = Arrays.asList(Blocks.PISTON, Blocks.STICKY_PISTON, Blocks.FURNACE, Blocks.FURNACE, Blocks.DROPPER, Blocks.DISPENSER, Blocks.CHEST, Blocks.TRAPPED_CHEST, Blocks.ENDER_CHEST, Blocks.HOPPER, Blocks.PUMPKIN, Blocks.JACK_O_LANTERN);
+	private static List<Block> ROTATABLE_VANILLA_BLOCKS = Arrays.asList(Blocks.PISTON, Blocks.STICKY_PISTON, Blocks.FURNACE, Blocks.FURNACE, Blocks.DROPPER, Blocks.DISPENSER, Blocks.CHEST, Blocks.TRAPPED_CHEST, Blocks.ENDER_CHEST, Blocks.HOPPER, Blocks.CARVED_PUMPKIN, Blocks.JACK_O_LANTERN);
+	// ⚠ Тот же носитель, что в ToolCompat: направленная тыква 1.7.10 = CARVED_PUMPKIN, а Blocks.PUMPKIN —
+	// неразрезанная и НЕ поворачивается вовсе (neo PumpkinBlock:24 extends Block, свойства FACING нет).
+	// Здесь стоял Blocks.PUMPKIN, из-за чего подсказка ключа на тыкве не показывалась никогда.
 }
