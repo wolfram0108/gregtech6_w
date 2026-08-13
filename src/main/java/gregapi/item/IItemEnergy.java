@@ -167,6 +167,7 @@ public interface IItemEnergy {
 			if (ST.invalid(aStack)) return 0;
 			if (aStack.getItem() instanceof IItemEnergy) return ((IItemEnergy)aStack.getItem()).doEnergyInjection(aEnergyType, aStack, aSize, aAmount, aInventory, aWorld, aX, aY, aZ, aDoInject);
 			if (aEnergyType == TD.Energy.EU && COMPAT_EU_ITEM != null && COMPAT_EU_ITEM.is(aStack) && !IL.IC2_EnergyCrystal.equal(aStack, T, T) && !IL.IC2_LapotronCrystal.equal(aStack, T, T) && COMPAT_EU_ITEM.insidevolt(aStack, UT.Code.voltMin(aSize), UT.Code.voltMax(aSize)) && COMPAT_EU_ITEM.charge(aStack, aSize, aDoInject) > 0) return 1;
+			if (aEnergyType == TD.Energy.EU) return fe(aStack, aSize, aAmount, aDoInject, T);
 			return 0;
 		}
 		
@@ -174,7 +175,53 @@ public interface IItemEnergy {
 			if (ST.invalid(aStack)) return 0;
 			if (aStack.getItem() instanceof IItemEnergy) return ((IItemEnergy)aStack.getItem()).doEnergyExtraction(aEnergyType, aStack, aSize, aAmount, aInventory, aWorld, aX, aY, aZ, aDoExtract);
 			if (aEnergyType == TD.Energy.EU && COMPAT_EU_ITEM != null && COMPAT_EU_ITEM.is(aStack) && !IL.IC2_EnergyCrystal.equal(aStack, T, T) && !IL.IC2_LapotronCrystal.equal(aStack, T, T) && COMPAT_EU_ITEM.provider(aStack) && COMPAT_EU_ITEM.insidevolt(aStack, UT.Code.voltMin(aSize), UT.Code.voltMax(aSize)) && COMPAT_EU_ITEM.decharge(aStack, aSize, aDoExtract) >= aSize) return 1;
+			if (aEnergyType == TD.Energy.EU) return fe(aStack, aSize, aAmount, aDoExtract, F);
 			return 0;
+		}
+
+		/**
+		 * Э5, ПРЕДМЕТНОЕ ПЛЕЧО: FE-капа предмета ({@code Capabilities.Energy.ITEM}, neoforge Capabilities:24).
+		 * Третья ветка этой же воронки, рядом с плечом IC2 — зарядники GT6 в неё уже ходят, править их не надо.
+		 * Через неё заряжаются powered-предметы AE2 (беспроводной терминал, переносные ячейки, matter cannon:
+		 * их капу ставит InitCapabilityProviders:205-212 через PoweredItemCapabilities).
+		 *
+		 * <p>Курс — авторский {@code RF_PER_EU = 4} (CS:217); у AE2 свой множитель 0.5, итого 1 EU = 2 AE.
+		 *
+		 * <p><b>Целые пакеты и никаких потерь.</b> GT6 меряет энергию пакетами {@code aSize} EU. Сначала ПРОБА:
+		 * транзакция открывается, спрашивается сколько возьмут, и закрывается БЕЗ commit — предмет не тронут.
+		 * По пробе считается число ЦЕЛЫХ пакетов; неполный пакет не проводится вовсе (иначе энергия ушла бы, а
+		 * вызыватель списал бы целый пакет). Фиксация — второй транзакцией и ровно на целые пакеты, и только
+		 * когда просят по-настоящему ({@code aDo}); при {@code aDo=F} возвращается лишь ответ пробы.
+		 *
+		 * <p><b>Вольтажного предиката здесь НЕТ, и это факт, а не упущение.</b> У плеча IC2 он есть, потому что
+		 * IC2 объявляет предмету ТИР ({@code CompatIC2EUItem:71} считает {@code insidevolt} по тиру). Движковый
+		 * {@code EnergyHandler} не несёт ни тира, ни напряжения — только объём, ёмкость, insert и extract
+		 * (neoforge EnergyHandler:55,94,110,124), и у предметов AE2 тира тоже нет. Вывести напряжение из
+		 * ёмкости или скорости заряда значило бы выдумать константу, чего делать нельзя. Следствие: FE-предмет
+		 * заряжается зарядником ЛЮБОГО тира. Появится у движка понятие тира — предикат встанет сюда одной строкой.
+		 */
+		private static long fe(ItemStack aStack, long aSize, long aAmount, boolean aDo, boolean aInject) {
+			if (ST.invalid(aStack) || aSize <= 0 || aAmount <= 0) return 0;
+			try {
+				net.neoforged.neoforge.transfer.energy.EnergyHandler tFE = net.neoforged.neoforge.capabilities.Capabilities.Energy.ITEM.getCapability(aStack, net.neoforged.neoforge.transfer.access.ItemAccess.forStack(aStack));
+				if (tFE == null) return 0;
+				long tCost = aSize * RF_PER_EU;
+				if (tCost <= 0) return 0;
+				int tWanted = UT.Code.bind31(aAmount * tCost);
+				long tPackets;
+				// ПРОБА: транзакция закрывается без commit — состояние предмета откатывается целиком.
+				try (net.neoforged.neoforge.transfer.transaction.Transaction tProbe = net.neoforged.neoforge.transfer.transaction.Transaction.open(net.neoforged.neoforge.transfer.transaction.Transaction.getCurrentOpenedTransaction())) {
+					tPackets = (aInject ? tFE.insert(tWanted, tProbe) : tFE.extract(tWanted, tProbe)) / tCost;
+				}
+				if (tPackets <= 0) return 0;
+				if (!aDo) return tPackets;
+				try (net.neoforged.neoforge.transfer.transaction.Transaction tRun = net.neoforged.neoforge.transfer.transaction.Transaction.open(net.neoforged.neoforge.transfer.transaction.Transaction.getCurrentOpenedTransaction())) {
+					long tMoved = (aInject ? tFE.insert(UT.Code.bind31(tPackets * tCost), tRun) : tFE.extract(UT.Code.bind31(tPackets * tCost), tRun)) / tCost;
+					if (tMoved <= 0) return 0;
+					tRun.commit();
+					return tMoved;
+				}
+			} catch(Throwable e) {return 0;}
 		}
 		
 		public static boolean full(ItemStack aStack, boolean aDefault) {

@@ -127,8 +127,24 @@ public class EnergyCompat {
 		
 		// IMPORTANT: Ignore the Fact that IEnergyConnection is SUPPOSEDLY part of IEnergyHandler. There is versions of the RF API in circulation, where this is NOT the case!!!
 		if (RF_ENERGY && (EMIT_EU_AS_RF || isElectricRFReceiver(aTarget)) && (aTarget instanceof cofh.api.energy.IEnergyHandler || (RF_ENERGY_NEW && aTarget instanceof cofh.api.energy.IEnergyReceiver))) return !(aTarget instanceof cofh.api.energy.IEnergyConnection) || ((cofh.api.energy.IEnergyConnection)aTarget).canConnectEnergy(FORGE_DIR[aSide]);
-		
+
+		// Э5, БЛОЧНОЕ ПЛЕЧО: FE-капа движка. Носитель RF-плеча выше (cofh.api.energy) — API мода 1.7.10,
+		// в 26.1 его нет, и RF_ENERGY всегда F. Смысл ветки переносится на движковую капу
+		// Capabilities.Energy.BLOCK (neoforge Capabilities:22): её отдают и Energy Acceptor AE2 (все
+		// AEBasePoweredBlockEntity, InitCapabilityProviders:82-83), и любой FE-приёмник вообще.
+		// Гейт ТОТ ЖЕ, что у RF-плеча: ключ Emit_EU_as_RF_from_Blocks либо белый список электро-приёмников.
+		if ((EMIT_EU_AS_RF || isElectricRFReceiver(aTarget)) && feHandler(aTarget, aSide) != null) return T;
+
 		return F;
+	}
+
+	/** Э5: FE-приёмник соседа со стороны {@code aSide}, движковой капой. Одно место на весь мод — его
+	 *  спрашивают и предикат связи, и вставка энергии; больше эту капу не спрашивает никто. */
+	public static net.neoforged.neoforge.transfer.energy.EnergyHandler feHandler(BlockEntity aReceiver, byte aSide) {
+		if (aReceiver == null || aReceiver.getLevel() == null) return null;
+		try {
+			return net.neoforged.neoforge.capabilities.Capabilities.Energy.BLOCK.getCapability(aReceiver.getLevel(), aReceiver.getBlockPos(), null, aReceiver, FORGE_DIR[aSide]);
+		} catch(Throwable e) {return null;}
 	}
 	
 	public static boolean checkOverCharge(long aSize, BlockEntity aReceiver) {
@@ -154,7 +170,30 @@ public class EnergyCompat {
 			// Applied Energistics gets a special case.
 			// Э0 (AE2 26.1): спец-случай снят — в 1.7.10 AE2 сам реализовывал приёмник EU
 			// (appeng.tile.powersink.IC2), в 26.1 этого класса нет и сеть принимает только FE.
-			// Выход GT6 на FE-капу движка (1 FE = 0.5 AE) — этап Э5.
+			//
+			// Э5, БЛОЧНОЕ ПЛЕЧО — тот самый выход на FE. Ветка стоит ЗДЕСЬ, а не у AE2: капа движковая, и
+			// через неё энергию примет любой FE-приёмник, не только Energy Acceptor. Курс — авторский
+			// RF_PER_EU = 4 (CS:217), у AE2 свой множитель 0.5 (AEConfig DEFAULT_FE_EXCHANGE), итого 1 EU = 2 AE.
+			// Гейт тот же, что у мёртвого RF-плеча ниже: ключ Emit_EU_as_RF_from_Blocks либо белый список.
+			// ТРАНЗАКЦИЯ: новый transfer-API отделяет пробу от фиксации. У ЭТОГО метода параметра симуляции
+			// нет — он и есть настоящая вставка (RF-плечо ниже тоже зовёт receiveEnergy с simulate=F),
+			// поэтому транзакция коммитится сразу, как только приёмник что-то взял. Проба с откатом нужна
+			// предметному плечу (IItemEnergy.Utility, там есть aDoInject) — здесь её нет и быть не должно.
+			// Возвращаем ФАКТИЧЕСКИ принятое, делением на цену пакета — ровно как RF-плечо, поэтому
+			// частичный приём не теряет остаток и вызыватель списывает только то, что реально ушло.
+			if (EMIT_EU_AS_RF || isElectricRFReceiver(aReceiver)) {
+				net.neoforged.neoforge.transfer.energy.EnergyHandler tFE = feHandler(aReceiver, aSide);
+				if (tFE != null) {
+					if (checkOverCharge(aSize, aReceiver)) return aAmount;
+					long tWanted = aAmount * aSize * RF_PER_EU;
+					try (net.neoforged.neoforge.transfer.transaction.Transaction tTx = net.neoforged.neoforge.transfer.transaction.Transaction.open(net.neoforged.neoforge.transfer.transaction.Transaction.getCurrentOpenedTransaction())) {
+						int tAccepted = tFE.insert(UT.Code.bind31(tWanted), tTx);
+						// aEmitter здесь может быть кем угодно; фиксируем только когда нас просят по-настоящему.
+						if (tAccepted > 0) tTx.commit();
+						return UT.Code.divup(tAccepted, aSize * RF_PER_EU);
+					} catch(Throwable e) {return 0;}
+				}
+			}
 
 			// Funky Locomotion includes the OLD RF-API that it does not even use, while also using NEWER parts of the RF API that it does not include... This sort of utter Bullshit makes RF-Mods incompatible with each other...
 			if (FL_ENERGY) {
