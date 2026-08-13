@@ -435,6 +435,13 @@ public class ToolCompat {
 				if (tStrategyAE.allowsPlayerRotation()) {
 					BlockState tNewAE = tStrategyAE.setOrientation(tStateAE, FORGE_DIR[aTargetSide], appeng.api.orientation.BlockOrientation.get(tStrategyAE, tStateAE).getSpin());
 					if (tNewAE != tStateAE && tNewAE.canSurvive(aWorld, tPosAE) && WD.set(aWorld, aX, aY, aZ, tNewAE, 3)) return 10000;
+					// «Уже смотрит туда» (клик в грань текущей ориентации): у ГРЕГА инструмент в руке ГЕЙТИТ GUI
+					// его машин — с ключом интерфейс не открывается никогда. Возврат 0 здесь ронял клик дальше в
+					// block.useItemOn, и AE2 открывала меню — живая приёмка 2026-08-13: «машины не поворачиваются,
+					// просто открываются» (стенд бил только в зоны КРАЁВ и этой ветки не видел). Холостой щелчок —
+					// малый износ, GUI отменён; открыть GUI при ключе в руке можно, как у Грега, — Shift тут занят
+					// разбором, значит GUI по AE2-блокам с ключом недоступен вовсе, ровно как у машин GT6.
+					return 2500;
 				}
 				return 0;
 			}
