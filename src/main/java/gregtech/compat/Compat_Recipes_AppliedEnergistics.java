@@ -190,22 +190,29 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 		// Оставлено ОСОЗНАННО (не дубли — ME-механика или единственный путь):
 		//  • smelting/blasting silicon_from_certus_quartz_dust — ЕДИНСТВЕННЫЙ путь к ae2:silicon, на нём
 		//    висит вход #c:silicon; GT6 сам плавит эту пыль в кремний AE2 (замер M-97, «запрет №1»).
+		//    Это ещё и КАНОН rv3: плавка пыли кварца в кремний была и в 1.7.10 (processing/vanilla.recipe:7-8).
+		//  • smelting/smooth_sky_stone_block — тоже канон rv3: единственная плавка небесного камня в
+		//    1.7.10 это ровно «BlockSkyStone -> BlockSkyStone:1» (decorative/skystone.recipe:1-2), то есть
+		//    сырой блок в гладкий. Цепь форм от гладкого живёт, её не трогаем.
 		//  • transform сингулярностей (entangled_singularity*) — компонент квантовых колец (дальний мост
 		//    ME-сети, QuantumBridgeBlockEntity:309-318); Грег такого не делает.
+		//  • Matter Condenser (io_condenser) — производитель материи (CondenserBlockEntity:144-148 отдаёт
+		//    MATTER_BALL либо SINGULARITY), но ЕДИНСТВЕННЫЙ в игре поставщик ae2:singularity: у GT6 пути к
+		//    ней нет вовсе (слова singularity во всём дереве продукта нет). Операция захардкожена, датапак-
+		//    рецепта у неё нет — гасить нечего и не за что.
 		//  • чарджер как МАШИНА и его крафт — зарядка собственных powered-предметов AE2 (беспроводной
 		//    терминал, переносные ячейки, matter cannon: ChargerBlockEntity:151-193) — ME-энергосистема;
 		//    GT6 их заряжать не умеет (мост энергии — Э5). charger/guide (книга-гайд) — документация мода.
 		//  • Growth Accelerator — тег growth_acceleratable это ВАНИЛЬНЫЕ культуры/саженцы/бамбук/ламинария
 		//    (+budding в конце): ускоритель ферм вообще, аналога у GT6 нет — не дубль.
-		//  • Vibration Chamber и Crystal Resonance Generator — генераторы AE-энергии, концептуальный дубль
-		//    генераторов GT6, НО до моста Э5 они единственные источники энергии сети — гасить их значит
-		//    обездвижить AE2 целиком. Замещаются НА Э5, вместе с капой EnergyHandler (реестр отложенности).
-		//  • Annihilation/Formation Plane — перемещение «мир ⇄ сеть» (PickupStrategy/placeInWorld), не
-		//    трансформация материи — логистика сети.
-		//  • компрессия кристаллов в блок, cable_anchor, формы кварца/флюикса (block_cutter/shaped),
-		//    деконструкция — ВЕРСТАК, не машина AE2; формы вдобавок канон гем-хранилищ Грега
-		//    (LoaderItemData:2118-2129). Кварцевое стекло и лампу снимает собственное замещение Грега
-		//    (CR.DEF_REM_REV_NCC → CR.remout → тот же центр, GT_API:721-731).
+		//  • Annihilation/Formation Plane — АВТОМАТИЧЕСКАЯ ДОБЫЧА и раскладка, а не логистика: плоскость
+		//    физически ломает блок (ItemPickupStrategy:306-308, level.destroyBlock). Оставлены не потому,
+		//    что «перемещение», а потому что машины-добытчика у GT6 НЕТ: во всём дереве только ручные
+		//    инструменты и MultiTileEntityBedrockDrill (качает жидкость, блоков не ломает) — дубля нет.
+		//  • компрессия кристаллов в блок, формы кварца/флюикса (block_cutter/shaped), деконструкция —
+		//    ВЕРСТАК и ванильный камнерез, не машина AE2 (block_cutter/* несут тип minecraft:stonecutting);
+		//    формы вдобавок канон гем-хранилищ Грега (LoaderItemData:2118-2129). Кварцевое стекло и лампу
+		//    снимает собственное замещение Грега (CR.DEF_REM_REV_NCC → CR.remout → тот же центр, GT_API:721-731).
 		//
 		// Управление — секция «ae2» конфига GregTech.cfg, по узлам (образец — секция «ic2», GT_API:1123-1152).
 		// Ось «наполнять чужую машину» (ENABLE_ADDING_*) у AE2 26.1 НОСИТЕЛЯ НЕ ИМЕЕТ: рецепты машин 26.1 —
@@ -221,7 +228,7 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 			// УЗЕЛ «инскрайбер» — умирает ЦЕЛИКОМ, вместе с крафтом машины. Все 15 его рецептов —
 			// трансформация материи, и каждый выход достижим машиной GT6 (судья gt6ae2nodes 66/0, M-95):
 			// пыль — ступка/Shredder (сертус, флюикс, ender: жемчуг Края дробится обработчиком префиксов),
-			// пыль скайстоуна — Смеситель (Loader_Recipes_Other:252) и дробление; печати и процессоры —
+			// пыль скайстоуна — Смеситель (loaders/c/Loader_Recipes_Other:251) и дробление; печати и процессоры —
 			// Пресс GT6 (строки 53-88 выше); прессы — LaserEngraver из блока железа + линза (строки 150-170
 			// выше) и размножение Прессом. Машина без единого рецепта — мусор в витрине, поэтому и её крафт
 			// network/blocks/inscribers снимается тем же узлом.
@@ -245,8 +252,9 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 			}
 
 			// УЗЕЛ «зарядка кристалла». Заряженный сертус у GT6 дают сито (шанс из промытой руды сертуса,
-			// Loader_Recipes_Ores:301-304) и молния (RM.Lightning, Loader_Recipes_Other:642). Сам чарджер
-			// ЖИВЁТ — он заряжает powered-предметы AE2 (см. шапку отбора).
+			// loaders/c/Loader_Recipes_Ores:302-305 — четыре рецепта RM.Sifting) и молния (RM.Lightning,
+			// loaders/c/Loader_Recipes_Other:642). Сам чарджер ЖИВЁТ — он заряжает powered-предметы AE2
+			// (см. шапку отбора).
 			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllChargerCrystalRecipes", T)) {
 				suppressAE(tSuppress, "charger/charged_certus_quartz_crystal");
 			}
@@ -262,6 +270,112 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 				suppressAE(tSuppress, "transform/damaged_budding_quartz");
 				suppressAE(tSuppress, "transform/chipped_budding_quartz");
 				suppressAE(tSuppress, "transform/flawed_budding_quartz");
+			}
+
+			// УЗЕЛ «инструменты сертуса и незер-кварца» — все 14 (7 сертусовых + 7 незер-кварцевых).
+			// Инструмент — сердце GT6: единый MetaTool (Loader_Tools:119, одна запись реестра gt.metatool.01),
+			// 40+ типов на мете стека (CS.ToolsGT:2135-2136), каждый из ЛЮБОГО материала с качеством, износом
+			// и ремонтом. Кварцевый набор AE2 — прямой дубль этой системы, причём вне её экономики.
+			// ⚠️ ИЗВЕСТНОЕ СЛЕДСТВИЕ, принятое решением пользователя: гаснут и оба кварцевых КЛЮЧА, а на них
+			// висел вход крафта Network Tool (tools/network_tool.json просит #ae2:quartz_wrench). Обслуживание
+			// блоков AE2 переезжает на грегов ключ нашим кодом (отдельный кусок слоя); тег c:tools/wrench НЕ
+			// заводится — у GT6 все инструменты одна запись реестра, и тег пометил бы ключом даже меч.
+			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllQuartzToolRecipes", T)) {
+				suppressAE(tSuppress, "tools/certus_quartz_axe");
+				suppressAE(tSuppress, "tools/certus_quartz_hoe");
+				suppressAE(tSuppress, "tools/certus_quartz_pickaxe");
+				suppressAE(tSuppress, "tools/certus_quartz_spade");
+				suppressAE(tSuppress, "tools/certus_quartz_sword");
+				suppressAE(tSuppress, "tools/certus_quartz_wrench");
+				suppressAE(tSuppress, "tools/certus_quartz_cutting_knife");
+				suppressAE(tSuppress, "tools/nether_quartz_axe");
+				suppressAE(tSuppress, "tools/nether_quartz_hoe");
+				suppressAE(tSuppress, "tools/nether_quartz_pickaxe");
+				suppressAE(tSuppress, "tools/nether_quartz_spade");
+				suppressAE(tSuppress, "tools/nether_quartz_sword");
+				suppressAE(tSuppress, "tools/nether_quartz_wrench");
+				suppressAE(tSuppress, "tools/nether_quartz_cutting_knife");
+			}
+
+			// УЗЕЛ «инструменты флюикса» — 5 инструментов и кузнечный шаблон, который существует только
+			// ради них (FLUIX_UPGRADE_SMITHING_TEMPLATE, AEItems:135, тип minecraft:smithing_transform).
+			// Основание то же, что у кварцевого набора.
+			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllFluixToolRecipes", T)) {
+				suppressAE(tSuppress, "tools/fluix_axe");
+				suppressAE(tSuppress, "tools/fluix_hoe");
+				suppressAE(tSuppress, "tools/fluix_pickaxe");
+				suppressAE(tSuppress, "tools/fluix_shovel");
+				suppressAE(tSuppress, "tools/fluix_sword");
+				suppressAE(tSuppress, "tools/fluix_upgrade_smithing_template");
+			}
+
+			// УЗЕЛ «ёмкости из небесного камня» — сундуки и бак. Хранение предметов и жидкостей у GT6 своё
+			// и куда богаче: MassStorage (Box/Barrel/Standard/Logistics), сейфы, шкафчики, ящики
+			// (tileentity/inventories/*), баки и бочки (multiblocks/MultiTileEntityTank*, tanks/*Barrel*).
+			// Это ХРАНЕНИЕ, но НЕ ME-механика: сундук из небесного камня к сети не подключается, он просто
+			// сундук — то есть попадает под замещение, в отличие от ME Chest и ME Drive.
+			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllSkyStoneContainerRecipes", T)) {
+				suppressAE(tSuppress, "misc/chests_sky_stone");
+				suppressAE(tSuppress, "misc/chests_smooth_sky_stone");
+				suppressAE(tSuppress, "misc/tank_sky_stone");
+			}
+
+			// УЗЕЛ «Tiny TNT». Взрывчатка у GT6 своя (IL:473 Dynamite, Dynamite_Strong, Boomstick) и
+			// завязана на его же добычу (BlocksGT.drillableDynamite, Loader_Ores:110-117).
+			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllTinyTNTRecipes", T)) {
+				suppressAE(tSuppress, "misc/tiny_tnt");
+			}
+
+			// УЗЕЛ «манипулятор энтропии» — крафт И все 10 его операций разом. Операции (тип ae2:entropy)
+			// это превращение блоков в мире: нагрев булыжник→камень, лёд→вода, снег→вода, вода→воздух;
+			// охлаждение вода→лёд, лава→обсидиан, камень→булыжник, кирпич→треснувший, трава→земля,
+			// текучая вода→снежок. У GT6 нагрев и охлаждение — работа МАШИН, а лава+вода→обсидиан вдобавок
+			// ванильная механика. Гасим вместе с крафтом: машина без операций — мусор в витрине, и предмет
+			// без операций тоже; светиться в JEI мёртвому инструменту незачем.
+			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllEntropyManipulatorRecipes", T)) {
+				suppressAE(tSuppress, "tools/misctools_entropy_manipulator");
+				suppressAE(tSuppress, "entropy/heat/cobblestone_stone");
+				suppressAE(tSuppress, "entropy/heat/ice_water");
+				suppressAE(tSuppress, "entropy/heat/snow_water");
+				suppressAE(tSuppress, "entropy/heat/water_air");
+				suppressAE(tSuppress, "entropy/cool/flowing_water_snowball");
+				suppressAE(tSuppress, "entropy/cool/grass_block_dirt");
+				suppressAE(tSuppress, "entropy/cool/lava_obsidian");
+				suppressAE(tSuppress, "entropy/cool/stone_bricks_cracked_stone_bricks");
+				suppressAE(tSuppress, "entropy/cool/stone_cobblestone");
+				suppressAE(tSuppress, "entropy/cool/water_ice");
+			}
+
+			// УЗЕЛ «кабельный якорь». Единственный рецепт типа ae2:quartz_cutting во всём датапаке
+			// (AERecipeTypes:30; исполняется в GUI ножа, QuartzCuttingKnifeItem implements IMenuItem) —
+			// и ровно тот выход, который Грег заместил САМ, дословно и 1:1 с оригиналом: RM.sawing из
+			// слитка (строки 73-84 выше; мета 120 = cable_anchor, AE2Names:277; оригинал Compat:65-76).
+			// Путь GT6 не позже: Пила — ранний тир. Вдобавок нож гаснет узлом кварцевых инструментов.
+			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllCableAnchorRecipes", T)) {
+				suppressAE(tSuppress, "network/parts/cable_anchor");
+			}
+
+			// УЗЕЛ «плавка пыли небесного камня в блок». Это НОВШЕСТВО 26.1, а не канон: в 1.7.10 у AE2
+			// плавка небесного камня была ровно одна — «BlockSkyStone -> BlockSkyStone:1», сырой блок в
+			// гладкий (decorative/skystone.recipe:1-2), а обратного моста «пыль -> блок» не существовало.
+			// Промышленный путь Грега свой: Смеситель варит пыль (loaders/c/Loader_Recipes_Other:251),
+			// пыль плавится в тигле и льётся в формы. Печной мост обесценивал бы всю эту цепь.
+			// ⛔ smelting/smooth_sky_stone_block НЕ трогаем — он и есть тот канон rv3 (см. шапку отбора).
+			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllSkyStoneDustSmeltingRecipes", T)) {
+				suppressAE(tSuppress, "blasting/sky_stone_block");
+			}
+
+			// УЗЕЛ «генераторы энергии AE2» — Vibration Chamber и Crystal Resonance Generator.
+			// Оба выдают AE в сеть (VibrationChamberBlockEntity:248-263 injectPower; CRG — пассивно) и
+			// концептуально дублируют генераторы GT6 (tileentity/energy/generators/* — 10 классов).
+			// ⚠️ ЧЕСТНО И ПРЯМО: моста энергии GT6 → AE сейчас НЕТ (EnergyCompat:46 RF_ENERGY/FL_ENERGY = F,
+			// реализаций neoforge.energy.IEnergyStorage в моде ноль; EnergyCompat:156-157 — «сеть принимает
+			// только FE, выход GT6 на FE-капу — этап Э5»). Пока Э5 не сделан, сеть AE2 с этим узлом остаётся
+			// БЕЗ ИСТОЧНИКА ПИТАНИЯ. Это принятое решение пользователя: Э5 фундаментален и идёт следом.
+			// Рубильник на месте — сборщик может вернуть генераторы одним ключом до появления моста.
+			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllEnergyGeneratorRecipes", T)) {
+				suppressAE(tSuppress, "network/blocks/energy_vibration_chamber");
+				suppressAE(tSuppress, "network/crystal_resonance_generator");
 			}
 
 			// Компас метеоритов — не отдельный узел, а спутник мастер-ключа генерации (ADAPT-019):
