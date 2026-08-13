@@ -982,7 +982,10 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		aBlock = WD.block(tPlayer.level(), aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ());
 		BlockEntity aTileEntity = WD.te(tPlayer.level(), aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ(), T);
 		if (!(aTileEntity instanceof ITileEntityOnDrawBlockHighlight) || !((ITileEntityOnDrawBlockHighlight)aTileEntity).onDrawBlockHighlight(aEvent)) {
-			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable)) && ST.valid(tPlayer.getMainHandItem()) && ToolsGT.contains(TOOL_wrench, tPlayer.getMainHandItem())) {
+			// Плечо AE2 (ToolCompat:404): ключ Грега обслуживает блоки AE2 — прицельная сетка зон обязана
+			// рисоваться и на них, тем же условием, что само плечо. Живая приёмка 2026-08-14: поворот
+			// работал, а сетки не было — подсказка отставала от механики.
+			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable) || (ToolCompat.AE_BASEBLOCKENTITY && aTileEntity instanceof appeng.blockentity.AEBaseBlockEntity)) && ST.valid(tPlayer.getMainHandItem()) && ToolsGT.contains(TOOL_wrench, tPlayer.getMainHandItem())) {
 				RenderHelper.drawWrenchOverlay(aEvent, (byte)0, tSide);
 				return;
 			}
