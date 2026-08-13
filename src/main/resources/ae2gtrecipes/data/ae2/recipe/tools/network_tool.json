@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "#ae2:illuminated_panel",
+    "#c:chests/wooden",
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "gregtech:gt.metatool.01",
+      "components": {
+        "gregapi:subtype": 16
+      }
+    },
+    "ae2:calculation_processor"
+  ],
+  "result": {
+    "id": "ae2:network_tool"
+  }
+}

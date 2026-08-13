@@ -986,7 +986,15 @@ public class CS {
 	 *  погашены (встроенный пак ae2replacegen, GT_API.onAddPackFinders) И заведена бедрок-жила метеоритного
 	 *  железа (Loader_Worldgen); F = метеориты живут, жила не заводится. Без AE2 в сборке всегда T (метеоритов
 	 *  нет, жила нужна — на ней пять сплавов MT). Значение ставит GT_API.onModPreInit2 по образцу флагов ic2. */
-	, AE2_REPLACE_METEORITE_GENERATION = T;
+	, AE2_REPLACE_METEORITE_GENERATION = T
+	/** Узел ae2/DisableAllQuartzToolRecipes (GregTech.cfg), поднятый во флаг: он двигает ДВЕ вещи сразу и
+	 *  потому обязан быть ОДНИМ решением в одном месте. Первая — гашение 14 кварцевых инструментов AE2
+	 *  (Compat_Recipes_AppliedEnergistics). Вторая — встроенный пак ae2gtrecipes: погасив оба кварцевых
+	 *  КЛЮЧА, мы убили и вход крафта Network Tool (его рецепт просит #ae2:quartz_wrench), а он ME-механика
+	 *  и обязан остаться крафтируемым — пак переопределяет его вход на ключ Грега. Выключил узел — вернулись
+	 *  и кварцевые ключи, и родной рецепт: пак не подключается. Без AE2 в сборке значение роли не играет.
+	 *  Ставится в GT_API.onModPreInit2 рядом с мастер-ключом. */
+	, AE2_KILL_QUARTZ_TOOLS = T;
 	/** Date based Shenanigans */
 	@SuppressWarnings("deprecation")
 	public static boolean

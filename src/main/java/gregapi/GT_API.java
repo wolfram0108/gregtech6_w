@@ -653,20 +653,41 @@ public class GT_API extends Abstract_Mod {
 	 * безусловно, {@code InitStructures.java:54}) — поэтому рычаг наш.
 	 *
 	 * <p><b>Тайминг:</b> событие стреляет при создании {@code PackRepository}
-	 * ({@code ResourcePackLoader.populatePackRepository:82} ← патч {@code ServerPacksSource}) — то есть при
-	 * создании мира/старте сервера, много позже чтения {@code GregTech.cfg} в preInit2; флаг к этому моменту
-	 * всегда выставлен. {@code Pack.Position.TOP} ставит пак ВЫШЕ встроенных паков модов — remove применяется
-	 * после датапака самого AE2 (порядок доказывается судьёй {@code gt6ae2gen}: тег пуст в живом реестре).
+	 * ({@code ResourcePackLoader.populatePackRepository:76-81} ← патч {@code ServerPacksSource:71-80}) — то есть
+	 * при открытии/создании мира либо старте выделенного сервера. Наш preInit это {@code FMLConstructModEvent}
+	 * ({@code GT6_Main:716}), самая ранняя фаза мода, а все создатели SERVER_DATA-репозитория — пути открытия
+	 * мира ({@code WorldOpenFlows}, {@code CreateWorldScreen}, {@code Main:163}); единственный ранний
+	 * {@code createVanillaTrustedRepository} принадлежит {@code KnownPacksManager} и строится при подключении к
+	 * серверу ({@code ClientConfigurationPacketListenerImpl:112}). Флаг к моменту события выставлен всегда.
+	 * Порядок: движок сначала добавляет builtin-паки модов ({@code ResourcePackLoader:79}) и лишь ПОТОМ шлёт
+	 * событие ({@code :81}), а {@code Pack.Position.TOP} вставляет пак в конец списка ({@code Pack:228-248}) =
+	 * высший приоритет — remove применяется после датапака самого AE2 (судья {@code gt6ae2gen}: тег пуст).
 	 */
 	public void onAddPackFinders(net.neoforged.neoforge.event.AddPackFindersEvent aEvent) {
 		if (aEvent.getPackType() != net.minecraft.server.packs.PackType.SERVER_DATA) return;
-		if (!MD.AE.mLoaded || !AE2_REPLACE_METEORITE_GENERATION) return;
-		aEvent.addPackFinders(
+		if (!MD.AE.mLoaded) return;
+		if (AE2_REPLACE_METEORITE_GENERATION) aEvent.addPackFinders(
 			net.minecraft.resources.Identifier.fromNamespaceAndPath(ModIDs.GAPI, "ae2replacegen"),
 			net.minecraft.server.packs.PackType.SERVER_DATA,
 			net.minecraft.network.chat.Component.literal("GT6: AE2 generation replaced by GregTech"),
 			net.minecraft.server.packs.repository.PackSource.BUILT_IN,
 			T, // alwaysActive: пак не предмет выбора игрока — им управляет ключ конфига
+			net.minecraft.server.packs.repository.Pack.Position.TOP);
+		// ВТОРОЙ КОРЕНЬ, свой ключ: перепайка рецептов AE2, у которых мы забрали вход. Пока такой один —
+		// Network Tool: погасив оба кварцевых КЛЮЧА (узел DisableAllQuartzToolRecipes), мы убили и его крафт
+		// (tools/network_tool.json просит #ae2:quartz_wrench), а он ME-механика и обязан жить. Переопределение
+		// подменяет вход на ключ ГРЕГА компонентным ингредиентом neoforge:components (NeoForgeMod:367):
+		// предмет gregtech:gt.metatool.01 плюс компонент gregapi:subtype = 16 (ToolsGT.WRENCH, CS:2135).
+		// Отбор ЧАСТИЧНЫЙ (strict по умолчанию false, DataComponentIngredient:43): прочие компоненты стека не
+		// сравниваются, поэтому подходит ключ ЛЮБОГО материала, а меч (subtype 0) не подходит.
+		// Пак отдельный, а не файл в первом: ключи независимы — выключив гашение инструментов, сборщик
+		// возвращает и кварцевые ключи, и родной рецепт, а метеориты этим не задеваются.
+		if (AE2_KILL_QUARTZ_TOOLS) aEvent.addPackFinders(
+			net.minecraft.resources.Identifier.fromNamespaceAndPath(ModIDs.GAPI, "ae2gtrecipes"),
+			net.minecraft.server.packs.PackType.SERVER_DATA,
+			net.minecraft.network.chat.Component.literal("GT6: AE2 recipes rewired to GregTech inputs"),
+			net.minecraft.server.packs.repository.PackSource.BUILT_IN,
+			T,
 			net.minecraft.server.packs.repository.Pack.Position.TOP);
 	}
 
@@ -1197,6 +1218,7 @@ public class GT_API extends Abstract_Mod {
 		// не пишется), без AE2 флаг всегда T — метеоритов нет, жила метеоритного железа нужна (пять сплавов MT).
 		// Потребители флага: GT_API.onAddPackFinders (пак-гашение метеоритов) и Loader_Worldgen (жила).
 		AE2_REPLACE_METEORITE_GENERATION        = !MD.AE.mLoaded || ConfigsGT.GREGTECH.get("ae2", "ReplaceMeteoriteGeneration", T);
+		AE2_KILL_QUARTZ_TOOLS                   = !MD.AE.mLoaded || ConfigsGT.GREGTECH.get("ae2", "DisableAllQuartzToolRecipes", T);
 
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDOUT"             , F)) System.out.close();
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDERR"             , F)) System.err.close();

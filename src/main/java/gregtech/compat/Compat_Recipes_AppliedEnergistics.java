@@ -280,7 +280,9 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 			// висел вход крафта Network Tool (tools/network_tool.json просит #ae2:quartz_wrench). Обслуживание
 			// блоков AE2 переезжает на грегов ключ нашим кодом (отдельный кусок слоя); тег c:tools/wrench НЕ
 			// заводится — у GT6 все инструменты одна запись реестра, и тег пометил бы ключом даже меч.
-			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllQuartzToolRecipes", T)) {
+			// Ключ поднят во флаг CS.AE2_KILL_QUARTZ_TOOLS: он двигает ДВЕ вещи — это гашение и встроенный
+			// пак ae2gtrecipes, перепаивающий вход Network Tool на ключ Грега. Одно решение — одно место.
+			if (AE2_KILL_QUARTZ_TOOLS) {
 				suppressAE(tSuppress, "tools/certus_quartz_axe");
 				suppressAE(tSuppress, "tools/certus_quartz_hoe");
 				suppressAE(tSuppress, "tools/certus_quartz_pickaxe");
