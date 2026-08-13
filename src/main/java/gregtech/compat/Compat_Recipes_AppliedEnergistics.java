@@ -200,9 +200,10 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 		//    MATTER_BALL либо SINGULARITY), но ЕДИНСТВЕННЫЙ в игре поставщик ae2:singularity: у GT6 пути к
 		//    ней нет вовсе (слова singularity во всём дереве продукта нет). Операция захардкожена, датапак-
 		//    рецепта у неё нет — гасить нечего и не за что.
-		//  • чарджер как МАШИНА и его крафт — зарядка собственных powered-предметов AE2 (беспроводной
-		//    терминал, переносные ячейки, matter cannon: ChargerBlockEntity:151-193) — ME-энергосистема;
-		//    GT6 их заряжать не умеет (мост энергии — Э5). charger/guide (книга-гайд) — документация мода.
+		//  • charger/guide (книга-гайд) — документация мода, не производство.
+		//    ⚠ Прежняя редакция оставляла ЗДЕСЬ же чарджер как машину и его крафт с обоснованием «GT6 не умеет
+		//    заряжать powered-предметы AE2, мост энергии — Э5». Э5 сделан: зарядники GT6 заряжают их напрямую
+		//    (IItemEnergy.Utility, FE-капа предмета), поэтому крафты чарджера и ворота погашены своим узлом ниже.
 		//  • Growth Accelerator — тег growth_acceleratable это ВАНИЛЬНЫЕ культуры/саженцы/бамбук/ламинария
 		//    (+budding в конце): ускоритель ферм вообще, аналога у GT6 нет — не дубль.
 		//  • Annihilation/Formation Plane — АВТОМАТИЧЕСКАЯ ДОБЫЧА и раскладка, а не логистика: плоскость
@@ -378,6 +379,21 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllEnergyGeneratorRecipes", T)) {
 				suppressAE(tSuppress, "network/blocks/energy_vibration_chamber");
 				suppressAE(tSuppress, "network/crystal_resonance_generator");
+			}
+
+			// УЗЕЛ «чарджер и ворот» — Э5-ФИНАЛ. Держался до последнего по честной причине: чарджер был
+			// ЕДИНСТВЕННЫМ способом зарядить powered-предметы AE2, а GT6 их заряжать не умел. Теперь умеет:
+			// мост энергии Э5 сделан двумя плечами в существующих центрах — блочное в EnergyCompat
+			// (insertEnergyInto/canConnectElectricity, FE-капа движка) и предметное в IItemEnergy.Utility
+			// (Capabilities.Energy.ITEM). Зарядники GT6 заряжают беспроводной терминал и переносные ячейки
+			// напрямую, курсом 1 EU = 2 AE. Значит чарджер перестал быть незаменимым и попадает под общий
+			// принцип: его функция замещена. Ворот (Wooden Crank) — ручной привод к чарджеру и инскрайберу;
+			// инскрайбер уже мёртв, чарджер гаснет здесь, приводить нечего.
+			// ⛔ Гасится ТОЛЬКО КРАФТ. Сами блоки, их поведение и рецепты чарджера (charger/guide) не тронуты:
+			// у кого они уже стоят в мире — продолжают работать.
+			if (ConfigsGT.GREGTECH.get("ae2", "DisableAllChargerAndCrankRecipes", T)) {
+				suppressAE(tSuppress, "network/blocks/crystal_processing_charger");
+				suppressAE(tSuppress, "network/blocks/crank");
 			}
 
 			// Компас метеоритов — не отдельный узел, а спутник мастер-ключа генерации (ADAPT-019):
