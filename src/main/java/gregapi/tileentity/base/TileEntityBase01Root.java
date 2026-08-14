@@ -298,14 +298,46 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		readFromNBT(aNBT);
 	}
 
-	// F6-worldgen КЛИЕНТ-СИНК: сознательно НЕ переопределяем getUpdateTag на корне всех MTE. Проверено механикой (4 прогона
-	// A/B/C/D): getUpdateTag=saveCustomOnly закрывал лишь 1 из ~2-4 edge-case null-BE (маргинально), но это ШИРОКОЕ изменение —
-	// saveCustomOnly на ВСЕХ BE (включая машины) → лишний трафик chunk-пакета и утечка server-полей на клиент. Плохой размен.
+	// F6-дедик КЛИЕНТ-СИНК ЛИЧНОСТИ MTE (корень «прозрачных блоков на выделенном сервере»; перенос решения main —
+	// коммит 4409cc14 «Три рецидива одного корня», BUG-126, замер дедика: MTE=217 real=0 stub=217 → real=217 stub=0).
+	// Клиент узнаёт о BE ровно двумя движковыми каналами: getUpdatePacket — у GT6 он null и final на обеих иерархиях
+	// (TileEntityBase03TicksAndSync:96, notick/TileEntityBase02Sync:100; синк идёт своим пакетом GT6), и getUpdateTag,
+	// который движок спрашивает при сборке пакета чанка (ClientboundLevelChunkPacketData$BlockEntityInfo.create:152-155).
+	// База отдаёт ПУСТОЙ тег (BlockEntity.java:163-165), а пустой тег пакет заменяет на null (:155) — клиент тогда даже
+	// не зовёт handleUpdateTag (LevelChunk.java:465-467) и получает MTE-BE без личности: фабрика MTE_TYPE даёт
+	// TileEntityLoaderStub, его mLoadedNBT остаётся null, reconstructMTE выходит первой строкой (GT6WorldgenFeature:433-434),
+	// стаб не IRenderedBlockObject → getRenderPasses=0 → блок прозрачен и подписан сырым ключом.
+	// Компенсирующий канал мода (WORLDGEN_MTE + onChunkWatch/drainPendingSync) покрывает лишь чанки, СГЕНЕРИРОВАННЫЕ в
+	// текущей сессии сервера: при загрузке готового мира с диска слать нечего — оттого дефект и виден на «настоящем»
+	// сервере. ⚠ Прежнее решение «не переопределять getUpdateTag» принималось по замерам В ОДИНОЧКЕ, где дефекта нет.
+	// Его возражение (saveCustomOnly = лишний трафик и утечка серверных полей на клиент) остаётся в силе и здесь УЧТЕНО:
+	// отдаётся не состояние, а ЛИЧНОСТЬ — два short'а, ровно то, чем реестр строит настоящий MTE. Данные отображения
+	// приходят прежним каналом GT6 (sendClientData) уже реконструированному объекту.
+	// ⚠ ОТЛИЧИЕ ВЕТКИ ОТ main: на 26.x личность пришлось дополнить ИМЕНЕМ реестра, потому что числовой ключ — это
+	// numeric item-id, назначаемый локально в каждой JVM (замер main: в мире reg=1646, у клиента 2011). В Forge 1.20.1
+	// такой опоры терять не пришлось: реестр предметов синкуемый (GameData.java:111 makeRegistry(Keys.ITEMS) без
+	// disableSync, RegistryBuilder.java:48 sync=true по умолчанию), и на не-локальном соединении сервер шлёт снимки
+	// (RegistryManager.java:197-201), а клиент перенумеровывает себя под сервер (HandshakeHandler.java:292
+	// GameData.injectSnapshot) ДО получения чанков. Поэтому числовой ключ здесь одинаков на обеих сторонах, и второе
+	// звено фикса main (NBT_MTE_REGNAME + центр resolve) на этой версии не нужно — вводить его значило бы менять
+	// формат NBT ветки без нужды, вопреки 1:1 с 1.7.10, где личность = ровно reg+id.
+	// Сигнатура 1.20.1 — БЕЗ HolderLookup.Provider (BlockEntity.java:163); в остальном перенос дословный.
+	@Override public CompoundTag getUpdateTag() {
+		CompoundTag rNBT = super.getUpdateTag();
+		writeMTEIdentity(rNBT);
+		return rNBT;
+	}
+
+	/** Личность MTE (реестр + sub-ID) для клиентского пакета чанка. Пишут её носители полей — обе иерархии MTE и стаб
+	 *  загрузчика; у прочих BE личности нет, и тег остаётся пустым, как было. Один канал на весь мод, без россыпи. */
+	protected void writeMTEIdentity(CompoundTag aNBT) {/* не-MTE потомки личности не несут */}
+
+	// ИСТОРИЯ ШВА: getUpdateTag=saveCustomOnly проверялся (4 прогона A/B/C/D) и был отвергнут —
+	// saveCustomOnly на ВСЕХ BE (включая машины) → лишний трафик chunk-пакета и утечка server-полей на клиент.
 	// ВАЖНО (диагностировано): флуд «Block state mismatch … != air, updating» (~9.5k/мир) от getUpdateTag НЕ зависит — он есть
 	// и без него (замер: WD.te привязывает 772k BE, при air=0; блок исчезает ПОЗЖЕ). Корень: GT6-фича сидит в ранней стадии
 	// Decoration.UNDERGROUND_ORES, а поздние стадии (VEGETAL/TOP_LAYER) перестраивают объём и стирают её декор-блоки → orphan-BE.
-	// Отложено в слой вордген-декора/MTE-контента (см. STATE.md). Клиент-синк worldgen-MTE делает целевой механизм:
-	// WORLDGEN_MTE + onChunkWatch/drainPendingSync (GT6WorldgenFeature) — sendClientData тем BE, чей блок РЕАЛЬНО MTE.
+	// Отложено в слой вордген-декора/MTE-контента (см. STATE.md).
 
 	/** return the internal Name of this TileEntity to be registered. DO NOT START YOUR NAME WITH "gt."!!! */
 	public abstract String getTileEntityName();

@@ -65,4 +65,16 @@ public class TileEntityLoaderStub extends TileEntityBase01Root {
 		// [GT6-MTEAUDIT] DIAG BUG-057 — снять при уборке фазы
 		if (probeFlag("gt6mteauditprobe.flag")) OUT.println("[GT6-MTEAUDIT-DIAG] стаб персистирован БЕЗ потерь @" + getBlockPos().toShortString());
 	}
+
+	/** F6-дедик, ТОТ ЖЕ приём прозрачного переносчика, но в СЕТЬ (разбор — {@code TileEntityBase01Root.getUpdateTag}):
+	 *  чанк уходит игроку тем же тиком, что грузится, а реконструкция стаба отложена на server-tick с квотой
+	 *  (GT6WorldgenFeature.drainStubs) — значит в момент сборки пакета в позиции нередко стоит ещё сам стаб, а не
+	 *  настоящий MTE. Личность он несёт (захвачена в mLoadedNBT) и обязан отдать её клиенту, иначе тот получит BE без
+	 *  reg/id и не сможет реконструировать — блок останется прозрачным. Отдаётся ровно личность, не весь захваченный
+	 *  NBT: серверные поля машины клиенту не нужны и не уходят. */
+	@Override protected void writeMTEIdentity(CompoundTag aNBT) {
+		if (mLoadedNBT == null) return;
+		if (mLoadedNBT.contains(NBT_MTE_REG)) aNBT.putShort(NBT_MTE_REG, mLoadedNBT.getShort(NBT_MTE_REG));
+		if (mLoadedNBT.contains(NBT_MTE_ID )) aNBT.putShort(NBT_MTE_ID , mLoadedNBT.getShort(NBT_MTE_ID ));
+	}
 }

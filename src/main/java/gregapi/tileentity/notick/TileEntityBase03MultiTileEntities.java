@@ -122,7 +122,14 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	}
 	
 	public void readFromNBT2(CompoundTag aNBT) {/**/}
-	
+
+	/** F6-дедик: личность в клиентский пакет чанка (разбор — {@code TileEntityBase01Root.getUpdateTag}). Вторая
+	 *  иерархия MTE (notick) несёт те же два поля и отдаёт их тем же каналом — приём один на обе, без второй адаптации. */
+	@Override protected void writeMTEIdentity(CompoundTag aNBT) {
+		aNBT.putShort(NBT_MTE_ID, mMTEID);
+		aNBT.putShort(NBT_MTE_REG, mMTERegistry);
+	}
+
 	@Override
 	public final void writeToNBT(CompoundTag aNBT) {
 		super.writeToNBT(aNBT);
