@@ -121,6 +121,51 @@ public class Compat_Jade implements IWailaPlugin {
 		for (String tToolType : VANILLA_TOOL_TYPES) HarvestToolProvider.registerHandler(new GT6ToolHandler(tToolType, tToolType));
 		// BUG-070 п.2/п.3 — строка «какой уровень нужен» и «что в руке»: у Jade такой строки нет ни для кого
 		aRegistration.registerBlockComponent(GT6HarvestLevelProvider.INSTANCE, Block.class);
+		registerFluidCellRestore(aRegistration);
+	}
+
+	/**
+	 * ИМЯ КЛЕТКИ-ЖИДКОСТИ GT6 (регресс ветки 1.20.1: Jade писал над водой GT6 «Water» вместо типа воды).
+	 *
+	 * <p><b>Почему это вообще понадобилось на 1.20.1 и не нужно на 26.1.</b> Jade 11.13.3 строит аксессор
+	 * не из того блока, что стоит в клетке: {@code RayTracing.wrapBlock} БЕЗУСЛОВНО подменяет состояние на
+	 * «легаси-блок его жидкости», если у блока непустой {@code FluidState} и пустой {@code getShape}
+	 * ({@code RayTracing.java:57-59}), и делает это ДО плагин-колбэков ({@code WailaTickHandler.java:107}
+	 * против {@code :135-137}). Блоки-жидкости GT6 наследуют {@code LiquidBlock}, у которого
+	 * {@code getShape} пуст ({@code LiquidBlock.java:104-106}), а мировые воды обязаны объявлять движку
+	 * ВАНИЛЬНУЮ воду — иначе мертвы waterlogging и заморозка ({@code BlockWaterlike.getFluidState}).
+	 * Оба условия выполнены — и клетка теряла своё имя, получая {@code Blocks.WATER}. В Jade 26.1.8 такой
+	 * подмены в трассировке нет вовсе: она живёт только внутри {@code CorePlugin.hideBlocks} и срабатывает
+	 * лишь для блоков, помеченных {@code shouldHide}, — GT6 таких пометок не ставит.
+	 *
+	 * <p><b>Чиним витриной, а не механикой.</b> Отдать воде свою жидкость или непустую форму значило бы
+	 * сломать плавание, клип и заморозку ради надписи. Поэтому берём канал, который Jade для этого и
+	 * завёл, — {@code addRayTraceCallback} ({@code IWailaClientRegistration.java:136-140}), выполняемый
+	 * ПОСЛЕ подмены и умеющий пересобрать аксессор ({@code BlockAccessor.Builder.from/blockState}).
+	 *
+	 * <p><b>Правило, а не перечень.</b> Спрашиваем сам мир: если клетка под прицелом занята блоком-жидкостью
+	 * GT6, а аксессор несёт другой блок — возвращаем настоящее состояние клетки. Поэтому оно покрывает все
+	 * блоки-жидкости GT6 разом (океан, река, болото, продвинутая река, геотермальная вода) и любые будущие,
+	 * ничего не перечисляя. Нефти и газ подменой не задеты: их {@code FluidState} — собственная жидкость GT6,
+	 * а её {@code createLegacyBlock} отдаёт СВОЙ же блок ({@code FluidGT:290-293}) — правило их просто не
+	 * касается, условие «аксессор несёт другой блок» у них ложно.
+	 *
+	 * <p>Приоритет — умолчание (0): встроенные колбэки Jade стоят на −10 и 5000
+	 * ({@code VanillaPlugin.java:194-195}), в их порядок не вмешиваемся.
+	 */
+	private static void registerFluidCellRestore(IWailaClientRegistration aRegistration) {
+		aRegistration.addRayTraceCallback((aHit, aAccessor, aOriginal) -> {
+			if (!(aAccessor instanceof BlockAccessor tAccessor)) return aAccessor;
+			try {
+				Level tWorld = tAccessor.getLevel();
+				if (tWorld == null) return aAccessor;
+				BlockState tReal = tWorld.getBlockState(tAccessor.getPosition());
+				if (tReal.getBlock() == tAccessor.getBlock()) return aAccessor;                    // подмены не было — не трогаем
+				if (!(tReal.getBlock() instanceof gregapi.block.fluid.BlockFluidBaseGT)) return aAccessor; // клетка не наша — чужая витрина
+				return aRegistration.blockAccessor().from(tAccessor).blockState(tReal).build();
+			} catch (Throwable e) {/* мира/клетки уже нет — оставляем витрину как есть */}
+			return aAccessor;
+		});
 	}
 
 	/** Один тип GT6-инструмента: «подходит ли он этому блоку» решает сам блок своим {@code getHarvestTool}. */
@@ -215,7 +260,7 @@ public class Compat_Jade implements IWailaPlugin {
 	 * <p><b>Что здесь СОЗНАТЕЛЬНО не показывается</b> (по разбору с игроком 2026-07-27):
 	 * <ul>
 	 * <li><b>название инструмента</b> — его несёт ИКОНКА, которую Jade кладёт в строку названия блока
-	 *     ({@code HarvestToolProvider:114} — {@code tooltip.append(0, …)}); текстом это был бы дубль;</li>
+	 *     ({@code HarvestToolProvider:139-141} — {@code align(RIGHT)} + {@code tooltip.append(0, …)}); текстом это был бы дубль;</li>
 	 * <li><b>значок соответствия</b> — его ставит сам Jade по тому же вердикту, что решает судьбу дропа
 	 *     ({@code CommonProxy:127} → {@code doPlayerHarvestCheck} → наш мост). Свой значок был бы вторым;</li>
 	 * <li><b>ярус того, что в руке, числом</b> — «In Hand: 3» игроку ничего не говорит, а ✔/✕ от Jade говорит;</li>
@@ -251,7 +296,7 @@ public class Compat_Jade implements IWailaPlugin {
 			Level tWorld = aAccessor.getLevel();
 			BlockPos tPos = aAccessor.getPosition();
 			// ── ИКОНКИ ИНСТРУМЕНТОВ ТАМ, ГДЕ JADE ИХ ПРЯЧЕТ ──────────────────────────────────────────────
-			// Jade выходит ДО отрисовки, когда скорость разрушения равна нулю (HarvestToolProvider:93), а у GT6
+			// Jade выходит ДО отрисовки, когда скорость разрушения равна нулю (HarvestToolProvider:117-127), а у GT6
 			// неподходящий инструмент даёт РОВНО ноль — и это КАНОН 1.7.10, подтверждённый парным замером
 			// (1360 пар, нулей 1176 в обеих версиях). Механику трогать нельзя; чиним витрину витриной.
 			// Список инструментов спрашиваем У САМОГО JADE (его же getText), а не собираем свой — иначе это была
@@ -261,7 +306,7 @@ public class Compat_Jade implements IWailaPlugin {
 			try {
 				if (aAccessor.getBlockState().getDestroyProgress(aAccessor.getPlayer(), tWorld, tPos) <= 0) {
 					java.util.List<snownee.jade.api.ui.IElement> tTools = HarvestToolProvider.INSTANCE.getText(aAccessor, aConfig);
-					if (!tTools.isEmpty()) aTooltip.add(tTools);
+					if (!tTools.isEmpty()) appendHarvestIcons(aTooltip, tTools, aConfig);
 				}
 			} catch (Throwable e) {/* витрина Jade недоступна — строка тира ниже всё равно будет */}
 			try {
@@ -290,5 +335,42 @@ public class Compat_Jade implements IWailaPlugin {
 
 		@Override
 		public ResourceLocation getUid() {return mUID;}
+
+		/**
+		 * КАК КЛАСТЬ ЧУЖИЕ ЭЛЕМЕНТЫ (наложение значков на строку тира, ветка 1.20.1).
+		 *
+		 * <p><b>Что было не так.</b> {@code HarvestToolProvider.getText} отдаёт элементы, ОТКАЛИБРОВАННЫЕ
+		 * под способ вставки, который он же выберет дальше по своему конфигу
+		 * ({@code Identifiers.MC_HARVEST_TOOL_NEW_LINE}, дефолт {@code false} — {@code VanillaPlugin:138}).
+		 * В режиме «не новая строка» вся пачка НУЛЕВОЙ высоты: {@code spacer(5, 0)}, иконки
+		 * {@code .size(10, 0)}, значок ✔/✕ — {@code Vec2.ZERO} ({@code HarvestToolProvider:49,161,169},
+		 * {@code SubTextElement:21-23}). Она рассчитана на приклейку к уже существующей строке. Мы же
+		 * клали её как ОТДЕЛЬНУЮ строку — а высота строки в 11.13.3 есть чистый максимум по элементам
+		 * ({@code Tooltip:35-50}), и строки укладываются подряд без единого отступа
+		 * ({@code TooltipRenderer:81-85} — {@code y += size.y}). Строка нулевой высоты не занимает места,
+		 * следующая («Requires Tier») ложится на тот же y — отсюда наложение. Вдобавок без
+		 * {@code Align.RIGHT} элементы уходят в левый список ({@code Element:17}) и накрывают именно текст.
+		 *
+		 * <p><b>Почему на 26.1 того же кода хватало.</b> Там у каждой строки есть собственный нижний отступ
+		 * {@code marginBottom = 2} и flex-укладка ({@code Jade-src impl/Tooltip:252-253},
+		 * {@code BoxElementImpl:88-96}) — она прощает строку нулевой высоты. Способ вставки был неверен и
+		 * там, просто не был виден.
+		 *
+		 * <p><b>Правило.</b> Чужие готовые элементы кладём ТЕМ ЖЕ способом, каким их откалибровал их
+		 * поставщик, а режим спрашиваем У НЕГО ЖЕ, а не угадываем — 1:1 с {@code HarvestToolProvider:131-142}.
+		 * Это не копия чужой политики: «какие инструменты показывать» по-прежнему отвечает его {@code getText};
+		 * здесь соблюдается лишь КОНТРАКТ ВОЗВРАТА — элементы годны ровно для одного способа вставки.
+		 *
+		 * <p>Побочно исчезает и развилка внешнего вида, которую видел игрок: значок встаёт на строку имени
+		 * и с пустой рукой (там рисует сам Jade), и в дыре (рисуем мы) — одинаково.
+		 */
+		private static void appendHarvestIcons(ITooltip aTooltip, java.util.List<snownee.jade.api.ui.IElement> aElements, IPluginConfig aConfig) {
+			if (aConfig.get(snownee.jade.api.Identifiers.MC_HARVEST_TOOL_NEW_LINE)) {
+				aTooltip.add(aElements); // элементы откалиброваны под собственную строку (spacer высотой 10)
+				return;
+			}
+			for (snownee.jade.api.ui.IElement tElement : aElements) tElement.align(snownee.jade.api.ui.IElement.Align.RIGHT);
+			aTooltip.append(0, aElements); // приклейка к строке имени блока — как это делает сам Jade
+		}
 	}
 }
