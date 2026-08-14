@@ -227,7 +227,9 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	}
 	
 	// @Override
-	public final void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMetaData) {
+	/** @return {@code true} = BlockEntity снимать НЕЛЬЗЯ (сработало вето {@code IMTE_BreakBlock}); во всех прочих
+	 *  исходах {@code false}, и вызыватель обязан отдать снятие движку ({@code super.onRemove}) — см. разбор там. */
+	public final boolean breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMetaData) {
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
 		// было aTileEntity.shouldRefresh(...) (1.7.10 TileEntity.shouldRefresh, УДАЛЁН в neo BlockEntity целиком,
@@ -235,12 +237,66 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// больше, обычный метод), поэтому маршрутизируем через cast; не-GT6-TE (не должно происходить для MTE)
 		// трактуем как "refresh=true" (дефолт TileEntityBase01Root.mShouldRefresh), чтобы не потерять срабатывание.
 		boolean tShouldRefresh = !(aTileEntity instanceof gregapi.tileentity.base.TileEntityBase01Root) || ((gregapi.tileentity.base.TileEntityBase01Root)aTileEntity).shouldRefresh(this, aBlock, aMetaData, aMetaData, aWorld, aX, aY, aZ);
-		if (aTileEntity == null || !tShouldRefresh) return;
-		if (aTileEntity instanceof IMTE_BreakBlock && ((IMTE_BreakBlock)aTileEntity).breakBlock()) return;
+		// ⚠️ Ранние выходы НЕ означают «BE оставить». Единственное «оставить» — вето интерфейса ниже; всё прочее
+		// снимает движок через super.onRemove у вызывателя (страховка 1.7.10 Chunk.func_150807_a:660-664).
+		if (aTileEntity == null || !tShouldRefresh) return F;
+		if (aTileEntity instanceof IMTE_BreakBlock && ((IMTE_BreakBlock)aTileEntity).breakBlock()) return T; // контракт: «return true to prevent the TileEntity from being removed»
 		if (aTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData && ((IMTE_HasMultiBlockMachineRelevantData)aTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, (byte)aMetaData, T);
 		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ)); // было aWorld.removeTileEntity(x,y,z) (1.7.10 World), neo Level.removeBlockEntity(BlockPos) [Level.java:688]
+		return F;
 	}
-	
+
+	/** РЕПОРТ ИГРОКА («положил 4 батареи в батарейный бокс и разрушил его — выпал только бокс, батареи исчезли;
+	 *  касается всех машин GT6»): у тела {@link #breakBlock} выше НЕ БЫЛО ВЫЗЫВАТЕЛЯ, и вместе с дропом содержимого
+	 *  молчали цепочка {@code IMTE_BreakBlock.breakBlock()} (14 переопределений: бокс, сейф, масс-хранилище, тигель,
+	 *  танк, трубы, полка, смеситель, …) и оповещение мультиблоков {@code causeMachineUpdate}.
+	 *  <p><b>Кто звал его в 1.7.10.</b> Сам движок: {@code Chunk.func_150807_a:658}
+	 *  {@code block1.breakBlock(worldObj, x,y,z, block1, k1)} — на СЕРВЕРЕ и при ЛЮБОЙ смене клетки (блок ИЛИ мета;
+	 *  совпавшая пара отсекается раньше, {@code Chunk.java:623}), причём блок в секции уже НОВЫЙ, а TileEntity ещё
+	 *  жив ({@code Chunk.java:653-658}). Аргументы — СТАРЫЕ блок и мета.
+	 *  <p><b>Тот же момент в 1.20.1</b> — {@code BlockBehaviour.onRemove} [BlockBehaviour.java:163-168]: единственный
+	 *  вызыватель во всём движке — {@code LevelChunk.setBlockState} [LevelChunk.java:246-250], и условия совпадают
+	 *  дословно (секция уже новая, BlockEntity ещё в чанке, клиент отсечён {@code !level.isClientSide}). Ваниль
+	 *  вытряхивает содержимое контейнеров именно оттуда ({@code ChestBlock.onRemove:218-227} → {@code Containers.dropContents}).
+	 *  На main (26.x) этот же момент движок отдаёт как {@code BlockEntity.preRemoveSideEffects} [LevelChunk.java:311],
+	 *  туда и повешен мост {@code TileEntityBase05Inventories:155}; в 1.20.1 хука на BlockEntity нет вовсе, поэтому
+	 *  мост живёт здесь — ОДИН на все MTE (наследуется {@code MultiTileEntityBlockWithCompat}), россыпи по TE нет.
+	 *  <p><b>Дроп владеет GT6, а не ванилью.</b> Глушить нечего: база {@code BlockBehaviour.onRemove} содержимое НЕ
+	 *  роняет (её единственное действие — {@code removeBlockEntity}), а MTE-контейнер ванильного дропа не имеет
+	 *  вовсе — двойного дропа не возникает и ванильный путь чужих блоков не задет.
+	 *  <p><b>Гейта на смену БЛОКА здесь нет намеренно</b> (в отличие от {@code BlockBaseTree}/{@code PrefixBlock}):
+	 *  1.7.10-условие — «блок ИЛИ мета изменились», а у MTE-блока свойств BlockState нет вовсе (мета не выражается
+	 *  стейтом, {@code IBlockExtendedMetaData:49}→0, см. {@link #blockMetaDataAt}), поэтому «стейт сменился» ⟺
+	 *  «блок сменился», и хук зовётся ровно в 1.7.10-случаях. Приём «поставить блок дважды со сменой меты»
+	 *  ({@code MultiTileEntityBlockInternal.placeBlock:157,165}) сюда не попадает: оба сета дают ОДИН И ТОТ ЖЕ
+	 *  {@code defaultBlockState}, второй отсекается {@code LevelChunk.java:224-226} — как и в 1.7.10 ({@code Chunk.java:623}).
+	 *  <p><b>{@code super.onRemove} не зовётся намеренно:</b> его единственное действие — {@code level.removeBlockEntity(pos)},
+	 *  а тело {@link #breakBlock} делает это само (строка выше) со своими гейтами ({@code shouldRefresh};
+	 *  {@code IMTE_BreakBlock.breakBlock()==true} = «BlockEntity не снимать»). В 1.7.10 снятие TE точно так же
+	 *  принадлежало телу breakBlock, а не движку (ванильный {@code Block.breakBlock} — пустой дефолт), и вызов super
+	 *  здесь ломал бы вето интерфейса. */
+	/** ⚠️ ИСПРАВЛЕНИЕ ОШИБКИ ПЕРЕНОСА (регресс, найден по потере построек игрока: блок снят, а BlockEntity осталась
+	 *  привязанной — «призрак», на место которого больше ничего не поставить). Первая редакция моста звала ТОЛЬКО
+	 *  {@link #breakBlock}, не зовя {@code super}, и тем забрала у движка его БЕЗУСЛОВНУЮ обязанность снять BE
+	 *  ({@code BlockBehaviour.onRemove}, BlockBehaviour.java:163-168), отдав её телу с ДВУМЯ ранними выходами
+	 *  (строки {@code aTileEntity == null || !tShouldRefresh} и вето {@code IMTE_BreakBlock}). На этих выходах BE
+	 *  оставалась висеть под снятым блоком.
+	 *  <p><b>Чего не хватало.</b> В 1.7.10 у тела breakBlock была СТРАХОВКА самого движка: {@code Chunk.func_150807_a}
+	 *  после вызова {@code block1.breakBlock(...)} (:658) ещё раз спрашивал {@code te.shouldRefresh(...)} и, если тот
+	 *  соглашался, сам звал {@code removeTileEntity} (:660-664) — «фантомную» TE подчищал движок. Я перенёс тело, но
+	 *  не перенёс страховку; в 1.20.1 её роль исполняет ровно {@code super.onRemove}.
+	 *  <p><b>Правило теперь.</b> Сперва GT6-цепочка (дроп содержимого, {@code IMTE_BreakBlock}, оповещение
+	 *  мультиблоков) — она обязана отработать ДО снятия BE, потому что читает её. Затем {@code super.onRemove}
+	 *  ВСЕГДА, кроме единственного случая: интерфейс {@code IMTE_BreakBlock.breakBlock()} вернул {@code true}, что по
+	 *  его же контракту значит «не снимать BlockEntity» (IMultiTileEntity.java:87) — это канон 1.7.10, и там BE тоже
+	 *  переживала снятие блока. Ранний выход по {@code shouldRefresh} снятие BE больше НЕ пропускает.
+	 *  <p>Повторное снятие BE безопасно: {@link #breakBlock} мог снять её сам, а {@code super} на отсутствующей BE —
+	 *  no-op ({@code LevelChunk.removeBlockEntity} на пустой позиции ничего не делает). */
+	@Override public void onRemove(BlockState aState, Level aWorld, BlockPos aPos, BlockState aNewState, boolean aMovedByPiston) {
+		boolean tKeepBlockEntity = breakBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), blockMetaDataAt(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));
+		if (!tKeepBlockEntity) super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston);
+	}
+
 	// было @Override Block.getMapColor(int) (1.7.10) - удалён в neo; собственный byte-meta dispatcher
 	// остаётся обычным GT6-методом (не движковый override). super.getMapColor(aMeta) (vanilla-дефолт = материал)
 	// заменён на mMaterial.getMaterialMapColor() - тот же источник дефолта, 1:1.
