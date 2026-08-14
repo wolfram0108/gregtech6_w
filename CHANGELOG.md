@@ -24,6 +24,43 @@ to publish if they do not.
 
 ## [Unreleased]
 
+## [6.0.0-alpha.4] — Applied Energistics 2 fits in, and three old bugs stop coming back
+
+### Added
+
+- **Applied Energistics 2 works alongside GregTech 6 as one progression, not two.** GT6 stays the
+  industrial layer; AE2 keeps what only it does — the network, storage, autocrafting and spatial
+  storage. Machines of AE2 that merely repeat a GregTech machine no longer have their own recipes,
+  so there is one way to make a thing, not two.
+- **Energy crosses the border both ways.** GregTech power feeds AE2 directly at 1 EU = 4 FE = 2 AE,
+  and AE2 devices charge from it, so no converter block is needed. In configs carried over from an
+  earlier build the key `Emit_EU_as_RF_from_Blocks` stays `false` — set it to `true` by hand to
+  enable the bridge.
+- **One wrench for everything.** Gregorius' wrench turns, dismantles and configures AE2 blocks the
+  same way it does GregTech ones; AE2's own tools are no longer needed for that.
+- **Sky stone is made, not only found.** It can be smelted from dust and cast into blocks through
+  the ordinary GregTech chain. World generation gives you the choice: the AE2 meteorite, or an
+  ordinary underground vein of sky stone — one or the other, never both.
+
+### Fixed
+
+- **A vanilla furnace could be crafted from plain cobblestone.** GregTech deliberately gates the
+  furnace behind a Fire Starter in the middle of the grid, and the recipe book showed exactly that —
+  but the crafting table still accepted a bare ring of cobblestone. The mod was resurrecting the
+  vanilla recipe itself, under its own name, after removing it. Twenty-eight recipes were affected
+  the same way, among them the saddle, the anvil, the bucket, the pistons, all four rails, the
+  dispenser, the redstone lamp, the repeater and the enchanting table.
+- **Vanilla blocks stopped stacking after re-entering a world.** Dirt, logs, cobblestone walls and
+  seventy-five other blocks would suddenly stack one to a slot — the first visit to a world was
+  fine, the second was not, and deleting the config only appeared to help because it meant
+  restarting the game. The stack limits are now applied correctly however many times the game
+  reloads its data. The config file was never at fault.
+- **On a dedicated server, GregTech blocks were invisible.** Bushes, rocks, sticks and machines
+  arrived at the client as empty space with a collision box and an unreadable name. The client was
+  told which block it was by a number that means something different in every process, so it could
+  not recognise it. Blocks now carry a name that reads the same everywhere. Worlds saved before this
+  release are repaired on load, not left broken.
+
 ## [6.0.0-alpha.3] — biomes decide again, tools are heard and held right, machines cost less to draw
 
 ### Fixed

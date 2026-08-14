@@ -91,46 +91,67 @@ jobs:
         with:
           subject-path: 'build/libs/*.jar'
 
+      # Тело релиза — это ЧТО ИЗМЕНИЛОСЬ, а не как собрать. Раздел текущей версии берётся из
+      # CHANGELOG.md как есть: один источник, никакого второго описания, которое разойдётся с первым.
+      # Отсутствие раздела — отказ публиковать: релиз без changelog'а не выпускается.
+      - name: Build release notes from CHANGELOG
+        run: |
+          VERSION='${{ steps.version.outputs.version }}'
+          awk -v v="## [$VERSION]" '
+            index($0, v) == 1 {found = 1; next}
+            found && /^## \[/ {exit}
+            found {print}
+          ' CHANGELOG.md > changelog-section.md
+          if [ ! -s changelog-section.md ]; then
+            echo "::error::CHANGELOG.md has no section '## [$VERSION]' — release notes would be empty."
+            exit 1
+          fi
+          {
+            echo "Minecraft 26.1.2 · NeoForge 26.1.2.84 or newer · Java 25."
+            echo
+            echo "> ⚠️ **Alpha.** Playable, not finished. Worlds are not guaranteed to survive between"
+            echo "> builds — see \"Known gaps\" in the README before using a world you care about."
+            echo
+            cat changelog-section.md
+            echo
+            echo "---"
+            echo
+            echo "<details><summary>Verifying this download, and how to report a defect</summary>"
+            echo
+            echo "An unofficial port of Gregorius Techneticies' GregTech 6, under LGPL-3.0-or-later."
+            echo "Not affiliated with or endorsed by the upstream author — report problems here, not there."
+            echo "Where every part of this jar comes from is set out in \`NOTICE\`, inside the jar."
+            echo
+            echo "Two independent checks, neither requiring you to trust me:"
+            echo
+            echo '```'
+            echo "gh attestation verify gregtech6-$VERSION.jar --repo ${{ github.repository }}"
+            echo '```'
+            echo
+            echo "confirms GitHub itself witnessed this exact file being built by this repository's"
+            echo "release workflow from the tagged commit. And because the build is reproducible, you"
+            echo "can check the claim yourself — build the tag and compare:"
+            echo
+            echo '```'
+            echo "./gradlew assemble && sha256sum build/libs/*.jar"
+            echo '```'
+            echo
+            echo "The result must equal the published \`.sha256\` byte for byte."
+            echo
+            echo "Report a defect with: what you did, what the 1.7.10 original does instead,"
+            echo "single-player or dedicated server, fresh or old world, plus \`logs/latest.log\`"
+            echo "and \`gregtech.log\`."
+            echo
+            echo "</details>"
+          } > release-notes.md
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: GregTech 6 for NeoForge ${{ steps.version.outputs.version }}
           prerelease: ${{ steps.version.outputs.prerelease }}
-          generate_release_notes: true
+          body_path: release-notes.md
           files: |
             build/libs/*.jar
             build/libs/*.sha256
-          body: |
-            **GregTech 6 for NeoForge — ${{ steps.version.outputs.version }}**
-
-            Minecraft 26.1.2 · NeoForge 26.1.2.84 or newer · Java 25.
-
-            An unofficial port of Gregorius Techneticies' GregTech 6, under LGPL-3.0-or-later.
-            Not affiliated with or endorsed by the upstream author — report problems here, not there.
-            Where every part of this jar comes from is set out in `NOTICE`, inside the jar.
-
-            > ⚠️ **Alpha.** Playable, not finished. Worlds are not guaranteed to survive between
-            > builds, and some subsystems are ported but not individually verified — see the
-            > "Known gaps" section of the README before using a world you care about.
-
-            **Verifying this download.** Two independent checks, neither requiring you to trust me:
-
-            ```
-            gh attestation verify gregtech6-${{ steps.version.outputs.version }}.jar \
-               --repo ${{ github.repository }}
-            ```
-
-            confirms GitHub itself witnessed this exact file being built by this repository's release
-            workflow from the tagged commit. And because the build is reproducible, you can check the
-            claim yourself — build the tag and compare:
-
-            ```
-            ./gradlew assemble && sha256sum build/libs/*.jar
-            ```
-
-            The result must equal the published `.sha256` byte for byte.
-
-            Report a defect with: what you did, what the 1.7.10 original does instead,
-            single-player or dedicated server, fresh or old world, plus `logs/latest.log`
-            and `gregtech.log`.
