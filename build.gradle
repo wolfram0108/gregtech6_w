@@ -126,6 +126,30 @@ if (project.hasProperty('gt6probes')) {
 tasks.named('jar').configure {
     exclude 'net/minecraft/**'
     exclude 'cpw/**'
+    // КАНАЛ МИКСИН-КОНФИГА НА ЭТОЙ ВЕТКЕ. Forge 1.20.1 (47.4.22) НЕ читает секцию [[mixins]] из mods.toml —
+    // это канал neo (там он и работает, ветка main). Реальный канал версии — атрибут манифеста MixinConfigs;
+    // проверено на живом рантайме этой же сборки: Jade регистрируется именно им
+    // (jade-11.13.3+forge.jar, META-INF/MANIFEST.MF: "MixinConfigs: jade.mixins.json"), а наш конфиг при
+    // [[mixins]]-объявлении в логе не появлялся ВООБЩЕ (ни "Registering mixin config", ни "Selecting config").
+    // DEV-запуск манифеста не имеет вовсе (мод подаётся каталогами классов/ресурсов), поэтому там канал
+    // другой — блок `mixin { config ... }` ниже: плагин сборки кладёт `--mixin.config=` в аргументы запуска.
+    manifest { attributes(['MixinConfigs': 'gregapi.mixins.json']) }
+}
+
+// КАНАЛ МИКСИН-КОНФИГА В DEV-ЗАПУСКАХ. Штатный DSL плагина legacyforge
+// (net.neoforged.moddevgradle.legacyforge.dsl.MixinExtension: `config(String)`), который добавляет
+// `--mixin.config=<имя>` в аргументы каждого runClient/runServer — строка `--mixin.config` лежит прямо
+// в LegacyForgeModDevPlugin.class. Замер: ДО этой строки в debug.log не было ни одной записи
+// «Registering mixin config: gregapi.mixins.json», хотя [[mixins]] в mods.toml был объявлен, а копия
+// атрибута MixinConfigs в src/main/resources/META-INF/MANIFEST.MF на dev-раскладке не читается.
+mixin {
+    config 'gregapi.mixins.json'
+    // REFMAP для PRODUCTION-jar. В dev рантайм на mojmap-именах и refmap не нужен, но в jar игрока
+    // Forge 1.20.1 живёт на SRG — без карты имён инжект `setSectionDirty(IIIZ)V` там не найдёт цель.
+    // `add(sourceSet, имя)` — штатный метод того же MixinExtension: он подключает annotation-processor
+    // миксина (-AoutRefMapFile/-AoutTsrgFile/-AmappingTypes=tsrg — строки в MixinCompilerArgs.class)
+    // и кладёт готовую карту в jar. Ветка main этого не требует: там рантайм и jar на одних именах.
+    add(sourceSets.main, 'gregapi.refmap.json')
 }
 
 // ВОСПРОИЗВОДИМАЯ СБОРКА. По умолчанию zip-записи несут время создания файла и порядок обхода
@@ -189,8 +213,10 @@ legacyForge {
             // Авто-вход в существующий мир для приёмочного render-probe (гейт ②): в меню DataComponents предметов НЕ bound
             // (ItemStack NPE «Components not bound yet»), а на world-load — bound. quickPlay грузит мир при старте →
             // level!=null → GT_API_Proxy_Client.onClientTickProbe вызывает GT6ItemModel.probeItemIcons (found/missing в gregtech.log).
-            // ОТКЛЮЧЕНО: обычный запуск в главное меню. Авто-вход в мир — через клиент-хук onAutoWorldCreate (гейт wgautoworld.flag),
-            // который на TitleScreen сам создаёт свежий CREATIVE-мир (createFreshLevel, минуя диалоги). quickPlay НЕ годится (виснет на диалоге).
+            // ОТКЛЮЧЕНО: обычный запуск в главное меню. Автовход в мир — НЕ здесь: он живёт в оснастке
+            // стендов (stands-1.20.1/_core/java/gregapi/GT6ProbeKitClient.java, подключается при -Pgt6probes)
+            // и управляется файлами в run/: wgautoworld.flag = свежий мир, wgautoworld.world = имя существующего.
+            // Второго носителя того же приёма здесь не заводим.
             // programArguments.addAll '--quickPlaySingleplayer', 'GT6WGTest'
         }
 
@@ -215,7 +241,7 @@ legacyForge {
         }
 
         data {
-            clientData()
+            data() // 1.20.1: тип запуска датагена — 'data' (clientData — деление 26.x; доступные типы: client, data, gameTestServer, server)
 
             // example of overriding the workingDirectory set in configureEach above, uncomment if you want to use it
             // gameDirectory = project.file('run-data')

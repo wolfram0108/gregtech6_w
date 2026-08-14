@@ -969,8 +969,39 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockEntity tBE = tChunk.getBlockEntity(tPos);
 		if (tBE == null || (tBE instanceof PrefixBlockTileEntity tTE && tTE.mItemNBT == null)) tChunk.removeBlockEntity(tPos);
-		if (tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC && aWorld instanceof net.minecraft.server.level.ServerLevel tSL) syncOreMap(tSL, tLC);
+		if (tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC && aWorld instanceof net.minecraft.server.level.ServerLevel tSL) markOreMapDirty(tSL, tLC);
 	}
+
+	// СКЛЕЙКА РАССЫЛКИ КАРТЫ. Пакет карты несёт чанк ЦЕЛИКОМ (полное состояние, идемпотентен), поэтому N записей
+	// подряд в один чанк — это N одинаковых по смыслу рассылок вместо одной. Больно это ветке дважды: сервер
+	// пакует и шлёт всю карту (сотни записей) на каждую руду, а клиент на каждый пакет строит дифф-карту той же
+	// длины. Копим грязные чанки и отсылаем раз за серверный тик — доставляемое состояние то же, задержка < 1 тика.
+	private static final java.util.Map<net.minecraft.server.level.ServerLevel, java.util.Set<Long>> ORE_MAP_DIRTY = new java.util.concurrent.ConcurrentHashMap<>();
+
+	/** Пометка «карта этого чанка изменилась» — вместо немедленной рассылки (см. {@link #flushOreMapSync}). */
+	public static void markOreMapDirty(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.world.level.chunk.LevelChunk aChunk) {
+		ORE_MAP_DIRTY.computeIfAbsent(aWorld, k -> java.util.concurrent.ConcurrentHashMap.newKeySet()).add(aChunk.getPos().toLong());
+	}
+
+	/** Отсылка накопленного — раз за серверный тик (зовёт GT_API_Proxy.onServerTick, фаза END). Чанк берём
+	 *  без подгрузки: выгруженному рассылать некому, а карта уедет с чанком при следующей отправке. */
+	public static void flushOreMapSync() {
+		if (ORE_MAP_DIRTY.isEmpty()) return;
+		for (java.util.Map.Entry<net.minecraft.server.level.ServerLevel, java.util.Set<Long>> tEntry : ORE_MAP_DIRTY.entrySet()) {
+			net.minecraft.server.level.ServerLevel tLevel = tEntry.getKey();
+			java.util.Iterator<Long> tIt = tEntry.getValue().iterator();
+			while (tIt.hasNext()) {
+				long tKey = tIt.next(); tIt.remove();
+				net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(
+					net.minecraft.world.level.ChunkPos.getX(tKey), net.minecraft.world.level.ChunkPos.getZ(tKey));
+				if (tChunk != null) syncOreMap(tLevel, tChunk);
+			}
+		}
+	}
+
+	/** Сброс между мирами: карта держит ссылку на ServerLevel, а stale-level — известный класс «второй мир виснет»
+	 *  (см. GT6WorldgenFeature: те же очереди чистятся на ServerStopping/ServerStopped). */
+	public static void clearOreMapSync() {ORE_MAP_DIRTY.clear();}
 
 	/** Ветка 1.20.1: замена бывшего {@code chunk.syncData(TYPE)} — карта уходит своим пакетом GT6 тем, кто ЧАНК
 	 *  ВИДИТ (тот же {@code PacketDistributor.TRACKING_CHUNK}, что и весь остальной синк мода). */

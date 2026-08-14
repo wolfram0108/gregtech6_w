@@ -136,10 +136,15 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	 *  (recompSrc RenderGlobal.markBlockForUpdate → секции ±1 блока); BER же строил её каждый кадр. Кэш
 	 *  возвращает гранулярность 1.7.10: сбрасывается тем же движковым сигналом (LevelRenderer.setSectionDirty —
 	 *  единственная воронка «картинка секции изменилась», см. MixinLevelRenderer). Валиден, пока
-	 *  {@code mQuadCacheEpoch == MultiTileEntityBER.sQuadEpoch}; сам список может быть null (MTE без квадов).
+	 *  {@code mQuadCacheEpoch == MultiTileEntityBER.sQuadEpoch} И {@code mQuadCacheSectionStamp} совпадает со
+	 *  штампом своей секции; сам список может быть null (MTE без квадов).
 	 *  Не сохраняется и не синхронизируется: чисто визуальный кэш, как mRenderAABB выше. */
 	public java.util.List<net.minecraft.client.renderer.block.model.BakedQuad> mQuadCache = null;
 	public long mQuadCacheEpoch = Long.MIN_VALUE;
+	/** Оттиск штампа СВОЕЙ секции на кадре постройки кэша (второе условие валидности рядом с эпохой). Сигнал
+	 *  setSectionDirty теперь не обходит блок-сущности, а печатает секцию — сверку делает сам MTE при рисовании,
+	 *  когда движок его и так вызвал. Long.MIN_VALUE = кэша не было (штамп непомеченной секции равен 0). */
+	public long mQuadCacheSectionStamp = Long.MIN_VALUE;
 
 	/** BUG-063 (репорт игрока: «как только центральный нижний блок выходит за границы экрана, весь тигель сразу
 	 *  пропадает»). Ветка 1.20.1: рамку отсечения рисунка BE объявляет САМ BE — {@code IForgeBlockEntity.getRenderBoundingBox()}

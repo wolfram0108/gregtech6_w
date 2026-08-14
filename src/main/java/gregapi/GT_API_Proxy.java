@@ -682,6 +682,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			}
 			
 			if (aEvent.phase == net.minecraftforge.event.TickEvent.Phase.END) { // было aEvent.phase == ServerTickEvent.END
+				// Склейка рассылки карты руды: за тик накопились грязные чанки — отсылаем каждый ОДИН раз
+				// (пакет несёт чанк целиком, см. PrefixBlock.flushOreMapSync).
+				gregapi.block.prefixblock.PrefixBlock.flushOreMapSync();
 				for (int i = 0; i < SERVER_TICK_POST.size(); i++) {
 					ITileEntityServerTickPost tTileEntity = SERVER_TICK_POST.get(i);
 					if (tTileEntity.isDead()) {
@@ -719,7 +722,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				}
 				
 				EntityFoodTracker.tick();
-				if (++sFlightTick % 600 == 0) flightSample(aEvent.getServer()); // самописец: срез раз в 30 секунд
+				// ВРЕМЕННАЯ ДИАГНОСТИКА (2026-08-13, слово пользователя): самописец заглушён на время разбора фризов
+				// движения — исключить его из подозреваемых. Вернуть строку при уборке. Телеметрия его же прогона:
+				// тик 8-35 мс, куча 6-9 ГБ пилой, чанков ~5000 при одном игроке — подозрение НЕ на самописец.
+				//if (++sFlightTick % 600 == 0) flightSample(aEvent.getServer()); // самописец: срез раз в 30 секунд
 				
 				if (SERVER_TIME % 1200 == 0) checkSaveLocation(aEvent.getServer().getWorldPath(LevelResource.ROOT).toFile(), T);
 				
