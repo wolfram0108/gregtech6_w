@@ -61,4 +61,20 @@ public class TileEntityLoaderStub extends TileEntityBase01Root {
 		if (mLoadedNBT == null) {super.saveAdditional(output); return;}
 		output.store(mLoadedNBT);
 	}
+
+	/** F6-дедик, ТОТ ЖЕ приём прозрачного переносчика, но в СЕТЬ: чанк уходит игроку тем же тиком, что грузится,
+	 *  а реконструкция стаба отложена на server-tick с квотой — значит в момент сборки пакета в позиции нередко
+	 *  стоит ещё сам стаб, а не настоящий MTE. Личность он несёт (захвачена в mLoadedNBT), и обязан отдать её
+	 *  клиенту, иначе тот получит BE без reg/id и не сможет реконструировать — блок останется прозрачным.
+	 *  Отдаётся ровно личность, не весь захваченный NBT: серверные поля машины клиенту не нужны и не уходят. */
+	@Override protected void writeMTEIdentity(CompoundTag aNBT) {
+		if (mLoadedNBT == null) return;
+		if (mLoadedNBT.contains(NBT_MTE_REG)) aNBT.putShort(NBT_MTE_REG, mLoadedNBT.getShort(NBT_MTE_REG).orElse((short)0));
+		if (mLoadedNBT.contains(NBT_MTE_ID )) aNBT.putShort(NBT_MTE_ID , mLoadedNBT.getShort(NBT_MTE_ID ).orElse((short)0));
+		// Имя реестра: из захваченного NBT, если мир уже писался с ним; иначе выводим из числа ЗДЕСЬ, на сервере,
+		// где это число ещё осмысленно — клиенту оно бесполезно (у него своя нумерация предметов).
+		String tName = mLoadedNBT.getString(NBT_MTE_REGNAME).orElse("");
+		if (!tName.isEmpty()) aNBT.putString(NBT_MTE_REGNAME, tName);
+		else if (mLoadedNBT.contains(NBT_MTE_REG)) gregapi.block.multitileentity.MultiTileEntityRegistry.writeRegistryName(aNBT, mLoadedNBT.getShort(NBT_MTE_REG).orElse((short)0));
+	}
 }

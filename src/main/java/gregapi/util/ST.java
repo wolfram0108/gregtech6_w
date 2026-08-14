@@ -350,7 +350,17 @@ public class ST {
 	 *  штатно меняется через neo ModifyDefaultComponentsEvent. Копим намерение в карту; ПОДКЛЮЧЕНО:
 	 *  applyVanillaComponentOverrides (ниже, подписан на mod-bus в GT_API) применяет её на событии. Вызыватели —
 	 *  форейн-итемы (TC/TF) под .exists(): в этой сборке форейн-моды отсутствуют → карта пуста → применять нечего (F10). */
-	public static final java.util.Map<Item, Integer> VANILLA_STACKSIZE_OVERRIDES = new java.util.IdentityHashMap<>();
+	/*  Тип карты: ConcurrentHashMap, НЕ IdentityHashMap. Причина не в стиле, а в двух фактах движка:
+	 *  (1) выпечка компонентов идёт на ФОНОВОМ исполнителе (ReloadableServerResources.java:123-125,
+	 *      supplyAsync(..., backgroundExecutor)), а пишет сюда серверный поток на LevelEvent.Load
+	 *      (GT_API.onLevelLoadEarlyItemInit -> runDeferredItemInit -> листенеры префиксов) — карта живёт под гонкой;
+	 *  (2) IdentityHashMap.resize() ОБНУЛЯЕТ старую таблицу, а её Map.Entry — это лишь индекс в снимке таблицы
+	 *      (java.util.IdentityHashMap$EntryIterator$Entry), поэтому любое отложенное чтение такой записи протухает.
+	 *  Идентичность ключа при смене типа СОХРАНЯЕТСЯ: у net.minecraft.world.item.Item нет собственных
+	 *  equals/hashCode (наследуются от Object) → equals-семантика ConcurrentHashMap здесь тождественна ==.
+	 *  null-ключей/значений карта не принимает — и не получает: setMaxStackSize ниже отсекает null-итем, а
+	 *  значение приходит из int (автобоксинг, null невозможен). */
+	public static final java.util.Map<Item, Integer> VANILLA_STACKSIZE_OVERRIDES = new java.util.concurrent.ConcurrentHashMap<>();
 	public static Item setMaxStackSize(Item aItem, int aSize) {
 		if (aItem instanceof gregapi.item.ItemBase) return ((gregapi.item.ItemBase)aItem).setMaxStackSize(aSize);
 		if (aItem != null) VANILLA_STACKSIZE_OVERRIDES.put(aItem, aSize);
@@ -368,8 +378,24 @@ public class ST {
 		// Повторный вызов на server-start (GT_API:1140, 1:1-место) остаётся — идемпотентен (та же величина).
 		gregapi.oredict.OreDictPrefix.applyAllStackSizes();
 		// форейн-мод override'ы (карта, если форейн-предмет присутствует)
-		for (java.util.Map.Entry<Item, Integer> tE : VANILLA_STACKSIZE_OVERRIDES.entrySet())
-			aEvent.modify(tE.getKey(), b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, tE.getValue()));
+		// BUG-041R (протухший захват): величина обязана сниматься ЗДЕСЬ, в локальную переменную, а не читаться из
+		// Map.Entry внутри лямбды. Движок исполняет эту лямбду не сейчас: modify() лишь КЛАДЁТ её в статический
+		// DataComponentModifiers.MODIFIERS_BY_ITEM (событие постится один раз за процесс, RegistrationEvents.java:22),
+		// а исполняется она на КАЖДОЙ выпечке компонентов — то есть на каждой загрузке мира и на /reload
+		// (ReloadableServerResources.java:124 build -> :175 apply). Между подпиской и второй выпечкой карта
+		// продолжает расти (листенеры префиксов на LevelEvent.Load), прежняя IdentityHashMap проходила resize,
+		// resize обнулял таблицу, на которую ссылалась захваченная Entry, и tE.getValue() отдавал null.
+		// b.set(тип, null) у движка означает УДАЛЕНИЕ компонента (DataComponentMap.java:143-149), а предмет без
+		// MAX_STACK_SIZE стакается по 1 (Item.java:176-177 getOrDefault(..., 1)) — отсюда «земля/брёвна/стена по 1»
+		// со ВТОРОГО захода в мир. Локальная величина делает лямбду замкнутой на константе: ничего не протухает.
+		// Способ применения (modify по предмету) и место в цепочке сохранены намеренно: MODIFIERS_BY_ITEM
+		// применяется ДО MODIFIERS_BY_PREDICATE (DataComponentModifiers.java:27-37), а внутри — в порядке merge,
+		// поэтому литеральные твики 1.7.10 ниже по тексту перекрывают карту. Перевод карты на modifyMatching
+		// перевернул бы этот порядок и откатил BUG-021.
+		for (java.util.Map.Entry<Item, Integer> tE : VANILLA_STACKSIZE_OVERRIDES.entrySet()) {
+			final int tStackSize = tE.getValue();
+			aEvent.modify(tE.getKey(), b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, tStackSize));
+		}
 		// golden ST.forceProperMaxStacksizes() 1:1: GT6 менял стек vanilla-предметов (potion→1; glass_bottle/cake/stick/книги/
 		// snowball/egg→64; bed→64; двери→8). 1.7.10 «bed»/«wooden_door» флэттились в neo → применяем ко ВСЕМ вариантам класса.
 		aEvent.modify(net.minecraft.world.item.Items.POTION, b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, 1));

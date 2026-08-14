@@ -123,12 +123,22 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	
 	public void readFromNBT2(CompoundTag aNBT) {/**/}
 	
+	/** F6-дедик: личность в клиентский пакет чанка (см. TileEntityBase01Root.getUpdateTag). Вторая иерархия MTE
+	 *  (notick) несёт те же два поля и отдаёт их тем же каналом — приём один на обе, без второй адаптации. */
+	@Override protected void writeMTEIdentity(CompoundTag aNBT) {
+		aNBT.putShort(NBT_MTE_ID, mMTEID);
+		aNBT.putShort(NBT_MTE_REG, mMTERegistry);
+		gregapi.block.multitileentity.MultiTileEntityRegistry.writeRegistryName(aNBT, mMTERegistry);
+	}
+
 	@Override
 	public final void writeToNBT(CompoundTag aNBT) {
 		super.writeToNBT(aNBT);
 		// write the IDs
 		aNBT.putShort(NBT_MTE_ID, mMTEID);
 		aNBT.putShort(NBT_MTE_REG, mMTERegistry);
+		// F6-дедик: рядом с числом — ИМЯ реестра (см. MultiTileEntityRegistry.resolve)
+		gregapi.block.multitileentity.MultiTileEntityRegistry.writeRegistryName(aNBT, mMTERegistry);
 		// write the Custom Name
 		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundOrEmpty("display"), "Name", mCustomName));
 		if (isPainted()) {aNBT.putInt(NBT_COLOR, getPaint()); aNBT.putBoolean(NBT_PAINTED, T);}

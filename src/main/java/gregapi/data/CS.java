@@ -1417,6 +1417,12 @@ public class CS {
 	, NBT_FUELMAP                   = "gt.fuelmap"                  // String containing the Fuel Map Name.
 	, NBT_TEMPERATURE               = "gt.temperature"              // Long containing a generic Temperature Variable.
 	, NBT_MTE_REG                   = "gt.mte.reg"                  // Containing the MTE Registry ID
+	// F6-дедик: ИМЯ реестра MTE рядом с его числовым id. Число (NBT_MTE_REG) — это numeric item-id блок-итема
+	// реестра, а в neo такой id назначается ЛОКАЛЬНО при регистрации: он разный в разных JVM и меняется от
+	// набора модов. В 1.7.10 item-id были стабильны и лежали в конфиге, поэтому у Грега число работало. Замер
+	// дедика: в мире записан reg=1646, у клиента тот же единственный реестр числится под 2011 → getRegistry
+	// не находит ничего, стаб не достраивается, блок прозрачен. Имя же одинаково в любой JVM и в любом мире.
+	, NBT_MTE_REGNAME               = "gt.mte.regname"              // Registry name (stable across JVMs, unlike the numeric id)
 	, NBT_MTE_ID                    = "gt.mte.id"                   // Containing the MTE ID
 	, NBT_USB_DIRECTION             = "gt.usb.dir"                  // Compound
 	, NBT_USB_TIER                  = "gt.usb.tier"                 // Byte

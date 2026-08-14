@@ -453,9 +453,10 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 			if (tN <= 20 || tN % 500 == 0) gregapi.data.CS.OUT.println("[GT6-WG] шелуха BUG-057 вычищена @" + tHuskPos.toShortString() + ", всего=" + tN);
 			return;
 		}
-		short tReg = tNBT.getShort(gregapi.data.CS.NBT_MTE_REG).orElse((short)0);
 		short tID  = tNBT.getShort(gregapi.data.CS.NBT_MTE_ID ).orElse((short)0);
-		gregapi.block.multitileentity.MultiTileEntityRegistry tRegistry = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry(tReg);
+		// F6-дедик: реестр разрешается ЦЕНТРОМ (имя → число → единственный кандидат), а не числом напрямую —
+		// numeric item-id блок-итема в neo локален для JVM, и на выделенном сервере клиент его не узнаёт.
+		gregapi.block.multitileentity.MultiTileEntityRegistry tRegistry = gregapi.block.multitileentity.MultiTileEntityRegistry.resolve(tNBT);
 		// Стаб с потерянным/нулевым reg реконструировать нечем — остаётся как есть (BUG-057).
 		if (tRegistry == null) return;
 		net.minecraft.core.BlockPos tPos = aStub.getBlockPos();

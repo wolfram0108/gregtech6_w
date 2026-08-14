@@ -131,6 +131,37 @@ public class MultiTileEntityRegistry {
 	public static MultiTileEntityRegistry getRegistry(String aRegistryName) {
 		return NAMED_REGISTRIES.get(aRegistryName);
 	}
+
+	/**
+	 * F6-дедик, ЕДИНСТВЕННАЯ точка разрешения реестра из сохранённой личности MTE.
+	 * <p>Числовой ключ ({@link CS#NBT_MTE_REG}) — это numeric item-id блок-итема реестра, и в neo он назначается
+	 * ЛОКАЛЬНО при регистрации: разный в разных JVM, меняется от набора модов. В 1.7.10 item-id были стабильны
+	 * (конфиг), поэтому у Грега число работало и переносить его 1:1 было верно; в neo этой опоры нет.
+	 * Замер дедика: в мире записан reg=1646, у клиента тот же ЕДИНСТВЕННЫЙ реестр числится под 2011 — стаб не
+	 * достраивается, MTE-блок остаётся прозрачным. Отсюда порядок: сперва ИМЯ (одинаково везде), потом число
+	 * (миры, записанные до этой правки), потом — если реестр в сборке ровно один — он сам: выбор однозначен,
+	 * это не догадка о состоянии, а единственный кандидат.
+	 */
+	public static MultiTileEntityRegistry resolve(net.minecraft.nbt.CompoundTag aNBT) {
+		if (aNBT == null) return null;
+		String tName = aNBT.getString(NBT_MTE_REGNAME).orElse("");
+		if (!tName.isEmpty()) {
+			MultiTileEntityRegistry rByName = NAMED_REGISTRIES.get(tName);
+			if (rByName != null) return rByName;
+		}
+		if (aNBT.contains(NBT_MTE_REG)) {
+			MultiTileEntityRegistry rByID = getRegistry(aNBT.getShort(NBT_MTE_REG).orElse((short)0));
+			if (rByID != null) return rByID;
+		}
+		if (NAMED_REGISTRIES.size() == 1) return NAMED_REGISTRIES.values().iterator().next();
+		return null;
+	}
+
+	/** Имя реестра в личность MTE — пишется рядом с числом всеми, кто эту личность сохраняет или шлёт. */
+	public static void writeRegistryName(net.minecraft.nbt.CompoundTag aNBT, int aRegistryID) {
+		MultiTileEntityRegistry tRegistry = getRegistry(aRegistryID);
+		if (tRegistry != null) aNBT.putString(NBT_MTE_REGNAME, tRegistry.mNameInternal);
+	}
 	
 	public static BlockEntity getCanonicalTileEntity(int aRegistryID, int aMultiTileEntityID) {
 		MultiTileEntityRegistry tRegistry = getRegistry(aRegistryID);

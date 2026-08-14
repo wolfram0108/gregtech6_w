@@ -283,9 +283,32 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		readFromNBT(tNBT);
 	}
 
-	// F6-worldgen КЛИЕНТ-СИНК: сознательно НЕ переопределяем getUpdateTag на корне всех MTE. Проверено механикой (4 прогона
-	// A/B/C/D): getUpdateTag=saveCustomOnly закрывал лишь 1 из ~2-4 edge-case null-BE (маргинально), но это ШИРОКОЕ изменение —
-	// saveCustomOnly на ВСЕХ BE (включая машины) → лишний трафик chunk-пакета и утечка server-полей на клиент. Плохой размен.
+	// F6-дедик КЛИЕНТ-СИНК ЛИЧНОСТИ MTE (корень «прозрачных блоков на выделенном сервере»).
+	// На ВЫДЕЛЕННОМ сервере клиент узнаёт о BE ровно двумя движковыми каналами: getUpdatePacket (у GT6 он null —
+	// TileEntityBase03TicksAndSync:96, синк идёт своим пакетом GT6) и getUpdateTag, который движок спрашивает при
+	// отправке чанка (ClientboundLevelChunkPacketData:154). База отдаёт ПУСТОЙ тег (BlockEntity:244), поэтому клиент
+	// получал MTE-BE без личности: фабрика MTE_TYPE даёт TileEntityLoaderStub, его mLoadedNBT остаётся null, и
+	// reconstructMTE выходит первой строкой — стаб не становится настоящим MTE, а стаб не IRenderedBlockObject →
+	// getRenderPasses=0 → блок прозрачен и зовётся сырым ключом. Замер дедика: MTE=217 real=0 stub=217.
+	// Компенсирующий канал мода (WORLDGEN_MTE + onChunkWatch/drainPendingSync) покрывает лишь чанки, СГЕНЕРИРОВАННЫЕ
+	// в текущей сессии сервера: при загрузке готового мира с диска записей нет и слать нечего — оттого дефект и виден
+	// на «настоящем» сервере, а в одиночке маскируется (там клиент и сервер делят один Level, синк не нужен вовсе).
+	// ⚠ Прежнее решение «не переопределять getUpdateTag» принималось по замерам В ОДИНОЧКЕ — в среде, где дефекта нет.
+	// Возражение того решения (saveCustomOnly = лишний трафик и утечка серверных полей на клиент) остаётся в силе и
+	// здесь УЧТЕНО: отдаётся не состояние, а ЛИЧНОСТЬ — два short'а, ровно то, чем реестр строит настоящий MTE.
+	// Данные отображения приходят прежним каналом GT6 (sendClientData) уже реконструированному объекту.
+	@Override public net.minecraft.nbt.CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider aProvider) {
+		net.minecraft.nbt.CompoundTag rNBT = super.getUpdateTag(aProvider);
+		writeMTEIdentity(rNBT);
+		return rNBT;
+	}
+
+	/** Личность MTE (реестр + sub-ID) для клиентского пакета чанка. Пишут её носители полей — обе иерархии MTE;
+	 *  у прочих BE личности нет, и тег остаётся пустым, как было. Один канал на весь мод, без россыпи. */
+	protected void writeMTEIdentity(net.minecraft.nbt.CompoundTag aNBT) {/* не-MTE потомки личности не несут */}
+
+	// ИСТОРИЯ ШВА: getUpdateTag=saveCustomOnly проверялся (4 прогона A/B/C/D) и был отвергнут —
+	// saveCustomOnly на ВСЕХ BE (включая машины) → лишний трафик chunk-пакета и утечка server-полей на клиент.
 	// ВАЖНО (диагностировано): флуд «Block state mismatch … != air, updating» (~9.5k/мир) от getUpdateTag НЕ зависит — он есть
 	// и без него (замер: WD.te привязывает 772k BE, при air=0; блок исчезает ПОЗЖЕ). Корень: GT6-фича сидит в ранней стадии
 	// Decoration.UNDERGROUND_ORES, а поздние стадии (VEGETAL/TOP_LAYER) перестраивают объём и стирают её декор-блоки → orphan-BE.

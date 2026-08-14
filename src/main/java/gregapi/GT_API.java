@@ -787,6 +787,30 @@ public class GT_API extends Abstract_Mod {
 				// До этой строки подавление жило только в первом сервере сессии — релог возвращал ваниль
 				// (симптом игрока: «бревно рукой снова даёт 4»; касалось и 21 инструмент-подавления Replace).
 				tRemove.addAll(SUPPRESSED_DATAPACK_RECIPES);
+				// BUG-095-рецидив: снятие GT6 обязано доставать до ore-ВЕРСИИ рецепта, а не только до его
+				// датапак-оригинала. В 1.7.10 замены Forge (ShapedOreRecipe) и ванильные рецепты лежали в ОДНОМ
+				// CraftingManager, и remout(выход)/remove(сетка) резали их одним проходом. Порт разнёс их по двум
+				// спискам — датапак (RecipeManager) и собственный буфер GT6 (CR.BUFFER), — а роль-C
+				// (OreDictionary.initVanillaRecipeReplacements, вызов выше по этому же методу) СТРОИТ ore-версию
+				// ванильного рецепта ПОСЛЕ того, как загрузчики отработали свои снятия: в буфер ложится копия
+				// рецепта, который GT6 только что снял. Симптом игрока: печь крафтилась из одного булыжника, хотя
+				// оригинал даёт её только через OD.craftingFirestarter (Loader_Recipes_Vanilla:59-61,67). Оба цикла
+				// подавления выше до неё не достают ПО ПОСТРОЕНИЮ — они пропускают GT6CraftingDispatcher, который
+				// эту ore-версию и подаёт в верстак.
+				// Суд идёт по ИСТОЧНИКУ, а не по выходу: ore-версия помнит ключ своего датапак-оригинала
+				// (mSourceId, OreDictionary:418,433). Оригинал подавлен -> подавлена и ore-версия; оригинал жив ->
+				// ore-версия остаётся супермножеством живого рецепта, как и задумано ролью-C. Опора — tRemove, куда
+				// уже влит персистентный SUPPRESSED_DATAPACK_RECIPES: сами регистры снятия осушаются выше, и проход
+				// по ним был бы верен только на ПЕРВОЙ загрузке мира (тот же класс ошибки, что чинила строка выше).
+				int tDroppedOre = 0;
+				for (java.util.Iterator<gregapi.recipes.ICraftingRecipeGT> tIt = gregapi.util.CR.BUFFER.iterator(); tIt.hasNext();) {
+					gregapi.recipes.ICraftingRecipeGT tRecipe = tIt.next();
+					net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> tSource = null;
+					if (tRecipe instanceof gregapi.recipes.ShapedOreRecipe tShaped && tShaped.mVanillaReplacement) tSource = tShaped.mSourceId;
+					else if (tRecipe instanceof gregapi.recipes.ShapelessOreRecipe tShapeless && tShapeless.mVanillaReplacement) tSource = tShapeless.mSourceId;
+					if (tSource != null && tRemove.contains(tSource)) {tIt.remove(); tDroppedOre++;}
+				}
+				OUT.println("GT_API: ore-версий роли-C снято вслед за подавленным оригиналом (BUG-095): " + tDroppedOre);
 				removeDatapackRecipes(tServer, tRemove);
 			} catch(Throwable e) {e.printStackTrace(ERR);}
 			// BUG-054: пересборка propertySets ПОСЛЕ наполнения FurnaceRecipes (drain выше) — и после подавления
