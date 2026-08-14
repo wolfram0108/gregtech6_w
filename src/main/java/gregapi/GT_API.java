@@ -279,6 +279,10 @@ public class GT_API extends Abstract_Mod {
 	 *  (ReloadableServerResources) → тот же пайплайн физически сдвинут сюда. OreDictManager.registerOre_ имеет guard
 	 *  «Only @Init/@PreInit» (sStartedPostInit>0 → throw) — во время ЭТОГО окна guard подавляется: это init GT6, сдвинутый во времени. */
 	public static boolean sDeferredItemInitRunning = false;
+	/** true после ПЕРВОГО осушения очереди: до этого момента варианты god-предметов ещё не насыпаны (addItems
+	 *  в очереди), и судить наполненность вкладок/предметов по getSubItems нельзя — перечислитель пуст не потому,
+	 *  что вариантов нет, а потому, что их время не пришло (см. CreativeTabsGT.isTabEmpty). */
+	public static boolean sDeferredItemInitDone = false;
 
 	/** F11-recipe-scan: очередь сканов ЧУЖИХ рецептов (Loader_Recipes_Replace). В 1.7.10 скан бежал на PostInit
 	 *  по готовому CraftingManager; в neo его вход (ore-версии ванильных рецептов, F4 роль-C) появляется только
@@ -327,7 +331,7 @@ public class GT_API extends Abstract_Mod {
 		// уже наполненный ванильный словарь — ровно тот порядок, что был в 1.7.10.
 		try {gregapi.oredict.OreDictionary.initVanillaEntries();} catch(Throwable e) {e.printStackTrace(ERR);}
 		try {while (!DEFERRED_ITEM_INIT.isEmpty()) {Runnable tInit = DEFERRED_ITEM_INIT.remove(0); try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);}}}
-		finally {sDeferredItemInitRunning = false;}
+		finally {sDeferredItemInitRunning = false; sDeferredItemInitDone = true;}
 	}
 
 	/** F12-followup (block-split, MTE): некоторые GT6-подсистемы (MultiTileEntityRegistry/MultiTileEntityBlock) СТРОЯТ

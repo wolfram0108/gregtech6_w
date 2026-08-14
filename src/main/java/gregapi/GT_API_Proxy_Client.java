@@ -341,6 +341,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		// Правка №3 (BUG-106): атлас/модели пересозданы — старые спрайты в кэшах геометрии мертвы, сбрасываем.
 		gregapi.render.GT6ItemModel.invalidateCaches();
 		gregapi.render.GT6BlockModel.invalidateParticle();
+		// Ветка 1.20.1: кэш квадов BER держит UV СТАРОГО атласа — рвём эпохой (в 26.x это делал миксин на
+		// allChanged, здесь он мёртв; перепечка моделей — тот же момент «атлас сменился»).
+		gregapi.render.MultiTileEntityBER.onRenderAllChanged();
 		// Ветка 1.20.1: карта результата ОДНА и общая — ключ блока это ModelResourceLocation состояния
 		// (BlockModelShaper.stateToModelLocation, BlockModelShaper.java:52), ключ предмета — «<id>#inventory»
 		// (ModelResourceLocation.java:26; ItemModelShaper ищет модель именно по нему).

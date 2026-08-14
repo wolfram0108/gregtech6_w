@@ -79,6 +79,10 @@ public final class CreativeTabsGT {
 		CreativeTab[] tRef = OWN_TAB_REF.computeIfAbsent(aName, k -> new CreativeTab[1]);
 		if (aItem != null && !tMembers.contains(aItem)) tMembers.add(aItem);
 		return CreativeModeTab.builder()
+			// Инстанс регистрируется НАПРЯМУЮ (() -> tTab, мимо Builder.build()), а дефолт фона Forge подставляет
+			// только внутри build() (CreativeModeTab$Builder.build():347); ctor-от-билдера копирует сырое поле ->
+			// null -> NPE в CreativeModeInventoryScreen.renderBg:692 при выборе вкладки. Задаём дефолт движка явно.
+			.withBackgroundLocation(new net.minecraft.resources.ResourceLocation("textures/gui/container/creative_inventory/tab_items.png"))
 			.title(net.minecraft.network.chat.Component.literal(aLocal))
 			.icon(() -> {
 				CreativeTab tLive = tRef[0];
@@ -190,6 +194,13 @@ public final class CreativeTabsGT {
 	 *  Bumblebees (все ST.hide), Impure Dusts (0 вариантов dustImpure). Пустой список членов = MTE-шелл (члены
 	 *  доливаются на server-start) → считаем НЕ пустой (не скрываем, иначе потеряем машинные вкладки). */
 	private static boolean isTabEmpty(String aName) {
+		// Судить до осушения отложенной item-init НЕЛЬЗЯ: addItems god-предметов ещё в очереди (F12), их
+		// getSubItems пуст не «нет вариантов», а «время не пришло» — и вдобавок САМОСКРЫВАЕТ предмет при
+		// пустоте (MultiItemRandom.getSubItems: ST.hide(this) — канал NEI 1.7.10, бежавший только ПОСЛЕ
+		// addItems). До фикса канала меты hide на буте тихо не срабатывал и гигиена случайно проходила;
+		// с рабочей метой она прятала 6 вкладок семейства MultiItemRandom (Books/Bottles/Cans/Food/
+		// Technology/Equipment). До осушения вкладка считается «наполнится позже» — как шелл.
+		if (!gregapi.GT_API.sDeferredItemInitDone) return false;
 		List<Item> tMembers = OWN_TAB_MEMBERS.get(aName);
 		if (tMembers == null || tMembers.isEmpty()) return false; // шелл/нет членов — наполнится позже, не скрываем
 		for (Item tItem : tMembers) try {

@@ -107,8 +107,27 @@ public final class GT6QuadBuilder {
 	/** Диаг П9: имена спрайтов, НЕ найденных в атласе (грань молча пропускалась → «частично без текстур»). */
 	public static final java.util.Set<String> sMissingSprites = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
+	// ВРЕМЕННАЯ ДИАГНОСТИКА (цвет мира, репорт 2026-08-13): считаем грани с цветом и без по нитям (Render thread =
+	// BER/item, Worker = чанк-компиляция). Печать капнута: 2 строки на прогон. Снять после закрытия дефекта цвета.
+	private static final java.util.concurrent.atomic.AtomicLong sDiagFaces = new java.util.concurrent.atomic.AtomicLong();
+	private static final java.util.concurrent.ConcurrentHashMap<String, long[]> sDiagByThread = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final java.util.Set<String> sDiagSamples = java.util.concurrent.ConcurrentHashMap.newKeySet();
 	public void putFace(byte aSide, ResourceLocation aIcon, short[] aRGBa) {
 		if (aIcon == null || aSide < 0 || aSide > 5) return;
+		boolean tColored = aRGBa != null && aRGBa.length >= 3 && ((aRGBa[0] & 0xFF) != 255 || (aRGBa[1] & 0xFF) != 255 || (aRGBa[2] & 0xFF) != 255);
+		String tThread = Thread.currentThread().getName().startsWith("Render") ? "render" : "worker";
+		long[] tCnt = sDiagByThread.computeIfAbsent(tThread, k -> new long[2]);
+		synchronized (tCnt) {tCnt[tColored ? 1 : 0]++;}
+		String tKind = tThread + (tColored ? "-цвет" : "-бел");
+		if (sDiagSamples.stream().filter(s -> s.startsWith(tKind)).count() < 3)
+			sDiagSamples.add(tKind + ":" + aIcon + (aRGBa == null ? ":null" : ":" + (aRGBa[0]&0xFF) + "," + (aRGBa[1]&0xFF) + "," + (aRGBa[2]&0xFF)));
+		long tN = sDiagFaces.incrementAndGet();
+		if (tN == 2000 || tN == 20000) {
+			StringBuilder tSB = new StringBuilder("[GT6-COLORDIAG] faces=").append(tN);
+			for (java.util.Map.Entry<String, long[]> tE : sDiagByThread.entrySet()) tSB.append(" · ").append(tE.getKey()).append(" бел/цвет=").append(tE.getValue()[0]).append("/").append(tE.getValue()[1]);
+			tSB.append(" · примеры: ").append(String.join(" | ", sDiagSamples));
+			gregapi.data.CS.OUT.println(tSB.toString());
+		}
 		TextureAtlasSprite tSprite = sprite(aIcon);
 		if (tSprite == null) {if (sMissingSprites.size() < 400) sMissingSprites.add(aIcon.toString()); return;}
 		Direction tDir = Direction.from3DDataValue(aSide);
@@ -239,6 +258,10 @@ public final class GT6QuadBuilder {
 		return null;
 	}
 
+	/** Порядок обхода углов {@link #corners} при выдаче грани куба: приводит вершины к КАНОНУ ванили
+	 *  ({@code FaceInfo.java:10-15}), от которого зависит раскладка AO по углам. Разбор — в {@link #boundedFace}. */
+	private static final int[] EMIT_ORDER = {1, 0, 3, 2};
+
 	/** Грань по текущим bounds (4 вершины) с UV из спрайта (клип по bounds) + tint из RGBa (0..255). AE2 QuartzGlassModel.createQuad/putVertex. */
 	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa) {
 		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
@@ -258,15 +281,33 @@ public final class GT6QuadBuilder {
 		tBuilder.setHasAmbientOcclusion(true);
 		// КРИТ (инвертированные нормали — 'видно блок изнутри'): движок выводит нормаль/facing грани ИЗ winding вершин
 		// (FaceBakery.computeQuadNormal), а corners давал CW-порядок (нормаль внутрь) → GPU back-face-cull скрывал грань
-		// снаружи. Реверсируем порядок вершин (3→0) → нормаль наружу, грань видима снаружи. UV/позиция per-vertex сохранены.
-		for (int i = 3; i >= 0; i--) {
+		// снаружи. Обмотку разворачиваем — нормаль наружу, грань видима снаружи. UV/позиция per-vertex сохранены.
+		//
+		// ⚠️ ПОЧЕМУ ИМЕННО {1,0,3,2}, А НЕ {3,2,1,0} (репорт игрока «тени на гранях есть, но повёрнуты»).
+		// Ванильный AO-конвейер 1.20.1 кладёт посчитанные яркости и лайтмапы в квад ПО НОМЕРУ ВЕРШИНЫ,
+		// молча считая номер КАНОНИЧЕСКИМ: `brightness[remap.vertN] = <яркость угла N>`
+		// (ModelBlockRenderer.java:431-434, таблица AmbientVertexRemap :490-496, раздача по вершинам :154).
+		// Канон порядка задаёт FaceInfo.java:10-15. Прежний обход {3,2,1,0} давал перестановку [2,3,0,1]
+		// на ВСЕХ шести сторонах — это поворот карты затенения на 180°: геометрия и текстура верны (их мы
+		// задаём сами, u/v лежат в той же строке `corners()`), а тень ложится не на свой угол.
+		// На ветке main того же не видно не потому, что порядок другой (он там такой же), а потому, что
+		// NeoForge 26.x подменяет ванильный лайтер своим, координатным: он считает яркость по ФАКТИЧЕСКИМ
+		// координатам вершины и порядок игнорирует (neo .../block/ModelBlockRenderer.java:41-42 →
+		// neoforge .../client/model/ao/EnhancedBlockModelLighter.java:33,103,110-119). У Forge 1.20.1 такого
+		// лайтера нет вовсе — здесь канон обязателен.
+		// {1,0,3,2} — ЦИКЛИЧЕСКИЙ сдвиг прежнего {3,2,1,0} на 2, поэтому обмотка (а с ней нормаль и
+		// back-face-cull) не меняется: фикс «видно блок изнутри» выше остаётся в силе.
+		// Стережёт статический судья: workspace/tools/quad_vertex_order_judge.py (читает ЭТОТ файл;
+		// обязан давать перестановку [0,1,2,3] и «сторон с расхождением: 0 из 6»).
+		for (int idx = 0; idx < 4; idx++) {
+			final int i = EMIT_ORDER[idx];
 			tBuilder.vertex(c[i][0], c[i][1], c[i][2]);
 			tBuilder.color(r, g, b, a);
 			tBuilder.normal(n.x(), n.y(), n.z());
-			// КРИТ (прозрачные/мусорные блоки): corners даёт u,v в 0..16 (block-texture конвенция), а getU/getV(offset)
-			// ждут offset 0..1 (u0+(u1-u0)*offset) → без /16 UV в 16× мимо спрайта = сэмпл вне текстуры (прозрачные щели
-			// атласа) → блок прозрачный. GT6ItemModel.flatFace уже делит на 16f — блочный путь этого не делал. Нормализуем.
-			tBuilder.uv(aSprite.getU(c[i][3] / 16f), aSprite.getV(c[i][4] / 16f));
+			// КРИТ (шкала UV): corners даёт u,v в 0..16 (block-texture конвенция). getU/getV 1.20.1 САМИ делят на 16
+			// (TextureAtlasSprite.java:66-69, u0+(u1-u0)*p/16 — шкала 1.7.10 getInterpolatedU); деление здесь (нужное
+			// в 26.x, где offset 0..1) сжимало развёртку в 1/16 уголка спрайта — грани красились одним текселем (белые).
+			tBuilder.uv(aSprite.getU(c[i][3]), aSprite.getV(c[i][4]));
 			tBuilder.endVertex();
 		}
 		return tBuilder.getQuad();
@@ -307,7 +348,7 @@ public final class GT6QuadBuilder {
 			tBuilder.vertex(aCorners[i][0], aCorners[i][1], aCorners[i][2]);
 			tBuilder.color(r, g, b, a);
 			tBuilder.normal(n.x(), n.y(), n.z());
-			tBuilder.uv(aSprite.getU(aCorners[i][3] / 16f), aSprite.getV(aCorners[i][4] / 16f));
+			tBuilder.uv(aSprite.getU(aCorners[i][3]), aSprite.getV(aCorners[i][4])); // getU/getV 1.20.1 ждут 0..16 (см. КРИТ выше)
 			tBuilder.endVertex();
 		}
 		return tBuilder.getQuad();
@@ -355,7 +396,7 @@ public final class GT6QuadBuilder {
 			tBuilder.vertex(aCorners[i][0], aCorners[i][1], aCorners[i][2]);
 			tBuilder.color(r, g, b, a);
 			tBuilder.normal(nx, 0, nz);
-			tBuilder.uv(aSprite.getU(tUV[i][0] / 16f), aSprite.getV(tUV[i][1] / 16f));
+			tBuilder.uv(aSprite.getU(tUV[i][0]), aSprite.getV(tUV[i][1])); // getU/getV 1.20.1 ждут 0..16 (см. КРИТ выше)
 			tBuilder.endVertex();
 		}
 		return tBuilder.getQuad();

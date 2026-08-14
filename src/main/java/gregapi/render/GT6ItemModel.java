@@ -369,7 +369,7 @@ public class GT6ItemModel implements BakedModel {
 			b.vertex(c[i][0], c[i][1], c[i][2]);
 			b.color(r, g, b8, 255); // тинт материала (белая проба подтвердила: цвет-механизм работает; корень — свет)
 			b.normal(n.x(), n.y(), n.z());
-			b.uv(aSprite.getU(c[i][3] / 16f), aSprite.getV(c[i][4] / 16f));
+			b.uv(aSprite.getU(c[i][3]), aSprite.getV(c[i][4])); // getU/getV 1.20.1 сами делят на 16 (шкала 0..16, канон 1.7.10) — см. GT6QuadBuilder.boundedFace
 			b.endVertex();
 		}
 		return b.getQuad();
@@ -471,7 +471,7 @@ public class GT6ItemModel implements BakedModel {
 			b.vertex((tSel[i][0] == 1 ? aTo[0] : aFrom[0]) / 16f, (tSel[i][1] == 1 ? aTo[1] : aFrom[1]) / 16f, (tSel[i][2] == 1 ? aTo[2] : aFrom[2]) / 16f);
 			b.color(r, g, b8, 255);
 			b.normal(n.x(), n.y(), n.z());
-			b.uv(aSprite.getU((i == 0 || i == 1 ? aMinU : aMaxU) / 16f), aSprite.getV((i == 0 || i == 3 ? aMinV : aMaxV) / 16f));
+			b.uv(aSprite.getU(i == 0 || i == 1 ? aMinU : aMaxU), aSprite.getV(i == 0 || i == 3 ? aMinV : aMaxV)); // getU/getV 1.20.1 сами делят на 16
 			b.endVertex();
 		}
 		return b.getQuad();
