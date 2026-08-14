@@ -1,5 +1,5 @@
 {
-  "type": "neoforge:remove_features",
+  "type": "forge:remove_features",
   "biomes": "#minecraft:is_nether",
   "features": [
     "minecraft:ore_quartz_nether",

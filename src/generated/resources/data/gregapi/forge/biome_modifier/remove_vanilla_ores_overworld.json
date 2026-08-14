@@ -1,5 +1,5 @@
 {
-  "type": "neoforge:remove_features",
+  "type": "forge:remove_features",
   "biomes": "#minecraft:is_overworld",
   "features": [
     "minecraft:ore_coal_upper",
@@ -13,7 +13,6 @@
     "minecraft:ore_redstone",
     "minecraft:ore_redstone_lower",
     "minecraft:ore_diamond",
-    "minecraft:ore_diamond_medium",
     "minecraft:ore_diamond_large",
     "minecraft:ore_diamond_buried",
     "minecraft:ore_lapis",

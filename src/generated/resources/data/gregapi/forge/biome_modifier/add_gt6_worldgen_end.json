@@ -1,6 +1,6 @@
 {
-  "type": "neoforge:add_features",
-  "biomes": "#minecraft:is_nether",
+  "type": "forge:add_features",
+  "biomes": "#minecraft:is_end",
   "features": "gregapi:gt6_worldgen",
   "step": "top_layer_modification"
 }

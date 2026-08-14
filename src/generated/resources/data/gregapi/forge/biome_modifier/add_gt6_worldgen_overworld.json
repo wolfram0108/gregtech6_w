@@ -1,5 +1,5 @@
 {
-  "type": "neoforge:add_features",
+  "type": "forge:add_features",
   "biomes": "#minecraft:is_overworld",
   "features": "gregapi:gt6_worldgen",
   "step": "top_layer_modification"
