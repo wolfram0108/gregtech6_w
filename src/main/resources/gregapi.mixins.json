@@ -3,6 +3,7 @@
   "minVersion": "0.8",
   "package": "gregapi.mixin",
   "compatibilityLevel": "JAVA_17",
+  "refmap": "gregapi.refmap.json",
   "mixins": [],
   "client": [
     "MixinLevelRenderer"

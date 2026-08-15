@@ -152,6 +152,16 @@ mixin {
     add(sourceSets.main, 'gregapi.refmap.json')
 }
 
+// ВЫХОД ОБРАБОТЧИКА МИКСИНА — ЧАСТЬ РЕЗУЛЬТАТА КОМПИЛЯЦИИ. Обработчик кладёт refmap и карту имён в
+// `build/mixin`, но Gradle об этом каталоге не знает: он не объявлен выходом `compileJava`. Пока задача
+// выполняется — всё на месте; как только она берётся из кеша (`:compileJava FROM-CACHE`, наблюдалось на
+// `clean build`), каталог не восстанавливается, и `:reobfJar` падает на отсутствующем `.mappings.tsrg`
+// (BP-BUG-006, вторичный дефект). Объявление каталога выходом чинит обе стороны: кеш его сохраняет и
+// восстанавливает вместе с классами.
+tasks.named('compileJava') {
+    outputs.dir(layout.buildDirectory.dir('mixin')).withPropertyName('mixinRefmapDir')
+}
+
 // ВОСПРОИЗВОДИМАЯ СБОРКА. По умолчанию zip-записи несут время создания файла и порядок обхода
 // файловой системы — из-за этого два прогона ОДНОГО коммита дают разный jar и разную контрольную
 // сумму (наблюдалось: локальная сборка и сборка CI из одного тега отличались размером). Тогда
@@ -299,6 +309,30 @@ configurations {
 obfuscation.createRemappingConfiguration(configurations.localRuntime)
 
 dependencies {
+    // ПРОЦЕССОР МИКСИНА ДЛЯ PRODUCTION-СБОРКИ (BP-BUG-006, смок 2026-08-15).
+    // Блок `mixin { add(...) }` ниже задаёт JavaCompile только АРГУМЕНТЫ обработчика
+    // (`-AdefaultObfuscationEnv=searge`, `-AmappingTypes=tsrg`, `-ApluginVersion=0.7` + пути refmap/tsrg —
+    // проверено дизассемблером `MixinExtension.add`/`MixinCompilerArgs` из moddev-gradle 2.0.141), но САМ
+    // обработчик в конфигурацию `annotationProcessor` не кладёт: это разделение штатное — плагин отвечает за
+    // аргументы, сборка за процессор. Без этой строки `annotationProcessor` пуст, карта имён не рождается и
+    // `:reobfJar` падает `FileNotFoundException: build/mixin/gregapi.refmap.json.mappings.tsrg` — боевой jar
+    // собрать нельзя. Артефакт тот же, что уже лежит на compile-пути (несёт
+    // `META-INF/services/javax.annotation.processing.Processor` + `MixinObfuscationProcessor`), новой
+    // зависимости в сборку не вводится.
+    annotationProcessor 'org.spongepowered:mixin:0.8.5'
+    // Транзитивные зависимости САМОГО обработчика: POM mixin-0.8.5 их не объявляет (jar собран
+    // shaded для рантайма), а на processor-path Gradle кладёт ровно то, что перечислено. Без них
+    // обработчик стартует и падает `NoClassDefFoundError: com/google/gson/JsonParseException`
+    // (замер 2026-08-15). Версии — те же, что уже в сборке 1.20.1, новых в среду не вводится.
+    annotationProcessor 'com.google.code.gson:gson:2.10.1'
+    annotationProcessor 'com.google.guava:guava:31.1-jre'
+    annotationProcessor 'org.ow2.asm:asm:9.9.1'
+    annotationProcessor 'org.ow2.asm:asm-tree:9.9.1'
+    annotationProcessor 'org.ow2.asm:asm-commons:9.9.1'
+    annotationProcessor 'org.ow2.asm:asm-util:9.9.1'
+    annotationProcessor 'org.ow2.asm:asm-analysis:9.9.1'
+    annotationProcessor 'commons-io:commons-io:2.20.0'
+
     // JEI (аналог NEI) — инструмент визуальной приёмки. Координаты выверены по AE2, метаданные резолвятся.
     // compileOnly-строки временно закомментированы: скачивание jar с maven.blamejared.com в этой среде
     // отваливается по таймауту, а на compileClasspath они БЛОКИРУЮТ компиляцию ядра (которое JEI пока не
