@@ -294,7 +294,85 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	 *  no-op ({@code LevelChunk.removeBlockEntity} на пустой позиции ничего не делает). */
 	@Override public void onRemove(BlockState aState, Level aWorld, BlockPos aPos, BlockState aNewState, boolean aMovedByPiston) {
 		boolean tKeepBlockEntity = breakBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), blockMetaDataAt(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));
-		if (!tKeepBlockEntity) super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston);
+		if (!tKeepBlockEntity) {super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston); sweepBlockEntityRemains(aWorld, aPos, aNewState);}
+		traceRemoval(aWorld, aPos, aState, aNewState, tKeepBlockEntity);
+	}
+
+	/** ДОБОР ОСТАТКА BE (корень BP-BUG-008, вскрытие 2026-08-15). {@code super.onRemove} отдаёт снятие движковому
+	 *  {@code Level.removeBlockEntity} → {@code LevelChunk.removeBlockEntity} [LevelChunk.java:394-408], и тот
+	 *  промахивается мимо BlockEntity в ДВУХ состояниях чанка — обоих законных и обоих встречающихся в живом мире:
+	 *
+	 *  <p><b>1. Запись ещё «упакована».</b> {@code LevelChunk.removeBlockEntity} снимает только из {@code blockEntities}
+	 *  и НЕ трогает {@code pendingBlockEntities} — в отличие от {@code ProtoChunk.removeBlockEntity}
+	 *  [ProtoChunk.java:250-253], который чистит оба хранилища. Распаковка (слив {@code pendingBlockEntities}) идёт
+	 *  лишь в {@code LevelChunk.postProcessGeneration} [LevelChunk.java:514-518], а его единственный вызыватель —
+	 *  {@code ChunkMap.prepareTickingChunk} [ChunkMap.java:747], то есть чанк обязан дойти до TICKING. Чанк на кромке
+	 *  радиуса (загружен, но не тикает) до распаковки не доходит: снятие блока проходит бесшумно, закладка остаётся
+	 *  и уходит на диск сиротой с полными тегами — «призрак» без коллизии, на место которого ничего не поставить.
+	 *
+	 *  <p><b>2. Чанк ещё не объявлен загруженным.</b> Тело {@code LevelChunk.removeBlockEntity} целиком закрыто
+	 *  условием {@code isInLevel()} = {@code loaded || isClientSide} [LevelChunk.java:340-342, 394-395], а
+	 *  {@code loaded} выставляется лишь на промоции в FULL [ChunkMap.java:717], уже после конструктора чанка. Снятие,
+	 *  попавшее в это окно, движок не выполняет вовсе — даже через {@code super}.
+	 *
+	 *  <p><b>Приём взят существующий, не новый.</b> Запрос {@code chunk.getBlockEntity(pos)} распаковывает закладку
+	 *  сам ({@code pendingBlockEntities.remove} + промоция, [LevelChunk.java:303-310]) — этим же приёмом снимает
+	 *  закладку воронка записи руды ({@code PrefixBlock:969-971}). Дальше остаток снимается штатно, а на случай окна
+	 *  №2 (штатный путь — no-op) сущность помечается снятой: Forge-патч {@code LevelChunk.getBlockEntity}
+	 *  [LevelChunk.java:299-302] выкидывает помеченную из карты при первом же обращении, а
+	 *  {@code getBlockEntityNbtForSaving} [LevelChunk.java:374] на снятой сущности уходит в ветку закладки и на диск
+	 *  её не пишет — сирота не рождается ни в памяти, ни в файле.
+	 *
+	 *  <p><b>Смена MTE на MTE не задета:</b> при {@code aNewState.hasBlockEntity()} остаток принадлежит уже НОВОМУ
+	 *  блоку (движок создаёт его тут же, {@code LevelChunk.java:260-271}) — трогать его нельзя, и мы не трогаем.
+	 *
+	 *  <p><b>1.7.10.</b> Там снятие TE принадлежало телу {@code breakBlock} ({@code MultiTileEntityBlock:145-152}
+	 *  оригинала — {@code aWorld.removeTileEntity(x,y,z)} последней строкой), а разделения «живая сущность / упакованная
+	 *  закладка» в чанке не существовало вовсе: {@code Chunk.chunkTileEntityMap} был один. Добор восстанавливает тот
+	 *  же итог — «после снятия блока сущности в клетке нет», — а не вводит новое поведение. */
+	private static void sweepBlockEntityRemains(Level aWorld, BlockPos aPos, BlockState aNewState) {
+		if (aWorld == null || aNewState.hasBlockEntity()) return;
+		try {
+			net.minecraft.world.level.chunk.LevelChunk tChunk = aWorld.getChunkAt(aPos);
+			if (tChunk == null) return;
+			BlockEntity tRemains = tChunk.getBlockEntity(aPos); // распаковывает закладку (см. разбор выше)
+			if (tRemains == null) return;
+			tChunk.removeBlockEntity(aPos);
+			if (!tRemains.isRemoved()) tRemains.setRemoved(); // окно «чанк ещё не loaded»: штатное снятие — no-op
+		} catch (Throwable e) {e.printStackTrace(ERR);}
+	}
+
+	// ==========================================================================================================
+	// СТОРОЖ КЛАССА «МАССОВОЕ СНЯТИЕ MTE В ОДНОМ ЧАНКЕ» (BP-BUG-008). Постоянный, не диагностика: класс уже дважды
+	// уносил постройку игрока целым чанком, а в журналах не осталось НИ ОДНОЙ строки о том, кто снимал блоки —
+	// охота стоила двух сессий вскрытия. Точка выбрана не случайно: onRemove — единственный вызыватель снятия MTE
+	// на сервере ({@code LevelChunk.setBlockState} [LevelChunk.java:246-250] зовёт {@code BlockState.onRemove}
+	// безусловно), поэтому один сторож здесь покрывает ВСЕ каналы снятия — игрока, взрыв, кавер, ворлдген, мод.
+	// Цена в горячем пути: три сравнения и инкремент, без аллокаций. Стек снимается только на первых событиях
+	// запуска и при срабатывании порога — то есть практически никогда.
+	// ==========================================================================================================
+	private static final int TRACE_FIRST = 16, TRACE_BURST = 4;
+	private static long sTraceChunk = Long.MIN_VALUE, sTraceTick = Long.MIN_VALUE;
+	private static int sTraceInTick = 0, sTracePrinted = 0;
+	private static boolean sTraceBurstSaid = F;
+
+	private static void traceRemoval(Level aWorld, BlockPos aPos, BlockState aState, BlockState aNewState, boolean aKept) {
+		if (aWorld == null || aWorld.isClientSide()) return;
+		long tChunk = net.minecraft.world.level.ChunkPos.asLong(aPos), tTick = aWorld.getGameTime();
+		if (tChunk != sTraceChunk || tTick != sTraceTick) {sTraceChunk = tChunk; sTraceTick = tTick; sTraceInTick = 0; sTraceBurstSaid = F;}
+		sTraceInTick++;
+		boolean tBurst = sTraceInTick >= TRACE_BURST && !sTraceBurstSaid;
+		if (sTracePrinted >= TRACE_FIRST && !tBurst) return;
+		if (tBurst) sTraceBurstSaid = T; else sTracePrinted++;
+		try {
+			net.minecraft.world.level.chunk.ChunkAccess tCA = aWorld.getChunk(aPos.getX() >> 4, aPos.getZ() >> 4, net.minecraft.world.level.chunk.ChunkStatus.FULL, F);
+			String tPromo = tCA instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? String.valueOf(tLC.getFullStatus()) : tCA == null ? "нет чанка" : tCA.getStatus().toString();
+			OUT.println("[GT6-MTEREMOVE]" + (tBurst ? " ПАЧКА x" + sTraceInTick + " за тик!" : "") + " @" + aPos.toShortString()
+				+ " чанк=" + new net.minecraft.world.level.ChunkPos(aPos) + " промоция=" + tPromo
+				+ " было=" + aState.getBlock() + " стало=" + aNewState.getBlock()
+				+ " BE-оставлена=" + aKept + " тик=" + tTick);
+			if (tBurst) new Throwable("[GT6-MTEREMOVE] стек массового снятия").printStackTrace(OUT);
+		} catch (Throwable e) {e.printStackTrace(ERR);}
 	}
 
 	// было @Override Block.getMapColor(int) (1.7.10) - удалён в neo; собственный byte-meta dispatcher
