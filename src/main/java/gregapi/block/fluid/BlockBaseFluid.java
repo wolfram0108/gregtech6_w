@@ -502,7 +502,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
 	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
 	public boolean canCollideCheck(int aMeta, boolean aFullHit) {return aFullHit && aMeta >= 7;}
-	public boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {return mActLikeWeb || !mEffectsBathing.isEmpty() || !mEffectsBreathing.isEmpty();}
+	public boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {return mMediumDragH > 0 || !mEffectsBathing.isEmpty() || !mEffectsBreathing.isEmpty();}
 	public boolean isNormalCube() {return F;}
 	public boolean isOpaqueCube() {return F;}
 	public boolean func_149730_j() {return F;}
@@ -519,11 +519,30 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		return this;
 	}
 	
-	public boolean mActLikeWeb = F;
-	public BlockBaseFluid setWeb() {
-		mActLikeWeb = T;
+	// ================= СРЕДА GT6 (BP-ADAPT-002): вязкость + плавание — канал МОДА, а не движка =================
+	// Перенос main 1:1 (BUG-120, требование пользователя 2026-08-11 сверх 1:1): во ВСЕХ нефтях плаваешь,
+	// лёгкие — как вода, тяжёлые — вязнешь. Оригинал 1.7.10 (Loader_Blocks:149-150) ставил setWeb() только двум
+	// тяжёлым — «паутина, да/нет», без всплытия; main обобщил это в ШКАЛУ (BlockBaseFluid.java:515), её и
+	// переносим вместе с величинами. Приём движковый: makeStuckInBlock умножает ход и гасит инерцию
+	// (Entity.move: stuckSpeedMultiplier, Entity.java:171,625-626), плюс подъём при зажатом прыжке — свой
+	// аналог движкового подъёма пловца.
+	//
+	// ⛔ ПОЧЕМУ НЕ FluidType, хотя на 1.20.1 он ЖИВОЙ (в отличие от main). Движок здесь действительно зовёт
+	// физику типа (LivingEntity.java:2031 — moveInFluid перехватывает ВСЁ движение в жидкости; Entity.java:1190
+	// canSwimInFluidType), и у ветки собственный тип уже есть (FluidGT.GTFluidType:217). Но путь выбран тот же,
+	// что на main: величины ниже уже приняты игроком живьём, и перевод на движковую физику дал бы ветке ДРУГОЕ
+	// поведение, которого у main нет, — плюс задел движка тянет чужую семантику (лодки, спринт-плавание, урон
+	// падения). Вариант «выразить средой движка» остаётся опцией в карточке BP-ADAPT-002 на явное желание
+	// пользователя; FluidType на ветке остаётся тем, чем уже является, — данные, имя и клиентские текстуры.
+	public float mMediumDragH = 0, mMediumDragV = 0, mMediumRise = 0;
+	/** aDragH/aDragV — множители хода по горизонтали/вертикали (1 = не мешает, паутина = 0.25/0.05);
+	 *  aRise — импульс всплытия за тик при зажатом прыжке (0 = всплытия нет). */
+	public BlockBaseFluid setMedium(double aDragH, double aDragV, double aRise) {
+		mMediumDragH = (float)aDragH; mMediumDragV = (float)aDragV; mMediumRise = (float)aRise;
 		return this;
 	}
+	/** 1.7.10 setWeb: вязнуть как в паутине — константы ванильного WebBlock (WebBlock.java:28,33), без всплытия. */
+	public BlockBaseFluid setWeb() {return setMedium(0.25, 0.05, 0);}
 	
 	public boolean set(Level aWorld, int aX, int aY, int aZ, int aMeta, boolean aBlockUpdate) {
 		if (WD.block(aWorld, aX, aY, aZ) != this) return WD.set(aWorld, aX, aY, aZ, this, aMeta, aBlockUpdate ? 3 : 2);
@@ -535,7 +554,32 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// было onEntityCollidedWithBlock(World,x,y,z,Entity) -> BlockBehaviour.entityInside(BlockState,Level,BlockPos,Entity) [BlockBehaviour.java:393];
 	// новые параметры effectApplier/isPrecise (батч damage-эффектов, F16-концепция без 1.7.10-аналога) не используются - GT6 их и раньше не применял.
 	@Override public void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity) {
-		if (mActLikeWeb) aEntity.makeStuckInBlock(defaultBlockState(), new Vec3(0.25, 0.05F, 0.25)); // было setInWeb() — 1.7.10 Entity.setInWeb() удалён; Entity.makeStuckInBlock(BlockState,Vec3) — тот же приём/константа, что ванильный WebBlock.entityInside (WebBlock.java:28,33)
+		if (mMediumDragH > 0) {
+			aEntity.makeStuckInBlock(defaultBlockState(), new Vec3(mMediumDragH, mMediumDragV, mMediumDragH)); // было setInWeb() — 1.7.10 Entity.setInWeb() удалён; тот же приём, что ванильный WebBlock.entityInside (WebBlock.java:28,33)
+			// Всплытие: строго ОДИН импульс за тик — от клетки, где стоят ноги (aPos == blockPosition()); без этого
+			// гейта тело, пересекающее две клетки столба, получало бы двойной толчок. Инерцию move гасит сам
+			// (Entity.java:625-626), поэтому скорость всплытия = (импульс − гравитация) × mMediumDragV, стабильная.
+			if (mMediumRise > 0 && aEntity instanceof LivingEntity tLiving && tLiving.jumping && aPos.equals(aEntity.blockPosition())) {
+				// ПЛАВНОСТЬ У ПОВЕРХНОСТИ (живой тест пользователя на main 2026-08-11): полный импульс у поверхности
+				// ВЫБРАСЫВАЛ тело из жидкости, тик снаружи ронял обратно — дрожь микропрыжками с частотой тиков.
+				// Импульс масштабируется ПОГРУЖЕНИЕМ (архимедово плечо): глубже блока — полный, у поверхности —
+				// убывает до равновесия «импульс = гравитация» (глубина ног ≈ 0.08/mMediumRise), где тело плавно
+				// зависает в поверхности, не выпрыгивая. Побочно верно и для лужи: мелкий слой не поднимает.
+				double tDepth;
+				if (aWorld.getBlockState(aPos.above()).getBlock() == this) tDepth = 1;
+				else tDepth = Math.max(0, Math.min(1, aPos.getY() + (aState.getValue(FLUID_META) + 1) / 8.0 - aEntity.getY()));
+				if (tDepth > 0) {
+					if (tLiving.horizontalCollision) {
+						// ВЫХОД НА БЕРЕГ (живой тест на main 2026-08-11: равновесное всплытие не даёт запрыгнуть на кромку).
+						// Приём движка для воды 1:1 — LivingEntity.java:2064-2065: упёрся в стену в жидкости → вертикаль 0.3.
+						// Толчок ставится ДО замедлителя, который умножит весь ход на mMediumDragV (Entity.java:625-626),
+						// поэтому делится на него — на выходе ровно движковые 0.3 в любой нефти.
+						Vec3 tV = tLiving.getDeltaMovement();
+						tLiving.setDeltaMovement(tV.x, 0.3F / mMediumDragV, tV.z);
+					} else tLiving.addDeltaMovement(new Vec3(0, mMediumRise * tDepth, 0));
+				}
+			}
+		}
 		if (!aWorld.isClientSide() && !mEffectsBathing.isEmpty() && aEntity instanceof LivingEntity && !UT.Entities.isWearingFullChemHazmat((LivingEntity)aEntity)) {
 			for (int[] tEffects : mEffectsBathing) UT.Entities.applyPotion(aEntity, tEffects[0], tEffects[1], tEffects[2], F);
 		}
