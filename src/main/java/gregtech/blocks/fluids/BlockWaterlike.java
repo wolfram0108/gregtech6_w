@@ -103,7 +103,13 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	@Override
 	public FluidStack drain(Level aWorld, net.minecraft.core.BlockPos aPos, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction aAction) {
 		if (aAction.execute()) WD.set(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), NB, 0, 2);
-		return FL.make(getFluid(), 1000);
+		// BP-BUG-004. Отдаём mFluid, а НЕ getFluid(). Это два разных вопроса, склеенных при гашении ошибок
+		// компиляции (dbf7e154): getFluid() на 1.20.1 обязан быть FlowingFluid (LiquidBlock.java:175 — сузить
+		// тип нельзя), поэтому он отвечает НОСИТЕЛЕМ-предком через liquidCarrierFor, а тот по материалу water
+		// даёт ванильную Fluids.WATER. Насос/дрейн читают эту клетку через FL.drainable -> drain(...) и получали
+		// пресную воду вместо FL.Ocean/FL.Swamp. Приём тот же, что уже у содержимых жидкостей
+		// (BlockBaseFluid.drain -> mQuanta из mFluid) — одна форма ответа на обе иерархии.
+		return FL.make(mFluid, 1000);
 	}
 
 	@Override
@@ -240,11 +246,16 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	// source полный; meta>0 = flowing, amount = quantaPerBlock-meta) → игрок ведёт себя как в воде mc26, включая
 	// весь vanilla-рендер воды. Кванты и разлив остаются на GT6 (updateFlow); vanilla fluid-tick НЕ планируется
 	// (блок не LiquidBlock, scheduleTick — только свой block-tick), двойного разлива нет.
-	@Override public net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState aState) {
+	// BP-BUG-003: СОБСТВЕННОГО ОТВЕТА ЗДЕСЬ БОЛЬШЕ НЕТ — «какая здесь жидкость» решает паспорт роли предка
+	// (BlockFluidBaseGT.getFluidState, final), общий на обе семьи. Сюда семья отдаёт ТОЛЬКО свою шкалу квантов.
+	/** Шкала classic-семьи для паспорта роли: мета 0 = полный источник, дальше убывающий поток
+	 *  ({@code quantaPerBlock − meta}). Тело 1:1 с прежним собственным ответом этой семьи: при мете 0 роль отдаёт
+	 *  {@code Fluids.WATER.defaultFluidState()} (уровень достиг quantaPerBlock), иначе
+	 *  {@code Fluids.FLOWING_WATER.getFlowing(clamp(quantaPerBlock − meta, 1, 8), false)} — те же два ответа,
+	 *  что были здесь до вывода их в центр. */
+	@Override protected int engineLevelOfState(net.minecraft.world.level.block.state.BlockState aState) {
 		int tMeta = aState.getValue(FLUID_META);
-		if (tMeta <= 0) return net.minecraft.world.level.material.Fluids.WATER.defaultFluidState();
-		int tAmount = net.minecraft.util.Mth.clamp(quantaPerBlock - tMeta, 1, 8);
-		return net.minecraft.world.level.material.Fluids.FLOWING_WATER.getFlowing(tAmount, false);
+		return tMeta <= 0 ? quantaPerBlock : quantaPerBlock - tMeta;
 	}
 
 	// F5-B block-контракт: getRenderShape=INVISIBLE / getShape=empty / getCollisionShape / propagatesSkylightDown=false

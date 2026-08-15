@@ -286,7 +286,9 @@ public class FluidGT {
 		 *  ({@code BlockBaseFluid:110}); контент-жидкость без мировой формы — AIR (1:1: в 1.7.10 Fluid.setBlock
 		 *  не звался, см. fluidProperties). LEVEL ванильного эталона не переносим — у GT6-блока канал LEVEL мёртв
 		 *  (кванты в FLUID_META), defaultBlockState = полный источник. Flowing-плечо (ForgeFlowingFluid.Flowing,
-		 *  block=null → AIR) недостижимо: FluidState GT6-блоков всегда source (BlockBaseFluid.getFluidState). */
+		 *  block=null → AIR) для СОДЕРЖИМЫХ жидкостей недостижимо: их шкала в паспорте роли — «источник всегда»
+		 *  ({@code BlockBaseFluid.engineLevelOfState}), а нефти и газ с BP-BUG-003 вовсе не объявляют движку
+		 *  жидкости (роль NO_ENGINE_FLUID → EMPTY), поэтому их flowing-состояние в мире не возникает. */
 		@Override protected BlockState createLegacyBlock(FluidState aState) {
 			Block tBlock = gregapi.data.FL.BLOCKS.get(gregapi.data.FL.regName(this));
 			return tBlock == null ? Blocks.AIR.defaultBlockState() : tBlock.defaultBlockState();

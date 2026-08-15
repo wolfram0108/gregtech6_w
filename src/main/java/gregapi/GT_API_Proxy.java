@@ -336,6 +336,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public void onProxyBeforeServerStarted(Abstract_Mod aMod, ServerStartedEvent aEvent) {
 		SERVER_TIME = 0;
 		MultiTileEntityRegistry.onServerStart();
+		// BP-BUG-003: сторож паспорта роли жидкостей — рассинхрон роли с ответом getFluidState компилятор не
+		// ловит, а в игре он молча даёт клетку, нарисованную дважды или ни разу. Потеря обязана называть себя.
+		gregapi.block.fluid.BlockFluidBaseGT.validateEngineRoles();
 	}
 	// [GT6-STACKPROBE] снята (§9, уборка BUG-041 — воспроизведение уборки параллельного агента, чей staged-вариант
 	// содержал регресс тик-машины 045 и не был взят; сама уборка — его работа, здесь только повторена).

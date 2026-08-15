@@ -412,22 +412,23 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		return WD.meta(aWorld, aX, aY, aZ)+1;
 	}
 
-	// F5-B2 (реверс воды mc26, content-жидкости): погружение/утопление/push через getFluidState (см. BlockWaterlike). Движок
-	// применяет эффекты только для fluid в теге FluidTags.WATER/LAVA (EntityFluidInteraction). Content-жидкость с материалом
-	// water/lava → vanilla WATER/LAVA FluidState по квантам (meta+1=1..8, полный=8) → игрок тонет/горит в ней. Прочие
-	// (газ/материал-специфика) → super=EMPTY: у них GT6-эффекты (bathing/breathing/drown) уже в entityInside/onHeadInside.
-	@Override public net.minecraft.world.level.material.FluidState getFluidState(BlockState aState) {
-		// SOURCE-ВСЕГДА (НЕ FLOWING): критично. Neo вызывает FluidState.tick() для любого non-EMPTY FLOWING-состояния
-		// (LevelChunk.postProcessGeneration / ServerLevel.tickFluid) → FlowingFluid.getNewLiquid не находит vanilla-источников
-		// (GT6-источник ≠ Blocks.WATER) → EMPTY → level.setBlock(AIR) УДАЛЯЕТ GT6-flowing мгновенно («гейзер появился и пропал»).
-		// isSource-состояния движок НЕ тикает. GT6-flow (updateTick по FLUID_META/quanta) полностью независим от FluidState —
-		// FluidState нужен лишь для физики (тег WATER/LAVA → погружение/тонешь/горишь); визуал BlockBaseFluid — GT6BlockModel.
-		// Исходник Forge 1.7.10 getFluidState НЕ имел (конфликта двух tick-систем не было). Материал water/lava → source-тег.
-		gregapi.block.Material tMat = getMaterial();
-		if (tMat == gregapi.block.Material.water) return net.minecraft.world.level.material.Fluids.WATER.defaultFluidState();
-		if (tMat == gregapi.block.Material.lava ) return net.minecraft.world.level.material.Fluids.LAVA.defaultFluidState();
-		return super.getFluidState(aState);
-	}
+	// F5-B2 (реверс воды mc26, content-жидкости): погружение/утопление/push идут через getFluidState (см. BlockWaterlike),
+	// а движок применяет эффекты только для fluid в теге FluidTags.WATER/LAVA (EntityFluidInteraction).
+	// BP-BUG-003: СОБСТВЕННОГО ОТВЕТА ЗДЕСЬ БОЛЬШЕ НЕТ — «какая здесь жидкость» решает паспорт роли предка
+	// (BlockFluidBaseGT.getFluidState, final). Прежняя развилка по материалу была ВТОРЫМ источником того же ответа
+	// и расходилась с ролью: не-вода/не-лава уходила в super, а super после репарентинга предка на LiquidBlock —
+	// это состояние носителя-предка, то есть САМА GT6-жидкость; нефти и газ объявляли движку непустой FluidState и
+	// при этом рисовались моделью (2 геометрии на клетку). Роль отвечает за обе семьи одинаково; сюда семья отдаёт
+	// ТОЛЬКО свою шкалу квантов — ниже.
+	/** Шкала finite-семьи для паспорта роли. ИСТОЧНИК ВСЕГДА (уровень = quantaPerBlock), и это КРИТИЧНО, а не
+	 *  упрощение: движок тикает FluidState.tick() для любого непустого FLOWING-состояния
+	 *  ({@code LevelChunk.postProcessGeneration} / {@code ServerLevel.tickFluid}), а {@code FlowingFluid.getNewLiquid}
+	 *  не находит ванильных источников рядом (GT6-источник ≠ {@code Blocks.WATER}) → EMPTY → {@code setBlock(AIR)}
+	 *  удаляет GT6-flowing мгновенно («гейзер появился и пропал»). isSource-состояния движок НЕ тикает.
+	 *  Собственный поток GT6 (updateTick по FLUID_META/quanta) от FluidState не зависит вовсе — FluidState нужен
+	 *  лишь для физики (тег WATER/LAVA → погружение/тонешь/горишь). Исходник Forge 1.7.10 getFluidState не имел:
+	 *  конфликта двух tick-систем там не было. Тело 1:1 с прежним собственным ответом этой семьи. */
+	@Override protected int engineLevelOfState(BlockState aState) {return quantaPerBlock;}
 
 	// F5-B block-контракт (проходимость): материал-жидкость/газ (масла/кислоты/газы) — ПРОХОДИМЫ, нельзя стоять на них
 	// как на твёрдом блоке (оригинал: Forge BlockFluidBase — коллайдера нет, canDisplace). getCollisionShape/getShape=empty.
@@ -436,7 +437,9 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// F5 surface-B: после репарентинга предка на LiquidBlock его INVISIBLE (:136) перекрывается обратно в MODEL —
 	// различие «чем рисуется» между иерархиями живёт в потомках, как и в 1.7.10 (у водоподобных — ванильная вода,
 	// здесь — своя текстура жидкости).
-	@Override public net.minecraft.world.level.block.RenderShape getRenderShape(BlockState aState) {return net.minecraft.world.level.block.RenderShape.MODEL;}
+	// BP-BUG-003: собственного ответа здесь БОЛЬШЕ НЕТ — оба движковых ответа выводит паспорт роли предка
+	// (BlockFluidBaseGT.getRenderShape, final). Прежнее безусловное MODEL спорило с getFluidState ниже:
+	// у содержимой жидкости с материалом water (геотермальная вода) движок рисовал и жидкость, и модель.
 	@Override public net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 	@Override public net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 
