@@ -120,6 +120,14 @@ public class GT6ItemModel implements BakedModel {
 	@Override public boolean isGui3d() {return false;}
 	@Override public boolean usesBlockLight() {return false;}
 	@Override public boolean isCustomRenderer() {return false;}
+	/** BP-BUG-007, ПРЕДМЕТНОЕ ПЛЕЧО канала слоя. Спрашивают именно ЭТУ модель: {@code RenderTypeHelper
+	 *  .getFallbackItemRenderType:63-68} для {@code BlockItem} зовёт {@code model.getRenderTypes(block
+	 *  .defaultBlockState(), …)} у item-модели, а не у блочной. Без этого ответа дефолт
+	 *  {@code IForgeBakedModel:85-88} уходил в {@code ItemBlockRenderTypes.getRenderLayers}, где блоков GT6 нет,
+	 *  и стекло в GUI рисовалось CUTOUT — непрозрачным. Формула — общий центр, своей копии не заводим. */
+	@Override public net.minecraftforge.client.ChunkRenderTypeSet getRenderTypes(BlockState aState, RandomSource aRandom, net.minecraftforge.client.model.data.ModelData aData) {
+		return GT6BlockModel.renderTypesOf(aState, null);
+	}
 	@Override public TextureAtlasSprite getParticleIcon() {return GT6QuadBuilder.resolveSprite(gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0));}
 	@Override public ItemTransforms getTransforms() {return ItemTransforms.NO_TRANSFORMS;}
 
@@ -171,6 +179,12 @@ public class GT6ItemModel implements BakedModel {
 		@Override public boolean isGui3d() {return mGui3d;}
 		@Override public boolean usesBlockLight() {return mBlockLight;}
 		@Override public boolean isCustomRenderer() {return mCustomRenderer;}
+		/** BP-BUG-007: ВТОРОЙ носитель предметного плеча — разрешённая per-стек модель. Движок спрашивает слой
+		 *  именно у той модели, которую отдал {@code ItemOverrides}, поэтому ответ обязан быть и здесь; иначе
+		 *  класс закрыт наполовину и стекло остаётся непрозрачным ровно у тех предметов, что идут через кэш. */
+		@Override public net.minecraftforge.client.ChunkRenderTypeSet getRenderTypes(BlockState aState, RandomSource aRandom, net.minecraftforge.client.model.data.ModelData aData) {
+			return GT6BlockModel.renderTypesOf(aState, null);
+		}
 		@Override public ItemOverrides getOverrides() {return ItemOverrides.EMPTY;}
 		@Override public ItemTransforms getTransforms() {return mTransforms;}
 		@Override public TextureAtlasSprite getParticleIcon() {return mParticle;}

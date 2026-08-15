@@ -116,12 +116,27 @@ public class GT6BlockModel implements BakedModel {
 		return getQuads(aState, aSide, aRandom, ModelData.EMPTY, null);
 	}
 
-	/** Слой отрисовки блока: 1.7.10-канал {@code getRenderBlockPass()} (0 = alpha-test, 1 = блендинг), см. {@code IBlock}. */
-	@Override
-	public ChunkRenderTypeSet getRenderTypes(BlockState aState, RandomSource aRandom, ModelData aData) {
-		Block tBlock = aState == null ? mOwner : aState.getBlock();
+	/** ЕДИНАЯ ФОРМУЛА СЛОЯ ОТРИСОВКИ на ВСЕ модели GT6 (BP-BUG-007). 1.7.10-канал {@code getRenderBlockPass()}
+	 *  (0 = alpha-test, 1 = блендинг), см. {@code IBlock}.
+	 *
+	 *  <p><b>Почему центр, а не метод одной модели.</b> Движок 1.20.1 сам слой не выбирает (в отличие от 26.1,
+	 *  где мод об этом не знает вовсе), поэтому канал завела ветка — и у канала ДВА плеча, мировое и предметное.
+	 *  Предметное спрашивает слой не у блочной модели, а у ITEM-модели: {@code RenderTypeHelper
+	 *  .getFallbackItemRenderType:63-68} берёт {@code BlockItem} и зовёт {@code model.getRenderTypes(block
+	 *  .defaultBlockState(), …)} У НЕЁ ЖЕ. Пока эту перегрузку несла только {@link GT6BlockModel}, item-плечо
+	 *  падало в дефолт {@code ItemBlockRenderTypes.getRenderLayers} ({@code IForgeBakedModel:85-88}), где блоков
+	 *  GT6 нет, и стекло в GUI выходило CUTOUT — без блендинга. Формула одна, потребителей три; второй таблицы
+	 *  слоёв не заводим. Блок берётся из состояния (его и передаёт движок), {@code aFallback} — на случай null. */
+	public static ChunkRenderTypeSet renderTypesOf(BlockState aState, Block aFallback) {
+		Block tBlock = aState == null ? aFallback : aState.getBlock();
 		int tPass = tBlock instanceof gregapi.block.IBlock tI ? tI.getRenderBlockPass() : 0;
 		return ChunkRenderTypeSet.of(tPass > 0 ? RenderType.translucent() : RenderType.cutout());
+	}
+
+	/** Слой отрисовки блока в МИРЕ — тем же центром, что и предметное плечо. */
+	@Override
+	public ChunkRenderTypeSet getRenderTypes(BlockState aState, RandomSource aRandom, ModelData aData) {
+		return renderTypesOf(aState, mOwner);
 	}
 
 	@Override public boolean useAmbientOcclusion() {return true;}
