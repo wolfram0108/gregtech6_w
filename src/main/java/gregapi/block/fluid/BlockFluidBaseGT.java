@@ -233,6 +233,27 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 			: net.minecraft.world.level.block.RenderShape.INVISIBLE;
 	}
 
+	/**
+	 * ТРЕТИЙ ответ из ТОЙ ЖЕ роли: ВИДИТ ЛИ КЛЕТКУ ЛУЧ, КОТОРЫЙ ИЩЕТ ЖИДКОСТЬ (BP-BUG-020).
+	 *
+	 * <p>В 1.7.10 на этот вопрос отвечал сам блок: {@code BlockFluidFinite.canCollideCheck(meta, fullHit)}
+	 * = {@code fullHit && meta == quantaPerBlock-1} (Forge 1.7.10, {@code BlockFluidFinite.java:50-53};
+	 * у {@code BlockFluidClassic.java:66-69} — то же с {@code meta == 0}). То есть обычный прицел игрока
+	 * ({@code fullHit=false}) жидкость не видел, а луч, который её ищет (WAILA/подсказки), видел — и только
+	 * ПОЛНУЮ клетку. В 1.20.1 этот канал у блока отобран: луч отбирает клетки по {@code FluidState}
+	 * ({@code ClipContext.Fluid.canPick}), а роль {@code NO_ENGINE_FLUID} обязана держать его пустым
+	 * (BP-BUG-003) — значит нефти и газ невидимы для любого луча, и витрина подсказок над ними пуста.
+	 *
+	 * <p>Ответ восстановлен здесь, у роли, тем же выражением «полная клетка», которым пользуется
+	 * {@link #getFluidState} (:209) — второй формулы источника не заводим. Потребитель — жила подсказок
+	 * ({@code gregtech.compat.Compat_Jade}), которая своим лучом досматривает то, чего движковый луч не видит.
+	 */
+	public final boolean isFullFluidCell(BlockState aState) {return engineLevelOfState(aState) >= quantaPerBlock;}
+
+	/** Клетка НЕВИДИМА движковому лучу жидкости (роль {@code NO_ENGINE_FLUID}: {@code FluidState} пуст).
+	 *  Спрашивается у состояния, а не у списка блоков: роль объявляет семья, и новый носитель попадёт сюда сам. */
+	public final boolean isInvisibleToFluidClip(BlockState aState) {return aState.getFluidState().isEmpty();}
+
 	/** СТОРОЖ РОЛЕЙ (зовётся на старте сервера, {@code GT_API_Proxy.onProxyBeforeServerStarted}).
 	 *  Сторожит РОВНО ТО, ЧЕГО НЕ ЛОВИТ КОМПИЛЯТОР, — обещание среды: роль, объявившая себя жидкостью движка,
 	 *  даёт эффекты (плавание, утопление, течение) только если её FluidState лежит в теге воды или лавы

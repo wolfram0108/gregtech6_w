@@ -122,6 +122,91 @@ public class Compat_Jade implements IWailaPlugin {
 		// BUG-070 п.2/п.3 — строка «какой уровень нужен» и «что в руке»: у Jade такой строки нет ни для кого
 		aRegistration.registerBlockComponent(GT6HarvestLevelProvider.INSTANCE, Block.class);
 		registerFluidCellRestore(aRegistration);
+		registerFluidCellReachable(aRegistration);
+	}
+
+	/**
+	 * КЛЕТКА НЕФТИ/ГАЗА ПОД ПРИЦЕЛОМ (BP-BUG-020: «нефть не показывается в Jade, то же с газом»).
+	 *
+	 * <p><b>Корень.</b> Витрина показывает то, во что попал ЛУЧ, а луч отбирает клетки-жидкости по
+	 * {@code FluidState} ({@code ClipContext.Fluid.canPick}; форма самого блока пуста —
+	 * {@code LiquidBlock.getShape:105-107}). Роль {@code NO_ENGINE_FLUID} обязана держать {@code FluidState}
+	 * пустым (BP-BUG-003: иначе клетка рисуется дважды), поэтому 4 нефти и газ невидимы ЛЮБОМУ лучу: он
+	 * проходит сквозь них и приносит дно лужи — или не приносит ничего. Воды GT6 показываются как раз потому,
+	 * что их роль объявляет движку непустой {@code FluidState}.
+	 *
+	 * <p><b>Что было в 1.7.10.</b> Там отбор делал сам блок: {@code BlockFluidFinite.canCollideCheck(meta,
+	 * fullHit)} = {@code fullHit && meta == quantaPerBlock-1} (Forge 1.7.10, {@code BlockFluidFinite.java:50-53}).
+	 * Прицел игрока ({@code fullHit=false}) нефть не видел, а луч подсказок ({@code fullHit=true}) видел — и
+	 * только ПОЛНУЮ клетку. Канал у блока отобран движком; ответ роли восстановлен
+	 * ({@code BlockFluidBaseGT.isFullFluidCell}), а спросить его некому — луч чужой.
+	 *
+	 * <p><b>Чиним витриной, а не механикой.</b> Дать нефти непустой {@code FluidState} значило бы вернуть
+	 * BP-BUG-003 (две геометрии), а непустую {@code getShape} — сделать её кликабельной для ВСЕХ лучей, чего
+	 * в 1.7.10 не было. Поэтому досматриваем клетку тем же каналом, которым уже пользуется соседний дефект
+	 * витрины, — {@code addRayTraceCallback}: пускаем свой луч движковым обходом
+	 * ({@code BlockGetter.traverseBlocks}), берём ПЕРВУЮ клетку-жидкость GT6, невидимую движковому лучу, и
+	 * ставим её целью витрины, только если она БЛИЖЕ уже найденной цели (иначе луч «простреливал» бы стены).
+	 *
+	 * <p><b>Режим жидкостей — не наш, а игрока.</b> Отбор берётся у самого Jade
+	 * ({@code IWailaConfig.get().getGeneral().getDisplayFluids()}): {@code NONE} — не вмешиваемся вовсе;
+	 * {@code SOURCE_ONLY} — только полные клетки (ровно канон 1.7.10); {@code ANY} — любые;
+	 * {@code FALLBACK} — только когда цели нет вовсе (так Jade обращается и с настоящими жидкостями,
+	 * {@code RayTracing.java:157-161,189-196}).
+	 *
+	 * <p><b>Чего не покрывает.</b> Если луч не встретил вообще ничего в пределах досягаемости, Jade выходит
+	 * ДО колбэков ({@code WailaTickHandler.java:100-103}) — витрина остаётся пустой; воспроизводится только
+	 * на озере, у которого в пределах руки нет ни дна, ни берега.
+	 */
+	private static void registerFluidCellReachable(IWailaClientRegistration aRegistration) {
+		aRegistration.addRayTraceCallback((aHit, aAccessor, aOriginal) -> {
+			try {
+				net.minecraft.client.Minecraft tMC = net.minecraft.client.Minecraft.getInstance();
+				net.minecraft.world.entity.Entity tCamera = tMC.getCameraEntity();
+				if (tCamera == null || tMC.level == null || tMC.player == null) return aAccessor;
+
+				snownee.jade.api.config.IWailaConfig.FluidMode tMode = snownee.jade.api.config.IWailaConfig.get().getGeneral().getDisplayFluids();
+				if (tMode == snownee.jade.api.config.IWailaConfig.FluidMode.NONE) return aAccessor;
+				// FALLBACK — жидкость только тогда, когда цели нет: так Jade поступает и с настоящими жидкостями
+				if (tMode == snownee.jade.api.config.IWailaConfig.FluidMode.FALLBACK && aAccessor != null) return aAccessor;
+				boolean tSourceOnly = (tMode == snownee.jade.api.config.IWailaConfig.FluidMode.SOURCE_ONLY);
+
+				net.minecraft.world.phys.Vec3 tFrom = tCamera.getEyePosition(tMC.getFrameTime());
+				double tReach = aHit != null && aHit.getType() != net.minecraft.world.phys.HitResult.Type.MISS
+					? Math.sqrt(aHit.getLocation().distanceToSqr(tFrom)) : JADE_FLUID_REACH;
+				if (tReach <= 0) return aAccessor;
+				net.minecraft.world.phys.Vec3 tTo = tFrom.add(tCamera.getViewVector(tMC.getFrameTime()).scale(Math.min(tReach, JADE_FLUID_REACH)));
+
+				net.minecraft.world.phys.BlockHitResult tOurHit = clipOwnFluid(tMC.level, tFrom, tTo, tSourceOnly);
+				if (tOurHit == null) return aAccessor;
+				// стена ближе клетки — витрину не перехватываем (луч не простреливает препятствия)
+				if (aHit != null && aHit.getType() != net.minecraft.world.phys.HitResult.Type.MISS
+					&& aHit.getLocation().distanceToSqr(tFrom) <= tOurHit.getLocation().distanceToSqr(tFrom)) return aAccessor;
+
+				BlockState tState = tMC.level.getBlockState(tOurHit.getBlockPos());
+				return aRegistration.blockAccessor()
+					.level(tMC.level).player(tMC.player)
+					.blockState(tState).blockEntity((net.minecraft.world.level.block.entity.BlockEntity)null)
+					.hit(tOurHit).requireVerification().build();
+			} catch (Throwable e) {/* мира/клетки уже нет — оставляем витрину как есть */}
+			return aAccessor;
+		});
+	}
+
+	/** Дальше этого расстояния витрина не смотрит и на настоящие жидкости (Jade трассирует в пределах руки). */
+	private static final double JADE_FLUID_REACH = 8.0;
+
+	/** ПЕРВАЯ по лучу клетка-жидкость GT6, невидимая движковому лучу. Обход — движковый
+	 *  ({@code BlockGetter.traverseBlocks}, тот же, которым идёт {@code Level.clip}); отбор — у роли
+	 *  ({@code BlockFluidBaseGT}), а не по списку блоков, поэтому новая жидкость попадёт под правило сама. */
+	private static net.minecraft.world.phys.BlockHitResult clipOwnFluid(Level aWorld, net.minecraft.world.phys.Vec3 aFrom, net.minecraft.world.phys.Vec3 aTo, boolean aSourceOnly) {
+		return net.minecraft.world.level.BlockGetter.traverseBlocks(aFrom, aTo, (Void)null, (aCtx, aPos) -> {
+			BlockState tState = aWorld.getBlockState(aPos);
+			if (!(tState.getBlock() instanceof gregapi.block.fluid.BlockFluidBaseGT tFluid)) return null;
+			if (!tFluid.isInvisibleToFluidClip(tState)) return null;      // движковый луч её и так видит — не наше дело
+			if (aSourceOnly && !tFluid.isFullFluidCell(tState)) return null; // канон 1.7.10: луч видел только полную клетку
+			return net.minecraft.world.phys.shapes.Shapes.block().clip(aFrom, aTo, aPos);
+		}, (aCtx) -> null);
 	}
 
 	/**
