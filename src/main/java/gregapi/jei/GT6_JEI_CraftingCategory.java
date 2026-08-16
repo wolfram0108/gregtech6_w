@@ -117,7 +117,7 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 				materialPairs(tXToY, tXToY.mInput, tXToY.mOutput, tXToY.mOutputCount, m -> tXToY.hasOutputFor(m), tIn, tOut);
 				int tN = tXToY.mInputCount;
 				if (!tIn.isEmpty() && tN > 0 && tN <= 9) {
-					int tW = tN >= 9 ? 3 : (tN >= 4 ? 2 : tN), tH = (tN + tW - 1) / tW;
+					int tW = gridWidth(tN), tH = (tN + tW - 1) / tW;
 					List<List<ItemStack>> tCells = new java.util.ArrayList<>();
 					for (int i = 0; i < tW * tH; i++) tCells.add(i < tN ? tIn : List.of());
 					mGridHelper.createAndSetInputs(aBuilder, tCells, tW, tH);
@@ -128,9 +128,67 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 			ItemStack tOutput = aRecipe.getRecipeOutput();
 			if (ST.valid(tOutput)) mGridHelper.createAndSetOutputs(aBuilder, List.of(tOutput));
 		} catch (Throwable e) {
+			sLayoutFailures++;
 			ERR.println("JEI: GT6 crafting recipe failed to lay out, skipping its slots.");
 			e.printStackTrace(ERR);
 		}
+	}
+
+	/** BUG-121: сторож раскладки — сколько рецептов витрина не смогла разложить за прогон.
+	 *  Ноль обязателен: упавшая раскладка оставляет карточку БЕЗ слотов (выход ставится после входов). */
+	public static int sLayoutFailures = 0;
+
+	/** BUG-121: ширина плотной раскладки. Сетка JEI — строго 3×3 (девять слотов создаёт
+	 *  {@code CraftingGridHelper.createInputSlots}: два цикла по 3), а индекс клетки при ШИРИНЕ 2
+	 *  считается со сдвигами (i>1 → +1, i>3 → +1, javap {@code getCraftingIndex}), поэтому седьмой
+	 *  предмет попадает в индекс 9 — {@code IndexOutOfBoundsException: Index 9 out of bounds for
+	 *  length 9}, и рецепт терял в витрине ВСЕ слоты. Ширина 2 допустима только пока высота ≤ 3. */
+	private static int gridWidth(int aCount) {return aCount <= 2 ? aCount : (aCount <= 4 ? 2 : 3);}
+
+	/** ⛔ ПРАВИЛО ВИТРИНЫ 1.7.10, восстановленное дословно (репорт игрока «части некоторых рецептов
+	 *  отсутствуют»): рецепт, у которого ХОТЬ ОДНА ячейка — пустой список вариантов (ore-имя, под
+	 *  которым нет ни одного предмета), в NEI не показывался ВООБЩЕ —
+	 *  {@code reference/mods/NotEnoughItems-1.7.10/src/codechicken/nei/recipe/ShapedRecipeHandler.java:157-158}
+	 *  ({@code if (item instanceof List && ((List<?>)item).isEmpty()) return null; //ore handler, no ores})
+	 *  и то же в {@code ShapelessRecipeHandler.java:156-157}.
+	 *
+	 *  <p>Такие записи в GT6 законны и есть в САМОМ оригинале: шаблоны префиксов подставляют символы
+	 *  безусловно ({@code Loader_OreProcessing.OreProcessing_CraftFrom.onOreRegistration}), поэтому
+	 *  «кольцо из самоцвета» рождается и у свинца, у которого самоцвета не существует. Рецепт мёртв
+	 *  (совпасть не с чем) — витрина 1.7.10 его и не показывала. Данные мы храним 1:1 с оригиналом
+	 *  (эталон {@code reference/oracle/crafting.jsonl}), а фильтр — не данные, а правило показа.</p>
+	 *
+	 *  <p>Для двух самостоятельных типов ({@code AdvancedCrafting1ToY}/{@code AdvancedCraftingXToY},
+	 *  BUG-099) правило то же по смыслу: нет ни одного материала, для которого есть и вход, и выход —
+	 *  показывать нечего, карточка была бы пустой.</p> */
+	public static boolean showable(ICraftingRecipeGT aRecipe) {
+		try {
+			if (aRecipe instanceof ShapedOreRecipe tShaped) return noEmptyChoice(tShaped.getInput());
+			if (aRecipe instanceof ShapelessOreRecipe tShapeless) return noEmptyChoice(tShapeless.getInput().toArray());
+			if (aRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY t1ToY) return t1ToY.mEmpty < 9 && hasPairs(t1ToY, t1ToY.mInput, t1ToY.mOutput, t1ToY.mOutputCount, m -> t1ToY.hasOutputFor(m));
+			if (aRecipe instanceof gregapi.recipes.AdvancedCraftingXToY tXToY) return tXToY.mInputCount > 0 && tXToY.mInputCount <= 9 && hasPairs(tXToY, tXToY.mInput, tXToY.mOutput, tXToY.mOutputCount, m -> tXToY.hasOutputFor(m));
+		} catch (Throwable e) {
+			// NEI при исключении разбора тоже отдавал null, то есть не показывал (ShapedRecipeHandler.java:161-164)
+			return F;
+		}
+		return T;
+	}
+
+	/** Ни одна ячейка не является ПУСТЫМ списком вариантов. Формат ячейки — 1:1 с 1.7.10
+	 *  ({@code null} / {@code ItemStack} / {@code List<ItemStack>}), список живой
+	 *  ({@code OreDictionary.getOres} отдаёт ту же ссылку), поэтому проверка верна в момент показа. */
+	private static boolean noEmptyChoice(Object[] aCells) {
+		if (aCells == null) return F;
+		for (Object tCell : aCells) if (tCell instanceof List && ((List<?>)tCell).isEmpty()) return F;
+		return T;
+	}
+
+	/** Есть ли хоть один материал, дающий И вход, И выход (иначе показывать нечего). */
+	private static boolean hasPairs(Object aRecipe, gregapi.oredict.OreDictPrefix aInput, gregapi.oredict.OreDictPrefix aOutput
+	, int aOutputCount, java.util.function.Predicate<gregapi.oredict.OreDictMaterial> aHasOutput) {
+		List<ItemStack> tIn = new ArrayList<>(), tOut = new ArrayList<>();
+		materialPairs(aRecipe, aInput, aOutput, aOutputCount, aHasOutput, tIn, tOut);
+		return !tIn.isEmpty();
 	}
 
 	/** BUG-099: рецепт задан на ПРЕФИКС, а витрина показывает конкретные предметы — собираем пары «вход↔выход»
