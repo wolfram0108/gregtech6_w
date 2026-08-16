@@ -121,10 +121,13 @@ public class FurnaceRecipes {
 			// ⛔ Фильтруем instanceof: в реестре типа SMELTING лежит НЕ ТОЛЬКО ванильный SmeltingRecipe, но и
 			// собственный мост GT6 — GT6SmeltingDispatcher (BUG-023), который отдаёт GT6-плавки ванильной печи.
 			// Диспетчер здесь пропускаем осознанно: он не носитель данных, а переходник в ЭТОТ же реестр.
+			// BP-BUG-010: диспетчер САМ стал SmeltingRecipe (контракт типа 1.20.1), поэтому отсев по классу его
+			// больше не ловит — исключаем его ИМЕНЕМ, иначе перебирали бы собственную живую витрину входов.
 			// 1.20.1: обёртки «рецепт+id» нет — getAllRecipesFor отдаёт сами рецепты
 			// (forge-1201-decompiled RecipeManager.java:96-98).
 			for (net.minecraft.world.item.crafting.Recipe<?> tAny
 				: tLevel.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING)) {
+				if (tAny instanceof GT6SmeltingDispatcher) continue;
 				if (!(tAny instanceof net.minecraft.world.item.crafting.SmeltingRecipe tRecipe)) continue;
 				for (Ingredient tIngredient : tRecipe.getIngredients()) for (ItemStack tItem : tIngredient.getItems()) {
 					ItemStack tIn = ST.amount(1, tItem);
