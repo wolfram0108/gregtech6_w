@@ -900,7 +900,24 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// в neo-порте клиент-BE едет АСИНХРОННО (GT6-пакеты, F17) → отсутствие BE на клиенте = состояние синка, не
 	// сиротство. Апдейт соседа в это окно удалял блок ЛОКАЛЬНО у клиента (сервер блок хранил; следующий серверный
 	// апдейт позиции возвращал его) → «блуждающая дыра» в стенах + дропы синк-пакетов в клиент-воздух.
-	public final void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (!LOCK) {LOCK = T; if (aTileEntity instanceof ITileEntity) ((ITileEntity)aTileEntity).onAdjacentBlockChange(aX, aY, aZ); LOCK = F;} if (aTileEntity instanceof IMTE_OnNeighborBlockChange) ((IMTE_OnNeighborBlockChange)aTileEntity).onNeighborBlockChange(aWorld, aBlock); if (aTileEntity == null && !aWorld.isClientSide()) WD.set(aWorld, aX, aY, aZ, NB, 0, 3);}
+	/** ⚠️ КОРЕНЬ BP-BUG-008 (потеря построек игрока, вскрытие 2026-08-16 по стеку сторожа {@code [GT6-MTEREMOVE]}).
+	 *  Ветка чистки сирот — канон 1.7.10 ({@code MultiTileEntityBlock:302} оригинала: {@code if (aTileEntity == null)
+	 *  aWorld.setBlockToAir(aX, aY, aZ);}) и остаётся на месте. Дефектом был её ПРИЗНАК: {@code WD.te == null} в 1.20.1
+	 *  означает не только сироту (разбор — {@link gregapi.util.WD#teProvenAbsent}). Живой случай: 22 трубы одного чанка
+	 *  снесены за ОДИН тик — тикающая MTE соседнего чанка звала {@code updateNeighborsAt}, у соседей {@code WD.te}
+	 *  отвечал null (чанк не был виден центру чтения), блок сносился, снос будил следующих соседей — домино в границах
+	 *  чанка. Признак заменён на доказуемый; сама ветка, её сторона и её действие не изменены. */
+	public final void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (!LOCK) {LOCK = T; if (aTileEntity instanceof ITileEntity) ((ITileEntity)aTileEntity).onAdjacentBlockChange(aX, aY, aZ); LOCK = F;} if (aTileEntity instanceof IMTE_OnNeighborBlockChange) ((IMTE_OnNeighborBlockChange)aTileEntity).onNeighborBlockChange(aWorld, aBlock); if (aTileEntity == null && !aWorld.isClientSide() && WD.teProvenAbsent(aWorld, aX, aY, aZ)) {traceOrphanSweep(aWorld, aX, aY, aZ); WD.set(aWorld, aX, aY, aZ, NB, 0, 3);}}
+
+	/** Ветка чистки сирот отработала ЗАКОННО (BE доказуемо нет). Событие редкое и ценное для охоты за породителем
+	 *  сирот (BP-BUG-009), поэтому видимо всегда: первые 20 и каждое 500-е — тот же приём, что у счётчиков шелухи и
+	 *  сирот в {@code GT6WorldgenFeature.reconstructMTE}. Молчание счётчика = сирот в мире не рождается. */
+	private static final java.util.concurrent.atomic.AtomicLong sOrphanBlocksSwept = new java.util.concurrent.atomic.AtomicLong();
+	private static void traceOrphanSweep(Level aWorld, int aX, int aY, int aZ) {
+		long tN = sOrphanBlocksSwept.incrementAndGet();
+		if (tN <= 20 || tN % 500 == 0) OUT.println("[GT6-MTEORPHAN] блок-сирота снят (BE доказуемо нет) @" + aX + ", " + aY + ", " + aZ
+			+ " чанк=[" + (aX >> 4) + ", " + (aZ >> 4) + "] тик=" + aWorld.getGameTime() + " всего=" + tN);
+	}
 	// F-neighbor (канал сместился): 1.7.10 World.notifyBlocksOfNeighborChange звал Block.onNeighborBlockChange; neo-вход —
 	// BlockBehaviour.neighborChanged. Мост по образцу BlockFluidBaseGT:154; GT6-канал (IMTE_OnNeighborBlockChange + чистка сирот) цел.
 	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, BlockPos aFromPos, boolean aMovedByPiston) {

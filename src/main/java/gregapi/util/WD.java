@@ -440,13 +440,65 @@ public class WD {
 	 *  null = чанк не загружен до FULL → для читателей это «воздух/нет», контракт 1.7.10 blockExists+EmptyChunk. */
 	public static net.minecraft.world.level.chunk.LevelChunk chunkNow(Level aWorld, int aChunkX, int aChunkZ) {
 		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
+			// ⚠️ ИСПРАВЛЕНИЕ ОШИБКИ БЭКПОРТА (корень BP-BUG-008, вскрытие 2026-08-16). Прежняя редакция ветки читала
+			// ChunkHolder.getFullChunk() (ChunkHolder.java:111) как «FULL-чанк уже есть». Это ДРУГОЙ признак: он смотрит
+			// поле fullChunkFuture, а его строит ChunkMap.prepareAccessibleChunk (ChunkMap.java:768-776) — getChunkRangeFuture
+			// РАДИУСА 1 (все 9 чанков 3×3) плюс задача в mainThreadMailbox. Движок же отдаёт чанк наружу гораздо раньше:
+			// Level.getChunkAt → ServerChunkCache.getChunk(FULL,true) ждёт только СТАТУСНЫЙ future самого чанка
+			// (ChunkHolder.getOrScheduleFuture(ChunkStatus.FULL), ServerChunkCache.java:200-208). Между этими двумя
+			// моментами лежит окно, в котором движок блоками чанка уже живёт (BE тикают, setBlock/getBlockState работают),
+			// а мод отвечал «чанка нет» — то есть ВЕСЬ чанк читался как воздух-без-сущностей (te/state/exists/mark/
+			// precipitationHeight). Отсюда потеря построек: чистка сирот в MultiTileEntityBlock.onNeighborBlockChange
+			// видела WD.te == null у живых MTE и сносила их пачкой, ровно в границах одного чанка.
+			// Признак теперь тот же, что у движка, — зеркало ServerChunkCache.getChunkNow (ServerChunkCache.java:157-190),
+			// как и на main (WD.java:441-450 ветки 26.1.2, где взят getChunkIfPresent(ChunkStatus.FULL)).
+			// На main-потоке ПЕРЕИСПОЛЬЗУЕМ сам движковый метод: он несёт кэш последних 4 чанков и Forge-байпас
+			// currentlyLoading (ChunkMap.java:719-724 — чанк в процессе загрузки, поле package-private, снаружи не видно).
+			// Вне main-потока (light-поток, клиентский рендер) у getChunkNow жёсткий гейт «только main» → там лок-фри
+			// взгляд на тот же СТАТУСНЫЙ future, без join и без thread-гейта.
+			if (tSL.getServer() != null && tSL.getServer().isSameThread()) return tSL.getChunkSource().getChunkNow(aChunkX, aChunkZ);
 			net.minecraft.server.level.ChunkHolder tHolder = tSL.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.asLong(aChunkX, aChunkZ));
 			if (tHolder == null) return null;
-			// Ветка 1.20.1: лок-фри взгляд даёт ChunkHolder.getFullChunk() (ChunkHolder.java:111) —
-			// getNow над FULL-future, БЕЗ join и БЕЗ thread-гейта: «FULL-чанк уже есть, иначе null».
-			return tHolder.getFullChunk();
+			com.mojang.datafixers.util.Either<net.minecraft.world.level.chunk.ChunkAccess, net.minecraft.server.level.ChunkHolder.ChunkLoadingFailure> tEither
+				= tHolder.getFutureIfPresent(net.minecraft.world.level.chunk.ChunkStatus.FULL).getNow(null);
+			return tEither != null && tEither.left().orElse(null) instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
 		}
 		return aWorld.getChunkSource().getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.ChunkStatus.FULL, F) instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
+	}
+
+	/** ЦЕНТР ПРИЗНАКА «В КЛЕТКЕ НЕТ BlockEntity — ДОКАЗУЕМО» (корень BP-BUG-008, вторая половина).
+	 *
+	 *  <p>В 1.7.10 «TE не найдена» означало ровно одно — сироту, потому что вопрос и действие шли по ОДНОМУ пути:
+	 *  {@code World.getTileEntity} грузил чанк ({@code World.java:2141} → {@code getChunkFromChunkCoords}), а
+	 *  {@code Chunk.func_150806_e} читал единственную карту {@code chunkTileEntityMap}, заполняемую синхронно с
+	 *  загрузкой чанка. Стадии «сущность ещё упакована» не существовало вовсе.
+	 *
+	 *  <p>В 1.20.1 ответ «нет BE» стал многозначным, и КАЖДОЕ значение — не сиротство:
+	 *  <ul>
+	 *  <li>чанк не виден моду (окно промоции/выгрузки) — {@link #chunkNow} вернёт null, а {@code Level.setBlock}
+	 *      тот же чанк ЗАГРУЗИТ и запишет: спрашиваем неблокирующе, действуем блокирующе;</li>
+	 *  <li>сущность ещё «упакована» в {@code LevelChunk.pendingBlockEntities} — распаковка идёт лишь в
+	 *      {@code postProcessGeneration} ({@code LevelChunk.java:514-518} ← {@code ChunkMap.prepareTickingChunk}), то есть
+	 *      чанк обязан дойти до TICKING; до этого карта {@code blockEntities} пуста при полном содержимом на диске;</li>
+	 *  <li>сущность MTE ещё не реконструирована из стаба ({@code GT6WorldgenFeature.drainStubs}, 16 чанков за тик);</li>
+	 *  <li>{@link #te} дополнительно снимает с ответа «мёртвую» сущность ({@code ITileEntityUnloadable.isDead}) — это
+	 *      состояние жизненного цикла, а не отсутствие.</li>
+	 *  </ul>
+	 *
+	 *  <p><b>Что делает признак.</b> Спрашивает чанк НАПРЯМУЮ и только его: {@code LevelChunk.getBlockEntity(pos)} сам
+	 *  распаковывает закладку ({@code pendingBlockEntities.remove} + промоция, {@code LevelChunk.java:303-310}) — тем же
+	 *  приёмом, каким закладку снимает воронка записи руды ({@code PrefixBlock:969-971}). Стаб — тоже сущность, и тоже
+	 *  ответ «есть». Фильтр {@code isDead} НЕ применяется: мёртвая сущность существует. Чанк не виден — ответ «не
+	 *  доказано»: судить о клетке, которой не видим, нельзя.
+	 *
+	 *  <p><b>Цена.</b> Признак зовётся ТОЛЬКО в ветке, где {@link #te} уже вернул null, — то есть в горячем пути соседских
+	 *  апдейтов не выполняется ни разу, пока всё в порядке. Сам он — один lookup карты чанка, без аллокаций сверх позиции. */
+	public static boolean teProvenAbsent(Level aWorld, int aX, int aY, int aZ) {
+		if (aWorld == null) return F;
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		if (aWorld.isOutsideBuildHeight(tPos)) return F;
+		net.minecraft.world.level.chunk.LevelChunk tChunk = chunkNow(aWorld, aX >> 4, aZ >> 4);
+		return tChunk != null && tChunk.getBlockEntity(tPos) == null;
 	}
 
 	/** ЦЕНТР гейта «блоки здесь тикают» (правка №2в, решение пользователя 2026-08-09: «где замерла вода —
