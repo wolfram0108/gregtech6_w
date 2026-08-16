@@ -96,6 +96,14 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 		aList.add(Chat.DGRAY    + LH.get(LH.TOOL_TO_DETAIL_MAGNIFYINGGLASS));
 	}
 	
+	/** Что видно в воронке: материал накопленной пыли. Чистый пересчёт из содержимого — центр зовёт его
+	 *  и из тика, и перед сборкой клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	@Override
+	public void updateVisualData() {
+		if (isClientSide()) return;
+		mDust = (mContent != null && (mContent.mAmount > 0 || slotHas(1)) ? mContent.mMaterial.mID : 0);
+	}
+	
 	@Override
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		if (aIsServerSide) {
@@ -115,7 +123,7 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 				}
 			}
 			
-			mDust = (mContent != null && (mContent.mAmount > 0 || slotHas(1)) ? mContent.mMaterial.mID : 0);
+			updateVisualData();
 			
 			if (mContent != null && !slotHas(1) && mContent.mAmount >= DUST_TYPES[mMode].mAmount) {
 				ItemStack tStack = DUST_TYPES[mMode].mat(mContent.mMaterial, 1);

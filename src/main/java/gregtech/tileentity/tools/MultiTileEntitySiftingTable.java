@@ -83,159 +83,167 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 		aList.add(Chat.ORANGE   + LH.get(LH.NO_GUI_CLICK_TO_INTERACT)   + " (" + LH.get(LH.FACE_TOP) + ")");
 	}
 	
+	/** Что видно на столе просеивания: вход и ожидаемый выход. Чистый пересчёт из слота — центр зовёт его
+	 *  и из тика, и перед сборкой клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	@Override
+	public void updateVisualData() {
+		if (isClientSide()) return;
+		mDisplayedInput = 0;
+		mDisplayedOutput = 0;
+		mState &= ~B[0];
+		ItemStack tStack = slot(0);
+		if (ST.valid(tStack)) {
+			mState |= B[0];
+			if (ST.equal(tStack, Blocks.DIRT        , 0)) {mDisplayedInput = -2;} else
+			if (ST.equal(tStack, Blocks.DIRT        , 1)) {mDisplayedInput = -3;} else
+			if (ST.equal(tStack, Blocks.DIRT        , 2)) {mDisplayedInput = -4;} else
+			if (ST.equal(tStack, Blocks.GRASS_BLOCK       , W)) {mDisplayedInput = -7;} else
+			if (ST.equal(tStack, BlocksGT.Grass     , W)) {mDisplayedInput = -7;} else
+			if (ST.equal(tStack, Blocks.MYCELIUM    , W)) {mDisplayedInput = -8;} else
+			if (ST.equal(tStack, BlocksGT.Diggables , 0)) {mDisplayedInput =-10;} else
+			if (IL.AETHER_Grass_Enchanted_Vanilla.equal(tStack, T, T)) {mDisplayedInput = -7;} else
+			if (IL.AETHER_Grass_Enchanted        .equal(tStack, T, T)) {mDisplayedInput = -7;} else
+			if (IL.AETHER_Grass                  .equal(tStack, T, T)) {mDisplayedInput = -7;} else
+			if (IL.AETHER_Dirt                   .equal(tStack, T, T)) {mDisplayedInput = -2;} else
+			if (IL.AETHER_Sand                   .equal(tStack, T, T)) {mDisplayedInput = -5;} else
+			if (IL.RH_Sand_Magnetite             .equal(tStack, F, T)) {mDisplayedInput =-11;} else
+			if (IL.RH_Sand_Magnetite             .equal(tStack, T, T)) {mDisplayedInput =- 5;} else
+			if (IL.TROPIC_Sand_Black             .equal(tStack, F, T)) {mDisplayedInput =-11;} else
+			if (IL.TROPIC_Sand_Black             .equal(tStack, T, T)) {mDisplayedInput = -5;} else
+			if (IL.PFAA_Sands                    .equal(tStack, T, T)) {mDisplayedInput =-11;} else
+			if (IL.NePl_SoulSoil                 .equal(tStack, T, T)) {mDisplayedInput = -9;} else
+			if (IL.NeLi_SoulSoil                 .equal(tStack, T, T)) {mDisplayedInput = -9;} else
+			if (IL.NeLi_Gravel                   .equal(tStack, T, T)) {mDisplayedInput =-11;} else
+			if (IL.EtFu_Gravel                   .equal(tStack, F, T)) {mDisplayedInput = -1;} else
+			if (IL.EtFu_Dirt                     .equal(tStack, F, T)) {mDisplayedInput = -3;} else
+			if (IL.BTL_Mud                       .equal(tStack, F, T)) {mDisplayedInput =-10;} else
+			if (IL.ERE_Mud                       .equal(tStack, F, T)) {mDisplayedInput =-10;} else
+			if (IL.BoP_Mud                       .equal(tStack, F, T)) {mDisplayedInput =-10;} else
+			if (IL.BoP_Quicksand                 .equal(tStack, F, T)) {mDisplayedInput = -5;} else
+			if (IL.BoP_Sand_Hard                 .equal(tStack, F, T)) {mDisplayedInput = -5;} else
+			if (IL.BoP_Grass_Endstone            .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.BoP_Grass_Loamy               .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.BoP_Grass_Long                .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.BoP_Grass_Netherrack          .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.BoP_Grass_Origin              .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.BoP_Grass_Sandy               .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.BoP_Grass_Silty               .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.BoP_Grass_Smoldering          .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.BoP_Coarse_Loamy              .equal(tStack, F, T)) {mDisplayedInput = -3;} else
+			if (IL.BoP_Coarse_Sandy              .equal(tStack, F, T)) {mDisplayedInput = -3;} else
+			if (IL.BoP_Coarse_Silty              .equal(tStack, F, T)) {mDisplayedInput = -3;} else
+			if (IL.BoP_Dirt_Hard                 .equal(tStack, F, T)) {mDisplayedInput = -3;} else
+			if (IL.BoP_Dirt_Dried                .equal(tStack, F, T)) {mDisplayedInput = -3;} else
+			if (IL.BoP_Dirt_Loamy                .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.BoP_Dirt_Sandy                .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.BoP_Dirt_Silty                .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.EB_Dirt_Alfisol               .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.EB_Dirt_Andisol               .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.EB_Dirt_Gelisol               .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.EB_Dirt_Histosol              .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.EB_Dirt_Inceptisol            .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.EB_Dirt_Mollisol              .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.EB_Dirt_Oxisol                .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.EB_Grass_Alfisol              .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.EB_Grass_Andisol              .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.EB_Grass_Gelisol              .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.EB_Grass_Histosol             .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.EB_Grass_Inceptisol           .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.EB_Grass_Mollisol             .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.EB_Grass_Oxisol               .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			if (IL.Salt_Dirt_1                   .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.Salt_Dirt_2                   .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.Salt_Dirt_3                   .equal(tStack, F, T)) {mDisplayedInput = -2;} else
+			if (IL.Salt_Grass                    .equal(tStack, F, T)) {mDisplayedInput = -7;} else
+			{
+				OreDictItemData tData = OM.data_(tStack);
+				if (tData == null || tData.mMaterial == null) {
+					mDisplayedInput = -1;
+				} else {
+					mDisplayedInput = tData.mMaterial.mMaterial.mID;
+				}
+			}
+		}
+		mState &= ~B[1];
+		for (int i = 1; i < 13; i++) if (ST.valid(tStack = slot(i))) {
+			mState |= B[1];
+			if (ST.equal(tStack, Blocks.DIRT        , 0)) {mDisplayedOutput = -2;} else
+			if (ST.equal(tStack, Blocks.DIRT        , 1)) {mDisplayedOutput = -3;} else
+			if (ST.equal(tStack, Blocks.DIRT        , 2)) {mDisplayedOutput = -4;} else
+			if (ST.equal(tStack, Blocks.GRASS_BLOCK       , W)) {mDisplayedOutput = -7;} else
+			if (ST.equal(tStack, BlocksGT.Grass     , W)) {mDisplayedOutput = -7;} else
+			if (ST.equal(tStack, Blocks.MYCELIUM    , W)) {mDisplayedOutput = -8;} else
+			if (ST.equal(tStack, BlocksGT.Diggables , 0)) {mDisplayedOutput =-10;} else
+			if (IL.AETHER_Grass_Enchanted_Vanilla.equal(tStack, T, T)) {mDisplayedOutput = -7;} else
+			if (IL.AETHER_Grass_Enchanted        .equal(tStack, T, T)) {mDisplayedOutput = -7;} else
+			if (IL.AETHER_Grass                  .equal(tStack, T, T)) {mDisplayedOutput = -7;} else
+			if (IL.AETHER_Dirt                   .equal(tStack, T, T)) {mDisplayedOutput = -2;} else
+			if (IL.AETHER_Sand                   .equal(tStack, T, T)) {mDisplayedOutput = -5;} else
+			if (IL.RH_Sand_Magnetite             .equal(tStack, F, T)) {mDisplayedOutput =-11;} else
+			if (IL.RH_Sand_Magnetite             .equal(tStack, T, T)) {mDisplayedOutput = -5;} else
+			if (IL.TROPIC_Sand_Black             .equal(tStack, F, T)) {mDisplayedOutput =-11;} else
+			if (IL.TROPIC_Sand_Black             .equal(tStack, T, T)) {mDisplayedOutput = -5;} else
+			if (IL.PFAA_Sands                    .equal(tStack, T, T)) {mDisplayedOutput =-11;} else
+			if (IL.NePl_SoulSoil                 .equal(tStack, T, T)) {mDisplayedOutput = -9;} else
+			if (IL.NeLi_SoulSoil                 .equal(tStack, T, T)) {mDisplayedOutput = -9;} else
+			if (IL.NeLi_Gravel                   .equal(tStack, T, T)) {mDisplayedOutput =-11;} else
+			if (IL.EtFu_Gravel                   .equal(tStack, F, T)) {mDisplayedOutput = -1;} else
+			if (IL.EtFu_Dirt                     .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
+			if (IL.BTL_Mud                       .equal(tStack, F, T)) {mDisplayedOutput =-10;} else
+			if (IL.ERE_Mud                       .equal(tStack, F, T)) {mDisplayedOutput =-10;} else
+			if (IL.BoP_Mud                       .equal(tStack, F, T)) {mDisplayedOutput =-10;} else
+			if (IL.BoP_Quicksand                 .equal(tStack, F, T)) {mDisplayedOutput = -5;} else
+			if (IL.BoP_Sand_Hard                 .equal(tStack, F, T)) {mDisplayedOutput = -5;} else
+			if (IL.BoP_Grass_Endstone            .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.BoP_Grass_Loamy               .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.BoP_Grass_Long                .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.BoP_Grass_Netherrack          .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.BoP_Grass_Origin              .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.BoP_Grass_Sandy               .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.BoP_Grass_Silty               .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.BoP_Grass_Smoldering          .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.BoP_Coarse_Loamy              .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
+			if (IL.BoP_Coarse_Sandy              .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
+			if (IL.BoP_Coarse_Silty              .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
+			if (IL.BoP_Dirt_Hard                 .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
+			if (IL.BoP_Dirt_Dried                .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
+			if (IL.BoP_Dirt_Loamy                .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.BoP_Dirt_Sandy                .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.BoP_Dirt_Silty                .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.EB_Dirt_Alfisol               .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.EB_Dirt_Andisol               .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.EB_Dirt_Gelisol               .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.EB_Dirt_Histosol              .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.EB_Dirt_Inceptisol            .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.EB_Dirt_Mollisol              .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.EB_Dirt_Oxisol                .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.EB_Grass_Alfisol              .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.EB_Grass_Andisol              .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.EB_Grass_Gelisol              .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.EB_Grass_Histosol             .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.EB_Grass_Inceptisol           .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.EB_Grass_Mollisol             .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.EB_Grass_Oxisol               .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			if (IL.Salt_Dirt_1                   .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.Salt_Dirt_2                   .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.Salt_Dirt_3                   .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
+			if (IL.Salt_Grass                    .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
+			{
+				OreDictItemData tData = OM.data_(tStack);
+				if (tData == null || tData.mMaterial == null) {
+					mDisplayedOutput = -1;
+				} else {
+					mDisplayedOutput = tData.mMaterial.mMaterial.mID;
+				}
+			}
+			break;
+		}
+	}
+	
 	@Override
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		if (aIsServerSide) {
-			mDisplayedInput = 0;
-			mDisplayedOutput = 0;
-			mState &= ~B[0];
-			ItemStack tStack = slot(0);
-			if (ST.valid(tStack)) {
-				mState |= B[0];
-				if (ST.equal(tStack, Blocks.DIRT        , 0)) {mDisplayedInput = -2;} else
-				if (ST.equal(tStack, Blocks.DIRT        , 1)) {mDisplayedInput = -3;} else
-				if (ST.equal(tStack, Blocks.DIRT        , 2)) {mDisplayedInput = -4;} else
-				if (ST.equal(tStack, Blocks.GRASS_BLOCK       , W)) {mDisplayedInput = -7;} else
-				if (ST.equal(tStack, BlocksGT.Grass     , W)) {mDisplayedInput = -7;} else
-				if (ST.equal(tStack, Blocks.MYCELIUM    , W)) {mDisplayedInput = -8;} else
-				if (ST.equal(tStack, BlocksGT.Diggables , 0)) {mDisplayedInput =-10;} else
-				if (IL.AETHER_Grass_Enchanted_Vanilla.equal(tStack, T, T)) {mDisplayedInput = -7;} else
-				if (IL.AETHER_Grass_Enchanted        .equal(tStack, T, T)) {mDisplayedInput = -7;} else
-				if (IL.AETHER_Grass                  .equal(tStack, T, T)) {mDisplayedInput = -7;} else
-				if (IL.AETHER_Dirt                   .equal(tStack, T, T)) {mDisplayedInput = -2;} else
-				if (IL.AETHER_Sand                   .equal(tStack, T, T)) {mDisplayedInput = -5;} else
-				if (IL.RH_Sand_Magnetite             .equal(tStack, F, T)) {mDisplayedInput =-11;} else
-				if (IL.RH_Sand_Magnetite             .equal(tStack, T, T)) {mDisplayedInput =- 5;} else
-				if (IL.TROPIC_Sand_Black             .equal(tStack, F, T)) {mDisplayedInput =-11;} else
-				if (IL.TROPIC_Sand_Black             .equal(tStack, T, T)) {mDisplayedInput = -5;} else
-				if (IL.PFAA_Sands                    .equal(tStack, T, T)) {mDisplayedInput =-11;} else
-				if (IL.NePl_SoulSoil                 .equal(tStack, T, T)) {mDisplayedInput = -9;} else
-				if (IL.NeLi_SoulSoil                 .equal(tStack, T, T)) {mDisplayedInput = -9;} else
-				if (IL.NeLi_Gravel                   .equal(tStack, T, T)) {mDisplayedInput =-11;} else
-				if (IL.EtFu_Gravel                   .equal(tStack, F, T)) {mDisplayedInput = -1;} else
-				if (IL.EtFu_Dirt                     .equal(tStack, F, T)) {mDisplayedInput = -3;} else
-				if (IL.BTL_Mud                       .equal(tStack, F, T)) {mDisplayedInput =-10;} else
-				if (IL.ERE_Mud                       .equal(tStack, F, T)) {mDisplayedInput =-10;} else
-				if (IL.BoP_Mud                       .equal(tStack, F, T)) {mDisplayedInput =-10;} else
-				if (IL.BoP_Quicksand                 .equal(tStack, F, T)) {mDisplayedInput = -5;} else
-				if (IL.BoP_Sand_Hard                 .equal(tStack, F, T)) {mDisplayedInput = -5;} else
-				if (IL.BoP_Grass_Endstone            .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.BoP_Grass_Loamy               .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.BoP_Grass_Long                .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.BoP_Grass_Netherrack          .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.BoP_Grass_Origin              .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.BoP_Grass_Sandy               .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.BoP_Grass_Silty               .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.BoP_Grass_Smoldering          .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.BoP_Coarse_Loamy              .equal(tStack, F, T)) {mDisplayedInput = -3;} else
-				if (IL.BoP_Coarse_Sandy              .equal(tStack, F, T)) {mDisplayedInput = -3;} else
-				if (IL.BoP_Coarse_Silty              .equal(tStack, F, T)) {mDisplayedInput = -3;} else
-				if (IL.BoP_Dirt_Hard                 .equal(tStack, F, T)) {mDisplayedInput = -3;} else
-				if (IL.BoP_Dirt_Dried                .equal(tStack, F, T)) {mDisplayedInput = -3;} else
-				if (IL.BoP_Dirt_Loamy                .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.BoP_Dirt_Sandy                .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.BoP_Dirt_Silty                .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.EB_Dirt_Alfisol               .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.EB_Dirt_Andisol               .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.EB_Dirt_Gelisol               .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.EB_Dirt_Histosol              .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.EB_Dirt_Inceptisol            .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.EB_Dirt_Mollisol              .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.EB_Dirt_Oxisol                .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.EB_Grass_Alfisol              .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.EB_Grass_Andisol              .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.EB_Grass_Gelisol              .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.EB_Grass_Histosol             .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.EB_Grass_Inceptisol           .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.EB_Grass_Mollisol             .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.EB_Grass_Oxisol               .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				if (IL.Salt_Dirt_1                   .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.Salt_Dirt_2                   .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.Salt_Dirt_3                   .equal(tStack, F, T)) {mDisplayedInput = -2;} else
-				if (IL.Salt_Grass                    .equal(tStack, F, T)) {mDisplayedInput = -7;} else
-				{
-					OreDictItemData tData = OM.data_(tStack);
-					if (tData == null || tData.mMaterial == null) {
-						mDisplayedInput = -1;
-					} else {
-						mDisplayedInput = tData.mMaterial.mMaterial.mID;
-					}
-				}
-			}
-			mState &= ~B[1];
-			for (int i = 1; i < 13; i++) if (ST.valid(tStack = slot(i))) {
-				mState |= B[1];
-				if (ST.equal(tStack, Blocks.DIRT        , 0)) {mDisplayedOutput = -2;} else
-				if (ST.equal(tStack, Blocks.DIRT        , 1)) {mDisplayedOutput = -3;} else
-				if (ST.equal(tStack, Blocks.DIRT        , 2)) {mDisplayedOutput = -4;} else
-				if (ST.equal(tStack, Blocks.GRASS_BLOCK       , W)) {mDisplayedOutput = -7;} else
-				if (ST.equal(tStack, BlocksGT.Grass     , W)) {mDisplayedOutput = -7;} else
-				if (ST.equal(tStack, Blocks.MYCELIUM    , W)) {mDisplayedOutput = -8;} else
-				if (ST.equal(tStack, BlocksGT.Diggables , 0)) {mDisplayedOutput =-10;} else
-				if (IL.AETHER_Grass_Enchanted_Vanilla.equal(tStack, T, T)) {mDisplayedOutput = -7;} else
-				if (IL.AETHER_Grass_Enchanted        .equal(tStack, T, T)) {mDisplayedOutput = -7;} else
-				if (IL.AETHER_Grass                  .equal(tStack, T, T)) {mDisplayedOutput = -7;} else
-				if (IL.AETHER_Dirt                   .equal(tStack, T, T)) {mDisplayedOutput = -2;} else
-				if (IL.AETHER_Sand                   .equal(tStack, T, T)) {mDisplayedOutput = -5;} else
-				if (IL.RH_Sand_Magnetite             .equal(tStack, F, T)) {mDisplayedOutput =-11;} else
-				if (IL.RH_Sand_Magnetite             .equal(tStack, T, T)) {mDisplayedOutput = -5;} else
-				if (IL.TROPIC_Sand_Black             .equal(tStack, F, T)) {mDisplayedOutput =-11;} else
-				if (IL.TROPIC_Sand_Black             .equal(tStack, T, T)) {mDisplayedOutput = -5;} else
-				if (IL.PFAA_Sands                    .equal(tStack, T, T)) {mDisplayedOutput =-11;} else
-				if (IL.NePl_SoulSoil                 .equal(tStack, T, T)) {mDisplayedOutput = -9;} else
-				if (IL.NeLi_SoulSoil                 .equal(tStack, T, T)) {mDisplayedOutput = -9;} else
-				if (IL.NeLi_Gravel                   .equal(tStack, T, T)) {mDisplayedOutput =-11;} else
-				if (IL.EtFu_Gravel                   .equal(tStack, F, T)) {mDisplayedOutput = -1;} else
-				if (IL.EtFu_Dirt                     .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
-				if (IL.BTL_Mud                       .equal(tStack, F, T)) {mDisplayedOutput =-10;} else
-				if (IL.ERE_Mud                       .equal(tStack, F, T)) {mDisplayedOutput =-10;} else
-				if (IL.BoP_Mud                       .equal(tStack, F, T)) {mDisplayedOutput =-10;} else
-				if (IL.BoP_Quicksand                 .equal(tStack, F, T)) {mDisplayedOutput = -5;} else
-				if (IL.BoP_Sand_Hard                 .equal(tStack, F, T)) {mDisplayedOutput = -5;} else
-				if (IL.BoP_Grass_Endstone            .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.BoP_Grass_Loamy               .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.BoP_Grass_Long                .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.BoP_Grass_Netherrack          .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.BoP_Grass_Origin              .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.BoP_Grass_Sandy               .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.BoP_Grass_Silty               .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.BoP_Grass_Smoldering          .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.BoP_Coarse_Loamy              .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
-				if (IL.BoP_Coarse_Sandy              .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
-				if (IL.BoP_Coarse_Silty              .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
-				if (IL.BoP_Dirt_Hard                 .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
-				if (IL.BoP_Dirt_Dried                .equal(tStack, F, T)) {mDisplayedOutput = -3;} else
-				if (IL.BoP_Dirt_Loamy                .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.BoP_Dirt_Sandy                .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.BoP_Dirt_Silty                .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.EB_Dirt_Alfisol               .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.EB_Dirt_Andisol               .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.EB_Dirt_Gelisol               .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.EB_Dirt_Histosol              .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.EB_Dirt_Inceptisol            .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.EB_Dirt_Mollisol              .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.EB_Dirt_Oxisol                .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.EB_Grass_Alfisol              .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.EB_Grass_Andisol              .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.EB_Grass_Gelisol              .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.EB_Grass_Histosol             .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.EB_Grass_Inceptisol           .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.EB_Grass_Mollisol             .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.EB_Grass_Oxisol               .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				if (IL.Salt_Dirt_1                   .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.Salt_Dirt_2                   .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.Salt_Dirt_3                   .equal(tStack, F, T)) {mDisplayedOutput = -2;} else
-				if (IL.Salt_Grass                    .equal(tStack, F, T)) {mDisplayedOutput = -7;} else
-				{
-					OreDictItemData tData = OM.data_(tStack);
-					if (tData == null || tData.mMaterial == null) {
-						mDisplayedOutput = -1;
-					} else {
-						mDisplayedOutput = tData.mMaterial.mMaterial.mID;
-					}
-				}
-				break;
-			}
+			updateVisualData();
 			
 			if (aTimer % 5 == 0 && (mState & B[2]) != 0) {
 				mState &= ~B[2];

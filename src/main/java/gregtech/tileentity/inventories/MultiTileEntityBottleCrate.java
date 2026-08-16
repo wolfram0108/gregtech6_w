@@ -83,18 +83,23 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 	@Override
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		super.onTick2(aTimer, aIsServerSide);
-		if (aIsServerSide && mInventoryChanged) {
-			for (int i = 0; i < mDisplay.length; i++) {
-				if (!slotHas(i)) {mDisplay[i] = 0; continue;}
-				if (ST.item(slot(i)) == Items.GLASS_BOTTLE || IL.BoP_Jar_Empty.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_1.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_2.equal(slot(i), T, T)) {mDisplay[i] = Short.MIN_VALUE; continue;}
-				FluidStack tFluid = FL.getFluid(slot(i), T);
-				if (tFluid != null) {mDisplay[i] = (short)-FL.id(tFluid); continue;}
-				if (ST.item(slot(i)) == Items.EXPERIENCE_BOTTLE) {mDisplay[i] = (short)-FL.Potion_Jump_1.id(); continue;}
-				if (MD.HBM.owns(slot(i))) {mDisplay[i] = (short)-FL.Potion_Harm_1.id(); continue;}
-				if (MD.BoP.owns(slot(i))) {mDisplay[i] = Short.MIN_VALUE; continue;}
-				mDisplay[i] = (short)-FL.Water.id();
-			}
-			updateClientData();
+		if (aIsServerSide && mInventoryChanged) {updateVisualData(); updateClientData();}
+	}
+
+	/** Что стоит в ящике: содержимое каждой бутыли. Чистый пересчёт из слотов — центр зовёт его и из тика,
+	 *  и перед сборкой клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	@Override
+	public void updateVisualData() {
+		if (isClientSide()) return;
+		for (int i = 0; i < mDisplay.length; i++) {
+			if (!slotHas(i)) {mDisplay[i] = 0; continue;}
+			if (ST.item(slot(i)) == Items.GLASS_BOTTLE || IL.BoP_Jar_Empty.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_1.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_2.equal(slot(i), T, T)) {mDisplay[i] = Short.MIN_VALUE; continue;}
+			FluidStack tFluid = FL.getFluid(slot(i), T);
+			if (tFluid != null) {mDisplay[i] = (short)-FL.id(tFluid); continue;}
+			if (ST.item(slot(i)) == Items.EXPERIENCE_BOTTLE) {mDisplay[i] = (short)-FL.Potion_Jump_1.id(); continue;}
+			if (MD.HBM.owns(slot(i))) {mDisplay[i] = (short)-FL.Potion_Harm_1.id(); continue;}
+			if (MD.BoP.owns(slot(i))) {mDisplay[i] = Short.MIN_VALUE; continue;}
+			mDisplay[i] = (short)-FL.Water.id();
 		}
 	}
 	

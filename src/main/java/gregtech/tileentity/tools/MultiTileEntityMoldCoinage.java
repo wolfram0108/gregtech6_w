@@ -96,14 +96,20 @@ public class MultiTileEntityMoldCoinage extends TileEntityBase07Paintable implem
 	
 	@Override
 	public void onTick2(long aTimer, boolean aIsServerSide) {
-		if (aIsServerSide) {
-			if (ST.invalid(slot(0))) {
-				mDisplayedMetal = 0;
-			} else {
-				OreDictItemData tData = OM.data_(slot(0));
-				if (tData != null && tData.mMaterial != null) {
-					mDisplayedMetal = tData.mMaterial.mMaterial.mID;
-				}
+		if (aIsServerSide) updateVisualData();
+	}
+
+	/** Что видно в форме для монет. Чистый пересчёт из слота — центр зовёт его и из тика, и перед сборкой клиентского
+	 *  снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	@Override
+	public void updateVisualData() {
+		if (isClientSide()) return;
+		if (ST.invalid(slot(0))) {
+			mDisplayedMetal = 0;
+		} else {
+			OreDictItemData tData = OM.data_(slot(0));
+			if (tData != null && tData.mMaterial != null) {
+				mDisplayedMetal = tData.mMaterial.mMaterial.mID;
 			}
 		}
 	}

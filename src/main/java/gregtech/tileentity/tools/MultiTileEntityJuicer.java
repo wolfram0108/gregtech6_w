@@ -111,12 +111,18 @@ public class MultiTileEntityJuicer extends TileEntityBase07Paintable implements 
 	
 	@Override
 	public void onTick2(long aTimer, boolean aIsServerSide) {
-		if (aIsServerSide) {
-			mDisplay = 0;
-			for (FluidTankGT tTank : mTanks) if (tTank.has()) {
-				mDisplay = (short)(FL.id_(tTank.getFluid())+1);
-				break;
-			}
+		if (aIsServerSide) updateVisualData();
+	}
+
+	/** Что видно в соковыжималке. Чистый пересчёт из танков — центр зовёт его и из тика, и перед сборкой
+	 *  клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	@Override
+	public void updateVisualData() {
+		if (isClientSide()) return;
+		mDisplay = 0;
+		for (FluidTankGT tTank : mTanks) if (tTank.has()) {
+			mDisplay = (short)(FL.id_(tTank.getFluid())+1);
+			break;
 		}
 	}
 	
