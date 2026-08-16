@@ -102,7 +102,11 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		// MODCOMPAT-002 (все 10 мировых жидкостей GT6 невидимы на карте): цвет на карте — тот же 1.7.10-дефолт
 		// «из материала» (`recompSrc/.../Block.java:232-235`), в neo его надо задать явно (дефолт = MapColor.NONE
 		// = «пропустить блок»). Мост и источник — общие с остальными иерархиями, см. BlockBase.mapColorOf.
-		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(FL.gas(aFluid) ? 1F : 30F), aMaterial), aMaterial, aFluid);
+		// РОЛЬ ЭТОЙ СЕМЬИ (паспорт роли, BlockFluidBaseGT): содержимая жидкость с материалом воды/лавы несёт
+		// СВОЮ жидкость и обещает среду тегом (геотермальная вода), прочая — движку не жидкость вовсе и рисуется
+		// своей моделью по квантам (нефти, газ). Выражение 1:1 с main (BlockBaseFluid.java:108 ветки main).
+		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(FL.gas(aFluid) ? 1F : 30F), aMaterial), aMaterial, aFluid,
+			aMaterial == Material.water || aMaterial == Material.lava ? EngineRole.OWN_TAGGED_FLUID : EngineRole.NO_ENGINE_FLUID);
 		mFluid = aFluid;
 		mAmountPerQuanta = aAmountPerQuanta;
 		gregapi.GT_API.deferItemInit(() -> mQuanta = FL.make(mFluid, mAmountPerQuanta));
@@ -126,6 +130,10 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// В 1.20.1 LiquidBlock.getFluid() объявлен как FlowingFluid (LiquidBlock.java:175), а Forge-IFluidBlock.getFluid() —
 	// как Fluid: ковариантный возврат покрывает оба. Носитель берём ЦЕНТРОМ базы (liquidCarrierFor), своей копии не заводим.
 	@Override public net.minecraft.world.level.material.FlowingFluid getFluid() {return liquidCarrierFor(mMaterial, mFluid);}
+
+	/** «Какую жидкость держит клетка» — второй, отдельный вопрос паспорта роли (см. предок): у содержимой
+	 *  жидкости это её собственная {@code mFluid}, а не носитель-предок. Второго хранилища не заводим. */
+	@Override public Fluid ownFluid() {return mFluid;}
 
 	/** было Forge {@code BlockFluidFinite.canDrain:332-335} — тело 1:1 ({@code return true}); finite-жидкость
 	 *  черпается на любом уровне, в отличие от classic-ветки ({@link gregtech.blocks.fluids.BlockWaterlike}),
@@ -420,15 +428,20 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// это состояние носителя-предка, то есть САМА GT6-жидкость; нефти и газ объявляли движку непустой FluidState и
 	// при этом рисовались моделью (2 геометрии на клетку). Роль отвечает за обе семьи одинаково; сюда семья отдаёт
 	// ТОЛЬКО свою шкалу квантов — ниже.
-	/** Шкала finite-семьи для паспорта роли. ИСТОЧНИК ВСЕГДА (уровень = quantaPerBlock), и это КРИТИЧНО, а не
-	 *  упрощение: движок тикает FluidState.tick() для любого непустого FLOWING-состояния
-	 *  ({@code LevelChunk.postProcessGeneration} / {@code ServerLevel.tickFluid}), а {@code FlowingFluid.getNewLiquid}
-	 *  не находит ванильных источников рядом (GT6-источник ≠ {@code Blocks.WATER}) → EMPTY → {@code setBlock(AIR)}
-	 *  удаляет GT6-flowing мгновенно («гейзер появился и пропал»). isSource-состояния движок НЕ тикает.
-	 *  Собственный поток GT6 (updateTick по FLUID_META/quanta) от FluidState не зависит вовсе — FluidState нужен
-	 *  лишь для физики (тег WATER/LAVA → погружение/тонешь/горишь). Исходник Forge 1.7.10 getFluidState не имел:
-	 *  конфликта двух tick-систем там не было. Тело 1:1 с прежним собственным ответом этой семьи. */
-	@Override protected int engineLevelOfState(BlockState aState) {return quantaPerBlock;}
+	/** Шкала finite-семьи для паспорта роли: {@code FLUID_META+1} = 1..8 квантов (мета 7 = полная клетка).
+	 *  Тело 1:1 с main ({@code BlockBaseFluid.quantaOfState:415} ветки main) — на нём же стоит ВЫСОТА клетки:
+	 *  движок берёт её из {@code FluidState.getOwnHeight()} (= уровень/9), поэтому «источник всегда» рисовал
+	 *  гейзер ПОЛНОЙ клеткой при любом кванте (репорт игрока 2026-08-16).
+	 *  <p><b>Почему flowing-состояние здесь безопасно</b> (прежняя редакция держала «источник всегда» из страха
+	 *  «движок стикает FLOWING и удалит GT6-поток»): единственный вход в {@code FluidState.tick} для нашей клетки —
+	 *  {@code LevelChunk.postProcessGeneration:499-501} (тикает позиции, помеченные при генерации), а помечает их
+	 *  {@code WorldGenRegion.setBlock:287-289} ТОЛЬКО при {@code state.hasPostProcess(...)}, чей дефолт —
+	 *  константа {@code false} ({@code BlockBehaviour.java:1011-1013}); GT6-блоки его не переопределяют. Все
+	 *  остальные планировщики ванильного fluid-тика — каналы {@code LiquidBlock} ({@code onPlace}/
+	 *  {@code neighborChanged}/{@code updateShape}) — перекрыты в общем предке (шов F5 surface-B). Поэтому
+	 *  {@code ServerLevel.tickFluid} для GT6-жидкости не вызывается ни разу, и собственный поток GT6 (updateTick
+	 *  по FLUID_META) остаётся единственным. То же устройство живёт на main и принято игроком (BUG-119). */
+	@Override protected int engineLevelOfState(BlockState aState) {return aState.getValue(FLUID_META) + 1;}
 
 	// F5-B block-контракт (проходимость): материал-жидкость/газ (масла/кислоты/газы) — ПРОХОДИМЫ, нельзя стоять на них
 	// как на твёрдом блоке (оригинал: Forge BlockFluidBase — коллайдера нет, canDisplace). getCollisionShape/getShape=empty.

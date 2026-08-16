@@ -1,0 +1,7 @@
+{
+	"replace": false,
+	"values": [
+		{"id": "gregapi:watergeothermal", "required": false},
+		{"id": "gregapi:watergeothermal_flowing", "required": false}
+	]
+}

@@ -119,9 +119,9 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	 *  {@code FluidType}, F5-доклад §1/§3). Перенос характеристик воспроизведён Fluid-перегрузкой ниже
 	 *  (данные из {@link gregapi.fluid.FluidGT}); эта 2-арг перегрузка оставляет Forge-дефолты
 	 *  (density=1, densityDir=-1, tickRate=20, quantaPerBlock=8). */
-	public BlockFluidBaseGT(BlockBehaviour.Properties aProperties, Material aMaterial) {
-		this(aProperties, aMaterial, null);
-	}
+	// 2-арг перегрузка (Properties, Material) СНЯТА вместе с выводом роли из материала: вызывателей не было
+	// (обе семьи идут полной формой), а роль обязана быть названа явно — молчаливого дефолта не заводим.
+	// Тот же состав, что на main (BlockFluidBaseGT.java:191-192 ветки main).
 
 	/** F5 surface-B: движковая идентичность жидкости блока — ЕДИНОЕ правило, то же, что у {@code getFluidState}
 	 *  обеих иерархий: материал water → ванильная WATER, lava → LAVA (их FluidState блок и отдаёт), иначе —
@@ -140,11 +140,13 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	//
 	// | Роль             | Кто на ветке (9 мировых жидкостей)  | getFluidState                      | getRenderShape |
 	// |------------------|-------------------------------------|------------------------------------|----------------|
-	// | VANILLA_WATER    | океан, река, болото, геотермальная   | ванильная вода/лава по шкале семьи | INVISIBLE      |
-	// |                  | вода (материал water/lava)           | (мертвы иначе waterlogging,        | (движковый     |
+	// | VANILLA_WATER    | океан, река, болото                  | ванильная вода/лава по шкале семьи | INVISIBLE      |
+	// |                  | (вся семья BlockWaterlike)           | (мертвы иначе waterlogging,        | (движковый     |
 	// |                  |                                      | заморозка, плавание — тождество    | жидкостный     |
 	// |                  |                                      | is(FluidTags.WATER))               | проход)        |
-	// | OWN_ENGINE_FLUID | НИКТО (см. ⚠️ ниже)                  | своя жидкость по шкале семьи       | INVISIBLE      |
+	// | OWN_TAGGED_FLUID | геотермальная вода (содержимая       | СВОЯ жидкость по шкале семьи;      | INVISIBLE      |
+	// |                  | жидкость с материалом water/lava)    | среда обещана ТЕГОМ воды           | (движковый ход  |
+	// |                  |                                      | data/minecraft/tags/fluids/*.json  | СВОЕЙ текстурой)|
 	// | NO_ENGINE_FLUID  | 4 нефти, газ                         | EMPTY — для движка не жидкость     | MODEL (GT6     |
 	// |                  |                                      |                                    | кванта-высотой)|
 	//
@@ -157,27 +159,35 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	// (идентичность блока для BucketItem/MapItem/createLegacyBlock), но ФИЗИКОЙ он больше не становится —
 	// ровно как на main, где нефти тоже EMPTY.
 	//
-	// ⚠️ Роль OWN_ENGINE_FLUID на ветке НИКОМУ не назначена, и это осознанно. На main её носитель —
-	// геотермальная вода (своя жидкость, а среда обещана ванильным ТЕГОМ воды). На 1.20.1 третья среда живёт
-	// иначе — штатным net/minecraftforge/fluids/FluidType.java (motionScale:244, canSwim:266, canDrownIn:319;
-	// зовётся из Entity.java:728,733,1190), поэтому перевод геоводы на собственную жидкость идёт вместе с
-	// собственной средой и вынесен в BP-ADAPT-002 (меняет поведение игры, нужна живая приёмка). До тех пор
-	// геовода — VANILLA_WATER: её плавание/утопление живы через ванильный WATER. Ветка роли реализована, но
-	// живого носителя пока не имеет — судьями ветки она НЕ покрыта.
-	public enum EngineRole {VANILLA_WATER, OWN_ENGINE_FLUID, NO_ENGINE_FLUID}
+	// ⚠️ Среда роли OWN_TAGGED_FLUID — ванильный ТЕГ воды, как на main, а НЕ физика FluidType. На 1.20.1
+	// FluidType жив (net/minecraftforge/fluids/FluidType.java: motionScale:244, canSwim:266, canDrownIn:319 —
+	// зовётся из Entity.java:728,733,1190), но путь ветки уже выбран в BP-ADAPT-002 тем же доводом: величины
+	// main приняты игроком живьём, а движковая физика дала бы ветке ДРУГОЕ поведение, которого у main нет.
+	// Геовода получает среду ровно тем же способом, что на main, — записью своей жидкости (source и flowing)
+	// в data/minecraft/tags/fluids/water.json; рассинхрон кода с файлом ловит сторож ниже.
+	//
+	// ⛔ РОЛЬ ОБЪЯВЛЯЕТ СЕМЬЯ, А НЕ МАТЕРИАЛ (репорт игрока 2026-08-16, регресс 4698b910). Первая редакция
+	// выводила роль из материала прямо здесь (`roleFor(Material)`) — и на роль «ванильная вода» уезжала ВСЯ
+	// содержимая вода, то есть геотермальная (BlockBaseFluid, Material.water, Loader_Blocks:162). Следствие:
+	// клетка гейзера объявляла движку ванильную воду ИСТОЧНИКОМ при любом кванте, а собственная модель
+	// глушилась INVISIBLE — вода рисовалась ванильно-синей и всегда полной клеткой («высота растекания
+	// неправильная, должна быть как у нефти и газа»). Материал отвечает на вопрос «какая среда», а не «чья
+	// жидкость»: у двух семей при ОДНОМ материале water ответы разные, и знает их только семья.
+	// Раскладка ролей взята с main 1:1 (там `BlockWaterlike.java:90` и `BlockBaseFluid.java:108`).
+	public enum EngineRole {VANILLA_WATER, OWN_TAGGED_FLUID, NO_ENGINE_FLUID}
 
-	/** Роль этого блока. Выводится из материала ОДИН раз в конструкторе — второго хранилища правды нет. */
+	/** Роль этого блока. Объявляется СЕМЬЁЙ при конструировании — второго хранилища правды нет. */
 	public final EngineRole mEngineRole;
 
 	/** Все живые блоки-жидкости — для сторожа ролей на старте сервера ({@link #validateEngineRoles}). */
 	private static final java.util.List<BlockFluidBaseGT> ALL_FLUID_BLOCKS = new java.util.ArrayList<>();
 
-	/** Роль по материалу: вода/лава несут ванильную среду (их FluidState блок и отдаёт), прочее — своей среды
-	 *  движку не обещает и рисуется собственной моделью. */
-	protected static EngineRole roleFor(Material aMaterial) {
-		if (aMaterial == Material.water || aMaterial == Material.lava) return EngineRole.VANILLA_WATER;
-		return EngineRole.NO_ENGINE_FLUID;
-	}
+	/** КАКУЮ ЖИДКОСТЬ ДЕРЖИТ КЛЕТКА — вопрос, отдельный от {@link #getFluid()} (тот на 1.20.1 обязан быть
+	 *  {@code FlowingFluid}-носителем предка, {@code LiquidBlock.java:175}, и отвечает «чем блок ЯВЛЯЕТСЯ для
+	 *  BucketItem/MapItem/createLegacyBlock»). Оба носителя уже хранят её в собственном {@code mFluid} —
+	 *  второго хранилища не заводим, центру нужен лишь доступ. Разделение вопросов — то же, что на main
+	 *  ({@code BlockBaseFluid.java:129} против {@code liquidCarrierFor}), и то же, которым закрыт BP-BUG-004. */
+	public abstract net.minecraft.world.level.material.Fluid ownFluid();
 
 	/** ШКАЛА КВАНТОВ СЕМЬИ — единственное, что семьи объявляют сами; РЕШЕНИЕ принимает центр ниже.
 	 *  Возврат — сколько «восьмых» клетки занято в движковых терминах: {@code >= quantaPerBlock} = ИСТОЧНИК,
@@ -197,10 +207,14 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 				return (tLava ? net.minecraft.world.level.material.Fluids.FLOWING_LAVA : net.minecraft.world.level.material.Fluids.FLOWING_WATER)
 					.getFlowing(net.minecraft.util.Mth.clamp(engineLevelOfState(aState), 1, 8), false);
 			}
-			default: { // OWN_ENGINE_FLUID — носителя на ветке пока нет, см. ⚠️ выше (BP-ADAPT-002)
-				// getFluid() на 1.20.1 объявлен FlowingFluid'ом самим движком (LiquidBlock.java:175), проверка типа
-				// не нужна — в отличие от main (26.1), где он объявлен Fluid и требует instanceof.
-				net.minecraft.world.level.material.FlowingFluid tOwn = getFluid();
+			default: { // OWN_TAGGED_FLUID — носитель на ветке один: геотермальная вода (Loader_Blocks:162)
+				// СВОЯ жидкость клетки (ownFluid), а НЕ носитель-предок getFluid(): у геоводы материал water, и
+				// носителем предка для неё выбрана ванильная WATER (liquidCarrierFor ниже) — именно она и рисовалась
+				// вместо горячего источника. Тело 1:1 с main (BlockFluidBaseGT.java:147-153 ветки main), включая
+				// фолбэк по материалу, когда своя жидкость не FlowingFluid (у GT6-жидкостей она им является —
+				// FluidGT.Source extends FlowingFluid, FluidGT.java:264).
+				if (!(ownFluid() instanceof net.minecraft.world.level.material.FlowingFluid tOwn))
+					return (mMaterial == Material.lava ? net.minecraft.world.level.material.Fluids.LAVA : net.minecraft.world.level.material.Fluids.WATER).defaultFluidState();
 				int tLevel = net.minecraft.util.Mth.clamp(engineLevelOfState(aState), 1, quantaPerBlock);
 				return tLevel >= quantaPerBlock ? tOwn.getSource(false) : tOwn.getFlowing(tLevel, false);
 			}
@@ -229,7 +243,8 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 			if (tPromises && !tFs.is(net.minecraft.tags.FluidTags.WATER) && !tFs.is(net.minecraft.tags.FluidTags.LAVA))
 				gregapi.data.CS.ERR.println("[GT6] РАССИНХРОН РОЛИ ЖИДКОСТИ: " + tBlock + " роль=" + tBlock.mEngineRole
 					+ " объявляет движку среду, но её жидкости нет в теге воды/лавы — плавание и утопление в ней МЕРТВЫ."
-					+ " Проверь data/minecraft/tags/fluid/*.json (обе записи: source и flowing) либо среду FluidType (BP-ADAPT-002).");
+					+ " Проверь data/minecraft/tags/fluids/water.json (обе записи: source и flowing; каталог на 1.20.1"
+					+ " именно tags/fluids — TagManager.java:20, в tags/fluid движок не заглянет).");
 			boolean tDrawnAsFluid = !tFs.isEmpty();
 			boolean tDrawnAsModel = tBlock.defaultBlockState().getRenderShape() != net.minecraft.world.level.block.RenderShape.INVISIBLE;
 			if (tDrawnAsFluid == tDrawnAsModel) gregapi.data.CS.ERR.println("[GT6] РАССИНХРОН РОЛИ ЖИДКОСТИ: " + tBlock
@@ -254,12 +269,12 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	 *  {@code maxScaledLight} (luminosity) НЕ перенесён: у всех 10 мировых жидкостей luminosity=0
 	 *  (Loader_Fluids: воды/нефти/газ без setLuminosity) — мёртвое поле не выдумываем.
 	 *  {@code temperature} НЕ перенесён: в порту никто не читает (Forge-static getTemperature не портирован). */
-	public BlockFluidBaseGT(BlockBehaviour.Properties aProperties, Material aMaterial, net.minecraft.world.level.material.Fluid aFluid) {
+	public BlockFluidBaseGT(BlockBehaviour.Properties aProperties, Material aMaterial, net.minecraft.world.level.material.Fluid aFluid, EngineRole aRole) {
 		// F5 surface-B: super = LiquidBlock(FlowingFluid, Properties) — блок ЯВЛЯЕТСЯ жидкостью для движка.
-		// Его stateCache/LEVEL-каналы не используются (getFluidState/кванты — GT6-свои, перекрыты в потомках).
+		// Его stateCache/LEVEL-каналы не используются (getFluidState/кванты — GT6-свои, паспорт роли выше).
 		super(liquidCarrierFor(aMaterial, aFluid), aProperties);
 		mMaterial = aMaterial;
-		mEngineRole = roleFor(aMaterial);
+		mEngineRole = aRole;
 		ALL_FLUID_BLOCKS.add(this);
 		registerDefaultState(getStateDefinition().any().setValue(FLUID_META, 0).setValue(LEVEL, 0));
 		gregapi.fluid.FluidGT tFluid = gregapi.fluid.FluidGT.of(aFluid);

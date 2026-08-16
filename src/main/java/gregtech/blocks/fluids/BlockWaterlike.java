@@ -84,7 +84,11 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		// MODCOMPAT-002 (река/океан/болото невидимы на карте): цвет — из того же Material.water (waterColor), которым
 		// блок и объявлен; в 1.7.10 он приходил сам (`recompSrc/.../Block.java:232-235`), в neo дефолт = MapColor.NONE.
 		// Мост и приём общие со всеми иерархиями — gregapi.block.BlockBase.mapColorOf.
-		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(30F), Material.water), Material.water, aFluid);
+		// РОЛЬ ЭТОЙ СЕМЬИ (паспорт роли, BlockFluidBaseGT): мировая вода объявляет движку ВАНИЛЬНУЮ воду —
+		// иначе мертвы waterlogging, заморозка и плавание (все они судят тождеством с Fluids.WATER, а не тегом).
+		// 1:1 с main (BlockWaterlike.java:90 ветки main).
+		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(30F), Material.water), Material.water, aFluid,
+			gregapi.block.fluid.BlockFluidBaseGT.EngineRole.VANILLA_WATER);
 		mFluid = aFluid;
 		quantaPerBlock = (aFlowsOut ? 8 : 3);
 		quantaPerBlockFloat = quantaPerBlock;
@@ -98,6 +102,10 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	/** BUG-115: {@code IFluidBlock} вернулся общему предку — {@code getFluid()} снова есть, 1:1 с 1.7.10. */
 	@Override public net.minecraft.world.level.material.FlowingFluid getFluid() {return liquidCarrierFor(mMaterial, mFluid);}
 
+	/** «Какую жидкость держит клетка» — второй, отдельный вопрос паспорта роли (см. предок): у мировой воды это
+	 *  её собственная {@code mFluid} (морская/болотная/речная), а не носитель-предок. Второго хранилища не заводим. */
+	@Override public Fluid ownFluid() {return mFluid;}
+
 	// F10: реальная сигнатура net.minecraftforge.fluids.IFluidBlock — drain(Level,BlockPos,IFluidHandler.FluidAction),
 	// canDrain(Level,BlockPos); было (Level,int,int,int,boolean aDoDrain) старого шима.
 	@Override
@@ -108,8 +116,9 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		// тип нельзя), поэтому он отвечает НОСИТЕЛЕМ-предком через liquidCarrierFor, а тот по материалу water
 		// даёт ванильную Fluids.WATER. Насос/дрейн читают эту клетку через FL.drainable -> drain(...) и получали
 		// пресную воду вместо FL.Ocean/FL.Swamp. Приём тот же, что уже у содержимых жидкостей
-		// (BlockBaseFluid.drain -> mQuanta из mFluid) — одна форма ответа на обе иерархии.
-		return FL.make(mFluid, 1000);
+		// (BlockBaseFluid.drain -> mQuanta из mFluid) — одна форма ответа на обе иерархии. Спрашиваем ЦЕНТР
+		// (ownFluid — тот же вопрос в паспорте роли), чтобы «какую жидкость держит клетка» жило в одном месте.
+		return FL.make(ownFluid(), 1000);
 	}
 
 	@Override
