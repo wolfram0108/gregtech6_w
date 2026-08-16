@@ -125,19 +125,23 @@ public final class GT6CraftingDispatcher extends CustomRecipe {
 	// КАЖДОГО слота; GT6-инструменты давали копию с износом doDamage(getToolDamagePerContainerCraft) — MultiItemTool:579,
 	// бутылки/каны/prefix — свои). Дефолт Recipe.getRemainingItems (Recipe.java:20-31) читает только
 	// hasCraftingRemainingItem предмета — про GT6-канал не знает → инструмент-ингредиент потреблялся бы целиком.
-	// Мост в ЕДИНОЙ воронке всех GT6-крафтов (F11-центр): GT6-предметы — через живой ItemBase-канал (слепок 1.7.10),
-	// прочие — ванильная семантика 1:1.
+	// Мост в ЕДИНОЙ воронке всех GT6-крафтов (F11-центр): GT6-предметы — через живой GT6-канал, прочие — ванильная
+	// семантика 1:1.
+	//
+	// BP-BUG-014: спрашивать надо ВСЕ ПЯТЬ корней канала, а не один. В 1.7.10 hasContainerItem/getContainerItem были
+	// методами САМОГО Item, поэтому SlotCrafting спрашивал любой GT6-предмет; в 1.20.1 у Item их нет, и реализации
+	// GT6 живут в пяти несвязанных корнях (ItemBase и его MultiItem*, PrefixItem, ItemFluidDisplay, PrefixBlockItem,
+	// MultiTileEntityItemInternal). Здесь спрашивался только ItemBase — тот же разрыв, что закрыт в ST.container
+	// (BUG-022 v2). Своего перебора корней не заводим: спрашиваем ТУ ЖЕ единую точку — ST.containerItemGT.
 	@Override
 	public net.minecraft.core.NonNullList<ItemStack> getRemainingItems(CraftingContainer aGrid) {
 		net.minecraft.core.NonNullList<ItemStack> rRemaining = net.minecraft.core.NonNullList.withSize(aGrid.getContainerSize(), ItemStack.EMPTY);
 		for (int i = 0; i < aGrid.getContainerSize(); i++) {
 			ItemStack tStack = aGrid.getItem(i);
 			if (tStack.isEmpty()) continue;
-			if (tStack.getItem() instanceof gregapi.item.ItemBase tItem) {
-				if (tItem.hasContainerItem(tStack)) {
-					ItemStack tRemainder = tItem.getContainerItem(tStack);
-					if (gregapi.util.ST.valid(tRemainder)) rRemaining.set(i, tRemainder);
-				}
+			ItemStack tRemainder = gregapi.util.ST.containerItemGT(tStack);
+			if (tRemainder != null) {
+				if (gregapi.util.ST.valid(tRemainder)) rRemaining.set(i, tRemainder);
 			} else if (tStack.hasCraftingRemainingItem()) {
 				rRemaining.set(i, tStack.getCraftingRemainingItem());
 			}

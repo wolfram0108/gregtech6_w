@@ -189,6 +189,39 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		// MenuScreens.register в client-setup (канон Forge 1.20.1), поэтому кладём её в enqueueWork
 		// (MenuScreens не потокобезопасен, а событие приходит на параллельном лоадере).
 		aEvent.enqueueWork(this::registerMenuScreens);
+		// BP-BUG-015: слой поверхности собственных жидкостей — там же, единственное окно, в котором движок
+		// принимает запись (ItemBlockRenderTypes.checkClientLoading:432-436 «ideally … from FMLClientSetupEvent»).
+		aEvent.enqueueWork(GT_API_Proxy_Client::registerFluidRenderLayers);
+	}
+
+	/** ЦЕНТР СЛОЯ ПОВЕРХНОСТИ ЖИДКОСТИ (BP-BUG-015). Клетку роли {@code OWN_TAGGED_FLUID} движок рисует
+	 *  ЖИДКОСТНЫМ проходом (getRenderShape=INVISIBLE, {@code BlockFluidBaseGT:226-230}), а слой такой клетки
+	 *  берёт НЕ у модели блока, а у собственной таблицы жидкостей: {@code ItemBlockRenderTypes.getRenderLayer
+	 *  (FluidState):377-379} с дефолтом {@code RenderType.solid()} ({@code :399-401}). Ваниль пишет туда свою
+	 *  воду статически ({@code :315-319} — FLOWING_WATER и WATER, translucent); мод обязан записать свою, иначе
+	 *  поверхность геоводы рисуется НЕПРОЗРАЧНОЙ (репорт игрока 2026-08-16).
+	 *
+	 *  <p>Величина не выдумывается и второй таблицей слоёв не заводится: слой берётся ТЕМ ЖЕ центром, что у
+	 *  моделей блоков и предметов, — {@link gregapi.render.GT6BlockModel#renderTypeOf(net.minecraft.world.level.block.Block)}
+	 *  (1.7.10-канал {@code getRenderBlockPass()}). Носители перечисляются ролью, а не списком имён: роль уже
+	 *  знает, чья клетка объявлена движку жидкостью. {@code VANILLA_WATER} пропускается — там жидкость
+	 *  ванильная и слой ей задал сам движок; {@code NO_ENGINE_FLUID} (нефти, газ) рисуется моделью и в этой
+	 *  таблице не участвует вовсе. */
+	private static void registerFluidRenderLayers() {
+		int tCount = 0;
+		for (gregapi.block.fluid.BlockFluidBaseGT tBlock : gregapi.block.fluid.BlockFluidBaseGT.allFluidBlocks()) {
+			if (tBlock.mEngineRole != gregapi.block.fluid.BlockFluidBaseGT.EngineRole.OWN_TAGGED_FLUID) continue;
+			net.minecraft.world.level.material.Fluid tOwn = tBlock.ownFluid();
+			if (tOwn == null || tOwn == net.minecraft.world.level.material.Fluids.EMPTY) continue;
+			net.minecraft.client.renderer.RenderType tLayer = gregapi.render.GT6BlockModel.renderTypeOf(tBlock);
+			// обе половины пары: getFluidState клетки отдаёт source ЛИБО flowing (BlockFluidBaseGT:218-219),
+			// и таблица движка адресуется КАЖДЫМ из них по отдельности — ровно как ваниль пишет WATER и FLOWING_WATER.
+			net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(tOwn, tLayer); tCount++;
+			if (tOwn instanceof net.minecraft.world.level.material.FlowingFluid tFlowing && tFlowing.getFlowing() != tOwn) {
+				net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(tFlowing.getFlowing(), tLayer); tCount++;
+			}
+		}
+		gregapi.data.CS.OUT.println("[F3-fluidlayer] слой поверхности задан для жидкостей GT6: " + tCount);
 	}
 
 	private void registerMenuScreens() {

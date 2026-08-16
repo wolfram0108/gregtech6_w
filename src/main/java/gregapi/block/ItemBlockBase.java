@@ -134,6 +134,14 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	public boolean func_150936_a(Level aWorld, int aX, int aY, int aZ, int aSide, Player aPlayer, ItemStack aStack) {return T;}
 	// F-useOn мост: neo зовёт useOn(UseOnContext), а не 1.7.10 onItemUse — распаковка+делегация в существующий onItemUse (IItemGT-центр).
 	@Override public InteractionResult useOn(UseOnContext aCtx) {return IItemGT.bridgeUseOn(this, aCtx);}
+	// BP-BUG-017 (класс «потерянный вызыватель»): у ВТОРОГО плеча того же канала мост отсутствовал. В 1.7.10
+	// Item.onItemUseFirst звал сам движок ДО onItemUse (ItemInWorldManager.activateBlockOrUseItem), в 1.20.1 его
+	// зовёт ServerPlayerGameMode.useItemOn:344-346 — но уже формой (ItemStack, UseOnContext), которую здесь никто
+	// не перекрывал: дефолт IForgeItem отдавал PASS, тело ниже вызывателя не имело. У решёток (BlockBaseBars:105-149)
+	// ВЕСЬ путь установки живёт в onItemUseFirst, а их onItemUse = F (:151) — то есть решётки GT6 не ставились
+	// вовсе. Мост — ТОТ ЖЕ центр IItemGT, что у useOn (bridgeUseOnFirst уже существует и используется
+	// MultiTileEntityItemInternal:206); второй формы моста не заводим.
+	@Override public InteractionResult onItemUseFirst(ItemStack aStack, UseOnContext aCtx) {return IItemGT.bridgeUseOnFirst(this, aCtx);}
 	@Override public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUseFirst(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
 	@Override public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUse(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было getBlock().getIcon(SIDE_TOP,aMeta) (vanilla Block.getIcon удалён в 26.1.2 —

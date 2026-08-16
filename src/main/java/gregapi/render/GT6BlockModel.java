@@ -128,9 +128,20 @@ public class GT6BlockModel implements BakedModel {
 	 *  GT6 нет, и стекло в GUI выходило CUTOUT — без блендинга. Формула одна, потребителей три; второй таблицы
 	 *  слоёв не заводим. Блок берётся из состояния (его и передаёт движок), {@code aFallback} — на случай null. */
 	public static ChunkRenderTypeSet renderTypesOf(BlockState aState, Block aFallback) {
-		Block tBlock = aState == null ? aFallback : aState.getBlock();
-		int tPass = tBlock instanceof gregapi.block.IBlock tI ? tI.getRenderBlockPass() : 0;
-		return ChunkRenderTypeSet.of(tPass > 0 ? RenderType.translucent() : RenderType.cutout());
+		return ChunkRenderTypeSet.of(renderTypeOf(aState == null ? aFallback : aState.getBlock()));
+	}
+
+	/** ТА ЖЕ ФОРМУЛА, ответ одним слоем — четвёртый потребитель центра (BP-BUG-015, поверхность жидкости).
+	 *  Клетку роли {@code OWN_TAGGED_FLUID} движок рисует не моделью, а ЖИДКОСТНЫМ проходом, и слой берёт у
+	 *  СВОЕЙ таблицы {@code ItemBlockRenderTypes.getRenderLayer(FluidState)} — где дефолт {@code solid}
+	 *  ({@code ItemBlockRenderTypes.java:377-379,399-401}), то есть поверхность непрозрачна. Ваниль пишет туда
+	 *  свою воду статически (:315-319); мод обязан записать свою — но НЕ второй таблицей слоёв: величина
+	 *  остаётся 1.7.10-каналом {@code getRenderBlockPass()} того же блока (у обеих жидкостных семей это 1,
+	 *  {@code BlockBaseFluid:473} = оригинал {@code BlockBaseFluid.java:366}). Регистрация — центр
+	 *  {@code GT_API_Proxy_Client.registerFluidRenderLayers}. */
+	public static RenderType renderTypeOf(Block aBlock) {
+		int tPass = aBlock instanceof gregapi.block.IBlock tI ? tI.getRenderBlockPass() : 0;
+		return tPass > 0 ? RenderType.translucent() : RenderType.cutout();
 	}
 
 	/** Слой отрисовки блока в МИРЕ — тем же центром, что и предметное плечо. */

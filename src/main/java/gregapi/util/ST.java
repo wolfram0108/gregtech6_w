@@ -1130,8 +1130,15 @@ public class ST {
 	 * считалась обычным ингредиентом и попадала в общий генератор плавки
 	 * ({@code Loader_OreProcessing}). Живая диагностика подтвердила: контейнер префикса на момент события
 	 * УЖЕ установлен — значит дело было не в тайминге, а в том, что его никто не спрашивал.</p>
+	 *
+	 * <p><b>Публичная (BP-BUG-014).</b> Тот же вопрос задаёт крафт-стол: в 1.7.10 остаток крафта брал
+	 * {@code SlotCrafting.onPickupFromSlot} тем же полиморфным {@code Item}-каналом
+	 * ({@code recompSrc net/minecraft/inventory/SlotCrafting.java:120-140}), а в 1.20.1 его задаёт
+	 * {@code Recipe.getRemainingItems} — то есть F11-центр {@code GT6CraftingDispatcher}. Он спрашивал
+	 * только {@code ItemBase} и терял те же четыре корня; второго перебора корней не заводим — он
+	 * спрашивает ЭТУ точку.</p>
 	 */
-	private static ItemStack gtContainerItem(ItemStack aStack) {
+	public static ItemStack containerItemGT(ItemStack aStack) {
 		Item tItem = item_(aStack);
 		if (tItem instanceof gregapi.item.ItemBase                                  tI) return tI.getContainerItem(aStack);
 		if (tItem instanceof gregapi.item.prefixitem.PrefixItem                     tI) return tI.getContainerItem(aStack);
@@ -1149,7 +1156,7 @@ public class ST {
 		if (item_(aStack) instanceof IFluidContainerItem tICI && tICI.getCapacity(aStack) > 0) return F;
 		// BUG-022 v2: симметрично ST.container — 1.7.10 звал полиморфный hasContainerItem (GT6-бутылки/каны/prefix),
 		// компонентный канал ниже покрывает только vanilla. Спрашиваем ВСЕ GT-корни через единую точку выше.
-		if (gtContainerItem(aStack) != null) return F;
+		if (containerItemGT(aStack) != null) return F;
 		if (item_(aStack).hasCraftingRemainingItem(aStack)) return F; // IForgeItem.java:253
 		if (ItemsGT.CONTAINER_DURABILITY.contains(aStack, T)) return F;
 		if (IL.Cell_Empty.equal(aStack, F, T) || IL.SC2_Teapot_Empty.equal(aStack, F, T) || IL.SC2_Teacup_Empty.equal(aStack, F, T)) return T;
@@ -1167,7 +1174,7 @@ public class ST {
 		// (у GT6-предметов его нет) → инструмент-ингредиент ПРОПАДАЛ во всех вызывателях ST.container (в т.ч.
 		// MultiTileEntityAdvancedCraftingTable.consumeSlot:436). Живой ItemBase-канал восстановлен ПЕРВЫМ, компонентный
 		// (vanilla ведро и т.п.) — следом, 1:1 порядок оригинала.
-		ItemStack tGTContainer = gtContainerItem(aStack); // все GT-корни разом (см. gtContainerItem)
+		ItemStack tGTContainer = containerItemGT(aStack); // все GT-корни разом (см. containerItemGT)
 		if (tGTContainer != null) return copy(tGTContainer);
 		if (item_(aStack).hasCraftingRemainingItem(aStack)) return copy(item_(aStack).getCraftingRemainingItem(aStack)); // IForgeItem.java:237,253
 		// These are all special Cases, in which it is intended to have only GT Blocks outputting those Container Items.

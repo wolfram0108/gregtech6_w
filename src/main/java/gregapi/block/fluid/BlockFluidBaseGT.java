@@ -182,6 +182,10 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	/** Все живые блоки-жидкости — для сторожа ролей на старте сервера ({@link #validateEngineRoles}). */
 	private static final java.util.List<BlockFluidBaseGT> ALL_FLUID_BLOCKS = new java.util.ArrayList<>();
 
+	/** ТОТ ЖЕ реестр — второму потребителю (клиентская регистрация слоя поверхности, BP-BUG-015).
+	 *  Второго списка не заводим: «кто есть кто» знает роль, а список носителей уже существует. */
+	public static java.util.List<BlockFluidBaseGT> allFluidBlocks() {return java.util.Collections.unmodifiableList(ALL_FLUID_BLOCKS);}
+
 	/** КАКУЮ ЖИДКОСТЬ ДЕРЖИТ КЛЕТКА — вопрос, отдельный от {@link #getFluid()} (тот на 1.20.1 обязан быть
 	 *  {@code FlowingFluid}-носителем предка, {@code LiquidBlock.java:175}, и отвечает «чем блок ЯВЛЯЕТСЯ для
 	 *  BucketItem/MapItem/createLegacyBlock»). Оба носителя уже хранят её в собственном {@code mFluid} —
