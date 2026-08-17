@@ -100,7 +100,7 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	@Override public net.minecraft.world.InteractionResultHolder<ItemStack> use(Level aWorld, Player aPlayer, net.minecraft.world.InteractionHand aHand) {
 		ItemStack tStack = aPlayer.getItemInHand(aHand);
 		ItemStack tResult = onItemRightClick(tStack, aWorld, aPlayer);
-		if (tResult != tStack) {aPlayer.setItemInHand(aHand, tResult); return net.minecraft.world.InteractionResultHolder.success(tResult);}
+		if (tResult != tStack) {aPlayer.setItemInHand(aHand, ST.nn(tResult)); return net.minecraft.world.InteractionResultHolder.success(tResult);} // F15: контракт 1.7.10 может вернуть null (предмет израсходован) — в руку движка только через центр
 		return super.use(aWorld, aPlayer, aHand);
 	}
 

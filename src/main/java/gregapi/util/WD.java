@@ -1629,11 +1629,37 @@ public class WD {
 	/** F13-legacy-meta МОСТ: 1.7.10-мета ванильного блока → BlockState (или подмена блока: настенный факел, вид бревна,
 	 *  двойные растения — в 1.7.10 варианты жили в мете ОДНОГО блока, движок разложил их в отдельные блоки).
 	 *  null = семья не легаси-мостится (обычный путь WD.set). Маппинги — см. комментарий у карт выше. */
+	/** База для legacy-меты: ТЕКУЩИЙ state, если в клетке стоит тот же блок, иначе дефолт. Смена направления
+	 *  не должна сбрасывать прочие свойства — горящая печь остаётся горящей, затопленный сундук затопленным;
+	 *  это ровно семантика 1.7.10, где setBlockMetadataWithNotify менял мету, а не пересоздавал блок. */
+	private static BlockState legacyBase(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {
+		BlockState tCur = state(aWorld, new BlockPos(aX, aY, aZ));
+		return tCur.getBlock() == aBlock ? tCur : aBlock.defaultBlockState();
+	}
+
 	private static BlockState legacyVanillaState(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta) {
 		int tMeta = (int)aMeta;
 		// Поршни: мета&7 = сторона (SIDE-порядок 1.7.10 = Direction-ординалы: 0D,1U,2N,3S,4W,5E).
 		if (aBlock == Blocks.PISTON || aBlock == Blocks.STICKY_PISTON)
 			return aBlock.defaultBlockState().setValue(net.minecraft.world.level.block.DirectionalBlock.FACING, Direction.from3DDataValue(tMeta & 7));
+		// Направленная ВАНИЛЬ, которую ключ Грега адресует НАПРЯМУЮ («лицом на ткнутую сторону»,
+		// ToolCompat ставит блоку мету = aTargetSide). Без этих строк мета для них терялась, WD.set возвращал
+		// false, и ключ сваливался в запасной путь WD.rotateBlock — то есть КРУТИЛ НА 90° вместо адресного
+		// поворота, теряя семантику Грега. Порядок мет 1.7.10 = ординалы Direction (0D,1U,2N,3S,4W,5E) — тот
+		// же, что у поршня выше.
+		if (aBlock instanceof net.minecraft.world.level.block.FurnaceBlock || aBlock instanceof net.minecraft.world.level.block.ChestBlock
+		 || aBlock instanceof net.minecraft.world.level.block.EnderChestBlock || aBlock instanceof net.minecraft.world.level.block.CarvedPumpkinBlock) {
+			Direction tDirH = Direction.from3DDataValue(tMeta & 7);
+			if (tDirH.getAxis().isHorizontal()) return legacyBase(aWorld, aX, aY, aZ, aBlock).setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, tDirH);
+		}
+		// Воронка держит направление в СВОЁМ свойстве (HopperBlock FACING_HOPPER): вверх ей запрещён.
+		if (aBlock instanceof net.minecraft.world.level.block.HopperBlock) {
+			Direction tDirHop = Direction.from3DDataValue(tMeta & 7);
+			if (tDirHop != Direction.UP) return legacyBase(aWorld, aX, aY, aZ, aBlock).setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING_HOPPER, tDirHop);
+		}
+		// Раздатчик и выбрасыватель (DropperBlock наследует DispenserBlock) — полные шесть сторон, как поршень.
+		if (aBlock instanceof net.minecraft.world.level.block.DispenserBlock)
+			return legacyBase(aWorld, aX, aY, aZ, aBlock).setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.from3DDataValue(tMeta & 7));
 		// Редстоун-факел: меты 1-4 = НАСТЕННЫЙ (в neo — отдельный блок REDSTONE_WALL_TORCH); 0/5 = стоячий (дефолт).
 		if (aBlock == Blocks.REDSTONE_TORCH) {
 			int tSide = tMeta & 7;

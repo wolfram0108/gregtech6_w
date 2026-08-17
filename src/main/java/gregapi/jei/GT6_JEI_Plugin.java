@@ -79,6 +79,12 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	 *  JEI отдаёт его один раз ({@link #onRuntimeAvailable}); держим здесь, потому что этот класс и есть
 	 *  центр JEI-совместимости (см. docstring класса), а не заводим второй держатель. */
 	public static volatile mezz.jei.api.runtime.IJeiRuntime sRuntime = null;
+
+	/** Сторож витрины крафта: что было отдано и что скрыто В МОМЕНТ построения категорий (важен именно
+	 *  момент — витрина строится один раз и запоминает содержимое ячеек, см. GT6_JEI_CraftingCategory). */
+	public static int sShownAtRegistration = -1, sHiddenAtRegistration = -1;
+
+	public static final List<String> sHiddenExamples = new ArrayList<>();
 	/** BUG-056: {@code RecipeMap.mNameNEI} -> тип категории. Тем же ключом, которым 1.7.10 звал NEI
 	 *  ({@code GuiCraftingRecipe.openRecipeGui(mNameNEI)}), теперь открывается JEI-категория. Статическая,
 	 *  потому что зовущая сторона ({@code RecipeMap.openNEI}) экземпляра плагина не видит. */
@@ -175,11 +181,28 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		// оригинала — показывает и раскладку, то есть в какую клетку класть, иначе механику не увидеть вовсе.
 		try {
 			List<ICraftingRecipeGT> tCraftingList = new ArrayList<>();
+			int tHidden = 0;
 			for (ICraftingRecipeGT tRecipe : CR.list()) {
 				if (tRecipe == null) continue;
 				if (tRecipe instanceof ShapedOreRecipe || tRecipe instanceof ShapelessOreRecipe
-				 || tRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY || tRecipe instanceof gregapi.recipes.AdvancedCraftingXToY) tCraftingList.add(tRecipe);
+				 || tRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY || tRecipe instanceof gregapi.recipes.AdvancedCraftingXToY) {
+					// Правило показа — не наше, оно 1.7.10: рецепт с ПУСТЫМ списком вариантов в ячейке витрина
+					// того времени не рисовала вовсе (см. GT6_JEI_CraftingCategory.showable). Механика не тронута:
+					// рецепт остаётся в CR.BUFFER и в верстаке, скрыт только показ.
+					if (!GT6_JEI_CraftingCategory.showable(tRecipe)) {
+						tHidden++;
+						if (sHiddenExamples.size() < 12) try {
+							ItemStack tOut = tRecipe.getRecipeOutput();
+							sHiddenExamples.add(tRecipe.getClass().getSimpleName() + " -> " + (tOut == null ? "null" : gregapi.util.ST.identityKey(tOut)));
+						} catch (Throwable e) {/**/}
+						continue;
+					}
+					tCraftingList.add(tRecipe);
+				}
 			}
+			sShownAtRegistration = tCraftingList.size();
+			sHiddenAtRegistration = tHidden;
+			OUT.println("[GT6-JEI] крафт-верстак: показываем " + tCraftingList.size() + " рецептов, скрыто как в NEI 1.7.10 (нечем нарисовать ячейку) — " + tHidden);
 			if (!tCraftingList.isEmpty()) {
 				mCraftingRecipes = tCraftingList;
 				tCategories.add(new GT6_JEI_CraftingCategory(tGuiHelper));

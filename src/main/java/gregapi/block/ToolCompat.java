@@ -22,7 +22,12 @@
  */
 
 package gregapi.block;
-import net.minecraft.world.level.block.PumpkinBlock;
+// F4-flattening, «признак сменил носитель»: в 1.7.10 BlockPumpkin — это НАПРАВЛЕННАЯ вырезанная тыква
+// (и lit_pumpkin от неё же). Движок 1.13+ разделил их: PumpkinBlock — неразрезанная, extends Block, свойства
+// направления у неё НЕТ ВООБЩЕ; направление живёт у CarvedPumpkinBlock (extends HorizontalDirectionalBlock),
+// и им же является JACK_O_LANTERN. Порт взял одноимённый класс, из-за чего все ветки поворота тыквы были
+// мертвы: instanceof не срабатывал никогда.
+import net.minecraft.world.level.block.CarvedPumpkinBlock;
 import net.minecraft.world.level.block.HopperBlock;
 import net.minecraft.world.level.block.FurnaceBlock;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
@@ -287,7 +292,7 @@ public class ToolCompat {
 			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
 				if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1) % 6, 3, F)) return 2000;
 			}
-			if (aBlock instanceof PumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
+			if (aBlock instanceof CarvedPumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ((aMeta-1)%4)+2, 3, F)) return 2500;
 			}
 			if (aBlock instanceof HopperBlock) {
@@ -346,7 +351,7 @@ public class ToolCompat {
 			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
 				if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1) % 6, 3, F)) return 2000;
 			}
-			if (aBlock instanceof PumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
+			if (aBlock instanceof CarvedPumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ((aMeta-1)%4)+2, 3, F)) return 2500;
 			}
 			if (aBlock instanceof HopperBlock) {
@@ -398,7 +403,7 @@ public class ToolCompat {
 			}
 			
 			if (aMeta == aTargetSide) {
-				if (aBlock instanceof PumpkinBlock || aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof HopperBlock || aBlock instanceof EnderChestBlock) {
+				if (aBlock instanceof CarvedPumpkinBlock || aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof HopperBlock || aBlock instanceof EnderChestBlock) {
 					if (WD.set(aWorld, aX, aY, aZ, NB, 0, 3)) {
 						ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, ST.make(aBlock, 1, 0));
 						return 10000;
@@ -408,7 +413,7 @@ public class ToolCompat {
 				if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
 					if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aTargetSide, 3, F)) return 10000;
 				}
-				if (aBlock instanceof PumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
+				if (aBlock instanceof CarvedPumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
 					if (SIDES_HORIZONTAL[aTargetSide] && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aTargetSide, 3, F)) return 10000;
 				}
 				if (aBlock instanceof HopperBlock) {

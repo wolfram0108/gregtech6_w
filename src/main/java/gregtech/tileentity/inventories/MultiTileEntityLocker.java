@@ -70,8 +70,8 @@ public class MultiTileEntityLocker extends TileEntityBase09FacingSingle implemen
 				ItemStack tStack = slot(i);
 				if (tStack == null || aPlayer.getEquipmentSlotForItem(tStack) == ARMOR_SLOTS[i]) {
 					if (!IL.BTRS_Backpack.equal(aPlayer.getItemBySlot(ARMOR_SLOTS[i]), T, T) && !IL.BTRS_Thaumpack.equal(aPlayer.getItemBySlot(ARMOR_SLOTS[i]), T, T)) {
-						slot(i, aPlayer.getItemBySlot(ARMOR_SLOTS[i]));
-						aPlayer.setItemSlot(ARMOR_SLOTS[i], tStack);
+						slot(i, ST.ni(aPlayer.getItemBySlot(ARMOR_SLOTS[i])));
+						aPlayer.setItemSlot(ARMOR_SLOTS[i], ST.nn(tStack));
 						temp = T;
 					}
 				}

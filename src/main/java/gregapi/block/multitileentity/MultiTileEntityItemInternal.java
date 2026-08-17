@@ -503,7 +503,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public net.minecraft.world.InteractionResultHolder<ItemStack> use(Level aWorld, Player aPlayer, InteractionHand aHand) {
 		ItemStack aStack = aPlayer.getItemInHand(aHand);
 		ItemStack rStack = onItemRightClick(aStack, aWorld, aPlayer);
-		if (rStack != aStack) {aPlayer.setItemInHand(aHand, rStack); return net.minecraft.world.InteractionResultHolder.success(rStack);}
+		if (rStack != aStack) {aPlayer.setItemInHand(aHand, gregapi.util.ST.nn(rStack)); return net.minecraft.world.InteractionResultHolder.success(rStack);} // F15: контракт 1.7.10 может вернуть null — в руку движка только через центр
 		if (aPlayer.isUsingItem()) return net.minecraft.world.InteractionResultHolder.consume(aStack);
 		return net.minecraft.world.InteractionResultHolder.pass(aStack);
 	}
