@@ -762,6 +762,16 @@ public class Loader_Worldgen implements Runnable {
 		new WorldgenOresBedrock("ore.bedrock.bauxite"      , T, T,   2000, MT.OREMATS.Bauxite     , BlocksGT.FlowersA, 7, GEN_FLOOR); // TODO Aluminium Flower
 		new WorldgenOresBedrock("ore.bedrock.cassiterite"  , T, T,   2000, MT.OREMATS.Cassiterite , BlocksGT.FlowersA, 7, GEN_FLOOR); // TODO Tin Flower
 		new WorldgenOresBedrock("ore.bedrock.chalcopyrite" , T, T,   2000, MT.OREMATS.Chalcopyrite, BlocksGT.FlowersA, 2, GEN_FLOOR);
+		// Слой AE2: жила СВЕРХ оригинала. В 1.7.10 метеоритное железо поставляли GalactiCraft и HBM
+		// (LoaderUnificationTargets), которых здесь нет; базовый источник — камни WorldgenRocks и лут gt.misc —
+		// остаётся, это промышленный этаж под Bedrock Drill. Вероятность и образец — ancientdebris (строка ниже,
+		// 4000); цветок — железный, тот же, что у гематита.
+		// Мастер-ключ ae2/ReplaceMeteoriteGeneration: есть метеорит — нет жилы, нет метеорита — есть жила.
+		// При F жила НЕ ЗАВОДИТСЯ ВОВСЕ (не «Enabled=F»): свой ключ Enabled персистится в
+		// WorldGenerationNew.cfg при первом же запуске, и связь через дефолт молча отвалилась бы.
+		// Вторая половина ключа — пак ae2replacegen (GT_API.onAddPackFinders). Без AE2 флаг всегда T.
+		if (AE2_REPLACE_METEORITE_GENERATION)
+		new WorldgenOresBedrock("ore.bedrock.meteoriciron" , T, T,   4000, MT.MeteoricIron        , BlocksGT.FlowersA, 7, GEN_FLOOR);
 		new WorldgenOresBedrock("ore.bedrock.voidquartz"   , T, T,   4000, MT.VoidQuartz                                , GEN_NETHER);
 		new WorldgenOresBedrock("ore.bedrock.glowstone"    , T, T,   4000, MT.Glowstone                                 , GEN_NETHER);
 		new WorldgenOresBedrock("ore.bedrock.gloomstone"   , T, T,   4000, MT.Gloomstone                                , GEN_NETHER);

@@ -1,0 +1,6 @@
+{
+  "pack": {
+    "description": "GregTech 6 replaces AE2 world generation (meteorites) with its own industrial paths. Controlled by GregTech.cfg: ae2 / ReplaceMeteoriteGeneration.",
+    "pack_format": 15
+  }
+}

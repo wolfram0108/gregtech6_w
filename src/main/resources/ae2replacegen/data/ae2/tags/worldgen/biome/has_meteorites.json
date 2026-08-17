@@ -1,0 +1,10 @@
+{
+  "__comment": "Гашение метеоритов AE2: их биом-тег опустошается полем remove (патч Forge, TagFile.java:7; применяется TagLoader.java:62,77-78). Ключ values обязателен кодеком даже пустой. Файл живёт во ВСТРОЕННОМ ПАКЕ ae2replacegen, который подключается GT_API.onAddPackFinders ТОЛЬКО при ae2/ReplaceMeteoriteGeneration=true (GregTech.cfg): есть метеорит - нет бедрок-жилы метеоритного железа, нет метеорита - жила есть (Loader_Worldgen, тот же флаг CS.AE2_REPLACE_METEORITE_GENERATION). Пак встаёт с Pack.Position.TOP - после датапака самого AE2, иначе remove молчит. Источники сертуса GT6: кварцитовый слой и жила кварца. Старые чанки не трогаются.",
+  "values": [],
+  "remove": [
+    {
+      "id": "#minecraft:is_overworld",
+      "required": false
+    }
+  ]
+}

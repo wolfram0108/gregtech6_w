@@ -653,6 +653,8 @@ public class GT_API extends Abstract_Mod {
 		aModBus.addListener(this::onPreLoad);
 		aModBus.addListener(this::onLoad);
 		aModBus.addListener(this::onPostLoad);
+		// Слой AE2: условный встроенный датапак ae2replacegen (гашение метеоритов) — мод-шина.
+		aModBus.addListener(this::onAddPackFinders);
 
 		// Серверные фазы GT6 (Abstract_Mod уже на родных событиях neo) — на игровой шине, не на мод-шине.
 		MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
@@ -822,6 +824,53 @@ public class GT_API extends Abstract_Mod {
 	 * контента внутри PreInit работает); формально относительно
 	 * FMLConstructModEvent на всех сборках; сверить при первой реальной регистрации через ITEMS/BLOCKS.
 	 */
+	/**
+	 * Слой AE2: подключение ВСТРОЕННОГО датапака {@code resources/ae2replacegen} — remove-тег, опустошающий
+	 * {@code ae2:has_meteorites} (единственная генерация AE2). Пак подключается ТОЛЬКО при
+	 * {@code CS.AE2_REPLACE_METEORITE_GENERATION} (мастер-ключ {@code ae2/ReplaceMeteoriteGeneration},
+	 * читается в {@link #onModPreInit2} по образцу флагов ic2) — вторая половина того же ключа заводит
+	 * бедрок-жилу метеоритного железа в {@code Loader_Worldgen}: есть метеорит — нет жилы, нет метеорита —
+	 * есть жила. У самого AE2 рубильника генерации нет (в rv3 был — {@code AEFeature.MeteoriteWorldGen};
+	 * у 15.4.10 структура объявлена датапаком безусловно, {@code InitStructures.java:41-54}, а в конфиге про
+	 * метеориты только {@code spawnPressesInMeteorites}) — поэтому рычаг наш.
+	 *
+	 * <p><b>Почему пак собирается РУКАМИ, а не одной строкой.</b> Событие 1.20.1
+	 * ({@code net.minecraftforge.event.AddPackFindersEvent}) умеет ровно одно —
+	 * {@code addRepositorySource(RepositorySource)} ({@code AddPackFindersEvent.java:34}); удобной
+	 * {@code addPackFinders(id, тип, имя, источник, alwaysActive, позиция)} у него нет (она появилась в
+	 * поздних версиях, и на ветке main используется именно она). Поэтому {@code Pack} строится сам:
+	 * {@code Pack.readMetaAndCreate(id, имя, required, поставщик, тип, позиция, источник)}
+	 * ({@code Pack.java:34}), поставщик — {@code PathPackResources(packId, isBuiltin, корень)}
+	 * ({@code PathPackResources.java:51}; корень — папка, СОДЕРЖАЩАЯ data/, её и отдаёт
+	 * {@code IModFile.findResource}). {@code Pack.ResourcesSupplier} в 1.20.1 — один метод
+	 * {@code open(String)} ({@code Pack.java:190-192}).
+	 *
+	 * <p><b>Тайминг и порядок.</b> Событие стреляет при создании {@code PackRepository}, то есть при
+	 * открытии/создании мира либо старте выделенного сервера; наш preInit — {@code FMLConstructModEvent},
+	 * самая ранняя фаза мода, поэтому флаг к моменту события выставлен всегда.
+	 * {@code Pack.Position.TOP} ставит пак ПОСЛЕ датапака самого AE2 — иначе {@code remove} молчал бы,
+	 * снимая ещё не добавленное. {@code required=true} = пак не предмет выбора игрока, им правит ключ конфига.
+	 */
+	public void onAddPackFinders(net.minecraftforge.event.AddPackFindersEvent aEvent) {
+		if (aEvent.getPackType() != net.minecraft.server.packs.PackType.SERVER_DATA) return;
+		if (!MD.AE.mLoaded || !AE2_REPLACE_METEORITE_GENERATION) return;
+		aEvent.addRepositorySource(aConsumer -> {
+			try {
+				java.nio.file.Path tRoot = net.minecraftforge.fml.ModList.get().getModFileById(ModIDs.GAPI).getFile().findResource("ae2replacegen");
+				net.minecraft.server.packs.repository.Pack tPack = net.minecraft.server.packs.repository.Pack.readMetaAndCreate(
+					  ModIDs.GAPI + ":ae2replacegen"
+					, net.minecraft.network.chat.Component.literal("GT6: AE2 generation replaced by GregTech")
+					, T
+					, aPackId -> new net.minecraftforge.resource.PathPackResources(aPackId, T, tRoot)
+					, net.minecraft.server.packs.PackType.SERVER_DATA
+					, net.minecraft.server.packs.repository.Pack.Position.TOP
+					, net.minecraft.server.packs.repository.PackSource.BUILT_IN);
+				if (tPack != null) {aConsumer.accept(tPack); OUT.println("GT_API: встроенный датапак ae2replacegen подключён (гашение метеоритов AE2).");}
+				else ERR.println("GT_API: встроенный датапак ae2replacegen НЕ создан — Pack.readMetaAndCreate вернул null (нет pack.mcmeta?).");
+			} catch(Throwable e) {ERR.println("GT_API: встроенный датапак ae2replacegen не подключён:"); e.printStackTrace(ERR);}
+		});
+	}
+
 	public void onPreLoad(FMLConstructModEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, this::onPreLoadPhase);}
 	/** Тело фазы PreInit; запускается центром {@code Abstract_Mod#runPhaseInModLoadOrder} в порядке загрузки модов. */
 	private void onPreLoadPhase() {
@@ -1151,14 +1200,15 @@ public class GT_API extends Abstract_Mod {
 		TREE_GROWTH_TIME                        = ConfigsGT.GREGTECH.get("general", "Tree_Growth_Time"                 , 1);
 		ENTITY_CRAMMING                         = ConfigsGT.GREGTECH.get("general", "MaxEqualEntitiesAtOneSpot"        , 3);
 		DRINKS_ALWAYS_DRINKABLE                 = ConfigsGT.GREGTECH.get("general", "drinks_always_drinkable"          , F);
-		// Дефолт F = 1:1 с оригиналом 1.7.10 (gregtech6/src/main/java/gregapi/GT_API.java:505, тот же ключ
-		// general/Emit_EU_as_RF_from_Blocks). На main (GT_API.java:1178) дефолт поднят до T сверх 1:1 решением
-		// слоя AE2: генераторы AE2 там погашены узлом DisableAllEnergyGeneratorRecipes, и при F сеть AE2
-		// остаётся без источника питания прямо из коробки. В этой ветке AE2 пока не подключена (заглушка
-		// compat-mirror) — обоснование неприменимо, F сохранён. Условие пересмотра: при подключении AE2
-		// (волна 4 консолидации веток) дефолт поднимается до T вслед за main, иначе слой AE2 останется без
-		// питания — та же причина, что подняла его на main.
-		EMIT_EU_AS_RF                           = ConfigsGT.GREGTECH.get("general", "Emit_EU_as_RF_from_Blocks"        , F);
+		// ⚠️ ОТКЛОНЕНИЕ СВЕРХ 1:1, СДЕЛАННОЕ ОСОЗНАННО. Оригинал 1.7.10 держит здесь F
+		// (gregtech6/src/main/java/gregapi/GT_API.java:505, тот же ключ general/Emit_EU_as_RF_from_Blocks), и
+		// ветка держала F, пока AE2 не была подключена. Со слоем AE2 обоснование меняется на противоположное:
+		// генераторы AE2 погашены узлом DisableAllEnergyGeneratorRecipes (Compat_Recipes_AppliedEnergistics),
+		// а принимает энергию она движковой FE-капой; при F мост GT6 -> FE закрыт для всех, кроме белого
+		// списка (EnergyCompat.canConnectElectricity/insertEnergyInto), и сеть AE2 осталась бы БЕЗ ИСТОЧНИКА
+		// ПИТАНИЯ прямо из коробки. Поэтому дефолт поднят до T — тем же решением и по той же причине, что на
+		// ветке main. Сборщик, играющий без AE2 и желающий строгое 1:1, возвращает F одним ключом конфига.
+		EMIT_EU_AS_RF                           = ConfigsGT.GREGTECH.get("general", "Emit_EU_as_RF_from_Blocks"        , T);
 		NERFED_WOOD                             = ConfigsGT.GREGTECH.get("general", "WoodNeedsSawForCrafting"          , T);
 		FORCE_GRAVEL_NO_FLINT                   = ConfigsGT.GREGTECH.get("general", "GravelWontDropFlint"              , F);
 		WATER_SOURCE_CONVERSION                 = ConfigsGT.GREGTECH.get("general", "WaterSourceConversion"            , F);
