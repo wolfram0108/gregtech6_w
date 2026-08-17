@@ -228,6 +228,22 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	}
 	
 	// @Override
+	// РАЗОБРАНО (консолидация волны 2A, решение оркестратора). Этот 6-арг метод — 1.7.10-сигнатура
+	// Block.breakBlock(World,x,y,z,Block,meta); движок её больше не зовёт (комментарий "// @Override" выше —
+	// не аннотация, обычный текст). Вызывателя нет: grep "\.breakBlock\(aWorld\|\.breakBlock\(tWorld\|\.breakBlock\(level"
+	// по всему дереву - 0 совпадений (все реальные вызовы `.breakBlock(...)` в дереве - это 0-арг форма,
+	// либо через `super.breakBlock()`, либо строка внутри тела этого самого метода ниже).
+	// Строка ниже несёт вето IMTE_BreakBlock: "return true to prevent the TileEntity from being removed"
+	// (контракт объявлен оригиналом, gregtech6/.../IMultiTileEntity.java:84). Разбор обоих деревьев:
+	// оригинал 1.7.10 - реализаций 18 (`grep -rn "public boolean breakBlock()" src/main/java/` = 18),
+	// `T` не возвращает НИ ОДНА; единственная строка `return T` во всём дереве лежит в
+	// example/MultiTileEntityChest.java внутри ЗАКОММЕНТИРОВАННОГО метода. Порт - реализаций 15,
+	// `T` не возвращает НИ ОДНА (та же формула, тот же результат).
+	// Вывод: канал ИЗБЫТОЧЕН, а не сломан. Вето не срабатывало и в оригинале - это авторский дизайн-задел,
+	// оставшийся неиспользованным; поведение порта тождественно оригиналу без всякого моста. Мост НЕ
+	// подключаем (подключение не изменило бы поведение ни на одном блоке) и метод НЕ удаляем (стёрло бы
+	// авторский контракт, который порт воспроизводит, а не переосмысливает). Подключать, если появится
+	// реализация IMTE_BreakBlock.breakBlock(), возвращающая T.
 	public final void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMetaData) {
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
@@ -241,7 +257,68 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		if (aTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData && ((IMTE_HasMultiBlockMachineRelevantData)aTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, (byte)aMetaData, T);
 		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ)); // было aWorld.removeTileEntity(x,y,z) (1.7.10 World), neo Level.removeBlockEntity(BlockPos) [Level.java:688]
 	}
-	
+
+	// Подключение канала «блок снят — тронь соседей» (тот же приём, что PrefixBlock.affectNeighborsAfterRemoval и
+	// BlockBaseTree.affectNeighborsAfterRemoval уже применяют для этого имени): 1.7.10 breakBlock(World,x,y,z,Block,meta)
+	// -> neo BlockBehaviour.affectNeighborsAfterRemoval(BlockState,ServerLevel,BlockPos,boolean) [BlockBehaviour.java:170],
+	// движок зовёт его последней строкой LevelChunk.setBlockState (LevelChunk.java:318-322), сразу после штатного
+	// removeBlockEntity (:315). Здесь висит ТОЛЬКО добор остатка BE ниже - GT6-специфичное содержимое канала
+	// (6-арг breakBlock/вето IMTE_BreakBlock) сюда сознательно не подключено: у него отдельный, уже занятый канал
+	// (TileEntityBase05Inventories.preRemoveSideEffects -> 0-арг breakBlock()), и решение по 6-арг методу - за
+	// пределами этой правки.
+	@Override protected void affectNeighborsAfterRemoval(BlockState aState, ServerLevel aWorld, BlockPos aPos, boolean aMovedByPiston) {
+		sweepBlockEntityRemains(aWorld, aPos);
+		super.affectNeighborsAfterRemoval(aState, aWorld, aPos, aMovedByPiston);
+	}
+
+	/** ДОБОР ОСТАТКА BE (движковая дыра; сверено по {@code reference/engine/neo-decompiled} - 26.1.2 повторяет
+	 *  1.20.1 1:1). Штатное снятие BlockEntity - {@code LevelChunk.setBlockState} зовёт {@code this.removeBlockEntity(pos)}
+	 *  НАПРЯМУЮ (LevelChunk.java:315), минуя какой-либо Block-хук, - и промахивается мимо BlockEntity в ДВУХ
+	 *  состояниях чанка, обоих законных и обоих встречающихся в живом мире:
+	 *
+	 *  <p><b>1. Запись ещё «упакована».</b> {@code LevelChunk.removeBlockEntity} снимает только из {@code blockEntities}
+	 *  и НЕ трогает {@code pendingBlockEntities} (LevelChunk.java:482-497). Распаковка (слив {@code pendingBlockEntities})
+	 *  идёт лишь в {@code LevelChunk.postProcessGeneration} (LevelChunk.java:573-607), а его единственный вызыватель -
+	 *  {@code ChunkMap.prepareTickingChunk} (ChunkMap.java:679-683), то есть чанк обязан дойти до TICKING. Чанк на
+	 *  кромке радиуса (загружен, но не тикает) до распаковки не доходит: снятие блока проходит бесшумно, закладка
+	 *  остаётся и уходит на диск сиротой с полными тегами - «призрак» без коллизии, на место которого ничего не поставить.
+	 *
+	 *  <p><b>2. Чанк ещё не объявлен загруженным.</b> Тело {@code LevelChunk.removeBlockEntity} целиком закрыто
+	 *  условием {@code isInLevel()} = {@code loaded || isClientSide} (LevelChunk.java:413-415, 483), а {@code loaded}
+	 *  выставляется лишь на промоции в FULL, уже после конструктора чанка. Снятие, попавшее в это окно, движок не
+	 *  выполняет вовсе.
+	 *
+	 *  <p><b>Приём взят существующий, не новый.</b> Запрос {@code chunk.getBlockEntity(pos)} распаковывает закладку
+	 *  сам ({@code pendingBlockEntities.remove} + промоция) - этим же приёмом снимает закладку воронка записи руды
+	 *  ({@link gregapi.block.prefixblock.PrefixBlock#setOreMeta}). Дальше остаток снимается штатно, а на случай
+	 *  окна №2 (штатный путь - no-op) сущность помечается снятой сама.
+	 *
+	 *  <p><b>Аргумента «новое состояние» здесь нет</b> (в отличие от старого {@code onRemove}, откуда добор
+	 *  переносится) - читаем текущее состояние клетки напрямую: секция уже переписана до вызова этого хука
+	 *  (LevelChunk.java:280, до :321), поэтому {@code aWorld.getBlockState(aPos)} даёт тот же ответ, что дал бы
+	 *  параметр нового состояния.
+	 *
+	 *  <p><b>Смена MTE на MTE не задета:</b> при {@code aWorld.getBlockState(aPos).hasBlockEntity()} остаток
+	 *  принадлежит уже НОВОМУ блоку (движок создаёт его дальше по тому же {@code setBlockState}, :331-347) -
+	 *  трогать его нельзя, и мы не трогаем.
+	 *
+	 *  <p><b>1.7.10.</b> Там снятие TE принадлежало телу {@code breakBlock} (оригинал
+	 *  {@code MultiTileEntityBlock:145-152} - {@code aWorld.removeTileEntity(x,y,z)} последней строкой), а
+	 *  разделения «живая сущность / упакованная закладка» в чанке не существовало вовсе: {@code Chunk.chunkTileEntityMap}
+	 *  был один. Добор восстанавливает тот же итог - «после снятия блока сущности в клетке нет», - а не вводит
+	 *  новое поведение. */
+	private static void sweepBlockEntityRemains(Level aWorld, BlockPos aPos) {
+		if (aWorld == null || aWorld.getBlockState(aPos).hasBlockEntity()) return;
+		try {
+			net.minecraft.world.level.chunk.LevelChunk tChunk = aWorld.getChunkAt(aPos);
+			if (tChunk == null) return;
+			BlockEntity tRemains = tChunk.getBlockEntity(aPos); // распаковывает закладку (см. разбор выше)
+			if (tRemains == null) return;
+			tChunk.removeBlockEntity(aPos);
+			if (!tRemains.isRemoved()) tRemains.setRemoved(); // окно «чанк ещё не loaded»: штатное снятие - no-op
+		} catch (Throwable e) {e.printStackTrace(ERR);}
+	}
+
 	// было @Override Block.getMapColor(int) (1.7.10) - удалён в neo; собственный byte-meta dispatcher
 	// остаётся обычным GT6-методом (не движковый override). super.getMapColor(aMeta) (vanilla-дефолт = материал)
 	// заменён на mMaterial.getMaterialMapColor() - тот же источник дефолта, 1:1.

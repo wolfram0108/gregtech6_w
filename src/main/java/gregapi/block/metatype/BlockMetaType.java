@@ -314,9 +314,14 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 			// override-точку generic-но; BlockMetaType-семейство сама её нигде не переопределяет (грепом по
 			// оригиналу - только этот единственный вызов), т.е. в 1.7.10 всегда резолвился в vanilla-дефолт 0 ->
 			// GT6-own reintroduced константный метод ниже (тот же приём, что BlockBaseFluid/PrefixBlock/
-			// MultiTileEntityBlock уже применяют для этого имени). Восстановлено "!= 0" (было инвертировано на
-			// "== 0" при предыдущем порте - 1:1 с оригиналом gregtech6/.../BlockMetaType.java:161).
-			if (aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mSide == mSide) return ((BlockMetaType)aBlock).getRenderBlockPass() != 0;
+			// MultiTileEntityBlock уже применяют для этого имени).
+			// ⚠️ ИНВЕРСИЯ (шов стеклянных половинок). Оригинал (BlockMetaType.java:161) отдавал "pass != 0" из
+			// метода, где T = РИСОВАТЬ: «сосед-половинка той же ориентации — грань рисуем, если он ПРОЗРАЧЕН,
+			// и прячем, если непрозрачен (он её и так закрывает)». Здесь контракт ОБРАТНЫЙ (T = СКРЫТЬ),
+			// поэтому выражение обязано быть "== 0"; соседние две строки метода инвертированы верно, эта была
+			// перенесена буквой. Ветвь до фикса atCellBoundary не исполнялась ни разу (у половинок грани вовсе
+			// не доходили до вопроса соседу, GT6QuadBuilder), поэтому расхождение не проявлялось.
+			if (aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mSide == mSide) return ((BlockMetaType)aBlock).getRenderBlockPass() == 0;
 		}
 		return super.skipRendering(aState, aNeighbor, aDir);
 	}

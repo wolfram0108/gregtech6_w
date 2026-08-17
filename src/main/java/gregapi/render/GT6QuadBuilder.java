@@ -52,7 +52,6 @@ public final class GT6QuadBuilder {
 	private final List<BakedQuad> mAll = new ArrayList<>();
 	/** Текущие render-bounds {minX,minY,minZ,maxX,maxY,maxZ} (1.7.10 RenderBlocks.setRenderBoundsFromBlock, обновляется per-pass). */
 	private final float[] mBounds = {0, 0, 0, 1, 1, 1};
-	private boolean mFullCube = true;
 	/** BUG-063 (граница отрисовки): суммарные bounds ФАКТИЧЕСКИ выданных граней — единственное место, где известно,
 	 *  сколько геометрии GT6 реально занимает. Считать статикой нельзя: у GT6 боксы вычисляются в рантайме
 	 *  (замер: из 785 объявлений box(...) числовых лишь 8 — тигель/турбина; трубы, коннекторы и каверы задают
@@ -76,7 +75,36 @@ public final class GT6QuadBuilder {
 	public void setBounds(float[] aBounds) {
 		if (aBounds == null || aBounds.length < 6) {System.arraycopy(new float[]{0,0,0,1,1,1}, 0, mBounds, 0, 6);}
 		else System.arraycopy(aBounds, 0, mBounds, 0, 6);
-		mFullCube = mBounds[0] <= 0 && mBounds[1] <= 0 && mBounds[2] <= 0 && mBounds[3] >= 1 && mBounds[4] >= 1 && mBounds[5] >= 1;
+	}
+
+	/**
+	 * ГРАНЬ ЛЕЖИТ В ПЛОСКОСТИ ГРАНИЦЫ КЛЕТКИ — единственный признак, по которому решается, задаст ли движок
+	 * про эту грань вопрос соседу (шов стеклянных половинок).
+	 *
+	 * <p><b>Что было не так.</b> Признак брался у ВСЕЙ формы («это полный куб?»), а не у грани. Следствие:
+	 * у любой не-кубической формы ВСЕ грани уходили в ведро «всегда видима», движок про них соседа не
+	 * спрашивал — и правило GT6 «грань к соседу того же стекла не рисуется»
+	 * ({@code BlockGlassClear.shouldSideBeRendered}) на слэбах просто не исполнялось: между двумя
+	 * половинками стекла оставался шов, тогда как полные блоки сливались.
+	 *
+	 * <p><b>Почему признак именно такой.</b> В 1.7.10 вопрос соседу задавала ваниль
+	 * ({@code RenderBlocks.renderStandardBlock} → {@code Block.shouldSideBeRendered}), и её собственный
+	 * дефолт отвечал «рисовать, не спрашивая» ровно тогда, когда bounds до границы не доставали
+	 * ({@code Block.shouldSideBeRendered}: {@code side==0 && minY>0 → T} и т.д.). Тот же признак — плоскость
+	 * границы — ваниль neo использует, назначая граням модели {@code cullface}. Так что это не новое
+	 * правило, а то же самое, перенесённое на per-face уровень: движок сам сверит формы
+	 * ({@code BlockBehaviour.skipRendering}), и внутренняя грань (верх слэба) останется видимой, потому что
+	 * её плоскость границы не касается.
+	 */
+	private boolean atCellBoundary(Direction aDir) {
+		switch (aDir) {
+		case DOWN : return mBounds[1] <= 0;
+		case UP   : return mBounds[4] >= 1;
+		case NORTH: return mBounds[2] <= 0;
+		case SOUTH: return mBounds[5] >= 1;
+		case WEST : return mBounds[0] <= 0;
+		default   : return mBounds[3] >= 1; // EAST
+		}
 	}
 
 	/** GT6 side-байт → neo Direction: SIDE_Y_NEG=0=DOWN, Y_POS=1=UP, Z_NEG=2=NORTH, Z_POS=3=SOUTH, X_NEG=4=WEST, X_POS=5=EAST. */
@@ -90,8 +118,9 @@ public final class GT6QuadBuilder {
 		Direction tDir = Direction.from3DDataValue(aSide);
 		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa);
 		if (tQuad == null) return;
-		// full-cube грань — cull-aware (сосед скроет её); sub-cube (спайк/бар/провод) — всегда видима.
-		if (mFullCube) mQuads.addCulledFace(tDir, tQuad); else mQuads.addUnculledFace(tQuad);
+		// грань в плоскости границы клетки — cull-aware (движок спросит соседа, см. atCellBoundary);
+		// грань внутри клетки (верх слэба, бок спайка/провода) — всегда видима.
+		if (atCellBoundary(tDir)) mQuads.addCulledFace(tDir, tQuad); else mQuads.addUnculledFace(tQuad);
 		mAll.add(tQuad);
 		// BUG-063: границы копим по РЕАЛЬНО выданной грани (а не по каждому объявленному боксу) — тогда рамка
 		// отсечения совпадает с тем, что видит игрок, и не раздувается проходами, у которых текстуры не нашлось.
@@ -227,7 +256,6 @@ public final class GT6QuadBuilder {
 		if (aIcon == null || aCorners == null || aCorners.length < 4) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
 		if (tSprite == null) {if (sMissingSprites.size() < 400) sMissingSprites.add(aIcon.toString()); return;}
-		mFullCube = false;
 		BakedQuad tQuad = vertexQuad(aCorners, tSprite, aRGBa, aDir, false);
 		if (tQuad != null) {mQuads.addUnculledFace(tQuad); mAll.add(tQuad);}
 		if (aBothSides) {
@@ -262,7 +290,8 @@ public final class GT6QuadBuilder {
 		if (aIcon == null) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
 		if (tSprite == null) return;
-		mFullCube = false; // cross никогда не куб — грани не cull-aware
+		// cross-плоскости кладутся прямо в ведро «всегда видима» (addCrossPlane ниже) — вопрос соседу для них
+		// не задаётся вовсе, поэтому отдельного признака формы здесь не нужно.
 		addCrossPlane(new float[][]{{0,0,0},{1,0,1},{1,1,1},{0,1,0}}, tSprite, aRGBa); // диагональ SW->NE
 		addCrossPlane(new float[][]{{1,0,0},{0,0,1},{0,1,1},{1,1,0}}, tSprite, aRGBa); // диагональ SE->NW
 	}
