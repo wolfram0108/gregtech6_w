@@ -128,10 +128,25 @@ public class EnergyCompat {
 		
 		// IMPORTANT: Ignore the Fact that IEnergyConnection is SUPPOSEDLY part of IEnergyHandler. There is versions of the RF API in circulation, where this is NOT the case!!!
 		if (RF_ENERGY && (EMIT_EU_AS_RF || isElectricRFReceiver(aTarget)) && (aTarget instanceof cofh.api.energy.IEnergyHandler || (RF_ENERGY_NEW && aTarget instanceof cofh.api.energy.IEnergyReceiver))) return !(aTarget instanceof cofh.api.energy.IEnergyConnection) || ((cofh.api.energy.IEnergyConnection)aTarget).canConnectEnergy(FORGE_DIR[aSide]);
-		
+
+		// Мост GT6 -> движковая FE-капа: capability net.minecraftforge.energy.IEnergyStorage (Forge 1.20.1),
+		// работает с ЛЮБЫМ FE-приёмником, не только AE2. Гейт тот же, что у RF-плеча выше: ключ
+		// Emit_EU_as_RF_from_Blocks либо белый список электро-приёмников.
+		if ((EMIT_EU_AS_RF || isElectricRFReceiver(aTarget)) && feHandler(aTarget, aSide) != null) return T;
+
 		return F;
 	}
-	
+
+	/** Мост GT6 -> движковая FE-капа: FE-приёмник соседа со стороны {@code aSide}, capability
+	 *  {@code ForgeCapabilities.ENERGY} (net.minecraftforge.energy, Forge 1.20.1). Одно место на весь мод —
+	 *  его спрашивают и предикат связи, и вставка энергии; больше эту капу не спрашивает никто. */
+	public static net.minecraftforge.energy.IEnergyStorage feHandler(BlockEntity aReceiver, byte aSide) {
+		if (aReceiver == null || aReceiver.getLevel() == null) return null;
+		try {
+			return aReceiver.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY, FORGE_DIR[aSide]).resolve().orElse(null);
+		} catch(Throwable e) {return null;}
+	}
+
 	public static boolean checkOverCharge(long aSize, BlockEntity aReceiver) {
 		if (aSize > VMAX[3]) {
 			Level tWorld = aReceiver.getLevel();
@@ -162,7 +177,30 @@ public class EnergyCompat {
 				}
 				return 0;
 			}
-			
+
+			// Мост GT6 -> движковая FE-капа: работает с ЛЮБЫМ FE-приёмником, не только AE2. Курс — авторский
+			// RF_PER_EU = 4 (CS:217). Целые пакеты и никаких потерь: у этой капы нет транзакций — вместо пробы
+			// транзакцией сперва идёт ПРОБА (simulate=T, приёмник не тронут), по ней считается число целых
+			// пакетов, неполный пакет не проводится вовсе; фиксация — реальным вызовом (simulate=F) и только
+			// на целые пакеты. Гейт тот же, что у мёртвого RF-плеча ниже: ключ Emit_EU_as_RF_from_Blocks либо
+			// белый список.
+			if (EMIT_EU_AS_RF || isElectricRFReceiver(aReceiver)) {
+				net.minecraftforge.energy.IEnergyStorage tFE = feHandler(aReceiver, aSide);
+				if (tFE != null) {
+					if (checkOverCharge(aSize, aReceiver)) return aAmount;
+					long tCost = aSize * RF_PER_EU;
+					if (tCost <= 0) return 0;
+					int tWanted = UT.Code.bind31(aAmount * tCost);
+					// ПРОБА: simulate=T, приёмник не тронут.
+					long tPackets = tFE.receiveEnergy(tWanted, T) / tCost;
+					if (tPackets <= 0) return 0;
+					// ФИКСАЦИЯ: simulate=F, ровно на целые пакеты.
+					long tMoved = tFE.receiveEnergy(UT.Code.bind31(tPackets * tCost), F) / tCost;
+					if (tMoved <= 0) return 0;
+					return tMoved;
+				}
+			}
+
 			// Funky Locomotion includes the OLD RF-API that it does not even use, while also using NEWER parts of the RF API that it does not include... This sort of utter Bullshit makes RF-Mods incompatible with each other...
 			if (FL_ENERGY) {
 				if (aReceiver instanceof com.rwtema.funkylocomotion.blocks.TilePusher ) return checkOverCharge(aSize, aReceiver) ? aAmount : UT.Code.divup(((com.rwtema.funkylocomotion.blocks.TilePusher )aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * aSize * RF_PER_EU * 10), F), aSize * RF_PER_EU * 10);

@@ -1145,6 +1145,13 @@ public class GT_API extends Abstract_Mod {
 		TREE_GROWTH_TIME                        = ConfigsGT.GREGTECH.get("general", "Tree_Growth_Time"                 , 1);
 		ENTITY_CRAMMING                         = ConfigsGT.GREGTECH.get("general", "MaxEqualEntitiesAtOneSpot"        , 3);
 		DRINKS_ALWAYS_DRINKABLE                 = ConfigsGT.GREGTECH.get("general", "drinks_always_drinkable"          , F);
+		// Дефолт F = 1:1 с оригиналом 1.7.10 (gregtech6/src/main/java/gregapi/GT_API.java:505, тот же ключ
+		// general/Emit_EU_as_RF_from_Blocks). На main (GT_API.java:1178) дефолт поднят до T сверх 1:1 решением
+		// слоя AE2: генераторы AE2 там погашены узлом DisableAllEnergyGeneratorRecipes, и при F сеть AE2
+		// остаётся без источника питания прямо из коробки. В этой ветке AE2 пока не подключена (заглушка
+		// compat-mirror) — обоснование неприменимо, F сохранён. Условие пересмотра: при подключении AE2
+		// (волна 4 консолидации веток) дефолт поднимается до T вслед за main, иначе слой AE2 останется без
+		// питания — та же причина, что подняла его на main.
 		EMIT_EU_AS_RF                           = ConfigsGT.GREGTECH.get("general", "Emit_EU_as_RF_from_Blocks"        , F);
 		NERFED_WOOD                             = ConfigsGT.GREGTECH.get("general", "WoodNeedsSawForCrafting"          , T);
 		FORCE_GRAVEL_NO_FLINT                   = ConfigsGT.GREGTECH.get("general", "GravelWontDropFlint"              , F);
