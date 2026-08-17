@@ -661,7 +661,13 @@ public class ST {
 	public static ItemStack mkic(String aItem                , long aSize, long aMeta                                   ) {return     meta(mkic(aItem, aSize), aMeta);}
 	public static ItemStack mkic(String aItem                , long aSize            , ItemStack aReplacement           ) {return get(     mkic(aItem, aSize)        , aReplacement);}
 	public static ItemStack mkic(String aItem                , long aSize, long aMeta, Object    aReplacement           ) {return get(meta(mkic(aItem, aSize), aMeta), aReplacement);}
-	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {return     meta(make(aModID, aItem, aSize), aMeta);}
+	// Э2 (слой совместимости AE2): ЕДИНСТВЕННАЯ точка, где имя предмета 1.7.10 превращается в стек, —
+	// сюда сходятся ВСЕ пути адресации чужого мода (ST.block/ST.item ModData-варианты, OM.data,
+	// OreDictManager.setTarget, ItemStackMap.put, ItemStackSet.add). AE2 под 1.20.1 переименовала свои
+	// предметы целиком (мета-подтипы rv2 стали отдельными id), поэтому пара «имя+мета» разрешается
+	// таблицей центра gregapi.compat.AE2Names; знает он только имена AE2 — для всех прочих модов путь
+	// прежний, verbatim. Тот же приём и то же место, что у ванильной развёртки меты (CS.Flattened в ST.make_).
+	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {if (gregapi.compat.AE2Names.owns(aModID, aItem)) return gregapi.compat.AE2Names.make(aItem, aSize, aMeta); return     meta(make(aModID, aItem, aSize), aMeta);}
 	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta, Object    aReplacement           ) {return get(meta(make(aModID, aItem, aSize), aMeta), aReplacement);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta                                   ) {return make(item(aItemID), aSize, aMeta);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta              , CompoundTag aNBT) {return make(item(aItemID), aSize, aMeta, aNBT);}
