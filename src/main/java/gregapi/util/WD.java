@@ -1407,6 +1407,20 @@ public class WD {
 		BlockPos tUpdPos = new BlockPos(aX, aY, aZ);
 		BlockState tUpdState = state(aWorld, tUpdPos);
 		((Level)aWorld).sendBlockUpdated(tUpdPos, tUpdState, tUpdState, 3);
+		// КЭШ ГЕОМЕТРИИ MTE СБРАСЫВАЕТСЯ ЗДЕСЬ, В ИСТОЧНИКЕ ИЗМЕНЕНИЯ. Раньше единственным сбросом был
+		// сигнал ванильного LevelRenderer.setSectionDirty (перехват MixinLevelRenderer): пока рендерер
+		// ванильный, сигнал приходит — но мод, который его заменяет (оптимизаторы рендера и подобное),
+		// уносит сигнал с собой, и кэш квадов не сбрасывается НИКОГДА: блок остаётся нарисованным таким,
+		// каким собрался в первый раз (поставил пустую наковальню — и слиток на ней уже не появится).
+		// Через WD.update проходит КАЖДОЕ сообщение клиенту об изменении MTE (receiveData*-диспетчеры,
+		// MultiTileEntityBlock), поэтому здесь инвалидация верна по построению и ни от кого не зависит.
+		// Точечный сброс отдельного экземпляра — рядом с O(1)-схемой штампа секции (MultiTileEntityBER),
+		// а не вместо неё: mQuadCacheEpoch=MIN_VALUE никогда не совпадёт с текущей эпохой, кэш-хит не
+		// пройдёт независимо от штампа своей секции.
+		if (((Level)aWorld).isClientSide()) {
+			BlockEntity tUpdTE = ((Level)aWorld).getBlockEntity(tUpdPos);
+			if (tUpdTE instanceof gregapi.tileentity.base.TileEntityBase01Root tUpdRoot) tUpdRoot.mQuadCacheEpoch = Long.MIN_VALUE;
+		}
 		if (CLIENT_BLOCKUPDATE_SOUNDS && CODE_CLIENT && CLIENT_TIME > 100) {
 			Player tPlayer = GT_API.api_proxy.getThePlayer();
 			if (tPlayer != null && Math.abs(tPlayer.getX() - aX) < 16 && Math.abs(tPlayer.getY() - aY) < 16 && Math.abs(tPlayer.getZ() - aZ) < 16) {

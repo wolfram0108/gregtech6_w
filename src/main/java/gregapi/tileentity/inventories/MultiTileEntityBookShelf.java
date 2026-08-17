@@ -161,15 +161,21 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 			if (aTimer % 300 == 0 && (UT.Code.stringValid(mDungeonLootNameFront) || UT.Code.stringValid(mDungeonLootNameBack)) && !level.getEntitiesOfClass(Player.class, box(-32, -32, -32, +33, +33, +33)).isEmpty()) generateDungeonLoot();
 			
 			if (mRedstoneDelay > 0) if (--mRedstoneDelay == 0) causeBlockUpdate();
-			
-			if (mInventoryChanged) {
-				for (int i = 0; i < mDisplay.length; i++) {
-					Byte tID = (slotHas(i)?BooksGT.BOOK_REGISTER.get(new ItemStackContainer(slot(i))):null);
-					if ((tID == null || tID == 0) && slotHas(i)) tID = BooksGT.BOOK_REGISTER.get(new ItemStackContainer(slot(i), W));
-					if (tID == null) tID = (byte)0;
-					if (tID != mDisplay[i]) {mDisplay[i] = tID; updateClientData();}
-				}
-			}
+
+			if (mInventoryChanged) updateVisualData();
+		}
+	}
+
+	/** Какие книги стоят на полке. Чистый пересчёт из слотов — центр зовёт его и из тика, и перед сборкой
+	 *  клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	@Override
+	public void updateVisualData() {
+		if (isClientSide()) return;
+		for (int i = 0; i < mDisplay.length; i++) {
+			Byte tID = (slotHas(i)?BooksGT.BOOK_REGISTER.get(new ItemStackContainer(slot(i))):null);
+			if ((tID == null || tID == 0) && slotHas(i)) tID = BooksGT.BOOK_REGISTER.get(new ItemStackContainer(slot(i), W));
+			if (tID == null) tID = (byte)0;
+			if (tID != mDisplay[i]) {mDisplay[i] = tID; updateClientData();}
 		}
 	}
 	

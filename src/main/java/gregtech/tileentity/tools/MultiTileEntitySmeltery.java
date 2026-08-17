@@ -316,10 +316,9 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 		}
 		
 		oTemperature = mTemperature;
-		
-		mDisplayedHeight = (byte)UT.Code.scale(tTotal, MAX_AMOUNT, 255, F);
-		mDisplayedFluid = (tLightest == null || tLightest.mMaterial.mMeltingPoint > mTemperature ? -1 : tLightest.mMaterial.mID);
-		
+
+		updateVisualData();
+
 		long tRequiredEnergy = 1 + (long)(tWeight / KG_PER_ENERGY), tConversions = mEnergy / tRequiredEnergy;
 		
 		if (mCooldown > 0) mCooldown--;
@@ -343,12 +342,28 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 			return;
 		}
 		
-		if (mMeltDown != (mTemperature+100 > getTemperatureMax(SIDE_INSIDE))) {
-			mMeltDown = !mMeltDown;
-			updateClientData();
-		}
+		updateVisualData(); // признак прогара (mMeltDown) считается там же, где остальной облик
 	}
-	
+
+	/** Что видно в плавильне: уровень расплава, верхний материал и признак прогара. Чистый пересчёт из
+	 *  содержимого и температуры — центр зовёт его и из тика, и перед сборкой клиентского снимка
+	 *  (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	@Override
+	public void updateVisualData() {
+		if (isClientSide()) return;
+		long tTotal = 0;
+		OreDictMaterialStack tLightest = null;
+		for (OreDictMaterialStack tMaterial : mContent) {
+			if (tLightest == null || tMaterial.mMaterial.mGramPerCubicCentimeter < tLightest.mMaterial.mGramPerCubicCentimeter) tLightest = tMaterial;
+			tTotal += tMaterial.mAmount;
+		}
+		short tDisplayedFluid = mDisplayedFluid; byte tDisplayedHeight = mDisplayedHeight; boolean tMeltDown = mMeltDown;
+		mDisplayedHeight = (byte)UT.Code.scale(tTotal, MAX_AMOUNT, 255, F);
+		mDisplayedFluid = (tLightest == null || tLightest.mMaterial.mMeltingPoint > mTemperature ? -1 : tLightest.mMaterial.mID);
+		mMeltDown = (mTemperature+100 > getTemperatureMax(SIDE_INSIDE));
+		if (mDisplayedFluid != tDisplayedFluid || mDisplayedHeight != tDisplayedHeight || mMeltDown != tMeltDown) updateClientData();
+	}
+
 	public boolean addMaterialStacks(List<OreDictMaterialStack> aList, long aTemperature) {
 		if (OM.total(mContent)+OM.total(aList) <= MAX_AMOUNT) {
 			double tWeight1 = OM.weight(mContent)+mMaterial.getWeight(U*7), tWeight2 = OM.weight(aList);

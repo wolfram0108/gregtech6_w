@@ -148,78 +148,81 @@ public class MultiTileEntityAnvil extends TileEntityBase09FacingSingle implement
 	
 	@Override
 	public void onTick2(long aTimer, boolean aIsServerSide) {
-		if (aIsServerSide) {
-			if (mInventoryChanged) {
-				mShapeA = mShapeB = 0;
-				if (ToolsGT.contains(TOOL_hammer, slot(0))) {
-					mMaterialA = MultiItemTool.getPrimaryMaterial(slot(0), MT.Steel).mID;
-					if (mMaterialA <= 0) mMaterialA = MT.Steel.mID;
-					mShapeA = 8;
-				} else if (ToolsGT.contains(TOOL_hammer, slot(1))) {
-					mMaterialA = MultiItemTool.getSecondaryMaterial(slot(1), MT.WOODS.Spruce).mID;
-					if (mMaterialA <= 0) mMaterialA = MT.WOODS.Spruce.mID;
-					mShapeA = 9;
-				} else if (slotHas(0)) {
-					mMaterialA = MT.Fe.mID;
-					OreDictItemData tData = OM.anydata(slot(0));
-					if (tData != null) {
-						if (tData.mMaterial != null && tData.mMaterial.mMaterial.mID > 0) mMaterialA = tData.mMaterial.mMaterial.mID;
-						if (tData.mPrefix != null) {
-							if (tData.mPrefix.containsAny(TD.Prefix.INGOT_BASED)) mShapeA = 1; else
-							if (tData.mPrefix.mNameInternal.startsWith("plate" )) mShapeA = 2; else
-							if (tData.mPrefix.mNameInternal.startsWith("plank" )) mShapeA = 2; else
-							if (tData.mPrefix.mNameInternal.startsWith("stick" )) mShapeA = 3; else
-							if (tData.mPrefix.mNameInternal.startsWith("wire"  )) mShapeA = 3; else
-							if (tData.mPrefix.mNameInternal.startsWith("chunk" )) mShapeA = 4; else
-							if (tData.mPrefix.mNameInternal.startsWith("ring"  )) mShapeA = 5; else
-							if (tData.mPrefix.mNameInternal.startsWith("gem"   )) mShapeA = 6; else
-							if (tData.mPrefix.mNameInternal.startsWith("ore"   )) mShapeA = 7; else
-							if (tData.mPrefix.mNameInternal.startsWith("rock"  )) mShapeA = 7; else
-							if (tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED)) mShapeA = 7; else
-							mShapeA = 0;
-						}
-					}
-				} else {
-					mMaterialA = 0;
+		if (aIsServerSide && mInventoryChanged) {updateVisualData(); updateClientData();}
+	}
+
+	/** Что лежит на наковальне: материал и форма обеих половин. Чистый пересчёт из слотов — центр зовёт его
+	 *  и из тика, и перед сборкой клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	@Override
+	public void updateVisualData() {
+		if (isClientSide()) return;
+		mShapeA = mShapeB = 0;
+		if (ToolsGT.contains(TOOL_hammer, slot(0))) {
+			mMaterialA = MultiItemTool.getPrimaryMaterial(slot(0), MT.Steel).mID;
+			if (mMaterialA <= 0) mMaterialA = MT.Steel.mID;
+			mShapeA = 8;
+		} else if (ToolsGT.contains(TOOL_hammer, slot(1))) {
+			mMaterialA = MultiItemTool.getSecondaryMaterial(slot(1), MT.WOODS.Spruce).mID;
+			if (mMaterialA <= 0) mMaterialA = MT.WOODS.Spruce.mID;
+			mShapeA = 9;
+		} else if (slotHas(0)) {
+			mMaterialA = MT.Fe.mID;
+			OreDictItemData tData = OM.anydata(slot(0));
+			if (tData != null) {
+				if (tData.mMaterial != null && tData.mMaterial.mMaterial.mID > 0) mMaterialA = tData.mMaterial.mMaterial.mID;
+				if (tData.mPrefix != null) {
+					if (tData.mPrefix.containsAny(TD.Prefix.INGOT_BASED)) mShapeA = 1; else
+					if (tData.mPrefix.mNameInternal.startsWith("plate" )) mShapeA = 2; else
+					if (tData.mPrefix.mNameInternal.startsWith("plank" )) mShapeA = 2; else
+					if (tData.mPrefix.mNameInternal.startsWith("stick" )) mShapeA = 3; else
+					if (tData.mPrefix.mNameInternal.startsWith("wire"  )) mShapeA = 3; else
+					if (tData.mPrefix.mNameInternal.startsWith("chunk" )) mShapeA = 4; else
+					if (tData.mPrefix.mNameInternal.startsWith("ring"  )) mShapeA = 5; else
+					if (tData.mPrefix.mNameInternal.startsWith("gem"   )) mShapeA = 6; else
+					if (tData.mPrefix.mNameInternal.startsWith("ore"   )) mShapeA = 7; else
+					if (tData.mPrefix.mNameInternal.startsWith("rock"  )) mShapeA = 7; else
+					if (tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED)) mShapeA = 7; else
+					mShapeA = 0;
 				}
-				
-				
-				if (ToolsGT.contains(TOOL_hammer, slot(1))) {
-					mMaterialB = MultiItemTool.getPrimaryMaterial(slot(1), MT.Steel).mID;
-					if (mMaterialB <= 0) mMaterialB = MT.Steel.mID;
-					mShapeB = 8;
-				} else if (ToolsGT.contains(TOOL_hammer, slot(0))) {
-					mMaterialB = MultiItemTool.getSecondaryMaterial(slot(0), MT.WOODS.Spruce).mID;
-					if (mMaterialB <= 0) mMaterialB = MT.WOODS.Spruce.mID;
-					mShapeB = 9;
-				} else if (slotHas(1)) {
-					mMaterialB = MT.Fe.mID;
-					OreDictItemData tData = OM.anydata(slot(1));
-					if (tData != null) {
-						if (tData.mMaterial != null && tData.mMaterial.mMaterial.mID > 0) mMaterialB = tData.mMaterial.mMaterial.mID;
-						if (tData.mPrefix != null) {
-							if (tData.mPrefix.containsAny(TD.Prefix.INGOT_BASED)) mShapeB = 1; else
-							if (tData.mPrefix.mNameInternal.startsWith("plate" )) mShapeB = 2; else
-							if (tData.mPrefix.mNameInternal.startsWith("plank" )) mShapeB = 2; else
-							if (tData.mPrefix.mNameInternal.startsWith("stick" )) mShapeB = 3; else
-							if (tData.mPrefix.mNameInternal.startsWith("wire"  )) mShapeB = 3; else
-							if (tData.mPrefix.mNameInternal.startsWith("chunk" )) mShapeB = 4; else
-							if (tData.mPrefix.mNameInternal.startsWith("ring"  )) mShapeB = 5; else
-							if (tData.mPrefix.mNameInternal.startsWith("gem"   )) mShapeB = 6; else
-							if (tData.mPrefix.mNameInternal.startsWith("ore"   )) mShapeB = 7; else
-							if (tData.mPrefix.mNameInternal.startsWith("rock"  )) mShapeB = 7; else
-							if (tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED)) mShapeB = 7; else
-							mShapeB = 0;
-						}
-					}
-				} else {
-					mMaterialB = 0;
-				}
-				updateClientData();
 			}
+		} else {
+			mMaterialA = 0;
+		}
+
+
+		if (ToolsGT.contains(TOOL_hammer, slot(1))) {
+			mMaterialB = MultiItemTool.getPrimaryMaterial(slot(1), MT.Steel).mID;
+			if (mMaterialB <= 0) mMaterialB = MT.Steel.mID;
+			mShapeB = 8;
+		} else if (ToolsGT.contains(TOOL_hammer, slot(0))) {
+			mMaterialB = MultiItemTool.getSecondaryMaterial(slot(0), MT.WOODS.Spruce).mID;
+			if (mMaterialB <= 0) mMaterialB = MT.WOODS.Spruce.mID;
+			mShapeB = 9;
+		} else if (slotHas(1)) {
+			mMaterialB = MT.Fe.mID;
+			OreDictItemData tData = OM.anydata(slot(1));
+			if (tData != null) {
+				if (tData.mMaterial != null && tData.mMaterial.mMaterial.mID > 0) mMaterialB = tData.mMaterial.mMaterial.mID;
+				if (tData.mPrefix != null) {
+					if (tData.mPrefix.containsAny(TD.Prefix.INGOT_BASED)) mShapeB = 1; else
+					if (tData.mPrefix.mNameInternal.startsWith("plate" )) mShapeB = 2; else
+					if (tData.mPrefix.mNameInternal.startsWith("plank" )) mShapeB = 2; else
+					if (tData.mPrefix.mNameInternal.startsWith("stick" )) mShapeB = 3; else
+					if (tData.mPrefix.mNameInternal.startsWith("wire"  )) mShapeB = 3; else
+					if (tData.mPrefix.mNameInternal.startsWith("chunk" )) mShapeB = 4; else
+					if (tData.mPrefix.mNameInternal.startsWith("ring"  )) mShapeB = 5; else
+					if (tData.mPrefix.mNameInternal.startsWith("gem"   )) mShapeB = 6; else
+					if (tData.mPrefix.mNameInternal.startsWith("ore"   )) mShapeB = 7; else
+					if (tData.mPrefix.mNameInternal.startsWith("rock"  )) mShapeB = 7; else
+					if (tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED)) mShapeB = 7; else
+					mShapeB = 0;
+				}
+			}
+		} else {
+			mMaterialB = 0;
 		}
 	}
-	
+
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {

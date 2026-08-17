@@ -147,31 +147,39 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 				}
 			}
 			
-			boolean tBreak = F;
-			mDisplay = 0;
-			for (FluidTankGT tTank : mTanksOutput) if (tTank.has()) {
+			updateVisualData();
+		}
+	}
+
+	/** Что видно в ванне. Чистый пересчёт из танков и слотов — центр зовёт его и из тика, и перед
+	 *  сборкой клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	@Override
+	public void updateVisualData() {
+		if (isClientSide()) return;
+		boolean tBreak = F;
+		mDisplay = 0;
+		for (FluidTankGT tTank : mTanksOutput) if (tTank.has()) {
+			mDisplay = (short)(-2-FL.id_(tTank.getFluid()));
+			tBreak = T;
+			break;
+		}
+		if (!tBreak) {
+			for (FluidTankGT tTank : mTanksInput) if (tTank.has()) {
 				mDisplay = (short)(-2-FL.id_(tTank.getFluid()));
 				tBreak = T;
 				break;
 			}
 			if (!tBreak) {
-				for (FluidTankGT tTank : mTanksInput) if (tTank.has()) {
-					mDisplay = (short)(-2-FL.id_(tTank.getFluid()));
+				ItemStack tStack;
+				for (int i = 0; i < 7; i++) if (ST.valid(tStack = slot(6-i))) {
+					OreDictItemData tData = OM.data_(tStack);
+					if (tData == null || tData.mMaterial == null) {
+						mDisplay = -1;
+					} else {
+						mDisplay = tData.mMaterial.mMaterial.mID;
+					}
 					tBreak = T;
 					break;
-				}
-				if (!tBreak) {
-					ItemStack tStack;
-					for (int i = 0; i < 7; i++) if (ST.valid(tStack = slot(6-i))) {
-						OreDictItemData tData = OM.data_(tStack);
-						if (tData == null || tData.mMaterial == null) {
-							mDisplay = -1;
-						} else {
-							mDisplay = tData.mMaterial.mMaterial.mID;
-						}
-						tBreak = T;
-						break;
-					}
 				}
 			}
 		}

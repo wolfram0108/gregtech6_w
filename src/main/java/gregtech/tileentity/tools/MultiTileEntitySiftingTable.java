@@ -83,15 +83,17 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 		aList.add(Chat.ORANGE   + LH.get(LH.NO_GUI_CLICK_TO_INTERACT)   + " (" + LH.get(LH.FACE_TOP) + ")");
 	}
 	
+	/** Что видно на столе просеивания: вход и ожидаемый выход. Чистый пересчёт из слота — центр зовёт его
+	 *  и из тика, и перед сборкой клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
 	@Override
-	public void onTick2(long aTimer, boolean aIsServerSide) {
-		if (aIsServerSide) {
-			mDisplayedInput = 0;
-			mDisplayedOutput = 0;
-			mState &= ~B[0];
-			ItemStack tStack = slot(0);
-			if (ST.valid(tStack)) {
-				mState |= B[0];
+	public void updateVisualData() {
+		if (isClientSide()) return;
+		mDisplayedInput = 0;
+		mDisplayedOutput = 0;
+		mState &= ~B[0];
+		ItemStack tStack = slot(0);
+		if (ST.valid(tStack)) {
+			mState |= B[0];
 				if (ST.equal(tStack, Blocks.DIRT        , 0)) {mDisplayedInput = -2;} else
 				if (ST.equal(tStack, Blocks.DIRT        , 1)) {mDisplayedInput = -3;} else
 				if (ST.equal(tStack, Blocks.DIRT        , 2)) {mDisplayedInput = -4;} else
@@ -236,16 +238,22 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 				}
 				break;
 			}
-			
+	}
+
+	@Override
+	public void onTick2(long aTimer, boolean aIsServerSide) {
+		if (aIsServerSide) {
+			updateVisualData();
+
 			if (aTimer % 5 == 0 && (mState & B[2]) != 0) {
 				mState &= ~B[2];
 				for (Player tPlayer : UT.Entities.getPlayersWithLastTarget(this)) {
 					mState |= B[2];
-					
+
 					boolean temp = T;
 					for (int i = 1; i < 13; i++) if (slotHas(i)) {temp = F; break;}
 					ItemStack aStack = slot(0);
-					
+
 					if (temp && ((mClickCount = UT.Code.bind7(mClickCount + UT.Entities.pot1Haste(tPlayer))) >= 4*UT.Entities.pot2Fatique(tPlayer) || UT.Entities.hasInfiniteItems(tPlayer))) {
 						mClickCount = 0;
 						Recipe tRecipe = mRecipes.findRecipe(this, mLastRecipe, F, V[1], null, ZL_FS, aStack);

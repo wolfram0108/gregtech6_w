@@ -102,8 +102,13 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		if (aNBT.contains(NBT_CONNECTION)) mAutoPullDirections = aNBT.getByte(NBT_CONNECTION);
 		if (aNBT.contains(NBT_TEMPERATURE)) mTemperature = aNBT.getLong(NBT_TEMPERATURE);
 		mContent = OreDictMaterialStack.load(NBT_MATERIALS, aNBT);
+		// Облик формы (что и в каком виде в ней застыло) считается ВМЕСТЕ с логикой остывания — вывести его
+		// заново чистой формулой нельзя (материал по дороге подменяется на затвердевший). Поэтому он хранится:
+		// иначе после загрузки в чанке ВНЕ зоны симуляции (там блок-энтити не тикает, см.
+		// TileEntityBase03TicksAndSync.updateVisualData) форма с содержимым выглядела бы пустой.
+		if (aNBT.contains("gt.mold.display")) mDisplay = aNBT.getShort("gt.mold.display");
 	}
-	
+
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
@@ -111,6 +116,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mUseRedstone);
 		UT.NBT.setNumber(aNBT, NBT_TEMPERATURE, mTemperature);
 		UT.NBT.setNumber(aNBT, "gt.mold", mShape);
+		UT.NBT.setNumber(aNBT, "gt.mold.display", mDisplay); // см. readFromNBT2: облик переживает выгрузку сам
 		if (mContent != null) mContent.save(NBT_MATERIALS, aNBT);
 	}
 	
