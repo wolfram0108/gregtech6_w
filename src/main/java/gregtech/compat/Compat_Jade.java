@@ -172,10 +172,12 @@ public class Compat_Jade implements IWailaPlugin {
 				boolean tSourceOnly = (tMode == snownee.jade.api.config.IWailaConfig.FluidMode.SOURCE_ONLY);
 
 				net.minecraft.world.phys.Vec3 tFrom = tCamera.getEyePosition(tMC.getFrameTime());
+				double tJadeReach = jadeReach(tMC);
+				if (tJadeReach <= 0) return aAccessor;
 				double tReach = aHit != null && aHit.getType() != net.minecraft.world.phys.HitResult.Type.MISS
-					? Math.sqrt(aHit.getLocation().distanceToSqr(tFrom)) : JADE_FLUID_REACH;
+					? Math.sqrt(aHit.getLocation().distanceToSqr(tFrom)) : tJadeReach;
 				if (tReach <= 0) return aAccessor;
-				net.minecraft.world.phys.Vec3 tTo = tFrom.add(tCamera.getViewVector(tMC.getFrameTime()).scale(Math.min(tReach, JADE_FLUID_REACH)));
+				net.minecraft.world.phys.Vec3 tTo = tFrom.add(tCamera.getViewVector(tMC.getFrameTime()).scale(Math.min(tReach, tJadeReach)));
 
 				net.minecraft.world.phys.BlockHitResult tOurHit = clipOwnFluid(tMC.level, tFrom, tTo, tSourceOnly);
 				if (tOurHit == null) return aAccessor;
@@ -193,8 +195,21 @@ public class Compat_Jade implements IWailaPlugin {
 		});
 	}
 
-	/** Дальше этого расстояния витрина не смотрит и на настоящие жидкости (Jade трассирует в пределах руки). */
-	private static final double JADE_FLUID_REACH = 8.0;
+	/**
+	 * ДАЛЬНОСТЬ ЛУЧА ВИТРИНЫ — НЕ НАШЕ ЧИСЛО, А ЕГО СОБСТВЕННОЕ. Считается ровно тем выражением, которым
+	 * Jade считает её себе: {@code mc.gameMode.getPickRange() + config.getReachDistance()}
+	 * ({@code RayTracing.java:117}, дальше эта величина уходит в {@code rayTrace}). Первое слагаемое —
+	 * движковая дальность прицела ({@code MultiPlayerGameMode.getPickRange}: 5.0 в креативе, 4.5 иначе),
+	 * второе — надбавка из настроек самого Jade (по умолчанию 0, {@code WailaConfig.java:90,185}).
+	 *
+	 * <p>До этого здесь стояла собственная константа {@code 8.0} — выдуманное число на месте движковой
+	 * величины: свой луч уходил дальше, чем смотрит сам Jade, и правило «не дальше руки» держалось на
+	 * совпадении. Источник у дальности теперь один, и он чужой.
+	 */
+	private static double jadeReach(net.minecraft.client.Minecraft aMC) {
+		double tPick = aMC.gameMode == null ? 0 : aMC.gameMode.getPickRange();
+		return tPick + snownee.jade.api.config.IWailaConfig.get().getGeneral().getReachDistance();
+	}
 
 	/** ПЕРВАЯ по лучу клетка-жидкость GT6, невидимая движковому лучу. Обход — движковый
 	 *  ({@code BlockGetter.traverseBlocks}, тот же, которым идёт {@code Level.clip}); отбор — у роли
