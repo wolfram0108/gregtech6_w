@@ -178,7 +178,7 @@ public class BI {
 		// icon-классов Textures.java:173/716/851/883 и TextureSet:99/156 — BI.Icon был единственным без него.
 		@Override public ResourceLocation getIcon(int aRenderPass) {if (mIcon == null) run(); return mIcon;}
 		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
-		@Override public void run() {mIcon = ResourceLocation.parse(RES_PATH_API_BLOCK + mIconName);}
+		@Override public void run() {mIcon = new ResourceLocation(RES_PATH_API_BLOCK + mIconName);}
 		@Override public ResourceLocation getTextureFile() {return TextureAtlas.LOCATION_BLOCKS;}
 		@Override public short[] getIconColor(int aRenderPass) {return UNCOLOURED;}
 		@Override public int getIconPasses() {return 1;}

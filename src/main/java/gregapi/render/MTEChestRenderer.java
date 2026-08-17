@@ -62,7 +62,7 @@ public class MTEChestRenderer implements BlockEntityRenderer<MultiTileEntityChes
 
 	/** Мост {@code MultiTileEntityChest.onRegistrationClient}: регистрация пары текстур .colored/.plain. */
 	public static void bindTexture(String aTextureName, String aRegistryNameInternal) {
-		RENDERER.mResources.put(aTextureName, new ResourceLocation[] {ResourceLocation.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistryNameInternal + "/" + aTextureName + ".colored.png"), ResourceLocation.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistryNameInternal + "/" + aTextureName + ".plain.png")});
+		RENDERER.mResources.put(aTextureName, new ResourceLocation[] {new ResourceLocation(MD.GT.mID, TEX_DIR_MODEL + aRegistryNameInternal + "/" + aTextureName + ".colored.png"), new ResourceLocation(MD.GT.mID, TEX_DIR_MODEL + aRegistryNameInternal + "/" + aTextureName + ".plain.png")});
 	}
 
 	private static final MultiTileEntityModelChest sModel = new MultiTileEntityModelChest();

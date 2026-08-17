@@ -97,12 +97,14 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		mSlabs[SIDE_INVALID] = mSlabs[SIDE_DOWN];
 		// F12-followup (block-split): слэбы созданы ВНУТРИ конструктора (makeSlab), а не через call-site registerBlockLazy —
 		// их neo-Block-реестр никто не регистрирует → «intrusive holders were not registered» на freeze. Регистрируем каждый
-		// уникальный слэб напрямую в реестр (конструкция идёт на RegisterEvent<Block>, реестр разморожен); ключ = setId слэба
-		// (GAPI:санитизированное имя). BlockItem слэба уже зарегистрирован его BlockBase-конструктором (registerItemLazy).
+		// уникальный слэб ЧЕРЕЗ ЦЕНТР GT_API.registerBlockOnly; ключ = setId слэба (GT:санитизированное имя).
+		// BlockItem слэба уже зарегистрирован его BlockBase-конструктором (registerItemLazy) — потому «Only».
+		// ⛔ Прямой Registry.register здесь стоять не может: реестры этой версии загрузчика — форджевы обёртки,
+		// и запись мимо активного RegisterEvent они запрещают («Can not register to a locked registry»).
 		{
 			java.util.Set<Object> tSeenSlabs = new java.util.HashSet<>();
 			for (BlockMetaType tSlab : mSlabs) if (tSlab != null && tSeenSlabs.add(tSlab)) {
-				net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.BLOCK, net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tSlab.mNameInternal))), tSlab);
+				gregapi.GT_API.registerBlockOnly(tSlab, tSlab.mNameInternal);
 			}
 		}
 		// F12-followup (block-split): конструкция блока идёт на RegisterEvent (реестр разморожен), но ST.hide/ST.make/рецепты

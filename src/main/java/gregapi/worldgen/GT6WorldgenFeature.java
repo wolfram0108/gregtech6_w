@@ -99,21 +99,21 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		FEATURES.register("gt6_worldgen", GT6WorldgenFeature::new);
 
 	private static final ResourceKey<ConfiguredFeature<?, ?>> GT6_WORLDGEN_CF =
-		ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "gt6_worldgen"));
+		ResourceKey.create(Registries.CONFIGURED_FEATURE, new ResourceLocation(MD.GAPI.mID, "gt6_worldgen"));
 	private static final ResourceKey<PlacedFeature> GT6_WORLDGEN_PF =
-		ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "gt6_worldgen"));
+		ResourceKey.create(Registries.PLACED_FEATURE, new ResourceLocation(MD.GAPI.mID, "gt6_worldgen"));
 
 	private static final ResourceKey<BiomeModifier> ADD_GT6_WORLDGEN_OVERWORLD =
-		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_overworld"));
+		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, new ResourceLocation(MD.GAPI.mID, "add_gt6_worldgen_overworld"));
 	private static final ResourceKey<BiomeModifier> ADD_GT6_WORLDGEN_NETHER =
-		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_nether"));
+		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, new ResourceLocation(MD.GAPI.mID, "add_gt6_worldgen_nether"));
 	private static final ResourceKey<BiomeModifier> ADD_GT6_WORLDGEN_END =
-		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_end"));
+		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, new ResourceLocation(MD.GAPI.mID, "add_gt6_worldgen_end"));
 	// F6 §4.2.2: отключение ванильных руд MC26 (GT6 замещает их своими — bedrock-руды + stone-layer перекрытие REPLACEABLE_BLOCKS).
 	private static final ResourceKey<BiomeModifier> REMOVE_VANILLA_ORES_OVERWORLD =
-		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_overworld"));
+		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, new ResourceLocation(MD.GAPI.mID, "remove_vanilla_ores_overworld"));
 	private static final ResourceKey<BiomeModifier> REMOVE_VANILLA_ORES_NETHER =
-		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_nether"));
+		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, new ResourceLocation(MD.GAPI.mID, "remove_vanilla_ores_nether"));
 
 	/**
 	 * Датаген-набор: CONFIGURED_FEATURE -> PLACED_FEATURE -> BIOME_MODIFIERS, дословно по паттерну

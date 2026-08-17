@@ -88,7 +88,7 @@ public class GT6BlockModel implements BakedModel {
 	 *  префикса {@code blocks/} — atlas-source кладёт {@code textures/blocks/**} с {@code prefix:""}. */
 	private static TextureAtlasSprite sErrorParticle;
 	private static TextureAtlasSprite errorParticle() {
-		if (sErrorParticle == null) sErrorParticle = GT6QuadBuilder.resolveSprite(ResourceLocation.fromNamespaceAndPath("gregtech", "system/error"));
+		if (sErrorParticle == null) sErrorParticle = GT6QuadBuilder.resolveSprite(new ResourceLocation("gregtech", "system/error"));
 		return sErrorParticle;
 	}
 	/** Сброс ленивого спрайта при перепечке атласа (зовёт onModifyBakingResult вместе с кэшами item-модели). */

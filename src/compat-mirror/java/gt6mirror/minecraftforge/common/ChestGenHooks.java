@@ -120,16 +120,16 @@ public class ChestGenHooks {
 	 *  ванили», давая GT-предметам ТОЧНО 1.7.10-вероятность на слот (vanilla-часть сундука генерит сам движок). */
 	private static final Map<String, Integer> VANILLA_WEIGHT_1710 = new HashMap<>();
 	static {
-		NEO_TABLE.put(DUNGEON_CHEST           , ResourceLocation.withDefaultNamespace("chests/simple_dungeon"));
-		NEO_TABLE.put(MINESHAFT_CORRIDOR      , ResourceLocation.withDefaultNamespace("chests/abandoned_mineshaft"));
-		NEO_TABLE.put(STRONGHOLD_LIBRARY      , ResourceLocation.withDefaultNamespace("chests/stronghold_library"));
-		NEO_TABLE.put(STRONGHOLD_CROSSING     , ResourceLocation.withDefaultNamespace("chests/stronghold_crossing"));
-		NEO_TABLE.put(STRONGHOLD_CORRIDOR     , ResourceLocation.withDefaultNamespace("chests/stronghold_corridor"));
-		NEO_TABLE.put(PYRAMID_DESERT_CHEST    , ResourceLocation.withDefaultNamespace("chests/desert_pyramid"));
-		NEO_TABLE.put(PYRAMID_JUNGLE_CHEST    , ResourceLocation.withDefaultNamespace("chests/jungle_temple"));
-		NEO_TABLE.put(PYRAMID_JUNGLE_DISPENSER, ResourceLocation.withDefaultNamespace("chests/jungle_temple_dispenser"));
-		NEO_TABLE.put(VILLAGE_BLACKSMITH      , ResourceLocation.withDefaultNamespace("chests/village/village_weaponsmith"));
-		NEO_TABLE.put(BONUS_CHEST             , ResourceLocation.withDefaultNamespace("chests/spawn_bonus_chest"));
+		NEO_TABLE.put(DUNGEON_CHEST           , new ResourceLocation("minecraft", "chests/simple_dungeon"));
+		NEO_TABLE.put(MINESHAFT_CORRIDOR      , new ResourceLocation("minecraft", "chests/abandoned_mineshaft"));
+		NEO_TABLE.put(STRONGHOLD_LIBRARY      , new ResourceLocation("minecraft", "chests/stronghold_library"));
+		NEO_TABLE.put(STRONGHOLD_CROSSING     , new ResourceLocation("minecraft", "chests/stronghold_crossing"));
+		NEO_TABLE.put(STRONGHOLD_CORRIDOR     , new ResourceLocation("minecraft", "chests/stronghold_corridor"));
+		NEO_TABLE.put(PYRAMID_DESERT_CHEST    , new ResourceLocation("minecraft", "chests/desert_pyramid"));
+		NEO_TABLE.put(PYRAMID_JUNGLE_CHEST    , new ResourceLocation("minecraft", "chests/jungle_temple"));
+		NEO_TABLE.put(PYRAMID_JUNGLE_DISPENSER, new ResourceLocation("minecraft", "chests/jungle_temple_dispenser"));
+		NEO_TABLE.put(VILLAGE_BLACKSMITH      , new ResourceLocation("minecraft", "chests/village/village_weaponsmith"));
+		NEO_TABLE.put(BONUS_CHEST             , new ResourceLocation("minecraft", "chests/spawn_bonus_chest"));
 
 		VANILLA_WEIGHT_1710.put(DUNGEON_CHEST           , 120);
 		VANILLA_WEIGHT_1710.put(MINESHAFT_CORRIDOR      ,  80);

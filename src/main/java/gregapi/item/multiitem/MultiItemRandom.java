@@ -384,9 +384,9 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	public void registerIcons(Object aIconRegister) {
 		for (short aMeta = 0, tMaxMeta = (short)mEnabledItems.length(); aMeta < tMaxMeta; aMeta++) if (mEnabledItems.get(aMeta)) {
 			for (byte k = 1; k < mIconList[aMeta].length; k++) {
-				mIconList[aMeta][k] = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta + "/" + k);
+				mIconList[aMeta][k] = new ResourceLocation(mModID + ":" + getUnlocalizedName() + "/" + aMeta + "/" + k);
 			}
-			mIconList[aMeta][0] = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
+			mIconList[aMeta][0] = new ResourceLocation(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
 		}
 	}
 

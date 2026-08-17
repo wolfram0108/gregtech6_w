@@ -355,11 +355,11 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			}
 			@Override public net.minecraft.resources.ResourceLocation getStillTexture() {
 				net.minecraft.resources.ResourceLocation t = texture();
-				return t != null ? t : net.minecraft.resources.ResourceLocation.withDefaultNamespace("block/water_still");
+				return t != null ? t : new net.minecraft.resources.ResourceLocation("minecraft", "block/water_still");
 			}
 			@Override public net.minecraft.resources.ResourceLocation getFlowingTexture() {
 				net.minecraft.resources.ResourceLocation t = texture();
-				return t != null ? t : net.minecraft.resources.ResourceLocation.withDefaultNamespace("block/water_flow");
+				return t != null ? t : new net.minecraft.resources.ResourceLocation("minecraft", "block/water_flow");
 			}
 			@Override public int getTintColor() {
 				short[] tRGBa = aFluid.getRGBa();

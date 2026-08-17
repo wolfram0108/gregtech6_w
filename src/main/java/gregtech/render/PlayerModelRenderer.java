@@ -51,7 +51,7 @@ import static gregapi.data.CS.RES_PATH_MODEL;
 public class PlayerModelRenderer {
 	// neo ResourceLocation.assertValidPath запрещает заглавные в path (1.7.10 ResourceLocation их допускал) — имена
 	// плащей-текстур приведены к lowercase (файлы переименованы синхронно). Порядок/логика выбора плаща 1:1.
-	private final ResourceLocation[] mResources = new ResourceLocation[] {ResourceLocation.parse(RES_PATH_MODEL + "braintech.png"), ResourceLocation.parse(RES_PATH_MODEL + "silver.png"), ResourceLocation.parse(RES_PATH_MODEL + "mrbrain.png"), ResourceLocation.parse(RES_PATH_MODEL + "dev.png"), ResourceLocation.parse(RES_PATH_MODEL + "gold.png"), ResourceLocation.parse(RES_PATH_MODEL + "crazy.png"), ResourceLocation.parse(RES_PATH_MODEL + "sus.png")};
+	private final ResourceLocation[] mResources = new ResourceLocation[] {new ResourceLocation(RES_PATH_MODEL + "braintech.png"), new ResourceLocation(RES_PATH_MODEL + "silver.png"), new ResourceLocation(RES_PATH_MODEL + "mrbrain.png"), new ResourceLocation(RES_PATH_MODEL + "dev.png"), new ResourceLocation(RES_PATH_MODEL + "gold.png"), new ResourceLocation(RES_PATH_MODEL + "crazy.png"), new ResourceLocation(RES_PATH_MODEL + "sus.png")};
 	private final Collection<String> mSupporterListSilver, mSupporterListGold;
 
 	public PlayerModelRenderer(Collection<String> aSupporterListSilver, Collection<String> aSupporterListGold) {

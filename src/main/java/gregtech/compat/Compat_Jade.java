@@ -376,7 +376,7 @@ public class Compat_Jade implements IWailaPlugin {
 	public enum GT6HarvestLevelProvider implements IBlockComponentProvider {
 		INSTANCE;
 
-		private final ResourceLocation mUID = ResourceLocation.fromNamespaceAndPath(MD.GT.mID, "harvest_level");
+		private final ResourceLocation mUID = new ResourceLocation(MD.GT.mID, "harvest_level");
 
 		// MODCOMPAT-014: экран настроек Jade требует перевод у КАЖДОЙ опции плагина и роняет
 		// AssertionError, если его нет — ключ строится как "config.jade.plugin_<namespace>.<path>" из UID

@@ -172,9 +172,9 @@ public class GT_Client extends GT_Proxy {
 	
 	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code new ResourceLocation(String)} (одноаргументный
 	 *  конструктор) — {@code ResourceLocation} конструктор {@code private} в 26.1.2, публичная фабрика для
-	 *  ванильного namespace — {@code ResourceLocation.withDefaultNamespace(path)}
+	 *  ванильного namespace — {@code new ResourceLocation("minecraft", path)}
 	 *  (`neo-decompiled/net/minecraft/resources/ResourceLocation.java:49`). */
-	private ResourceLocation WATER_OVERLAY = ResourceLocation.withDefaultNamespace("textures/misc/underwater.png");
+	private ResourceLocation WATER_OVERLAY = new ResourceLocation("minecraft", "textures/misc/underwater.png");
 
 	/**
 	 * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code net.minecraftforge.client.event.RenderBlockOverlayEvent}

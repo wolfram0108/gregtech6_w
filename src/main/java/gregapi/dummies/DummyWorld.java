@@ -183,7 +183,7 @@ public class DummyWorld extends Level {
 	public DummyWorld(RegistryAccess aRegistryAccess) {
 		super(
 			new DummyLevelData(),
-			ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("dummy_dimension")),
+			ResourceKey.create(Registries.DIMENSION, new ResourceLocation("minecraft", "dummy_dimension")),
 			aRegistryAccess,
 			overworldType(aRegistryAccess),
 			(Supplier<ProfilerFiller>)() -> InactiveProfiler.INSTANCE,

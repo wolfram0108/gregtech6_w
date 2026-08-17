@@ -420,7 +420,7 @@ public class ST {
 	 */
 	public static Item findItem(String aModID, String aName) {
 		if (aModID == null || aName == null) return null;
-		ResourceLocation tID = ResourceLocation.fromNamespaceAndPath(aModID, aName);
+		ResourceLocation tID = new ResourceLocation(aModID, aName);
 		return BuiltInRegistries.ITEM.containsKey(tID) ? BuiltInRegistries.ITEM.get(tID) : null;
 	}
 	/** F12/R7: ЕДИНАЯ точка «item по (modId,name) → ItemStack размера aSize» (был выдуманный

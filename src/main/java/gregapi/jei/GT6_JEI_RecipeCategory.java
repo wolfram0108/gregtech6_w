@@ -72,9 +72,9 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 		mMap = aMap;
 		IDrawable tNEI = null, tGui = null;
 		try {
-			tNEI = aGuiHelper.createDrawable(net.minecraft.resources.ResourceLocation.parse((RES_PATH_GUI + "machines/NEI.png").toLowerCase(java.util.Locale.ROOT)), 0, 5, 176, 161);
+			tNEI = aGuiHelper.createDrawable(new net.minecraft.resources.ResourceLocation((RES_PATH_GUI + "machines/NEI.png").toLowerCase(java.util.Locale.ROOT)), 0, 5, 176, 161);
 			String tGuiPath = gregapi.util.UT.Code.stringValid(aMap.mGUIPath) ? aMap.mGUIPath : RES_PATH_GUI + aMap.mNameInternal + ".png";
-			tGui = aGuiHelper.createDrawable(net.minecraft.resources.ResourceLocation.parse(tGuiPath.toLowerCase(java.util.Locale.ROOT)), 0, 3, 176, 79);
+			tGui = aGuiHelper.createDrawable(new net.minecraft.resources.ResourceLocation(tGuiPath.toLowerCase(java.util.Locale.ROOT)), 0, 3, 176, 79);
 		} catch (Throwable e) {ERR.println("JEI: фон категории '" + aMap.mNameInternal + "' не собрался: " + e);}
 		mBackNEI = tNEI; mBackGui = tGui;
 	}

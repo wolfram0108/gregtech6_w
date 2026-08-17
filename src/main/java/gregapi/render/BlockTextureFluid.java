@@ -106,7 +106,7 @@ public class BlockTextureFluid implements ITexture {
 		// отсутствует и в ресурсах 1.7.10 — там рисовалась missing-шахматкой; резолвер GT6QuadBuilder такие
 		// квады ПРОПУСКАЕТ → жидкость невидима) → water_still, красится mRGBa. Конструктор бежит только под
 		// CODE_CLIENT (все get()-фабрики гейтованы) — client-класс GT6QuadBuilder сервером не линкуется.
-		if (tIcon != null && GT6QuadBuilder.resolveSprite(tIcon) == null) tIcon = ResourceLocation.withDefaultNamespace("block/water_still");
+		if (tIcon != null && GT6QuadBuilder.resolveSprite(tIcon) == null) tIcon = new ResourceLocation("minecraft", "block/water_still");
 		mIcon = tIcon;
 		mAllowAlpha = aAllowAlpha;
 	}

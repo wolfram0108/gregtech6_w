@@ -186,7 +186,7 @@ public final class CreativeTabsGT {
 			// 1.7.10 такую вкладку показывал пустой — оставляем как есть; в логе о ней пишет только JEI, NEI молчал.
 			if (isTabEmpty(tE.getKey())) continue;
 			aEvent.register(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB,
-				net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tE.getKey())), () -> tTab);
+				new net.minecraft.resources.ResourceLocation(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tE.getKey())), () -> tTab);
 		} catch (Throwable e) {/* boot-safe: сбой одной вкладки не рушит загрузку */}
 	}
 

@@ -867,7 +867,7 @@ public class WD {
 			for (Map.Entry<String, VanillaPassport> tEntry : VANILLA_PASSPORT_BY_NAME.entrySet()) try {
 				String tName = tEntry.getKey();
 				VanillaPassport tPassport = tEntry.getValue();
-				net.minecraft.resources.ResourceLocation tID = net.minecraft.resources.ResourceLocation.parse(PASSPORT_RENAMED.getOrDefault(tName, tName));
+				net.minecraft.resources.ResourceLocation tID = new net.minecraft.resources.ResourceLocation(PASSPORT_RENAMED.getOrDefault(tName, tName));
 				net.minecraft.core.registries.BuiltInRegistries.BLOCK.getOptional(tID).ifPresent(tBlock -> VANILLA_PASSPORT.put(tBlock, tPassport));
 			} catch (Throwable e) {/* имени нет в neo и адреса ему не задано — обслуживают ветки-обобщения */}
 		}

@@ -47,7 +47,7 @@ public class GT_Renderer_Entity_Arrow extends ArrowRenderer<Arrow> {
 	// RenderingRegistry.registerEntityRenderingHandler(class, this) удалён — регистрация теперь по EntityType.
 	public GT_Renderer_Entity_Arrow(EntityRendererProvider.Context aContext, String aTextureName) {
 		super(aContext);
-		mTexture = ResourceLocation.parse(RES_PATH_ENTITY+aTextureName+".png");
+		mTexture = new ResourceLocation(RES_PATH_ENTITY+aTextureName+".png");
 	}
 
 	@Override

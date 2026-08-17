@@ -88,7 +88,7 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 		mContainer = aContainer;
 		// F-namespace lowercase: GT6-пути несут заглавные (machines/Oven.png), neo отвергает не-[a-z0-9/._-]
 		// (IdentifierException) — тот же приём, что TextureSet:122 (ассеты на диске уже lowercase).
-		mBackground = ResourceLocation.parse(aBackgroundPath.toLowerCase(java.util.Locale.ROOT));
+		mBackground = new ResourceLocation(aBackgroundPath.toLowerCase(java.util.Locale.ROOT));
 		// Screen.minecraft/font движок заполняет только в init(...) (Screen.java:315-316) — снимок в конструкторе
 		// давал null (NPE drawString при открытии сундука). Берём живой инстанс: на клиенте в момент постройки GUI он есть.
 		mc = net.minecraft.client.Minecraft.getInstance();

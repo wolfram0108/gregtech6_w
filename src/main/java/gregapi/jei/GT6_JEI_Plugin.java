@@ -70,7 +70,7 @@ import static gregapi.data.CS.*;
  */
 @JeiPlugin
 public final class GT6_JEI_Plugin implements IModPlugin {
-	public static final ResourceLocation PLUGIN_UID = ResourceLocation.fromNamespaceAndPath(MD.GT.mID, "jei_plugin");
+	public static final ResourceLocation PLUGIN_UID = new ResourceLocation(MD.GT.mID, "jei_plugin");
 
 	/** RecipeMap -> её уникальный JEI-RecipeType. Заполняется в {@link #registerCategories}, читается в {@link #registerRecipes}/{@link #registerRecipeCatalysts}. */
 	private final Map<RecipeMap, RecipeType<Recipe>> mTypes = new LinkedHashMap<>();

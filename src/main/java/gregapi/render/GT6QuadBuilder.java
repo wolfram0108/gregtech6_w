@@ -208,7 +208,7 @@ public final class GT6QuadBuilder {
 	 *  items-атласа не существует — иконки предметов лежат в block-атласе под префиксом {@code items/} (см.
 	 *  {@link #ATLAS_ITEMS}), поэтому значение служит МАРКЕРОМ ведра, а не адресом текстуры. Канал сохранён
 	 *  ради 1:1 состава контракта: читателей у него в моде нет (греп {@code getTextureFile} — только объявления). */
-	public static final ResourceLocation LOCATION_ITEMS = ResourceLocation.withDefaultNamespace("textures/atlas/items.png");
+	public static final ResourceLocation LOCATION_ITEMS = new ResourceLocation("minecraft", "textures/atlas/items.png");
 
 	/** Резолв спрайта из block-атласа (по умолчанию — блок-грани через putFace/resolveBlockFaceIcon). */
 	public static TextureAtlasSprite resolveSprite(ResourceLocation aIcon) {return resolveSprite(aIcon, ATLAS_BLOCKS);}

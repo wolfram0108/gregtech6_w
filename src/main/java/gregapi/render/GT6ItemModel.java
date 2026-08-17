@@ -302,7 +302,7 @@ public class GT6ItemModel implements BakedModel {
 		sVanillaTransformsTried.add(aModelPath);
 		try {
 			net.minecraft.client.resources.model.ModelBakery tBakery = net.minecraft.client.Minecraft.getInstance().getModelManager().getModelBakery();
-			net.minecraft.client.resources.model.UnbakedModel tModel = tBakery.getModel(ResourceLocation.withDefaultNamespace(aModelPath));
+			net.minecraft.client.resources.model.UnbakedModel tModel = tBakery.getModel(new ResourceLocation("minecraft", aModelPath));
 			if (tModel instanceof net.minecraft.client.renderer.block.model.BlockModel tBlockModel) {
 				ItemTransforms tTr = tBlockModel.getTransforms();
 				if (tTr != null) sVanillaTransforms.put(aModelPath, tTr);

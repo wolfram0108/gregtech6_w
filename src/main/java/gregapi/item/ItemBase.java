@@ -188,7 +188,7 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	// дефолт Forge уже отдаёт подтип из сырого "Damage", а само-вызов через ST.meta_ замыкает движок (см. ST.meta_).
 	public final boolean getShareTag() {return T;} // just to be sure.
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(mModID+":"+mName) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
-	public void registerIcons(Object aIconRegister) {mIcon = ResourceLocation.parse((mModID + ":" + mName).toLowerCase(java.util.Locale.ROOT));}
+	public void registerIcons(Object aIconRegister) {mIcon = new ResourceLocation((mModID + ":" + mName).toLowerCase(java.util.Locale.ROOT));}
 	// F3-render: registerIcons (1.7.10 IIconRegister-хук) в neo НЕ вызывается → mIcon оставался null → GT6ItemModel.resolveIcon
 	// возвращал null → предмет не рисовался (пусто/пурпур). Строим mIcon ЛЕНИВО при первом запросе (тот же путь "modid:name").
 	public ResourceLocation getIconFromDamage(int aMeta) {if (mIcon == null) registerIcons(null); return mIcon;}

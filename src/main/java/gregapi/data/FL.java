@@ -1310,8 +1310,8 @@ public enum FL {
 		if (aFluid == null) return null;
 		FluidGT tGT = FluidGT.of(aFluid);
 		if (tGT != null && tGT.mTexture != null) return tGT.mTexture.getIcon(0);
-		if (aFluid.isSame(Fluids.LAVA)) return ResourceLocation.withDefaultNamespace("block/lava_still");
-		return ResourceLocation.withDefaultNamespace("block/water_still");
+		if (aFluid.isSame(Fluids.LAVA)) return new ResourceLocation("minecraft", "block/lava_still");
+		return new ResourceLocation("minecraft", "block/water_still");
 	}
 
 	/** Loads a FluidStack properly. */

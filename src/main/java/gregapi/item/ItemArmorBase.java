@@ -96,7 +96,7 @@ public class ItemArmorBase extends ArmorItem implements IItemUpdatable, IItemGT,
 	// Восстанавливаем 1:1: ленивое построение того же ResourceLocation (armor/<name>/<slot>) при первом запросе.
 	protected net.minecraft.resources.ResourceLocation mIcon;
 	public net.minecraft.resources.ResourceLocation getIconFromDamage(int aMeta) {
-		if (mIcon == null) mIcon = net.minecraft.resources.ResourceLocation.parse((mModID + ":armor/" + mArmorName + "/" + mArmorSlot).toLowerCase(java.util.Locale.ROOT)); // sprite-id БЕЗ "textures/" (items.json prefix:"" → textures/items/armor/<name>/<slot>.png)
+		if (mIcon == null) mIcon = new net.minecraft.resources.ResourceLocation((mModID + ":armor/" + mArmorName + "/" + mArmorSlot).toLowerCase(java.util.Locale.ROOT)); // sprite-id БЕЗ "textures/" (items.json prefix:"" → textures/items/armor/<name>/<slot>.png)
 		return mIcon;
 	}
 

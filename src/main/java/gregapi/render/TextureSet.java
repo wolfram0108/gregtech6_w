@@ -123,8 +123,8 @@ public class TextureSet {
 		public void registerIcons(Object aIconRegister) {
 			// F3 superseded-render: было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — ResourceLocation строим напрямую.
 			// lowercase: neo ResourceLocation.assertValidPath запрещает заглавные (имена наборов/файлов GT6 были заглавные, файлы уже переименованы).
-			mIconColored = ResourceLocation.parse((mMod+":materialicons/"+mName).toLowerCase(java.util.Locale.ROOT));
-			mIconOverlay = ResourceLocation.parse((mMod+":materialicons/"+mName+"_OVERLAY").toLowerCase(java.util.Locale.ROOT));
+			mIconColored = new ResourceLocation((mMod+":materialicons/"+mName).toLowerCase(java.util.Locale.ROOT));
+			mIconOverlay = new ResourceLocation((mMod+":materialicons/"+mName+"_OVERLAY").toLowerCase(java.util.Locale.ROOT));
 		}
 
 		@Override
@@ -180,8 +180,8 @@ public class TextureSet {
 		public void registerIcons(Object aIconRegister) {
 			// F3 superseded-render: было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — ResourceLocation строим напрямую.
 			// lowercase: neo ResourceLocation.assertValidPath запрещает заглавные (имена наборов/файлов GT6 были заглавные, файлы уже переименованы).
-			mIconColored = ResourceLocation.parse((mMod+":materialicons/"+mName).toLowerCase(java.util.Locale.ROOT));
-			mIconOverlay = ResourceLocation.parse((mMod+":materialicons/"+mName+"_OVERLAY").toLowerCase(java.util.Locale.ROOT));
+			mIconColored = new ResourceLocation((mMod+":materialicons/"+mName).toLowerCase(java.util.Locale.ROOT));
+			mIconOverlay = new ResourceLocation((mMod+":materialicons/"+mName+"_OVERLAY").toLowerCase(java.util.Locale.ROOT));
 		}
 
 		@Override

@@ -89,7 +89,7 @@ public class DamageSources {
 
 		Kind(String aMsgId, boolean aBypassesArmor, boolean aAbsolute, boolean aCreative, Function<LivingEntity, Component> aDeathMessage) {
 			mMsgId = aMsgId;
-			mKey = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(MODID, aMsgId));
+			mKey = ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(MODID, aMsgId));
 			mTags = tags(aBypassesArmor, aAbsolute, aCreative);
 			mType = new DamageType(aMsgId, DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER, mTags.isEmpty() ? DEFAULT_EXHAUSTION : ZERO_EXHAUSTION, DamageEffects.HURT);
 			mDeathMessage = aDeathMessage;

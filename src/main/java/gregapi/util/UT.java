@@ -1484,9 +1484,9 @@ public class UT {
 			ResourceLocation aux = null;
 			if (aResourceLocation.contains(":")) {
 				String[] modid_itemid = aResourceLocation.split(":");
-				aux = ResourceLocation.fromNamespaceAndPath(modid_itemid[0], "textures/items/" + modid_itemid[1] + ".png"); // neo: ctor ResourceLocation(String,String) private -> fromNamespaceAndPath (ResourceLocation.java:41)
+				aux = new ResourceLocation(modid_itemid[0], "textures/items/" + modid_itemid[1] + ".png"); // neo: ctor ResourceLocation(String,String) private -> fromNamespaceAndPath (ResourceLocation.java:41)
 			} else {
-				aux = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/items/" + aResourceLocation + ".png");
+				aux = new ResourceLocation("minecraft", "textures/items/" + aResourceLocation + ".png");
 			}
 			java.awt.image.BufferedImage tIcon = null;
 			// neo: ResourceManager.getResource(ResourceLocation) -> Optional<Resource> (не бросает FileNotFound);
@@ -2873,7 +2873,7 @@ public class UT {
 					// neo sound-id; neo-native строки играют сразу.
 					// F-sound (1:1): легаси 1.7.10 SFX-строки → neo sound-id через neoSound (карта SFX_LEGACY, сверена по SoundEvents.java);
 					// neo-native строки проходят как есть. Раньше легаси не резолвились → все GT6-звуки молчали. Восстановлено.
-					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.get(net.minecraft.resources.ResourceLocation.parse(neoSound(mSound)));
+					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.get(new net.minecraft.resources.ResourceLocation(neoSound(mSound)));
 					if (tEvent != null) mWorld.playLocalSound(mX+0.5, mY+0.5, mZ+0.5, tEvent, net.minecraft.sounds.SoundSource.BLOCKS, mVolume, mPitch, T);
 				} catch(Throwable e) {/**/}
 			}

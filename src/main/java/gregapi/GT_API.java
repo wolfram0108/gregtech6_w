@@ -225,7 +225,7 @@ public class GT_API extends Abstract_Mod {
 	 *  ФАЙЛА, что и 1.7.10, — список звуков не дублируется в коде и переживает пополнение ассетов. */
 	public static final DeferredRegister<net.minecraft.sounds.SoundEvent> SOUND_EVENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.SOUND_EVENT, ModIDs.GAPI);
 	static {
-		for (String tKey : soundKeysFromAssets()) SOUND_EVENTS.register(tKey, () -> net.minecraft.sounds.SoundEvent.createVariableRangeEvent(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(ModIDs.GAPI, tKey)));
+		for (String tKey : soundKeysFromAssets()) SOUND_EVENTS.register(tKey, () -> net.minecraft.sounds.SoundEvent.createVariableRangeEvent(new net.minecraft.resources.ResourceLocation(ModIDs.GAPI, tKey)));
 	}
 	/** Имена звуков, объявленных модом в {@code assets/<namespace>/sounds.json} — единственный источник истины.
 	 *  ⛔ ЧИТАТЬ ЧЕРЕЗ CLASSLOADER НЕЛЬЗЯ: в dev-среде ресурсы лежат в каталоге и {@code getResourceAsStream}
@@ -350,8 +350,37 @@ public class GT_API extends Abstract_Mod {
 		try {for (Runnable tInit : DEFERRED_BLOCK_INIT) try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_BLOCK_INIT.clear();}
 		finally {sBlockRegisterEvent = null;}
 	}
+	/** HIGHEST: событие блок-реестра открывается ДО всех DeferredRegister-диспетчеров и держится открытым всю фазу.
+	 *  Иначе блок, построенный внутри чужого DR-supplier'а (слэбы BlockMetaType), регистрировался бы отложенно —
+	 *  а порядок регистрации задаёт ИМЕНА наборов (замер: `gt.block.glass.slab.0` уезжал в `…slab.1`, 17 рецептов
+	 *  плавки меняли вход). Открытое событие сохраняет прежний, немедленный порядок 1:1. */
+	private static void onRegisterEventOpen(net.minecraftforge.registries.RegisterEvent aEvent) {
+		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.BLOCK)) sBlockRegisterEvent = aEvent;
+	}
+	/** LOWEST: после всех DeferredRegister — слить очередь отложенной конструкции и закрыть событие. */
 	private static void onRegisterEvent(net.minecraftforge.registries.RegisterEvent aEvent) {
-		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.BLOCK)) runDeferredBlockInit(aEvent);
+		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.BLOCK)) {
+			try {runDeferredBlockInit(aEvent);} finally {sBlockRegisterEvent = null;}
+		}
+	}
+
+	/** Зарегистрировать ТОЛЬКО блок (без BlockItem — он у вызывателя уже заведён своим путём).
+	 *
+	 *  ЗАЧЕМ ЦЕНТР. Реестры этой версии загрузчика — форджевы обёртки (`NamespacedWrapper`), и прямой
+	 *  {@code Registry.register(BuiltInRegistries.BLOCK, …)} на них запрещён: «Can not register to a locked
+	 *  registry» (`NamespacedWrapper.registerMapping:75`). Регистрировать разрешено только через реестр
+	 *  активного {@code RegisterEvent}. На 26.1.2 обёрток нет и прямой вызов проходит — отсюда и разошлись
+	 *  ветки; здесь путь один и живёт в этом центре, а не россыпью по вызывателям.
+	 *
+	 *  ФАЗА. Блок могли построить внутри чужого обработчика того же события (DeferredRegister-supplier), где
+	 *  {@link #sBlockRegisterEvent} ещё не выставлен. Тогда регистрация откладывается в ту же очередь
+	 *  {@link #DEFERRED_BLOCK_INIT}, которая сливается на этом же {@code RegisterEvent&lt;Block&gt;} —
+	 *  слушатель центра стоит приоритетом {@code LOWEST} и идёт после всех DeferredRegister. */
+	public static void registerBlockOnly(Block aBlock, String aRegistryName) {
+		if (aBlock == null || aRegistryName == null) return;
+		if (sBlockRegisterEvent == null) {deferBlockInit(() -> registerBlockOnly(aBlock, aRegistryName)); return;}
+		sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK
+			, new net.minecraft.resources.ResourceLocation(ModIDs.GT, sanitizeRegName(aRegistryName)), () -> aBlock);
 	}
 
 	/**
@@ -447,7 +476,7 @@ public class GT_API extends Abstract_Mod {
 			// F12-namespace (MTE): namespace=GT — gt.multitileentity контент GT6 (golden gregtech:), не gregapi. Единственные
 			// вызыватели registerBlock — MTE (ST.register из MultiTileEntityRegistry/MultiTileEntityBlock). Ключ реестра/item-DR
 			// совпадает с setId блока (ModIDs.GT) и ключом предмета (BuiltInRegistries.BLOCK.getKey(block)=GT). ~17k рецептов паритета.
-			sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(ModIDs.GT, sanitizeRegName(aRegistryName)), () -> aBlock);
+			sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK, new net.minecraft.resources.ResourceLocation(ModIDs.GT, sanitizeRegName(aRegistryName)), () -> aBlock);
 			itemsFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
 			return null;
 		}
@@ -560,7 +589,10 @@ public class GT_API extends Abstract_Mod {
 		SOUND_EVENTS.register(aModBus); // BUG-113: свои звуки мода (в 1.7.10 хватало sounds.json, в neo нужен SoundEvent в реестре)
 		// F12-followup (block-split, MTE): слив DEFERRED_BLOCK_INIT на RegisterEvent<Block> (реестр разморожен) — единая
 		// точка для подсистем, чьё конструирование блока нельзя выразить одним registerBlockLazy (см. deferBlockInit).
-		aModBus.addListener(GT_API::onRegisterEvent);
+		// Пара слушателей держит блок-реестр открытым всю фазу регистрации: HIGHEST открывает (до DeferredRegister),
+		// LOWEST сливает отложенную очередь и закрывает (после них). Порядок регистрации остаётся исходным.
+		aModBus.addListener(net.minecraftforge.eventbus.api.EventPriority.HIGHEST, GT_API::onRegisterEventOpen);
+		aModBus.addListener(net.minecraftforge.eventbus.api.EventPriority.LOWEST, GT_API::onRegisterEvent);
 		// F6: центральный ворлдген-переходник (Feature/PlacedFeature/BiomeModifier) — тот же мод-бас,
 		// единая точка подписки (decisions/F6-worldgen.md, gregapi/worldgen/GT6WorldgenFeature.java).
 		gregapi.worldgen.GT6WorldgenFeature.register(aModBus);

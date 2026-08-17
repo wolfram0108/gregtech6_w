@@ -184,7 +184,7 @@ public class Textures {
 		public void run() {
 			// F3-render: было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути (см. gregapi.render.TextureSet). Адаптировано.
 			// lowercase: имя энума ЗАГЛАВНОЕ (ORE_ANTHRACITE), а neo ResourceLocation требует lowercase + файлы лоуэркейзены (iconsets/ore_anthracite.png).
-				try { mIcon = ResourceLocation.parse((RES_PATH_BLOCK + "iconsets/" + this).toLowerCase(java.util.Locale.ROOT)); } catch (Throwable e) { mIcon = null; }
+				try { mIcon = new ResourceLocation((RES_PATH_BLOCK + "iconsets/" + this).toLowerCase(java.util.Locale.ROOT)); } catch (Throwable e) { mIcon = null; }
 		}
 
 		@Override
@@ -730,7 +730,7 @@ public class Textures {
 				// КРИТ (прозрачные блоки): пути CustomIcon содержат ЗАГЛАВНЫЕ варианты (stones/X/STONE, COBBLE, BRICKS...), а neo
 				// ResourceLocation ТРЕБУЕТ lowercase (заглавные → ResourceLocationException) + текстур-файлы лоуэркейзены. Без lowercase
 				// mIcon=null → putFace пропускает грань → 0 quads → блок ПРОЗРАЧНЫЙ (BlockStones/RockOres и все CustomIcon-блоки).
-				try { mIcon = ResourceLocation.parse(mIconName.toLowerCase(java.util.Locale.ROOT)); } catch (Throwable e) { mIcon = null; }
+				try { mIcon = new ResourceLocation(mIconName.toLowerCase(java.util.Locale.ROOT)); } catch (Throwable e) { mIcon = null; }
 			}
 
 			@Override
@@ -873,9 +873,9 @@ public class Textures {
 			// F3-render: было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути. Адаптировано.
 			// toLowerCase: enum-имена uppercase (VOID/RENDERING_ERROR), а neo ResourceLocation требует lowercase-путь (иначе parse
 			// бросает) + ассеты лежат lowercase (iconsets/void.png) — тот же приём, что ItemBase.registerIcons.
-			mIcon       = ResourceLocation.parse((RES_PATH_ITEM + "iconsets/" + this).toLowerCase(java.util.Locale.ROOT));
+			mIcon       = new ResourceLocation((RES_PATH_ITEM + "iconsets/" + this).toLowerCase(java.util.Locale.ROOT));
 			if (mUseOverlay)
-			mOverlay    = ResourceLocation.parse((RES_PATH_ITEM + "iconsets/" + this + "_OVERLAY").toLowerCase(java.util.Locale.ROOT));
+			mOverlay    = new ResourceLocation((RES_PATH_ITEM + "iconsets/" + this + "_OVERLAY").toLowerCase(java.util.Locale.ROOT));
 		}
 
 		public static class CustomIcon implements IIconContainer, Runnable {
@@ -895,8 +895,8 @@ public class Textures {
 			public void run() {
 				// F3-render: было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути. Адаптировано.
 				// toLowerCase: neo ResourceLocation требует lowercase-путь (иначе parse бросает), ассеты lowercase — как ItemBase.registerIcons.
-				mIcon       = ResourceLocation.parse(mIconName.toLowerCase(java.util.Locale.ROOT));
-				mOverlay    = ResourceLocation.parse((mIconName + "_OVERLAY").toLowerCase(java.util.Locale.ROOT));
+				mIcon       = new ResourceLocation(mIconName.toLowerCase(java.util.Locale.ROOT));
+				mOverlay    = new ResourceLocation((mIconName + "_OVERLAY").toLowerCase(java.util.Locale.ROOT));
 			}
 
 			@Override

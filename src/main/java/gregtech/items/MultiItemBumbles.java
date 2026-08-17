@@ -667,13 +667,13 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	@Override
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
 	public void registerIcons(Object aIconRegister) {
-		PRINCESS    = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/overlay_princess");
-		QUEEN       = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/overlay_queen");
-		SCANNED     = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/overlay_scanned");
-		DEAD        = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/overlay_dead");
+		PRINCESS    = new ResourceLocation(mModID + ":" + getUnlocalizedName() + "/overlay_princess");
+		QUEEN       = new ResourceLocation(mModID + ":" + getUnlocalizedName() + "/overlay_queen");
+		SCANNED     = new ResourceLocation(mModID + ":" + getUnlocalizedName() + "/overlay_scanned");
+		DEAD        = new ResourceLocation(mModID + ":" + getUnlocalizedName() + "/overlay_dead");
 
 		for (short aMeta = 0, tMaxMeta = (short)mEnabledItems.length(); aMeta < tMaxMeta; aMeta+=10) if (mEnabledItems.get(aMeta)) {
-			mIconList[aMeta][0] = ResourceLocation.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
+			mIconList[aMeta][0] = new ResourceLocation(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
 		}
 	}
 
