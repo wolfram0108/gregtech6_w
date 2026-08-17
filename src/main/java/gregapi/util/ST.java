@@ -215,7 +215,18 @@ public class ST {
 	// зовущее meta_/getDamageValue, замыкает движок на себя — компилятор такой цикл не видит.
 	public static short     meta_(ItemStack aStack) {return UT.Code.bindShort(aStack.getDamageValue());}
 	public static ItemStack meta (ItemStack aStack, long aMeta) {return aStack == null ? null : meta_(aStack, aMeta);}
-	public static ItemStack meta_(ItemStack aStack, long aMeta) {aStack.setDamageValue(UT.Code.bindShort(aMeta)); return aStack;}
+	// ⛔ МЕТА 0 НЕ ОСТАВЛЯЕТ СЛЕДА НА СТЕКЕ. В 1.7.10 подтип был ПОЛЕМ стека (ItemStack.itemDamage), и ноль —
+	// дефолт поля, а не запись: стек с метой 0 ничем не отличался от стека, добытого обычным путём. В 1.20.1
+	// поле эмулируется ключом "Damage" ВНУТРИ тега, и IForgeItem.setDamage (:472-475) пишет его безусловно —
+	// то есть на мете 0 рождал тег {Damage:0} там, где тега быть не должно. Цена: движок судит слияние стеков
+	// сравнением тегов ЦЕЛИКОМ (ItemStack.isSameItemSameTags:459-464, спрашивается в
+	// Inventory.hasRemainingSpaceForItem:56) — предмет из ST.make не ложился в один слот с таким же
+	// предметом, добытым обычным путём (замер: у 1077 из 1077 стакающихся предметов реестра).
+	// Ветка main держит ровно этот гард на своём носителе подтипа (ST.java:208: мета 0 -> remove(SUBTYPE)),
+	// при бэкпорте он потерялся. Снятие ключа идёт через центр тега ItemNBT (единственный setTag в дереве,
+	// коммит 09a79720): его field(...,F) — «поля нет», и он же не оставляет за собой пустого тега.
+	// Ненулевая мета пишется прежним движковым каналом, дословно как было.
+	public static ItemStack meta_(ItemStack aStack, long aMeta) {short tMeta = UT.Code.bindShort(aMeta); if (tMeta != 0) aStack.setDamageValue(tMeta); else gregapi.code.ItemNBT.field(aStack, ItemStack.TAG_DAMAGE, F); return aStack;}
 
 	/**
 	 * BUG-079, ЕДИНСТВЕННЫЙ ответ на вопрос «что делает предмет ОТДЕЛЬНЫМ предметом для внешней витрины».

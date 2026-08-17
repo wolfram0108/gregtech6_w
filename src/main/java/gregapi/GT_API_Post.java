@@ -23,7 +23,6 @@
 
 package gregapi;
 
-import appeng.api.AEApi;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -753,7 +752,8 @@ public class GT_API_Post extends Abstract_Mod {
 		if (DISABLE_ALL_IC2_CENTRIFUGE_RECIPES  ) ic2.api.recipe.Recipes.centrifuge.getRecipes().clear();
 		
 		// Clearing the AE Grindstone Recipe List.
-		if (MD.AE.mLoaded) AEApi.instance().registries().grinder().getRecipes().clear();
+		// Э0 (слой AE2): очистка снята вместе с носителем — кварцевой мельницы (Grindstone) у AE2 под 1.20.1
+		// нет, вместе с ней исчез и её реестр AEApi.instance().registries().grinder(), который здесь стирался.
 		
 		// Well Netherite Plus is very special with its Compat Items... This is WAY too late in the loading Cycle! (I am aware that the Ancient Dust got removed in later Versions)
 		if (MD.NePl.mLoaded) {

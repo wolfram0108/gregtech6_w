@@ -161,7 +161,15 @@ public final class ItemNBT {
 		return tNBT != null && tNBT.getBoolean(aKey);
 	}
 
-	/** Запись эмулированного ПОЛЯ стека; снятое поле не оставляет за собой пустого тега (1.7.10-норма). */
+	/**
+	 * Запись эмулированного ПОЛЯ стека; снятое поле не оставляет за собой пустого тега (1.7.10-норма).
+	 *
+	 * <p>{@code aFlag=F} означает «ПОЛЯ НЕТ» и годится любому ключу из {@link #FIELDS}, а не только
+	 * булеву: у числового поля «нет» — это его дефолт, то есть 0 (в 1.7.10 {@code itemDamage == 0} и
+	 * {@code stackSize == 0} были дефолтами ПОЛЕЙ, а не записями в предметном NBT). Этой веткой ходит
+	 * {@code ST.meta_} при мете 0 — иначе {@code IForgeItem.setDamage} оставил бы тег {@code {Damage:0}},
+	 * и стек перестал бы складываться с таким же предметом, добытым обычным путём.
+	 */
 	public static void field(ItemStack aStack, String aKey, boolean aFlag) {
 		if (aStack == null || aStack.isEmpty()) return;
 		if (aFlag) {aStack.getOrCreateTag().putBoolean(aKey, true); return;}

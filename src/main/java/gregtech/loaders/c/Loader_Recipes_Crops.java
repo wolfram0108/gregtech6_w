@@ -40,6 +40,10 @@ import net.minecraftforge.fluids.FluidStack;
 import static gregapi.data.CS.*;
 import static gregapi.data.OP.*;
 
+// Э0 (слой AE2): из слушателей ниже сняты 10 строк с вызовом мельницы AE2 — кварцевой мельницы у AE2 под
+// 1.20.1 нет (метод удалён в RM.java вместе с носителем). Соседние рецепты тех же слушателей (RM.crop/
+// crop_nut/Squeezer/Juicer) не тронуты: дробление тех же плодов у GT6 своё, через Mortar/Shredder в
+// RM.mortarize.
 public class Loader_Recipes_Crops implements Runnable {
 	@Override public void run() {
 		for (OreDictMaterial tMat : ANY.FlourGrains.mToThis) {
@@ -344,7 +348,6 @@ public class Loader_Recipes_Crops implements Runnable {
 		addListener("cropCandle", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.Squeezer     .addRecipe1(T, 16, 16, aEvent.mStack, NF, FL.Juice.make(25), OP.dustSmall.mat(MT.WaxPlant, 1));
 			RM.Juicer       .addRecipe1(T, 16, 16, aEvent.mStack, NF, FL.Juice.make(20), OP.dustSmall.mat(MT.WaxPlant, 1));
-			RM.ae_grinder(4, aEvent.mStack, OP.dustSmall.mat(MT.WaxPlant, 2), OP.dustSmall.mat(MT.WaxPlant, 1), 0.5F, OP.dustSmall.mat(MT.WaxPlant, 1), 0.5F);
 		}});
 		addListener("cropCandleberry", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.crop(aEvent.mStack, FL.Juice, 25, OP.dustSmall.mat(MT.WaxPlant, 4), 3000, "Canned Candleberries", IL.CANS_FRUIT, 0, 0, 0, 4, 0);
@@ -366,15 +369,12 @@ public class Loader_Recipes_Crops implements Runnable {
 		
 		addListener("cropCocoa", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.crop(aEvent.mStack, FL.Oil_Seed, 100, OP.dustSmall.mat(MT.Cocoa, 4), 8000, null, null, 0, 0, 4, 4, 0);
-			RM.ae_grinder(4, aEvent.mStack, OP.dustSmall.mat(MT.Cocoa, 2), OP.dustSmall.mat(MT.Cocoa, 1), 0.5F, OP.dustSmall.mat(MT.Cocoa, 1), 0.5F);
 		}});
 		addListener("cropCoffee", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.crop(aEvent.mStack, FL.Oil_Seed, 100, OP.dustSmall.mat(MT.Coffee, 4), 8000, null, null, 0, 4, 4, 4, 0);
-			RM.ae_grinder(4, aEvent.mStack, OP.dustSmall.mat(MT.Coffee, 2), OP.dustSmall.mat(MT.Coffee, 1), 0.5F, OP.dustSmall.mat(MT.Coffee, 1), 0.5F);
 		}});
 		addListener("cropTea", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.crop(aEvent.mStack, null, 0, OP.dustTiny.mat(MT.Tea, 2), 9000, null, null, 0, 4, 0, 0, 0);
-			RM.ae_grinder(4, aEvent.mStack, OP.dustTiny.mat(MT.Tea, 1), OP.dustTiny.mat(MT.Tea, 1), 0.25F, OP.dustTiny.mat(MT.Tea, 1), 0.25F);
 		}});
 		addListener("cropHops", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			for (FluidStack tWater : FL.waters(250))
@@ -400,27 +400,21 @@ public class Loader_Recipes_Crops implements Runnable {
 		
 		addListener("cropPeanut", "cropPeanuts", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.crop_nut(aEvent.mStack, 100, OP.dustSmall.mat(MT.Peanut, 4), 8000, "Canned Peanuts");
-			RM.ae_grinder(4, aEvent.mStack, OP.dustSmall.mat(MT.Peanut, 2), OP.dustSmall.mat(MT.Peanut, 1), 0.5F, OP.dustSmall.mat(MT.Peanut, 1), 0.5F);
 		}});
 		addListener("cropHazelnut", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.crop_nut(aEvent.mStack, 100, OP.dustSmall.mat(MT.Hazelnut, 4), 8000, "Canned Hazelnuts");
-			RM.ae_grinder(4, aEvent.mStack, OP.dustSmall.mat(MT.Hazelnut, 2), OP.dustSmall.mat(MT.Hazelnut, 1), 0.5F, OP.dustSmall.mat(MT.Hazelnut, 1), 0.5F);
 		}});
 		addListener("cropPistachio", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.crop_nut(aEvent.mStack, 100, OP.dustSmall.mat(MT.Pistachio, 4), 8000, "Canned Pistachios");
-			RM.ae_grinder(4, aEvent.mStack, OP.dustSmall.mat(MT.Pistachio, 2), OP.dustSmall.mat(MT.Pistachio, 1), 0.5F, OP.dustSmall.mat(MT.Pistachio, 1), 0.5F);
 		}});
 		addListener("cropNutmeg", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.crop_nut(aEvent.mStack, 100, OP.dustSmall.mat(MT.Nutmeg, 4), 8000, "Canned Nutmegs");
-			RM.ae_grinder(4, aEvent.mStack, OP.dustSmall.mat(MT.Nutmeg, 2), OP.dustSmall.mat(MT.Nutmeg, 1), 0.5F, OP.dustSmall.mat(MT.Nutmeg, 1), 0.5F);
 		}});
 		addListener("cropAlmond", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.crop_nut(aEvent.mStack, 100, OP.dustSmall.mat(MT.Almond, 4), 8000, "Canned Almonds");
-			RM.ae_grinder(4, aEvent.mStack, OP.dustSmall.mat(MT.Almond, 2), OP.dustSmall.mat(MT.Almond, 1), 0.5F, OP.dustSmall.mat(MT.Almond, 1), 0.5F);
 		}});
 		addListener("cropCandlenut", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.crop_nut(aEvent.mStack, 100, OP.dustSmall.mat(MT.WaxPlant, 4), 8000, "Canned Candlenuts");
-			RM.ae_grinder(4, aEvent.mStack, OP.dustSmall.mat(MT.WaxPlant, 2), OP.dustSmall.mat(MT.WaxPlant, 1), 0.5F, OP.dustSmall.mat(MT.WaxPlant, 1), 0.5F);
 		}});
 		addListener("cropPecan", "cropPecannut", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.crop_nut(aEvent.mStack, 100, 8000, "Canned Pecannuts");

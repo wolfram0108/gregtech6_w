@@ -31,7 +31,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import gregapi.fluid.FluidTankInfo;
 
-import appeng.api.movable.IMovableTile;
 import gregapi.api.Optional;
 import net.minecraftforge.api.distmarker.Dist;
 import gregapi.block.multitileentity.IMultiTileEntity;
@@ -102,10 +101,12 @@ import static gregapi.data.CS.*;
  * 
  * The Functions all TileEntities should have.
  */
-@Optional.InterfaceList(value = {
-  @Optional.Interface(iface = "appeng.api.movable.IMovableTile", modid = ModIDs.AE)
-})
-public abstract class TileEntityBase01Root extends BlockEntity implements ITileEntity, ITileEntityGUI, IMovableTile {
+// Э0 (слой AE2): снят @Optional.Interface appeng.api.movable.IMovableTile — интерфейса у AE2 под 1.20.1
+// НЕТ (пакет appeng.api.movable там несёт BlockEntityMoveStrategies/IBlockEntityMoveStrategy). Пока его
+// роль исполняло зеркало src/compat-mirror/java/appeng/, а с подключением настоящего jar AE2 пакет appeng.*
+// оказался бы в ДВУХ источниках классов сразу — один молча затирает другой. Методы prepareToMove()/
+// doneMoving() — код самого GT6, остаются как обычные (см. ниже).
+public abstract class TileEntityBase01Root extends BlockEntity implements ITileEntity, ITileEntityGUI {
 	/** If this TileEntity checks for the Chunk to be loaded before returning World based values. If this is set to T, this TileEntity will not cause worfin' Chunks, uhh I mean orphan Chunks. */
 	public boolean mIgnoreUnloadedChunks = T;
 	
@@ -1152,9 +1153,12 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public void onCoordinateChange() {/**/}
 	
 	// AE Stuff
-	
-	@Override public boolean prepareToMove() {return T;}
-	@Override public void doneMoving() {onCoordinateChange();}
+
+	// Э0 (слой AE2): @Override снят вместе с implements IMovableTile (см. заголовок класса) — тела методов
+	// Грега 1:1 на месте, doneMoving() переопределён в наследнике. Привязка к движущей механике AE2 под
+	// 1.20.1 (IBlockEntityMoveStrategy) в объём слоя не входит.
+	public boolean prepareToMove() {return T;}
+	public void doneMoving() {onCoordinateChange();}
 	
 	// Fire Stuff
 	

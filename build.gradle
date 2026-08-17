@@ -369,6 +369,21 @@ dependencies {
     // [1.20.1 замер] compileOnly снят: версия под 1.20.1 не подобрана
     // [1.20.1 замер] localRuntime снят: версия под 1.20.1 не подобрана
 
+    // Applied Energistics 2 (слой совместимости GT6 ⇄ AE2, этап Э0). GT6 знает AE2 с 1.7.10:
+    // gregtech/compat/Compat_Recipes_AppliedEnergistics.java задаёт прессы, резку, sky stone; MD.AE.mLoaded
+    // сторожит все эти пути. Тот же приём, что у Jade выше — Modrinth-maven, compileOnly + modLocalRuntime.
+    // ⚠ ПАКЕТ appeng.* ТЕПЕРЬ ПРИНАДЛЕЖИТ ЭТОМУ JAR. Зеркала src/compat-mirror/java/appeng/ удалены (Э0):
+    // один пакет обязан принадлежать ровно одному источнику классов, иначе второй молча затирается и
+    // порядок обхода недетерминирован. Новые зеркала в appeng.* класть НЕЛЬЗЯ: код должен ходить в
+    // настоящий API AE2.
+    compileOnly "maven.modrinth:ae2:${ae2_version}"
+    // modLocalRuntime, а не localRuntime: production-jar AE2 зовёт движок SRG-именами, dev-рантайм этой
+    // сборки — named (см. блок obfuscation выше). Без ремапа первый же вызов даст NoSuchMethodError.
+    modLocalRuntime "maven.modrinth:ae2:${ae2_version}"
+    // GuideME — обязательная зависимость AE2 (её mods.toml: modId="guideme", mandatory=true); без неё
+    // загрузчик AE2 не поднимет. Только рантайм: наш код её не трогает.
+    modLocalRuntime "maven.modrinth:guideme:${guideme_version}"
+
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
     // The group id is ignored when searching -- in this case, it is "blank"

@@ -1004,7 +1004,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public static void clearOreMapSync() {ORE_MAP_DIRTY.clear();}
 
 	/** Ветка 1.20.1: замена бывшего {@code chunk.syncData(TYPE)} — карта уходит своим пакетом GT6 тем, кто ЧАНК
-	 *  ВИДИТ (тот же {@code PacketDistributor.TRACKING_CHUNK}, что и весь остальной синк мода). */
+	 *  ВИДИТ (тем же центром {@code NetworkHandler.sendToAllPlayersInRange}, что и весь остальной синк мода;
+	 *  адресат считается перебором {@code chunkMap.getPlayers(ChunkPos,false)} — см. объяснение у самого центра,
+	 *  почему объект чанка там больше не запрашивается). */
 	public static void syncOreMap(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.world.level.chunk.LevelChunk aChunk) {
 		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(aChunk);
 		if (tMap == null) return;

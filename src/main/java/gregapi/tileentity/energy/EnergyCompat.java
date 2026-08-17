@@ -40,7 +40,11 @@ import static gregapi.data.CS.*;
  * For mostly Internal Use.
  */
 public class EnergyCompat {
-	public static boolean RF_ENERGY = F, RF_ENERGY_NEW = F, AE_ENERGY = F, FL_ENERGY = F, WD_ENERGY = F, IC_ENERGY = F, BB_ENERGY = F, GC_ENERGY = F, BC_LASER = F;
+	// Э0 (слой AE2): AE_ENERGY снят из списка. Флаг сторожил спец-случай «EU напрямую в AE2» —
+	// appeng.tile.powersink.IC2 (AE2 rv2 реализовывал приёмник энергии IC2 сам). У AE2 под 1.20.1 такого
+	// класса нет: в пакете appeng.blockentity.powersink остались только AEBasePoweredBlockEntity и
+	// IExternalPowerSink, а энергию извне она принимает движковой FE-капой — её и кормит мост feHandler ниже.
+	public static boolean RF_ENERGY = F, RF_ENERGY_NEW = F, FL_ENERGY = F, WD_ENERGY = F, IC_ENERGY = F, BB_ENERGY = F, GC_ENERGY = F, BC_LASER = F;
 	
 	/** Gets Called once during postInit to see which Interfaces are there and Classloaded. */
 	@SuppressWarnings("ResultOfMethodCallIgnored")
@@ -61,10 +65,6 @@ public class EnergyCompat {
 			// Some Mods do not include this File, due to badly referencing old RF-API stuff, so this gets a separate Boolean now.
 			cofh.api.energy.IEnergyReceiver                              .class.getCanonicalName();
 			RF_ENERGY_NEW = T;
-		} catch(Throwable e) {/**/}
-		try {
-			appeng.tile.powersink.IC2                                    .class.getCanonicalName();
-			AE_ENERGY = T;
 		} catch(Throwable e) {/**/}
 		try {
 			ic2.api.energy.tile.IEnergyTile                              .class.getCanonicalName();
@@ -110,8 +110,9 @@ public class EnergyCompat {
 		// IMPORTANT: Ignore the Fact that this SEEMS to be unused. It does exist, SOMETIMES.
 		if (aTarget instanceof gregtech.api.interfaces.tileentity.IEnergyConnected) return ((gregtech.api.interfaces.tileentity.IEnergyConnected)aTarget).inputEnergyFrom(aSide) || ((gregtech.api.interfaces.tileentity.IEnergyConnected)aTarget).outputsEnergyTo(aSide);
 		
-		if (AE_ENERGY &&  aTarget instanceof appeng.tile.powersink.IC2) return aThis == null || ((appeng.tile.powersink.IC2)aTarget).acceptsEnergyFrom(aThis, FORGE_DIR[aSide]);
-		
+		// Э0 (слой AE2): ветка AE_ENERGY (appeng.tile.powersink.IC2) снята — носителя нет, см. поле выше.
+		// Связь с AE2 теперь решает общий FE-мост в конце этого же метода.
+
 		if (FL_ENERGY && (aTarget instanceof com.rwtema.funkylocomotion.blocks.TilePusher || aTarget instanceof com.rwtema.funkylocomotion.blocks.TileBooster)) return T;
 		
 		if (WD_ENERGY &&  aTarget instanceof cr0s.warpdrive.block.TileEntityAbstractEnergy) return ((cr0s.warpdrive.block.TileEntityAbstractEnergy)aTarget).energy_canInput(FORGE_DIR[aSide]);
@@ -168,15 +169,10 @@ public class EnergyCompat {
 			aSize = Math.abs(aSize);
 			
 			// Applied Energistics gets a special case.
-			if (AE_ENERGY && aReceiver instanceof appeng.tile.powersink.IC2) {
-				if (((appeng.tile.powersink.IC2)aReceiver).acceptsEnergyFrom(aEmitter instanceof BlockEntity ? (BlockEntity)aEmitter : null, FORGE_DIR[aSide])) {
-					if (checkOverCharge(aSize, aReceiver)) return aAmount;
-					long rUsedAmount = 0;
-					while (aAmount > rUsedAmount && ((appeng.tile.powersink.IC2)aReceiver).getDemandedEnergy() >= aSize && ((appeng.tile.powersink.IC2)aReceiver).injectEnergy(FORGE_DIR[aSide], aSize, aSize) < aSize) rUsedAmount++;
-					return rUsedAmount;
-				}
-				return 0;
-			}
+			// Э0 (слой AE2): спец-случай снят — в 1.7.10 AE2 сама реализовывала приёмник EU
+			// (appeng.tile.powersink.IC2), у версии под 1.20.1 этого класса нет, а энергию извне она берёт
+			// движковой FE-капой (appeng/blockentity/powersink/AEBasePoweredBlockEntity + ForgeEnergyAdapter).
+			// Её кормит общий мост GT6 → FE ниже по этому же методу, отдельного плеча AE2 не нужно.
 
 			// Мост GT6 -> движковая FE-капа: работает с ЛЮБЫМ FE-приёмником, не только AE2. Курс — авторский
 			// RF_PER_EU = 4 (CS:217). Целые пакеты и никаких потерь: у этой капы нет транзакций — вместо пробы

@@ -42,10 +42,8 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 	public Compat_Recipes_AppliedEnergistics(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
 	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing AE Recipes.");
-		RM.ae_grinder(5, ST.make(MD.AE, "item.ItemMultiMaterial", 1, 10), OP.dustSmall.mat(MT.CertusQuartz, 2));
-		RM.ae_grinder(5, ST.make(MD.AE, "item.ItemMultiMaterial", 1, 11), OP.dustSmall.mat(MT.NetherQuartz, 2));
-		RM.ae_grinder(5, ST.make(MD.AE, "item.ItemMultiMaterial", 1, 12), OP.dustSmall.mat(MT.Fluix, 2));
-		
+		// Э0 (слой AE2): три строки RM.ae_grinder(5, …) сняты — кварцевой мельницы у AE2 под 1.20.1 нет.
+
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(IL.AE_Cutter_Certus.wild(1), OP.ingot.mat(MT.Fe, 1)), ST.array(ST.make(MD.AE, "item.ItemMultiMaterial", 0, 21)), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(IL.AE_Cutter_Quartz.wild(1), OP.ingot.mat(MT.Fe, 1)), ST.array(ST.make(MD.AE, "item.ItemMultiMaterial", 0, 21)), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
 		
@@ -132,66 +130,9 @@ public class Compat_Recipes_AppliedEnergistics extends CompatMods {
 		
 		
 		new OreDictListenerEvent_Names() {@Override public void addAllListeners() {
-		addListener("gemCertusQuartz", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.CertusQuartz, 1));
-		}});
-		addListener("gemNetherQuartz", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.NetherQuartz, 1));
-		}});
-		addListener("gemVoidQuartz", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.VoidQuartz, 1));
-		}});
-		addListener("gemMilkyQuartz", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.MilkyQuartz, 1));
-		}});
-		addListener("gemFluix", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Fluix, 1));
-		}});
-		addListener("gemCoal", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder( 5, aEvent.mStack, OP.dust.mat(MT.Coal, 1));
-		}});
-		addListener("gemCharcoal", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder( 5, aEvent.mStack, OP.dust.mat(MT.Charcoal, 1));
-		}});
-		addListener("gemSulfur", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder( 5, aEvent.mStack, OP.dust.mat(MT.S, 1));
-		}});
-		addListener("gemSaltpeter", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder( 5, aEvent.mStack, OP.dust.mat(MT.KNO3, 1));
-		}});
-		addListener("ingotCopper", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Cu, 1));
-		}});
-		addListener("ingotTin", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Sn, 1));
-		}});
-		addListener("ingotLead", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Pb, 1));
-		}});
-		addListener("ingotBismuth", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Bi, 1));
-		}});
-		addListener("ingotZinc", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Zn, 1));
-		}});
-		addListener("ingotBrass", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(10, aEvent.mStack, OP.dust.mat(MT.Brass, 1));
-		}});
-		addListener("ingotBronze", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(20, aEvent.mStack, OP.dust.mat(MT.Bronze, 1));
-		}});
-		addListener("ingotGold", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(20, aEvent.mStack, OP.dust.mat(MT.Au, 1));
-		}});
-		addListener("ingotPlatinum", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(20, aEvent.mStack, OP.dust.mat(MT.Pt, 1));
-		}});
-		addListener("ingotNickel", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(20, aEvent.mStack, OP.dust.mat(MT.Ni, 1));
-		}});
-		addListener("ingotIron", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.ae_grinder(20, aEvent.mStack, OP.dust.mat(MT.Fe, 1));
-		}});
+		// Э0 (слой AE2): 20 слушателей (gemCertusQuartz…ingotIron), тело которых состояло ТОЛЬКО из вызова
+		// мельницы AE2, сняты вместе с ней — без вызова слушатель пуст. Четыре слушателя по линзам ниже
+		// живы: они кормят RM.LaserEngraver, машину самого GT6.
 		addListener(DYE_OREDICTS_LENS[DYE_INDEX_White], new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			for (OreDictMaterial tMat : ANY.Fe.mToThis) if (tMat != MT.Enori)
 			RM.LaserEngraver.addRecipe2(T,512,512, OP.blockSolid.mat(tMat, 1), ST.amount(0, aEvent.mStack), ST.make(MD.AE, "item.ItemMultiMaterial", 1, 13));

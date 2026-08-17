@@ -2388,7 +2388,10 @@ public class CS {
 		, TE_DYNAMICS       = "ThermalDynamics"
 		, TE_DRILLS         = "rfdrills"
 		
-		, AE                = "appliedenergistics2"
+		// Э0 (слой AE2): было "appliedenergistics2" (id мода в 1.7.10). AE2 под 1.20.1 объявляет себя как "ae2"
+		// (appeng/api/ids/AEConstants.java:31 MOD_ID = "ae2", то же в её mods.toml) — со старым id MD.AE.mLoaded
+		// всегда F, и весь AE-код мода был мёртв.
+		, AE                = "ae2"
 		, MO                = "mo"
 		
 		, TFC               = "terrafirmacraft"

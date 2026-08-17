@@ -234,10 +234,23 @@ public final class NetworkHandler implements INetworkHandler {
 		if (aPacket == null) return;
 		ServerLevel tWorld = serverWorld(aWorld);
 		if (tWorld == null) return;
-		// TRACKING_CHUNK рассылает ровно тем, кто ЧАНК ВИДИТ ({@code PacketDistributor.java:238-243} —
-		// chunkMap.getPlayers(chunk.getPos(), false)); это и есть проверка isPlayerWatchingChunk оригинала.
+		// Рассылка ровно тем, кто ЧАНК ВИДИТ — это и есть проверка isPlayerWatchingChunk оригинала.
+		// Спрашиваем ПОЗИЦИЕЙ, а не объектом чанка: chunkMap.getPlayers(ChunkPos, false) — тот же перебор,
+		// которым ходят братья ниже (:262, :249), и ровно та выборка, которую делает внутри себя сам Forge
+		// (PacketDistributor.java:238-243 достаёт из переданного чанка только getLevel() и getPos()).
+		//
+		// ⛔ ПОЧЕМУ НЕ TRACKING_CHUNK, хотя он по смыслу «тот самый». Его тип — PacketDistributor<LevelChunk>,
+		// то есть API требует ОБЪЕКТ чанка, а взять его можно лишь Level.getChunk(x,z) — БЛОКИРУЮЩИМ запросом
+		// (ServerChunkCache.getChunk:135 -> BlockableEventLoop.managedBlock). Во время подготовки области поток
+		// сервера САМ двигает генерацию, и такой запрос запирает его на себе: MTE, рождённая ворлдгеном, на
+		// clearRemoved шлёт синк -> getChunk ждёт готовности чанка -> двигать готовность больше некому.
+		// Ценой был НЕ СОЗДАЮЩИЙСЯ свежий мир (замер: сервер молчал на «Preparing spawn area 97-98 %», дамп
+		// стека — этот самый кадр). Позиция у нас уже есть на входе, объект чанка не нужен никому.
+		// На main такого нет по конструкции API: там PacketDistributor.sendToPlayersTrackingChunk берёт
+		// ChunkPos (gregtech6_w NetworkHandler.java:199) и чанк не грузит вовсе.
 		ChunkPos tChunk = chunk(aX, aZ);
-		mChannel.send(PacketDistributor.TRACKING_CHUNK.with(() -> tWorld.getChunk(tChunk.x, tChunk.z)), payload(aPacket));
+		GT6Payload tPayload = payload(aPacket);
+		for (ServerPlayer tPlayer : tWorld.getChunkSource().chunkMap.getPlayers(tChunk, false)) mChannel.send(PacketDistributor.PLAYER.with(() -> tPlayer), tPayload);
 	}
 
 	@Override public void sendToPlayerIfInRange(IPacket aPacket, UUID aPlayer, Level aWorld, BlockPos aCoords) {sendToPlayerIfInRange(aPacket, aPlayer, aWorld, aCoords.getX(), aCoords.getZ());}
