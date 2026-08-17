@@ -250,6 +250,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 			CLIENT_STUB_QUEUE.clear();
 			WORLDGEN_MTE.clear();
 			PENDING_SYNC.clear();
+			gregapi.block.prefixblock.PrefixBlock.clearOreMapSync(); // тот же класс stale-level: карта держит ServerLevel
 			gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = false;
 		});
 		// Дедлок перезахода (jstack: Server thread мира-2 в getChunk->join): выгрузка чанков мира-1 идёт ПОСЛЕ
@@ -260,6 +261,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 			CLIENT_STUB_QUEUE.clear();
 			WORLDGEN_MTE.clear();
 			PENDING_SYNC.clear();
+			gregapi.block.prefixblock.PrefixBlock.clearOreMapSync(); // тот же класс stale-level: карта держит ServerLevel
 		});
 	}
 

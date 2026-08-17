@@ -945,8 +945,43 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockEntity tBE = tChunk.getBlockEntity(tPos);
 		if (tBE == null || (tBE instanceof PrefixBlockTileEntity tTE && tTE.mItemNBT == null)) tChunk.removeBlockEntity(tPos);
-		if (tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC && aWorld instanceof net.minecraft.server.level.ServerLevel) tLC.syncData(PrefixBlockOreMap.TYPE.get());
+		if (tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC && aWorld instanceof net.minecraft.server.level.ServerLevel tSL) markOreMapDirty(tSL, tLC);
 	}
+
+	// СКЛЕЙКА РАССЫЛКИ КАРТЫ (волна 3 консолидации, п.1). Пакет карты несёт чанк ЦЕЛИКОМ (AttachmentSync.syncUpdate
+	// шлёт полное состояние трекерам СРАЗУ внутри вызова, без своей очереди — neoforge-decompiled/.../AttachmentSync.java:84-109),
+	// поэтому N записей подряд в один чанк — это N одинаковых по смыслу полных рассылок вместо одной. Копим
+	// грязные чанки и отсылаем раз за серверный тик (GT_API_Proxy, фаза Post) — доставляемое состояние то же
+	// (читаем карту чанка в момент флаша, а не снимок в момент записи), задержка меньше тика.
+	private static final java.util.Map<net.minecraft.server.level.ServerLevel, java.util.Set<Long>> ORE_MAP_DIRTY = new java.util.concurrent.ConcurrentHashMap<>();
+
+	/** Пометка «карта этого чанка изменилась» — вместо немедленной рассылки (см. {@link #flushOreMapSync}). */
+	public static void markOreMapDirty(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.world.level.chunk.LevelChunk aChunk) {
+		ORE_MAP_DIRTY.computeIfAbsent(aWorld, k -> java.util.concurrent.ConcurrentHashMap.newKeySet()).add(aChunk.getPos().pack());
+	}
+
+	/** Диаг: число реальных рассылок карты чанка клиентам (судья батчинга gt6oremapprobe, S). */
+	public static final java.util.concurrent.atomic.AtomicLong sOreMapSyncCalls = new java.util.concurrent.atomic.AtomicLong();
+
+	/** Отсылка накопленного — раз за серверный тик (зовёт GT_API_Proxy.onServerTick, фаза Post). Чанк берём
+	 *  без подгрузки: выгруженному рассылать некому, а карта уедет с чанком при следующей отправке. */
+	public static void flushOreMapSync() {
+		if (ORE_MAP_DIRTY.isEmpty()) return;
+		for (java.util.Map.Entry<net.minecraft.server.level.ServerLevel, java.util.Set<Long>> tEntry : ORE_MAP_DIRTY.entrySet()) {
+			net.minecraft.server.level.ServerLevel tLevel = tEntry.getKey();
+			java.util.Iterator<Long> tIt = tEntry.getValue().iterator();
+			while (tIt.hasNext()) {
+				long tKey = tIt.next(); tIt.remove();
+				net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(
+					net.minecraft.world.level.ChunkPos.getX(tKey), net.minecraft.world.level.ChunkPos.getZ(tKey));
+				if (tChunk != null) {tChunk.syncData(PrefixBlockOreMap.TYPE.get()); sOreMapSyncCalls.incrementAndGet();}
+			}
+		}
+	}
+
+	/** Сброс между мирами: карта держит ссылку на ServerLevel, а stale-level — известный класс «второй мир
+	 *  виснет» (см. GT6WorldgenFeature: те же очереди чистятся на ServerStopping/ServerStopped). */
+	public static void clearOreMapSync() {ORE_MAP_DIRTY.clear();}
 
 	/** Правка №1 (BUG-106): МИГРАЦИЯ старого чанка — сущности руды/породы переливаются в карту чанка и
 	 *  снимаются навсегда (чанк помечен на сохранение — на диск уйдёт уже без них). Сущности с mItemNBT

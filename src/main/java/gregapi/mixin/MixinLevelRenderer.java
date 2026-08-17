@@ -24,12 +24,10 @@
 package gregapi.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
 
 import gregapi.render.MultiTileEntityBER;
@@ -51,15 +49,21 @@ import gregapi.render.MultiTileEntityBER;
  *
  * <p>Правка централизована: одно место на весь мод, все 106 классов с рендер-состоянием обслуживаются
  * одной воронкой, а не пофайловым сбросом.</p>
+ *
+ * <p><b>Цена сигнала (волна 3 консолидации, п.2).</b> Для движка это дешёвый идемпотентный флаг, поэтому
+ * он бьёт по нему пачками: {@code setBlockDirty} крутит ±1 по трём осям и зовёт сюда 27 раз на ОДНО
+ * изменение блока ({@code LevelRenderer.java:1446-1460}), а приход чанка добавляет свет
+ * ({@code ClientPacketListener.enableChunkLight} → {@code Level.setSectionRangeDirty}). Живой замер
+ * (стенд gt6berstorm) подтвердил шторм числом — обработчик обязан быть O(1), см.
+ * {@code MultiTileEntityBER.onSectionDirty}: он только ПЕЧАТАЕТ секцию, сверку делает сам MTE в момент
+ * рисования. Всё, что тяжелее инкремента, здесь недопустимо.</p>
  */
 @Mixin(LevelRenderer.class)
 public abstract class MixinLevelRenderer {
 
-	@Shadow private ClientLevel level;
-
 	@Inject(method = "setSectionDirty(IIIZ)V", at = @At("HEAD"))
 	private void gt6$invalidateQuadCaches(int aSectionX, int aSectionY, int aSectionZ, boolean aPlayerChanged, CallbackInfo aCI) {
-		if (this.level != null) MultiTileEntityBER.onSectionDirty(this.level, aSectionX, aSectionY, aSectionZ);
+		MultiTileEntityBER.onSectionDirty(aSectionX, aSectionY, aSectionZ);
 	}
 
 	@Inject(method = "allChanged()V", at = @At("HEAD"))

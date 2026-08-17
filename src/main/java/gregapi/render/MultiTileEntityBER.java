@@ -96,6 +96,9 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 	public static final java.util.concurrent.atomic.AtomicLong sSpecialExtract = new java.util.concurrent.atomic.AtomicLong(), sSpecialSubmit = new java.util.concurrent.atomic.AtomicLong(), sSpecialItemForm = new java.util.concurrent.atomic.AtomicLong();
 	/** Диаг-счётчики кэша квадов (BUG-106 №4): extract'ы рендер-объектов / реальные пересборки / кэш-хиты. */
 	public static final java.util.concurrent.atomic.AtomicLong sQuadExtracts = new java.util.concurrent.atomic.AtomicLong(), sQuadBuilds = new java.util.concurrent.atomic.AtomicLong(), sQuadCacheHits = new java.util.concurrent.atomic.AtomicLong();
+	/** Диаг-счётчики гейта замера (волна 3 консолидации, п.2): вызовы {@link #onSectionDirty} / суммарные
+	 *  итерации обхода {@code chunk.getBlockEntities()} внутри него — судья шторма O(N) (живой стенд gt6berstorm). */
+	public static final java.util.concurrent.atomic.AtomicLong sSectionDirtyCalls = new java.util.concurrent.atomic.AtomicLong(), sSectionDirtyIterations = new java.util.concurrent.atomic.AtomicLong();
 
 	/** BUG-106 №4 — кэш квадов BER. Эпоха рендера: {@code allChanged()} (перешив атласа/моделей — F3+T, F3+A,
 	 *  смена дистанции; кэшированные квады держат UV СТАРОГО атласа) рвёт ВСЕ кэши разом, O(1). Точечный сброс —
@@ -108,19 +111,41 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 	 *  Залипание кэша возможно лишь там, где залипал бы и мэш 1.7.10 — 1:1 по следствию. */
 	public static long sQuadEpoch = 0;
 
-	/** Сброс кэша квадов у всех MTE секции (зовёт MixinLevelRenderer из setSectionDirty, main-thread). */
-	public static void onSectionDirty(net.minecraft.client.multiplayer.ClientLevel aLevel, int aSectionX, int aSectionY, int aSectionZ) {
-		net.minecraft.world.level.chunk.LevelChunk tChunk = gregapi.util.WD.chunkNow(aLevel, aSectionX, aSectionZ);
-		if (tChunk == null) return;
-		int tMinY = aSectionY << 4, tMaxY = tMinY + 15;
-		for (java.util.Map.Entry<BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tEntry : tChunk.getBlockEntities().entrySet()) {
-			int tY = tEntry.getKey().getY();
-			if (tY >= tMinY && tY <= tMaxY && tEntry.getValue() instanceof TileEntityBase01Root tBE) tBE.mQuadCacheEpoch = Long.MIN_VALUE;
-		}
+	/** ШТАМП СЕКЦИИ — цена сигнала (волна 3 консолидации, п.2). Сигнал {@code setSectionDirty} для движка стоит
+	 *  один флаг ({@code viewArea.setDirty}), поэтому он зовёт его ПАЧКАМИ: {@code setBlockDirty} крутит ±1 по
+	 *  трём осям и бьёт 27 раз на ОДНО изменение блока ({@code LevelRenderer.java:1446-1460}), а приход чанка
+	 *  добавляет свет ({@code ClientPacketListener.enableChunkLight} → {@code Level.setSectionRangeDirty}, 3×3×N
+	 *  секций по Y). Прежняя редакция вешала на этот сигнал обход ВСЕХ блок-сущностей чанка — живой замер
+	 *  (стенд gt6berstorm, полёт в непрогруженную область) дал сотни тысяч вызовов и миллионы бесполезных
+	 *  итераций за десятки секунд.
+	 *
+	 *  <p>Работа снята с сигнала и отдана моменту рендера: сигнал лишь ПЕЧАТАЕТ секцию (инкремент, O(1)), а
+	 *  валидность кэша каждый MTE проверяет сам, сверяя свой оттиск со штампом своей секции. Гранулярность и
+	 *  момент инвалидации те же, что были (та же воронка, та же секция) — дешевеет только цена, поэтому 1:1
+	 *  по следствию с мэшем 1.7.10 сохраняется.
+	 *
+	 *  <p>Смена мира карту не переживает: {@code LevelRenderer.setLevel} зовёт {@code allChanged()} →
+	 *  {@link #onRenderAllChanged} чистит её тем же движковым сигналом, которым рвутся и эпохи. Отдельного
+	 *  механизма выгрузки не заводим. */
+	private static final it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap SECTION_STAMP = new it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap();
+
+	/** Печать секции (зовёт MixinLevelRenderer из setSectionDirty, main-thread). O(1) — ни чанка, ни его блок-сущностей. */
+	public static void onSectionDirty(int aSectionX, int aSectionY, int aSectionZ) {
+		sSectionDirtyCalls.incrementAndGet();
+		SECTION_STAMP.addTo(net.minecraft.core.SectionPos.asLong(aSectionX, aSectionY, aSectionZ), 1L);
 	}
 
-	/** Полный сброс (зовёт MixinLevelRenderer из allChanged, main-thread). */
-	public static void onRenderAllChanged() {sQuadEpoch++;}
+	/** Штамп секции, в которой лежит позиция (0 = секцию не помечали ни разу — законное значение, см. рендер). */
+	private static long sectionStamp(BlockPos aPos) {
+		return SECTION_STAMP.get(net.minecraft.core.SectionPos.asLong(
+			  net.minecraft.core.SectionPos.blockToSectionCoord(aPos.getX())
+			, net.minecraft.core.SectionPos.blockToSectionCoord(aPos.getY())
+			, net.minecraft.core.SectionPos.blockToSectionCoord(aPos.getZ())));
+	}
+
+	/** Полный сброс (зовёт MixinLevelRenderer из allChanged, main-thread): эпоха рвёт все кэши разом, штампы
+	 *  секций теряют смысл вместе с ней (иначе карта росла бы от мира к миру). */
+	public static void onRenderAllChanged() {sQuadEpoch++; SECTION_STAMP.clear();}
 	/** Счётчик crack-decal сабмитов (судья трещин). */
 	public static final java.util.concurrent.atomic.AtomicLong sCrackSubmits = new java.util.concurrent.atomic.AtomicLong();
 
@@ -184,14 +209,17 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 			return;
 		}
 		sQuadExtracts.incrementAndGet();
-		// BUG-106 №4: кэш-хит — облик с кадра построения не менялся (сигнала setSectionDirty не было, см. sQuadEpoch
-		// выше). mRenderAABB остаётся от кадра построения, спец-рендер (аниматика TESR) идёт живым ниже, как всегда.
-		if (aBE.mQuadCacheEpoch == sQuadEpoch) {
+		BlockPos tPos = aBE.getBlockPos();
+		// BUG-106 №4: кэш-хит — облик с кадра построения не менялся, то есть НИ эпоха рендера (перешив атласа),
+		// НИ штамп СВОЕЙ секции с того кадра не сдвинулись (волна 3 консолидации, п.2). Штамп 0 у ни разу не
+		// помеченной секции — законное значение: первый кадр даёт промах (оттиск заведён Long.MIN_VALUE), после
+		// него 0 == 0 и кэш живёт. mRenderAABB остаётся от кадра построения, спец-рендер идёт живым ниже, как всегда.
+		long tSectionStamp = sectionStamp(tPos);
+		if (aBE.mQuadCacheEpoch == sQuadEpoch && aBE.mQuadCacheSectionStamp == tSectionStamp) {
 			aState.mQuads = aBE.mQuadCache;
 			sQuadCacheHits.incrementAndGet();
 		} else {
-			aBE.mRenderAABB = new net.minecraft.world.phys.AABB(aBE.getBlockPos());
-			BlockPos tPos = aBE.getBlockPos();
+			aBE.mRenderAABB = new net.minecraft.world.phys.AABB(tPos);
 			GT6QuadBuilder tQB = new GT6QuadBuilder();
 			try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* render-логика конкретного MTE не должна ронять кадр */}
 			if (!tQB.isEmpty()) aState.mQuads = tQB.quads();
@@ -200,8 +228,9 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 			if (tDrawn != null) aBE.mRenderAABB = new net.minecraft.world.phys.AABB(
 				  tPos.getX() + Math.min(tDrawn[0], 0F), tPos.getY() + Math.min(tDrawn[1], 0F), tPos.getZ() + Math.min(tDrawn[2], 0F)
 				, tPos.getX() + Math.max(tDrawn[3], 1F), tPos.getY() + Math.max(tDrawn[4], 1F), tPos.getZ() + Math.max(tDrawn[5], 1F));
-			aBE.mQuadCache = aState.mQuads; // null = «квадов нет» — тоже кэшируется (валидность судит эпоха)
+			aBE.mQuadCache = aState.mQuads; // null = «квадов нет» — тоже кэшируется (валидность судят эпоха и штамп секции)
 			aBE.mQuadCacheEpoch = sQuadEpoch;
+			aBE.mQuadCacheSectionStamp = tSectionStamp;
 			sQuadBuilds.incrementAndGet();
 		}
 		@SuppressWarnings("rawtypes") BlockEntityRenderer tSpecial = SPECIAL_RENDERERS.get(aBE.getClass());

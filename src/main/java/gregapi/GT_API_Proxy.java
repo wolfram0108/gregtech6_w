@@ -691,6 +691,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			}
 			
 			if (aEvent instanceof ServerTickEvent.Post) { // было aEvent.phase == ServerTickEvent.END
+				// Склейка рассылки карты руды (волна 3 консолидации, п.1): за тик накопились грязные чанки —
+				// отсылаем каждый ОДИН раз (пакет несёт чанк целиком, см. PrefixBlock.flushOreMapSync).
+				gregapi.block.prefixblock.PrefixBlock.flushOreMapSync();
 				for (int i = 0; i < SERVER_TICK_POST.size(); i++) {
 					ITileEntityServerTickPost tTileEntity = SERVER_TICK_POST.get(i);
 					if (tTileEntity.isDead()) {
