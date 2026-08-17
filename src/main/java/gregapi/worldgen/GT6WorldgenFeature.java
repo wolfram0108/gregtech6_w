@@ -216,6 +216,13 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		// (ProjectileWeaponItem.java:20) и без него не постит событие выстрела вовсе — gregapi/data/GT6ItemTags.java.
 		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6ItemTags>) aOutput ->
 			new gregapi.data.GT6ItemTags(aOutput, aEvent.getLookupProvider()));
+		// F1-b тег-мост, ИСХОДЯЩАЯ сторона (decisions/F4-oredictionary.md §4.4): материал-агностичные группы
+		// GT6 (ingots/dusts/gems/…) в конвенционные теги forge:. Та же датаген-точка, отдельного события не
+		// заводим (gregapi/data/GT6ConventionTags.java, таблица имён — gregapi/oredict/OreDictTags.java).
+		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6ConventionTags>) aOutput ->
+			new gregapi.data.GT6ConventionTags(aOutput, aEvent.getLookupProvider()));
+		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6ConventionTags.Blocks>) aOutput ->
+			new gregapi.data.GT6ConventionTags.Blocks(aOutput, aEvent.getLookupProvider()));
 	}
 
 	/** F6: центральная точка подписки, вызывается ОДИН раз из {@code GT_API}-конструктора (тот же мод-бас,

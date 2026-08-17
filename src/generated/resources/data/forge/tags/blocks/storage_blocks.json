@@ -1,0 +1,9 @@
+{
+  "values": [
+    "gregtech:gt.meta.storage.raw",
+    "gregtech:gt.meta.storage.gem",
+    "gregtech:gt.meta.storage.dust",
+    "gregtech:gt.meta.storage.ingot",
+    "gregtech:gt.meta.storage.solid"
+  ]
+}

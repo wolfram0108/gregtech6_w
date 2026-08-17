@@ -1,6 +1,5 @@
 {
   "values": [
-    "gregtech:gt.block.multitileentity.iron.stone.shovel.0.0.15.false.false",
     "gregtech:gt.meta.storage.dust",
     "gregtech:gt.block.diggable",
     "gregtech:gt.block.grass",
@@ -13,6 +12,7 @@
     "gregtech:gt.meta.ore.small.sand",
     "gregtech:gt.meta.ore.small.redsand",
     "gregtech:gt.meta.ore.normal.mud",
-    "gregtech:gt.meta.ore.small.mud"
+    "gregtech:gt.meta.ore.small.mud",
+    "gregtech:gt.block.multitileentity.iron.stone.shovel.0.0.15.false.false"
   ]
 }

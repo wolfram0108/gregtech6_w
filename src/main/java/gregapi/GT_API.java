@@ -330,6 +330,12 @@ public class GT_API extends Abstract_Mod {
 		// потому что весь stack-based контент GT6 регистрируется ниже по этой очереди и обязан видеть
 		// уже наполненный ванильный словарь — ровно тот порядок, что был в 1.7.10.
 		try {gregapi.oredict.OreDictionary.initVanillaEntries();} catch(Throwable e) {e.printStackTrace(ERR);}
+		// F1-b тег-мост, ВХОДЯЩАЯ сторона (decisions/F4-oredictionary.md §4.4): в 1.7.10 чужие моды сами звали
+		// OreDictionary.registerOre и GT6 ловил их событием; на этой версии общий язык модов — теги forge:, и
+		// мост читает их РЕАЛЬНЫЙ реестр, подавая содержимое в тот же вход словаря. Место вызова не произвольно:
+		// setTarget_ с aOverwrite=F оставляет целью унификации ПЕРВОГО зарегистрированного — значит чужой предмет
+		// обязан успеть до собственных стеков GT6 (очередь ниже), ровно как успевали моды, грузившиеся раньше GT6.
+		try {gregapi.oredict.OreDictTags.importFromTags();} catch(Throwable e) {e.printStackTrace(ERR);}
 		try {while (!DEFERRED_ITEM_INIT.isEmpty()) {Runnable tInit = DEFERRED_ITEM_INIT.remove(0); try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);}}}
 		finally {sDeferredItemInitRunning = false; sDeferredItemInitDone = true;}
 	}

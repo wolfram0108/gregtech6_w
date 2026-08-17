@@ -1,8 +1,5 @@
 {
   "values": [
-    "gregtech:gt.block.multitileentity.wood.wood.axe.0.0.15.false.false",
-    "gregtech:gt.block.multitileentity.leaves.grass.axe.0.0.15.false.false",
-    "gregtech:gt.block.multitileentity.redstonelight.wood.axe.0.0.15.false.false",
     "gregtech:gt.block.bars.wood",
     "gregtech:gt.block.log.1",
     "gregtech:gt.block.log.1.fireproof",
@@ -51,6 +48,9 @@
     "gregtech:gt.block.planks2.fireproof.slab.3",
     "gregtech:gt.block.planks2.fireproof.slab.4",
     "gregtech:gt.block.planks2.fireproof.slab.5",
-    "gregtech:gt.block.planks2.fireproof"
+    "gregtech:gt.block.planks2.fireproof",
+    "gregtech:gt.block.multitileentity.wood.wood.axe.0.0.15.false.false",
+    "gregtech:gt.block.multitileentity.leaves.grass.axe.0.0.15.false.false",
+    "gregtech:gt.block.multitileentity.redstonelight.wood.axe.0.0.15.false.false"
   ]
 }
