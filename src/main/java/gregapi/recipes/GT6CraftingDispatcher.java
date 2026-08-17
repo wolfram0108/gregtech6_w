@@ -122,23 +122,38 @@ public final class GT6CraftingDispatcher extends CustomRecipe {
 	// КАЖДОГО слота; GT6-инструменты давали копию с износом doDamage(getToolDamagePerContainerCraft) — MultiItemTool:579,
 	// бутылки/каны/prefix — свои). В neo модель per-recipe (CraftingRecipe.getRemainingItems:22, дефолт читает только
 	// компонентный getCraftingRemainder — про GT6-канал не знает) → инструмент-ингредиент потреблялся целиком. Мост в
-	// ЕДИНОЙ воронке всех GT6-крафтов (F11-центр): GT6-предметы — через живой ItemBase-канал (:175, слепок 1.7.10),
-	// прочие — vanilla-семантика defaultCraftingReminder 1:1. Отклонение-форс движка: neo кладёт остаток обратно В СЕТКУ
-	// (ResultSlot:105), 1.7.10 doesContainerItemLeaveCraftingGrid=F отдавал в инвентарь — канала больше нет.
+	// ЕДИНОЙ воронке всех GT6-крафтов (F11-центр): GT6-предметы — через живой GT6-канал, прочие — vanilla-семантика
+	// defaultCraftingReminder 1:1. Отклонение-форс движка: neo кладёт остаток обратно В СЕТКУ (ResultSlot:105),
+	// 1.7.10 doesContainerItemLeaveCraftingGrid=F отдавал в инвентарь — канала больше нет.
+	//
+	// BUG-022, класс «слепой центр»: спрашивать надо ВСЕ ПЯТЬ корней канала, а не один. В 1.7.10
+	// hasContainerItem/getContainerItem были методами САМОГО Item, поэтому SlotCrafting спрашивал любой GT6-предмет;
+	// в neo у Item их нет, и реализации GT6 живут в пяти несвязанных корнях (ItemBase и его MultiItem*, PrefixItem,
+	// ItemFluidDisplay, PrefixBlockItem, MultiTileEntityItemInternal). Здесь спрашивался только ItemBase — тот же
+	// разрыв, что закрыт в ST.container (BUG-022 v2). Своего перебора корней не заводим: спрашиваем ТУ ЖЕ единую
+	// точку — ST.gtContainerItem (сделана публичной для этого вызывателя).
+	//
+	// ⚠️ ПРОВЕРЕНО ВЕТВЛЕНИЕ (не только состав корней): раньше instanceof ItemBase без контейнера уходил В НИКУДА
+	// (else был доступен только НЕ-ItemBase стекам) — теперь любой стек с gtContainerItem==null проваливается в
+	// ванильный getCraftingRemainder(). Замер живым обходом ВСЕГО реестра (45388 реальных стеков, приём
+	// CreativeTabsGT.enumerate, тот же, что у «527 → 1371» ЦЕНТРА выше): стеков, где ОБА условия разом
+	// (gtContainerItem==null И getCraftingRemainder()!=null) — 5, и ВСЕ ПЯТЬ вне пяти GT6-корней (ванильные,
+	// напр. вёдра) — для них старый код и без правки безусловно брал этот же else (не instanceof ItemBase),
+	// поведение не изменилось. Среди instanceof ItemBase (единственный корень, где старый else вообще был
+	// недостижим при отсутствующем контейнере) совпадений — 0. Реальных расхождений старое/новое поведение: 0.
+	// Ветвление безопасно, восстанавливать прежнюю изоляцию ItemBase от ванильного канала не требуется.
 	@Override
 	public net.minecraft.core.NonNullList<ItemStack> getRemainingItems(CraftingInput aGrid) {
 		net.minecraft.core.NonNullList<ItemStack> rRemaining = net.minecraft.core.NonNullList.withSize(aGrid.size(), ItemStack.EMPTY);
 		for (int i = 0; i < aGrid.size(); i++) {
 			ItemStack tStack = aGrid.getItem(i);
 			if (tStack.isEmpty()) continue;
-			if (tStack.getItem() instanceof gregapi.item.ItemBase tItem) {
-				if (tItem.hasContainerItem(tStack)) {
-					ItemStack tRemainder = tItem.getContainerItem(tStack);
-					if (gregapi.util.ST.valid(tRemainder)) rRemaining.set(i, tRemainder);
-				}
+			ItemStack tRemainder = gregapi.util.ST.gtContainerItem(tStack);
+			if (tRemainder != null) {
+				if (gregapi.util.ST.valid(tRemainder)) rRemaining.set(i, tRemainder);
 			} else {
-				net.minecraft.world.item.ItemStackTemplate tRemainder = tStack.getCraftingRemainder();
-				if (tRemainder != null) rRemaining.set(i, tRemainder.create());
+				net.minecraft.world.item.ItemStackTemplate tVanillaRemainder = tStack.getCraftingRemainder();
+				if (tVanillaRemainder != null) rRemaining.set(i, tVanillaRemainder.create());
 			}
 		}
 		return rRemaining;

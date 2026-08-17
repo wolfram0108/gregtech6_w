@@ -122,8 +122,12 @@ public class FurnaceRecipes {
 			// отдаёт GT6-плавки ванильной печи. Типизированный обход ронял ClassCastException прямо на нём,
 			// цикл обрывался на середине (перенеслось 149 из всех, булыжник и прочее за ним — нет).
 			// Диспетчер здесь пропускаем осознанно: он не носитель данных, а переходник в ЭТОТ же реестр.
+			// F11-smelting, крах-класс: диспетчер САМ стал SmeltingRecipe (контракт ванильного типа), поэтому
+			// фильтр по классу его больше не отсеивает — исключаем его ИМЕНЕМ, иначе перебирали бы собственную
+			// живую витрину входов (рекурсия в свой же реестр).
 			for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder
 				: tLevel.recipeAccess().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.SMELTING)) {
+				if (tHolder.value() instanceof GT6SmeltingDispatcher) continue;
 				if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.SmeltingRecipe tRecipe)) continue;
 				for (net.minecraft.core.Holder<net.minecraft.world.item.Item> tItem : tRecipe.input().items().toList()) {
 					ItemStack tIn = new ItemStack(tItem);

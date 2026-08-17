@@ -1163,8 +1163,13 @@ public class ST {
 	 * считалась обычным ингредиентом и попадала в общий генератор плавки
 	 * ({@code Loader_OreProcessing}). Живая диагностика подтвердила: контейнер префикса на момент события
 	 * УЖЕ установлен — значит дело было не в тайминге, а в том, что его никто не спрашивал.</p>
+	 *
+	 * <p><b>Публичная.</b> Тот же вопрос задаёт крафт-стол: остаток крафта отдаёт диспетчер верстака
+	 * {@code GT6CraftingDispatcher.getRemainingItems} — он спрашивал только {@code ItemBase}
+	 * (частный {@code instanceof}) и терял те же четыре корня; второго перебора корней не заводим —
+	 * диспетчер спрашивает ЭТУ точку.</p>
 	 */
-	private static ItemStack gtContainerItem(ItemStack aStack) {
+	public static ItemStack gtContainerItem(ItemStack aStack) {
 		Item tItem = item_(aStack);
 		if (tItem instanceof gregapi.item.ItemBase                                  tI) return tI.getContainerItem(aStack);
 		if (tItem instanceof gregapi.item.prefixitem.PrefixItem                     tI) return tI.getContainerItem(aStack);

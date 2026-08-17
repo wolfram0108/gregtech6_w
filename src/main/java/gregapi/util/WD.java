@@ -443,6 +443,38 @@ public class WD {
 		return aWorld.getChunkSource().getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, F) instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
 	}
 
+	/** ЦЕНТР ПРИЗНАКА «В КЛЕТКЕ НЕТ BlockEntity — ДОКАЗУЕМО» (крах-класс «признак сменил носитель»).
+	 *
+	 *  <p>В 1.7.10 «TE не найдена» означало ровно одно — сироту, потому что вопрос и действие шли по ОДНОМУ пути:
+	 *  {@code World.getTileEntity} грузил чанк, а {@code Chunk.func_150806_e} читал единственную карту
+	 *  {@code chunkTileEntityMap}, заполняемую синхронно с загрузкой чанка. Стадии «сущность ещё упакована»
+	 *  не существовало вовсе.
+	 *
+	 *  <p>В neo ответ «нет BE» стал многозначным, и КАЖДОЕ значение — не сиротство:
+	 *  <ul>
+	 *  <li>чанк не виден моду (окно промоции/выгрузки) — {@link #chunkNow} вернёт null, а {@code Level.setBlock}
+	 *      тот же чанк ЗАГРУЗИТ и запишет: спрашиваем неблокирующе, действуем блокирующе;</li>
+	 *  <li>сущность ещё «упакована» в {@code LevelChunk.pendingBlockEntities} — распаковка идёт лишь на TICKING,
+	 *      до этого карта {@code blockEntities} пуста при полном содержимом на диске;</li>
+	 *  <li>сущность MTE ещё не реконструирована из стаба ({@code GT6WorldgenFeature.drainStubs});</li>
+	 *  <li>{@link #te} дополнительно снимает с ответа «мёртвую» сущность ({@code ITileEntityUnloadable.isDead}) —
+	 *      это состояние жизненного цикла, а не отсутствие.</li>
+	 *  </ul>
+	 *
+	 *  <p><b>Что делает признак.</b> Спрашивает чанк НАПРЯМУЮ и только его: {@code LevelChunk.getBlockEntity(pos)}
+	 *  сам распаковывает закладку — стаб тоже сущность, тоже ответ «есть». Фильтр {@code isDead} НЕ применяется:
+	 *  мёртвая сущность существует. Чанк не виден — ответ «не доказано»: судить о клетке, которой не видим, нельзя.
+	 *
+	 *  <p><b>Цена.</b> Признак зовётся ТОЛЬКО в ветке, где {@link #te} уже вернул null, — в горячем пути соседских
+	 *  апдейтов не выполняется ни разу, пока всё в порядке. Сам он — один lookup карты чанка, без аллокаций сверх позиции. */
+	public static boolean teProvenAbsent(Level aWorld, int aX, int aY, int aZ) {
+		if (aWorld == null) return F;
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		if (aWorld.isOutsideBuildHeight(tPos)) return F;
+		net.minecraft.world.level.chunk.LevelChunk tChunk = chunkNow(aWorld, aX >> 4, aZ >> 4);
+		return tChunk != null && tChunk.getBlockEntity(tPos) == null;
+	}
+
 	/** ЦЕНТР гейта «блоки здесь тикают» (правка №2в, решение пользователя 2026-08-09: «где замерла вода —
 	 *  замирает и труба», один закон для GT6 и ванили). Движковый предикат ServerLevel.shouldTickBlocksAt
 	 *  (ServerLevel.java:480 → DistanceManager.inBlockTickingRange) — ровно тот же гейт, которым движок
@@ -1409,16 +1441,26 @@ public class WD {
 	// коллизия формы. Воспроизводим семантику оригинала 1:1 (net/minecraft/world/World.java:3647-3649): (1) коллизия
 	// формы РАЗМЕЩАЕМОГО блока с сущностями, кроме размещающей (skipColl -> без проверки) — через уже существующий
 	// центр noEntityCollision(box, entity) = 1:1 с 1.7.10 checkNoEntityCollision(aabb, entity); (2) заменяемость цели —
-	// neo BlockState.canBeReplaced() (1.7.10 block1.isReplaceable). Ветку «anvil на circuits» опускаем: недостижима для
-	// GT6-блоков (aBlock всегда GT6-блок, никогда Blocks.ANVIL); block.canReplace для GT6-блока = T (BlockBase.canReplace),
-	// потому вторая половина сводится к canBeReplaced() цели.
+	// neo BlockState.canBeReplaced() (1.7.10 block1.isReplaceable); (3) «а можно ли РАЗМЕЩАЕМОМУ блоку тут стоять» —
+	// neo BlockState.canSurvive (1.7.10 aBlock.canReplace -> canPlaceBlockOnSide -> canPlaceBlockAt). Ветку «anvil на
+	// circuits» опускаем: недостижима для GT6-блоков (aBlock всегда GT6-блок, никогда Blocks.ANVIL).
+	//
+	// ⛔ Крах-класс «известный носитель»: прежняя редакция пункт (3) ОПУСКАЛА с обоснованием «block.canReplace для
+	// GT6-блока = T (BlockBase.canReplace)». Обоснование неверно: в 1.7.10 GT6 canReplace НЕ переопределял вовсе
+	// (греп по gt6-original: только ВЫЗЫВАТЕЛИ, BlockBase.java и MultiTileEntityItemInternal.java) — он резолвился
+	// в ванильный Block.canReplace -> canPlaceBlockOnSide -> canPlaceBlockAt, и ИМЕННО ЭТУ ветку переопределяли
+	// рельсы (BlockRailBase: твёрдый верх снизу), кувшинки (BlockBaseLilyPad), саженцы (BlockBaseSapling), цветы.
+	// Т.е. `canReplace=T` порта — новая, пустая деталь, а не слепок; сама проверка потерялась, и блок вставал куда
+	// угодно, чтобы в тот же тик осыпаться в лут. Дефолт canSurvive у neo = true, дефолт canPlaceBlockAt у 1.7.10 =
+	// isReplaceable(цель) (уже проверено пунктом (2)) — значит пункт (3) возвращает РОВНО переопределения, ничего сверх.
 	public static boolean canPlaceEntityOnSide(LevelAccessor aWorld, Block aBlock, int aX, int aY, int aZ, boolean aSkipCollisionCheck, int aSide, Entity aEntity, ItemStack aStack) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		if (!aSkipCollisionCheck) {
 			net.minecraft.world.phys.shapes.VoxelShape tShape = aBlock.defaultBlockState().getCollisionShape(aWorld, tPos);
 			if (!tShape.isEmpty() && !noEntityCollision(aWorld, tShape.bounds().move(aX, aY, aZ), aEntity)) return F;
 		}
-		return state(aWorld, tPos).canBeReplaced();
+		if (!state(aWorld, tPos).canBeReplaced()) return F;
+		return aBlock.defaultBlockState().canSurvive(aWorld, tPos);
 	}
 
 	/** ЦЕНТР гейта дропа от взрыва (BUG-024; консолидация BUG-047-ревизии — были копии в BlockBase/PrefixBlock/

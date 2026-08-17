@@ -71,8 +71,18 @@ import static gregapi.data.CS.F;
  *
  * <p>Отклонение-форс движка (видимо): коптильня/домна ({@code SmokerRecipes}/{@code BlastFurnaceRecipes})
  * — ветка {@code MD.EtFu} (не загружен) = 1:1 поведение 1.7.10 без EtFu; их проброс — при F10-compat.</p>
+ *
+ * <p><b>Крах-класс, контракт типа.</b> Предок — именно {@link net.minecraft.world.item.crafting.SmeltingRecipe},
+ * не {@code AbstractCookingRecipe}: {@code RecipeType.SMELTING} ТИПИЗИРОВАН конкретным классом
+ * ({@code RecipeType.java:9} — {@code RecipeType<SmeltingRecipe> SMELTING}), поэтому любой потребитель, берущий
+ * рецепт по этому типу через generic, получает от компилятора {@code checkcast} к {@code SmeltingRecipe}.
+ * Потребитель, ронявший сервер, — лут-функция «выплавить дроп» ({@code SmeltItemFunction.java:41}, животное
+ * сгорело в лаве): {@code Optional<RecipeHolder<SmeltingRecipe>> = getRecipeFor(RecipeType.SMELTING, …)} →
+ * {@code ClassCastException} на прежнем предке {@code AbstractCookingRecipe}. Второго плеча-моста (выход без
+ * контейнера) здесь не требуется: та же лут-функция в 26.1.2 читает выход через {@code assemble(input)}
+ * с контейнером ({@code SmeltItemFunction.java:41-43}), а не отдельным беcконтекстным геттером, как в 1.20.1.</p>
  */
-public final class GT6SmeltingDispatcher extends AbstractCookingRecipe {
+public final class GT6SmeltingDispatcher extends net.minecraft.world.item.crafting.SmeltingRecipe {
 	public static final MapCodec<GT6SmeltingDispatcher> CODEC = com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec(i -> i.group(
 		com.mojang.serialization.Codec.FLOAT.optionalFieldOf("xp", 0.0F).forGetter(AbstractCookingRecipe::experience)
 	).apply(i, GT6SmeltingDispatcher::new));
@@ -138,8 +148,15 @@ public final class GT6SmeltingDispatcher extends AbstractCookingRecipe {
 		return Items.FURNACE;
 	}
 
-	@Override public RecipeSerializer<GT6SmeltingDispatcher> getSerializer() {
-		return SERIALIZER;
+	// Крах-класс, продолжение: SmeltingRecipe.getSerializer() (в отличие от предка AbstractCookingRecipe) сужает
+	// возврат БЕЗ wildcard — RecipeSerializer<SmeltingRecipe> — генерики инвариантны, поэтому переопределение здесь
+	// обязано вернуть РОВНО этот тип (RecipeSerializer<GT6SmeltingDispatcher> движок отвергает: не подтип). Поле
+	// SERIALIZER остаётся RecipeSerializer<GT6SmeltingDispatcher> — им же пользуется DeferredRegister-регистрация
+	// (GT6CraftingDispatcher.SERIALIZERS.register); каст безопасен — стирание типов, тот же объект, реальный T рецепта
+	// остаётся GT6SmeltingDispatcher (extends SmeltingRecipe), кодек/стрим-кодек читают и пишут ровно его.
+	@SuppressWarnings("unchecked")
+	@Override public RecipeSerializer<net.minecraft.world.item.crafting.SmeltingRecipe> getSerializer() {
+		return (RecipeSerializer<net.minecraft.world.item.crafting.SmeltingRecipe>)(RecipeSerializer<?>) SERIALIZER;
 	}
 
 	@Override public RecipeType<net.minecraft.world.item.crafting.SmeltingRecipe> getType() {
