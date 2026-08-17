@@ -1227,6 +1227,13 @@ public class GT_API extends Abstract_Mod {
 		ENABLE_ADDING_IC2_CENTRIFUGE_RECIPES    = F;
 		}
 		
+		// Слой AE2, тот же приём, что флаги ic2 выше: ключ читается ТОЛЬКО при живом AE2 (без неё в конфиг
+		// не пишется), без AE2 флаг всегда T — метеоритов нет, жила метеоритного железа нужна (на ней пять
+		// сплавов MT). Потребители флагов: гашение рецептов (Compat_Recipes_AppliedEnergistics), пак-гашение
+		// метеоритов и жила (Loader_Worldgen) — по мере ввода соответствующих шагов слоя.
+		AE2_REPLACE_METEORITE_GENERATION        = !MD.AE.mLoaded || ConfigsGT.GREGTECH.get("ae2", "ReplaceMeteoriteGeneration", T);
+		AE2_KILL_QUARTZ_TOOLS                   = !MD.AE.mLoaded || ConfigsGT.GREGTECH.get("ae2", "DisableAllQuartzToolRecipes", T);
+
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDOUT"             , F)) System.out.close();
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDERR"             , F)) System.err.close();
 		// F12: 1.7.10 Blocks.mob_spawner.setHardness(500)/setResistance(6000000) — runtime-мутация vanilla-блока (neo Properties
