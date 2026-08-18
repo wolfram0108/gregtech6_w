@@ -84,7 +84,7 @@ import static gregapi.data.CS.*;
  * For Internal Use.
  */
 public class ToolCompat {
-	public static boolean GC_BLOCKADVANCED = F, IC_WRENCHABLE = F, IC_CROPTILE = F;
+	public static boolean GC_BLOCKADVANCED = F, IC_WRENCHABLE = F, IC_CROPTILE = F, AE_BASEBLOCKENTITY = F;
 	
 	public static void checkAvailabilities() {
 		try {
@@ -98,6 +98,13 @@ public class ToolCompat {
 		try {
 			ICropTile.class.getCanonicalName();
 			IC_CROPTILE = T;
+		} catch(Throwable e) {/**/}
+		try {
+			// Слой AE2: её блоки обслуживает ключ ГРЕГА (см. плечо в onToolClick). AE2 подключена
+			// compileOnly, поэтому в чистой сборке класса нет — признак берётся его наличием, ровно тем же
+			// приёмом, что у трёх флагов выше.
+			appeng.blockentity.AEBaseBlockEntity.class.getCanonicalName();
+			AE_BASEBLOCKENTITY = T;
 		} catch(Throwable e) {/**/}
 	}
 	
@@ -390,7 +397,51 @@ public class ToolCompat {
 					}
 				}
 			}
-			
+
+			// ПЛЕЧО AE2 — ключ Грега обслуживает блоки Applied Energistics. Решение пользователя: «машины из
+			// мода, такие как хранилища и подобные, должны поворачиваться греговским ключом… У Грега поворот
+			// реализован значительно правильнее». Кварцевые ключи AE2 при этом погашены узлом
+			// DisableAllQuartzToolRecipes (Compat_Recipes_AppliedEnergistics), то есть ключ в сборке один — наш.
+			// ⛔ Тег c:tools/wrench НЕ заводится: у GT6 ВСЕ инструменты — одна запись реестра gt.metatool.01,
+			// а тип лежит на мете стека, поэтому тег на записи пометил бы ключом и меч, и кирку.
+			// Обслуживаем сами, публичным API AE2, тем же приёмом и в том же месте, что плечи GC и IC2 выше.
+			if (AE_BASEBLOCKENTITY && aEntityPlayer != null && aTileEntity instanceof appeng.blockentity.AEBaseBlockEntity tAEEntity) {
+				BlockPos tPosAE = new BlockPos(aX, aY, aZ);
+				if (!appeng.util.Platform.hasPermissions(new appeng.api.util.DimensionalBlockPos(aWorld, tPosAE), aEntityPlayer)) return 0;
+				if (aSneaking) {
+					// РАЗБОР С СОХРАНЕНИЕМ СОДЕРЖИМОГО. Зовём метод самого AE2, а не ломаем блок: он выгружает
+					// настройки и внутренний инвентарь (AEBaseBlockEntity.disassembleWithWrench:441), а у кабельной
+					// шины и сундука переопределён своим правильным способом (CableBusBlockEntity:340,
+					// SkyChestBlockEntity:135).
+					// ⚠ ПРИНЯТАЯ КОСМЕТИЧЕСКАЯ ЦЕНА: AE2 глушит частицы и звук слома флагом
+					// WrenchHook.IS_DISASSEMBLING — приватный ThreadLocal, извне недоступен, поэтому частицы слома
+					// будут видны; звук компенсируем ровно тем, что играет сам AE2 (WrenchHook:74-76).
+					if (tAEEntity.disassembleWithWrench(aEntityPlayer, aWorld, new BlockHitResult(new Vec3(aX+aHitX, aY+aHitY, aZ+aHitZ), FORGE_DIR[aSide], tPosAE, F), aStack).consumesAction()) {
+						aWorld.playSound(aEntityPlayer, tPosAE, net.minecraft.sounds.SoundEvents.ITEM_FRAME_REMOVE_ITEM, net.minecraft.sounds.SoundSource.BLOCKS, 0.7F, 1.0F);
+						return 10000;
+					}
+					return 0;
+				}
+				// ПОВОРОТ — семантикой ГРЕГА, не AE2. У AE2 это круговое вращение вокруг нажатой грани
+				// (WrenchHook:83-92, BlockOrientation.rotateClockwiseAround). У Грега сторона вычисляется по ТОЧКЕ
+				// ПОПАДАНИЯ — aTargetSide выше, UT.Code.getSideWrenching(aSide,aHitX,aHitY,aHitZ), девять зон грани, —
+				// и блок встаёт ЛИЦОМ на неё: не «щёлкай, пока не встанет», а «ткни, куда повернуть». Циклический
+				// поворот AE2 намеренно НЕ воспроизводится. Разворот вокруг оси (spin) сохраняем.
+				BlockState tStateAE = aWorld.getBlockState(tPosAE);
+				appeng.api.orientation.IOrientationStrategy tStrategyAE = appeng.api.orientation.IOrientationStrategy.get(tStateAE);
+				if (tStrategyAE.allowsPlayerRotation()) {
+					BlockState tNewAE = tStrategyAE.setOrientation(tStateAE, FORGE_DIR[aTargetSide], appeng.api.orientation.BlockOrientation.get(tStrategyAE, tStateAE).getSpin());
+					if (tNewAE != tStateAE && tNewAE.canSurvive(aWorld, tPosAE) && WD.set(aWorld, aX, aY, aZ, tNewAE, 3)) return 10000;
+					// «Уже смотрит туда» (клик в грань текущей ориентации): у ГРЕГА инструмент в руке ГЕЙТИТ GUI его
+					// машин — с ключом интерфейс не открывается никогда. Возврат 0 здесь ронял бы клик дальше в
+					// block.use, и AE2 открыла бы меню (на main это поймала живая приёмка: «машины не поворачиваются,
+					// просто открываются»). Холостой щелчок — малый износ, GUI отменён; Shift тут занят разбором,
+					// значит GUI по AE2-блокам с ключом недоступен вовсе, ровно как у машин GT6.
+					return 2500;
+				}
+				return 0;
+			}
+
 			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock instanceof gregapi.block.tree.BlockBaseLog || aBlock instanceof gregapi.block.tree.BlockBaseBeam || aBlock instanceof gregapi.block.misc.BlockBaseBale /* было aBlock.getRenderType()==PILLAR_RENDER — Forge-render-hook удалён из движка; ровно эти 3 класса возвращали PILLAR_RENDER(31) в оригинале (grep getRenderType по gregtech6/), instanceof — точный 1:1 эквивалент */) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}

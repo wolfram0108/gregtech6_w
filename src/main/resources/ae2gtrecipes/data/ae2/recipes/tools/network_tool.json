@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "tag": "ae2:illuminated_panel"
+    },
+    {
+      "tag": "forge:chests/wooden"
+    },
+    {
+      "type": "forge:partial_nbt",
+      "item": "gregtech:gt.metatool.01",
+      "nbt": "{Damage:16}"
+    },
+    {
+      "item": "ae2:calculation_processor"
+    }
+  ],
+  "result": {
+    "item": "ae2:network_tool"
+  }
+}

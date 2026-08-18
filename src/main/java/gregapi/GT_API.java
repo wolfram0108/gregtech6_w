@@ -853,21 +853,37 @@ public class GT_API extends Abstract_Mod {
 	 */
 	public void onAddPackFinders(net.minecraftforge.event.AddPackFindersEvent aEvent) {
 		if (aEvent.getPackType() != net.minecraft.server.packs.PackType.SERVER_DATA) return;
-		if (!MD.AE.mLoaded || !AE2_REPLACE_METEORITE_GENERATION) return;
+		if (!MD.AE.mLoaded) return;
+		// ПЕРВЫЙ пак — гашение генерации (мастер-ключ ReplaceMeteoriteGeneration).
+		if (AE2_REPLACE_METEORITE_GENERATION) addBuiltInPack(aEvent, "ae2replacegen", "GT6: AE2 generation replaced by GregTech");
+		// ВТОРОЙ пак, свой ключ: перепайка рецептов AE2, у которых МЫ забрали вход. Пока такой один — Network
+		// Tool: погасив оба кварцевых КЛЮЧА (узел DisableAllQuartzToolRecipes), мы убили и его крафт
+		// (tools/network_tool.json просит тег ae2:quartz_wrench), а он ME-механика и обязан жить. Переопределение
+		// подменяет вход на ключ ГРЕГА ингредиентом forge:partial_nbt (PartialNBTIngredient): предмет
+		// gregtech:gt.metatool.01 плюс поле стека Damage = 16 (ToolsGT.WRENCH). Отбор ЧАСТИЧНЫЙ — прочее NBT
+		// инструмента (материал, износ) не сравнивается, поэтому подходит ключ ЛЮБОГО материала, а меч
+		// (Damage 0) не подходит. Пак отдельный, а не файл в первом: ключи независимы — выключив гашение
+		// инструментов, сборщик возвращает и кварцевые ключи, и родной рецепт, а метеориты этим не задеваются.
+		if (AE2_KILL_QUARTZ_TOOLS) addBuiltInPack(aEvent, "ae2gtrecipes", "GT6: AE2 recipes rewired to GregTech inputs");
+	}
+
+	/** Подключение ОДНОГО встроенного датапака мода. Одна точка на все паки порта: форма сборки {@code Pack}
+	 *  на 1.20.1 нетривиальна (см. javadoc выше), и повторять её на каждый пак — прямая дорога к расхождению. */
+	private static void addBuiltInPack(net.minecraftforge.event.AddPackFindersEvent aEvent, String aDir, String aTitle) {
 		aEvent.addRepositorySource(aConsumer -> {
 			try {
-				java.nio.file.Path tRoot = net.minecraftforge.fml.ModList.get().getModFileById(ModIDs.GAPI).getFile().findResource("ae2replacegen");
+				java.nio.file.Path tRoot = net.minecraftforge.fml.ModList.get().getModFileById(ModIDs.GAPI).getFile().findResource(aDir);
 				net.minecraft.server.packs.repository.Pack tPack = net.minecraft.server.packs.repository.Pack.readMetaAndCreate(
-					  ModIDs.GAPI + ":ae2replacegen"
-					, net.minecraft.network.chat.Component.literal("GT6: AE2 generation replaced by GregTech")
+					  ModIDs.GAPI + ":" + aDir
+					, net.minecraft.network.chat.Component.literal(aTitle)
 					, T
 					, aPackId -> new net.minecraftforge.resource.PathPackResources(aPackId, T, tRoot)
 					, net.minecraft.server.packs.PackType.SERVER_DATA
 					, net.minecraft.server.packs.repository.Pack.Position.TOP
 					, net.minecraft.server.packs.repository.PackSource.BUILT_IN);
-				if (tPack != null) {aConsumer.accept(tPack); OUT.println("GT_API: встроенный датапак ae2replacegen подключён (гашение метеоритов AE2).");}
-				else ERR.println("GT_API: встроенный датапак ae2replacegen НЕ создан — Pack.readMetaAndCreate вернул null (нет pack.mcmeta?).");
-			} catch(Throwable e) {ERR.println("GT_API: встроенный датапак ae2replacegen не подключён:"); e.printStackTrace(ERR);}
+				if (tPack != null) {aConsumer.accept(tPack); OUT.println("GT_API: встроенный датапак " + aDir + " подключён.");}
+				else ERR.println("GT_API: встроенный датапак " + aDir + " НЕ создан — Pack.readMetaAndCreate вернул null (нет pack.mcmeta?).");
+			} catch(Throwable e) {ERR.println("GT_API: встроенный датапак " + aDir + " не подключён:"); e.printStackTrace(ERR);}
 		});
 	}
 

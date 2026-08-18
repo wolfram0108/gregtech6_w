@@ -1,0 +1,6 @@
+{
+  "pack": {
+    "description": "GregTech 6 rewires AE2 recipes whose inputs it removed. Controlled by GregTech.cfg: ae2 / DisableAllQuartzToolRecipes.",
+    "pack_format": 15
+  }
+}
