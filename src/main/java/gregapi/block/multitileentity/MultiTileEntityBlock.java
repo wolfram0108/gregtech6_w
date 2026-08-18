@@ -300,7 +300,11 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	 *
 	 *  <p><b>Смена MTE на MTE не задета:</b> при {@code aWorld.getBlockState(aPos).hasBlockEntity()} остаток
 	 *  принадлежит уже НОВОМУ блоку (движок создаёт его дальше по тому же {@code setBlockState}, :331-347) -
-	 *  трогать его нельзя, и мы не трогаем.
+	 *  трогать его нельзя, и мы не трогаем. Это условие относится к смене между РАЗНЫМИ Java-классами Block
+	 *  (blockChanged=true). Смена MTE на MTE ОДНИМ И ТЕМ ЖЕ физическим Block-классом (типичный случай
+	 *  {@code MultiTileEntityBlockInternal.placeBlock} - GT6 держит личность машины в meta/BE, не в типе Block)
+	 *  даёт {@code blockChanged=false}, и этот хук вообще не вызывается - для неё закладка снимается
+	 *  централизованно в {@code WD.te} (Н-5), тем же приёмом {@code chunk.getBlockEntity(pos)}, что и здесь.
 	 *
 	 *  <p><b>1.7.10.</b> Там снятие TE принадлежало телу {@code breakBlock} (оригинал
 	 *  {@code MultiTileEntityBlock:145-152} - {@code aWorld.removeTileEntity(x,y,z)} последней строкой), а

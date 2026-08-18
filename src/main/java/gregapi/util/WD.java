@@ -1154,6 +1154,20 @@ public class WD {
 	/** Sets the TileEntity at the passed position, with the option of turning adjacent TileEntity updates off. */
 	public static BlockEntity te(LevelAccessor aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity, boolean aCauseTileEntityUpdates) {
 		if (tileYInvalid(aWorld, aY)) return invalidateTileEntityWithNegativeYCoord(aX, aY, aZ, aTileEntity); // было aY<0 — MC26 бедрок Y=−64 легитимен, порог = дно мира getMinY()
+		// Н-5 ЦЕНТР: снять возможную «упакованную» закладку ПРЕЖНЕГО BE по этой позиции ДО force-подмены ниже —
+		// иначе при смене MTE на MTE (тот же физический класс Block у placeBlock => blockChanged=false в
+		// LevelChunk.setBlockState:304 => хук снятия affectNeighborsAfterRemoval:318 физически недостижим — ту же
+		// движковую дыру для случая «блок снят целиком» закрывает sweepBlockEntityRemains, MultiTileEntityBlock.java)
+		// закладка первого MTE остаётся сиротой в pendingBlockEntities рядом с живой BE второго. Приём —
+		// существующий, не новый (см. комментарий sweepBlockEntityRemains): запрос chunk.getBlockEntity(pos) сам
+		// распаковывает pendingBlockEntities и снимает запись оттуда (LevelChunk.java:379); ветка put() ниже
+		// (Level.setBlockEntity/ChunkAccess.setBlockEntity) корректно снимет временно распакованный объект через
+		// LevelChunk.setBlockEntity (previousEntry.setRemoved(), LevelChunk.java:450-454).
+		try {
+			ChunkAccess tPendingChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
+			BlockPos tPendingPos = new BlockPos(aX, aY, aZ);
+			if (tPendingChunk != null && tPendingChunk.getBlockEntityNbt(tPendingPos) != null) tPendingChunk.getBlockEntity(tPendingPos);
+		} catch (Throwable e) {e.printStackTrace(ERR);}
 		// F-tick (канал сместился): в 1.7.10 ОБЕ ветки (World.setTileEntity И Chunk.setTileEntity) добавляли TE в мировой
 		// тик-цикл loadedTileEntityList; в neo тикер регистрируется ТОЛЬКО через Level.setBlockEntity→addAndRegisterBlockEntity
 		// (LevelChunk.setBlockEntity/ChunkAccess — карта без тикера). Потому на реальном Level ВСЕГДА идём полным путём —
