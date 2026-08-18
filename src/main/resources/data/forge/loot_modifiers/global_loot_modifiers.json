@@ -1,6 +1,7 @@
 {
   "replace": false,
   "entries": [
-    "gregtech:block_drops"
+    "gregtech:block_drops",
+    "gregtech:chest_loot"
   ]
 }

@@ -60,8 +60,6 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.LootTableLoadEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 /** 1.7.10 {@code net.minecraftforge.common.ChestGenHooks} — реестр chest-лута. ЕДИНСТВЕННЫЙ центр адаптации
@@ -77,15 +75,26 @@ import net.minecraftforge.server.ServerLifecycleHooks;
  *  <ul><li><b>GT6-категории (gt.*)</b> — содержимое целиком в {@code contents}: getOneItem/getItems/getCount —
  *  формулы 1:1, никакого neo-контекста не нужно (мешки Bag_Loot_*, книги, Unboxinator, ST.generateLoot).</li>
  *  <li><b>Ванильные категории</b> — vanilla-часть живёт в data-driven таблице движка; GT-добавки из
- *  {@code contents} ИНЪЕКТИРУЮТСЯ в неё именованным {@link LootPool} с точным 1.7.10-распределением (см.
- *  {@link #injectInto}); getOneItem семплирует итоговую таблицу (vanilla+GT) на живом сервере.</li></ul>
+ *  {@code contents} СОБИРАЮТСЯ в СТОЯЛЫЙ (никогда не привязанный к таблице) {@link LootPool} с точным
+ *  1.7.10-распределением (см. {@link #buildPool}) и доставляются {@code IGlobalLootModifier}-центром
+ *  {@code gregapi.loot.GT6ChestLootModifier} (единственный вызыватель buildPool); getOneItem семплирует
+ *  итоговую таблицу (vanilla+GT) на живом сервере.</li></ul>
  *
- *  <p>Тайминг (класс BUG-054): {@link LootTableLoadEvent} стреляет при загрузке серверных ресурсов
- *  (ReloadableServerRegistries.scheduleRegistryLoad:69) — РАНЬШЕ GT6 data-init (drain отложек на
- *  LevelEvent.Load) → на первой загрузке буфер пуст и событие no-op. Потому ДВА канала инъекции:
- *  {@link #onLootTableLoad} (покрывает /reload и все будущие перезагрузки) + догоняющий {@link #injectAll}
- *  из GT_API.onLevelLoadEarlyItemInit ПОСЛЕ runDeferredItemInit. Идемпотентность — именованный pool
- *  ({@code gregtech6:<категория>}, LootTable.getPool/addPool отвергает дубликат).
+ *  <p>Тайминг (задача A1, workspace/tasks/consolidation/OPEN-ITEMS.md): Forge 1.20.1 замораживает КАЖДУЮ
+ *  {@code LootTable} сразу после посева {@code LootTableLoadEvent}, СИНХРОННО, в том же проходе загрузки
+ *  серверных ресурсов ({@code ForgeHooks.readLootTable} → {@code loadLootTable} → {@code ret.freeze()},
+ *  forge-1201-decompiled {@code ForgeHooks.java:886-890}) — окна между «событие отстреляло» и «таблица
+ *  заморожена» НЕТ вообще, ни на первой загрузке, ни на любой последующей. GT6 data-init (буфер {@code
+ *  contents}) наполняется СТРОГО позже — на {@code LevelEvent.Load} ({@code GT_API.onLevelLoadEarlyItemInit},
+ *  уже ПОСЛЕ того, как ресурсы сервера загружены и заморожены). Прежняя пара каналов
+ *  (LootTableLoadEvent-слушатель + догоняющая инъекция из onLevelLoadEarlyItemInit) поэтому НИКОГДА не
+ *  успевала: первый видел пустой буфер, второй — уже мёртвую таблицу (10 {@code RuntimeException
+ *  "Attempted to modify LootTable after being finalized!"} на КАЖДОМ старте, GT-лут в 10 ванильных
+ *  категориях не попадал никуда). Штатный канал Forge для добавления лута в ЧУЖУЮ (в т.ч. уже
+ *  замороженную) таблицу — {@code IGlobalLootModifier} ({@code ForgeHooks.modifyLoot}, зовётся ПОСЛЕ
+ *  {@code getRandomItemsRaw}, самой таблицы не касается вовсе): {@code GT6ChestLootModifier.doApply} на
+ *  каждом реальном броске лута строит {@link #buildPool} заново из ЖИВОГО {@code contents} — заморозка
+ *  таблицы ему не мешает, потому что он её не трогает.
  *
  *  <p>REPLACE/read-путь ванильных категорий — ЗАКРЫТ РЕШЕНИЕМ (FORCED-ADAPTATION, BUG-039 v4): канал 1.7.10
  *  (подмена ванильного сундука на GT6-сундук В МОМЕНТ генерации его лута) в neo исчез — лут ленивый
@@ -167,7 +176,6 @@ public class ChestGenHooks {
 		addInfo(VILLAGE_BLACKSMITH      ,  3,  9);
 		addInfo(BONUS_CHEST             , 10, 10);
 		addInfo(DUNGEON_CHEST           ,  8,  8);
-		MinecraftForge.EVENT_BUS.addListener(ChestGenHooks::onLootTableLoad);
 	}
 
 	private static void addInfo(String aCategory, int aMin, int aMax) {
@@ -289,51 +297,33 @@ public class ChestGenHooks {
 	public void setMin(int aValue) {countMin = aValue;}
 	public void setMax(int aValue) {countMax = aValue;}
 
-	// ------------------------------------------------------------------ neo-диспетчер инъекции (ADD-путь) ---
+	// ------------------------------------------------------------------ neo-доставка (ADD-путь, задача A1) ---
 
-	/** Канал 1: /reload и все будущие (пере)загрузки серверных ресурсов. На ПЕРВОЙ загрузке буфер ещё пуст
-	 *  (data-init GT6 отложен на LevelEvent.Load) — тогда работает канал 2 {@link #injectAll}. Событие приходит
-	 *  на background-executor'е загрузки ресурсов; к этому моменту contents либо пуст (первая загрузка), либо
-	 *  стабилен (data-init давно завершён) — гонки нет. */
-	private static void onLootTableLoad(LootTableLoadEvent aEvent) {
-		for (Map.Entry<String, ResourceLocation> tEntry : NEO_TABLE.entrySet()) {
-			if (!tEntry.getValue().equals(aEvent.getName())) continue;
-			ChestGenHooks tHook = chestInfo.get(tEntry.getKey());
-			if (tHook != null && !tHook.contents.isEmpty()) injectInto(tHook, aEvent.getTable());
-			return;
-		}
+	/** Обратный поиск: neo-таблица -> GT6-категория. Единственный вызыватель — {@code GT6ChestLootModifier}
+	 *  (доставка живёт там, gregapi.loot — доставка неймспейсно отделена от compat-mirror), сам центр
+	 *  соответствия категория<->таблица остаётся здесь, в единственном месте, где он и заведён. */
+	public static String categoryForTable(ResourceLocation aTable) {
+		for (Map.Entry<String, ResourceLocation> tEntry : NEO_TABLE.entrySet())
+			if (tEntry.getValue().equals(aTable)) return tEntry.getKey();
+		return null;
 	}
 
-	/** Канал 2: догоняющая инъекция первой загрузки — вызывается из GT_API.onLevelLoadEarlyItemInit СРАЗУ после
-	 *  runDeferredItemInit (буфер полон, сервер создан, таблицы загружены). Тот же приём, что пересбор
-	 *  furnace-propertySet (BUG-054). */
-	public static void injectAll(MinecraftServer aServer) {
-		if (aServer == null) return;
-		for (Map.Entry<String, ResourceLocation> tEntry : NEO_TABLE.entrySet()) {
-			ChestGenHooks tHook = chestInfo.get(tEntry.getKey());
-			if (tHook == null || tHook.contents.isEmpty()) continue;
-			try {
-				LootTable tTable = aServer.getLootData().getLootTable(tEntry.getValue());
-				if (tTable != null && tTable != LootTable.EMPTY) injectInto(tHook, tTable);
-			} catch (Throwable e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	/** Инъекция GT-добавок категории в ванильную таблицу ОДНИМ именованным pool'ом с точным 1.7.10-распределением:
-	 *  rolls = 1.7.10-count категории (формула getCount 1:1), внутри — GT-entries с их весами + «пустой» entry с
-	 *  весом vanilla-суммы 1.7.10 ({@link #VANILLA_WEIGHT_1710}). Каждый ролл: с вероятностью W_v/(W_v+ΣW_gt) слот
+	/** Собирает СТОЯЛЫЙ (ни к какой {@code LootTable} не привязанный, никогда не замораживаемый) {@link LootPool}
+	 *  с GT-добавками категории — ТА ЖЕ формула распределения 1:1, что несла прежняя addPool-инъекция: rolls =
+	 *  1.7.10-count категории (формула getCount 1:1), внутри — GT-entries с их весами + «пустой» entry с весом
+	 *  vanilla-суммы 1.7.10 ({@link #VANILLA_WEIGHT_1710}). Каждый ролл: с вероятностью W_v/(W_v+ΣW_gt) слот
 	 *  «достался ванили» (пусто — её генерит родная часть таблицы), иначе GT-предмет по весу → P(слот=GT-предмет i)
-	 *  = w_i/(W_v+ΣW_gt) — ровно как в едином списке 1.7.10. Идемпотентно: pool именован, дубликат не ставится. */
-	private static void injectInto(ChestGenHooks aHook, LootTable aTable) {
-		String tPoolName = "gregtech6:" + aHook.category;
-		if (aTable.getPool(tPoolName) != null) return;
-		Integer tVanillaWeight = VANILLA_WEIGHT_1710.get(aHook.category);
-		LootPool.Builder tPool = LootPool.lootPool().name(tPoolName).setRolls(
-			aHook.countMin < aHook.countMax ? UniformGenerator.between(aHook.countMin, aHook.countMax - 1) : ConstantValue.exactly(aHook.countMin));
+	 *  = w_i/(W_v+ΣW_gt) — ровно как в едином списке 1.7.10. Строится заново на каждый вызов из живого буфера
+	 *  {@code contents} (единственный вызыватель — {@code GT6ChestLootModifier.doApply}, на каждый реальный
+	 *  бросок лута этой категории) — поэтому НЕ зависит от момента заморозки ванильной таблицы (задача A1). */
+	public static LootPool buildPool(String aCategory) {
+		ChestGenHooks tHook = chestInfo.get(aCategory);
+		if (tHook == null || tHook.contents.isEmpty()) return null;
+		Integer tVanillaWeight = VANILLA_WEIGHT_1710.get(aCategory);
+		LootPool.Builder tPool = LootPool.lootPool().name("gregtech6:" + aCategory).setRolls(
+			tHook.countMin < tHook.countMax ? UniformGenerator.between(tHook.countMin, tHook.countMax - 1) : ConstantValue.exactly(tHook.countMin));
 		if (tVanillaWeight != null) tPool.add(EmptyLootItem.emptyItem().setWeight(tVanillaWeight));
-		for (WeightedRandomChestContent tContent : aHook.contents) {
+		for (WeightedRandomChestContent tContent : tHook.contents) {
 			if (tContent.theItemId == null || tContent.theItemId.isEmpty()) continue;
 			net.minecraft.world.level.storage.loot.entries.LootPoolSingletonContainer.Builder<?> tItem =
 				LootItem.lootTableItem(tContent.theItemId.getItem())
@@ -351,7 +341,7 @@ public class ChestGenHooks {
 				tItem.apply(net.minecraft.world.level.storage.loot.functions.SetNbtFunction.setTag(tContent.theItemId.getTag().copy()));
 			tPool.add(tItem);
 		}
-		aTable.addPool(tPool.build());
+		return tPool.build();
 	}
 
 }

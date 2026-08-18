@@ -628,6 +628,10 @@ public class GT_API extends Abstract_Mod {
 		// Ветка 1.20.1: доставка обработки дропа ЧУЖИХ блоков — глобальный модификатор лута (событий со списком
 		// дропов у Forge 1.20.1 нет); правило живёт в GT_API_Proxy.processBlockDrops, здесь только реестр кодека.
 		gregapi.loot.GT6BlockDropsModifier.register(aModBus);
+		// Задача A1 (workspace/tasks/consolidation/OPEN-ITEMS.md): доставка GT-добавок ChestGenHooks в 10
+		// ванильных chest-таблиц — ТЕМ ЖЕ реестром GLM-сериализаторов (GT6BlockDropsModifier.SERIALIZERS уже
+		// подписан строкой выше), здесь только гарантия, что вторая запись (chest_loot) в него попадёт.
+		gregapi.loot.GT6ChestLootModifier.register();
 		// F11: центральный крафт-верстак-диспетчер (CustomRecipe SERIALIZERS) — тот же мод-бас, единая точка
 		// подписки (decisions/F11-crafting-recipe.md §7, gregapi/recipes/GT6CraftingDispatcher.java; закрывает
 		// прежний долг F12↔F11 wiring).
@@ -796,10 +800,12 @@ public class GT_API extends Abstract_Mod {
 			// finalizeRecipeLoading, в этой версии не существует; shift-click-гейт печи живой
 			// (AbstractFurnaceMenu.canSmelt:145-146 → getRecipeFor → matches). Класс дефекта BUG-054 отсутствует
 			// (разбор — journal шов-работа №1, Б-3).
-			// BUG-039 (F-loot, тот же класс тайминга): LootTableLoadEvent отстрелял при загрузке ресурсов ДО этой
-			// data-init (буфер ChestGenHooks был пуст) → догоняющая инъекция GT-пулов в загруженные таблицы.
-			// Идемпотентна (именованный pool); /reload и последующие загрузки покрывает сам LootTableLoadEvent.
-			gt6mirror.minecraftforge.common.ChestGenHooks.injectAll(tServer);
+			// Задача A1 (было BUG-039, тот же класс тайминга): здесь раньше стояла догоняющая инъекция
+			// GT-пулов addPool'ом в уже загруженные таблицы — LootTableLoadEvent отстреливал и таблица
+			// замораживалась СИНХРОННО, до этой data-init, поэтому addPool падал на КАЖДОМ старте (10
+			// исключений). Канал снят: доставка теперь идёт живым IGlobalLootModifier'ом
+			// (gregapi.loot.GT6ChestLootModifier), который таблицы не касается вовсе — ни этой точки, ни
+			// LootTableLoadEvent-слушателя ему не нужно.
 		} else if (aEvent.getLevel() instanceof net.minecraft.world.level.Level tClientLevel && tClientLevel.isClientSide()) {
 			// BUG-094 (дедикейт: камни/палки/машины прозрачны): у клиента, подключённого к ВЫДЕЛЕННОМУ серверу,
 			// ServerLevel не существует → единственный drain выше НИКОГДА не бежал → вся отложенная item-init
