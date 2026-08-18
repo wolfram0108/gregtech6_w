@@ -325,6 +325,11 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	 *
 	 *  <p><b>Смена MTE на MTE не задета:</b> при {@code aNewState.hasBlockEntity()} остаток принадлежит уже НОВОМУ
 	 *  блоку (движок создаёт его тут же, {@code LevelChunk.java:260-271}) — трогать его нельзя, и мы не трогаем.
+	 *  Это условие относится к смене между РАЗНЫМИ Java-классами Block. Смена MTE на MTE ОДНИМ И ТЕМ ЖЕ
+	 *  физическим Block-классом ({@code MultiTileEntityBlockInternal.placeBlock} — GT6 держит личность машины в
+	 *  meta/BE, не в типе Block) ставит один и тот же {@code defaultBlockState} дважды — {@code LevelChunk.setBlockState:224}
+	 *  отсекает это как no-op, {@code onRemove} вообще не вызывается. Для неё закладка снимается централизованно
+	 *  в {@code WD.te} (Н-5), тем же приёмом {@code chunk.getBlockEntity(pos)}, что и здесь.
 	 *
 	 *  <p><b>1.7.10.</b> Там снятие TE принадлежало телу {@code breakBlock} ({@code MultiTileEntityBlock:145-152}
 	 *  оригинала — {@code aWorld.removeTileEntity(x,y,z)} последней строкой), а разделения «живая сущность / упакованная

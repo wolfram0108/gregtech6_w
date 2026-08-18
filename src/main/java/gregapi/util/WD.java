@@ -1219,6 +1219,24 @@ public class WD {
 	/** Sets the TileEntity at the passed position, with the option of turning adjacent TileEntity updates off. */
 	public static BlockEntity te(LevelAccessor aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity, boolean aCauseTileEntityUpdates) {
 		if (tileYInvalid(aWorld, aY)) return invalidateTileEntityWithNegativeYCoord(aX, aY, aZ, aTileEntity); // было aY<0 — MC26 бедрок Y=−64 легитимен, порог = дно мира getMinY()
+		// Н-5 ЦЕНТР (зеркало main): снять возможную «упакованную» закладку ПРЕЖНЕГО BE по этой позиции ДО
+		// force-подмены ниже — при смене MTE на MTE ОДНИМ И ТЕМ ЖЕ физическим Block-классом критерий «блок
+		// изменился» у LevelChunk.setBlockState на main (neo) — Block-identity (oldState.is(newBlock),
+		// LevelChunk.java:304) — физически недостижим независимо от BlockState-свойств; на этой ветке (forge
+		// 1.20.1) критерий — BlockState-instance identity (blockstate==p_62866_, LevelChunk.java:224), из-за чего
+		// в живых замерах путь чаще проходит сам (доказано стендом: COLD без этой правки уже даёт ЗЕЛЁНЫЙ на
+		// gt6pending, кейс D). Правка остаётся страховкой того же класса дефекта для путей, где BlockState-объект
+		// СОВПАДАЕТ (singleton defaultBlockState без свойств) — тогда и здесь распаковка была бы физически
+		// недостижима тем же приёмом, каким её закрывает sweepBlockEntityRemains (MultiTileEntityBlock.java) для
+		// случая «блок снят целиком»: запрос chunk.getBlockEntity(pos) сам распаковывает pendingBlockEntities и
+		// снимает запись оттуда (ChunkAccess.getBlockEntity → pendingBlockEntities.remove); put() ниже
+		// (Level.setBlockEntity/ChunkAccess.setBlockEntity) корректно снимет временно распакованный объект
+		// штатной заменой записи в карте.
+		try {
+			ChunkAccess tPendingChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
+			BlockPos tPendingPos = new BlockPos(aX, aY, aZ);
+			if (tPendingChunk != null && tPendingChunk.getBlockEntityNbt(tPendingPos) != null) tPendingChunk.getBlockEntity(tPendingPos);
+		} catch (Throwable e) {e.printStackTrace(ERR);}
 		// F-tick (канал сместился): в 1.7.10 ОБЕ ветки (World.setTileEntity И Chunk.setTileEntity) добавляли TE в мировой
 		// тик-цикл loadedTileEntityList; в neo тикер регистрируется ТОЛЬКО через Level.setBlockEntity→addAndRegisterBlockEntity
 		// (LevelChunk.setBlockEntity/ChunkAccess — карта без тикера). Потому на реальном Level ВСЕГДА идём полным путём —
