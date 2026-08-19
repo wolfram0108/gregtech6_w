@@ -29,7 +29,11 @@ import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.render.IconContainerCopied;
 import gregapi.util.UT;
-import net.minecraft.client.renderer.texture.TextureAtlas;
+// ⛔ АТЛАС БЛОКОВ — У ОБЩЕГО НОСИТЕЛЯ, НЕ У КЛИЕНТСКОГО. TextureAtlas помечен @OnlyIn(Dist.CLIENT)
+// (forge-1201-decompiled/net/minecraft/client/renderer/texture/TextureAtlas.java:25): его загрузка на
+// выделенном сервере роняет класс (BP-BUG-022). Значение ТО ЖЕ: сам движок объявляет LOCATION_BLOCKS
+// псевдонимом этого поля — TextureAtlas.java:30 «LOCATION_BLOCKS = InventoryMenu.BLOCK_ATLAS».
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.resources.ResourceLocation;
 
@@ -189,7 +193,7 @@ public class Textures {
 
 		@Override
 		public ResourceLocation getTextureFile() {
-			return TextureAtlas.LOCATION_BLOCKS;
+			return InventoryMenu.BLOCK_ATLAS;
 		}
 		
 		public static final IIconContainer[]
@@ -735,7 +739,7 @@ public class Textures {
 
 			@Override
 			public ResourceLocation getTextureFile() {
-				return TextureAtlas.LOCATION_BLOCKS;
+				return InventoryMenu.BLOCK_ATLAS;
 			}
 
 			@Override

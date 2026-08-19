@@ -28,7 +28,11 @@ import gregapi.render.BlockTextureDefault;
 import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.util.UT;
-import net.minecraft.client.renderer.texture.TextureAtlas;
+// ⛔ АТЛАС БЛОКОВ — У ОБЩЕГО НОСИТЕЛЯ, НЕ У КЛИЕНТСКОГО. TextureAtlas помечен @OnlyIn(Dist.CLIENT)
+// (forge-1201-decompiled/net/minecraft/client/renderer/texture/TextureAtlas.java:25): его загрузка на
+// выделенном сервере роняет класс (BP-BUG-022). Значение ТО ЖЕ: сам движок объявляет LOCATION_BLOCKS
+// псевдонимом этого поля — TextureAtlas.java:30 «LOCATION_BLOCKS = InventoryMenu.BLOCK_ATLAS».
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.resources.ResourceLocation;
 
 import static gregapi.data.CS.*;
@@ -179,7 +183,7 @@ public class BI {
 		@Override public ResourceLocation getIcon(int aRenderPass) {if (mIcon == null) run(); return mIcon;}
 		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
 		@Override public void run() {mIcon = new ResourceLocation(RES_PATH_API_BLOCK + mIconName);}
-		@Override public ResourceLocation getTextureFile() {return TextureAtlas.LOCATION_BLOCKS;}
+		@Override public ResourceLocation getTextureFile() {return InventoryMenu.BLOCK_ATLAS;}
 		@Override public short[] getIconColor(int aRenderPass) {return UNCOLOURED;}
 		@Override public int getIconPasses() {return 1;}
 		@Override public void registerIcons(Object aIconRegister) {/**/}

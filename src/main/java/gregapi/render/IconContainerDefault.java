@@ -25,7 +25,11 @@ package gregapi.render;
 
 import static gregapi.data.CS.*;
 
-import net.minecraft.client.renderer.texture.TextureAtlas;
+// ⛔ АТЛАС БЛОКОВ — У ОБЩЕГО НОСИТЕЛЯ, НЕ У КЛИЕНТСКОГО. TextureAtlas помечен @OnlyIn(Dist.CLIENT)
+// (forge-1201-decompiled/net/minecraft/client/renderer/texture/TextureAtlas.java:25): его загрузка на
+// выделенном сервере роняет класс (BP-BUG-022). Значение ТО ЖЕ: сам движок объявляет LOCATION_BLOCKS
+// псевдонимом этого поля — TextureAtlas.java:30 «LOCATION_BLOCKS = InventoryMenu.BLOCK_ATLAS».
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.resources.ResourceLocation;
 
 /**
@@ -43,11 +47,11 @@ public class IconContainerDefault implements IIconContainer {
 	}
 
 	public IconContainerDefault(ResourceLocation aIcon, short[] aRGBa, boolean aIsBlockTexture) {
-		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = (aIsBlockTexture ? TextureAtlas.LOCATION_BLOCKS : gregapi.render.GT6QuadBuilder.LOCATION_ITEMS);
+		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = (aIsBlockTexture ? InventoryMenu.BLOCK_ATLAS : gregapi.render.GT6QuadBuilder.LOCATION_ITEMS);
 	}
 
 	public IconContainerDefault(ResourceLocation aIcon, short[] aRGBa) {
-		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = TextureAtlas.LOCATION_BLOCKS;
+		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = InventoryMenu.BLOCK_ATLAS;
 	}
 
 	public IconContainerDefault(ResourceLocation aIcon, ResourceLocation aTextureFile) {
@@ -55,11 +59,11 @@ public class IconContainerDefault implements IIconContainer {
 	}
 
 	public IconContainerDefault(ResourceLocation aIcon, boolean aIsBlockTexture) {
-		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = (aIsBlockTexture ? TextureAtlas.LOCATION_BLOCKS : gregapi.render.GT6QuadBuilder.LOCATION_ITEMS);
+		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = (aIsBlockTexture ? InventoryMenu.BLOCK_ATLAS : gregapi.render.GT6QuadBuilder.LOCATION_ITEMS);
 	}
 
 	public IconContainerDefault(ResourceLocation aIcon) {
-		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = TextureAtlas.LOCATION_BLOCKS;
+		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = InventoryMenu.BLOCK_ATLAS;
 	}
 
 	@Override
