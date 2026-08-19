@@ -1249,9 +1249,18 @@ public class WD {
 	/** было Block.getCollisionBoundingBoxFromPool(w,x,y,z) (world-space AABB или null) -> getCollisionShape(w,pos).bounds().move(x,y,z)
 	 *  (VoxelShape.bounds:39/isEmpty:73, AABB.move:220); пустая форма -> null (1:1 с 1.7.10 «нет коллизии»). */
 	public static AABB collisionBox(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {if (aWorld == null) return null; BlockPos tPos = new BlockPos(aX, aY, aZ); net.minecraft.world.phys.shapes.VoxelShape tShape = state(aWorld, tPos).getCollisionShape(aWorld, tPos); return tShape.isEmpty() ? null : tShape.bounds().move(aX, aY, aZ);}
-	/** было World.checkNoEntityCollision(AABB) (нет сущностей в боксе) -> EntityGetter.getEntities(null,bb).isEmpty() (EntityGetter:29); null-бокс -> true (нет коллизии). */
-	public static boolean noEntityCollision(LevelAccessor aWorld, AABB aBox) {return aWorld == null || aBox == null || aWorld.getEntities((Entity)null, aBox).isEmpty();}
-	public static boolean noEntityCollision(LevelAccessor aWorld, AABB aBox, Entity aExcept) {return aWorld == null || aBox == null || aWorld.getEntities(aExcept, aBox).isEmpty();}
+	/** Н-9: было World.checkNoEntityCollision(AABB,Entity) — 1.7.10 фильтровал НЕ «есть хоть одна сущность», а «есть
+	 *  сущность с !isDead && preventEntitySpawning && entity!=except» (recompSrc/net/minecraft/world/World.java:2379-2394).
+	 *  Прежняя редакция это потеряла (`getEntities(...).isEmpty()` — блокирует ЛЮБАЯ сущность, включая лежащий лут).
+	 *  Восстановлено 1:1 через neo-аналог того же фильтра — EntityGetter.isUnobstructed (EntityGetter.java:33-48)
+	 *  проверяет entity.blocksBuilding && !entity.isRemoved(); getEntities(except,bb) уже отдаёт только РЕАЛЬНО
+	 *  пересекающихся (EntitySection.getEntities: entity.getBoundingBox().intersects(bb)), отдельной проверки формы
+	 *  не требуется. ⚠ EntityItem (упавший предмет) preventEntitySpawning/blocksBuilding НЕ ставит НИГДЕ в дереве —
+	 *  ни в 1.7.10, ни в neo — построить блок поверх лута можно было и должно быть можно; блокируют только реальные
+	 *  препятствия (живые сущности, лодки/вагонетки, падающий блок, TNT, кристалл, стойка-немаркер, страйдер).
+	 *  null-бокс -> true (нет коллизии). */
+	public static boolean noEntityCollision(LevelAccessor aWorld, AABB aBox) {if (aWorld == null || aBox == null) return T; for (Entity tEntity : aWorld.getEntities((Entity)null, aBox)) if (!tEntity.isRemoved() && tEntity.blocksBuilding) return F; return T;}
+	public static boolean noEntityCollision(LevelAccessor aWorld, AABB aBox, Entity aExcept) {if (aWorld == null || aBox == null) return T; for (Entity tEntity : aWorld.getEntities(aExcept, aBox)) if (!tEntity.isRemoved() && tEntity.blocksBuilding) return F; return T;}
 	
 	// F6: было `WorldProvider aProvider`-перегрузки ПАРАЛЛЕЛЬНО с `Level aWorld`-перегрузками (вызов через
 	// `aWorld.provider`) — та же болезнь, что у семейства `dimXXX` выше: `WorldProvider` в neo удалён, компилятор
