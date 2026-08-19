@@ -495,6 +495,12 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public InteractionResult use(Level aWorld, Player aPlayer, InteractionHand aHand) {
 		ItemStack aStack = aPlayer.getItemInHand(aHand);
 		ItemStack rStack = onItemRightClick(aStack, aWorld, aPlayer);
+		// ⚖️ ИЗБЫТОЧЕН (консолидация H1, вердикт 2026-08-19): гейт «rStack != aStack» структурно недостижим —
+		// оба реальных носителя IMTE_OnItemRightClick (TileEntityBase08FluidContainer:295, MultiTileEntitySandwich:250)
+		// всегда возвращают тот же параметр aStack (scoopResult:286 тоже возвращает свой параметр; замена стека —
+		// мутация NBT/count in-place). Сверено с оригиналом 1.7.10: те же два носителя там (TileEntityBase08FluidContainer.java:274,
+		// MultiTileEntitySandwich.java:247) идентично всегда return aStack — гейт был бы мёртв и у Грегориуса. Не утраченный
+		// носитель, а изначально нереализованная в GT6 ветка «замена стека новым объектом»; не удаляется (F15 — контракт может вернуть null).
 		if (rStack != aStack) {aPlayer.setItemInHand(aHand, gregapi.util.ST.nn(rStack)); return InteractionResult.SUCCESS;} // F15: контракт 1.7.10 может вернуть null — в руку движка только через центр
 		if (aPlayer.isUsingItem()) return InteractionResult.CONSUME;
 		return InteractionResult.PASS;

@@ -361,6 +361,12 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		return null;
 	}
 	
+	// ⚖️ ИЗБЫТОЧЕН (реестр мёртвых каналов, вердикт 2026-08-19). Вызывателя нет: в 1.7.10 это был хук
+	// самого Item, движок спрашивал его перед getContainerItem; в neo у Item такого метода нет вовсе,
+	// а центр GT6 (ST.gtContainerItem) спрашивает СРАЗУ getContainerItem — признак выводится из него
+	// (ItemBase:199 и оригинал ItemBase:121 определяют hasContainerItem РОВНО как getContainerItem != null).
+	// Оба метода здесь согласованы 1:1 с оригиналом (ItemFluidDisplay:298-305: null и F), поэтому канал
+	// не сломан, а не нужен. НЕ удаляем — авторский контракт воспроизводится как есть.
 	// @Override
 	public final boolean hasContainerItem(ItemStack aStack) {
 		return F;
