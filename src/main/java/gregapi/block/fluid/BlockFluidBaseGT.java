@@ -261,13 +261,16 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 	 * (BP-BUG-003) — значит нефти и газ невидимы для любого луча, и витрина подсказок над ними пуста.
 	 *
 	 * <p>Ответ восстановлен здесь, у роли, тем же выражением «полная клетка», которым пользуется
-	 * {@link #getFluidState} (:209) — второй формулы источника не заводим. Потребитель — жила подсказок
-	 * ({@code gregtech.compat.Compat_Jade}), которая своим лучом досматривает то, чего движковый луч не видит.
+	 * {@link #getFluidState} (:209) — второй формулы источника не заводим.
 	 */
+	// ⏸ ПОТРЕБИТЕЛЯ СЕЙЧАС НЕТ: обвязка витрины поверх чужого луча снята решением владельца 2026-08-17
+	//    (BP-BUG-022); ответ роли оставлен до фундаментального решения видимости свойством блока.
 	public final boolean isFullFluidCell(BlockState aState) {return engineLevelOfState(aState) >= quantaPerBlock;}
 
 	/** Клетка НЕВИДИМА движковому лучу жидкости (роль {@code NO_ENGINE_FLUID}: {@code FluidState} пуст).
 	 *  Спрашивается у состояния, а не у списка блоков: роль объявляет семья, и новый носитель попадёт сюда сам. */
+	// ⏸ ПОТРЕБИТЕЛЯ СЕЙЧАС НЕТ: обвязка витрины поверх чужого луча снята решением владельца 2026-08-17
+	//    (BP-BUG-022); ответ роли оставлен до фундаментального решения видимости свойством блока.
 	public final boolean isInvisibleToFluidClip(BlockState aState) {return aState.getFluidState().isEmpty();}
 
 	/** СТОРОЖ РОЛЕЙ (зовётся на старте сервера, {@code GT_API_Proxy.onProxyBeforeServerStarted}).
