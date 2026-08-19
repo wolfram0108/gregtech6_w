@@ -1,5 +1,34 @@
 {
   "_comment": "Пороги гейта отложенности (.github/ci/check_markers.py). Числа снимаются машиной: обход src/main/java. Поднимать порог можно ТОЛЬКО осознанно, в том же коммите, с причиной в сообщении коммита. Снимок 2026-08-07, коммит 82eab2bd: обе метки обнулены.",
   "PORT-TODO": 0,
-  "SILENT-STUB": 0
+  "SILENT-STUB": 0,
+  "_comment_dist": "Реестр носителей клиентских типов (.github/ci/check_dist.py). dist_client — классы, живущие ТОЛЬКО на клиенте: клиентские типы им положены. dist_latent — общие классы, у которых клиентское имя лежит под ленивым разрешением; список обязан УБЫВАТЬ, пополнять его можно только осознанно, в том же коммите, с причиной. Снимок 2026-08-19 (BP-BUG-022).",
+  "dist_client": {
+    "gregapi/GT_API_Proxy_Client": "клиентское плечо центра side-разделения (приём BUG-084)",
+    "gregapi/gui/ContainerClient": "экраны контейнеров — живут только на клиенте (MenuScreens.register)",
+    "gregapi/jei/GT6_JEI_RecipeCategory": "категория JEI — рисуется только на клиенте",
+    "gregapi/mixin/": "миксины в клиентские классы движка",
+    "gregapi/render/BlockTextureFluid": "текстура жидкости — только путь отрисовки",
+    "gregapi/render/GT6BlockModel": "модель блока — только клиент",
+    "gregapi/render/GT6ItemModel": "модель предмета — только клиент",
+    "gregapi/render/GT6QuadBuilder": "сборка квадов и атлас — только клиент",
+    "gregapi/render/MTEChestRenderer": "BER сундука — только клиент",
+    "gregapi/render/MTEMassStorageRenderer": "BER хранилища — только клиент",
+    "gregapi/render/MultiTileEntityBER": "BER многотайловых — только клиент",
+    "gregapi/render/RenderHelper": "помощник отрисовки — только клиент",
+    "gregapi/tileentity/client/ITileEntitySoundSource$": "вложенный SoundInstance — только клиент",
+    "gregtech/GT_Client": "клиентский корень мода",
+    "gregtech/render/": "рендер стрелы и плаща игрока — только клиент",
+    "gregtech/tileentity/extenders/MultiTileEntityFilter$MultiTileEntityGUIClientFilter": "вложенный клиентский GUI; внешний общий класс чист"
+  },
+  "dist_latent": {
+    "gregapi/block/multitileentity/MultiTileEntityBlock": "ParticleEngine в дескрипторах addHitEffects/addDestroyEffects — приёмник формы 1.7.10. Движковый контракт этих хуков живёт в КЛИЕНТСКОМ расширении блока (IClientBlockExtensions:59,74-75) и сигнатурой не совпадает; моста к нему в моде нет, вызывателей нет — имя лежит в дескрипторе и никем не разрешается. Снятие приёмника = функциональная правка 1:1-переноса, решение владельца.",
+    "gregapi/data/BI$Icon": "TextureAtlas.LOCATION_BLOCKS/LOCATION_ITEMS как ЗНАЧЕНИЕ канала getTextureFile. В 26.1.2 общего носителя этой константы НЕТ: единственное объявление — клиентский TextureAtlas.java:40,42 (проверено обходом декомпила). Дублировать литерал движка в моде запрещено, поэтому носитель остаётся. На ветке 1.20.1 эквивалент есть (InventoryMenu.BLOCK_ATLAS) и там он применён.",
+    "gregapi/old/Textures$BlockIcons": "TextureAtlas.LOCATION_BLOCKS/LOCATION_ITEMS как ЗНАЧЕНИЕ канала getTextureFile. В 26.1.2 общего носителя этой константы НЕТ: единственное объявление — клиентский TextureAtlas.java:40,42 (проверено обходом декомпила). Дублировать литерал движка в моде запрещено, поэтому носитель остаётся. На ветке 1.20.1 эквивалент есть (InventoryMenu.BLOCK_ATLAS) и там он применён.",
+    "gregapi/old/Textures$ItemIcons": "TextureAtlas.LOCATION_BLOCKS/LOCATION_ITEMS как ЗНАЧЕНИЕ канала getTextureFile. В 26.1.2 общего носителя этой константы НЕТ: единственное объявление — клиентский TextureAtlas.java:40,42 (проверено обходом декомпила). Дублировать литерал движка в моде запрещено, поэтому носитель остаётся. На ветке 1.20.1 эквивалент есть (InventoryMenu.BLOCK_ATLAS) и там он применён.",
+    "gregapi/render/IconContainerCopied": "TextureAtlas.LOCATION_BLOCKS/LOCATION_ITEMS как ЗНАЧЕНИЕ канала getTextureFile. В 26.1.2 общего носителя этой константы НЕТ: единственное объявление — клиентский TextureAtlas.java:40,42 (проверено обходом декомпила). Дублировать литерал движка в моде запрещено, поэтому носитель остаётся. На ветке 1.20.1 эквивалент есть (InventoryMenu.BLOCK_ATLAS) и там он применён.",
+    "gregapi/render/IconContainerDefault": "TextureAtlas.LOCATION_BLOCKS/LOCATION_ITEMS как ЗНАЧЕНИЕ канала getTextureFile. В 26.1.2 общего носителя этой константы НЕТ: единственное объявление — клиентский TextureAtlas.java:40,42 (проверено обходом декомпила). Дублировать литерал движка в моде запрещено, поэтому носитель остаётся. На ветке 1.20.1 эквивалент есть (InventoryMenu.BLOCK_ATLAS) и там он применён.",
+    "gregapi/render/TextureSet$TextureSetIconBlock": "TextureAtlas.LOCATION_BLOCKS/LOCATION_ITEMS как ЗНАЧЕНИЕ канала getTextureFile. В 26.1.2 общего носителя этой константы НЕТ: единственное объявление — клиентский TextureAtlas.java:40,42 (проверено обходом декомпила). Дублировать литерал движка в моде запрещено, поэтому носитель остаётся. На ветке 1.20.1 эквивалент есть (InventoryMenu.BLOCK_ATLAS) и там он применён.",
+    "gregapi/render/TextureSet$TextureSetIconItem": "TextureAtlas.LOCATION_BLOCKS/LOCATION_ITEMS как ЗНАЧЕНИЕ канала getTextureFile. В 26.1.2 общего носителя этой константы НЕТ: единственное объявление — клиентский TextureAtlas.java:40,42 (проверено обходом декомпила). Дублировать литерал движка в моде запрещено, поэтому носитель остаётся. На ветке 1.20.1 эквивалент есть (InventoryMenu.BLOCK_ATLAS) и там он применён."
+  }
 }

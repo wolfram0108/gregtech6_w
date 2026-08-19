@@ -60,6 +60,9 @@ jobs:
       - name: Guard — deferral counters (PORT-TODO / SILENT-STUB)
         run: python3 .github/ci/check_markers.py
 
+      - name: Guard — dist purity (no client types in server-loaded classes)
+        run: python3 .github/ci/check_dist.py
+
       - name: Upload jar
         uses: actions/upload-artifact@v4
         with:
