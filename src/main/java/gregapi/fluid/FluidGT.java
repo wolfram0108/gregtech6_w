@@ -45,6 +45,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.fluids.FluidType;
 
@@ -139,7 +140,7 @@ public class FluidGT {
 		// FluidType не интрузивен → его можно держать эагерно. mType — эагер, mSource/mFlowing — отложенная конструкция.
 		mTypeHolder    = FLUID_TYPES.register(tRegName, () -> mType);
 		mSourceHolder  = FLUIDS.register(tRegName, () -> new Source());
-		mFlowingHolder = FLUIDS.register(tRegName + "_flowing", () -> new ForgeFlowingFluid.Flowing(fluidProperties()));
+		mFlowingHolder = FLUIDS.register(tRegName + "_flowing", () -> new Flowing(fluidProperties()));
 
 		BY_NAME.put(mName, this);
 		BY_FLUID_CACHE = null;
@@ -276,6 +277,14 @@ public class FluidGT {
 		@Override protected int getDropOff(LevelReader aLevel) {return 1;}
 		@Override public int getAmount(FluidState aState) {return 8;}
 		@Override public boolean isSource(FluidState aState) {return true;}
+		/** Н-8 (снимок владельца из 1.7.10): у этой жидкости НЕТ направленного течения — свойство самой
+		 *  жидкости, не приём рисования. Эталон рисовал её ОДНОЙ иконкой без полосы-потока
+		 *  ({@code getStillIcon()==getFlowingIcon()}, {@code gt6-original/gregapi/fluid/FluidGT.java:85-87});
+		 *  движковая формула {@link FlowingFluid#getFlow} (поворот UV по вектору потока,
+		 *  {@code LiquidBlockRenderer.tesselate:151-165}) к ней неприменима — переопределена здесь тем же
+		 *  приёмом, что {@link #getAmount}/{@link #isSource} выше, а не подавлена снаружи рисования.
+		 *  Второе плечо той же жидкости — {@link Flowing#getFlow} ниже, вторая формула не заводится. */
+		@Override public Vec3 getFlow(BlockGetter aLevel, BlockPos aPos, FluidState aState) {return Vec3.ZERO;}
 		@Override public Item getBucket() {return Items.AIR;}
 		@Override protected boolean canBeReplacedWith(FluidState aState, BlockGetter aLevel, BlockPos aPos, Fluid aOther, Direction aDirection) {return aDirection == Direction.DOWN && !isSame(aOther);}
 		@Override public int getTickDelay(LevelReader aLevel) {return 5;}
@@ -297,5 +306,18 @@ public class FluidGT {
 		}
 		@Override public boolean isSame(Fluid aFluid) {return aFluid == this || (mFlowingHolder != null && mFlowingHolder.isPresent() && aFluid == mFlowingHolder.get());}
 		@Override public FluidType getFluidType() {return mType;}
+	}
+
+	/**
+	 * Второе движковое плечо той же жидкости — «поток» {@code ForgeFlowingFluid.Flowing} (частичная клетка;
+	 * {@link BlockFluidBaseGT#getFluidState} отдаёт его при кванте меньше {@code quantaPerBlock}). Без
+	 * собственного класса этому плечу неоткуда было взять {@link #getFlow}: {@link Source} — не оно (движок
+	 * читает FluidState.getType(), а на партиальном кванте тип — Flowing, не Source). Вложен статично: живых
+	 * полей объемлющего {@link FluidGT}, кроме конструктора {@code Properties}, ему не нужно.
+	 */
+	public static final class Flowing extends ForgeFlowingFluid.Flowing {
+		public Flowing(ForgeFlowingFluid.Properties aProperties) {super(aProperties);}
+		/** см. {@link Source#getFlow} — то же свойство той же жидкости, тот же приём, второй раз не объясняем. */
+		@Override public Vec3 getFlow(BlockGetter aLevel, BlockPos aPos, FluidState aState) {return Vec3.ZERO;}
 	}
 }
