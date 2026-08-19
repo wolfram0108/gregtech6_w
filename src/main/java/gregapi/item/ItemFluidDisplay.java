@@ -89,7 +89,15 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		if (!aWorld.isClientSide() && UT.Entities.hasInfiniteItems(aPlayer)) for (byte tSide : ALL_SIDES_VALID) if (FL.fill(WD.te(aWorld, aX, aY, aZ, tSide, T), FL.make(FL.fluid(ST.meta_(aStack)), Integer.MAX_VALUE), T) > 0) return T;
 		return !aWorld.isClientSide();
 	}
-	
+	// BP-BUG-017 (класс «потерянный вызыватель»): тот же класс, что уже закрыт у ItemBlockBase (см. её ItemBlockBase.java) —
+	// forge зовёт Item.onItemUseFirst(ItemStack,UseOnContext) (IForgeItem-хук, IForgeItem.java:98) ДО активации блока,
+	// а не 1.7.10 onItemUseFirst(x,y,z,side,hit); тело выше движком не вызывается вовсе. Дефолт IForgeItem отдаёт
+	// PASS без делегации в тело — наполнение баков дисплеем жидкости было мертво. Мост — тот же центр IItemGT
+	// (bridgeUseOnFirst уже существует и используется ItemBlockBase/MultiTileEntityItemInternal/ItemBase), второй формы
+	// не заводим. Оригинал 1.7.10 (ItemFluidDisplay.java:76-80) переопределял ТОЛЬКО onItemUseFirst (наполнение баков
+	// креативом), обычного onItemUse (установка блока) не было — этот предмет не BlockItem, useOn ему не нужен.
+	@Override public net.minecraft.world.InteractionResult onItemUseFirst(ItemStack aStack, net.minecraft.world.item.context.UseOnContext aCtx) {return IItemGT.bridgeUseOnFirst(this, aCtx);}
+
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
