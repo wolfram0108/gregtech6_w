@@ -33,6 +33,7 @@ Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 
 ## Contents
 
+- [Which build do I need?](#which-build-do-i-need)
 - [What GregTech 6 is](#what-gregtech-6-is)
 - [Why porting it is hard](#why-porting-it-is-hard)
 - [The architecture that had to survive](#the-architecture-that-had-to-survive)
@@ -51,6 +52,19 @@ Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 - [License and credits](#license-and-credits)
 
 ---
+
+## Which build do I need?
+
+One codebase, two branches — pick the one that matches the Minecraft version you play:
+
+| Your Minecraft | Branch | Loader | Java | Release tags |
+|---|---|---|---|---|
+| `26.1.2` | [`main`](https://github.com/wolfram0108/gregtech6_w/tree/main) | NeoForge `26.1.2.84` | 25 | `v6.0.0-alpha.N` |
+| `1.20.1` | [`1.20.1`](https://github.com/wolfram0108/gregtech6_w/tree/1.20.1) | NeoForge `1.20.1-47.1.106` | 17 | `v6.0.0-1.20.1-alpha.N` |
+
+**You are reading the `main` branch.** The `1.20.1` branch is a backport: the same mod and the same
+generator, built against the older engine. The branches are never merged; a fix that belongs to both
+is applied to both.
 
 ## What GregTech 6 is
 

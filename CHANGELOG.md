@@ -22,7 +22,62 @@ complete with save compatibility maintained; a release without a suffix will mea
 Each release is tagged `v<version>`; the tag and the version in the build must agree, and CI refuses
 to publish if they do not.
 
+**Two game versions, one repository.** This branch (`main`) targets Minecraft 26.1.2 and is versioned
+`6.0.0-alpha.N`. The `1.20.1` branch is a backport to that older game version and carries it in the
+middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release series never collide.
+
 ## [Unreleased]
+
+## [6.0.0-alpha.5] — the two versions become one set of fixes, and a log that never wrote a line
+
+### Fixed
+
+- **An item placed on an anvil was not drawn.** Machines whose look depends on what is inside them —
+  anvils, crates, bookshelves, juicers, mixing bowls, crucibles and seven more — only refreshed that
+  look while their chunk was being ticked. A block can be visible without being ticked on this
+  engine, so a machine you were standing next to could keep showing an older picture. The look is
+  now recomputed when the snapshot is sent, whether the block ticks or not, and the mod no longer
+  depends on a signal that another mod can take away by replacing the renderer.
+- **The recipe viewer offered recipes the original never showed.** GregTech deliberately hides some
+  of its own recipes from the viewer; that rule came across but was not applied, so the list held
+  entries the 2014 mod kept out of sight. Recipes that do not fit a three-by-three grid are also laid
+  out again the way they were meant to be.
+- **Replacing one machine with another kept the first one's contents.** Swapping a machine in place
+  left the previous machine's stored data attached to the spot.
+- **A corner rail was drawn rotated by half a turn** on two of its four shapes. The track worked; the
+  picture lied.
+- **An item lying on the ground blocked building.** After a machine was dismantled, its dropped item
+  made the square unbuildable until the item was picked up. In the original the item was pushed aside.
+- **Geothermal water had no visible flow direction**, so a stream looked like a still pool.
+- **Glass slabs showed a seam from inside**, where full glass blocks correctly hide it.
+- **A dismantled block could leave its data behind** on the edge of a loaded area.
+- **Five fixes found while working on the 1.20.1 backport were brought over**: a burning animal dying
+  in lava could crash the server; bars and fluid displays refused to be placed at all; rails and
+  flowers could be placed on nothing; crafting with a bottle or bucket could swallow the container;
+  and a removal path could delete machines it had not proven absent.
+- **The player activity log never wrote a single line on this version.** The mod records who
+  interacted with which block; that recording failed to start on every launch, and the failure was
+  swallowed silently, so the file existed and stayed empty. Failures to start a subsystem are now
+  reported in the mod's log instead of vanishing.
+- **A dedicated server did not exit after `stop`.** The world was saved and the ports were released,
+  but the process stayed alive and had to be killed by hand, which breaks any restart script. The
+  mod now closes what it started when the server shuts down, finishing the log entry it was writing
+  instead of losing it.
+
+### Changed
+
+- **Ore map updates are sent in one batch per chunk** instead of one per entry, and the cached
+  geometry of a machine is invalidated in constant time rather than by walking the chunk.
+- **The build now refuses to publish** if client-only engine types appear in classes that a
+  dedicated server loads — the failure that this guards against had already happened once.
+
+### Known issues
+
+- Oil and gas puddles are not named in the Jade tooltip. The mechanism behind it was rejected as
+  unsound and will be rebuilt as a property of the block itself, the same way for both versions.
+- Vanilla mud duplicates GregTech's own dirt; GregTech fluids cannot be waterlogged; stripping and
+  felling a tree the way the original did are not implemented yet.
+
 
 ## [6.0.0-alpha.4] — Applied Energistics 2 fits in, and three old bugs stop coming back
 
