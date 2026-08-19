@@ -22,7 +22,62 @@ complete with save compatibility maintained; a release without a suffix will mea
 Each release is tagged `v<version>`; the tag and the version in the build must agree, and CI refuses
 to publish if they do not.
 
+**Two game versions, one repository.** The `main` branch targets Minecraft 26.1.2 and is versioned
+`6.0.0-alpha.N`. This branch targets Minecraft 1.20.1 and carries the game version in the middle of
+its own version — `6.0.0-1.20.1-alpha.N` — so the two release series never collide. Entries below
+that predate this branch describe work done on the shared code base before it was split off.
+
 ## [Unreleased]
+
+## [6.0.0-1.20.1-alpha.1] — the port runs on Minecraft 1.20.1
+
+First release of the backport. It is the same mod as the `main` branch, rebuilt against Minecraft
+1.20.1 and NeoForge; everything listed in the earlier entries below is part of it. What follows is
+what this branch needed on top of that, in the terms of what you would notice while playing.
+
+### Added
+
+- **Applied Energistics 2 works alongside GregTech 6 as one progression**, on the versions of AE2
+  that exist for 1.20.1: one wrench for both mods, energy crossing the border in both directions,
+  duplicate machine recipes retired, and sky stone that can be made rather than only found.
+- **The mod's own fluids are a proper engine fluid on this version too** — they freeze, evaporate,
+  fill buckets and interact with the world through the engine rather than beside it.
+
+### Fixed
+
+- **Hand-built structures could vanish after a server restart.** A machine could be removed by the
+  mod's own cleanup because, in a narrow window, the mod could not see a chunk the engine already
+  considered alive. Pipes and machines across a chunk border were the usual casualties. Restart
+  cycles now survive intact; see the note in *Known issues* about worlds damaged before this build.
+- **A machine could leave its contents behind or drop nothing at all** when broken.
+- **Items of the mod refused to stack** with the same item obtained another way, filling inventories
+  with single-item slots.
+- **A fresh world could not be created** — world generation stopped at "preparing spawn area" and the
+  server sat there forever.
+- **A burning animal dying in lava crashed the server.**
+- **Vanilla recipes the mod deliberately removes came back** in another form, so a furnace could be
+  made from bare cobblestone.
+- **Geothermal water looked and behaved like ordinary water**, and its surface was shaded upside down.
+- **Bars and fluid displays could not be placed at all**; rails and flowers could be placed on nothing.
+- **Crafting with a bottle or bucket could swallow the container** instead of returning it.
+- **Glass was opaque in the inventory**, and glass slabs showed a seam from inside.
+- **The tooltip plugin failed to load on a dedicated server**, and the mod's parts of the tooltip were
+  switched off there.
+- **The server did not exit after `stop`** — the world saved, but the process stayed alive.
+- **World generation, chunk loading and lighting no longer stall** the way they did on early builds of
+  this branch.
+
+### Known issues
+
+- **Rarely, world generation can leave an invisible leftover** where a machine-like block was meant to
+  be: fewer than one chunk in twenty thousand. It is logged when it happens.
+- **Worlds damaged by the restart bug above are not repaired** — the fix prevents new losses, it
+  cannot bring back what an earlier build removed.
+- **Oil and gas puddles are not named in the Jade tooltip**, the same as on `main`; the mechanism is
+  being rebuilt properly for both versions.
+- **This branch has no automated product tests yet** — its correctness rests on live test stands and
+  play testing, while `main` also has a small automated suite.
+
 
 ## [6.0.0-alpha.3] — biomes decide again, tools are heard and held right, machines cost less to draw
 

@@ -10,11 +10,17 @@ This document says plainly what works, what could work, and what will not.
 
 ## Working today
 
-| Mod | What is integrated |
-|---|---|
-| **JEI** | GT6 registers its own recipe categories and item variants; verified in a live client |
-| **Jade** | GT6 registers its own harvest tools — wrench, crowbar, cutters and the rest — which vanilla tags cannot express, so the "can I mine this" tooltip is correct |
-| **JourneyMap** (and the vanilla map) | GT6 blocks and fluids resolve to the correct map colour, checked by asking the real mod the same question it asks itself |
+| Mod | Verified against | What is integrated |
+|---|---|---|
+| **JEI** | `15.48.0.183` | GT6 registers its own recipe categories and item variants; verified in a live client |
+| **Jade** | `11.13.3+forge` | GT6 registers its own harvest tools — wrench, crowbar, cutters and the rest — which vanilla tags cannot express, so the "can I mine this" tooltip is correct |
+| **Applied Energistics 2** | `15.4.10` | GT6 stays the industrial layer and AE2 keeps the network, storage, autocrafting and spatial storage; AE2 machines that merely repeat a GregTech one lose their own recipes, energy crosses the border both ways, and the GregTech wrench turns and dismantles AE2 blocks |
+| **The vanilla map** | — | GT6 blocks and fluids resolve to the correct map colour |
+
+> **JourneyMap** is not part of this branch's build and has not been checked here; on the `main`
+> branch it is wired up and verified. The map-colour work itself is shared code and is present on
+> both branches.
+
 
 ## What the original integrated with
 
@@ -56,7 +62,7 @@ was GregTech 6 itself, and cross-mod work is a separate undertaking that has not
 | Steamcraft 2 | 211 | ◻ not assessed |  |
 | Atum | 195 | ◻ not assessed |  |
 | Per Fabrica Ad Astra | 182 | ◻ not assessed |  |
-| Applied Energistics | 176 | ⏳ modern version exists | not wired up |
+| Applied Energistics | 176 | ✅ integrated | see **Working today** — the modern AE2 is wired up, the 1.7.10 integration is not what does it |
 | Tech Guns | 168 | ◻ not assessed |  |
 | The Aether | 167 | ◻ not assessed |  |
 | Enhanced Biomes | 157 | ◻ not assessed |  |

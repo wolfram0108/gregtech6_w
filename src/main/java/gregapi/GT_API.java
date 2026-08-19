@@ -1050,7 +1050,13 @@ public class GT_API extends Abstract_Mod {
 			MAT_LOG.println("**********************************************************************");
 			MAT_LOG.println("* This is the complete List of usable GregTech Materials             *");
 			MAT_LOG.println("**********************************************************************");
-		} catch (Throwable e) {/**/}
+		// ⛔ МОЛЧАНИЕ СНЯТО ТОЧЕЧНО. Класс: «инициализация подсистемы мода падает, и никто не узнаёт» —
+		// именно он спрятал на два месяца мёртвый журнал активности игрока (см. ниже). Здесь молчание
+		// прячет невыполненную работу: MAT_LOG остаётся буфером, и списка материалов не будет вовсе.
+		// Пишем существующим центром мода (ERR — тот же, которым мод сообщает обо всех своих сбоях),
+		// своего механизма не заводим. Стиль автора не трогаем: пустые перехваты, за которыми стоит видимое
+		// следствие (createNewFile — файл всё равно создаст PrintStream ниже), оставлены как есть.
+		} catch (Throwable e) {ERR.println("GT_API: список материалов (materiallist.log) не открыт — файла не будет"); e.printStackTrace(ERR);}
 		
 		tFile = new File(DirectoriesGT.LOGS, "oredict.log");
 		if (!tFile.exists()) {try {tFile.createNewFile();} catch (Throwable e) {/**/}}
@@ -1061,12 +1067,15 @@ public class GT_API extends Abstract_Mod {
 			ORD.println("* This is the complete Log of the GregTech OreDictionary Handler     *");
 			ORD.println("**********************************************************************");
 			for (String tString : tList) ORD.println(tString);
-		} catch (Throwable e) {/**/}
+		} catch (Throwable e) {ERR.println("GT_API: журнал словаря руд (oredict.log) не открыт — записи словаря потеряны"); e.printStackTrace(ERR);}
 		
 		if (ConfigsGT.GREGTECH.get("general", "LoggingPlayerActivity", !CODE_CLIENT)) {
 			tFile = new File(DirectoriesGT.LOGS, "playeractivity_"+(System.currentTimeMillis()/60000)+".log");
 			if (!tFile.exists()) {try {tFile.createNewFile();} catch (Throwable e) {/**/}}
-			try {mPlayerLogger = new LoggerPlayerActivity(new PrintStream(tFile));} catch (Throwable e) {/**/}
+			// ⛔ НОСИТЕЛЬ, ИЗ-ЗА КОТОРОГО КЛАСС И БЫЛ НАЙДЕН: здесь молча гасло исключение шины
+			// («Cannot register listeners for abstract …»), mPlayerLogger оставался null, и журнал активности
+			// игрока не работал ни одной строкой — при живом конфиге и созданном файле.
+			try {mPlayerLogger = new LoggerPlayerActivity(new PrintStream(tFile));} catch (Throwable e) {ERR.println("GT_API: журнал активности игрока не заведён — записей о действиях игроков не будет"); e.printStackTrace(ERR);}
 		}
 		
 		ConfigsGT.CLIENT = new Config(DirectoriesGT.MINECRAFT, "GregTech.cfg");
@@ -1629,6 +1638,20 @@ public class GT_API extends Abstract_Mod {
 	@Override
 	public void onModServerStopped2(ServerStoppedEvent aEvent) {
 		for (ICompat tCompat : ICompat.COMPAT_CLASSES) try {tCompat.onServerStopped(aEvent);} catch(Throwable e) {e.printStackTrace(ERR);}
+		// ВОССТАНОВЛЕНИЕ КОНТРАКТА «что мод завёл на время сервера — на время сервера и живёт».
+		// Оригинал 1.7.10 с этим потоком не прощался вовсе (GT_API.java:830 — только запуск; снятия нет нигде
+		// во всём его дереве), и порт унаследовал это 1:1. На целевом движке так нельзя: нормальный выход
+		// выделенного сервера System.exit НЕ зовёт — во всём пакете net.minecraft.server он встречается лишь
+		// в ServerWatchdog (аварийное убийство зависшего), а Main.java прямо оговаривает, что System.exit на
+		// нормальном выходе есть только у GameTestServer (forge-1201-decompiled .../server/Main.java:233-235).
+		// Поэтому вечный цикл дневника (LoggerPlayerActivity, запускается 1:1 в postLoad) держал JVM живой
+		// ПОСЛЕ «stop»: мир сохранён, порты отпущены, а процесс не выходит — владелец дедика получает висящий
+		// перезапуск. Прощаемся здесь, в центре прощания мода, и именно доведением работы до конца: дневник
+		// дописывает запись и закрывает файл сам (см. LoggerPlayerActivity.stop()). Пометить поток служебным
+		// нельзя — движок оборвал бы его на полуслове, потеряв хвост записи.
+		// ⚠ Почему движку 1.7.10 этого не требовалось — по локальному референсу НЕ проверено: его исходников
+		// в reference/ нет. Проверено обратное и достаточное: у целевого движка такого механизма нет.
+		if (mPlayerLogger != null) mPlayerLogger.stop();
 	}
 	
 	// В neo нет числовых ID блоков/предметов, поэтому нет и neo-аналога FMLModIdMappingEvent — метод

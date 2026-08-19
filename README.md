@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/badge/license-LGPL--3.0--or--later-blue)](LICENSE)
 
 **A port of [GregTech 6](https://github.com/GregTech6/gregtech6) — Gregorius Techneticies' mod for
-Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
+Minecraft 1.7.10 — to Minecraft 1.20.1 / NeoForge.**
 
 > **This is an unofficial port.** It is not affiliated with, endorsed by or supported by Gregorius
 > Techneticies or the GregTech 6 team. Report problems with it *here*, never upstream — the bugs are
@@ -16,9 +16,9 @@ Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 
 | | |
 |---|---|
-| Minecraft | `26.1.2` |
-| NeoForge | `26.1.2.84` |
-| Java | 25 |
+| Minecraft | `1.20.1` |
+| NeoForge | `1.20.1-47.1.106` |
+| Java | 17 |
 | Upstream | GregTech 6 `v6.17.06` (Minecraft 1.7.10, Forge 10.13.4) |
 | License | LGPL-3.0-or-later, inherited from upstream |
 
@@ -33,6 +33,7 @@ Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 
 ## Contents
 
+- [Which build do I need?](#which-build-do-i-need)
 - [What GregTech 6 is](#what-gregtech-6-is)
 - [Why porting it is hard](#why-porting-it-is-hard)
 - [The architecture that had to survive](#the-architecture-that-had-to-survive)
@@ -51,6 +52,18 @@ Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 - [License and credits](#license-and-credits)
 
 ---
+
+## Which build do I need?
+
+One codebase, two branches — pick the one that matches the Minecraft version you play:
+
+| Your Minecraft | Branch | Loader | Java | Release tags |
+|---|---|---|---|---|
+| `26.1.2` | [`main`](https://github.com/wolfram0108/gregtech6_w/tree/main) | NeoForge `26.1.2.84` | 25 | `v6.0.0-alpha.N` |
+| `1.20.1` | [`1.20.1`](https://github.com/wolfram0108/gregtech6_w/tree/1.20.1) | NeoForge `1.20.1-47.1.106` | 17 | `v6.0.0-1.20.1-alpha.N` |
+
+**You are reading the `1.20.1` branch** — a backport: the same mod and the same generator, built
+against the older engine. The branches are never merged; a fix that belongs to both is applied to both.
 
 ## What GregTech 6 is
 
@@ -75,7 +88,7 @@ Scale, for context: about 200 000 lines of Java in ~1 230 classes, plus roughly 
 
 ## Why porting it is hard
 
-GregTech 6 was written for Minecraft 1.7.10 (2014). Between that version and 26.1.2 essentially
+GregTech 6 was written for Minecraft 1.7.10 (2014). Between that version and 1.20.1 essentially
 every engine subsystem the mod depends on was removed or replaced — not deprecated, removed:
 
 | What GT6 uses in 1.7.10 | What happened to it |
@@ -240,7 +253,8 @@ Two rules keep this from lying, both bought with failures:
 
 ## Building
 
-You need **JDK 25**, about **8 GB of free RAM** and **10 GB of disk**. The first build downloads
+You need **JDK 25** to run the build (the mod itself is compiled for **Java 17**, which Gradle
+provisions on its own), about **8 GB of free RAM** and **10 GB of disk**. The first build downloads
 NeoForge and decompiles Minecraft, which is what the memory is for (the decompiler inherits the
 Gradle JVM heap, set to 6 GB in `gradle.properties`) — and it takes a while. Later builds are fast.
 
@@ -260,19 +274,18 @@ Gradle JVM heap, set to 6 GB in `gradle.properties`) — and it takes a while. L
 
 Client and server deliberately use separate game directories, so both can run at once.
 
-There is one opt-in build flag, `-Pgt6probes`, which adds the in-engine verification probes
-(`src/probes/java`) to the build. Without it they are not compiled at all and cannot end up in a
-player's jar; with it, `runClient`/`runServer` can run automated in-game checks.
+There is one opt-in build flag, `-Pgt6probes`, which attaches the in-engine verification stands.
+Those live **outside this repository**, in the developer's working environment (`../stands-1.20.1`);
+the repository contains none of them, so they cannot end up in a player's jar. Given that directory
+and the flag, `runClient`/`runServer` can run automated in-game checks.
 
 ## Tests
 
-```bash
-./gradlew test    # 13 tests, no external data required
-```
-
-The tests boot the mod inside a headless server and then exercise it: the material and prefix
-generator, recipe matching, a machine running a full processing cycle tick by tick, energy transfer,
-content registration, and the round trip of items through save and load.
+**This repository contains no tests, and this branch has none beside it either.** Verification is
+instrumentation, not product: the in-engine stands live in the developer's working environment
+(`../stands-1.20.1/`), and the automated product tests exist only for the `main` branch so far — on
+this branch `./gradlew test` finds nothing to run. What has been verified here was verified by the
+in-engine stands and by the comparison against the original, both described below.
 
 ## Development tooling
 
