@@ -116,23 +116,13 @@ public final class NetworkHandler implements INetworkHandler {
 		mChannel.registerMessage(0, GT6Payload.class, GT6Payload::write, GT6Payload::read, this::handlePayload);
 	}
 
-	// [GT6-SYNCDIAG] BUG-094 (снять при уборке фазы): клиент — счётчики приёма GT6-пакетов
-	private static final java.util.concurrent.atomic.AtomicLong sDiagReceived = new java.util.concurrent.atomic.AtomicLong(), sDiagQueued = new java.util.concurrent.atomic.AtomicLong(), sDiagProcessed = new java.util.concurrent.atomic.AtomicLong();
-
 	private void handlePayload(GT6Payload aPayload, Supplier<NetworkEvent.Context> aContextSupplier) {
 		NetworkEvent.Context aContext = aContextSupplier.get();
 		// 1.20.1 требует явной отметки: неотмеченный пакет Forge считает необработанным и пишет в лог
 		// (NetworkEvent.Context.setPacketHandled, NetworkEvent.java:196). В 26.x отметки не было — там её вёл движок.
 		aContext.setPacketHandled(true);
 		IPacket tPacket = decode(aPayload.data());
-		if (tPacket == null) {
-			if (gregapi.data.CS.probeFlag("gt6syncdiag.flag")) gregapi.data.CS.OUT.println("[GT6-SYNCDIAG-NET] decode=null (канал " + mChannelName + ")");
-			return;
-		}
-		if (gregapi.data.CS.probeFlag("gt6syncdiag.flag")) {
-			long tN = sDiagReceived.incrementAndGet();
-			if (tN <= 10 || tN % 200 == 0) gregapi.data.CS.OUT.println("[GT6-SYNCDIAG-NET] принят #" + tN + " " + tPacket.getClass().getSimpleName() + " (канал " + mChannelName + ")");
-		}
+		if (tPacket == null) return;
 		aContext.enqueueWork(() -> {
 			BlockGetter tWorld = getProcessingWorld(aContext);
 			// НАДЁЖНЫЙ МОСТ (репорт игрока: worldgen-MTE невидимы в стартовой области при входе): даже на
@@ -142,17 +132,9 @@ public final class NetworkHandler implements INetworkHandler {
 			if (tWorld instanceof Level tLevel && tLevel.isClientSide() && tPacket instanceof gregapi.network.packets.PacketCoordinates tPC
 			 && !tLevel.hasChunkAt(new BlockPos(tPC.mX, tPC.mY, tPC.mZ))) {
 				queuePending(tPC, this);
-				if (gregapi.data.CS.probeFlag("gt6syncdiag.flag")) {
-					long tQ = sDiagQueued.incrementAndGet();
-					if (tQ <= 10 || tQ % 200 == 0) gregapi.data.CS.OUT.println("[GT6-SYNCDIAG-NET] отложен (чанка нет) #" + tQ + " @" + tPC.mX + "," + tPC.mY + "," + tPC.mZ);
-				}
 				return;
 			}
 			tPacket.process(tWorld, this);
-			if (gregapi.data.CS.probeFlag("gt6syncdiag.flag")) {
-				long tP = sDiagProcessed.incrementAndGet();
-				if (tP <= 10 || tP % 200 == 0) gregapi.data.CS.OUT.println("[GT6-SYNCDIAG-NET] обработан #" + tP + " " + tPacket.getClass().getSimpleName() + " world=" + (tWorld == null ? "null" : tWorld.getClass().getSimpleName()));
-			}
 		});
 	}
 

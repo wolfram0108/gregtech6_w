@@ -295,7 +295,6 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override public void onRemove(BlockState aState, Level aWorld, BlockPos aPos, BlockState aNewState, boolean aMovedByPiston) {
 		boolean tKeepBlockEntity = breakBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), blockMetaDataAt(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));
 		if (!tKeepBlockEntity) {super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston); sweepBlockEntityRemains(aWorld, aPos, aNewState);}
-		traceRemoval(aWorld, aPos, aState, aNewState, tKeepBlockEntity);
 	}
 
 	/** ДОБОР ОСТАТКА BE (корень BP-BUG-008, вскрытие 2026-08-15). {@code super.onRemove} отдаёт снятие движковому
@@ -347,39 +346,6 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		} catch (Throwable e) {e.printStackTrace(ERR);}
 	}
 
-	// ==========================================================================================================
-	// СТОРОЖ КЛАССА «МАССОВОЕ СНЯТИЕ MTE В ОДНОМ ЧАНКЕ» (BP-BUG-008). Постоянный, не диагностика: класс уже дважды
-	// уносил постройку игрока целым чанком, а в журналах не осталось НИ ОДНОЙ строки о том, кто снимал блоки —
-	// охота стоила двух сессий вскрытия. Точка выбрана не случайно: onRemove — единственный вызыватель снятия MTE
-	// на сервере ({@code LevelChunk.setBlockState} [LevelChunk.java:246-250] зовёт {@code BlockState.onRemove}
-	// безусловно), поэтому один сторож здесь покрывает ВСЕ каналы снятия — игрока, взрыв, кавер, ворлдген, мод.
-	// Цена в горячем пути: три сравнения и инкремент, без аллокаций. Стек снимается только на первых событиях
-	// запуска и при срабатывании порога — то есть практически никогда.
-	// ==========================================================================================================
-	private static final int TRACE_FIRST = 16, TRACE_BURST = 4;
-	private static long sTraceChunk = Long.MIN_VALUE, sTraceTick = Long.MIN_VALUE;
-	private static int sTraceInTick = 0, sTracePrinted = 0;
-	private static boolean sTraceBurstSaid = F;
-
-	private static void traceRemoval(Level aWorld, BlockPos aPos, BlockState aState, BlockState aNewState, boolean aKept) {
-		if (aWorld == null || aWorld.isClientSide()) return;
-		long tChunk = net.minecraft.world.level.ChunkPos.asLong(aPos), tTick = aWorld.getGameTime();
-		if (tChunk != sTraceChunk || tTick != sTraceTick) {sTraceChunk = tChunk; sTraceTick = tTick; sTraceInTick = 0; sTraceBurstSaid = F;}
-		sTraceInTick++;
-		boolean tBurst = sTraceInTick >= TRACE_BURST && !sTraceBurstSaid;
-		if (sTracePrinted >= TRACE_FIRST && !tBurst) return;
-		if (tBurst) sTraceBurstSaid = T; else sTracePrinted++;
-		try {
-			net.minecraft.world.level.chunk.ChunkAccess tCA = aWorld.getChunk(aPos.getX() >> 4, aPos.getZ() >> 4, net.minecraft.world.level.chunk.ChunkStatus.FULL, F);
-			String tPromo = tCA instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? String.valueOf(tLC.getFullStatus()) : tCA == null ? "нет чанка" : tCA.getStatus().toString();
-			OUT.println("[GT6-MTEREMOVE]" + (tBurst ? " ПАЧКА x" + sTraceInTick + " за тик!" : "") + " @" + aPos.toShortString()
-				+ " чанк=" + new net.minecraft.world.level.ChunkPos(aPos) + " промоция=" + tPromo
-				+ " было=" + aState.getBlock() + " стало=" + aNewState.getBlock()
-				+ " BE-оставлена=" + aKept + " тик=" + tTick);
-			if (tBurst) new Throwable("[GT6-MTEREMOVE] стек массового снятия").printStackTrace(OUT);
-		} catch (Throwable e) {e.printStackTrace(ERR);}
-	}
-
 	// было @Override Block.getMapColor(int) (1.7.10) - удалён в neo; собственный byte-meta dispatcher
 	// остаётся обычным GT6-методом (не движковый override). super.getMapColor(aMeta) (vanilla-дефолт = материал)
 	// заменён на mMaterial.getMaterialMapColor() - тот же источник дефолта, 1:1.
@@ -427,29 +393,14 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 			return tExisting;
 		}
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(aID1);
-		// [GT6-SYNCDIAG] BUG-094 (снять при уборке фазы): молчаливые провалы создания клиент-BE из пакета
-		if (tRegistry == null) {if (probeFlag("gt6syncdiag.flag")) OUT.println("[GT6-SYNCDIAG-CLI] getRegistry(" + aID1 + ")=NULL @" + aX + "," + aY + "," + aZ + " id2=" + aID2); return null;}
+		if (tRegistry == null) return null;
 		BlockEntity aTileEntity = tRegistry.getNewTileEntity(aWorld, aX, aY, aZ, aID2);
-		if (aTileEntity == null) {
-			if (probeFlag("gt6syncdiag.flag")) {
-				MultiTileEntityClassContainer tClass = tRegistry.mRegistry.get((short)aID2);
-				OUT.println("[GT6-SYNCDIAG-CLI] getNewTileEntity(reg=" + aID1 + ",id=" + aID2 + ")=NULL @" + aX + "," + aY + "," + aZ
-					+ " | классов в реестре=" + tRegistry.mRegistry.size()
-					+ " | класс id=" + (tClass == null ? "НЕ ЗАРЕГИСТРИРОВАН" : ("есть, mBlock=" + (tClass.mBlock == null ? "NULL" : "жив") + ", класс=" + tClass.mClass.getSimpleName())));
-			}
-			return null;
-		}
+		if (aTileEntity == null) return null;
 		WD.te(aWorld, aX, aY, aZ, aTileEntity, F);
 		return aTileEntity;
 	}
 
-	@Override public final void receiveData         (BlockGetter aWorld, int aX, int aY, int aZ              , INetworkHandler aNetworkHandler, short aID1, short aID2)                                                                {if (!(aWorld instanceof Level)) return; BlockEntity aTileEntity = reuseOrCreateClientTE((Level)aWorld, aX, aY, aZ, aID1, aID2, aNetworkHandler, F); if (aTileEntity == null) return; diagDescribe(aX, aY, aZ, aID1, aID2, aTileEntity); if (aTileEntity instanceof ITileEntitySynchronising) ((ITileEntitySynchronising)aTileEntity).processPacket(aNetworkHandler); WD.update(aWorld, aX, aY, aZ);}
-
-	// ВРЕМЕННАЯ ДИАГНОСТИКА (цвет MTE 2026-08-13): приход полного describe-пакета на клиент. Снять вместе с [GT6-MTECOLORDIAG].
-	private static int sDiagDescribes = 0;
-	private static void diagDescribe(int aX, int aY, int aZ, short aID1, short aID2, BlockEntity aTE) {
-		if (sDiagDescribes < 8) {sDiagDescribes++; gregapi.data.CS.OUT.println("[GT6-MTECOLORDIAG] describe " + aX + "," + aY + "," + aZ + " id=" + aID1 + "/" + aID2 + " -> " + aTE.getClass().getSimpleName());}
-	}
+	@Override public final void receiveData         (BlockGetter aWorld, int aX, int aY, int aZ              , INetworkHandler aNetworkHandler, short aID1, short aID2)                                                                {if (!(aWorld instanceof Level)) return; BlockEntity aTileEntity = reuseOrCreateClientTE((Level)aWorld, aX, aY, aZ, aID1, aID2, aNetworkHandler, F); if (aTileEntity == null) return; if (aTileEntity instanceof ITileEntitySynchronising) ((ITileEntitySynchronising)aTileEntity).processPacket(aNetworkHandler); WD.update(aWorld, aX, aY, aZ);}
 	@Override public final void receiveDataByte     (BlockGetter aWorld, int aX, int aY, int aZ, byte   aData, INetworkHandler aNetworkHandler, short aID1, short aID2)                                                                {if (!(aWorld instanceof Level)) return; BlockEntity aTileEntity = reuseOrCreateClientTE((Level)aWorld, aX, aY, aZ, aID1, aID2, aNetworkHandler, F); if (aTileEntity == null) return; if (aTileEntity instanceof ITileEntitySynchronising) ((ITileEntitySynchronising)aTileEntity).processPacket(aNetworkHandler); if (aTileEntity instanceof IMTE_SyncDataByte     ) ((IMTE_SyncDataByte     )aTileEntity).receiveDataByte     (aData, aNetworkHandler); WD.update(aWorld, aX, aY, aZ);}
 	@Override public final void receiveDataShort    (BlockGetter aWorld, int aX, int aY, int aZ, short  aData, INetworkHandler aNetworkHandler, short aID1, short aID2)                                                                {if (!(aWorld instanceof Level)) return; BlockEntity aTileEntity = reuseOrCreateClientTE((Level)aWorld, aX, aY, aZ, aID1, aID2, aNetworkHandler, F); if (aTileEntity == null) return; if (aTileEntity instanceof ITileEntitySynchronising) ((ITileEntitySynchronising)aTileEntity).processPacket(aNetworkHandler); if (aTileEntity instanceof IMTE_SyncDataShort    ) ((IMTE_SyncDataShort    )aTileEntity).receiveDataShort    (aData, aNetworkHandler); WD.update(aWorld, aX, aY, aZ);}
 	@Override public final void receiveDataInteger  (BlockGetter aWorld, int aX, int aY, int aZ, int    aData, INetworkHandler aNetworkHandler, short aID1, short aID2)                                                                {if (!(aWorld instanceof Level)) return; BlockEntity aTileEntity = reuseOrCreateClientTE((Level)aWorld, aX, aY, aZ, aID1, aID2, aNetworkHandler, F); if (aTileEntity == null) return; if (aTileEntity instanceof ITileEntitySynchronising) ((ITileEntitySynchronising)aTileEntity).processPacket(aNetworkHandler); if (aTileEntity instanceof IMTE_SyncDataInteger  ) ((IMTE_SyncDataInteger  )aTileEntity).receiveDataInteger  (aData, aNetworkHandler); WD.update(aWorld, aX, aY, aZ);}
@@ -905,7 +856,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// в neo-порте клиент-BE едет АСИНХРОННО (GT6-пакеты, F17) → отсутствие BE на клиенте = состояние синка, не
 	// сиротство. Апдейт соседа в это окно удалял блок ЛОКАЛЬНО у клиента (сервер блок хранил; следующий серверный
 	// апдейт позиции возвращал его) → «блуждающая дыра» в стенах + дропы синк-пакетов в клиент-воздух.
-	/** ⚠️ КОРЕНЬ BP-BUG-008 (потеря построек игрока, вскрытие 2026-08-16 по стеку сторожа {@code [GT6-MTEREMOVE]}).
+	/** ⚠️ КОРЕНЬ BP-BUG-008 (потеря построек игрока, вскрытие 2026-08-16 по стеку снятия MTE).
 	 *  Ветка чистки сирот — канон 1.7.10 ({@code MultiTileEntityBlock:302} оригинала: {@code if (aTileEntity == null)
 	 *  aWorld.setBlockToAir(aX, aY, aZ);}) и остаётся на месте. Дефектом был её ПРИЗНАК: {@code WD.te == null} в 1.20.1
 	 *  означает не только сироту (разбор — {@link gregapi.util.WD#teProvenAbsent}). Живой случай: 22 трубы одного чанка

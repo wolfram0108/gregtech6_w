@@ -77,11 +77,8 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 	private static final java.util.Map<Class<?>, BlockEntityRenderer> SPECIAL_RENDERERS = new java.util.HashMap<>();
 	public static void bindSpecialRenderer(Class<?> aTileEntityClass, @SuppressWarnings("rawtypes") BlockEntityRenderer aRenderer) {SPECIAL_RENDERERS.put(aTileEntityClass, aRenderer);}
 
-	/** Диаг-счётчики судьи П2 (спец-рендер реально вызван движком). */
-	public static final java.util.concurrent.atomic.AtomicLong sSpecialSubmit = new java.util.concurrent.atomic.AtomicLong(), sSpecialItemForm = new java.util.concurrent.atomic.AtomicLong();
 	/** Диаг-счётчики кэша квадов (BUG-106 №4): вызовы рендера рендер-объектов / реальные пересборки / кэш-хиты. */
 	public static final java.util.concurrent.atomic.AtomicLong sQuadExtracts = new java.util.concurrent.atomic.AtomicLong(), sQuadBuilds = new java.util.concurrent.atomic.AtomicLong(), sQuadCacheHits = new java.util.concurrent.atomic.AtomicLong();
-	private static int sDiagBuilds = 0; // ВРЕМЕННАЯ ДИАГНОСТИКА — снять вместе с [GT6-MTECOLORDIAG]
 
 	/** BUG-106 №4 — кэш квадов BER. Эпоха рендера: {@code allChanged()} (перешив атласа/моделей — F3+T, F3+A,
 	 *  смена дистанции; кэшированные квады держат UV СТАРОГО атласа) рвёт ВСЕ кэши разом, O(1). Точечный сброс —
@@ -167,7 +164,6 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 			if (tRenderer == null) return;
 			try {
 				tRenderer.render(tBE, 0F, aPoseStack, aBuffer, aLight, aOverlay);
-				sSpecialItemForm.incrementAndGet();
 			} catch (Throwable e) {/* item-форма не должна ронять рендер */}
 		}
 
@@ -210,12 +206,6 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 			sQuadCacheHits.incrementAndGet();
 		} else {
 			aBE.mRenderAABB = new net.minecraft.world.phys.AABB(tPos);
-			// ВРЕМЕННАЯ ДИАГНОСТИКА (цвет MTE 2026-08-13): чем является клиентский BE и какой цвет он несёт
-			// В МОМЕНТ ПОСТРОЙКИ облика. Снять вместе с [GT6-MTECOLORDIAG].
-			if (sDiagBuilds < 8) {sDiagBuilds++; gregapi.data.CS.OUT.println("[GT6-MTECOLORDIAG] build " + tPos.toShortString()
-				+ " класс=" + aBE.getClass().getSimpleName()
-				+ " paint=" + (aBE instanceof gregapi.tileentity.base.TileEntityBase07Paintable tP ? Integer.toHexString(tP.getPaint()) : "-")
-				+ " painted=" + (aBE instanceof gregapi.tileentity.base.TileEntityBase07Paintable tP2 && tP2.isPainted()));}
 			GT6QuadBuilder tQB = new GT6QuadBuilder();
 			try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* render-логика конкретного MTE не должна ронять кадр */}
 			tQuads = tQB.isEmpty() ? null : tQB.quads();
@@ -246,7 +236,6 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 		@SuppressWarnings("rawtypes") BlockEntityRenderer tSpecial = SPECIAL_RENDERERS.get(aBE.getClass());
 		if (tSpecial != null) try {
 			tSpecial.render(aBE, aPartialTicks, aPoseStack, aBuffer, aLight, aOverlay);
-			sSpecialSubmit.incrementAndGet();
 		} catch (Throwable e) {/* спец-рендер не должен ронять кадр */}
 	}
 }

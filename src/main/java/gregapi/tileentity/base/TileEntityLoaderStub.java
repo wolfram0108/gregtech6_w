@@ -62,8 +62,6 @@ public class TileEntityLoaderStub extends TileEntityBase01Root {
 	@Override protected void saveAdditional(CompoundTag aNBT) {
 		if (mLoadedNBT == null) {super.saveAdditional(aNBT); return;}
 		aNBT.merge(mLoadedNBT);
-		// [GT6-MTEAUDIT] DIAG BUG-057 — снять при уборке фазы
-		if (probeFlag("gt6mteauditprobe.flag")) OUT.println("[GT6-MTEAUDIT-DIAG] стаб персистирован БЕЗ потерь @" + getBlockPos().toShortString());
 	}
 
 	/** F6-дедик, ТОТ ЖЕ приём прозрачного переносчика, но в СЕТЬ (разбор — {@code TileEntityBase01Root.getUpdateTag}):

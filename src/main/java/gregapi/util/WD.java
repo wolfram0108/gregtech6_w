@@ -1211,11 +1211,6 @@ public class WD {
 		return aTileEntity;
 	}
 	
-	/** П5-замер: гистограмма статусов чанков-приёмников worldgen-BE (диагностика mismatch-сирот). */
-	public static final java.util.concurrent.ConcurrentHashMap<String, Long> sWgBEStatus = new java.util.concurrent.ConcurrentHashMap<>();
-	/** П5-замер: выборка позиций BE, записанных в НЕ-full чанки (+ класс BE и блок на момент записи) — финал probe проверит, чем стали. */
-	public static final java.util.Queue<Object[]> sWgBESamples = new java.util.concurrent.ConcurrentLinkedQueue<>();
-
 	/** Sets the TileEntity at the passed position, with the option of turning adjacent TileEntity updates off. */
 	public static BlockEntity te(LevelAccessor aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity, boolean aCauseTileEntityUpdates) {
 		if (tileYInvalid(aWorld, aY)) return invalidateTileEntityWithNegativeYCoord(aX, aY, aZ, aTileEntity); // было aY<0 — MC26 бедрок Y=−64 легитимен, порог = дно мира getMinY()
@@ -1251,13 +1246,6 @@ public class WD {
 			// на ChunkAccess работает и для ещё-генерящегося чанка (BE промотируется движком при финализации ProtoChunk→LevelChunk).
 			ChunkAccess tChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
 			if (tChunk != null) {
-				// П5-замер: статус чанка-приёмника в момент BE-записи (гипотеза сирот: пишем в недогенерированный сосед → его поздние стадии затирают блок)
-				if (aTileEntity instanceof gregapi.block.multitileentity.IMultiTileEntity) {
-					String tStatus = String.valueOf(tChunk.getStatus() /* 1.20.1: ChunkAccess.getStatus() */);
-					sWgBEStatus.merge(tStatus, 1L, Long::sum);
-					if (!"minecraft:full".equals(tStatus) && sWgBESamples.size() < 60)
-						sWgBESamples.add(new Object[]{new BlockPos(aX, aY, aZ), aTileEntity.getClass().getSimpleName(), String.valueOf(block(aWorld, aX, aY, aZ)), tStatus});
-				}
 				tChunk.setBlockEntity(aTileEntity); // было tChunk.func_150812_a(x&15,y,z&15,te)/addAndRegisterBlockEntity (LevelChunk-only) — neo: ChunkAccess.setBlockEntity(BlockEntity), позиция из te.getBlockPos()
 				tChunk.setUnsaved(true); // было tChunk.setUnsaved(true)
 				// F6-worldgen КРОСС-ЧАНК BE-ПЕРСИСТ (ЦЕНТР): worldgen кладёт MTE и в СОСЕДНИЕ чанки региона; в модели neo
@@ -1578,6 +1566,70 @@ public class WD {
 		return aWorld.setBlock(tPos, tState.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.TRUE), 3);
 	}
 
+
+	/** ЕДИНСТВЕННАЯ точка записи блока в мир из центра {@link #set}. Смысл — снять движковую ЗАГЛУШКУ
+	 *  блок-сущности, которую движок 1.20.1 кладёт в чанк на КАЖДУЮ ворлдген-запись блока с {@code BlockEntity}.
+	 *
+	 *  <p><b>Что делает движок.</b> {@code WorldGenRegion.setBlock} [WorldGenRegion.java:267-282]: если новый
+	 *  блок несёт сущность, а чанк ещё не полный, движок кладёт в {@code pendingBlockEntities} свою запись
+	 *  {@code {id:"DUMMY"}} — обещание «сущность создам потом, при промоции». Снимается это обещание ровно
+	 *  двумя способами: {@code ChunkAccess.removeBlockEntity} (сам движок зовёт его на соседней ветке
+	 *  [WorldGenRegion.java:283-284], когда новый блок сущности не несёт) и общим сливом
+	 *  {@code LevelChunk.postProcessGeneration} [LevelChunk.java:514-518], который выполняется ТОЛЬКО когда
+	 *  чанк становится ТИКАЮЩИМ [ChunkMap.java:747] — то есть заметно позже промоции.
+	 *
+	 *  <p><b>Почему обещание становится сиротой.</b> Штатное снятие блока обещание НЕ трогает:
+	 *  {@code BlockBehaviour.onRemove} [BlockBehaviour.java:163-166] уходит в
+	 *  {@code LevelChunk.removeBlockEntity} [LevelChunk.java:394-403], а тот чистит ТОЛЬКО карту ЖИВЫХ
+	 *  сущностей. Если ворлдген-блок исчезнет в окне «промоция … постобработка», обещание останется висеть.
+	 *  А исчезает он там ШТАТНО И ПО КАНОНУ: камешек снимает себя сам, когда рядом жидкость или пропала
+	 *  опора — {@code MultiTileEntityRock.onNeighborBlockChange} (тело 1:1 с оригиналом 1.7.10
+	 *  {@code gt6-original/.../placeables/MultiTileEntityRock.java:151-163}), а соседские апдейты приходят
+	 *  ровно тогда, когда чанк начинает тикать. Итог — движковый WARN
+	 *  «Tried to load a DUMMY block entity … but found not block entity block» и запись-призрак на диске
+	 *  (BP-BUG-009: замер — 12/16/12 варнов на ~31,9 тыс. свежих чанков).
+	 *
+	 *  <p><b>Почему чиним здесь, а не в носителе.</b> Носителей у класса столько же, сколько ворлдген-блоков
+	 *  с сущностью (~150 на чанк: руды, камешки, палки, спринги), а поведение камешка — КАНОН, править его
+	 *  нельзя. Общая деталь ровно одна — эта: центр записи блока. Обещание моду не нужно НИ РАЗУ: GT6 ставит
+	 *  свои сущности сам ({@link #te}), как и в 1.7.10 — «Where I come from, we set the TileEntities ourselves»
+	 *  ({@code PrefixBlock.createTileEntity}); заглушек в 1.7.10 не существовало вовсе, а
+	 *  {@code Chunk.func_150807_a} снимал сущность вместе с блоком.
+	 *
+	 *  <p><b>Приём движковый, своего механизма не заводим:</b> снимаем тем же {@code ChunkAccess.removeBlockEntity},
+	 *  которым это делает сам {@code WorldGenRegion}. Он чистит обе карты [ProtoChunk.java:248-251], поэтому уже
+	 *  привязанную живую сущность (порядок «блок → сущность» у {@code placeBlock} двойной: set/te/set/te)
+	 *  возвращаем на место тем же каналом {@code ChunkAccess.setBlockEntity}, каким её ставит {@link #te}.
+	 *  {@code ProtoChunk.removeBlockEntity} — чистые операции над картами, {@code setRemoved()} не зовёт.
+	 *
+	 *  <p><b>Симметрия с main (26.1.2): правка нужна ТОЛЬКО здесь.</b> В движке 26.1.2 обещание снимает сам
+	 *  {@code ProtoChunk.setBlockEntity} [neo-decompiled/.../ProtoChunk.java:173-175:
+	 *  {@code pendingBlockEntities.remove(pos); blockEntities.put(pos, be);}], то есть привязка настоящей
+	 *  сущности гасит заглушку автоматически. В 1.20.1 того же метода нет
+	 *  [forge-1201-decompiled/.../ProtoChunk.java:148-150 — только {@code blockEntities.put}]. Эта правка
+	 *  воспроизводит на ветке поведение более позднего движка. */
+	private static boolean setWG(LevelAccessor aWorld, BlockPos aPos, BlockState aState, int aFlags) {
+		boolean rSet = aWorld.setBlock(aPos, aState, aFlags);
+		if (rSet && aState.hasBlockEntity()) dropWorldgenBEStub(aWorld, aPos);
+		return rSet;
+	}
+
+	/** Снятие движкового обещания. Условие — ровно то, при котором движок его пишет
+	 *  ({@code WorldGenRegion.setBlock:268}: тип чанка НЕ {@code LEVELCHUNK}), поэтому на живом мире и на
+	 *  уже-полном соседе метод не делает ничего. */
+	private static void dropWorldgenBEStub(LevelAccessor aWorld, BlockPos aPos) {
+		if (aWorld instanceof Level) return; // не ворлдген — обещаний не бывает
+		try {
+			ChunkAccess tChunk = aWorld.getChunk(aPos.getX() >> 4, aPos.getZ() >> 4);
+			if (tChunk == null || tChunk.getStatus().getChunkType() == net.minecraft.world.level.chunk.ChunkStatus.ChunkType.LEVELCHUNK) return;
+			net.minecraft.nbt.CompoundTag tStub = tChunk.getBlockEntityNbt(aPos);
+			if (tStub == null || !"DUMMY".equals(tStub.getString("id"))) return; // чужую упакованную запись не трогаем
+			BlockEntity tLive = tChunk.getBlockEntity(aPos); // ProtoChunk: чистое чтение карты (ProtoChunk.java:153-155), промоции нет
+			tChunk.removeBlockEntity(aPos);
+			if (tLive != null) tChunk.setBlockEntity(tLive);
+		} catch (Throwable e) {e.printStackTrace(ERR);}
+	}
+
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
 		// BUG-115-хвост (репорт: «остаются полублоки лавы») — ФОРС ДВИЖКА при СНЯТИИ жидкости.
 		// В 1.7.10 поток жил своим тиком: BlockDynamicLiquid.updateTick перепланировал себя, пока блок
@@ -1598,7 +1650,7 @@ public class WD {
 		if ((aFlags & 1) == 0 && aBlock == NB && liquid(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock())) aFlags |= 1;
 		if (aRemoveGrassBelow) {
 			Block tBlock = state(aWorld, new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
-			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)
+			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) setWG(aWorld, new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)
 		}
 		// BUG-025: движок (1.13+) разложил 1.7.10-котёл (один блок, мета 0-3 = уровень воды) на РАЗНЫЕ реестровые блоки:
 		// CAULDRON(пусто, БЕЗ свойства уровня) / WATER_CAULDRON(LayeredCauldronBlock, LEVEL 1-3). Универсальный мост ниже
@@ -1610,14 +1662,14 @@ public class WD {
 			BlockState tCauldron = tLevel <= 0
 				? Blocks.CAULDRON.defaultBlockState()
 				: Blocks.WATER_CAULDRON.defaultBlockState().setValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL, (int) Math.min(net.minecraft.world.level.block.LayeredCauldronBlock.MAX_FILL_LEVEL, tLevel));
-			return aWorld.setBlock(new BlockPos(aX, aY, aZ), tCauldron, (int) aFlags);
+			return setWG(aWorld, new BlockPos(aX, aY, aZ), tCauldron, (int) aFlags);
 		}
 		// F13-legacy-meta МОСТ (заход данжей #39, живой тест: «повороты — повсеместная проблема»): worldgen GT6 ставит
 		// ванильные направленные блоки ДОСЛОВНЫМИ метами 1.7.10, а у neo-модели меты нет — прежний путь давал
 		// дефолт-стейт (поршни вниз, кнопки в воздухе, двери/кровати/рамки без ориентации). Разбор ниже.
 		{
 			BlockState tLegacy = legacyVanillaState(aWorld, aX, aY, aZ, aBlock, aMeta);
-			if (tLegacy != null) return aWorld.setBlock(new BlockPos(aX, aY, aZ), tLegacy, (int)aFlags);
+			if (tLegacy != null) return setWG(aWorld, new BlockPos(aX, aY, aZ), tLegacy, (int)aFlags);
 		}
 		// было aWorld.setBlock(x,y,z,block,meta,flags) — neo: LevelWriter.setBlock(BlockPos,BlockState,flags) (LevelWriter.java:10).
 		// Числовой меты у BlockState нет (МОДЕЛЬ МЕТЫ п.1/4). BUG-047: 1.7.10 Chunk.func_150807_a писал блок+мету ОДНИМ
@@ -1629,9 +1681,9 @@ public class WD {
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			BlockState tCur = state(aWorld, tSetPos);
 			BlockState tNew = ((IBlockExtendedMetaData)aBlock).getStateForExtendedMetaData(tCur.getBlock() == aBlock ? tCur : aBlock.defaultBlockState(), Code.bind4(aMeta));
-			if (tNew != null) return aWorld.setBlock(tSetPos, tNew, (int)aFlags);
+			if (tNew != null) return setWG(aWorld, tSetPos, tNew, (int)aFlags);
 		}
-		boolean rSet = aWorld.setBlock(tSetPos, aBlock.defaultBlockState(), (int)aFlags);
+		boolean rSet = setWG(aWorld, tSetPos, aBlock.defaultBlockState(), (int)aFlags);
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			byte tNewMeta = Code.bind4(aMeta);
 			// мета — отдельный канал; но setter даёт side-effects (WD.te/WD.update), потому — только при РЕАЛЬНОМ отличии
@@ -1648,7 +1700,7 @@ public class WD {
 	 *  блоком, а движок 1.13+ разложил его в blockstate-свойство того же блока (lit_redstone_lamp → REDSTONE_LAMP[LIT];
 	 *  тот же класс разложения, что котёл BUG-025 выше). Числовой меты у таких состояний нет — мета-каналом не выразить. */
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, BlockState aState, long aFlags) {
-		return aWorld.setBlock(new BlockPos(aX, aY, aZ), aState, (int)aFlags);
+		return setWG(aWorld, new BlockPos(aX, aY, aZ), aState, (int)aFlags);
 	}
 
 	// F13-legacy-meta МОСТ (заход данжей #39): карты направлений 1.7.10. Выверены ГЕОМЕТРИЕЙ данж-конструкций Грега
@@ -1841,7 +1893,7 @@ public class WD {
 		// было aWorld.setBlock(x,y,z,Blocks.OAK_WALL_SIGN,aSide,flags) — aSide был прямой мета-ориентацией wall_sign
 		// (2-5); neo: WallSignBlock.FACING (EnumProperty<Direction>, WallSignBlock.java:30) через уже
 		// централизованный FORGE_DIR[side]->Direction (тот же массив, что используется по всему файлу).
-		aWorld.setBlock(new BlockPos(aX, aY, aZ), Blocks.OAK_WALL_SIGN.defaultBlockState().setValue(WallSignBlock.FACING, FORGE_DIR[aSide]), (int)aFlags);
+		setWG(aWorld, new BlockPos(aX, aY, aZ), Blocks.OAK_WALL_SIGN.defaultBlockState().setValue(WallSignBlock.FACING, FORGE_DIR[aSide]), (int)aFlags);
 		BlockEntity tSign = te(aWorld, aX, aY, aZ, T);
 		if (!(tSign instanceof SignBlockEntity)) return F;
 		// было signText[0..3]=String (1.7.10 мутабельный массив строк) -> neo SignText immutable (front/back):

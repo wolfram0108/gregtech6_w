@@ -83,8 +83,6 @@ public class PacketOreMap implements IPacket {
 		// Чанк уже пришёл (пакет чанка идёт по тому же соединению РАНЬШЕ — момент отправки задан ChunkWatchEvent.Watch);
 		// если его всё же нет, писать некуда — карта приедет заново со следующей отправкой чанка.
 		net.minecraft.world.level.chunk.ChunkAccess tChunk = tWorld.getChunkSource().getChunk(mChunkX, mChunkZ, false);
-		// ВРЕМЕННАЯ ДИАГНОСТИКА (цвет мира 2026-08-13): судьба первых 10 пакетов карты — ловим гонку «пакет раньше чанка».
-		if (sDiagPackets < 10) {sDiagPackets++; gregapi.data.CS.OUT.println("[GT6-OREMAPDIAG] чанк " + mChunkX + "," + mChunkZ + " записей=" + (mEntries == null ? 0 : mEntries.length) + " чанк-на-клиенте=" + (tChunk != null) + " капа=" + (tChunk != null && PrefixBlockOreMap.existing(tChunk) != null));}
 		if (tChunk == null) return;
 		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(tChunk);
 		if (tMap == null) return;
@@ -123,8 +121,6 @@ public class PacketOreMap implements IPacket {
 			if (tSections.add(tY >> 4)) markDirty(aWorld, (tKey & 0xFF) | (((tY & ~15) + 8 + 2048) << 8));
 		}
 	}
-
-	private static int sDiagPackets = 0; // ВРЕМЕННАЯ ДИАГНОСТИКА — снять вместе с [GT6-OREMAPDIAG]
 
 	/** Обратное преобразование ключа карты (PrefixBlockOreMap.key: ((y+2048)<<8) | ((z&15)<<4) | (x&15)) в мировую позицию. */
 	private void markDirty(Level aWorld, int aKey) {

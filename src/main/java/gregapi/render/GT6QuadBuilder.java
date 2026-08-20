@@ -132,32 +132,10 @@ public final class GT6QuadBuilder {
 	}
 
 	/** GT6 side-байт → neo Direction: SIDE_Y_NEG=0=DOWN, Y_POS=1=UP, Z_NEG=2=NORTH, Z_POS=3=SOUTH, X_NEG=4=WEST, X_POS=5=EAST. */
-	/** Диаг П9: имена спрайтов, НЕ найденных в атласе (грань молча пропускалась → «частично без текстур»). */
-	public static final java.util.Set<String> sMissingSprites = java.util.concurrent.ConcurrentHashMap.newKeySet();
-
-	// ВРЕМЕННАЯ ДИАГНОСТИКА (цвет мира, репорт 2026-08-13): считаем грани с цветом и без по нитям (Render thread =
-	// BER/item, Worker = чанк-компиляция). Печать капнута: 2 строки на прогон. Снять после закрытия дефекта цвета.
-	private static final java.util.concurrent.atomic.AtomicLong sDiagFaces = new java.util.concurrent.atomic.AtomicLong();
-	private static final java.util.concurrent.ConcurrentHashMap<String, long[]> sDiagByThread = new java.util.concurrent.ConcurrentHashMap<>();
-	private static final java.util.Set<String> sDiagSamples = java.util.concurrent.ConcurrentHashMap.newKeySet();
 	public void putFace(byte aSide, ResourceLocation aIcon, short[] aRGBa) {
 		if (aIcon == null || aSide < 0 || aSide > 5) return;
-		boolean tColored = aRGBa != null && aRGBa.length >= 3 && ((aRGBa[0] & 0xFF) != 255 || (aRGBa[1] & 0xFF) != 255 || (aRGBa[2] & 0xFF) != 255);
-		String tThread = Thread.currentThread().getName().startsWith("Render") ? "render" : "worker";
-		long[] tCnt = sDiagByThread.computeIfAbsent(tThread, k -> new long[2]);
-		synchronized (tCnt) {tCnt[tColored ? 1 : 0]++;}
-		String tKind = tThread + (tColored ? "-цвет" : "-бел");
-		if (sDiagSamples.stream().filter(s -> s.startsWith(tKind)).count() < 3)
-			sDiagSamples.add(tKind + ":" + aIcon + (aRGBa == null ? ":null" : ":" + (aRGBa[0]&0xFF) + "," + (aRGBa[1]&0xFF) + "," + (aRGBa[2]&0xFF)));
-		long tN = sDiagFaces.incrementAndGet();
-		if (tN == 2000 || tN == 20000) {
-			StringBuilder tSB = new StringBuilder("[GT6-COLORDIAG] faces=").append(tN);
-			for (java.util.Map.Entry<String, long[]> tE : sDiagByThread.entrySet()) tSB.append(" · ").append(tE.getKey()).append(" бел/цвет=").append(tE.getValue()[0]).append("/").append(tE.getValue()[1]);
-			tSB.append(" · примеры: ").append(String.join(" | ", sDiagSamples));
-			gregapi.data.CS.OUT.println(tSB.toString());
-		}
 		TextureAtlasSprite tSprite = sprite(aIcon);
-		if (tSprite == null) {if (sMissingSprites.size() < 400) sMissingSprites.add(aIcon.toString()); return;}
+		if (tSprite == null) return;
 		Direction tDir = Direction.from3DDataValue(aSide);
 		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa);
 		if (tQuad == null) return;
@@ -349,7 +327,7 @@ public final class GT6QuadBuilder {
 	public void fluidQuad(float[][] aCorners, Direction aDir, ResourceLocation aIcon, short[] aRGBa, boolean aBothSides) {
 		if (aIcon == null || aCorners == null || aCorners.length < 4) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
-		if (tSprite == null) {if (sMissingSprites.size() < 400) sMissingSprites.add(aIcon.toString()); return;}
+		if (tSprite == null) return;
 		BakedQuad tQuad = vertexQuad(aCorners, tSprite, aRGBa, aDir, false);
 		if (tQuad != null) {mUnculled.add(tQuad); mAll.add(tQuad);}
 		if (aBothSides) {

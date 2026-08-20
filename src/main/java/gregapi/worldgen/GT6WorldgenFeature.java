@@ -456,12 +456,8 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		short tReg = tNBT.getShort(gregapi.data.CS.NBT_MTE_REG);
 		short tID  = tNBT.getShort(gregapi.data.CS.NBT_MTE_ID );
 		gregapi.block.multitileentity.MultiTileEntityRegistry tRegistry = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry(tReg);
-		if (tRegistry == null) {
-			// [GT6-MTEAUDIT] DIAG (§6.3) BUG-057 — снять при уборке фазы: стаб с потерянным/нулевым reg НЕ реконструируется и остаётся навсегда
-			if (gregapi.data.CS.probeFlag("gt6mteauditprobe.flag"))
-				gregapi.data.CS.OUT.println("[GT6-MTEAUDIT-DIAG] reconstruct FAIL: реестр null (reg=" + tReg + " id=" + tID + ") @" + aStub.getBlockPos().toShortString() + " ключи=" + tNBT.getAllKeys());
-			return;
-		}
+		// Стаб с потерянным/нулевым reg реконструировать нечем — остаётся как есть (BUG-057).
+		if (tRegistry == null) return;
 		net.minecraft.core.BlockPos tPos = aStub.getBlockPos();
 		// блок-гейт (корень mismatch-флуда): BE-сирота (блок в позиции не MTE — затёрт/air) НЕ реконструируется,
 		// стаб снимается → мир самоочищается от сирот вместо вечного «Block state mismatch … != air» при каждой загрузке.
