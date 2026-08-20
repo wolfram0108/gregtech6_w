@@ -740,7 +740,6 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				}
 				
 				EntityFoodTracker.tick();
-				if (++sFlightTick % 600 == 0) flightSample(aEvent.getServer()); // самописец: срез раз в 30 секунд
 				
 				if (SERVER_TIME % 1200 == 0) checkSaveLocation(aEvent.getServer().getWorldPath(LevelResource.ROOT).toFile(), T);
 				
@@ -1310,67 +1309,6 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// карту чанка (PrefixBlockOreMap) и снимаются НАВСЕГДА (чанк помечен на сохранение — при записи уйдёт уже
 	// без них). Сущности с mItemNBT (канал №8 аудита) остаются жить, но материал дублируется в карту, чтобы
 	// воронка чтения была единой. Тип сущности остаётся зарегистрированным вечно — он и есть читатель легаси.
-	// ================================================================================================================
-	// ПОЛЁТНЫЙ САМОПИСЕЦ (требование пользователя 2026-08-09: «любая многочасовая игра фиксирует всё — потом
-	// разбирается любой баг без наигрывания»). Мод-половина чёрного ящика (внешняя — watchdog: JFR/GC/куча/дамп):
-	// раз в 30 секунд строка CSV в logs/gt6-flight.csv — время, средний тик, куча, по каждому измерению чанки/
-	// сущности/игроки/позиция. Команда /gt6mark <текст> — пометить МОМЕНТ бага в самописце и логе: при разборе
-	// метка связывает слова пользователя с телеметрией и JFR-стеками по времени. Стоимость среза — микросекунды.
-	// ================================================================================================================
-	private static long sFlightTick = 0;
-	private static boolean sFlightBroken = false;
-	private static final java.time.format.DateTimeFormatter FLIGHT_TS = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-	private static void flightWrite(net.minecraft.server.MinecraftServer aServer, String aLine) {
-		if (sFlightBroken) return;
-		try {
-			java.nio.file.Path tDir = aServer.getServerDirectory().resolve("logs");
-			java.nio.file.Files.createDirectories(tDir);
-			java.nio.file.Path tFile = tDir.resolve("gt6-flight.csv");
-			if (java.nio.file.Files.exists(tFile) && java.nio.file.Files.size(tFile) > 64L << 20) // ротация 64МБ
-				java.nio.file.Files.move(tFile, tDir.resolve("gt6-flight-" + System.currentTimeMillis() + ".csv"));
-			if (!java.nio.file.Files.exists(tFile))
-				java.nio.file.Files.writeString(tFile, "время;тип;тик_мс;куча_МБ;куча_макс_МБ;измерение;чанков;сущностей;игроков;позиция;текст\n", java.nio.file.StandardOpenOption.CREATE);
-			java.nio.file.Files.writeString(tFile, aLine, java.nio.file.StandardOpenOption.APPEND);
-		} catch (Throwable e) {sFlightBroken = true; ERR.println("[GT6-FLIGHT] самописец отключён: " + e);}
-	}
-
-	private static void flightSample(net.minecraft.server.MinecraftServer aServer) {
-		try {
-			String tNow = java.time.LocalDateTime.now().format(FLIGHT_TS);
-			double tTickMs = aServer.getAverageTickTimeNanos() / 1.0e6;
-			Runtime tRt = Runtime.getRuntime();
-			long tUsed = (tRt.totalMemory() - tRt.freeMemory()) >> 20, tMax = tRt.maxMemory() >> 20;
-			StringBuilder tOut = new StringBuilder();
-			for (net.minecraft.server.level.ServerLevel tLevel : aServer.getAllLevels()) {
-				int tEntities = 0; for (@SuppressWarnings("unused") Object tE : tLevel.getAllEntities()) tEntities++;
-				net.minecraft.server.level.ServerPlayer tFirst = tLevel.players().isEmpty() ? null : tLevel.players().get(0);
-				tOut.append(tNow).append(";срез;").append(String.format(java.util.Locale.ROOT, "%.1f", tTickMs)).append(';').append(tUsed).append(';').append(tMax)
-					.append(';').append(tLevel.dimension().identifier()).append(';').append(tLevel.getChunkSource().getLoadedChunksCount())
-					.append(';').append(tEntities).append(';').append(tLevel.players().size())
-					.append(';').append(tFirst == null ? "-" : tFirst.blockPosition().toShortString().replace(',', ' ')).append(";-\n");
-			}
-			flightWrite(aServer, tOut.toString());
-		} catch (Throwable e) {/* срез не смеет ронять тик */}
-	}
-
-	/** Метка момента: пишется и в самописец, и в gregtech.log — при разборе связывает слова пользователя со стеками/телеметрией по времени. */
-	public static void flightMark(net.minecraft.server.MinecraftServer aServer, String aText) {
-		String tNow = java.time.LocalDateTime.now().format(FLIGHT_TS);
-		String tSafe = aText == null ? "-" : aText.replace(';', ',').replace('\n', ' ');
-		OUT.println("[GT6-MARK " + tNow + "] " + tSafe);
-		flightWrite(aServer, tNow + ";МЕТКА;-;-;-;-;-;-;-;-;" + tSafe + "\n");
-		flightSample(aServer); // срез в момент метки — состояние ровно тогда, когда пользователь это увидел
-	}
-
-	@SubscribeEvent
-	public void onRegisterCommands(net.neoforged.neoforge.event.RegisterCommandsEvent aEvent) {
-		aEvent.getDispatcher().register(net.minecraft.commands.Commands.literal("gt6mark")
-			.executes(tCtx -> {flightMark(tCtx.getSource().getServer(), "метка без текста"); tCtx.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("[GT6] метка записана в самописец"), false); return 1;})
-			.then(net.minecraft.commands.Commands.argument("текст", com.mojang.brigadier.arguments.StringArgumentType.greedyString())
-				.executes(tCtx -> {flightMark(tCtx.getSource().getServer(), com.mojang.brigadier.arguments.StringArgumentType.getString(tCtx, "текст")); tCtx.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("[GT6] метка записана в самописец"), false); return 1;})));
-	}
-
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onChunkLoadMigrateOres(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
 		if (aEvent.getLevel() == null || aEvent.getLevel().isClientSide() || !(aEvent.getChunk() instanceof LevelChunk tChunk)) return;

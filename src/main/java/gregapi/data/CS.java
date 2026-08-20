@@ -2351,6 +2351,13 @@ public class CS {
 	
 	/** Class Containing MOD ID Strings used in GT, since they are very common Parameters. */
 	public static class ModIDs {
+		/** Принадлежит ли namespace самому моду (обе его половины — ядро и контент).
+		 *  ЦЕНТР признака: спрашивают и клиентский рендер (инъекция моделей блокам и предметам GT6),
+		 *  и общий код (процедурный источник клиентских ресурсов на ветке 1.20.1). Живёт здесь, а не в
+		 *  клиентском прокси, по двум причинам сразу: копия признака в двух местах — дублирование
+		 *  сущности, а ссылка на клиентский класс из общего кода — протечка клиентского типа в
+		 *  classloading выделенного сервера. Общий центр снимает обе беды разом. */
+		public static boolean isGregNamespace(String aNS) {return GT.equals(aNS) || GAPI.equals(aNS);}
 		/** MOD ID Strings */
 		@SuppressWarnings("hiding")
 		public static final String
