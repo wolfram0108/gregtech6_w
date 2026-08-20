@@ -175,6 +175,31 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// «Registry is already frozen». Теперь тип создаётся и РЕГИСТРИРУЕТСЯ через GT_API.BLOCK_ENTITIES (supplier зовёт
 	// createType() на RegisterEvent, реестр открыт, intrusive-holder связывается) → к server-start MTE_TYPE уже готов.
 	public static BlockEntityType<TileEntityBase01Root> MTE_TYPE;
+	/** ВТОРОЙ тип той же иерархии — носитель признака «этот MTE не тикает НИКОГДА».
+	 *
+	 *  <p>В 1.7.10 признак объявлял сам блок-энтити — Forge-хук {@code TileEntity.canUpdate()}, и оригинал GT6 его
+	 *  переопределяет ({@code gt6-original/.../TileEntityBase01Root.java:440}: {@code mIsTicking && mShouldRefresh}),
+	 *  а нетикающую половину иерархии выделяет отдельным пакетом {@code gregapi.tileentity.notick}. В neo вопроса
+	 *  «тикаешь ли ты» блок-сущности больше не задают — движок отбирает
+	 *  тикающих ИСКЛЮЧИТЕЛЬНО по возврату {@code EntityBlock.getTicker(level, state, type)}
+	 *  ({@code LevelChunk.updateBlockEntityTicker}: {@code ticker == null} → {@code removeBlockEntityTicker}), а
+	 *  сам блок-энтити в этот хук не передаётся. У GT6 все MTE делят ОДИН блок и один {@code BlockState}
+	 *  (реестр {@code gt.multitileentity}), поэтому по состоянию тикающего от нетикающего не отличить — единственный
+	 *  различитель, который движок даёт в этом хуке, это {@code BlockEntityType}.
+	 *
+	 *  <p>Отсюда второй тип: признак {@code mIsTicking} (final, известен в конструкторе — им же объявлена вся ветка
+	 *  {@code gregapi.tileentity.notick}, {@code super(F)}) выбирает тип, а {@code MultiTileEntityBlock.getTicker}
+	 *  читает его у движка на его же языке. Ничего своего вместо движкового механизма не заводится.
+	 *
+	 *  <p>Цена прежнего поведения — замер живого клиента 2026-08-20 (BUG-138): тикер выдавался ВСЕМ MTE, и движок
+	 *  каждый тик гонял по списку 43 500 блок-сущностей мира (камни 27 836, палки 8 522, кусты 3 583, родники,
+	 *  руда), спрашивая {@code Level.shouldTickBlocksAt} — 8,46 % профиля на отбор плюс 4,94 % на вызов лямбды,
+	 *  которая тут же выходила по {@code canUpdate()==false}.
+	 *
+	 *  <p>Совместимость миров: тип пишется в NBT как id блок-сущности. Старые миры несут {@code gregapi:mte} —
+	 *  фабрика отдаёт по нему стаб/руду ровно как раньше, а личность MTE восстанавливает реконструкция
+	 *  ({@code ChunkEvent.Load}), которая и создаёт объект с правильным из двух типов. Фабрика у типов одна и та же. */
+	public static BlockEntityType<TileEntityBase01Root> MTE_TYPE_NOTICK;
 	// neo валидирует пустой varargs valid-блоков → «pass Set.of() instead of an empty varag». Плейсхолдер намеренно без
 	// valid-блоков (канонические инстансы создаются рефлексией, не движком) → передаём Set.of() (осознанно пустой).
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -193,7 +218,14 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		@Override public boolean isValid(net.minecraft.world.level.block.state.BlockState aState) {return true;}
 	}
 	// GT6-TE (MTE-машины, класс = sub-ID из NBT, недоступен здесь) → TileEntityLoaderStub, реконструкция на ChunkEvent.Load.
-	public static BlockEntityType<TileEntityBase01Root> createType() {return MTE_TYPE = new MTEBlockEntityType((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> aState.getBlock() instanceof gregapi.block.prefixblock.PrefixBlock ? new gregapi.block.prefixblock.PrefixBlockTileEntity(aPos, aState) : new TileEntityLoaderStub(aPos, aState));}
+	// ФАБРИКА ОДНА на оба типа: они различают лишь участие в тике, а путь рождения объекта у них общий — второй
+	// экземпляр той же лямбды был бы дублем сущности.
+	@SuppressWarnings("unchecked")
+	private static final BlockEntityType.BlockEntitySupplier<TileEntityBase01Root> FACTORY =
+		(BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> aState.getBlock() instanceof gregapi.block.prefixblock.PrefixBlock ? new gregapi.block.prefixblock.PrefixBlockTileEntity(aPos, aState) : new TileEntityLoaderStub(aPos, aState);
+	public static BlockEntityType<TileEntityBase01Root> createType() {return MTE_TYPE = new MTEBlockEntityType(FACTORY);}
+	/** Тип нетикающей половины иерархии — см. {@link #MTE_TYPE_NOTICK}. Регистрируется рядом с основным. */
+	public static BlockEntityType<TileEntityBase01Root> createTypeNoTick() {return MTE_TYPE_NOTICK = new MTEBlockEntityType(FACTORY);}
 
 	// F-tileentity-construction (ADR, placement-pos): реальная мировая pos у вручную-создаваемого MTE-TE. worldPosition в
 	// neo immutable (BlockEntity.java:48-59, ставится только super-ctor), а вся MTE-иерархия наследует no-arg-конструкторы
@@ -205,8 +237,11 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public static final ThreadLocal<BlockPos> PENDING_WORLD_POS = new ThreadLocal<>();
 	private static BlockPos pendingPosOrZero() {BlockPos p = PENDING_WORLD_POS.get(); return p != null ? p : BlockPos.ZERO;}
 
+	/** Тип по признаку тика — единственная точка выбора на всю иерархию (см. {@link #MTE_TYPE_NOTICK}). */
+	private static BlockEntityType<TileEntityBase01Root> typeOf(boolean aIsTicking) {return aIsTicking ? MTE_TYPE : MTE_TYPE_NOTICK;}
+
 	public TileEntityBase01Root(boolean aIsTicking) {
-		super(MTE_TYPE, pendingPosOrZero(), Blocks.AIR.defaultBlockState());
+		super(typeOf(aIsTicking), pendingPosOrZero(), Blocks.AIR.defaultBlockState());
 		mIsTicking = aIsTicking;
 	}
 
@@ -214,7 +249,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// размещения GT6-TE (PrefixBlock-руды в ворлдгене): без неё TE садился на BlockPos.ZERO (0,0,0) → neo setBlockEntity
 	// ставил TE не туда («state does not allow it»). state=AIR — как в no-arg ctor (валидацию type отключает isValidBlockState).
 	public TileEntityBase01Root(boolean aIsTicking, BlockPos aPos) {
-		super(MTE_TYPE, aPos, Blocks.AIR.defaultBlockState());
+		super(typeOf(aIsTicking), aPos, Blocks.AIR.defaultBlockState());
 		mIsTicking = aIsTicking;
 	}
 
@@ -223,7 +258,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// сам чинит строкой 445), но это шум и неверный кэш до фикса. Передача точного state (= defaultBlockState блока, как
 	// ставит WD.set) убирает предупреждение и делает кэш верным 1:1 при ручном размещении GT6-TE (PrefixBlock-руды).
 	public TileEntityBase01Root(boolean aIsTicking, BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {
-		super(MTE_TYPE, aPos, aState);
+		super(typeOf(aIsTicking), aPos, aState);
 		mIsTicking = aIsTicking;
 	}
 

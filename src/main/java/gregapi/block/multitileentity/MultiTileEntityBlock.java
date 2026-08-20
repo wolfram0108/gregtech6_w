@@ -756,7 +756,15 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// (updateEntity каждый тик, ОБЕ стороны — recompSrc World.updateEntities); в neo тики BE идут ТОЛЬКО через
 	// EntityBlock.getTicker → BlockEntityTicker (Level.tickBlockEntities). Без шва весь механизм TE03+ мёртв:
 	// onTick*, sendClientData-синк клиенту (place-путь), анимации (mLidAngle), doBlockUpdate. canUpdate 1:1 (TE01:572).
+	// BUG-138: ОТБОР ДЕЛАЕТ ДВИЖОК, а не наша лямбда после отбора. В 1.7.10 признак нёс сам TE (Forge-хук canUpdate(),
+	// оригинал TileEntityBase01Root:440), и нетикающая половина иерархии вынесена автором в пакет notick; neo вопроса не задаёт и берёт в список каждого, кому этот
+	// метод выдал тикер (LevelChunk.updateBlockEntityTicker: ticker==null → removeBlockEntityTicker). Пока тикер
+	// выдавался всем, движок каждый тик гонял по списку 43 500 блок-сущностей мира и спрашивал shouldTickBlocksAt —
+	// 8,46 % профиля живого клиента уходило на отбор, ещё 4,94 % на вызов лямбды, которая тут же выходила.
+	// Признак тика объявлен типом блок-сущности (единственный различитель, который движок даёт в этот хук: блок и
+	// состояние у всех MTE общие) — см. TileEntityBase01Root.MTE_TYPE_NOTICK.
 	@Override public final <T extends BlockEntity> net.minecraft.world.level.block.entity.BlockEntityTicker<T> getTicker(Level aLevel, BlockState aState, net.minecraft.world.level.block.entity.BlockEntityType<T> aType) {
+		if (aType != gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE) return null;
 		return (tLevel, tPos, tState, tBE) -> {
 			if (tBE instanceof gregapi.tileentity.base.TileEntityBase01Root tTE && tTE.canUpdate()) tTE.updateEntity();
 		};

@@ -202,6 +202,11 @@ public class GT_API extends Abstract_Mod {
 	 *  server-start → «Registry is already frozen» → рушился весь Loader_MultiTileEntities (cables/wires/pipes = 0). */
 	public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(net.minecraft.core.registries.Registries.BLOCK_ENTITY_TYPE, ModIDs.GAPI);
 	public static final Object MTE_TYPE_HOLDER = BLOCK_ENTITIES.register("mte", gregapi.tileentity.base.TileEntityBase01Root::createType);
+	/** BUG-138: ВТОРОЙ тип той же иерархии — нетикающая половина ({@code gregapi.tileentity.notick}, {@code super(F)}).
+	 *  Он существует не ради данных, а ради единственного вопроса, который движок задаёт про блок-сущность до тика:
+	 *  {@code EntityBlock.getTicker(level, state, type)}. Блок и состояние у всех MTE общие, тип — единственный
+	 *  различитель; подробности и замер — {@code TileEntityBase01Root.MTE_TYPE_NOTICK}. */
+	public static final Object MTE_TYPE_NOTICK_HOLDER = BLOCK_ENTITIES.register("mte_notick", gregapi.tileentity.base.TileEntityBase01Root::createTypeNoTick);
 
 	/** F12-entity: центральный реестр EntityType контента gregapi — тот же приём, что ITEMS/BLOCKS/BLOCK_ENTITIES выше
 	 *  (и что gregtech.entities.EntitiesGT у своих стрел). Заменяет удалённый 1.7.10

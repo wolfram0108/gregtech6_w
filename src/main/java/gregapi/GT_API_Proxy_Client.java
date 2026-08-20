@@ -207,8 +207,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// F3-render: MTE-блоки рисует BER (не baked — регион не отдаёт MTE-BE, см. MultiTileEntityBER). Один generic BER на весь
 	// MTE_TYPE (централизация 1:1). Руды/стабы отсеиваются внутри BER (гейт MultiTileEntityBlock+IRenderedBlockObject).
 	private void onRegisterBlockEntityRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers aEvent) {
+		// BUG-138: типов иерархии стало два (тикающая половина и нетикающая — признак объявлен движку типом,
+		// см. TileEntityBase01Root.MTE_TYPE_NOTICK). Рендер к тику отношения не имеет: облик рисуется у ОБЕИХ
+		// половин, и нетикающих в мире как раз большинство (камни, кусты, палки). Рендерер один и тот же — иначе
+		// половина мира стала бы невидимой.
 		if (gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE != null)
 			aEvent.registerBlockEntityRenderer(gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE, gregapi.render.MultiTileEntityBER::new);
+		if (gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE_NOTICK != null)
+			aEvent.registerBlockEntityRenderer(gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE_NOTICK, gregapi.render.MultiTileEntityBER::new);
 		// F12-entity: рендерер падающего мета-блока — 1:1 оригинала (:126 registerEntityRenderingHandler(
 		// PrefixBlockFallingEntity.class, new RenderFallingBlock())): тот же ванильный рендерер падающего блока,
 		// он рисует то, что отдаёт getBlockState() (у нас — гравий, как и задумал автор, см. PrefixBlockFallingEntity).
