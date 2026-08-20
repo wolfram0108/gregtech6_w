@@ -253,6 +253,18 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		return aStack.is(net.minecraft.tags.ItemTags.BEACON_PAYMENT_ITEMS) || (aStack.getItem() instanceof IItemBeaconPayment tItem && tItem.isBeaconPayment(aStack));
 	}
 
+	/** ⛔ ИМЕНОВАННЫЙ, А НЕ АНОНИМНЫЙ: анонимный подкласс заставляет javac СКОПИРОВАТЬ в свой
+	 *  конструктор имена параметров родителя, взятые из артефакта движка. Если артефакт несёт
+	 *  обфусцированные имена (а он их несёт, когда разворачивается на чистой машине — поймано
+	 *  сборкой выпуска 2026-08-20: «variable o is already defined in constructor»), два параметра
+	 *  оказываются с одним именем и компиляция падает. Именованный класс объявляет свои параметры
+	 *  сам и от имён в артефакте не зависит. Поведение прежнее. */
+	private static final class BeaconPaymentSlot extends net.minecraft.world.inventory.Slot {
+		BeaconPaymentSlot(net.minecraft.world.Container aContainer, int aSlot, int aX, int aY) {super(aContainer, aSlot, aX, aY);}
+		@Override public boolean mayPlace(ItemStack aStack) {return isBeaconPayment(aStack);}
+		@Override public int getMaxStackSize() {return 1;} // как у PaymentSlot (BeaconMenu:170)
+	}
+
 	/** Плечо моста: подмена слота 0 ванильного {@code BeaconMenu} на слот с центральным предикатом. Все пути
 	 *  клика идут через {@code slots.get(index).mayPlace} (AbstractContainerMenu:356,382,452,485,494,693), поле
 	 *  {@code BeaconMenu.paymentSlot} продолжает работать (тот же Container, возврат предмета в {@code removed()}
@@ -261,10 +273,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public static void wrapBeaconPaymentSlot(net.minecraft.world.inventory.AbstractContainerMenu aMenu) {
 		if (!(aMenu instanceof net.minecraft.world.inventory.BeaconMenu)) return;
 		net.minecraft.world.inventory.Slot tOld = aMenu.slots.get(0);
-		net.minecraft.world.inventory.Slot tNew = new net.minecraft.world.inventory.Slot(tOld.container, tOld.getContainerSlot(), tOld.x, tOld.y) {
-			@Override public boolean mayPlace(ItemStack aStack) {return isBeaconPayment(aStack);}
-			@Override public int getMaxStackSize() {return 1;} // как у PaymentSlot (BeaconMenu:170)
-		};
+		net.minecraft.world.inventory.Slot tNew = new BeaconPaymentSlot(tOld.container, tOld.getContainerSlot(), tOld.x, tOld.y);
 		tNew.index = tOld.index;
 		aMenu.slots.set(0, tNew);
 	}
