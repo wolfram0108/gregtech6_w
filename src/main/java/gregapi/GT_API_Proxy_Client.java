@@ -398,7 +398,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		int tItemCount = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			net.minecraft.resources.ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
-			if (tKey == null || !isGregNamespace(tKey.getNamespace())) continue;
+			if (tKey == null || !gregapi.data.CS.ModIDs.isGregNamespace(tKey.getNamespace())) continue;
 			// block-предмет инжектим, если его блок — IRenderedBlock ИЛИ рельс (BlockBaseRail: GT6ItemModel рисует ему плоскую
 			// straight-иконку); прочие block-предметы оставляем дефолтной модели блока.
 			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && !(tBI.getBlock() instanceof gregapi.render.IRenderedBlock) && !(tBI.getBlock() instanceof gregapi.block.misc.BlockBaseRail)) continue;
@@ -412,7 +412,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		int tEmptyCount = 0;
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
 			net.minecraft.resources.ResourceLocation tBKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
-			if (tBKey == null || !isGregNamespace(tBKey.getNamespace())) continue;
+			if (tBKey == null || !gregapi.data.CS.ModIDs.isGregNamespace(tBKey.getNamespace())) continue;
 			for (net.minecraft.world.level.block.state.BlockState tState : tBlock.getStateDefinition().getPossibleStates()) {
 				net.minecraft.client.resources.model.ModelResourceLocation tStateKey = net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(tState);
 				if (tMap.containsKey(tStateKey) || tState.getRenderShape() != net.minecraft.world.level.block.RenderShape.INVISIBLE) continue;
@@ -422,9 +422,6 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		gregapi.data.CS.OUT.println("[GT6] F3-render: GT6BlockModel injected into " + tCount + " block-states, GT6ItemModel into " + tItemCount + " items, " + tEmptyCount + " invisible-block placeholders.");
 	}
 
-	private static boolean isGregNamespace(String aNs) {
-		return aNs.equals(gregapi.data.CS.ModIDs.GT) || aNs.equals("gregtech") || aNs.equals("gregapi");
-	}
 	
 	@Override
 	public Player getThePlayer() {

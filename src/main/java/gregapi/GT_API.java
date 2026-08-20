@@ -857,7 +857,34 @@ public class GT_API extends Abstract_Mod {
 	 * {@code Pack.Position.TOP} ставит пак ПОСЛЕ датапака самого AE2 — иначе {@code remove} молчал бы,
 	 * снимая ещё не добавленное. {@code required=true} = пак не предмет выбора игрока, им правит ключ конфига.
 	 */
+	/**
+	 * Движко-шов ветки 1.20.1 (не регресс, у main этого шва нет — там {@code BlockStateModelDispatcher}
+	 * устроен иначе, {@code neo-decompiled/.../BlockStateModelDispatcher.java:123}): {@code ModelBakery}
+	 * {@code (forge-1201-decompiled/net/minecraft/client/resources/model/ModelBakery.java:336-343)} в
+	 * {@code finally} безусловно обходит ВСЕ {@code BlockState}-варианты каждого блока и на КАЖДЫЙ, для
+	 * которого {@code blockStateResources} пуст ({@code :289} — {@code getOrDefault(..., List.of())}),
+	 * печатает {@code WARN "missing model for variant"}; тем же приёмом {@code loadModel (:249)} печатает
+	 * {@code WARN "Unable to load model"} на {@code <id>#inventory}, если {@code models/item/<path>.json}
+	 * не нашёлся. У GregTech НЕТ ни одного blockstate/item-model JSON — модель рисуется процедурно и
+	 * впрыскивается ПОСЛЕ выпечки ({@link GT_API_Proxy_Client#onModifyBakingResult}, само содержимое
+	 * этого шва не трогаем — предупреждение печатается РАНЬШЕ инъекции, на этапе {@code ModelManager.
+	 * loadBlockStates/loadBlockModels}, который спрашивает ресурсы через {@code ResourceManager}, то есть
+	 * через ЭТО событие). Лечим шов на ЕГО уровне — отдаём движку заглушку-ресурс, а не глушим лог.
+	 * <p>Заглушка — ссылка на ВАНИЛЬНУЮ пустую модель {@code minecraft:block/air} (переиспользование,
+	 * образец 1:1 — {@code assets/minecraft/blockstates/air.json} client-extra артефакта): движок находит
+	 * модель, WARN не печатается; реальный визуал блока/предмета этим не затронут — он приходит позже,
+	 * тем же {@code ModifyBakingResult}, который безусловно ПЕРЕЗАПИСЫВАЕТ карту моделей для каждого
+	 * GT6-блока/предмета (см. тот метод) — эта заглушка для них никогда не остаётся видимой.
+	 * <p>ПРОЦЕДУРНЫЙ пак (вторая форма центра, рядом с {@link #addBuiltInPack}): 707 блоков / 847
+	 * предметов GT6 нельзя раздать статичными JSON-файлами — их список и есть содержимое реестров
+	 * {@code BuiltInRegistries.BLOCK/ITEM}, заполняемых модом процедурно (ось проекта — генератор, не
+	 * выхлоп). Носитель — {@link GT6ProceduralClientResourcePack}, см. её javadoc.
+	 */
 	public void onAddPackFinders(net.minecraftforge.event.AddPackFindersEvent aEvent) {
+		// CLIENT_RESOURCES — отдельная ветка ДО серверного return ниже: событие с этим типом на выделенном
+		// сервере вообще не долетает (PackRepository ресурсов строит только Minecraft.<init>, т.е. клиент),
+		// а с AE2-датапаками (SERVER_DATA, дальше по методу) эта заглушка никак не связана.
+		if (aEvent.getPackType() == net.minecraft.server.packs.PackType.CLIENT_RESOURCES) {addProceduralClientModelPack(aEvent); return;}
 		if (aEvent.getPackType() != net.minecraft.server.packs.PackType.SERVER_DATA) return;
 		if (!MD.AE.mLoaded) return;
 		// ПЕРВЫЙ пак — гашение генерации (мастер-ключ ReplaceMeteoriteGeneration).
@@ -891,6 +918,114 @@ public class GT_API extends Abstract_Mod {
 				else ERR.println("GT_API: встроенный датапак " + aDir + " НЕ создан — Pack.readMetaAndCreate вернул null (нет pack.mcmeta?).");
 			} catch(Throwable e) {ERR.println("GT_API: встроенный датапак " + aDir + " не подключён:"); e.printStackTrace(ERR);}
 		});
+	}
+
+	/** Подключение ВТОРОЙ формы того же центра — ПРОЦЕДУРНОГО клиентского пака (см. javadoc {@link
+	 *  #onAddPackFinders} и {@link GT6ProceduralClientResourcePack}). В отличие от {@link #addBuiltInPack}
+	 *  здесь нет каталога на диске ({@code findResource}) — поставщик строит носитель прямо из ID пака;
+	 *  форма сборки {@code Pack} та же (см. javadoc {@link #onAddPackFinders} у AE2-пака выше про
+	 *  {@code Pack.readMetaAndCreate}). {@code Position.BOTTOM} — заглушка обязана быть НИЖЕ любых
+	 *  настоящих ассетов (мода и ресурспаков игрока): она отдаёт ресурс ТОЛЬКО когда реального нет
+	 *  (у GT6 JSON-моделей нет вовсе), но если он появится — обязана уступить, а не перекрыть. */
+	private static void addProceduralClientModelPack(net.minecraftforge.event.AddPackFindersEvent aEvent) {
+		aEvent.addRepositorySource(aConsumer -> {
+			try {
+				net.minecraft.server.packs.repository.Pack tPack = net.minecraft.server.packs.repository.Pack.readMetaAndCreate(
+					  ModIDs.GAPI + ":modelplaceholder"
+					, net.minecraft.network.chat.Component.literal("GT6: procedural block/item model placeholders")
+					, T
+					, aPackId -> new GT6ProceduralClientResourcePack(aPackId)
+					, net.minecraft.server.packs.PackType.CLIENT_RESOURCES
+					, net.minecraft.server.packs.repository.Pack.Position.BOTTOM
+					, net.minecraft.server.packs.repository.PackSource.BUILT_IN);
+				if (tPack != null) {aConsumer.accept(tPack); OUT.println("GT_API: процедурный пак заглушек модели подключён.");}
+				else ERR.println("GT_API: процедурный пак заглушек модели НЕ создан — Pack.readMetaAndCreate вернул null.");
+			} catch(Throwable e) {ERR.println("GT_API: процедурный пак заглушек модели не подключён:"); e.printStackTrace(ERR);}
+		});
+	}
+
+	/**
+	 * Носитель ПРОЦЕДУРНОГО источника клиентских ресурсов (движко-шов {@link #onAddPackFinders}, ветка
+	 * 1.20.1). Контракт — {@code PackResources} ({@code forge-1201-decompiled/net/minecraft/server/packs/
+	 * PackResources.java}), 7 методов; здесь через {@code AbstractPackResources} переиспользованы
+	 * {@code packId/isBuiltin/getMetadataSection} (тот читает {@code pack.mcmeta} через
+	 * {@link #getRootResource}, второй раз его не парсим).
+	 * <p><b>Лениво.</b> {@code AddPackFindersEvent} стреляет ОЧЕНЬ рано ({@code PackRepository} строится в
+	 * {@code Minecraft.<init>}) — реестры блоков/предметов тогда ещё не обязаны быть полны. Здесь НИЧЕГО
+	 * не читается из реестра в конструкторе: {@link #getResource}/{@link #listResources} обходят
+	 * {@code BuiltInRegistries.BLOCK/ITEM} НА КАЖДЫЙ запрос — тот момент физически позже (первая загрузка
+	 * ресурсов, {@code ModelManager.reload}), реестры к нему заморожены.
+	 * <p><b>Отдаёт только своё.</b> Принадлежность namespace спрашивается у ЦЕНТРА признака —
+	 * {@code CS.ModIDs.isGregNamespace}; там же его спрашивает клиентский инжектор моделей
+	 * ({@code GT_API_Proxy_Client}). Центр общий намеренно: копия признака в двух местах была бы
+	 * дублированием сущности, а ссылка отсюда (общий класс, который грузит и выделенный сервер) на
+	 * клиентский прокси — протечкой клиентского типа в серверный classloading. Путь
+	 * признаётся своим, ТОЛЬКО если под ним в реестре РЕАЛЬНО есть блок/предмет — на любой чужой запрос
+	 * (неизвестный namespace, неизвестный путь, несуществующий блок/предмет) — {@code null}/пусто, как и
+	 * положено {@code PackResources} (см. {@code VanillaPackResources.getResource} — тот же контракт).
+	 * <p>Ресурс — ровно ДВА вида, обе ссылки на ВАНИЛЬНУЮ пустую модель {@code minecraft:block/air}
+	 * (переиспользование, своей модели не заводим): {@code blockstates/<path>.json} — форма 1:1
+	 * {@code assets/minecraft/blockstates/air.json} (пустой селектор {@code ""} покрывает все состояния
+	 * блока разом), {@code models/item/<path>.json} — {@code {"parent":"minecraft:block/air"}}.
+	 */
+	private static final class GT6ProceduralClientResourcePack extends net.minecraft.server.packs.AbstractPackResources {
+		private static final byte[] PACK_META = "{\"pack\":{\"description\":\"GT6 procedural model placeholders (blockstates/air, models/item parent air)\",\"pack_format\":15}}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+		private static final byte[] BLOCKSTATE_JSON = "{\"variants\":{\"\":{\"model\":\"minecraft:block/air\"}}}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+		private static final byte[] ITEM_MODEL_JSON = "{\"parent\":\"minecraft:block/air\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+		private static final String BLOCKSTATES_DIR = "blockstates/", ITEM_MODELS_DIR = "models/item/", JSON_EXT = ".json";
+
+		GT6ProceduralClientResourcePack(String aPackId) {super(aPackId, T);}
+
+		@Override
+		public net.minecraft.server.packs.resources.IoSupplier<java.io.InputStream> getRootResource(String... aPath) {
+			if (aPath.length == 1 && aPath[0].equals("pack.mcmeta")) return () -> new java.io.ByteArrayInputStream(PACK_META);
+			return null;
+		}
+
+		@Override
+		public net.minecraft.server.packs.resources.IoSupplier<java.io.InputStream> getResource(net.minecraft.server.packs.PackType aType, net.minecraft.resources.ResourceLocation aLoc) {
+			if (aType != net.minecraft.server.packs.PackType.CLIENT_RESOURCES || !ModIDs.isGregNamespace(aLoc.getNamespace())) return null;
+			String tPath = aLoc.getPath();
+			if (tPath.startsWith(BLOCKSTATES_DIR) && tPath.endsWith(JSON_EXT)) {
+				String tKey = tPath.substring(BLOCKSTATES_DIR.length(), tPath.length() - JSON_EXT.length());
+				if (net.minecraft.core.registries.BuiltInRegistries.BLOCK.containsKey(new net.minecraft.resources.ResourceLocation(aLoc.getNamespace(), tKey))) return () -> new java.io.ByteArrayInputStream(BLOCKSTATE_JSON);
+				return null;
+			}
+			if (tPath.startsWith(ITEM_MODELS_DIR) && tPath.endsWith(JSON_EXT)) {
+				String tKey = tPath.substring(ITEM_MODELS_DIR.length(), tPath.length() - JSON_EXT.length());
+				if (net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(new net.minecraft.resources.ResourceLocation(aLoc.getNamespace(), tKey))) return () -> new java.io.ByteArrayInputStream(ITEM_MODEL_JSON);
+				return null;
+			}
+			return null;
+		}
+
+		@Override
+		public void listResources(net.minecraft.server.packs.PackType aType, String aNamespace, String aPath, net.minecraft.server.packs.PackResources.ResourceOutput aOutput) {
+			if (aType != net.minecraft.server.packs.PackType.CLIENT_RESOURCES || !ModIDs.isGregNamespace(aNamespace)) return;
+			// Префиксы — те же, что спрашивает ModelBakery: BLOCKSTATE_LISTER="blockstates" (ModelBakery.java:88),
+			// MODEL_LISTER="models" (:89, item-модели лежат под models/item/, что и отдаём).
+			if (aPath.equals("blockstates")) {
+				for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+					net.minecraft.resources.ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+					if (tKey == null || !tKey.getNamespace().equals(aNamespace)) continue;
+					aOutput.accept(new net.minecraft.resources.ResourceLocation(aNamespace, BLOCKSTATES_DIR + tKey.getPath() + JSON_EXT), () -> new java.io.ByteArrayInputStream(BLOCKSTATE_JSON));
+				}
+			} else if (aPath.equals("models")) {
+				for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+					net.minecraft.resources.ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+					if (tKey == null || !tKey.getNamespace().equals(aNamespace)) continue;
+					aOutput.accept(new net.minecraft.resources.ResourceLocation(aNamespace, ITEM_MODELS_DIR + tKey.getPath() + JSON_EXT), () -> new java.io.ByteArrayInputStream(ITEM_MODEL_JSON));
+				}
+			}
+		}
+
+		@Override
+		public java.util.Set<String> getNamespaces(net.minecraft.server.packs.PackType aType) {
+			return aType == net.minecraft.server.packs.PackType.CLIENT_RESOURCES ? java.util.Set.of(ModIDs.GT, ModIDs.GAPI) : java.util.Set.of();
+		}
+
+		@Override
+		public void close() {/* нечего закрывать — нет ни файлов, ни потоков */}
 	}
 
 	public void onPreLoad(FMLConstructModEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, this::onPreLoadPhase);}
