@@ -1146,11 +1146,6 @@ public class WD {
 		return aTileEntity;
 	}
 	
-	/** П5-замер: гистограмма статусов чанков-приёмников worldgen-BE (диагностика mismatch-сирот). */
-	public static final java.util.concurrent.ConcurrentHashMap<String, Long> sWgBEStatus = new java.util.concurrent.ConcurrentHashMap<>();
-	/** П5-замер: выборка позиций BE, записанных в НЕ-full чанки (+ класс BE и блок на момент записи) — финал probe проверит, чем стали. */
-	public static final java.util.Queue<Object[]> sWgBESamples = new java.util.concurrent.ConcurrentLinkedQueue<>();
-
 	/** Sets the TileEntity at the passed position, with the option of turning adjacent TileEntity updates off. */
 	public static BlockEntity te(LevelAccessor aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity, boolean aCauseTileEntityUpdates) {
 		if (tileYInvalid(aWorld, aY)) return invalidateTileEntityWithNegativeYCoord(aX, aY, aZ, aTileEntity); // было aY<0 — MC26 бедрок Y=−64 легитимен, порог = дно мира getMinY()
@@ -1182,13 +1177,6 @@ public class WD {
 			// на ChunkAccess работает и для ещё-генерящегося чанка (BE промотируется движком при финализации ProtoChunk→LevelChunk).
 			ChunkAccess tChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
 			if (tChunk != null) {
-				// П5-замер: статус чанка-приёмника в момент BE-записи (гипотеза сирот: пишем в недогенерированный сосед → его поздние стадии затирают блок)
-				if (aTileEntity instanceof gregapi.block.multitileentity.IMultiTileEntity) {
-					String tStatus = String.valueOf(tChunk.getPersistedStatus());
-					sWgBEStatus.merge(tStatus, 1L, Long::sum);
-					if (!"minecraft:full".equals(tStatus) && sWgBESamples.size() < 60)
-						sWgBESamples.add(new Object[]{new BlockPos(aX, aY, aZ), aTileEntity.getClass().getSimpleName(), String.valueOf(block(aWorld, aX, aY, aZ)), tStatus});
-				}
 				tChunk.setBlockEntity(aTileEntity); // было tChunk.func_150812_a(x&15,y,z&15,te)/addAndRegisterBlockEntity (LevelChunk-only) — neo: ChunkAccess.setBlockEntity(BlockEntity), позиция из te.getBlockPos()
 				tChunk.markUnsaved(); // было tChunk.markUnsaved()
 				// F6-worldgen КРОСС-ЧАНК BE-ПЕРСИСТ (ЦЕНТР): worldgen кладёт MTE и в СОСЕДНИЕ чанки региона; в модели neo

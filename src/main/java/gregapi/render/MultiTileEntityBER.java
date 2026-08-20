@@ -92,13 +92,10 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 	private static final java.util.Map<Class<?>, BlockEntityRenderer> SPECIAL_RENDERERS = new java.util.HashMap<>();
 	public static void bindSpecialRenderer(Class<?> aTileEntityClass, @SuppressWarnings("rawtypes") BlockEntityRenderer aRenderer) {SPECIAL_RENDERERS.put(aTileEntityClass, aRenderer);}
 
-	/** Диаг-счётчики судьи П2 (спец-рендер реально вызван движком). */
-	public static final java.util.concurrent.atomic.AtomicLong sSpecialExtract = new java.util.concurrent.atomic.AtomicLong(), sSpecialSubmit = new java.util.concurrent.atomic.AtomicLong(), sSpecialItemForm = new java.util.concurrent.atomic.AtomicLong();
 	/** Диаг-счётчики кэша квадов (BUG-106 №4): extract'ы рендер-объектов / реальные пересборки / кэш-хиты. */
 	public static final java.util.concurrent.atomic.AtomicLong sQuadExtracts = new java.util.concurrent.atomic.AtomicLong(), sQuadBuilds = new java.util.concurrent.atomic.AtomicLong(), sQuadCacheHits = new java.util.concurrent.atomic.AtomicLong();
-	/** Диаг-счётчики гейта замера (волна 3 консолидации, п.2): вызовы {@link #onSectionDirty} / суммарные
-	 *  итерации обхода {@code chunk.getBlockEntities()} внутри него — судья шторма O(N) (живой стенд gt6berstorm). */
-	public static final java.util.concurrent.atomic.AtomicLong sSectionDirtyCalls = new java.util.concurrent.atomic.AtomicLong(), sSectionDirtyIterations = new java.util.concurrent.atomic.AtomicLong();
+	/** Счётчик вызовов {@link #onSectionDirty} — судья шторма O(N) (живой стенд gt6berstorm). */
+	public static final java.util.concurrent.atomic.AtomicLong sSectionDirtyCalls = new java.util.concurrent.atomic.AtomicLong();
 
 	/** BUG-106 №4 — кэш квадов BER. Эпоха рендера: {@code allChanged()} (перешив атласа/моделей — F3+T, F3+A,
 	 *  смена дистанции; кэшированные квады держат UV СТАРОГО атласа) рвёт ВСЕ кэши разом, O(1). Точечный сброс —
@@ -166,7 +163,6 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 				tRenderer.extractRenderState(aBE, tState, 0, Vec3.ZERO, null);
 				tState.lightCoords = aLight;
 				tRenderer.submit(tState, aPoseStack, aNodes, null);
-				sSpecialItemForm.incrementAndGet();
 			} catch (Throwable e) {/* item-форма не должна ронять рендер */}
 		}
 		@Override public void getExtents(java.util.function.Consumer<org.joml.Vector3fc> aOutput) {
@@ -238,7 +234,6 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 			aState.mSpecialRenderer = tSpecial;
 			aState.mSpecialState = (BlockEntityRenderState)tSpecial.createRenderState();
 			tSpecial.extractRenderState(aBE, aState.mSpecialState, aPartialTicks, aCameraPos, aBreakProgress);
-			sSpecialExtract.incrementAndGet();
 		} catch (Throwable e) {aState.mSpecialRenderer = null; aState.mSpecialState = null;}
 	}
 
@@ -268,6 +263,6 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 			}
 		}
 		if (aState.mSpecialRenderer != null && aState.mSpecialState != null)
-			try {aState.mSpecialRenderer.submit(aState.mSpecialState, aPoseStack, aNodes, aCamera); sSpecialSubmit.incrementAndGet();} catch (Throwable e) {/* спец-рендер не должен ронять кадр */}
+			try {aState.mSpecialRenderer.submit(aState.mSpecialState, aPoseStack, aNodes, aCamera);} catch (Throwable e) {/* спец-рендер не должен ронять кадр */}
 	}
 }

@@ -108,13 +108,10 @@ public final class GT6QuadBuilder {
 	}
 
 	/** GT6 side-байт → neo Direction: SIDE_Y_NEG=0=DOWN, Y_POS=1=UP, Z_NEG=2=NORTH, Z_POS=3=SOUTH, X_NEG=4=WEST, X_POS=5=EAST. */
-	/** Диаг П9: имена спрайтов, НЕ найденных в атласе (грань молча пропускалась → «частично без текстур»). */
-	public static final java.util.Set<String> sMissingSprites = java.util.concurrent.ConcurrentHashMap.newKeySet();
-
 	public void putFace(byte aSide, Identifier aIcon, short[] aRGBa) {
 		if (aIcon == null || aSide < 0 || aSide > 5) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
-		if (tSprite == null) {if (sMissingSprites.size() < 400) sMissingSprites.add(aIcon.toString()); return;}
+		if (tSprite == null) return;
 		Direction tDir = Direction.from3DDataValue(aSide);
 		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa);
 		if (tQuad == null) return;
@@ -255,7 +252,7 @@ public final class GT6QuadBuilder {
 	public void fluidQuad(float[][] aCorners, Direction aDir, Identifier aIcon, short[] aRGBa, boolean aBothSides) {
 		if (aIcon == null || aCorners == null || aCorners.length < 4) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
-		if (tSprite == null) {if (sMissingSprites.size() < 400) sMissingSprites.add(aIcon.toString()); return;}
+		if (tSprite == null) return;
 		BakedQuad tQuad = vertexQuad(aCorners, tSprite, aRGBa, aDir, false);
 		if (tQuad != null) {mQuads.addUnculledFace(tQuad); mAll.add(tQuad);}
 		if (aBothSides) {
