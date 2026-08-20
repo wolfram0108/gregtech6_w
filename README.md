@@ -43,10 +43,6 @@ Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 - [Current state](#current-state)
 - [Building](#building)
 - [Running](#running)
-- [Tests](#tests)
-- [Development tooling](#development-tooling)
-- [Continuous integration](#continuous-integration)
-- [Verifying a download](#verifying-a-download)
 - [Mod compatibility](#mod-compatibility)
 - [Reporting problems](#reporting-problems)
 - [License and credits](#license-and-credits)
@@ -279,98 +275,13 @@ Those live **outside this repository**, in the developer's working environment (
 repository contains none of them, so they cannot end up in a player's jar. Given that directory and
 the flag, `runClient`/`runServer` can run automated in-game checks.
 
-## Tests
-
-**This repository contains no tests.** Verification is instrumentation, not product: the tests, the
-in-engine stands and the comparison against the original all live beside the repository, in the
-developer's working environment (`../stands/`), and the repository holds only the mod and what it takes
-to build and ship it.
-
-If that directory is present, `./gradlew test` picks the tests up automatically (`build.gradle` attaches
-`../stands/*/test-java`) and runs eight checks: the mod boots in a headless server, the material and
-prefix generator, recipe matching, material fluids, energy transfer and a machine running a full
-processing cycle tick by tick all work at measured levels, and two previously recurring defects — the
-thin collider of GT6 bars and the "zero stack with a remembered type" — stay fixed. Without the
-directory there is nothing to run, and `./gradlew build` simply builds the mod.
-
-What each check asserts, the measured thresholds behind it, and the rule for adding a new one are
-documented with the tests themselves.
-
-## Development tooling
-
-Three things are **verification tooling**, not part of the product, and this repository holds
-**neither**: they live beside it, in the developer's working environment (`../stands`). Instruments do
-not ship with the mod. Both attach on demand only and cost nothing when unused.
-
-| Tool | What it answers | How to run |
-|---|---|---|
-| **Comparison against the original** | "does the mod still generate exactly what GregTech 6 on 1.7.10 generated?" — materials, items, ore dictionary, recipes, worldgen, names | `./gradlew test -Pgt6.oracle=<path>` |
-| **In-engine stands** | "what does the real engine path actually do here?" — drives real interactions and judges object identity, not pixels | `./gradlew runClient -Pgt6probes` |
-| **Product tests** | "is the mod alive and are its subsystems working at measured levels?" — eight checks inside a headless server | `./gradlew test` |
-
-The comparison needs dumps taken from a running 1.7.10 installation — roughly 200 MB, produced by a
-separate dumper, and deliberately **not** part of this repository; that same path also attaches the
-comparison's own code. Without the path, those checks simply do not run: the port phase is finished,
-so the question is asked while investigating a difference, not on every build.
-
-If you cloned only this repository, both tools are absent — that is not a defect: the product does
-not need them, and `gradlew build` builds the mod on its own.
-
-## Continuous integration
-
-The build is checked on a clean machine — a different OS, an empty cache, nothing but the contents
-of this repository. It runs **on demand** (Actions → CI → Run workflow) and automatically on pull
-requests; it deliberately does not fire on every commit, because the build is run locally anyway and
-a duplicate would only add noise.
-
-Two jobs, in parallel:
-
-| Job | Checks |
-|---|---|
-| **Build** | produces the mod jar, then verifies the jar contains no compile-only stand-in classes for packages the engine owns — shipping those makes the mod fail to load, and it happened once — and that unfinished-work markers left in the source are not accumulating |
-| **Server** | boots a dedicated server and requires it to reach "Done". No unit test can see this: they bring a server up without a world and without the client side, while what actually broke three times in a month was the dedicated server specifically |
-
-Tagging a release (`v<version>`) builds the jar, verifies the tag matches the version in
-`gradle.properties`, and publishes a GitHub release — pre-release for alpha, beta and rc versions.
-
-## Verifying a download
-
-A mod runs as ordinary code inside your game, with your permissions. So the honest question is not
-"is this file intact" but "is this file the one built from the source you can read" — and both
-answers here are checkable **without trusting me**.
-
-```bash
-gh attestation verify gregtech6-<version>.jar --repo wolfram0108/gregtech6_w
-```
-
-GitHub itself witnessed this exact file being produced by this repository's release workflow from
-the tagged commit, and signs that statement. A file rebuilt or altered by anyone else fails this.
-
-The stronger check is that you can reproduce the build. Archive timestamps and file order are
-pinned, so building a tag twice — on any machine — yields a **byte-identical** jar:
-
-```bash
-git checkout v<version> && ./gradlew assemble
-sha256sum build/libs/*.jar     # must equal the published .sha256
-```
-
-This is measured, not intended. The jar built on Windows and the one CI built on Ubuntu from the
-same commit are byte-identical, and the digest GitHub attests is the same one a local build
-produces. Getting there took fixing two separate causes — archive timestamps and ordering, then
-line endings, which Windows expands on checkout and which travel into the jar as they sit on disk.
-The check was also run once with the settings deliberately off, to confirm it can fail: without
-them the same source produced two different jars.
-
-Note that the jar is **not** signed with a code-signing certificate, and deliberately so: NeoForge
-does not verify mod signatures at all — it loads classes with `(CodeSigner[]) null` — so a
-self-signed certificate would add ceremony without adding a verifier.
-
 ## Mod compatibility
 
 | Mod | Status |
 |---|---|
 | **JEI** | supported — GT6's recipe categories and item variants are browsable |
 | **Jade** | supported — GT6 registers its own tools (wrench, crowbar, cutters…), which vanilla tags cannot express, so harvest tooltips are correct |
+| **Applied Energistics 2** | supported — GT6 stays the industrial layer while AE2 keeps the network, storage, autocrafting and spatial storage; AE2 machines that merely repeat a GregTech one lose their own recipes, energy crosses the border both ways, and the GregTech wrench turns and dismantles AE2 blocks |
 | **JourneyMap** and the vanilla map | supported — GT6 blocks and fluids render correctly on both |
 | 1.7.10-era industrial mods | the original integrated with 211 of them; what survives and what does not is listed in [COMPATIBILITY.md](COMPATIBILITY.md) |
 
