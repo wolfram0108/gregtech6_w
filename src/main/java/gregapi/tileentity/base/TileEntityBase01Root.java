@@ -194,14 +194,19 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// F-tileentity-construction (LOAD-путь): neo world-load зовёт supplier для реконструкции TE из NBT. Прежний ->null
 	// падал NPE (BlockEntity.loadStatic:206) на ЛЮБОМ сохранённом GT6-TE. Диспетчер по блоку: PrefixBlock-руды дают
 	// PrefixBlockTileEntity(pos,state) СРАЗУ (класс выводится из блока; loadAdditional дочитает mMetaData=материал); прочие
-	// GT6-TE (MTE-машины, класс = sub-ID из NBT, недоступен здесь) → TileEntityLoaderStub, реконструкция на ChunkEvent.Load.
-	public static BlockEntityType<TileEntityBase01Root> createType() {return MTE_TYPE = new BlockEntityType<TileEntityBase01Root>((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> aState.getBlock() instanceof gregapi.block.prefixblock.PrefixBlock ? new gregapi.block.prefixblock.PrefixBlockTileEntity(aPos, aState) : new TileEntityLoaderStub(aPos, aState), java.util.Set.<Block>of(), (com.mojang.datafixers.types.Type<?>)null) {
-		// F-tileentity-construction: MTE_TYPE — ОБЩИЙ placeholder-тип всей GT6-TE-иерархии (динамические блоки, valid-блоки
-		// не применимы). neo BlockEntityType.isValid(state) = validBlocks.contains(block) → пустой Set → всегда false →
-		// LevelChunk.setBlockEntity отклоняет TE («state ... does not allow it», TE не регистрируется). Override → true
-		// (валидность решает isValidBlockState на самом TE; тип общий). Чинит размещение ВСЕХ GT6-TE (PrefixBlock-руды и пр.).
+	/** ⛔ ИМЕНОВАННЫЙ, А НЕ АНОНИМНЫЙ: анонимный подкласс копирует в свой конструктор имена параметров
+	 *  родителя из артефакта движка; на чистой машине они обфусцированы и повторяются, и компиляция падает
+	 *  («variable o is already defined», поймано сборкой выпуска 2026-08-20). Поведение прежнее. */
+	private static final class MTEBlockEntityType extends BlockEntityType<TileEntityBase01Root> {
+		MTEBlockEntityType(BlockEntityType.BlockEntitySupplier<TileEntityBase01Root> aSupplier, com.mojang.datafixers.types.Type<?> aType) {super(aSupplier, java.util.Set.<Block>of(), aType);}
+		// F-tileentity-construction: MTE_TYPE — ОБЩИЙ placeholder-тип всей GT6-TE-иерархии (динамические блоки,
+		// valid-блоки не применимы). neo BlockEntityType.isValid(state) = validBlocks.contains(block) → пустой Set
+		// → всегда false → LevelChunk.setBlockEntity отклоняет TE. Override → true (валидность решает
+		// isValidBlockState на самом TE; тип общий). Чинит размещение ВСЕХ GT6-TE (PrefixBlock-руды и пр.).
 		@Override public boolean isValid(net.minecraft.world.level.block.state.BlockState aState) {return true;}
-	};}
+	}
+	// GT6-TE (MTE-машины, класс = sub-ID из NBT, недоступен здесь) → TileEntityLoaderStub, реконструкция на ChunkEvent.Load.
+	public static BlockEntityType<TileEntityBase01Root> createType() {return MTE_TYPE = new MTEBlockEntityType((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> aState.getBlock() instanceof gregapi.block.prefixblock.PrefixBlock ? new gregapi.block.prefixblock.PrefixBlockTileEntity(aPos, aState) : new TileEntityLoaderStub(aPos, aState), (com.mojang.datafixers.types.Type<?>)null);}
 
 	// F-tileentity-construction (ADR, placement-pos): реальная мировая pos у вручную-создаваемого MTE-TE. worldPosition в
 	// neo immutable (BlockEntity.java:48-59, ставится только super-ctor), а вся MTE-иерархия наследует no-arg-конструкторы

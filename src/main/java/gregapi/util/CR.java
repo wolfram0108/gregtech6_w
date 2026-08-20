@@ -615,11 +615,16 @@ public class CR {
 		for (int i = 0; i < 9; i++) tItems.set(i, i < aRecipe.length && aRecipe[i] != null ? aRecipe[i] : ItemStack.EMPTY);
 		return new net.minecraft.world.inventory.TransientCraftingContainer(DUMMY_MENU, 3, 3, tItems);
 	}
-	/** Пустышка-владелец сетки — 1:1 анонимный {@code Container} оригинала ({@code canInteractWith → F}). */
-	private static final AbstractContainerMenu DUMMY_MENU = new AbstractContainerMenu(null, -1) {
+	/** ⛔ ИМЕНОВАННЫЙ, А НЕ АНОНИМНЫЙ: анонимный подкласс копирует в свой конструктор имена параметров
+	 *  родителя из артефакта движка; на чистой машине они обфусцированы и повторяются, и компиляция
+	 *  падает («variable o is already defined», поймано сборкой выпуска 2026-08-20). Поведение прежнее:
+	 *  1:1 анонимный {@code Container} оригинала ({@code canInteractWith -> F}). */
+	private static final class DummyMenu extends AbstractContainerMenu {
+		DummyMenu() {super(null, -1);}
 		@Override public ItemStack quickMoveStack(Player aPlayer, int aSlot) {return ItemStack.EMPTY;}
 		@Override public boolean stillValid(Player aPlayer) {return F;}
-	};
+	}
+	private static final AbstractContainerMenu DUMMY_MENU = new DummyMenu();
 	
 	/** F11: собственный ПОСТОЯННЫЙ буфер крафт-рецептов GT6 (не neo {@code RecipeManager} — тот наполняется
 	 *  датапаком на старте сервера, на mod-init пуст). Диспетчер-{@code CustomRecipe} читает этот буфер. */
