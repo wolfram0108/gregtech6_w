@@ -2,8 +2,8 @@
 
 # GregTech 6 for NeoForge
 
-[![CI](https://github.com/wolfram0108/gregtech6_w/actions/workflows/build.yml/badge.svg)](https://github.com/wolfram0108/gregtech6_w/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/wolfram0108/gregtech6_w?include_prereleases&sort=semver)](https://github.com/wolfram0108/gregtech6_w/releases)
+[![CI](https://github.com/wolfram0108/gregtech6_w/actions/workflows/build.yml/badge.svg?branch=1.20.1)](https://github.com/wolfram0108/gregtech6_w/actions/workflows/build.yml?query=branch%3A1.20.1)
+[![Releases](https://img.shields.io/badge/releases-v6.0.0--1.20.1--alpha.x-blue)](https://github.com/wolfram0108/gregtech6_w/releases?q=1.20.1)
 [![License](https://img.shields.io/badge/license-LGPL--3.0--or--later-blue)](LICENSE)
 
 **A port of [GregTech 6](https://github.com/GregTech6/gregtech6) — Gregorius Techneticies' mod for
@@ -43,10 +43,6 @@ Minecraft 1.7.10 — to Minecraft 1.20.1 / NeoForge.**
 - [Current state](#current-state)
 - [Building](#building)
 - [Running](#running)
-- [Tests](#tests)
-- [Development tooling](#development-tooling)
-- [Continuous integration](#continuous-integration)
-- [Verifying a download](#verifying-a-download)
 - [Mod compatibility](#mod-compatibility)
 - [Reporting problems](#reporting-problems)
 - [License and credits](#license-and-credits)
@@ -253,8 +249,7 @@ Two rules keep this from lying, both bought with failures:
 
 ## Building
 
-You need **JDK 25** to run the build (the mod itself is compiled for **Java 17**, which Gradle
-provisions on its own), about **8 GB of free RAM** and **10 GB of disk**. The first build downloads
+You need **JDK 17**, about **8 GB of free RAM** and **10 GB of disk**. The first build downloads
 NeoForge and decompiles Minecraft, which is what the memory is for (the decompiler inherits the
 Gradle JVM heap, set to 6 GB in `gradle.properties`) — and it takes a while. Later builds are fast.
 
@@ -279,88 +274,14 @@ Those live **outside this repository**, in the developer's working environment (
 the repository contains none of them, so they cannot end up in a player's jar. Given that directory
 and the flag, `runClient`/`runServer` can run automated in-game checks.
 
-## Tests
-
-**This repository contains no tests, and this branch has none beside it either.** Verification is
-instrumentation, not product: the in-engine stands live in the developer's working environment
-(`../stands-1.20.1/`), and the automated product tests exist only for the `main` branch so far — on
-this branch `./gradlew test` finds nothing to run. What has been verified here was verified by the
-in-engine stands and by the comparison against the original, both described below.
-
-## Development tooling
-
-Two things in this repository are **tools from the porting effort**, not part of the product. They
-are off by default, cost nothing when unused, and exist because a port occasionally has to ask
-questions an ordinary mod never does.
-
-| Tool | What it answers | How to run |
-|---|---|---|
-| **Comparison against the original** | "does the mod still generate exactly what GregTech 6 on 1.7.10 generated?" — materials, items, ore dictionary, recipes, worldgen, names | `./gradlew test -Pgt6.oracle=<path>` |
-| **In-engine probes** | "what does the real engine path actually do here?" — drives real interactions and judges object identity, not pixels | `./gradlew runClient -Pgt6probes` |
-
-The comparison needs dumps taken from a running 1.7.10 installation — roughly 200 MB, produced by a
-separate dumper, and deliberately **not** part of this repository. Without the path, those checks
-simply do not run: the port phase is finished, so the question is asked while investigating a
-difference, not on every build.
-
-## Continuous integration
-
-The build is checked on a clean machine — a different OS, an empty cache, nothing but the contents
-of this repository. It runs **on demand** (Actions → CI → Run workflow) and automatically on pull
-requests; it deliberately does not fire on every commit, because the build is run locally anyway and
-a duplicate would only add noise.
-
-Four jobs, in parallel:
-
-| Job | Checks |
-|---|---|
-| **Build** | produces the mod jar, then verifies the jar contains no compile-only stand-in classes for packages the engine owns — shipping those makes the mod fail to load, and it happened once — and that unfinished-work markers left in the source are not accumulating |
-| **Stands** | compiles the in-engine probes, which the normal build does not touch and would otherwise silently rot |
-| **Tests** | runs the test suite and compares the set of failures against a recorded baseline: an unknown failure fails the build, and a suite that did not run at all also fails (a test runner that quietly starts nothing must not read as success) |
-| **Server** | boots a dedicated server and requires it to reach "Done". No unit test can see this: they bring a server up without a world and without the client side, while what actually broke three times in a month was the dedicated server specifically |
-
-Tagging a release (`v<version>`) builds the jar, verifies the tag matches the version in
-`gradle.properties`, and publishes a GitHub release — pre-release for alpha, beta and rc versions.
-
-## Verifying a download
-
-A mod runs as ordinary code inside your game, with your permissions. So the honest question is not
-"is this file intact" but "is this file the one built from the source you can read" — and both
-answers here are checkable **without trusting me**.
-
-```bash
-gh attestation verify gregtech6-<version>.jar --repo wolfram0108/gregtech6_w
-```
-
-GitHub itself witnessed this exact file being produced by this repository's release workflow from
-the tagged commit, and signs that statement. A file rebuilt or altered by anyone else fails this.
-
-The stronger check is that you can reproduce the build. Archive timestamps and file order are
-pinned, so building a tag twice — on any machine — yields a **byte-identical** jar:
-
-```bash
-git checkout v<version> && ./gradlew assemble
-sha256sum build/libs/*.jar     # must equal the published .sha256
-```
-
-This is measured, not intended. The jar built on Windows and the one CI built on Ubuntu from the
-same commit are byte-identical, and the digest GitHub attests is the same one a local build
-produces. Getting there took fixing two separate causes — archive timestamps and ordering, then
-line endings, which Windows expands on checkout and which travel into the jar as they sit on disk.
-The check was also run once with the settings deliberately off, to confirm it can fail: without
-them the same source produced two different jars.
-
-Note that the jar is **not** signed with a code-signing certificate, and deliberately so: NeoForge
-does not verify mod signatures at all — it loads classes with `(CodeSigner[]) null` — so a
-self-signed certificate would add ceremony without adding a verifier.
-
 ## Mod compatibility
 
 | Mod | Status |
 |---|---|
 | **JEI** | supported — GT6's recipe categories and item variants are browsable |
 | **Jade** | supported — GT6 registers its own tools (wrench, crowbar, cutters…), which vanilla tags cannot express, so harvest tooltips are correct |
-| **JourneyMap** and the vanilla map | supported — GT6 blocks and fluids render correctly on both |
+| **Applied Energistics 2** | supported — GT6 stays the industrial layer while AE2 keeps the network, storage, autocrafting and spatial storage; AE2 machines that merely repeat a GregTech one lose their own recipes, energy crosses the border both ways, and the GregTech wrench turns and dismantles AE2 blocks |
+| **JourneyMap** and the vanilla map | supported — GT6 blocks, ores, machines and fluids render on both; checked against the live mod `1.20.1-6.0.2+forge` |
 | 1.7.10-era industrial mods | the original integrated with 211 of them; what survives and what does not is listed in [COMPATIBILITY.md](COMPATIBILITY.md) |
 
 ## Reporting problems

@@ -154,7 +154,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: GregTech 6 for NeoForge ${{ steps.version.outputs.version }}
+          # Версия игры — В ЗАГОЛОВКЕ: релизы принадлежат репозиторию, а не ветке, и в общем
+          # списке /releases выпуски обеих веток идут вперемешку. Из номера версии человек
+          # версию игры не вычитает — она обязана стоять в названии.
+          name: GregTech 6 for NeoForge ${{ steps.version.outputs.version }} — Minecraft 1.20.1
           prerelease: ${{ steps.version.outputs.prerelease }}
           body_path: release-notes.md
           files: |
