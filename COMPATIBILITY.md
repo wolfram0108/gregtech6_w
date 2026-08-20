@@ -15,11 +15,7 @@ This document says plainly what works, what could work, and what will not.
 | **JEI** | `15.48.0.183` | GT6 registers its own recipe categories and item variants; verified in a live client |
 | **Jade** | `11.13.3+forge` | GT6 registers its own harvest tools — wrench, crowbar, cutters and the rest — which vanilla tags cannot express, so the "can I mine this" tooltip is correct |
 | **Applied Energistics 2** | `15.4.10` | GT6 stays the industrial layer and AE2 keeps the network, storage, autocrafting and spatial storage; AE2 machines that merely repeat a GregTech one lose their own recipes, energy crosses the border both ways, and the GregTech wrench turns and dismantles AE2 blocks |
-| **The vanilla map** | — | GT6 blocks and fluids resolve to the correct map colour |
-
-> **JourneyMap** is not part of this branch's build and has not been checked here; on the `main`
-> branch it is wired up and verified. The map-colour work itself is shared code and is present on
-> both branches.
+| **JourneyMap** (and the vanilla map) | `1.20.1-6.0.2+forge` | GT6 blocks, ores, machines and fluids resolve to the correct map colour, checked by asking the real mod the same question it asks itself; oil and gas declare no engine fluid on this branch, so the vanilla map reads their block colour directly — both paths verified |
 
 
 ## What the original integrated with

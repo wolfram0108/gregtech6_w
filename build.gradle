@@ -366,8 +366,11 @@ dependencies {
     // каналом, каким тот решает судьбу блока на карте (BlockMD.get → isIgnore/getTextureColor/getAlpha;
     // декомпил-референс: journeymap-decompiled/). Production-код на него НЕ ссылается; исходники мода закрыты
     // (ARR), поэтому compileOnly идёт с того же Modrinth-maven, что и Jade.
-    // [1.20.1 замер] compileOnly снят: версия под 1.20.1 не подобрана
-    // [1.20.1 замер] localRuntime снят: версия под 1.20.1 не подобрана
+    // [1.20.1] версия подобрана 2026-08-20: journeymap 1.20.1-6.0.2+forge (то же поколение 6.0.x, что
+    // на main). modLocalRuntime, а не localRuntime: production-jar под Forge 1.20.1 зовёт движок
+    // SRG-именами — тот же приём, что у Jade и AE2 выше.
+    compileOnly "maven.modrinth:journeymap:${journeymap_version}"
+    modLocalRuntime "maven.modrinth:journeymap:${journeymap_version}"
 
     // Applied Energistics 2 (слой совместимости GT6 ⇄ AE2, этап Э0). GT6 знает AE2 с 1.7.10:
     // gregtech/compat/Compat_Recipes_AppliedEnergistics.java задаёт прессы, резку, sky stone; MD.AE.mLoaded
