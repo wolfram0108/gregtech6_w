@@ -184,8 +184,10 @@ public class GT6BlockModel implements BakedModel {
 	 *  <p>Ветка 1.20.1: контекста мира у {@code getQuads} нет вовсе (движок зовёт breaking-оверлей через
 	 *  {@code LevelRenderer:1315} → {@code BlockRenderDispatcher.renderBreakingTexture} с {@code ModelData.EMPTY},
 	 *  а JourneyMap и прочие читатели моделей вне мира — через ванильную перегрузку), поэтому та же форма строится
-	 *  здесь, по владельцу. Диспатч по mOwner: MTE (обе иерархии) → ПУСТО, их геометрию (и трещины на ней) даёт
-	 *  {@link MultiTileEntityBER}; куст/цветок (IRenderedCross) → крест; остальные (IBlock) → статические bounds
+	 *  здесь, по владельцу. Диспатч по mOwner: MTE (обе иерархии) → ПУСТО — форма конкретного MTE без позиции
+	 *  неизвестна (блок и состояние у всех MTE общие), а трещины на его ФАКТИЧЕСКОЙ форме кладёт
+	 *  {@link MultiTileEntityBER} по живой геометрии ломаемого блока (BUG-138: остальной облик MTE идёт мэшем секции,
+	 *  см. {@link #collectParts0}); куст/цветок (IRenderedCross) → крест; остальные (IBlock) → статические bounds
 	 *  (полублок = полбокса); неизвестный владелец → куб. UV трещин пересчитывает {@code SheetedDecalTextureGenerator}
 	 *  по ПОЗИЦИИ — спрайт не важен, важна ГЕОМЕТРИЯ.
 	 *  <p>Первоисточник — ITEM-ФОРМА блока ({@link #buildInventoryQuads}: тот же центр, что 3D-иконка в инвентаре/JEI —
@@ -245,12 +247,22 @@ public class GT6BlockModel implements BakedModel {
 			return tQB.build();
 		}
 
-		// F3-render: MTE-блоки рисует BER (MultiTileEntityBER), НЕ baked-модель. Причина (probe, окончательно): neo section-compile
-		// регион (worker-снапшот) НЕ отдаёт MTE-BE (getBlockEntity=null 100%) → тут геометрию собрать нельзя. BER берёт живой BE на
-		// main-thread. Пропускаем (пустой меш; часть MTE регион случайно захватывал — рисовали бы дважды с BER). Флюид/BlockBase — ниже (render на блоке).
-		if (tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) return tQB.build();
+		// BUG-138 носитель №2. Прежде здесь стоял выход «MTE рисует BER, не baked-модель» с обоснованием «регион
+		// чанк-компиляции не отдаёт MTE-BE (getBlockEntity=null 100%)». Обоснование НЕВЕРНО и снято живой пробой
+		// (стенд gt6meshgate, 2026-08-21): регион, собранный движковой фабрикой RenderRegionCache.createRegion —
+		// той самой, что кладёт его в RebuildTask (ChunkRenderDispatcher:455-460) — отдаёт ТОТ ЖЕ живой объект
+		// блок-сущности, что и клиентский Level (RenderChunkRegion.getBlockEntity:51-56 → RenderChunk:24-28
+		// ImmutableMap.copyOf(chunk.getBlockEntities()) — копируется КАРТА, а не сущности). Это тот же путь, которым
+		// движок и так собирает MTE в список рисуемых BE (RebuildTask.compile: region.getBlockEntity → handleBlockEntity),
+		// поэтому «null 100%» противоречило бы работе самого BER.
+		// Значит MTE идут дальше ОБЩЕЙ веткой рендер-объекта — то есть попадают в МЭШ СЕКЦИИ, как в 1.7.10
+		// (MultiTileEntityBlock.getRenderType() → RendererBlockTextured implements ISimpleBlockRenderingHandler,
+		// оригинал :295), а не рисуются заново каждый кадр.
 
 		// 1:1-порт RendererBlockTextured.renderWorldBlock: двойной passRenderingToObject → ветвь блока / ветвь рендер-объекта.
+		// Для MTE рендер-объект — сам живой BE (MultiTileEntityBlock.passRenderingToObject → WD.te(BlockGetter,…):387,
+		// плоское чтение карты BE региона). Нет BE (стаб/руда) → tRenderer==null → ветвь блока, а у MTE-блока
+		// getRenderPasses==0 (MultiTileEntityBlock:794) → пустой набор, как и было.
 		IRenderedBlockObject tRenderer = tRB.passRenderingToObject(aLevel, tX, tY, tZ);
 		if (tRenderer != null) tRenderer = tRenderer.passRenderingToObject(aLevel, tX, tY, tZ);
 
@@ -277,7 +289,10 @@ public class GT6BlockModel implements BakedModel {
 			if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(tBlock, 0, 0, 0, 1, 1, 1); // анти-протечка общего блока (1:1 :132)
 			tQB.clearUVRotate(); // 1:1 renderBlockLog: сброс uvRotate* после renderStandardBlock
 		} else {
-			buildRendererQuads(tQB, tRenderer, tBlock, aLevel, tX, tY, tZ);
+			// BUG-138: та же защита от падения, что несла ветка BER (MultiTileEntityBER.render:210 — «render-логика
+			// конкретного MTE не должна ронять кадр»). Здесь она нужнее: исключение внутри компиляции секции движок
+			// заворачивает в ReportedException и роняет игру (RebuildTask.compile → CrashReport «Tesselating block in world»).
+			try {buildRendererQuads(tQB, tRenderer, tBlock, aLevel, tX, tY, tZ);} catch (Throwable e) {/* один MTE не рушит мэш секции */}
 		}
 		return tQB.build();
 	}
