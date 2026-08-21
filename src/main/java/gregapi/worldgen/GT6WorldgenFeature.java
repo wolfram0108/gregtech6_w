@@ -266,34 +266,92 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	}
 
 	// R1-живность: GT6-вода (River/Ocean/Swamp) заместила Blocks.WATER своим блоком → vanilla water-спаун молчит, т.к.
-	// хардкодит is(Blocks.WATER) (WaterAnimal.checkSurfaceWaterAnimalSpawnRules:78). Оригинал GT6 1.7.10 не имел проблемы
-	// (спаун шёл по Material.water). Каноничный neo-мост: RegisterSpawnPlacementsEvent c Operation.OR добавляет водным
-	// мобам predicate, где верх/низ проверяются по ТЕГУ FluidTags.WATER (GT6-вода его несёт через getFluidState), а не по
-	// конкретному Blocks.WATER. OR не ломает vanilla-спаун (в vanilla-воде работает исходный predicate) — только расширяет.
+	// правила отбора хардкодят ИДЕНТИЧНОСТЬ блока: getBlockState(...).is(Blocks.WATER). Оригинал GT6 1.7.10 проблемы не
+	// имел (спаун шёл по Material.water; рыб как сущностей там вообще не было — они появились в MC 1.13, из водной
+	// живности был только кальмар). Каноничный neo-мост: RegisterSpawnPlacementsEvent c Operation.OR даёт виду ВТОРОЙ
+	// predicate, который проходит там, где ванильный споткнулся о воду мода.
+	// ⛔ OR расширяет правило вида ЦЕЛИКОМ и действует В ТОМ ЧИСЛЕ в ванильной воде — поэтому добавляемый predicate
+	// обязан быть правилом ИМЕННО ЭТОГО вида: дословный перенос его ванильного правила, где подменено ТОЛЬКО сломанное
+	// звено (gt6WaterBlockAt). Общий predicate на всех = чужое правило каждому (светящийся кальмар получал окно
+	// поверхностных рыб и появлялся у поверхности среди бела дня — BP-BUG-030).
+	// Правил у движка ЧЕТЫРЕ на восемь видов — столько же здесь, один-в-один и с теми же адресатами:
+	//   WaterAnimal.checkSurfaceWaterAnimalSpawnRules:70-78                → gt6SurfaceWaterAnimalSpawnRules (COD/SALMON/PUFFERFISH)
+	//   AgeableWaterCreature.checkSurfaceAgeableWaterCreatureSpawnRules:66-75 — ТОТ ЖЕ текст, правило SQUID/DOLPHIN → он же
+	//   TropicalFish.checkTropicalFishSpawnRules:261-269                   → gt6TropicalFishSpawnRules
+	//   GlowSquid.checkGlowSquidSpawnRules:110-113                         → gt6GlowSquidSpawnRules
+	//   AbstractNautilus.checkNautilusSpawnRules:134-143                   → gt6NautilusSpawnRules (своё окно seaLevel-25..seaLevel-5)
+	// Состав видов получен сплошным обходом SpawnPlacements.java + грепом check*SpawnRules на is(Blocks.WATER) — это ВСЕ,
+	// чьё правило спрашивает идентичность блока воды. Drowned/Guardian/Axolotl мостить НЕ нужно: их правила целиком на
+	// тегах (Drowned.java:136-139, Guardian.java:302-308, Axolotl.java:559-562).
 	public static void onRegisterSpawnPlacements(net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent aEvent) {
-		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.COD);
-		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.SALMON);
-		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.PUFFERFISH);
-		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.TROPICAL_FISH);
-		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.SQUID);
-		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.GLOW_SQUID);
-		// ADAPT-009/фауна: дельфин (warm/lukewarm-океаны 1.13+, вошли в BIOMES_OCEAN) — его
-		// checkSurfaceAgeableWaterCreatureSpawnRules:74 хардкодит above.is(Blocks.WATER), как и рыбы.
-		// Drowned/Guardian мостить НЕ нужно — их правила целиком на FluidTags.WATER (Drowned.java:139, Guardian.java:307).
-		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.DOLPHIN);
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.COD          , GT6WorldgenFeature::gt6SurfaceWaterAnimalSpawnRules);
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.SALMON       , GT6WorldgenFeature::gt6SurfaceWaterAnimalSpawnRules);
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.PUFFERFISH   , GT6WorldgenFeature::gt6SurfaceWaterAnimalSpawnRules);
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.SQUID        , GT6WorldgenFeature::gt6SurfaceWaterAnimalSpawnRules);
+		// ADAPT-009/фауна: дельфин (warm/lukewarm-океаны 1.13+, вошли в BIOMES_OCEAN) судится тем же правилом
+		// поверхностных водных, что и рыбы (SpawnPlacements.java:94-99).
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.DOLPHIN      , GT6WorldgenFeature::gt6SurfaceWaterAnimalSpawnRules);
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.TROPICAL_FISH, GT6WorldgenFeature::gt6TropicalFishSpawnRules);
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.GLOW_SQUID   , GT6WorldgenFeature::gt6GlowSquidSpawnRules);
+		// Наутилус — вид 26.1.2 (в 1.20.1 его нет), ванильные спавны во всех девяти океанских биомах
+		// (data/minecraft/worldgen/biome/*ocean*.json). Его правило хардкодит выше-Blocks.WATER так же, как рыбье,
+		// но окно глубин у него СВОЁ — поэтому и predicate свой.
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.NAUTILUS     , GT6WorldgenFeature::gt6NautilusSpawnRules);
 	}
 
-	private static <T extends net.minecraft.world.entity.Entity> void addGT6WaterSpawn(net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent aEvent, net.minecraft.world.entity.EntityType<T> aType) {
-		aEvent.register(aType, GT6WorldgenFeature::gt6WaterSpawnPredicate, net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent.Operation.OR);
+	private static <T extends net.minecraft.world.entity.Entity> void addGT6WaterSpawn(net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent aEvent, net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.entity.SpawnPlacements.SpawnPredicate<T> aRule) {
+		aEvent.register(aType, aRule, net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent.Operation.OR);
 	}
 
-	// Копия vanilla WaterAnimal.checkSurfaceWaterAnimalSpawnRules (seaLevel-13..seaLevel), НО above по тегу FluidTags.WATER
-	// (GT6-вода удовлетворяет) вместо getBlockState(above).is(Blocks.WATER). Below и так был по тегу — не трогаем.
-	private static <T extends net.minecraft.world.entity.Entity> boolean gt6WaterSpawnPredicate(net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.level.ServerLevelAccessor aLevel, net.minecraft.world.entity.EntitySpawnReason aReason, net.minecraft.core.BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+	/** ЕДИНСТВЕННОЕ адаптированное звено моста. Движок спрашивает «блок в этой клетке — {@code Blocks.WATER}?»
+	 *  ({@code getBlockState(pos).is(Blocks.WATER)}), а воду океанов/рек/болот GT6 несёт СВОЙ блок
+	 *  ({@code BlockWaterlike extends BlockFluidBaseGT extends LiquidBlock}, жидкость — настоящая {@code Fluids.WATER}:
+	 *  {@code BlockWaterlike.java:91} → {@code BlockFluidBaseGT.java:223}). Спрашиваем то же самое в терминах движка:
+	 *  «полноблочная жидкость, и она — вода». В ВАНИЛЬНОЙ воде ответ дословно совпадает с движковым (единственные
+	 *  {@code LiquidBlock} ванили — {@code Blocks.WATER} и {@code Blocks.LAVA}, {@code Blocks.java:294-310}; клетки
+	 *  waterlogged к {@code LiquidBlock} не относятся — ровно как у движка), в воде GT6 — становится верным. */
+	private static boolean gt6WaterBlockAt(net.minecraft.world.level.LevelAccessor aLevel, net.minecraft.core.BlockPos aPos) {
+		net.minecraft.world.level.block.state.BlockState tState = aLevel.getBlockState(aPos);
+		return tState.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock
+			&& tState.getFluidState().is(net.minecraft.tags.FluidTags.WATER);
+	}
+
+	/** {@code WaterAnimal.checkSurfaceWaterAnimalSpawnRules} ({@code WaterAnimal.java:70-78}) дословно, подменено
+	 *  только звено {@code getBlockState(above).is(Blocks.WATER)}. Правило COD/SALMON/PUFFERFISH и — тем же текстом
+	 *  в {@code AgeableWaterCreature:66-75} — SQUID/DOLPHIN. */
+	private static <T extends net.minecraft.world.entity.Entity> boolean gt6SurfaceWaterAnimalSpawnRules(net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.level.ServerLevelAccessor aLevel, net.minecraft.world.entity.EntitySpawnReason aReason, net.minecraft.core.BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 		int tSea = aLevel.getSeaLevel();
-		return aPos.getY() >= tSea - 13 && aPos.getY() <= tSea
+		int tMin = tSea - 13;
+		return aPos.getY() >= tMin && aPos.getY() <= tSea
 			&& aLevel.getFluidState(aPos.below()).is(net.minecraft.tags.FluidTags.WATER)
-			&& aLevel.getFluidState(aPos.above()).is(net.minecraft.tags.FluidTags.WATER);
+			&& gt6WaterBlockAt(aLevel, aPos.above());
+	}
+
+	/** {@code TropicalFish.checkTropicalFishSpawnRules} ({@code TropicalFish.java:261-269}) дословно: сохранена и
+	 *  ветка «биом с тегом ALLOWS_TROPICAL_FISH_SPAWNS_AT_ANY_HEIGHT — на любой глубине». */
+	private static <T extends net.minecraft.world.entity.Entity> boolean gt6TropicalFishSpawnRules(net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.level.ServerLevelAccessor aLevel, net.minecraft.world.entity.EntitySpawnReason aReason, net.minecraft.core.BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		return aLevel.getFluidState(aPos.below()).is(net.minecraft.tags.FluidTags.WATER)
+			&& gt6WaterBlockAt(aLevel, aPos.above())
+			&& (aLevel.getBiome(aPos).is(net.minecraft.tags.BiomeTags.ALLOWS_TROPICAL_FISH_SPAWNS_AT_ANY_HEIGHT)
+			 || gt6SurfaceWaterAnimalSpawnRules(aType, aLevel, aReason, aPos, aRandom));
+	}
+
+	/** {@code GlowSquid.checkGlowSquidSpawnRules} ({@code GlowSquid.java:110-113}) дословно: глубина
+	 *  {@code y <= seaLevel-33} и полная темнота остаются — подменена только идентичность блока воды. */
+	private static <T extends net.minecraft.world.entity.Entity> boolean gt6GlowSquidSpawnRules(net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.level.ServerLevelAccessor aLevel, net.minecraft.world.entity.EntitySpawnReason aReason, net.minecraft.core.BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		return aPos.getY() <= aLevel.getSeaLevel() - 33
+			&& aLevel.getRawBrightness(aPos, 0) == 0
+			&& gt6WaterBlockAt(aLevel, aPos);
+	}
+
+	/** {@code AbstractNautilus.checkNautilusSpawnRules} ({@code AbstractNautilus.java:134-143}) дословно: своё окно
+	 *  глубин {@code seaLevel-25 .. seaLevel-5} остаётся — подменена только идентичность блока воды сверху. */
+	private static <T extends net.minecraft.world.entity.Entity> boolean gt6NautilusSpawnRules(net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.level.ServerLevelAccessor aLevel, net.minecraft.world.entity.EntitySpawnReason aReason, net.minecraft.core.BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		int tSea = aLevel.getSeaLevel();
+		int tMin = tSea - 25;
+		return aPos.getY() >= tMin && aPos.getY() <= tSea - 5
+			&& aLevel.getFluidState(aPos.below()).is(net.minecraft.tags.FluidTags.WATER)
+			&& gt6WaterBlockAt(aLevel, aPos.above());
 	}
 
 	private static void onGatherDataStatic(GatherDataEvent.Client aEvent) {
