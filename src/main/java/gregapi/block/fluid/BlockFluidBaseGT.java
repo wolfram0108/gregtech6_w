@@ -157,12 +157,19 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 			case NO_ENGINE_FLUID: return net.minecraft.world.level.material.Fluids.EMPTY.defaultFluidState();
 			case VANILLA_WATER: {
 				int tQuanta = quantaOfState(aState);
-				if (tQuanta >= quantaPerBlock) return net.minecraft.world.level.material.Fluids.WATER.defaultFluidState();
+				// BUG-141-A: ИСТОЧНИК объявляется getSource(false), а НЕ defaultFluidState(). Дефолтное состояние
+				// жидкости — stateDefinition.any() (Fluid.java:37-38), а первым значением FALLING идёт true
+				// (BooleanProperty.VALUES = [true,false]) → движку уходил «падающий источник», какого у ванильной
+				// воды не бывает: сам движок строит источник как fluid.getSource(false) (LiquidBlock.java:71).
+				// Следствия: FlowingFluid.getFlow:90 давал ненулевой вектор вниз, а WalkNodeEvaluator видел иной
+				// старт пути. Соседняя ветка этого же метода (OWN_TAGGED_FLUID) всегда делала верно — расхождение
+				// внутри одного центра.
+				if (tQuanta >= quantaPerBlock) return net.minecraft.world.level.material.Fluids.WATER.getSource(false);
 				return net.minecraft.world.level.material.Fluids.FLOWING_WATER.getFlowing(net.minecraft.util.Mth.clamp(tQuanta, 1, 8), false);
 			}
 			default: { // OWN_TAGGED_FLUID
 				if (!(getFluid() instanceof net.minecraft.world.level.material.FlowingFluid tOwn))
-					return (mMaterial == Material.lava ? net.minecraft.world.level.material.Fluids.LAVA : net.minecraft.world.level.material.Fluids.WATER).defaultFluidState();
+					return (mMaterial == Material.lava ? net.minecraft.world.level.material.Fluids.LAVA : net.minecraft.world.level.material.Fluids.WATER).getSource(false); // BUG-141-A: источник, а не дефолтное состояние (см. выше)
 				int tQuanta = net.minecraft.util.Mth.clamp(quantaOfState(aState), 1, quantaPerBlock);
 				if (tQuanta >= quantaPerBlock) return tOwn.getSource(false);
 				return tOwn.getFlowing(tQuanta, false);
