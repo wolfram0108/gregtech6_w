@@ -204,8 +204,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		gregapi.data.CS.OUT.println("[GT6-GUI] MenuScreens: экран для ContainerCommon.MENU_TYPE зарегистрирован (F14).");
 	}
 
-	// F3-render: MTE-блоки рисует BER (не baked — регион не отдаёт MTE-BE, см. MultiTileEntityBER). Один generic BER на весь
-	// MTE_TYPE (централизация 1:1). Руды/стабы отсеиваются внутри BER (гейт MultiTileEntityBlock+IRenderedBlockObject).
+	// F3-render: облик MTE идёт МЭШЕМ СЕКЦИИ (GT6BlockModel), как в 1.7.10 — BUG-138 носитель №2. BER остаётся ради
+	// того, ради чего в 1.7.10 существовал bindTileEntitySpecialRenderer: сундук, масс-сторадж и трещины на живой
+	// геометрии ломаемого блока. Регистрация по BlockEntityType — движок иначе не умеет, диспетч по классу внутри BER.
 	private void onRegisterBlockEntityRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers aEvent) {
 		// BUG-138: типов иерархии стало два (тикающая половина и нетикающая — признак объявлен движку типом,
 		// см. TileEntityBase01Root.MTE_TYPE_NOTICK). Рендер к тику отношения не имеет: облик рисуется у ОБЕИХ

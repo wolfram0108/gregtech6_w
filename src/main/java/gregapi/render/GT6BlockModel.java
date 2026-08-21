@@ -154,12 +154,21 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 			return;
 		}
 
-		// F3-render: MTE-блоки рисует BER (MultiTileEntityBER), НЕ baked-модель. Причина (probe, окончательно): neo section-compile
-		// регион (worker-снапшот) НЕ отдаёт MTE-BE (getBlockEntity=null 100%) → тут геометрию собрать нельзя. BER берёт живой BE на
-		// main-thread. Пропускаем (пустой меш; часть MTE регион случайно захватывал — рисовали бы дважды с BER). Флюид/BlockBase — ниже (render на блоке).
-		if (tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) {aParts.add(new SimpleModelWrapper(tQB.build(), true, mParticle)); return;}
+		// BUG-138 носитель №2. Прежде здесь стоял выход «MTE рисует BER, не baked-модель» с обоснованием «регион
+		// чанк-компиляции не отдаёт MTE-BE (getBlockEntity=null 100%)». Обоснование НЕВЕРНО и снято живой пробой
+		// (стенд gt6meshgate, ветка 1.20.1, 2026-08-21; в 26.1.2 узел тот же): регион отдаёт ТОТ ЖЕ живой объект
+		// блок-сущности — RenderSectionRegion.getBlockEntity:73-79 → SectionCopy.getBlockEntity:47-49, а SectionCopy:34
+		// делает ImmutableMap.copyOf(levelChunk.getBlockEntities()) — копируется КАРТА, а не сущности. Это тот же путь,
+		// которым движок и так собирает MTE в список рисуемых BE (SectionCompiler.compile:92-95), поэтому «null 100%»
+		// противоречило бы работе самого BER.
+		// Значит MTE идут дальше ОБЩЕЙ веткой рендер-объекта — то есть попадают в МЭШ СЕКЦИИ, как в 1.7.10
+		// (MultiTileEntityBlock.getRenderType() → RendererBlockTextured implements ISimpleBlockRenderingHandler,
+		// оригинал :295), а не рисуются заново каждый кадр.
 
 		// 1:1-порт RendererBlockTextured.renderWorldBlock: двойной passRenderingToObject → ветвь блока / ветвь рендер-объекта.
+		// Для MTE рендер-объект — сам живой BE (MultiTileEntityBlock.passRenderingToObject → WD.te(BlockGetter,…),
+		// плоское чтение карты BE региона). Нет BE (стаб/руда) → tRenderer==null → ветвь блока, а у MTE-блока
+		// getRenderPasses==0 → пустой набор, как и было.
 		IRenderedBlockObject tRenderer = tRB.passRenderingToObject(aLevel, tX, tY, tZ);
 		if (tRenderer != null) tRenderer = tRenderer.passRenderingToObject(aLevel, tX, tY, tZ);
 
@@ -186,7 +195,10 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 			if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(tBlock, 0, 0, 0, 1, 1, 1); // анти-протечка общего блока (1:1 :132)
 			tQB.clearUVRotate(); // 1:1 renderBlockLog: сброс uvRotate* после renderStandardBlock
 		} else {
-			buildRendererQuads(tQB, tRenderer, tBlock, aLevel, tX, tY, tZ);
+			// BUG-138: та же защита от падения, что несла ветка BER («render-логика конкретного MTE не должна ронять
+			// кадр»). Здесь она нужнее: исключение внутри компиляции секции движок заворачивает в ReportedException и
+			// роняет игру (SectionCompiler.compile:118-123 — CrashReport «Tesselating block in world»).
+			try {buildRendererQuads(tQB, tRenderer, tBlock, aLevel, tX, tY, tZ);} catch (Throwable e) {/* один MTE не рушит мэш секции */}
 		}
 		aParts.add(new SimpleModelWrapper(tQB.build(), true, mParticle));
 	}

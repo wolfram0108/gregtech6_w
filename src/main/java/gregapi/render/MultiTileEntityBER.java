@@ -44,23 +44,37 @@ import gregapi.block.multitileentity.MultiTileEntityBlock;
 import gregapi.tileentity.base.TileEntityBase01Root;
 
 /**
- * F3-render КОРЕНЬ прозрачности MTE (машины/трубы/декор): geometry MTE-блоков живёт на клиент-BE (IRenderedBlockObject:
- * getRenderPasses/getTexture/box), а neo section-compile регион (worker-снапшот) BE НЕ отдаёт (доказано probe:
- * getBlockEntity=null 100%), и ModelData-мост удалён в 26.x. Потому MTE рисуются НЕ через baked {@link GT6BlockModel}
- * (он их пропускает), а через ЭТОТ BlockEntityRenderer: {@link #extractRenderState} на main-thread берёт ЖИВОЙ BE и строит
- * quads той же логикой GT6 ({@link GT6BlockModel#buildRendererQuads}, переиспользование 1:1), {@link #submit} эмитит их через
- * {@code submitCustomGeometry}. Один generic BER на весь {@code MTE_TYPE} — централизация 1:1 (аналог единого GT6-рендерера).
- * Руды ({@code PrefixBlockTileEntity}) и стабы отсеиваются гейтом (их рисует baked-модель). См. память gt6-neoforge-2612 п.7.
+ * F3-render спец-рендеры MTE (1.7.10 {@code ClientRegistry.bindTileEntitySpecialRenderer}) — и ТОЛЬКО они.
+ *
+ * <p><b>BUG-138 носитель №2.</b> Прежде этот BlockEntityRenderer строил и заливал геометрию ВСЕХ MTE КАЖДЫЙ КАДР
+ * (303 класса: машины, трубы, камни, кусты, покрытия) — 38,85 % рендер-потока живого клиента, из них 35,4 % на
+ * заливку вершин. Обоснованием служило «регион чанк-компиляции BE не отдаёт (getBlockEntity=null 100%)»; живая
+ * проба (стенд {@code gt6meshgate}, 2026-08-21) показала обратное: регион отдаёт ТОТ ЖЕ живой объект BE
+ * ({@code RenderSectionRegion.getBlockEntity:73-79} → {@code SectionCopy:34,47-49} — копируется КАРТА, не сущности).
+ * Поэтому облик MTE снова живёт в МЭШЕ СЕКЦИИ — его собирает {@link GT6BlockModel#collectParts} тем же центром
+ * {@link GT6BlockModel#buildRendererQuads}, ровно как в 1.7.10 ({@code MultiTileEntityBlock.getRenderType()} →
+ * {@code RendererBlockTextured implements ISimpleBlockRenderingHandler}, оригинал {@code :295}).
+ *
+ * <p><b>Что осталось покадровым — 1:1 с оригиналом.</b> В 1.7.10 у GT6 было РОВНО ДВА покадровых рендерера
+ * (сундук и масс-сторадж). Здесь их держит реестр {@link #SPECIAL_RENDERERS} — диспетч по КЛАССУ внутри единого
+ * BER, потому что движок регистрирует рендерер по {@code BlockEntityType}, а он у всех MTE один из двух. Всем
+ * прочим MTE {@link #extractRenderState} геометрию НЕ строит.
+ *
+ * <p><b>Трещины разрушения.</b> Признак «по этому блоку идёт разрушение» движок кладёт прямо в аргумент
+ * {@code extractRenderState} ({@code ModelFeatureRenderer.CrumblingOverlay}, {@code LevelRenderer:939-945});
+ * по нему и строится живая геометрия ломаемого блока, чтобы трещины легли на его ФАКТИЧЕСКУЮ форму — 1:1 с
+ * 1.7.10, где {@code RenderGlobal.drawBlockDamageTexture} звал тот же {@code RendererBlockTextured} с реальным миром.
+ *
+ * <p>Руды ({@code PrefixBlockTileEntity}) и стабы отсеиваются тем же гейтом, что и раньше.
  */
 public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01Root, MultiTileEntityBER.MTERenderState> {
 
 	public MultiTileEntityBER(BlockEntityRendererProvider.Context aContext) {/* per-BE геометрия строится в extractRenderState; ресурсы контекста тут не нужны */}
 
-	/** F3-render дистанция (репорт игрока: MTE «пропадают вдалеке»): дефолт BER = 64 блока, но в 1.7.10 MTE были
-	 *  chunk-геометрией и рисовались на ВСЮ дистанцию прорисовки. 1:1 по следствию: радиус = renderDistance чанков. */
-	@Override public int getViewDistance() {
-		return net.minecraft.client.Minecraft.getInstance().options.renderDistance().get() * 16;
-	}
+	// BUG-138: переопределение дистанции СНЯТО. Оно стояло потому, что геометрия MTE шла через этот BER и пропадала
+	// за движковыми 64 блоками; теперь она в мэше секции и рисуется на всю дальность прорисовки. Дефолт движка
+	// (64 блока) — ровно 1:1 с 1.7.10, где TESR резался тем же радиусом (TileEntity.getMaxRenderDistanceSquared()
+	// == 4096), а покадровыми были только сундук и масс-сторадж.
 
 	/** BUG-063 (репорт игрока: «как только центральный нижний блок выходит за границы экрана, весь тигель сразу
 	 *  пропадает»): neo отсекает рисунок BE по ЭТОЙ рамке ({@code BlockEntityRenderDispatcher:90}), а её умолчание —
@@ -204,32 +218,48 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 			aBE.mRenderAABB = new net.minecraft.world.phys.AABB(aBE.getBlockPos());
 			return;
 		}
-		sQuadExtracts.incrementAndGet();
-		BlockPos tPos = aBE.getBlockPos();
-		// BUG-106 №4: кэш-хит — облик с кадра построения не менялся, то есть НИ эпоха рендера (перешив атласа),
-		// НИ штамп СВОЕЙ секции с того кадра не сдвинулись (волна 3 консолидации, п.2). Штамп 0 у ни разу не
-		// помеченной секции — законное значение: первый кадр даёт промах (оттиск заведён Long.MIN_VALUE), после
-		// него 0 == 0 и кэш живёт. mRenderAABB остаётся от кадра построения, спец-рендер идёт живым ниже, как всегда.
-		long tSectionStamp = sectionStamp(tPos);
-		if (aBE.mQuadCacheEpoch == sQuadEpoch && aBE.mQuadCacheSectionStamp == tSectionStamp) {
-			aState.mQuads = aBE.mQuadCache;
-			sQuadCacheHits.incrementAndGet();
-		} else {
-			aBE.mRenderAABB = new net.minecraft.world.phys.AABB(tPos);
-			GT6QuadBuilder tQB = new GT6QuadBuilder();
-			try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* render-логика конкретного MTE не должна ронять кадр */}
-			if (!tQB.isEmpty()) aState.mQuads = tQB.quads();
-			// BUG-063: рамка = ФАКТИЧЕСКИ нарисованное этим BE (quads строятся в локальных координатах блока → сдвигаем в мир).
-			float[] tDrawn = tQB.drawnBounds();
-			if (tDrawn != null) aBE.mRenderAABB = new net.minecraft.world.phys.AABB(
-				  tPos.getX() + Math.min(tDrawn[0], 0F), tPos.getY() + Math.min(tDrawn[1], 0F), tPos.getZ() + Math.min(tDrawn[2], 0F)
-				, tPos.getX() + Math.max(tDrawn[3], 1F), tPos.getY() + Math.max(tDrawn[4], 1F), tPos.getZ() + Math.max(tDrawn[5], 1F));
-			aBE.mQuadCache = aState.mQuads; // null = «квадов нет» — тоже кэшируется (валидность судят эпоха и штамп секции)
-			aBE.mQuadCacheEpoch = sQuadEpoch;
-			aBE.mQuadCacheSectionStamp = tSectionStamp;
-			sQuadBuilds.incrementAndGet();
-		}
 		@SuppressWarnings("rawtypes") BlockEntityRenderer tSpecial = SPECIAL_RENDERERS.get(aBE.getClass());
+		// BUG-138 — ГЛАВНЫЙ ГЕЙТ. Облик MTE собран в мэше секции (GT6BlockModel.collectParts), поэтому строить и
+		// заливать его здесь ещё раз — чистая двойная работа каждый кадр. Живая геометрия нужна ровно двум:
+		// ломаемому блоку (по ней ниже эмитятся трещины) и классам со своим покадровым рендерером (сундук,
+		// масс-сторадж — те самые два TESR 1.7.10). Рамка = куб блока: рисунка BE у остальных больше нет,
+		// а мэш секции отсекается своей секцией 16³ — как в 1.7.10.
+		if (tSpecial == null && aBreakProgress == null) {
+			aBE.mRenderAABB = new net.minecraft.world.phys.AABB(aBE.getBlockPos());
+			return;
+		}
+		BlockPos tPos = aBE.getBlockPos();
+		// Рамку куба ставим только тем, у кого своего покадрового рендерера НЕТ. У сундука и масс-стоража она
+		// остаётся неизвестной (= не отсекать, см. getRenderBoundingBox) — ровно как в 1.7.10, где у TESR рамка
+		// по умолчанию была БЕСКОНЕЧНОЙ (recompSrc TileEntity:399-420), а их аниматика может выходить за блок.
+		if (tSpecial == null) aBE.mRenderAABB = new net.minecraft.world.phys.AABB(tPos);
+		// Живая геометрия — ТОЛЬКО ломаемому блоку: по ней submit кладёт трещины на фактическую форму (1:1 с 1.7.10,
+		// RenderGlobal.drawBlockDamageTexture → тот же RendererBlockTextured). Спец-рендерер свою аниматику рисует сам.
+		if (aBreakProgress != null) {
+			sQuadExtracts.incrementAndGet();
+			// BUG-106 №4: кэш-хит — облик с кадра построения не менялся, то есть НИ эпоха рендера (перешив атласа),
+			// НИ штамп СВОЕЙ секции с того кадра не сдвинулись (волна 3 консолидации, п.2). Штамп 0 у ни разу не
+			// помеченной секции — законное значение: первый кадр даёт промах (оттиск заведён Long.MIN_VALUE), после
+			// него 0 == 0 и кэш живёт.
+			long tSectionStamp = sectionStamp(tPos);
+			if (aBE.mQuadCacheEpoch == sQuadEpoch && aBE.mQuadCacheSectionStamp == tSectionStamp) {
+				aState.mQuads = aBE.mQuadCache;
+				sQuadCacheHits.incrementAndGet();
+			} else {
+				GT6QuadBuilder tQB = new GT6QuadBuilder();
+				try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* render-логика конкретного MTE не должна ронять кадр */}
+				if (!tQB.isEmpty()) aState.mQuads = tQB.quads();
+				// BUG-063: рамка = ФАКТИЧЕСКИ нарисованное этим BE (quads строятся в локальных координатах блока → сдвигаем в мир).
+				float[] tDrawn = tQB.drawnBounds();
+				if (tDrawn != null) aBE.mRenderAABB = new net.minecraft.world.phys.AABB(
+					  tPos.getX() + Math.min(tDrawn[0], 0F), tPos.getY() + Math.min(tDrawn[1], 0F), tPos.getZ() + Math.min(tDrawn[2], 0F)
+					, tPos.getX() + Math.max(tDrawn[3], 1F), tPos.getY() + Math.max(tDrawn[4], 1F), tPos.getZ() + Math.max(tDrawn[5], 1F));
+				aBE.mQuadCache = aState.mQuads; // null = «квадов нет» — тоже кэшируется (валидность судят эпоха и штамп секции)
+				aBE.mQuadCacheEpoch = sQuadEpoch;
+				aBE.mQuadCacheSectionStamp = tSectionStamp;
+				sQuadBuilds.incrementAndGet();
+			}
+		}
 		if (tSpecial != null) try {
 			aState.mSpecialRenderer = tSpecial;
 			aState.mSpecialState = (BlockEntityRenderState)tSpecial.createRenderState();
