@@ -263,8 +263,15 @@ public class CS {
 	 * (вода 3, листва 1, прозрачное 0), а всё, что 15 и выше — включая 255 — становится 15.
 	 *
 	 * <p>Перевод живёт здесь, рядом с самими константами, чтобы у него было ОДНО место на весь мод:
-	 * мосты в {@code BlockBase}/{@code PrefixBlock}/{@code BlockBaseFlower}/{@code BlockBaseRail}/
-	 * {@code BlockFluidBaseGT} зовут его, а не повторяют арифметику.
+	 * мосты в {@code BlockBase}/{@code PrefixBlock}/{@code BlockBaseFlower}/{@code BlockBaseRail}
+	 * зовут его, а не повторяют арифметику.
+	 *
+	 * <p>⚠️ {@code BlockFluidBaseGT} — исключение и в этом списке НЕ значится: он отдаёт движку сырое
+	 * значение 1.7.10 ({@code getLightDampening → getLightOpacity → LIGHT_OPACITY_WATER}), без перевода.
+	 * Поведение от этого не меняется — все потребители {@code getLightDampening()} сравнивают
+	 * ({@code >=15}, {@code >0}, {@code !=0}, {@code max(1,·)}, {@code getLightBlockInto(...)<15}),
+	 * поэтому 255 у болота и 15 неотличимы. Прежняя редакция этого абзаца числила жидкости среди
+	 * вызывателей — текст не соответствовал коду (найдено при разборе BUG-140, 2026-08-21).
 	 */
 	public static int lightDampening(int aOpacity1710) {
 		return aOpacity1710 >= 15 ? 15 : Math.max(0, aOpacity1710);

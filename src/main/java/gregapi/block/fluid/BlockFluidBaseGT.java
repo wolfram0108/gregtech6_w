@@ -223,7 +223,12 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 			case VANILLA_WATER: {
 				boolean tLava = (mMaterial == Material.lava);
 				if (engineLevelOfState(aState) >= quantaPerBlock)
-					return (tLava ? net.minecraft.world.level.material.Fluids.LAVA : net.minecraft.world.level.material.Fluids.WATER).defaultFluidState();
+					// BUG-141-A: ИСТОЧНИК объявляется getSource(false), а НЕ defaultFluidState(). Дефолтное состояние
+					// жидкости — stateDefinition.any() (Fluid.java:37-38), а первым значением FALLING идёт true
+					// (BooleanProperty.VALUES = [true,false]) → движку уходил «падающий источник», какого у ванильной
+					// воды не бывает: сам движок строит источник как fluid.getSource(false) (LiquidBlock.java:71).
+					// Соседняя ветка этого же метода (OWN_TAGGED_FLUID) всегда делала верно.
+					return (tLava ? net.minecraft.world.level.material.Fluids.LAVA : net.minecraft.world.level.material.Fluids.WATER).getSource(false);
 				return (tLava ? net.minecraft.world.level.material.Fluids.FLOWING_LAVA : net.minecraft.world.level.material.Fluids.FLOWING_WATER)
 					.getFlowing(net.minecraft.util.Mth.clamp(engineLevelOfState(aState), 1, 8), false);
 			}
@@ -234,7 +239,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 				// фолбэк по материалу, когда своя жидкость не FlowingFluid (у GT6-жидкостей она им является —
 				// FluidGT.Source extends FlowingFluid, FluidGT.java:264).
 				if (!(ownFluid() instanceof net.minecraft.world.level.material.FlowingFluid tOwn))
-					return (mMaterial == Material.lava ? net.minecraft.world.level.material.Fluids.LAVA : net.minecraft.world.level.material.Fluids.WATER).defaultFluidState();
+					return (mMaterial == Material.lava ? net.minecraft.world.level.material.Fluids.LAVA : net.minecraft.world.level.material.Fluids.WATER).getSource(false); // BUG-141-A: источник, а не дефолтное состояние (см. выше)
 				int tLevel = net.minecraft.util.Mth.clamp(engineLevelOfState(aState), 1, quantaPerBlock);
 				return tLevel >= quantaPerBlock ? tOwn.getSource(false) : tOwn.getFlowing(tLevel, false);
 			}
