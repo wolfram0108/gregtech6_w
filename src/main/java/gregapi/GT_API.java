@@ -630,6 +630,9 @@ public class GT_API extends Abstract_Mod {
 		// в 26.x attachment). Единая точка подписки, ни один другой файл её не дублирует
 		// (gregapi/player/EntityFoodTracker.java).
 		gregapi.player.EntityFoodTracker.register(aModBus);
+		// BUG-145 mirror: the ITEM arm of the fluid view — stacks of live IFluidContainerItem items
+		// expose FLUID_HANDLER_ITEM; one listener, declared next to the other capability seams.
+		gregapi.fluid.GT6FluidCapability.registerItemCapabilities();
 		// Ветка 1.20.1: доставка обработки дропа ЧУЖИХ блоков — глобальный модификатор лута (событий со списком
 		// дропов у Forge 1.20.1 нет); правило живёт в GT_API_Proxy.processBlockDrops, здесь только реестр кодека.
 		gregapi.loot.GT6BlockDropsModifier.register(aModBus);

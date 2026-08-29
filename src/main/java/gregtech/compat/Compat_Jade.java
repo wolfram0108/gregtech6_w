@@ -122,6 +122,43 @@ public class Compat_Jade implements IWailaPlugin {
 		// BUG-070 п.2/п.3 — строка «какой уровень нужен» и «что в руке»: у Jade такой строки нет ни для кого
 		aRegistration.registerBlockComponent(GT6HarvestLevelProvider.INSTANCE, Block.class);
 		registerFluidCellRestore(aRegistration);
+		aRegistration.registerFluidStorageClient(GT6FluidContainerProvider.INSTANCE);
+	}
+
+	@Override
+	public void register(snownee.jade.api.IWailaCommonRegistration aRegistration) {
+		// Showcase-only provider (BUG-145 mirror, BUG-088 precedent): small GT6 containers (cups, cylinders)
+		// interact through taps by design and expose no block fluid capability (getTankInfo is empty for the
+		// FluidContainer branch), so Jade's built-in bar is silent on them. This feeds the SAME tank the item
+		// tooltip prints (mTank) into the standard fluid bar — mechanics untouched. Barrels are a sibling
+		// branch already covered by the capability.
+		aRegistration.registerFluidStorage(GT6FluidContainerProvider.INSTANCE, gregapi.tileentity.tank.TileEntityBase08FluidContainer.class);
+	}
+
+	public enum GT6FluidContainerProvider implements
+			snownee.jade.api.view.IServerExtensionProvider<gregapi.tileentity.tank.TileEntityBase08FluidContainer, net.minecraft.nbt.CompoundTag>,
+			snownee.jade.api.view.IClientExtensionProvider<net.minecraft.nbt.CompoundTag, snownee.jade.api.view.FluidView> {
+		INSTANCE;
+
+		@Override public net.minecraft.resources.ResourceLocation getUid() {return new net.minecraft.resources.ResourceLocation("gregapi", "fluid_container");}
+
+		@Override
+		public java.util.List<snownee.jade.api.view.ViewGroup<net.minecraft.nbt.CompoundTag>> getGroups(net.minecraft.server.level.ServerPlayer aPlayer, net.minecraft.server.level.ServerLevel aWorld, gregapi.tileentity.tank.TileEntityBase08FluidContainer aContainer, boolean aDetails) {
+			gregapi.fluid.FluidTankGT tTank = aContainer.mTank;
+			long tCapacity = tTank.capacity();
+			if (tCapacity <= 0) return null;
+			net.minecraftforge.fluids.FluidStack tFluid = tTank.getFluid();
+			snownee.jade.api.fluid.JadeFluidObject tObject = tFluid == null || tFluid.isEmpty()
+				? snownee.jade.api.fluid.JadeFluidObject.empty()
+				: snownee.jade.api.fluid.JadeFluidObject.of(tFluid.getFluid(), tTank.amount(), tFluid.getTag());
+			return java.util.List.of(new snownee.jade.api.view.ViewGroup<>(java.util.List.of(
+				snownee.jade.api.view.FluidView.writeDefault(tObject, tCapacity))));
+		}
+
+		@Override
+		public java.util.List<snownee.jade.api.view.ClientViewGroup<snownee.jade.api.view.FluidView>> getClientGroups(snownee.jade.api.Accessor<?> aAccessor, java.util.List<snownee.jade.api.view.ViewGroup<net.minecraft.nbt.CompoundTag>> aGroups) {
+			return snownee.jade.api.view.ClientViewGroup.map(aGroups, snownee.jade.api.view.FluidView::readDefault, null);
+		}
 	}
 
 	/**

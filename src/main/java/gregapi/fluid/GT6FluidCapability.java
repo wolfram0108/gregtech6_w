@@ -129,4 +129,68 @@ public final class GT6FluidCapability {
 			try {FluidStack rDrained = mTileEntity.drain(mSide, aMaxDrain, aAction.execute()); return rDrained == null ? FluidStack.EMPTY : rDrained;} catch (Throwable e) {return FluidStack.EMPTY;}
 		}
 	}
+
+	// ==============================================================================================
+	// ITEM arm (BUG-145 mirror): the live 1.7.10 IFluidContainerItem contract of GT6 items exposed
+	// as ForgeCapabilities.FLUID_HANDLER_ITEM — what JEI, Jade and other mods read off an ItemStack.
+	// ==============================================================================================
+
+	private static final net.minecraft.resources.ResourceLocation ITEM_CAP_ID =
+		new net.minecraft.resources.ResourceLocation("gregapi", "fluid_container_item");
+
+	/** One listener for the whole mod (same seam as EntityFoodTracker.register / PrefixBlockOreMap):
+	 *  every stack whose item still carries the live 1.7.10 IFluidContainerItem contract gets the
+	 *  1.20.1 item capability; NBT stays the only storage format, the adapter below owns no state. */
+	public static void registerItemCapabilities() {
+		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addGenericListener(net.minecraft.world.item.ItemStack.class,
+			(net.minecraftforge.event.AttachCapabilitiesEvent<net.minecraft.world.item.ItemStack> aEvent) -> {
+				net.minecraft.world.item.ItemStack tStack = aEvent.getObject();
+				if (tStack.getItem() instanceof gt6mirror.minecraftforge.fluids.IFluidContainerItem tItem)
+					aEvent.addCapability(ITEM_CAP_ID, new ItemProvider(tStack, tItem));
+			});
+	}
+
+	private static final class ItemProvider implements net.minecraftforge.common.capabilities.ICapabilityProvider {
+		private final net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandlerItem> mHandler;
+		ItemProvider(net.minecraft.world.item.ItemStack aStack, gt6mirror.minecraftforge.fluids.IFluidContainerItem aItem) {
+			mHandler = net.minecraftforge.common.util.LazyOptional.of(() -> new GT6ItemFluidHandler(aStack, aItem));
+		}
+		@Override public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> aCapability, Direction aSide) {
+			return aCapability == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM ? mHandler.cast() : net.minecraftforge.common.util.LazyOptional.empty();
+		}
+	}
+
+	/** Thin bridge IFluidContainerItem -> IFluidHandlerItem: all tank logic stays with the GT6 item
+	 *  (getFluid/getCapacity/fill/drain over the stack's NBT), 1.7.10 null becomes 1.20.1 EMPTY. */
+	private static final class GT6ItemFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandlerItem {
+		private final net.minecraft.world.item.ItemStack mStack;
+		private final gt6mirror.minecraftforge.fluids.IFluidContainerItem mItem;
+		GT6ItemFluidHandler(net.minecraft.world.item.ItemStack aStack, gt6mirror.minecraftforge.fluids.IFluidContainerItem aItem) {mStack = aStack; mItem = aItem;}
+		@Override public net.minecraft.world.item.ItemStack getContainer() {return mStack;}
+		@Override public int getTanks() {return 1;}
+		@Override public FluidStack getFluidInTank(int aTank) {
+			try {FluidStack rFluid = mItem.getFluid(mStack); return rFluid == null ? FluidStack.EMPTY : rFluid.copy();} catch (Throwable e) {return FluidStack.EMPTY;}
+		}
+		@Override public int getTankCapacity(int aTank) {
+			try {return mItem.getCapacity(mStack);} catch (Throwable e) {return 0;}
+		}
+		@Override public boolean isFluidValid(int aTank, FluidStack aFluid) {return aFluid != null && !aFluid.isEmpty();}
+		@Override public int fill(FluidStack aResource, FluidAction aAction) {
+			if (aResource == null || aResource.isEmpty()) return 0;
+			try {return mItem.fill(mStack, aResource, aAction.execute());} catch (Throwable e) {return 0;}
+		}
+		@Override public FluidStack drain(FluidStack aResource, FluidAction aAction) {
+			if (aResource == null || aResource.isEmpty()) return FluidStack.EMPTY;
+			try {
+				FluidStack tHeld = mItem.getFluid(mStack);
+				if (tHeld == null || !tHeld.isFluidEqual(aResource)) return FluidStack.EMPTY;
+				FluidStack rDrained = mItem.drain(mStack, aResource.getAmount(), aAction.execute());
+				return rDrained == null ? FluidStack.EMPTY : rDrained;
+			} catch (Throwable e) {return FluidStack.EMPTY;}
+		}
+		@Override public FluidStack drain(int aMaxDrain, FluidAction aAction) {
+			if (aMaxDrain <= 0) return FluidStack.EMPTY;
+			try {FluidStack rDrained = mItem.drain(mStack, aMaxDrain, aAction.execute()); return rDrained == null ? FluidStack.EMPTY : rDrained;} catch (Throwable e) {return FluidStack.EMPTY;}
+		}
+	}
 }
