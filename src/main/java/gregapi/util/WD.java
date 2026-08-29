@@ -105,6 +105,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.util.*;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.IPlantable;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.biome.Biome;
@@ -627,9 +629,12 @@ public class WD {
 	public static void setMotionX(Entity aEntity, double aX) {net.minecraft.world.phys.Vec3 v = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(aX, v.y, v.z);}
 	public static void setMotionY(Entity aEntity, double aY) {net.minecraft.world.phys.Vec3 v = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(v.x, aY, v.z);}
 	public static void setMotionZ(Entity aEntity, double aZ) {net.minecraft.world.phys.Vec3 v = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(v.x, v.y, aZ);}
-	/** F-render: 1.7.10 WD.opaque(Block) = «непрозрачный полный куб» -> neo BlockState.canOcclude()
-	 *  (BlockBehaviour.java:658). Запрос по конкретному блоку — через его defaultBlockState. */
-	public static boolean opaque(Block aBlock) {return aBlock.defaultBlockState().canOcclude();}
+	/** 1.7.10 WD.opaque(Block) = overridable Block.isOpaqueCube() ("full opaque cube"). The neo carrier is
+	 *  BlockState.isSolidRender() (full occlusion cube), which GT6 blocks feed per-class via the
+	 *  getOcclusionShape bridge — same reasoning as visOpq below. canOcclude() here was wrong twice: it is
+	 *  true for partial occluders (slabs, stairs) AND for every GT6 cross block (Properties lack noOcclusion),
+	 *  so WD.set stripped grass under saplings on placement (original WD.java:482 passed isOpaqueCube). */
+	public static boolean opaque(Block aBlock) {return aBlock.defaultBlockState().isSolidRender();}
 	/** F-harvest-event (decisions/): 1.7.10 {@code ForgeEventFactory.fireBlockHarvesting} фаерил HarvestDropsEvent —
 	 *  внешние моды правили список дропа и шанс, метод возвращал шанс. neo: модель дропов = движко-fired
 	 *  {@code BlockDropsEvent} при спавне через loot-систему, ПРЯМОГО EventHooks-эквивалента НЕТ (сверено
@@ -672,6 +677,30 @@ public class WD {
 		if (aPlant == Blocks.LILY_PAD)    return tSoil.getFluidState().isSource() && tSoil.getFluidState().is(net.minecraft.tags.FluidTags.WATER); // Water (:2244: материал water + мета 0)
 		// Plains (:2243) — дефолтный тип BlockBush 1.7.10 (цветы, саженцы, травы)
 		return tSelf == Blocks.GRASS_BLOCK || tHead == Blocks.DIRT || tSelf == Blocks.FARMLAND;
+	}
+	/** F-plant CENTER: neo plant (BlockState) -> 1.7.10 IPlantable, required by GT6 soil hooks (BlockBase family,
+	 *  IMTE_CanSustainPlant). In 1.7.10 Forge patched every vanilla plant to be IPlantable; neo lost that, so
+	 *  vanilla plants never reached GT6 soils. Types mirror 1.7.10 BlockBush.getPlantType (recompSrc :122-138),
+	 *  BlockCactus (:186) and BlockReed (:163); default Plains 1:1 (:138). */
+	public static IPlantable plantable(BlockState aPlant) {
+		Block tBlock = aPlant.getBlock();
+		if (tBlock instanceof IPlantable) return (IPlantable)tBlock;
+		EnumPlantType tType =
+			tBlock instanceof net.minecraft.world.level.block.CactusBlock        ? EnumPlantType.Desert :
+			tBlock instanceof net.minecraft.world.level.block.DryVegetationBlock ? EnumPlantType.Desert : // dead_bush in 26.1.2 (Blocks.java:733-735)
+			tBlock instanceof net.minecraft.world.level.block.SugarCaneBlock     ? EnumPlantType.Beach  :
+			tBlock instanceof net.minecraft.world.level.block.LilyPadBlock       ? EnumPlantType.Water  :
+			tBlock instanceof net.minecraft.world.level.block.NetherWartBlock    ? EnumPlantType.Nether :
+			tBlock instanceof net.minecraft.world.level.block.MushroomBlock      ? EnumPlantType.Cave   :
+			tBlock instanceof net.minecraft.world.level.block.CropBlock          ? EnumPlantType.Crop   :
+			tBlock instanceof net.minecraft.world.level.block.StemBlock          ? EnumPlantType.Crop   :
+			tBlock instanceof net.minecraft.world.level.block.AttachedStemBlock  ? EnumPlantType.Crop   :
+			EnumPlantType.Plains;
+		return new IPlantable() {
+			@Override public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {return tType;}
+			@Override public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return tBlock;}
+			@Override public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return 0;}
+		};
 	}
 	/** F-spawn: 1.7.10 World.setSpawnLocation(x,y,z) -> neo ServerLevel.setRespawnData(RespawnData) (ServerLevel:1507;
 	 *  spawn = GlobalPos+yaw/pitch). Централизованный переходник (worldgen задаёт мир-спавн). Чтение — getRespawnData().pos(). */

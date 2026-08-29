@@ -121,8 +121,8 @@ public class WorldgenOresLarge extends WorldgenObject {
 						// «материал блока — жидкость» это реальный BlockState.liquid() (BlockBehaviour.java:586, поле
 						// `liquid` напрямую наследует старое Material.isLiquid).
 						if (tContact.liquid()) break;
-						// F6 (1:1): было isOpaqueCube() (пропуск не-цельных блоков при спуске) → BlockState.canOcclude() (WD.opaque).
-						if (!tContact.canOcclude()) continue;
+						// F6 (1:1): было isOpaqueCube() (пропуск не-цельных блоков при спуске) — через центр WD.opaque.
+						if (!WD.opaque(tContact.getBlock())) continue;
 						// F6 (1:1): индикатор ставится только на grass/ground/sand/rock. WD.getMaterial(Block) РЕАЛИЗОВАН
 						// (vanilla-классификация по идентичности+тегам, WD.java:474) — стух-тег снят.
 						gregapi.block.Material tMat = WD.getMaterial(tContact.getBlock());

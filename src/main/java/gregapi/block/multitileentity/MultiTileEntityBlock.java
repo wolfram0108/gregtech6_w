@@ -591,11 +591,9 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final boolean isFoliage(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsFoliage ? ((IMTE_IsFoliage)aTileEntity).isFoliage() : F;}
 	// было canSustainPlant(IBlockAccess,x,y,z,side,IPlantable) -> IBlockExtension.canSustainPlant(BlockState,BlockGetter,
 	// BlockPos,Direction,BlockState) [IBlockExtension.java:424], IPlantable(1.7.10-параметр)->BlockState(neo), TriState вместо boolean.
-	// net.minecraftforge.common.IPlantable (F10 compile-only shim) остаётся для IMTE-хука; мост BlockState->IPlantable через
-	// instanceof (GT6-плант-блоки реализуют IPlantable напрямую, см. compat-mirror/.../IPlantable.java). Дефолт (не-IPlantable
-	// плант, либо нет IMTE-хука) = TriState.DEFAULT ("плант решает сам") - 1:1 с доком IBlockExtension.canSustainPlant,
-	// заменяет прежнюю материал-зависимую vanilla-логику (та же семантика "движок решит").
-	@Override public final net.minecraft.util.TriState canSustainPlant(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide, BlockState aPlant) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (!(aTileEntity instanceof IMTE_CanSustainPlant) || !(aPlant.getBlock() instanceof IPlantable aPlantable)) return net.minecraft.util.TriState.DEFAULT; return net.minecraft.util.TriState.from(((IMTE_CanSustainPlant)aTileEntity).canSustainPlant(UT.Code.side(aSide), aPlantable));}
+	// Plant adapted via the WD.plantable center: in 1.7.10 every vanilla plant was IPlantable (Forge patch), so the
+	// IMTE hook must answer for ANY plant, not just GT6 ones — a bare instanceof left dungeon Plant Pots barren.
+	@Override public final net.minecraft.util.TriState canSustainPlant(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide, BlockState aPlant) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (!(aTileEntity instanceof IMTE_CanSustainPlant)) return net.minecraft.util.TriState.DEFAULT; return net.minecraft.util.TriState.from(((IMTE_CanSustainPlant)aTileEntity).canSustainPlant(UT.Code.side(aSide), WD.plantable(aPlant)));}
 	// F13: 1.7.10 Block.onPlantGrow удалён из neo (нет хука). IMTE_OnPlantGrow без implementor'ов (0) → мёртвая поверхность.
 	// Ванильный дефолт был пуст → отсутствие super-вызова 1:1 эквивалентно "ничего не делать". Не заглушка.
 	public final void onPlantGrow(Level aWorld, int aX, int aY, int aZ, int sX, int sY, int sZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnPlantGrow) ((IMTE_OnPlantGrow)aTileEntity).onPlantGrow(sX, sY, sZ);}

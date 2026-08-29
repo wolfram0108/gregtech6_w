@@ -339,6 +339,11 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
 	public void registerBlockIcons(Object aIconRegister) {/**/}
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {return F;}
+	// Bridges the neo soil hook into the 1.7.10-shaped override above: F for the whole family 1:1 with the
+	// original (:90), Grass/Diggable/Stones refine it virtually. Plant adapted via the WD.plantable center.
+	@Override public net.minecraft.util.TriState canSustainPlant(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide, BlockState aPlant) {
+		return net.minecraft.util.TriState.from(canSustainPlant(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aSide, WD.plantable(aPlant)));
+	}
 	public boolean canCreatureSpawn(MobCategory type, BlockGetter aWorld, int aX, int aY, int aZ) {byte aMeta = WD.meta(aWorld, aX, aY, aZ); return canCreatureSpawn(aMeta) && isSideSolid(aMeta, SIDE_TOP);}
 	public boolean isFireSource(Level aWorld, int aX, int aY, int aZ, Direction aSide) {return isFireSource(WD.meta(aWorld, aX, aY, aZ));}
 	public boolean isFlammable(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return isFlammable(WD.meta(aWorld, aX, aY, aZ));}
