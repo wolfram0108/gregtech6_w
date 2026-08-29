@@ -129,6 +129,32 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@Override
 	public boolean openRecipeGui(String aNameNEI) {return gregapi.jei.GT6_JEI_Plugin.showRecipeCategory(aNameNEI);}
 
+	/** Client half of 1.7.10 displayGUIBook (EntityPlayerSP:379-391): opens the book screen with the PASSED
+	 *  stack. Pages come from the component when the engine wrote one, else from the GT6 flat NBT "pages"
+	 *  (UT.Books.createWrittenBook:491) — one converter, both worlds. */
+	@Override
+	public void displayBook(net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.item.ItemStack aStack, boolean aWritable) {
+		net.minecraft.client.Minecraft tMC = net.minecraft.client.Minecraft.getInstance();
+		if (aWritable) {
+			net.minecraft.world.item.component.WritableBookContent tContent = aStack.get(net.minecraft.core.component.DataComponents.WRITABLE_BOOK_CONTENT);
+			if (tContent == null) tContent = new net.minecraft.world.item.component.WritableBookContent(bookPagesRaw(aStack).stream().map(net.minecraft.server.network.Filterable::passThrough).toList());
+			tMC.setScreen(new net.minecraft.client.gui.screens.inventory.BookEditScreen(aPlayer, aStack, net.minecraft.world.InteractionHand.MAIN_HAND, tContent));
+			return;
+		}
+		java.util.List<net.minecraft.network.chat.Component> tPages;
+		net.minecraft.world.item.component.WrittenBookContent tWritten = aStack.get(net.minecraft.core.component.DataComponents.WRITTEN_BOOK_CONTENT);
+		if (tWritten != null) tPages = tWritten.getPages(tMC.isTextFilteringEnabled());
+		else tPages = bookPagesRaw(aStack).stream().map(tPage -> (net.minecraft.network.chat.Component)net.minecraft.network.chat.Component.literal(tPage)).toList();
+		tMC.setScreen(new net.minecraft.client.gui.screens.inventory.BookViewScreen(new net.minecraft.client.gui.screens.inventory.BookViewScreen.BookAccess(tPages)));
+	}
+
+	private static java.util.List<String> bookPagesRaw(net.minecraft.world.item.ItemStack aStack) {
+		net.minecraft.nbt.ListTag tList = gregapi.util.UT.NBT.getNBT(aStack).getListOrEmpty("pages");
+		java.util.List<String> rPages = new java.util.ArrayList<>(tList.size());
+		for (int i = 0; i < tList.size(); i++) rPages.add(tList.getStringOr(i, ""));
+		return rPages;
+	}
+
 	@Override
 	public void registerClientModels(net.neoforged.bus.api.IEventBus aModBus) {
 		aModBus.addListener(this::onRegisterBlockStateModels);
