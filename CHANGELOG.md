@@ -28,6 +28,17 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 
 ## [Unreleased]
 
+## [6.0.0-alpha.6] — plants, books, dyes and fluid containers behave again
+
+### Fixed
+
+- GregTech sprouts no longer plant in mid-air, on walls or on stone, no longer destroy their neighbour, and dungeon plant pots hold them again.
+- Grass under a GregTech sapling no longer turns into dirt.
+- All GregTech books open and read again.
+- Fluid containers (cups, canisters, cylinders) show their fluid bar under the crosshair and report their contents to other mods.
+- Vanilla black, blue, brown and white dyes are accepted by GregTech recipes.
+- The recipe viewer no longer cycles impossible ingredients when focused on a family recipe's output.
+
 ## [6.0.0-alpha.5] — the two versions become one set of fixes, and a log that never wrote a line
 
 ### Fixed
