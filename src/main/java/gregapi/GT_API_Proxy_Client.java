@@ -129,6 +129,19 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@Override
 	public boolean openRecipeGui(String aNameNEI) {return gregapi.jei.GT6_JEI_Plugin.showRecipeCategory(aNameNEI);}
 
+	/** Client half of 1.7.10 displayGUIBook (EntityPlayerSP:379-391): opens the book screen with the PASSED
+	 *  stack. 1.20.1 keeps books in flat NBT, and BookViewScreen.BookAccess.fromItem reads that "pages" list
+	 *  directly (BookViewScreen:254-296) — the GT6 format needs no converter on this branch. */
+	@Override
+	public void displayBook(net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.item.ItemStack aStack, boolean aWritable) {
+		net.minecraft.client.Minecraft tMC = net.minecraft.client.Minecraft.getInstance();
+		if (aWritable) {
+			tMC.setScreen(new net.minecraft.client.gui.screens.inventory.BookEditScreen(aPlayer, aStack, net.minecraft.world.InteractionHand.MAIN_HAND));
+			return;
+		}
+		tMC.setScreen(new net.minecraft.client.gui.screens.inventory.BookViewScreen(net.minecraft.client.gui.screens.inventory.BookViewScreen.BookAccess.fromItem(aStack)));
+	}
+
 	@Override
 	public void registerClientModels(net.minecraftforge.eventbus.api.IEventBus aModBus) {
 		// Ветка 1.20.1: точки регистрации рендера — те же три события мод-шины, что назвал F3-render.md §4.6

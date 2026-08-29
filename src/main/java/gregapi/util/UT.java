@@ -429,7 +429,9 @@ public class UT {
 			if (Code.stringValid(aMapping)) display(aPlayer, aMapping); else display(aPlayer, F, aStack);
 		}
 		public static void display(Player aPlayer, String aMapping) {
-			aPlayer.openItemGui(getWrittenBook(aMapping, T, ST.make(Items.WRITTEN_BOOK, 1, 0)), net.minecraft.world.InteractionHand.MAIN_HAND); // F14: displayGUIBook(ItemStack) -> Player.openItemGui(ItemStack,InteractionHand) (Player.java:854, ServerPlayer шлёт ClientboundOpenBookPacket).
+			// 1.7.10 displayGUIBook opened the PASSED stack on the client; the 1.20.1 client arm opens only a
+			// WRITABLE book from the hand (LocalPlayer:567-572), so written GT6 books never opened — proxy seam.
+			gregapi.GT_API.api_proxy.displayBook(aPlayer, getWrittenBook(aMapping, T, ST.make(Items.WRITTEN_BOOK, 1, 0)), F);
 		}
 		public static void display(Player aPlayer, boolean aWritable, ItemStack aStack) {
 			if (ST.invalid(aStack)) return;
@@ -437,7 +439,7 @@ public class UT {
 		}
 		public static void display(Player aPlayer, boolean aWritable, CompoundTag aNBT) {
 			if (aNBT == null || UT.Code.stringInvalid(UT.NBT.getBookTitle(aNBT))) return;
-			aPlayer.openItemGui(ST.make(aWritable?Items.WRITABLE_BOOK:Items.WRITTEN_BOOK, 1, 0, aNBT), net.minecraft.world.InteractionHand.MAIN_HAND); // F14: displayGUIBook -> Player.openItemGui.
+			gregapi.GT_API.api_proxy.displayBook(aPlayer, ST.make(aWritable?Items.WRITABLE_BOOK:Items.WRITTEN_BOOK, 1, 0, aNBT), aWritable); // same proxy seam as the mapping overload above
 		}
 		
 		@Deprecated public static ItemStack getWrittenBook(String aMapping) {return getWrittenBook(aMapping, F, null);}

@@ -374,7 +374,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	 * {@link #registerClientModels}. Сервер: no-op, как и раньше возвращаем false.
 	 */
 	public boolean openRecipeGui(String aNameNEI) {return false;}
-	
+
+	/** 1.7.10 EntityPlayer.displayGUIBook: the CLIENT override opened a book screen with the PASSED stack
+	 *  (EntityPlayerSP:379-391), the server side was an empty body (EntityPlayer:1259). The 1.20.1 client arm
+	 *  opens only a WRITABLE book from the hand (LocalPlayer:567-572), so written GT6 books never opened.
+	 *  Same proxy seam as openRecipeGui. */
+	public void displayBook(net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.item.ItemStack aStack, boolean aWritable) {/* server: no-op, 1:1 */}
+
 	// DimensionManager (1.7.10 Forge) neo-эквивалента не имеет (не найден ни в neo-decompiled, ни в neoforge-decompiled, ни в fml-decompiled) —
 	// реальный neo-путь к текущему save-root: ServerLevel.getServer().getWorldPath(LevelResource.ROOT) (сверено, MinecraftServer.java:2058 + LevelResource.java:16).
 	@SubscribeEvent(priority = EventPriority.LOWEST) public void onWorldLoad  (LevelEvent.Load   aEvent) {if (aEvent.getLevel() instanceof ServerLevel tLevel) checkSaveLocation(tLevel.getServer().getWorldPath(LevelResource.ROOT).toFile(), F);}
