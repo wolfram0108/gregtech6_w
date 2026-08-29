@@ -292,9 +292,19 @@ public class OreDictionary {
 			registerOre("blockGlass"+ tDyes[i], ST.make(gregapi.data.CS.Flattened.STAINED_GLASS     [15-i], 1, 0));
 			registerOre("paneGlass" + tDyes[i], ST.make(gregapi.data.CS.Flattened.STAINED_GLASS_PANE[15-i], 1, 0));
 		}
-		// НОВЫЕ чистые красители neo (1.14: black/blue/brown/white_dye) в словарь НЕ регистрируются:
-		// состав ore-списков остаётся 1:1 с 1.7.10 (их принимает сам ванильный датапак-рецепт, а
-		// ore-версии роли-C дают GT-пыли — функция игрока полна; см. tReplacements роли-C).
+		// The four post-1.13 pure dyes (1.14 split: black/blue/brown/white_dye). 1.7.10 had no such items, but
+		// the engine hands them to the player as the PRIMARY dye source (cornflower -> blue_dye), and keeping
+		// them outside the dye* lists made every GT6 recipe with a dye ingredient reject them (player report
+		// 2026-08-29: crowbar refused vanilla blue dye). Explicit adaptation on the player's order; the
+		// historical carriers (ink_sac/lapis/cocoa/bone_meal) stay registered above, ore lists only widen.
+		registerOre("dye"     , ST.make(net.minecraft.world.item.Items.BLACK_DYE, 1, 0));
+		registerOre("dyeBlack", ST.make(net.minecraft.world.item.Items.BLACK_DYE, 1, 0));
+		registerOre("dye"     , ST.make(net.minecraft.world.item.Items.BLUE_DYE , 1, 0));
+		registerOre("dyeBlue" , ST.make(net.minecraft.world.item.Items.BLUE_DYE , 1, 0));
+		registerOre("dye"     , ST.make(net.minecraft.world.item.Items.BROWN_DYE, 1, 0));
+		registerOre("dyeBrown", ST.make(net.minecraft.world.item.Items.BROWN_DYE, 1, 0));
+		registerOre("dye"     , ST.make(net.minecraft.world.item.Items.WHITE_DYE, 1, 0));
+		registerOre("dyeWhite", ST.make(net.minecraft.world.item.Items.WHITE_DYE, 1, 0));
 	}
 
 	private static boolean sHasReplacedRecipes = false;

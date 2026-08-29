@@ -106,8 +106,11 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 				if (!tIn.isEmpty() && t1ToY.mEmpty < 9) {
 					List<List<ItemStack>> tCells = new java.util.ArrayList<>();
 					for (int i = 0; i < 9; i++) tCells.add(i == t1ToY.mEmpty ? tIn : List.of());
-					mGridHelper.createAndSetInputs(aBuilder, tCells, 3, 3);
-					mGridHelper.createAndSetOutputs(aBuilder, tOut);
+					List<mezz.jei.api.gui.builder.IRecipeSlotBuilder> tSlots = mGridHelper.createAndSetInputs(aBuilder, tCells, 3, 3);
+					mezz.jei.api.gui.builder.IRecipeSlotBuilder tOutSlot = mGridHelper.createAndSetOutputs(aBuilder, tOut);
+					// Player report 2026-08-29: with a focused output (R on the blue dye) the input cycled through
+					// ALL materials — a focus link filters both slots to the focused material and keeps them in step.
+					aBuilder.createFocusLink(tSlots.get(t1ToY.mEmpty), tOutSlot);
 				}
 				return;
 			} else if (aRecipe instanceof gregapi.recipes.AdvancedCraftingXToY tXToY) {
@@ -120,8 +123,13 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 					int tW = gridWidth(tN), tH = (tN + tW - 1) / tW;
 					List<List<ItemStack>> tCells = new java.util.ArrayList<>();
 					for (int i = 0; i < tW * tH; i++) tCells.add(i < tN ? tIn : List.of());
-					mGridHelper.createAndSetInputs(aBuilder, tCells, tW, tH);
-					mGridHelper.createAndSetOutputs(aBuilder, tOut);
+					List<mezz.jei.api.gui.builder.IRecipeSlotBuilder> tSlots = mGridHelper.createAndSetInputs(aBuilder, tCells, tW, tH);
+					mezz.jei.api.gui.builder.IRecipeSlotBuilder tOutSlot = mGridHelper.createAndSetOutputs(aBuilder, tOut);
+					// Same focus link as 1ToY: N input slots carry the same material list, all must follow the focus.
+					List<mezz.jei.api.gui.builder.IIngredientAcceptor<?>> tLinked = new java.util.ArrayList<>();
+					for (int i = 0; i < tN && i < tSlots.size(); i++) tLinked.add(tSlots.get(i));
+					tLinked.add(tOutSlot);
+					aBuilder.createFocusLink(tLinked.toArray(new mezz.jei.api.gui.builder.IIngredientAcceptor<?>[0]));
 				}
 				return;
 			}
