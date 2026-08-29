@@ -691,9 +691,12 @@ public class WD {
 	public static void setMotionX(Entity aEntity, double aX) {net.minecraft.world.phys.Vec3 v = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(aX, v.y, v.z);}
 	public static void setMotionY(Entity aEntity, double aY) {net.minecraft.world.phys.Vec3 v = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(v.x, aY, v.z);}
 	public static void setMotionZ(Entity aEntity, double aZ) {net.minecraft.world.phys.Vec3 v = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(v.x, v.y, aZ);}
-	/** F-render: 1.7.10 WD.opaque(Block) = «непрозрачный полный куб» -> neo BlockState.canOcclude()
-	 *  (BlockBehaviour.java:658). Запрос по конкретному блоку — через его defaultBlockState. */
-	public static boolean opaque(Block aBlock) {return aBlock.defaultBlockState().canOcclude();}
+	/** 1.7.10 WD.opaque(Block) = overridable Block.isOpaqueCube() ("full opaque cube"). The 1.20.1 carrier is
+	 *  BlockState.isSolidRender(BlockGetter,BlockPos) (full occlusion cube), which GT6 blocks feed per-class via
+	 *  the getOcclusionShape bridge — same reasoning as visOpq below. canOcclude() here was wrong twice: it is
+	 *  true for partial occluders (slabs, stairs) AND for every GT6 cross block (Properties lack noOcclusion),
+	 *  so WD.set stripped grass under saplings on placement (original WD.java:482 passed isOpaqueCube). */
+	public static boolean opaque(Block aBlock) {return aBlock.defaultBlockState().isSolidRender(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO);}
 	/** F-harvest-event (decisions/): 1.7.10 {@code ForgeEventFactory.fireBlockHarvesting} фаерил HarvestDropsEvent —
 	 *  внешние моды правили список дропа и шанс, метод возвращал шанс. neo: модель дропов = движко-fired
 	 *  {@code BlockDropsEvent} при спавне через loot-систему, ПРЯМОГО EventHooks-эквивалента НЕТ (сверено

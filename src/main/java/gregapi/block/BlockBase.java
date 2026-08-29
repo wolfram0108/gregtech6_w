@@ -344,6 +344,12 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
 	public void registerBlockIcons(Object aIconRegister) {/**/}
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {return F;}
+	// Bridges the Forge soil hook into the 1.7.10-shaped override above: F for the whole family 1:1 with the
+	// original (:90), Grass/Diggable/Stones refine it virtually. 1.20.1 keeps the 1.7.10 hook shape (IPlantable,
+	// boolean — IForgeBlock.java:354) and vanilla plants implement IPlantable, so no plant adapter is needed.
+	@Override public boolean canSustainPlant(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos, Direction aSide, IPlantable aPlant) {
+		return canSustainPlant(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aSide, aPlant);
+	}
 	public boolean canCreatureSpawn(MobCategory type, BlockGetter aWorld, int aX, int aY, int aZ) {byte aMeta = WD.meta(aWorld, aX, aY, aZ); return canCreatureSpawn(aMeta) && isSideSolid(aMeta, SIDE_TOP);}
 	public boolean isFireSource(Level aWorld, int aX, int aY, int aZ, Direction aSide) {return isFireSource(WD.meta(aWorld, aX, aY, aZ));}
 	public boolean isFlammable(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return isFlammable(WD.meta(aWorld, aX, aY, aZ));}

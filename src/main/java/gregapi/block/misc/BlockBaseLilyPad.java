@@ -85,10 +85,12 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	// super-вызова (Block.java:661-669 recompSrc), тот же приём, что уже принят в MultiTileEntityBlock.
 	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {if (!(aEntity instanceof Boat)) {AABB tBox = getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ); if (tBox != null && aAABB.intersects(tBox)) aList.add(tBox);}}
 	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return aY >= WD.minY(aWorld) && aY < WD.topY(aWorld) && WD.getMaterial(WD.block(aWorld, aX, aY - 1, aZ)) == Material.water && WD.meta(aWorld, aX, aY - 1, aZ) == 0;} // BUG-089: было aY >= 0 && aY < 256 — границы мира через центр F6-Y-scale
-	// было Block.canPlaceBlockAt(World,x,y,z) (1.7.10, дефолт world.getBlock(x,y,z).isReplaceable(...), Block.java:1046-1049)
-	// удалён из neo целиком - inline-порт вместо super через уже-существующий центр WD.replaceable (тот же приём, что
-	// BlockBase.onItemUse уже использует для идентичной проверки).
-	public boolean canPlaceBlockAt(Level aWorld, int aX, int aY, int aZ) {return WD.replaceable(WD.block(aWorld, aX, aY, aZ), aWorld, aX, aY, aZ) && canBlockStay(aWorld, aX, aY, aZ);}
+	// 1.7.10 canPlaceBlockAt override (original :73 = isReplaceable(target) && canBlockStay) is expressed by the
+	// engine channel: target replaceability is clause (2) of WD.canPlaceEntityOnSide, support is canSurvive below —
+	// same bridge as BlockBaseFlower:235. Removal on lost support stays the GT6 checkAndDropBlock channel (1:1).
+	@Override public boolean canSurvive(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.LevelReader aWorld, net.minecraft.core.BlockPos aPos) {
+		return aWorld instanceof Level tLevel ? canBlockStay(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : super.canSurvive(aState, aWorld, aPos);
+	}
 	@Override public boolean checkNoEntityCollision(Level aWorld, int aX, int aY, int aZ, byte aMeta, Entity aExceptThisOne) {return T;}
 	@Override public void onNeighborBlockChange2(Level aWorld, int aX, int aY, int aZ, Block aBlock) {checkAndDropBlock(aWorld, aX, aY, aZ);}
 	@Override public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {checkAndDropBlock(aWorld, aX, aY, aZ);}

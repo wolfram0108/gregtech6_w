@@ -196,10 +196,12 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		return !aBlock.defaultBlockState().isSolidRender(aWorld, new net.minecraft.core.BlockPos(aX, aY, aZ));
 	}
 	
-	// было Block.canPlaceBlockAt(World,x,y,z) (1.7.10, дефолт world.getBlock(x,y,z).isReplaceable(...), Block.java:1046-1049)
-	// удалён из neo целиком - inline-порт вместо super через уже-существующий центр WD.replaceable, тот же приём, что
-	// BlockBaseLilyPad.canPlaceBlockAt уже использует.
-	public boolean canPlaceBlockAt(Level aWorld, int aX, int aY, int aZ) {return WD.replaceable(WD.block(aWorld, aX, aY, aZ), aWorld, aX, aY, aZ) && canBlockStay(aWorld, aX, aY, aZ);}
+	// 1.7.10 canPlaceBlockAt override (original :133 = isReplaceable(target) && canBlockStay) is expressed by the
+	// engine channel: target replaceability is clause (2) of WD.canPlaceEntityOnSide, support is canSurvive below —
+	// same bridge as BlockBaseFlower:235. Removal on lost support stays the GT6 checkAndDropBlock channel (1:1).
+	@Override public boolean canSurvive(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.LevelReader aWorld, net.minecraft.core.BlockPos aPos) {
+		return aWorld instanceof Level tLevel ? canBlockStay(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : super.canSurvive(aState, aWorld, aPos);
+	}
 	
 	@Override
 	public void onNeighborBlockChange2(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
