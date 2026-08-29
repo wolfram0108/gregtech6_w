@@ -29,6 +29,19 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+## [6.0.0-1.20.1-alpha.2] — plants, books, dyes and fluid containers behave again
+
+The same six fixes as `6.0.0-alpha.6` on the main branch, made against this version of the engine.
+
+### Fixed
+
+- GregTech sprouts no longer plant in mid-air, on walls or on stone, no longer destroy their neighbour, and dungeon plant pots hold them again.
+- Grass under a GregTech sapling no longer turns into dirt.
+- All GregTech books open and read again.
+- Fluid containers (cups, canisters, cylinders) show their fluid bar under the crosshair and report their contents to other mods.
+- Vanilla black, blue, brown and white dyes are accepted by GregTech recipes.
+- The recipe viewer no longer cycles impossible ingredients when focused on a family recipe's output.
+
 ## [6.0.0-1.20.1-alpha.1] — the port runs on Minecraft 1.20.1
 
 First release of the backport. It is the same mod as the `main` branch, rebuilt against Minecraft
