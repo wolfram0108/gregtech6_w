@@ -87,6 +87,53 @@ public class GT6FluidCapability {
 		}
 		aEvent.registerBlock(Capabilities.Fluid.BLOCK, GT6FluidCapability::handlerAt, tBlocks.toArray(new net.minecraft.world.level.block.Block[0]));
 		gregapi.data.CS.OUT.println("GT6 F5-capability: канал жидкостей зарегистрирован для " + tBlocks.size() + " MTE-блоков (Capabilities.Fluid.BLOCK).");
+		// Second half of the same class: 1.7.10 ITEM-side interface IFluidContainerItem is alive 1:1 on the
+		// items (BUG-045) but was never registered as Capabilities.Fluid.ITEM — container items looked empty
+		// to JEI and other mods. One adapter bridges the GT6 channel; items enumerated by the same rule.
+		List<net.minecraft.world.item.Item> tItems = new ArrayList<>();
+		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM)
+			if (tItem instanceof net.minecraftforge.fluids.IFluidContainerItem) tItems.add(tItem);
+		if (!tItems.isEmpty()) {
+			aEvent.registerItem(Capabilities.Fluid.ITEM,
+				(aStack, aAccess) -> aStack.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem ? new GT6ItemFluidHandler(aAccess) : null,
+				tItems.toArray(new net.minecraft.world.level.ItemLike[0]));
+			gregapi.data.CS.OUT.println("GT6 F5-capability: канал жидкостей предметов зарегистрирован для " + tItems.size() + " предметов (Capabilities.Fluid.ITEM).");
+		}
+	}
+
+	/** Item side: bridges the live 1.7.10 IFluidContainerItem bodies (getFluid/getCapacity/fill/drain mutate
+	 *  the stack NBT) into the neo transactional contract — same "one adapter over the GT6 channel" approach
+	 *  as handlerOf() above. update() rebuilds a stack via the GT6 channel so NBT stays the single format. */
+	private static final class GT6ItemFluidHandler extends net.neoforged.neoforge.transfer.ItemAccessResourceHandler<FluidResource> {
+		private GT6ItemFluidHandler(net.neoforged.neoforge.transfer.access.ItemAccess aAccess) {super(aAccess, 1);}
+
+		private static net.neoforged.neoforge.fluids.FluidStack fluidOf(net.neoforged.neoforge.transfer.item.ItemResource aResource) {
+			net.minecraft.world.item.ItemStack tStack = aResource.toStack(1);
+			return tStack.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem tItem ? tItem.getFluid(tStack) : null;
+		}
+
+		@Override protected FluidResource getResourceFrom(net.neoforged.neoforge.transfer.item.ItemResource aResource, int aIndex) {
+			net.neoforged.neoforge.fluids.FluidStack tFluid = fluidOf(aResource);
+			return tFluid == null || tFluid.isEmpty() ? FluidResource.EMPTY : FluidResource.of(tFluid);
+		}
+
+		@Override protected int getAmountFrom(net.neoforged.neoforge.transfer.item.ItemResource aResource, int aIndex) {
+			net.neoforged.neoforge.fluids.FluidStack tFluid = fluidOf(aResource);
+			return tFluid == null ? 0 : tFluid.getAmount();
+		}
+
+		@Override protected int getCapacity(int aIndex, FluidResource aResource) {
+			net.minecraft.world.item.ItemStack tStack = itemAccess.getResource().toStack(1);
+			return tStack.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem tItem ? tItem.getCapacity(tStack) : 0;
+		}
+
+		@Override protected net.neoforged.neoforge.transfer.item.ItemResource update(net.neoforged.neoforge.transfer.item.ItemResource aResource, int aIndex, FluidResource aNewResource, int aNewAmount) {
+			net.minecraft.world.item.ItemStack tStack = aResource.toStack(1);
+			if (!(tStack.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem tItem)) return null;
+			tItem.drain(tStack, Integer.MAX_VALUE, true);
+			if (aNewAmount > 0 && tItem.fill(tStack, aNewResource.toStack(aNewAmount), true) != aNewAmount) return null;
+			return net.neoforged.neoforge.transfer.item.ItemResource.of(tStack);
+		}
 	}
 
 	/** Блок-вариант провайдера: BlockEntity движок передаёт сам (может быть null, если его ещё нет). */

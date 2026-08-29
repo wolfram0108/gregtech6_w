@@ -117,6 +117,35 @@ public class Compat_Jade implements IWailaPlugin {
 		for (String tToolType : VANILLA_TOOL_TYPES) HarvestToolProvider.registerHandler(() -> new GT6ToolHandler(tToolType, snownee.jade.api.JadeIds.JADE(tToolType)));
 		// BUG-070 п.2/п.3 — строка «какой уровень нужен» и «что в руке»: у Jade такой строки нет ни для кого
 		aRegistration.registerBlockComponent(GT6HarvestLevelProvider.INSTANCE, Block.class);
+		aRegistration.registerFluidStorageClient(GT6FluidContainerProvider.INSTANCE);
+	}
+
+	@Override
+	public void register(snownee.jade.api.IWailaCommonRegistration aRegistration) {
+		// Showcase-only provider (BUG-088 precedent): small GT6 containers (cups, glasses) interact through
+		// taps by design and expose no Fluid.BLOCK capability, so Jade's built-in bak component is silent on
+		// them. This feeds the SAME tank the item tooltip prints (mTank) into the standard fluid bar —
+		// mechanics untouched. Barrels/canisters are a sibling branch already covered by the capability.
+		aRegistration.registerFluidStorage(GT6FluidContainerProvider.INSTANCE, gregapi.tileentity.tank.TileEntityBase08FluidContainer.class);
+	}
+
+	public enum GT6FluidContainerProvider implements snownee.jade.api.view.IServerExtensionProvider<snownee.jade.api.view.FluidView.Data>, snownee.jade.api.view.IClientExtensionProvider<snownee.jade.api.view.FluidView.Data, snownee.jade.api.view.FluidView> {
+		INSTANCE;
+
+		@Override public Identifier getUid() {return Identifier.fromNamespaceAndPath("gregapi", "fluid_container");}
+
+		@Override
+		public java.util.List<snownee.jade.api.view.ViewGroup<snownee.jade.api.view.FluidView.Data>> getGroups(snownee.jade.api.Accessor<?> aAccessor) {
+			if (aAccessor instanceof snownee.jade.api.BlockAccessor tBlockAccessor
+					&& tBlockAccessor.getBlockEntity() instanceof gregapi.tileentity.tank.TileEntityBase08FluidContainer tContainer)
+				return snownee.jade.util.JadeForgeUtils.fromFluidHandler(tContainer.mTank.asResourceHandler());
+			return null;
+		}
+
+		@Override
+		public java.util.List<snownee.jade.api.view.ClientViewGroup<snownee.jade.api.view.FluidView>> getClientGroups(snownee.jade.api.Accessor<?> aAccessor, java.util.List<snownee.jade.api.view.ViewGroup<snownee.jade.api.view.FluidView.Data>> aGroups) {
+			return snownee.jade.api.view.ClientViewGroup.map(aGroups, snownee.jade.api.view.FluidView::readDefault, null);
+		}
 	}
 
 	/** Один тип GT6-инструмента: «подходит ли он этому блоку» решает сам блок своим {@code getHarvestTool}. */
