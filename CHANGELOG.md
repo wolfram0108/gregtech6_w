@@ -28,6 +28,12 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 
 ## [Unreleased]
 
+## [6.0.0-alpha.6.1] — the recipe viewer keeps one material on both sides of a card
+
+### Fixed
+
+- A recipe card built from a material family no longer pairs an ingredient of one metal with a result of another: the input and the output always show the same material, whether the card cycles on its own or is focused on one result.
+
 ## [6.0.0-alpha.6] — plants, books, dyes and fluid containers behave again
 
 ### Fixed
