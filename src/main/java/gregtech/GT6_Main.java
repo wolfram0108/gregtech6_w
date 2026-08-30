@@ -263,6 +263,8 @@ public class GT6_Main extends Abstract_Mod {
 		new Compat_Recipes_MineFactoryReloaded  (MD.MFR           , this); // Has to be after RC!
 		new Compat_Recipes_AppliedEnergistics   (MD.AE            , this);
 		new Compat_Recipes_Bluepower            (MD.BP            , this);
+		new Compat_Recipes_MoreRed              (MD.MR            , this);
+		new Compat_MoreRed                      (MD.MR            , this);
 		new Compat_Recipes_ProjectRed           (MD.PR            , this);
 		new Compat_Recipes_ProjectE             (MD.PE            , this);
 		new Compat_Recipes_OpenComputers        (MD.OC            , this);

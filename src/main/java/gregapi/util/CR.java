@@ -751,6 +751,16 @@ public class CR {
 	 *  Дренаж — тот же {@code GT_API.onLevelLoadEarlyItemInit}, тот же центр {@code GT_API.removeDatapackRecipes}. */
 	public static final List<ItemStack> DATAPACK_REMOVALS_OUT = new ArrayListNoNulls<>();
 
+	/** Третье плечо того же класса. Первые два судят сетку и выход, то есть умеют только верстак; чужой мод со
+	 *  своим станком держит рецепты СВОЕГО типа, и гасить их поштучно значит переписывать чужой датапак. */
+	public static final java.util.Set<String> DATAPACK_REMOVALS_TYPE = new gregapi.code.HashSetNoNulls<>();
+
+	/** Гасит станок чужого мода целиком: {@code remoutType(MD.MR, "soldering")} снимает все его рецепты. */
+	public static boolean remoutType(ModData aMod, String... aTypes) {
+		if (aMod.mLoaded) for (String tType : aTypes) DATAPACK_REMOVALS_TYPE.add(aMod.mPrefix + tType);
+		return aMod.mLoaded;
+	}
+
 	/**
 	 * Removes a Crafting Recipe and gives you the former output of it.
 	 * @param aRecipe The content of the Crafting Grid as ItemStackArray with length 9

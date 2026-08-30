@@ -2581,6 +2581,7 @@ public class CS {
 		
 		, RP                = "Redpower"
 		, BP                = "bluepower"
+		, MR                = "morered"
 		, PR                = "ProjRed|Core"
 		, PR_TRANSPORT      = "ProjRed|Transportation"
 		, PR_INTEGRATION    = "ProjRed|Integration"

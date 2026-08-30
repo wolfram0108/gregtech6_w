@@ -42,6 +42,7 @@ import net.minecraftforge.common.Tags;
 
 import gregapi.data.CS;
 import gregapi.data.MD;
+import gregapi.data.MT;
 import gregapi.data.OD;
 import gregapi.data.OP;
 import gregapi.util.ST;
@@ -168,6 +169,12 @@ public class OreDictTags {
 		// forge:rods/wooden (Tags.java:378; AE2 ConventionTags:93 читает его как WOOD_STICK) — «wooden» это не имя
 		// материала GT6; деревянная палка у Грега это stickWood (OD.java, вход ванильного словаря).
 		tExceptions.put("rods/wooden"       , OD.stickWood.toString());
+		// forge:ingots/redstone_alloy — по правилу имён это RedstoneAlloy, сплав EnderIO (MT.java: Si + Redstone).
+		// Но наполняет тег More Red, а он сплавляет свой слиток из МЕДИ (его red_alloyable_ingots это
+		// forge:ingots/copper), то есть по составу это RedAlloy Грега (Cu + Redstone), сплав RedPower, наследником
+		// которого мод и является. Имя тега и вещество в нём разошлись у автора тега; без этой строки медный сплав
+		// числился бы кремниевым. Условие на мод: пока такого тега никто не наполняет, правило имён верно само.
+		if (MD.MR.mLoaded) tExceptions.put("ingots/redstone_alloy", OP.ingot.mNameInternal + MT.RedAlloy.mNameInternal);
 		sExceptions = tExceptions;
 	}
 

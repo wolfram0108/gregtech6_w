@@ -769,6 +769,14 @@ public class GT_API extends Abstract_Mod {
 						} catch(Throwable e) {/*чужой рецепт упал на getResultItem — не наш суд*/}
 					}
 				}
+				// Третье плечо ТОГО ЖЕ класса — снятие по ТИПУ рецепта (CR.remoutType). Набор не осушается:
+				// он описывает станок, а не разовую заявку, и переприменяется на каждой загрузке мира.
+				if (!gregapi.util.CR.DATAPACK_REMOVALS_TYPE.isEmpty()) {
+					for (net.minecraft.world.item.crafting.Recipe<?> tAny : tServer.getRecipeManager().getRecipes()) {
+						net.minecraft.resources.ResourceLocation tType = net.minecraftforge.registries.ForgeRegistries.RECIPE_TYPES.getKey(tAny.getType());
+						if (tType != null && gregapi.util.CR.DATAPACK_REMOVALS_TYPE.contains(tType.toString())) tRemove.add(tAny.getId());
+					}
+				}
 				gregapi.util.CR.DATAPACK_REMOVALS_OUT.clear();
 				gregapi.util.CR.DATAPACK_REMOVALS.clear();
 				// Перезаход в одиночке = НОВЫЙ MinecraftServer со свежим (полным) датапаком, а очереди сканов

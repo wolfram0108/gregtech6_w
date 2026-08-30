@@ -195,6 +195,13 @@ repositories {
         url = 'https://api.modrinth.com/maven'
         content { includeGroup 'maven.modrinth' }
     }
+
+    // More Red (наследник RedPower) и две его обязательные зависимости. Автор публикует их сам;
+    // на Modrinth лежит только сам мод, поэтому источник один — его maven.
+    maven {
+        url = 'https://maven.commoble.net'
+        content { includeGroupByRegex 'commoble\\..*' }
+    }
 }
 
 base {
@@ -386,6 +393,18 @@ dependencies {
     // GuideME — обязательная зависимость AE2 (её mods.toml: modId="guideme", mandatory=true); без неё
     // загрузчик AE2 не поднимет. Только рантайм: наш код её не трогает.
     modLocalRuntime "maven.modrinth:guideme:${guideme_version}"
+
+    // More Red (наследник RedPower) — нужен ТОЛЬКО для стенда gt6moreredprobe: судья спрашивает
+    // РЕАЛЬНЫЙ мод теми же каналами, какими тот решает судьбу сигнала (MoreRedAPI: реестры
+    // соединителей и источников мощности; ванильные getSignal/canConnectRedstone у провода).
+    // Production-код на мод НЕ ссылается: в линии 1.20.1 стык целиком ванильный, кода интеграции нет.
+    compileOnly "commoble.morered:morered-${minecraft_version}:${morered_version}"
+    // modLocalRuntime, а не localRuntime: production-jar мода зовёт движок SRG-именами — тот же приём,
+    // что у Jade, JourneyMap и AE2 выше.
+    modLocalRuntime "commoble.morered:morered-${minecraft_version}:${morered_version}"
+    // Обязательные зависимости мода (mods.toml: mandatory=true). Только рантайм: наш код их не трогает.
+    modLocalRuntime "commoble.useitemonblockevent:useitemonblockevent-${minecraft_version}:${useitemonblockevent_version}"
+    modLocalRuntime "commoble.jumbofurnace:jumbofurnace-${minecraft_version}:${jumbofurnace_version}"
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
