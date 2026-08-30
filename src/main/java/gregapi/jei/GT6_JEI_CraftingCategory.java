@@ -97,39 +97,24 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 				List<Object> tInput = ((ShapelessOreRecipe)aRecipe).getInput();
 				mGridHelper.createAndSetInputs(aBuilder, cells(tInput.toArray()), 0, 0);
 			} else if (aRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY t1ToY) {
-				// BUG-099: продукт выбирается КЛЕТКОЙ — предмет кладётся так, чтобы перед ним стояло ровно
-				// mEmpty пустых (то же число, по которому рецепт себя опознаёт, AdvancedCrafting1ToY:161).
-				// Рисуем настоящую сетку 3x3 с предметом в этой клетке: игрок видит не только ЧТО получится,
-				// но и КУДА положить — без этого механику из витрины не узнать.
+				// The product is chosen by the CELL the item sits in, so the card must show that cell.
 				List<ItemStack> tIn = new java.util.ArrayList<>(), tOut = new java.util.ArrayList<>();
 				materialPairs(t1ToY, t1ToY.mInput, t1ToY.mOutput, t1ToY.mOutputCount, m -> t1ToY.hasOutputFor(m), tIn, tOut);
 				if (!tIn.isEmpty() && t1ToY.mEmpty < 9) {
-					List<List<ItemStack>> tCells = new java.util.ArrayList<>();
-					for (int i = 0; i < 9; i++) tCells.add(i == t1ToY.mEmpty ? tIn : List.of());
-					List<mezz.jei.api.gui.builder.IRecipeSlotBuilder> tSlots = mGridHelper.createAndSetInputs(aBuilder, tCells, 3, 3);
-					mezz.jei.api.gui.builder.IRecipeSlotBuilder tOutSlot = mGridHelper.createAndSetOutputs(aBuilder, tOut);
-					// Player report 2026-08-29: with a focused output (R on the blue dye) the input cycled through
-					// ALL materials — a focus link filters both slots to the focused material and keeps them in step.
-					aBuilder.createFocusLink(tSlots.get(t1ToY.mEmpty), tOutSlot);
+					boolean[] tFilled = new boolean[9];
+					tFilled[t1ToY.mEmpty] = T;
+					family(aBuilder, tFilled, tIn, tOut);
 				}
 				return;
 			} else if (aRecipe instanceof gregapi.recipes.AdvancedCraftingXToY tXToY) {
-				// BUG-099: X одинаковых предметов префикса → выход. Позиции не важны (рецепт считает только
-				// количество) — показываем плотной раскладкой, как их и кладут.
+				// Positions carry no meaning here (the recipe counts items), so fill the first N cells.
 				List<ItemStack> tIn = new java.util.ArrayList<>(), tOut = new java.util.ArrayList<>();
 				materialPairs(tXToY, tXToY.mInput, tXToY.mOutput, tXToY.mOutputCount, m -> tXToY.hasOutputFor(m), tIn, tOut);
 				int tN = tXToY.mInputCount;
 				if (!tIn.isEmpty() && tN > 0 && tN <= 9) {
-					int tW = gridWidth(tN), tH = (tN + tW - 1) / tW;
-					List<List<ItemStack>> tCells = new java.util.ArrayList<>();
-					for (int i = 0; i < tW * tH; i++) tCells.add(i < tN ? tIn : List.of());
-					List<mezz.jei.api.gui.builder.IRecipeSlotBuilder> tSlots = mGridHelper.createAndSetInputs(aBuilder, tCells, tW, tH);
-					mezz.jei.api.gui.builder.IRecipeSlotBuilder tOutSlot = mGridHelper.createAndSetOutputs(aBuilder, tOut);
-					// Same focus link as 1ToY: N input slots carry the same material list, all must follow the focus.
-					List<mezz.jei.api.gui.builder.IIngredientAcceptor<?>> tLinked = new java.util.ArrayList<>();
-					for (int i = 0; i < tN && i < tSlots.size(); i++) tLinked.add(tSlots.get(i));
-					tLinked.add(tOutSlot);
-					aBuilder.createFocusLink(tLinked.toArray(new mezz.jei.api.gui.builder.IIngredientAcceptor<?>[0]));
+					boolean[] tFilled = new boolean[9];
+					for (int i = 0; i < tN; i++) tFilled[i] = T;
+					family(aBuilder, tFilled, tIn, tOut);
 				}
 				return;
 			}
@@ -146,12 +131,19 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 	 *  Ноль обязателен: упавшая раскладка оставляет карточку БЕЗ слотов (выход ставится после входов). */
 	public static int sLayoutFailures = 0;
 
-	/** BUG-121: ширина плотной раскладки. Сетка JEI — строго 3×3 (девять слотов создаёт
-	 *  {@code CraftingGridHelper.createInputSlots}: два цикла по 3), а индекс клетки при ШИРИНЕ 2
-	 *  считается со сдвигами (i>1 → +1, i>3 → +1, javap {@code getCraftingIndex}), поэтому седьмой
-	 *  предмет попадает в индекс 9 — {@code IndexOutOfBoundsException: Index 9 out of bounds for
-	 *  length 9}, и рецепт терял в витрине ВСЕ слоты. Ширина 2 допустима только пока высота ≤ 3. */
-	private static int gridWidth(int aCount) {return aCount <= 2 ? aCount : (aCount <= 4 ? 2 : 3);}
+	/** The only place a family card (prefix recipe, paired material lists) becomes slots.
+	 *  The grid stays 3x3 because only there JEI's cell-to-slot mapping is the identity, so no index is ever guessed. */
+	private void family(IRecipeLayoutBuilder aBuilder, boolean[] aFilled, List<ItemStack> aInputs, List<ItemStack> aOutputs) {
+		List<List<ItemStack>> tCells = new ArrayList<>(9);
+		for (int i = 0; i < 9; i++) tCells.add(aFilled[i] ? aInputs : List.of());
+		List<mezz.jei.api.gui.builder.IRecipeSlotBuilder> tSlots = mGridHelper.createAndSetInputs(aBuilder, tCells, 3, 3);
+		mezz.jei.api.gui.builder.IRecipeSlotBuilder tOutSlot = mGridHelper.createAndSetOutputs(aBuilder, aOutputs);
+		List<mezz.jei.api.gui.builder.IIngredientAcceptor<?>> tLinked = new ArrayList<>();
+		for (int i = 0; i < 9; i++) if (aFilled[i]) tLinked.add(tSlots.get(i));
+		tLinked.add(tOutSlot);
+		// Without the link a focused output leaves the input cycling through every material.
+		aBuilder.createFocusLink(tLinked.toArray(new mezz.jei.api.gui.builder.IIngredientAcceptor<?>[0]));
+	}
 
 	/** ⛔ ПРАВИЛО ВИТРИНЫ 1.7.10, восстановленное дословно (репорт игрока «части некоторых рецептов
 	 *  отсутствуют»): рецепт, у которого ХОТЬ ОДНА ячейка — пустой список вариантов (ore-имя, под
@@ -218,12 +210,19 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 
 	private static void materialPairs(gregapi.oredict.OreDictPrefix aInput, gregapi.oredict.OreDictPrefix aOutput, int aOutputCount
 	, java.util.function.Predicate<gregapi.oredict.OreDictMaterial> aHasOutput, List<ItemStack> rInputs, List<ItemStack> rOutputs) {
+		java.util.Set<String> tSeen = new java.util.HashSet<>();
 		for (gregapi.oredict.OreDictMaterial tMaterial : new java.util.LinkedHashSet<>(gregapi.oredict.OreDictMaterial.MATERIAL_MAP.values())) {
-			if (tMaterial == null || !aHasOutput.test(tMaterial)) continue;
+			if (tMaterial == null) continue;
 			ItemStack tIn = aInput.mat(tMaterial, 1);
 			if (!ST.valid(tIn)) continue;
-			ItemStack tOut = aOutput.mat(tMaterial, aOutputCount);
-			if (!ST.valid(tOut)) continue;
+			// The recipe judges the STACK, and the dictionary may unify it into another material or prefix,
+			// so the pair is built from what the stack really is — never from the material key asked for.
+			gregapi.oredict.OreDictItemData tData = gregapi.util.OM.anydata_(tIn);
+			if (tData == null || tData.mPrefix != aInput || tData.mMaterial == null) continue;
+			gregapi.oredict.OreDictMaterial tActual = tData.mMaterial.mMaterial;
+			if (tActual == null || !aHasOutput.test(tActual)) continue;
+			ItemStack tOut = aOutput.mat(tActual, aOutputCount);
+			if (!ST.valid(tOut) || !tSeen.add(ST.identityKey(tIn))) continue;
 			rInputs.add(tIn); rOutputs.add(tOut);
 		}
 	}

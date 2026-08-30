@@ -29,6 +29,14 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+## [6.0.0-1.20.1-alpha.2.1] — the recipe viewer keeps one material on both sides of a card
+
+The same fix as `6.0.0-alpha.6.1` on the main branch, made against this version of the engine.
+
+### Fixed
+
+- A recipe card built from a material family no longer pairs an ingredient of one metal with a result of another: the input and the output always show the same material, whether the card cycles on its own or is focused on one result.
+
 ## [6.0.0-1.20.1-alpha.2] — plants, books, dyes and fluid containers behave again
 
 The same six fixes as `6.0.0-alpha.6` on the main branch, made against this version of the engine.
