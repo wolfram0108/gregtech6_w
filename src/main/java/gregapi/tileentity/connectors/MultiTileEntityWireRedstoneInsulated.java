@@ -133,6 +133,9 @@ public class MultiTileEntityWireRedstoneInsulated extends TileEntityBase10Connec
 			mReceived = SIDE_UNDEFINED;
 		}
 		for (byte tSide : ALL_SIDES_VALID_BUT[oReceived]) if ((tRedstone = getRedstoneAtSide(tSide)) > mRedstone) {mRedstone = tRedstone; mReceived = tSide;}
+		// A changed intake side flips which sides this wire emits to, and neighbouring signal graphs
+		// cache that per node: without this notice they keep feeding the wire what it just fed them.
+		if (mReceived != oReceived) gregapi.compat.SignalGraphBridge.notifyChanged(level, getBlockPos());
 		if (mRedstone != oRedstone) {if (mConnectedToNonWire) causeBlockUpdate(); return T;}
 		return F;
 	}

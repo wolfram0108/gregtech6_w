@@ -43,7 +43,7 @@ public class EnergyCompat {
 	// Э0 (AE2 26.1): AE_ENERGY снят из списка. Флаг сторожил спец-случай «EU напрямую в AE2» —
 	// appeng.tile.powersink.IC2 (AE2 rv2 реализовывал приёмник энергии IC2 сам). В AE2 26.1 такого класса
 	// нет: сеть принимает только FE. Выход GT6 на FE-капу движка — этап Э5, здесь ветка просто снята.
-	public static boolean RF_ENERGY = F, RF_ENERGY_NEW = F, FL_ENERGY = F, WD_ENERGY = F, IC_ENERGY = F, BB_ENERGY = F, GC_ENERGY = F, BC_LASER = F;
+	public static boolean RF_ENERGY = F, RF_ENERGY_NEW = F, FL_ENERGY = F, WD_ENERGY = F, IC_ENERGY = F, BB_ENERGY = F, GC_ENERGY = F, BC_LASER = F, XM_ROTATION = F;
 	
 	/** Gets Called once during postInit to see which Interfaces are there and Classloaded. */
 	@SuppressWarnings("ResultOfMethodCallIgnored")
@@ -89,6 +89,13 @@ public class EnergyCompat {
 			buildcraft.api.power.ILaserTarget                            .class.getCanonicalName();
 			BC_LASER = T;
 		} catch(Throwable e) {/**/}
+		try {
+			net.commoble.exmachina.api.ExMachinaRegistries               .class.getCanonicalName();
+			net.commoble.exmachina.api.MechanicalNodeStates              .class.getCanonicalName();
+			net.commoble.exmachina.api.MechanicalState                   .class.getCanonicalName();
+			net.commoble.exmachina.api.NodeShape                         .class.getCanonicalName();
+			XM_ROTATION = T;
+		} catch(Throwable e) {/**/}
 	}
 	
 	public static boolean isElectricRFReceiver(BlockEntity aReceiver) {
@@ -101,6 +108,22 @@ public class EnergyCompat {
 		return F;
 	}
 	
+	/** Rotation, asked by the Axles the same way the electric Wires ask canConnectElectricity. */
+	public static boolean canConnectRotation(BlockEntity aThis, BlockEntity aTarget, byte aSide) {
+		if (aTarget == null) return F;
+		if (aTarget instanceof ITileEntityEnergy) return ((ITileEntityEnergy)aTarget).isEnergyAcceptingFrom(TD.Energy.RU, aSide, T) || ((ITileEntityEnergy)aTarget).isEnergyEmittingTo(TD.Energy.RU, aSide, T);
+		return isMechanical(aTarget);
+	}
+
+	/** A foreign Block only turns if some Mod put it into the mechanical Graph, so that Registry is the Answer. */
+	public static boolean isMechanical(BlockEntity aTarget) {
+		if (!XM_ROTATION || aTarget == null || aTarget.getLevel() == null) return F;
+		try {
+			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aTarget.getBlockState().getBlock());
+			return tKey != null && aTarget.getLevel().registryAccess().lookupOrThrow(net.commoble.exmachina.api.ExMachinaRegistries.MECHANICAL_COMPONENT).containsKey(tKey);
+		} catch(Throwable e) {return F;}
+	}
+
 	@SuppressWarnings("deprecation")
 	public static boolean canConnectElectricity(BlockEntity aThis, BlockEntity aTarget, byte aSide) {
 		if (aTarget == null) return F;
@@ -162,6 +185,23 @@ public class EnergyCompat {
 		if (aAmount <= 0 || aSize == 0 || aReceiver == null) return 0;
 		// Obvious GT6 Blocks should not be eligible for Compat. Should reduce some IC2 Compat Lag.
 		if (aReceiver instanceof gregapi.tileentity.base.TileEntityBase01Root) return 0;
+		
+		// Foreign Machines read their Node State and nothing else, so that is where the Rotation has to go.
+		if (aEnergyType == TD.Energy.RU) {
+			if (!isMechanical(aReceiver)) return 0;
+			try {
+				java.util.Map<net.commoble.exmachina.api.NodeShape, net.commoble.exmachina.api.MechanicalState> tStates = aReceiver.getData(net.commoble.exmachina.api.MechanicalNodeStates.HOLDER.get());
+				// The Windmills own the whole Block while the Plates own one Face, so write into the Node that is there.
+				net.commoble.exmachina.api.NodeShape tFace = net.commoble.exmachina.api.NodeShape.ofSide(FORGE_DIR[aSide]), tCube = net.commoble.exmachina.api.NodeShape.ofCube();
+				net.commoble.exmachina.api.NodeShape tShape = !tStates.containsKey(tFace) && tStates.containsKey(tCube) ? tCube : tFace;
+				net.commoble.exmachina.api.MechanicalState tState = new net.commoble.exmachina.api.MechanicalState(Math.abs(aSize * aAmount), aSize * RAD_PER_RU);
+				if (!tState.equals(tStates.put(tShape, tState))) {
+					aReceiver.setChanged();
+					aReceiver.syncData(net.commoble.exmachina.api.MechanicalNodeStates.HOLDER.get());
+				}
+				return aAmount;
+			} catch(Throwable e) {return 0;}
+		}
 		
 		if (aEnergyType == TD.Energy.EU) {
 			// Nothing here needs the Negative Part of this, so it's gonna be skipped.

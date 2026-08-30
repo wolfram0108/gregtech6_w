@@ -215,6 +215,8 @@ public class CS {
 	public static final int RF_PER_MJ = 10;
 	/** The value of how many RF are worth an EU. */
 	public static final int RF_PER_EU =  4;
+	/** The value of how many radians per second a Rotation Unit is worth to foreign mechanical Mods. */
+	public static final double RAD_PER_RU = 1.0D;
 	/** The value of how many Fuel Ticks a Furnace Smelt has. */
 	public static int TICKS_PER_SMELT = 200;
 	/** The value of how many Energy Units are worth a Furnace Tick in regards of Fuel -> Energy */
@@ -2585,6 +2587,9 @@ public class CS {
 		
 		, RP                = "Redpower"
 		, BP                = "bluepower"
+		// The RedPower line on this engine version is carried by More Red, standing on the Ex Machina power API.
+		, MR                = "morered"
+		, EXM               = "exmachina"
 		, PR                = "ProjRed|Core"
 		, PR_TRANSPORT      = "ProjRed|Transportation"
 		, PR_INTEGRATION    = "ProjRed|Integration"

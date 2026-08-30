@@ -40,6 +40,7 @@ import net.neoforged.neoforge.common.Tags;
 
 import gregapi.data.CS;
 import gregapi.data.MD;
+import gregapi.data.MT;
 import gregapi.data.OD;
 import gregapi.data.OP;
 import gregapi.util.ST;
@@ -161,6 +162,13 @@ public class OreDictTags {
 		// в 1.7.10 не было и который стеклом в смысле рецептов GT6 не является — расширять состав blockGlass сверх
 		// оригинала мост не вправе.
 		tExceptions.put("glass_blocks/cheap", OD.blockGlass.toString());
+		// c:ingots/redstone_alloy — по правилу имён это RedstoneAlloy, сплав EnderIO (MT.java:1753: Si + Redstone,
+		// цель унификации LoaderUnificationTargets.java:876). Но наполняет тег More Red, а он сплавляет свой слиток
+		// из МЕДИ — его собственный tags/item/red_alloyable_ingots.json это #c:ingots/copper, — то есть по составу
+		// это RedAlloy Грега (MT.java:1749: Cu + Redstone), сплав RedPower, наследником которого мод и является.
+		// Имя тега и вещество в нём разошлись у автора тега; без этой строки медный сплав числился бы кремниевым.
+		// Условие на мод, а не на голое имя: пока такого тега никто не наполняет, правило именования верно само.
+		if (MD.MR.mLoaded) tExceptions.put("ingots/redstone_alloy", OP.ingot.mNameInternal + MT.RedAlloy.mNameInternal);
 		sExceptions = tExceptions;
 	}
 

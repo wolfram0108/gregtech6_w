@@ -164,6 +164,14 @@ repositories {
         url = 'https://api.modrinth.com/maven'
         content { includeGroup 'maven.modrinth' }
     }
+
+    // Ex Machina is the rotation/signal graph library More Red is built on, and More Red already ships it
+    // inside its own jar, so only the API is needed here. A mirror under net.commoble.* would collide with
+    // that live jar the same way an appeng.* mirror does, so the real artifact is used instead.
+    maven {
+        url = 'https://maven.commoble.net/'
+        content { includeGroup 'net.commoble.exmachina' }
+    }
 }
 
 base {
@@ -309,6 +317,16 @@ dependencies {
     // GuideME — обязательная зависимость AE2 (её neoforge.mods.toml: modId="guideme"); Modrinth-maven pom
     // транзитивных зависимостей не несёт, поэтому объявляется здесь. Только runtime: наш код её не трогает.
     localRuntime "maven.modrinth:guideme:${guideme_version}"
+
+    // More Red (modid "morered") — наследник RedPower: провода с 16 каналами, логические плиты. Нужен
+    // стендам совместимости по редстоуну: судья спрашивает РЕАЛЬНЫЙ мод тем же каналом, каким тот отдаёт
+    // сигнал соседу. Тот же приём, что у Jade/AE2, но источник локальный: в мавен версия под 26.1.2 не
+    // публиковалась, артефакт собран из reference/mods/MoreRed-src (см. stands/_mods/PASSPORT.md).
+    // Только localRuntime: production-код на мод не ссылается, в jar игрока он не попадает.
+    localRuntime files("../stands/_mods/morered-26.1.2.3.jar")
+    // compileOnly only: Ex Machina reaches the game inside the More Red jar and never enters the player's
+    // jar. EnergyCompat needs the API to speak to foreign rotation, as its IC2 and RF branches already do.
+    compileOnly "net.commoble.exmachina:exmachina:${exmachina_version}"
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar

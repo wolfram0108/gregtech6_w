@@ -250,6 +250,8 @@ public class MD {
 	
 	, RP                = new ModData(ModIDs.RP                 , "Redpower")
 	, BP                = new ModData(ModIDs.BP                 , "Blue Power")
+	, MR                = new ModData(ModIDs.MR                 , "More Red")
+	, EXM               = new ModData(ModIDs.EXM                , "Ex Machina")
 	, PR                = new ModData(ModIDs.PR                 , "Project Red")
 	, PR_TRANSPORT      = new ModData(ModIDs.PR_TRANSPORT       , "Project Red Transport")
 	, PR_INTEGRATION    = new ModData(ModIDs.PR_INTEGRATION     , "Project Red Integration")

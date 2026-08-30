@@ -634,7 +634,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						// в активную очередь до оттаивания (в замороженном мире соседям нечего пересчитывать).
 						if (tTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)tTileEntity).isDead()) continue;
 						if (!WD.blockTicking(tTileEntity)) {DELAYED_BLOCK_UPDATES.add(tTileEntity); continue;}
-						tTileEntity.getWorld().updateNeighborsAt(new BlockPos(tTileEntity.getX(), tTileEntity.getY(), tTileEntity.getZ()), tTileEntity.getBlock(tTileEntity.getCoords()), null);
+						BlockPos tUpdatePos = new BlockPos(tTileEntity.getX(), tTileEntity.getY(), tTileEntity.getZ());
+						tTileEntity.getWorld().updateNeighborsAt(tUpdatePos, tTileEntity.getBlock(tTileEntity.getCoords()), null);
+						// This queue bypasses doBlockUpdate, so foreign signal graphs would keep a stale value here.
+						gregapi.compat.SignalGraphBridge.notifyChanged(tTileEntity.getWorld(), tUpdatePos);
 					} catch(Throwable e) {
 						if (tTileEntity instanceof ITileEntityErrorable) ((ITileEntityErrorable)tTileEntity).setError("Delayed Block Update - " + e);
 						e.printStackTrace(ERR);

@@ -199,3 +199,35 @@ config="gregapi.mixins.json"
 # stop your mod loading on the server for example.
 #[features.${mod_id}]
 #openGLVersion="[3.2,)"
+
+# More Red — опциональная зависимость слоя адаптации. Ребро НЕСУЩЕЕ: адаптация выключает рецепты мода
+# файлами data/morered/recipe/**, а файлы паков применяются в порядке модов, поэтому наш пак обязан идти
+# ПОСЛЕ мода. Ребро объявляется у ВСЕХ ЧЕТЫРЁХ наших модов — порядок определяется первым из них
+# (та же причина, что у зависимости от ae2 выше).
+[[dependencies.${mod_id}]]
+    modId="morered"
+    type="optional"
+    versionRange="[26.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.gregapi]]
+    modId="morered"
+    type="optional"
+    versionRange="[26.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.gregapi_post]]
+    modId="morered"
+    type="optional"
+    versionRange="[26.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.gregtech]]
+    modId="morered"
+    type="optional"
+    versionRange="[26.1.0,)"
+    ordering="AFTER"
+    side="BOTH"

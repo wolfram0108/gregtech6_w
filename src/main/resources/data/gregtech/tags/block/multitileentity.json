@@ -1,0 +1,18 @@
+{
+	"values": [
+		"gregtech:gt.block.multitileentity.cloth.cloth.shears.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.iron.stone.pickaxe.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.iron.stone.shovel.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.leaves.grass.axe.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.machine.stone.cutter.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.machine.stone.wrench.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.redstonelight.cloth.shears.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.redstonelight.stone.pickaxe.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.redstonelight.wood.axe.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.rock.stone.pickaxe.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.rock.wood.scoop.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.tnt.grass.pickaxe.0.0.15.false.false",
+		"gregtech:gt.block.multitileentity.wood.wood.axe.0.0.15.false.false",
+		"gregtech:gt.multitileentity"
+	]
+}

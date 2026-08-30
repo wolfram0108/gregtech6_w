@@ -1,0 +1,8 @@
+{
+	"values": {
+		"#gregtech:multitileentity": {
+			"type": "exmachina:cube",
+			"receives_power": true
+		}
+	}
+}

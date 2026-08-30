@@ -38,6 +38,7 @@ import gregapi.render.ITexture;
 import gregapi.tileentity.ITileEntityQuickObstructionCheck;
 import gregapi.tileentity.data.ITileEntityProgress;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
+import gregapi.tileentity.energy.EnergyCompat;
 import gregapi.tileentity.energy.ITileEntityEnergy;
 import gregapi.tileentity.energy.ITileEntityEnergyDataConductor;
 import gregapi.util.UT;
@@ -134,11 +135,7 @@ public class MultiTileEntityAxle extends TileEntityBase11ConnectorStraight imple
 		return aPower;
 	}
 	
-	@Override
-	public boolean canConnect(byte aSide, DelegatorTileEntity<BlockEntity> aDelegator) {
-		if (aDelegator.mTileEntity instanceof ITileEntityEnergy) return ((ITileEntityEnergy)aDelegator.mTileEntity).isEnergyAcceptingFrom(TD.Energy.RU, aDelegator.mSideOfTileEntity, T) || ((ITileEntityEnergy)aDelegator.mTileEntity).isEnergyEmittingTo(TD.Energy.RU, aDelegator.mSideOfTileEntity, T);
-		return F;
-	}
+	@Override public boolean canConnect(byte aSide, DelegatorTileEntity<BlockEntity> aDelegator) {return EnergyCompat.canConnectRotation(this, aDelegator.mTileEntity, aDelegator.mSideOfTileEntity);}
 	
 	@Override public boolean isEnergyType(TagData aEnergyType, byte aSide, boolean aEmitting) {return aEnergyType == TD.Energy.RU;}
 	@Override public Collection<TagData> getEnergyTypes(byte aSide) {return TD.Energy.RU.AS_LIST;}
