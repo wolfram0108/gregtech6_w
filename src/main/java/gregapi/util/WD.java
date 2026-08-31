@@ -1624,6 +1624,13 @@ public class WD {
 		// BUG-139: гейт ST.isGT — обещание снимаем ТОЛЬКО у блоков МОДА (их сущность ставит сам мод через WD.te).
 		// У чужого блока обещание движка — единственный источник сущности; снять его значит оставить блок без неё.
 		if (rSet && aState.hasBlockEntity() && ST.isGT(aState.getBlock())) dropWorldgenBEStub(aWorld, aPos);
+		// Стартовый тик жидкости: WorldGenRegion не зовёт onPlace, а в 1.7.10 его звал сам чанк, и flowing-вода
+		// моб-фермы данжа (ориг. DungeonChunkRoomFarmMobs:198-201) растекалась сама. Приём движковый — так же
+		// планирует тик генератор структур самого движка (StructurePiece.placeBlock).
+		if (rSet && !(aWorld instanceof Level)) {
+			net.minecraft.world.level.material.FluidState tFluid = aWorld.getFluidState(aPos);
+			if (!tFluid.isEmpty()) aWorld.scheduleTick(aPos, tFluid.getType(), 0);
+		}
 		return rSet;
 	}
 
@@ -1772,6 +1779,11 @@ public class WD {
 			if (tSide >= 1 && tSide <= 4) return Blocks.REDSTONE_WALL_TORCH.defaultBlockState().setValue(net.minecraft.world.level.block.RedstoneWallTorchBlock.FACING, DIR_1710_TORCH[tSide-1]);
 			return Blocks.REDSTONE_TORCH.defaultBlockState();
 		}
+		// Жидкость: мета 1.7.10 = уровень (0 источник, 1-7 поток, бит 8 «падающая»), и neo держит ту же шкалу в
+		// LiquidBlock.LEVEL (LiquidBlock.java:70-78). Без ветки мета терялась: выплеск прогара (ориг. Crucible:373-375
+		// flowing_lava меты 1) вставал ИСТОЧНИКОМ лавы и не рассасывался. Только ваниль: у жидкостей мода свой канал меты.
+		if (aBlock == Blocks.WATER || aBlock == Blocks.LAVA)
+			return aBlock.defaultBlockState().setValue(net.minecraft.world.level.block.LiquidBlock.LEVEL, Math.min(15, tMeta));
 		// Кнопки: меты 1-4 = настенные (та же карта, что факелы); прочие — дефолт-путь.
 		if (aBlock instanceof net.minecraft.world.level.block.ButtonBlock && (tMeta & 7) >= 1 && (tMeta & 7) <= 4)
 			return aBlock.defaultBlockState()
