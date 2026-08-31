@@ -18,6 +18,21 @@ This document says plainly what works, what could work, and what will not.
 | **JourneyMap** (and the vanilla map) | `1.20.1-6.0.2+forge` | GT6 blocks, ores, machines and fluids resolve to the correct map colour, checked by asking the real mod the same question it asks itself; oil and gas declare no engine fluid on this branch, so the vanilla map reads their block colour directly — both paths verified |
 
 
+## Lighting of GregTech blocks on this version
+
+If shading around corners looks wrong on this branch — an edge that stays flat where it should
+darken — turn on the alternative rendering pipeline in `config/forge-client.toml`:
+
+```toml
+experimentalForgeLightPipelineEnabled = true
+```
+
+Its own description says what it does: *"fixes the lighting of custom models"*. GregTech builds its
+block faces at runtime rather than from static model files, and the default pipeline on 1.20.1 lights
+such models with visible artefacts — they appear on vanilla blocks too, which is how you can tell
+them apart from a mod defect. On 1.21+ the loader enables an equivalent pipeline by itself, so this
+setting is only needed here.
+
 ## What the original integrated with
 
 The table below is generated from the mod's own registry of foreign mods and from a count of how
