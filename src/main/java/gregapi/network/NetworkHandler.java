@@ -80,10 +80,22 @@ import net.minecraftforge.network.simple.SimpleChannel;
  * @author Gregorius Techneticies
  */
 public final class NetworkHandler implements INetworkHandler {
-	/** Протокольная строка канала: стороны обязаны совпасть, иначе Forge не пустит подключение
-	 *  ({@code NetworkRegistry.java:102} — предикаты clientAccepted/serverAccepted). Прямой наследник
-	 *  1.7.10-проверки версии, которую GT6 делал сам в {@link #decode}. */
-	private static final String NETWORK_VERSION = "1";
+	/** Fallback only for a build whose own metadata cannot be read; a fixed string would let any build in. */
+	private static final String NETWORK_VERSION_UNKNOWN = "unknown";
+
+	/** Channel version follows the MOD version: both sides must match or Forge refuses the connection
+	 *  (NetworkRegistry.java:102, predicates clientAccepted/serverAccepted), so a client of another
+	 *  build cannot join and silently desync on a changed packet format. */
+	public static String networkVersion() {
+		String rVersion = net.minecraftforge.fml.ModList.get() == null ? null
+			: net.minecraftforge.fml.ModList.get().getModContainerById(gregapi.data.MD.GT.mID)
+				.map(tContainer -> tContainer.getModInfo().getVersion().toString()).orElse(null);
+		if (rVersion == null || rVersion.isBlank()) {
+			gregapi.data.CS.ERR.println("GT_API: mod version unreadable, network channel falls back to '" + NETWORK_VERSION_UNKNOWN + "'.");
+			return NETWORK_VERSION_UNKNOWN;
+		}
+		return rVersion;
+	}
 
 	private final IPacket[] mPacketTypes;
 	private final String mModID;
@@ -111,7 +123,8 @@ public final class NetworkHandler implements INetworkHandler {
 			if (mPacketTypes[tID] == null) mPacketTypes[tID] = aPacketTypes[i]; else throw new IllegalArgumentException("Duplicate Packet ID! " + tID);
 		}
 		// Канал заводится ПРЯМО В КОНСТРУКТОРЕ — как в 1.7.10 (см. javadoc класса: NETLOCK стоит в фазе COMPLETE).
-		mChannel = NetworkRegistry.newSimpleChannel(new ResourceLocation(identifierPart(aModID), "network/" + identifierPart(aChannelName)), () -> NETWORK_VERSION, NETWORK_VERSION::equals, NETWORK_VERSION::equals);
+		final String tVersion = networkVersion();
+		mChannel = NetworkRegistry.newSimpleChannel(new ResourceLocation(identifierPart(aModID), "network/" + identifierPart(aChannelName)), () -> tVersion, tVersion::equals, tVersion::equals);
 		// Один тип сообщения на канал, двусторонний (направление не задаём) — форма FMLEmbeddedChannel оригинала.
 		mChannel.registerMessage(0, GT6Payload.class, GT6Payload::write, GT6Payload::read, this::handlePayload);
 	}
