@@ -30,6 +30,8 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 
 ### Fixed
 
+- Dungeon mob-farm water flows again instead of standing as a block, and the piston doors of a dungeon are closed and worked by their crank.
+- A crucible burning through, and a faucet, mold or smeltery spilling, leave a flow of lava that drains away instead of a permanent lava source.
 - Adding another mod no longer changes what is stored in GregTech inventories: a saved stack now keeps the item's name, so it survives any change to the set of installed items.
 
 ## [6.0.0-alpha.6.1] — the recipe viewer keeps one material on both sides of a card
