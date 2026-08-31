@@ -216,6 +216,10 @@ public final class GT6QuadBuilder {
 		return null;
 	}
 
+	// Renderers lay out AO and lightmap by vertex NUMBER, taking the number as canonical (FaceInfo.java:14-48);
+	// any other order rotates the shading map on the face while geometry, UV and winding stay correct.
+	static final int[] EMIT_ORDER = {1, 0, 3, 2};
+
 	/** Грань по текущим bounds (4 вершины) с UV из спрайта (клип по bounds) + tint из RGBa (0..255). AE2 QuartzGlassModel.createQuad/putVertex. */
 	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa) {
 		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
@@ -230,10 +234,10 @@ public final class GT6QuadBuilder {
 		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
 		tBuilder.setSprite(new Material.Baked(aSprite, false));
 		tBuilder.setDirection(aDir);
-		// КРИТ (инвертированные нормали — 'видно блок изнутри'): neo выводит нормаль/facing грани ИЗ winding вершин
-		// (FaceBakery.computeQuadNormal), а corners давал CW-порядок (нормаль внутрь) → GPU back-face-cull скрывал грань
-		// снаружи. Реверсируем порядок вершин (3→0) → нормаль наружу, грань видима снаружи. UV/позиция per-vertex сохранены.
-		for (int i = 3; i >= 0; i--) {
+		// EMIT_ORDER is a cyclic shift of the plain reverse, so the outward winding that back-face culling
+		// needs is kept while the vertex numbering becomes the canonical one.
+		for (int idx = 0; idx < 4; idx++) {
+			final int i = EMIT_ORDER[idx];
 			tBuilder.addVertex(c[i][0], c[i][1], c[i][2]);
 			tBuilder.setColor(r, g, b, a);
 			tBuilder.setNormal((float)n.x, (float)n.y, (float)n.z);
@@ -260,7 +264,90 @@ public final class GT6QuadBuilder {
 			if (tBack != null) {mQuads.addUnculledFace(tBack); mAll.add(tBack);}
 		}
 	}
-	/** Один quad по 4 вершинам {x,y,z,u,v} (u,v 0..16) с tint; aReverse — обратная намотка. */
+	/** Порядок выдачи вершин произвольного quad'а, приводящий их к канону {@code FaceInfo.java:14-48}: таблицей
+	 *  {@link #EMIT_ORDER} его не выразить — вершины сюда приходят массивом от вызывателя (поверхность жидкости
+	 *  со склоном), поэтому канон вычисляется по самой геометрии.
+	 *
+	 *  <p>Форма канона у каждой грани — «два угла по первой плоскостной оси × два по второй» (ось нормали в
+	 *  каноне постоянна). Значит вершину достаточно классифицировать «меньший/больший» по обеим плоскостным осям
+	 *  и поставить на её место в каноне. По ведущей оси делим серединой разброса, по второй — ВНУТРИ пары с общей
+	 *  ведущей: так склон жидкости (разные высоты соседних углов) не путает «верх» с «низом».
+	 *
+	 *  <p>Обмотка сохраняется сама: канон противоположных граней у ванили противоположен по обходу, поэтому
+	 *  обратная сторона двусторонней поверхности получает обратную намотку тем же вызовом с {@code getOpposite}.
+	 *
+	 *  @return порядок выдачи 4 вершин; при вырожденной геометрии (совпавшие углы) — {@code {0,1,2,3}}, то есть
+	 *          порядок вызывателя без изменений (выдумывать перестановку не на чем). */
+	static int[] canonicalOrder(Direction aDir, float[][] aCorners) {
+		final int tNormal = aDir.getAxis().ordinal();          // 0=X, 1=Y, 2=Z
+		final int a1 = tNormal == 0 ? 1 : 0;                   // первая плоскостная ось грани
+		final int a2 = tNormal == 2 ? 1 : 2;                   // вторая плоскостная ось грани
+		// A side face of a fluid must lead on its horizontal axis: the vertical one carries the slope,
+		// where "above the middle" tells nothing about which corner is which.
+		boolean[][] tCls = classify(aCorners, a1, a2);
+		boolean tSwapped = false;
+		if (tCls == null) {tCls = classify(aCorners, a2, a1); tSwapped = true;}
+		if (tCls == null) return new int[]{0, 1, 2, 3};        // вырожденная геометрия — порядок вызывателя
+		final boolean[] tHiLead = tCls[0], tHiRank = tCls[1];
+		final boolean[][] tCanon = canonPattern(aDir, tSwapped ? a2 : a1, tSwapped ? a1 : a2);
+		int[] rOrder = new int[4];
+		for (int c = 0; c < 4; c++) {
+			int tFound = -1;
+			for (int i = 0; i < 4; i++) if (tHiLead[i] == tCanon[c][0] && tHiRank[i] == tCanon[c][1]) {tFound = i; break;}
+			if (tFound < 0) return new int[]{0, 1, 2, 3};
+			rOrder[c] = tFound;
+		}
+		return rOrder;
+	}
+
+	/** «Меньший/больший» по двум осям: ведущая — по середине разброса (обязана дать 2 на 2), вторая — ВНУТРИ
+	 *  пары с общим значением ведущей. Возврат {@code null} = ведущая ось вершины пополам не делит. */
+	private static boolean[][] classify(float[][] aCorners, int aLead, int aRank) {
+		float tMin = Float.MAX_VALUE, tMax = -Float.MAX_VALUE;
+		for (float[] tV : aCorners) {tMin = Math.min(tMin, tV[aLead]); tMax = Math.max(tMax, tV[aLead]);}
+		if (tMax - tMin < 1e-6F) return null;
+		final float tMid = (tMin + tMax) * 0.5F;
+		boolean[] tHiLead = new boolean[4];
+		int tCountHi = 0;
+		for (int i = 0; i < 4; i++) {tHiLead[i] = aCorners[i][aLead] > tMid; if (tHiLead[i]) tCountHi++;}
+		if (tCountHi != 2) return null;
+		boolean[] tHiRank = new boolean[4];
+		for (int s = 0; s < 2; s++) {
+			boolean tSide = s == 1;
+			int p = -1, q = -1;
+			for (int i = 0; i < 4; i++) if (tHiLead[i] == tSide) {if (p < 0) p = i; else q = i;}
+			if (p < 0 || q < 0) return null;
+			if (Math.abs(aCorners[p][aRank] - aCorners[q][aRank]) < 1e-6F) return null; // пара не различима второй осью
+			tHiRank[aCorners[p][aRank] > aCorners[q][aRank] ? p : q] = true;
+		}
+		return new boolean[][]{tHiLead, tHiRank};
+	}
+
+	/** Канон {@code FaceInfo.java:14-48}, переписанный в «меньший/больший» по двум плоскостным осям грани.
+	 *  Дословные строки ванили (mn/mx по XYZ): DOWN (mn,mn,mx)(mn,mn,mn)(mx,mn,mn)(mx,mn,mx) · UP (mn,mx,mn)
+	 *  (mn,mx,mx)(mx,mx,mx)(mx,mx,mn) · NORTH (mx,mx,mn)(mx,mn,mn)(mn,mn,mn)(mn,mx,mn) · SOUTH (mn,mx,mx)
+	 *  (mn,mn,mx)(mx,mn,mx)(mx,mx,mx) · WEST (mn,mx,mn)(mn,mn,mn)(mn,mn,mx)(mn,mx,mx) · EAST (mx,mx,mx)
+	 *  (mx,mn,mx)(mx,mn,mn)(mx,mx,mn). Ось нормали в каждой строке постоянна и потому опущена. */
+	private static boolean[][] canonPattern(Direction aDir, int a1, int a2) {
+		final boolean[][] rXYZ = new boolean[4][3];             // [вершина][ось] = «больший»
+		final boolean n = false, x = true;
+		switch (aDir) {
+		case DOWN:  set(rXYZ, n,n,x,  n,n,n,  x,n,n,  x,n,x); break;
+		case UP:    set(rXYZ, n,x,n,  n,x,x,  x,x,x,  x,x,n); break;
+		case NORTH: set(rXYZ, x,x,n,  x,n,n,  n,n,n,  n,x,n); break;
+		case SOUTH: set(rXYZ, n,x,x,  n,n,x,  x,n,x,  x,x,x); break;
+		case WEST:  set(rXYZ, n,x,n,  n,n,n,  n,n,x,  n,x,x); break;
+		default:    set(rXYZ, x,x,x,  x,n,x,  x,n,n,  x,x,n); break; // EAST
+		}
+		boolean[][] r = new boolean[4][2];
+		for (int i = 0; i < 4; i++) {r[i][0] = rXYZ[i][a1]; r[i][1] = rXYZ[i][a2];}
+		return r;
+	}
+	private static void set(boolean[][] aTable, boolean... aBits) {
+		for (int i = 0; i < 12; i++) aTable[i / 3][i % 3] = aBits[i];
+	}
+
+	/** Один quad по 4 вершинам {x,y,z,u,v} (u,v 0..16) с tint; aReverse — признак задней стороны для вызывателя. */
 	private BakedQuad vertexQuad(float[][] aCorners, TextureAtlasSprite aSprite, short[] aRGBa, Direction aDir, boolean aReverse) {
 		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
 		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
@@ -270,7 +357,9 @@ public final class GT6QuadBuilder {
 		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
 		tBuilder.setSprite(new Material.Baked(aSprite, false));
 		tBuilder.setDirection(aDir);
-		int[] tOrder = aReverse ? new int[]{3,2,1,0} : new int[]{0,1,2,3};
+		// The canonical order of the OPPOSITE face already walks the other way round, so the back side of a
+		// two-sided surface gets its reversed winding from aDir alone.
+		int[] tOrder = canonicalOrder(aDir, aCorners);
 		for (int idx = 0; idx < 4; idx++) {
 			int i = tOrder[idx];
 			tBuilder.addVertex(aCorners[i][0], aCorners[i][1], aCorners[i][2]);

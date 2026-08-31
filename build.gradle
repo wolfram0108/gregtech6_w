@@ -324,6 +324,10 @@ dependencies {
     // публиковалась, артефакт собран из reference/mods/MoreRed-src (см. stands/_mods/PASSPORT.md).
     // Только localRuntime: production-код на мод не ссылается, в jar игрока он не попадает.
     localRuntime files("../stands/_mods/morered-26.1.2.3.jar")
+    // Sodium — сторонний конвейер отрисовки чанков, нужен ТОЛЬКО приёмке рендера: своего координатного
+    // лайтера у него нет, освещение он раскладывает по номеру вершины квада, и лишь под ним видно
+    // расхождение порядка вершин с каноном ванили. Вне -Pgt6probes не подключается вовсе.
+    if (project.hasProperty('gt6probes')) localRuntime files("../stands/_mods/sodium-neoforge-0.9.1-mc26.1.2.jar")
     // compileOnly only: Ex Machina reaches the game inside the More Red jar and never enters the player's
     // jar. EnergyCompat needs the API to speak to foreign rotation, as its IC2 and RF branches already do.
     compileOnly "net.commoble.exmachina:exmachina:${exmachina_version}"

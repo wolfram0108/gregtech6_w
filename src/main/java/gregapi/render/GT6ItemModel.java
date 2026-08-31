@@ -350,7 +350,9 @@ public class GT6ItemModel implements ItemModel {
 		b.setSprite(new Material.Baked(aSprite, false));
 		b.setDirection(tDir);
 		b.setLightEmission(15); // full-bright: putBakedQuad берёт light=getLightCoordsWithEmission(lightEmission); GUI даёт тёмный lightCoords (даже без-тинтовая полоса тёмная) → форсим эмиссию 15 (как эталон плоского item-icon)
-		for (int i = 3; i >= 0; i--) { // КОРЕНЬ затемнения: winding вершин был инвертирован vs канон Mojang (FaceInfo) → GPU backface-cull скрывал SOUTH-грань (яркая нормаль) и показывал NORTH-грань (тёмная под ITEMS_FLAT-диффузом). Реверс порядка (i=3→0) чинит winding — тот же приём, что уже в GT6QuadBuilder.boundedFace:130
+		// Same canonical vertex numbering as block faces: one order for the whole mod, see GT6QuadBuilder.EMIT_ORDER.
+		for (int idx = 0; idx < 4; idx++) {
+			final int i = GT6QuadBuilder.EMIT_ORDER[idx];
 			b.addVertex(c[i][0], c[i][1], c[i][2]);
 			b.setColor(r, g, b8, 255); // тинт материала (белая проба подтвердила: цвет-механизм работает; корень — свет)
 			b.setNormal((float)n.x, (float)n.y, (float)n.z);
