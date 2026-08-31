@@ -379,7 +379,9 @@ public class GT6ItemModel implements BakedModel {
 		b.setDirection(tDir);
 		b.setTintIndex(-1); // тинт материала УЖЕ запечён в вершины; tintIndex по умолчанию 0 → движок домножил бы ещё раз через ItemColors
 		b.setShade(false);  // плоский предмет — ровный свет (эталон ItemModelGenerator/GuiLight.FRONT), без направленного затенения
-		for (int i = 3; i >= 0; i--) { // КОРЕНЬ затемнения: winding вершин был инвертирован vs канон Mojang (FaceInfo) → GPU backface-cull скрывал SOUTH-грань (яркая нормаль) и показывал NORTH-грань (тёмная под item-диффузом). Реверс порядка (i=3→0) чинит winding — тот же приём, что в GT6QuadBuilder.boundedFace
+		// Same canonical vertex numbering as block faces: one order for the whole mod, see GT6QuadBuilder.EMIT_ORDER.
+		for (int idx = 0; idx < 4; idx++) {
+			final int i = GT6QuadBuilder.EMIT_ORDER[idx];
 			b.vertex(c[i][0], c[i][1], c[i][2]);
 			b.color(r, g, b8, 255); // тинт материала (белая проба подтвердила: цвет-механизм работает; корень — свет)
 			b.normal(n.x(), n.y(), n.z());

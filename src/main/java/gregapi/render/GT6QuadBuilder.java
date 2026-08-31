@@ -267,7 +267,7 @@ public final class GT6QuadBuilder {
 
 	/** Порядок обхода углов {@link #corners} при выдаче грани куба: приводит вершины к КАНОНУ ванили
 	 *  ({@code FaceInfo.java:10-15}), от которого зависит раскладка AO по углам. Разбор — в {@link #boundedFace}. */
-	private static final int[] EMIT_ORDER = {1, 0, 3, 2};
+	static final int[] EMIT_ORDER = {1, 0, 3, 2};
 
 	/** Грань по текущим bounds (4 вершины) с UV из спрайта (клип по bounds) + tint из RGBa (0..255). AE2 QuartzGlassModel.createQuad/putVertex. */
 	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa) {
