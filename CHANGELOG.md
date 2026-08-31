@@ -28,6 +28,10 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 
 ## [Unreleased]
 
+### Fixed
+
+- Adding another mod no longer changes what is stored in GregTech inventories: a saved stack now keeps the item's name, so it survives any change to the set of installed items.
+
 ## [6.0.0-alpha.6.1] — the recipe viewer keeps one material on both sides of a card
 
 ### Fixed
