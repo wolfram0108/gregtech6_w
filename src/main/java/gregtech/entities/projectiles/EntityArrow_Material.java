@@ -351,7 +351,8 @@ public class EntityArrow_Material extends EntityProjectile {
 		aNBT.putShort("yTile", (short)mHitBlockY);
 		aNBT.putShort("zTile", (short)mHitBlockZ);
 		aNBT.putShort("life", (short)mTicksAlive);
-		aNBT.putByte("inTile", (byte)net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(mHitBlock));
+		// A byte index of the block registry is neither stable nor wide enough; the name is written instead.
+		aNBT.putString("inTileReg", gregapi.util.ST.blockRegName(mHitBlock));
 		aNBT.putByte("inData", (byte)mHitBlockMeta);
 		aNBT.putByte("shake", (byte)shakeTime);
 		aNBT.putByte("inGround", (byte)(inGround ? 1 : 0));
@@ -367,7 +368,7 @@ public class EntityArrow_Material extends EntityProjectile {
 		mHitBlockY = aNBT.getShortOr("yTile", (short)0);
 		mHitBlockZ = aNBT.getShortOr("zTile", (short)0);
 		mTicksAlive = aNBT.getShortOr("life", (short)0);
-		mHitBlock = Block.stateById(aNBT.getByteOr("inTile", (byte)0) & 255).getBlock();
+		mHitBlock = gregapi.util.ST.blockByRegName(aNBT.getStringOr("inTileReg", ""));
 		mHitBlockMeta = aNBT.getByteOr("inData", (byte)0) & 255;
 		shakeTime = aNBT.getByteOr("shake", (byte)0) & 255;
 		inGround = aNBT.getByteOr("inGround", (byte)0) == 1;

@@ -58,6 +58,13 @@ public class CoverTextureCanvas extends AbstractCoverDefault {
 		if (aPlayer != null) UT.Sounds.send(SFX.MC_DIG_CLOTH, 1.0F, -1.0F, aData.mTileEntity);
 	}
 	
+	@Override
+	public void onCoverLoaded(byte aSide, CoverData aData) {
+		// The saved visual packs a registry index; recompute it from the name kept in the cover's own NBT.
+		if (aData.mNBTs[aSide] == null || !aData.mNBTs[aSide].contains(NBT_CANVAS_BLOCK)) return;
+		aData.visual(aSide, (short)((net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(ST.getBlock(aData.mNBTs[aSide], NBT_CANVAS_BLOCK)) << 4) | (aData.mNBTs[aSide].getIntOr(NBT_CANVAS_META, 0) & 15)));
+	}
+
 	@Override public void onAfterCrowbar(ITileEntityCoverable aTileEntity) {UT.Sounds.send(SFX.MC_DIG_CLOTH, 1.0F, -1.0F, aTileEntity);}
 	@Override public boolean needsVisualsSaved(byte aSide, CoverData aData) {return T;}
 	

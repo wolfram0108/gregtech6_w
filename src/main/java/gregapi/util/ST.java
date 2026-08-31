@@ -470,6 +470,38 @@ public class ST {
 		return BuiltInRegistries.BLOCK.byId(aNBT.getIntOr(aKey, 0));
 	}
 
+	/** Full registry name of a block ("namespace:path"); empty string when it has none. */
+	public static String blockRegName(Block aBlock) {
+		if (aBlock == null || aBlock == NB) return "";
+		Identifier tID = BuiltInRegistries.BLOCK.getKey(aBlock);
+		return tID == null ? "" : tID.toString();
+	}
+
+	/** Block by its full registry name; AIR-block constant for an empty or unknown name. */
+	public static Block blockByRegName(String aRegName) {
+		if (aRegName == null || aRegName.isEmpty()) return NB;
+		Identifier tID = Identifier.tryParse(aRegName);
+		return tID != null && BuiltInRegistries.BLOCK.containsKey(tID) ? BuiltInRegistries.BLOCK.getValue(tID) : NB;
+	}
+
+	/** Writes an ITEM reference held as a runtime registry index (covers, visuals) with its NAME beside it. */
+	public static void putItemId(net.minecraft.nbt.CompoundTag aNBT, String aKey, short aID) {
+		if (aNBT == null) return;
+		aNBT.putShort(aKey, aID);
+		Item tItem = item_((long)aID);
+		if (tItem != null) {
+			Identifier tID = BuiltInRegistries.ITEM.getKey(tItem);
+			if (tID != null) aNBT.putString(aKey + REG_SUFFIX, tID.toString());
+		}
+	}
+
+	/** Registry index for an item reference written by {@link #putItemId}: recomputed from the NAME when present. */
+	public static short getItemId(net.minecraft.nbt.CompoundTag aNBT, String aKey) {
+		if (aNBT == null) return 0;
+		Item tItem = itemByRegName(aNBT.getStringOr(aKey + REG_SUFFIX, ""));
+		return tItem == null ? aNBT.getShortOr(aKey, (short)0) : id_(tItem);
+	}
+
 	/** Copies a block reference (name and legacy index) between two NBT tags. */
 	public static void copyBlock(net.minecraft.nbt.CompoundTag aFrom, net.minecraft.nbt.CompoundTag aTo, String aKey) {
 		if (aFrom == null || aTo == null) return;
