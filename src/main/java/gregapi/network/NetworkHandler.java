@@ -56,8 +56,23 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * @author Gregorius Techneticies
  */
 public final class NetworkHandler implements INetworkHandler {
-	private static final String NETWORK_VERSION = "1";
 	private static final List<NetworkHandler> HANDLERS = new ArrayList<>();
+	/** Fallback only for a build whose own metadata cannot be read; a fixed string would let any build in. */
+	private static final String NETWORK_VERSION_UNKNOWN = "unknown";
+
+	/** Channel version follows the MOD version: mismatched versions are refused at the handshake
+	 *  (NeoForge NetworkRegistry: "Neo-Neo connections with mismatched versions are denied"),
+	 *  so a client of another build cannot join and silently desync on a changed packet format. */
+	public static String networkVersion() {
+		String rVersion = net.neoforged.fml.ModList.get() == null ? null
+			: net.neoforged.fml.ModList.get().getModContainerById(gregapi.data.MD.GT.mID)
+				.map(tContainer -> tContainer.getModInfo().getVersion().toString()).orElse(null);
+		if (rVersion == null || rVersion.isBlank()) {
+			gregapi.data.CS.ERR.println("GT_API: mod version unreadable, network channel falls back to '" + NETWORK_VERSION_UNKNOWN + "'.");
+			return NETWORK_VERSION_UNKNOWN;
+		}
+		return rVersion;
+	}
 
 	private final IPacket[] mPacketTypes;
 	private final String mModID;
@@ -97,7 +112,7 @@ public final class NetworkHandler implements INetworkHandler {
 		synchronized(HANDLERS) {
 			tHandlers = new ArrayList<>(HANDLERS);
 		}
-		PayloadRegistrar tRegistrar = aEvent.registrar(NETWORK_VERSION);
+		PayloadRegistrar tRegistrar = aEvent.registrar(networkVersion());
 		for (NetworkHandler tHandler : tHandlers) tHandler.registerPayload(tRegistrar);
 		// F7-lifecycle (boot-подтверждено: NetworkHandler создаются вовремя)
 	}
