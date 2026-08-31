@@ -1540,7 +1540,7 @@ public class WD {
 		if ((aFlags & 1) == 0 && aBlock == NB && liquid(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock())) aFlags |= 1;
 		if (aRemoveGrassBelow) {
 			Block tBlock = state(aWorld, new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
-			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)
+			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) setWG(aWorld, new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)
 		}
 		// BUG-025: движок (1.13+) разложил 1.7.10-котёл (один блок, мета 0-3 = уровень воды) на РАЗНЫЕ реестровые блоки:
 		// CAULDRON(пусто, БЕЗ свойства уровня) / WATER_CAULDRON(LayeredCauldronBlock, LEVEL 1-3). Универсальный мост ниже
@@ -1552,14 +1552,14 @@ public class WD {
 			BlockState tCauldron = tLevel <= 0
 				? Blocks.CAULDRON.defaultBlockState()
 				: Blocks.WATER_CAULDRON.defaultBlockState().setValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL, (int) Math.min(net.minecraft.world.level.block.LayeredCauldronBlock.MAX_FILL_LEVEL, tLevel));
-			return aWorld.setBlock(new BlockPos(aX, aY, aZ), tCauldron, (int) aFlags);
+			return setWG(aWorld, new BlockPos(aX, aY, aZ), tCauldron, (int) aFlags);
 		}
 		// F13-legacy-meta МОСТ (заход данжей #39, живой тест: «повороты — повсеместная проблема»): worldgen GT6 ставит
 		// ванильные направленные блоки ДОСЛОВНЫМИ метами 1.7.10, а у neo-модели меты нет — прежний путь давал
 		// дефолт-стейт (поршни вниз, кнопки в воздухе, двери/кровати/рамки без ориентации). Разбор ниже.
 		{
 			BlockState tLegacy = legacyVanillaState(aWorld, aX, aY, aZ, aBlock, aMeta);
-			if (tLegacy != null) return aWorld.setBlock(new BlockPos(aX, aY, aZ), tLegacy, (int)aFlags);
+			if (tLegacy != null) return setWG(aWorld, new BlockPos(aX, aY, aZ), tLegacy, (int)aFlags);
 		}
 		// было aWorld.setBlock(x,y,z,block,meta,flags) — neo: LevelWriter.setBlock(BlockPos,BlockState,flags) (LevelWriter.java:10).
 		// Числовой меты у BlockState нет (МОДЕЛЬ МЕТЫ п.1/4). BUG-047: 1.7.10 Chunk.func_150807_a писал блок+мету ОДНИМ
@@ -1571,9 +1571,9 @@ public class WD {
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			BlockState tCur = state(aWorld, tSetPos);
 			BlockState tNew = ((IBlockExtendedMetaData)aBlock).getStateForExtendedMetaData(tCur.getBlock() == aBlock ? tCur : aBlock.defaultBlockState(), Code.bind4(aMeta));
-			if (tNew != null) return aWorld.setBlock(tSetPos, tNew, (int)aFlags);
+			if (tNew != null) return setWG(aWorld, tSetPos, tNew, (int)aFlags);
 		}
-		boolean rSet = aWorld.setBlock(tSetPos, aBlock.defaultBlockState(), (int)aFlags);
+		boolean rSet = setWG(aWorld, tSetPos, aBlock.defaultBlockState(), (int)aFlags);
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			byte tNewMeta = Code.bind4(aMeta);
 			// мета — отдельный канал; но setter даёт side-effects (WD.te/WD.update), потому — только при РЕАЛЬНОМ отличии
@@ -1590,7 +1590,23 @@ public class WD {
 	 *  блоком, а движок 1.13+ разложил его в blockstate-свойство того же блока (lit_redstone_lamp → REDSTONE_LAMP[LIT];
 	 *  тот же класс разложения, что котёл BUG-025 выше). Числовой меты у таких состояний нет — мета-каналом не выразить. */
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, BlockState aState, long aFlags) {
-		return aWorld.setBlock(new BlockPos(aX, aY, aZ), aState, (int)aFlags);
+		return setWG(aWorld, new BlockPos(aX, aY, aZ), aState, (int)aFlags);
+	}
+
+	/** ЕДИНАЯ запись состояния в мир: {@code setBlock} плюс доводка, которую при ГЕНЕРАЦИИ движок не делает сам.
+	 *  {@code WorldGenRegion.setBlock} (neo-decompiled :257-295) пишет прямо в чанк — ни {@code onPlace}, ни флагов;
+	 *  в 1.7.10 ровно там жидкость запускала себя ({@code BlockDynamicLiquid.onBlockAdded} → {@code scheduleBlockUpdate}),
+	 *  и вода моб-фермы данжа (ориг. {@code DungeonChunkRoomFarmMobs:198-201} — {@code flowing_water}) растекалась сама.
+	 *  Приём взят у самого движка: его генератор структур планирует тик каждой поставленной жидкости
+	 *  ({@code StructurePiece.placeBlock:192-195}). Редстоун этим не лечится (провод не пересчитает силу без апдейта
+	 *  соседей) — он доводится диспетчером первой загрузки чанка ({@code GT_API_Proxy.RECHUNK_REDSTONE}). */
+	private static boolean setWG(LevelAccessor aWorld, BlockPos aPos, BlockState aState, int aFlags) {
+		boolean rSet = aWorld.setBlock(aPos, aState, aFlags);
+		if (rSet && !(aWorld instanceof Level)) {
+			net.minecraft.world.level.material.FluidState tFluid = aWorld.getFluidState(aPos);
+			if (!tFluid.isEmpty()) aWorld.scheduleTick(aPos, tFluid.getType(), 0);
+		}
+		return rSet;
 	}
 
 	// F13-legacy-meta МОСТ (заход данжей #39): карты направлений 1.7.10. Выверены ГЕОМЕТРИЕЙ данж-конструкций Грега
@@ -1650,6 +1666,11 @@ public class WD {
 			if (tSide >= 1 && tSide <= 4) return Blocks.REDSTONE_WALL_TORCH.defaultBlockState().setValue(net.minecraft.world.level.block.RedstoneWallTorchBlock.FACING, DIR_1710_TORCH[tSide-1]);
 			return Blocks.REDSTONE_TORCH.defaultBlockState();
 		}
+		// Жидкость: мета 1.7.10 = уровень (0 источник, 1-7 поток, бит 8 «падающая»), и neo держит ту же шкалу в
+		// LiquidBlock.LEVEL (LiquidBlock.java:70-78). Без ветки мета терялась: выплеск прогара (ориг. Crucible:373-375
+		// flowing_lava меты 1) вставал ИСТОЧНИКОМ лавы и не рассасывался. Только ваниль: у жидкостей мода свой канал меты.
+		if (aBlock == Blocks.WATER || aBlock == Blocks.LAVA)
+			return aBlock.defaultBlockState().setValue(net.minecraft.world.level.block.LiquidBlock.LEVEL, Math.min(15, tMeta));
 		// Кнопки: меты 1-4 = настенные (та же карта, что факелы); прочие — дефолт-путь.
 		if (aBlock instanceof net.minecraft.world.level.block.ButtonBlock && (tMeta & 7) >= 1 && (tMeta & 7) <= 4)
 			return aBlock.defaultBlockState()
@@ -1784,7 +1805,7 @@ public class WD {
 		// было aWorld.setBlock(x,y,z,Blocks.OAK_WALL_SIGN,aSide,flags) — aSide был прямой мета-ориентацией wall_sign
 		// (2-5); neo: WallSignBlock.FACING (EnumProperty<Direction>, WallSignBlock.java:30) через уже
 		// централизованный FORGE_DIR[side]->Direction (тот же массив, что используется по всему файлу).
-		aWorld.setBlock(new BlockPos(aX, aY, aZ), Blocks.OAK_WALL_SIGN.defaultBlockState().setValue(WallSignBlock.FACING, FORGE_DIR[aSide]), (int)aFlags);
+		setWG(aWorld, new BlockPos(aX, aY, aZ), Blocks.OAK_WALL_SIGN.defaultBlockState().setValue(WallSignBlock.FACING, FORGE_DIR[aSide]), (int)aFlags);
 		BlockEntity tSign = te(aWorld, aX, aY, aZ, T);
 		if (!(tSign instanceof SignBlockEntity)) return F;
 		// было signText[0..3]=String (1.7.10 мутабельный массив строк) -> neo SignText immutable (front/back):

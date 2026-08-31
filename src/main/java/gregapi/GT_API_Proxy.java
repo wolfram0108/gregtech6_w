@@ -2209,46 +2209,51 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// PRODUCTION-механизм (не проба).
 	// ==========================================================================================================
 	public static final int RECHUNK_REDSTONE = 1, RECHUNK_PLANTS = 2;
+	private static final int RECHUNK_TRIES_PER_TICK = 64, RECHUNK_JOBS_PER_TICK = 4, RECHUNK_MAX_WAIT = 600;
 	private static final java.util.concurrent.ConcurrentLinkedQueue<Object[]> sChunkFinishQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onChunkLoadFinishWorldgen(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
 		if (!(aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel)) return;
-		if (!aEvent.isNewChunk()) return; // только свежесгенерённые: в старых мирах уже стоящее не трогаем
 		net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
-		int tTasks = RECHUNK_PLANTS; // растительность проверяется в каждом свежем чанке
-		// редстоун — только в данж-области, она детерминирована якорной формулой
+		// растительность роняется только в свежем чанке: в старом мире стоящее принадлежит игроку.
+		int tTasks = aEvent.isNewChunk() ? RECHUNK_PLANTS : 0;
+		// редстоун — в данж-области при ЛЮБОЙ загрузке: рассылка апдейтов идемпотентна, а данжи старых
+		// миров иначе остаются с мёртвой цепью навсегда (двери «открыты», репорт 2026-08-31).
 		if (gregapi.worldgen.dungeon.WorldgenDungeonGT.isDungeonAreaChunk(tLevel, tPos.x(), tPos.z())) tTasks |= RECHUNK_REDSTONE;
-		sChunkFinishQueue.add(new Object[] {tLevel, tPos, tTasks});
+		if (tTasks != 0) sChunkFinishQueue.add(new Object[] {tLevel, tPos, tTasks, SERVER_TIME});
 	}
 
+	// Чанк на момент ChunkEvent.Load ещё не отдаётся getChunkNow, поэтому задача почти всегда откладывается;
+	// прежний ранний выход на первой неготовой задаче гасил ВЕСЬ тик диспетчера, и за прогон не выполнялось
+	// ни одной (замер 2026-08-31: принято 8182, выполнено 0). Неготовая задача больше не срывает обход, а
+	// задача чанка, так и не ставшего тикающим за RECHUNK_MAX_WAIT, снимается — иначе очередь растёт вечно.
 	private static void gt6ChunkFinishTick() {
-		for (int n = 0; n < 4; n++) {
+		java.util.List<Object[]> tWaiting = null;
+		int tDone = 0;
+		for (int n = 0; n < RECHUNK_TRIES_PER_TICK && tDone < RECHUNK_JOBS_PER_TICK; n++) {
 			Object[] tJob = sChunkFinishQueue.poll();
-			if (tJob == null) return;
+			if (tJob == null) break;
 			net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel)tJob[0];
 			net.minecraft.world.level.ChunkPos tPos = (net.minecraft.world.level.ChunkPos)tJob[1];
 			int tTasks = (Integer)tJob[2];
 			net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(tPos.x(), tPos.z());
-			if (tChunk == null) {sChunkFinishQueue.add(tJob); return;} // ещё не FULL — попробуем следующим тиком
+			if (tChunk == null) {
+				if (SERVER_TIME - (Long)tJob[3] < RECHUNK_MAX_WAIT) {
+					if (tWaiting == null) tWaiting = new java.util.ArrayList<>();
+					tWaiting.add(tJob);
+				}
+				continue;
+			}
+			tDone++;
 			if ((tTasks & RECHUNK_PLANTS) != 0) {
 				try {gregapi.util.WD.dropUnsupportedPlants(tLevel, tChunk);} catch (Throwable e) {e.printStackTrace(ERR);}
 			}
 			if ((tTasks & RECHUNK_REDSTONE) != 0) {
-				try {
-					int tY0 = gregapi.util.WD.remapY(tLevel, 20);
-					for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) for (int y = tY0-12; y <= tY0+14; y++) {
-						BlockPos tBP = new BlockPos((tPos.x() << 4) + x, y, (tPos.z() << 4) + z);
-						net.minecraft.world.level.block.Block tBlock = tChunk.getBlockState(tBP).getBlock();
-						if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WIRE || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WALL_TORCH
-						 || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_TORCH || tBlock == net.minecraft.world.level.block.Blocks.STICKY_PISTON
-						 || tBlock == net.minecraft.world.level.block.Blocks.PISTON || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP) {
-							tLevel.updateNeighborsAt(tBP, tBlock, null);
-						}
-					}
-				} catch (Throwable e) {e.printStackTrace(ERR);}
+				try {gregapi.worldgen.dungeon.WorldgenDungeonGT.wakeRedstone(tLevel, tChunk);} catch (Throwable e) {e.printStackTrace(ERR);}
 			}
 		}
+		if (tWaiting != null) sChunkFinishQueue.addAll(tWaiting);
 	}
 
 

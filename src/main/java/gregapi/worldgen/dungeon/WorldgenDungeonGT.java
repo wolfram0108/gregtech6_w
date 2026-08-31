@@ -164,6 +164,26 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		return tRandom.nextInt(tGen.mProbability) == 0;
 	}
 	
+	/** Доводка редстоун-цепей данжа в чанке: то, что в 1.7.10 делал flags=3 факелов при populate. Окно высоты —
+	 *  собственное окно генератора [mMinY..mMaxY] плюс высота конструкций комнаты, а не зашитое число: конфиг мира
+	 *  окно двигает. Идемпотентна — цепь просто приходит в равновесие. */
+	public static void wakeRedstone(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.world.level.chunk.LevelChunk aChunk) {
+		WorldgenDungeonGT tGen = INSTANCE;
+		if (tGen == null) return;
+		int tMinY = WD.remapY(aLevel, tGen.mMinY) - 12, tMaxY = WD.remapY(aLevel, tGen.mMaxY) + 14;
+		int tX0 = aChunk.getPos().getMinBlockX(), tZ0 = aChunk.getPos().getMinBlockZ();
+		net.minecraft.core.BlockPos.MutableBlockPos tPos = new net.minecraft.core.BlockPos.MutableBlockPos();
+		for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) for (int y = tMinY; y <= tMaxY; y++) {
+			tPos.set(tX0 + x, y, tZ0 + z);
+			net.minecraft.world.level.block.Block tBlock = aChunk.getBlockState(tPos).getBlock();
+			if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WIRE || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WALL_TORCH
+			 || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_TORCH || tBlock == net.minecraft.world.level.block.Blocks.STICKY_PISTON
+			 || tBlock == net.minecraft.world.level.block.Blocks.PISTON || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP) {
+				aLevel.updateNeighborsAt(tPos.immutable(), tBlock);
+			}
+		}
+	}
+
 	public static final int ROOM_ID_COUNT = 1, IMPORTANT_ROOM_COUNT = 2;
 	
 	@Override
