@@ -100,7 +100,10 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 			mMTEID = aNBT.getShort(NBT_MTE_ID);
 			mMTERegistry = aNBT.getShort(NBT_MTE_REG);
 			// And add additional Default Parameters, in case the Mod updated with new ones.
-			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(mMTERegistry);
+			// The saved number is a local item index; the registry NAME written beside it decides, and the
+			// number is refreshed to this run's index so the rest of the code keeps working with it.
+			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.resolve(aNBT);
+			if (tRegistry != null) mMTERegistry = gregapi.util.ST.id(gregapi.util.ST.item(tRegistry.mBlock));
 			if (tRegistry != null) {
 				MultiTileEntityClassContainer tClass = tRegistry.getClassContainer(mMTEID);
 				if (tClass != null) {
@@ -128,6 +131,7 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	@Override protected void writeMTEIdentity(CompoundTag aNBT) {
 		aNBT.putShort(NBT_MTE_ID, mMTEID);
 		aNBT.putShort(NBT_MTE_REG, mMTERegistry);
+		gregapi.block.multitileentity.MultiTileEntityRegistry.writeRegistryName(aNBT, mMTERegistry);
 	}
 
 	@Override
@@ -136,6 +140,7 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 		// write the IDs
 		aNBT.putShort(NBT_MTE_ID, mMTEID);
 		aNBT.putShort(NBT_MTE_REG, mMTERegistry);
+		gregapi.block.multitileentity.MultiTileEntityRegistry.writeRegistryName(aNBT, mMTERegistry);
 		// write the Custom Name
 		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompound("display"), "Name", mCustomName));
 		if (isPainted()) {aNBT.putInt(NBT_COLOR, getPaint()); aNBT.putBoolean(NBT_PAINTED, T);}

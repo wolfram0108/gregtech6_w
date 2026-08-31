@@ -74,5 +74,9 @@ public class TileEntityLoaderStub extends TileEntityBase01Root {
 		if (mLoadedNBT == null) return;
 		if (mLoadedNBT.contains(NBT_MTE_REG)) aNBT.putShort(NBT_MTE_REG, mLoadedNBT.getShort(NBT_MTE_REG));
 		if (mLoadedNBT.contains(NBT_MTE_ID )) aNBT.putShort(NBT_MTE_ID , mLoadedNBT.getShort(NBT_MTE_ID ));
+		// The registry name travels with the identity: the number is a local item index and means nothing to a client.
+		String tName = mLoadedNBT.getString(NBT_MTE_REGNAME);
+		if (tName != null && !tName.isEmpty()) aNBT.putString(NBT_MTE_REGNAME, tName);
+		else if (mLoadedNBT.contains(NBT_MTE_REG)) gregapi.block.multitileentity.MultiTileEntityRegistry.writeRegistryName(aNBT, mLoadedNBT.getShort(NBT_MTE_REG));
 	}
 }

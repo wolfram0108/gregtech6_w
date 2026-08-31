@@ -131,6 +131,29 @@ public class MultiTileEntityRegistry {
 	public static MultiTileEntityRegistry getRegistry(String aRegistryName) {
 		return NAMED_REGISTRIES.get(aRegistryName);
 	}
+
+	/** The only place a saved MTE identity turns back into a registry: the NAME is the same in every JVM,
+	 *  the numeric id is a local item index kept for worlds written before the name existed. */
+	public static MultiTileEntityRegistry resolve(net.minecraft.nbt.CompoundTag aNBT) {
+		if (aNBT == null) return null;
+		String tName = aNBT.getString(gregapi.data.CS.NBT_MTE_REGNAME);
+		if (tName != null && !tName.isEmpty()) {
+			MultiTileEntityRegistry rByName = NAMED_REGISTRIES.get(tName);
+			if (rByName != null) return rByName;
+		}
+		if (aNBT.contains(gregapi.data.CS.NBT_MTE_REG)) {
+			MultiTileEntityRegistry rByID = getRegistry(aNBT.getShort(gregapi.data.CS.NBT_MTE_REG));
+			if (rByID != null) return rByID;
+		}
+		if (NAMED_REGISTRIES.size() == 1) return NAMED_REGISTRIES.values().iterator().next();
+		return null;
+	}
+
+	/** Registry name written next to the numeric id by everyone who saves or sends an MTE identity. */
+	public static void writeRegistryName(net.minecraft.nbt.CompoundTag aNBT, int aRegistryID) {
+		MultiTileEntityRegistry tRegistry = getRegistry(aRegistryID);
+		if (tRegistry != null) aNBT.putString(gregapi.data.CS.NBT_MTE_REGNAME, tRegistry.mNameInternal);
+	}
 	
 	public static BlockEntity getCanonicalTileEntity(int aRegistryID, int aMultiTileEntityID) {
 		MultiTileEntityRegistry tRegistry = getRegistry(aRegistryID);

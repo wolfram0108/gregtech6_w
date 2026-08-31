@@ -1426,6 +1426,8 @@ public class CS {
 	, NBT_FUELMAP                   = "gt.fuelmap"                  // String containing the Fuel Map Name.
 	, NBT_TEMPERATURE               = "gt.temperature"              // Long containing a generic Temperature Variable.
 	, NBT_MTE_REG                   = "gt.mte.reg"                  // Containing the MTE Registry ID
+	// The numeric registry id is a local item index and shifts with the mod set; the name is the same everywhere.
+	, NBT_MTE_REGNAME               = "gt.mte.regname"              // Registry name (stable across JVMs, unlike the numeric id)
 	, NBT_MTE_ID                    = "gt.mte.id"                   // Containing the MTE ID
 	, NBT_USB_DIRECTION             = "gt.usb.dir"                  // Compound
 	, NBT_USB_TIER                  = "gt.usb.tier"                 // Byte
