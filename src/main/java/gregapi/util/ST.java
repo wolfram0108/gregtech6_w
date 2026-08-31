@@ -429,6 +429,15 @@ public class ST {
 	 * чтобы сохранить оригинальное «null для неизвестного» 1:1. {@code ResourceLocation.fromNamespaceAndPath}
 	 * — сверено (используется в DeferredRegister.java:230).
 	 */
+	/** Item by its full registry name ("namespace:path"); null for an empty, malformed or unknown name. */
+	public static Item itemByRegName(String aRegName) {
+		if (aRegName == null || aRegName.isEmpty()) return null;
+		int tColon = aRegName.indexOf(':');
+		if (tColon <= 0) return null;
+		try {return findItem(aRegName.substring(0, tColon), aRegName.substring(tColon + 1));}
+		catch (Throwable e) {return null;}
+	}
+
 	public static Item findItem(String aModID, String aName) {
 		if (aModID == null || aName == null) return null;
 		ResourceLocation tID = new ResourceLocation(aModID, aName);
@@ -1722,11 +1731,15 @@ public class ST {
 		// нельзя (получится EMPTY, идентичность потеряется), поэтому строим на 1 и помечаем ZEROSIZE-призраком
 		// через центр size_ — ровно то представление, которым GT6-код пользуется в рантайме (ST.count даст 0).
 		int tCount = aNBT.getInt("Count");
-		ItemStack rStack = make(Item.byId(aNBT.getShort("id")), tCount <= 0 ? 1 : tCount, aNBT.getShort("Damage"));
-		if (rStack == null) if (aNBT.contains("od")) {
-			rStack = OreDictManager.INSTANCE.getStack(aNBT.getString("od"), tCount <= 0 ? 1 : tCount);
-			if (rStack == null) return aDefault == null ? null : update_(OM.get_(aDefault));
-		} else return aDefault == null ? null : update_(OM.get_(aDefault));
+		// The numeric item id is a registry INDEX on this engine: adding any mod shifts it and every saved
+		// stack would come back as a different item, so the registry NAME decides whenever it is present.
+		Item tItem = itemByRegName(aNBT.getString("reg"));
+		ItemStack rStack = tItem == null ? null : make(tItem, tCount <= 0 ? 1 : tCount, aNBT.getShort("Damage"));
+		// Records written before the name existed carry only the shifting index, so the ore dictionary
+		// name — saved next to it and describing the same unified stack — is trusted ahead of that index.
+		if (rStack == null && aNBT.contains("od")) rStack = OreDictManager.INSTANCE.getStack(aNBT.getString("od"), tCount <= 0 ? 1 : tCount);
+		if (rStack == null) rStack = make(Item.byId(aNBT.getShort("id")), tCount <= 0 ? 1 : tCount, aNBT.getShort("Damage"));
+		if (rStack == null) return aDefault == null ? null : update_(OM.get_(aDefault));
 		if (tCount <= 0) size_(0, rStack);
 		// Has to use setTagCompound instead of putting it into make()
 		// because it would delete certain Tags on load, making stuff like unscanned Forestry Bees unstackable.
@@ -1848,6 +1861,9 @@ public class ST {
 		CompoundTag rNBT = UT.NBT.make();
 		aStack = OM.get_(aStack);
 		rNBT.putShort("id", id(aStack));
+		// The name survives a changed mod set; the numeric id above stays only so older builds can still read this.
+		String tRegName = regName(aStack);
+		if (tRegName != null) rNBT.putString("reg", tRegName);
 		// BUG-077 (бесконечный генератор предметов): пишем ЛОГИЧЕСКИЙ размер, а не физический count.
 		// «Ноль с памятью типа» (масстораж после опустошения, катализаторы) в neo хранится ZEROSIZE-призраком —
 		// count=1 + компонент-маркер, потому что neo не держит count<=0. Формат этой записи 1:1 с 1.7.10

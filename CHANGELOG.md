@@ -29,6 +29,10 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+### Fixed
+
+- Adding another mod no longer changes what is stored in GregTech inventories: a saved stack now keeps the item's name, so it survives any change to the set of installed items.
+
 ## [6.0.0-1.20.1-alpha.2.1] — the recipe viewer keeps one material on both sides of a card
 
 The same fix as `6.0.0-alpha.6.1` on the main branch, made against this version of the engine.
