@@ -60,7 +60,9 @@ public class CoverData {
 	}
 	
 	public CoverData(ITileEntityCoverable aTileEntity, CompoundTag aNBT) {
-		this( new short[] {aNBT.getShort("a"), aNBT.getShort("b"), aNBT.getShort("c"), aNBT.getShort("d"), aNBT.getShort("e"), aNBT.getShort("f")}
+		// The cover is addressed by a registry INDEX, which shifts with the mod set — the name written
+		// beside it decides, so covers stay themselves after another mod joins the game.
+		this( new short[] {ST.getItemId(aNBT, "a"), ST.getItemId(aNBT, "b"), ST.getItemId(aNBT, "c"), ST.getItemId(aNBT, "d"), ST.getItemId(aNBT, "e"), ST.getItemId(aNBT, "f")}
 			, new short[] {aNBT.getShort("g"), aNBT.getShort("h"), aNBT.getShort("i"), aNBT.getShort("j"), aNBT.getShort("k"), aNBT.getShort("l")}
 			, new short[] {aNBT.getShort("m"), aNBT.getShort("n"), aNBT.getShort("o"), aNBT.getShort("p"), aNBT.getShort("q"), aNBT.getShort("r")}
 			, new short[] {aNBT.getShort("0"), aNBT.getShort("1"), aNBT.getShort("2"), aNBT.getShort("3"), aNBT.getShort("4"), aNBT.getShort("5")}
@@ -73,42 +75,42 @@ public class CoverData {
 	public CompoundTag writeToNBT(CompoundTag aNBT, boolean aIncludeVisuals) {
 		byte i = 0;
 		if (mIDs[  i] != 0) {
-			aNBT.putShort("a", mIDs[i]);
+			ST.putItemId(aNBT, "a", mIDs[i]);
 			if (mMetas[i] != 0) aNBT.putShort("g", mMetas[i]);
 			if (mValues[i] != 0) aNBT.putShort("0", mValues[i]);
 			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("s", mNBTs[i]);
 			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.putShort("m", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
-			aNBT.putShort("b", mIDs[i]);
+			ST.putItemId(aNBT, "b", mIDs[i]);
 			if (mMetas[i] != 0) aNBT.putShort("h", mMetas[i]);
 			if (mValues[i] != 0) aNBT.putShort("1", mValues[i]);
 			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("t", mNBTs[i]);
 			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.putShort("n", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
-			aNBT.putShort("c", mIDs[i]);
+			ST.putItemId(aNBT, "c", mIDs[i]);
 			if (mMetas[i] != 0) aNBT.putShort("i", mMetas[i]);
 			if (mValues[i] != 0) aNBT.putShort("2", mValues[i]);
 			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("u", mNBTs[i]);
 			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.putShort("o", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
-			aNBT.putShort("d", mIDs[i]);
+			ST.putItemId(aNBT, "d", mIDs[i]);
 			if (mMetas[i] != 0) aNBT.putShort("j", mMetas[i]);
 			if (mValues[i] != 0) aNBT.putShort("3", mValues[i]);
 			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("v", mNBTs[i]);
 			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.putShort("p", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
-			aNBT.putShort("e", mIDs[i]);
+			ST.putItemId(aNBT, "e", mIDs[i]);
 			if (mMetas[i] != 0) aNBT.putShort("k", mMetas[i]);
 			if (mValues[i] != 0) aNBT.putShort("4", mValues[i]);
 			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("w", mNBTs[i]);
 			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.putShort("q", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
-			aNBT.putShort("f", mIDs[i]); 
+			ST.putItemId(aNBT, "f", mIDs[i]); 
 			if (mMetas[i] != 0) aNBT.putShort("l", mMetas[i]);
 			if (mValues[i] != 0) aNBT.putShort("5", mValues[i]);
 			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("x", mNBTs[i]);
