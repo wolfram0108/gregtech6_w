@@ -93,7 +93,10 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 			mMTEID = aNBT.getShort(NBT_MTE_ID).orElse((short)0);
 			mMTERegistry = aNBT.getShort(NBT_MTE_REG).orElse((short)0);
 			// And add additional Default Parameters, in case the Mod updated with new ones.
-			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(mMTERegistry);
+			// The saved number is a local item index; the registry NAME written beside it decides, and the
+			// number is refreshed to this run's index so the rest of the code keeps working with it.
+			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.resolve(aNBT);
+			if (tRegistry != null) mMTERegistry = gregapi.util.ST.id(gregapi.util.ST.item(tRegistry.mBlock));
 			if (tRegistry != null) {
 				MultiTileEntityClassContainer tClass = tRegistry.getClassContainer(mMTEID);
 				if (tClass != null) {
