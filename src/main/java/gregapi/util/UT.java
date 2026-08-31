@@ -2119,7 +2119,7 @@ public class UT {
 				return aList;
 			}
 			if (aData.contains(NBT_CANVAS_BLOCK)) {
-				aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(ST.block_(aData.getIntOr(NBT_CANVAS_BLOCK, 0)), 1, aData.getIntOr(NBT_CANVAS_META, 0))));
+				aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(ST.getBlock(aData, NBT_CANVAS_BLOCK), 1, aData.getIntOr(NBT_CANVAS_META, 0))));
 				return aList;
 			}
 			if (aData.contains(NBT_REPLICATOR_DATA)) {

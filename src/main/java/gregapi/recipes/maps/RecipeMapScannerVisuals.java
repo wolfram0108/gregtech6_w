@@ -112,7 +112,7 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 							rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 64, 16, 0);
 							if (!ST.hasNBT(rRecipe.mOutputs[0])) ST.setNBT(rRecipe.mOutputs[0], UT.NBT.make());
 							CompoundTag tNBT = UT.NBT.make();
-							tNBT.putInt(NBT_CANVAS_BLOCK, ItemNBT.get(tScanned).getIntOr(NBT_CANVAS_BLOCK, 0));
+							ST.copyBlock(ItemNBT.get(tScanned), tNBT, NBT_CANVAS_BLOCK);
 							tNBT.putInt(NBT_CANVAS_META, ItemNBT.get(tScanned).getIntOr(NBT_CANVAS_META, 0));
 							ST.nbtPut(rRecipe.mOutputs[0], NBT_USB_DATA, tNBT);
 							ST.nbtPutByte(rRecipe.mOutputs[0], NBT_USB_TIER, (byte)1);
@@ -191,7 +191,7 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 512, 16, 0);
 						if (!ST.hasNBT(rRecipe.mOutputs[0])) ST.setNBT(rRecipe.mOutputs[0], UT.NBT.make());
 						CompoundTag tNBT = UT.NBT.make();
-						tNBT.putInt(NBT_CANVAS_BLOCK, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(tBlock));
+						ST.putBlock(tNBT, NBT_CANVAS_BLOCK, tBlock);
 						tNBT.putInt(NBT_CANVAS_META, ST.meta_(tScanned));
 						ST.nbtPut(rRecipe.mOutputs[0], NBT_USB_DATA, tNBT);
 						ST.nbtPutByte(rRecipe.mOutputs[0], NBT_USB_TIER, (byte)1);

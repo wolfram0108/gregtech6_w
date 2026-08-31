@@ -447,6 +447,37 @@ public class ST {
 	 * чтобы сохранить оригинальное «null для неизвестного» 1:1. {@code Identifier.fromNamespaceAndPath}
 	 * — сверено (используется в DeferredRegister.java:230).
 	 */
+	/** Suffix of the companion key that stores a registry NAME next to a legacy numeric id. */
+	private static final String REG_SUFFIX = ".reg";
+
+	/** Writes a block into NBT by NAME (plus the legacy index, so older builds still read it):
+	 *  the index is a registry position and shifts as soon as the set of installed items changes. */
+	public static void putBlock(net.minecraft.nbt.CompoundTag aNBT, String aKey, Block aBlock) {
+		if (aNBT == null || aBlock == null || aBlock == NB) return;
+		aNBT.putInt(aKey, BuiltInRegistries.BLOCK.getId(aBlock));
+		Identifier tID = BuiltInRegistries.BLOCK.getKey(aBlock);
+		if (tID != null) aNBT.putString(aKey + REG_SUFFIX, tID.toString());
+	}
+
+	/** Block written by {@link #putBlock}; the name decides, the legacy index is the fallback. */
+	public static Block getBlock(net.minecraft.nbt.CompoundTag aNBT, String aKey) {
+		if (aNBT == null) return NB;
+		String tName = aNBT.getStringOr(aKey + REG_SUFFIX, "");
+		if (!tName.isEmpty()) {
+			Identifier tID = Identifier.tryParse(tName);
+			if (tID != null && BuiltInRegistries.BLOCK.containsKey(tID)) return BuiltInRegistries.BLOCK.getValue(tID);
+		}
+		return BuiltInRegistries.BLOCK.byId(aNBT.getIntOr(aKey, 0));
+	}
+
+	/** Copies a block reference (name and legacy index) between two NBT tags. */
+	public static void copyBlock(net.minecraft.nbt.CompoundTag aFrom, net.minecraft.nbt.CompoundTag aTo, String aKey) {
+		if (aFrom == null || aTo == null) return;
+		aTo.putInt(aKey, aFrom.getIntOr(aKey, 0));
+		String tName = aFrom.getStringOr(aKey + REG_SUFFIX, "");
+		if (!tName.isEmpty()) aTo.putString(aKey + REG_SUFFIX, tName);
+	}
+
 	/** Item by its full registry name ("namespace:path"); null for an empty or unknown name. */
 	public static Item itemByRegName(String aRegName) {
 		if (aRegName == null || aRegName.isEmpty()) return null;
