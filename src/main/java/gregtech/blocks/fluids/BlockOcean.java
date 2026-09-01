@@ -162,17 +162,9 @@ public class BlockOcean extends BlockWaterlike {
 			}
 		}
 		
-		for (BlockPos tCoords : tList) {
-			// ADAPT: та же причина, что у ветки aY-1 выше и у BlockSwamp:180 — ограничитель BIOMES_RIVER_LAKE
-			// накрывал воду, пока она сама была биомом; в mc26 она стоит в биомах суши.
-			if (!canClaim(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ())) continue;
-			if (WD.set(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
-				if (WD.exists(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j)) {
-					tBlock = WD.block(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j);
-					if (tBlock == this) aWorld.scheduleTick(new BlockPos(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j), this, tickRate);
-				}
-			}
-		}
+		// The claim itself lives in BlockWaterlike: ocean, river and swamp all take foreign water the same way,
+		// each stopped by its own canClaim territory (in mc26 the water sits in land biomes, not in its own).
+		claimWater(aWorld, tList);
 		
 		updateFlow(aWorld, aX, aY, aZ, aRandom);
 		PLACEMENT_ALLOWED = F;

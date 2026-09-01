@@ -66,33 +66,23 @@ import static gregapi.data.CS.*;
  * getQuantaValue/shouldSideBeRendered/onHeadInside/...) — 1:1, только API-свод.
  */
 public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock, IItemGT, IBlockOnHeadInside {
-	public static int WATER_UPDATE_FLAGS = 0;
+	// A state change reaches the client only with the UPDATE_CLIENTS bit set (Level.markAndNotifyBlock);
+	// 1.7.10 got that from the per-tick WD.update this port dropped, so the flag itself has to carry it.
+	public static int WATER_UPDATE_FLAGS = net.minecraft.world.level.block.Block.UPDATE_CLIENTS;
 
 	public final Fluid mFluid;
 
 	public BlockWaterlike(String aName, Fluid aFluid, boolean aFlowsOut, boolean aHide) {
-		// было super(aFluid, Material.water) + setResistance(30) — neo Block immutable (Properties ДО super,
-		// F16/F9 форс движка, см. BlockFluidBaseGT). setBlockName удалён (имя — ST.register ниже, как
-		// BlockBase.java); setLightOpacity(...) удалено (own getLightOpacity() ниже уже хардкодит значение);
-		// setFluidStack(...) удалено (Forge-only stack-поле, GT6 drain() его не читает — мёртвый код).
-		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром/call-site).
-		// Fluid-перегрузка супер-ктора: перенос характеристик 1:1 c Forge BlockFluidBase(Fluid,Material) —
-		// воды получают density=1000 (иначе нефти 600-900 «плотнее» воды density=1 и вытесняли бы её) и
-		// tickRate=5, который подклассы переставляют после super (Ocean/River 20, Swamp 10 — 1:1).
-		// .replaceable().liquid().pushReaction(DESTROY).noLootTable() — 1:1 с Material.water 1.7.10 (MaterialLiquid:
-		// replaceable + noPushMobility), эталон vanilla-вода Blocks.java:297-304: в воду можно ставить блоки (замещение).
-		// MODCOMPAT-002 (река/океан/болото невидимы на карте): цвет — из того же Material.water (waterColor), которым
-		// блок и объявлен; в 1.7.10 он приходил сам (`recompSrc/.../Block.java:232-235`), в neo дефолт = MapColor.NONE.
-		// Мост и приём общие со всеми иерархиями — gregapi.block.BlockBase.mapColorOf.
-		// РОЛЬ ЭТОЙ СЕМЬИ (паспорт роли, BlockFluidBaseGT): мировая вода объявляет движку ВАНИЛЬНУЮ воду —
-		// иначе мертвы waterlogging, заморозка и плавание (все они судят тождеством с Fluids.WATER, а не тегом).
-		// 1:1 с main (BlockWaterlike.java:90 ветки main).
+		// The block is immutable, so every trait is decided here: water keeps density 1000 or the heavier oils
+		// would push it aside, and the map colour is taken from the same Material.water the block declares.
+		// Big waters must BE vanilla water by identity: waterlogging, freezing and swimming pick them with
+		// is(Fluids.WATER) and offer no hook to join in otherwise.
 		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(30F), Material.water), Material.water, aFluid,
 			gregapi.block.fluid.BlockFluidBaseGT.EngineRole.VANILLA_WATER);
 		mFluid = aFluid;
 		quantaPerBlock = (aFlowsOut ? 8 : 3);
 		quantaPerBlockFloat = quantaPerBlock;
-		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site (Loader_Blocks); ЗДЕСЬ — только BlockItem.
+		// The block itself is registered at the call site; only its item belongs here.
 		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GT, aName, () -> gregapi.GT_API.blockItemFor(this, gregapi.block.fluid.ItemBlockFluidGT.class));
 		LH.add(getUnlocalizedName(), getLocalizedName());
 		LanguageHandler.set(getLocalizedName(), getLocalizedName()); // WAILA is retarded...
@@ -320,6 +310,40 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	 * поведение НЕ меняется — правка без замера в этом проекте запрещена.
 	 */
 	public boolean canClaim(Level aWorld, int aX, int aY, int aZ) {return T;}
+
+	// A bed that stands still never schedules a tick, so an old seam of plain water would sit there forever.
+	// The engine's own random tick is the cheapest pulse there is, and it does nothing at all unless foreign
+	// water is actually touching this cell — a scheduled tick is only asked for when there is work to do.
+	@Override public boolean isRandomlyTicking(net.minecraft.world.level.block.state.BlockState aState) {return T;}
+
+	@Override
+	public void randomTick(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		if (!plainWaterAround(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()).isEmpty()) aWorld.scheduleTick(aPos, this, tickRate);
+	}
+
+	/** Take over foreign water inside own territory and wake the neighbours, so the front keeps moving. */
+	public void claimWater(Level aWorld, Iterable<BlockPos> aList) {
+		for (BlockPos tCoords : aList) {
+			if (!canClaim(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ())) continue;
+			if (!WD.set(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) continue;
+			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
+				int tX = tCoords.getX()+i, tZ = tCoords.getZ()+j;
+				if (WD.exists(aWorld, tX, tCoords.getY(), tZ) && WD.block(aWorld, tX, tCoords.getY(), tZ) == this)
+					aWorld.scheduleTick(new BlockPos(tX, tCoords.getY(), tZ), this, tickRate);
+			}
+		}
+	}
+
+	/** Plain water touching this cell — the cells a claim may take over; own waters are never taken.
+	 *  Allocates nothing while there is none, because this runs in every tick of every water cell. */
+	public java.util.List<BlockPos> plainWaterAround(Level aWorld, int aX, int aY, int aZ) {
+		java.util.List<BlockPos> rList = null;
+		for (byte tSide : ALL_SIDES_BUT_TOP) if (WD.water(WD.block(aWorld, aX, aY, aZ, tSide))) {
+			if (rList == null) rList = new ArrayListNoNulls<>();
+			rList.add(new BlockPos(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]));
+		}
+		return rList == null ? java.util.Collections.emptyList() : rList;
+	}
 
 	public boolean isSourceBlock(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.block(aWorld, aX, aY, aZ) instanceof BlockWaterlike && WD.meta(aWorld, aX, aY, aZ) == 0;}
 	@Override public Block getBlock() {return this;}
