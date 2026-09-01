@@ -43,7 +43,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  *
- * F5 форс движка (decisions/F5-fluids.md §5): движковые хуки — см. javadoc {@link BlockOcean}.
+ * Engine hooks of the waterlike family are described on {@link BlockOcean}.
  */
 public class BlockRiver extends BlockWaterlike {
 	public static boolean PLACEMENT_ALLOWED = F, FLOWS_OUT = T;
@@ -56,7 +56,7 @@ public class BlockRiver extends BlockWaterlike {
 	// @Override
 	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		if (PLACEMENT_ALLOWED) {
-			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 10+RNGSUS.nextInt(90)); // было scheduleBlockUpdate(x,y,z,block,delay)
+			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 10+RNGSUS.nextInt(90));
 		} else {
 			WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 		}
@@ -72,9 +72,9 @@ public class BlockRiver extends BlockWaterlike {
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		PLACEMENT_ALLOWED = T;
 
-		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) { // было doChunksNearChunkExist(x,y,z,33) — см. BlockOcean
-			// ADAPT-009: холостые re-light + клиент-апдейт каждого тика воды сняты — обоснование см. BlockOcean.updateTick
-			if (aY > WD.minY(aWorld)) { // F6-Y-scale: было aY > 0, дно neo = getMinY()
+		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) {
+			// No per-tick relight or client packet: they cost far more than they ever fixed (see BlockOcean).
+			if (aY > WD.minY(aWorld)) { // The world floor is getMinY(), not zero.
 				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
 					aWorld.scheduleTick(new BlockPos(aX, aY-1, aZ), this, tickRate);
 				}
@@ -84,7 +84,7 @@ public class BlockRiver extends BlockWaterlike {
 			PLACEMENT_ALLOWED = F;
 			return;
 		}
-		if (aY <= WD.minY(aWorld)) { // F6-Y-scale: было aY <= 0, дно neo = getMinY()
+		if (aY <= WD.minY(aWorld)) { // The world floor is getMinY(), not zero.
 			updateFlow(aWorld, aX, aY, aZ, aRandom);
 			PLACEMENT_ALLOWED = F;
 			return;
@@ -94,6 +94,9 @@ public class BlockRiver extends BlockWaterlike {
 			for (byte tSide : ALL_SIDES_HORIZONTAL) if (WD.block(aWorld, aX, aY, aZ, tSide) == this && WD.meta(aWorld, aX, aY, aZ, tSide) == 0) tRiverCounter++;
 			if (tRiverCounter >= 2) WD.set(aWorld, aX, aY, aZ, this, 0, WATER_UPDATE_FLAGS);
 		}
+		// A river bed left half plain water (older chunks, worldgen seams) never healed, because unlike ocean
+		// and swamp the river took nothing over. Same claim, same territory gate — one carrier for all three.
+		claimWater(aWorld, plainWaterAround(aWorld, aX, aY, aZ));
 		updateFlow(aWorld, aX, aY, aZ, aRandom);
 		PLACEMENT_ALLOWED = F;
 		return;
@@ -106,16 +109,24 @@ public class BlockRiver extends BlockWaterlike {
 		return FL.Water.make(1000);
 	}
 	
+	/** Unlike ocean and swamp the river is not a biome but a line drawn through them — a measured bed runs
+	 *  through {@code minecraft:snowy_plains}, so gating the river by its own biome froze the very seams it
+	 *  had to heal. What it must respect instead is the territory of its sisters: sea water and dirty water
+	 *  are separate resources, and a river reaching them would quietly turn them into fresh water. */
+	@Override
+	public boolean canClaim(Level aWorld, int aX, int aY, int aZ) {
+		net.minecraft.core.Holder<Biome> tBiome = aWorld.getBiome(new BlockPos(aX, aY, aZ));
+		return !BIOMES_OCEAN_BEACH.contains(tBiome) && !BIOMES_SWAMP.contains(tBiome);
+	}
+
 	@Override
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
-		// было aWorld.getBiomeGenForCoords(x,z) (2D, IBlockAccess) — BlockGetter самого getBiome не несёт
-		// (LevelReader.getBiome(BlockPos), F6-центр); рендер вызывает colorMultiplier всегда с реальным Level
-		// (тот же приём — WD.te(BlockGetter,...) instanceof Level, WD.java:379-380), F3-safe дефолт иначе.
+		// Only a Level carries biomes, and the renderer always passes one; anything else gets a safe default.
 		if (!(aWorld instanceof Level)) return 0x00ffffff;
 		Level aLevel = (Level)aWorld;
 		int rR = 0, rG = 0, rB = 0;
 		for (int tX = -1; tX <= 1; tX++) for (int tZ = -1; tZ <= 1; tZ++) {
-			int tRGB = aLevel.getBiome(new BlockPos(aX+tX, aY, aZ+tZ)).value().getWaterColor(); // было .getWaterColorMultiplier() — Biome.getWaterColor() (Biome.java:259)
+			int tRGB = aLevel.getBiome(new BlockPos(aX+tX, aY, aZ+tZ)).value().getWaterColor();
 			rR += UT.Code.getR(tRGB);
 			rG += UT.Code.getG(tRGB);
 			rB += UT.Code.getB(tRGB);

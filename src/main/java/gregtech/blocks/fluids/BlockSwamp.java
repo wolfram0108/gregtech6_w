@@ -177,19 +177,8 @@ public class BlockSwamp extends BlockWaterlike {
 			}
 		}
 		
-		for (BlockPos tCoords : tList) {
-			// ADAPT (класс «признак сменил носитель», см. BlockWaterlike.canClaim): в 1.7.10 болото
-			// упиралось в воду, которая САМА была биомом river/ocean/beach, и ветка BIOMES_INFINITE_WATER
-			// выше его останавливала. В mc26 разлив лежит в биоме суши (замер: minecraft:savanna), список
-			// мимо — и болото ело чужую воду без предела. Своя территория болота = биом болота.
-			if (!canClaim(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ())) continue;
-			if (WD.set(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
-				if (WD.exists(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j)) {
-					tBlock = WD.block(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j);
-					if (tBlock instanceof BlockSwamp) aWorld.scheduleTick(new BlockPos(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j), this, tickRate);
-				}
-			}
-		}
+		// Same claim as ocean and river — one carrier in BlockWaterlike; the swamp only names its territory.
+		claimWater(aWorld, tList);
 		
 		updateFlow(aWorld, aX, aY, aZ, aRandom);
 		PLACEMENT_ALLOWED = F;
