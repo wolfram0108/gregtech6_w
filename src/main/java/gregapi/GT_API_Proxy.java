@@ -978,10 +978,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						}
 
 						if (rStack == null || rStack.getCount() <= 0) {
-							((ItemEntity)aEntity).setItem(NI);
+							// ItemEntity reads its own stack (fireImmune -> getItem().canBeHurtBy), so null crashes the engine.
+							((ItemEntity)aEntity).setItem(ST.nn(NI));
 							// BUG-103: не discard() здесь — мы внутри обхода сущностей мира (см. tToDiscard выше)
 							if (tToDiscard == null) tToDiscard = new ArrayListNoNulls<>(16);
 							tToDiscard.add((ItemEntity)aEntity);
+							// Removal is deferred, so isRemoved() stays false: the entity must be skipped explicitly.
+							continue;
 						} else if (!ST.equal(rStack, aStack) || rStack.getCount() != aStack.getCount()) {
 							((ItemEntity)aEntity).setItem(rStack);
 							UT.Reflection.setField(ItemEntity.class, aEntity, "pickupDelay", 40, F); // было delayBeforeCanPickup (1.7.10) — neo-имя поля: pickupDelay, приватное (сверено, ItemEntity.java:49)
@@ -1354,7 +1357,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		//
 		net.minecraft.world.entity.player.Inventory tInv = aPlayer.getInventory();
 		// Only work on Vanilla-Sized Player Inventories!
-		if (tInv.getContainerSize() != 36) return;
+		// 1.7.10 measured mainInventory; getContainerSize() also counts the seven equipment slots.
+		if (tInv.getNonEquipmentItems().size() != 36) return;
 		//
 		int tSlot = tInv.getSelectedSlot();
 		// There cant be any Inventory Row above this one.
@@ -1372,22 +1376,22 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (ST.equal(aOriginal, tInv.getItem(tSlot+27), T)) {
 			if (ST.equal(aOriginal, tInv.getItem(tSlot+18), T)) {
 			if (ST.equal(aOriginal, tInv.getItem(tSlot+ 9), T)) {
-			tInv.setItem(tSlot, tInv.getItem(tSlot+ 9)); tInv.setItem(tSlot+ 9, NI); ST.update(aPlayer); return;}
-			tInv.setItem(tSlot, tInv.getItem(tSlot+18)); tInv.setItem(tSlot+18, NI); ST.update(aPlayer); return;}
-			tInv.setItem(tSlot, tInv.getItem(tSlot+27)); tInv.setItem(tSlot+27, NI); ST.update(aPlayer); return;}
+			tInv.setItem(tSlot, tInv.getItem(tSlot+ 9)); tInv.setItem(tSlot+ 9, ST.nn(NI)); ST.update(aPlayer); return;}
+			tInv.setItem(tSlot, tInv.getItem(tSlot+18)); tInv.setItem(tSlot+18, ST.nn(NI)); ST.update(aPlayer); return;}
+			tInv.setItem(tSlot, tInv.getItem(tSlot+27)); tInv.setItem(tSlot+27, ST.nn(NI)); ST.update(aPlayer); return;}
 			return;
 		}
 		// Move into Second Row. Usually only with the Double Hotbars Mod.
 		if (tSlot < 18) {
 			if (ST.equal(aOriginal, tInv.getItem(tSlot+18), T)) {
 			if (ST.equal(aOriginal, tInv.getItem(tSlot+ 9), T)) {
-			tInv.setItem(tSlot, tInv.getItem(tSlot+ 9)); tInv.setItem(tSlot+ 9, NI); ST.update(aPlayer); return;}
-			tInv.setItem(tSlot, tInv.getItem(tSlot+18)); tInv.setItem(tSlot+18, NI); ST.update(aPlayer); return;}
+			tInv.setItem(tSlot, tInv.getItem(tSlot+ 9)); tInv.setItem(tSlot+ 9, ST.nn(NI)); ST.update(aPlayer); return;}
+			tInv.setItem(tSlot, tInv.getItem(tSlot+18)); tInv.setItem(tSlot+18, ST.nn(NI)); ST.update(aPlayer); return;}
 			return;
 		}
 		// Move into Third Row. Unsure if a Triple Hotbar Mod exists, but if it does, well then it is supported.
 		if (ST.equal(aOriginal, tInv.getItem(tSlot+ 9), T)) {
-		tInv.setItem(tSlot, tInv.getItem(tSlot+ 9)); tInv.setItem(tSlot+ 9, NI); ST.update(aPlayer); return;}
+		tInv.setItem(tSlot, tInv.getItem(tSlot+ 9)); tInv.setItem(tSlot+ 9, ST.nn(NI)); ST.update(aPlayer); return;}
 		return;
 	}
 	
