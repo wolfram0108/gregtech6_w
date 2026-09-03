@@ -50,6 +50,10 @@ public interface IBehavior<E extends Item> {
 	public boolean onRightClickEntity(E aItem, ItemStack aStack, Player aPlayer, Entity aEntity);
 	public boolean onItemUse(E aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ);
 	public boolean onItemUseFirst(E aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ);
+	/** Behaviours act server side only, so on the client every click reports PASS and the client then repeats
+	 *  it with the other hand, undoing what the server just did. A behaviour that answers block clicks says so
+	 *  here, and the client stops after the first hand. */
+	public default boolean handlesUseOnFirst(E aItem, ItemStack aStack) {return false;}
 	public ItemStack onItemRightClick(E aItem, ItemStack aStack, Level aWorld, Player aPlayer);
 	public List<String> getAdditionalToolTips(E aItem, List<String> aList, ItemStack aStack);
 	public void onUpdate(E aItem, ItemStack aStack, Level aWorld, Entity aPlayer, int aTimer, boolean aIsInHand);
@@ -76,7 +80,7 @@ public interface IBehavior<E extends Item> {
 		
 		@Override
 		public ItemStack onDispense(MultiItem aItem, BlockSource aSource, ItemStack aStack) {
-			Direction enumfacing = aSource.getBlockState().getValue(DispenserBlock.FACING); // F-dispenser: func_149937_b(metadata) -> facing в BlockState (BlockSource=record, DispenserBlock.java:50).
+			Direction enumfacing = aSource.getBlockState().getValue(DispenserBlock.FACING); // F-dispenser: the facing moved from metadata into the BlockState (DispenserBlock.java:50)
 			Position iposition = DispenserBlock.getDispensePosition(aSource);
 			ItemStack itemstack1 = aStack.split(1);
 			DefaultDispenseItemBehavior.spawnItem(aSource.getLevel(), itemstack1, 6, enumfacing, iposition); // F-dispenser: doDispense -> spawnItem (DefaultDispenseItemBehavior.java:30).
