@@ -88,10 +88,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	 */
 	public MultiItemTool(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		// BUG-021: прежний довод «стак=1 следует из durability декларативно» был НЕВЕРЕН — GT6-инструменты ведут
-		// прочность собственной NBT-системой (getToolDamage/doDamage), Properties.durability/DAMAGE-компонента у них
-		// нет → движок ничего не форсировал, инструменты стакались по 64. Восстановлено 1:1 (оригинал :88); жёсткий
-		// getItemStackLimit=1 ниже (:~754) достижим через мост MultiItem.getMaxStackSize.
+		// BUG-021: stack=1 does NOT follow from durability — GT6 tools track it via their own NBT system
+		// (getToolDamage/doDamage), no durability component involved; engine never forced it, tools stacked to 64. Restored 1:1 (original :88); hard limit enforced via getItemStackLimit=1 (:~754) through the MultiItem.getMaxStackSize bridge.
 		setMaxStackSize(1);
 		/*
 		if (MD.BG2.mLoaded) try {
@@ -214,9 +212,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 			return;
 		}
 		long tDamage = tStats.convertBlockDrops(aDrops, aStack, aPlayer, aBlock, (getToolMaxDamage(aStack) - getToolDamage(aStack)) / tStats.getToolDamagePerDropConversion(), aX, aY, aZ, aMeta, aFortune, aSilkTouch);
-		// 1:1 с 1.7.10 setBlockToAir: ставим именно ВОЗДУХ. neo removeBlock оставляет на месте жидкость клетки
-		// (Level.java:296-298 — fluidState.createLegacyBlock()), а ванильный лёд к этому моменту уже мог смениться
-		// водой (тот же класс ошибки перевода, что был в CoverDrain).
+		// 1:1 with 1.7.10 setBlockToAir: set AIR explicitly — neo removeBlock leaves the cell's fluid behind
+		// (Level.java:296-298, fluidState.createLegacyBlock()); ice may already be water by this point (same bug class as CoverDrain).
 		if (aBlock == Blocks.ICE && !aDrops.isEmpty()) aPlayer.level().setBlock(new BlockPos(aX, aY, aZ), Blocks.AIR.defaultBlockState(), 3);
 		if (WD.dimBTL(aPlayer.level()) && !getPrimaryMaterial(aStack).contains(TD.Properties.BETWEENLANDS)) tDamage *= 4;
 		doDamage(aStack, tDamage * tStats.getToolDamagePerDropConversion(), aPlayer, T);
@@ -236,11 +233,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (aBlock == NB || WD.bedrock(aBlock)) return aDefault;
 		// Things that are normally harvested instantly, like Torches for example.
 		if (ST.instaharvest(aBlock, aMeta)) return Float.MAX_VALUE;
-		// BUG-071 ВТОРОЕ ЗВЕНО (первое — право на дроп, GT_API_Proxy.onPlayerHarvestCheckEvent): недостаточный уровень
-		// инструмента в 1.7.10 давал НУЛЕВУЮ скорость (getDigSpeed:482 оригинала: quality < block.getHarvestLevel(meta)
-		// → 0), то есть блок не разрушался вовсе, а не «ломался без дропа». Здесь то же сравнение, но уровень берётся
-		// ПОЗИЦИОННЫМ центром WD.harvestLevel(world,x,y,z): у prefix/MTE мета порта занята другим и на пути
-		// getDestroySpeed(stack,state) вырождается в 0 (см. javadoc центра). Событие BreakSpeed позицию несёт.
+		// BUG-071 link 2 (link 1 = drop eligibility, GT_API_Proxy.onPlayerHarvestCheckEvent): insufficient level gave
+		// ZERO speed in 1.7.10 (original getDigSpeed:482) — block didn't break at all, not "breaks without drop". Same check here, but level comes from the positional WD.harvestLevel center: getDestroySpeed(stack,state) has no position (prefix/MTE meta is repurposed), the BreakSpeed event does.
 		IToolStats tStatsLevel = getToolStats(aStack);
 		if (tStatsLevel == null || tStatsLevel.getBaseQuality() + getPrimaryMaterial(aStack).mToolQuality
 			< UT.Code.bind4(WD.harvestLevel(aPlayer.level(), aX, aY, aZ))) return 0;
@@ -255,32 +249,29 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public boolean onLeftClickEntity(ItemStack aStack, Player aPlayer, Entity aEntity) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null || !isItemStackUsable(aStack)) return T;
-		// item-base functional (компилятор-неоднозначность play(String,int,float,Entity/BlockPos) обойдена координатным overload, тот же эффект): play(String,int,float,Entity) vs
-		// play(String,int,float,BlockPos) неоднозначны компилятору на этом call-site (не мой центр, вне зоны,
-		// gregapi/util/UT.java) — обхожу через координатный overload, тот же эффект (Entity-overload сам вызывает
-		// координатный внутри).
-		if (TOOL_SOUNDS) UT.Sounds.forActor(tStats.getEntityHitSound(), 20, 1, aPlayer, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())); // BUG-113: hitEntity идёт только на сервере
+		// play(String,int,float,Entity) vs play(String,int,float,BlockPos) is ambiguous to the compiler at this call
+		// site (gregapi/util/UT.java, out of scope here) — use the coordinate overload instead, same effect since the Entity overload calls it internally anyway.
+		if (TOOL_SOUNDS) UT.Sounds.forActor(tStats.getEntityHitSound(), 20, 1, aPlayer, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())); // BUG-113: hitEntity only runs server-side
 		if (super.onLeftClickEntity(aStack, aPlayer, aEntity)) return T;
-		// 1.7.10 Entity.canAttackWithItem() -> neo Entity.isAttackable() (можно ли атаковать сущность). Способность есть, 1:1.
+		// 1.7.10 Entity.canAttackWithItem() -> neo Entity.isAttackable() (whether the entity can be attacked). Capability present, 1:1.
 		if (aEntity.isAttackable()) {
 			int tImplosion = UT.NBT.getEnchantmentLevelImplosion(aStack);
-			// F8 (1:1): 1.7.10 EnchantmentHelper.getFireAspectModifier(aPlayer) — уровень Fire Aspect на оружии.
-			// Enchantments.FIRE_ASPECT в neo = ResourceKey (не удалён); ported UT.NBT.getEnchantmentLevel читает уровень со стека.
+			// F8 (1:1): 1.7.10 EnchantmentHelper.getFireAspectModifier(aPlayer) — Fire Aspect level on the weapon.
+			// Enchantments.FIRE_ASPECT in neo is a ResourceKey (not removed); ported UT.NBT.getEnchantmentLevel reads it from the stack.
 			int tFireAspect = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT, aStack);
 			boolean tIgnitesFire = !aEntity.isOnFire() && tFireAspect > 0 && aEntity instanceof LivingEntity;
 			if (tIgnitesFire) aEntity.setSecondsOnFire(1);
 			if (aEntity.skipAttackInteraction(aPlayer)) {
 				if (tIgnitesFire) aEntity.clearFire();
 			} else {
-				// F8 (1:1): 1-й арг — урон-бонус чар (Sharpness/Smite/Bane) против жертвы. 1.7.10 getEnchantmentModifierLiving(
-				// aPlayer,entity); neo-эквивалент ported UT.Enchantments.getDamageBonusVsCreature (EnchantmentHelper.modifyDamage,
-				// тот же центр, что зовут EntityArrow_Material/Behavior_Gun). Было 0.
+				// F8 (1:1): 1st arg is the enchant damage bonus (Sharpness/Smite/Bane) vs the victim — 1.7.10
+				// getEnchantmentModifierLiving(aPlayer,entity), ported as UT.Enchantments.getDamageBonusVsCreature (same center used by EntityArrow_Material/Behavior_Gun). Was 0 before.
 				float tMagicDamage = tStats.getMagicDamageAgainstEntity(aEntity instanceof LivingEntity ? UT.Enchantments.getDamageBonusVsCreature(aStack, aEntity) : 0, aEntity, aStack, aPlayer), tDamage = tStats.getNormalDamageAgainstEntity((float)aPlayer.getAttributeValue(Attributes.ATTACK_DAMAGE) + getToolCombatDamage(aStack), aEntity, aStack, aPlayer);
 				// Also work on Ghasts and such. But no double dipping on Anti Creeper Damage!
 				if (tImplosion > 0 && UT.Entities.isExplosiveCreature(aEntity) && !Creeper.class.isInstance(aEntity)) tMagicDamage += 1.5F * tImplosion;
 
 				if (tDamage + tMagicDamage > 0) {
-					// 1.7.10 Entity.hurtResistantTime -> neo Entity.invulnerableTime (то же поле hit-invulnerability, переименовано). Способность есть, 1:1.
+					// 1.7.10 Entity.hurtResistantTime -> neo Entity.invulnerableTime (same hit-invulnerability field, renamed). Capability present, 1:1.
 					boolean tRealHit = (!aEntity.level().isClientSide() || aEntity.invulnerableTime <= 0);
 					boolean tCriticalHit = aPlayer.fallDistance > 0 && !aPlayer.onGround() && !aPlayer.onClimbable() && !aPlayer.isInWater() && !aPlayer.hasEffect(MobEffects.BLINDNESS) && aPlayer.getVehicle() == null && aEntity instanceof LivingEntity;
 					if (tCriticalHit && tDamage > 0) tDamage *= 1.5;
@@ -289,14 +280,13 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 					if (tStats.canPenetrate() && tSource instanceof gregapi.damage.DamageSources.GregTechDamageSource) ((gregapi.damage.DamageSources.GregTechDamageSource)tSource).setDamageBypassesArmor();
 					// Avoiding the Betweenlands Damage Cap of 40 in a fair way.
 					// Only Betweenlands Materials will avoid it. And maybe some super Lategame Materials.
-					// 1.7.10 attackEntityFrom работал на ОБЕ стороны (клиент — предсказание). neo-эквивалент = hurtOrSimulate:
-					// сам диспатчит ServerLevel→hurtServer / ClientLevel→hurtClient (Entity.java:1835). Прямой каст (ServerLevel)level()
-					// на клиенте кидал ClassCastException (BUG-003) — tRealHit по формуле :268 истинен и на клиенте.
+					// 1.7.10 attackEntityFrom ran on BOTH sides (client = prediction). neo equivalent hurtOrSimulate
+					// dispatches itself (ServerLevel->hurtServer / ClientLevel->hurtClient, Entity.java:1835); a direct (ServerLevel) cast threw CCE client-side (BUG-003) — tRealHit above is true client-side too.
 					if (tRealHit && MD.BTL.mLoaded && aEntity.getClass().getName().startsWith("thebetweenlands") && getPrimaryMaterial(aStack).contains(TD.Properties.BETWEENLANDS)) {
 						float tDamageToDeal = tFullDamage;
 						while (tDamageToDeal > 0 && aEntity.hurt(tSource, Math.min(tDamageToDeal, 12) / 0.3F)) {
 							tDamageToDeal -= 12;
-							if (tDamageToDeal > 0) aEntity.invulnerableTime = 0; // 1.7.10 hurtResistantTime=0 (было УРОНЕНО в порту) — сброс invuln-фреймов, чтобы следующий 12-урон прошёл (обход BTL-кэпа 40); invulnerableTime = переименованное поле
+							if (tDamageToDeal > 0) aEntity.invulnerableTime = 0; // 1.7.10 hurtResistantTime=0 (dropped in the port) — reset invuln frames so the next 12-dmg hit lands (bypasses BTL's 40 cap); invulnerableTime is the renamed field
 						}
 						tRealHit &= (tDamageToDeal < tFullDamage);
 					} else if (tRealHit) {
@@ -317,8 +307,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	@Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {
 		IToolStats tStats = getToolStats(aStack);
-		// item-base: neo use-модель — startUsingItem(InteractionHand) + длительность из getUseDuration (см. ниже),
-		// явный setItemInUse(stack,72000) не нужен (заменён декларативно). Не заглушка.
+		// item-base: neo's use model is startUsingItem(InteractionHand) + duration from getUseDuration (below) —
+		// no explicit setItemInUse(stack,72000) needed, it's declarative now. Not a stub.
 		return super.onItemRightClick(aStack, aWorld, aPlayer);
 	}
 
@@ -335,8 +325,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return 0;
 	}
 	
-	// F13/F16 creative-tab: getSubItems сохранён 1:1 как перечислитель вариантов; ПОДКЛЮЧЁН — CreativeTabsGT.populate
-	// вызывает его рефлексивно из displayItems-генератора GT-вкладки (см. CreativeTabsGT). Не заглушка.
+	// F13/F16 creative-tab: getSubItems kept 1:1 as the variant enumerator; WIRED UP — CreativeTabsGT.populate
+	// calls it reflectively from the GT tab's displayItems generator. Not a stub.
 	@SuppressWarnings("unchecked")
 	public final void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
 		for (int i = 0; i < 32766; i+=2) if (getToolStats(ST.make(this, 1, i)) != null) {
@@ -442,9 +432,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		}
 		return 0;
 	}
-	// F8-nbt: оригинал мутировал живой тег стека (1.7.10 getTagCompound = ссылка). Под мостом ItemNBT (neo CustomData копирует
-	// тег на get()) мутацию надо вернуть в стек: get(копия) → mutate → put суб-тег обратно → ItemNBT.set(aStack, ...). Иначе
-	// метод no-op → инструменты не изнашиваются (doDamage:464). См. decisions/F8-nbt-data-components.md §7.
+	// F8-nbt: the original mutated the stack's live tag (1.7.10 getTagCompound = reference). Under the ItemNBT bridge
+	// (neo CustomData copies the tag on get()), the mutation must be written back: get(copy) -> mutate -> put sub-tag -> ItemNBT.set(aStack, ...), else it's a no-op and tools never wear (doDamage:464). See decisions/F8-nbt-data-components.md §7.
 	public static final boolean setToolDamage(ItemStack aStack, long aDamage) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
@@ -482,7 +471,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 				} else {
 					if (TOOL_SOUNDS) {
 						String tBreakSound = getPrimaryMaterial(aStack) == MT.NULL ? tStats.getCraftingSound() : tStats.getBreakingSound();
-						// BUG-113: ветвление «есть игрок / нет игрока» больше не пишется на месте — его держит центр
+						// BUG-113: the "player present / no player" branch is no longer written inline — a central helper owns it
 						if (aPlayer == null) UT.Sounds.play(tBreakSound, 100, 1, LAST_TOOL_COORDS_BEFORE_DAMAGE);
 						else UT.Sounds.forActor(tBreakSound, 100, 1, aPlayer, UT.Code.roundDown(aPlayer.getX()), UT.Code.roundDown(aPlayer.getY()), UT.Code.roundDown(aPlayer.getZ()));
 					}
@@ -505,13 +494,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return useEnergy(TD.Energy.EU, aStack, aAmount, aPlayer, null, null, 0, 0, 0, T);
 	}
 	
-	// F9-tool: getDigSpeed(ItemStack,Block,int)/canHarvestBlock/getHarvestLevel/onBlockDestroyed — GT6-внутренние
-	// доменные вычисления (тела 1:1, зовутся другими методами этого класса напрямую). Block.getHarvestLevel(int)/
-	// getBlockHardness(World,x,y,z) внутри — восстановлены через ЦЕНТРЫ WD.harvestLevel/WD.hardness (реальные порты).
-	// НЕO-MINING-МОСТ (принцип 4): подключаем GT6-доменные вычисления к реальной добыче движка. getDestroySpeed/
-	// isCorrectToolForDrops — БЕЗ позиции (F13: числовой меты в BlockState нет) → мета-0, РОВНО как GT6-canHarvestBlock:518
-	// всегда берёт (byte)0 (консистентно с оригиналом:487-488). mineBlock — С позицией → onBlockDestroyed с реальной метой
-	// (WD.meta(world,pos) внутри). Теперь инструмент в игре копает/дропает/изнашивается по GT6-логике, а не neo-дефолту.
+	// F9-tool bridge (principle 4): getDigSpeed/canHarvestBlock/getHarvestLevel/onBlockDestroyed are GT6-internal
+	// domain logic wired to real engine mining via the WD.harvestLevel/WD.hardness centers. getDestroySpeed/isCorrectToolForDrops have no position (F13: BlockState carries no numeric meta) so they use meta 0, same as GT6-canHarvestBlock:518 (matches original:487-488); mineBlock has a position, so onBlockDestroyed gets the real meta via WD.meta(world,pos).
 	/**
 	 * ⛔ СЮДА ИДЁТ {@link #getDigSpeed} — И ЭТО 1:1, ПРОВЕРЕНО ПАРНЫМ ЗАМЕРОМ (2026-08-06).
 	 *
@@ -537,8 +521,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return canHarvestBlock(aState.getBlock(), aStack);
 	}
 	@Override public boolean mineBlock(ItemStack aStack, Level aWorld, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.core.BlockPos aPos, net.minecraft.world.entity.LivingEntity aPlayer) {
-		// F13-контракт (BUG-016): в 1.7.10 onBlockDestroyed звался ДО removeBlock (мета ещё в мире); в neo mineBlock
-		// идёт ПОСЛЕ — мета берётся из снимка aState, не из мира (там уже воздух).
+		// F13 contract (BUG-016): in 1.7.10 onBlockDestroyed ran BEFORE removeBlock (meta still in world); in neo
+		// mineBlock runs AFTER — meta comes from the aState snapshot, not the world (already air there).
 		return onBlockDestroyed(aStack, aWorld, aState.getBlock(), aPos.getX(), aPos.getY(), aPos.getZ(), aPlayer, WD.meta(aState));
 	}
 	public float getDigSpeed(ItemStack aStack, Block aBlock, int aMeta) {
@@ -551,8 +535,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		OreDictMaterial tMaterial = getPrimaryMaterial(aStack);
 		if ((IL.TF_Mazestone.equal(aBlock) || IL.TF_Mazehedge.equal(aBlock) || IL.TF_Towerwood.equal(aBlock)) && tMaterial.contains(TD.Properties.MAZEBREAKER)) tMultiplier *= 40;
 		IToolStats tStats = getToolStats(aStack);
-		// оригинал:482 ... < UT.Code.bind4(aBlock.getHarvestLevel(aMeta)). Способность ЕСТЬ — ЦЕНТР WD.harvestLevel
-		// (GT6-блок->BlockBase.getHarvestLevel, vanilla->neo NEEDS_*_TOOL теги). Была ложная деградация до 0 (любой инструмент копал всё) — 1:1 восстановлено.
+		// original:482 ... < UT.Code.bind4(aBlock.getHarvestLevel(aMeta)). Capability exists via the WD.harvestLevel
+		// center (GT6 block -> BlockBase.getHarvestLevel, vanilla -> neo NEEDS_*_TOOL tags). Had falsely degraded to 0 (any tool mined anything) — restored 1:1.
 		if (tStats == null || tStats.getBaseQuality() + tMaterial.mToolQuality < UT.Code.bind4(WD.harvestLevel(aBlock, aMeta))) return 0;
 		return tStats.getMiningSpeed(aBlock, (byte)aMeta) * Math.max(Float.MIN_NORMAL, tStats.getSpeedMultiplier() * tMultiplier * tMaterial.mToolSpeed);
 	}
@@ -586,18 +570,18 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	}
 
 	public boolean onBlockDestroyed(ItemStack aStack, Level aWorld, Block aBlock, int aX, int aY, int aZ, LivingEntity aPlayer) {
-		return onBlockDestroyed(aStack, aWorld, aBlock, aX, aY, aZ, aPlayer, WD.meta(aWorld, aX, aY, aZ)); // 1.7.10-сигнатура сохранена
+		return onBlockDestroyed(aStack, aWorld, aBlock, aX, aY, aZ, aPlayer, WD.meta(aWorld, aX, aY, aZ)); // 1.7.10 signature kept
 	}
 	public boolean onBlockDestroyed(ItemStack aStack, Level aWorld, Block aBlock, int aX, int aY, int aZ, LivingEntity aPlayer, byte aMeta) {
 		if (ST.instaharvest(aBlock) || UT.Entities.hasInfiniteItems(aPlayer)) return T;
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null) return F;
-		if (TOOL_SOUNDS) UT.Sounds.forActor(tStats.getMiningSound(), 5, 1, aPlayer, aX, aY, aZ); // BUG-113: mineBlock идёт только на сервере
+		if (TOOL_SOUNDS) UT.Sounds.forActor(tStats.getMiningSound(), 5, 1, aPlayer, aX, aY, aZ); // BUG-113: mineBlock only runs server-side
 		String aRegName = ST.regName(aBlock);
 		boolean rReturn = (getDigSpeed(aStack, aBlock, aMeta) > 0);
-		// оригинал: * aBlock.getBlockHardness(aWorld,aX,aY,aZ). Способность ЕСТЬ — ЦЕНТР WD.hardness (уже
-		// через BlockState.getDestroySpeed, WD.java:360). Была ложная деградация до 1.0 — восстановлено 1:1.
+		// original: * aBlock.getBlockHardness(aWorld,aX,aY,aZ). Capability exists via the WD.hardness center
+		// (BlockState.getDestroySpeed, WD.java:360). Had falsely degraded to 1.0 — restored 1:1.
 		double tDamage = tStats.getToolDamagePerBlockBreak() * WD.hardness(aBlock, aWorld, aX, aY, aZ);
 		OreDictMaterial aMat1 = getPrimaryMaterial(aStack);
 		if (WD.dimBTL(aWorld) && !aMat1.contains(TD.Properties.BETWEENLANDS)) tDamage *= 4;
@@ -607,9 +591,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 			if (IL.TF_Mazestone.equal(aBlock)) if (aMat1.contains(TD.Properties.MAZEBREAKER)) tDamage /= 40; else tDamage *= 16;
 			if (IL.TF_Mazehedge.equal(aBlock)) {
 				if (aMat1.contains(TD.Properties.MAZEBREAKER)) tDamage /= 40; else tDamage *= 16;
-				// F8 (1:1): было UT.NBT.getEnchantmentLevel(Enchantment.silkTouch, aStack) <= 0 — особый Mazehedge-дроп ТОЛЬКО без
-				// шёлкового касания. Enchantments.SILK_TOUCH в neo = ResourceKey (не удалён); ported UT.NBT.getEnchantmentLevel
-				// (UT.java:2257) читает уровень чар со стека. Гейт восстановлен: с silk-touch особый дроп НЕ выдаётся.
+				// F8 (1:1): original UT.NBT.getEnchantmentLevel(Enchantment.silkTouch, aStack) <= 0 gates the special
+				// Mazehedge drop to non-silk-touch only. Enchantments.SILK_TOUCH in neo is a ResourceKey (not removed); ported UT.NBT.getEnchantmentLevel (UT.java:2257) reads it. Gate restored: silk-touch suppresses the special drop.
 				if (!aWorld.isClientSide() && UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH, aStack) <= 0) {
 					if (aPlayer instanceof Player && canCollectDropsDirectly(aStack, aBlock, aMeta)) {
 						ST.give(aPlayer, IL.TF_Mazehedge.get(1), aWorld, aX, aY, aZ);
@@ -624,12 +607,12 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	}
 	
 	@Override
-	public ItemStack getContainerItem(ItemStack aStack) {
+	public ItemStack getContainerItemDefault(ItemStack aStack) {
 		if (!isUsableMeta(aStack)) return null;
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null) return null;
-		// тот же случай, что в PrefixItem: путь крафта серверный, но крафтящего игрока движок держит для нас
-		// (CommonHooks, ResultSlot.java:89-91) — берём носителя оттуда, а не теряем звук.
+		// Same case as PrefixItem: the crafting path is server-side, but the engine hands us the crafting player
+		// (CommonHooks, ResultSlot.java:89-91) — take it from there instead of dropping the sound.
 		if (TOOL_SOUNDS) {
 			net.minecraft.world.entity.player.Player tCrafter = net.minecraftforge.common.ForgeHooks.getCraftingPlayer();
 			if (tCrafter != null) UT.Sounds.forActor(tStats.getCraftingSound(), 200, 1, tCrafter, UT.Code.roundDown(tCrafter.getX()), UT.Code.roundDown(tCrafter.getY()), UT.Code.roundDown(tCrafter.getZ()));
@@ -667,9 +650,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public boolean isItemStackUsable(ItemStack aStack) {
 		if (aStack.getCount() <= 0) return F;
 
-		// F8-nbt: aNBT.remove("ench")/put("ench",...) мутируют СНИМОК (neo CustomData копирует тег на get()) — надо вернуть в
-		// стек через ItemNBT.set, иначе в 1.7.10-семантике «живого тега» правки терялись → энчанты переприменялись каждый вызов
-		// (маркер "ench" не персистился). См. decisions/F8-nbt-data-components.md §7.
+		// F8-nbt: aNBT.remove("ench")/put("ench",...) mutate a SNAPSHOT (neo CustomData copies the tag on get()) — must be
+		// written back via ItemNBT.set, else the "ench" marker never persists and enchants get reapplied every call. See decisions/F8-nbt-data-components.md §7.
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		// The Tool has no Data? Treat it like a single use Creative Tool.
 		if (aNBT == null) return T;
@@ -718,7 +700,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (tStats.isRangedWeapon()) for (ObjectStack<Enchantment> tEnchantment : aMaterial.mEnchantmentRanged ) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
 		
 		// Get Tool Specific Enchantments.
-		Enchantment[] tEnchants = tStats.getEnchantments(aStack, aMaterial); // валюта чар в 1.20.1 — сам Enchantment (форма 1.7.10).
+		Enchantment[] tEnchants = tStats.getEnchantments(aStack, aMaterial); // enchant currency in 1.20.1 is Enchantment itself (matches the 1.7.10 shape)
 		int[] tLevels = tStats.getEnchantmentLevels(aStack, aMaterial);
 		
 		for (int i = 0; i < tEnchants.length; i++) if (tLevels[i] > 0) {
@@ -758,11 +740,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return getUnusableMeta(ST.meta(aStack));
 	}
 	
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): getRenderPasses(int)/getColorFromItemStack(ItemStack,int)/
-	// getIconIndex/getIconFromDamage/getIconFromDamageForRenderPass/getIcon(...) (1.7.10 multi-pass IIcon
-	// Item-рендер) не существуют в 26.1.2 Item целиком — держатель текстуры теперь ResourceLocation (см.
-	// gregapi.render.IIconContainer, тот же центр); методы НЕ @Override, тела 1:1 сохранены (внутренние
-	// доменные вычисления, дергают друг друга напрямую внутри этого же класса).
+	// F3 superseded-render (GT6BlockModel/ItemModel pipeline; old getIcon/immediate-mode is dead, 0 neo calls):
+	// getRenderPasses/getColorFromItemStack/getIconIndex/getIconFromDamage*/getIcon (1.7.10 multi-pass Item render) don't exist on 26.1.2 Item; texture holder is now ResourceLocation (gregapi.render.IIconContainer). Not @Override, bodies kept 1:1 as internal domain calls between each other.
 	public int getRenderPasses(int aMetaData) {
 		IToolStats tStats = getToolStatsInternal(aMetaData);
 		if (tStats != null) return tStats.getRenderPasses()+2;
@@ -813,20 +792,19 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public IToolStats getToolStatsInternal(int aDamage) {return mToolStats.get((short)aDamage);}
 	@Override public final boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	@Override public final int getItemStackLimit(ItemStack aStack) {return 1;}
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): isFull3D/getSpriteNumber/requiresMultipleRenderPasses (1.7.10
-	// multi-pass Item-рендер) не существуют в 26.1.2 — методы НЕ @Override, тела 1:1 сохранены.
+	// F3 superseded-render (GT6BlockModel/ItemModel pipeline; old getIcon/immediate-mode is dead, 0 neo calls):
+	// isFull3D/getSpriteNumber/requiresMultipleRenderPasses (1.7.10 multi-pass Item render) don't exist on 26.1.2 — not @Override, bodies kept 1:1.
 	public boolean isFull3D() {return T;}
 	public int getSpriteNumber() {return 1;}
 	public boolean requiresMultipleRenderPasses() {return T;}
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было registerIcons(IIconRegister) (тип атлас-стежки 1.7.10 удалён) —
-	// параметр Object, тот же нейтральный держатель что gregapi.render.IIconContainer#registerIcons(Object).
+	// F3 superseded-render: was registerIcons(IIconRegister) (1.7.10 atlas-stitching type removed) — parameter is now
+	// Object, the same neutral holder as gregapi.render.IIconContainer#registerIcons(Object).
 	public void registerIcons(Object aIconRegister) {/**/}
 	@Override @SuppressWarnings("deprecation") public boolean isFoil(ItemStack aStack) {return F;}
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было hasEffect(ItemStack,int aRenderPass) (multi-pass glint, тип удалён).
+	// F3 superseded-render: was hasEffect(ItemStack,int aRenderPass) (multi-pass glint, type removed).
 	public boolean hasEffect(ItemStack aStack, int aRenderPass) {return F;}
-	// item-base dead-interface: getItemEnchantability/isBookEnchantable/getIsRepairable — 1.7.10 virtual-хуки, neo их НЕ зовёт
-	// (enchantability = стек-компонент ENCHANTABLE через stack.getEnchantmentValue; repair = Properties.repairable/ENCHANTABLE).
-	// Методы НЕ @Override (мёртвы, 0 вызовов движка). Per-material вариация — стек-компонент (item-metadata-model).
+	// item-base dead-interface: getItemEnchantability/isBookEnchantable/getIsRepairable are 1.7.10 virtual hooks that
+	// neo never calls (enchantability = ENCHANTABLE stack component via stack.getEnchantmentValue; repair = Properties.repairable/ENCHANTABLE). Not @Override (dead, 0 engine calls). Per-material variation is a stack component instead.
 	public int getItemEnchantability() {return 0;}
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}

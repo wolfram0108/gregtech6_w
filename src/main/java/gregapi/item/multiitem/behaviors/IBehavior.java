@@ -54,6 +54,10 @@ public interface IBehavior<E extends Item> {
 	 *  it with the other hand, undoing what the server just did. A behaviour that answers block clicks says so
 	 *  here, and the client stops after the first hand. */
 	public default boolean handlesUseOnFirst(E aItem, ItemStack aStack) {return false;}
+	/** What is left of the stack after one crafting use, or null when the behaviour keeps nothing back.
+	 *  Tools already return a worn copy through MultiItemTool; this gives the same channel to behaviours
+	 *  that spend charges, so a box of matches is not consumed whole by a single recipe. */
+	public default ItemStack getContainerItem(E aItem, ItemStack aStack) {return null;}
 	public ItemStack onItemRightClick(E aItem, ItemStack aStack, Level aWorld, Player aPlayer);
 	public List<String> getAdditionalToolTips(E aItem, List<String> aList, ItemStack aStack);
 	public void onUpdate(E aItem, ItemStack aStack, Level aWorld, Entity aPlayer, int aTimer, boolean aIsInHand);

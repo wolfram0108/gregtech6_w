@@ -216,6 +216,20 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	}
 	
 	// @Override
+	/** A behaviour that spends charges answers first; the per-meta tables of the subclasses stay as the
+	 *  default below them, so an item without such a behaviour keeps exactly the remainder it had. */
+	@Override
+	public final ItemStack getContainerItem(ItemStack aStack) {
+		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));
+		if (tList != null) for (IBehavior<MultiItem> tBehavior : tList) {
+			ItemStack rStack = tBehavior.getContainerItem(this, aStack);
+			if (rStack != null) return rStack;
+		}
+		return getContainerItemDefault(aStack);
+	}
+
+	public ItemStack getContainerItemDefault(ItemStack aStack) {return super.getContainerItem(aStack);}
+
 	@Override
 	public boolean handlesUseOnFirst(ItemStack aStack) {
 		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));

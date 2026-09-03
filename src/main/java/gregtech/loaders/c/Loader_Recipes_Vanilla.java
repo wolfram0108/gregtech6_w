@@ -1045,43 +1045,36 @@ public class Loader_Recipes_Vanilla implements Runnable {
 	private static void copperAge() {
 		final Object tIngot = ingot.dat(ANY.Cu);
 
-		// Вход в медный век: девять грегских слитков дают ванильный медный блок. Отсюда весь остальной
-		// медный контент 26.1.2 берётся ванильными путями без нашего участия.
+		// Entry to the copper age: nine GT ingots craft the vanilla copper block.
+		// The rest of 26.1.2's copper content follows vanilla paths from there, untouched by us.
 		CR.shaped(ST.make(Items.COPPER_BLOCK          , 1, 0), DEF_REM    , "XXX", "XXX", "XXX", 'X', tIngot);
 
-		// Изделия, которые в ванили требуют слиток меди.
+		// Items that vanilla recipes require a copper ingot for.
 		CR.shaped(ST.make(Items.LIGHTNING_ROD         , 1, 0), DEF_REM    , "X"  , "X"  , "X"  , 'X', tIngot);
 		CR.shaped(ST.make(Items.SPYGLASS              , 1, 0), DEF_REM    , " A ", " X ", " X ", 'X', tIngot, 'A', ST.make(Items.AMETHYST_SHARD, 1, 0));
 		CR.shaped(ST.make(Items.BRUSH                 , 1, 0), DEF_REM    , "F"  , "X"  , "S"  , 'X', tIngot, 'F', ST.make(Items.FEATHER, 1, 0), 'S', ST.make(Items.STICK, 1, 0));
 
 
 
-		// Ванильный слиток меди и его спутники в обращение не вводятся: рецептов, дающих их, не остаётся.
-		// (Плавка руды/сырца сюда не входит — она датапак-рецепт типа smelting, см. «Не сделано» в ADAPT-014.)
+		// Vanilla copper ingot and its byproducts are never crafted directly: no recipe yields them.
+		// (Ore/raw smelting is out of scope here — a datapack smelting recipe, see ADAPT-014 "Not done".)
 		CR.delate(ST.make(Items.COPPER_INGOT     , 1, 0));
 		CR.delate(ST.make(Items.RAW_COPPER_BLOCK , 1, 0));
 
-		// --- УТЕЧКА МАТЕРИАЛА: ванильная медь достижима МИМО рецептов ---------------------------------------
-		// Производить её нельзя (выше снято), но попасть в руки она может: лут-таблицы entities/drowned и
-		// entities/copper_golem дают minecraft:copper_ingot, ванильная переплавка медной брони и инструментов
-		// (smelting/blasting, датапак — нашим плечом не снимается: GT_API.java:659,668 судит только
-		// CraftingRecipe) даёт minecraft:copper_nugget, а блоки руды в старом мире или креативе дают
-		// raw_copper. Без опознания эти предметы — мусор, в который утекает УЖЕ ДОБЫТАЯ грегская медь
-		// (скрафтил броню из своей меди -> переплавил -> ванильные самородки в никуда).
+		// MATERIAL LEAK: vanilla copper reachable outside these recipes despite the craft ban above —
+		// drowned/copper_golem loot, armor/tool smelting (datapack; GT_API.java:659,668 covers only
+		// CraftingRecipe) and raw ore blocks all yield vanilla items, sinking already-mined GT copper.
 		//
-		// Приём — тот же, которым GT6 опознаёт любой чужой предмет: регистрация под своим именем материала
-		// (ср. OreDictionary.java:196-199 для ванильных ingotIron/ingotGold). Ингредиент рецепта матчится
-		// по ИМЕНИ OreDict (CR.java:401-411), поэтому опознание = вход в наши рецепты выше.
+		// Fix: register these items under our material name like any foreign item (cf.
+		// OreDictionary.java:196-199); CR.java:401-411 matches recipe ingredients by OreDict name.
 		//
-		// ⛔ РИСК, ради которого написана страховка ниже: регистрация имени взводит
-		// setTarget_(prefix, material, stack, aOverwrite=F, ...) (OreDictManager.java:471). Цель ставится
-		// только при пустой ячейке, но полагаться на порядок фаз нельзя — перехват цели означал бы, что ВСЯ
-		// грегская медь начнёт выдаваться ванильным слитком. Поэтому грегский стек берётся ДО регистрации и
-		// возвращается целью ПОСЛЕ, уже с aOverwrite=T. Судится стендом gt6copperprobe §6.
-		// ⚠ ПОРЯДОК: паспорт материала выдаётся ДО регистрации имён. addItemData_ (OreDictManager:667)
-		// не перезаписывает уже существующую ассоциацию, а регистрация имени её создаёт — при обратном
-		// порядке сырец получал ассоциацию oreRawCopper без массы и оставался без паспорта (замер: 130
-		// предметов без данных, из них raw_copper не лечился повторной выдачей).
+		// setTarget_ (OreDictManager.java:471) only fills an empty target slot, but phase order is not
+		// guaranteed — hijacking it would redirect ALL GT copper to the vanilla ingot. So the GT stack
+		// is read BEFORE registration and restored as target AFTER, with aOverwrite=true.
+		// Verified by stand gt6copperprobe §6.
+		// ORDER MATTERS: assign material data BEFORE registering names — addItemData_ (OreDictManager:667)
+		// won't overwrite an existing association, and name registration creates one. Reversed order left
+		// raw_copper associated but data-less (measured: 130 items affected).
 		copperItemData();
 
 		ItemStack tGTIngot  = ingot .mat(MT.Cu, 1);
@@ -1114,15 +1107,15 @@ public class Loader_Recipes_Vanilla implements Runnable {
 	 * {@code OP.stick} = U2 каждая) и у сундука, блез и редстоун у лампы. Тогда шредер вернёт и их.
 	 */
 	private static void copperItemData() {
-		// базовое имя формы -> сколько меди в ней (U = один слиток)
+		// base form name -> how much copper it holds (U = one ingot)
 		java.util.Map<String, Long> tForms = new java.util.LinkedHashMap<>();
-		tForms.put("copper"              , U*9  ); // окисленные варианты блока зовутся exposed_copper и т.п.
+		tForms.put("copper"              , U*9  ); // oxidized block variants are named exposed_copper etc.
 		tForms.put("copper_block"        , U*9  );
 		tForms.put("raw_copper_block"    , U*9  );
 		tForms.put("cut_copper"          , U*9  );
 		tForms.put("chiseled_copper"     , U*9  );
 		tForms.put("copper_grate"        , U*9  );
-		tForms.put("copper_golem_statue" , U*9  ); // крафта нет (структуры/креатив), облик медного блока
+		tForms.put("copper_golem_statue" , U*9  ); // no recipe (structure/creative only); same look as a copper block
 		tForms.put("cut_copper_stairs"   , U*27/2);
 		tForms.put("copper_bulb"         , U*27/4);
 		tForms.put("cut_copper_slab"     , U*9/2);
@@ -1148,20 +1141,19 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		tForms.put("copper_bars"         , U*3/8);
 		tForms.put("copper_nugget"       , U/9  );
 		tForms.put("copper_torch"        , U/36 );
-		// вторичный материал формы (дерево палок и досок), U2 = половина юнита на палку
+		// form's secondary material (stick/plank wood), U2 = half a unit per stick
 		java.util.Map<String, Long> tWood = new java.util.LinkedHashMap<>();
-		tWood.put("copper_axe"     , U    ); // 2 палки
+		tWood.put("copper_axe"     , U    ); // 2 sticks
 		tWood.put("copper_pickaxe" , U    );
 		tWood.put("copper_hoe"     , U    );
 		tWood.put("copper_shovel"  , U    );
-		tWood.put("copper_sword"   , U2   ); // 1 палка
+		tWood.put("copper_sword"   , U2   ); // 1 stick
 		tWood.put("copper_spear"   , U    );
-		tWood.put("copper_torch"   , U2/4 ); // палка на 4 торча
-		tWood.put("copper_chest"   , U*8  ); // ванильный сундук — 8 досок
+		tWood.put("copper_torch"   , U2/4 ); // one stick per 4 torches
+		tWood.put("copper_chest"   , U*8  ); // vanilla chest — 8 planks
 
-		// Рудные формы описываются ПРЕФИКСОМ, а не массой: у oreVanillastone/oreDeepslate/oreRaw стоит
-		// setOreStats(2*U) (OP.java:63,67,137), и путь у них рудный — дробление, промывка, обжиг, а не
-		// «расплавить в два слитка». Поэтому им выдаётся паспорт префикса, а не число.
+		// Ore forms are described by PREFIX, not mass: oreVanillastone/oreDeepslate/oreRaw carry
+		// setOreStats(2*U) (OP.java:63,67,137) and follow the ore path, not "melt into two ingots".
 		OM.data(ST.make(Items.COPPER_ORE          , 1, 0), oreVanillastone.dat(MT.Cu));
 		OM.data(ST.make(Items.DEEPSLATE_COPPER_ORE, 1, 0), oreDeepslate   .dat(MT.Cu));
 		OM.data(ST.make(Items.RAW_COPPER          , 1, 0), oreRaw         .dat(MT.Cu));
@@ -1177,7 +1169,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 					if (tBase.startsWith(tPrefix)) {tBase = tBase.substring(tPrefix.length()); tChanged = T;}
 			}
 			Long tAmount = tForms.get(tBase);
-			// руда (свой префикс, задаётся отдельно) и яйцо призыва материалом не описываются
+			// ore (its own prefix, set separately) and the spawn egg carry no material data
 			if (tAmount == null) {tSkip++; continue;}
 			ItemStack tStack = ST.make(tItem, 1, 0);
 			if (ST.invalid(tStack)) {tSkip++; continue;}

@@ -42,7 +42,7 @@ import static gregapi.data.CS.*;
 public class MultiItemBottles extends MultiItemRandomWithCompat implements IItemRottable {
 	public MultiItemBottles(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Bottles", this, (short)1600); // F16 creative-tab: своя GT-вкладка (icon+displayItems), регистрируется CreativeTabsGT на RegisterEvent<CreativeModeTab>. 1:1.
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Bottles", this, (short)1600); // F16 creative tab: dedicated GT tab (icon+displayItems), registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>. 1:1.
 	}
 	
 	@Override
@@ -421,7 +421,7 @@ public class MultiItemBottles extends MultiItemRandomWithCompat implements IItem
 	}
 	
 	@Override
-	public ItemStack getContainerItem(ItemStack aStack) {
+	public ItemStack getContainerItemDefault(ItemStack aStack) {
 		return IL.Bottle_Empty.get(1);
 	}
 	
