@@ -198,7 +198,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 		if (hasSnow()) {mTexture = SNOW_TEXTURE; return 2;}
 		
 		Block tBlock = getBlockAtSide(SIDE_BOTTOM);
-		if (tBlock == BlocksGT.Diggables) {
+		if (tBlock == BlocksGT.Diggables || tBlock == Blocks.MUD) {
 			mTexture = BlockTextureCopied.get(BlocksGT.Kimberlite, SIDE_ANY, 0); return 1;
 		}
 		if (tBlock instanceof BlockStones || tBlock == Blocks.SNOW || tBlock == Blocks.STONE || tBlock == Blocks.END_STONE || tBlock == Blocks.OBSIDIAN) {

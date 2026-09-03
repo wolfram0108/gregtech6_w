@@ -621,11 +621,11 @@ public class Loader_Recipes_Temporary implements Runnable {
 		RM.add_smelting(IL.Mud_Ball               .get(1), IL.BoP_Mud_Brick.get(1, IL.BTL_Mud_Brick.get(1, IL.ERE_Mud_Brick.get(1))), F, F, T);
 		RM.add_smelting(IL.BoP_Mud_Ball           .get(1), IL.BoP_Mud_Brick.get(1, IL.BTL_Mud_Brick.get(1, IL.ERE_Mud_Brick.get(1))), F, F, T);
 		RM.add_smelting(IL.Salt_Mud_Ball          .get(1), IL.BoP_Mud_Brick.get(1, IL.BTL_Mud_Brick.get(1, IL.ERE_Mud_Brick.get(1))), F, F, T);
-		RM.add_smelting(ST.make(BlocksGT.Diggables, 1, 0), IL.BoP_Mud_Brick.get(1, IL.BTL_Mud_Brick.get(1, IL.ERE_Mud_Brick.get(1))), F, F, T);
+		RM.add_smelting(ST.make(Blocks.MUD        , 1, 0), IL.BoP_Mud_Brick.get(1, IL.BTL_Mud_Brick.get(1, IL.ERE_Mud_Brick.get(1))), F, F, T);
 		
 		RM.generify   (IL.Salt_Mud_Ball.get(1), IL.Mud_Ball.get(1));
 		RM.genericycle(IL.BoP_Mud_Ball .get(1), IL.Mud_Ball.get(1));
-		RM.genericycle(ST.make(BlocksGT.Diggables, 1, 0), IL.BoP_Mud.get(1), IL.ERE_Mud.get(1), IL.BTL_Mud.get(1));
+		RM.genericycle(ST.make(Blocks.MUD        , 1, 0), IL.BoP_Mud.get(1), IL.ERE_Mud.get(1), IL.BTL_Mud.get(1));
 		RM.genericycle(IL.BoP_Mud_Brick .get(1), IL.BTL_Mud_Brick .get(1), IL.ERE_Mud_Brick .get(1));
 		RM.genericycle(IL.BoP_Mud_Bricks.get(1), IL.BTL_Mud_Bricks.get(1), IL.ERE_Mud_Bricks.get(1), IL.Salt_Mud_Bricks.get(1));
 		RM.genericycle(IL.RC_Crushed_Obsidian .get(1), IL.HBM_Crushed_Obsidian.get(1));

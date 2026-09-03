@@ -728,6 +728,9 @@ public class WD {
 		if (aPlant instanceof net.minecraftforge.common.IPlantable tPlantable && tSoil.getBlock().canSustainPlant(tSoil, aWorld, tPos, aSide, tPlantable)) return T;
 		Block tSelf = tSoil.getBlock(), tHead = gregapi.data.CS.Flattened.headOf(tSelf);
 		if (tHead == null) tHead = tSelf;
+		// ADAPT-015: vanilla mud is the single mud and carries the soil rule of BlockDiggable meta 0 — reeds,
+		// bushes and Plains/Water/Desert/Beach grow, Crop and Nether do not (BlockDiggable canSustainPlant).
+		if (tSelf == Blocks.MUD) return aPlant != Blocks.WHEAT && aPlant != Blocks.NETHER_WART;
 		if (aPlant == Blocks.CACTUS)      return tSelf == Blocks.CACTUS || tHead == Blocks.SAND;  // кактус-на-кактусе (:2222) + Desert (:2239)
 		if (aPlant == Blocks.SUGAR_CANE)  return tSelf == Blocks.SUGAR_CANE                       // тростник-на-тростнике (:2227) + Beach (:2245-2251)
 			|| ((tSelf == Blocks.GRASS_BLOCK || tHead == Blocks.DIRT || tHead == Blocks.SAND)
@@ -1104,7 +1107,10 @@ public class WD {
 		if (aBlock == Blocks.COBWEB)                                                                             return gregapi.block.Material.web;
 		if (aBlock == Blocks.TNT)                                                                                return gregapi.block.Material.tnt;
 		if (tState.is(net.minecraft.tags.BlockTags.SAND))                                                        return gregapi.block.Material.sand;
-		if (aBlock == Blocks.DIRT || aBlock == Blocks.COARSE_DIRT || aBlock == Blocks.GRAVEL || aBlock == Blocks.FARMLAND || aBlock == Blocks.DIRT_PATH || aBlock == Blocks.ROOTED_DIRT || aBlock == Blocks.SOUL_SAND || aBlock == Blocks.SOUL_SOIL) return gregapi.block.Material.ground;
+		if (aBlock == Blocks.DIRT || aBlock == Blocks.COARSE_DIRT || aBlock == Blocks.GRAVEL || aBlock == Blocks.FARMLAND || aBlock == Blocks.DIRT_PATH || aBlock == Blocks.ROOTED_DIRT || aBlock == Blocks.SOUL_SAND || aBlock == Blocks.SOUL_SOIL
+		 // ADAPT-015: mud carries the material of BlockDiggable meta 0 it replaced; without it the hardness
+		 // and worldgen branches read the fallback `rock` and dug mud like stone.
+		 || aBlock == Blocks.MUD) return gregapi.block.Material.ground;
 		if (tState.is(net.minecraft.tags.BlockTags.LEAVES))                                                      return gregapi.block.Material.leaves;
 		// BUG-013: производные деревянные блоки. 1.7.10: BlockWoodSlab/BlockDoor(wood)/trapdoor/fence/fence_gate/
 		// wooden_pressure_plate/BlockSign = Material.wood, деревянные лестницы наследуют материал донора-досок

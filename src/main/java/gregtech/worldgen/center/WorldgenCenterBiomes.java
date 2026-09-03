@@ -233,8 +233,8 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.WATER, 0);
-							WD.set(aChunk, i, mHeight-1, j, BlocksGT.Diggables, 0);
-							WD.set(aChunk, i, mHeight-2, j, BlocksGT.Diggables, 0);
+							WD.set(aChunk, i, mHeight-1, j, Blocks.MUD, 0);
+							WD.set(aChunk, i, mHeight-2, j, Blocks.MUD, 0);
 							WD.set(aChunk, i, mHeight-3, j, BlocksGT.Diggables, 2);
 							WD.set(aChunk, i, mHeight-4, j, BlocksGT.Diggables, 2);
 							WD.set(aChunk, i, mHeight-5, j, BlocksGT.Diggables, 2);
