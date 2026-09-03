@@ -144,13 +144,9 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		return super.isItemStackUsable(aStack);
 	}
 	
-	// F12-hook (потерянный приёмник, тот же класс, что мост tick→updateTick у PrefixBlock): neo-канал
-	// правого клика предметом по существу — interactLivingEntity(ItemStack,Player,LivingEntity,InteractionHand)
-	// (Item.java:292). 1.7.10-сигнатура itemInteractionForEntity ниже ничего не переопределяла («// @Override»)
-	// и движком не звалась → МЁРТВЫ были все поведения onRightClickEntity: доение коровы ведром GT6
-	// (Behavior_Bucket_Simple), стрижка овец (Behavior_Shears), лечение зомби-жителя (Behavior_CureZombie),
-	// кормление и приручение животных (Behavior_FeedCat/Dog/Pig/Grass/Chocolate). Соседний onLeftClickEntity
-	// приёмник имел — осиротел только правый клик.
+	// F12-hook: the neo channel for a right click on a living entity is interactLivingEntity (Item.java:292);
+	// the 1.7.10 signature below overrode nothing, so every onRightClickEntity behaviour was dead - milking,
+	// shearing, curing a zombie villager, feeding and taming.
 	@Override
 	public net.minecraft.world.InteractionResult interactLivingEntity(ItemStack aStack, Player aPlayer, LivingEntity aEntity, net.minecraft.world.InteractionHand aHand) {
 		return itemInteractionForEntity(aStack, aPlayer, aEntity)
@@ -220,6 +216,13 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	}
 	
 	// @Override
+	@Override
+	public boolean handlesUseOnFirst(ItemStack aStack) {
+		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));
+		if (tList != null) for (IBehavior<MultiItem> tBehavior : tList) if (tBehavior.handlesUseOnFirst(this, aStack)) return T;
+		return F;
+	}
+
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ) {
 		if (MD.BbLC.owns(aWorld, aX, aY, aZ)) return F;
 		if (!aWorld.isClientSide()) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
@@ -242,7 +245,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	
 	public boolean destroyCheck(ItemStack aStack, Player aPlayer) {
 		if (aStack.getCount() <= 0) {
-			if (aPlayer != null) aPlayer.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY); // 1.7.10 destroyCurrentEquippedItem() очищал выбранный слот руки -> neo setItemInHand(MAIN_HAND, EMPTY).
+			if (aPlayer != null) aPlayer.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY); // 1.7.10 destroyCurrentEquippedItem cleared the selected hand slot
 			return T;
 		}
 		return F;
@@ -261,9 +264,8 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		return aStack;
 	}
 	
-	// F13-мост тултипа (appendHoverText) — в КОРНЕ иерархии ItemBase: тело универсально, addInformation
-	// виртуален, поэтому каждый потомок отдаёт своё. Копия здесь была дублем и оставляла остальных
-	// наследников ItemBase вовсе без подсказок.
+	// F13 tooltip bridge in the ROOT of the ItemBase hierarchy: the body is generic and addInformation is
+	// virtual, so every subclass supplies its own. A copy here left the other heirs without tooltips.
 
 	@Override
 	@SuppressWarnings("unchecked")
@@ -307,13 +309,11 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		if (tList != null) for (IBehavior<MultiItem> tBehavior : tList) tBehavior.onUpdate(this, aStack, aWorld, aPlayer, aTimer, aIsInHand);
 	}
 
-	// Подключение канала «тик предмета в инвентаре» (2026-07-30, реестр мёртвых каналов).
+	// Bridge for the channel "item ticks in the inventory".
 	// 1.7.10 onUpdate(ItemStack,World,Entity,int itemSlot,boolean isSelected) → neo
 	// Item.inventoryTick(ItemStack,ServerLevel,Entity,EquipmentSlot) (Item.java:307).
-	// ⚠️ Расхождение подписей, разобрано: НОМЕРА СЛОТА в neo нет вовсе — вместо индекса инвентаря приходит
-	// EquipmentSlot (nullable). Единственный носитель канала в моде — Behavior_Sonictron:68, и он ни слот, ни
-	// «в руке» не читает: своё состояние берёт из NBT стека (getTickTimer/getCurrentIndex). Поэтому индекс
-	// передаётся нейтральным 0, а «в руке» выражается точно — основная рука. Без моста Сониктрон не тикал вовсе.
+	// The signatures differ: neo passes an EquipmentSlot instead of a slot index. The only carrier in the mod
+	// (Behavior_Sonictron:68) reads neither, keeping its state in stack NBT, so the index is passed as 0.
 	@Override public void inventoryTick(ItemStack aStack, net.minecraft.server.level.ServerLevel aLevel, Entity aOwner, net.minecraft.world.entity.EquipmentSlot aSlot) {
 		onUpdate(aStack, aLevel, aOwner, 0, aSlot == net.minecraft.world.entity.EquipmentSlot.MAINHAND);
 	}
@@ -330,7 +330,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		
 		ItemStack tStack = FL.fill(aFluid, aStack, F, F, F, F);
 		if (tStack != null) {
-			ST.set(aStack, tStack); // F-itemstack-mutation: 1.7.10 setItemDamage+func_150996_a(смена Item in-place) -> центр ST.set (item в neo final: копирует count/meta/NBT; центр F-item-final — ST.java:449).
+			ST.set(aStack, tStack); // F-itemstack-mutation: Item is final in neo, so the central ST.set copies count, meta and NBT (ST.java:449)
 			return FL.getFluid(tStack, F).getAmount();
 		}
 		
@@ -359,7 +359,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		int space = (int)(long)tStats[0] - tFluid.getAmount();
 		if (aFluid.getAmount() <= space) {
 			if (doFill) {
-				tFluid.setAmount(tFluid.getAmount() + aFluid.getAmount()); // F5: neo FluidStack.getAmount() не lvalue -> setAmount (FluidStack.java:472).
+				tFluid.setAmount(tFluid.getAmount() + aFluid.getAmount()); // F5: FluidStack.getAmount() is not an lvalue in neo (FluidStack.java:472)
 				setFluidContent(aStack, tFluid);
 			}
 			return aFluid.getAmount();
@@ -384,7 +384,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 					aStack.setCount(0);
 					return tFluid;
 				}
-				ST.set(aStack, tStack); // F-itemstack-mutation: setItemDamage+func_150996_a -> центр ST.set (item в neo final).
+				ST.set(aStack, tStack); // F-itemstack-mutation: same central ST.set, Item is final in neo
 			}
 			return tFluid;
 		}
@@ -397,7 +397,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		
 		if (tFluid.getAmount() < aMaxDrain) aMaxDrain = tFluid.getAmount();
 		if (aDoDrain) {
-			tFluid.setAmount(tFluid.getAmount() - aMaxDrain); // F5: neo FluidStack.getAmount() не lvalue -> setAmount.
+			tFluid.setAmount(tFluid.getAmount() - aMaxDrain); // F5: FluidStack.getAmount() is not an lvalue in neo
 			setFluidContent(aStack, tFluid);
 		}
 		
@@ -420,11 +420,9 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		isItemStackUsable(aStack);
 	}
 	
-	// BUG-021: getItemStackLimit ниже — 1.7.10-имя движкового per-stack хука; в neo канал = IItemExtension
-	// .getMaxStackSize(ItemStack) (тот же per-stack контракт). Без моста вся динамика размера (энергия=1,
-	// fluid-контейнеры, getDefaultStackLimit наследников: MultiItemTool=1, RandomTools/Bottles/Bumbles) была
-	// мертва — предметы стакались по ItemBase-дефолту 64. Мост = точный аналог 1.7.10 @Override поверх
-	// vanilla-дефолта (ItemBase:57 mMaxStackSize).
+	// BUG-021: getItemStackLimit below is the 1.7.10 name of the per-stack hook; in neo the channel is
+	// IItemExtension.getMaxStackSize(ItemStack). Without the bridge every dynamic size was dead and items
+	// stacked by the plain default of 64.
 	@Override public int getMaxStackSize(ItemStack aStack) {return getItemStackLimit(aStack);}
 	// @Override
 	public int getItemStackLimit(ItemStack aStack) {

@@ -83,6 +83,8 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 		return rOutput;
 	}
 	
+	@Override public boolean handlesUseOnFirst(MultiItem aItem, ItemStack aStack) {return T;}
+
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aWorld.isClientSide() || (aStack.getCount() != 1 && (mFuelAmount != 1 || mEmptyLighter != null))) return F;

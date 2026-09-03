@@ -876,6 +876,8 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Juicer       .addRecipe1(T, 16,   16, 10000, ST.make(Items.SPIDER_EYE        , 1, W), NF, FL.Potion_Poison_1.make(125), OM.dust(MT.MeatRaw, U2));
 		RM.Juicer       .addRecipe1(T, 16,   32, 10000, ST.make(Items.PUFFERFISH, 1, 0), NF, FL.Potion_Poison_2.make(125), OM.dust(MT.FishRaw, U));
 		RM.Juicer       .addRecipe1(T, 16,   16, 10000, IL.Dye_SquidInk                 .get(1), NF, FL.make("squidink", 3*L/2), NI);
+		// ADAPT-023: glow squid ink appeared after 1.7.10 - same ink as the plain sac, plus the glow it carries.
+		RM.Juicer       .addRecipe1(T, 16,   16, 10000, ST.make(Items.GLOW_INK_SAC      , 1, 0), NF, FL.make("squidink", 3*L/2), dustTiny.mat(MT.Glowstone, 1));
 		
 		
 		RM.Bath         .addRecipe1(T,  0,  128, ST.make(Items.GOLDEN_APPLE, 1, 0), MT.Au.liquid(U*64, T), NF, ST.make(Items.ENCHANTED_GOLDEN_APPLE, 1, 0));

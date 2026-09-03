@@ -22,12 +22,8 @@
  */
 
 package gregapi.block;
-// F4-flattening, «признак сменил носитель»: в 1.7.10 BlockPumpkin — это НАПРАВЛЕННАЯ вырезанная тыква
-// (и lit_pumpkin от неё же). Движок 1.13+ разделил их: PumpkinBlock — неразрезанная, extends Block, свойства
-// направления у неё НЕТ ВООБЩЕ (neo PumpkinBlock:24); направление живёт у CarvedPumpkinBlock
-// (extends HorizontalDirectionalBlock, neo CarvedPumpkinBlock:31-33), и им же является JACK_O_LANTERN.
-// Порт взял одноимённый класс, из-за чего все ветки поворота тыквы были мертвы: instanceof не срабатывал
-// никогда. Поймано живым стендом gt6ae2wrench (цель «юг», тыква вставала на «восток» запасным циклом).
+// F4-flattening: since 1.13 facing lives on CarvedPumpkinBlock (:31-33), which JACK_O_LANTERN also is;
+// the same-named PumpkinBlock (:24) is the uncarved one and carries no facing property at all.
 import net.minecraft.world.level.block.CarvedPumpkinBlock;
 import net.minecraft.world.level.block.HopperBlock;
 import net.minecraft.world.level.block.FurnaceBlock;
@@ -101,9 +97,8 @@ public class ToolCompat {
 			IC_CROPTILE = T;
 		} catch(Throwable e) {/**/}
 		try {
-			// Слой совместимости с AE2: её блоки обслуживает ключ ГРЕГА (см. плечо в onToolClick).
-			// AE2 подключена compileOnly (build.gradle:307), поэтому в чистой сборке класса нет — признак
-			// берётся его наличием, ровно тем же приёмом, что у трёх флагов выше.
+			// AE2 blocks are served by the GregTech wrench (see the arm in onToolClick). AE2 is a compileOnly
+			// dependency (build.gradle:307), so its presence is detected by the class, as with the three flags above.
 			appeng.blockentity.AEBaseBlockEntity.class.getCanonicalName();
 			AE_BASEBLOCKENTITY = T;
 		} catch(Throwable e) {/**/}
@@ -131,10 +126,8 @@ public class ToolCompat {
 		try {
 		
 		if (aTool.equals(TOOL_hoe) && (aEntityPlayer == null || (aEntityPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack))) {
-			// F-tool-event functional-adapted (вспашка GT6 работает 1:1 ниже; отсутствует лишь veto-хук других модов — нет чистого neo-эквивалента в кастом-диспетче): 1.7.10-ctor UseHoeEvent(player,stack,world,x,y,z) удалён; neo BlockToolModificationEvent(BlockState,UseOnContext,ItemAbility,boolean)
-			// (neoforge/event/level/BlockEvent.java:262) требует полноценный UseOnContext, а aEntityPlayer здесь может быть null (canPlayerEdit-ветка это допускает) —
-			// построение контекста неоправданно сложно для события, которое в GT6 существовало ЛИШЬ ради шанса другим модам отменить/переопределить вспашку;
-			// саму вспашку GT6 реализует напрямую ниже. Хук совместимости с другими модами (отмена события) НЕ реализован — деградация видима здесь.
+			// The 1.7.10 hoe event existed only so other mods could veto tilling; neo BlockToolModificationEvent needs
+			// a full UseOnContext unavailable here (the player may be null), so only that veto hook is missing.
 			{
 				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.GRASS_BLOCK || gregapi.data.CS.Flattened.headOf(aBlock) == Blocks.DIRT || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
 					WD.playStepSound(aWorld, aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.FARMLAND);
@@ -169,10 +162,8 @@ public class ToolCompat {
 					tBark = null;
 				}
 			}
-			// F4-flattening (BUG-042): ванильные брёвна (oak/spruce/birch/jungle/acacia/dark_oak) в neo = отдельный блок
-			// породы + AXIS-ориентация. Балку (БЛОК + породу) берём из ЦЕНТРА WoodDictionary (log→WoodEntry→mBeamEntry.mBeam,
-			// LoaderWoodDictionary:51-56) — маппинг не дублируем в хардкод; ориентацию читаем из AXIS. 1:1 восстановление
-			// 1.7.10 «Beam, порода|ориентация» (прежде ловились только OAK_LOG/ACACIA_LOG, остальные 4 уходили в дженерик Wood Beam).
+			// F4-flattening: vanilla logs are one block per species plus AXIS. Species and beam come from the
+			// WoodDictionary centre (LoaderWoodDictionary:51-56), never from a hardcoded map.
 			if (!rReturn && (aBlock == Blocks.OAK_LOG || aBlock == Blocks.SPRUCE_LOG || aBlock == Blocks.BIRCH_LOG
 					|| aBlock == Blocks.JUNGLE_LOG || aBlock == Blocks.ACACIA_LOG || aBlock == Blocks.DARK_OAK_LOG)) {
 				gregapi.wooddict.WoodEntry tWood = gregapi.wooddict.WoodDictionary.WOODS.get(aBlock, 0);
@@ -246,11 +237,10 @@ public class ToolCompat {
 					byte  tMeta  = WD.meta (aWorld, aX+i, aY+j, aZ+k);
 					Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k);
 					BlockPos tActPos = new BlockPos(aX+i, aY+j, aZ+k);
-					// было func_149851_a(World,x,y,z,isClient) — neo BonemealableBlock.isValidBonemealTarget(LevelReader,BlockPos,BlockState) (BonemealableBlock.java:14)
+					// was func_149851_a(World,x,y,z,isClient) - neo BonemealableBlock.isValidBonemealTarget (BonemealableBlock.java:14)
 					if (tBlock.getClass() == aBlock.getClass() && !((BonemealableBlock)tBlock).isValidBonemealTarget(aWorld, tActPos, aWorld.getBlockState(tActPos))) {
-						// было tBlock.onBlockActivated(World,x,y,z,player,side,hitX,hitY,hitZ) — neo BlockState.useWithoutItem(Level,Player,BlockHitResult) (BlockBehaviour.java:783);
-						// точный ванильный порядок диспетчеризации (useItemOn затем useWithoutItem, см. ServerPlayerGameMode.java:395-402) не воспроизведён —
-						// useWithoutItem ближайший по семантике одиночный вызов "активации блока вне зависимости от предмета в руке".
+						// was onBlockActivated - neo BlockState.useWithoutItem (BlockBehaviour.java:783); the vanilla dispatch order
+						// (useItemOn then useWithoutItem) is not reproduced, this is the closest single activate call.
 						aWorld.getBlockState(tActPos).useWithoutItem(aWorld, aEntityPlayer, new BlockHitResult(new Vec3(aX+i+aHitX, aY+j+aHitY, aZ+k+aHitZ), FORGE_DIR[aSide], tActPos, F));
 						tDamage += 10000;
 					}
@@ -265,7 +255,7 @@ public class ToolCompat {
 		if (aTool.equals(TOOL_igniter) && ST.item(aStack) != Items.FLINT_AND_STEEL) {
 			// Ignite any TNT Blocks.
 			if (aBlock instanceof net.minecraft.world.level.block.TntBlock) {
-				// было func_150114_a(World,x,y,z,fuse,igniter) — neo TntBlock.onCaughtFire(BlockState,Level,BlockPos,Direction,LivingEntity) (TntBlock.java:152); face=null как в самом TntBlock (TntBlock.java:50,58,66 — не-hitResult-вызовы)
+				// was func_150114_a - neo TntBlock.onCaughtFire (TntBlock.java:152); face=null as in TntBlock itself (:50,58,66)
 				((net.minecraft.world.level.block.TntBlock)aBlock).onCaughtFire(aWorld.getBlockState(new BlockPos(aX, aY, aZ)), aWorld, new BlockPos(aX, aY, aZ), null, aEntityLiving);
 				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 				return 10000;
@@ -273,14 +263,22 @@ public class ToolCompat {
 			// Ignite Forestry Candles.
 			if (IL.FR_Candle.equal(aBlock) && aTileEntity instanceof TileCandle) {
 				((TileCandle)aTileEntity).setLit(T);
-				WD.update(aWorld, aX, aY, aZ); // было aWorld.markBlockForUpdate(x,y,z) — центр WD.update (WD.java:612)
+				WD.update(aWorld, aX, aY, aZ); // was markBlockForUpdate - central WD.update (WD.java:612)
 				return 1;
+			}
+			// ADAPT-024: a candle occupies the cell, so the fire branch below can never reach it.
+			// Engine path of flint and steel: canLight already gates lit/waterlogged (FlintAndSteelItem:30,50-52).
+			BlockState tCandleState = aWorld.getBlockState(new BlockPos(aX, aY, aZ));
+			if (net.minecraft.world.level.block.CandleBlock.canLight(tCandleState)) {
+				WD.set(aWorld, aX, aY, aZ, tCandleState.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.LIT, T), 11);
+				aWorld.gameEvent(aEntityLiving, net.minecraft.world.level.gameevent.GameEvent.BLOCK_CHANGE, new BlockPos(aX, aY, aZ));
+				return 10000;
 			}
 			// This thing has a special Functionality, which should override spawning Fire Blocks.
 			if (!IL.TF_Lamp_of_Cinders.equal(aStack, T, T)) {
 				if (aEntityPlayer == null || (aEntityPlayer).mayUseItemAt(new BlockPos(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]), FORGE_DIR[aSide], aStack)) {
-					if (WD.air(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide])) { // было aWorld.isAirBlock(x,y,z) — центр WD.air (WD.java:859)
-						if (WD.oxygen(aWorld, aX, aY, aZ)) WD.set(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], Blocks.FIRE, 0, 3); // было aWorld.setBlock(x,y,z,Block) (meta=0,flags=3 по умолчанию Forge 1.7.10) — центр WD.set (WD.java:644)
+					if (WD.air(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide])) { // was isAirBlock - central WD.air (WD.java:859)
+						if (WD.oxygen(aWorld, aX, aY, aZ)) WD.set(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], Blocks.FIRE, 0, 3); // was setBlock with meta 0 and flags 3, the Forge 1.7.10 default - central WD.set (WD.java:644)
 						return 10000;
 					}
 				}
@@ -306,11 +304,8 @@ public class ToolCompat {
 			if (aBlock instanceof HopperBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1)%6==1?(aMeta+1)%6:2, 3, F)) return 2500;
 			}
-			// 1.7.10 aBlock.rotateBlock(aWorld,aX,aX,aX,ForgeDirection.getOrientation(aSide)) — способность «повернуть блок»
-			// адаптирована через ЦЕНТР WD.rotateBlock (neo BlockState.rotate: каждый блок сам поворачивается, ненаправленные
-			// возвращают себя -> WD.rotateBlock=F, эквивалент Forge-дефолта). Координаты aX,aX,aX — как в оригинале (verbatim,
-			// закон 1:1; вероятная опечатка GT6 aX vs aY,aZ НЕ исправляется — суждению не доверяем). Модель Forge-ось->Rotation-угол
-			// (принцип 6, форс-адаптация) — но реальный порт, не заглушка.
+			// Rotation goes through the WD.rotateBlock centre: in neo every block rotates itself and a non-directional one
+			// returns itself, which equals the Forge default. Coordinates aX,aX,aX are verbatim from 1.7.10.
 			if (WD.rotateBlock(aWorld, aX, aX, aX, FORGE_DIR[aSide])) return 10000;
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
@@ -320,9 +315,9 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_crowbar)) {
 			if (aBlock instanceof BaseRailBlock && (!MD.RC.mLoaded || !(MD.MC.owns(aBlock) || MD.RC.owns(aBlock)))) {
-				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
+				; // 1.7.10 suppressed the client packet around setBlock; flag 0 (no UPDATE_CLIENTS) gives the same result here.
 				// Why the fuck are the two Coordinate Parameters in isFlexibleRail switched? And then it is used like x y z instead of using the broken namings.
-				// было isFlexibleRail(World,x,y,z) — neo BaseRailBlock.isFlexibleRail(BlockState,BlockGetter,BlockPos) (BaseRailBlock.java:310)
+				// was isFlexibleRail(World,x,y,z) - neo BaseRailBlock.isFlexibleRail (BaseRailBlock.java:310)
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, ((BaseRailBlock)aBlock).isFlexibleRail(aWorld.getBlockState(new BlockPos(aX, aY, aZ)), aWorld, new BlockPos(aX, aY, aZ)) ? (aMeta+1) % 10 : ((aMeta/8) * 8) + (((aMeta%8)+1) % 6), 0);
 				;
 				return tResult?2000:0;
@@ -330,25 +325,25 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_softhammer)) {
 			if (aBlock == Blocks.REDSTONE_LAMP) {
-				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
+				; // 1.7.10 suppressed the client packet around setBlock; flag 0 (no UPDATE_CLIENTS) gives the same result here.
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.REDSTONE_LAMP, 0, 0);
 				;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.REDSTONE_LAMP) {
-				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
+				; // 1.7.10 suppressed the client packet around setBlock; flag 0 (no UPDATE_CLIENTS) gives the same result here.
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.REDSTONE_LAMP, 0, 0);
 				;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.POWERED_RAIL) {
-				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
+				; // 1.7.10 suppressed the client packet around setBlock; flag 0 (no UPDATE_CLIENTS) gives the same result here.
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, (aMeta + 8) % 16, 0);
 				;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.ACTIVATOR_RAIL) {
-				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
+				; // 1.7.10 suppressed the client packet around setBlock; flag 0 (no UPDATE_CLIENTS) gives the same result here.
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, (aMeta + 8) % 16, 0);
 				;
 				return tResult?10000:0;
@@ -379,7 +374,7 @@ public class ToolCompat {
 				}
 				if (((IWrenchable)aTileEntity).wrenchCanRemove(aEntityPlayer)) {
 					int tDamage = Math.max(10000, (int)(30000 / ((IWrenchable)aTileEntity).getWrenchDropRate()));
-					// было aBlock.getDrops(World,x,y,z,meta,fortune) (Forge 1.7.10, возвращал ArrayList) — neo Block.getDrops(BlockState,ServerLevel,BlockPos,BlockEntity) (Block.java:361), возвращает List; aWorld тут гарантированно ServerLevel (уже прошли aWorld.isClientSide() return 0 выше)
+					// was getDrops(World,x,y,z,meta,fortune) - neo Block.getDrops (Block.java:361); the level here is always a ServerLevel
 					List<ItemStack> tDrops = Block.getDrops(aWorld.getBlockState(new BlockPos(aX, aY, aZ)), (ServerLevel)aWorld, new BlockPos(aX, aY, aZ), aTileEntity);
 					ItemStack tOutput = ((IWrenchable)aTileEntity).getWrenchDrop(aEntityPlayer);
 					
@@ -399,48 +394,29 @@ public class ToolCompat {
 				}
 			}
 
-			// ПЛЕЧО AE2 — ключ Грега обслуживает блоки Applied Energistics. Решение пользователя: «машины из
-			// мода, такие как хранилища и подобные, должны поворачиваться греговским ключом… У Грега поворот
-			// реализован значительно правильнее». Кварцевые ключи AE2 при этом погашены узлом
-			// DisableAllQuartzToolRecipes (Compat_Recipes_AppliedEnergistics), то есть ключ в сборке один — наш.
-			// ⛔ Тег c:tools/wrench (ConventionTags:157, спрашивается InteractionUtil:38-39,:51) НЕ заводится:
-			// у GT6 ВСЕ инструменты — одна запись реестра gt.metatool.01 (Loader_Tools:119), а тип лежит на
-			// мете стека (CS.ToolsGT:2135-2136), поэтому тег на записи пометил бы ключом и меч, и кирку.
-			// Обслуживаем сами, публичным API AE2, тем же приёмом и в том же месте, что плечи GC и IC2 выше.
+			// AE2 arm: its machines are turned by the GregTech wrench, and AE2 quartz wrenches are disabled in the pack.
+			// The c:tools/wrench tag is unusable: all GT6 tools are one registry entry (Loader_Tools:119), type is stack meta.
 			if (AE_BASEBLOCKENTITY && aEntityPlayer != null && aTileEntity instanceof appeng.blockentity.AEBaseBlockEntity tAEEntity) {
 				BlockPos tPosAE = new BlockPos(aX, aY, aZ);
 				if (!appeng.util.Platform.hasPermissions(new appeng.api.util.DimensionalBlockPos(aWorld, tPosAE), aEntityPlayer)) return 0;
 				if (aSneaking) {
-					// РАЗБОР С СОХРАНЕНИЕМ СОДЕРЖИМОГО. Зовём метод самого AE2, а не ломаем блок: он выгружает
-					// настройки (exportSettings, SettingsFrom.DISMANTLE_ITEM) и внутренний инвентарь
-					// (addAdditionalDrops) — AEBaseBlockEntity:450-478, — а у кабельной шины и сундука
-					// переопределён своим правильным способом (CableBusBlockEntity:326, SkyStoneChestBlockEntity:128).
-					// ⚠ ПРИНЯТАЯ КОСМЕТИЧЕСКАЯ ЦЕНА: AE2 глушит частицы и звук слома флагом
-					// WrenchHook.IS_DISASSEMBLING — приватный ThreadLocal (WrenchHook:27), читается в
-					// AEBaseBlock:120-123. Извне он недоступен, поэтому частицы слома будут видны; звук
-					// компенсируем ровно тем, что играет сам AE2 (WrenchHook:74-76).
+					// Dismantle through AE2's own call instead of breaking the block: it exports settings and the inner
+					// inventory (AEBaseBlockEntity:450-478). Break particles stay visible - AE2 hides them behind a private flag.
 					if (tAEEntity.disassembleWithWrench(aEntityPlayer, aWorld, new BlockHitResult(new Vec3(aX+aHitX, aY+aHitY, aZ+aHitZ), FORGE_DIR[aSide], tPosAE, F), aStack).consumesAction()) {
 						aWorld.playSound(aEntityPlayer, tPosAE, net.minecraft.sounds.SoundEvents.ITEM_FRAME_REMOVE_ITEM, net.minecraft.sounds.SoundSource.BLOCKS, 0.7F, 1.0F);
 						return 10000;
 					}
 					return 0;
 				}
-				// ПОВОРОТ — семантикой ГРЕГА, не AE2. У AE2 это круговое вращение вокруг нажатой грани
-				// (WrenchHook:83-92, BlockOrientation.rotateClockwiseAround). У Грега сторона вычисляется по
-				// ТОЧКЕ ПОПАДАНИЯ — aTargetSide выше, UT.Code.getSideWrenching(aSide,aHitX,aHitY,aHitZ), девять
-				// зон грани, — и блок встаёт ЛИЦОМ на неё: не «щёлкай, пока не встанет», а «ткни, куда повернуть».
-				// Циклический поворот AE2 намеренно НЕ воспроизводится. Разворот вокруг оси (spin) сохраняем.
+				// Rotation keeps GregTech semantics: the side comes from the hit point (nine zones per face) and the block
+				// faces it, instead of the click-until-it-fits cycle of AE2 (WrenchHook:83-92). Spin is kept.
 				BlockState tStateAE = aWorld.getBlockState(tPosAE);
 				appeng.api.orientation.IOrientationStrategy tStrategyAE = appeng.api.orientation.IOrientationStrategy.get(tStateAE);
 				if (tStrategyAE.allowsPlayerRotation()) {
 					BlockState tNewAE = tStrategyAE.setOrientation(tStateAE, FORGE_DIR[aTargetSide], appeng.api.orientation.BlockOrientation.get(tStrategyAE, tStateAE).getSpin());
 					if (tNewAE != tStateAE && tNewAE.canSurvive(aWorld, tPosAE) && WD.set(aWorld, aX, aY, aZ, tNewAE, 3)) return 10000;
-					// «Уже смотрит туда» (клик в грань текущей ориентации): у ГРЕГА инструмент в руке ГЕЙТИТ GUI
-					// его машин — с ключом интерфейс не открывается никогда. Возврат 0 здесь ронял клик дальше в
-					// block.useItemOn, и AE2 открывала меню — живая приёмка 2026-08-13: «машины не поворачиваются,
-					// просто открываются» (стенд бил только в зоны КРАЁВ и этой ветки не видел). Холостой щелчок —
-					// малый износ, GUI отменён; открыть GUI при ключе в руке можно, как у Грега, — Shift тут занят
-					// разбором, значит GUI по AE2-блокам с ключом недоступен вовсе, ровно как у машин GT6.
+					// Clicking the face a machine already faces: a wrench in hand gates the GUI in GregTech, so returning 0
+					// would drop through and open the AE2 menu instead. An idle click costs small wear and cancels the GUI.
 					return 2500;
 				}
 				return 0;
@@ -450,7 +426,7 @@ public class ToolCompat {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			
-			if (aBlock instanceof net.minecraft.world.level.block.CraftingTableBlock || aBlock == Blocks.BOOKSHELF) { // было instanceof BlockBookshelf — класса нет в neo, ванильная книжная полка = обычный Block (Blocks.java:1179, register без класса); единственный экземпляр — прямое сравнение эквивалентно instanceof
+			if (aBlock instanceof net.minecraft.world.level.block.CraftingTableBlock || aBlock == Blocks.BOOKSHELF) { // was instanceof BlockBookshelf - no such class in neo, the vanilla bookshelf is a plain Block (Blocks.java:1179)
 				if (WD.set(aWorld, aX, aY, aZ, NB, 0, 3)) {
 					ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, ST.make(aBlock, 1, aMeta));
 					return 10000;
@@ -478,9 +454,8 @@ public class ToolCompat {
 			if (aBlock instanceof BaseRailBlock || aBlock instanceof net.minecraft.world.level.block.DiodeBlock || aBlock instanceof net.minecraft.world.level.block.piston.PistonHeadBlock || aBlock instanceof PistonBaseBlock) {
 				// wrench doesn't work on those.
 			} else {
-				// 1.7.10: if (Arrays.asList(getValidRotations(...)).contains(dir)) rotateBlock(...,dir). Способность есть — WD.rotateBlock
-				// (neo state.rotate) сама возвращает F для неповорачиваемых блоков, поэтому предчек getValidRotations в neo-модели
-				// ИЗБЫТОЧЕН (поглощён): поворачиваемый блок повернётся, прочий вернёт себя. Реальный порт через центр, не заглушка.
+				// The getValidRotations pre-check of 1.7.10 is absorbed: WD.rotateBlock (neo state.rotate) already returns
+				// false for anything non-rotatable.
 				if (WD.rotateBlock(aWorld, aX, aY, aZ, FORGE_DIR[aTargetSide])) return 10000;
 			}
 		}
@@ -493,7 +468,7 @@ public class ToolCompat {
 		}
 		
 		} catch(Throwable e) {
-			ERR.println(String.format("Exception occured when ToolCompat was used at the Coordinates: [%d;%d;%d] at '%s' with TileEntity '%s' using the Tool '%s' %s", aX, aY, aZ, aBlock.getDescriptionId(), aTileEntity.getClass(), aTool, e.toString())); // F2/logging: было Logging.severe(printf) — neo net.neoforged.fml.Logging = контейнер Marker'ов без .severe(); маршрут в централизованный ERR.println (GT_API_Proxy:25)
+			ERR.println(String.format("Exception occured when ToolCompat was used at the Coordinates: [%d;%d;%d] at '%s' with TileEntity '%s' using the Tool '%s' %s", aX, aY, aZ, aBlock.getDescriptionId(), aTileEntity.getClass(), aTool, e.toString())); // F2/logging: was Logging.severe - neo fml Logging has no such call, so it routes through the central ERR (GT_API_Proxy:25)
 			e.printStackTrace(ERR);
 		}
 		return 0;

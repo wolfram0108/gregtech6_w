@@ -50,16 +50,13 @@ public interface IItemGT {
 	default Object setMaxDamage(int aMaxDamage) {return this;}
 	default Object setHasSubtypes(boolean aHasSubtypes) {return this;}
 
-	// F-useOn (класс дефектов «канал движка сместился», как F-tick/F13-appendHoverText): в 1.7.10 точкой входа установки
-	// блока был vanilla ItemBlock.onItemUse(stack,player,world,x,y,z,side,hitX,hitY,hitZ) — GT6 его переопределял. В neo
-	// 26.1.2 точка входа — Item.useOn(UseOnContext) (для BlockItem → place → placeBlock → Level.setBlock), а onItemUse
-	// движком НЕ вызывается вовсе → вся GT6-логика установки (BE-init MTE, NBT материала prefix, звук) была мертва.
-	// Приём (централизация): распаковка UseOnContext → 1.7.10-параметры в ОДНОМ месте (ниже), корни-предметы
-	// (ItemBlockBase / MultiTileEntityItemInternal / PrefixBlockItem — все реализуют IItemGT) переопределяют neo-useOn/
-	// onItemUseFirst тонкой делегацией сюда. 1.7.10-контракт установки объявлен здесь (дефолт-no-op для прочих IItemGT-
-	// маркеров, включая блоки — у них метод не вызывается); корни его реализуют своими существующими телами onItemUse.
+	// F-useOn: in 1.7.10 block placement entered through ItemBlock.onItemUse, which GregTech overrode; here
+	// the entry point is Item.useOn(UseOnContext) and onItemUse is never called, so the unpacking of the
+	// context into the 1.7.10 parameters lives in one place below and every item root delegates to it.
 	default boolean onItemUse     (ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return false;}
 	default boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return false;}
+	/** Whether this stack answers a block click at all - asked on the client, where the action itself cannot run. */
+	default boolean handlesUseOnFirst(ItemStack aStack) {return false;}
 
 	/** Распаковка neo UseOnContext → 1.7.10-параметры. side = Direction.get3DDataValue() (DOWN0/UP1/NORTH2/SOUTH3/WEST4/
 	 *  EAST5 — 1:1 с ForgeDirection ordinal, тем же индексом уже пользуются OFFX/FORGE_DIR в GT6); hit — относительно
@@ -70,6 +67,10 @@ public interface IItemGT {
 	}
 	static InteractionResult bridgeUseOnFirst(IItemGT aSelf, UseOnContext aCtx) {
 		BlockPos p = aCtx.getClickedPos(); Vec3 h = aCtx.getClickLocation();
-		return aSelf.onItemUseFirst(aCtx.getItemInHand(), aCtx.getPlayer(), aCtx.getLevel(), p.getX(), p.getY(), p.getZ(), aCtx.getClickedFace().get3DDataValue(), (float)(h.x-p.getX()), (float)(h.y-p.getY()), (float)(h.z-p.getZ())) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+		if (aSelf.onItemUseFirst(aCtx.getItemInHand(), aCtx.getPlayer(), aCtx.getLevel(), p.getX(), p.getY(), p.getZ(), aCtx.getClickedFace().get3DDataValue(), (float)(h.x-p.getX()), (float)(h.y-p.getY()), (float)(h.z-p.getZ()))) return InteractionResult.SUCCESS;
+		// The behaviours run server side, so the client would report PASS and then repeat the click with the
+		// other hand - an empty hand undoes the server result (a candle lit and blown out in one click).
+		if (aCtx.getLevel().isClientSide() && aSelf.handlesUseOnFirst(aCtx.getItemInHand())) return InteractionResult.CONSUME;
+		return InteractionResult.PASS;
 	}
 }
