@@ -70,19 +70,20 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 		MT.Kaolinite   .mTextureSolid = BlockTextureCopied.get(this, SIDE_TOP, 6);
 		
 		gregapi.GT_API.deferItemInit(() -> {
+		RM.generify(ST.make(this, 1, 0), ST.make(Blocks.MUD , 1, 0));
 		RM.generify(ST.make(this, 1, 1), ST.make(Blocks.CLAY, 1, 0));
 		RM.generify(ST.make(this, 1, 3), ST.make(Blocks.CLAY, 1, 0));
 		RM.generify(ST.make(this, 1, 4), ST.make(Blocks.CLAY, 1, 0));
 		RM.generify(ST.make(this, 1, 5), ST.make(Blocks.CLAY, 1, 0));
 		RM.generify(ST.make(this, 1, 6), ST.make(Blocks.CLAY, 1, 0));
-		RM.Drying.addRecipe1(T, 16, 64, ST.make(this       , 1, 0), NF, NF, ST.make(Blocks.COARSE_DIRT, 1, 0));
+		RM.Drying.addRecipe1(T, 16, 64, ST.make(Blocks.MUD , 1, 0), NF, NF, ST.make(Blocks.COARSE_DIRT, 1, 0));
 		RM.Drying.addRecipe1(T, 16, 64, ST.make(Blocks.CLAY, 1, 0), NF, NF, ST.make(Blocks.TERRACOTTA, 1, 0));
 		RM.Drying.addRecipe1(T, 16, 64, ST.make(this       , 1, 1), NF, NF, ST.make(Blocks.TERRACOTTA, 1, 0));
 		RM.Drying.addRecipe1(T, 16, 64, ST.make(this       , 1, 3), NF, NF, ST.make(Blocks.TERRACOTTA, 1, 0));
 		RM.Drying.addRecipe1(T, 16, 64, ST.make(this       , 1, 4), NF, NF, ST.make(Blocks.TERRACOTTA, 1, 0));
 		RM.Drying.addRecipe1(T, 16, 64, ST.make(this       , 1, 5), NF, NF, ST.make(Blocks.TERRACOTTA, 1, 0));
 		RM.Drying.addRecipe1(T, 16, 64, ST.make(this       , 1, 6), NF, NF, ST.make(Blocks.TERRACOTTA, 1, 0));
-		RM.add_smelting(ST.make(this, 1, 0), ST.make(Blocks.COARSE_DIRT, 1, 0), F, F, F);
+		RM.add_smelting(ST.make(Blocks.MUD, 1, 0), ST.make(Blocks.COARSE_DIRT, 1, 0), F, F, F);
 		RM.add_smelting(ST.make(this, 1, 1), ST.make(Blocks.TERRACOTTA, 1, 0), F, F, T);
 		RM.add_smelting(ST.make(this, 1, 3), ST.make(Blocks.TERRACOTTA, 1, 0), F, F, T);
 		RM.add_smelting(ST.make(this, 1, 4), ST.make(Blocks.TERRACOTTA, 1, 0), F, F, T);
@@ -104,6 +105,8 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 		
 		BlocksGT.drillableDynamite.add(this);
 		BlocksGT.harvestableSpade.add(this);
+		// ADAPT-015: meta 0 is no longer produced — vanilla mud replaced it; it stays registered only to read old worlds.
+		gregapi.GT_API.deferItemInit(() -> ST.hide(this, 0));
 		
 		gregapi.GT_API.deferItemInit(() -> {
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
@@ -139,6 +142,28 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 	@Override
 	public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
 		if (doesWalkSpeed(WD.meta(aWorld, aX, aY, aZ))) {WD.setMotionX(aEntity, WD.motionX(aEntity)*0.5); WD.setMotionZ(aEntity, WD.motionZ(aEntity)*0.5);}
+	}
+
+	/** ADAPT-015: the legacy stack from an old chest turns into vanilla mud the moment it is placed, so a world
+	 *  updated to this build never gains a second mud back through the inventory. */
+	@Override
+	public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {
+		if (WD.meta(aWorld, aX, aY, aZ) == 0) WD.set(aWorld, aX, aY, aZ, Blocks.MUD, 0, 3);
+	}
+
+	/** ADAPT-015: mud of old worlds becomes vanilla mud on chunk load, so only one mud is ever left in a world.
+	 *  The palette test skips untouched sections at O(1); light stays valid because both blocks are opaque. */
+	public static void migrateChunkMud(net.minecraft.world.level.chunk.LevelChunk aChunk) {
+		if (!(BlocksGT.Diggables instanceof BlockDiggable tLegacy)) return;
+		net.minecraft.world.level.block.state.BlockState tOld = tLegacy.defaultBlockState().setValue(META, 0), tNew = Blocks.MUD.defaultBlockState();
+		boolean tMigrated = F;
+		for (net.minecraft.world.level.chunk.LevelChunkSection tSection : aChunk.getSections()) {
+			if (tSection == null || tSection.hasOnlyAir() || !tSection.maybeHas(aState -> aState == tOld)) continue;
+			for (int tX = 0; tX < 16; tX++) for (int tY = 0; tY < 16; tY++) for (int tZ = 0; tZ < 16; tZ++) {
+				if (tSection.getBlockState(tX, tY, tZ) == tOld) {tSection.setBlockState(tX, tY, tZ, tNew, F); tMigrated = T;}
+			}
+		}
+		if (tMigrated) aChunk.markUnsaved();
 	}
 	
 	@Override public boolean useGravity      (byte aMeta) {return !IS_CLAY[aMeta];}

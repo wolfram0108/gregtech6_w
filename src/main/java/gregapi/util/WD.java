@@ -28,7 +28,7 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-// F5: net.minecraftforge.fluids.BlockFluidClassic/BlockFluidFinite удалены (см. liquid_classic/liquid_finite ниже).
+// F5: BlockFluidClassic/BlockFluidFinite are gone from the engine; see liquid_classic/liquid_finite below.
 import net.minecraftforge.fluids.IFluidBlock;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
@@ -74,8 +74,7 @@ import gregapi.block.BlockBase;
 import gregapi.block.multitileentity.MultiTileEntityBlock;
 import gregapi.block.metatype.BlockStones;
 import net.minecraft.core.Direction;
-// F#(WD-block): доступ к блокам мира переучен на BlockPos/BlockState (world.getBlockState(pos).getBlock() —
-// BlockGetter.java:32 + BlockBehaviour.java:521 getBlock()); координатные типы/шейпы/рейтрейс — ниже.
+// F#(WD-block): world access goes through BlockPos/BlockState now; coordinate types, shapes and raytrace below.
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -146,20 +145,8 @@ public class WD {
 		}
 		return null;
 	}
-	// ==========================================================================================================
-	// BUG-103, корень «при генерации мира»: ВОРДГЕН УБИРАЕТ СУЩНОСТИ ИЗ ЧУЖОГО ПОТОКА.
-	//
-	// В 1.7.10 генерация шла в главном потоке сервера (IWorldGenerator.generate из chunk provider), поэтому
-	// «убить предметы, выпавшие при генерации» было обычной строкой. В 26.1.2 генерация чанка исполняется
-	// worker-потоками, а состав сущностей — забота серверного потока: discard() тянет цепочку
-	// Callback.onRemove → stopTracking → onTrackingEnd → ChunkMap.removeEntity, то есть правит entityMap
-	// и EntityLookup.byId. Пока серверный поток обходит ту же карту (ChunkMap.tick:1206), правка из воркера
-	// рвёт fastutil-итератор — NPE «this.wrapped is null», в стеке мода нет.
-	//
-	// ЕДИНЫЙ приём на весь мод: и ПОИСК, и удаление откладываются в серверный поток (он же выполняет их сразу,
-	// в ближайшую же свою очередь). Наблюдаемый результат тот же — сущности исчезают; меняется только поток.
-	// Вне сервера (клиентский/тестовый уровень) выполняется на месте, как раньше.
-	// ==========================================================================================================
+	// Worldgen runs on worker threads while the entity map belongs to the server thread: discarding from a
+	// worker tears the fastutil iterator of ChunkMap.tick. Search and removal are deferred to that thread.
 	public static <T extends net.minecraft.world.entity.Entity> void discardEntitiesSafely(LevelAccessor aWorld, Class<T> aClass, AABB aBox, java.util.function.Predicate<T> aFilter) {
 		if (aWorld == null || aClass == null || aBox == null) return;
 		net.minecraft.world.level.Level tLevel = aWorld instanceof net.minecraft.world.level.Level tL ? tL : (aWorld instanceof net.minecraft.world.level.ServerLevelAccessor tS ? tS.getLevel() : null);
@@ -197,12 +184,10 @@ public class WD {
 			if (MD.TC.mLoaded && tTileEntity instanceof INode) return F;
 		}
 		BlockPos tObstrPos = new BlockPos(aX, aY, aZ);
-		BlockState tObstrState = state(aWorld, tObstrPos); // было aWorld.getBlock(x,y,z) — BlockGetter.java:32
+		BlockState tObstrState = state(aWorld, tObstrPos);
 		Block tBlock = tObstrState.getBlock();
 		if (tBlock instanceof TrapDoorBlock || tBlock instanceof DoorBlock || tBlock instanceof LadderBlock) return F;
-		// было tBlock.getCollisionBoundingBoxFromPool(world,x,y,z) — BlockBehaviour.getCollisionShape(level,pos)
-		// (BlockBehaviour.java:674) даёт локальный VoxelShape; .move(pos).bounds() переносит в мировые координаты
-		// (VoxelShape.java:39,81); пустой шейп = старое null-возврату (нет коллизии).
+		// The engine shape is local, so it is moved to world coordinates; an empty shape means no collision.
 		VoxelShape tObstrShape = tObstrState.getCollisionShape(aWorld, tObstrPos);
 		if (tObstrShape.isEmpty()) return F;
 		AABB tBoundingBox = tObstrShape.move(tObstrPos).bounds();
@@ -218,9 +203,9 @@ public class WD {
 	}
 	
 	public static HitResult getMOP(LevelAccessor aWorld, Player aPlayer, boolean aFlag) {
-		Vec3 vec3 = new Vec3( // 1.7.10 Vec3.createVectorHelper(x,y,z) удалён -> neo ctor new Vec3(double,double,double).
+		Vec3 vec3 = new Vec3(
 		  aPlayer.xo + (aPlayer.getX() - aPlayer.xo)
-		, aPlayer.yo + (aPlayer.getY() - aPlayer.yo) + (aWorld.isClientSide() ? aPlayer.getEyeHeight() - aPlayer.getEyeHeight(net.minecraft.world.entity.Pose.STANDING) : aPlayer.getEyeHeight()) // F6-eye: 1.7.10 getDefaultEyeHeight() -> neo getEyeHeight(Pose.STANDING) (стоячая высота глаз, Entity.java:3381). isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
+		, aPlayer.yo + (aPlayer.getY() - aPlayer.yo) + (aWorld.isClientSide() ? aPlayer.getEyeHeight() - aPlayer.getEyeHeight(net.minecraft.world.entity.Pose.STANDING) : aPlayer.getEyeHeight()) // F6-eye: client side already adds the eye height, so the standing value is subtracted back there.
 		, aPlayer.zo + (aPlayer.getZ() - aPlayer.zo)
 		);
 		float  tPitch = aPlayer.xRotO + (aPlayer.getXRot() - aPlayer.xRotO);
@@ -230,25 +215,12 @@ public class WD {
 		float  tW     = -Mth.cos(-tPitch * 0.017453292F);
 		float  tY     =  Mth.sin(-tPitch * 0.017453292F);
 		double tReach = (aPlayer instanceof ServerPlayer ? ((ServerPlayer)aPlayer).blockInteractionRange() : 5);
-		// было aWorld.func_147447_a(from,to,stopOnLiquid,ignoreBlockWithoutBoundingBox,returnLastUncollidableBlock=F) —
-		// neo: BlockGetter.clip(ClipContext) (BlockGetter.java:65). stopOnLiquid=aFlag -> ClipContext.Fluid.ANY/NONE
-		// (ClipContext.java:96-110, ANY подбирает любую непустую FluidState, NONE — никогда); Block.OUTLINE — тот же
-		// режим формы, которым реально пользуется ванильный player-look-raytrace (Item.getPlayerPOVHitResult,
-		// Item.java:362-365); returnLastUncollidableBlock здесь всегда F (аналога нет, не задействован).
+		// OUTLINE is the shape mode the vanilla player-look raytrace uses; the flag only picks whether fluids stop it.
 		return aWorld.clip(new ClipContext(vec3, vec3.add(tX * tW * tReach, tY * tReach, tZ * tW * tReach), ClipContext.Block.OUTLINE, aFlag ? ClipContext.Fluid.ANY : ClipContext.Fluid.NONE, aPlayer));
 	}
 	
-	// F6: было `WorldProvider aProvider`-перегрузки (числовой `dimensionId`, `UT.Reflection.getLowercaseClass`
-	// по имени java-класса провайдера стороннего мода) ПАРАЛЛЕЛЬНО с `Level aWorld`-перегрузками, вызывавшими их
-	// через `aWorld.provider` — `net.minecraft.world.WorldProvider` в neo удалён целиком (нет ни в одном из 3
-	// корней референса), из-за чего компилятор не мог выбрать между двумя `dimXXX(...)`-перегрузками с одним
-	// именем (ambiguous). `WorldProvider`-перегрузки убраны, остался один вход — `dimXXX(Level)`.
-	// Собственная (не мод-зависимая) идентификация ванильных измерений переведена дословно на neo-эквиваленты
-	// (`Level.dimension()`==`Level.OVERWORLD/NETHER/END`, см. `decisions/README.md` «Dimension-identity»).
-	// Идентификация измерений СТОРОННИХ модов шла через reflection по имени java-класса `WorldProvider`-подкласса
-	// этого мода (`"WorldProviderCaves".equalsIgnoreCase(...)` и т.п.) либо (dimTF) через числовой
-	// `TwilightForestMod.dimensionID` — ни один из 3 корней референса не содержит neo-эквивалента для этих
-	// древних 1.7.10-модов (не портированы), это foreign-gated (древние 1.7.10-моды не портированы): F корректно, пока мод отсутствует.
+	// F6: WorldProvider is gone from the engine, so only the dimXXX(Level) entry remains and vanilla dimensions
+	// are identified by Level.dimension(); foreign 1.7.10 mods have no equivalent and stay false while absent.
 	/** F6 dimension-identity ЦЕНТР: у neo-измерения нет числового id, ключ измерения = {@code ResourceKey<Level>}.
 	 *  {@code Level} даёт {@code dimension()} напрямую; worldgen-приёмник {@code WorldGenLevel}/{@code ServerLevelAccessor}
 	 *  знает свой {@code ServerLevel} через {@code getLevel()} → {@code getLevel().dimension()}. Единственный вход на весь
@@ -665,6 +637,9 @@ public class WD {
 		if (tDecision != net.minecraft.util.TriState.DEFAULT) return tDecision.isTrue();
 		Block tSelf = tSoil.getBlock(), tHead = gregapi.data.CS.Flattened.headOf(tSelf);
 		if (tHead == null) tHead = tSelf;
+		// ADAPT-015: vanilla mud is the single mud and carries the soil rule of BlockDiggable meta 0 — reeds,
+		// bushes and Plains/Water/Desert/Beach grow, Crop and Nether do not (BlockDiggable canSustainPlant).
+		if (tSelf == Blocks.MUD) return aPlant != Blocks.WHEAT && aPlant != Blocks.NETHER_WART;
 		if (aPlant == Blocks.CACTUS)      return tSelf == Blocks.CACTUS || tHead == Blocks.SAND;  // кактус-на-кактусе (:2222) + Desert (:2239)
 		if (aPlant == Blocks.SUGAR_CANE)  return tSelf == Blocks.SUGAR_CANE                       // тростник-на-тростнике (:2227) + Beach (:2245-2251)
 			|| ((tSelf == Blocks.GRASS_BLOCK || tHead == Blocks.DIRT || tHead == Blocks.SAND)
@@ -1064,7 +1039,10 @@ public class WD {
 		if (aBlock == Blocks.COBWEB)                                                                             return gregapi.block.Material.web;
 		if (aBlock == Blocks.TNT)                                                                                return gregapi.block.Material.tnt;
 		if (tState.is(net.minecraft.tags.BlockTags.SAND))                                                        return gregapi.block.Material.sand;
-		if (aBlock == Blocks.DIRT || aBlock == Blocks.COARSE_DIRT || aBlock == Blocks.GRAVEL || aBlock == Blocks.FARMLAND || aBlock == Blocks.DIRT_PATH || aBlock == Blocks.ROOTED_DIRT || aBlock == Blocks.SOUL_SAND || aBlock == Blocks.SOUL_SOIL) return gregapi.block.Material.ground;
+		if (aBlock == Blocks.DIRT || aBlock == Blocks.COARSE_DIRT || aBlock == Blocks.GRAVEL || aBlock == Blocks.FARMLAND || aBlock == Blocks.DIRT_PATH || aBlock == Blocks.ROOTED_DIRT || aBlock == Blocks.SOUL_SAND || aBlock == Blocks.SOUL_SOIL
+		 // ADAPT-015: mud carries the material of BlockDiggable meta 0 it replaced; without it the hardness
+		 // and worldgen branches read the fallback `rock` and dug mud like stone.
+		 || aBlock == Blocks.MUD) return gregapi.block.Material.ground;
 		if (tState.is(net.minecraft.tags.BlockTags.LEAVES))                                                      return gregapi.block.Material.leaves;
 		// BUG-013: производные деревянные блоки. 1.7.10: BlockWoodSlab/BlockDoor(wood)/trapdoor/fence/fence_gate/
 		// wooden_pressure_plate/BlockSign = Material.wood, деревянные лестницы наследуют материал донора-досок

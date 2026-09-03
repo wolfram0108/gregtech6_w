@@ -1324,6 +1324,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public void onChunkLoadMigrateOres(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
 		if (aEvent.getLevel() == null || aEvent.getLevel().isClientSide() || !(aEvent.getChunk() instanceof LevelChunk tChunk)) return;
 		gregapi.block.prefixblock.PrefixBlock.migrateChunkOres(tChunk); // логика — в центре у данных (PrefixBlock)
+		gregtech.blocks.BlockDiggable.migrateChunkMud(tChunk); // ADAPT-015: тот же приём — логика у данных грязи
 	}
 
 	// PlayerDestroyItemEvent.original/.entityPlayer (1.7.10) — приватные поля в neo, getOriginal()/getEntity() (сверено,

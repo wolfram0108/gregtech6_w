@@ -690,6 +690,7 @@ public class LoaderItemData implements Runnable {
 		OM.reg(OD.container1000slimeblue            , ST.make(MD.TiC, "buckets", 1, 24));
 		OM.reg(OD.container1000glue                 , ST.make(MD.TiC, "buckets", 1, 25));
 		OM.reg(OD.blockClay                         , ST.make(Blocks.CLAY, 1, W));
+		OM.reg(OD.blockMud                          , ST.make(Blocks.MUD, 1, W));
 		OM.reg(OD.craftingBook                      , ST.make(Items.BOOK, 1, W));
 		OM.reg(OD.craftingBook                      , ST.make(Items.WRITABLE_BOOK, 1, W));
 		OM.reg(OD.craftingBook                      , ST.make(Items.WRITTEN_BOOK, 1, W));
