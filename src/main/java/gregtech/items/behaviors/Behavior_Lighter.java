@@ -85,6 +85,21 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 	
 	@Override public boolean handlesUseOnFirst(MultiItem aItem, ItemStack aStack) {return T;}
 
+	/** ADAPT-025: a lighter used in a recipe costs one charge, like a tool costs durability, instead of
+	 *  being consumed whole. Single-use carriers (a match, a fire starter) keep nothing back, which is
+	 *  what one use already means for them. */
+	@Override
+	public ItemStack getContainerItem(MultiItem aItem, ItemStack aStack) {
+		if (ST.invalid(mUsedLighter)) return null;
+		ItemStack rStack = ST.amount(1, aStack);
+		prepare(rStack);
+		if (!ST.equal(rStack, mUsedLighter, T)) return null;
+		long tFuelAmount = UT.NBT.getLighterFuel(rStack) - 1;
+		UT.NBT.setLighterFuel(rStack, tFuelAmount);
+		if (tFuelAmount <= 0) useUp(rStack);
+		return ST.valid(rStack) ? rStack : null;
+	}
+
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aWorld.isClientSide() || (aStack.getCount() != 1 && (mFuelAmount != 1 || mEmptyLighter != null))) return F;

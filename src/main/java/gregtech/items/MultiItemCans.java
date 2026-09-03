@@ -43,7 +43,7 @@ import static gregapi.data.CS.*;
 public class MultiItemCans extends MultiItemRandomWithCompat implements IItemRottable {
 	public MultiItemCans(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Cans", this, (short)74); // F16 creative-tab: своя GT-вкладка (icon+displayItems), регистрируется CreativeTabsGT на RegisterEvent<CreativeModeTab>. 1:1.
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Cans", this, (short)74); // F16 creative tab: own GT tab (icon+displayItems), registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>. 1:1.
 	}
 	
 	@Override
@@ -126,7 +126,7 @@ public class MultiItemCans extends MultiItemRandomWithCompat implements IItemRot
 	}
 	
 	@Override
-	public ItemStack getContainerItem(ItemStack aStack) {
+	public ItemStack getContainerItemDefault(ItemStack aStack) {
 		return IL.Food_Can_Empty.get(1);
 	}
 	

@@ -61,7 +61,7 @@ import static gregapi.data.OP.chunkGt;
 public class MultiItemRandomTools extends MultiItemRandomWithCompat implements IItemRottable {
 	public MultiItemRandomTools(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Equipment", this, (short)5008); // F16 creative-tab: своя GT-вкладка (icon+displayItems), регистрируется CreativeTabsGT на RegisterEvent<CreativeModeTab>. 1:1.
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Equipment", this, (short)5008); // F16 creative tab: own GT tab (icon+displayItems), registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>. 1:1.
 	}
 	
 	@Override
@@ -402,13 +402,12 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		IL.Tool_Fire_Starter_Bark          .set(addItem(5015, "Fire Starter"                     , "(Made with Dry Tree Bark)"                   , new OreDictItemData(ANY.Wood, U), new Behavior_Lighter(5500), TC.stack(TC.IGNIS, 1), TC.stack(TC.ARBOR, 2), OD.craftingFirestarter));
 		CR.shaped(IL.Tool_Fire_Starter_Bark.get(1)  , CR.DEF_NCC_MIR, "S ", "GS", 'S', OP.stick.dat(ANY.Wood), 'G', OD.itemBarkDry);
 
-		// ADAPT-001 (адаптация, НЕ 1:1): ещё один ПУТЬ ПОЛУЧЕНИЯ трута — из ванильной сухой листвы 26.1.2,
-		// которой в 1.7.10 не существовало. Новый предмет НЕ заводится: два штатных варианта различаются
-		// шансом поджига (трава 5000 = 50 %, кора 5500 = 55 %), то есть материалом-качеством; листва — тот же
-		// класс лёгкого растительного трута, что трава, значит и результат тот же самый предмет. Заводить под
-		// него третий ID означало бы дубль сущности, отличающийся только подписью.
-		// Форма 2×2 — по прямому запросу игрока (2 палки + 2 листа); у травяного/коряного вариантов
-		// ингредиентов два, поэтому там диагональ.
+		// ADAPT-001 (adaptation, NOT 1:1): another tinder source — vanilla 26.1.2 dry leaf litter,
+		// absent in 1.7.10. No new item: the two existing variants differ only by ignition chance
+		// (grass 5000 = 50%, bark 5500 = 55%), i.e. material quality; litter is the same light
+		// plant-tinder class as grass, so it yields the same item — a third ID would just duplicate
+		// the entity under a different label. The 2x2 shape follows a direct player request (2 sticks
+		// + 2 leaves); the grass/bark recipes use a diagonal because they have only two ingredients.
 		CR.shaped(IL.Tool_Fire_Starter.get(1)       , CR.DEF_NCC_MIR, "SL", "LS", 'S', OP.stick.dat(ANY.Wood), 'L', OD.itemLeafLitter);
 		
 		
@@ -681,7 +680,7 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 	}
 	
 	@Override
-	public ItemStack getContainerItem(ItemStack aStack) {
+	public ItemStack getContainerItemDefault(ItemStack aStack) {
 		short aMeta = ST.meta_(aStack);
 		if (aMeta >=  1000 && aMeta <=  1999) return make(  999);
 		if (aMeta >   2000 && aMeta <=  2099) return make( 2000);
@@ -698,7 +697,7 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		if (aMeta ==  5006 || aMeta ==  5009) return make(aMeta - 2);
 		if (aMeta ==  5011) return make( 5013);
 		if (aMeta ==  5012) return make( 5010);
-		return super.getContainerItem(aStack);
+		return super.getContainerItemDefault(aStack);
 	}
 	
 	@Override
