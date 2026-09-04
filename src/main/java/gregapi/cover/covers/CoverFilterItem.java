@@ -50,8 +50,8 @@ public class CoverFilterItem extends AbstractCoverAttachment {
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		ItemStack tStack = ST.load(ItemNBT.get(aStack), "gt.filter.item");
-		if (ST.valid(tStack)) try {aList.add(LH.Chat.CYAN + tStack.getDisplayName());} catch(Throwable e) {aList.add(LH.Chat.BLINKING_RED + "ERROR, CANNOT DISPLAY ITEM NAME");}
-		aList.add(LH.Chat.ORANGE + "Not NBT sensitive!");
+		if (ST.valid(tStack)) try {aList.add(LH.Chat.CYAN + tStack.getDisplayName());} catch(Throwable e) {aList.add(LH.Chat.BLINKING_RED + LH.tt("ERROR, CANNOT DISPLAY ITEM NAME"));}
+		aList.add(LH.Chat.ORANGE + LH.tt("Not NBT sensitive!"));
 		super.addToolTips(aList, aStack, aF3_H);
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_TOGGLE_CONTROLLER_COVER));
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_TOGGLE_SCREWDRIVER));
@@ -62,7 +62,7 @@ public class CoverFilterItem extends AbstractCoverAttachment {
 	public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_screwdriver)) {
 			aData.visual(aCoverSide, (short)(aData.mVisuals[aCoverSide] == 0 ? 1 : 0));
-			if (aChatReturn != null) aChatReturn.add(aData.mVisuals[aCoverSide] == 0 ? "Whitelist Filter" : "Blacklist Filter");
+			if (aChatReturn != null) aChatReturn.add(aData.mVisuals[aCoverSide] == 0 ? LH.tt("Whitelist Filter") : LH.tt("Blacklist Filter"));
 			return 1000;
 		}
 		if (aTool.equals(TOOL_softhammer)) {
@@ -71,17 +71,17 @@ public class CoverFilterItem extends AbstractCoverAttachment {
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
-				aChatReturn.add(aData.mVisuals[aCoverSide] == 0 ? "Whitelist Filter" : "Blacklist Filter");
+				aChatReturn.add(aData.mVisuals[aCoverSide] == 0 ? LH.tt("Whitelist Filter") : LH.tt("Blacklist Filter"));
 				if (aData.mNBTs[aCoverSide] == null) {
-					aChatReturn.add("Filter is empty!");
+					aChatReturn.add(LH.tt("Filter is empty!"));
 					aData.mNBTs[aCoverSide] = null;
 				} else {
 					ItemStack tStack = ST.load(aData.mNBTs[aCoverSide], "gt.filter.item");
 					if (ST.invalid(tStack)) {
-						aChatReturn.add("Filter is empty!");
+						aChatReturn.add(LH.tt("Filter is empty!"));
 						aData.mNBTs[aCoverSide] = null;
 					} else {
-						aChatReturn.add("Filters for: " + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + (ST.meta_(tStack) == W ? LH.Chat.GREEN + "Wildcard" : LH.Chat.CYAN + ST.meta_(tStack)));
+						aChatReturn.add(LH.tt("Filters for: ") + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + (ST.meta_(tStack) == W ? LH.Chat.GREEN + LH.tt("Wildcard") : LH.Chat.CYAN + ST.meta_(tStack)));
 					}
 				}
 			}
@@ -99,16 +99,16 @@ public class CoverFilterItem extends AbstractCoverAttachment {
 				if (ST.invalid(tFilter)) {
 					aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", ST.make(ST.item_(tStack), 1, ST.meta_(tStack)));
 					UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);
-					UT.Entities.sendchat(aPlayer, "Filters for: " + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
+					UT.Entities.sendchat(aPlayer, LH.tt("Filters for: ") + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
 				} else if (ST.equal(tFilter, tStack, T)) {
 					if (ST.meta_(tFilter) == W) {
 						aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", ST.make(ST.item_(tStack), 1, ST.meta_(tStack)));
 						UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);
-						UT.Entities.sendchat(aPlayer, "Filters for: " + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
+						UT.Entities.sendchat(aPlayer, LH.tt("Filters for: ") + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
 					} else {
 						aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", ST.make(ST.item_(tStack), 1, W));
 						UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);
-						UT.Entities.sendchat(aPlayer, "Filters for: " + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.GREEN + "Wildcard");
+						UT.Entities.sendchat(aPlayer, LH.tt("Filters for: ") + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.GREEN + LH.tt("Wildcard"));
 					}
 				}
 			}

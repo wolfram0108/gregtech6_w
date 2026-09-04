@@ -132,7 +132,7 @@ public class MultiTileEntityPipeItem extends TileEntityBase10ConnectorRendered i
 		if (aTool.equals(TOOL_monkeywrench)) {
 			byte aTargetSide = UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ);
 			if (getAdjacentTileEntity(aTargetSide).mTileEntity instanceof ITileEntityItemPipe) {
-				if (aChatReturn != null) aChatReturn.add("Will not work between two Item Pipes!");
+				if (aChatReturn != null) aChatReturn.add(LH.tt("Will not work between two Item Pipes!"));
 				return 0;
 			}
 			if (FACE_CONNECTED[aTargetSide][mDisabledInputs]) {
@@ -151,8 +151,8 @@ public class MultiTileEntityPipeItem extends TileEntityBase10ConnectorRendered i
 				}
 			}
 			if (aChatReturn != null) {
-				aChatReturn.add(FACE_CONNECTED[aTargetSide][mDisabledInputs ]?"Accepting from selected Side disabled":"Accepting from selected Side enabled");
-				aChatReturn.add(FACE_CONNECTED[aTargetSide][mDisabledOutputs]?"Emitting to selected Side disabled"   :"Emitting to selected Side enabled");
+				aChatReturn.add(FACE_CONNECTED[aTargetSide][mDisabledInputs ]?LH.tt("Accepting from selected Side disabled"):LH.tt("Accepting from selected Side enabled"));
+				aChatReturn.add(FACE_CONNECTED[aTargetSide][mDisabledOutputs]?LH.tt("Emitting to selected Side disabled")   :LH.tt("Emitting to selected Side enabled"));
 			}
 			return 2500;
 		}
@@ -160,8 +160,8 @@ public class MultiTileEntityPipeItem extends TileEntityBase10ConnectorRendered i
 			byte aTargetSide = UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ);
 			if (!isCovered(aTargetSide)) {
 				if (aChatReturn != null) {
-					aChatReturn.add(FACE_CONNECTED[aTargetSide][mDisabledInputs ]?"Accepting from selected Side disabled":"Accepting from selected Side enabled");
-					aChatReturn.add(FACE_CONNECTED[aTargetSide][mDisabledOutputs]?"Emitting to selected Side disabled"   :"Emitting to selected Side enabled");
+					aChatReturn.add(FACE_CONNECTED[aTargetSide][mDisabledInputs ]?LH.tt("Accepting from selected Side disabled"):LH.tt("Accepting from selected Side enabled"));
+					aChatReturn.add(FACE_CONNECTED[aTargetSide][mDisabledOutputs]?LH.tt("Emitting to selected Side disabled")   :LH.tt("Emitting to selected Side enabled"));
 				}
 				return 1;
 			}

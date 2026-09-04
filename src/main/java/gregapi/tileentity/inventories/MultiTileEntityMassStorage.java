@@ -70,10 +70,10 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	public long mPartialUnits = 0;
 	public byte mMode = 0;
 	
-	/** BUG-078: у витрины иная раскладка граней ({@code aSide == mFacing} + собственный BER, без
-	 *  {@code FACING_ROTATIONS}), поэтому item-facing свой — величина откалибрована живым глазом (BUG-038)
-	 *  и лежит ОДИН раз, здесь. Подставляет её общий центр {@code MultiTileEntityRegistry.applyItemFacing};
-	 *  прежняя россыпь `level==null?ITEM_MASSSTORAGE_FACING:mFacing` по четырём подклассам и BER снята. */
+	/** BUG-078: the display item has a different face layout ({@code aSide == mFacing} + its own BER, without
+	 *  {@code FACING_ROTATIONS}), so item-facing is its own — the value was calibrated by eye (BUG-038)
+	 *  and lives ONCE, here. The shared center {@code MultiTileEntityRegistry.applyItemFacing} substitutes it;
+	 *  the former scattered `level==null?ITEM_MASSSTORAGE_FACING:mFacing` across four subclasses and the BER was removed. */
 	@Override public byte getItemFacing() {return ITEM_MASSSTORAGE_FACING;}
 
 	@Override
@@ -106,7 +106,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		if (slotHas(1)) aList.add(Chat.YELLOW + slot(1).getDisplayName() + Chat.GRAY + ": " + Chat.WHITE + ST.count(slot(1))); // F15-size0: логический счёт (призрак=0)
+		if (slotHas(1)) aList.add(Chat.YELLOW + slot(1).getDisplayName() + Chat.GRAY + ": " + Chat.WHITE + ST.count(slot(1))); // F15-size0: logical count (ghost=0)
 		aList.add(Chat.CYAN + LH.get("gt.multitileentity.massstorage.tooltip.1") + UT.Code.makeString(mMaxStorage));
 		aList.add(Chat.CYAN + LH.get("gt.multitileentity.massstorage.tooltip.2"));
 		aList.add(Chat.DGRAY + LH.get(LH.TOOL_TO_TAKE_PINCERS));
@@ -163,7 +163,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 				return 10000;
 			}
 			if (slotHas(1)) {
-				// F15-size0: логический счёт/запись через центры ST.count/ST.size_ (призрак «тип запомнен, штук 0»)
+				// F15-size0: logical count/write through the centers ST.count/ST.size_ (ghost "type remembered, count 0")
 				for (int i = 0; i < 128 && ST.count(slot(1)) > Math.max(1, slot(1).getMaxStackSize()); i++) {
 					ST.place(level, getBlockPos().getX()+OFFX[mFacing]+0.5, getBlockPos().getY()+OFFY[mFacing]+0.5, getBlockPos().getZ()+OFFZ[mFacing]+0.5, ST.amount(Math.max(1, slot(1).getMaxStackSize()), slot(1)));
 					ST.size_(ST.count(slot(1))-(Math.max(1, slot(1).getMaxStackSize())), slot(1));
@@ -189,7 +189,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		if (aTool.equals(TOOL_ducttape)) {
 			if ((mMode & B[3]) != 0 || !slotHas(1)) return 0;
 			if (ST.count(slot(1)) > aRemainingDurability) {
-				aChatReturn.add("Not enough Tape left to contain the Items!");
+				aChatReturn.add(LH.tt("Not enough Tape left to contain the Items!"));
 				return 0;
 			}
 			mMode |= B[3];
@@ -206,14 +206,14 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		}
 		if (aTool.equals(TOOL_cutter)) {
 			mMode ^= B[2];
-			aChatReturn.add((mMode & B[2]) == 0 ? "Won't emit Overflow" : "Will emit Overflow to Inventories below");
+			aChatReturn.add((mMode & B[2]) == 0 ? LH.tt("Won't emit Overflow") : LH.tt("Will emit Overflow to Inventories below"));
 			updateClientData();
 			updateInventory();
 			return 10000;
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
 			mMode ^= B[1];
-			aChatReturn.add((mMode & B[1]) == 0 ? "Filter stays when empty" : "Filter resets when empty");
+			aChatReturn.add((mMode & B[1]) == 0 ? LH.tt("Filter stays when empty") : LH.tt("Filter resets when empty"));
 			if (!allowZeroStacks(1)) slotNull(1);
 			updateClientData();
 			updateInventory();
@@ -221,7 +221,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		}
 		if (aTool.equals(TOOL_monkeywrench)) {
 			mMode ^= B[0];
-			aChatReturn.add((mMode & B[0]) == 0 ? "Won't fill Inventories below" : "Will fill Inventories below");
+			aChatReturn.add((mMode & B[0]) == 0 ? LH.tt("Won't fill Inventories below") : LH.tt("Will fill Inventories below"));
 			updateClientData();
 			updateInventory();
 			return 10000;
@@ -229,14 +229,14 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
 				if (slotHas(1)) {
-					aChatReturn.add("Contains: " + ST.count(slot(1)) + " " + slot(1).getDisplayName());
+					aChatReturn.add(LH.tt("Contains: ") + ST.count(slot(1)) + " " + slot(1).getDisplayName());
 				} else {
-					aChatReturn.add("Storage is empty");
+					aChatReturn.add(LH.tt("Storage is empty"));
 				}
-				aChatReturn.add((mMode & B[0]) == 0 ? "Won't fill Inventories below" : "Will fill Inventories below");
-				aChatReturn.add((mMode & B[1]) == 0 ? "Filter stays when empty" : "Filter resets when empty");
-				aChatReturn.add((mMode & B[2]) == 0 ? "Won't emit Overflow" : "Will emit Overflow to Inventories below");
-				if ((mMode & B[3]) != 0) aChatReturn.add("Will keep content when harvested.");
+				aChatReturn.add((mMode & B[0]) == 0 ? LH.tt("Won't fill Inventories below") : LH.tt("Will fill Inventories below"));
+				aChatReturn.add((mMode & B[1]) == 0 ? LH.tt("Filter stays when empty") : LH.tt("Filter resets when empty"));
+				aChatReturn.add((mMode & B[2]) == 0 ? LH.tt("Won't emit Overflow") : LH.tt("Will emit Overflow to Inventories below"));
+				if ((mMode & B[3]) != 0) aChatReturn.add(LH.tt("Will keep content when harvested."));
 			}
 			return 1;
 		}
@@ -269,8 +269,8 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 					if (tCoords[0] >= PX_P[ 4] && tCoords[0] <= PX_N[ 4]) {tAmount = -1;}
 				}
 				if (tAmount > 0) {
-					// F15-size0: логический счёт/запись через центры (при полной выдаче слот становится ZEROSIZE-призраком
-					// «тип запомнен, штук 0» — 1:1 allowZeroStacks 1.7.10; сброс типа — только мягкий молот)
+					// F15-size0: logical count/write through the centers (on full output the slot becomes a ZEROSIZE ghost
+					// "type remembered, count 0" — 1:1 with allowZeroStacks in 1.7.10; clearing the type requires only a soft hammer)
 					tAmount = Math.min(tAmount, ST.count(slot(1)));
 					if (tAmount > 0) {
 						ST.size_(ST.count(slot(1))-(tAmount), slot(1));
@@ -299,7 +299,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 								ItemStack tStack = insertItems(aPlayer.getInventory().getItem(i), F);
 								if (tStack == null) {
 									temp = T;
-									aPlayer.getInventory().setItem(i, ST.nn(NI)); // F15-граница: GT6 null -> движок EMPTY (setItem(null) на NonNullList кидает NPE)
+									aPlayer.getInventory().setItem(i, ST.nn(NI)); // F15 boundary: GT6 null -> engine EMPTY (setItem(null) on a NonNullList throws NPE)
 									continue;
 								}
 								if (tStack.getCount() < aPlayer.getInventory().getItem(i).getCount()) {
@@ -408,8 +408,8 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		int tMaxStorage = getMaxContent();
 		ItemStack tContent = slot(1);
 
-		// F15-size0: логический счёт/запись через центры — вставка в ZEROSIZE-призрак («тип запомнен, штук 0»)
-		// обязана работать 1:1 (репорт игрока: «вытащил все — обратно положить не могу»); ST.equal маркер не видит.
+		// F15-size0: logical count/write through the centers — inserting into a ZEROSIZE ghost ("type remembered, count 0")
+		// must work 1:1 (player report: "took everything out — can't put it back"); ST.equal does not see the marker.
 		if (ST.count(tContent) >= tMaxStorage) return aStack;
 
 		if (ST.equal(aStack, tContent)) {
@@ -519,7 +519,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override
 	public IPacket getClientDataPacket(boolean aSendAll) {
-		int tStacksize = slotHas(1) ? ST.count(slot(1)) : -1; // F15-size0: клиент получает ЛОГИЧЕСКИЙ счёт (призрак=0)
+		int tStacksize = slotHas(1) ? ST.count(slot(1)) : -1; // F15-size0: the client receives the LOGICAL count (ghost=0)
 		short tMeta = slotHas(1) ? ST.meta_(slot(1)) : 0, tID = ST.id(slot(1));
 		return aSendAll ? getClientDataPacketByteArray(aSendAll, (byte)UT.Code.getR(mRGBa), (byte)UT.Code.getG(mRGBa), (byte)UT.Code.getB(mRGBa), getDirectionData(), mMode, UT.Code.toByteS(tID, 0), UT.Code.toByteS(tID, 1), UT.Code.toByteS(tMeta, 0), UT.Code.toByteS(tMeta, 1), UT.Code.toByteI(tStacksize, 0), UT.Code.toByteI(tStacksize, 1), UT.Code.toByteI(tStacksize, 2), UT.Code.toByteI(tStacksize, 3)) : tStacksize <= Short.MAX_VALUE ? getClientDataPacketShort(aSendAll, (short)tStacksize) : getClientDataPacketInteger(aSendAll, tStacksize);
 	}
@@ -529,7 +529,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		mRGBa = UT.Code.getRGBInt(new short[] {UT.Code.unsignB(aData[0]), UT.Code.unsignB(aData[1]), UT.Code.unsignB(aData[2])});
 		setDirectionData(aData[3]);
 		mMode = aData[4];
-		// F15-size0: клиентский слот при счёте 0 — тоже ZEROSIZE-призрак (иначе дисплей-предмет на фасаде пропадал бы)
+		// F15-size0: the client slot at count 0 is also a ZEROSIZE ghost (otherwise the display item on the facade would vanish)
 		int tCount = UT.Code.combine(aData[9], aData[10], aData[11], aData[12]);
 		ItemStack tStack = ST.make(UT.Code.combine(aData[5], aData[6]), 1, UT.Code.combine(aData[7], aData[8]));
 		slot(1, tStack == null ? null : ST.size_(tCount, tStack));
@@ -709,13 +709,13 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		return T;
 	}
 	
-	// BUG-092 (дедикейт): спец-рендер/state ВЫНЕСЕНЫ в gregapi/render/MTEMassStorageRenderer — клиентские типы
-	// в common-MTE валили линковку класса на выделенном сервере и обрывали Loader_MultiTileEntities (тот же класс
-	// и приём, что MultiTileEntityChest). Здесь остался ленивый invokestatic-мост клиент-only канала.
+	// BUG-092 (dedicated server): special render/state MOVED OUT to gregapi/render/MTEMassStorageRenderer — client types
+	// in the common MTE broke class linking on a dedicated server and aborted Loader_MultiTileEntities (same bug class
+	// and fix as MultiTileEntityChest). What remains here is a lazy invokestatic bridge to the client-only channel.
 	@Override
 	public void onRegistrationFirstClient(MultiTileEntityRegistry aRegistry, short aID) {
-		// было ClientRegistry.bindTileEntitySpecialRenderer (FML-диспетчер по классу TE; API мёртв) →
-		// тот же диспетч по классу в едином GT6-BER (MTE_TYPE один на все MTE, см. MultiTileEntityBER).
+		// was ClientRegistry.bindTileEntitySpecialRenderer (FML dispatch by TE class; API is dead) ->
+		// the same dispatch by class in the unified GT6-BER (one MTE_TYPE for all MTEs, see MultiTileEntityBER).
 		gregapi.render.MTEMassStorageRenderer.bindFirst(getClass());
 	}
 }

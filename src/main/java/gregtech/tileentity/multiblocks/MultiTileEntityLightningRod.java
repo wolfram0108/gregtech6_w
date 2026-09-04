@@ -112,8 +112,8 @@ public class MultiTileEntityLightningRod extends TileEntityBase10MultiBlockBase 
 		aList.add(Chat.WHITE    + LH.get("gt.tooltip.multiblock.lightningrod.7"));
 		aList.add(Chat.YELLOW   + LH.get("gt.tooltip.multiblock.lightningrod.8"));
 		aList.add(Chat.ORANGE   + LH.get("gt.tooltip.multiblock.lightningrod.9"));
-		aList.add(Chat.GREEN    + LH.get(LH.ENERGY_OUTPUT) + ": " + Chat.WHITE + VREC[6] + " " + mEnergyTypeEmitted.getLocalisedChatNameShort() + Chat.WHITE + "/p (up to 16 Amps)");
-		aList.add(Chat.WHITE    + mCapacity + " " + mEnergyTypeEmitted.getLocalisedChatNameShort() + Chat.GRAY + " per Lightning Strike");
+		aList.add(Chat.GREEN    + LH.get(LH.ENERGY_OUTPUT) + ": " + Chat.WHITE + VREC[6] + " " + mEnergyTypeEmitted.getLocalisedChatNameShort() + Chat.WHITE + LH.tt("/p (up to 16 Amps)"));
+		aList.add(Chat.WHITE    + mCapacity + " " + mEnergyTypeEmitted.getLocalisedChatNameShort() + Chat.GRAY + LH.tt(" per Lightning Strike"));
 		super.addToolTips(aList, aStack, aF3_H);
 	}
 	
@@ -137,7 +137,7 @@ public class MultiTileEntityLightningRod extends TileEntityBase10MultiBlockBase 
 						for (MultiTileEntityLightningRod tLightningRod : ALL_LIGHTNING_RODS) if (tLightningRod != this && tLightningRod.mSize > 0 && tLightningRod.getWorld() == level && Math.abs(tLightningRod.getBlockPos().getX() - getBlockPos().getX()) < 256 && Math.abs(tLightningRod.getBlockPos().getZ() - getBlockPos().getZ()) < 256) tCount++;
 						if (rng(tCount) == 0) {
 							boolean temp = T;
-							for (int i = getBlockPos().getY() + mSize + 5, j = gregapi.util.WD.topY(level) /* BUG-089: было getHeight()=COUNT */; i < j; i++) {
+							for (int i = getBlockPos().getY() + mSize + 5, j = gregapi.util.WD.topY(level) /* BUG-089: was getHeight()=COUNT */; i < j; i++) {
 								if (!WD.air(level, getBlockPos().getX(), i, getBlockPos().getZ())) {
 									temp = F;
 									break;

@@ -50,8 +50,8 @@ public class MultiTileEntityZPM extends TileEntityBase08Battery implements IMTE_
 		if (UT.Code.inside(1, mCapacity-1, mEnergy)) {
 			super.addToolTips(aList, aStack, aF3_H);
 		} else {
-			aList.add(LH.Chat.CYAN + "An Ancient Artifact of huge Power");
-			aList.add(LH.Chat.WHITE + "Capacity: " + mCapacity + mType.getLocalisedChatNameShort());
+			aList.add(LH.Chat.CYAN + LH.tt("An Ancient Artifact of huge Power"));
+			aList.add(LH.Chat.WHITE + LH.tt("Capacity: ") + mCapacity + mType.getLocalisedChatNameShort());
 		}
 	}
 	

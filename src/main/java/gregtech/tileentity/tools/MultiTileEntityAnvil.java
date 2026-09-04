@@ -140,7 +140,7 @@ public class MultiTileEntityAnvil extends TileEntityBase09FacingSingle implement
 			return 0;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add("Remaining Durability: " + UT.Code.makeString(UT.Code.divup(mDurability, 10000)));
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Remaining Durability: ") + UT.Code.makeString(UT.Code.divup(mDurability, 10000)));
 			return 1;
 		}
 		return 0;
@@ -151,8 +151,8 @@ public class MultiTileEntityAnvil extends TileEntityBase09FacingSingle implement
 		if (aIsServerSide && mInventoryChanged) {updateVisualData(); updateClientData();}
 	}
 
-	/** Что лежит на наковальне: материал и форма обеих половин. Чистый пересчёт из слотов — центр зовёт его
-	 *  и из тика, и перед сборкой клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	/** What lies on the anvil: material and shape of both halves. A pure recomputation from the slots — the center calls it
+	 *  both from the tick and before assembling the client snapshot (see {@code TileEntityBase03TicksAndSync.updateVisualData}). */
 	@Override
 	public void updateVisualData() {
 		if (isClientSide()) return;

@@ -104,11 +104,11 @@ public class ToolCompat {
 		} catch(Throwable e) {/**/}
 	}
 	
-	/** F4-flattening (BUG-042): ванильное бревно в neo = отдельный блок породы + AXIS-blockstate (в 1.7.10 — один
-	 *  Blocks.log, мета = порода(биты 0-1)|ориентация(биты 2-3)). WD.meta ванильного бревна = 0 (не IBlockExtendedMetaData)
-	 *  → ориентацию (PILLAR-биты балки) читаем прямо из RotatedPillarBlock.AXIS: AXIS.Y→PILLAR_Y(0), X→PILLAR_X(4),
-	 *  Z→PILLAR_Z(8) (сверено CS.PILLAR_TO_AXIS:804-809). Восстанавливает 1.7.10-контракт «Beam, порода|ориентация»
-	 *  для лежачих брёвен (без этого лежачее бревно ошкуривалось в вертикальную балку). */
+	/** F4-flattening (BUG-042): a vanilla log in neo = a separate wood-type block + an AXIS blockstate (in 1.7.10 — one
+	 *  Blocks.log, meta = wood type(bits 0-1)|orientation(bits 2-3)). WD.meta of a vanilla log = 0 (not IBlockExtendedMetaData)
+	 *  -> so the orientation (beam PILLAR bits) is read directly from RotatedPillarBlock.AXIS: AXIS.Y->PILLAR_Y(0), X->PILLAR_X(4),
+	 *  Z->PILLAR_Z(8) (checked against CS.PILLAR_TO_AXIS:804-809). Restores the 1.7.10 "Beam, wood type|orientation" contract
+	 *  for logs lying on their side (without this, a horizontal log got stripped into a vertical beam). */
 	private static int pillarFromAxis(Level aWorld, int aX, int aY, int aZ) {
 		BlockState tState = aWorld.getBlockState(new BlockPos(aX, aY, aZ));
 		if (!tState.hasProperty(net.minecraft.world.level.block.RotatedPillarBlock.AXIS)) return PILLAR_Y;
@@ -292,7 +292,7 @@ public class ToolCompat {
 			}
 		}
 		if (aTool.equals(TOOL_rotator)) {
-			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock instanceof gregapi.block.tree.BlockBaseLog || aBlock instanceof gregapi.block.tree.BlockBaseBeam || aBlock instanceof gregapi.block.misc.BlockBaseBale /* было aBlock.getRenderType()==PILLAR_RENDER — Forge-render-hook удалён из движка; ровно эти 3 класса возвращали PILLAR_RENDER(31) в оригинале (grep getRenderType по gregtech6/), instanceof — точный 1:1 эквивалент */) {
+			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock instanceof gregapi.block.tree.BlockBaseLog || aBlock instanceof gregapi.block.tree.BlockBaseBeam || aBlock instanceof gregapi.block.misc.BlockBaseBale /* was aBlock.getRenderType()==PILLAR_RENDER — the Forge render hook is removed from the engine; exactly these 3 classes returned PILLAR_RENDER(31) in the original (grep getRenderType over gregtech6/), instanceof is the exact 1:1 equivalent */) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
@@ -348,7 +348,7 @@ public class ToolCompat {
 				;
 				return tResult?10000:0;
 			}
-			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock instanceof gregapi.block.tree.BlockBaseLog || aBlock instanceof gregapi.block.tree.BlockBaseBeam || aBlock instanceof gregapi.block.misc.BlockBaseBale /* было aBlock.getRenderType()==PILLAR_RENDER — Forge-render-hook удалён из движка; ровно эти 3 класса возвращали PILLAR_RENDER(31) в оригинале (grep getRenderType по gregtech6/), instanceof — точный 1:1 эквивалент */) {
+			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock instanceof gregapi.block.tree.BlockBaseLog || aBlock instanceof gregapi.block.tree.BlockBaseBeam || aBlock instanceof gregapi.block.misc.BlockBaseBale /* was aBlock.getRenderType()==PILLAR_RENDER — the Forge render hook is removed from the engine; exactly these 3 classes returned PILLAR_RENDER(31) in the original (grep getRenderType over gregtech6/), instanceof is the exact 1:1 equivalent */) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
@@ -422,7 +422,7 @@ public class ToolCompat {
 				return 0;
 			}
 
-			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock instanceof gregapi.block.tree.BlockBaseLog || aBlock instanceof gregapi.block.tree.BlockBaseBeam || aBlock instanceof gregapi.block.misc.BlockBaseBale /* было aBlock.getRenderType()==PILLAR_RENDER — Forge-render-hook удалён из движка; ровно эти 3 класса возвращали PILLAR_RENDER(31) в оригинале (grep getRenderType по gregtech6/), instanceof — точный 1:1 эквивалент */) {
+			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock instanceof gregapi.block.tree.BlockBaseLog || aBlock instanceof gregapi.block.tree.BlockBaseBeam || aBlock instanceof gregapi.block.misc.BlockBaseBale /* was aBlock.getRenderType()==PILLAR_RENDER — the Forge render hook is removed from the engine; exactly these 3 classes returned PILLAR_RENDER(31) in the original (grep getRenderType over gregtech6/), instanceof is the exact 1:1 equivalent */) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			
@@ -495,19 +495,19 @@ public class ToolCompat {
 			// The Strings in this do not want to be localized, and not even Backup Lang wants to work.
 			tBlock = WD.block(aWorld, tX, tY, tZ);
 			if (tBlock == Blocks.LAVA || tBlock == Blocks.LAVA) {
-				if (aChatReturn != null) aChatReturn.add("There is Lava behind this Rock");
+				if (aChatReturn != null) aChatReturn.add(LH.tt("There is Lava behind this Rock"));
 				break;
 			}
 			if (tBlock instanceof LiquidBlock || tBlock instanceof IFluidBlock) {
-				if (aChatReturn != null) aChatReturn.add("There is a Fluid behind this Rock");
+				if (aChatReturn != null) aChatReturn.add(LH.tt("There is a Fluid behind this Rock"));
 				break;
 			}
 			if (tBlock instanceof InfestedBlock || !WD.hasCollide(aWorld, tX, tY, tZ, tBlock)) {
-				if (aChatReturn != null) aChatReturn.add("There is an Air Pocket behind this Rock");
+				if (aChatReturn != null) aChatReturn.add(LH.tt("There is an Air Pocket behind this Rock"));
 				break;
 			}
 			if (i < 4) if (tBlock != aBlock || aMeta != WD.meta(aWorld, tX, tY, tZ)) {
-				if (aChatReturn != null) aChatReturn.add("Material is changing behind this Rock");
+				if (aChatReturn != null) aChatReturn.add(LH.tt("Material is changing behind this Rock"));
 				break;
 			}
 		}
@@ -522,12 +522,12 @@ public class ToolCompat {
 			if (tBlock != NB && tBlock != Blocks.OBSIDIAN && tBlock != BlocksGT.RockOres) {
 				OreDictItemData tAssotiation = OM.anyassociation((tBlock instanceof IBlockRetrievable ? ((IBlockRetrievable)tBlock).getItemStackFromBlock(aWorld, tX, tY, tZ, SIDE_INVALID) : ST.make(tBlock, 1, WD.meta(aWorld, tX, tY, tZ))));
 				if (tAssotiation != null && tAssotiation.mPrefix.containsAny(TD.Prefix.STANDARD_ORE, TD.Prefix.DENSE_ORE)) {
-					if (aChatReturn != null) aChatReturn.add("Found traces of " + tAssotiation.mMaterial.mMaterial.getLocal());
+					if (aChatReturn != null) aChatReturn.add(LH.tt("Found traces of ") + tAssotiation.mMaterial.mMaterial.getLocal());
 					return T;
 				}
 			}
 		}
-		if (aChatReturn != null && aChatReturn.isEmpty()) aChatReturn.add("No traces of Ore found");
+		if (aChatReturn != null && aChatReturn.isEmpty()) aChatReturn.add(LH.tt("No traces of Ore found"));
 		return T;
 	}
 }

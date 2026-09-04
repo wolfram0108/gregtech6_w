@@ -146,18 +146,18 @@ public class CoverDrain extends AbstractCoverAttachment {
 					if (tBlock == BlocksGT.Swamp) {
 						FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Dirty_Water.make(16000), T);
 					} else
-					if (tBlock instanceof IFluidBlock) tFluid = FL.drainable(aData.mTileEntity.getWorld(), new net.minecraft.core.BlockPos(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide))); // F5 §6.2 — центр
+					if (tBlock instanceof IFluidBlock) tFluid = FL.drainable(aData.mTileEntity.getWorld(), new net.minecraft.core.BlockPos(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide))); // F5 §6.2 — center
 					
 					if (tFluid != null && (SIDES_HORIZONTAL[aCoverSide] || FL.gas(tFluid) || (FL.lighter(tFluid)?SIDES_BOTTOM:SIDES_TOP)[aCoverSide])) {
 						if (FL.fillAll((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], tFluid, T)) {
 							if (tBlock instanceof IFluidBlock) {
-								FL.drainCell(aData.mTileEntity.getWorld(), new net.minecraft.core.BlockPos(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide))); // F5 §6.2 — центр
+								FL.drainCell(aData.mTileEntity.getWorld(), new net.minecraft.core.BlockPos(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide))); // F5 §6.2 — center
 							} else {
-								// ⛔ Было removeBlock(pos,false) как перевод 1.7.10 setBlockToAir — НЕВЕРНО для клетки,
-								// которая сама является жидкостью: neo removeBlock ставит НЕ воздух, а
-								// fluidState.createLegacyBlock() (Level.java:296-298), то есть возвращает воду на место.
-								// Дрен качал воду бесконечно, а блок не исчезал (репорт пользователя). 1:1 с 1.7.10 —
-								// поставить именно ВОЗДУХ.
+								// WARNING: was removeBlock(pos,false) as a translation of the 1.7.10 setBlockToAir — WRONG for a cell
+								// that is itself a fluid: neo removeBlock does NOT place air, it places
+								// fluidState.createLegacyBlock() (Level.java:296-298), i.e. it puts the water back in place.
+								// The drain pumped water forever and the block never disappeared (user report). 1:1 with 1.7.10 —
+								// place actual AIR.
 								aData.mTileEntity.getWorld().setBlock(new BlockPos(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide)), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 							}
 						}
@@ -235,17 +235,17 @@ public class CoverDrain extends AbstractCoverAttachment {
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		super.addToolTips(aList, aStack, aF3_H);
-		aList.add(LH.Chat.CYAN + "Collects Fluid Blocks (if not against Gravity)");
-		aList.add(LH.Chat.CYAN + "Collects Rainwater (not in Dry or Cold Areas)");
-		aList.add(LH.Chat.CYAN + "Will work infinitely in River and Lake Biomes");
+		aList.add(LH.Chat.CYAN + LH.tt("Collects Fluid Blocks (if not against Gravity)"));
+		aList.add(LH.Chat.CYAN + LH.tt("Collects Rainwater (not in Dry or Cold Areas)"));
+		aList.add(LH.Chat.CYAN + LH.tt("Will work infinitely in River and Lake Biomes"));
 		if (FL.Sewage.exists())
-		aList.add(LH.Chat.ORANGE + "Will collect Sewage from adult Animals walking on it (Bigger Animals make more)");
+		aList.add(LH.Chat.ORANGE + LH.tt("Will collect Sewage from adult Animals walking on it (Bigger Animals make more)"));
 		if (FL.XP.exists())
-		aList.add(LH.Chat.GREEN + "Will collect XP Orbs to make Liquid XP");
+		aList.add(LH.Chat.GREEN + LH.tt("Will collect XP Orbs to make Liquid XP"));
 		else if (FL.Mob.exists())
-		aList.add(LH.Chat.DGREEN + "Will collect XP Orbs to make Mob Essence");
+		aList.add(LH.Chat.DGREEN + LH.tt("Will collect XP Orbs to make Mob Essence"));
 		if (MD.OB.mLoaded)
-		aList.add(LH.Chat.GREEN + "Stand on this and Sneak to drain your XP");
+		aList.add(LH.Chat.GREEN + LH.tt("Stand on this and Sneak to drain your XP"));
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_TOGGLE_CONTROLLER_COVER));
 	}
 	

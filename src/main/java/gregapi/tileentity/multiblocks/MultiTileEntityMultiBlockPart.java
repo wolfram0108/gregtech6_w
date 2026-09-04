@@ -259,7 +259,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		ITileEntityMultiBlockController tTileEntity = getTarget(F);
 		if (tTileEntity == null) {
 			if (aTool.equals(TOOL_magnifyingglass) || aTool.equals(TOOL_builderwand)) {
-				aChatReturn.add("There is no Multiblock Controller for this Block.");
+				aChatReturn.add(LH.tt("There is no Multiblock Controller for this Block."));
 				return 1;
 			}
 		} else {
@@ -326,10 +326,10 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		return F;
 	}
 
-	// F14-inventory-contract: neo Container-мост поверх GT6-старых имён выше (getStackInSlot/getSizeInventory/
-	// setInventorySlotContents/decrStackSize/getStackInSlotOnClosing/isItemValidForSlot — делегаты в контроллер
-	// IMultiBlockInventory). notick-иерархия параллельна base/TileEntityBase05Inventories:112-120; MultiBlockPart
-	// реализует Container сам, тот же мост здесь без дублирования логики. setChanged наследуется от BlockEntity.
+	// F14-inventory-contract: neo Container bridge over the GT6 legacy names above (getStackInSlot/getSizeInventory/
+	// setInventorySlotContents/decrStackSize/getStackInSlotOnClosing/isItemValidForSlot — delegates to the controller
+	// IMultiBlockInventory). The notick hierarchy is parallel to base/TileEntityBase05Inventories:112-120; MultiBlockPart
+	// implements Container itself, same bridge here without duplicating the logic. setChanged is inherited from BlockEntity.
 	@Override public int getContainerSize() {return getSizeInventory();}
 	@Override public ItemStack getItem(int aSlot) {return getStackInSlot(aSlot);}
 	@Override public void setItem(int aSlot, ItemStack aStack) {setInventorySlotContents(aSlot, aStack);}
@@ -415,12 +415,12 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		return ZL_FLUIDTANKINFO;
 	}
 
-	/** СЕДЬМАЯ делегация того же ряда, что fill/drain/canFill/canDrain/getTankInfo выше — и ровно по той же
-	 *  причине: стенка своих танков не имеет, их держит контроллер. Без неё капа жидкости (neo-канал наружу,
-	 *  {@code GT6FluidCapability}) спрашивала у стенки унаследованный пустой {@code getFluidTanks} и получала
-	 *  «танков нет»: содержимое многоблока было видно только на управляющем блоке, а на стенках — ничего
-	 *  (репорт игрока: навёл Jade на стенку танка — пусто, на главный блок — вода). В 1.7.10 дыры не было,
-	 *  потому что наружу торчал сам {@code IFluidHandler} части с её делегирующими методами. */
+	/** The SEVENTH delegation of the same kind as fill/drain/canFill/canDrain/getTankInfo above — for exactly the same
+	 *  reason: a wall part has no tanks of its own, the controller holds them. Without it, the fluid capability (the neo
+	 *  channel facing outward, {@code GT6FluidCapability}) would ask the wall part its inherited empty {@code getFluidTanks} and get
+	 *  "no tanks": the multiblock's content was visible only on the controller block, and nothing on the wall parts
+	 *  (player report: pointed Jade at a tank wall part — empty, at the main block — water). There was no hole in 1.7.10,
+	 *  because the part's own {@code IFluidHandler} with its delegating methods stuck out to the outside. */
 	@Override
 	protected net.minecraftforge.fluids.IFluidTank[] getFluidTanks2(byte aSide) {
 		ITileEntityMultiBlockController tTileEntity = getTarget(T);
@@ -429,26 +429,26 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		return ZL_FT;
 	}
 
-	/** КЛИЕНТ ВОССТАНАВЛИВАЕТ ПРИВЯЗКУ САМ — тем же приёмом, каким восстанавливает сами MTE из пакета IDs.
+	/** THE CLIENT RECOVERS THE BINDING ITSELF — using the same trick it uses to recover the MTEs themselves from the ID packet.
 	 *
-	 *  <p>Привязка части к контроллеру ({@code mTargetPos}) живёт только в NBT и по сети НЕ идёт: в 1.7.10 это
-	 *  никому не мешало, потому что наружу спрашивали СЕРВЕРНЫЙ {@code IFluidHandler} (так работала и Waila).
-	 *  В neo подсказка над блоком читает capability у КЛИЕНТСКОЙ копии, а та о контроллере не знает — отсюда
-	 *  «на главном блоке танка вода видна, на стенках пусто» при полностью исправном сервере (замер на мире
-	 *  игрока: сервер отдаёт 5000 mb и с клапана, и со стенок).
+	 *  <p>The part-to-controller binding ({@code mTargetPos}) lives only in NBT and does NOT travel over the network: in 1.7.10 this
+	 *  bothered no one, because the SERVER-side {@code IFluidHandler} was asked from the outside (that's how Waila worked too).
+	 *  In neo, the tooltip over the block reads the capability off the CLIENT-side copy, and that copy knows nothing about the controller — hence
+	 *  "water visible on the tank's main block, empty on the wall parts" with a fully correct server (measured on the player's
+	 *  world: the server returns 5000 mb both from the valve and from the wall parts).
 	 *
-	 *  <p>Расширять сетевой протокол части ради подсказки не стали: её байтовый канал занят дизайном, а
-	 *  массивный — краской. Вместо этого клиент ищет контроллер сам в пределах ВОЗМОЖНОЙ структуры (куб 5×5×5
-	 *  вокруг части — крупнейшие многоблоки GT6 именно такие) и спрашивает у найденного {@code isInsideStructure}
-	 *  — то есть решение принимает сам контроллер, перебор лишь предлагает кандидатов. Найденное кладётся в
-	 *  {@code mTargetPos}, дальше работает штатный {@code getTarget}, и повторного перебора не будет. */
+	 *  <p>Extending the part's network protocol just for the tooltip was avoided: its byte channel is taken by the design, and
+	 *  the int channel by the paint. Instead the client looks for the controller itself within the STRUCTURE'S POSSIBLE bounds (a 5x5x5 cube
+	 *  around the part — the largest GT6 multiblocks are exactly that size) and asks each candidate's {@code isInsideStructure}
+	 *  — i.e. the controller itself makes the decision, the scan only offers candidates. What's found is stored in
+	 *  {@code mTargetPos}, after which the regular {@code getTarget} works, and there will be no repeated scan. */
 	private ITileEntityMultiBlockController findControllerClientSide() {
 		if (level == null) return null;
 		BlockPos tSelf = getBlockPos();
 		for (int dx = -2; dx <= 2; dx++) for (int dy = -2; dy <= 2; dy++) for (int dz = -2; dz <= 2; dz++) {
 			if (dx == 0 && dy == 0 && dz == 0) continue;
 			BlockPos tPos = tSelf.offset(dx, dy, dz);
-			BlockEntity tBE = WD.te(level, tPos, T); // T = не грузить чанк ради подсказки
+			BlockEntity tBE = WD.te(level, tPos, T); // T = do not load the chunk just for a tooltip
 			if (tBE instanceof ITileEntityMultiBlockController tController && !((BlockEntity)tController).isRemoved()
 			 && tController.isInsideStructure(tSelf.getX(), tSelf.getY(), tSelf.getZ())) {
 				mTarget = tController;
@@ -755,7 +755,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	
 	// Useless Garbage :P
 	@Override public boolean isUseableByPlayer(Player aPlayer) {return aPlayer.distanceToSqr(getBlockPos().getX() + 0.5D, getBlockPos().getY() + 0.5D, getBlockPos().getZ() + 0.5D) <= 64D;}
-	// neo Container.stillValid (1.7.10 isUseableByPlayer) — делегат к своей проверке дистанции (без дублирования).
+	// neo Container.stillValid (1.7.10 isUseableByPlayer) — delegates to its own distance check (no duplication).
 	@Override public boolean stillValid(Player aPlayer) {return isUseableByPlayer(aPlayer);}
 	@Override public void openInventory() {/**/}
 	@Override public void closeInventory() {/**/}

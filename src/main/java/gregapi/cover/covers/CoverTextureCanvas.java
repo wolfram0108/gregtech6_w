@@ -71,9 +71,9 @@ public class CoverTextureCanvas extends AbstractCoverDefault {
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		if (aStack != null && ItemNBT.has(aStack) && ItemNBT.get(aStack).contains(NBT_CANVAS_BLOCK)) {
-			// F-registry: 1.7.10 Block.getBlockById(int) удалён -> neo BuiltInRegistries.BLOCK.byId(int) (DefaultedMappedRegistry:64,
-			// plain block-id -> Block, missing->AIR). Легаси-NBT id блока (canvas); межверсийная id-семантика — legacy-NBT-compat.
-			aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(ST.getBlock(ItemNBT.get(aStack), NBT_CANVAS_BLOCK), 1, ItemNBT.get(aStack).getInt(NBT_CANVAS_META) & 15)));
+			// F-registry: the 1.7.10 Block.getBlockById(int) is removed -> neo BuiltInRegistries.BLOCK.byId(int) (DefaultedMappedRegistry:64,
+			// plain block-id -> Block, missing->AIR). Legacy NBT block id (canvas); cross-version id semantics — legacy-NBT-compat.
+			aList.add(LH.Chat.CYAN + LH.tt("Block Image: ") + ST.names(ST.make(ST.getBlock(ItemNBT.get(aStack), NBT_CANVAS_BLOCK), 1, ItemNBT.get(aStack).getInt(NBT_CANVAS_META) & 15)));
 		}
 		super.addToolTips(aList, aStack, aF3_H);
 	}

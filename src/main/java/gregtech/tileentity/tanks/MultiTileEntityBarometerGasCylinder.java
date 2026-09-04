@@ -77,8 +77,8 @@ public class MultiTileEntityBarometerGasCylinder extends TileEntityBase09FluidCo
 	
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		// BUG-050/F15-граница: 1.7.10 getCurrentEquippedItem()==null (пустая рука) -> ST.n(getMainHandItem())==null (центр перевода)
-		// (getMainHandItem НИКОГДА не null, отдаёт EMPTY) — с ==null ветка настройки была мертва (тот же класс, что MeasuringPot).
+		// BUG-050/F15 boundary: 1.7.10 getCurrentEquippedItem()==null (empty hand) -> ST.n(getMainHandItem())==null (translation center)
+		// (getMainHandItem is NEVER null, gives out EMPTY) — with ==null the setting branch was dead (same bug class as MeasuringPot).
 		if (ST.n(aPlayer.getMainHandItem()) == null && SIDES_HORIZONTAL[aSide]) {
 			if (isClientSide()) return T;
 			if (aHitY > PX_P[8]) {
@@ -110,7 +110,7 @@ public class MultiTileEntityBarometerGasCylinder extends TileEntityBase09FluidCo
 					}
 				}
 			}
-			UT.Entities.sendchat(aPlayer, "Limit: " + mTank.capacity() + "L");
+			UT.Entities.sendchat(aPlayer, LH.tt("Limit: ") + mTank.capacity() + "L");
 			return T;
 		}
 		return super.onBlockActivated3(aPlayer, aSide, aHitX, aHitY, aHitZ);

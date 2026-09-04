@@ -172,8 +172,8 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 		aList.add(Chat.WHITE    + LH.get("gt.tooltip.multiblock.crucible.2"));
 		aList.add(Chat.WHITE    + LH.get("gt.tooltip.multiblock.crucible.3"));
 		aList.add(Chat.WHITE    + LH.get("gt.tooltip.multiblock.crucible.4"));
-		aList.add(Chat.CYAN     + LH.get(LH.CONVERTS_FROM_X) + " 1 " + TD.Energy.HU.getLocalisedNameShort() + " " + LH.get(LH.CONVERTS_TO_Y) + " +1 K " + LH.get(LH.CONVERTS_PER_Z) + " "+ KG_PER_ENERGY + "kg (at least "+getEnergySizeInputMin(TD.Energy.HU, SIDE_ANY)+" Units per Tick required!)");
-		aList.add(Chat.YELLOW   + LH.get(LH.TOOLTIP_THERMALMASS) + mMaterial.getWeight(U*100) + " kg");
+		aList.add(Chat.CYAN     + LH.get(LH.CONVERTS_FROM_X) + " 1 " + TD.Energy.HU.getLocalisedNameShort() + " " + LH.get(LH.CONVERTS_TO_Y) + " +1 K " + LH.get(LH.CONVERTS_PER_Z) + " "+ KG_PER_ENERGY + LH.tt("kg (at least ")+getEnergySizeInputMin(TD.Energy.HU, SIDE_ANY)+LH.tt(" Units per Tick required!)"));
+		aList.add(Chat.YELLOW   + LH.get(LH.TOOLTIP_THERMALMASS) + mMaterial.getWeight(U*100) + LH.tt(" kg"));
 		aList.add(Chat.DRED     + LH.get(LH.HAZARD_MELTDOWN) + " (" + getTemperatureMax(SIDE_ANY) + " K)");
 		aList.add(Chat.WHITE    + LH.get("gt.tooltip.multiblock.crucible.5"));
 		if (mAcidProof) aList.add(Chat.ORANGE + LH.get(LH.TOOLTIP_ACIDPROOF));
@@ -396,12 +396,12 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 			return;
 		}
 		
-		updateVisualData(); // признак прогара (mMeltDown) считается там же, где остальной облик
+		updateVisualData(); // the burnout flag (mMeltDown) is computed in the same place as the rest of the appearance
 	}
 
-	/** Что видно в тигле: уровень расплава, самый лёгкий (верхний) материал и признак прогара.
-	 *  Чистый пересчёт из содержимого и температуры — центр зовёт его и из тика, и перед сборкой
-	 *  клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	/** What is visible in the crucible: melt level, the lightest (top) material, and the burnout flag.
+	 *  A pure recomputation from the content and temperature — the center calls it both from the tick and before
+	 *  assembling the client snapshot (see {@code TileEntityBase03TicksAndSync.updateVisualData}). */
 	@Override
 	public void updateVisualData() {
 		if (isClientSide()) return;
@@ -496,7 +496,7 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 		if (!checkStructure(F)) return F;
 		if (SIDES_TOP[aSide]) {
 			if (isServerSide() && aPlayer != null) {
-				ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15-граница: движок EMPTY -> GT6 null (тело 1:1 рассуждает null-семантикой)
+				ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15 boundary: engine EMPTY -> GT6 null (the body reasons in null-semantics 1:1)
 				OreDictMaterialStack tLightest = null;
 				for (OreDictMaterialStack tMaterial : mContent) if (tLightest == null || tMaterial.mMaterial.mGramPerCubicCentimeter < tLightest.mMaterial.mGramPerCubicCentimeter) tLightest = tMaterial;
 				
@@ -593,7 +593,7 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 	@Override
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
-		if (aTool.equals(TOOL_thermometer)) {if (aChatReturn != null) aChatReturn.add("Temperature: " + mTemperature + "K"); return 10000;}
+		if (aTool.equals(TOOL_thermometer)) {if (aChatReturn != null) aChatReturn.add(LH.tt("Temperature: ") + mTemperature + "K"); return 10000;}
 		if (aTool.equals(TOOL_shovel) && SIDES_TOP[aSide] && checkStructure(F) && aPlayer instanceof Player) {
 			OreDictMaterialStack tLightest = null;
 			for (OreDictMaterialStack tMaterial : mContent) if (tLightest == null || tMaterial.mMaterial.mGramPerCubicCentimeter < tLightest.mMaterial.mGramPerCubicCentimeter) tLightest = tMaterial;

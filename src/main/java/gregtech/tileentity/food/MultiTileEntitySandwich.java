@@ -112,7 +112,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 		if (MD.APC.mLoaded) {
 			for (ItemStack tStack : mStacks) if (ST.valid(tStack)) aList.add(1, LH.Chat.GRAY + tStack.getDisplayName());
 		} else {
-			aList.add(1, LH.Chat.RED + "Food: " + getTotalFood() + " - Saturation: " + getTotalSaturation());
+			aList.add(1, LH.Chat.RED + LH.tt("Food: ") + getTotalFood() + LH.tt(" - Saturation: ") + getTotalSaturation());
 			for (ItemStack tStack : mStacks) if (ST.valid(tStack)) aList.add(2, LH.Chat.GRAY + tStack.getDisplayName());
 		}
 	}
@@ -249,7 +249,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	@Override
 	public ItemStack onItemRightClick(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		if (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood()) {
-			aPlayer.startUsingItem(net.minecraft.world.InteractionHand.MAIN_HAND); /* было setItemInUse(stack,duration); neo длительность из item.getUseDuration */
+			aPlayer.startUsingItem(net.minecraft.world.InteractionHand.MAIN_HAND); /* was setItemInUse(stack,duration); neo duration comes from item.getUseDuration */
 			return aStack;
 		}
 		return aStack;
@@ -268,7 +268,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	@Override
 	public ItemStack onEaten(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		if (MD.APC.mLoaded) {
-			aPlayer.getFoodData().eat(getTotalFood(), getTotalSaturation()); /* AppleCore ItemFoodProxy/func_151686_a удалены в neo (food=DataComponents.FOOD); APC-ветка dead-in-parity -> neo eat */
+			aPlayer.getFoodData().eat(getTotalFood(), getTotalSaturation()); /* AppleCore ItemFoodProxy/func_151686_a removed in neo (food=DataComponents.FOOD); APC branch dead-in-parity -> neo eat */
 		} else {
 			aPlayer.getFoodData().eat(getTotalFood(), getTotalSaturation());
 		}

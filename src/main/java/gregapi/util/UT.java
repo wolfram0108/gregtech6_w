@@ -127,11 +127,11 @@ import static gregapi.data.CS.*;
  */
 public class UT {
 	@Deprecated public static class Fluids {
-		// F5: тело переведено на делегирование единственному центру FL (тот же приём, что createLiquid/
-		// createMolten/load/save ниже в этом же классе, decisions/F5-fluids.md) — `net.minecraftforge.fluids.*`
-		// (Fluid/FluidRegistry/IFluidTank/IFluidHandler/FluidContainerRegistry, 1.7.10 Forge) не существует
-		// в neo целиком (пакет отсутствует во всех 3 корнях референса), FL.java уже реализует те же имена
-		// методов на реальном neo/neoforge API (BuiltInRegistries.FLUID, FluidStack.getAmount(), и т.д.).
+		// F5: body delegates to the single FL centre (same approach as createLiquid/createMolten/load/save
+		// below, decisions/F5-fluids.md) — net.minecraftforge.fluids.* (Fluid/FluidRegistry/IFluidTank/
+		// IFluidHandler/FluidContainerRegistry, 1.7.10 Forge) does not exist in neo at all (package absent
+		// from all 3 reference roots); FL.java already implements the same method names on the real
+		// neo/neoforge API (BuiltInRegistries.FLUID, FluidStack.getAmount(), etc.).
 		@Deprecated public static int id (IFluidTank aTank) {return FL.id (aTank);}
 		@Deprecated public static int id_(IFluidTank aTank) {return FL.id_(aTank);}
 		@Deprecated public static int id (FluidStack aFluid) {return FL.id (aFluid);}
@@ -233,11 +233,11 @@ public class UT {
 		@Deprecated public static boolean gas(Fluid aFluid, boolean aDefault) {return FL.gas(aFluid, aDefault);}
 		@Deprecated public static boolean gas(Fluid aFluid) {return FL.gas(aFluid);}
 
-		// F5 impossible-1:1 dead (0 вызывателей): net.minecraftforge.fluids.BlockFluidBase — 1.7.10
-		// Forge-класс, отсутствует во всех 3 корнях референса (пакет net.minecraftforge.fluids удалён
-		// движком целиком, не переименован). Не найдено вызывающих ни в этом файле, ни во всём дереве
-		// (grep) — параметр этого типа физически невозможно сохранить, перегрузки lighter(BlockFluidBase)/
-		// dir(BlockFluidBase) сняты (не заменены форс-заглушкой — сигнатуру всё равно нечем заполнить).
+		// F5 impossible-1:1 dead (0 callers): net.minecraftforge.fluids.BlockFluidBase — a 1.7.10 Forge
+		// class, absent from all 3 reference roots (package net.minecraftforge.fluids removed entirely by
+		// the engine, not renamed). No callers found in this file or the whole tree (grep) — a parameter
+		// of this type is physically impossible to keep, so the lighter(BlockFluidBase)/dir(BlockFluidBase)
+		// overloads are dropped (no stub replacement — nothing to fill the signature with anyway).
 		@Deprecated public static boolean lighter(IFluidTank aFluid) {return FL.lighter(aFluid);}
 		@Deprecated public static boolean lighter(FluidStack aFluid) {return FL.lighter(aFluid);}
 		@Deprecated public static boolean lighter(Fluid aFluid)      {return FL.lighter(aFluid);}
@@ -301,8 +301,9 @@ public class UT {
 
 		@Deprecated public static long fill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return FL.fill (aDelegator, aFluid, aDoFill);}
 		@Deprecated public static long fill_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return FL.fill_(aDelegator, aFluid, aDoFill);}
-		// F5 dead-deprecated (0 вызывателей — живой путь FL.fill/fillAll(IFluidHandler,side,...), реализован через fillSided,
-		// см. CoverDrain). Эти  UT-обёртки IFluidHandler+side мертвы; neo fill без side-параметра. Сигнатура сохранена.
+		// F5 dead-deprecated (0 callers — the live path is FL.fill/fillAll(IFluidHandler,side,...), implemented
+		// via fillSided, see CoverDrain). These UT wrappers over IFluidHandler+side are dead; neo fill has no
+		// side parameter. Signature kept.
 		@Deprecated public static long fill (IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return 0;}
 		@Deprecated public static long fill_(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return 0;}
 		@Deprecated public static long fill (IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {return 0;}
@@ -310,7 +311,7 @@ public class UT {
 
 		@Deprecated public static boolean fillAll (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return FL.fillAll (aDelegator, aFluid, aDoFill);}
 		@Deprecated public static boolean fillAll_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return FL.fillAll_(aDelegator, aFluid, aDoFill);}
-		// F5 dead-deprecated (0 вызывателей, живой путь FL.*) — см. выше.
+		// F5 dead-deprecated (0 callers, live path is FL.*) — see above.
 		@Deprecated public static boolean fillAll (IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return F;}
 		@Deprecated public static boolean fillAll_(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return F;}
 		@Deprecated public static boolean fillAll (IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {return F;}
@@ -348,18 +349,18 @@ public class UT {
 
 		@Deprecated public static FluidStack[] copyArray(FluidStack... aFluids) {return FL.copy(aFluids);}
 
-		// F5 (bookkeeping в FL.FULL_TO_DATA/EMPTY_TO_FLUID_TO_DATA): gt6mirror.minecraftforge.fluids.FluidContainerRegistry/
-		// FluidContainerData — пакет удалён движком целиком, не существует в neo (не найден ни в одном из
-		// 3 корней референса, тот же класс проблемы, что уже занесён в gregapi/oredict/OreDictManager.java
-		// под меткой fluid-container-registry с приставкой oredict-). Легаси-поля sFilled2Data/sEmpty2Fluid2Data
-		// (типизированные снятым FluidContainerData, ссылались на несуществующие FL.FULL_TO_DATA/
-		// FL.EMPTY_TO_FLUID_TO_DATA — уже были некомпилируемы ДО этого захода) и раздельные перегрузки
+		// F5 (bookkeeping in FL.FULL_TO_DATA/EMPTY_TO_FLUID_TO_DATA): gt6mirror.minecraftforge.fluids.FluidContainerRegistry/
+		// FluidContainerRegistry/FluidContainerData — package removed entirely by the engine, does not
+		// exist in neo (not found in any of the 3 reference roots; same class of problem already logged
+		// in gregapi/oredict/OreDictManager.java under the fluid-container-registry label, oredict- prefix).
+		// Legacy fields sFilled2Data/sEmpty2Fluid2Data (typed on the removed FluidContainerData, referenced
+		// nonexistent FL.FULL_TO_DATA/FL.EMPTY_TO_FLUID_TO_DATA — already uncompilable before this pass) and
 		// registerFluidContainer(FluidContainerData[,...])/setFluidContainerData(FluidContainerData[,...])
-		// физически невозможно сохранить — сам параметр-тип отсутствует. Внешних вызывающих ни на одно из
-		// этого не найдено (grep по всему дереву) — поля и обе FluidContainerData-перегрузки сняты.
-		// FluidStack/ItemStack-перегрузки ниже (без FluidContainerData в сигнатуре) сохранены — делегированы
-		// на реальный FL.reg/FL.fill/FL.contains/FL.getFluid/FL.getEmpty (те же имена методов, что уже
-		// реализованы в центре FL, decisions/F5-fluids.md §3,8).
+		// overloads are physically impossible to keep — the parameter type itself is gone. No external
+		// callers found for any of it (grep across the whole tree) — the fields and both FluidContainerData
+		// overloads are dropped. The FluidStack/ItemStack overloads below (no FluidContainerData in the
+		// signature) are kept — delegated to the real FL.reg/FL.fill/FL.contains/FL.getFluid/FL.getEmpty
+		// (same method names already implemented in the FL centre, decisions/F5-fluids.md §3,8).
 		@Deprecated public static void registerFluidContainer(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty) {FL.reg(aFluid, aFull, aEmpty);}
 		@Deprecated public static void registerFluidContainer(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {FL.reg(aFluid, aFull, aEmpty, aOverrideFillingEmpty, aOverrideDrainingFull);}
 		@Deprecated public static void registerFluidContainer(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aNullEmpty) {FL.reg(aFluid, aFull, aEmpty, aNullEmpty);}
@@ -387,12 +388,12 @@ public class UT {
 		@Deprecated public static CompoundTag save (FluidStack aFluid) {return FL.save (aFluid);}
 		@Deprecated public static CompoundTag save_(FluidStack aFluid) {return FL.save_(aFluid);}
 		
-		// F5 стык: этот блок был мёртвым (0 вызывающих во всём дереве, grep подтверждён) буквальным
-		// копированием тела gregapi.data.FL.create*(тот же F5-центр) поверх несуществующего в neo
-		// net.minecraftforge.fluids.Fluid/FluidRegistry/FluidContainerRegistry (красно ещё до порта F5).
-		// Оригинал 1.7.10 (gregtech6/src/main/java/gregapi/util/UT.java:492-513) держал ДВЕ раздельные
-		// копии одной и той же логики (UT.Fluids и FL) — как уже сделано для load/save чуть выше в этом
-		// же классе, дублирование заменено на делегирование единственному центру FL (decisions/F5-fluids.md).
+		// F5 seam: this block was dead (0 callers across the whole tree, grep-confirmed), a literal copy
+		// of gregapi.data.FL.create* (the same F5 centre) over net.minecraftforge.fluids.Fluid/
+		// FluidRegistry/FluidContainerRegistry, which do not exist in neo (already red before the F5
+		// port). The 1.7.10 original (gregtech6/src/main/java/gregapi/util/UT.java:492-513) kept TWO
+		// separate copies of the same logic (UT.Fluids and FL) — as already done for load/save just above
+		// in this class, the duplication is replaced by delegation to the single FL centre (decisions/F5-fluids.md).
 		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createLiquid(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createLiquid(aMaterial, aFluidList);}
 		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createLiquid(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createLiquid(aMaterial, aTexture, aFluidList);}
 
@@ -631,19 +632,19 @@ public class UT {
 			boolean temp = F;
 			int tCounter = 0;
 			
-			tBook.add("===================\n"+aMat.getLocal()+"\n===================\nID: "+(aMat.mID<0?"NONE":aMat.mID)+"\nMelting: "+aMat.mMeltingPoint+" K\nBoiling: "+aMat.mBoilingPoint+" K\nPlasma: "+aMat.mPlasmaPoint+" K\n===================\nDensity:\n"+(aMat.mGramPerCubicCentimeter == 0 ? "???" : aMat.mGramPerCubicCentimeter)+" g/cm3\n"+aMat.getWeight(U)+" kg/unit\n===================\n");
+			tBook.add("===================\n"+aMat.getLocal()+"\n===================\n"+LanguageHandler.get("gt.matdict.id", "ID:")+" "+(aMat.mID<0?"NONE":aMat.mID)+"\n"+LanguageHandler.get("gt.matdict.melting", "Melting:")+" "+aMat.mMeltingPoint+" K\n"+LanguageHandler.get("gt.matdict.boiling", "Boiling:")+" "+aMat.mBoilingPoint+" K\n"+LanguageHandler.get("gt.matdict.plasma", "Plasma:")+" "+aMat.mPlasmaPoint+" K\n===================\n"+LanguageHandler.get("gt.matdict.density", "Density:")+"\n"+(aMat.mGramPerCubicCentimeter == 0 ? "???" : aMat.mGramPerCubicCentimeter)+" g/cm3\n"+aMat.getWeight(U)+" kg/unit\n===================\n");
 			
 			//----------
 			
 			if (aMat.mComponents == null) {
 				if (aMat.contains(TD.Atomic.ELEMENT)) {
 					temp = T;
-					tPage="Atomic Structure:\nProtons: "+aMat.mProtons+"\nElectrons: " + aMat.mElectrons + "\nNeutrons: " + aMat.mNeutrons + "\nMass: "+aMat.mMass+"\n===================\n";
+					tPage=LanguageHandler.get("gt.matdict.atomic_structure", "Atomic Structure:")+"\n"+LanguageHandler.get("gt.matdict.protons", "Protons:")+" "+aMat.mProtons+"\n"+LanguageHandler.get("gt.matdict.electrons", "Electrons:")+" " + aMat.mElectrons + "\n"+LanguageHandler.get("gt.matdict.neutrons", "Neutrons:")+" " + aMat.mNeutrons + "\n"+LanguageHandler.get("gt.matdict.mass", "Mass:")+" "+aMat.mMass+"\n===================\n";
 					for (TagData tTag : TD.Atomic.ALL) if (tTag != TD.Atomic.ELEMENT && tTag != TD.Atomic.NONMETAL && aMat.contains(tTag)) tPage += tTag.getLocalisedNameLong() + "\n";
 				}
 			} else {
 				temp = T;
-				tPage="Components per "+aMat.mComponents.getCommonDivider() + "\n===================\n";
+				tPage=LanguageHandler.get("gt.matdict.components_per", "Components per")+" "+aMat.mComponents.getCommonDivider() + "\n===================\n";
 				for (OreDictMaterialStack tMaterial : aMat.mComponents.getUndividedComponents()) tPage += (tMaterial.mAmount / U)+" "+tMaterial.mMaterial.getLocal()+"\n";
 			}
 			
@@ -653,47 +654,47 @@ public class UT {
 			
 			
 			if (aMat.mToolTypes > 0) {
-				tPage="Tool Properties\n===================\n";
-				tPage+="Durability:\n"+aMat.mToolDurability;
-				tPage+="\nQuality:\n"+aMat.mToolQuality;
-				tPage+="\nSpeed:\n"+aMat.mToolSpeed;
-				tPage+="\nHandle:\n"+aMat.mHandleMaterial.getLocal()+"\n";
+				tPage=LanguageHandler.get("gt.matdict.tool_properties", "Tool Properties")+"\n===================\n";
+				tPage+=LanguageHandler.get("gt.matdict.durability", "Durability:")+"\n"+aMat.mToolDurability;
+				tPage+="\n"+LanguageHandler.get("gt.matdict.quality", "Quality:")+"\n"+aMat.mToolQuality;
+				tPage+="\n"+LanguageHandler.get("gt.matdict.speed", "Speed:")+"\n"+aMat.mToolSpeed;
+				tPage+="\n"+LanguageHandler.get("gt.matdict.handle", "Handle:")+"\n"+aMat.mHandleMaterial.getLocal()+"\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentTools  .isEmpty()) {
-				tPage = "Tool Enchantments\n===================\n";
+				tPage = LanguageHandler.get("gt.matdict.tool_enchantments", "Tool Enchantments")+"\n===================\n";
 				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentTools  ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentWeapons.isEmpty()) {
-				tPage = "Weapon Enchantments\n===================\n";
+				tPage = LanguageHandler.get("gt.matdict.weapon_enchantments", "Weapon Enchantments")+"\n===================\n";
 				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentWeapons) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentAmmo   .isEmpty()) {
-				tPage = "Ammo Enchantments\n===================\n";
+				tPage = LanguageHandler.get("gt.matdict.ammo_enchantments", "Ammo Enchantments")+"\n===================\n";
 				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentAmmo   ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentRanged .isEmpty()) {
-				tPage = "Ranged Enchantments\n===================\n";
+				tPage = LanguageHandler.get("gt.matdict.ranged_enchantments", "Ranged Enchantments")+"\n===================\n";
 				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentRanged ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentFishing.isEmpty()) {
-				tPage = "Fishing Enchantments\n===================\n";
+				tPage = LanguageHandler.get("gt.matdict.fishing_enchantments", "Fishing Enchantments")+"\n===================\n";
 				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentFishing) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentArmors .isEmpty()) {
-				tPage = "Armor Enchantments\n===================\n";
+				tPage = LanguageHandler.get("gt.matdict.armor_enchantments", "Armor Enchantments")+"\n===================\n";
 				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentArmors ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			
 			//----------
 			
-			tPage="Properties\n===================\n";
+			tPage=LanguageHandler.get("gt.matdict.properties", "Properties")+"\n===================\n";
 			
 			for (TagData tTag : TD.Properties.ALL_RELEVANTS) if (aMat.contains(tTag)) {temp = T; tPage += tTag.getLocalisedNameLong() + "\n";}
 			
@@ -701,7 +702,7 @@ public class UT {
 			
 			//----------
 			
-			tPage="Machine Processing\n===================\n";
+			tPage=LanguageHandler.get("gt.matdict.machine_processing", "Machine Processing")+"\n===================\n";
 			
 			for (TagData tTag : TD.Processing.ALL_MACHINES) if (aMat.contains(tTag)) {temp = T; tPage += tTag.getLocalisedNameLong() + "\n";}
 			
@@ -709,7 +710,7 @@ public class UT {
 			
 			//----------
 			
-			tPage="Materials which can be decomposed to this\n===================\n";
+			tPage=LanguageHandler.get("gt.matdict.materials_decomposed_to_this", "Materials which can be decomposed to this")+"\n===================\n";
 			tCounter = 0;
 			for (OreDictMaterial tMat : OreDictMaterial.MATERIAL_MAP.values()) if (tMat.mComponents != null && tMat.contains(TD.Compounds.DECOMPOSABLE)) {
 				for (OreDictMaterialStack tMt2 : tMat.mComponents.getUndividedComponents()) if (tMt2.mMaterial == aMat) {
@@ -717,7 +718,7 @@ public class UT {
 					tPage += tMat.getLocal()+"\n";
 					if (!temp) {
 						tBook.add(tPage);
-						tPage="Materials which can be decomposed to this\n===================\n";
+						tPage=LanguageHandler.get("gt.matdict.materials_decomposed_to_this", "Materials which can be decomposed to this")+"\n===================\n";
 					}
 					break;
 				}
@@ -727,7 +728,7 @@ public class UT {
 			
 			//----------
 			
-			tPage="Ore Processing\n===================\n";
+			tPage=LanguageHandler.get("gt.matdict.ore_processing", "Ore Processing")+"\n===================\n";
 			
 			for (TagData tTag : TD.Processing.ALL_ORES) if (aMat.contains(tTag)) {temp = T; tPage += tTag.getLocalisedNameLong() + "\n";}
 			
@@ -735,7 +736,7 @@ public class UT {
 			
 			//----------
 			
-			tPage="Ore Byproducts\n===================\n";
+			tPage=LanguageHandler.get("gt.matdict.ore_byproducts", "Ore Byproducts")+"\n===================\n";
 			
 			for (OreDictMaterial tMat : aMat.mByProducts) {temp = T; tPage += tMat.getLocal() + "\n";}
 			
@@ -743,14 +744,14 @@ public class UT {
 			
 			//----------
 			
-			tPage="Ores with this as Byproduct\n===================\n";
+			tPage=LanguageHandler.get("gt.matdict.ores_with_this_as_byproduct", "Ores with this as Byproduct")+"\n===================\n";
 			tCounter = 0;
 			for (OreDictMaterial tMat : OreDictMaterial.MATERIAL_MAP.values()) if (tMat.mByProducts.contains(aMat)) {
 				temp=!(tCounter++%6==5);
 				tPage += tMat.getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage="Ores with this as Byproduct\n===================\n";
+					tPage=LanguageHandler.get("gt.matdict.ores_with_this_as_byproduct", "Ores with this as Byproduct")+"\n===================\n";
 				}
 			}
 			
@@ -758,39 +759,39 @@ public class UT {
 			
 			//----------
 			
-			tPage = "Processing Data\n===================\n";
-			tPage += "Smelting:\n"      +(aMat.mTargetSmelting   .mAmount / U) + "." + ((int)(((double)(aMat.mTargetSmelting   .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetSmelting   .mAmount <= 0 ? "nothing" : aMat.mTargetSmelting   .mMaterial == aMat ? "itself" : aMat.mTargetSmelting   .mMaterial.getLocal())+"\n";
-			tPage += "Solidifying:\n"   +(aMat.mTargetSolidifying.mAmount / U) + "." + ((int)(((double)(aMat.mTargetSolidifying.mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetSolidifying.mAmount <= 0 ? "nothing" : aMat.mTargetSolidifying.mMaterial == aMat ? "itself" : aMat.mTargetSolidifying.mMaterial.getLocal())+"\n";
-			tPage += "Burning:\n"       +(aMat.mTargetBurning    .mAmount / U) + "." + ((int)(((double)(aMat.mTargetBurning    .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetBurning    .mAmount <= 0 ? "nothing" : aMat.mTargetBurning    .mMaterial == aMat ? "itself" : aMat.mTargetBurning    .mMaterial.getLocal())+"\n";
-			tPage += "Pulverising:\n"   +(aMat.mTargetPulver     .mAmount / U) + "." + ((int)(((double)(aMat.mTargetPulver     .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetPulver     .mAmount <= 0 ? "nothing" : aMat.mTargetPulver     .mMaterial == aMat ? "itself" : aMat.mTargetPulver     .mMaterial.getLocal())+"\n";
-			tPage += "Crushing:\n"      +(aMat.mTargetCrushing   .mAmount / U) + "." + ((int)(((double)(aMat.mTargetCrushing   .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetCrushing   .mAmount <= 0 ? "nothing" : aMat.mTargetCrushing   .mMaterial == aMat ? "itself" : aMat.mTargetCrushing   .mMaterial.getLocal())+"\n";
+			tPage = LanguageHandler.get("gt.matdict.processing_data", "Processing Data")+"\n===================\n";
+			tPage += LanguageHandler.get("gt.matdict.smelting", "Smelting:")+"\n"      +(aMat.mTargetSmelting   .mAmount / U) + "." + ((int)(((double)(aMat.mTargetSmelting   .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetSmelting   .mAmount <= 0 ? LanguageHandler.get("gt.matdict.nothing", "nothing") : aMat.mTargetSmelting   .mMaterial == aMat ? LanguageHandler.get("gt.matdict.itself", "itself") : aMat.mTargetSmelting   .mMaterial.getLocal())+"\n";
+			tPage += LanguageHandler.get("gt.matdict.solidifying", "Solidifying:")+"\n"   +(aMat.mTargetSolidifying.mAmount / U) + "." + ((int)(((double)(aMat.mTargetSolidifying.mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetSolidifying.mAmount <= 0 ? LanguageHandler.get("gt.matdict.nothing", "nothing") : aMat.mTargetSolidifying.mMaterial == aMat ? LanguageHandler.get("gt.matdict.itself", "itself") : aMat.mTargetSolidifying.mMaterial.getLocal())+"\n";
+			tPage += LanguageHandler.get("gt.matdict.burning", "Burning:")+"\n"       +(aMat.mTargetBurning    .mAmount / U) + "." + ((int)(((double)(aMat.mTargetBurning    .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetBurning    .mAmount <= 0 ? LanguageHandler.get("gt.matdict.nothing", "nothing") : aMat.mTargetBurning    .mMaterial == aMat ? LanguageHandler.get("gt.matdict.itself", "itself") : aMat.mTargetBurning    .mMaterial.getLocal())+"\n";
+			tPage += LanguageHandler.get("gt.matdict.pulverising", "Pulverising:")+"\n"   +(aMat.mTargetPulver     .mAmount / U) + "." + ((int)(((double)(aMat.mTargetPulver     .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetPulver     .mAmount <= 0 ? LanguageHandler.get("gt.matdict.nothing", "nothing") : aMat.mTargetPulver     .mMaterial == aMat ? LanguageHandler.get("gt.matdict.itself", "itself") : aMat.mTargetPulver     .mMaterial.getLocal())+"\n";
+			tPage += LanguageHandler.get("gt.matdict.crushing", "Crushing:")+"\n"      +(aMat.mTargetCrushing   .mAmount / U) + "." + ((int)(((double)(aMat.mTargetCrushing   .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetCrushing   .mAmount <= 0 ? LanguageHandler.get("gt.matdict.nothing", "nothing") : aMat.mTargetCrushing   .mMaterial == aMat ? LanguageHandler.get("gt.matdict.itself", "itself") : aMat.mTargetCrushing   .mMaterial.getLocal())+"\n";
 			
 			tBook.add(tPage);
 			
 			//----------
 			
-			tPage = "Processing Data\n===================\n";
-			tPage += "Bending:\n"       +(aMat.mTargetBending    .mAmount / U) + "." + ((int)(((double)(aMat.mTargetBending    .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetBending    .mAmount <= 0 ? "nothing" : aMat.mTargetBending    .mMaterial == aMat ? "itself" : aMat.mTargetBending    .mMaterial.getLocal())+"\n";
-			tPage += "Compressing:\n"   +(aMat.mTargetCompressing.mAmount / U) + "." + ((int)(((double)(aMat.mTargetCompressing.mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetCompressing.mAmount <= 0 ? "nothing" : aMat.mTargetCompressing.mMaterial == aMat ? "itself" : aMat.mTargetCompressing.mMaterial.getLocal())+"\n";
-			tPage += "Cutting:\n"       +(aMat.mTargetCutting    .mAmount / U) + "." + ((int)(((double)(aMat.mTargetCutting    .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetCutting    .mAmount <= 0 ? "nothing" : aMat.mTargetCutting    .mMaterial == aMat ? "itself" : aMat.mTargetCutting    .mMaterial.getLocal())+"\n";
-			tPage += "Forging:\n"       +(aMat.mTargetForging    .mAmount / U) + "." + ((int)(((double)(aMat.mTargetForging    .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetForging    .mAmount <= 0 ? "nothing" : aMat.mTargetForging    .mMaterial == aMat ? "itself" : aMat.mTargetForging    .mMaterial.getLocal())+"\n";
-			tPage += "Smashing:\n"      +(aMat.mTargetSmashing   .mAmount / U) + "." + ((int)(((double)(aMat.mTargetSmashing   .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetSmashing   .mAmount <= 0 ? "nothing" : aMat.mTargetSmashing   .mMaterial == aMat ? "itself" : aMat.mTargetSmashing   .mMaterial.getLocal())+"\n";
+			tPage = LanguageHandler.get("gt.matdict.processing_data", "Processing Data")+"\n===================\n";
+			tPage += LanguageHandler.get("gt.matdict.bending", "Bending:")+"\n"       +(aMat.mTargetBending    .mAmount / U) + "." + ((int)(((double)(aMat.mTargetBending    .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetBending    .mAmount <= 0 ? LanguageHandler.get("gt.matdict.nothing", "nothing") : aMat.mTargetBending    .mMaterial == aMat ? LanguageHandler.get("gt.matdict.itself", "itself") : aMat.mTargetBending    .mMaterial.getLocal())+"\n";
+			tPage += LanguageHandler.get("gt.matdict.compressing", "Compressing:")+"\n"   +(aMat.mTargetCompressing.mAmount / U) + "." + ((int)(((double)(aMat.mTargetCompressing.mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetCompressing.mAmount <= 0 ? LanguageHandler.get("gt.matdict.nothing", "nothing") : aMat.mTargetCompressing.mMaterial == aMat ? LanguageHandler.get("gt.matdict.itself", "itself") : aMat.mTargetCompressing.mMaterial.getLocal())+"\n";
+			tPage += LanguageHandler.get("gt.matdict.cutting", "Cutting:")+"\n"       +(aMat.mTargetCutting    .mAmount / U) + "." + ((int)(((double)(aMat.mTargetCutting    .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetCutting    .mAmount <= 0 ? LanguageHandler.get("gt.matdict.nothing", "nothing") : aMat.mTargetCutting    .mMaterial == aMat ? LanguageHandler.get("gt.matdict.itself", "itself") : aMat.mTargetCutting    .mMaterial.getLocal())+"\n";
+			tPage += LanguageHandler.get("gt.matdict.forging", "Forging:")+"\n"       +(aMat.mTargetForging    .mAmount / U) + "." + ((int)(((double)(aMat.mTargetForging    .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetForging    .mAmount <= 0 ? LanguageHandler.get("gt.matdict.nothing", "nothing") : aMat.mTargetForging    .mMaterial == aMat ? LanguageHandler.get("gt.matdict.itself", "itself") : aMat.mTargetForging    .mMaterial.getLocal())+"\n";
+			tPage += LanguageHandler.get("gt.matdict.smashing", "Smashing:")+"\n"      +(aMat.mTargetSmashing   .mAmount / U) + "." + ((int)(((double)(aMat.mTargetSmashing   .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetSmashing   .mAmount <= 0 ? LanguageHandler.get("gt.matdict.nothing", "nothing") : aMat.mTargetSmashing   .mMaterial == aMat ? LanguageHandler.get("gt.matdict.itself", "itself") : aMat.mTargetSmashing   .mMaterial.getLocal())+"\n";
 			
 			tBook.add(tPage);
 			
 			//----------
 			
-			tPage = "Processing Data\n===================\n";
-			tPage += "Working:\n"       +(aMat.mTargetWorking    .mAmount / U) + "." + ((int)(((double)(aMat.mTargetWorking    .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetWorking    .mAmount <= 0 ? "nothing" : aMat.mTargetWorking    .mMaterial == aMat ? "itself" : aMat.mTargetWorking    .mMaterial.getLocal())+"\n";
+			tPage = LanguageHandler.get("gt.matdict.processing_data", "Processing Data")+"\n===================\n";
+			tPage += LanguageHandler.get("gt.matdict.working", "Working:")+"\n"       +(aMat.mTargetWorking    .mAmount / U) + "." + ((int)(((double)(aMat.mTargetWorking    .mAmount % U) / (double)U) * 1000))+" "+(aMat.mTargetWorking    .mAmount <= 0 ? LanguageHandler.get("gt.matdict.nothing", "nothing") : aMat.mTargetWorking    .mMaterial == aMat ? LanguageHandler.get("gt.matdict.itself", "itself") : aMat.mTargetWorking    .mMaterial.getLocal())+"\n";
 			
 			tBook.add(tPage);
 			
 			//----------
 			
-			tPage = "Thaumaturgic Data\n===================\nAspects:\n";
+			tPage = LanguageHandler.get("gt.matdict.thaumaturgic_data", "Thaumaturgic Data")+"\n===================\n"+LanguageHandler.get("gt.matdict.aspects", "Aspects:")+"\n";
 			
 			if (aMat.mAspects.isEmpty()) {
-				tPage += "None\n";
+				tPage += LanguageHandler.get("gt.matdict.none", "None")+"\n";
 			} else {
 				for (TC_AspectStack tAspect : aMat.mAspects) tPage += tAspect.mAmount + "x " + tAspect.mAspect.mName + "\n";
 			}
@@ -805,14 +806,14 @@ public class UT {
 			
 			tMap = new HashMap<>(); for (OreDictMaterial tMat : aMat.mTargetedSmelting) if (tMat.mTargetRegistration == tMat && tMat != aMat && tMat.mTargetSmelting.has(aMat)) tMap.put(tMat, tMat.mTargetSmelting.mAmount);
 			tMap = Code.sortByValuesDescending(tMap);
-			tPage = "Resources to smelt for getting "+aMat.getLocal()+"\n===================\n";
+			tPage = LanguageHandler.get("gt.matdict.resources_to_smelt", "Resources to smelt for getting")+" "+aMat.getLocal()+"\n===================\n";
 			tCounter = 0;
 			for (Entry<OreDictMaterial, Long> tEntry : tMap.entrySet()) {
 				temp=!(tCounter++%6==5);
-				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" from 1 "+tEntry.getKey().getLocal()+"\n";
+				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" "+LanguageHandler.get("gt.matdict.from_1", "from 1")+" "+tEntry.getKey().getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage = "Resources to smelt for getting "+aMat.getLocal()+"\n===================\n";
+					tPage = LanguageHandler.get("gt.matdict.resources_to_smelt", "Resources to smelt for getting")+" "+aMat.getLocal()+"\n===================\n";
 				}
 			}
 			
@@ -822,14 +823,14 @@ public class UT {
 			
 			tMap = new HashMap<>(); for (OreDictMaterial tMat : aMat.mTargetedSolidifying) if (tMat.mTargetRegistration == tMat && tMat != aMat && tMat.mTargetSolidifying.has(aMat)) tMap.put(tMat, tMat.mTargetSolidifying.mAmount);
 			tMap = Code.sortByValuesDescending(tMap);
-			tPage = "Resources to smelt and solidify for getting "+aMat.getLocal()+"\n===================\n";
+			tPage = LanguageHandler.get("gt.matdict.resources_to_smelt_and_solidify", "Resources to smelt and solidify for getting")+" "+aMat.getLocal()+"\n===================\n";
 			tCounter = 0;
 			for (Entry<OreDictMaterial, Long> tEntry : tMap.entrySet()) {
 				temp=!(tCounter++%6==5);
-				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" from 1 "+tEntry.getKey().getLocal()+"\n";
+				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" "+LanguageHandler.get("gt.matdict.from_1", "from 1")+" "+tEntry.getKey().getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage = "Resources to smelt and solidify for getting "+aMat.getLocal()+"\n===================\n";
+					tPage = LanguageHandler.get("gt.matdict.resources_to_smelt_and_solidify", "Resources to smelt and solidify for getting")+" "+aMat.getLocal()+"\n===================\n";
 				}
 			}
 			
@@ -839,14 +840,14 @@ public class UT {
 			
 			tMap = new HashMap<>(); for (OreDictMaterial tMat : aMat.mTargetedBurning) if (tMat.mTargetRegistration == tMat && tMat != aMat && tMat.mTargetBurning.has(aMat)) tMap.put(tMat, tMat.mTargetBurning.mAmount);
 			tMap = Code.sortByValuesDescending(tMap);
-			tPage = "Resources to burn for getting "+aMat.getLocal()+"\n===================\n";
+			tPage = LanguageHandler.get("gt.matdict.resources_to_burn", "Resources to burn for getting")+" "+aMat.getLocal()+"\n===================\n";
 			tCounter = 0;
 			for (Entry<OreDictMaterial, Long> tEntry : tMap.entrySet()) {
 				temp=!(tCounter++%6==5);
-				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" from 1 "+tEntry.getKey().getLocal()+"\n";
+				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" "+LanguageHandler.get("gt.matdict.from_1", "from 1")+" "+tEntry.getKey().getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage = "Resources to burn for getting "+aMat.getLocal()+"\n===================\n";
+					tPage = LanguageHandler.get("gt.matdict.resources_to_burn", "Resources to burn for getting")+" "+aMat.getLocal()+"\n===================\n";
 				}
 			}
 			
@@ -856,14 +857,14 @@ public class UT {
 			
 			tMap = new HashMap<>(); for (OreDictMaterial tMat : aMat.mTargetedPulver) if (tMat.mTargetRegistration == tMat && tMat != aMat && tMat.mTargetPulver.has(aMat)) tMap.put(tMat, tMat.mTargetPulver.mAmount);
 			tMap = Code.sortByValuesDescending(tMap);
-			tPage = "Resources to pulverise for getting "+aMat.getLocal()+"\n===================\n";
+			tPage = LanguageHandler.get("gt.matdict.resources_to_pulverise", "Resources to pulverise for getting")+" "+aMat.getLocal()+"\n===================\n";
 			tCounter = 0;
 			for (Entry<OreDictMaterial, Long> tEntry : tMap.entrySet()) {
 				temp=!(tCounter++%6==5);
-				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" from 1 "+tEntry.getKey().getLocal()+"\n";
+				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" "+LanguageHandler.get("gt.matdict.from_1", "from 1")+" "+tEntry.getKey().getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage = "Resources to pulverise for getting "+aMat.getLocal()+"\n===================\n";
+					tPage = LanguageHandler.get("gt.matdict.resources_to_pulverise", "Resources to pulverise for getting")+" "+aMat.getLocal()+"\n===================\n";
 				}
 			}
 			
@@ -873,14 +874,14 @@ public class UT {
 			
 			tMap = new HashMap<>(); for (OreDictMaterial tMat : aMat.mTargetedBending) if (tMat.mTargetRegistration == tMat && tMat != aMat && tMat.mTargetBending.has(aMat)) tMap.put(tMat, tMat.mTargetBending.mAmount);
 			tMap = Code.sortByValuesDescending(tMap);
-			tPage = "Resources to bend for getting "+aMat.getLocal()+"\n===================\n";
+			tPage = LanguageHandler.get("gt.matdict.resources_to_bend", "Resources to bend for getting")+" "+aMat.getLocal()+"\n===================\n";
 			tCounter = 0;
 			for (Entry<OreDictMaterial, Long> tEntry : tMap.entrySet()) {
 				temp=!(tCounter++%6==5);
-				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" from 1 "+tEntry.getKey().getLocal()+"\n";
+				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" "+LanguageHandler.get("gt.matdict.from_1", "from 1")+" "+tEntry.getKey().getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage = "Resources to bend for getting "+aMat.getLocal()+"\n===================\n";
+					tPage = LanguageHandler.get("gt.matdict.resources_to_bend", "Resources to bend for getting")+" "+aMat.getLocal()+"\n===================\n";
 				}
 			}
 			
@@ -890,14 +891,14 @@ public class UT {
 			
 			tMap = new HashMap<>(); for (OreDictMaterial tMat : aMat.mTargetedCompressing) if (tMat.mTargetRegistration == tMat && tMat != aMat && tMat.mTargetCompressing.has(aMat)) tMap.put(tMat, tMat.mTargetCompressing.mAmount);
 			tMap = Code.sortByValuesDescending(tMap);
-			tPage = "Resources to compress for getting "+aMat.getLocal()+"\n===================\n";
+			tPage = LanguageHandler.get("gt.matdict.resources_to_compress", "Resources to compress for getting")+" "+aMat.getLocal()+"\n===================\n";
 			tCounter = 0;
 			for (Entry<OreDictMaterial, Long> tEntry : tMap.entrySet()) {
 				temp=!(tCounter++%6==5);
-				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" from 1 "+tEntry.getKey().getLocal()+"\n";
+				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" "+LanguageHandler.get("gt.matdict.from_1", "from 1")+" "+tEntry.getKey().getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage = "Resources to compress for getting "+aMat.getLocal()+"\n===================\n";
+					tPage = LanguageHandler.get("gt.matdict.resources_to_compress", "Resources to compress for getting")+" "+aMat.getLocal()+"\n===================\n";
 				}
 			}
 			
@@ -907,14 +908,14 @@ public class UT {
 			
 			tMap = new HashMap<>(); for (OreDictMaterial tMat : aMat.mTargetedCrushing) if (tMat.mTargetRegistration == tMat && tMat != aMat && tMat.mTargetCrushing.has(aMat)) tMap.put(tMat, tMat.mTargetCrushing.mAmount);
 			tMap = Code.sortByValuesDescending(tMap);
-			tPage = "Resources to crush for getting "+aMat.getLocal()+"\n===================\n";
+			tPage = LanguageHandler.get("gt.matdict.resources_to_crush", "Resources to crush for getting")+" "+aMat.getLocal()+"\n===================\n";
 			tCounter = 0;
 			for (Entry<OreDictMaterial, Long> tEntry : tMap.entrySet()) {
 				temp=!(tCounter++%6==5);
-				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" from 1 "+tEntry.getKey().getLocal()+"\n";
+				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" "+LanguageHandler.get("gt.matdict.from_1", "from 1")+" "+tEntry.getKey().getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage = "Resources to crush for getting "+aMat.getLocal()+"\n===================\n";
+					tPage = LanguageHandler.get("gt.matdict.resources_to_crush", "Resources to crush for getting")+" "+aMat.getLocal()+"\n===================\n";
 				}
 			}
 			
@@ -924,14 +925,14 @@ public class UT {
 			
 			tMap = new HashMap<>(); for (OreDictMaterial tMat : aMat.mTargetedCutting) if (tMat.mTargetRegistration == tMat && tMat != aMat && tMat.mTargetCutting.has(aMat)) tMap.put(tMat, tMat.mTargetCutting.mAmount);
 			tMap = Code.sortByValuesDescending(tMap);
-			tPage = "Resources to cut for getting "+aMat.getLocal()+"\n===================\n";
+			tPage = LanguageHandler.get("gt.matdict.resources_to_cut", "Resources to cut for getting")+" "+aMat.getLocal()+"\n===================\n";
 			tCounter = 0;
 			for (Entry<OreDictMaterial, Long> tEntry : tMap.entrySet()) {
 				temp=!(tCounter++%6==5);
-				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" from 1 "+tEntry.getKey().getLocal()+"\n";
+				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" "+LanguageHandler.get("gt.matdict.from_1", "from 1")+" "+tEntry.getKey().getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage = "Resources to cut for getting "+aMat.getLocal()+"\n===================\n";
+					tPage = LanguageHandler.get("gt.matdict.resources_to_cut", "Resources to cut for getting")+" "+aMat.getLocal()+"\n===================\n";
 				}
 			}
 			
@@ -941,14 +942,14 @@ public class UT {
 			
 			tMap = new HashMap<>(); for (OreDictMaterial tMat : aMat.mTargetedForging) if (tMat.mTargetRegistration == tMat && tMat != aMat && tMat.mTargetForging.has(aMat)) tMap.put(tMat, tMat.mTargetForging.mAmount);
 			tMap = Code.sortByValuesDescending(tMap);
-			tPage = "Resources to forge for getting "+aMat.getLocal()+"\n===================\n";
+			tPage = LanguageHandler.get("gt.matdict.resources_to_forge", "Resources to forge for getting")+" "+aMat.getLocal()+"\n===================\n";
 			tCounter = 0;
 			for (Entry<OreDictMaterial, Long> tEntry : tMap.entrySet()) {
 				temp=!(tCounter++%6==5);
-				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" from 1 "+tEntry.getKey().getLocal()+"\n";
+				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" "+LanguageHandler.get("gt.matdict.from_1", "from 1")+" "+tEntry.getKey().getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage = "Resources to forge for getting "+aMat.getLocal()+"\n===================\n";
+					tPage = LanguageHandler.get("gt.matdict.resources_to_forge", "Resources to forge for getting")+" "+aMat.getLocal()+"\n===================\n";
 				}
 			}
 			
@@ -958,14 +959,14 @@ public class UT {
 			
 			tMap = new HashMap<>(); for (OreDictMaterial tMat : aMat.mTargetedSmashing) if (tMat.mTargetRegistration == tMat && tMat != aMat && tMat.mTargetSmashing.has(aMat)) tMap.put(tMat, tMat.mTargetSmashing.mAmount);
 			tMap = Code.sortByValuesDescending(tMap);
-			tPage = "Resources to smash for getting "+aMat.getLocal()+"\n===================\n";
+			tPage = LanguageHandler.get("gt.matdict.resources_to_smash", "Resources to smash for getting")+" "+aMat.getLocal()+"\n===================\n";
 			tCounter = 0;
 			for (Entry<OreDictMaterial, Long> tEntry : tMap.entrySet()) {
 				temp=!(tCounter++%6==5);
-				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" from 1 "+tEntry.getKey().getLocal()+"\n";
+				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" "+LanguageHandler.get("gt.matdict.from_1", "from 1")+" "+tEntry.getKey().getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage = "Resources to smash for getting "+aMat.getLocal()+"\n===================\n";
+					tPage = LanguageHandler.get("gt.matdict.resources_to_smash", "Resources to smash for getting")+" "+aMat.getLocal()+"\n===================\n";
 				}
 			}
 			
@@ -975,14 +976,14 @@ public class UT {
 			
 			tMap = new HashMap<>(); for (OreDictMaterial tMat : aMat.mTargetedWorking) if (tMat.mTargetRegistration == tMat && tMat != aMat && tMat.mTargetWorking.has(aMat)) tMap.put(tMat, tMat.mTargetWorking.mAmount);
 			tMap = Code.sortByValuesDescending(tMap);
-			tPage = "Resources to use in other ways for getting "+aMat.getLocal()+"\n===================\n";
+			tPage = LanguageHandler.get("gt.matdict.resources_to_use_other_ways", "Resources to use in other ways for getting")+" "+aMat.getLocal()+"\n===================\n";
 			tCounter = 0;
 			for (Entry<OreDictMaterial, Long> tEntry : tMap.entrySet()) {
 				temp=!(tCounter++%6==5);
-				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" from 1 "+tEntry.getKey().getLocal()+"\n";
+				tPage+=(tEntry.getValue() / U) + "." + ((int)(((double)(tEntry.getValue() % U) / (double)U) * 1000))+" "+LanguageHandler.get("gt.matdict.from_1", "from 1")+" "+tEntry.getKey().getLocal()+"\n";
 				if (!temp) {
 					tBook.add(tPage);
-					tPage = "Resources to use in other ways for getting "+aMat.getLocal()+"\n===================\n";
+					tPage = LanguageHandler.get("gt.matdict.resources_to_use_other_ways", "Resources to use in other ways for getting")+" "+aMat.getLocal()+"\n===================\n";
 				}
 			}
 			
@@ -991,7 +992,7 @@ public class UT {
 			//----------
 			
 			for (IOreDictConfigurationComponent tConfig : aMat.mAlloyCreationRecipes) {
-				tPage="Alloy:\n"+aMat.getLocal()+"\n===================\nMelting: "+aMat.mMeltingPoint+" K\nBoiling: "+aMat.mBoilingPoint+" K\n===================\nComponents per "+tConfig.getCommonDivider() + "\n";
+				tPage=LanguageHandler.get("gt.matdict.alloy", "Alloy:")+"\n"+aMat.getLocal()+"\n===================\n"+LanguageHandler.get("gt.matdict.melting", "Melting:")+" "+aMat.mMeltingPoint+" K\n"+LanguageHandler.get("gt.matdict.boiling", "Boiling:")+" "+aMat.mBoilingPoint+" K\n===================\n"+LanguageHandler.get("gt.matdict.components_per", "Components per")+" "+tConfig.getCommonDivider() + "\n";
 				for (OreDictMaterialStack tMt2 : tConfig.getUndividedComponents()) tPage += (tMt2.mAmount / U)+" "+tMt2.mMaterial.getLocal()+"\n";
 				tBook.add(tPage);
 			}
@@ -1002,7 +1003,7 @@ public class UT {
 				for (IOreDictConfigurationComponent tConfig : tMat.mAlloyCreationRecipes) {
 					for (OreDictMaterialStack tMatStack : tConfig.getUndividedComponents()) {
 						if (tMatStack.mMaterial == aMat) {
-							tPage="Alloy:\n"+tMat.getLocal()+"\n===================\nMelting: "+tMat.mMeltingPoint+" K\nBoiling: "+tMat.mBoilingPoint+" K\n===================\nComponents per "+tConfig.getCommonDivider() + "\n";
+							tPage=LanguageHandler.get("gt.matdict.alloy", "Alloy:")+"\n"+tMat.getLocal()+"\n===================\n"+LanguageHandler.get("gt.matdict.melting", "Melting:")+" "+tMat.mMeltingPoint+" K\n"+LanguageHandler.get("gt.matdict.boiling", "Boiling:")+" "+tMat.mBoilingPoint+" K\n===================\n"+LanguageHandler.get("gt.matdict.components_per", "Components per")+" "+tConfig.getCommonDivider() + "\n";
 							for (OreDictMaterialStack tMt2 : tConfig.getUndividedComponents()) tPage += (tMt2.mAmount / U)+" "+tMt2.mMaterial.getLocal()+"\n";
 							tBook.add(tPage);
 							break;
@@ -1013,11 +1014,11 @@ public class UT {
 			
 			//----------
 			
-			if (aMat.mDescription != null) for (int i = 0, j = 0; i < aMat.mDescription.length; i++) if (Code.stringValid(aMat.mDescription[i])) tBook.add("Description Pg "+(++j)+"\n===================\n" + aMat.mDescription[i]);
+			if (aMat.mDescription != null) for (int i = 0, j = 0; i < aMat.mDescription.length; i++) if (Code.stringValid(aMat.mDescription[i])) tBook.add(LanguageHandler.get("gt.matdict.description_pg", "Description Pg")+" "+(++j)+"\n===================\n" + aMat.mDescription[i]);
 			
 			//----------
 			
-			return null != createWrittenBook("Material_Dictionary_"+aMat.mNameInternal, aMat.getLocal(), "Material Dictionary Foundation", tBook.size()<=50?(ST.valid(aDefaultBook)?ST.amount(1, aDefaultBook):ST.make(ItemsGT.BOOKS, 1, 32002)):(ST.valid(aDefaultLargeBook)?ST.amount(1, aDefaultLargeBook):ST.make(ItemsGT.BOOKS, 1, 32003)), F, tBook.toArray(ZL_STRING));
+			return null != createWrittenBook("Material_Dictionary_"+aMat.mNameInternal, aMat.getLocal(), LanguageHandler.get("gt.matdict.material_dictionary_foundation", "Material Dictionary Foundation"), tBook.size()<=50?(ST.valid(aDefaultBook)?ST.amount(1, aDefaultBook):ST.make(ItemsGT.BOOKS, 1, 32002)):(ST.valid(aDefaultLargeBook)?ST.amount(1, aDefaultLargeBook):ST.make(ItemsGT.BOOKS, 1, 32003)), F, tBook.toArray(ZL_STRING));
 		}
 	}
 	
@@ -1421,9 +1422,9 @@ public class UT {
 		public static short  bind8    (long   aBoundValue) {return (short)Math.max(0, Math.min(       255, aBoundValue));}
 		public static short  bind15   (long   aBoundValue) {return (short)Math.max(0, Math.min(     32767, aBoundValue));}
 
-		/** ЦЕНТР конвертации генераторов случайности (консолидация BUG-047-ревизии): neo-каналы (tick/randomTick/
-		 *  worldgen) дают RandomSource, дословный GT6-код 1.7.10 хочет java.util.Random — единый мост (seed от
-		 *  nextLong, энтропия канала сохранена). Один приём на весь мод, копии по иерархиям искоренены. */
+		/** CENTER for random-generator conversion (BUG-047 revision consolidation): neo channels (tick/randomTick/
+		 *  worldgen) hand out RandomSource, but the verbatim GT6 1.7.10 code wants java.util.Random — a single bridge
+		 *  (seed from nextLong, channel entropy preserved). One approach for the whole mod, per-hierarchy copies eradicated. */
 		public static java.util.Random random(net.minecraft.util.RandomSource aRandom) {return new java.util.Random(aRandom.nextLong());}
 		public static int    bind16   (long   aBoundValue) {return (int)  Math.max(0, Math.min(     65535, aBoundValue));}
 		public static int    bind24   (long   aBoundValue) {return (int)  Math.max(0, Math.min(  16777215, aBoundValue));}
@@ -1471,22 +1472,22 @@ public class UT {
 		/** estebes helped with the code for this one, and yes that cast down there is fucking necessary... */
 		public static short[] color(ItemStack aStack) {
 			if (ST.invalid(aStack)) return UNCOLOURED;
-			// F3 (baked-рендер клиента), деградация без потери функции — единственный вызыватель этого метода —
-			// служебный лог «Outputting Colors of unknown Materials» (gregtech/GT6_Main.java:547), в игре не виден:
-			// 1.7.10 читал средний цвет из атлас-спрайта предмета
-			// (ItemStack.getIconIndex():IIcon + IIcon.getIconName() + Item.getColorFromItemStack) — весь этот
-			// immediate-mode/IIcon стек удалён в 26.1.2 (см. decisions/F3-render.md). Атлас-спрайт на клиенте
-			// станет TextureAtlasSprite/Material при Фазе C; тинт предмета — ItemColors. До неё деградируем до
-			// нейтрального UNCOLOURED (тинт «нет модуляции»), НЕ крашим — метод @OnlyIn(CLIENT), на сервере не зовётся.
+			// F3 (client baked-render), degradation without functional loss — the only caller of this method is
+			// the service log "Outputting Colors of unknown Materials" (gregtech/GT6_Main.java:547), not visible in game:
+			// 1.7.10 read the average color from the item's atlas sprite
+			// (ItemStack.getIconIndex():IIcon + IIcon.getIconName() + Item.getColorFromItemStack) — this whole
+			// immediate-mode/IIcon stack was removed in 26.1.2 (see decisions/F3-render.md). The client atlas sprite
+			// will become TextureAtlasSprite/Material at Phase C; item tint — ItemColors. Until then degrade to
+			// neutral UNCOLOURED (tint "no modulation"), do NOT crash — the method is @OnlyIn(CLIENT), not called on server.
 			return UNCOLOURED;
 		}
 		
 		/** estebes helped with the code for this one */
 		public static short[] color(String aResourceLocation) {
 			ResourceLocation aux = null;
-			// BUG-122 (вторая точка класса): имя приходит СНАРУЖИ, а конструктор ResourceLocation(String,String)
-			// БРОСАЕТ на недопустимом пути (ResourceLocation.java:39 assertValidPath) — tryBuild возвращает
-			// null, как возвращал null весь этот метод для неизвестного ресурса и в 1.7.10.
+			// BUG-122 (second point of the class): the name comes from OUTSIDE, and the ResourceLocation(String,String)
+			// constructor THROWS on an invalid path (ResourceLocation.java:39 assertValidPath) — tryBuild returns
+			// null, just as this whole method used to return null for an unknown resource in 1.7.10 too.
 			if (aResourceLocation.contains(":")) {
 				String[] modid_itemid = aResourceLocation.split(":");
 				aux = ResourceLocation.tryBuild(modid_itemid[0], "textures/items/" + modid_itemid[1] + ".png"); // neo: ctor ResourceLocation(String,String) deprecated -> tryBuild (ResourceLocation.java:39,69)
@@ -1495,9 +1496,9 @@ public class UT {
 			}
 			if (aux == null) return null;
 			java.awt.image.BufferedImage tIcon = null;
-			// neo: ResourceManager.getResource(ResourceLocation) -> Optional<Resource> (не бросает FileNotFound);
-			// Resource.getInputStream() -> open() (Resource.java). Читаем только если ресурс присутствует.
-			// S6: доступ к client resource manager — через центр (GT_API_Proxy.getResourceStream), на сервере null (не грузим Minecraft).
+			// neo: ResourceManager.getResource(ResourceLocation) -> Optional<Resource> (does not throw FileNotFound);
+			// Resource.getInputStream() -> open() (Resource.java). Only read if the resource is present.
+			// S6: access to the client resource manager — through the center (GT_API_Proxy.getResourceStream), null on server (do not load Minecraft).
 			try {java.io.InputStream tStream = gregapi.GT_API.api_proxy.getResourceStream(aux); if (tStream != null) tIcon = javax.imageio.ImageIO.read(tStream);} catch (IOException e) {/**/}
 			return tIcon == null ? null : color(tIcon);
 		}
@@ -1897,14 +1898,14 @@ public class UT {
 			return rNBT==null?make():rNBT;
 		}
 
-		// F8 КОНТРАКТ (важно): под иммутабельным CustomData «живой» тег на стеке невозможен — этот метод
-		// возвращает МУТАБЕЛЬНУЮ DETACHED-копию (ItemNBT.get() копирует). КАЖДЫЙ вызывающий, который мутирует
-		// результат, ОБЯЗАН закоммитить его через UT.NBT.set(aStack, rNBT)/ItemNBT.set — без commit правки
-		// теряются. Тело — дословный 1:1-порт старого getOrCreate (мост setTagCompound→ItemNBT.set);
-		// при пустом теге ItemNBT.set удаляет компонент (no-op), т.е. пустой тег НЕ сохраняется на стеке,
-		// в отличие от старого setTagCompound(new NBTTagCompound()). Это безопасно: UT.NBT.set в GT6 и так
-		// стрипает пустые теги, поэтому GT6-код никогда не полагался на персистентный пустой тег.
-		// (См. ItemNBT.java javadoc, decisions/F8-nbt-data-components.md §7.)
+		// F8 CONTRACT (important): under immutable CustomData a "live" tag on the stack is impossible — this method
+		// returns a MUTABLE DETACHED copy (ItemNBT.get() copies). EVERY caller that mutates
+		// the result MUST commit it via UT.NBT.set(aStack, rNBT)/ItemNBT.set — without a commit, edits
+		// are lost. The body is a verbatim 1:1 port of the old getOrCreate (bridge setTagCompound→ItemNBT.set);
+		// on an empty tag ItemNBT.set removes the component (no-op), i.e. an empty tag is NOT persisted on the stack,
+		// unlike the old setTagCompound(new NBTTagCompound()). This is safe: UT.NBT.set in GT6 already
+		// strips empty tags, so GT6 code never relied on a persistent empty tag.
+		// (See ItemNBT.java javadoc, decisions/F8-nbt-data-components.md §7.)
 		public static CompoundTag getOrCreate(ItemStack aStack) {
 			CompoundTag rNBT = ItemNBT.get(aStack);
 			if (rNBT == null) ItemNBT.set(aStack, rNBT = make());
@@ -2112,11 +2113,11 @@ public class UT {
 		
 		public static List<String> getDataToolTip(CompoundTag aData, List<String> aList, boolean aAllDetails) {
 			if (aData.contains(NBT_REACTOR_SETUP)) {
-				aList.add(LH.Chat.CYAN + "Reactor Setup: " + aData.getString(NBT_REACTOR_SETUP_NAME));
+				aList.add(LH.Chat.CYAN + LH.tt("Reactor Setup: ") + aData.getString(NBT_REACTOR_SETUP_NAME));
 				return aList;
 			}
 			if (aData.contains(NBT_CANVAS_BLOCK)) {
-				aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(ST.getBlock(aData, NBT_CANVAS_BLOCK), 1, aData.getInt(NBT_CANVAS_META))));
+				aList.add(LH.Chat.CYAN + LH.tt("Block Image: ") + ST.names(ST.make(ST.getBlock(aData, NBT_CANVAS_BLOCK), 1, aData.getInt(NBT_CANVAS_META))));
 				return aList;
 			}
 			if (aData.contains(NBT_REPLICATOR_DATA)) {
@@ -2125,21 +2126,21 @@ public class UT {
 					OreDictMaterial tMaterial = OreDictMaterial.MATERIAL_ARRAY[tIndex];
 					if (tMaterial.contains(TD.Processing.UUM)) {
 						if (aAllDetails) {
-							aList.add(LH.Chat.CYAN + "Material Data: " + LH.Chat.WHITE + tMaterial.getLocal());
-							aList.add(LH.Chat.CYAN + "Can be Replicated using");
+							aList.add(LH.Chat.CYAN + LH.tt("Material Data: ") + LH.Chat.WHITE + tMaterial.getLocal());
+							aList.add(LH.Chat.CYAN + LH.tt("Can be Replicated using"));
 							if (tMaterial.contains(TD.Atomic.ANTIMATTER)) {
-								aList.add(LH.Chat.WHITE + "Neutral Antimatter: " + LH.Chat.YELLOW + tMaterial.mNeutrons);
-								aList.add(LH.Chat.WHITE + "Charged Antimatter: " + LH.Chat.RED + tMaterial.mProtons);
+								aList.add(LH.Chat.WHITE + LH.tt("Neutral Antimatter: ") + LH.Chat.YELLOW + tMaterial.mNeutrons);
+								aList.add(LH.Chat.WHITE + LH.tt("Charged Antimatter: ") + LH.Chat.RED + tMaterial.mProtons);
 							} else {
-								aList.add(LH.Chat.WHITE + "Neutral Matter: " + LH.Chat.YELLOW + tMaterial.mNeutrons);
-								aList.add(LH.Chat.WHITE + "Charged Matter: " + LH.Chat.RED + tMaterial.mProtons);
+								aList.add(LH.Chat.WHITE + LH.tt("Neutral Matter: ") + LH.Chat.YELLOW + tMaterial.mNeutrons);
+								aList.add(LH.Chat.WHITE + LH.tt("Charged Matter: ") + LH.Chat.RED + tMaterial.mProtons);
 							}
-							aList.add(LH.Chat.WHITE + "Energy: " + TD.Energy.QU.getChatFormat() + ((tMaterial.mNeutrons+tMaterial.mProtons)*65536) + " " + TD.Energy.QU.getLocalisedNameShort());
+							aList.add(LH.Chat.WHITE + LH.tt("Energy: ") + TD.Energy.QU.getChatFormat() + ((tMaterial.mNeutrons+tMaterial.mProtons)*65536) + " " + TD.Energy.QU.getLocalisedNameShort());
 						} else {
-							aList.add(LH.Chat.CYAN + "Mat Data: " + LH.Chat.WHITE + tMaterial.getLocal() + (aAllDetails ? "" : " ("+LH.Chat.YELLOW+tMaterial.mNeutrons+LH.Chat.WHITE+"/"+LH.Chat.RED+tMaterial.mProtons+LH.Chat.WHITE+"/"+TD.Energy.QU.getChatFormat()+((tMaterial.mNeutrons+tMaterial.mProtons)*65536)+LH.Chat.WHITE+")"));
+							aList.add(LH.Chat.CYAN + LH.tt("Mat Data: ") + LH.Chat.WHITE + tMaterial.getLocal() + (aAllDetails ? "" : " ("+LH.Chat.YELLOW+tMaterial.mNeutrons+LH.Chat.WHITE+"/"+LH.Chat.RED+tMaterial.mProtons+LH.Chat.WHITE+"/"+TD.Energy.QU.getChatFormat()+((tMaterial.mNeutrons+tMaterial.mProtons)*65536)+LH.Chat.WHITE+")"));
 						}
 					} else {
-						aList.add(LH.Chat.CYAN + "Material Data: " + LH.Chat.WHITE + tMaterial.getLocal() + LH.Chat.ORANGE + " (Not Replicatable)");
+						aList.add(LH.Chat.CYAN + LH.tt("Material Data: ") + LH.Chat.WHITE + tMaterial.getLocal() + LH.Chat.ORANGE + LH.tt(" (Not Replicatable)"));
 					}
 				}
 				return aList;
@@ -2160,45 +2161,45 @@ public class UT {
 				short tMeta = aData.getShort("ie_blueprint");
 				aList.add(LH.Chat.CYAN + IL.IE_Blueprint_Projectiles_Common.getWithMeta(1, tMeta).getDisplayName());
 				switch(tMeta) {
-				case 0: aList.add(LH.Chat.GREEN + "Common Projectiles"); break;
-				case 1: aList.add(LH.Chat.GREEN + "Specialized Projectiles"); break;
-				case 2: aList.add(LH.Chat.GREEN + "Arc Furnace Electrodes"); break;
+				case 0: aList.add(LH.Chat.GREEN + LH.tt("Common Projectiles")); break;
+				case 1: aList.add(LH.Chat.GREEN + LH.tt("Specialized Projectiles")); break;
+				case 2: aList.add(LH.Chat.GREEN + LH.tt("Arc Furnace Electrodes")); break;
 				}
 				return aList;
 			}
 			String tString = getBookTitle(aData);
 			if (Code.stringValid(tString)) {
-				aList.add(LH.Chat.CYAN + "Book: " + tString);
+				aList.add(LH.Chat.CYAN + LH.tt("Book: ") + tString);
 				if (aAllDetails) {
 					tString = getBookAuthor(aData);
-					if (Code.stringValid(tString)) aList.add(LH.Chat.CYAN + "by " + tString);
+					if (Code.stringValid(tString)) aList.add(LH.Chat.CYAN + LH.tt("by ") + tString);
 				}
 				return aList;
 			}
 			short
 			tMapID = getMapID(aData);
 			if (tMapID >= 0) {
-				aList.add(LH.Chat.CYAN + "Map ID: " + tMapID);
+				aList.add(LH.Chat.CYAN + LH.tt("Map ID: ") + tMapID);
 				return aList;
 			}
 			tMapID = getMagicMapID(aData);
 			if (tMapID >= 0) {
-				aList.add(LH.Chat.CYAN + "Magic Map ID: " + tMapID);
+				aList.add(LH.Chat.CYAN + LH.tt("Magic Map ID: ") + tMapID);
 				return aList;
 			}
 			tMapID = getMazeMapID(aData);
 			if (tMapID >= 0) {
-				aList.add(LH.Chat.CYAN + "Maze Map ID: " + tMapID);
+				aList.add(LH.Chat.CYAN + LH.tt("Maze Map ID: ") + tMapID);
 				return aList;
 			}
 			tMapID = getOreMapID(aData);
 			if (tMapID >= 0) {
-				aList.add(LH.Chat.CYAN + "Ore Map ID: " + tMapID);
+				aList.add(LH.Chat.CYAN + LH.tt("Ore Map ID: ") + tMapID);
 				return aList;
 			}
 			tString = getPunchCardData(aData);
 			if (Code.stringValid(tString)) {
-				aList.add(LH.Chat.CYAN + "Punch Card Data");
+				aList.add(LH.Chat.CYAN + LH.tt("Punch Card Data"));
 				if (aAllDetails) for (int i = 0, j = tString.length(); i < j; i += 64) aList.add(LH.Chat.GREEN + tString.substring(i, Math.min(i+64, j)));
 				return aList;
 			}
@@ -2206,12 +2207,12 @@ public class UT {
 			if (tBlueprint != ZL_IS) {
 				ItemStack tCrafted = CR.getany(DW, tBlueprint);
 				if (ST.invalid(tCrafted)) {
-					aList.add(LH.Chat.CYAN + "Blueprint with random Items");
+					aList.add(LH.Chat.CYAN + LH.tt("Blueprint with random Items"));
 				} else {
 					if (aAllDetails) {
-						aList.add(LH.Chat.CYAN + "Blueprint for " + tCrafted.getDisplayName());
+						aList.add(LH.Chat.CYAN + LH.tt("Blueprint for ") + tCrafted.getDisplayName());
 					} else {
-						aList.add(LH.Chat.CYAN + "Blueprint: " + tCrafted.getDisplayName());
+						aList.add(LH.Chat.CYAN + LH.tt("Blueprint: ") + tCrafted.getDisplayName());
 					}
 				}
 				return aList;
@@ -2220,36 +2221,36 @@ public class UT {
 		}
 		
 		
-		// F10 стык: RailcraftEnchantments.destruction/wrecking/implosion — compat-mirror интерфейс
-		// (mods/railcraft/.../RailcraftEnchantments.java) сейчас пустая заглушка без членов (чужая зона,
-		// не F8) — символ появится, когда владелец F10-зеркала добавит поля. Вызов оставлен 1:1.
+		// F10 seam: RailcraftEnchantments.destruction/wrecking/implosion — the compat-mirror interface
+		// (mods/railcraft/.../RailcraftEnchantments.java) is currently an empty stub with no members (foreign zone,
+		// not F8) — the symbol will appear when the owner of the F10 mirror adds the fields. The call is left 1:1.
 		public static int getEnchantmentLevelDestruction   (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.destruction, aStack) : 0;}
 		public static int getEnchantmentLevelWrecking      (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.wrecking   , aStack) : 0;}
 		public static int getEnchantmentLevelImplosion     (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.implosion  , aStack) : 0;}
-		// 1.20.1: "fortune"/"looting" — снова готовые объекты Enchantment (Enchantments.BLOCK_FORTUNE/MOB_LOOTING,
-		// forge-1201-decompiled …/Enchantments.java:27,32), реестр/Holder не нужны — форма оригинала 1:1
-		// (gt6-original …/UT.java:2350). Полное имя класса (без import) — простое имя "Enchantments" в файле уже
-		// занято вложенным UT.Enchantments (BULLSHIT-диспетчер ниже), member-тип экранирует top-level импорт (JLS 6.4.1).
+		// 1.20.1: "fortune"/"looting" — ready-made Enchantment objects again (Enchantments.BLOCK_FORTUNE/MOB_LOOTING,
+		// forge-1201-decompiled …/Enchantments.java:27,32), no registry/Holder needed — the original's form 1:1
+		// (gt6-original …/UT.java:2350). Fully-qualified class name (no import) — the simple name "Enchantments" in this
+		// file is already taken by the nested UT.Enchantments (BULLSHIT dispatcher below), the member type shadows the top-level import (JLS 6.4.1).
 		public static int getEnchantmentLevelLootingFortune(ItemStack aStack) {return Math.max(getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE, aStack), getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.MOB_LOOTING, aStack));}
 
-		// 1.20.1: чары стека снова лежат сырым ListTag "Enchantments" в NBT (ItemStack.java:93,549), а сам чар —
-		// объект реестра. Оригинал звал EnchantmentHelper.getEnchantmentLevel(effectId, stack) — прямой аналог
-		// ItemStack.getEnchantmentLevel(Enchantment) (Forge-расширение, EnchantmentHelper.java:64-66). Проверка
-		// "effectId < 0" снята: числовых effectId в 1.20.1 нет, null-guard сохранён.
+		// 1.20.1: the stack's enchantments live again in a raw ListTag "Enchantments" in the NBT (ItemStack.java:93,549), and
+		// the enchantment itself is a registry object. The original called EnchantmentHelper.getEnchantmentLevel(effectId, stack) —
+		// a direct analog of ItemStack.getEnchantmentLevel(Enchantment) (a Forge extension, EnchantmentHelper.java:64-66). The
+		// "effectId < 0" check is dropped: there are no numeric effectId values on 1.20.1, the null guard is kept.
 		public static int getEnchantmentLevel(Enchantment aEnchantment, ItemStack aStack) {
 			if (aEnchantment == null || ST.invalid(aStack)) return 0;
 			return aStack.getEnchantmentLevel(aEnchantment);
 		}
-		// Гейт вернулся к оригинальному (gt6-original …/UT.java:2356): в 1.20.1 чары снова живут ВНУТРИ общего
-		// NBT-тега стека ("Enchantments", ItemStack.java:93), поэтому "нет тега вообще" ⇒ "нет чар" — снова верно.
+		// The gate is back to the original (gt6-original …/UT.java:2356): on 1.20.1 enchantments live INSIDE the stack's
+		// general NBT tag again ("Enchantments", ItemStack.java:93), so "no tag at all" => "no enchantments" holds again.
 		public static int getEnchantmentXP(ItemStack aStack) {
 			if (ST.invalid(aStack) || !aStack.hasTag() || ST.isGT_(aStack) || (COMPAT_EU_ITEM != null && COMPAT_EU_ITEM.is(aStack))) return 0;
 			return getEnchantmentXP(getNBT(aStack));
 		}
-		// Восстановлено 1:1 (в 26.x деградировало до 0 — там формат был недостижим). Отличие от 1.7.10 ровно одно:
-		// id чара в записи — строковый ResourceLocation, а не short-индекс Enchantment.enchantmentsList
-		// (EnchantmentHelper.getEnchantmentId(CompoundTag), EnchantmentHelper.java:52-55); уровень читается тем же
-		// движковым хелпером (EnchantmentHelper.java:48-50). Проклятия и формула divup(rXP,2) — как в оригинале,
+		// Restored 1:1 (on 26.x it degraded to 0 — the format was unreachable there). Exactly one difference from 1.7.10:
+		// the enchantment id in the entry is a string ResourceLocation, not a short index into Enchantment.enchantmentsList
+		// (EnchantmentHelper.getEnchantmentId(CompoundTag), EnchantmentHelper.java:52-55); the level is read by the same
+		// engine helper (EnchantmentHelper.java:48-50). Curses and the divup(rXP,2) formula — as in the original,
 		// getMinEnchantability -> getMinCost (Enchantment.java:62).
 		public static int getEnchantmentXP(CompoundTag aNBT) {
 			if (!aNBT.contains("Enchantments", 9)) return 0;
@@ -2269,29 +2270,29 @@ public class UT {
 			return check(aStack);
 		}
 		public static void removeEnchantments(CompoundTag aNBT) {
-			// ключ списка чар в 1.20.1 — "Enchantments" (ItemStack.TAG_ENCH, ItemStack.java:93); в 1.7.10 был "ench".
+			// the enchantment list key on 1.20.1 — "Enchantments" (ItemStack.TAG_ENCH, ItemStack.java:93); on 1.7.10 it was "ench".
 			aNBT.remove("Enchantments");
 		}
-		// F8: маршрут на типизированный DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS (см. javadoc
-		// getEnchantmentLevel выше про Holder.direct). ItemEnchantments.Mutable.set(holder, level)
-		// заменяет существующую запись ИЛИ добавляет новую — 1:1 замена ручного скана списка "найти id,
-		// обновить lvl, иначе добавить". Каст (byte)aLevel сохраняет ОРИГИНАЛЬНУЮ 1.7.10-усечку уровня
-		// (исходный код тоже писал lvl как (byte)aLevel, несмотря на short-поле) — не улучшение, воспроизведение.
-		/** BUG-002 (протухший Holder) — дефект НЕВОЗМОЖЕН в 1.20.1: чары здесь снова СТАТИЧЕСКИЙ реестр
-		 *  (BuiltInRegistries.ENCHANTMENT / ForgeRegistries.ENCHANTMENTS, Enchantment.java:27-29), а не
-		 *  динамический пер-серверный, и в NBT стека лежит строковый id, а не ссылка на объект реестра
-		 *  (ItemStack.java:549, EnchantmentHelper.java:52-55). Пере-резолвить нечего. Оригинал 1.7.10 этих
-		 *  методов не имел вовсе (появились только под neo-модель) — сохранены как no-op ради вызывателей
-		 *  (ST.java, GT6CraftingDispatcher.java), поведение стека не меняется. */
+		// F8: route to the typed DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS (see javadoc
+		// for getEnchantmentLevel above about Holder.direct). ItemEnchantments.Mutable.set(holder, level)
+		// replaces the existing entry OR adds a new one — a 1:1 replacement for manually scanning the list "find id,
+		// update lvl, else add". The (byte)aLevel cast preserves the ORIGINAL 1.7.10 level truncation
+		// (the source code also wrote lvl as (byte)aLevel, despite the short field) — not an improvement, a reproduction.
+		/** BUG-002 (stale Holder) — the defect is IMPOSSIBLE on 1.20.1: enchantments here are once again a STATIC registry
+		 *  (BuiltInRegistries.ENCHANTMENT / ForgeRegistries.ENCHANTMENTS, Enchantment.java:27-29), not a
+		 *  dynamic per-server one, and the stack's NBT holds a string id, not a reference to a registry object
+		 *  (ItemStack.java:549, EnchantmentHelper.java:52-55). There is nothing to re-resolve. The 1.7.10 original had
+		 *  no such methods at all (they appeared only under the neo model) — kept as no-ops for the sake of the
+		 *  callers (ST.java, GT6CraftingDispatcher.java), stack behavior is unchanged. */
 		public static ItemStack freshenEnchantments(ItemStack aStack) {
 			return aStack;
 		}
 
-		// Форма оригинала (gt6-original …/UT.java:2379-2404) восстановлена: список чар снова живёт в NBT стека
-		// ключом "Enchantments" (ItemStack.java:93,820-828). Отличие ровно одно — id записи строковый
-		// (EnchantmentHelper.storeEnchantment/getEnchantmentId, EnchantmentHelper.java:37-55), а не short-индекс
-		// удалённого Enchantment.enchantmentsList. Дедуп «нашли тот же id — обновили lvl, иначе добавили» и
-		// оригинальная усечка (byte)aLevel сохранены дословно (движковый ItemStack.enchant дедупа НЕ делает).
+		// The original's form (gt6-original …/UT.java:2379-2404) is restored: the enchantment list lives in the stack's
+		// NBT again under the key "Enchantments" (ItemStack.java:93,820-828). Exactly one difference — the entry id is a
+		// string (EnchantmentHelper.storeEnchantment/getEnchantmentId, EnchantmentHelper.java:37-55), not a short index
+		// into the removed Enchantment.enchantmentsList. The dedup "found the same id — updated lvl, else added" and the
+		// original (byte)aLevel truncation are kept verbatim (the engine's own ItemStack.enchant does NOT dedup).
 		public static ItemStack addEnchantment(ItemStack aStack, Enchantment aEnchantment, long aLevel) {
 			if (aEnchantment == null || ST.invalid(aStack)) return aStack;
 			net.minecraft.resources.ResourceLocation tID = EnchantmentHelper.getEnchantmentId(aEnchantment);
@@ -2316,18 +2317,18 @@ public class UT {
 			return set(aStack, tNBT);
 		}
 
-		/** BUG-002 (протухший Holder) — дефект НЕВОЗМОЖЕН в 1.20.1: чары здесь снова СТАТИЧЕСКИЙ реестр
-		 *  (BuiltInRegistries.ENCHANTMENT / ForgeRegistries.ENCHANTMENTS, Enchantment.java:27-29), а не
-		 *  динамический пер-серверный, и в NBT стека лежит строковый id, а не ссылка на объект реестра
-		 *  (ItemStack.java:549, EnchantmentHelper.java:52-55). Пере-резолвить нечего. Оригинал 1.7.10 этих
-		 *  методов не имел вовсе (появились только под neo-модель) — сохранены как no-op ради вызывателей
-		 *  (ST.java, GT6CraftingDispatcher.java), поведение стека не меняется. */
+		/** BUG-002 (stale Holder) — the defect is IMPOSSIBLE on 1.20.1: enchantments here are once again a STATIC registry
+		 *  (BuiltInRegistries.ENCHANTMENT / ForgeRegistries.ENCHANTMENTS, Enchantment.java:27-29), not a
+		 *  dynamic per-server one, and the stack's NBT holds a string id, not a reference to a registry object
+		 *  (ItemStack.java:549, EnchantmentHelper.java:52-55). There is nothing to re-resolve. The 1.7.10 original had
+		 *  no such methods at all (they appeared only under the neo model) — kept as no-ops for the sake of the
+		 *  callers (ST.java, GT6CraftingDispatcher.java), stack behavior is unchanged. */
 		public static ItemStack refreshEnchantments(ItemStack aStack) {
 			return aStack;
 		}
 
-		/** было {@code aEnchantment.getTranslatedName(aLevel)} (1.7.10) — в 1.20.1 тот же метод зовётся
-		 *  {@code Enchantment.getFullname(int)} и возвращает {@code Component} ({@code Enchantment.java:99}). */
+		/** was {@code aEnchantment.getTranslatedName(aLevel)} (1.7.10) — on 1.20.1 the same method is called
+		 *  {@code Enchantment.getFullname(int)} and returns a {@code Component} ({@code Enchantment.java:99}). */
 		public static String enchantName(Enchantment aEnchantment, int aLevel) {
 			return aEnchantment == null ? "" : aEnchantment.getFullname(aLevel).getString();
 		}
@@ -2340,22 +2341,22 @@ public class UT {
 		private static final BullshitIteratorA mBullshitIteratorA = new BullshitIteratorA();
 		private static final BullshitIteratorB mBullshitIteratorB = new BullshitIteratorB();
 
-		// Ветка 1.20.1: обе половины модели 1.7.10 на месте — EnchantmentHelper.getDamageBonus(ItemStack, MobType)
-		// (EnchantmentHelper.java:164) и LivingEntity.getMobType() (LivingEntity.java:1850). Это дословный
-		// эквивалент func_152377_a(stack, getCreatureAttribute()), поэтому тело центра возвращено к форме
-		// оригинала (gt6-original Behavior_Gun.java:267, EntityArrow_Material.java:177). Расхождение модели
-		// движка, отмеченное в 26.x-ветке (modifyDamage включал общий Sharpness-бонус), здесь отсутствует.
-		// Центр сохранён: оба вызывателя (Behavior_Gun, EntityArrow_Material) идут сюда.
+		// Branch 1.20.1: both halves of the 1.7.10 model are present — EnchantmentHelper.getDamageBonus(ItemStack, MobType)
+		// (EnchantmentHelper.java:164) and LivingEntity.getMobType() (LivingEntity.java:1850). This is a verbatim
+		// equivalent of func_152377_a(stack, getCreatureAttribute()), so the center's body is restored to the
+		// original's form (gt6-original Behavior_Gun.java:267, EntityArrow_Material.java:177). The engine-model
+		// discrepancy noted on the 26.x branch (modifyDamage folded in the general Sharpness bonus) is absent here.
+		// The center is kept: both callers (Behavior_Gun, EntityArrow_Material) go through it.
 		public static float getDamageBonusVsCreature(ItemStack aStack, Entity aTarget) {
 			if (aTarget == null || aStack == null || aStack.isEmpty()) return 0;
 			return aTarget instanceof LivingEntity ? EnchantmentHelper.getDamageBonus(aStack, ((LivingEntity)aTarget).getMobType()) : 0;
 		}
 
-		// Восстановлено 1:1 (gt6-original …/UT.java:2413-2427; в 26.x деградировало до no-op): список чар стека
-		// снова читается сырым — ItemStack.getEnchantmentTags() (ItemStack.java:549), запись разбирается
-		// движковыми хелперами (EnchantmentHelper.java:48-55). Отличие от оригинала ровно одно: id строковый,
-		// поэтому вместо Enchantment.enchantmentsList[short] — BuiltInRegistries.ENCHANTMENT.get(ResourceLocation).
-		// try/catch вокруг тела — как в оригинале.
+		// Restored 1:1 (gt6-original …/UT.java:2413-2427; on 26.x it degraded to a no-op): the stack's enchantment list
+		// is read raw again — ItemStack.getEnchantmentTags() (ItemStack.java:549), the entry is parsed by the
+		// engine's own helpers (EnchantmentHelper.java:48-55). Exactly one difference from the original: the id is a
+		// string, so instead of Enchantment.enchantmentsList[short] it is BuiltInRegistries.ENCHANTMENT.get(ResourceLocation).
+		// try/catch around the body — as in the original.
 		private static void applyBullshit(IBullshit aBullshitModifier, ItemStack aStack) {
 			if (aStack == null || aStack.isEmpty()) return;
 			net.minecraft.nbt.ListTag tList = aStack.getEnchantmentTags();
@@ -2374,8 +2375,8 @@ public class UT {
 			for (int i = 0; i < aStacks.length; i++) applyBullshit(aBullshitModifier, aStacks[i]);
 		}
 
-		// F8: 1.7.10 EntityLivingBase.getLastActiveItems() (снимок «в руках+броне», ItemStack[5]) — прямого метода в neo нет,
-		// НО реконструируется из getItemBySlot(EquipmentSlot) (MAINHAND + 4 брони), 1:1. Централизованный хелпер.
+		// F8: 1.7.10 EntityLivingBase.getLastActiveItems() (a "hands+armor" snapshot, ItemStack[5]) — there is no direct method in neo,
+		// BUT it is reconstructed from getItemBySlot(EquipmentSlot) (MAINHAND + 4 armor pieces), 1:1. Centralized helper.
 		public static ItemStack[] lastActiveItems(LivingEntity aEntity) {
 			if (aEntity == null) return new ItemStack[0];
 			return new ItemStack[] {
@@ -2388,7 +2389,7 @@ public class UT {
 		public static void applyBullshitA(LivingEntity aPlayer, Entity aEntity, ItemStack aStack) {
 			mBullshitIteratorA.mPlayer = aPlayer;
 			mBullshitIteratorA.mEntity = aEntity;
-			// F8: getLastActiveItems → lastActiveItems (реконструкция из getItemBySlot), armor-enchant эффекты восстановлены 1:1.
+			// F8: getLastActiveItems → lastActiveItems (reconstruction from getItemBySlot), armor-enchant effects restored 1:1.
 			if (aPlayer != null) applyArrayOfBullshit(mBullshitIteratorA, lastActiveItems(aPlayer));
 			if (aStack != null) applyBullshit(mBullshitIteratorA, aStack);
 		}
@@ -2396,7 +2397,7 @@ public class UT {
 		public static void applyBullshitB(LivingEntity aPlayer, Entity aEntity, ItemStack aStack) {
 			mBullshitIteratorB.mPlayer = aPlayer;
 			mBullshitIteratorB.mEntity = aEntity;
-			// F8: см. applyBullshitA — getLastActiveItems → lastActiveItems (реконструкция из getItemBySlot), 1:1.
+			// F8: see applyBullshitA — getLastActiveItems → lastActiveItems (reconstruction from getItemBySlot), 1:1.
 			if (aPlayer != null) applyArrayOfBullshit(mBullshitIteratorB, lastActiveItems(aPlayer));
 			if (aStack != null) applyBullshit(mBullshitIteratorB, aStack);
 		}
@@ -2409,7 +2410,7 @@ public class UT {
 			@Override
 			public void calculateModifier(Enchantment aEnchantment, int aLevel) {
 				// 1.7.10 func_151367_b (gt6-original …/recompSrc/…/Enchantment.java:182) = 1.20.1 doPostHurt
-				// (Enchantment.java:121) — виртуальный колбэк снова на месте, путь восстановлен 1:1.
+				// (Enchantment.java:121) — the virtual callback is back in place, the path is restored 1:1.
 				aEnchantment.doPostHurt(mPlayer, mEntity, aLevel);
 			}
 		}
@@ -2422,7 +2423,7 @@ public class UT {
 			@Override
 			public void calculateModifier(Enchantment aEnchantment, int aLevel) {
 				// 1.7.10 func_151368_a (gt6-original …/recompSrc/…/Enchantment.java:180) = 1.20.1 doPostAttack
-				// (Enchantment.java:118) — виртуальный колбэк снова на месте, путь восстановлен 1:1.
+				// (Enchantment.java:118) — the virtual callback is back in place, the path is restored 1:1.
 				aEnchantment.doPostAttack(mPlayer, mEntity, aLevel);
 			}
 		}
@@ -2652,11 +2653,11 @@ public class UT {
 		public static List<PlayedSound> sPlayedSounds = new ArrayListNoNulls<>();
 		public static List<SoundWithLocation> sSoundsToPlay = new ArrayListNoNulls<>();
 
-		/** F-sound (1:1 Mojang sound-flattening): легаси 1.7.10 SFX-строки → neo sound-id. КАЖДЫЙ neo-id сверен по
-		 *  neo-decompiled SoundEvents.java. neo-native строки (не в карте) проходят как есть. */
+		/** F-sound (1:1 Mojang sound-flattening): legacy 1.7.10 SFX strings → neo sound-id. EVERY neo-id verified against
+		 *  neo-decompiled SoundEvents.java. neo-native strings (not in the map) pass through as-is. */
 		private static final java.util.Map<String, String> SFX_LEGACY = new java.util.HashMap<>();
 		static {
-			SFX_LEGACY.put("random.chestopen", "block.chest.open");         SFX_LEGACY.put("random.chestclosed", "block.chest.close"); // сверено: SoundEvents.java:352,354
+			SFX_LEGACY.put("random.chestopen", "block.chest.open");         SFX_LEGACY.put("random.chestclosed", "block.chest.close"); // verified: SoundEvents.java:352,354
 			SFX_LEGACY.put("random.break", "entity.item.break");            SFX_LEGACY.put("random.anvil_use", "block.anvil.use");
 			SFX_LEGACY.put("random.anvil_break", "block.anvil.destroy");    SFX_LEGACY.put("random.anvil_land", "block.anvil.land");
 			SFX_LEGACY.put("random.click", "ui.button.click");              SFX_LEGACY.put("random.pop", "entity.item.pickup");
@@ -2678,17 +2679,17 @@ public class UT {
 		}
 		public static String neoSound(String aSound) {String r = SFX_LEGACY.get(aSound); return r != null ? r : aSound;}
 		
-		// ⛔ ГЕЙТ СТОРОНЫ ЖИВЁТ В ОДНОМ МЕСТЕ — в конечной перегрузке ниже. Прежде он был переписан в четырёх
-		// перегрузках подряд, и вызов отсекался раньше, чем доходил до места, где потеря называется: сторож
-		// молчал, а звук пропадал. Остальные перегрузки только приводят аргументы к общему виду.
+		// ⛔ THE SIDE GATE LIVES IN ONE PLACE — in the final overload below. Previously it was rewritten across four
+		// overloads in a row, and the call was cut off before it reached the place where the loss gets named: the guard
+		// stayed silent, and the sound just vanished. The other overloads only bring the arguments to a common shape.
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume) {
 			Player tPlayer = GT_API.api_proxy.getThePlayer();
-			if (tPlayer == null) {namePlaceOfLostSound(aSound, "клиентский play() без игрока (СЕРВЕРНЫЙ код?)"); return F;}
+			if (tPlayer == null) {namePlaceOfLostSound(aSound, "client play() with no player (SERVER code?)"); return F;}
 			return play(aSound, aTimeUntilNextSound, aVolume, tPlayer);
 		}
 		
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, Entity aEntity) {
-			if (aEntity == null) {namePlaceOfLostSound(aSound, "клиентский play() без сущности"); return F;}
+			if (aEntity == null) {namePlaceOfLostSound(aSound, "client play() with no entity"); return F;}
 			return play(aSound, aTimeUntilNextSound, aVolume, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ()));
 		}
 		
@@ -2705,35 +2706,35 @@ public class UT {
 			return play(aSound, aTimeUntilNextSound, aVolume, aPitch, new BlockPos(aX, aY, aZ));
 		}
 		
-		/** Места, о потере звука в которых уже сказано — чтобы предупреждение не повторялось каждый тик. */
+		/** Places where a sound loss has already been reported — so the warning does not repeat every tick. */
 		private static final java.util.Set<String> sMutedPlaces = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
-		/** Сколько РАЗНЫХ мест потери звука названо за сеанс — для судьи сторожа (и для приёмки: число должно убывать). */
+		/** How many DIFFERENT sound-loss places have been named this session — for the guard's judge (and for acceptance: the number must decrease). */
 		public static int lostPlacesCount() {return sMutedPlaces.size();}
 
-		/** Называет МЕСТО, где звук потерян (один раз на место). Молчаливая потеря — худшая часть дефекта:
-		 *  её не видно ни в логе, ни в судье, и находится она только жалобой игрока (BUG-113). */
+		/** Names the PLACE where a sound was lost (once per place). A silent loss is the worst part of a defect:
+		 *  it is invisible both in the log and to the judge, and is only found by a player's complaint (BUG-113). */
 		private static void namePlaceOfLostSound(String aSound, String aWhy) {
 			try {
 				for (StackTraceElement tAt : Thread.currentThread().getStackTrace()) {
 					String tCls = tAt.getClassName();
 					if (tCls.startsWith("gregapi.util.UT") || tCls.startsWith("java.") || tCls.startsWith("jdk.")) continue;
 					String tPlace = tCls + ":" + tAt.getLineNumber();
-					if (sMutedPlaces.add(tPlace)) ERR.println("[GT6-SOUND] ЗВУК ПОТЕРЯН: " + aSound + " — " + aWhy + " @" + tPlace + " (чинится переводом на send = звук места, либо forActor = звук действия)");
+					if (sMutedPlaces.add(tPlace)) ERR.println("[GT6-SOUND] SOUND LOST: " + aSound + " — " + aWhy + " @" + tPlace + " (fix: switch to send = sound of a place, or forActor = sound of an action)");
 					return;
 				}
-			} catch (Throwable e) {/* называние места не должно мешать игре */}
+			} catch (Throwable e) {/* naming the place must not interfere with the game */}
 		}
 
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, float aPitch, BlockPos aCoords) {
-			// ⛔ КЛИЕНТСКИЙ ПРИМИТИВ. В 1.7.10 звук можно было играть отсюда откуда угодно: тот же код исполнялся
-			// и на клиенте, и на сервере, и клиент играл сам. В neo носители разъехались — часть кода стала
-			// ТОЛЬКО серверной (Item.mineBlock, hitEntity, useOn), и вызов отсюда пропадал МОЛЧА (BUG-113: звук
-			// ключа при разрушении). Молчание — худшая часть дефекта: он не виден ни в логе, ни в судье.
-			// Теперь центр называет место потери сам, один раз на место: чинить — переводом на send (звук места)
-			// или forActor (звук действия), которые доставляют пакет с любой стороны.
+			// ⛔ CLIENT PRIMITIVE. In 1.7.10 a sound could be played from here from anywhere: the same code executed
+			// on both client and server, and the client played it itself. In neo the carriers diverged — part of the code became
+			// SERVER-ONLY (Item.mineBlock, hitEntity, useOn), and a call from here would disappear SILENTLY (BUG-113: the
+			// wrench sound on breaking). Silence is the worst part of the defect: it is invisible both in the log and to the judge.
+			// Now the center names the loss place itself, once per place: fix it by switching to send (place sound)
+			// or forActor (action sound), which deliver the packet from either side.
 			if (!CODE_CLIENT || net.minecraftforge.fml.util.thread.EffectiveSide.get().isServer()) {
-				if (Code.stringValid(aSound)) namePlaceOfLostSound(aSound, "клиентский play() из СЕРВЕРНОГО кода");
+				if (Code.stringValid(aSound)) namePlaceOfLostSound(aSound, "client play() from SERVER code");
 				return F;
 			}
 			Player aPlayer = GT_API.api_proxy.getThePlayer();
@@ -2742,17 +2743,17 @@ public class UT {
 			return T;
 		}
 		
-		/** BUG-113: звук ДЕЙСТВУЮЩЕГО инструмента. В 1.7.10 его играл клиентский {@link #play}, потому что
-		 *  {@code onBlockDestroyed}/{@code onLeftClickEntity} звались на ОБЕИХ сторонах. В neo их носители
-		 *  ({@code Item.mineBlock}, {@code hitEntity}) исполняются ТОЛЬКО на сервере, где {@code play} по
-		 *  построению возвращает F — звук молча пропадал (звук поворота ключом жил, звук того же ключа при
-		 *  разрушении блока — нет). Приём выражен один раз здесь: на клиенте играем как прежде, на сервере
-		 *  шлём пакет ТОМУ, кто действует (1:1 по слышимости: в 1.7.10 звук слышал только он). */
+		/** BUG-113: sound of the ACTING tool. In 1.7.10 it was played by the client {@link #play}, because
+		 *  {@code onBlockDestroyed}/{@code onLeftClickEntity} were called on BOTH sides. In neo their carriers
+		 *  ({@code Item.mineBlock}, {@code hitEntity}) execute ONLY on the server, where {@code play} by
+		 *  construction returns F — the sound silently vanished (the wrench-turn sound lived, the sound of the same wrench
+		 *  breaking a block — did not). The approach is expressed once here: on the client we play as before, on the server we
+		 *  send the packet TO the one acting (1:1 audibility: in 1.7.10 only they heard the sound). */
 		public static boolean forActor(String aSound, int aTimeUntilNextSound, float aVolume, net.minecraft.world.entity.Entity aPlayer, int aX, int aY, int aZ) {
 			if (Code.stringInvalid(aSound) || aPlayer == null || aPlayer.level() == null) return F;
-			// ⛔ Клиентская половина двустороннего вызова обязана МОЛЧАТЬ: иначе на действие, чей код идёт на обеих
-			// сторонах, клиент сыграет сам И получит пакет — звук раздвоится. Звук действия рождается один раз,
-			// на сервере, и адресуется тому, кто действует (в 1.7.10 его слышал ровно он).
+			// ⛔ The client half of a two-sided call must STAY SILENT: otherwise, for an action whose code runs on both
+			// sides, the client would play it itself AND receive the packet — the sound would double up. An action sound is born once,
+			// on the server, and is addressed to the one acting (in 1.7.10 only they heard it).
 			if (aPlayer.level().isClientSide()) return F;
 			if (!(aPlayer instanceof ServerPlayer)) return F;
 			NW_API.sendToPlayer(new PacketSound(aSound, aVolume, SFX.RANDOM_PITCH, new BlockPos(aX, aY, aZ)), (ServerPlayer)aPlayer);
@@ -2777,11 +2778,11 @@ public class UT {
 		public static boolean send(String aSound, Level aWorld, BlockPos aCoords) {
 			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aWorld, aCoords);
 		}
-		// F-sound: neo SoundType.getBreakSound()/getStepSound()/… возвращают SoundEvent (record с компонентом
-		// location:ResourceLocation), не легаси-строку 1.7.10 (aBlock.stepSound.getBreakSound() отдавал "dig.stone").
-		// Центр String-based (SFX-константы вида "random.click") — извлекаем движковый ID через
-		// SoundEvent.location().toString() (SoundEvent.java:15, record-компонент; neo несёт корректный neo-путь)
-		// и делегируем в String-перегрузку. Мост под сменённый движком тип звука, не улучшение.
+		// F-sound: neo SoundType.getBreakSound()/getStepSound()/… return SoundEvent (a record with a
+		// location:ResourceLocation component), not a legacy 1.7.10 string (aBlock.stepSound.getBreakSound() used to give "dig.stone").
+		// The center is String-based (SFX constants like "random.click") — extract the engine ID via
+		// SoundEvent.location().toString() (SoundEvent.java:15, record component; neo carries the correct neo path)
+		// and delegate to the String overload. A bridge for the engine-changed sound type, not an improvement.
 		public static boolean send(net.minecraft.sounds.SoundEvent aSound, Level aWorld, BlockPos aCoords) {
 			return aSound == null ? F : send(aSound.getLocation().toString(), aWorld, aCoords);
 		}
@@ -2819,10 +2820,10 @@ public class UT {
 			return send(aSound, aVolume, aPitch, aWorld, new BlockPos(aX, aY, aZ));
 		}
 		public static boolean send(String aSound, float aVolume, float aPitch, Level aWorld, BlockPos aCoords) {
-			// СЕРВЕРНЫЙ приём «звук места». Симметрично play(): вызов не со своей стороны — это потеря звука,
-			// и центр называет место сам, вместо того чтобы промолчать.
+			// SERVER-SIDE "place sound" reception. Symmetric to play(): a call from the wrong side is a sound loss,
+			// and the center names the place itself instead of staying silent.
 			if (Code.stringInvalid(aSound) || aWorld == null || aWorld.isClientSide()) {
-				if (Code.stringValid(aSound) && aWorld != null) namePlaceOfLostSound(aSound, "send() из КЛИЕНТСКОГО кода");
+				if (Code.stringValid(aSound) && aWorld != null) namePlaceOfLostSound(aSound, "send() from CLIENT code");
 				return F;
 			}
 			NW_API.sendToAllPlayersInRange(new PacketSound(aSound, aVolume, aPitch, aCoords), aWorld, aCoords);
@@ -2873,12 +2874,12 @@ public class UT {
 				PlayedSound tSound = new PlayedSound(mSound, mX, mY, mZ, mTimeUntilNextSound);
 				if (!sPlayedSounds.contains(tSound)) try {
 					sPlayedSounds.add(tSound);
-					// F-sound: neo Level.playSound(double,double,double,String,...) удалён — звук адресуется
-					// SoundEvent из реестра (Registry.getValue(ResourceLocation), Registry.java:69), проигрывается
-					// Level.playLocalSound(...,SoundEvent,SoundSource,...) (Level.java:463). Резолвим mSound как
-					// neo sound-id; neo-native строки играют сразу.
-					// F-sound (1:1): легаси 1.7.10 SFX-строки → neo sound-id через neoSound (карта SFX_LEGACY, сверена по SoundEvents.java);
-					// neo-native строки проходят как есть. Раньше легаси не резолвились → все GT6-звуки молчали. Восстановлено.
+					// F-sound: neo Level.playSound(double,double,double,String,...) was removed — a sound is addressed via a
+					// SoundEvent from the registry (Registry.getValue(ResourceLocation), Registry.java:69), played with
+					// Level.playLocalSound(...,SoundEvent,SoundSource,...) (Level.java:463). Resolve mSound as a
+					// neo sound-id; neo-native strings play right away.
+					// F-sound (1:1): legacy 1.7.10 SFX strings → neo sound-id via neoSound (SFX_LEGACY map, verified against SoundEvents.java);
+					// neo-native strings pass through as-is. Previously legacy strings were not resolved → all GT6 sounds were silent. Restored.
 					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.get(new net.minecraft.resources.ResourceLocation(neoSound(mSound)));
 					if (tEvent != null) mWorld.playLocalSound(mX+0.5, mY+0.5, mZ+0.5, tEvent, net.minecraft.sounds.SoundSource.BLOCKS, mVolume, mPitch, T);
 				} catch(Throwable e) {/**/}
@@ -2887,8 +2888,8 @@ public class UT {
 	}
 	
 	public static class Entities {
-		/** было {@code aEntity.getEquipmentInSlot(aIndex)} (1.7.10 EntityLivingBase, удалён) — neo getItemBySlot(EquipmentSlot).
-		 *  Индексы 1.7.10: 0=held→MAINHAND, 1→FEET, 2→LEGS, 3→CHEST, 4→HEAD (сверено neo EquipmentSlot.java:13-18 filterFlag 1-4). */
+		/** was {@code aEntity.getEquipmentInSlot(aIndex)} (1.7.10 EntityLivingBase, removed) — neo getItemBySlot(EquipmentSlot).
+		 *  1.7.10 indices: 0=held→MAINHAND, 1→FEET, 2→LEGS, 3→CHEST, 4→HEAD (verified against neo EquipmentSlot.java:13-18 filterFlag 1-4). */
 		public static ItemStack getEquipmentInSlot(LivingEntity aEntity, int aIndex) {
 			return aEntity.getItemBySlot(aIndex <= 0 ? net.minecraft.world.entity.EquipmentSlot.MAINHAND : aIndex == 1 ? net.minecraft.world.entity.EquipmentSlot.FEET : aIndex == 2 ? net.minecraft.world.entity.EquipmentSlot.LEGS : aIndex == 3 ? net.minecraft.world.entity.EquipmentSlot.CHEST : net.minecraft.world.entity.EquipmentSlot.HEAD);
 		}
@@ -2995,10 +2996,10 @@ public class UT {
 		public static boolean isWereCreature(LivingEntity aEntity) {
 			if (aEntity instanceof Player) {
 				if ("Bear989Sr".equalsIgnoreCase(aEntity.getName().getString())) return T;
-				// F10 foreign-gated (Werewolves-мод отсутствует, честная деградация F): 1.7.10 Entity.getExtendedProperties("WerewolfPlayer")
-				// (IExtendedEntityProperties) удалён -> neo AttachmentType-модель (иная регистрация). Интеграция мода
-				// Werewolves (reflection getWerewolf) отложена: детекция игрока-оборотня недоступна без порта мода +
-				// регистрации AttachmentType. Возвращаем F (мод не загружен, API удалён) — честная деградация, не тихий стаб.
+				// F10 foreign-gated (the Werewolves mod is absent, honest degradation to F): 1.7.10 Entity.getExtendedProperties("WerewolfPlayer")
+				// (IExtendedEntityProperties) was removed -> neo AttachmentType model (different registration). Integration of the
+				// Werewolves mod (reflection getWerewolf) is deferred: werewolf-player detection is unavailable without porting the mod +
+				// registering an AttachmentType. Returning F (mod not loaded, API removed) — honest degradation, not a silent stub.
 				return F;
 			}
 			if (aEntity.getClass().getName().indexOf(".") < 0) return F;
@@ -3024,9 +3025,9 @@ public class UT {
 				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentFishing) if (Enchantment_Radioactivity.INSTANCE.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
 				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentArmors ) if (Enchantment_Radioactivity.INSTANCE.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
 			}
-			// F8 (1:1): было EnchantmentHelper.getEnchantmentLevel(Enchantment_Radioactivity.INSTANCE.effectId, aStack) —
-			// вклад НАДЕТОЙ Radioactivity-чары (в дополнение к GT6-материалу выше). Enchantment_Radioactivity теперь
-			// registry-driven (KEY, забутстрапена EnchantsGT6) → ported UT.NBT.getEnchantmentLevel(KEY, стек) читает уровень.
+			// F8 (1:1): was EnchantmentHelper.getEnchantmentLevel(Enchantment_Radioactivity.INSTANCE.effectId, aStack) —
+			// the contribution of a WORN Radioactivity charm (in addition to the GT6 material above). Enchantment_Radioactivity is now
+			// registry-driven (KEY, bootstrapped by EnchantsGT6) → the ported UT.NBT.getEnchantmentLevel(KEY, stack) reads the level.
 			rLevel = Math.max(rLevel, NBT.getEnchantmentLevel(Enchantment_Radioactivity.INSTANCE, aStack));
 			return Code.bindInt(rLevel);
 		}
@@ -3094,9 +3095,9 @@ public class UT {
 		}
 		
 		public static boolean applyRadioactivity(Entity aEntity, int aLevel, int aAmountOfItems) {
-			// Ветка 1.20.1: MobType/getMobType() на месте (MobType.java:5-6, LivingEntity.java:1850) — это
-			// прямой эквивалент 1.7.10 EnumCreatureAttribute/getCreatureAttribute(), поэтому восстановлена
-			// форма оригинала дословно (gt6-original UT.java:3034).
+			// Branch 1.20.1: MobType/getMobType() are present (MobType.java:5-6, LivingEntity.java:1850) — this is a
+			// direct equivalent of the 1.7.10 EnumCreatureAttribute/getCreatureAttribute(), so the original's
+			// form is restored verbatim (gt6-original UT.java:3034).
 			if (aLevel > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && ((LivingEntity)aEntity).getMobType() != net.minecraft.world.entity.MobType.UNDEAD && ((LivingEntity)aEntity).getMobType() != net.minecraft.world.entity.MobType.ARTHROPOD && !isWearingFullRadioHazmat(((LivingEntity)aEntity))) {
 				
 				EntityFoodTracker tTracker = EntityFoodTracker.get(aEntity);
@@ -3118,22 +3119,22 @@ public class UT {
 			return F;
 		}
 		
-		// F8: числовые id 1.7.10 (см. switch ниже) не имеют аналога в neo — Potion/MobEffect больше не
-		// адресуются static int-полем (сверено `gregtech6/build/tmp/recompSrc/net/minecraft/potion/Potion.java`
+		// F8: 1.7.10 numeric ids (see switch below) have no counterpart in neo — Potion/MobEffect are no longer
+		// addressed by a static int field (verified against `gregtech6/build/tmp/recompSrc/net/minecraft/potion/Potion.java`
 		// — 1=moveSpeed, 2=moveSlowdown, 3=digSpeed, 4=digSlowdown, 5=damageBoost, 6=heal, 7=harm, 8=jump,
 		// 9=confusion, 10=regeneration, 11=resistance, 12=fireResistance, 13=waterBreathing, 14=invisibility,
 		// 15=blindness, 16=nightVision, 17=hunger, 18=weakness, 19=poison, 20=wither, 22=absorption
-		// (field_76444_x), 23=saturation (field_76443_y)). Восстановлен маппинг на реальные neo Holder-
-		// константы (`neo-decompiled/.../MobEffects.java`), RegistryAccess не нужен — это заранее известные
-		// ВАНИЛЬНЫЕ Holder, объявленные `static final` в самом движке. R8-доработка (GPT-переревизия):
-		// набор id — полный аудит по ФАКТУ использования в GT6 (не по памяти) — `int...aPotionEffects` во
-		// всех `new FoodStat(...)`/`new FoodStatDrink(...)` (`gregtech/items/MultiItemFood.java`,
-		// `MultiItemCans.java`, `gregtech/loaders/a/Loader_Fluids.java` — все 3 файла, создающие FoodStat,
-		// grep по дереву), `.addEffectBathing/addEffectBreathing(int,...)` (`gregtech/loaders/a/
-		// Loader_Blocks.java`) и `UT.NBT.make("id", MobEffect.xxx.id,...)` (`gregapi/recipes/maps/
-		// RecipeMapBath.java`, читается назад через `GT_API_Proxy.java:1128`) — все текут в этот же
-		// int-канал `applyPotion(Entity,int,...)`. id 21 (healthBoost) в neo есть (`MobEffects.
-		// HEALTH_BOOST`), но GT6 нигде не использует (grep=0) — не добавлен (не выдумывать неиспользуемое).
+		// (field_76444_x), 23=saturation (field_76443_y)). The mapping to real neo Holder
+		// constants (`neo-decompiled/.../MobEffects.java`) has been restored, RegistryAccess is not needed — these are known-in-advance
+		// VANILLA Holders, declared `static final` in the engine itself. R8 revision (GPT re-review):
+		// the id set is a full audit by ACTUAL use in GT6 (not from memory) — `int...aPotionEffects` in
+		// every `new FoodStat(...)`/`new FoodStatDrink(...)` (`gregtech/items/MultiItemFood.java`,
+		// `MultiItemCans.java`, `gregtech/loaders/a/Loader_Fluids.java` — all 3 files that create a FoodStat,
+		// grepped across the tree), `.addEffectBathing/addEffectBreathing(int,...)` (`gregtech/loaders/a/
+		// Loader_Blocks.java`) and `UT.NBT.make("id", MobEffect.xxx.id,...)` (`gregapi/recipes/maps/
+		// RecipeMapBath.java`, read back via `GT_API_Proxy.java:1128`) — all flow into this same
+		// int channel `applyPotion(Entity,int,...)`. id 21 (healthBoost) exists in neo (`MobEffects.
+		// HEALTH_BOOST`), but GT6 does not use it anywhere (grep=0) — not added (do not invent the unused).
 		private static final Map<Integer, MobEffect> VANILLA_POTION_IDS = new HashMap<>();
 		static {
 			VANILLA_POTION_IDS.put( 1, MobEffects.MOVEMENT_SPEED);            // moveSpeed        — MultiItemFood.java:565, Loader_Fluids.java:247
@@ -3160,10 +3161,10 @@ public class UT {
 			VANILLA_POTION_IDS.put(23, MobEffects.SATURATION);       // saturation (field_76443_y) — MultiItemFood.java:938 (Pill_Cure_All)
 		}
 
-		// F8: GT6-внутренний id-простор зелий (== 1.7.10 Potion.X.id). neo MobEffects.X — это MobEffect без
-		// числового `.id`, но GT сериализует id в NBT ("gt.effects"→"id") и читает обратно через applyPotion(int)→
-		// VANILLA_POTION_IDS. Значит запись обязана писать те же ключи карты выше. Единый источник — здесь, не россыпь
-		// литералов по потребителям (RecipeMapBath NBT-запись, EntityFoodTracker id-overload). Значения — ключи карты.
+		// F8: GT6's internal potion id space (== 1.7.10 Potion.X.id). neo MobEffects.X is a MobEffect without
+		// a numeric `.id`, but GT serializes the id into NBT ("gt.effects"→"id") and reads it back via applyPotion(int)→
+		// VANILLA_POTION_IDS. So the writer must write the same keys as the map above. Single source — here, not scattered
+		// literals across consumers (RecipeMapBath NBT write, EntityFoodTracker id overload). Values are the map's keys.
 		public static final int
 			  POTID_MOVESPEED      =  1, POTID_MOVESLOWDOWN   =  2, POTID_DIGSPEED       =  3, POTID_DIGSLOWDOWN    =  4
 			, POTID_DAMAGEBOOST    =  5, POTID_HEAL           =  6, POTID_HARM           =  7, POTID_JUMP           =  8
@@ -3172,17 +3173,17 @@ public class UT {
 			, POTID_HUNGER         = 17, POTID_WEAKNESS       = 18, POTID_POISON         = 19, POTID_WITHER         = 20
 			, POTID_ABSORPTION     = 22, POTID_SATURATION     = 23;
 
-		/** BUG-090: привязка НЕванильного id к Holder в ту же карту — механизм 1.7.10 «real IDs are to be set
-		 *  on API postInit» (`CS.java:1690`): PotionsGT.ID_* проставляются в GT_API.onModPostInit2Deferred, id
-		 *  GT6-собственных эффектов (MobEffectsGT) идут этим же путём и резолвятся тем же applyPotion(int).
-		 *  Карта остаётся единственным местом конверсии id→Holder на весь мод. */
+		/** BUG-090: binding a NON-vanilla id to a Holder in this same map — the 1.7.10 mechanism "real IDs are to be set
+		 *  on API postInit" (`CS.java:1690`): PotionsGT.ID_* are set in GT_API.onModPostInit2Deferred, the ids of
+		 *  GT6's own effects (MobEffectsGT) go through this same path and are resolved by the same applyPotion(int).
+		 *  The map remains the single place of id→Holder conversion for the whole mod. */
 		public static void bindPotionID(int aID, MobEffect aPotion) {
 			if (aID >= 0 && aPotion != null) VANILLA_POTION_IDS.put(aID, aPotion);
 		}
 
-		/** id-адресуемый активный эффект: vanilla id → Holder через VANILLA_POTION_IDS, дальше neo getEffect(Holder).
-		 *  Кастом-id чужих модов (не в карте) → null — 1:1 деградация «зелье не зарегистрировано» (как оригинал при
-		 *  отсутствии мода: тихий пропуск). Централизует бывший `getEffect(MobEffect.potionTypes[id])`. */
+		/** id-addressed active effect: vanilla id → Holder via VANILLA_POTION_IDS, then neo getEffect(Holder).
+		 *  Custom ids of foreign mods (not in the map) → null — 1:1 degradation "potion not registered" (as the original did when
+		 *  the mod was absent: silent skip). Centralizes the former `getEffect(MobEffect.potionTypes[id])`. */
 		public static MobEffectInstance getEffectByID(LivingEntity aEntity, int aID) {
 			MobEffect tPotion = VANILLA_POTION_IDS.get(aID);
 			return tPotion == null ? null : aEntity.getEffect(tPotion);
@@ -3202,31 +3203,31 @@ public class UT {
 				case -11: aID = PotionsGT.ID_STICKY     ; break;
 			}
 			if (aID < 0) return F;
-			// vanilla id (1-20,22,23) → реальный MobEffect из VANILLA_POTION_IDS выше, полный
-			// аудит по факту использования (см. javadoc карты) — деградации для них НЕТ.
-			// 1:1 с оригиналом (не долг): ID этих эффектов и в 1.7.10 приходили ИЗ ЧУЖИХ МОДОВ на postInit —
+			// vanilla id (1-20,22,23) -> the real MobEffect from VANILLA_POTION_IDS above, full
+			// audit by actual usage (see the map's javadoc) — there is NO degradation for them.
+			// 1:1 with the original (not a debt): the IDs of these effects came FROM FOREIGN MODS at postInit in 1.7.10 too —
 			// gregtech6/src/main/java/gregapi/GT_API.java:776-783 (ic2.api.info.Info.POTION_RADIATION.id,
-			// enviromine.EnviroPotion.dehydration/frostbite/heatstroke/hypothermia/insanity.id); без этих модов
-			// значения оставались отрицательными и оригинал так же тихо пропускал эффект. Речь о кастом-зельях
-			// чужих модов PotionsGT.ID_RADIATION/ID_HYPOTHERMIA/ID_HEATSTROKE/ID_FROSTBITE/ID_DEHYDRATION/
-			// ID_INSANITY/ID_FLAMMABLE/ID_SLIPPERY/ID_CONDUCTIVE/ID_STICKY (`gregapi/data/CS.java`, класс
-			// PotionsGT, IC2/EnviroMine/Immersive Engineering). BUG-090: пять из них (flammable/slippery/
-			// conductive/sticky/insanity) регистрирует сам GT6 — `gregapi.potion.MobEffectsGT` («функция,
-			// не авторство»: модов-владельцев для 26.1.2 нет), их id встают в карту через bindPotionID на
-			// postInit (GT_API.onModPostInit2Deferred) и резолвятся здесь как ванильные. Остальные пять
-			// ОСТАЮТСЯ отрицательными намеренно: RADIATION/DEHYDRATION — Грегов фолбэк-дизайн без IC2/
-			// EnviroMine (wither/poison/hunger — ветки `PotionsGT.ID_* >= 0 ? ... :` выше и в
-			// EntityFoodTracker) и есть каноническое поведение; HYPOTHERMIA/HEATSTROKE/FROSTBITE GT6
-			// никогда не накладывает (только снятие Pill_Cure_All — no-op, 1:1 с «мод не установлен»).
-			// Для незарегистрированных id `VANILLA_POTION_IDS.get(aID)` вернёт null — тихий пропуск,
-			// как оригинал при `aID < 0`.
+			// enviromine.EnviroPotion.dehydration/frostbite/heatstroke/hypothermia/insanity.id); without those mods
+			// the values stayed negative and the original just as silently skipped the effect. This concerns custom potions
+			// of foreign mods PotionsGT.ID_RADIATION/ID_HYPOTHERMIA/ID_HEATSTROKE/ID_FROSTBITE/ID_DEHYDRATION/
+			// ID_INSANITY/ID_FLAMMABLE/ID_SLIPPERY/ID_CONDUCTIVE/ID_STICKY (`gregapi/data/CS.java`, class
+			// PotionsGT, IC2/EnviroMine/Immersive Engineering). BUG-090: five of them (flammable/slippery/
+			// conductive/sticky/insanity) are registered by GT6 itself — `gregapi.potion.MobEffectsGT` ("function,
+			// not authorship": there are no owner mods for 26.1.2), their ids get placed into the map via bindPotionID at
+			// postInit (GT_API.onModPostInit2Deferred) and are resolved here as vanilla. The other five
+			// REMAIN negative intentionally: RADIATION/DEHYDRATION — Gregorius's fallback design without IC2/
+			// EnviroMine (wither/poison/hunger — the `PotionsGT.ID_* >= 0 ? ... :` branches above and in
+			// EntityFoodTracker) is the canonical behavior; HYPOTHERMIA/HEATSTROKE/FROSTBITE GT6
+			// never applies (only removal via Pill_Cure_All — no-op, 1:1 with "mod not installed").
+			// For unregistered ids `VANILLA_POTION_IDS.get(aID)` returns null — a silent skip,
+			// same as the original for `aID < 0`.
 			MobEffect tPotion = VANILLA_POTION_IDS.get(aID);
 			return tPotion != null && applyPotion(aEntity, tPotion, aDuration, aLevel, aInvisibleParticles);
 		}
-		/** Замена 1.7.10 {@code Potion.getLiquidColor()}: цвет зелья по 1.7.10 vanilla-id через {@link MobEffect#getColor()}
-		 *  из той же карты {@link #VANILLA_POTION_IDS} (конверсия с движком централизована в одном месте). 1.7.10
-		 *  {@code Potion(id, isBad, color)} — тот же {@code color} служил liquidColor ⇒ neo effect-color = faithful 1:1.
-		 *  Неизвестный/кастом-id (нет в карте) ⇒ 0 (как оригинал при отсутствии зелья). */
+		/** Replacement for 1.7.10 {@code Potion.getLiquidColor()}: potion color by 1.7.10 vanilla id via {@link MobEffect#getColor()}
+		 *  from the same {@link #VANILLA_POTION_IDS} map (conversion with the engine centralized in one place). 1.7.10
+		 *  {@code Potion(id, isBad, color)} — the same {@code color} served as liquidColor ⇒ neo effect-color = faithful 1:1.
+		 *  Unknown/custom id (not in the map) ⇒ 0 (as the original did when the potion was absent). */
 		public static int potionColor(int aID) {
 			MobEffect tPotion = VANILLA_POTION_IDS.get(aID);
 			return tPotion == null ? 0 : tPotion.getColor();
@@ -3358,7 +3359,7 @@ public class UT {
 			if (hasInfiniteItems(aPlayer)) return T;
 			ItemStack aStack = aPlayer.getInventory().getItem(aPlayer.getInventory().selected);
 			if (ST.invalid(aStack)) return F;
-			if (aStack.getCount() != NEI_INFINITE) {aStack.setCount(aStack.getCount()-1); if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().selected, ST.nn(NI));} // F15-граница: setItem(null) на NonNullList кидает NPE
+			if (aStack.getCount() != NEI_INFINITE) {aStack.setCount(aStack.getCount()-1); if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().selected, ST.nn(NI));} // F15 border: setItem(null) on a NonNullList throws NPE
 			ST.give(aPlayer, ST.container(aStack, T), F);
 			return T;
 		}
@@ -3574,13 +3575,13 @@ public class UT {
 	
 	/**
 	 * F-item-use: 1.7.10 {@code ItemStack.tryPlaceItemIntoWorld(EntityPlayer, World, int, int, int, int,
-	 * float, float, float)} — метод физически удалён движком; neo заменяет его на
-	 * {@code Item.useOn(UseOnContext)} -> {@code InteractionResult} (сверено
-	 * neo-decompiled/net/minecraft/world/item/Item.java:198, вызывается через
+	 * float, float, float)} — the method was physically removed by the engine; neo replaces it with
+	 * {@code Item.useOn(UseOnContext)} -> {@code InteractionResult} (verified against
+	 * neo-decompiled/net/minecraft/world/item/Item.java:198, called via
 	 * neo-decompiled/net/minecraft/world/item/ItemStack.java:362 {@code ItemStack.useOn(UseOnContext)}).
-	 * Централизованный переходник (ОДНО место, без россыпи) — собирает {@code BlockHitResult}/
-	 * {@code UseOnContext} и переводит {@code InteractionResult} обратно в старый {@code boolean}-сигнал успеха.
-	 * Верифицированные neo-символы:
+	 * Centralized adapter (ONE place, no scattering) — assembles {@code BlockHitResult}/
+	 * {@code UseOnContext} and translates {@code InteractionResult} back to the old {@code boolean} success signal.
+	 * Verified neo symbols:
 	 *  - {@code BlockHitResult(Vec3, Direction, BlockPos, boolean)}: neo-decompiled/net/minecraft/world/phys/BlockHitResult.java:17
 	 *  - {@code Vec3(double, double, double)}: neo-decompiled/net/minecraft/world/phys/Vec3.java:65
 	 *  - {@code BlockPos(int, int, int)}: neo-decompiled/net/minecraft/core/BlockPos.java:59
@@ -3589,7 +3590,7 @@ public class UT {
 	 *  - {@code ItemStack.useOn(UseOnContext)}: neo-decompiled/net/minecraft/world/item/ItemStack.java:362
 	 *  - {@code InteractionResult.consumesAction()}: neo-decompiled/net/minecraft/world/InteractionResult.java:18
 	 *  - {@code CS.FORGE_DIR}: gregapi/data/CS.java:660
-	 * @return успешно ли было размещение (1:1 со старым {@code boolean}-возвратом).
+	 * @return whether the placement succeeded (1:1 with the old {@code boolean} return).
 	 */
 	public static boolean tryPlaceItemIntoWorld(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		BlockHitResult tHit = new BlockHitResult(new Vec3(aX+aHitX, aY+aHitY, aZ+aHitZ), FORGE_DIR[aSide], new BlockPos(aX, aY, aZ), F);

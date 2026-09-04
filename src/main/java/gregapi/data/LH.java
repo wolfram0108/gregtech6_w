@@ -157,9 +157,9 @@ public class LH {
 	, TOOL_TO_REMOVE_SHOVEL = "gt.lang.use.shovel.to.empty"
 	, TOOL_TO_CHANGE_DESIGN_CHISEL = "gt.lang.use.chisel.to.switch.design"
 	, TOOL_TO_HARVEST = "gt.lang.tool.to.harvest"
-	// Требуемый ТИР добычи отдельной строкой — нужен витрине тултип-модов (Jade): формат оригинала печатает
-	// уровень только начиная с 2 и всегда вместе с названием инструмента, а витрине нужен один лишь тир.
-	// Ключ живёт здесь, как и все остальные строки мода: россыпь строковых литералов по плагинам — не наш путь.
+	// The required harvest TIER as a separate string — needed by tooltip-mod displays (Jade): the original's format
+	// prints the level only from 2 upward, and always together with the tool name, while a display needs the tier alone.
+	// The key lives here, like all the mod's other strings: string literals scattered across plugins is not our path.
 	, TOOL_HARVEST_TIER = "gt.lang.tooltip.harvest.level"
 	, TOOL_TO_TAKE_PINCERS = "gt.lang.use.pincers.to.take"
 	, TOOL_HINT_USE_SNEAK = "gt.lang.tool.hint.use.sneak"
@@ -274,19 +274,47 @@ public class LH {
 	public static final String add(String aKey, String aEnglish) {LanguageHandler.add(aKey, aEnglish); return aKey;}
 	public static final String get(String aKey) {return LanguageHandler.translate(aKey);}
 	public static final String get(String aKey, String aDefault) {return LanguageHandler.translate(aKey, aDefault);}
+
+	private static final java.util.Map<String, String> TOOLTIP_KEYS = new java.util.concurrent.ConcurrentHashMap<>();
+
+	/**
+	 * Tooltip text that GT6 writes as a literal where it is used instead of as a key in this class.
+	 * The key is derived from the text, so the English keeps its single home at the point of use and
+	 * this class does not gain a second copy of every line. Untranslated text returns unchanged.
+	 */
+	public static final String tt(String aEnglish) {
+		String tKey = TOOLTIP_KEYS.get(aEnglish);
+		if (tKey == null) {tKey = ttKey(aEnglish); TOOLTIP_KEYS.put(aEnglish, tKey);}
+		return LanguageHandler.translate(tKey, aEnglish);
+	}
+
+	/** Hashes the exact text, so leading and trailing spaces stay part of the identity of the line. */
+	public static final String ttKey(String aEnglish) {
+		byte[] tBytes = aEnglish.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+		int tHash = 0x811C9DC5;
+		for (byte tByte : tBytes) {tHash ^= (tByte & 0xFF); tHash *= 0x01000193;}
+		StringBuilder tSlug = new StringBuilder();
+		for (int i = 0; i < aEnglish.length() && tSlug.length() < 32; i++) {
+			char tChar = Character.toLowerCase(aEnglish.charAt(i));
+			if ((tChar >= 'a' && tChar <= 'z') || (tChar >= '0' && tChar <= '9')) tSlug.append(tChar);
+			else if (tSlug.length() > 0 && tSlug.charAt(tSlug.length()-1) != '_') tSlug.append('_');
+		}
+		while (tSlug.length() > 0 && tSlug.charAt(tSlug.length()-1) == '_') tSlug.setLength(tSlug.length()-1);
+		return "gt.tt." + tSlug + "." + String.format("%08x", tHash);
+	}
 	
 	public static final String percent(long aNumber) {return (aNumber/100) + ((aNumber%100)>9?"."+aNumber%100:".0"+(aNumber%100));}
 	
 	public static final String getToolTipBlastResistance(Block aBlock, double aResistance) {return Chat.WHITE + get(LH.TOOLTIP_BLASTRESISTANCE) + Chat.ORANGE + ((int)aResistance) + "." + (((int)(aResistance * 10)) % 10) + (aResistance < 4 ? Chat.BLINKING_RED + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_TERRIBLE) : aResistance < 12 ? Chat.RED + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_GHAST) : aResistance < 16 ? Chat.YELLOW + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_CREEPER) : aResistance <= 40 ? Chat.GREEN + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_TNT) : aResistance < 3330 || COMPAT_IC2 == null || COMPAT_IC2.isExplosionWhitelisted(aBlock) ? Chat.GREEN + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_DYNAMITE) : Chat.BLINKING_CYAN + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_NOT_NUKE));}
 	
 	/**
-	 * Материал-ЭТАЛОН требуемого уровня добычи, локализованный: 1=камень, 2=железо, 3=алмаз, 4=незерит,
-	 * 5=адамантий, 6..14 — имени нет, 15+ — бесконечность. Пустая строка = имени для этого уровня не предусмотрено.
+	 * Reference material for the required harvest level, localized: 1=stone, 2=iron, 3=diamond, 4=netherite,
+	 * 5=adamantium, 6..14 — no name, 15+ — infinity. Empty string = no name defined for this level.
 	 *
-	 * <p>Таблица эта — не новая: она дословно та же, что внутри {@link #getToolTipHarvest} (ветки {@code case 1..5}
-	 * и {@code default}). Вынесена сюда, чтобы у интеграции с тултип-модами (витрина уровня добычи в Jade) НЕ
-	 * появилась вторая копия — числа 0..15 игроку ничего не говорят, а «Нетеритовый» говорит. Второй копии этой
-	 * таблицы в дереве быть не должно.
+	 * <p>This table is not new: it is verbatim the same as inside {@link #getToolTipHarvest} (branches {@code case 1..5}
+	 * and {@code default}). Extracted here so the tooltip-mod integration (harvest level display in Jade) does NOT
+	 * get a second copy — numbers 0..15 tell the player nothing, while "Netherite" does. A second copy of this
+	 * table must not exist in the tree.
 	 */
 	public static final String getHarvestLevelMaterial(int aHarvestLevel) {
 		switch (aHarvestLevel) {
@@ -302,14 +330,14 @@ public class LH {
 	public static final String getToolTipHarvest(Material aMaterial, String aHarvestTool, int aHarvestLevel) {
 		if (aMaterial.isAdventureModeExempt()) {
 			if (UT.Code.stringValid(aHarvestTool))
-			return LH.Chat.DGRAY + "Hand-Harvestable, but " + LH.Chat.WHITE + LH.get(TOOL_LOCALISER_PREFIX + aHarvestTool, UT.Code.capitalise(aHarvestTool)) + LH.Chat.DGRAY + " is faster";
-			return LH.Chat.DGRAY + "Hand-Harvestable";
+			return LH.Chat.DGRAY + LH.tt("Hand-Harvestable, but ") + LH.Chat.WHITE + LH.get(TOOL_LOCALISER_PREFIX + aHarvestTool, UT.Code.capitalise(aHarvestTool)) + LH.Chat.DGRAY + LH.tt(" is faster");
+			return LH.Chat.DGRAY + LH.tt("Hand-Harvestable");
 		}
 		if (UT.Code.stringValid(aHarvestTool)) {
-			// БЫЛ РАЗВЁРНУТЫЙ switch НА 15 ВЕТОК с той же таблицей «уровень -> материал», что и в
-			// getHarvestLevelMaterial выше. Две копии одной таблицы — дубль, пойманный гейтом самопроверки
-			// (сам же и завёл его, добавляя витрину Jade). Свёрнуто в вызов центра; вывод ПОБУКВЕННО тот же:
-			// уровни 2..5 и 15+ дают « (N, Материал)», уровни 6..14 — « (N)», уровни 0..1 сюда не заходят.
+			// Used to be an EXPANDED switch WITH 15 BRANCHES using the same "level -> material" table as in
+			// getHarvestLevelMaterial above. Two copies of the same table — a duplicate caught by the self-check
+			// gate (introduced by the same change that added the Jade display). Collapsed into a call to the
+			// center; output is LETTER-FOR-LETTER the same: levels 2..5 and 15+ give " (N, Material)", levels 6..14 — " (N)", levels 0..1 never reach here.
 			if (aHarvestLevel > 1) {
 				String tLevelMaterial = getHarvestLevelMaterial(aHarvestLevel);
 				return LH.Chat.DGRAY + LH.get(LH.TOOL_TO_HARVEST) + ": " + LH.Chat.WHITE + LH.get(TOOL_LOCALISER_PREFIX + aHarvestTool, UT.Code.capitalise(aHarvestTool)) + " ("+aHarvestLevel+(tLevelMaterial.isEmpty()?"":", "+tLevelMaterial)+")";
@@ -368,12 +396,12 @@ public class LH {
 	public static final void addEnergyToolTips(ITileEntityEnergy aTileEntity, List<String> aToolTips, TagData aEnergyTypeIN, TagData aEnergyTypeOUT, String aSidesIN, String aSidesOUT) {
 		if (aEnergyTypeIN != null) {
 			long tMin = aTileEntity.getEnergySizeInputMin(aEnergyTypeOUT, SIDE_ANY), tRec = aTileEntity.getEnergySizeInputRecommended(aEnergyTypeOUT, SIDE_ANY), tMax = aTileEntity.getEnergySizeInputMax(aEnergyTypeOUT, SIDE_ANY);
-			aToolTips.add(Chat.GREEN + LH.get(LH.ENERGY_INPUT ) + ": " + Chat.WHITE + tRec + " " + aEnergyTypeIN .getLocalisedChatNameShort() + Chat.WHITE + (tRec == tMin && tRec == tMax ? "/t" : (tMin <= 1 ? "/t (up to " : "/t ("+tMin+" to ")+tMax+(UT.Code.stringInvalid(aSidesIN )?"":", "+aSidesIN )+")"));
+			aToolTips.add(Chat.GREEN + LH.get(LH.ENERGY_INPUT ) + ": " + Chat.WHITE + tRec + " " + aEnergyTypeIN .getLocalisedChatNameShort() + Chat.WHITE + (tRec == tMin && tRec == tMax ? "/t" : (tMin <= 1 ? LH.tt("/t (up to ") : "/t ("+tMin+LH.tt(" to "))+tMax+(UT.Code.stringInvalid(aSidesIN )?"":", "+aSidesIN )+")"));
 			aToolTips.add(getToolTipRedstoneFluxAccept(aEnergyTypeIN));
 		}
 		if (aEnergyTypeOUT != null) {
 			long tMin = aTileEntity.getEnergySizeOutputMin(aEnergyTypeOUT, SIDE_ANY), tRec = aTileEntity.getEnergySizeOutputRecommended(aEnergyTypeOUT, SIDE_ANY), tMax = aTileEntity.getEnergySizeOutputMax(aEnergyTypeOUT, SIDE_ANY);
-			aToolTips.add(Chat.RED   + LH.get(LH.ENERGY_OUTPUT) + ": " + Chat.WHITE + tRec + " " + aEnergyTypeOUT.getLocalisedChatNameShort() + Chat.WHITE + (tRec == tMin && tRec == tMax ? "/t" : (tMin <= 1 ? "/t (up to " : "/t ("+tMin+" to ")+tMax+(UT.Code.stringInvalid(aSidesOUT)?"":", "+aSidesOUT)+")"));
+			aToolTips.add(Chat.RED   + LH.get(LH.ENERGY_OUTPUT) + ": " + Chat.WHITE + tRec + " " + aEnergyTypeOUT.getLocalisedChatNameShort() + Chat.WHITE + (tRec == tMin && tRec == tMax ? "/t" : (tMin <= 1 ? LH.tt("/t (up to ") : "/t ("+tMin+LH.tt(" to "))+tMax+(UT.Code.stringInvalid(aSidesOUT)?"":", "+aSidesOUT)+")"));
 			aToolTips.add(getToolTipRedstoneFluxEmit(aEnergyTypeOUT));
 		}
 	}

@@ -73,11 +73,11 @@ public class CoverRobotArm extends AbstractCoverAttachment {
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
 			aData.value(aSide, (short)UT.Code.bind(Short.MIN_VALUE, aData.mTileEntity instanceof MultiTileEntityPipeItem ? -1 : Short.MAX_VALUE, aData.mValues[aSide] + (aSneaking?-1:+1)));
-			if (aChatReturn != null) aChatReturn.add(aData.mValues[aSide] < 0 ? "Takes from Slot: " + (-1-aData.mValues[aSide]) : "Puts into Slot: " + aData.mValues[aSide]);
+			if (aChatReturn != null) aChatReturn.add(aData.mValues[aSide] < 0 ? LH.tt("Takes from Slot: ") + (-1-aData.mValues[aSide]) : LH.tt("Puts into Slot: ") + aData.mValues[aSide]);
 			return 200;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add(aData.mValues[aSide] < 0 ? "Takes from Slot: " + (-1-aData.mValues[aSide]) : "Puts into Slot: " + aData.mValues[aSide]);
+			if (aChatReturn != null) aChatReturn.add(aData.mValues[aSide] < 0 ? LH.tt("Takes from Slot: ") + (-1-aData.mValues[aSide]) : LH.tt("Puts into Slot: ") + aData.mValues[aSide]);
 			return 1;
 		}
 		return 0;
@@ -105,7 +105,7 @@ public class CoverRobotArm extends AbstractCoverAttachment {
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		super.addToolTips(aList, aStack, aF3_H);
-		aList.add(LH.Chat.CYAN + "Transfers a Stack every " + (mTiming==1?"Tick from/to a specific Slot":mTiming+" Ticks from/to a specific Slot"));
+		aList.add(LH.Chat.CYAN + LH.tt("Transfers a Stack every ") + (mTiming==1?LH.tt("Tick from/to a specific Slot"):mTiming+LH.tt(" Ticks from/to a specific Slot")));
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_TOGGLE_MONKEY_WRENCH));
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_TOGGLE_CONTROLLER_COVER));
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_TOGGLE_SCREWDRIVER));

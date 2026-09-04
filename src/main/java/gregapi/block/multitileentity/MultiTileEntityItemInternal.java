@@ -92,49 +92,49 @@ import static gregapi.data.CS.*;
 , @Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.item.IItemElectric", modid = ModIDs.GC)
 , @Optional.Interface(iface = "vazkii.botania.api.item.IFlowerPlaceable", modid = ModIDs.BOTA)
 })
-// F5/BUG-045: 1.7.10 Forge IFluidContainerItem восстановлен как живой compat-mirror
-// (net/minecraftforge/fluids/IFluidContainerItem.java) — implements-список снова 1:1 с оригиналом
-// (:88), делегаты getFluid/getCapacity/fill/drain ниже оживлены (per-stack состояние несёт NBT стека:
-// TileEntityBase08FluidContainer.fill/drain сами пишут writeItemNBT обратно в стек).
+// F5/BUG-045: the 1.7.10 Forge IFluidContainerItem is restored as a live compat mirror
+// (net/minecraftforge/fluids/IFluidContainerItem.java) — the implements list is 1:1 with the original again
+// (:88), the getFluid/getCapacity/fill/drain delegates below are brought back to life (per-stack state is carried by the stack's NBT:
+// TileEntityBase08FluidContainer.fill/drain write writeItemNBT back into the stack themselves).
 public class MultiTileEntityItemInternal extends BlockItem implements squeek.applecore.api.food.IEdible, IItemReactorRod, IItemUpdatable, IItemColorableRGB, IOreDictItemDataOverrideItem, IItemGT, IItemNoGTOverride, IFluidContainerItem, ISpecialElectricItem, IElectricItemManager, IItemEnergy, IItemElectric, IItemRottable, IFlowerPlaceable {
 	public final MultiTileEntityBlockInternal mBlock;
 
 	public MultiTileEntityItemInternal(Block aBlock) {
-		// F12-followup (item-split): id в Properties из ключа блока (BlockItem делит id с блоком; конструкция на RegisterEvent<Item>).
+		// F12-followup (item-split): id in Properties from the block's key (BlockItem shares its id with the block; construction happens on RegisterEvent<Item>).
 		super(aBlock, new Item.Properties());
 		setMaxDamage(0);
 		setHasSubtypes(T);
 		mBlock = (MultiTileEntityBlockInternal)aBlock;
 	}
 	
-	// F1-контракт (1.7.10 itemDamage==meta): переопределения getDamage(ItemStack) здесь НЕТ и быть не должно —
-	// дефолт Forge уже отдаёт подтип (ID машины) из сырого "Damage", а само-вызов через ST.meta_ замыкает движок
-	// (см. gregapi.util.ST#meta_).
+	// F1 contract (1.7.10 itemDamage==meta): there is NO override of getDamage(ItemStack) here, and there should not
+	// be one — the Forge default already hands back the subtype (machine ID) from the raw "Damage", and the call itself
+	// through ST.meta_ closes the loop on the engine (see gregapi.util.ST#meta_).
 
-	// LOCALIZATION-display: neo берёт имя через getName(ItemStack) — мост в GT6-имя (LH через getItemStackDisplayName);
-	// тот же мост, что ItemBase:145/PrefixItem:213/ItemBlockBase. Без него — сырой ключ "item.gregtech.gt.multitileentity".
+	// LOCALIZATION-display: neo takes the name via getName(ItemStack) — bridge into the GT6 name (LH via getItemStackDisplayName);
+	// the same bridge as ItemBase:145/PrefixItem:213/ItemBlockBase. Without it — a raw key "item.gregtech.gt.multitileentity".
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 
-	// F3-render (ветка 1.20.1): item-форма MTE со СВОИМ рендером (сундук, масс-хранилище) рисуется BEWLR'ом —
-	// движок берёт его отсюда (IForgeItem.initializeClient, Item.java:400-408, вызов защищён Dist.CLIENT).
-	// Тело — ленивый invokestatic в клиентский центр (BUG-092: клиентские типы в common-классе валят линковку
-	// на выделенном сервере), тот же приём, что MTEChestRenderer.bindFirst.
+	// F3-render (branch 1.20.1): the item form of an MTE with its OWN renderer (chest, mass storage) is drawn by a BEWLR —
+	// the engine takes it from here (IForgeItem.initializeClient, Item.java:400-408, the call is guarded by Dist.CLIENT).
+	// The body is a lazy invokestatic into the client center (BUG-092: client types in a common class break linking
+	// on a dedicated server), the same technique as MTEChestRenderer.bindFirst.
 	@Override
 	public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> aConsumer) {
 		gregapi.render.MultiTileEntityBER.bindItemExtensions(aConsumer);
 	}
 
-	// F13: neo зовёт appendHoverText (не 1.7.10 addInformation) — мост как ItemBlockBase:65 (собираем GT6-тултип через
-	// addInformation ниже). Без него у машин нет характеристик (ёмкость/прочность/EU из NBT-параметров).
+	// F13: neo calls appendHoverText (not the 1.7.10 addInformation) — bridge like ItemBlockBase:65 (we assemble the GT6 tooltip via
+	// addInformation below). Without it machines would have no stats (capacity/durability/EU from NBT parameters).
 	@Override @SuppressWarnings({"rawtypes", "unchecked"})
 	public void appendHoverText(ItemStack aStack, net.minecraft.world.level.Level aWorld, java.util.List<net.minecraft.network.chat.Component> aTooltips, net.minecraft.world.item.TooltipFlag aFlag) {
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
 		if (tPlayer == null) return;
 		java.util.List tList = new java.util.ArrayList();
-		// BUG-018: 1.7.10-контракт vanilla Item.getTooltip — [0]=имя предмета, addInformation дописывает ПОСЛЕ него;
-		// GT6-код (сэндвич MultiTileEntitySandwich:109-112) легально вставляет add(1,…)/add(2,…) «сразу после имени».
-		// В neo имя в список не входит (рисуется отдельно через getName) → пустой список ронял IOOBE на каждом тултипе
-		// (глотался catch'ами ниже — спам-трейс + обрубленный тултип). Подкладываем имя в [0] и не выгружаем его.
+		// BUG-018: the 1.7.10 vanilla Item.getTooltip contract — [0]=item name, addInformation appends AFTER it;
+		// GT6 code (the sandwich MultiTileEntitySandwich:109-112) legally inserts add(1,…)/add(2,…) "right after the name".
+		// In neo the name is not part of the list (it's drawn separately via getName) → an empty list threw IOOBE on every tooltip
+		// (swallowed by the catches below — a spam trace + a truncated tooltip). We insert the name at [0] and never remove it.
 		tList.add(getItemStackDisplayName(aStack));
 		try {addInformation(aStack, tPlayer, tList, aFlag.isAdvanced());} catch (Throwable e) {/**/}
 		for (int i = 1; i < tList.size(); i++) {Object o = tList.get(i); if (o != null) aTooltips.add(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));}
@@ -143,9 +143,9 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	// @Override
 	public String getItemStackDisplayName(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
-		// было super.getItemStackDisplayName(aStack) (реальный vanilla Item-hook 1.7.10, ItemBlock extends Item);
-		// neo BlockItem/Item не объявляет getItemStackDisplayName вовсе — звать нечего, честный эквивалент —
-		// та же формула, что и на дефолтной ветке ниже (LanguageHandler.get(getUnlocalizedName), приём ItemBase.java:132).
+		// was super.getItemStackDisplayName(aStack) (a real vanilla Item hook in 1.7.10, ItemBlock extends Item);
+		// neo BlockItem/Item does not declare getItemStackDisplayName at all — nothing to call, the honest equivalent is
+		// the same formula as the default branch below (LanguageHandler.get(getUnlocalizedName), the ItemBase.java:132 approach).
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IMTE_GetItemName) return ((IMTE_GetItemName)tTileEntityContainer.mTileEntity).getItemName(aStack, gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack)));
 		return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));
 	}
@@ -154,7 +154,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
-		if (tTileEntityContainer == null) {aList.add("INVALID ITEM! THIS IS A BUG IF ACQUIRED IN A LEGIT WAY!"); return;}
+		if (tTileEntityContainer == null) {aList.add(LH.tt("INVALID ITEM! THIS IS A BUG IF ACQUIRED IN A LEGIT WAY!")); return;}
 		if (tTileEntityContainer.mTileEntity instanceof IMTE_AddToolTips) try {((IMTE_AddToolTips)tTileEntityContainer.mTileEntity).addToolTips(aList, aStack, aF3_H);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (tTileEntityContainer.mTileEntity instanceof IMTE_GetFlammability ? ((IMTE_GetFlammability)tTileEntityContainer.mTileEntity).getFlammability(SIDE_ANY, WD.getMaterial(tTileEntityContainer.mBlock).getCanBurn()) > 0 : WD.getMaterial(tTileEntityContainer.mBlock).getCanBurn()) aList.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FLAMMABLE));
 		if (tTileEntityContainer.mTileEntity instanceof IMTE_GetEnchantPowerBonus) aList.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_ENCHANT_BONUS));
@@ -200,14 +200,14 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return mBlock.mMultiTileEntityRegistry.mCreativeTabs.values().toArray(new CreativeModeTab[mBlock.mMultiTileEntityRegistry.mCreativeTabs.size()]);
 	}
 	
-	// F-useOn мост: neo зовёт useOn/onItemUseFirst(UseOnContext), а не 1.7.10 onItemUse(x,y,z,side,hit) — распаковка+делегация
-	// в существующие тела (IItemGT-центр). onItemUseFirst-мост нужен MTE (единственный с реальной first-логикой IMTE_OnItemUseFirst).
+	// F-useOn bridge: neo calls useOn/onItemUseFirst(UseOnContext), not the 1.7.10 onItemUse(x,y,z,side,hit) — unpack+delegate
+	// into the existing bodies (the IItemGT center). The onItemUseFirst bridge is needed by MTE (the only one with real first-logic, IMTE_OnItemUseFirst).
 	@Override public InteractionResult useOn(UseOnContext aCtx) {return IItemGT.bridgeUseOn(this, aCtx);}
 	@Override public InteractionResult onItemUseFirst(ItemStack aStack, UseOnContext aCtx) {return IItemGT.bridgeUseOnFirst(this, aCtx);}
 
 	@Override
 	public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aY < WD.minY(aWorld) || aY > WD.maxY(aWorld)) return F; // было aY<0 || aY>getHeight() — MC26: Y∈[minY..maxY], getHeight()=COUNT(384)≠верх; порог через центр WD
+		if (aY < WD.minY(aWorld) || aY > WD.maxY(aWorld)) return F; // was aY<0 || aY>getHeight() — MC26: Y∈[minY..maxY], getHeight()=COUNT(384)≠top; threshold via the WD center
 		
 		try {
 			Block tClickedBlock = WD.block(aWorld, aX, aY, aZ);
@@ -218,11 +218,11 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 			}
 			Block tReplacedBlock = WD.block(aWorld, aX, aY, aZ);
 
-			// Оригинал: !tReplacedBlock.isReplaceable(...) || !mBlock.canReplace(...). mBlock (MultiTileEntityBlockInternal)
-			// canReplace НЕ переопределён -> резолвился в vanilla Forge-дефолт Block.canReplace(w,x,y,z,side,stack) =
-			// { return w.getBlock(x,y,z).isReplaceable(w,x,y,z); } — т.е. проверка ЗАМЕНЯЕМОСТИ ЦЕЛИ, ДУБЛИРУЮЩАЯ первую
-			// клаузу. Способность (заменяемость цели) сохранена через WD.replaceable ниже — вторая клауза избыточна,
-			// поглощена. Не деградация: обе клаузы оригинала проверяли одно и то же.
+			// Original: !tReplacedBlock.isReplaceable(...) || !mBlock.canReplace(...). mBlock's (MultiTileEntityBlockInternal)
+			// canReplace is NOT overridden -> it resolved to the vanilla Forge default Block.canReplace(w,x,y,z,side,stack) =
+			// { return w.getBlock(x,y,z).isReplaceable(w,x,y,z); } — i.e. a check of the TARGET's REPLACEABILITY, DUPLICATING the first
+			// clause. The capability (target replaceability) is preserved via WD.replaceable below — the second clause is redundant,
+			// absorbed. Not a degradation: both clauses of the original checked the same thing.
 			if (!WD.replaceable(tReplacedBlock, aWorld, aX, aY, aZ)) return F;
 			if (aStack.getCount() == 0 || (aPlayer != null && !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack))) return F;
 			
@@ -253,11 +253,11 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				try {
 					if (!aWorld.isClientSide()) {
-						// было World.notifyBlockChange(x,y,z,Block) -> тело делегировало notifyBlocksOfNeighborChange (recompSrc
-						// World.java:695-698) -> Level.updateNeighborsAt(BlockPos, Block) [Level.java:338], тот же
-						// форс-эквивалент, что уже принят в MultiTileEntityBlockInternal.placeBlock.
+						// was World.notifyBlockChange(x,y,z,Block) -> the body delegated to notifyBlocksOfNeighborChange (recompSrc
+						// World.java:695-698) -> Level.updateNeighborsAt(BlockPos, Block) [Level.java:338], the same
+						// forced equivalent already adopted in MultiTileEntityBlockInternal.placeBlock.
 						aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), tReplacedBlock);
-						// было World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos, Block) [Level.java:338]
+						// was World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos, Block) [Level.java:338]
 						aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), aMTEContainer.mBlock);
 					}
 				} catch(Throwable e) {e.printStackTrace(ERR);}
@@ -267,7 +267,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 					}
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				try {
-					// было World.func_147451_t(x,y,z) -> neo Level.getLightEngine().checkBlock(BlockPos) [LevelLightEngine.java:32]
+					// was World.func_147451_t(x,y,z) -> neo Level.getLightEngine().checkBlock(BlockPos) [LevelLightEngine.java:32]
 					aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY, aZ));
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				
@@ -299,7 +299,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		}
 	}
 	
-	// BUG-021 v2: мост neo per-stack канала на 1.7.10-хук ниже (per-MTE стак из класс-контейнера/IMTE_GetMaxStackSize).
+	// BUG-021 v2: bridge from the neo per-stack channel to the 1.7.10 hook below (per-MTE stack size from the class container/IMTE_GetMaxStackSize).
 	@Override public int getMaxStackSize(ItemStack aStack) {return UT.Code.bindStack(getItemStackLimit(aStack));}
 	// @Override
 	public int getItemStackLimit(ItemStack aStack) {
@@ -322,11 +322,11 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		updateItemStack(aStack);
 	}
 
-	// Подключение канала «предмет скрафчен» к движку (2026-07-30, реестр мёртвых каналов). 1.7.10
+	// Wiring the "item crafted" channel to the engine (2026-07-30, dead-channel registry). 1.7.10
 	// onCreated(ItemStack,World,EntityPlayer) → neo Item.onCraftedBy(ItemStack,Player) (Item.java:310;
-	// мир берётся оттуда же, чем это делает сам движок — player.level(), Item.java:311). Приём взят у брата
-	// ItemArmorBase:255. Без моста у свежескрафченной машины не звался IMTE_OnCrafted.onCrafted и не
-	// обновлялся NBT предмета (updateItemStack) — то есть личность блока в стеке оставалась незаполненной.
+	// the world is taken from the same place the engine itself uses — player.level(), Item.java:311). Approach taken from sibling
+	// ItemArmorBase:255. Without the bridge, a freshly crafted machine never called IMTE_OnCrafted.onCrafted and never
+	// updated the item's NBT (updateItemStack) — i.e. the block's identity in the stack stayed unset.
 	@Override public void onCraftedBy(ItemStack aStack, Level aWorld, Player aPlayer) {onCreated(aStack, aWorld, aPlayer);}
 	
 	@Override
@@ -493,41 +493,41 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return aStack;
 	}
 
-	// F13/BUG-048: мост движок->мод для use-цепочки предмета. 4 метода выше — 1.7.10-имена (в neo Item их нет,
-	// движок их не звал — питьё из Кувшина/Кубка/Термоса и еда Сэндвича были мертвы); живые neo-хуки ниже
-	// делегируют в них 1:1. Паттерн «начать пить» = TE-делегат сам зовёт startUsingItem (LivingEntity.java:3529),
-	// хук возвращает CONSUME — как ванильный Item.use с BLOCKS_ATTACKS (Item.java:216-218). Замена стека
-	// возвратом (контракт 1.7.10 onItemRightClick) -> setItemInHand + SUCCESS; иначе PASS (1.7.10 не различал,
-	// мутации in-place уже применены). MAIN_HAND в TE-делегате 1:1 (1.7.10 offhand не имел).
+	// F13/BUG-048: engine->mod bridge for the item's use chain. The 4 methods above are 1.7.10 names (neo Item has none of
+	// them, the engine never called them — drinking from a Jug/Cup/Thermos and eating a Sandwich were dead); the live neo hooks below
+	// delegate into them 1:1. The "start drinking" pattern = the TE delegate itself calls startUsingItem (LivingEntity.java:3529),
+	// the hook returns CONSUME — like the vanilla Item.use with BLOCKS_ATTACKS (Item.java:216-218). Replacing the stack
+	// via the return value (the 1.7.10 onItemRightClick contract) -> setItemInHand + SUCCESS; otherwise PASS (1.7.10 did not distinguish,
+	// in-place mutations are already applied). MAIN_HAND in the TE delegate is 1:1 (1.7.10 had no offhand).
 	@Override
 	public net.minecraft.world.InteractionResultHolder<ItemStack> use(Level aWorld, Player aPlayer, InteractionHand aHand) {
 		ItemStack aStack = aPlayer.getItemInHand(aHand);
 		ItemStack rStack = onItemRightClick(aStack, aWorld, aPlayer);
-		// ⚖️ ИЗБЫТОЧЕН (консолидация H1, вердикт 2026-08-19): гейт «rStack != aStack» структурно недостижим —
-		// оба реальных носителя IMTE_OnItemRightClick (TileEntityBase08FluidContainer:295, MultiTileEntitySandwich:250)
-		// всегда возвращают тот же параметр aStack (scoopResult:286 тоже возвращает свой параметр; замена стека —
-		// мутация NBT/count in-place). Сверено с оригиналом 1.7.10: те же два носителя там (TileEntityBase08FluidContainer.java:274,
-		// MultiTileEntitySandwich.java:247) идентично всегда return aStack — гейт был бы мёртв и у Грегориуса. Не утраченный
-		// носитель, а изначально нереализованная в GT6 ветка «замена стека новым объектом»; не удаляется (F15 — контракт может вернуть null).
-		if (rStack != aStack) {aPlayer.setItemInHand(aHand, gregapi.util.ST.nn(rStack)); return net.minecraft.world.InteractionResultHolder.success(rStack);} // F15: контракт 1.7.10 может вернуть null — в руку движка только через центр
+		// ⚖️ REDUNDANT (H1 consolidation, verdict 2026-08-19): the "rStack != aStack" gate is structurally unreachable —
+		// both real IMTE_OnItemRightClick carriers (TileEntityBase08FluidContainer:295, MultiTileEntitySandwich:250)
+		// always return the same aStack parameter (scoopResult:286 also returns its own parameter; replacing the stack means
+		// mutating NBT/count in-place). Verified against the 1.7.10 original: the same two carriers there (TileEntityBase08FluidContainer.java:274,
+		// MultiTileEntitySandwich.java:247) identically always return aStack — the gate would have been dead for Gregorius too. Not a lost
+		// carrier, but a branch "replace the stack with a new object" never implemented in GT6 to begin with; not removed (F15 — the contract may return null).
+		if (rStack != aStack) {aPlayer.setItemInHand(aHand, gregapi.util.ST.nn(rStack)); return net.minecraft.world.InteractionResultHolder.success(rStack);} // F15: the 1.7.10 contract may return null — into the engine's hand only through the center
 		if (aPlayer.isUsingItem()) return net.minecraft.world.InteractionResultHolder.consume(aStack);
 		return net.minecraft.world.InteractionResultHolder.pass(aStack);
 	}
 
 	@Override
 	public int getUseDuration(ItemStack aStack) {
-		return getMaxItemUseDuration(aStack); // 1.20.1 Item.getUseDuration(ItemStack) — форма 1.7.10 getMaxItemUseDuration
+		return getMaxItemUseDuration(aStack); // 1.20.1 Item.getUseDuration(ItemStack) — the 1.7.10 form getMaxItemUseDuration
 	}
 
 	@Override
 	public UseAnim getUseAnimation(ItemStack aStack) {
-		return getItemUseAction(aStack); // было Item.getItemUseAction(ItemStack) (1.7.10) -> neo Item.getUseAnimation(ItemStack) (Item.java:317)
+		return getItemUseAction(aStack); // was Item.getItemUseAction(ItemStack) (1.7.10) -> neo Item.getUseAnimation(ItemStack) (Item.java:317)
 	}
 
 	@Override
 	public ItemStack finishUsingItem(ItemStack aStack, Level aWorld, LivingEntity aEntity) {
-		// было Item.onEaten(ItemStack,World,EntityPlayer) (1.7.10) -> neo Item.finishUsingItem(ItemStack,Level,LivingEntity)
-		// (Item.java:232); 1.7.10 звал только для игрока — Player-гейт, не-игрок падает в super (Consumable-путь, у MTE пуст).
+		// was Item.onEaten(ItemStack,World,EntityPlayer) (1.7.10) -> neo Item.finishUsingItem(ItemStack,Level,LivingEntity)
+		// (Item.java:232); 1.7.10 called it only for a player — a Player gate, a non-player falls into super (the Consumable path, empty for MTE).
 		return aEntity instanceof Player tPlayer ? onEaten(aStack, aWorld, tPlayer) : super.finishUsingItem(aStack, aWorld, aEntity);
 	}
 	
@@ -543,7 +543,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public ItemStack getRotten(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemRottable) return ((IItemRottable)tTileEntityContainer.mTileEntity).getRotten(aStack);
-		// F5/BUG-045 (1:1): this снова IFluidContainerItem — восстановлена 2-арг перегрузка оригинала (:437).
+		// F5/BUG-045 (1:1): this is IFluidContainerItem again — the original's 2-arg overload (:437) is restored.
 		return IItemRottable.RottingUtil.rotting(aStack, this);
 	}
 
@@ -551,7 +551,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public ItemStack getRotten(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemRottable) return ((IItemRottable)tTileEntityContainer.mTileEntity).getRotten(aStack, aWorld, aX, aY, aZ);
-		// F5/BUG-045 (1:1): this снова IFluidContainerItem — восстановлена 2-арг перегрузка оригинала (:444).
+		// F5/BUG-045 (1:1): this is IFluidContainerItem again — the original's 2-arg overload (:444) is restored.
 		return IItemRottable.RottingUtil.rotting(aStack, this);
 	}
 	
@@ -712,28 +712,28 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return 0;
 	}
 	
-	// ⚠️ КАНАЛ ЧУЖОГО МОДА — подключать нечего и некому. В оригинале charge/discharge реализовывали
-	// интерфейсы IC2 (ic2.api.item.IElectricItemManager) и Galacticraft (micdoodle8...IItemElectric) под
-	// @Optional.Interface (оригинал MultiTileEntityItemInternal.java:45-48, 83-88), то есть работали ТОЛЬКО
-	// при наличии этих модов. Ни IC2, ни Galacticraft в сборке нет — мертвы законно, как остальные compat-каналы.
-	// Собственная энергия GT6 идёт своим путём (IItemEnergy выше, doEnergyInjection/doEnergyExtraction) и жива.
+	// ⚠️ FOREIGN-MOD CHANNEL — nothing to wire up and no one to wire it for. In the original, charge/discharge implemented
+	// the IC2 (ic2.api.item.IElectricItemManager) and Galacticraft (micdoodle8...IItemElectric) interfaces under
+	// @Optional.Interface (original MultiTileEntityItemInternal.java:45-48, 83-88), i.e. they worked ONLY
+	// when those mods were present. Neither IC2 nor Galacticraft is in the build — legitimately dead, like the other compat channels.
+	// GT6's own energy goes its own way (IItemEnergy above, doEnergyInjection/doEnergyExtraction) and is alive.
 	// @Override
 	public double charge   (ItemStack aStack, double aCharge, int aTier, boolean aIgnoreTransferLimit, boolean aSimulate) {
 		if (aCharge < V[aTier = UT.Code.bind4(aTier)]) return 0;
 		return V[aTier] * doEnergyInjection (TD.Energy.EU, aStack, V[aTier], (long)(aCharge / V[aTier]), null, null, 0, 0, 0, !aSimulate);
 	}
 	
-	// ⚠️ КАНАЛ ЧУЖОГО МОДА — та же ветка, что charge выше: интерфейсы IC2 (IElectricItemManager) и
-	// Galacticraft (IItemElectric) под @Optional.Interface в оригинале (:45-48,83-88). Модов в сборке нет.
+	// ⚠️ FOREIGN-MOD CHANNEL — same branch as charge above: the IC2 (IElectricItemManager) and
+	// Galacticraft (IItemElectric) interfaces under @Optional.Interface in the original (:45-48,83-88). Neither mod is in the build.
 	// @Override
 	public double discharge(ItemStack aStack, double aCharge, int aTier, boolean aIgnoreTransferLimit, boolean aBatteryAlike, boolean aSimulate) {
 		if (aCharge < V[aTier = UT.Code.bind4(aTier)]) return 0;
 		return V[aTier] * doEnergyExtraction(TD.Energy.EU, aStack, V[aTier], (long)(aCharge / V[aTier]), null, null, 0, 0, 0, !aSimulate);
 	}
 	
-	// ⚠️ КАНАЛ ЧУЖОГО МОДА — та же ветка, что charge/discharge выше: это Galacticraft-интерфейс
-	// (micdoodle8...IItemElectric, оригинал :47,85), видно и по EnergyConfigHandler.IC2_RATIO в теле.
-	// Мода в сборке нет — мёртв законно. Своя энергия GT6 (IItemEnergy) жива.
+	// ⚠️ FOREIGN-MOD CHANNEL — same branch as charge/discharge above: this is the Galacticraft interface
+	// (micdoodle8...IItemElectric, original :47,85), also visible from EnergyConfigHandler.IC2_RATIO in the body.
+	// The mod is not in the build — legitimately dead. GT6's own energy (IItemEnergy) is alive.
 	// @Override
 	public float discharge(ItemStack aStack, float aEnergy, boolean aDoExtract) {
 		if (aEnergy <= 0) return 0;
@@ -772,9 +772,9 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public int getSpriteNumber() {return 0;}
 	public void registerIcons(Object aRegister) {/**/}
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было itemIcon=Items.BREAD.getIconFromDamage(0) (фикс eating-particle 1.7.10) —
-	// и поле Item.itemIcon, и метод Item.getIconFromDamage(int) удалены в 26.1.2 целиком, замены нет до Фазы C.
-	public ResourceLocation getIconFromDamage(int aMeta) {throw new UnsupportedOperationException("F3 dead-interface: 1.7.10 Item.getIconFromDamage(meta) удалён из neo (НЕ @Override; было itemIcon для eating-particle). MTEItemInternal — BlockItem, рендерится моделью блока; GT6ItemModel пропускает BlockItem'ы. Defensive throw.");}
+	// F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo calls): was itemIcon=Items.BREAD.getIconFromDamage(0) (a 1.7.10 eating-particle fix) —
+	// both the Item.itemIcon field and the Item.getIconFromDamage(int) method were removed entirely in 26.1.2, no replacement until Phase C.
+	public ResourceLocation getIconFromDamage(int aMeta) {throw new UnsupportedOperationException("F3 dead-interface: 1.7.10 Item.getIconFromDamage(meta) is gone in neo (NOT @Override; it was itemIcon for the eating particle). MTEItemInternal is a BlockItem, rendered by its block model; GT6ItemModel skips BlockItems. Defensive throw.");}
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public int getItemEnchantability() {return 0;}

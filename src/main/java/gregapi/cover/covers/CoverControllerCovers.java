@@ -80,12 +80,12 @@ public class CoverControllerCovers extends AbstractCoverAttachment {
 		if (tSide == aCoverSide || aSideClicked != aCoverSide) {
 			if (aTool.equals(TOOL_screwdriver)) {
 				aData.value(aCoverSide, (short)(aData.mValues[aCoverSide] ^ B[0]));
-				if (aChatReturn != null) aChatReturn.add((aData.mValues[aCoverSide] & B[0]) != 0 ? "Covers work when Input is OFF" : "Covers work when Input is ON");
+				if (aChatReturn != null) aChatReturn.add((aData.mValues[aCoverSide] & B[0]) != 0 ? LH.tt("Covers work when Input is OFF") : LH.tt("Covers work when Input is ON"));
 				aData.setStopped(getStateOnOff(aCoverSide, aData));
 				return 1000;
 			}
 			if (aTool.equals(TOOL_magnifyingglass)) {
-				if (aChatReturn != null) aChatReturn.add((aData.mValues[aCoverSide] & B[0]) != 0 ? "Covers work when Input is OFF" : "Covers work when Input is ON");
+				if (aChatReturn != null) aChatReturn.add((aData.mValues[aCoverSide] & B[0]) != 0 ? LH.tt("Covers work when Input is OFF") : LH.tt("Covers work when Input is ON"));
 				return 1;
 			}
 			return 0;

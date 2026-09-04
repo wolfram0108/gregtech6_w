@@ -79,7 +79,7 @@ public class CoverSelectorButtonPanel extends AbstractCoverAttachmentSelector {
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
 			aData.value(aSide, (short)(aData.mValues[aSide] > 0 ? 0 : 1));
-			if (aChatReturn != null) aChatReturn.add(aData.mValues[aSide] > 0 ? "Buttons will reset" : "Buttons stay pressed");
+			if (aChatReturn != null) aChatReturn.add(aData.mValues[aSide] > 0 ? LH.tt("Buttons will reset") : LH.tt("Buttons stay pressed"));
 			return 10000;
 		}
 		return 0;

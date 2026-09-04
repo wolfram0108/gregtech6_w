@@ -111,21 +111,21 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	
 	@Override
 	public int addArmor(String aPrefix) {
-		// BUG-039 v4 (аудит JPMS-mirror): 1.7.10 RenderingRegistry.addNewArmourRendererPrefix (кастомный слой
-		// armor-текстуры) удалён вместе со всей моделью armor-рендера (neo: humanoid-слои через equipment assets,
-		// см. ItemArmorBase/F13); mirror-класс cpw.* JPMS-вырезан из рантайма (вызов кидал NoClassDefFoundError в
-		// пустой catch). Вызывателей метода 0 (греп) — возвращаемый индекс neo-рендером не потребляется.
+		// BUG-039 v4 (JPMS-mirror audit): 1.7.10 RenderingRegistry.addNewArmourRendererPrefix (custom armor-texture
+		// layer) was removed together with the whole armor-render model (neo: humanoid layers via equipment assets,
+		// see ItemArmorBase/F13); the mirror class cpw.* is JPMS-cut from the runtime (the call used to throw NoClassDefFoundError into
+		// an empty catch). Callers of the method: 0 (grep) — the returned index is not consumed by the neo renderer.
 		return 0;
 	}
 
-	// F3-render (client): регистрация единого динамического типа модели всех GT6-блоков на mod-bus.
-	// Замена удалённого `RenderingRegistry.registerBlockHandler`/render-id диспетчера (decisions/F3-render.md §2.1):
-	// один `GT6BlockModel` тип. Две точки: (1) RegisterBlockStateModels — тип для blockstate-JSON (fallback);
-	// (2) ModifyBakingResult — рантайм-инъекция модели ВСЕМ GT6-блокам (IRenderedBlock) БЕЗ JSON — процедурный
-	// мод (сотни блоков динамически) не может держать тысячи статичных JSON; централизация 1:1 (одна модель на весь мод).
-	/** BUG-056: клиентская половина «открыть все рецепты машины» — делегирует единственному центру
-	 *  JEI-совместимости ({@link gregapi.jei.GT6_JEI_Plugin#showRecipeCategory}), который держит живой
-	 *  рантайм и карту «имя категории → тип». Ключ тот же {@code mNameNEI}, которым 1.7.10 звал NEI. */
+	// F3-render (client): registration of the single dynamic model type for all GT6 blocks on the mod-bus.
+	// Replacement for the removed `RenderingRegistry.registerBlockHandler`/render-id dispatcher (decisions/F3-render.md §2.1):
+	// one `GT6BlockModel` type. Two points: (1) RegisterBlockStateModels — the type for blockstate JSON (fallback);
+	// (2) ModifyBakingResult — runtime model injection for ALL GT6 blocks (IRenderedBlock) WITHOUT JSON — a procedural
+	// mod (hundreds of blocks dynamically) cannot hold thousands of static JSONs; centralization 1:1 (one model for the whole mod).
+	/** BUG-056: the client half of "open all recipes of this machine" — delegates to the single JEI-compatibility
+ 	 *  center ({@link gregapi.jei.GT6_JEI_Plugin#showRecipeCategory}), which holds the live runtime
+ 	 *  and the "category name → type" map. Same key {@code mNameNEI} that 1.7.10 used to call NEI. */
 	@Override
 	public boolean openRecipeGui(String aNameNEI) {return gregapi.jei.GT6_JEI_Plugin.showRecipeCategory(aNameNEI);}
 
@@ -144,10 +144,10 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 
 	@Override
 	public void registerClientModels(net.minecraftforge.eventbus.api.IEventBus aModBus) {
-		// Ветка 1.20.1: точки регистрации рендера — те же три события мод-шины, что назвал F3-render.md §4.6
-		// (модели, BER, тинты); отдельного «RegisterBlockStateModels» здесь нет — GT6 не держит blockstate-JSON
-		// и всегда инжектил модель рантаймом, так что канал у него один — ModifyBakingResult.
-		// Модели жидкостей регистрируются не событием, а расширением типа жидкости (см. bindFluidClientExtensions).
+		// Branch 1.20.1: the render registration points are the same three mod-bus events F3-render.md §4.6 named
+		// (models, BER, tints); there is no separate "RegisterBlockStateModels" here — GT6 does not keep blockstate JSON
+		// and always injected the model at runtime, so it has a single channel — ModifyBakingResult.
+		// Fluid models are registered not by an event but by a fluid-type extension (see bindFluidClientExtensions).
 		aModBus.addListener(this::onModifyBakingResult);
 		aModBus.addListener(this::onRegisterBlockEntityRenderers);
 		aModBus.addListener(this::onClientSetup);
@@ -155,16 +155,16 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		aModBus.addListener(this::registerClientResourceListener);
 	}
 
-	// ===== F3 tint ЦЕНТР: цвет блоков GT6 ====================================================================
-	// В 1.7.10 движок спрашивал цвет У БЛОКА двумя методами: getRenderColor(meta) — цвет по подтипу, и
-	// colorMultiplier(world,x,y,z) — цвет в точке мира (биом-оттенок). Оба метода в порте живы, но вызывателей
-	// не имели: neo цвет у блока НЕ спрашивает — он берёт его из РЕЕСТРА источников тинта
+	// ===== F3 tint CENTER: color of GT6 blocks ====================================================================
+	// In 1.7.10 the engine asked the BLOCK ITSELF for color via two methods: getRenderColor(meta) — color by subtype, and
+	// colorMultiplier(world,x,y,z) — color at a point in the world (biome tint). Both methods survive in the port, but had no
+	// callers: neo does NOT ask the block for color — it takes it from a REGISTRY of tint sources
 	// (BlockColors.register(List<BlockTintSource>, Block...), RegisterColorHandlersEvent.BlockTintSources:68).
-	// Поэтому здесь ОДНА регистрация на весь мод, а не мост в каждом блоке: подключать нечего к семи корням —
-	// движок вообще ходит другим путём. Источник ниже спрашивает те самые 1.7.10-методы, значения не дублируются.
-	// Следствие до этой правки: крашеные блоки (BlockColored — цветное стекло и родня) рисовались без цвета,
-	// а биом-оттенок скопированных текстур не работал (метка отложенности в BlockTextureCopied:36 — тот же
-	// канал; слово-маркер здесь НЕ пишем дословно, иначе счётчик меток считает упоминание за метку).
+	// So there is ONE registration for the whole mod here, not a bridge per block: there is nothing to wire into seven roots —
+	// the engine simply goes a different route. The source below asks those very 1.7.10 methods, values are not duplicated.
+	// Consequence before this fix: crashed blocks (BlockColored — colored glass and kin) rendered without color,
+	// and the biome tint of copied textures did not work (deferred-work marker in BlockTextureCopied:36 — the same
+	// channel; the marker word is deliberately NOT written verbatim here, otherwise the marker counter would count this mention as a marker).
 	private void onRegisterBlockTints(net.minecraftforge.client.event.RegisterColorHandlersEvent.Block aEvent) {
 		java.util.List<net.minecraft.world.level.block.Block> tBlocks = new java.util.ArrayList<>();
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
@@ -173,53 +173,53 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			if (tBlock instanceof gregapi.block.IBlock) tBlocks.add(tBlock);
 		}
 		if (!tBlocks.isEmpty()) aEvent.register(new GT6BlockTint(), tBlocks.toArray(new net.minecraft.world.level.block.Block[0]));
-		gregapi.data.CS.OUT.println("[F3-tint] источник цвета зарегистрирован для блоков GT6: " + tBlocks.size());
+		gregapi.data.CS.OUT.println("[F3-tint] tint source registered for GT6 blocks: " + tBlocks.size());
 	}
 
-	/** Переходник «вопрос движка о цвете» → «1.7.10-методы блока GT6». Один на весь мод; величины живут в блоках.
-	 *  Ветка 1.20.1: носитель — {@code BlockColor} с ОДНИМ методом {@code getColor(state, level, pos, tintIndex)},
-	 *  где отсутствие мира выражено {@code null}-аргументами ({@code BlockColor.java:11}); две ветки 26.x
-	 *  ({@code color(state)} / {@code colorInWorld(...)}) сходятся в него по тому же признаку. */
+	/** Adapter: "engine's color question" -> "1.7.10 GT6 block methods". One for the whole mod; the values live in the blocks.
+	 *  Branch 1.20.1: the carrier is {@code BlockColor} with a SINGLE method {@code getColor(state, level, pos, tintIndex)},
+	 *  where the absence of a world is expressed by {@code null} arguments ({@code BlockColor.java:11}); the two 26.x
+	 *  branches ({@code color(state)} / {@code colorInWorld(...)}) converge into it by the same predicate. */
 	private static final class GT6BlockTint implements net.minecraft.client.color.block.BlockColor {
 		@Override
 		public int getColor(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockAndTintGetter aLevel, net.minecraft.core.BlockPos aPos, int aTintIndex) {
 			if (!(aState.getBlock() instanceof gregapi.block.IBlock tBlock)) return 16777215;
-			// Вопрос с миром — 1.7.10 colorMultiplier(world,x,y,z) (биом-оттенок и прочее позиционное).
+			// Question with a world — 1.7.10 colorMultiplier(world,x,y,z) (biome tint and other positional data).
 			if (aLevel != null && aPos != null) return tBlock.colorMultiplier(aLevel, aPos.getX(), aPos.getY(), aPos.getZ());
-			// Вопрос без мира — 1.7.10 getRenderColor(meta). Подтип берём СУЩЕСТВУЮЩИМ центром мета↔BlockState
-			// (IBlockExtendedMetaData.getExtendedMetaData), а не своим разбором свойств.
+			// Question without a world — 1.7.10 getRenderColor(meta). The subtype is taken from the EXISTING
+			// meta<->BlockState center (IBlockExtendedMetaData.getExtendedMetaData), not from our own property parsing.
 			int tMeta = aState.getBlock() instanceof gregapi.block.IBlockExtendedMetaData tMetaBlock ? tMetaBlock.getExtendedMetaData(aState) : 0;
 			return tBlock.getRenderColor(tMeta);
 		}
 	}
 
-	// F14-gui: КЛИЕНТ-регистрация экрана для ContainerCommon.MENU_TYPE (без неё neo падает при открытии любого GUI мода —
-	// «no screen for menu type»). Фабрика маршрутизирует в ЕДИНЫЙ GT6-центр getGUIClient (тот же, что строил экран в
-	// 1.7.10 — per-machine ContainerClient-подкласс+текстура); fallback (getGUIClient=null/исключение) — обёртка
-	// neo-реконструированного menu базовым ContainerClient (без краша).
+	// F14-gui: CLIENT-side registration of the screen for ContainerCommon.MENU_TYPE (without it neo crashes when opening any mod GUI —
+	// "no screen for menu type"). The factory routes into the SINGLE GT6 center getGUIClient (the same one that built the screen in
+	// 1.7.10 — per-machine ContainerClient subclass+texture); fallback (getGUIClient=null/exception) — a wrapper
+	// of the neo-reconstructed menu with a plain ContainerClient (no crash).
 	private void onClientSetup(net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent aEvent) {
-		// Ветка 1.20.1: отдельного события регистрации экранов нет — привязка делается статическим
-		// MenuScreens.register в client-setup (канон Forge 1.20.1), поэтому кладём её в enqueueWork
-		// (MenuScreens не потокобезопасен, а событие приходит на параллельном лоадере).
+		// Branch 1.20.1: there is no separate screen-registration event — the binding is done by the static
+		// MenuScreens.register in client-setup (Forge 1.20.1 canon), so it is placed inside enqueueWork
+		// (MenuScreens is not thread-safe, and the event arrives on a parallel loader thread).
 		aEvent.enqueueWork(this::registerMenuScreens);
-		// BP-BUG-015: слой поверхности собственных жидкостей — там же, единственное окно, в котором движок
-		// принимает запись (ItemBlockRenderTypes.checkClientLoading:432-436 «ideally … from FMLClientSetupEvent»).
+		// BP-BUG-015: the surface layer of the mod's own fluids — same place, the only window in which the engine
+		// accepts the entry (ItemBlockRenderTypes.checkClientLoading:432-436 "ideally … from FMLClientSetupEvent").
 		aEvent.enqueueWork(GT_API_Proxy_Client::registerFluidRenderLayers);
 	}
 
-	/** ЦЕНТР СЛОЯ ПОВЕРХНОСТИ ЖИДКОСТИ (BP-BUG-015). Клетку роли {@code OWN_TAGGED_FLUID} движок рисует
-	 *  ЖИДКОСТНЫМ проходом (getRenderShape=INVISIBLE, {@code BlockFluidBaseGT:226-230}), а слой такой клетки
-	 *  берёт НЕ у модели блока, а у собственной таблицы жидкостей: {@code ItemBlockRenderTypes.getRenderLayer
-	 *  (FluidState):377-379} с дефолтом {@code RenderType.solid()} ({@code :399-401}). Ваниль пишет туда свою
-	 *  воду статически ({@code :315-319} — FLOWING_WATER и WATER, translucent); мод обязан записать свою, иначе
-	 *  поверхность геоводы рисуется НЕПРОЗРАЧНОЙ (репорт игрока 2026-08-16).
+	/** CENTER FOR THE FLUID SURFACE LAYER (BP-BUG-015). The engine draws a cell of the {@code OWN_TAGGED_FLUID} role
+	 *  through the FLUID pass (getRenderShape=INVISIBLE, {@code BlockFluidBaseGT:226-230}), and such a cell's layer
+	 *  is taken NOT from the block model but from the engine's own fluid layer table: {@code ItemBlockRenderTypes.getRenderLayer
+	 *  (FluidState):377-379} defaulting to {@code RenderType.solid()} ({@code :399-401}). Vanilla writes its own
+	 *  water there statically ({@code :315-319} — FLOWING_WATER and WATER, translucent); the mod must write its own,
+	 *  otherwise the surface of GT6 water-like fluids is drawn OPAQUE (player report 2026-08-16).
 	 *
-	 *  <p>Величина не выдумывается и второй таблицей слоёв не заводится: слой берётся ТЕМ ЖЕ центром, что у
-	 *  моделей блоков и предметов, — {@link gregapi.render.GT6BlockModel#renderTypeOf(net.minecraft.world.level.block.Block)}
-	 *  (1.7.10-канал {@code getRenderBlockPass()}). Носители перечисляются ролью, а не списком имён: роль уже
-	 *  знает, чья клетка объявлена движку жидкостью. {@code VANILLA_WATER} пропускается — там жидкость
-	 *  ванильная и слой ей задал сам движок; {@code NO_ENGINE_FLUID} (нефти, газ) рисуется моделью и в этой
-	 *  таблице не участвует вовсе. */
+	 *  <p>The value is not invented and no second layer table is started: the layer is taken from the SAME center
+	 *  used by block and item models — {@link gregapi.render.GT6BlockModel#renderTypeOf(net.minecraft.world.level.block.Block)}
+	 *  (the 1.7.10 channel {@code getRenderBlockPass()}). Carriers are enumerated by role, not by a name list: the role
+	 *  already knows whose cell is declared to the engine as a fluid. {@code VANILLA_WATER} is skipped — there the fluid
+	 *  is vanilla and the engine itself already set its layer; {@code NO_ENGINE_FLUID} (oils, gas) is drawn by the model
+	 *  and does not participate in this table at all. */
 	private static void registerFluidRenderLayers() {
 		int tCount = 0;
 		for (gregapi.block.fluid.BlockFluidBaseGT tBlock : gregapi.block.fluid.BlockFluidBaseGT.allFluidBlocks()) {
@@ -227,132 +227,138 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			net.minecraft.world.level.material.Fluid tOwn = tBlock.ownFluid();
 			if (tOwn == null || tOwn == net.minecraft.world.level.material.Fluids.EMPTY) continue;
 			net.minecraft.client.renderer.RenderType tLayer = gregapi.render.GT6BlockModel.renderTypeOf(tBlock);
-			// обе половины пары: getFluidState клетки отдаёт source ЛИБО flowing (BlockFluidBaseGT:218-219),
-			// и таблица движка адресуется КАЖДЫМ из них по отдельности — ровно как ваниль пишет WATER и FLOWING_WATER.
+			// both halves of the pair: the cell's getFluidState returns EITHER source OR flowing (BlockFluidBaseGT:218-219),
+			// and the engine table is addressed by EACH of them separately — exactly as vanilla writes WATER and FLOWING_WATER.
 			net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(tOwn, tLayer); tCount++;
 			if (tOwn instanceof net.minecraft.world.level.material.FlowingFluid tFlowing && tFlowing.getFlowing() != tOwn) {
 				net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(tFlowing.getFlowing(), tLayer); tCount++;
 			}
 		}
-		gregapi.data.CS.OUT.println("[F3-fluidlayer] слой поверхности задан для жидкостей GT6: " + tCount);
+		gregapi.data.CS.OUT.println("[F3-fluidlayer] surface layer set for GT6 fluids: " + tCount);
 	}
 
 	private void registerMenuScreens() {
 		if (gregapi.gui.ContainerCommon.MENU_TYPE == null) return;
 		net.minecraft.client.gui.screens.MenuScreens.<gregapi.gui.ContainerCommon, gregapi.gui.ContainerClient>register(gregapi.gui.ContainerCommon.MENU_TYPE.get(), (aMenu, aInv, aTitle) -> {
-			// исключение отсюда = дисконнект (neoforge ClientPayloadHandler.createMenuScreen catch→disconnect) → тотальный null-гейт
+			// an exception here = disconnect (neoforge ClientPayloadHandler.createMenuScreen catch→disconnect) → a total null-gate
 			if (aMenu == null) aMenu = new gregapi.gui.ContainerCommon(0, aInv);
-			// containerId-мост (корень «слот есть на сервере, но не отображается»): getGUIClient строит СВЕЖИЙ
-			// клиент-контейнер легаси-конструктором (id из sPendingWindowID); вне withWindowID тот равен -1 →
-			// id клиента ≠ id сервера → ВСЕ пакеты контента/слотов меню молча дропаются клиентом (проверка id в
-			// handleContainerSetSlot/Content). Оборачиваем фабрику мостом с id сетевого меню (= серверный id).
+			// containerId bridge (root of "the slot exists on the server but is not displayed"): getGUIClient builds a FRESH
+			// client-side container via the legacy constructor (id from sPendingWindowID); outside withWindowID that equals -1 →
+			// client id ≠ server id → ALL content/slot packets for the menu are silently dropped by the client (id check in
+			// handleContainerSetSlot/Content). We wrap the factory in a bridge carrying the network menu's id (= the server id).
 			final gregapi.gui.ContainerCommon fMenu = aMenu;
 			try { if (aMenu.mTileEntity instanceof gregapi.tileentity.ITileEntityGUI tGUI) { Object tScreen = gregapi.gui.ContainerCommon.withWindowID(fMenu.containerId, () -> tGUI.getGUIClient(fMenu.mGUIID, aInv.player)); if (tScreen instanceof gregapi.gui.ContainerClient tCC) {
-				// счётчик-баланс (сундук-«хор»): сетевой контейнер (createFromNetwork) УЖЕ вызвал openInventoryGUI на клиент-TE,
-				// и свежий контейнер из getGUIClient вызвал ЕЩЁ раз; removed() при закрытии декрементит ОДИН раз → клиентский
-				// mUsingPlayers залипал >0 навсегда (крышка вечно открыта, звук у всех «открытых» при входе в зону).
-				// Компенсация: закрываем счёт сетевого контейнера — экран владеет только своим.
+				// counter-balance (chest-"chorus"): the network container (createFromNetwork) ALREADY called openInventoryGUI on the client TE,
+				// and the fresh container from getGUIClient called it ONE MORE time; removed() on close decrements ONCE → the client-side
+				// mUsingPlayers stuck >0 forever (lid permanently open, everyone hears the "opened" sound when entering the area).
+				// Compensation: close the network container's own count — the screen owns only its own.
 				fMenu.mTileEntity.closeInventoryGUI();
 				return tCC;
 			} } }
-			catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-GUI] getGUIClient упал, fallback-экран: "+e); }
+			catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-GUI] getGUIClient threw, fallback screen: "+e); }
 			return new gregapi.gui.ContainerClient(aMenu, gregapi.data.CS.RES_PATH_GUI + "chests/" + (aMenu.mTileEntity == null ? 1 : aMenu.mTileEntity.getSizeInventoryGUI()) + ".png");
 		});
-		gregapi.data.CS.OUT.println("[GT6-GUI] MenuScreens: экран для ContainerCommon.MENU_TYPE зарегистрирован (F14).");
+		gregapi.data.CS.OUT.println("[GT6-GUI] MenuScreens: screen for ContainerCommon.MENU_TYPE registered (F14).");
 	}
 
-	// F3-render: облик MTE идёт МЭШЕМ СЕКЦИИ (GT6BlockModel), как в 1.7.10 — BUG-138 носитель №2. BER остаётся ради
-	// того, ради чего в 1.7.10 существовал bindTileEntitySpecialRenderer: сундук, масс-сторадж и трещины на живой
-	// геометрии ломаемого блока. Регистрация по BlockEntityType — движок иначе не умеет, диспетч по классу внутри BER.
+	// F3-render: the MTE's appearance is rendered via the SECTION MESH (GT6BlockModel), as in 1.7.10 — BUG-138 carrier #2. The BER remains for
+	// the same purpose bindTileEntitySpecialRenderer served in 1.7.10: chest, mass-storage and cracks on the live
+	// geometry of the block being broken. Registration by BlockEntityType — the engine has no other way, dispatch by class happens inside BER.
 	private void onRegisterBlockEntityRenderers(net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers aEvent) {
-		// BUG-138: типов иерархии стало два (тикающая половина и нетикающая — признак объявлен движку типом,
-		// см. TileEntityBase01Root.MTE_TYPE_NOTICK). Рендер к тику отношения не имеет: облик рисуется у ОБЕИХ
-		// половин, и нетикающих в мире как раз большинство (камни, кусты, палки). Рендерер один и тот же — иначе
-		// половина мира стала бы невидимой.
+		// BUG-138: the hierarchy now has two types (a ticking half and a non-ticking half — the trait is declared to the engine as a type,
+		// see TileEntityBase01Root.MTE_TYPE_NOTICK). Rendering has nothing to do with ticking: appearance is drawn for BOTH
+		// halves, and non-ticking ones are in fact the majority in the world (stones, bushes, sticks). It is the same renderer either way — otherwise
+		// half the world would turn invisible.
 		if (gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE != null)
 			aEvent.registerBlockEntityRenderer(gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE, gregapi.render.MultiTileEntityBER::new);
 		if (gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE_NOTICK != null)
 			aEvent.registerBlockEntityRenderer(gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE_NOTICK, gregapi.render.MultiTileEntityBER::new);
-		// F12-entity: рендерер падающего мета-блока — 1:1 оригинала (:126 registerEntityRenderingHandler(
-		// PrefixBlockFallingEntity.class, new RenderFallingBlock())): тот же ванильный рендерер падающего блока,
-		// он рисует то, что отдаёт getBlockState() (у нас — гравий, как и задумал автор, см. PrefixBlockFallingEntity).
+		// F12-entity: renderer for the falling meta-block — 1:1 of the original (:126 registerEntityRenderingHandler(
+		// PrefixBlockFallingEntity.class, new RenderFallingBlock())): the same vanilla falling-block renderer,
+		// it draws whatever getBlockState() returns (for us — gravel, exactly as the author intended, see PrefixBlockFallingEntity).
 		aEvent.registerEntityRenderer(GT_API.METABLOCK_FALLING.get(), net.minecraft.client.renderer.entity.FallingBlockRenderer::new);
 	}
 
-	// Приёмочный скан рендера (гейт ②): на первом client-tick, когда атлас стежен И DataComponents ПРИВЯЗАНЫ (на
-	// ModelEvent.BakingCompleted они ещё не bound → Item.getDefaultInstance NPE «Components not bound yet»). Проверяем,
-	// что item-иконки GT6 резолвятся (не пурпур). Once. Пишет found/missing в gregtech.log (game-bus, авто-регистр).
+	// Render acceptance scan (gate ②): on the first client tick, once the atlas is stitched AND DataComponents are BOUND (on
+	// ModelEvent.BakingCompleted they are not yet bound → Item.getDefaultInstance NPEs "Components not bound yet"). Verifies
+	// that GT6 item icons resolve (not purple). Once. Writes found/missing into gregtech.log (game-bus, auto-registered).
 
-	// Контракт оригинала: LAST_BROKEN_TILEENTITY живёт НЕ ДОЛЬШЕ тика — «Making sure it is being free'd up in order
-	// to prevent exploits or Garbage Collection mishaps» (GT_API_Proxy.onServerTick, оригинал :250). ThreadLocal:
-	// серверная чистка не видит КЛИЕНТСКУЮ копию, а в neo слом идёт клиент-предикшеном (MultiPlayerGameMode.destroyBlock
-	// → onDestroyedByPlayer) и ставит её на Render-потоке → WD.te вечно отдавал призрак сломанного BE → его
-	// ITileEntitySurface-opaque гасил грань соседнего блока до СЛЕДУЮЩЕГО слома (U3 «блуждающая дыра» стен).
-	// Зеркало той же строки оригинала на клиентском тике — жизненный цикл восстановлен 1:1.
+	// Original contract: LAST_BROKEN_TILEENTITY lives NO LONGER than a tick — "Making sure it is being free'd up in order
+	// to prevent exploits or Garbage Collection mishaps" (GT_API_Proxy.onServerTick, original :250). ThreadLocal:
+	// server-side cleanup does not see the CLIENT copy, and in neo the break happens via client prediction (MultiPlayerGameMode.destroyBlock
+	// → onDestroyedByPlayer) and sets it on the Render thread → WD.te kept handing back the ghost of the broken BE → its
+	// ITileEntitySurface-opaque suppressed the neighboring block's face until the NEXT break (U3 "wandering hole" in walls).
+	// A mirror of the same original line on the client tick — the lifecycle is restored 1:1.
 	@net.minecraftforge.eventbus.api.SubscribeEvent
 	public void onClientTickFreeLastBrokenTileEntity(net.minecraftforge.event.TickEvent.ClientTickEvent aEvent) {
-		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return; // 1.20.1: фаза — поле события (форма 1.7.10), отдельного .Post-типа нет
+		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return; // 1.20.1: phase is an event field (1.7.10 form), no separate .Post type
 		gregapi.data.CS.LAST_BROKEN_TILEENTITY.set(null);
 	}
 
-	// НАДЁЖНЫЙ МОСТ синка (пара к буферу NetworkHandler.PENDING): каждый клиент-тик доигрываем координатные
-	// GT6-пакеты, обогнавшие свой чанк при логине (иначе worldgen-MTE стартовой области оставались без клиент-BE).
+	// RELIABLE SYNC BRIDGE (a counterpart to the NetworkHandler.PENDING buffer): every client tick, catch up on positional
+	// GT6 packets that outran their chunk during login (otherwise worldgen MTEs in the starting area were left without a client BE).
 	@net.minecraftforge.eventbus.api.SubscribeEvent
 	public void onPendingPackets(net.minecraftforge.event.TickEvent.ClientTickEvent aEvent) {
 		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
 		gregapi.network.NetworkHandler.processPending(Minecraft.getInstance().level);
 	}
 
-	// ЦЕНТР ЛОКАЛИЗАЦИИ (BUG-082), клиентское плечо. Таблица переводов движка пересоздаётся ПРИ КАЖДОЙ загрузке
-	// ресурсов (ClientLanguage.loadFrom) — вместе с ней исчезают имена GT6, дописанные ранее. Здесь центр доливается
-	// целиком: событие приходит и на первой загрузке, и на каждой перезагрузке (F3+T, смена ресурспака, смена языка).
-	// Сам долив и его обоснование — gregapi.lang.LanguageHandler.injectIntoEngine().
-	// Ветка 1.20.1: отдельного «ресурсы загружены» события нет — сигнал берётся штатным слушателем перезагрузки
-	// ресурсов (RegisterClientReloadListenersEvent, мод-шина): он вызывается и на первой загрузке, и на каждой
-	// последующей — ровно тот набор моментов, что нёс ClientResourceLoadFinishedEvent.
+	// LOCALIZATION CENTER (BUG-082), client-side arm. The engine's translation table is recreated on EVERY resource
+	// reload (ClientLanguage.loadFrom) — taking with it the GT6 names appended earlier. Here the center refills it
+	// fully: the event fires both on the first load and on every reload (F3+T, resource-pack switch, language switch).
+	// The refill itself and its rationale — gregapi.lang.LanguageHandler.injectIntoEngine().
+	// Branch 1.20.1: there is no separate "resources loaded" event — the signal is taken from the standard resource
+	// reload listener (RegisterClientReloadListenersEvent, mod bus): it fires on both the first load and every
+	// subsequent one — exactly the set of moments ClientResourceLoadFinishedEvent used to carry.
 	public void registerClientResourceListener(net.minecraftforge.client.event.RegisterClientReloadListenersEvent aEvent) {
 		aEvent.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) aManager -> {
 			int tInjected = gregapi.lang.LanguageHandler.injectIntoEngine();
-			if (tInjected > 0) gregapi.data.CS.OUT.println("GT6 localization: имён GT6 дописано в таблицу движка: " + tInjected);
+			if (tInjected > 0) gregapi.data.CS.OUT.println("GT6 localization: GT6 names appended to the engine table: " + tInjected);
 		});
 	}
 
 	/**
-	 * ВТОРОЙ НОСИТЕЛЬ ПЕРЕВОДА НА КЛИЕНТЕ (MODCOMPAT-014).
+ 	 * SECOND TRANSLATION CARRIER ON THE CLIENT (MODCOMPAT-014).
 	 *
-	 * <p>{@code I18n} держит СОБСТВЕННЫЙ указатель на таблицу ({@code I18n.java:11} — {@code private static
-	 * volatile Language language}), и ставит его единственное место — {@code LanguageManager.apply:66-68}:
+ 	 * <p>{@code I18n} holds its OWN pointer to the table ({@code I18n.java:11} — {@code private static
+ 	 * volatile Language language}), and the only place that sets it is {@code LanguageManager.apply:66-68}:
 	 * <pre>  I18n.setLanguage(locale);   Language.inject(locale);</pre>
-	 * Надстройка GT6 приходит позже и только через {@code Language.inject} ({@code Language.java:121-123}),
-	 * которое это поле НЕ трогает. Поэтому {@code I18n.exists/get} не видели имён GT6 вообще: замер на живом
-	 * клиенте — {@code Language.getInstance()} знает 4 ключа из 5, {@code I18n} — 0, и объекты у каналов
-	 * разные. Через {@code I18n} спрашивают сторонние моды (Jade — переводы своих конфиг-опций, отсюда
-	 * «Missing config translation»), поэтому носителя два, а имя должно быть одно.
+ 	 * The GT6 overlay arrives later and only through {@code Language.inject} ({@code Language.java:121-123}),
+ 	 * which does NOT touch this field. So {@code I18n.exists/get} never saw GT6 names at all: a measurement on a live
+ 	 * client showed {@code Language.getInstance()} knows 4 of 5 keys, {@code I18n} — 0, and the channel objects are
+ 	 * different. Third-party mods ask through {@code I18n} (Jade — translations of its own config options, hence
+ 	 * "Missing config translation"), so there are two carriers, and there should be one name.
 	 *
-	 * <p>Ставим во второй носитель ТУ ЖЕ надстройку, что уже стоит в первом, — и там же, где движок ставит
-	 * свою: после каждой загрузки ресурсов. Штатной точки расширения у {@code I18n} нет ({@code setLanguage}
-	 * пакетный), поэтому поле берётся отражением — тем же приёмом, каким мод уже достаёт закрытые узлы
-	 * движка ({@code GT6ItemModel} → {@code ModBakery.resolvedModels}). Отказ не тихий: если приём перестанет
-	 * работать, в лог уйдёт строка, а не молчание.
+ 	 * <p>We install into the second carrier the SAME overlay already installed into the first — at the same place the engine
+ 	 * installs its own: after every resource load. There is no official extension point on {@code I18n} ({@code setLanguage}
+ 	 * is package-private), so the field is taken via reflection — the same trick the mod already uses to reach closed engine
+ 	 * internals ({@code GT6ItemModel} → {@code ModBakery.resolvedModels}). Failure is not silent: if the trick stops
+ 	 * working, a line goes into the log rather than silence.
 	 *
-	 * <p>Метод живёт в КЛИЕНТСКОМ прокси намеренно: {@code I18n} — {@code @OnlyIn(Dist.CLIENT)}, и упоминание
-	 * его в общем классе тянет клиентский тип на выделенный сервер (класс дефекта BUG-092).
+ 	 * <p>The method deliberately lives in the CLIENT proxy: {@code I18n} is {@code @OnlyIn(Dist.CLIENT)}, and naming
+ 	 * it in a common class would drag the client-only type onto the dedicated server (defect class BUG-092).
 	 */
+	// Lives in the client proxy for the same reason as syncClientI18n: LanguageManager is a client-only type and
+	// naming it in a common class drags it onto the dedicated server (defect class BUG-092).
+	@Override public String selectedLanguage() {
+		try {return net.minecraft.client.Minecraft.getInstance().getLanguageManager().getSelected();} catch (Throwable e) {return null;}
+	}
+
 	@Override public void syncClientI18n() {
 		try {
 			java.lang.reflect.Field tField = net.minecraft.client.resources.language.I18n.class.getDeclaredField("language");
 			tField.setAccessible(true);
 			if (tField.get(null) != net.minecraft.locale.Language.getInstance()) tField.set(null, net.minecraft.locale.Language.getInstance());
 		} catch (Throwable e) {
-			gregapi.data.CS.ERR.println("GT6 localization: I18n остался без имён GT6 — сторонние моды их не увидят (" + e + ").");
+			gregapi.data.CS.ERR.println("GT6 localization: I18n was left without GT6 names — third-party mods will not see them (" + e + ").");
 		}
 	}
 
-	// F-tileentity-construction (КЛИЕНТ-реконструкция MTE-BE): neo подменяет не-PrefixBlock GT6-MTE общим MTE_TYPE →
-	// TileEntityLoaderStub при десериализации BE чанка НА КЛИЕНТЕ. Стаб — не IRenderedBlockObject → passRenderingToObject=null
-	// → getRenderPasses=0 → MTE-блок НЕ рисуется (прозрачный: камни/палки/флюид-источники/машины). Серверная реконструкция
-	// (server-tick) клиент не покрывает — у него ОТДЕЛЬНЫЕ BE. Здесь дренируем клиентскую очередь стабов на client-tick,
-	// заменяя их настоящими MTE (единый механизм GT6WorldgenFeature.reconstructChunkMTEs, теперь Level-обобщённый).
+	// F-tileentity-construction (CLIENT MTE-BE reconstruction): neo substitutes non-PrefixBlock GT6 MTEs with a common MTE_TYPE →
+	// TileEntityLoaderStub during BE deserialization ON THE CLIENT. The stub is not IRenderedBlockObject → passRenderingToObject=null
+	// → getRenderPasses=0 → the MTE block is NOT rendered (transparent: stones/sticks/fluid sources/machines). Server-side reconstruction
+	// (server-tick) does not cover the client — it has SEPARATE BEs. Here we drain the client-side stub queue on client-tick,
+	// replacing them with real MTEs (the same unified mechanism GT6WorldgenFeature.reconstructChunkMTEs, now Level-generic).
 	@net.minecraftforge.eventbus.api.SubscribeEvent
 	public void onClientMTEReconstruct(net.minecraftforge.event.TickEvent.ClientTickEvent aEvent) {
 		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
@@ -361,16 +367,16 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	}
 
 
-	// F5/F3-render (client): рендер ВСЕХ GT6-жидкостей. GT6-жидкость = still/flow-текстура (mTexture, IIconContainer)
-	// + цвет (mRGBa, тинтит серый молтен). Ветка 1.20.1: движок берёт эти три величины не из модели и не из события,
-	// а из расширения ТИПА жидкости — {@code IClientFluidTypeExtensions} ({@code FluidType.initializeClient},
-	// FluidType.java:899), поэтому здесь живёт ЕДИНЫЙ переходник, а зовёт его сам GTFluidType (тот же приём ленивого
-	// invokestatic из common-класса, что у item-расширений MTE). Централизация 1:1 — одна фабрика на весь мод,
-	// как GT6BlockModel/GT6ItemModel. Fallback на воду при null-иконе.
+	// F5/F3-render (client): rendering of ALL GT6 fluids. A GT6 fluid = still/flow texture (mTexture, IIconContainer)
+	// + color (mRGBa, tints grey molten). Branch 1.20.1: the engine takes these three values not from a model and not
+	// from an event, but from a fluid TYPE extension — {@code IClientFluidTypeExtensions} ({@code FluidType.initializeClient},
+	// FluidType.java:899), so a SINGLE adapter lives here, and GTFluidType itself calls it (the same lazy
+	// invokestatic technique from a common class used by MTE item extensions). Centralization 1:1 — one factory for
+	// the whole mod, like GT6BlockModel/GT6ItemModel. Falls back to water on a null icon.
 	public static void bindFluidClientExtensions(gregapi.fluid.FluidGT aFluid, java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions> aConsumer) {
 		aConsumer.accept(new net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions() {
 			private net.minecraft.resources.ResourceLocation texture() {
-				try { if (aFluid.mTexture != null) { net.minecraft.resources.ResourceLocation t = aFluid.mTexture.getIcon(0); if (t != null) return t; } } catch (Throwable e) {/* невалидная икона → fallback вода */}
+				try { if (aFluid.mTexture != null) { net.minecraft.resources.ResourceLocation t = aFluid.mTexture.getIcon(0); if (t != null) return t; } } catch (Throwable e) {/* invalid icon -> fallback to water */}
 				return null;
 			}
 			@Override public net.minecraft.resources.ResourceLocation getStillTexture() {
@@ -388,46 +394,46 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		});
 	}
 
-	// Рантайм-инъекция: каждому BlockState каждого GT6-блока-рендера назначаем единственный GT6BlockModel
-	// (модель динамическая — читает блок/позицию/состояние в collectParts, один инстанс на весь мод).
+	// Runtime injection: assign the single GT6BlockModel to every BlockState of every GT6 renderer block
+	// (the model is dynamic — reads the block/position/state in collectParts, one instance for the whole mod).
 	private void onModifyBakingResult(net.minecraftforge.client.event.ModelEvent.ModifyBakingResult aEvent) {
-		// Правка №3 (BUG-106): атлас/модели пересозданы — старые спрайты в кэшах геометрии мертвы, сбрасываем.
+		// Edit #3 (BUG-106): the atlas/models were recreated — old sprites in geometry caches are dead, invalidating them.
 		gregapi.render.GT6ItemModel.invalidateCaches();
 		gregapi.render.GT6BlockModel.invalidateParticle();
-		// Ветка 1.20.1: кэш квадов BER держит UV СТАРОГО атласа — рвём эпохой (в 26.x это делал миксин на
-		// allChanged, здесь он мёртв; перепечка моделей — тот же момент «атлас сменился»).
+		// Branch 1.20.1: the BER quad cache holds UVs of the OLD atlas — busted by epoch (on 26.x a mixin on
+		// allChanged did this, it is dead here; model re-baking is the same "atlas changed" moment).
 		gregapi.render.MultiTileEntityBER.onRenderAllChanged();
-		// Ветка 1.20.1: карта результата ОДНА и общая — ключ блока это ModelResourceLocation состояния
-		// (BlockModelShaper.stateToModelLocation, BlockModelShaper.java:52), ключ предмета — «<id>#inventory»
-		// (ModelResourceLocation.java:26; ItemModelShaper ищет модель именно по нему).
+		// Branch 1.20.1: the result map is ONE and shared — the block key is the state's ModelResourceLocation
+		// (BlockModelShaper.stateToModelLocation, BlockModelShaper.java:52), the item key is "<id>#inventory"
+		// (ModelResourceLocation.java:26; ItemModelShaper looks the model up by exactly that key).
 		java.util.Map<net.minecraft.resources.ResourceLocation, net.minecraft.client.resources.model.BakedModel> tMap = aEvent.getModels();
 		int tCount = 0;
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
-			// GT6BlockModel — и IRenderedBlock, и BlockBaseRail (рельсы: своя рельс-ветка, плоский quad по мете).
+			// GT6BlockModel — both IRenderedBlock and BlockBaseRail (rails: their own rail branch, a flat quad by meta).
 			if (!(tBlock instanceof gregapi.render.IRenderedBlock) && !(tBlock instanceof gregapi.block.misc.BlockBaseRail)) continue;
-			// per-BlockState инстанс: модель обязана знать владельца там, где движок контекста мира НЕ даёт
-			// (breaking-оверлей, статический запрос модели), и мету — для спрайта крошки (getParticleIcon без pos).
+			// per-BlockState instance: the model must know its owner where the engine gives no world context
+			// (the breaking overlay, a static model request), and the meta — for the crack sprite (getParticleIcon without pos).
 			for (net.minecraft.world.level.block.state.BlockState tState : tBlock.getStateDefinition().getPossibleStates()) {
 				tMap.put(net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(tState), new gregapi.render.GT6BlockModel(tBlock, tState));
 				tCount++;
 			}
 		}
-		// F3-render: ЕДИНАЯ item-модель ВСЕМ GT6-предметам (включая block-предметы: их item-форму рисует GT6ItemModel через
-		// buildInventoryQuads = renderInventoryBlock). Прежде block-предметы пропускались → у них не было item-модели → пурпур.
+		// F3-render: a SINGLE item model for ALL GT6 items (including block items: their item shape is drawn by GT6ItemModel via
+		// buildInventoryQuads = renderInventoryBlock). Previously block items were skipped → they had no item model → purple.
 		gregapi.render.GT6ItemModel tItemModel = new gregapi.render.GT6ItemModel();
 		int tItemCount = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			net.minecraft.resources.ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null || !gregapi.data.CS.ModIDs.isGregNamespace(tKey.getNamespace())) continue;
-			// block-предмет инжектим, если его блок — IRenderedBlock ИЛИ рельс (BlockBaseRail: GT6ItemModel рисует ему плоскую
-			// straight-иконку); прочие block-предметы оставляем дефолтной модели блока.
+			// inject the block item if its block is IRenderedBlock OR a rail (BlockBaseRail: GT6ItemModel draws it a flat
+			// straight icon); other block items are left with the default block model.
 			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && !(tBI.getBlock() instanceof gregapi.render.IRenderedBlock) && !(tBI.getBlock() instanceof gregapi.block.misc.BlockBaseRail)) continue;
 			tMap.put(new net.minecraft.client.resources.model.ModelResourceLocation(tKey, "inventory"), tItemModel); tItemCount++;
 		}
-		// Гигиена («Missing model for variant»): GT6-блоки с RenderShape.INVISIBLE (fluid-блоки river/ocean/swamp — сам блок
-		// невидим 1:1 к vanilla LiquidBlock, вода рисуется FluidState/F5-подсистемой) не имеют baked-модели → ModelManager сыпал
-		// предупреждение на КАЖДЫЙ их BlockState-вариант (48 шт). Кладём пустую модель (тот же GT6BlockModel: для не-IRenderedBlock
-		// геометрия пуста) — движок находит модель, предупреждение уходит; визуал не меняется (блок и так INVISIBLE).
+		// Hygiene ("Missing model for variant"): GT6 blocks with RenderShape.INVISIBLE (fluid blocks river/ocean/swamp — the block
+		// itself is invisible 1:1 to vanilla LiquidBlock, water is drawn by the FluidState/F5 subsystem) have no baked model → ModelManager
+		// logged a warning for EVERY one of their BlockState variants (48 of them). We plug in an empty model (the same GT6BlockModel: for a
+		// non-IRenderedBlock the geometry is empty) — the engine finds a model, the warning stops; the visual does not change (the block is still INVISIBLE).
 		gregapi.render.GT6BlockModel tEmptyModel = new gregapi.render.GT6BlockModel();
 		int tEmptyCount = 0;
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
@@ -462,27 +468,27 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		return null;
 	}
 
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code PlayerControllerMP.sendUseItem(player,world,stack)}
-	 *  с явным {@code ItemStack} (тип метода удалён). Neo {@code MultiPlayerGameMode.useItem(Player,InteractionHand)}
-	 *  берёт предмет из руки игрока, а не явный {@code aStack} — семантика "использовать ИМЕННО этот стек"
-	 *  недостижима без него (движко-шов), поэтому используется основная рука как ближайший эквивалент. */
+	/** F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo callers): was {@code PlayerControllerMP.sendUseItem(player,world,stack)}
+ 	 *  with an explicit {@code ItemStack} (the method type was removed). Neo {@code MultiPlayerGameMode.useItem(Player,InteractionHand)}
+ 	 *  takes the item from the player's hand, not the explicit {@code aStack} — the semantics of "use EXACTLY this stack"
+ 	 *  is unreachable without it (an engine seam), so the main hand is used as the closest equivalent. */
 	@Override
 	public boolean sendUseItemPacket(Player aPlayer, Level aWorld, ItemStack aStack) {
 		Minecraft.getInstance().gameMode.useItem(aPlayer, net.minecraft.world.InteractionHand.MAIN_HAND);
 		return T;
 	}
 
-	// BUG-039 v4 (аудит JPMS-mirror): метод БЫЛ мёртвым сиротой — сигнатура (FMLCommonSetupEvent) не совпадала с
-	// базовой Abstract_Proxy.onProxyAfterPreInit(Abstract_Mod, FMLPreInitializationEvent), @Override был
-	// закомментирован → Abstract_Mod:167 его никогда не звал; OptiFine-детект и сезонная листва были потеряны
-	// молча. Сигнатура исправлена, канал жив. RenderingRegistry-заглушки (registerEntityRenderingHandler/
-	// registerBlockHandler — F3-суперсид GT6BlockModel-пайплайном, no-op по замыслу) СНЯТЫ: их mirror-класс
-	// cpw.* JPMS-вырезан из рантайма, исполнение кидало бы NoClassDefFoundError (см. decisions/F3-render.md §1,2.1,2.5).
+	// BUG-039 v4 (JPMS-mirror audit): the method WAS a dead orphan — the signature (FMLCommonSetupEvent) did not match the
+	// base Abstract_Proxy.onProxyAfterPreInit(Abstract_Mod, FMLPreInitializationEvent), @Override was
+	// commented out → Abstract_Mod:167 never called it; OptiFine detection and seasonal foliage were lost
+	// silently. Signature fixed, the channel is alive. RenderingRegistry stubs (registerEntityRenderingHandler/
+	// registerBlockHandler — F3-superseded by the GT6BlockModel pipeline, no-op by design) were REMOVED: their mirror class
+	// cpw.* is JPMS-cut from the runtime, invoking them would throw NoClassDefFoundError (see decisions/F3-render.md §1,2.1,2.5).
 	@Override
 	public void onProxyAfterPreInit(Abstract_Mod aMod, gregapi.api.FMLPreInitializationEvent aEvent) {
 		// Check if OptiFine is loaded in order to disable some GT Render Hooks to fix Glitches.
-		// 1:1-мост: 1.7.10 FMLClientHandler.hasOptifine() = детект Class.forName("Config") (FMLClientHandler:272-286,
-		// референс) — FML-обёртка удалена, сам детект воспроизведён; + net.optifine.Config (современный путь OF).
+		// 1:1 bridge: 1.7.10 FMLClientHandler.hasOptifine() = detects Class.forName("Config") (FMLClientHandler:272-286,
+		// reference) — the FML wrapper is gone, the detection itself is reproduced; + net.optifine.Config (the modern OF path).
 		boolean tOptifine = F;
 		try {Class.forName("Config", false, GT_API_Proxy_Client.class.getClassLoader()); tOptifine = T;} catch(Throwable e) {/**/}
 		if (!tOptifine) try {Class.forName("net.optifine.Config", false, GT_API_Proxy_Client.class.getClassLoader()); tOptifine = T;} catch(Throwable e) {/**/}
@@ -550,29 +556,29 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	public static final List<short[]> sRainbow = new ArrayListNoNulls<>(), sRainbowFast = new ArrayListNoNulls<>(), sPosR = new ArrayListNoNulls<>(), sPosG = new ArrayListNoNulls<>(), sPosB = new ArrayListNoNulls<>(), sPosA = new ArrayListNoNulls<>(), sNegR = new ArrayListNoNulls<>(), sNegG = new ArrayListNoNulls<>(), sNegB = new ArrayListNoNulls<>(), sNegA = new ArrayListNoNulls<>();
 	
 	/**
-	 * 1.7.10 {@code TextureStitchEvent.Pre} нёс здесь страховку Грегориуса «жидкость без иконки или с битой
-	 * иконкой получает иконку своего блока либо воды» (оригинал {@code GT_API_Proxy_Client:194-212}). В neo
-	 * Pre-события нет ({@code TextureAtlasStitchedEvent} приходит только ПОСЛЕ стежки), а мутировать чужую
-	 * жидкость нельзя — модель жидкости регистрирует владеющий мод. Функция страховки НЕ утрачена: она несётся
-	 * тремя централизованными плечами. Ветка «иконки нет» ({@code getIcon()==null}) — {@link gregapi.data.FL#stillIcon}
-	 * (заведено в BUG-049: нет своей текстуры → {@code water_still}; потребители — дисплеи и ВСЕ баки через
-	 * {@link gregapi.render.BlockTextureFluid}). Ветка «иконка битая» ({@code FluidsGT.BROKEN}) —
-	 * {@code BlockTextureFluid:105}: спрайт не нашёлся в атласе → {@code water_still}. Мировой рендер —
-	 * {@link #onRegisterFluidModels}: фолбэк на воду при null/невалидной иконе (baked-фаза F3 — ровно куда
-	 * прежняя метка отложенности предписывала перенести фикс). Списки-исключения оригинала перенесены 1:1:
-	 * {@code BROKEN} пуст, {@code BORKEN} несёт одну thaumcraft-жидкость (мода в сборке нет) — применимых
-	 * чужих случаев нет, жидкости регистрируют только ваниль и GT6. Судья фолбэка — {@code gt6itemmodelprobe}
-	 * (BUG-068): river/ocean/swamp — жидкости БЕЗ своей текстуры — получают {@code water_still}, 10/10.
-	 * Обработчик оставлен пустым 1:1 к точке подписки оригинала.
+ 	 * 1.7.10 {@code TextureStitchEvent.Pre} carried Gregorius's safety net here: "a fluid without an icon or with a broken
+ 	 * icon gets the icon of its own block or of water" (original {@code GT_API_Proxy_Client:194-212}). In neo
+ 	 * there is no Pre event ({@code TextureAtlasStitchedEvent} only fires AFTER stitching), and mutating someone else's
+ 	 * fluid is not allowed — the fluid's model is registered by the owning mod. The safety net's function is NOT lost: it is carried
+ 	 * by three centralized arms. The "no icon" branch ({@code getIcon()==null}) — {@link gregapi.data.FL#stillIcon}
+ 	 * (set up in BUG-049: no own texture → {@code water_still}; consumers are displays and ALL tanks via
+ 	 * {@link gregapi.render.BlockTextureFluid}). The "broken icon" branch ({@code FluidsGT.BROKEN}) —
+ 	 * {@code BlockTextureFluid:105}: the sprite was not found in the atlas → {@code water_still}. World render —
+ 	 * {@link #onRegisterFluidModels}: falls back to water on a null/invalid icon (the baked F3 phase — exactly where
+ 	 * the earlier deferred-work marker instructed the fix to move). The original's exception lists are carried over 1:1:
+ 	 * {@code BROKEN} is empty, {@code BORKEN} carries one thaumcraft fluid (the mod is absent from the build) — no
+ 	 * applicable foreign cases exist, only vanilla and GT6 register fluids. The fallback's judge is {@code gt6itemmodelprobe}
+ 	 * (BUG-068): river/ocean/swamp — fluids WITHOUT their own texture — get {@code water_still}, 10/10.
+ 	 * The handler is left empty, 1:1 with the original's subscription point.
 	 */
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onTextureStitchedPre(TextureStitchEvent.Post aEvent) {
 		//
 	}
 
-	/** Клиентское плечо моста оплаты маяка (центр — {@link GT_API_Proxy#wrapBeaconPaymentSlot}): клиент строит
-	 *  СВОЙ экземпляр {@code BeaconMenu} по сетевому пакету, серверная подмена слота его не достигает — без
-	 *  этого плеча клиентское предсказание клика отвергало бы стек, который сервер принимает. */
+	/** Client-side arm of the beacon-payment bridge (center — {@link GT_API_Proxy#wrapBeaconPaymentSlot}): the client builds
+ 	 *  its OWN {@code BeaconMenu} instance from the network packet, the server-side slot swap does not reach it — without
+ 	 *  this arm the client's click prediction would reject a stack that the server accepts. */
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onScreenOpening(net.minecraftforge.client.event.ScreenEvent.Opening aEvent) {
 		if (aEvent.getNewScreen() instanceof net.minecraft.client.gui.screens.inventory.BeaconScreen tScreen) GT_API_Proxy.wrapBeaconPaymentSlot(tScreen.getMenu());
@@ -580,19 +586,19 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 
 	/**
 	 * 1.7.10 {@code net.minecraftforge.event.entity.player.ItemTooltipEvent}
-	 * держал tooltip как {@code List<String>} напрямую в поле {@code toolTip}; neo-эквивалент
+ 	 * held the tooltip as a {@code List<String>} directly in the field {@code toolTip}; the neo equivalent
 	 * {@code net.minecraftforge.event.entity.player.ItemTooltipEvent} (`neoforge-decompiled/.../ItemTooltipEvent.java:16-70`)
-	 * — геттеры, а список типизирован {@code List<Component>} (движко-шов, т.к. рендер текста теперь
-	 * дерево {@code Component}, не сырая строка). Вся GT6-логика ниже (300+ строк) оперирует СТРОКАМИ
-	 * (конкатенация {@code LH.Chat.*} §-кодов, {@code replaceAll}, и т.д.) и передаётся в
-	 * {@code ICover.addToolTips(List<String>,...)} (сотни реализаций по всему моду, {@code List<String>}
-	 * НЕ тронут — вне зоны этого захода) — чтобы не терять ни строки бизнес-логики (R8), тело работает
-	 * на ЛОКАЛЬНОЙ {@code List<String>}-копии (снятой из {@code Component.getString()} до, собранной
-	 * обратно через {@code Component.literal(...)} после — §-коды внутри literal-строки по-прежнему
-	 * рендерятся движком, см. {@code FormattedCharSequence}); синхронизация — в {@code finally}, чтобы
-	 * сработать на ЛЮБОМ выходе (return/exception), как оригинал мутировал список напрямую. Harvest-строка
-	 * восстановлена ниже: {@code Block.getHarvestTool/getHarvestLevel} удалены из neo по имени, но те же
-	 * величины отдаёт центр {@link WD} из паспорта блока 1.7.10 (данные оракула, см. {@code WD.vanillaPassport}).
+ 	 * — getters, and the list is typed {@code List<Component>} (an engine seam, since text rendering is now
+ 	 * a {@code Component} tree, not a raw string). All the GT6 logic below (300+ lines) operates on STRINGS
+ 	 * (concatenating {@code LH.Chat.*} § codes, {@code replaceAll}, etc.) and is passed into
+ 	 * {@code ICover.addToolTips(List<String>,...)} (hundreds of implementations across the mod, {@code List<String>}
+ 	 * left UNTOUCHED — out of scope for this pass) — so as not to lose a single line of business logic (R8), the body works
+ 	 * on a LOCAL {@code List<String>} copy (taken from {@code Component.getString()} before, reassembled
+ 	 * via {@code Component.literal(...)} after — § codes inside a literal string still render
+ 	 * correctly through the engine, see {@code FormattedCharSequence}); the sync-back happens in {@code finally}, so it
+ 	 * fires on ANY exit (return/exception), just as the original mutated the list directly. The harvest line
+ 	 * is restored below: {@code Block.getHarvestTool/getHarvestLevel} were removed from neo by name, but the same
+ 	 * values are supplied by the center {@link WD} from the 1.7.10 block passport (oracle data, see {@code WD.vanillaPassport}).
 	 */
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onItemTooltip(ItemTooltipEvent aEvent) {
@@ -605,16 +611,16 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try {
 			if (UT.NBT.getNBT(aEvent.getItemStack()).getBoolean("gt.err.oredict.output")) {
 				aToolTip.clear();
-				aToolTip.add(0, LH.Chat.BLINKING_RED+"A Recipe used an OreDict Item as Output directly, without copying it before!");
-				aToolTip.add(1, LH.Chat.BLINKING_RED+"This is a typical CallByReference/CallByValue Error of the Modder doing it.");
-				aToolTip.add(2, LH.Chat.BLINKING_RED+"Please check all Recipes outputting this Item, and report the Recipes to their Owner.");
-				aToolTip.add(3, LH.Chat.BLINKING_RED+"The Owner of the RECIPE, NOT the Owner of the Item!");
+				aToolTip.add(0, LH.Chat.BLINKING_RED+LH.tt("A Recipe used an OreDict Item as Output directly, without copying it before!"));
+				aToolTip.add(1, LH.Chat.BLINKING_RED+LH.tt("This is a typical CallByReference/CallByValue Error of the Modder doing it."));
+				aToolTip.add(2, LH.Chat.BLINKING_RED+LH.tt("Please check all Recipes outputting this Item, and report the Recipes to their Owner."));
+				aToolTip.add(3, LH.Chat.BLINKING_RED+LH.tt("The Owner of the RECIPE, NOT the Owner of the Item!"));
 				return;
 			}
 
 			String aRegName = ST.regName(aEvent.getItemStack());
 			if (aRegName == null) {
-				aToolTip.set(0, LH.Chat.BLINKING_RED+"ERROR: THIS ITEM HAS NOT BEEN REGISTERED!!!");
+				aToolTip.set(0, LH.Chat.BLINKING_RED+LH.tt("ERROR: THIS ITEM HAS NOT BEEN REGISTERED!!!"));
 				aRegName = "ERROR: THIS ITEM HAS NOT BEEN REGISTERED!!!";
 			}
 			short aMeta = ST.meta_(aEvent.getItemStack());
@@ -641,9 +647,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				if (MD.TiC.owns(aRegName)) return;
 			}
 
-			if (MD.Mek.owns(aRegName)) aToolTip.set(0, aToolTip.get(0).replaceAll("Osmium", MT.Ge.mNameLocal));
-			if (MD.BP .owns(aRegName)) aToolTip.set(0, aToolTip.get(0).replaceAll("Infused Teslatite", MT.PurpleAlloy.mNameLocal).replaceAll("Teslatite", MT.Nikolite.mNameLocal));
-			if (MD.BP.mLoaded) aToolTip.set(0, aToolTip.get(0).replaceAll("Teslatite", MT.Nikolite.mNameLocal));
+			if (MD.Mek.owns(aRegName)) aToolTip.set(0, aToolTip.get(0).replaceAll("Osmium", MT.Ge.getLocal()));
+			if (MD.BP .owns(aRegName)) aToolTip.set(0, aToolTip.get(0).replaceAll("Infused Teslatite", MT.PurpleAlloy.getLocal()).replaceAll("Teslatite", MT.Nikolite.getLocal()));
+			if (MD.BP.mLoaded) aToolTip.set(0, aToolTip.get(0).replaceAll("Teslatite", MT.Nikolite.getLocal()));
 
 			if (!(aItem instanceof ItemFluidDisplay) && SHOW_INTERNAL_NAMES) {
 				if (tData != null && tData.validData()) {
@@ -665,7 +671,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			}
 
 			if (ItemsGT.RECIPE_REMOVED_USE_TRASH_BIN_INSTEAD.contains(aEvent.getItemStack(), T)) {
-				aToolTip.add(LH.Chat.BLINKING_RED + "Recipe has been removed in favour of the GregTech Ender Garbage Bin");
+				aToolTip.add(LH.Chat.BLINKING_RED + LH.tt("Recipe has been removed in favour of the GregTech Ender Garbage Bin"));
 			}
 
 			ICover tCover = CoverRegistry.get(aEvent.getItemStack());
@@ -684,8 +690,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					} else {
 						aToolTip.add(LH.getToolTipBlastResistance(aBlock, aBlock.getExplosionResistance()));
 					}
-					// 1:1 с оригиналом (`gregtech6/.../GT_API_Proxy_Client.java:301`): те же три величины, только
-					// спрошенные у центра WD — в neo у блока нет ни материала, ни harvestTool/Level по имени.
+					// 1:1 with the original (`gregtech6/.../GT_API_Proxy_Client.java:301`): the same three values, only
+					// asked from the center WD — in neo the block has neither a material nor harvestTool/Level by name.
 					aToolTip.add(LH.getToolTipHarvest(WD.getMaterial(aBlock), WD.harvestTool(aBlock, aBlockMeta), WD.harvestLevel(aBlock, aBlockMeta)));
 				}
 				if (BlocksGT.openableCrowbar.contains(aBlock)) {
@@ -701,19 +707,19 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				aToolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_SANDWICHABLE));
 			}
 
-			/* Было {@code Item.isBeaconPayment(ItemStack)} (Forge 1.7.10, метод удалён) — центральный предикат моста
-			 * (тег {@code BEACON_PAYMENT_ITEMS} ИЛИ контракт IItemBeaconPayment): тултип отвечает то же, что слот маяка. */
+			/* Was {@code Item.isBeaconPayment(ItemStack)} (Forge 1.7.10, method removed) — the central predicate of the bridge
+	 		 * (tag {@code BEACON_PAYMENT_ITEMS} OR the IItemBeaconPayment contract): the tooltip answers the same as the beacon slot. */
 			if (GT_API_Proxy.isBeaconPayment(aEvent.getItemStack())) {
 				aToolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_BEACON_PAYMENT));
 			}
 
-			/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code cpw.mods.fml.common.registry.GameRegistry.getFuelValue(ItemStack)}
-			 * (Forge 1.7.10 static API, удалён) — neo {@code Level.fuelValues().burnDuration(ItemStack)}
-			 * (`neo-decompiled/net/minecraft/world/level/block/entity/FuelValues.java:38`), инстанс с клиентского
-			 * {@code Minecraft.getInstance().level} (ближайший клиентский эквивалент world-контекста). */
+			/* F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo callers): was {@code cpw.mods.fml.common.registry.GameRegistry.getFuelValue(ItemStack)}
+	 		 * (Forge 1.7.10 static API, removed) — neo {@code Level.fuelValues().burnDuration(ItemStack)}
+	 		 * (`neo-decompiled/net/minecraft/world/level/block/entity/FuelValues.java:38`), instance from the client's
+	 		 * {@code Minecraft.getInstance().level} (the closest client-side equivalent of a world context). */
 			Level tClientLevel = Minecraft.getInstance().level;
 			long tBurnValue = tClientLevel == null ? 0 : net.minecraftforge.common.ForgeHooks.getBurnTime(ST.amount(1, aEvent.getItemStack()), null);
-			if (tBurnValue > 0) aToolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FURNACE_FUEL) + LH.Chat.WHITE + tBurnValue + " ("+(tBurnValue*EU_PER_FURNACE_TICK)+LH.Chat._RED+"HU"+LH.Chat.WHITE+")");
+			if (tBurnValue > 0) aToolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FURNACE_FUEL) + LH.Chat.WHITE + tBurnValue + " ("+(tBurnValue*EU_PER_FURNACE_TICK)+LH.Chat._RED+LH.tt("HU")+LH.Chat.WHITE+")");
 
 			if (tData != null) {
 				if (tData.validPrefix()) {
@@ -722,11 +728,11 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						if (tToolTip != null) aToolTip.add(tToolTip);
 					}
 				} else {
-					if (IL.RC_Firestone_Refined.equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + "GT6 Burning Boxes: "+LH.Chat.WHITE+(800*EU_PER_LAVA)+LH.Chat._RED+"HU"+LH.Chat._CYAN+"per Lava Block"); else
-					if (IL.RC_Firestone_Cracked.equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + "GT6 Burning Boxes: "+LH.Chat.WHITE+(600*EU_PER_LAVA)+LH.Chat._RED+"HU"+LH.Chat._CYAN+"per Lava Block"); else
-					if (IL.TF_Pick_Giant       .equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + "Repairable with Knightmetal Ingots on the Vanilla Anvil"); else
-					if (IL.TF_Sword_Giant      .equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + "Repairable with Ironwood Ingots on the Vanilla Anvil"); else
-					if (IL.TF_Lamp_of_Cinders  .equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + "Can be used as a Lighter for GT6 things and TNT");
+					if (IL.RC_Firestone_Refined.equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + LH.tt("GT6 Burning Boxes: ")+LH.Chat.WHITE+(800*EU_PER_LAVA)+LH.Chat._RED+LH.tt("HU")+LH.Chat._CYAN+LH.tt("per Lava Block")); else
+					if (IL.RC_Firestone_Cracked.equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + LH.tt("GT6 Burning Boxes: ")+LH.Chat.WHITE+(600*EU_PER_LAVA)+LH.Chat._RED+LH.tt("HU")+LH.Chat._CYAN+LH.tt("per Lava Block")); else
+					if (IL.TF_Pick_Giant       .equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + LH.tt("Repairable with Knightmetal Ingots on the Vanilla Anvil")); else
+					if (IL.TF_Sword_Giant      .equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + LH.tt("Repairable with Ironwood Ingots on the Vanilla Anvil")); else
+					if (IL.TF_Lamp_of_Cinders  .equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + LH.tt("Can be used as a Lighter for GT6 things and TNT"));
 				}
 				if (tData.validMaterial()) {
 					boolean tUnburnable = F;
@@ -744,14 +750,17 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						aToolTip.add(LH.Chat.YELLOW + tData.mMaterial.mMaterial.mTooltipChemical);
 					}
 					if (tData.mMaterial.mMaterial == MT.Nikolite) {
-						aToolTip.set(0, aToolTip.get(0).replaceAll("(Teslatite|Electrotine)", MT.Nikolite.mNameLocal));
+						aToolTip.set(0, aToolTip.get(0).replaceAll("(Teslatite|Electrotine)", MT.Nikolite.getLocal()));
 					}
 					if (tData.mMaterial.mMaterial == MT.Ge) {
-						aToolTip.set(0, aToolTip.get(0).replaceAll("Osmium", MT.Ge.mNameLocal));
+						aToolTip.set(0, aToolTip.get(0).replaceAll("Osmium", MT.Ge.getLocal()));
 					}
 					if (tData.validPrefix()) {
 						if (!ST.isGT(aItem) && tData.mPrefix == OP.dustTiny && ANY.Blaze.mToThis.contains(tData.mMaterial.mMaterial)) {
-							aToolTip.set(0, aToolTip.get(0).replaceAll(tData.mMaterial.mMaterial.mNameLocal, OP.dustTiny.mMaterialPre + tData.mMaterial.mMaterial.mNameLocal));
+							// The search side keeps the English name: that is what the foreign mod wrote. The replacement asks
+							// for the localised item name, so on a Russian client the line does not switch back to English.
+							aToolTip.set(0, aToolTip.get(0).replaceAll(tData.mMaterial.mMaterial.mNameLocal,
+								LH.get("oredict." + OP.dustTiny.dat(tData.mMaterial.mMaterial).toString(), OP.dustTiny.mMaterialPre + tData.mMaterial.mMaterial.mNameLocal)));
 						}
 						if (tData.mPrefix.contains(TD.Prefix.NEEDS_SHARPENING)) aToolTip.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_NEEDS_SHARPENING));
 						if (tData.mPrefix.contains(TD.Prefix.NEEDS_HANDLE    )) aToolTip.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_NEEDS_HANDLE) + LH.Chat.WHITE + tData.mMaterial.mMaterial.mHandleMaterial.getLocal());
@@ -760,7 +769,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 							StringBuilder
 							tToolTip = null;
 							for (OreDictMaterial tMaterial : tData.mMaterial.mMaterial.mSourceOf) {
-								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.CYAN).append("Source of: ").append(LH.Chat.WHITE); else tToolTip.append(", ");
+								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.CYAN).append(LH.tt("Source of: ")).append(LH.Chat.WHITE); else tToolTip.append(", ");
 								tToolTip.append(tMaterial.getLocal());
 							}
 							if (tToolTip != null) aToolTip.add(tToolTip.toString());
@@ -780,7 +789,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 							for (ObjectStack<Enchantment> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentTools) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_TOOL_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
 								tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
-								if (tEnchantment.mObject == Enchantments.FIRE_ASPECT && tEnchantment.mAmount >= 3) tToolTip.append(" (Autosmelt)");
+								if (tEnchantment.mObject == Enchantments.FIRE_ASPECT && tEnchantment.mAmount >= 3) tToolTip.append(LH.tt(" (Autosmelt)"));
 							}
 							if (tToolTip != null) aToolTip.add(tToolTip.toString());
 							tToolTip = null;
@@ -864,27 +873,27 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						aToolTip.add(tString.toString());
 					}
 				} else {
-					aToolTip.add(LH.Chat.DGRAY + "Enable F3+H Mode for Info about contained Materials.");
+					aToolTip.add(LH.Chat.DGRAY + LH.tt("Enable F3+H Mode for Info about contained Materials."));
 				}
 
 				if (tData.validData()) {
 					if (ST.isGT(aItem)) {
 						if (tData.mMaterial.mMaterial.mOriginalMod == null) {
-							aToolTip.add(LH.Chat.BLUE + "Material from an Unknown Mod");
+							aToolTip.add(LH.Chat.BLUE + LH.tt("Material from an Unknown Mod"));
 						} else if (tData.mMaterial.mMaterial.mOriginalMod == MD.MC) {
-							aToolTip.add(LH.Chat.BLUE + "Vanilla Material");
+							aToolTip.add(LH.Chat.BLUE + LH.tt("Vanilla Material"));
 						} else if (tData.mMaterial.mMaterial.mOriginalMod == MD.GAPI) {
 							if (tData.mMaterial.mMaterial.mID > 0 && tData.mMaterial.mMaterial.mID < 8000) {
-								aToolTip.add(LH.Chat.BLUE + "Material from the Periodic Table of Elements");
+								aToolTip.add(LH.Chat.BLUE + LH.tt("Material from the Periodic Table of Elements"));
 							} else {
-								aToolTip.add(LH.Chat.BLUE + "Random Material handled by Greg API");
+								aToolTip.add(LH.Chat.BLUE + LH.tt("Random Material handled by Greg API"));
 							}
 						} else {
-							aToolTip.add(LH.Chat.BLUE + "Material from " + tData.mMaterial.mMaterial.mOriginalMod.mName);
+							aToolTip.add(LH.Chat.BLUE + LH.tt("Material from ") + tData.mMaterial.mMaterial.mOriginalMod.mName);
 						}
 					} else {
 						if ((tData.mMaterial.mMaterial == MT.Fe || tData.mMaterial.mMaterial == MT.Fe2O3) && tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED) && !aToolTip.get(0).contains("Native")) {
-							aToolTip.set(0, aToolTip.get(0).replaceAll("Banded Iron", MT.Fe2O3.mNameLocal).replaceAll("Iron", MT.Fe2O3.mNameLocal));
+							aToolTip.set(0, aToolTip.get(0).replaceAll("Banded Iron", MT.Fe2O3.getLocal()).replaceAll("Iron", MT.Fe2O3.getLocal()));
 						}
 						if (tData.mMaterial.mMaterial == MT.Au && tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED) && !aToolTip.get(0).contains("Native")) {
 							aToolTip.set(0, aToolTip.get(0).replaceAll("Gold", "Native Gold"));
@@ -904,41 +913,41 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		} finally {
-			// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): синхронизация локальной List<String> обратно в
-			// List<Component> события (см. class javadoc метода) — движко-форсированный шов.
+			// F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo callers): sync the local List<String> back into
+			// the event's List<Component> (see method's class javadoc) — an engine-forced seam.
 			tTT.clear();
 			for (String s : aToolTip) tTT.add(s == null ? null : Component.literal(s));
 		}
 	}
 	
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent}
-	 *  с полем {@code phase}/сравнением {@code == ServerTickEvent.END} (тип+поле удалены, F10-зеркало
-	 *  `compat-mirror/java/cpw/mods/fml/common/gameevent/TickEvent.java` — тип-пустышка, поведение живёт
-	 *  здесь) — neo раздельно шлёт {@code ClientTickEvent.Pre}/{@code .Post}
-	 *  (`forge-1201-decompiled/net/minecraftforge/event/TickEvent.java:24-29`) — в 1.20.1 фаза снова ПОЛЕ
-	 *  события ({@code phase}), как в 1.7.10, поэтому вернулось и условие-обёртка; тело БЕЗ ИЗМЕНЕНИЙ. */
+	/** F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo callers): was {@code cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent}
+ 	 *  with a {@code phase} field/compared to {@code == ServerTickEvent.END} (type+field removed, the F10 mirror
+ 	 *  `compat-mirror/java/cpw/mods/fml/common/gameevent/TickEvent.java` is a dummy type, the behavior lives
+ 	 *  here) — neo sends {@code ClientTickEvent.Pre}/{@code .Post} separately
+	 *  (`forge-1201-decompiled/net/minecraftforge/event/TickEvent.java:24-29`) — on 1.20.1 the phase is once again a FIELD
+	 *  of the event ({@code phase}), as in 1.7.10, so the condition-wrapper is back too; the body is UNCHANGED. */
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onClientTickEvent(ClientTickEvent aEvent) {
-		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return; // 1.20.1: фаза — поле события (форма 1.7.10)
+		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return; // 1.20.1: phase is an event field (1.7.10 form)
 		{
 			if (CLIENT_TIME == 10) {
-				// ЗАКРЫТО, тело переехало на серверную сторону — {@code gregtech.GT6_Main.onModServerStarted2}:
-				// «Fake Furnace Recipe Map» (наполнение витрины RM.Furnace) и перенос ванильных плавок в реестр
-				// GT6 ({@code FurnaceRecipes.importVanilla}). В 1.7.10 это делалось здесь, потому что ванильный
-				// список плавок был статикой и существовал уже к клиентскому тику; в neo рецепты data-driven и
-				// приходят с датапаком, поэтому момент тот же (мир загружен), а сторона — серверная.
+				// CLOSED, the body moved to the server side — {@code gregtech.GT6_Main.onModServerStarted2}:
+				// "Fake Furnace Recipe Map" (populating the RM.Furnace showcase) and importing vanilla smelts into the
+				// GT6 registry ({@code FurnaceRecipes.importVanilla}). In 1.7.10 this was done here because the vanilla
+				// smelting list was static and already existed by the client tick; in neo recipes are data-driven and
+				// arrive with the datapack, so the moment is the same (world loaded), but the side is server-side.
 				//
-				// Вторая половина 1.7.10-тела — «hiding stuff from NEI» ({@code Item.getSubItems} +
-				// {@code CreativeTabs.tabAllSearch}) — ДОЛГА НЕ НЕСЁТ: оригинал (:530-536) прятал микроблоки
-				// ЧУЖИХ модов (Forge Microblocks, Extra Utilities, Extra Simple, фасады AE2). Ни один из них не
-				// в сборке, {@code ST.item(MD.FMB, "microblock")} = null, цикл был бы пустым.
+				// The second half of the 1.7.10 body — "hiding stuff from NEI" ({@code Item.getSubItems} +
+				// {@code CreativeTabs.tabAllSearch}) — CARRIES NO DEBT: the original (:530-536) hid microblocks
+				// of FOREIGN mods (Forge Microblocks, Extra Utilities, Extra Simple, AE2 facades). None of them are
+				// in the build, {@code ST.item(MD.FMB, "microblock")} = null, the loop would be empty.
 			}
 
-			// BUG-090: клиентское плечо скольжения slippery. В 1.7.10 Potion.performEffect тикал на ОБЕИХ
-			// сторонах (IEPotions.java:118-121 двигал и клиентского игрока); в neo applyEffectTick сервер-only
-			// (сигнатура ServerLevel), а движение игрока клиент-авторитетно — серверная добавка скорости до
-			// клиента не доезжает. Эффект синхронизирован клиенту штатно (ClientboundUpdateMobEffectPacket) —
-			// читаем его здесь тем же вектором и коэффициентом; выброс предмета остаётся серверным.
+			// BUG-090: client-side arm of the slippery-slide effect. In 1.7.10 Potion.performEffect ticked on BOTH
+			// sides (IEPotions.java:118-121 also moved the client player); in neo applyEffectTick is server-only
+			// (ServerLevel signature), and player movement is client-authoritative — the server-side speed boost never
+			// reaches the client. The effect is synced to the client normally (ClientboundUpdateMobEffectPacket) —
+			// we read it here using the same vector and coefficient; the item drop remains server-side.
 			{
 				net.minecraft.client.player.LocalPlayer tSlipperyPlayer = Minecraft.getInstance().player;
 				if (tSlipperyPlayer != null && tSlipperyPlayer.onGround() && tSlipperyPlayer.hasEffect(gregapi.potion.MobEffectsGT.SLIPPERY.get()))
@@ -1031,12 +1040,12 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		}
 	}
 	
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): см. javadoc {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight}
-	 *  — {@link RenderHighlightEvent.Block} не несёт {@code player}/{@code currentItem}/{@code partialTicks}
-	 *  старого события. Игрок восстановлен через {@code Minecraft.getInstance().player} (тот же центральный
-	 *  паттерн, что {@link #getThePlayer()}); {@code sideHit} — из {@code getHitResult().getDirection()};
-	 *  {@code partialTicks} недостижим (0 — нейтрально, единственный потребитель {@link RenderHelper#drawWrenchOverlay}
-	 *  уже no-op, см. его javadoc). Ветвление/делегирование в {@link ITileEntityOnDrawBlockHighlight} — БЕЗ ИЗМЕНЕНИЙ. */
+	/** F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo callers): see the javadoc of {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight}
+	 *  — {@link RenderHighlightEvent.Block} does not carry {@code player}/{@code currentItem}/{@code partialTicks}.
+ 	 *  The player is recovered via {@code Minecraft.getInstance().player} (the same central
+ 	 *  pattern as {@link #getThePlayer()}); {@code sideHit} — from {@code getHitResult().getDirection()};
+ 	 *  {@code partialTicks} is unreachable (0 — neutral, the sole consumer {@link RenderHelper#drawWrenchOverlay}
+ 	 *  is already a no-op, see its javadoc). Branching/delegation into {@link ITileEntityOnDrawBlockHighlight} — UNCHANGED. */
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onDrawBlockHighlight(RenderHighlightEvent.Block aEvent) {
 		Player tPlayer = Minecraft.getInstance().player;
@@ -1051,9 +1060,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		aBlock = WD.block(tPlayer.level(), aEvent.getTarget().getBlockPos().getX(), aEvent.getTarget().getBlockPos().getY(), aEvent.getTarget().getBlockPos().getZ());
 		BlockEntity aTileEntity = WD.te(tPlayer.level(), aEvent.getTarget().getBlockPos().getX(), aEvent.getTarget().getBlockPos().getY(), aEvent.getTarget().getBlockPos().getZ(), T);
 		if (!(aTileEntity instanceof ITileEntityOnDrawBlockHighlight) || !((ITileEntityOnDrawBlockHighlight)aTileEntity).onDrawBlockHighlight(aEvent)) {
-			// Плечо AE2 (ToolCompat, onToolClick): ключ Грега обслуживает блоки AE2 — прицельная сетка зон
-			// обязана рисоваться и на них, ТЕМ ЖЕ условием, что само плечо. На main это поймала живая приёмка:
-			// поворот работал, а сетки не было — подсказка отставала от механики.
+			// AE2 arm (ToolCompat, onToolClick): Greg's wrench also serves AE2 blocks — the aiming grid overlay
+			// must be drawn on them too, under the SAME condition as the arm itself. On main this was caught by a live
+			// acceptance check: rotation worked, but there was no grid — the hint lagged behind the mechanic.
 			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable) || (ToolCompat.AE_BASEBLOCKENTITY && aTileEntity instanceof appeng.blockentity.AEBaseBlockEntity)) && ST.valid(tPlayer.getMainHandItem()) && ToolsGT.contains(TOOL_wrench, tPlayer.getMainHandItem())) {
 				RenderHelper.drawWrenchOverlay(aEvent, (byte)0, tSide);
 				return;
@@ -1062,7 +1071,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	}
 	
 	private static List<Block> ROTATABLE_VANILLA_BLOCKS = Arrays.asList(Blocks.PISTON, Blocks.STICKY_PISTON, Blocks.FURNACE, Blocks.FURNACE, Blocks.DROPPER, Blocks.DISPENSER, Blocks.CHEST, Blocks.TRAPPED_CHEST, Blocks.ENDER_CHEST, Blocks.HOPPER, Blocks.CARVED_PUMPKIN, Blocks.JACK_O_LANTERN);
-	// Тот же носитель, что в ToolCompat: направленная тыква 1.7.10 = CARVED_PUMPKIN, а Blocks.PUMPKIN —
-	// неразрезанная и НЕ поворачивается вовсе (neo PumpkinBlock extends Block, свойства FACING нет).
-	// Здесь стоял Blocks.PUMPKIN, из-за чего подсказка ключа на тыкве не показывалась никогда.
+	// Same carrier as in ToolCompat: the directional pumpkin of 1.7.10 = CARVED_PUMPKIN, and Blocks.PUMPKIN is the
+	// uncut one and does NOT rotate at all (neo PumpkinBlock extends Block, no FACING property).
+	// Blocks.PUMPKIN used to be here, which is why the wrench hint on the pumpkin never showed up.
 }

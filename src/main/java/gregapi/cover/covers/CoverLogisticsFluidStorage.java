@@ -56,7 +56,7 @@ public class CoverLogisticsFluidStorage extends AbstractCoverAttachmentLogistics
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		FluidStack tFluid = FL.load(ItemNBT.get(aStack), "gt.filter.fluid");
 		if (tFluid != null && tFluid.getFluid() != null) aList.add(LH.Chat.CYAN + FL.name(tFluid, T));
-		aList.add(LH.Chat.ORANGE + "Not NBT sensitive!");
+		aList.add(LH.Chat.ORANGE + LH.tt("Not NBT sensitive!"));
 		super.addToolTips(aList, aStack, aF3_H);
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_RESET_SOFT_HAMMER));
 	}
@@ -70,15 +70,15 @@ public class CoverLogisticsFluidStorage extends AbstractCoverAttachmentLogistics
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
 				if (aData.mNBTs[aCoverSide] == null) {
-					aChatReturn.add("No Filter Set! (Priority: " + aData.mValues[aCoverSide] + ")");
+					aChatReturn.add(LH.tt("No Filter Set! (Priority: ") + aData.mValues[aCoverSide] + ")");
 					aData.mNBTs[aCoverSide] = null;
 				} else {
 					FluidStack tFluid = FL.load(aData.mNBTs[aCoverSide], "gt.filter.fluid");
 					if (tFluid == null) {
-						aChatReturn.add("No Filter Set! (Priority: " + aData.mValues[aCoverSide] + ")");
+						aChatReturn.add(LH.tt("No Filter Set! (Priority: ") + aData.mValues[aCoverSide] + ")");
 						aData.mNBTs[aCoverSide] = null;
 					} else {
-						aChatReturn.add("Stores: " + LH.Chat.CYAN + FL.regName(tFluid.getFluid()) + " (Priority: " + aData.mValues[aCoverSide] + ")");
+						aChatReturn.add(LH.tt("Stores: ") + LH.Chat.CYAN + FL.regName(tFluid.getFluid()) + LH.tt(" (Priority: ") + aData.mValues[aCoverSide] + ")");
 					}
 				}
 			}
@@ -103,7 +103,7 @@ public class CoverLogisticsFluidStorage extends AbstractCoverAttachmentLogistics
 					if (FL.valid(tFluid)) {
 						aData.mNBTs[aCoverSide] = FL.save(null, "gt.filter.fluid", tFluid);
 						UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);
-						UT.Entities.sendchat(aPlayer, "Stores: " + LH.Chat.CYAN + FL.regName(tFluid.getFluid()));
+						UT.Entities.sendchat(aPlayer, LH.tt("Stores: ") + LH.Chat.CYAN + FL.regName(tFluid.getFluid()));
 					}
 				}
 			}

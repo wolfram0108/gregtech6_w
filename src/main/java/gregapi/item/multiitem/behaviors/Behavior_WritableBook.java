@@ -51,7 +51,7 @@ public class Behavior_WritableBook extends AbstractBehaviorDefault {
 		if (UT.Code.stringValid(tTitle)) {
 			aList.add(LH.Chat.CYAN + tTitle);
 		} else {
-			aList.add(LH.Chat.CYAN + "Untitled");
+			aList.add(LH.Chat.CYAN + LH.tt("Untitled"));
 		}
 		return aList;
 	}

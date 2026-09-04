@@ -47,11 +47,11 @@ public class MultiTileEntityReactorRodProduct extends MultiTileEntityReactorRodB
 
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		aList.add(LH.Chat.DGRAY + "Used in Nuclear Reactor Core");
-		aList.add(LH.Chat.CYAN + "Emits half the Heat per Neutron on this Rod");
-		aList.add(LH.Chat.CYAN + "Can be centrifuged to get valuable materials");
+		aList.add(LH.Chat.DGRAY + LH.tt("Used in Nuclear Reactor Core"));
+		aList.add(LH.Chat.CYAN + LH.tt("Emits half the Heat per Neutron on this Rod"));
+		aList.add(LH.Chat.CYAN + LH.tt("Can be centrifuged to get valuable materials"));
 		if (mBreedingName.equals(""))  mBreedingName = ST.meta(aStack.copy(), mBreeding).getDisplayName().getString();
-		aList.add(LH.Chat.GREEN + "Breed from " + mBreedingName);
+		aList.add(LH.Chat.GREEN + LH.tt("Breed from ") + mBreedingName);
 	}
 
 	@Override

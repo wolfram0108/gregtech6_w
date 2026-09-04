@@ -90,7 +90,7 @@ import java.util.Set;
 import static gregapi.data.CS.*;
 
 public abstract class GT_Proxy extends Abstract_Proxy {
-	// F12-entity: мод-шинная регистрация клиентских рендереров сущностей — база no-op (сервер), override в GT_Client.
+	// F12-entity: mod-bus registration of client entity renderers — a no-op base (server), overridden in GT_Client.
 	public void registerClientRenderers(IEventBus aModBus) {/**/}
 
 	public final HashSetNoNulls<String> mSupporterListSilver = new HashSetNoNulls<>();
@@ -102,9 +102,9 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	public int mSkeletonsShootGTArrows = 16, mFlintChance = 30;
 	
 	public GT_Proxy() {
-		// neo: единая MinecraftForge.EVENT_BUS; ORE_GEN_BUS/TERRAIN_GEN_BUS и FML-шина удалены движком (см. F-event-model кластер A).
-		// F7 (централизованно, Abstract_Proxy): register(this) запрещён neo — @SubscribeEvent на супертипе GT_Proxy, а
-		// инстанс — GT_Server/GT_Client-подкласс; per-method addListener обходит проверку иерархии. Одно место на весь мод.
+		// neo: a single MinecraftForge.EVENT_BUS; ORE_GEN_BUS/TERRAIN_GEN_BUS and the FML bus were removed by the engine (see F-event-model cluster A).
+		// F7 (centralized, Abstract_Proxy): register(this) is forbidden by neo — @SubscribeEvent lives on the GT_Proxy supertype, while
+		// the instance is a GT_Server/GT_Client subclass; per-method addListener bypasses the hierarchy check. One place for the whole mod.
 		registerSubscribeEvents();
 	}
 
@@ -136,20 +136,20 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 		if (aEvent.getEntityLiving() instanceof EnderMan && aEvent.getEntityLiving().getEffect(MobEffects.WEAKNESS) != null) aEvent.setCanceled(T);
 	}
 
-	// ── F-event-model кластер B (worldgen-terraingen) ──────────────────────────────────────────────────
-	// neo УДАЛИЛ terraingen-шину целиком (пакет net.minecraftforge.event.terraingen отсутствует): классы
-	// OreGenEvent/DecorateBiomeEvent/PopulateChunkEvent/BiomeEvent не существуют. 5 обработчиков подавления
-	// ванильной генерации (руды/озёра DENY, подмена village-блоков, отмена декора в GT-зонах улиц/биомов)
-	// НЕ могут быть event-обработчиками. Подавление централизованно переносится в worldgen-подсистему
-	// (neo BiomeModifier + Feature), единым приёмом на весь кластер вместе с Worldgen*/ChestGenHooksChestReplacer —
-	// см. decisions/F-event-model-and-removed-subsystems-map.md кластер B (ADR-B). Здесь НЕ заглушка:
-	// обработчики удалены вместе с удалённой движком шиной; поведение реализует worldgen-подсистема.
+	// ── F-event-model cluster B (worldgen-terraingen) ──────────────────────────────────────────────────
+	// neo REMOVED the terraingen bus entirely (the net.minecraftforge.event.terraingen package does not exist): the classes
+	// OreGenEvent/DecorateBiomeEvent/PopulateChunkEvent/BiomeEvent do not exist. The 5 handlers that suppressed
+	// vanilla generation (ore/lake DENY, village-block substitution, canceling decoration in GT street/biome zones)
+	// CANNOT be event handlers. The suppression is moved centrally into the worldgen subsystem
+	// (neo BiomeModifier + Feature), one approach for the whole cluster together with Worldgen*/ChestGenHooksChestReplacer —
+	// see decisions/F-event-model-and-removed-subsystems-map.md cluster B (ADR-B). This is NOT a stub:
+	// the handlers were removed along with the engine-removed bus; the behavior is implemented by the worldgen subsystem.
 
 	private static final HashSetNoNulls<String> CHECKED_PLAYERS = new HashSetNoNulls<>();
 
-	// F-event-model: 1.7.10 PlayerInteractEvent (одно событие + aEvent.action) движок расщепил на подклассы;
-	// RIGHT_CLICK_AIR -> PlayerInteractEvent.RightClickItem, RIGHT_CLICK_BLOCK -> RightClickBlock. Разносим в
-	// два обработчика 1:1; общая supporter-проверка (выполнялась на любом взаимодействии) — в общий метод.
+	// F-event-model: the engine split the 1.7.10 PlayerInteractEvent (one event + aEvent.action) into subclasses;
+	// RIGHT_CLICK_AIR -> PlayerInteractEvent.RightClickItem, RIGHT_CLICK_BLOCK -> RightClickBlock. We split it into
+	// two handlers 1:1; the shared supporter check (which ran on any interaction) goes into a common method.
 	private void checkSupporterCertificate(PlayerInteractEvent aEvent) {
 		String aName = aEvent.getEntity().getName().getString(), aNameLowercase = aName.toLowerCase();
 		if (!aEvent.getLevel().isClientSide() && CHECKED_PLAYERS.add(aName)) {
@@ -157,7 +157,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 				if (!MultiTileEntityCertificate.ALREADY_RECEIVED.contains(aNameLowercase)) {
 					if (ST.give(aEvent.getEntity(), MultiTileEntityCertificate.getCertificate(1, aName), F)) {
 						MultiTileEntityCertificate.ALREADY_RECEIVED.add(aNameLowercase);
-						UT.Entities.sendchat(aEvent.getEntity(), CHAT_GREG + "Thank you, " + aName + ", for Supporting GregTech! Here, have a Certificate. ;)");
+						UT.Entities.sendchat(aEvent.getEntity(), CHAT_GREG + LH.tt("Thank you, ") + aName + LH.tt(", for Supporting GregTech! Here, have a Certificate. ;)"));
 					}
 				}
 			}
@@ -180,7 +180,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 
 				HitResult tTarget = WD.getMOP(aEvent.getLevel(), aEvent.getEntity(), T);
 				if (tTarget == null || tTarget.getType() != HitResult.Type.BLOCK) return;
-				// WD.getMOP теперь возвращает neo HitResult; getBlockPos()/getDirection() живут в BlockHitResult (после гейта BLOCK — безопасно).
+				// WD.getMOP now returns a neo HitResult; getBlockPos()/getDirection() live on BlockHitResult (safe after the BLOCK gate).
 				BlockHitResult tHit = (BlockHitResult)tTarget; BlockPos tPos = tHit.getBlockPos();
 				if (!aEvent.getLevel().mayInteract(aEvent.getEntity(), tPos) || !aEvent.getEntity().mayUseItemAt(tPos, tHit.getDirection(), aStack)) return;
 				Block tBlock = WD.block(aEvent.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ());
@@ -228,13 +228,13 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					BlockPos tPos = ((BlockHitResult)tTarget).getBlockPos();
 					Block tBlock = WD.block(aEvent.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ());
 					if (tBlock instanceof BlockWaterlike && tBlock != BlocksGT.River) {
-						// 1:1 (ориг. :253-260): океан/болото ванильным ведром НЕ черпаются (иначе морская/грязная
-						// становилась бы бесплатной пресной), река — черпается.
+						// 1:1 (original :253-260): ocean/swamp are NOT scoopable with a vanilla bucket (otherwise salty/dirty
+						// water would become free fresh water), a river IS scoopable.
 						aEvent.setCanceled(T);
-						// Страховка рассинхрона предсказания (вердикт приёмки 2026-07-30, «ведро-призрак»):
-						// клиентский BucketItem мог уже показать ведро воды и стереть блок — рейкасты сторон
-						// расходятся на кадр интерполяции WD.getMOP:193. При СЕРВЕРНОЙ отмене возвращаем клиенту
-						// правду: полный синк меню (broadcastChanges не шлёт — сервер ничего не менял) + блок хита.
+						// Insurance against a prediction desync (acceptance verdict 2026-07-30, "ghost bucket"):
+						// the client BucketItem may have already shown a water bucket and erased the block — side raycasts
+						// diverge for one interpolation frame at WD.getMOP:193. On a SERVER-side cancellation we return the
+						// truth to the client: a full menu sync (broadcastChanges does not send — the server changed nothing) + the hit block.
 						if (!aEvent.getLevel().isClientSide() && aEvent.getEntity() instanceof net.minecraft.server.level.ServerPlayer tSP) {
 							tSP.containerMenu.sendAllDataToRemote();
 							tSP.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(aEvent.getLevel(), tPos)); // ctor (BlockGetter,BlockPos) — ClientboundBlockUpdatePacket.java:29
@@ -252,7 +252,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 		checkSupporterCertificate(aEvent);
 
 		final int tX = aEvent.getPos().getX(), tY = aEvent.getPos().getY(), tZ = aEvent.getPos().getZ();
-		final byte tSide = UT.Code.side(aEvent.getFace()); // Direction -> GT6-байт стороны (центр UT.Code.side)
+		final byte tSide = UT.Code.side(aEvent.getFace()); // Direction -> GT6 side byte (the UT.Code.side center)
 
 		ItemStack aStack = aEvent.getEntity().getMainHandItem();
 		if (aStack != null && aStack.getCount() > 0) {
@@ -344,7 +344,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 		if (aEvent.getEntity() == null) return;
 		
 		if (aEvent.getEntity() instanceof LivingEntity) {
-			// AI Tasks for Entities — 1.7.10 EntityAITasks -> neo GoalSelector (только Mob несёт goalSelector).
+			// AI Tasks for Entities — 1.7.10 EntityAITasks -> neo GoalSelector (only Mob carries goalSelector).
 			if (aEvent.getEntity() instanceof Mob tMob) {
 				GoalSelector tGoals = tMob.goalSelector;
 				if (aEvent.getEntity() instanceof Villager) {
@@ -354,8 +354,8 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					if (ItemsGT.CANS != null) tGoals.addGoal(3, new TemptGoal((PathfinderMob)aEvent.getEntity(), 0.6D, net.minecraft.world.item.crafting.Ingredient.of(ItemsGT.CANS), T));
 				}
 				if (aEvent.getEntity() instanceof Zombie) {
-					// 1.7.10 подменял ванильный EntityAIAttackOnCollide на GT-версию; neo: находим обёртку MeleeAttackGoal
-					// (ZombieAttackGoal is-a MeleeAttackGoal) и заменяем на EntityAIBetterAttackOnCollide тем же приоритетом.
+					// 1.7.10 replaced the vanilla EntityAIAttackOnCollide with the GT version; neo: find the MeleeAttackGoal wrapper
+					// (ZombieAttackGoal is-a MeleeAttackGoal) and replace it with EntityAIBetterAttackOnCollide at the same priority.
 					for (WrappedGoal tWrapped : new java.util.ArrayList<>(tGoals.getAvailableGoals())) {
 						if (tWrapped.getGoal() instanceof MeleeAttackGoal) {
 							int tPrio = tWrapped.getPriority();
@@ -400,21 +400,21 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 				}
 				ItemStack tArrow = OP.arrowGtWood.mat(tMaterial, 1);
 				if (ST.valid(tArrow)) {
-					// ⛔ ТОТ ЖЕ КРАШ-КЛАСС, что в GT_API_Proxy.onEntitySpawningEvent (лог04): было
-					// `addFreshEntity(замена); discard()` — дословный перенос 1.7.10
-					// (`spawnEntityInWorld(...); setDead()`). В neo это событие постится ВНУТРИ добавления
-					// сущности (PersistentEntitySectionManager.addEntity:80), ДО setLevelCallback, и discard()
-					// оставляет в ChunkMap.entityMap трекер уже удалённой сущности — обход карты потом рвётся.
-					// Штатный путь подмены: ОТМЕНИТЬ добавление ванильной стрелы (движок вернёт false и в мир её
-					// не пустит) и добавить свою — порядок «сначала отмена, потом замена» держит карту трекеров
-					// согласованной. Наблюдаемое поведение 1:1 с оригиналом: в мире оказывается ровно одна
-					// GT6-стрела вместо ванильной.
-					// BUG-103 (рецидив 2026-08-08): добавлять замену ПРЯМО ЗДЕСЬ нельзя — событие постится ВНУТРИ
-					// PersistentEntitySectionManager.addEntity:80, и addFreshEntity отсюда запускает вложенное
-					// добавление в те же структуры (sectionStorage/knownUuids/ChunkMap.entityMap), пока внешнее
-					// ещё не закончено. Ставим замену в очередь сервера — она выполнится тем же серверным
-					// потоком сразу по выходе из добавления. Наблюдаемое поведение то же: в мире ровно одна
-					// GT6-стрела вместо ванильной, ванильная не появляется вовсе (событие отменено).
+					// ⛔ THE SAME CRASH CLASS as in GT_API_Proxy.onEntitySpawningEvent (log04): it used to be
+					// `addFreshEntity(replacement); discard()` — a verbatim carry-over of the 1.7.10
+					// (`spawnEntityInWorld(...); setDead()`). In neo this event is posted INSIDE the entity's
+					// addition (PersistentEntitySectionManager.addEntity:80), BEFORE setLevelCallback, and discard()
+					// leaves a tracker for an already-removed entity in ChunkMap.entityMap — the map walk later breaks.
+					// The proper substitution path: CANCEL the vanilla arrow's addition (the engine returns false and
+					// never lets it into the world) and add our own — the order "cancel first, then substitute" keeps the
+					// tracker map consistent. The observed behavior is 1:1 with the original: exactly one
+					// GT6 arrow ends up in the world instead of the vanilla one.
+					// BUG-103 (recurrence 2026-08-08): the substitute must NOT be added RIGHT HERE — the event is posted INSIDE
+					// PersistentEntitySectionManager.addEntity:80, and addFreshEntity from here would trigger a nested
+					// addition into the same structures (sectionStorage/knownUuids/ChunkMap.entityMap) while the outer one
+					// has not finished yet. We queue the substitute on the server — it runs on the same server
+					// thread right after the addition completes. The observed behavior is the same: exactly one
+					// GT6 arrow ends up in the world instead of the vanilla one, the vanilla one never appears at all (the event is canceled).
 					aEvent.setCanceled(true);
 					final net.minecraft.world.level.Level tLevel = aEvent.getEntity().level();
 					final EntityArrow_Material tReplacement = new EntityArrow_Material((Arrow)aEvent.getEntity(), tArrow);
@@ -428,8 +428,8 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onEntityLivingDropsEventEvent(LivingDropsEvent aEvent) {
 		if (aEvent.getEntity().level().isClientSide()) return;
-		// neo: LivingDropsEvent больше не несёт lootingLevel (лутинг ушёл в loot-таблицы). Восстанавливаем 1:1 —
-		// уровень Looting оружия убийцы (тот же смысл, что старый event.lootingLevel), через центр UT.NBT.getEnchantmentLevel.
+		// neo: LivingDropsEvent no longer carries lootingLevel (looting moved into loot tables). Restoring it 1:1 —
+		// the Looting level of the killer's weapon (the same meaning as the old event.lootingLevel), via the UT.NBT.getEnchantmentLevel center.
 		int tLooting = 0;
 		if (aEvent.getSource().getEntity() instanceof LivingEntity tKiller) tLooting = UT.NBT.getEnchantmentLevel(Enchantments.MOB_LOOTING, tKiller.getMainHandItem());
 		Override_Drops.handleDrops(aEvent.getEntity(), UT.Reflection.getLowercaseClass(aEvent.getEntity()), aEvent.getDrops(), aEvent.getSource(), tLooting, aEvent.getEntity().isOnFire(), aEvent.isRecentlyHit());

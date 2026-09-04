@@ -48,9 +48,9 @@ public class Behavior_WrittenBook extends AbstractBehaviorDefault {
 		String tTitle = UT.NBT.getBookTitle(aStack);
 		if (UT.Code.stringValid(tTitle)) {
 			aList.add(LH.Chat.CYAN + tTitle);
-			aList.add(LH.Chat.CYAN + "by " + UT.NBT.getBookAuthor(aStack));
+			aList.add(LH.Chat.CYAN + LH.tt("by ") + UT.NBT.getBookAuthor(aStack));
 		} else {
-			aList.add(LH.Chat.CYAN + "This Book is Empty");
+			aList.add(LH.Chat.CYAN + LH.tt("This Book is Empty"));
 		}
 		return aList;
 	}

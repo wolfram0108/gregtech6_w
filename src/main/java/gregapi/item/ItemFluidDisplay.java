@@ -59,25 +59,25 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItemUpdatable, IItemGT {
-	// F3-render: было IIcon (удалённый 1.7.10-класс) — поле мёртвое (нигде не читается); тип сменён на neo ResourceLocation,
-	// чтобы убрать ссылку на removed-класс (иначе перечисление методов класса в GT6ItemModel.resolveIcon → NoClassDefFoundError).
+	// F3-render: was IIcon (a removed 1.7.10 class) — the field is dead (read nowhere); type switched to neo ResourceLocation,
+	// to remove the reference to the removed class (otherwise enumerating the class's methods in GT6ItemModel.resolveIcon → NoClassDefFoundError).
 	protected net.minecraft.resources.ResourceLocation mIcon;
 	private final String mName;
 	
 	public ItemFluidDisplay() {
-		// F1/F16: neo Item.<init> требует ID в Properties (descriptionId) — задаём из (GAPI, "gt.display.fluid"), совпадает с DeferredRegister-именем.
+		// F1/F16: neo Item.<init> requires an ID in Properties (descriptionId) — set from (GAPI, "gt.display.fluid"), matching the DeferredRegister name.
 		super(new Item.Properties());
 		mName = "gt.display.fluid";
 		LH.add(mName, "Fluid Display");
-		// F12-lazy: САМО-регистрация убрана из конструктора — предмет регистрируется через DeferredRegister-supplier на
-		// call-site (GT_API.onModPreInit2: IL.Display_Fluid.set(GT_API.ITEMS.register(name, ItemFluidDisplay::new))), т.к.
-		// конструкция должна идти на RegisterEvent (intrusive-holder нужен открытый реестр), не в preInit. Иначе двойная регистрация.
+		// F12-lazy: SELF-registration was removed from the constructor — the item registers via a DeferredRegister supplier at the
+		// call site (GT_API.onModPreInit2: IL.Display_Fluid.set(GT_API.ITEMS.register(name, ItemFluidDisplay::new))), because
+		// the construction must happen on RegisterEvent (an intrusive holder needs an open registry), not in preInit. Otherwise double registration.
 		if (ConfigsGT.CLIENT.get(ConfigCategories.visibility, "HiddenGTFluidDisplay", F)) gregapi.GT_API.deferItemInit(() -> ST.hide(this));
-		// BUG-030: в 1.7.10 предмет был БЕЗ вкладки, но NEI-панель перечисляла его getSubItems независимо от вкладок
-		// (жидкости находились поиском). В neo канал креатив-поиска И JEI-панели ингредиентов = содержимое вкладок —
-		// без членства перечисление недостижимо ниоткуда. Минимальный мост: вкладка Ingredients (маппинг tabMisc,
-		// как прочие GT6-ингредиенты); перечисление — восстановленным getSubItems ниже; конфиг HiddenGTFluidDisplay
-		// (ST.hide → фильтр ST.hidden в CreativeTabsGT) продолжает скрывать целиком.
+		// BUG-030: in 1.7.10 the item had NO tab, but the NEI panel enumerated it via getSubItems independent of tabs
+		// (fluids were found by search). In neo the creative-search channel AND the JEI ingredient panel = tab contents —
+		// without membership, enumeration is unreachable from anywhere. Minimal bridge: the Ingredients tab (mapping to tabMisc,
+		// like other GT6 ingredients); enumeration — via the restored getSubItems below; the HiddenGTFluidDisplay config
+		// (ST.hide → the ST.hidden filter in CreativeTabsGT) still hides it entirely.
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.MISC);
 		ItemsGT.DEBUG_ITEMS.add(this);
 		ItemsGT.ILLEGAL_DROPS.add(this);
@@ -89,13 +89,14 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		if (!aWorld.isClientSide() && UT.Entities.hasInfiniteItems(aPlayer)) for (byte tSide : ALL_SIDES_VALID) if (FL.fill(WD.te(aWorld, aX, aY, aZ, tSide, T), FL.make(FL.fluid(ST.meta_(aStack)), Integer.MAX_VALUE), T) > 0) return T;
 		return !aWorld.isClientSide();
 	}
-	// BP-BUG-017 (класс «потерянный вызыватель»): тот же класс, что уже закрыт у ItemBlockBase (см. её ItemBlockBase.java) —
-	// forge зовёт Item.onItemUseFirst(ItemStack,UseOnContext) (IForgeItem-хук, IForgeItem.java:98) ДО активации блока,
-	// а не 1.7.10 onItemUseFirst(x,y,z,side,hit); тело выше движком не вызывается вовсе. Дефолт IForgeItem отдаёт
-	// PASS без делегации в тело — наполнение баков дисплеем жидкости было мертво. Мост — тот же центр IItemGT
-	// (bridgeUseOnFirst уже существует и используется ItemBlockBase/MultiTileEntityItemInternal/ItemBase), второй формы
-	// не заводим. Оригинал 1.7.10 (ItemFluidDisplay.java:76-80) переопределял ТОЛЬКО onItemUseFirst (наполнение баков
-	// креативом), обычного onItemUse (установка блока) не было — этот предмет не BlockItem, useOn ему не нужен.
+	// BP-BUG-017 (defect class "lost caller"): the same class already closed for ItemBlockBase (see its ItemBlockBase.java) —
+	// forge calls Item.onItemUseFirst(ItemStack,UseOnContext) (the IForgeItem hook, IForgeItem.java:98) BEFORE the
+	// block activates, not the 1.7.10 onItemUseFirst(x,y,z,side,hit); the body above is never called by the engine at
+	// all. The IForgeItem default hands back PASS with no delegation into the body — filling tanks with the fluid
+	// display item was dead. The bridge is the same IItemGT center (bridgeUseOnFirst already exists and is used by
+	// ItemBlockBase/MultiTileEntityItemInternal/ItemBase), no second form is started. The 1.7.10 original
+	// (ItemFluidDisplay.java:76-80) overrode ONLY onItemUseFirst (creative tank filling); there was no ordinary
+	// onItemUse (block placement) — this item is not a BlockItem, it needs no useOn.
 	@Override public net.minecraft.world.InteractionResult onItemUseFirst(ItemStack aStack, net.minecraft.world.item.context.UseOnContext aCtx) {return IItemGT.bridgeUseOnFirst(this, aCtx);}
 
 	// @Override
@@ -104,14 +105,14 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		Fluid aFluid = FL.fluid(ST.meta_(aStack));
 		if (aFluid == null) {
-			aList.add(LH.Chat.BLINKING_RED + "CLIENTSIDE FLUID IS NULL!!!");
+			aList.add(LH.Chat.BLINKING_RED + LH.tt("CLIENTSIDE FLUID IS NULL!!!"));
 		} else if (FL.Error.is(aFluid)) {
-			aList.add(LH.Chat.BLINKING_RED + "THIS IS AN ERROR AND SHOULD NEVER BE OBTAINABLE!!!");
+			aList.add(LH.Chat.BLINKING_RED + LH.tt("THIS IS AN ERROR AND SHOULD NEVER BE OBTAINABLE!!!"));
 		} else {
 			String aName = FL.regName(aFluid);
 			
-			if (SHOW_INTERNAL_NAMES || aF3_H) aList.add("Registry: " + aName);
-			if (FL.exists(FluidsGT.FLUID_RENAMINGS.get(aName)) || FluidsGT.NONSTANDARD.contains(aName)) aList.add(LH.Chat.BLINKING_RED + "NON-STANDARD FLUID!");
+			if (SHOW_INTERNAL_NAMES || aF3_H) aList.add(LH.tt("Registry: ") + aName);
+			if (FL.exists(FluidsGT.FLUID_RENAMINGS.get(aName)) || FluidsGT.NONSTANDARD.contains(aName)) aList.add(LH.Chat.BLINKING_RED + LH.tt("NON-STANDARD FLUID!"));
 			
 			long tAmount = 0, tTemperature = DEF_ENV_TEMP;
 			FluidStack tFluid = NF;
@@ -130,7 +131,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 			}
 			
 			if (tAmount > 0) {
-				aList.add(LH.Chat.BLUE + "Amount: " + UT.Code.makeString(tAmount) + " L");
+				aList.add(LH.Chat.BLUE + LH.tt("Amount: ") + UT.Code.makeString(tAmount) + " L");
 			}
 			OreDictMaterialStack tMaterial = OreDictMaterial.FLUID_MAP.get(aName);
 			if (tMaterial != null) {
@@ -138,60 +139,60 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 					long tMatAmount = UT.Code.units(tAmount, tMaterial.mAmount, U, F);
 					if (tMatAmount > 0) {
 						int tDigits = (int)(((tMatAmount % U) / UD) * 1000);
-						aList.add(LH.Chat.BLUE + "Worth: " + (tMatAmount / U) + "." + (tDigits<1?"000":tDigits<10?"00"+tDigits:tDigits<100?"0"+tDigits:tDigits) + " Units of " + tMaterial.mMaterial.getLocal());
+						aList.add(LH.Chat.BLUE + LH.tt("Worth: ") + (tMatAmount / U) + "." + (tDigits<1?"000":tDigits<10?"00"+tDigits:tDigits<100?"0"+tDigits:tDigits) + LH.tt(" Units of ") + tMaterial.mMaterial.getLocal());
 					}
 				}
 				if (UT.Code.stringValid(tMaterial.mMaterial.mTooltipChemical)) aList.add(LH.Chat.YELLOW + tMaterial.mMaterial.mTooltipChemical);
 			}
 			
-			aList.add(LH.Chat.RED + "Temperature: " + tTemperature + " K (" + (tTemperature-C) + "°C)");
+			aList.add(LH.Chat.RED + LH.tt("Temperature: ") + tTemperature + " K (" + (tTemperature-C) + "°C)");
 			
-			// F5: 1.7.10 Fluid.isGaseous(FluidStack) удалён -> FluidType.isLighterThanAir() (без FluidStack-арга,
-			// свойство типа жидкости, не стека; neoforge-decompiled/.../fluids/FluidType.java:807, тот же
-			// aFluid.getFluidType() приём, что уже используется ниже в этом файле для getDensity/getLightLevel/getViscosity).
+			// F5: 1.7.10 Fluid.isGaseous(FluidStack) was removed -> FluidType.isLighterThanAir() (no FluidStack arg,
+			// a property of the fluid type, not the stack; neoforge-decompiled/.../fluids/FluidType.java:807, the same
+			// aFluid.getFluidType() approach already used below in this file for getDensity/getLightLevel/getViscosity).
 			if (FL.plasma(tFluid)) {
-				aList.add(LH.Chat.GREEN + "State: " + LH.Chat.YELLOW + "Plasma" + (!aFluid.getFluidType().isLighterThanAir() ? LH.Chat.RED + " (Warning: Considered a Liquid by Mods other than GT!)" : LH.Chat.ORANGE + " (Note: Considered a Gas by Mods other than GT!)"));
+				aList.add(LH.Chat.GREEN + LH.tt("State: ") + LH.Chat.YELLOW + LH.tt("Plasma") + (!aFluid.getFluidType().isLighterThanAir() ? LH.Chat.RED + LH.tt(" (Warning: Considered a Liquid by Mods other than GT!)") : LH.Chat.ORANGE + LH.tt(" (Note: Considered a Gas by Mods other than GT!)")));
 			} else if (tGas) {
-				aList.add(LH.Chat.GREEN + "State: " + LH.Chat.CYAN + "Gas" + (!aFluid.getFluidType().isLighterThanAir() ? LH.Chat.RED + " (Warning: Considered a Liquid by Mods other than GT!)" : ""));
+				aList.add(LH.Chat.GREEN + LH.tt("State: ") + LH.Chat.CYAN + LH.tt("Gas") + (!aFluid.getFluidType().isLighterThanAir() ? LH.Chat.RED + LH.tt(" (Warning: Considered a Liquid by Mods other than GT!)") : ""));
 			} else {
-				aList.add(LH.Chat.GREEN + "State: " + LH.Chat.BLUE + "Liquid" + (tMaterial != null && ST.valid(OP.ingot.mat(tMaterial.mMaterial, 1)) ? LH.Chat.CYAN + " (Might able to cast into Molds)" : ""));
-				if (aFluid.getFluidType().isLighterThanAir()) aList.add(LH.Chat.BLINKING_RED + " (Warning: Considered a Gas by Mods other than GT!)");
+				aList.add(LH.Chat.GREEN + LH.tt("State: ") + LH.Chat.BLUE + LH.tt("Liquid") + (tMaterial != null && ST.valid(OP.ingot.mat(tMaterial.mMaterial, 1)) ? LH.Chat.CYAN + LH.tt(" (Might able to cast into Molds)") : ""));
+				if (aFluid.getFluidType().isLighterThanAir()) aList.add(LH.Chat.BLINKING_RED + LH.tt(" (Warning: Considered a Gas by Mods other than GT!)"));
 			}
 			
 			int tDensity = aFluid.getFluidType().getDensity(tFluid);
 			if (tDensity > 0) {
-				aList.add(LH.Chat.GREEN + "Density: " + tDensity + " ; Heavier than Air (typically moves down)");
+				aList.add(LH.Chat.GREEN + LH.tt("Density: ") + tDensity + LH.tt(" ; Heavier than Air (typically moves down)"));
 			} else if (tDensity < 0) {
-				aList.add(LH.Chat.GREEN + "Density: " + tDensity + " ; Lighter than Air (typically moves up)");
+				aList.add(LH.Chat.GREEN + LH.tt("Density: ") + tDensity + LH.tt(" ; Lighter than Air (typically moves up)"));
 			} else {
-				aList.add(LH.Chat.GREEN + "Density: 0 ; As dense as Air (typically still moves down)");
+				aList.add(LH.Chat.GREEN + LH.tt("Density: 0 ; As dense as Air (typically still moves down)"));
 			}
 			
 			int tLuminosity = aFluid.getFluidType().getLightLevel(tFluid);
-			if (tLuminosity != 0) aList.add(LH.Chat.YELLOW + "Luminosity: " + tLuminosity);
+			if (tLuminosity != 0) aList.add(LH.Chat.YELLOW + LH.tt("Luminosity: ") + tLuminosity);
 			
 			int tViscosity = aFluid.getFluidType().getViscosity(tFluid);
-			if (tViscosity != 0) aList.add(LH.Chat.BLUE + "Viscosity: " + tViscosity);
+			if (tViscosity != 0) aList.add(LH.Chat.BLUE + LH.tt("Viscosity: ") + tViscosity);
 			
 			if (FluidsGT.COOKING_OIL.contains(aName)) {
-				aList.add(LH.Chat.DGREEN + "Usable as Cooking Oil in a GT Oven to duplicate Meat and Fish");
+				aList.add(LH.Chat.DGREEN + LH.tt("Usable as Cooking Oil in a GT Oven to duplicate Meat and Fish"));
 			}
 			if (FL.simple(aFluid)) {
-				aList.add(LH.Chat.DGREEN + "This is a simple Fluid that is easy to handle");
+				aList.add(LH.Chat.DGREEN + LH.tt("This is a simple Fluid that is easy to handle"));
 			}
 			if (FL.powerconducting(aFluid)) {
-				aList.add(LH.Chat.DGREEN + "This is a Power Conducting Fluid");
-				aList.add(LH.Chat.ORANGE + "Cannot be stored in any normal GT6 Storage Tanks!");
+				aList.add(LH.Chat.DGREEN + LH.tt("This is a Power Conducting Fluid"));
+				aList.add(LH.Chat.ORANGE + LH.tt("Cannot be stored in any normal GT6 Storage Tanks!"));
 			}
 			if (FL.acid(aFluid)) {
-				aList.add(LH.Chat.ORANGE + "Acidic! Handle with Care!");
+				aList.add(LH.Chat.ORANGE + LH.tt("Acidic! Handle with Care!"));
 			}
 			if (FL.magic(aFluid)) {
-				aList.add(LH.Chat.ORANGE + "Magical! Handle with Care!");
+				aList.add(LH.Chat.ORANGE + LH.tt("Magical! Handle with Care!"));
 			}
 			if (FL.Lubricant.is(aFluid) || FL.LubRoCant.is(aFluid)) {
-				aList.add(LH.Chat.ORANGE + "Industrial Use ONLY!");
-				aList.add(LH.Chat.RED + "Not Flammable!");
+				aList.add(LH.Chat.ORANGE + LH.tt("Industrial Use ONLY!"));
+				aList.add(LH.Chat.RED + LH.tt("Not Flammable!"));
 			} else {
 				for (Recipe.RecipeMap tMap : Recipe.RecipeMap.FUEL_MAP_LIST) {
 					Collection<Recipe> tRecipes = tMap.mRecipeFluidMap.get(aName);
@@ -200,9 +201,9 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 						for (Recipe tRecipe : tRecipes) if (tRecipe.mEnabled && tRecipe.mFluidInputs[0] != null) tFuelValue = Math.max(tFuelValue, (tRecipe.getAbsoluteTotalPower() * U) / tRecipe.mFluidInputs[0].getAmount());
 						if (tFuelValue > 0) {
 							if (tAmount > 1) {
-								aList.add(LH.Chat.RED + LH.get(tMap.mNameInternal) + ": " + LH.Chat.WHITE + UT.Code.makeString(tFuelValue / U) + LH.Chat.YELLOW + " GU/L; " + LH.Chat.WHITE + UT.Code.makeString((tFuelValue * tAmount) / U) + LH.Chat.YELLOW + " GU total");
+								aList.add(LH.Chat.RED + LH.get(tMap.mNameInternal) + ": " + LH.Chat.WHITE + UT.Code.makeString(tFuelValue / U) + LH.Chat.YELLOW + LH.tt(" GU/L; ") + LH.Chat.WHITE + UT.Code.makeString((tFuelValue * tAmount) / U) + LH.Chat.YELLOW + LH.tt(" GU total"));
 							} else {
-								aList.add(LH.Chat.RED + LH.get(tMap.mNameInternal) + ": " + LH.Chat.WHITE + UT.Code.makeString(tFuelValue / U) + LH.Chat.YELLOW + " GU/L ");
+								aList.add(LH.Chat.RED + LH.get(tMap.mNameInternal) + ": " + LH.Chat.WHITE + UT.Code.makeString(tFuelValue / U) + LH.Chat.YELLOW + LH.tt(" GU/L "));
 							}
 						}
 					}
@@ -210,59 +211,59 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 			}
 			
 			if (FluidGT.of(aFluid) != null) {
-				aList.add(LH.Chat.DGRAY + "Fluid owned by GT6");
+				aList.add(LH.Chat.DGRAY + LH.tt("Fluid owned by GT6"));
 			} else {
 				if (FL.Water.is(aFluid) || FL.Lava.is(aFluid)) {
-					aList.add(LH.Chat.DGRAY + "Fluid owned by vanilla Minecraft");
+					aList.add(LH.Chat.DGRAY + LH.tt("Fluid owned by vanilla Minecraft"));
 				} else {
-					aList.add(LH.Chat.DGRAY + "Fluid NOT owned by GT6");
+					aList.add(LH.Chat.DGRAY + LH.tt("Fluid NOT owned by GT6"));
 				}
 			}
 		}
 		
 		if (UT.Entities.hasInfiniteItems(aPlayer)) {
-			aList.add(LH.Chat.RAINBOW_SLOW + "Rightclick Blocks to fill their Tanks with this Fluid!");
+			aList.add(LH.Chat.RAINBOW_SLOW + LH.tt("Rightclick Blocks to fill their Tanks with this Fluid!"));
 		}
 		
 		while (aList.remove(null));
 	}
 	
 	// @Override
-	// F3-render: было registerIcons(IIconRegister) (removed-класс в сигнатуре ломал перечисление методов в resolveIcon →
-	// NoClassDefFoundError) — param сменён на Object. «Useful hack» диспетчеризации sBlockIconload (1.7.10: этот предмет был
-	// ДРАЙВЕРОМ block-icon-load-фазы) МЁРТВ в neo — GT_API.sBlockIconload обнуляется на init (GT_API.java:1048); block-иконки
-	// строятся ЛЕНИВО (BI.Icon / Textures.java:171). Убран: ленивый вызов итерировал бы null → NPE.
+	// F3-render: was registerIcons(IIconRegister) (a removed class in the signature broke enumerating methods in resolveIcon →
+	// NoClassDefFoundError) — the param was changed to Object. The "useful hack" of dispatching sBlockIconload (1.7.10: this item was
+	// the DRIVER of the block-icon-load phase) is DEAD in neo — GT_API.sBlockIconload is nulled at init (GT_API.java:1048); block icons
+	// are built LAZILY (BI.Icon / Textures.java:171). Removed: a lazy call would have iterated null → NPE.
 	public void registerIcons(Object aIconRegister) {
 		//
 	}
 
-	// Иконка = still-текстура жидкости (1:1 Fluid.getStillIcon): GT6-жидкости — из центра F5 (FluidGT.mTexture),
-	// ванильные/чужие — neo-канон IClientFluidTypeExtensions (клиент-класс → изолирован во вложенном холдере,
-	// грузится лениво только под CODE_CLIENT — dedicated-сервер его не трогает).
-	// КАНАЛ ЖИВ — вызыватель: центр GT6ItemModel.iconForPass:229 (рефлексия): у класса нет getIcon(ItemStack,int),
-	// поэтому pass0 идёт фолбэком getIconIndex → getIconFromDamage. Спрайт жидкости жив и вторым путём —
-	// stillIcon ниже используется клиентским каналом IClientFluidTypeExtensions (см. разбор выше).
-	// Реестр мёртвых каналов рефлексию грепом не видит — прежняя метка «разобран» была ложной (2026-07-30).
+	// Icon = the fluid's still texture (1:1 Fluid.getStillIcon): GT6 fluids — from the F5 center (FluidGT.mTexture),
+	// vanilla/foreign — the neo canon IClientFluidTypeExtensions (a client-only class → isolated in a nested holder,
+	// loaded lazily only under CODE_CLIENT — a dedicated server never touches it).
+	// CHANNEL IS ALIVE — caller: the GT6ItemModel.iconForPass:229 center (reflection): the class has no getIcon(ItemStack,int),
+	// so pass0 falls back to getIconIndex → getIconFromDamage. The fluid sprite is also alive via a second path —
+	// stillIcon below is used by the client channel IClientFluidTypeExtensions (see the analysis above).
+	// The dead-channel registry cannot see reflection via grep — the previous "analyzed" label was false (2026-07-30).
 	// @Override
 	public net.minecraft.resources.ResourceLocation getIconFromDamage(int aMeta) {
 		return stillIcon(FL.fluid(aMeta));
 	}
 
-	// getIconIndex(ItemStack) проверяется resolveIcon ПЕРВЫМ — читаем мету родным каналом ST.meta_ (не damage).
+	// getIconIndex(ItemStack) is checked by resolveIcon FIRST — read the meta via the native channel ST.meta_ (not damage).
 	public net.minecraft.resources.ResourceLocation getIconIndex(ItemStack aStack) {
 		return stillIcon(FL.fluid(ST.meta_(aStack)));
 	}
 
 	private static net.minecraft.resources.ResourceLocation stillIcon(net.minecraft.world.level.material.Fluid aFluid) {
-		// BUG-049: локальная копия снята — единый резолвер still-иконки теперь в центре FL.stillIcon
-		// (жидкости без своей текстуры получают water_still вместо null — прежние ваниль-ветки покрыты).
+		// BUG-049: the local copy was removed — the single still-icon resolver is now the FL.stillIcon center
+		// (fluids without their own texture get water_still instead of null — the former vanilla branches are covered).
 		return FL.stillIcon(aFluid);
 	}
 
-	// Тинт (1:1 Fluid.getColor): GT6-жидкости — mRGBa из центра F5 (FluidGT); ванильная вода — NORMAL_WATER_COLOR
-	// (OverworldBiomes.java:28, серый water_still без тинта был бы бесцветным); лава несёт цвет в текстуре.
-	// КАНАЛ ЖИВ — вызыватель: центр GT6ItemModel.itemColor:224 (рефлексия по сигнатуре (ItemStack,int)) красит
-	// им квады пасса. Реестр рефлексию грепом не видит — прежняя метка «разобран» была ложной (2026-07-30).
+	// Tint (1:1 Fluid.getColor): GT6 fluids — mRGBa from the F5 center (FluidGT); vanilla water — NORMAL_WATER_COLOR
+	// (OverworldBiomes.java:28, the gray water_still without tint would be colorless); lava carries color in its texture.
+	// CHANNEL IS ALIVE — caller: the GT6ItemModel.itemColor:224 center (reflection by signature (ItemStack,int)) tints
+	// the pass's quads with it. The registry cannot see reflection via grep — the previous "analyzed" label was false (2026-07-30).
 	// @Override
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		net.minecraft.world.level.material.Fluid tFluid = FL.fluid(ST.meta_(aStack));
@@ -278,9 +279,9 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		return 0;
 	}
 	
-	// ⚠️ КАНАЛ ИЗБЫТОЧЕН — имя предмета строит getItemStackDisplayName:270 (сам берёт жидкость из меты),
-	// а до движка его доводит мост getName:280. Этот 1.7.10-метод в цепочке не участвует; оставлен точкой
-	// сверки с оригиналом.
+	// ⚠️ CHANNEL IS REDUNDANT — the item's name is built by getItemStackDisplayName:270 (which itself takes the fluid from the meta),
+	// and the getName:280 bridge carries it to the engine. This 1.7.10 method does not take part in the chain; kept as a comparison
+	// point with the original.
 	// @Override
 	public String getUnlocalizedName(ItemStack aStack) {
 		if (aStack != null) return FL.name(FL.fluid(ST.meta_(aStack)), F);
@@ -294,13 +295,14 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		return tFluid == null ? "INVALID FLUID ID!!!" : FL.name(tFluid, T);
 	}
 
-	// F1-контракт (1.7.10 itemDamage==meta): meta = fluid-ID. Переопределения getDamage(ItemStack) здесь НЕТ и быть
-	// не должно — дефолт Forge уже отдаёт его из сырого "Damage", а само-вызов через ST.meta_ замыкает движок (см. ST.meta_).
+	// F1 contract (1.7.10 itemDamage==meta): meta = fluid ID. There is NO override of getDamage(ItemStack) here, and
+	// there should not be one — the Forge default already hands it back from the raw "Damage", and the call itself
+	// through ST.meta_ closes the loop on the engine (see ST.meta_).
 
-	// LOCALIZATION-display: мост getName → GT6-имя (как ItemBase:145); без него дисплей жидкости — сырой ключ.
+	// LOCALIZATION-display: bridge getName → the GT6 name (like ItemBase:145); without it the fluid display shows a raw key.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 
-	// F13-мост appendHoverText → addInformation (как ItemBlockBase:65): количество/температура жидкости в тултипе.
+	// F13 bridge appendHoverText → addInformation (like ItemBlockBase:65): fluid amount/temperature in the tooltip.
 	@Override @SuppressWarnings({"rawtypes", "unchecked"})
 	public void appendHoverText(ItemStack aStack, net.minecraft.world.level.Level aWorld, java.util.List<net.minecraft.network.chat.Component> aTooltips, net.minecraft.world.item.TooltipFlag aFlag) {
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
@@ -315,22 +317,22 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		return aFluid != null && FluidsGT.ENCHANTED_EFFECT.contains(FL.regName(aFluid));
 	}
 
-	// Подключение канала «блеск зачарования» к движку (2026-07-30, реестр мёртвых каналов). В 1.7.10 его
-	// спрашивали по проходам рендера (RenderHelper.java:89 — aStack.hasEffect(i)), в neo проходов нет и
-	// вопрос задаётся один раз: Item.isFoil(ItemStack). Приём взят у брата MultiItemTool:795. Тело 1:1 с
-	// оригиналом (ItemFluidDisplay.java:270-273) — проход 0 у 1.7.10-версии значения не менял.
-	// Без моста дисплеи жидкостей из FluidsGT.ENCHANTED_EFFECT не блестели вовсе.
+	// Wiring the "enchantment glint" channel to the engine (2026-07-30, dead-channel registry). In 1.7.10 it was
+	// asked per render pass (RenderHelper.java:89 — aStack.hasEffect(i)), in neo there are no passes and
+	// the question is asked once: Item.isFoil(ItemStack). Approach taken from sibling MultiItemTool:795. Body 1:1 with
+	// the original (ItemFluidDisplay.java:270-273) — pass 0 did not change the value in the 1.7.10 version.
+	// Without the bridge, fluid displays from FluidsGT.ENCHANTED_EFFECT would not glint at all.
 	@Override public boolean isFoil(ItemStack aStack) {return hasEffect(aStack, 0);}
 	
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {
-		// BUG-030: восстановлен 1.7.10-цикл перечисления жидкостей (оригинал :278-287). Тогда: плотный проход
-		// FluidRegistry.getMaxID() + FL.fluid(i); в neo реестр не плотный → живой проход по BuiltInRegistries.FLUID
-		// (тот же registry-канал, что уже работает в FL.id/FL.fluid; FL.display давно реален, стаба нет).
-		// Modern-особенность: у текучей жидкости ДВА реестровых объекта (source+flowing), 1.7.10 знал ОДИН Fluid
-		// на жидкость → перечисляем только source-вариант (иначе каждый дисплей задвоится). Гейт скрытых — тот же
-		// FluidsGT.HIDDEN по 1.7.10-имени (FL.regName = FluidGT.nameOf, аналог tFluid.getName()).
+		// BUG-030: the 1.7.10 fluid-enumeration loop is restored (original :278-287). Back then: a dense pass
+		// FluidRegistry.getMaxID() + FL.fluid(i); in neo the registry is not dense → a live pass over BuiltInRegistries.FLUID
+		// (the same registry channel already used by FL.id/FL.fluid; FL.display has long been real, no stub).
+		// Modern quirk: a flowing fluid has TWO registry objects (source+flowing), 1.7.10 knew ONE Fluid
+		// per fluid → we enumerate only the source variant (otherwise every display would be doubled). The hidden-set gate is the same
+		// FluidsGT.HIDDEN keyed by the 1.7.10 name (FL.regName = FluidGT.nameOf, an analog of tFluid.getName()).
 		for (Fluid tFluid : net.minecraft.core.registries.BuiltInRegistries.FLUID) {
 			if (tFluid == net.minecraft.world.level.material.Fluids.EMPTY || !tFluid.defaultFluidState().isSource()) continue;
 			if (FluidsGT.HIDDEN.contains(FL.regName(tFluid))) continue;
@@ -343,17 +345,17 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	public final Item setUnlocalizedName(String aName) {return this;}
 	public final String getUnlocalizedName() {return mName;}
 	
-	// F12-hook (потерянный приёмник): neo-канал — IItemExtension.doesSneakBypassUse(ItemStack,LevelReader,
-	// BlockPos,Player) (IItemExtension.java:251). 1.7.10-сигнатура ниже ничего не переопределяла и движком
-	// не звалась → присед с дисплей-предметом в руке НЕ пропускал клик к блоку (сундук/машина не открывались,
-	// пока в руке дисплей). Тело 1:1 — всегда T.
+	// F12 hook (lost receiver): the neo channel is IItemExtension.doesSneakBypassUse(ItemStack,LevelReader,
+	// BlockPos,Player) (IItemExtension.java:251). The 1.7.10 signature below overrode nothing and was never
+	// called by the engine → crouching with a display item in hand did NOT let a click through to the block (chest/machine did not open
+	// while a display was held). Body 1:1 — always T.
 	@Override
 	public boolean doesSneakBypassUse(ItemStack aStack, net.minecraft.world.level.LevelReader aWorld, net.minecraft.core.BlockPos aPos, Player aPlayer) {
 		return T;
 	}
 
-	// ⚠️ КАНАЛ ИЗБЫТОЧЕН — 1.7.10-подпись, роль закрыта neo-версией выше (строка 322, IItemExtension:251).
-	// Оставлена как точка сверки с оригиналом; вызывателей не имеет и иметь не должна.
+	// ⚠️ CHANNEL IS REDUNDANT — the 1.7.10 signature, its role is covered by the neo version above (line 322, IItemExtension:251).
+	// Kept as a comparison point with the original; has no callers and should not have any.
 	// @Override
 	public boolean doesSneakBypassUse(Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
 		return T;
@@ -364,12 +366,12 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		return null;
 	}
 	
-	// ⚖️ ИЗБЫТОЧЕН (реестр мёртвых каналов, вердикт 2026-08-19). Вызывателя нет: в 1.7.10 это был хук
-	// самого Item, движок спрашивал его перед getContainerItem; в neo у Item такого метода нет вовсе,
-	// а центр GT6 (ST.gtContainerItem) спрашивает СРАЗУ getContainerItem — признак выводится из него
-	// (ItemBase:199 и оригинал ItemBase:121 определяют hasContainerItem РОВНО как getContainerItem != null).
-	// Оба метода здесь согласованы 1:1 с оригиналом (ItemFluidDisplay:298-305: null и F), поэтому канал
-	// не сломан, а не нужен. НЕ удаляем — авторский контракт воспроизводится как есть.
+	// ⚖️ REDUNDANT (dead-channel registry, verdict 2026-08-19). No caller: in 1.7.10 this was a hook of
+	// the Item itself, the engine asked it before getContainerItem; in neo Item has no such method at all,
+	// and the GT6 center (ST.gtContainerItem) asks getContainerItem DIRECTLY — the trait is derived from it
+	// (ItemBase:199 and the original ItemBase:121 define hasContainerItem EXACTLY as getContainerItem != null).
+	// Both methods here agree 1:1 with the original (ItemFluidDisplay:298-305: null and F), so the channel
+	// is not broken, just unneeded. NOT removed — the author's contract is reproduced as-is.
 	// @Override
 	public final boolean hasContainerItem(ItemStack aStack) {
 		return F;
@@ -384,8 +386,8 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 			String tName = FluidsGT.FLUID_RENAMINGS.get(aName);
 			if (UT.Code.stringValid(tName)) aName = tName;
 			Fluid tFluid = FL.fluid_(aName);
-			// F5: 1.7.10 Fluid.getID() удалён -> FL.id(Fluid) (FL.java:673, тот же центр-хелпер уже
-			// используется по всему дереву; про нестабильность registry-id между запусками — FL.java:736, 1:1 наследуется).
+			// F5: 1.7.10 Fluid.getID() was removed -> FL.id(Fluid) (FL.java:673, the same center helper already
+			// used across the whole tree; about registry-id instability across runs — FL.java:736, inherited 1:1).
 			if (tFluid != null) ST.meta_(aStack, FL.id(tFluid));
 			return;
 		}

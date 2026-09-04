@@ -25,6 +25,7 @@ package gregapi.item.multiitem.behaviors;
 
 import static gregapi.data.CS.*;
 
+import gregapi.data.LH;
 import java.util.List;
 
 import gregapi.item.IItemGT;
@@ -55,7 +56,7 @@ public class Behavior_Switch_Metadata extends AbstractBehaviorDefault {
 	
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
-		if (mShowModeSwitchTooltip) aList.add("Sneak Rightclick to switch Mode");
+		if (mShowModeSwitchTooltip) aList.add(LH.tt("Sneak Rightclick to switch Mode"));
 		return aList;
 	}
 	

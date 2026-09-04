@@ -84,7 +84,7 @@ public class MultiTileEntityAxle extends TileEntityBase11ConnectorStraight imple
 	@Override
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_tachometer) && isServerSide()) {
-			if (aChatReturn != null) aChatReturn.add(mTransferredLast + " RU/t");
+			if (aChatReturn != null) aChatReturn.add(mTransferredLast + LH.tt(" RU/t"));
 			return 1;
 		}
 		return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);

@@ -36,8 +36,8 @@ import net.minecraft.world.item.ItemStack;
 public class MultiTileEntityReactorRodAbsorber extends MultiTileEntityReactorRodBase {
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		aList.add(LH.Chat.DGRAY + "Used in Nuclear Reactor Core");
-		aList.add(LH.Chat.CYAN + "Absorbs Neutrons and emits twice the Heat per Neutron to Coolant");
+		aList.add(LH.Chat.DGRAY + LH.tt("Used in Nuclear Reactor Core"));
+		aList.add(LH.Chat.CYAN + LH.tt("Absorbs Neutrons and emits twice the Heat per Neutron to Coolant"));
 	}
 	
 	@Override

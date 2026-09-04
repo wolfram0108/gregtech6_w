@@ -83,7 +83,7 @@ public class MultiTileEntityGeneratorHotFluid extends TileEntityBase09FacingSing
 		mEnergy = aNBT.getLong(NBT_ENERGY);
 		mActivity = new TE_Behavior_Active_Trinary(this, aNBT);
 		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
-		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: do not overwrite the default on a null lookup */
 		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
 		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 		mTanks[0].setCapacity(mRate * 10);
@@ -177,8 +177,8 @@ public class MultiTileEntityGeneratorHotFluid extends TileEntityBase09FacingSing
 		
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
-				aChatReturn.add("Input: "  + mTanks[0].content());
-				aChatReturn.add("Output: " + mTanks[1].content());
+				aChatReturn.add(LH.tt("Input: ")  + mTanks[0].content());
+				aChatReturn.add(LH.tt("Output: ") + mTanks[1].content());
 			}
 			return 1;
 		}

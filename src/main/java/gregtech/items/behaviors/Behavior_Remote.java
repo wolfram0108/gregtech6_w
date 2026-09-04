@@ -56,20 +56,20 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 		ArrayListNoNulls<BlockPos> tList = getCoords(aNBT, WD.dimensionId(aWorld));
 		BlockPos tCoords = new BlockPos(aX, aY, aZ);
 		if (tList.contains(tCoords)) {
-			UT.Entities.sendchat(aPlayer, "Coordinates removed!");
+			UT.Entities.sendchat(aPlayer, LH.tt("Coordinates removed!"));
 			UT.Sounds.send(SFX.GT_BEEP, 0.5F, 1.0F, aWorld, tCoords);
 			tList.remove(tCoords);
 		} else if (tList.size() >= 64) {
-			UT.Entities.sendchat(aPlayer, "Cant hold more than 64 Coordinates per Dimension!");
+			UT.Entities.sendchat(aPlayer, LH.tt("Cant hold more than 64 Coordinates per Dimension!"));
 			UT.Sounds.send(SFX.GT_BEEP, 0.5F, 0.5F, aWorld, tCoords);
 		} else {
 			BlockEntity tTileEntity = WD.te(aWorld, tCoords, F);
 			if (tTileEntity instanceof ITileEntityRemoteActivateable) {
-				UT.Entities.sendchat(aPlayer, "Coordinates added!");
+				UT.Entities.sendchat(aPlayer, LH.tt("Coordinates added!"));
 				UT.Sounds.send(SFX.GT_BEEP, 0.5F, 1.0F, aWorld, tCoords);
 				tList.add(tCoords);
 			} else {
-				UT.Entities.sendchat(aPlayer, "This cannot be added!");
+				UT.Entities.sendchat(aPlayer, LH.tt("This cannot be added!"));
 				UT.Sounds.send(SFX.GT_BEEP, 0.5F, 0.5F, aWorld, tCoords);
 			}
 		}
@@ -78,8 +78,8 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 		return T;
 	}
 	
-	// F8: тег захвачен ОДИН раз в aNBT, getCoords его читает, setCoords его мутирует, коммит единый
-	// ItemNBT.set в конце — иначе правка списка координат из setCoords тихо терялась бы (см. ItemNBT.java).
+	// F8: the tag is captured ONCE into aNBT, getCoords reads it, setCoords mutates it, a single commit
+	// via ItemNBT.set at the end — otherwise the coordinate-list edit from setCoords would be silently lost (see ItemNBT.java).
 	@Override
 	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		if (aWorld.isClientSide() || aPlayer.isShiftKeyDown() || !ItemNBT.has(aStack)) return aStack;

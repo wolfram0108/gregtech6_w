@@ -76,8 +76,8 @@ public class MultiTileEntityMeasuringPot extends TileEntityBase10FluidContainerS
 	
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		// BUG-050/F15-граница: 1.7.10 getCurrentEquippedItem()==null (пустая рука) -> ST.n(getMainHandItem())==null (центр перевода)
-		// (getMainHandItem НИКОГДА не null, отдаёт EMPTY) — с ==null ветка настройки лимита была мертва.
+		// BUG-050/F15 boundary: 1.7.10 getCurrentEquippedItem()==null (empty hand) -> ST.n(getMainHandItem())==null (translation center)
+		// (getMainHandItem is NEVER null, gives out EMPTY) — with ==null the limit-setting branch was dead.
 		if (ST.n(aPlayer.getMainHandItem()) == null && SIDES_HORIZONTAL[aSide]) {
 			if (isClientSide()) return T;
 			if (aHitY > PX_P[4]) {
@@ -93,7 +93,7 @@ public class MultiTileEntityMeasuringPot extends TileEntityBase10FluidContainerS
 					mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isShiftKeyDown() ? 5 : 50)));
 				}
 			}
-			UT.Entities.sendchat(aPlayer, "Limit: " + mTank.capacity() + "L");
+			UT.Entities.sendchat(aPlayer, LH.tt("Limit: ") + mTank.capacity() + "L");
 			return T;
 		}
 		return super.onBlockActivated3(aPlayer, aSide, aHitX, aHitY, aHitZ);

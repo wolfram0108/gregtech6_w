@@ -63,7 +63,7 @@ import static gregapi.data.CS.*;
 public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItemBumbleBee {
 	public MultiItemBumbles(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Bumblebees", this, (short)2); // F16 creative-tab: своя GT-вкладка (icon+displayItems), регистрируется CreativeTabsGT на RegisterEvent<CreativeModeTab>. 1:1.
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Bumblebees", this, (short)2); // F16 creative-tab: its own GT tab (icon+displayItems), registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>. 1:1.
 		if (!SHOW_BUMBLEBEES) gregapi.GT_API.deferItemInit(() -> ST.hide(this));
 	}
 	
@@ -312,9 +312,9 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 					if (WD.meta(aWorld, aX+i, aY+j, aZ+k) == 12) return new BlockPos(aX+i, aY+j, aZ+k);
 					continue;
 				}
-				// F16 flower-pot ЗАКРЫТ (BUG-039 v4): 1.7.10 читал содержимое горшка из TileEntityFlowerPot-BE
-				// (mirror, NCDFE в рантайме) — в neo содержимое = сам POTTED_*-блок. 1:1: кактус в горшке найден,
-				// любой другой горшок — мимо (continue оригинала).
+				// F16 flower-pot CLOSED (BUG-039 v4): 1.7.10 read the pot's content from the TileEntityFlowerPot BE
+				// (mirror, runtime NCDFE) — in neo the content IS the POTTED_* block itself. 1:1: cactus found in a pot,
+				// any other pot — skip (the original's continue).
 				if (tBlock == Blocks.POTTED_CACTUS) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (tBlock instanceof net.minecraft.world.level.block.FlowerPotBlock) continue;
 			}
@@ -350,19 +350,19 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	
 	public String getFlowerTooltip(short aMetaData) {
 		switch(aMetaData / 100) {
-		case   1:           return "Water";
-		case   2:           return "Magical Biome, Thaumic Flowers or Rainbow Leaves";
-		case   3: case 200: return MD.BoP.mLoaded ? "Netherwart or Burning Blossoms" : "Netherwart";
-		case   4: case 202: return MD.EtFu.mLoaded ? "Chorus Flower or Dragon Egg" : "End Portal, End Biome or Dragon Egg";
-		case   5: case 203: return "Stone, Cobble or Mossy";
-		case   6:           return "Cocoa";
-		case   7: case 201: return "Snow or Ice";
-		case   8:           return "Mycelium or Mushrooms";
-		case   9: case 105: return "Desert Flowers and Cacti (even potted ones work)";
-		case 100:           return "Raw Clay Blocks";
-		case 101:           return MD.IC2.mLoaded ? "Rubber Tree Resin Holes (IC2 or GT6)" : "Rubber Tree Resin Holes";
-		case 103:           return "Soul Sand Blocks";
-		default :           return "Flowers (even potted ones work)";
+		case   1:           return LH.tt("Water");
+		case   2:           return LH.tt("Magical Biome, Thaumic Flowers or Rainbow Leaves");
+		case   3: case 200: return MD.BoP.mLoaded ? LH.tt("Netherwart or Burning Blossoms") : LH.tt("Netherwart");
+		case   4: case 202: return MD.EtFu.mLoaded ? LH.tt("Chorus Flower or Dragon Egg") : LH.tt("End Portal, End Biome or Dragon Egg");
+		case   5: case 203: return LH.tt("Stone, Cobble or Mossy");
+		case   6:           return LH.tt("Cocoa");
+		case   7: case 201: return LH.tt("Snow or Ice");
+		case   8:           return LH.tt("Mycelium or Mushrooms");
+		case   9: case 105: return LH.tt("Desert Flowers and Cacti (even potted ones work)");
+		case 100:           return LH.tt("Raw Clay Blocks");
+		case 101:           return MD.IC2.mLoaded ? LH.tt("Rubber Tree Resin Holes (IC2 or GT6)") : LH.tt("Rubber Tree Resin Holes");
+		case 103:           return LH.tt("Soul Sand Blocks");
+		default :           return LH.tt("Flowers (even potted ones work)");
 		}
 	}
 	
@@ -502,59 +502,59 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	public void addAdditionalToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		short aMeta = ST.meta_(aStack);
 		String tTooltip = getFlowerTooltip(aMeta);
-		if (UT.Code.stringValid(tTooltip)) aList.add(LH.Chat.CYAN + "Requirement:" + LH.Chat._WHITE + tTooltip);
+		if (UT.Code.stringValid(tTooltip)) aList.add(LH.Chat.CYAN + LH.tt("Requirement:") + LH.Chat._WHITE + tTooltip);
 		CompoundTag aBumbleTag = null;
 		if (ItemNBT.has(aStack)) aBumbleTag = ItemNBT.get(aStack).getCompound("gt.bumble");
 		if (aBumbleTag == null || aBumbleTag.isEmpty()) {
-			aList.add(LH.Chat.BLINKING_RED + "No Genetic Data to display");
-			aList.add(LH.Chat.CYAN + "Generates random 'Outsider-Plains-Biome' Genes when used");
+			aList.add(LH.Chat.BLINKING_RED + LH.tt("No Genetic Data to display"));
+			aList.add(LH.Chat.CYAN + LH.tt("Generates random 'Outsider-Plains-Biome' Genes when used"));
 		} else {
-			aList.add(LH.Chat.PURPLE + "Level:" + LH.Chat._PINK + (((aMeta / 10) % 10)+1) + LH.Chat._WHITE + "of" + LH.Chat._PINK + 4);
+			aList.add(LH.Chat.PURPLE + LH.tt("Level:") + LH.Chat._PINK + (((aMeta / 10) % 10)+1) + LH.Chat._WHITE + LH.tt("of") + LH.Chat._PINK + 4);
 			if (aMeta % 10 < 5) {
-				aList.add(LH.Chat.RED + "Not scanned yet!");
+				aList.add(LH.Chat.RED + LH.tt("Not scanned yet!"));
 			} else {
-				aList.add(LH.Chat.CYAN + "Humidity:" + LH.Chat._WHITE + Util.getHumidityMin(aBumbleTag) + " to " + Util.getHumidityMax(aBumbleTag) + LH.Chat.RED + "   Temp:" + LH.Chat._WHITE + Util.getTemperatureMin(aBumbleTag) + "K to " + Util.getTemperatureMax(aBumbleTag) + "K");
-				aList.add(LH.Chat.GREEN + "Offspring:" + LH.Chat._WHITE + Util.getOffspring(aBumbleTag) + LH.Chat.ORANGE + "   Life:" + LH.Chat._WHITE + Util.getLifeSpan(aBumbleTag) + " ticks");
-				aList.add(LH.Chat.YELLOW + "Eff:" + LH.Chat._WHITE + LH.percent(Util.getWorkForce(aBumbleTag)) + "%" + LH.Chat.RED + "   Aggro:" + LH.Chat._WHITE + LH.percent(Util.getAggressiveness(aBumbleTag)) + "%");
+				aList.add(LH.Chat.CYAN + LH.tt("Humidity:") + LH.Chat._WHITE + Util.getHumidityMin(aBumbleTag) + LH.tt(" to ") + Util.getHumidityMax(aBumbleTag) + LH.Chat.RED + LH.tt("   Temp:") + LH.Chat._WHITE + Util.getTemperatureMin(aBumbleTag) + LH.tt("K to ") + Util.getTemperatureMax(aBumbleTag) + "K");
+				aList.add(LH.Chat.GREEN + LH.tt("Offspring:") + LH.Chat._WHITE + Util.getOffspring(aBumbleTag) + LH.Chat.ORANGE + LH.tt("   Life:") + LH.Chat._WHITE + Util.getLifeSpan(aBumbleTag) + LH.tt(" ticks"));
+				aList.add(LH.Chat.YELLOW + LH.tt("Eff:") + LH.Chat._WHITE + LH.percent(Util.getWorkForce(aBumbleTag)) + "%" + LH.Chat.RED + LH.tt("   Aggro:") + LH.Chat._WHITE + LH.percent(Util.getAggressiveness(aBumbleTag)) + "%");
 				if (Util.getDayActive(aBumbleTag)) {
 					if (Util.getNightActive(aBumbleTag)) {
-						aList.add(LH.Chat.RAINBOW + "Doesn't take breaks");
+						aList.add(LH.Chat.RAINBOW + LH.tt("Doesn't take breaks"));
 					} else {
-						aList.add(LH.Chat.PURPLE + "Works at Day");
+						aList.add(LH.Chat.PURPLE + LH.tt("Works at Day"));
 					}
 				} else {
 					if (Util.getNightActive(aBumbleTag)) {
-						aList.add(LH.Chat.PURPLE + "Works at Night");
+						aList.add(LH.Chat.PURPLE + LH.tt("Works at Night"));
 					} else {
-						aList.add(LH.Chat.BLINKING_RED + "Doesn't work at any Time (BUG!!!)");
+						aList.add(LH.Chat.BLINKING_RED + LH.tt("Doesn't work at any Time (BUG!!!)"));
 					}
 				}
 				
 				if (Util.getRainproof(aBumbleTag)) {
 					if (Util.getStormproof(aBumbleTag)) {
-						aList.add(LH.Chat.RAINBOW + "Can fly during any Weather");
+						aList.add(LH.Chat.RAINBOW + LH.tt("Can fly during any Weather"));
 					} else {
-						aList.add(LH.Chat.PURPLE + "Can fly during Rain, but not during Storms");
+						aList.add(LH.Chat.PURPLE + LH.tt("Can fly during Rain, but not during Storms"));
 					}
 				} else {
 					if (Util.getStormproof(aBumbleTag)) {
-						aList.add(LH.Chat.PURPLE + "Can fly during Storms, but not when it Rains");
+						aList.add(LH.Chat.PURPLE + LH.tt("Can fly during Storms, but not when it Rains"));
 					} else {
-						aList.add(LH.Chat.RED + "Weak to Weather");
+						aList.add(LH.Chat.RED + LH.tt("Weak to Weather"));
 					}
 				}
 				
 				if (Util.getOutsideActive(aBumbleTag)) {
 					if (Util.getInsideActive(aBumbleTag)) {
-						aList.add(LH.Chat.RAINBOW + "Doesn't care whether to bee In- or Outside");
+						aList.add(LH.Chat.RAINBOW + LH.tt("Doesn't care whether to bee In- or Outside"));
 					} else {
-						aList.add(LH.Chat.PURPLE + "Needs to bee Outside");
+						aList.add(LH.Chat.PURPLE + LH.tt("Needs to bee Outside"));
 					}
 				} else {
 					if (Util.getInsideActive(aBumbleTag)) {
-						aList.add(LH.Chat.PURPLE + "Needs to bee Inside");
+						aList.add(LH.Chat.PURPLE + LH.tt("Needs to bee Inside"));
 					} else {
-						aList.add(LH.Chat.BLINKING_RED + "Doesn't work anywhere (BUG!!!)");
+						aList.add(LH.Chat.BLINKING_RED + LH.tt("Doesn't work anywhere (BUG!!!)"));
 					}
 				}
 			}
@@ -617,9 +617,9 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	public static boolean checkFlowers(Level aWorld, int aX, int aY, int aZ) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ, F);
 		if (aBlock == NB) return F;
-		// F16 flower-pot ЗАКРЫТ (BUG-039 v4): 1.7.10 читал содержимое горшка из TileEntityFlowerPot-BE (mirror,
-		// NCDFE в рантайме) — в neo содержимое = сам POTTED_*-блок. 1:1 «dandelion или red_flower в горшке»:
-		// 1.7.10 POPPY-блок = все 9 расщеплённых red_flower (F4-flattening) → их potted-варианты.
+		// F16 flower-pot CLOSED (BUG-039 v4): 1.7.10 read the pot's content from the TileEntityFlowerPot BE (mirror,
+		// runtime NCDFE) — in neo the content IS the POTTED_* block itself. 1:1 for "dandelion or red_flower in a pot":
+		// the 1.7.10 POPPY block = all 9 flattened red_flower variants (F4-flattening) -> their potted equivalents.
 		if (aBlock instanceof net.minecraft.world.level.block.FlowerPotBlock) {
 			return aBlock == Blocks.POTTED_DANDELION || aBlock == Blocks.POTTED_POPPY || aBlock == Blocks.POTTED_BLUE_ORCHID
 				|| aBlock == Blocks.POTTED_ALLIUM || aBlock == Blocks.POTTED_AZURE_BLUET || aBlock == Blocks.POTTED_RED_TULIP
@@ -665,7 +665,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	}
 	
 	@Override
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
+	// F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo calls): was aIconRegister.registerIcon(...) (IIconRegister removed) — we build the ResourceLocation directly from the same path.
 	public void registerIcons(Object aIconRegister) {
 		PRINCESS    = new ResourceLocation(mModID + ":" + getUnlocalizedName() + "/overlay_princess");
 		QUEEN       = new ResourceLocation(mModID + ":" + getUnlocalizedName() + "/overlay_queen");

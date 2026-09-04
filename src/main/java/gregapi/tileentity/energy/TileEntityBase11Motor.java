@@ -87,13 +87,13 @@ public abstract class TileEntityBase11Motor extends TileEntityBase10EnergyConver
 			TE_Behavior_Energy_Converter tConverter = mConverter;
 			mConverter = mConRevert;
 			mConRevert = tConverter;
-			if (aChatReturn != null) aChatReturn.add(mCounterClockwise ? "Counterclockwise" : "Clockwise");
+			if (aChatReturn != null) aChatReturn.add(mCounterClockwise ? LH.tt("Counterclockwise") : LH.tt("Clockwise"));
 			causeBlockUpdate();
 			doEnetUpdate();
 			return 10000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add(mCounterClockwise ? "Counterclockwise" : "Clockwise");
+			if (aChatReturn != null) aChatReturn.add(mCounterClockwise ? LH.tt("Counterclockwise") : LH.tt("Clockwise"));
 			return 1;
 		}
 		

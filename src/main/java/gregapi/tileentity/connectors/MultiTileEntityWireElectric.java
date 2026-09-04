@@ -138,7 +138,7 @@ public class MultiTileEntityWireElectric extends TileEntityBase10ConnectorRender
 	@Override
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_electrometer) && isServerSide()) {
-			if (aChatReturn != null) aChatReturn.add(mWattageLast + " EU/t");
+			if (aChatReturn != null) aChatReturn.add(mWattageLast + LH.tt(" EU/t"));
 			return 1;
 		}
 		return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);

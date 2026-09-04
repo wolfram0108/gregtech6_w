@@ -101,7 +101,7 @@ public class BlockTreePlanks2FireProof extends BlockBasePlanks {
 	public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {
 		super.addInformation(aStack, aMeta, aPlayer, aList, aF3_H);
 		if (XMAS_IN_JULY && aMeta == 0) {
-			aList.add(LH.Chat.RAINBOW_SLOW + "Save on everything at Christmas in July!");
+			aList.add(LH.Chat.RAINBOW_SLOW + LH.tt("Save on everything at Christmas in July!"));
 		}
 	}
 }

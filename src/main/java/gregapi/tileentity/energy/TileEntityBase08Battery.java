@@ -109,7 +109,7 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		if (mCapacity > 0) aList.add(LH.Chat.WHITE + UT.Code.makeString(Math.min(mCapacity, mEnergy)) + " / " + UT.Code.makeString(mCapacity) + " " + mType.getLocalisedChatNameShort() + LH.Chat.WHITE + (mSizeMin <= 1 ? " - Size: up to " + mSizeMax : " - Size: " + mSizeRec));
+		if (mCapacity > 0) aList.add(LH.Chat.WHITE + UT.Code.makeString(Math.min(mCapacity, mEnergy)) + " / " + UT.Code.makeString(mCapacity) + " " + mType.getLocalisedChatNameShort() + LH.Chat.WHITE + (mSizeMin <= 1 ? LH.tt(" - Size: up to ") + mSizeMax : LH.tt(" - Size: ") + mSizeRec));
 	}
 	
 	@Override
@@ -126,7 +126,7 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 		long rReturn = super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (rReturn > 0 || isClientSide()) return rReturn;
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add(UT.Code.makeString(mEnergy) + " of " + UT.Code.makeString(mCapacity) + " " + mType.getLocalisedNameShort());
+			if (aChatReturn != null) aChatReturn.add(UT.Code.makeString(mEnergy) + LH.tt(" of ") + UT.Code.makeString(mCapacity) + " " + mType.getLocalisedNameShort());
 			return 1;
 		}
 		return 0;

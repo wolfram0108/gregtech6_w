@@ -96,46 +96,46 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 			}
 			if (aChatReturn == null) return 1;
 			if (mRock == null) {
-				if (WD.dimensionId(level) == -1)         {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rack"); return 1;}
-				if (WD.dimensionId(level) ==  0)         {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rock"); return 1;}
-				if (WD.dimensionId(level) == +1)         {aChatReturn.add(LH.Chat.GRAY + "There is definitely an End"); return 1;}
-				if (WD.dimAETHER(level))                      {aChatReturn.add(LH.Chat.GRAY + "Holy $#!T, it's a Rock.."); return 1;}
-				if (WD.dimALF   (level))                      {aChatReturn.add(LH.Chat.GRAY + "Wait that Rock is alive?!"); return 1;}
-				if (WD.dimTROPIC(level))                      {aChatReturn.add(LH.Chat.GRAY + "Seems to be a Chunk o'Head"); return 1;}
-				if (BIOMES_MOON.contains(getBiome()))  {aChatReturn.add(LH.Chat.GRAY + "This is definitely not made of Cheese"); return 1;}
-				if (BIOMES_MARS.contains(getBiome()))  {aChatReturn.add(LH.Chat.GRAY + "This is definitely from Mars"); return 1;}
-				if (BIOMES_SPACE.contains(getBiome())) {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Space Rock"); return 1;}
-				aChatReturn.add(LH.Chat.GRAY + "This definitely is a Rock");
+				if (WD.dimensionId(level) == -1)         {aChatReturn.add(LH.Chat.GRAY + LH.tt("This is definitely a Rack")); return 1;}
+				if (WD.dimensionId(level) ==  0)         {aChatReturn.add(LH.Chat.GRAY + LH.tt("This is definitely a Rock")); return 1;}
+				if (WD.dimensionId(level) == +1)         {aChatReturn.add(LH.Chat.GRAY + LH.tt("There is definitely an End")); return 1;}
+				if (WD.dimAETHER(level))                      {aChatReturn.add(LH.Chat.GRAY + LH.tt("Holy $#!T, it's a Rock..")); return 1;}
+				if (WD.dimALF   (level))                      {aChatReturn.add(LH.Chat.GRAY + LH.tt("Wait that Rock is alive?!")); return 1;}
+				if (WD.dimTROPIC(level))                      {aChatReturn.add(LH.Chat.GRAY + LH.tt("Seems to be a Chunk o'Head")); return 1;}
+				if (BIOMES_MOON.contains(getBiome()))  {aChatReturn.add(LH.Chat.GRAY + LH.tt("This is definitely not made of Cheese")); return 1;}
+				if (BIOMES_MARS.contains(getBiome()))  {aChatReturn.add(LH.Chat.GRAY + LH.tt("This is definitely from Mars")); return 1;}
+				if (BIOMES_SPACE.contains(getBiome())) {aChatReturn.add(LH.Chat.GRAY + LH.tt("This is definitely a Space Rock")); return 1;}
+				aChatReturn.add(LH.Chat.GRAY + LH.tt("This definitely is a Rock"));
 				return 1;
 			}
-			if (OD.itemFlint.is_(mRock)) {aChatReturn.add(LH.Chat.GRAY + (APRIL_FOOLS || rng(WOODMANS_BDAY ? 10 : XMAS_IN_JULY ? 100 : 1000)==0?"Flintstones, meet the Flintstones, they're the modern Stone Age family":"It's a Flint")); return 1;}
+			if (OD.itemFlint.is_(mRock)) {aChatReturn.add(LH.Chat.GRAY + (APRIL_FOOLS || rng(WOODMANS_BDAY ? 10 : XMAS_IN_JULY ? 100 : 1000)==0?LH.tt("Flintstones, meet the Flintstones, they're the modern Stone Age family"):LH.tt("It's a Flint"))); return 1;}
 			OreDictItemData tData = OM.anydata_(mRock);
 			if (tData != null && tData.nonemptyMaterial()) {
 				if (tData.mMaterial.mMaterial == MT.MeteoricIron || tData.mMaterial.mMaterial == MT.Meteorite) {
-					aChatReturn.add(LH.Chat.ORANGE + "Looks like it fell from the Sky!"); return 1;
+					aChatReturn.add(LH.Chat.ORANGE + LH.tt("Looks like it fell from the Sky!")); return 1;
 				}
 				if (tData.mMaterial.mMaterial == MT.AncientDebris) {
-					aChatReturn.add(LH.Chat.PINK + "Looks quite old and broken"); return 1;
+					aChatReturn.add(LH.Chat.PINK + LH.tt("Looks quite old and broken")); return 1;
 				}
 				if (tData.mMaterial.mMaterial == MT.Stone) {
-					aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rock"); return 1;
+					aChatReturn.add(LH.Chat.GRAY + LH.tt("This is definitely a Rock")); return 1;
 				}
 				if (tData.mMaterial.mMaterial == MT.Netherrack) {
-					aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rack"); return 1;
+					aChatReturn.add(LH.Chat.GRAY + LH.tt("This is definitely a Rack")); return 1;
 				}
 				if (tData.mMaterial.mMaterial == MT.Endstone) {
-					aChatReturn.add(LH.Chat.GRAY + "There is definitely an End"); return 1;
+					aChatReturn.add(LH.Chat.GRAY + LH.tt("There is definitely an End")); return 1;
 				}
 				if (tData.mMaterial.mMaterial == MT.PetrifiedWood) {
-					aChatReturn.add(LH.Chat.GRAY + "Looks like a nice piece of Wood" + LH.Chat._BLACK + ">:]"); return 1;
+					aChatReturn.add(LH.Chat.GRAY + LH.tt("Looks like a nice piece of Wood") + LH.Chat._BLACK + ">:]"); return 1;
 				}
 				if (tData.mMaterial.mMaterial.contains(TD.Properties.GLOWING)) {
-					aChatReturn.add(LH.Chat.YELLOW + "Glows a little"); return 1;
+					aChatReturn.add(LH.Chat.YELLOW + LH.tt("Glows a little")); return 1;
 				}
 				if (tData.mMaterial.mMaterial.contains(TD.Properties.STONE)) {
-					aChatReturn.add(LH.Chat.GRAY + "This Rock consists out of " + LH.Chat.WHITE + tData.mMaterial.mMaterial.getLocal()); return 1;
+					aChatReturn.add(LH.Chat.GRAY + LH.tt("This Rock consists out of ") + LH.Chat.WHITE + tData.mMaterial.mMaterial.getLocal()); return 1;
 				}
-				aChatReturn.add(LH.Chat.GRAY + "This Rock is bearing " + LH.Chat.CYAN + tData.mMaterial.mMaterial.getLocal());
+				aChatReturn.add(LH.Chat.GRAY + LH.tt("This Rock is bearing ") + LH.Chat.CYAN + tData.mMaterial.mMaterial.getLocal());
 				return 1;
 			}
 			return 1;

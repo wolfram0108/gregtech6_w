@@ -131,17 +131,17 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_screwdriver)) {
 			mInverted = !mInverted;
-			if (aChatReturn != null) aChatReturn.add(mInverted ? "Blacklist Filter" : "Whitelist Filter");
+			if (aChatReturn != null) aChatReturn.add(mInverted ? LH.tt("Blacklist Filter") : LH.tt("Whitelist Filter"));
 			return 2000;
 		}
 		if (aTool.equals(TOOL_softhammer)) {
 			mInverted = F;
 			for (int i = 0; i < mFilter.length; i++) mFilter[i] = null;
-			if (aChatReturn != null) aChatReturn.add("Cleared the Filter");
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Cleared the Filter"));
 			return 10000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add(mInverted ? "Blacklist Filter" : "Whitelist Filter");
+			if (aChatReturn != null) aChatReturn.add(mInverted ? LH.tt("Blacklist Filter") : LH.tt("Whitelist Filter"));
 			return 1;
 		}
 		return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
@@ -349,7 +349,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 
 		@Override
 		protected void drawGuiContainerBackgroundLayer2(float par1, int par2, int par3) {
-			// был GL11.glColor4f(1,1,1,1) — в neo цвет пер-blit (дефолт белый)
+			// was GL11.glColor4f(1,1,1,1) — in neo the color is per-blit (default white)
 			int k = (width - xSize) / 2;
 			int l = (height - ySize) / 2;
 			drawTexturedModalRect(k, l, 0, 0, xSize, mRows * 18 + 17);

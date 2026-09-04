@@ -45,11 +45,11 @@ public class CoverControllerRedstone extends AbstractCoverAttachmentController {
 	public long onToolClick(byte aSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_screwdriver)) {
 			aData.value(aSide, (short)(aData.mValues[aSide] ^ B[0]));
-			if (aChatReturn != null) aChatReturn.add((aData.mValues[aSide] & B[0]) != 0 ? "Runs when Input is OFF" : "Runs when Input is ON");
+			if (aChatReturn != null) aChatReturn.add((aData.mValues[aSide] & B[0]) != 0 ? LH.tt("Runs when Input is OFF") : LH.tt("Runs when Input is ON"));
 			return 1000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add((aData.mValues[aSide] & B[0]) != 0 ? "Runs when Input is OFF" : "Runs when Input is ON");
+			if (aChatReturn != null) aChatReturn.add((aData.mValues[aSide] & B[0]) != 0 ? LH.tt("Runs when Input is OFF") : LH.tt("Runs when Input is ON"));
 			return 1;
 		}
 		return aData.mTileEntity.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSideClicked, aHitX, aHitY, aHitZ);

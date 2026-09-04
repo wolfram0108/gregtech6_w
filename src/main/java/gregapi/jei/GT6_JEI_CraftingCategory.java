@@ -23,6 +23,7 @@
 
 package gregapi.jei;
 
+import gregapi.data.LH;
 import gregapi.data.MD;
 import gregapi.recipes.ICraftingRecipeGT;
 import gregapi.recipes.ShapedOreRecipe;
@@ -44,38 +45,38 @@ import java.util.List;
 import static gregapi.data.CS.*;
 
 /**
- * ЕДИНЫЙ центр JEI-показа крафт-верстака GT6 (Ф1.3-crafting-jei, decisions/F11-crafting-recipe.md). В 1.7.10
- * NEI показывал крафт GT6 сам: {@code ICraftingRecipeGT extends IRecipe}, GT6 регистрировал конкретные
- * реализации forge {@code ShapedOreRecipe}/{@code ShapelessOreRecipe} через {@code GameRegistry.addRecipe}
- * (см. {@code CR.shaped}/{@code CR.shapeless} тех лет), и встроенный (не GT6-код, часть самого NEI)
- * {@code ShapedRecipeHandler}/{@code ShapelessRecipeHandler} узнавал их по классу и рисовал сам — GT6 даже
- * явно ОТКЛЮЧАЛ свой цикл {@code GuiCraftingRecipe.craftinghandlers} (gregapi/NEI_GT_API_Config.java:59,
- * закомментировано), полагаясь целиком на автоматику NEI.
+ * The SINGLE center for JEI display of the GT6 crafting bench (F1.3-crafting-jei, decisions/F11-crafting-recipe.md). In 1.7.10
+ * NEI displayed GT6 crafting itself: {@code ICraftingRecipeGT extends IRecipe}, GT6 registered concrete
+ * forge implementations {@code ShapedOreRecipe}/{@code ShapelessOreRecipe} via {@code GameRegistry.addRecipe}
+ * (see the {@code CR.shaped}/{@code CR.shapeless} of that era), and the built-in (not GT6 code, part of NEI itself)
+ * {@code ShapedRecipeHandler}/{@code ShapelessRecipeHandler} recognized them by class and drew them itself — GT6 even
+ * explicitly DISABLED its own {@code GuiCraftingRecipe.craftinghandlers} loop (gregapi/NEI_GT_API_Config.java:59,
+ * commented out), relying entirely on NEI's automation.
  *
- * <p>В neo GT6-крафт (F11) — СОБСТВЕННЫЙ буфер {@code CR.BUFFER}/{@code ICraftingRecipeGT}, диспетчер
- * {@code CustomRecipe} читает его в рантайме верстака; сами рецепты НЕ neo {@code CraftingRecipe}
- * (ADR F11 §"почему не Recipe"), поэтому встроенная JEI-категория {@code RecipeTypes.CRAFTING}
- * ({@code IRecipeHolderType<RecipeHolder<CraftingRecipe>>} — требует codec/serializer в
- * {@code RecipeManager}, см. ADR §Ф1.3-crafting-jei) их не видит и не может: делать GT6-рецепты настоящим
- * {@code CraftingRecipe} означало бы переоткрыть закрытый F11-шов ради витрины. Поэтому — СОБСТВЕННАЯ
- * {@code IRecipeCategory} на {@link ICraftingRecipeGT}, читающая тот же {@code CR.list()} (F11-буфер) 1:1,
- * но раскладка сетки — через штатный JEI {@link ICraftingGridHelper} (тот же общий JEI-механизм, что и
- * встроенная категория): 3×3-сетка по 18px/слот, выходной слот (95,19), размер 116×54, иконка
- * {@code Blocks.CRAFTING_TABLE} — 1:1 скопировано (декомпилировано javap) из
- * {@code mezz.jei.library.plugins.vanilla.crafting.CraftingRecipeCategory} (сама эта константа не в наших
- * трёх neo-корнях — реализация JEI закрыта, но она читается через javap как часть приёмки данной задачи;
- * контракт {@link ICraftingGridHelper} в {@code jei-26.1.2-common-api}), — визуально неотличима от
- * нативного крафт-рендера JEI.
+ * <p>In neo, GT6 crafting (F11) is its OWN buffer {@code CR.BUFFER}/{@code ICraftingRecipeGT}, a dispatcher
+ * {@code CustomRecipe} reads it at bench runtime; the recipes themselves are NOT neo {@code CraftingRecipe}
+ * (ADR F11 §"why not Recipe"), so the built-in JEI category {@code RecipeTypes.CRAFTING}
+ * ({@code IRecipeHolderType<RecipeHolder<CraftingRecipe>>} — requires a codec/serializer in
+ * {@code RecipeManager}, see ADR §F1.3-crafting-jei) cannot see them and cannot: making GT6 recipes a real
+ * {@code CraftingRecipe} would mean reopening the closed F11 seam just for the display. Hence — a DEDICATED
+ * {@code IRecipeCategory} on {@link ICraftingRecipeGT}, reading the same {@code CR.list()} (the F11 buffer) 1:1,
+ * but the grid layout goes through the standard JEI {@link ICraftingGridHelper} (the same shared JEI mechanism as the
+ * built-in category): a 3×3 grid at 18px/slot, output slot at (95,19), size 116×54, icon
+ * {@code Blocks.CRAFTING_TABLE} — copied 1:1 (decompiled via javap) from
+ * {@code mezz.jei.library.plugins.vanilla.crafting.CraftingRecipeCategory} (this constant itself is not in our
+ * three neo reference roots — the JEI implementation is closed source, but it was read via javap as part of this
+ * task's acceptance; the {@link ICraftingGridHelper} contract lives in {@code jei-26.1.2-common-api}) — visually
+ * indistinguishable from JEI's native crafting render.
  *
- * <p>BUG-099 (требование пользователя «рецепты обязаны быть в витрине на 100%»): показываются ЧЕТЫРЕ типа —
- * {@link ShapedOreRecipe}/{@link ShapelessOreRecipe}-наследники (в т.ч. {@code AdvancedCraftingShaped}/
- * {@code AdvancedCraftingShapeless}/{@code AdvancedCraftingTool}) плюс оба самостоятельных:
- * {@code AdvancedCrafting1ToY} (один предмет, продукт выбирается КЛЕТКОЙ) и {@code AdvancedCraftingXToY}
- * (X предметов префикса → Y выхода). Последние два реализуют {@code ICraftingRecipeGT} напрямую, а их
- * {@code getRecipeOutput()} отдаёт {@code ERROR_OUTPUT}-заглушку — поэтому их не рисовал и NEI в 1.7.10
- * (тот узнавал рецепты по классу). Здесь витрина ИДЁТ ДАЛЬШЕ оригинала: раскладку и выход строим из полей
- * самого рецепта (префикс входа/выхода, количество, номер клетки), так что игрок видит и что получится,
- * и куда класть.</p>
+ * <p>BUG-099 (user requirement "recipes must be 100% shown in the display"): FOUR types are shown —
+ * {@link ShapedOreRecipe}/{@link ShapelessOreRecipe} descendants (incl. {@code AdvancedCraftingShaped}/
+ * {@code AdvancedCraftingShapeless}/{@code AdvancedCraftingTool}) plus both standalone ones:
+ * {@code AdvancedCrafting1ToY} (one item, the product is chosen by CELL) and {@code AdvancedCraftingXToY}
+ * (X prefix items → Y output). The last two implement {@code ICraftingRecipeGT} directly, and their
+ * {@code getRecipeOutput()} returns an {@code ERROR_OUTPUT} stub — which is why NEI never drew them in 1.7.10 either
+ * (it recognized recipes by class). Here the display GOES FURTHER than the original: the layout and output are built from
+ * the recipe's own fields (input/output prefix, count, cell number), so the player sees both what they'll get
+ * and where to place items.</p>
  */
 public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraftingRecipeGT> {
 	public static final RecipeType<ICraftingRecipeGT> TYPE = RecipeType.create(MD.GT.mID, "crafting_gt6", ICraftingRecipeGT.class);
@@ -83,7 +84,7 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 	private final ICraftingGridHelper mGridHelper;
 
 	public GT6_JEI_CraftingCategory(IGuiHelper aGuiHelper) {
-		super(TYPE, Component.literal("Crafting Table"), aGuiHelper.createDrawableItemLike(Blocks.CRAFTING_TABLE), 116, 54);
+		super(TYPE, Component.literal(LH.tt("Crafting Table")), aGuiHelper.createDrawableItemLike(Blocks.CRAFTING_TABLE), 116, 54);
 		mGridHelper = aGuiHelper.createCraftingGridHelper();
 	}
 
@@ -127,8 +128,8 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 		}
 	}
 
-	/** BUG-121: сторож раскладки — сколько рецептов витрина не смогла разложить за прогон.
-	 *  Ноль обязателен: упавшая раскладка оставляет карточку БЕЗ слотов (выход ставится после входов). */
+	/** BUG-121: layout guard — how many recipes the display failed to lay out this run.
+	 *  Zero is mandatory: a failed layout leaves the card WITHOUT slots (the output is placed after the inputs). */
 	public static int sLayoutFailures = 0;
 
 	/** The only place a family card (prefix recipe, paired material lists) becomes slots.
@@ -145,22 +146,22 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 		aBuilder.createFocusLink(tLinked.toArray(new mezz.jei.api.gui.builder.IIngredientAcceptor<?>[0]));
 	}
 
-	/** ⛔ ПРАВИЛО ВИТРИНЫ 1.7.10, восстановленное дословно (репорт игрока «части некоторых рецептов
-	 *  отсутствуют»): рецепт, у которого ХОТЬ ОДНА ячейка — пустой список вариантов (ore-имя, под
-	 *  которым нет ни одного предмета), в NEI не показывался ВООБЩЕ —
+	/** ⛔ 1.7.10 DISPLAY RULE, restored verbatim (player report "parts of some recipes
+	 *  are missing"): a recipe where EVEN ONE cell is an empty list of options (an ore name
+	 *  under which no item exists) was NOT shown AT ALL in NEI —
 	 *  {@code reference/mods/NotEnoughItems-1.7.10/src/codechicken/nei/recipe/ShapedRecipeHandler.java:157-158}
 	 *  ({@code if (item instanceof List && ((List<?>)item).isEmpty()) return null; //ore handler, no ores})
-	 *  и то же в {@code ShapelessRecipeHandler.java:156-157}.
+	 *  and the same in {@code ShapelessRecipeHandler.java:156-157}.
 	 *
-	 *  <p>Такие записи в GT6 законны и есть в САМОМ оригинале: шаблоны префиксов подставляют символы
-	 *  безусловно ({@code Loader_OreProcessing.OreProcessing_CraftFrom.onOreRegistration}), поэтому
-	 *  «кольцо из самоцвета» рождается и у свинца, у которого самоцвета не существует. Рецепт мёртв
-	 *  (совпасть не с чем) — витрина 1.7.10 его и не показывала. Данные мы храним 1:1 с оригиналом
-	 *  (эталон {@code reference/oracle/crafting.jsonl}), а фильтр — не данные, а правило показа.</p>
+	 *  <p>Such entries are legitimate in GT6 and exist in the ORIGINAL itself: prefix templates substitute symbols
+	 *  unconditionally ({@code Loader_OreProcessing.OreProcessing_CraftFrom.onOreRegistration}), so
+	 *  a "gem ring" is born even for lead, for which no gem exists. The recipe is dead
+	 *  (nothing to match) — the 1.7.10 display did not show it either. We keep the data 1:1 with the original
+	 *  (reference {@code reference/oracle/crafting.jsonl}), and the filter is not data but a display rule.</p>
 	 *
-	 *  <p>Для двух самостоятельных типов ({@code AdvancedCrafting1ToY}/{@code AdvancedCraftingXToY},
-	 *  BUG-099) правило то же по смыслу: нет ни одного материала, для которого есть и вход, и выход —
-	 *  показывать нечего, карточка была бы пустой.</p> */
+	 *  <p>For the two standalone types ({@code AdvancedCrafting1ToY}/{@code AdvancedCraftingXToY},
+	 *  BUG-099) the rule is the same in spirit: if there is no material with both an input and an output,
+	 *  there is nothing to show — the card would be empty.</p> */
 	public static boolean showable(ICraftingRecipeGT aRecipe) {
 		try {
 			if (aRecipe instanceof ShapedOreRecipe tShaped) return noEmptyChoice(tShaped.getInput());
@@ -168,22 +169,22 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 			if (aRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY t1ToY) return t1ToY.mEmpty < 9 && hasPairs(t1ToY, t1ToY.mInput, t1ToY.mOutput, t1ToY.mOutputCount, m -> t1ToY.hasOutputFor(m));
 			if (aRecipe instanceof gregapi.recipes.AdvancedCraftingXToY tXToY) return tXToY.mInputCount > 0 && tXToY.mInputCount <= 9 && hasPairs(tXToY, tXToY.mInput, tXToY.mOutput, tXToY.mOutputCount, m -> tXToY.hasOutputFor(m));
 		} catch (Throwable e) {
-			// NEI при исключении разбора тоже отдавал null, то есть не показывал (ShapedRecipeHandler.java:161-164)
+			// NEI also returned null on a parse exception, i.e. it did not show it either (ShapedRecipeHandler.java:161-164)
 			return F;
 		}
 		return T;
 	}
 
-	/** Ни одна ячейка не является ПУСТЫМ списком вариантов. Формат ячейки — 1:1 с 1.7.10
-	 *  ({@code null} / {@code ItemStack} / {@code List<ItemStack>}), список живой
-	 *  ({@code OreDictionary.getOres} отдаёт ту же ссылку), поэтому проверка верна в момент показа. */
+	/** No cell is an EMPTY list of options. The cell format is 1:1 with 1.7.10
+	 *  ({@code null} / {@code ItemStack} / {@code List<ItemStack>}), the list is live
+	 *  ({@code OreDictionary.getOres} returns the same reference), so the check is correct at the moment of display. */
 	private static boolean noEmptyChoice(Object[] aCells) {
 		if (aCells == null) return F;
 		for (Object tCell : aCells) if (tCell instanceof List && ((List<?>)tCell).isEmpty()) return F;
 		return T;
 	}
 
-	/** Есть ли хоть один материал, дающий И вход, И выход (иначе показывать нечего). */
+	/** Whether there is at least one material giving BOTH an input AND an output (otherwise nothing to show). */
 	private static boolean hasPairs(Object aRecipe, gregapi.oredict.OreDictPrefix aInput, gregapi.oredict.OreDictPrefix aOutput
 	, int aOutputCount, java.util.function.Predicate<gregapi.oredict.OreDictMaterial> aHasOutput) {
 		List<ItemStack> tIn = new ArrayList<>(), tOut = new ArrayList<>();
@@ -191,15 +192,15 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 		return !tIn.isEmpty();
 	}
 
-	/** BUG-099: рецепт задан на ПРЕФИКС, а витрина показывает конкретные предметы — собираем пары «вход↔выход»
-	 *  по всем материалам, для которых у рецепта есть выход. Списки одной длины и одного порядка: JEI листает
-	 *  альтернативы слотов в такт, поэтому вход и выход всегда показывают ОДИН материал.
-	 *  <p>Материалы берём из {@code MATERIAL_MAP} (существующие), а не из разреженного массива на 32767 слотов:
-	 *  раскладка строится для каждого рецепта, и обход массива стоил 14 секунд на регистрации плагина —
-	 *  за это время интегрированный сервер успевал отвалиться (замер по логу JEI-стартера).</p> */
+	/** BUG-099: the recipe is defined on a PREFIX, but the display shows concrete items — we collect "input↔output"
+	 *  pairs across all materials for which the recipe has an output. The lists are the same length and order: JEI cycles
+	 *  through slot alternatives in lockstep, so the input and output always show the SAME material.
+	 *  <p>Materials are taken from {@code MATERIAL_MAP} (the existing ones), not from the sparse 32767-slot array:
+	 *  the layout is built for every recipe, and walking the array cost 14 seconds at plugin registration —
+	 *  long enough for the integrated server to time out (measured from the JEI-starter log).</p> */
 	private static final java.util.Map<Object, List<List<ItemStack>>> PAIRS_CACHE = new java.util.WeakHashMap<>();
 
-	/** Пары для рецепта, считаются один раз (JEI может перестраивать раскладку). */
+	/** Pairs for the recipe, computed once (JEI may rebuild the layout). */
 	private static void materialPairs(Object aRecipe, gregapi.oredict.OreDictPrefix aInput, gregapi.oredict.OreDictPrefix aOutput, int aOutputCount
 	, java.util.function.Predicate<gregapi.oredict.OreDictMaterial> aHasOutput, List<ItemStack> rInputs, List<ItemStack> rOutputs) {
 		List<List<ItemStack>> tCached = PAIRS_CACHE.get(aRecipe);
@@ -227,8 +228,8 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 		}
 	}
 
-	/** Ячейка {@code null}/{@code ItemStack}/{@code List<ItemStack>} (см. {@link ShapedOreRecipe#getInput()}
-	 *  и {@link ShapelessOreRecipe#getInput()}) -> {@code List<ItemStack>} для {@link ICraftingGridHelper}. */
+	/** A cell {@code null}/{@code ItemStack}/{@code List<ItemStack>} (see {@link ShapedOreRecipe#getInput()}
+	 *  and {@link ShapelessOreRecipe#getInput()}) -> {@code List<ItemStack>} for {@link ICraftingGridHelper}. */
 	private static List<List<ItemStack>> cells(Object[] aCells) {
 		List<List<ItemStack>> rCells = new ArrayList<>(aCells.length);
 		for (Object tCell : aCells) {

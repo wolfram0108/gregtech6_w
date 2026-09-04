@@ -181,12 +181,12 @@ public class MultiTileEntityEngineSteam extends TileEntityBase09FacingSingle imp
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
 				if (mStopped) {
-					aChatReturn.add("Stopped");
+					aChatReturn.add(LH.tt("Stopped"));
 				} else {
 					if (mActive) {
-						aChatReturn.add("Running");
+						aChatReturn.add(LH.tt("Running"));
 					} else {
-						aChatReturn.add("Capable of Running");
+						aChatReturn.add(LH.tt("Capable of Running"));
 					}
 				}
 			}

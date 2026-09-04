@@ -95,15 +95,15 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public boolean mRegisterToOreDict = T, mHidden = F;
 	
 	public final float mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ;
-	/** F9 4-bis: тот же приём, что в {@code BlockBaseRail}/{@code BlockBaseFlower}/{@code MultiTileEntityBlock} —
-	 *  собственное поле вместо удалённого ванильного {@code Block.blockMaterial}, не новая абстракция. В 1.7.10
-	 *  материал приходил в {@code super(aVanillaMaterial)} (оригинал {@code PrefixBlock.java:168}) и участвовал в
-	 *  правилах блока; здесь он нужен признаку «нормальный куб» ({@link #isBlockNormalCube}). */
+	/** F9 4-bis: same approach as in {@code BlockBaseRail}/{@code BlockBaseFlower}/{@code MultiTileEntityBlock} —
+	 *  a dedicated field replacing the removed vanilla {@code Block.blockMaterial}, not a new abstraction. In 1.7.10
+	 *  the material arrived via {@code super(aVanillaMaterial)} (original {@code PrefixBlock.java:168}) and took part in
+	 *  block rules; here it is needed for the "normal cube" trait ({@link #isBlockNormalCube}). */
 	protected final Material mMaterial;
 	public Material getMaterial() {return mMaterial;}
-	/** F-bounds (тот же приём, что BlockBase.java/MultiTileEntityBlock.java): последние заданные bounds (через
-	 *  setBlockBoundsBasedOnState -> setBlockBounds), neo bounds immutable -> храним сами отдельно от mMinX..mMaxZ
-	 *  (те final, интринсик-геометрия материала), рендер-использование отложено на F3-клиент-проход. */
+	/** F-bounds (same approach as BlockBase.java/MultiTileEntityBlock.java): the last-set bounds (via
+	 *  setBlockBoundsBasedOnState -> setBlockBounds), neo bounds are immutable -> store them ourselves separately from mMinX..mMaxZ
+	 *  (those are final, intrinsic material geometry), render usage is deferred to the F3 client pass. */
 	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
@@ -187,26 +187,26 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	 * @param aCanExplode if this Block can explode if the Material it is made of can explode.
 	 * @param aRenderOverlayInWorld if the Icon Overlay is to be rendered InWorld. Used for Crates and Ores.
 	 */
-	// F13/F16/F16: Properties при ctor — sound(step-звук) + noOcclusion для non-opaque (иначе рендер solid + свет блокируется). setId обязателен.
+	// F13/F16/F16: Properties at ctor — sound(step sound) + noOcclusion for non-opaque (otherwise renders solid + blocks light). setId is mandatory.
 	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aModIDOwner, String aNameInternal, SoundType aSoundType, boolean aOpaque, String aTool, Material aVanillaMaterial) {
 		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType)
-			// Правка №1 (BUG-106): раньше неподвижность для поршней держалась на факте «у блока есть BE» (движок не
-			// толкает блоки с сущностью); с переносом материала в карту чанка сущности нет — запрет объявляем явно,
-			// поведение 1:1 с прежним (и с 1.7.10, где TE-блоки были нетолкаемы).
+			// Fix #1 (BUG-106): previously piston immovability relied on the fact "the block has a BE" (the engine does not
+			// push blocks with a block entity); with the material moved into the chunk map there is no entity — declare the ban
+			// explicitly, behavior 1:1 with before (and with 1.7.10, where TE blocks were unpushable).
 			.pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK);
 		if (!aOpaque) p = p.noOcclusion();
-		// F-harvest-tool (1:1 GT6, зеркало MultiTileEntityBlock.mkProps): гейт «нужен ли инструмент для дропа» решает
-		// МАТЕРИАЛ (1.7.10 EntityPlayer.canHarvestBlock → Material.isToolNotRequired), не строка инструмента: руды на
-		// Material.rock (требует) → только кирка; мягкие prefix-блоки (материалы без setRequiresTool) — рука дропает /30.
+		// F-harvest-tool (1:1 GT6, mirrors MultiTileEntityBlock.mkProps): the gate "is a tool required for the drop" is decided by the
+		// MATERIAL (1.7.10 EntityPlayer.canHarvestBlock → Material.isToolNotRequired), not the tool string: ores on
+		// Material.rock (requires) → pickaxe only; soft prefix blocks (materials without setRequiresTool) — hand drops them too.
 		if (aTool != null && !aTool.isEmpty() && aVanillaMaterial != null && !aVanillaMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();
-		// MODCOMPAT-002: цвет на карте — тот же 1.7.10-дефолт «из материала», см. BlockBase.mapColorOf.
+		// MODCOMPAT-002: map color — the same 1.7.10 default "from the material", see BlockBase.mapColorOf.
 		p = gregapi.block.BlockBase.mapColorOf(p, aVanillaMaterial);
 		return p;
 	}
 	public PrefixBlock(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterialStack aHullMaterial, Class<? extends PrefixBlockItem> aItemClass, Drops aDrops, ITexture aTexture, Material aVanillaMaterial, SoundType aSoundType, String aTool, float aBaseHardness, float aBaseResistance, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ, boolean aGravity, boolean aBeaconBase, boolean aEnderDragonProof, boolean aWitherProof, boolean aOpaque, boolean aNormalCube, boolean aPlacementChecksTemperature, boolean aPlacementChecksAntimatter, boolean aCanBurn, boolean aCanExplode, boolean aRenderOverlayInWorld, boolean aCanGlow, boolean aCanLight, boolean aSpawnProof, OreDictMaterial... aMaterialList) {
-		// F12-followup (block-split): setId в Properties (neo Block.<init> требует ID). F16: sound(aSoundType) (step-звук).
-		// F13/F16: opaque/lightOpacity — 1.7.10 runtime-поля удалены; neo occlusion/свет из Properties → non-opaque блоки
-		// получают .noOcclusion() при ctor (иначе рендерятся solid + блокируют свет). aOpaque — ctor-param. mkProps ниже.
+		// F12-followup (block-split): setId in Properties (neo Block.<init> requires an ID). F16: sound(aSoundType) (step sound).
+		// F13/F16: opaque/lightOpacity — 1.7.10 runtime fields removed; neo occlusion/light comes from Properties → non-opaque blocks
+		// get .noOcclusion() at ctor (otherwise they render solid + block light). aOpaque — ctor param. mkProps below.
 		super(mkProps(aModIDOwner, aNameInternal, aSoundType, aOpaque, aTool, aVanillaMaterial));
 		mPrefix = aPrefix;
 		mMaterial = aVanillaMaterial;
@@ -216,7 +216,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		
 		mMinX = (float)aMinX; mMinY = (float)aMinY; mMinZ = (float)aMinZ; mMaxX = (float)aMaxX; mMaxY = (float)aMaxY; mMaxZ = (float)aMaxZ;
 		
-		// F16: setStepSound ПОДКЛЮЧЕН — звук выставлен в mkProps выше (.sound(aSoundType) при ctor). Не заглушка.
+		// F16: setStepSound IS WIRED — the sound is set in mkProps above (.sound(aSoundType) at ctor). Not a stub.
 		mOpaque = aOpaque;
 		mGravity = aGravity;
 		mCanBurn = aCanBurn;
@@ -245,17 +245,17 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		LH.add("oredict." + mPrefix.dat(MT.Empty).toString(), getLocalName(mPrefix, MT.Empty));
 		LH.add(mNameInternal+"."+W, "Any Sub-Block of this one"); // Local Name for the WildcardItem Variant.
 		
-		// F13/F16: opaque ПОДКЛЮЧЕН в Properties при ctor (mkProps выше: non-opaque → .noOcclusion() → neo рендер/свет
-		// корректны). Собственные isOpaqueCube()/getLightOpacity() читают mOpaque для GT6-внутренней логики. Не заглушка.
+		// F13/F16: opaque IS WIRED UP in Properties at ctor (mkProps above: non-opaque → .noOcclusion() → neo render/light
+		// are correct). Our own isOpaqueCube()/getLightOpacity() read mOpaque for GT6-internal logic. Not a stub.
 		
-		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site; ЗДЕСЬ (на RegisterEvent<Block>, ITEMS ещё
-		// открыт) регистрируем ТОЛЬКО BlockItem через supplier (тот же приём, что item-split). Было: ST.register(this,...) — оно
-		// регистрировало и блок (эагер→freeze) и BlockItem.
+		// F12-followup (block-split): the block registers via registerBlockLazy at the call site; HERE (on RegisterEvent<Block>, ITEMS is still
+		// open) we register ONLY the BlockItem via a supplier (same approach as the item-split). It used to be: ST.register(this,...) — that
+		// registered both the block (eager→freeze) and the BlockItem.
 		final Class<? extends PrefixBlockItem> tItemClass = aItemClass==null?PrefixBlockItem.class:aItemClass;
 		gregapi.GT_API.registerItemLazy(aModIDOwner, mNameInternal, () -> (net.minecraft.world.item.BlockItem)gregapi.util.UT.Reflection.callConstructor(tItemClass, 0, null, T, this));
 		
-		// F12-followup (block-split, hashCode-стабильность): как в PrefixItem — id_(BlockItem) до регистрации = -1 →
-		// запись в «мёртвом» бакете, дедуп не находит. Откладываем add на server-start (id_ стабилен) → wildcard-дедуп схлопывает.
+		// F12-followup (block-split, hashCode stability): same as in PrefixItem — id_(BlockItem) before registration = -1 →
+		// the entry lands in a "dead" bucket, dedup does not find it. Defer the add to server-start (id_ is stable) → wildcard dedup collapses it.
 		gregapi.GT_API.deferItemInit(() -> mPrefix.mRegisteredItems.add(this)); // this optimizes some processes by decreasing the size of the Set.
 
 		if (mPrefix.contains(TD.Prefix.ORE)) {
@@ -275,18 +275,18 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		if (mOpaque) VISUALLY_OPAQUE_BLOCKS.add(this);
 		mDrops = aDrops==null?new Drops(this, this, this, this, F, F, 0, 0):aDrops;
 		
-		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было MinecraftForgeClient.registerItemRenderer(...) (net.minecraftforge.client
-		// удалён целиком в 26.1.2, RendererBlockTextured больше не implements IItemRenderer — decisions/F3-render.md §2.1/§3
-		// "IItemRenderer"). Реальная регистрация item-модели — RegisterBlockStateModels/ModelEvent.RegisterStandalone (Фаза C).
+		// F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo calls): used to be MinecraftForgeClient.registerItemRenderer(...) (net.minecraftforge.client
+		// was removed entirely in 26.1.2, RendererBlockTextured no longer implements IItemRenderer — decisions/F3-render.md §2.1/§3
+		// "IItemRenderer"). The real item-model registration is RegisterBlockStateModels/ModelEvent.RegisterStandalone (Phase C).
 		
 		// Execute before all the other things. This is to ensure that PrefixBlocks are created before MultiItems.
 		(GAPI.mBeforeInit==null?GAPI.mBeforePostInit:GAPI.mBeforeInit).add(0, this);
 	}
 	
 	/** This ensures, that all Materials are registered at the time this Item registers to the OreDictionary. */
-	// F12-followup (block-split): тело делает ST.make/OreDict-регистрацию (Holder.components привязаны только на server-start) →
-	// отложено в runDeferredItemInit (тот же приём, что PrefixItem.run). run() вызывается на @Init (mBeforeInit) → defer добавлен
-	// до postInit-дефферов; guard registerOre_ «Only @Init/@PreInit» подавлён в окне (см. GT_API.sDeferredItemInitRunning).
+	// F12-followup (block-split): the body does ST.make/OreDict registration (Holder.components are only bound at server-start) →
+	// deferred to runDeferredItemInit (same approach as PrefixItem.run). run() is called on @Init (mBeforeInit) → the defer is added
+	// before the postInit deferrals; the registerOre_ guard "Only @Init/@PreInit" is suppressed in this window (see GT_API.sDeferredItemInitRunning).
 	@Override
 	public void run() {gregapi.GT_API.deferItemInit(this::runDeferred);}
 	private void runDeferred() {
@@ -333,9 +333,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// @Override
 	public int getRenderColor(int aMetaData) {
 		OreDictMaterial aMaterial = getMetaMaterial(aMetaData);
-		// F3-render (tint): super.getRenderColor(int) удалён из neo (block-color data-driven, регистрируется
-		// клиентски отдельной фазой). Дефолт при отсутствии материала = 0xFFFFFF (белый, без тонирования — ровно
-		// прежний Block.getRenderColor-дефолт 1.7.10). Материал-RGB сохранён.
+		// F3-render (tint): super.getRenderColor(int) was removed from neo (block-color is data-driven, registered
+		// client-side in a separate phase). Default when there's no material = 0xFFFFFF (white, no tint — exactly
+		// the previous Block.getRenderColor default from 1.7.10). Material RGB is preserved.
 		return aMaterial == null ? 0xFFFFFF : UT.Code.getRGBInt(aMaterial.fRGBa[mPrefix.mState]);
 	}
 	
@@ -406,7 +406,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	
 	private static boolean LOCK = F;
 	
-	// было onNeighborChange(IBlockAccess,x,y,z,tileX,Y,Z) -> IBlockExtension.onNeighborChange(BlockState,LevelReader,BlockPos,BlockPos) [IBlockExtension.java:534]
+	// was onNeighborChange(IBlockAccess,x,y,z,tileX,Y,Z) -> IBlockExtension.onNeighborChange(BlockState,LevelReader,BlockPos,BlockPos) [IBlockExtension.java:534]
 	@Override
 	public void onNeighborChange(BlockState aState, LevelReader aWorld, BlockPos aPos, BlockPos aNeighbor) {
 		if (!LOCK) {
@@ -428,24 +428,24 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		}
 		scheduleUpdateIfNeeded(aWorld, aX, aY, aZ, aTileEntity);
 	}
-	// F-neighbor (канал сместился): 1.7.10 World.notifyBlocksOfNeighborChange звал Block.onNeighborBlockChange; neo-вход —
-	// BlockBehaviour.neighborChanged. Мост по образцу BlockFluidBaseGT:154.
+	// F-neighbor (the channel moved): 1.7.10 World.notifyBlocksOfNeighborChange called Block.onNeighborBlockChange; the neo entry point is
+	// BlockBehaviour.neighborChanged. Bridge modeled on BlockFluidBaseGT:154.
 	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, BlockPos aFromPos, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}
 	
 	public boolean scheduleUpdateIfNeeded(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity) {
-		if (mGravity && aY > WD.minY(aWorld) && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) { // BUG-089: было aY > 0, дно MC26 = getMinY()
+		if (mGravity && aY > WD.minY(aWorld) && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) { // BUG-089: was aY > 0, MC26 floor = getMinY()
 			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2);
 			return T;
 		}
 		if (!mCanBurn && !mCanExplode) return F;
-		// Правка №1: материал — из переданной сущности (легаси/NBT) либо из воронки (карта чанка); прежний гейт
-		// «TE == null → выход» означал «на позиции нет данных» — теперь это «материал == null».
+		// Fix #1: material — from the passed entity (legacy/NBT) or from the funnel (chunk map); the previous gate
+		// "TE == null → exit" meant "no data at this position" — now it is "material == null".
 		OreDictMaterial aMaterial = aTileEntity != null ? getMetaMaterial(aTileEntity) : getMetaMaterial((BlockGetter)aWorld, aX, aY, aZ);
-		// null-гард (краш приёмки 2026-07-30): данные свежезагруженного чанка могут прийти позже блока
-		// (каскад от приземления PrefixBlockFallingEntity) → материала по мете нет. Оригинал :385 гарда не имел —
-		// в 1.7.10 этого окна не было; ВСЕ соседние ветки файла (:463, :472, :663) охраняются так же.
+		// null guard (acceptance crash 2026-07-30): freshly loaded chunk data can arrive later than the block
+		// (cascade from a PrefixBlockFallingEntity landing) → no material by meta. The original at :385 had no guard —
+		// this window did not exist in 1.7.10; ALL neighboring branches in the file (:463, :472, :663) are guarded the same way.
 		if (aMaterial == null) return F;
 		if (mPrefix.contains(TD.Prefix.DUST_BASED)) {
 			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2);
@@ -458,37 +458,37 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return F;
 	}
 	
-	// BUG-024 (улов BUG-020): 1.7.10-хук ниже был мёртв — при взрыве LAST_BROKEN не ставился, блок сносил neo-дефолт
-	// (setBlock air + wasExploded), цепная детонация EXPLOSIVE/FLAMMABLE-руд не срабатывала. Мост тем же приёмом, что
-	// MultiTileEntityBlock:502. Порядок vanilla (BlockBehaviour.onExplosionHit:173-193): дропы через loot-канал ДО этого
-	// хука (BE ещё жив), затем удаление здесь. GT6-версия не звала super (1.7.10 onBlockDestroyedByExplosion) — 1:1.
+	// BUG-024 (BUG-020 catch): the 1.7.10 hook below was dead — LAST_BROKEN was never set on explosion, the block was removed by neo's default
+	// (setBlock air + wasExploded), the chain detonation of EXPLOSIVE/FLAMMABLE ores never triggered. Bridge using the same approach as
+	// MultiTileEntityBlock:502. Vanilla order (BlockBehaviour.onExplosionHit:173-193): drops via the loot channel BEFORE this
+	// hook (the BE is still alive), then removal here. The GT6 version did not call super (1.7.10 onBlockDestroyedByExplosion) — 1:1.
 	@Override public void onBlockExploded(BlockState aState, Level aWorld, BlockPos aPos, Explosion aExplosion) {
 		onBlockExploded(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aExplosion);
 	}
 	// @Override
 	public void onBlockExploded(Level aWorld, int aX, int aY, int aZ, Explosion aExplosion) {
 		if (aWorld.isClientSide()) return;
-		BlockEntity aTileEntity = teOrCarrier(aWorld, aX, aY, aZ); // правка №1: сущности нет — носитель с материалом из карты
+		BlockEntity aTileEntity = teOrCarrier(aWorld, aX, aY, aZ); // fix #1: no entity — a carrier with the material from the map
 		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
 		OreDictMaterial aMaterial = getMetaMaterial(aTileEntity);
 		WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 		if (aMaterial != null && ((mCanExplode && aMaterial.contains(TD.Properties.EXPLOSIVE)) || (mCanBurn && aMaterial.contains(TD.Properties.FLAMMABLE) && mPrefix.contains(TD.Prefix.DUST_BASED)))) try {ExplosionGT.explode(aWorld, null, aX+0.5, aY+0.5, aZ+0.5, ((mPrefix.mAmount>0?mPrefix.mAmount:U)*0.7F)/U, T, T);} catch(StackOverflowError e) {ERR.println("WARNING: StackOverflow during Explosion has been prevented at: " + aX +" ; "+ aY +" ; "+ aZ);}
 	}
 	
-	// было getExplosionResistance(Entity,World,x,y,z,expX,expY,expZ) -> IBlockExtension.getExplosionResistance
-	// (BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]; explosionX/Y/Z были не использованы
-	// исходным телом (только material-проверка по позиции) - без потери переносится напрямую.
+	// was getExplosionResistance(Entity,World,x,y,z,expX,expY,expZ) -> IBlockExtension.getExplosionResistance
+	// (BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]; explosionX/Y/Z were unused
+	// by the original body (only a material check by position) - carried over directly without loss.
 	@Override
 	public float getExplosionResistance(BlockState aState, BlockGetter aWorld, BlockPos aPos, Explosion aExplosion) {
 		OreDictMaterial aMaterial = getMetaMaterial(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());
 		if (aMaterial != null && ((mCanExplode && aMaterial.contains(TD.Properties.EXPLOSIVE)) || (mCanBurn && aMaterial.contains(TD.Properties.FLAMMABLE) && mPrefix.contains(TD.Prefix.DUST_BASED)))) return 0;
-		// BUG-020: в 1.7.10 формула читала getBlockMetadata = bind4(mToolQuality материала) (placement :435 клал именно
-		// его в мету чанка). В порте числовой меты нет, а WD.meta даёт bind4(ID материала) = мусор → quality берётся из
-		// материала напрямую (мета чанка была его чистой производной — 1:1 по значению).
+		// BUG-020: in 1.7.10 the formula read getBlockMetadata = bind4(the material's mToolQuality) (placement :435 put exactly
+		// that into the chunk meta). In the port there is no numeric meta, and WD.meta gives bind4(material ID) = garbage → quality is taken
+		// from the material directly (the chunk meta was its pure derivative — 1:1 by value).
 		return mBaseResistance * (1+getHarvestLevel(aMaterial == null ? 0 : UT.Code.bind4(aMaterial.mToolQuality)));
 	}
 	
-	// было onBlockEventReceived(World,x,y,z,id,data) -> BlockBehaviour.triggerEvent(BlockState,Level,BlockPos,int,int)
+	// was onBlockEventReceived(World,x,y,z,id,data) -> BlockBehaviour.triggerEvent(BlockState,Level,BlockPos,int,int)
 	// [BlockBehaviour.java:206]; TileEntity.receiveClientEvent(id,data) -> BlockEntity.triggerEvent(int,int) [BlockEntity.java:270]
 	@Override
 	public boolean triggerEvent(BlockState aState, Level aWorld, BlockPos aPos, int aID, int aParam) {
@@ -496,16 +496,16 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return aTileEntity == null || aTileEntity.triggerEvent(aID, aParam);
 	}
 	
-	// ⚠️ КАНАЛ ИЗБЫТОЧЕН — 1.7.10 getDamageValue отвечал «какой подтип у предмета этого блока» и звался из
-	// getPickBlock/createStackedBlock. В neo эту роль целиком несёт getCloneItemStack (ниже, строка 494):
-	// он отдаёт готовый стек с метой через getItemStackFromBlock. Оставлен точкой сверки с оригиналом.
+	// ⚠️ CHANNEL IS REDUNDANT — in 1.7.10 getDamageValue answered "which subtype does this block's item have" and was called from
+	// getPickBlock/createStackedBlock. In neo this role is carried entirely by getCloneItemStack (below, line 494):
+	// it returns a ready stack with meta via getItemStackFromBlock. Kept as a comparison point with the original.
 	// @Override
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {
 		return getMetaDataValue(aWorld, aX, aY, aZ);
 	}
 	
-	// F13: 1.7.10 Block.getPickBlock удалён — neo middle-click через IBlockExtension.getCloneItemStack; ниже neo-хук
-	// делегирует в GT6-getPickBlock (getItemStackFromBlock), восстанавливая поведение 1:1. GT6-метод сохранён.
+	// F13: 1.7.10 Block.getPickBlock was removed — neo middle-click goes via IBlockExtension.getCloneItemStack; the neo hook below
+	// delegates to the GT6 getPickBlock (getItemStackFromBlock), restoring the behavior 1:1. The GT6 method is kept.
 	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.block.state.BlockState aState, HitResult aTarget, net.minecraft.world.level.BlockGetter aLevel, net.minecraft.core.BlockPos aPos, Player aPlayer) {
 		ItemStack r = getItemStackFromBlock(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), SIDE_UNKNOWN);
 		return ST.valid(r) ? r : super.getCloneItemStack(aState, aTarget, aLevel, aPos, aPlayer);
@@ -514,20 +514,20 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN);
 	}
 
-	// ⚠️ КАНАЛ ИЗБЫТОЧЕН — разобран при BUG-020 (разбор ниже, строки 508-510): роль «запомнить снимаемый
-	// BlockEntity до его снятия» несёт мост onDestroyedByPlayer (строка 511), поставленный тем же приёмом,
-	// что MultiTileEntityBlock.onDestroyedByPlayer:433. Оставлен точкой сверки с оригиналом.
+	// ⚠️ CHANNEL IS REDUNDANT — analyzed during BUG-020 (analysis below, lines 508-510): the role "remember the
+	// BlockEntity being removed before it's removed" is carried by the onDestroyedByPlayer bridge (line 511), set up with the same approach
+	// as MultiTileEntityBlock.onDestroyedByPlayer:433. Kept as a comparison point with the original.
 	// @Override
 	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int par6) {
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity != null) LAST_BROKEN_TILEENTITY.set(tTileEntity);
-		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ)); // было aWorld.removeTileEntity(x,y,z) (1.7.10 World), neo Level.removeBlockEntity(BlockPos) [Level.java:688]
+		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ)); // was aWorld.removeTileEntity(x,y,z) (1.7.10 World), neo Level.removeBlockEntity(BlockPos) [Level.java:688]
 	}
-	// BUG-020 (дроп руды): breakBlock выше — мёртвый 1.7.10-хук (никто не зовёт) → LAST_BROKEN_TILEENTITY не ставился →
-	// Drops.getDrops (:67 WD.te) на loot-этапе (BE уже снят движком) не находил материал. Мост тем же приёмом, что
-	// MultiTileEntityBlock.onDestroyedByPlayer:433 — LAST_BROKEN ставится ДО снятия блока, тик-конец его чистит (Proxy:911).
+	// BUG-020 (ore drop): breakBlock above is a dead 1.7.10 hook (nobody calls it) → LAST_BROKEN_TILEENTITY was never set →
+	// Drops.getDrops (:67 WD.te) at the loot stage (the BE is already removed by the engine) could not find the material. Bridge using the same approach as
+	// MultiTileEntityBlock.onDestroyedByPlayer:433 — LAST_BROKEN is set BEFORE the block is removed, end-of-tick cleans it up (Proxy:911).
 	@Override public boolean onDestroyedByPlayer(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, boolean aWillHarvest, net.minecraft.world.level.material.FluidState aFluid) {
-		BlockEntity aTileEntity = teOrCarrier(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()); // правка №1: носитель из карты
+		BlockEntity aTileEntity = teOrCarrier(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()); // fix #1: carrier from the map
 		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
 		return super.onDestroyedByPlayer(aState, aWorld, aPos, aPlayer, aWillHarvest, aFluid);
 	}
@@ -535,17 +535,17 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	@Override
 	public boolean placeBlock(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
 		OreDictMaterial aMaterial = getMetaMaterial(aMetaData);
-		// F6-worldgen (флаг): без aCauseBlockUpdates ставим с UPDATE_KNOWN_SHAPE (16), чтобы neo пропустил neighbor-shape-update.
-		// Иначе setBlock во время ворлдгена читает соседний (ещё не сгенерированный) чанк → синхронная его генерация → каскад
-		// (тик >60с → watchdog-краш). 1:1 с 1.7.10: ворлдген клал флагом 2 (без neighbor-notify), тут UPDATE_KNOWN_SHAPE — эквивалент.
+		// F6-worldgen (flag): without aCauseBlockUpdates we place with UPDATE_KNOWN_SHAPE (16), so neo skips the neighbor shape update.
+		// Otherwise setBlock during worldgen reads a neighboring (not-yet-generated) chunk → its synchronous generation → cascade
+		// (tick >60s → watchdog crash). 1:1 with 1.7.10: worldgen placed with flag 2 (no neighbor-notify), UPDATE_KNOWN_SHAPE here is the equivalent.
 		if (aMaterial != null && (aForcePlacement || ((!mPlacementChecksAntimatter || !aMaterial.contains(TD.Atomic.ANTIMATTER)) && (!mPlacementChecksTemperature || aMaterial.mMeltingPoint > WD.temperature(aWorld, aX, aY, aZ)))) && WD.set(aWorld, aX, aY, aZ, this, UT.Code.bind4(aMaterial.mToolQuality), aCauseBlockUpdates?3:net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE)) {
-			// Правка №1 (BUG-106): материал — в карту чанка (одна запись вместо сущности на каждую руду).
-			// «This darn TileEntity update is ruining World generation Code» Грегориуса решён здесь в корне:
-			// запись в карту не трогает соседей и не будит синк. Сущность остаётся ЕДИНСТВЕННОМУ случаю —
-			// блок с предметным NBT (mItemNBT, канал №8 аудита) — и ставится вручную, как ставил оригинал.
+			// Fix #1 (BUG-106): material — into the chunk map (one entry instead of an entity per ore).
+			// Gregorius's «This darn TileEntity update is ruining World generation Code» is solved here at the root:
+			// writing to the map does not touch neighbors and does not wake up sync. The entity remains for the ONE
+			// case that still needs it — a block with item NBT (mItemNBT, audit channel #8) — and is set manually, as the original did.
 			setOreMeta(aWorld, aX, aY, aZ, aMetaData);
 			if (aNBT != null) WD.te(aWorld, aX, aY, aZ, createTileEntity(aWorld, aX, aY, aZ, aSide, aMetaData, aNBT), aCauseBlockUpdates);
-			scheduleUpdateIfNeeded(aWorld, aX, aY, aZ, null); // гравитация/самовозгорание при установке — как в оригинале
+			scheduleUpdateIfNeeded(aWorld, aX, aY, aZ, null); // gravity/self-ignition on placement — as in the original
 			return T;
 		}
 		return F;
@@ -553,7 +553,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	
 	@Override
 	public ItemStack getItemStackFromBlock(BlockGetter aWorld, int aX, int aY, int aZ, byte aSide) {
-		// Правка №1: материал — через воронку (карта чанка, фолбэк-сущность); NBT — из редкой сущности, если стоит.
+		// Fix #1: material — via the funnel (chunk map, entity fallback); NBT — from the rare entity, if present.
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		short tMeta = getMetaDataValue(aWorld, aX, aY, aZ);
 		return ST.make(this, 1, tMeta, aTileEntity instanceof PrefixBlockTileEntity ? ((PrefixBlockTileEntity)aTileEntity).mItemNBT : null);
@@ -592,19 +592,19 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return T;
 	}
 
-	// ===== ПОДКЛЮЧЕНИЕ 1.7.10-каналов огня и разрушаемости к движку =====================================
-	// Тем же приёмом, что уже принят у брата MultiTileEntityBlock:526-535 — прямой делегат в 1.7.10-метод,
-	// типы совпадают 1:1. У руд/дроблёнки каналы были объявлены (тела 1:1 с оригиналом PrefixBlock.java:453-476),
-	// но вызывателей не имели: движок спрашивает их через IBlockExtension, а не по 1.7.10-именам. Без этого
-	// горючесть и защита от дракона/иссушителя считались ванильными дефолтами (FireBlock-таблица и тег
-	// DRAGON_IMMUNE), а не по МАТЕРИАЛУ блока, как задумано в GT6.
+	// ===== WIRING 1.7.10 fire/destructibility channels to the engine =====================================
+	// Same approach already adopted for the sibling MultiTileEntityBlock:526-535 — a direct delegate to the 1.7.10 method,
+	// types match 1:1. For ores/crushed-ore the channels were declared (bodies 1:1 with the original PrefixBlock.java:453-476),
+	// but had no callers: the engine asks them via IBlockExtension, not by 1.7.10 names. Without this,
+	// flammability and dragon/wither protection were counted by vanilla defaults (the FireBlock table and the
+	// DRAGON_IMMUNE tag), instead of by the block's MATERIAL, as intended in GT6.
 	@Override public int getFlammability(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return getFlammability(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aSide);}
 	@Override public int getFireSpreadSpeed(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return getFireSpreadSpeed(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aSide);}
 	@Override public boolean canEntityDestroy(BlockState aState, BlockGetter aWorld, BlockPos aPos, Entity aEntity) {return canEntityDestroy(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aEntity);}
-	// isFireSource: neo сузил тип до LevelReader (IBlockExtension:736), а 1.7.10-тело просит Level. Единственный
-	// вызыватель в движке — FireBlock.tick(BlockState, ServerLevel, ...) (FireBlock.java:141,149), то есть сюда
-	// всегда приходит ServerLevel; приведение проверено по коду движка, а не предположено. Иной случай
-	// (LevelReader вне Level) в движке не встречается — там отдаём ванильный дефолт, не тихий false.
+	// isFireSource: neo narrowed the type to LevelReader (IBlockExtension:736), while the 1.7.10 body wants a Level. The only
+	// caller in the engine is FireBlock.tick(BlockState, ServerLevel, ...) (FireBlock.java:141,149), i.e. a ServerLevel
+	// always arrives here; the cast is verified against the engine code, not assumed. The other case
+	// (a LevelReader outside Level) does not occur in the engine — there we return the vanilla default, not a silent false.
 	@Override public boolean isFireSource(BlockState aState, net.minecraft.world.level.LevelReader aWorld, BlockPos aPos, Direction aSide) {
 		return aWorld instanceof Level tLevel ? isFireSource(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), aSide) : super.isFireSource(aState, aWorld, aPos, aSide);
 	}
@@ -613,7 +613,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		OreDictMaterial aMaterial = getMetaMaterial(aWorld, aX, aY, aZ);
 		if (!aWorld.isClientSide() && aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add("This is " + getLocalName(mPrefix, aMaterial));
+			if (aChatReturn != null) aChatReturn.add(LH.tt("This is ") + getLocalName(mPrefix, aMaterial));
 			return 1;
 		}
 		if (!aWorld.isClientSide() && aTool.equals(TOOL_prospector) && mPrefix.contains(TD.Prefix.ORE)) {
@@ -633,9 +633,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	
 	@Override
 	public void setExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
-		// Правка №1: запись — в карту чанка (воронка записи); легаси/NBT-сущность обновляем ТОЛЬКО в живом мире
-		// (сброс кэша текстуры, F3-render #2). В ворлдгене сущностей не бывает, а чтение BE у WorldGenRegion
-		// печатает движковый WARN на каждый вызов — флуд лога 100k+ строк (репорт пользователя 2026-08-09).
+		// Fix #1: the write goes into the chunk map (write funnel); the legacy/NBT entity is updated ONLY in a live world
+		// (texture cache reset, F3-render #2). Worldgen never has entities, and reading a BE from WorldGenRegion
+		// prints an engine WARN on every call — a log flood of 100k+ lines (user report 2026-08-09).
 		if (aWorld instanceof net.minecraft.world.level.LevelAccessor tAcc) setOreMeta(tAcc, aX, aY, aZ, aMetaData);
 		if (aWorld instanceof Level) {
 			BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
@@ -661,18 +661,18 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return F;
 	}
 	
-	// F12-tick (тот же обрыв и тот же мост, что закрыт у семьи BlockBase под BUG-005, BlockBase.java:368-373):
-	// neo-канал запланированного тика — tick(BlockState,ServerLevel,BlockPos,RandomSource); 1.7.10-сигнатура
-	// updateTick ничего не переопределяет («// @Override» ниже) и движком не зовётся. Без моста три ветки
-	// scheduleUpdateIfNeeded (:423-438) били в пустоту: ГРАВИТАЦИЯ мета-блоков, самовозгорание пыли и
-	// взрыв горючих/щелочных материалов при нагреве. Конвертер RandomSource→java.util.Random — центр UT.Code.random.
+	// F12-tick (the same break and the same bridge already closed for the BlockBase family under BUG-005, BlockBase.java:368-373):
+	// the neo scheduled-tick channel is tick(BlockState,ServerLevel,BlockPos,RandomSource); the 1.7.10 signature
+	// updateTick overrides nothing (the "// @Override" below) and is not called by the engine. Without the bridge, three
+	// scheduleUpdateIfNeeded branches (:423-438) hit a void: GRAVITY of meta-blocks, dust self-ignition, and
+	// the explosion of flammable/alkali materials on heating. The RandomSource→java.util.Random converter is the UT.Code.random center.
 	@Override public void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 
 		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), UT.Code.random(aRandom));
 	}
 
-	// Правка №1: уборка карты при снятии блока любым путём (игрок/взрыв/поршень-невозможен/WD.set) — иначе
-	// записи копились бы под чужими блоками. Дроп не страдает: материал к тому моменту уже в LAST_BROKEN-носителе.
+	// Fix #1: clean up the map when the block is removed by any path (player/explosion/piston-impossible/WD.set) — otherwise
+	// entries would pile up under other blocks. Drops are unaffected: by that point the material is already in the LAST_BROKEN carrier.
 	@Override public void onRemove(BlockState aState, Level aWorld, BlockPos aPos, BlockState aNewState, boolean aMovedByPiston) {
 		if (!aState.is(aNewState.getBlock())) setOreMeta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), (short)0);
 		super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston);
@@ -681,7 +681,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// @Override
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (aWorld.isClientSide() || checkGravity(aWorld, aX, aY, aZ)) return;
-		OreDictMaterial aMaterial = getMetaMaterial(aWorld, aX, aY, aZ); // правка №1: через воронку (карта, фолбэк-сущность)
+		OreDictMaterial aMaterial = getMetaMaterial(aWorld, aX, aY, aZ); // fix #1: via the funnel (map, entity fallback)
 		if (aMaterial != null) {
 			if (mCanBurn && (mPrefix.contains(TD.Prefix.DUST_BASED) || (mCanExplode && aMaterial.contains(TD.Properties.EXPLOSIVE))) && aMaterial.contains(TD.Properties.FLAMMABLE) && WD.temperature(aWorld, aX, aY, aZ) > C + 100) {
 				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
@@ -713,23 +713,23 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);
 	}
 	
-	// ⚠️ КАНАЛ ИЗБЫТОЧЕН, мост НЕ нужен — разобрано поимённо (реестр мёртвых каналов, 2026-07-30).
-	// Роль тела закрыта тремя разными путями, ни один из них не потерян:
-	//  • дроп — через getDrops(BlockState, LootParams.Builder) ниже (BUG-020), туда же приходит silk/fortune;
-	//  • статистика добычи — ванильный дефолт Block.playerDestroy (Block.java:468) делает то же awardStat;
-    //  • усталость — там же (Block.java:469), причём значение брать НЕ отсюда: 0.025F в 1.7.10 было ВАНИЛЬНЫМ
-    //    (recompSrc Block.java:1195), GT6 его просто повторял, своего правила у мода не было. Ваниль neo сменила
-    //    его на 0.005F, и 1:1 здесь — «как ванильный блок», а не «то же число»: иначе руда GT6 утомляла бы игрока
-    //    впятеро сильнее камня, чего в оригинале не было.
+	// ⚠️ CHANNEL IS REDUNDANT, no bridge NEEDED — analyzed by name (registry of dead channels, 2026-07-30).
+	// The body's role is covered by three different paths, none of them lost:
+	//  • drop — via getDrops(BlockState, LootParams.Builder) below (BUG-020), which also receives silk/fortune;
+	//  • mining stats — the vanilla default Block.playerDestroy (Block.java:468) does the same awardStat;
+    //  • exhaustion — same place (Block.java:469), and the value must NOT be taken from here: 0.025F in 1.7.10 was the VANILLA
+    //    value (recompSrc Block.java:1195), GT6 simply repeated it, the mod had no rule of its own. Vanilla neo changed
+    //    it to 0.005F, and 1:1 here means "like a vanilla block", not "the same number": otherwise GT6 ore would tire the player
+    //    five times as much as stone, which was not the case in the original.
 	// @Override
 	public void harvestBlock(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {
-		aPlayer.awardStat(Stats.BLOCK_MINED.get(this), 1); /* было Stats.mineBlockStatArray[getIdFromBlock(this)] (1.7.10 int-ID) -> Stats.BLOCK_MINED.get(Block) [Stats.java:12] + Player.awardStat [Player.java:1413] */
+		aPlayer.awardStat(Stats.BLOCK_MINED.get(this), 1); /* was Stats.mineBlockStatArray[getIdFromBlock(this)] (1.7.10 int-ID) -> Stats.BLOCK_MINED.get(Block) [Stats.java:12] + Player.awardStat [Player.java:1413] */
 		UT.Entities.exhaust(aPlayer, 0.025F);
-		// было EnchantmentHelper.getSilkTouchModifier(Player)/getFortuneModifier(Player) (1.7.10) - удалены в neo;
-		// реальный neo: EnchantmentHelper.getEnchantmentLevel(Holder<Enchantment>,LivingEntity) по Holder из
-		// RegistryAccess (сверено, EnchantmentHelper.java:292 + Enchantments.SILK_TOUCH/FORTUNE), тот же приём,
-		// что уже принят и одобрен ревизией в GT_API_Proxy.onBlockHarvestingEvent (GT_API_Proxy.java:1450-1451)
-		// и в MultiTileEntityBlock.harvestBlock (тот же класс проблемы).
+		// was EnchantmentHelper.getSilkTouchModifier(Player)/getFortuneModifier(Player) (1.7.10) - removed in neo;
+		// the real neo way: EnchantmentHelper.getEnchantmentLevel(Holder<Enchantment>,LivingEntity) by a Holder from
+		// RegistryAccess (verified, EnchantmentHelper.java:292 + Enchantments.SILK_TOUCH/FORTUNE), the same approach
+		// already adopted and review-approved in GT_API_Proxy.onBlockHarvestingEvent (GT_API_Proxy.java:1450-1451)
+		// and in MultiTileEntityBlock.harvestBlock (the same problem class).
 		boolean aSilkTouch = EnchantmentHelper.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH, aPlayer) > 0;
 		int aFortune = EnchantmentHelper.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE, aPlayer);
 		ArrayList<ItemStack> tList = mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, aSilkTouch);
@@ -737,16 +737,16 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);
 	}
 	
-	// BUG-020 (дроп руды): GT6-хуки дропа выше (harvestBlock/dropBlockAsItemWithChance/getDrops) — мёртвые 1.7.10-имена;
-	// neo рождает дропы из loot-table, которой у PrefixBlock нет → дроп был ПУСТО (замер gt6oreprobe). Мост тем же приёмом,
-	// что BlockBase.getDrops:214 (neo getDrops(state,params) → GT6 mDrops), + silk/fortune из THIS_ENTITY — 1:1 семантика
-	// harvestBlock:648-650. Материал жив через LAST_BROKEN_TILEENTITY (onDestroyedByPlayer выше). dropResources дальше сам
-	// поднимает BlockDropsEvent → onBlockHarvestingEvent (unification/blockToSilk) — конвейер 1.7.10 HarvestDropsEvent цел.
+	// BUG-020 (ore drop): the GT6 drop hooks above (harvestBlock/dropBlockAsItemWithChance/getDrops) are dead 1.7.10 names;
+	// neo generates drops from a loot table, which PrefixBlock does not have → the drop was EMPTY (gt6oreprobe measurement). Bridge using the same approach
+	// as BlockBase.getDrops:214 (neo getDrops(state,params) → GT6 mDrops), + silk/fortune from THIS_ENTITY — 1:1 semantics with
+	// harvestBlock:648-650. The material survives via LAST_BROKEN_TILEENTITY (onDestroyedByPlayer above). dropResources further on
+	// itself raises BlockDropsEvent → onBlockHarvestingEvent (unification/blockToSilk) — the 1.7.10 HarvestDropsEvent pipeline is intact.
 	@Override public java.util.List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
 		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
 		if (tOrigin == null) return super.getDrops(aState, aParams);
-		// BUG-024: гейт дропа от взрыва — ЦЕНТР WD.explosionDropDenied (1.7.10 Explosion.doExplosionB / ExplosionGT:175; консолидация, копии искоренены).
+		// BUG-024: the explosion-drop gate — CENTER WD.explosionDropDenied (1.7.10 Explosion.doExplosionB / ExplosionGT:175; consolidation, copies eradicated).
 		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList();
 		int tX = net.minecraft.util.Mth.floor(tOrigin.x), tY = net.minecraft.util.Mth.floor(tOrigin.y), tZ = net.minecraft.util.Mth.floor(tOrigin.z);
 		int tFortune = 0; boolean tSilkTouch = F;
@@ -757,45 +757,45 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		}
 		ArrayList<ItemStack> rDrops = mDrops.getDrops(this, tLevel, tX, tY, tZ, tFortune, tSilkTouch);
 		if (rDrops == null) return java.util.Collections.emptyList();
-		// Ветка 1.20.1: собственные блоки GT6 лут-таблиц не имеют, поэтому глобальный модификатор лута
-		// (gregapi/loot/GT6BlockDropsModifier.java) их не видит — обработку дропа зовём из того же ЦЕНТРА напрямую.
-		// Правило одно на оба пути; копии логики не заводится (в 1.7.10 обе ветки шли через HarvestDropsEvent).
+		// Branch 1.20.1: GT6's own blocks have no loot tables, so the global loot modifier
+		// (gregapi/loot/GT6BlockDropsModifier.java) does not see them — drop processing is called from the same CENTER directly.
+		// One rule for both paths; no logic is duplicated (on 1.7.10 both branches went through HarvestDropsEvent).
 		gregapi.GT_API_Proxy.processBlockDrops(rDrops, tLevel, new BlockPos(tX, tY, tZ), aState, tEntity);
 		return rDrops;
 	}
 	public final ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aUnusableMetaData, int aFortune) {return mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, F);}
 	public int getExpDrop(BlockGetter aWorld, int aMeta, int aFortune) {return mDrops.getExp(this);}
 	public int getRenderBlockPass() {return ITexture.Util.MC_ALPHA_BLENDING?1:0;}
-	// F-creative: getSubItems — метод GT6-предмета (PrefixBlockItem:81), не член neo Item; предмет PrefixBlock всегда
-	// PrefixBlockItem (ctor Class<? extends PrefixBlockItem>) — каст. GT6 зовёт getSubBlocks внутренне (BlockMetaType:200),
-	// функционал сохранён (neo креатив-пайплайн его не зовёт — это отдельная F-creative event-фаза).
+	// F-creative: getSubItems is a GT6 item method (PrefixBlockItem:81), not a member of neo Item; a PrefixBlock's item is always
+	// a PrefixBlockItem (ctor Class<? extends PrefixBlockItem>) — cast. GT6 calls getSubBlocks internally (BlockMetaType:200),
+	// functionality preserved (the neo creative pipeline does not call it — that's a separate F-creative event phase).
 	public void getSubBlocks(Item aItem, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {if (aItem instanceof PrefixBlockItem tItem) tItem.getSubItems(aItem, aCreativeTab, aList);}
 	/** Where I come from, we set the TileEntities ourselves instead of letting a Handler do it. */
 	public final BlockEntity createNewTileEntity(Level aWorld, int aMeta) {return null;}
 	/** Where I come from, we set the TileEntities ourselves instead of letting a Handler do it. */
 	public final BlockEntity createTileEntity(Level aWorld, int aMeta) {return null;}
-	// F3-render КОРЕНЬ «руды в прогрузке/серое вкрапление»: neo объявляет наличие BE у блока ЧЕРЕЗ newBlockEntity (это
-	// ЕДИНСТВЕННЫЙ путь в neo — в отличие от 1.7.10, где TE ставились вручную). Прежний null → neo на КЛИЕНТЕ не создавал BE
-	// для руды → синхронизированный сервером PrefixBlockTileEntity (mMetaData=материал) не удерживался (be=null у 203/203 руд,
-	// GT6-ORE-PROBE) → материал недоступен → getMetaMaterial=NULL → серое вкрапление без цвета. Возвращаем свежий
-	// PrefixBlockTileEntity (mMetaData дочитывается из синка readFromNBT/receiveMetaData; placeBlock всё равно ставит свой BE
-	// с материалом на сервере). RE-APPLY 2026-07-17: безопасно после снятия серверно-тикового worldgen (генерация в Feature.place
-	// на регионе, реентрантного getChunk текущего чанка больше нет — прежний дедлок с ore-BE устранён в корне).
-	// Правка №1 (BUG-106): материал живёт в карте чанка (PrefixBlockOreMap, синк штатным AttachmentSync) —
-	// прежняя причина клиентской сущности («материал недоступен на рендере», RE-APPLY 2026-07-17 выше) снята в корне.
-	// EntityBlock-природа блока сохраняется: старые сущности из NBT чанков грузятся (тип валиден,
-	// TileEntityBase01Root.createType) и мигрируют в карту (GT_API_Proxy.onChunkLoadMigrateOres), а блоки с
-	// mItemNBT ставят свою сущность вручную (placeBlock) — «Where I come from, we set the TileEntities ourselves».
-	// ⛔ null возвращать НЕЛЬЗЯ (жило 2026-08-09..10): контракт neo «EntityBlock всегда создаёт» жёсткий —
-	// ворлдген пишет в прото-чанк заглушку id="DUMMY" на КАЖДЫЙ блок с hasBlockEntity (WorldGenRegion:276-281),
-	// а первая полная загрузка чанка зовёт этот метод (LevelChunk.promotePendingBlockEntity:612-614) и на null
-	// печатает WARN:627 на каждую руду — 343 394 строки за 3 минуты на старом мире, ~1 млн за прогон на свежем
-	// (репорт пользователя 2026-08-10). Возврат сущности заглушку удовлетворяет, а миграция снимает её В ТОЙ ЖЕ
-	// цепочке загрузки (ChunkStatusTasks:201-204: registerAllBlockEntitiesAfterLevelLoad → ChunkEvent.Load, один
-	// тред, между ними чтений нет) — сущность-однодневка, постоянных объектов на рудах не появляется. Обычные
-	// чтения сущностей не плодят: getBlockEntity идёт с EntityCreationType.CHECK (только чтение,
-	// LevelChunk:372-395); IMMEDIATE зовётся лишь для сущностей из чанк-пакета (:546-547) — у рядовых руд их
-	// нет. Материал однодневки — из карты (setLevel-фолбэк в PrefixBlockTileEntity), «0 вместо руды» невозможен.
+	// F3-render ROOT CAUSE of "gray speck ore while loading": neo declares that a block has a BE THROUGH newBlockEntity (this is
+	// the ONLY path in neo — unlike 1.7.10, where TEs were set manually). The previous null → neo did not create a BE on the CLIENT
+	// for ore → the server-synced PrefixBlockTileEntity (mMetaData=material) was not retained (be=null for 203/203 ores,
+	// GT6-ORE-PROBE) → material unavailable → getMetaMaterial=NULL → a gray speck with no color. We now return a fresh
+	// PrefixBlockTileEntity (mMetaData is re-read from the sync readFromNBT/receiveMetaData; placeBlock still sets its own BE
+	// with the material on the server). RE-APPLY 2026-07-17: safe after removing the server-tick worldgen (generation happens in Feature.place
+	// on the region, there is no longer a reentrant getChunk of the current chunk — the former deadlock with ore BEs is fixed at the root).
+	// Fix #1 (BUG-106): the material lives in the chunk map (PrefixBlockOreMap, synced by the standard AttachmentSync) —
+	// the previous reason for the client entity ("material unavailable on render", RE-APPLY 2026-07-17 above) is removed at the root.
+	// The block's EntityBlock nature is preserved: old entities from chunk NBT still load (type valid,
+	// TileEntityBase01Root.createType) and migrate into the map (GT_API_Proxy.onChunkLoadMigrateOres), and blocks with
+	// mItemNBT set their own entity manually (placeBlock) — "Where I come from, we set the TileEntities ourselves".
+	// ⛔ returning null is FORBIDDEN (lived 2026-08-09..10): the neo contract "EntityBlock always creates" is strict —
+	// worldgen writes a stub id="DUMMY" into the proto-chunk for EVERY block with hasBlockEntity (WorldGenRegion:276-281),
+	// and the chunk's first full load calls this method (LevelChunk.promotePendingBlockEntity:612-614) and on null
+	// prints WARN:627 for every ore — 343,394 lines in 3 minutes on an old world, ~1 million per run on a fresh one
+	// (user report 2026-08-10). Returning an entity satisfies the stub, and the migration removes it in the SAME
+	// load chain (ChunkStatusTasks:201-204: registerAllBlockEntitiesAfterLevelLoad → ChunkEvent.Load, one
+	// thread, no reads in between) — a one-tick entity, no permanent objects appear on ores. Regular
+	// entity reads do not spawn more: getBlockEntity goes through EntityCreationType.CHECK (read-only,
+	// LevelChunk:372-395); IMMEDIATE is only called for entities from the chunk packet (:546-547) — regular ores
+	// don't have any. The one-tick entity's material comes from the map (setLevel fallback in PrefixBlockTileEntity), "0 instead of ore" is impossible.
 	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return new PrefixBlockTileEntity(aPos, aState);}
 	@Override public String toString() {return mNameInternal;}
 	public String getUnlocalizedName() {return mNameInternal;}
@@ -805,12 +805,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX + mMinX, aY + mMinY, aZ + mMinZ, aX + mMaxX, aY + mMaxY, aZ + mMaxZ);}
 	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX + mMinX, aY + mMinY, aZ + mMinZ, aX + mMaxX, aY + mMaxY, aZ + mMaxZ);}
 	public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {setBlockBounds(mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ);}
-	// F-shape (зеркало корней BlockBase/MTE — третий Block-корень без общего предка): neo-коллизия/outline из тех же
-	// статических bounds mMin*..mMax*, что 1.7.10-каналы выше (:678-680). Bounds финальны per-инстанс → позиция/мир не
-	// нужны, одна ветка обслуживает и живой мир, и BlockState-кэш (EmptyBlockGetter: снег/isFaceSturdy). Полный куб
-	// (руды/блоки 0..1) → super без изменений; неполные prefix-формы получают реальную коллизию и прицел-рамку.
-	// Правка №4 (BUG-106): границы mMin*..mMax* финальны на экземпляр → воксель-форма считается ОДИН раз
-	// (прежде Shapes.create аллоцировался на каждый запрос коллизии/прицела — ~2% всех аллокаций по JFR).
+	// F-shape (mirrors the BlockBase/MTE roots — a third Block root with no common ancestor): neo collision/outline from the same
+	// static bounds mMin*..mMax* as the 1.7.10 channels above (:678-680). Bounds are final per-instance → position/world are not
+	// needed, a single branch serves both the live world and the BlockState cache (EmptyBlockGetter: snow/isFaceSturdy). A full cube
+	// (ores/blocks 0..1) → unchanged super; incomplete prefix shapes get real collision and an outline box.
+	// Fix #4 (BUG-106): the mMin*..mMax* bounds are final per instance → the voxel shape is computed ONCE
+	// (previously Shapes.create was allocated on every collision/outline request — ~2% of all allocations per JFR).
 	private net.minecraft.world.phys.shapes.VoxelShape mShapeCache;
 	private net.minecraft.world.phys.shapes.VoxelShape subCubeShape() {
 		if (mShapeCache == null) mShapeCache = net.minecraft.world.phys.shapes.Shapes.create(new AABB(mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ));
@@ -826,28 +826,28 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		net.minecraft.world.phys.shapes.VoxelShape rShape = subCubeShape();
 		return rShape.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.block() : rShape;
 	}
-	// F12/F9-hardness (BUG-020): в 1.7.10 getBlockHardness был @Override реального Forge-хука — движок звал его сам.
-	// В neo канал сместился в getDestroyProgress (Properties.destroyTime у PrefixBlock не задан = 0 → блок ломался
-	// мгновенно, mBaseHardness руд не участвовал). Мост тем же приёмом, что BlockBase:248 (vanilla-формула, 1:1).
+	// F12/F9-hardness (BUG-020): in 1.7.10 getBlockHardness was an @Override of a real Forge hook — the engine called it itself.
+	// In neo the channel shifted to getDestroyProgress (PrefixBlock's Properties.destroyTime is unset = 0 → the block broke
+	// instantly, ore mBaseHardness played no part). Bridge using the same approach as BlockBase:248 (vanilla formula, 1:1).
 	@Override public float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
 		if (!(aWorld instanceof Level tLevel)) return super.getDestroyProgress(aState, aPlayer, aWorld, aPos);
-		return WD.destroyProgress(getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()), aPlayer, aState, aWorld, aPos); // vanilla-формула — ЦЕНТР WD.destroyProgress
+		return WD.destroyProgress(getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()), aPlayer, aState, aWorld, aPos); // vanilla formula — CENTER WD.destroyProgress
 	}
-	// BUG-020 (второй операнд формулы): 1.7.10 getBlockMetadata = bind4(mToolQuality материала) — см. getExplosionResistance
-	// выше; quality из материала TE (WD.te внутри страхуется LAST_BROKEN_TILEENTITY → и harvest-путь после removeBlock жив).
+	// BUG-020 (second operand of the formula): 1.7.10 getBlockMetadata = bind4(material's mToolQuality) — see getExplosionResistance
+	// above; quality from the TE's material (WD.te is backstopped internally by LAST_BROKEN_TILEENTITY → the harvest path after removeBlock stays alive too).
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {
 		if (mBaseHardness < 0) return -1;
 		if (mBaseHardness == 0) return 0;
 		OreDictMaterial tMaterial = getMetaMaterial(aWorld, aX, aY, aZ);
 		return Math.max(1, mBaseHardness * (1+getHarvestLevel(tMaterial == null ? 0 : UT.Code.bind4(tMaterial.mToolQuality))));
 	}
-	// F3-render (отложенная фаза): super.getRenderType() удалён из neo (рендер data-driven) -> -1; см. MultiTileEntityBlock:436.
+	// F3-render (deferred phase): super.getRenderType() was removed from neo (render is data-driven) -> -1; see MultiTileEntityBlock:436.
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?-1:RendererBlockTextured.INSTANCE.mRenderID;}
 	public int getHarvestLevel(int aMaterialToolQuality) {return (int)UT.Code.bind_(mHarvestLevelMinimum, mHarvestLevelMaximum, mHarvestLevelOffset + aMaterialToolQuality);}
-	/** BUG-071: величина, которую 1.7.10 держал в мете ЭТОГО блока, — {@code bind4(материал.mToolQuality)}
-	 *  (оригинал :435 клал её в мету при установке, движок потом звал getHarvestLevel(мета)). В порте мета prefix-блока
-	 *  занята ID материала (PrefixBlockTileEntity.mMetaData), поэтому величину берём из самого материала по позиции —
-	 *  результат тот же, что в 1.7.10, и остаётся ОДНА формула уровня (метод выше). Материал из BE: getMetaMaterial. */
+	/** BUG-071: the value that 1.7.10 kept in THIS block's meta — {@code bind4(material.mToolQuality)}
+	 *  (the original at :435 put it into meta on placement, the engine then called getHarvestLevel(meta)). In the port the prefix block's meta
+	 *  is occupied by the material ID (PrefixBlockTileEntity.mMetaData), so we take the value from the material itself by position —
+	 *  the result is the same as in 1.7.10, and there remains ONE level formula (the method above). Material from the BE: getMetaMaterial. */
 	@Override public int getHarvestLevel(BlockGetter aWorld, int aX, int aY, int aZ) {
 		OreDictMaterial tMaterial = getMetaMaterial(aWorld, aX, aY, aZ);
 		return getHarvestLevel(tMaterial == null ? 0 : UT.Code.bind4(tMaterial.mToolQuality));
@@ -856,17 +856,17 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return getRenderColor(getMetaDataValue(aWorld, aX, aY, aZ));}
 	public int getLightOpacity() {return mOpaque?255:0;}
 
-	// F3 light-opacity МОСТ (иерархия руд/дроблёнки — отдельная от BlockBase, наследует Block напрямую):
-	// значение GT6 доводится до движкового канала затухания, см. разбор в BlockBase. Поле mOpaque читать
-	// безопасно — initCache вызывается после регистрации блоков (neo-decompiled/.../Blocks.java:7221-7228).
+	// F3 light-opacity BRIDGE (the ore/crushed-ore hierarchy is separate from BlockBase, inherits Block directly):
+	// the GT6 value is carried through to the engine's dampening channel, see the analysis in BlockBase. It is safe to read
+	// the mOpaque field — initCache is called after block registration (neo-decompiled/.../Blocks.java:7221-7228).
 	@Override public int getLightBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.lightDampening(getLightOpacity());}
 
-	// F3 shade МОСТ (иерархия руд/дроблёнки — отдельная от BlockBase, наследует Block напрямую; разбор канала —
-	// в BlockBase). В 1.7.10 признак не зависел от размера бокса, поэтому руда с урезанной геометрией
-	// (mMinX..mMaxZ) затемняла соседей наравне с полным кубом, а neo-дефолт по коллизии её бы уже не считал.
+	// F3 shade BRIDGE (the ore/crushed-ore hierarchy is separate from BlockBase, inherits Block directly; the channel analysis is
+	// in BlockBase). In 1.7.10 this trait did not depend on the box size, so ore with a trimmed geometry
+	// (mMinX..mMaxZ) shaded neighbors the same as a full cube, while the neo default-by-collision would no longer count it.
 	@Override public float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
 
-	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
+	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — body 1:1, see {@code BlockBase}. */
 	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
 	public boolean isBeaconBase(BlockGetter aWorld, int aX, int aY, int aZ, int aBeaconX, int aBeaconY, int aBeaconZ) {return mBeaconBase;}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return mOpaque;}
@@ -878,12 +878,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public boolean canSilkHarvest() {return F;}
 	public boolean func_149730_j() {return mOpaque;}
 	public boolean canCreatureSpawn(MobCategory aType, BlockGetter aWorld, int aX, int aY, int aZ) {return !mSpawnProof;}
-	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
-	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering) И новая сигнатура не
-	// передаёт World/BlockPos вовсе - невозможно вызвать setBlockBoundsBasedOnState(aWorld,x,y,z) как раньше.
-	// F3 functional-adapted (neo skipRendering сигнатура потеряла World/BlockPos → per-TE culling недостижим; используется vanilla-дефолт super.skipRendering, 1:1 по следствию): побочный эффект setBlockBoundsBasedOnState
-	// недостижим без позиции; используем ванильный дефолт (тот же fallback, что и в старой ветке
-	// super.shouldSideBeRendered, просто под новым именем/полярностью).
+	// was shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
+	// [BlockBehaviour.java:160], the semantics are INVERTED (shouldRender -> skipRendering) AND the new signature doesn't
+	// pass World/BlockPos at all - impossible to call setBlockBoundsBasedOnState(aWorld,x,y,z) as before.
+	// F3 functional-adapted (the neo skipRendering signature lost World/BlockPos → per-TE culling is unreachable; the vanilla default super.skipRendering is used, 1:1 in effect): the setBlockBoundsBasedOnState
+	// side effect is unreachable without a position; we use the vanilla default (the same fallback as the old
+	// super.shouldSideBeRendered branch, just under a new name/polarity).
 	@Override public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return super.skipRendering(aState, aNeighbor, aDir);}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return T;}
 	@Override public boolean usesRenderPass(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return T;}
@@ -900,30 +900,30 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return aTileEntity instanceof PrefixBlockTileEntity?((PrefixBlockTileEntity)aTileEntity).mMetaData:0;
 	}
 
-	/** Правка №1 (BUG-106): ГОРЛЫШКО ВОРОНКИ ЧТЕНИЯ. Материал берётся из карты чанка (PrefixBlockOreMap);
-	 *  фолбэк в сущность — ТОЛЬКО для ещё не мигрированных чанков старых миров (сущность жива до первого
-	 *  ChunkEvent.Load) — после миграции ветка мертва. Все прежние вызыватели воронки не изменились. */
+	/** Fix #1 (BUG-106): READ-FUNNEL NECK. The material is taken from the chunk map (PrefixBlockOreMap);
+	 *  the fallback to an entity is ONLY for chunks of old worlds not yet migrated (the entity stays alive until the first
+	 *  ChunkEvent.Load) — after migration the branch is dead. All previous funnel callers are unchanged. */
 	public short getMetaDataValue(BlockGetter aWorld, int aX, int aY, int aZ) {
 		short rMeta = getOreMeta(aWorld, aX, aY, aZ);
 		if (rMeta != 0) return rMeta;
-		// Фолбэк в сущность — ТОЛЬКО живой мир (легаси старых миров/NBT-блоки). У WorldGenRegion и прочих вью
-		// легаси-сущностей не бывает по определению, а их getBlockEntity на блоке «с правом на BE, но без BE»
-		// печатает движковый WARN на каждый вызов — флуд лога 100k+ строк (репорт пользователя 2026-08-09).
+		// Fallback to the entity — ONLY the live world (legacy of old worlds/NBT blocks). WorldGenRegion and other views
+		// never have legacy entities by definition, and their getBlockEntity on a block "entitled to a BE but without one"
+		// prints an engine WARN on every call — a log flood of 100k+ lines (user report 2026-08-09).
 		if (!(aWorld instanceof Level)) return 0;
 		return getMetaDataValue(WD.te(aWorld, aX, aY, aZ, T));
 	}
 
-	/** Чтение карты материалов. Разрешение чанка: ворлдген-регион → свой чанк региона (ProtoChunk);
-	 *  живой мир → WD.chunkNow (без подгрузки, правка №2); рендер-вью клиента (RenderRegion и т.п. карт
-	 *  не несут) → чанк клиентского мира. */
+	/** Reading the material map. Chunk resolution: worldgen region → the region's own chunk (ProtoChunk);
+	 *  live world → WD.chunkNow (without loading, fix #2); client render view (RenderRegion et al. do not
+	 *  carry a map) → the client world's chunk. */
 	public static short getOreMeta(BlockGetter aWorld, int aX, int aY, int aZ) {
 		net.minecraft.world.level.chunk.ChunkAccess tChunk = oreChunk(aWorld, aX, aZ);
 		if (tChunk == null) return 0;
 		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(tChunk);
 		if (tMap != null) return tMap.get(aX, aY, aZ);
-		// Ветка 1.20.1: у ProtoChunk ворлдгена носителя-капабилити нет — там материал лежит в самой блок-сущности
-		// (форма оригинала 1.7.10), см. PrefixBlockOreMap javadoc. Чтение сущности прото-чанка — обычный поиск в
-		// его карте (ProtoChunk.java:154-156), движковых WARN не печатает.
+		// Branch 1.20.1: a worldgen ProtoChunk has no capability carrier — there the material lives in the
+		// block-entity itself (the 1.7.10 original's form), see the PrefixBlockOreMap javadoc. Reading the proto-chunk's
+		// entity is an ordinary lookup in its map (ProtoChunk.java:154-156), it prints no engine WARN.
 		if (tChunk instanceof net.minecraft.world.level.chunk.LevelChunk) return 0;
 		BlockEntity tBE = tChunk.getBlockEntity(new BlockPos(aX, aY, aZ));
 		return tBE instanceof PrefixBlockTileEntity tTE ? tTE.mMetaData : 0;
@@ -936,17 +936,17 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return tPlayer == null ? null : WD.chunkNow(tPlayer.level(), aX >> 4, aZ >> 4);
 	}
 
-	/** Правка №1: ГОРЛЫШКО ВОРОНКИ ЗАПИСИ. Пишет материал в карту чанка; в живом серверном мире — пометка
-	 *  на сохранение + штатный синк attachment клиентам (AttachmentSync); на ProtoChunk ворлдгена — просто
-	 *  запись (карта уедет в LevelChunk при промоушене и к клиенту при отправке чанка). */
+	/** Fix #1: WRITE-FUNNEL NECK. Writes the material into the chunk map; in a live server world — marks it
+	 *  for saving + the standard attachment sync to clients (AttachmentSync); on a worldgen ProtoChunk — just a
+	 *  write (the map will travel into the LevelChunk on promotion and to the client when the chunk is sent). */
 	public static void setOreMeta(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, short aMeta) {
 		net.minecraft.world.level.chunk.ChunkAccess tChunk = oreChunk(aWorld, aX, aZ);
 		if (tChunk == null) return;
 		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(tChunk);
 		if (tMap == null) {
-			// Ветка 1.20.1, фаза ворлдгена: ProtoChunk капабилити не несёт, поэтому материал едет в блок-сущности —
-			// ровно так, как его хранил оригинал 1.7.10. Миграция (migrateChunkOres на ChunkEvent.Load) переливает
-			// его в карту и сущность снимает; порядок доказан декомпилом (ChunkMap.java:706-722), см. PrefixBlockOreMap.
+			// Branch 1.20.1, worldgen phase: a ProtoChunk carries no capability, so the material travels in the
+			// block-entity — exactly how the 1.7.10 original stored it. Migration (migrateChunkOres on ChunkEvent.Load)
+			// pours it into the map and removes the entity; the order is proven by decompile (ChunkMap.java:706-722), see PrefixBlockOreMap.
 			BlockPos tProtoPos = new BlockPos(aX, aY, aZ);
 			if (aMeta == 0) {tChunk.removeBlockEntity(tProtoPos); return;}
 			BlockEntity tProtoBE = tChunk.getBlockEntity(tProtoPos);
@@ -960,31 +960,31 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		}
 		tMap.set(aX, aY, aZ, aMeta);
 		tChunk.setUnsaved(true);
-		// Хвост правки №1 (2026-08-10): раз материал записан в карту, сущность/закладка, рождённая движком на
-		// САМ setBlock, снимается тут же — в той же воронке записи. Рождает их контракт «EntityBlock всегда
-		// создаёт» (newBlockEntity обязан быть non-null, см. :788): ветка «ворлдген в живой чанк» кладёт живую
-		// сущность (WorldGenRegion:268-274 — судья W ловил 875 шт), ветка прото-чанка — закладку DUMMY (:276-281).
-		// Носитель предметного NBT не задет: он ставится ПОСЛЕ этой записи (placeBlock:548), а уже стоящий
-		// защищён условием mItemNBT == null. На прото-чанке removeBlockEntity снимает и pending-закладку (:283-286).
+		// Tail of fix #1 (2026-08-10): once the material is written into the map, the entity/placeholder that the engine spawns on
+		// setBlock ITSELF is removed right here — in the same write funnel. They are spawned by the contract "EntityBlock always
+		// creates" (newBlockEntity must be non-null, see :788): the "worldgen into a live chunk" branch places a live
+		// entity (WorldGenRegion:268-274 — the W judge caught 875 of them), the proto-chunk branch places a DUMMY placeholder (:276-281).
+		// The item-NBT carrier is unaffected: it is set AFTER this write (placeBlock:548), and an already-standing one is
+		// protected by the mItemNBT == null condition. On a proto-chunk, removeBlockEntity also removes a pending placeholder (:283-286).
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockEntity tBE = tChunk.getBlockEntity(tPos);
 		if (tBE == null || (tBE instanceof PrefixBlockTileEntity tTE && tTE.mItemNBT == null)) tChunk.removeBlockEntity(tPos);
 		if (tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC && aWorld instanceof net.minecraft.server.level.ServerLevel tSL) markOreMapDirty(tSL, tLC);
 	}
 
-	// СКЛЕЙКА РАССЫЛКИ КАРТЫ. Пакет карты несёт чанк ЦЕЛИКОМ (полное состояние, идемпотентен), поэтому N записей
-	// подряд в один чанк — это N одинаковых по смыслу рассылок вместо одной. Больно это ветке дважды: сервер
-	// пакует и шлёт всю карту (сотни записей) на каждую руду, а клиент на каждый пакет строит дифф-карту той же
-	// длины. Копим грязные чанки и отсылаем раз за серверный тик — доставляемое состояние то же, задержка < 1 тика.
+	// MAP-BROADCAST COALESCING. The map packet carries the chunk WHOLE (full state, idempotent), so N writes
+	// in a row to one chunk are N identically-meaning broadcasts instead of one. It hurts this branch twice: the server
+	// packs and sends the whole map (hundreds of entries) on every ore, and the client builds a diff-map of the same
+	// length on every packet. We accumulate dirty chunks and send once per server tick — the delivered state is the same, latency < 1 tick.
 	private static final java.util.Map<net.minecraft.server.level.ServerLevel, java.util.Set<Long>> ORE_MAP_DIRTY = new java.util.concurrent.ConcurrentHashMap<>();
 
-	/** Пометка «карта этого чанка изменилась» — вместо немедленной рассылки (см. {@link #flushOreMapSync}). */
+	/** Marks "this chunk's map has changed" — instead of an immediate broadcast (see {@link #flushOreMapSync}). */
 	public static void markOreMapDirty(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.world.level.chunk.LevelChunk aChunk) {
 		ORE_MAP_DIRTY.computeIfAbsent(aWorld, k -> java.util.concurrent.ConcurrentHashMap.newKeySet()).add(aChunk.getPos().toLong());
 	}
 
-	/** Отсылка накопленного — раз за серверный тик (зовёт GT_API_Proxy.onServerTick, фаза END). Чанк берём
-	 *  без подгрузки: выгруженному рассылать некому, а карта уедет с чанком при следующей отправке. */
+	/** Sends the accumulated backlog — once per server tick (called from GT_API_Proxy.onServerTick, END phase). The chunk is taken
+	 *  without loading it: an unloaded chunk has nobody to broadcast to, and the map will travel with the chunk on the next send. */
 	public static void flushOreMapSync() {
 		if (ORE_MAP_DIRTY.isEmpty()) return;
 		for (java.util.Map.Entry<net.minecraft.server.level.ServerLevel, java.util.Set<Long>> tEntry : ORE_MAP_DIRTY.entrySet()) {
@@ -999,32 +999,32 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		}
 	}
 
-	/** Сброс между мирами: карта держит ссылку на ServerLevel, а stale-level — известный класс «второй мир виснет»
-	 *  (см. GT6WorldgenFeature: те же очереди чистятся на ServerStopping/ServerStopped). */
+	/** Reset between worlds: the map holds a reference to ServerLevel, and a stale level is a known defect class "second world
+	 *  hangs" (see GT6WorldgenFeature: the same queues are cleared on ServerStopping/ServerStopped). */
 	public static void clearOreMapSync() {ORE_MAP_DIRTY.clear();}
 
-	/** Ветка 1.20.1: замена бывшего {@code chunk.syncData(TYPE)} — карта уходит своим пакетом GT6 тем, кто ЧАНК
-	 *  ВИДИТ (тем же центром {@code NetworkHandler.sendToAllPlayersInRange}, что и весь остальной синк мода;
-	 *  адресат считается перебором {@code chunkMap.getPlayers(ChunkPos,false)} — см. объяснение у самого центра,
-	 *  почему объект чанка там больше не запрашивается). */
+	/** Branch 1.20.1: replaces the former {@code chunk.syncData(TYPE)} — the map goes out in its own GT6 packet to
+	 *  whoever SEES the chunk (through the same center {@code NetworkHandler.sendToAllPlayersInRange} used by the
+	 *  rest of the mod's sync; the recipient set is computed by iterating {@code chunkMap.getPlayers(ChunkPos,false)} —
+	 *  see the explanation at the center itself for why the chunk object is no longer requested there). */
 	public static void syncOreMap(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.world.level.chunk.LevelChunk aChunk) {
 		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(aChunk);
 		if (tMap == null) return;
 		gregapi.data.CS.NW_API.sendToAllPlayersInRange(new gregapi.network.packets.PacketOreMap(aChunk.getPos().x, aChunk.getPos().z, tMap.pack()), aWorld, aChunk.getPos().getMinBlockX(), aChunk.getPos().getMinBlockZ());
 	}
 
-	/** Ветка 1.20.1: отправка карты ОДНОМУ игроку в момент, когда движок шлёт ему чанк ({@code ChunkWatchEvent.Watch});
-	 *  в 26.x этот момент обслуживал сам attachment-синк. */
+	/** Branch 1.20.1: sends the map to ONE player at the moment the engine sends them the chunk ({@code ChunkWatchEvent.Watch});
+	 *  on 26.x that moment was served by the attachment sync itself. */
 	public static void syncOreMap(net.minecraft.server.level.ServerPlayer aPlayer, net.minecraft.world.level.chunk.LevelChunk aChunk) {
 		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(aChunk);
 		if (tMap == null || tMap.isEmpty()) return;
 		gregapi.data.CS.NW_API.sendToPlayer(new gregapi.network.packets.PacketOreMap(aChunk.getPos().x, aChunk.getPos().z, tMap.pack()), aPlayer);
 	}
 
-	/** Правка №1 (BUG-106): МИГРАЦИЯ старого чанка — сущности руды/породы переливаются в карту чанка и
-	 *  снимаются навсегда (чанк помечен на сохранение — на диск уйдёт уже без них). Сущности с mItemNBT
-	 *  (канал №8 аудита) живут дальше, но материал дублируется в карту — воронка чтения едина.
-	 *  Зовётся из GT_API_Proxy.onChunkLoadMigrateOres (ChunkEvent.Load, сервер) и напрямую стендом. */
+	/** Fix #1 (BUG-106): old-chunk MIGRATION — ore/rock entities are poured into the chunk map and
+	 *  removed for good (the chunk is marked for saving — it will go to disk without them). Entities with mItemNBT
+	 *  (audit channel #8) keep living, but the material is also duplicated into the map — the read funnel stays unified.
+	 *  Called from GT_API_Proxy.onChunkLoadMigrateOres (ChunkEvent.Load, server) and directly by the stand. */
 	public static void migrateChunkOres(net.minecraft.world.level.chunk.LevelChunk aChunk) {
 		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(aChunk);
 		if (tMap == null) return;
@@ -1044,9 +1044,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		}
 	}
 
-	/** Правка №1: мост LAST_BROKEN для мигрированных блоков — сущности на позиции больше нет, а механика
-	 *  дропа (Drops.getDrops через getMetaDataValue(TE)) читает «последнюю сломанную». Носитель-односменка
-	 *  с материалом из карты, в мир не ставится. */
+	/** Fix #1: LAST_BROKEN bridge for migrated blocks — there is no longer an entity at the position, but the drop
+	 *  mechanism (Drops.getDrops via getMetaDataValue(TE)) reads "the last broken one". A one-shot carrier
+	 *  with the material from the map, never placed into the world. */
 	protected BlockEntity teOrCarrier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		BlockEntity rTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (rTileEntity != null) return rTileEntity;
@@ -1066,12 +1066,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	public OreDictMaterial getMetaMaterial(BlockGetter aWorld, int aX, int aY, int aZ) {
-		return getMetaMaterial((int)getMetaDataValue(aWorld, aX, aY, aZ)); // правка №1: через воронку (карта чанка, фолбэк-сущность)
+		return getMetaMaterial((int)getMetaDataValue(aWorld, aX, aY, aZ)); // fix #1: via the funnel (chunk map, entity fallback)
 	}
 	
 	public BlockEntity createTileEntity(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT) {
-		// blockstate руды передаём в TE (= defaultBlockState, как ставит WD.set) → TE кэширует верный state сразу,
-		// без «Block state mismatch … updating» на загрузке чанка (руды и так генерировались, это был лишь шум кэша).
+		// pass the ore's blockstate into the TE (= defaultBlockState, as WD.set places it) → the TE caches the correct state right away,
+		// without a "Block state mismatch … updating" on chunk load (ores were generating fine anyway, this was only cache noise).
 		PrefixBlockTileEntity rTileEntity = new PrefixBlockTileEntity(new net.minecraft.core.BlockPos(aX, aY, aZ), defaultBlockState());
 		if (aNBT != null) rTileEntity.readFromNBT(aNBT);
 		rTileEntity.mMetaData = aMetaData;
@@ -1080,10 +1080,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	protected boolean checkGravity(Level aWorld, int aX, int aY, int aZ) {
-		if (mGravity && aY > WD.minY(aWorld) && getMetaDataValue(aWorld, aX, aY, aZ) != 0 && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) { // BUG-089: было aY > 0, дно MC26 = getMinY(); правка №1: «есть сущность» → «есть материал в воронке»
-			// было BlockFalling.fallInstantly (1.7.10 static-поле, дефолт false, не найден ни в одном из 3 корней) ->
+		if (mGravity && aY > WD.minY(aWorld) && getMetaDataValue(aWorld, aX, aY, aZ) != 0 && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) { // BUG-089: was aY > 0, MC26 floor = getMinY(); fix #1: "has an entity" → "has material in the funnel"
+			// was BlockFalling.fallInstantly (1.7.10 static field, default false, not found in any of the 3 reference roots) ->
 			// "T"; World.checkChunksExist(±32) -> ILevelReaderExtension.isAreaLoaded(BlockPos,int) [ILevelReaderExtension.java:19]
-			// (тот же приём, что и BlockBase.checkGravity/decisions/DEFERRED-LEDGER.md §B2).
+			// (the same approach as BlockBase.checkGravity/decisions/DEFERRED-LEDGER.md §B2).
 			if (T && aWorld.isAreaLoaded(new BlockPos(aX, aY, aZ), 32)) {
 				if (!aWorld.isClientSide()) aWorld.addFreshEntity(new PrefixBlockFallingEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UP)));
 			} else {
@@ -1106,9 +1106,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	@Override public void receiveDataByteArray(BlockGetter aWorld, int aX, int aY, int aZ, byte[] aData, INetworkHandler aNetworkHandler) {/**/}
 	@Override public void receiveDataName     (BlockGetter aWorld, int aX, int aY, int aZ, String aData, INetworkHandler aNetworkHandler) {if (UT.Code.stringValid(aData)) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof PrefixBlockTileEntity) {if (((PrefixBlockTileEntity)aTileEntity).mItemNBT == null) ((PrefixBlockTileEntity)aTileEntity).mItemNBT = UT.NBT.make(); ((PrefixBlockTileEntity)aTileEntity).mItemNBT.put("display", UT.NBT.makeString(((PrefixBlockTileEntity)aTileEntity).mItemNBT.getCompound("display"), "Name", aData));}}}
 
-	/** BUG-071 (ветка 1.20.1): право на дроп судит ЦЕНТР {@code WD.canHarvestBlock} — здесь только зов.
-	 *  Дом правила переехал с события {@code PlayerEvent.HarvestCheck} (в 1.20.1 оно не несёт ни мира, ни
-	 *  позиции — {@code PlayerEvent.java:69-81}) в этот хук, который их несёт ({@code IForgeBlock.java:167-170}). */
+	/** BUG-071 (branch 1.20.1): drop eligibility is judged by the CENTER {@code WD.canHarvestBlock} — this is just the call.
+	 *  The rule's home moved from the event {@code PlayerEvent.HarvestCheck} (on 1.20.1 it carries neither the world nor
+	 *  the position — {@code PlayerEvent.java:69-81}) to this hook, which does carry them ({@code IForgeBlock.java:167-170}). */
 	@Override public boolean canHarvestBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.entity.player.Player aPlayer) {
 		return gregapi.util.WD.canHarvestBlock(aState, aWorld, aPos, aPlayer);
 	}

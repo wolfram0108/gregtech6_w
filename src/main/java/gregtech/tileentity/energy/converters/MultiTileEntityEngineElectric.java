@@ -145,8 +145,8 @@ public class MultiTileEntityEngineElectric extends TileEntityBase09FacingSingle 
 		
 		if (aTool.equals(TOOL_screwdriver)) {
 			mState = (byte)((mState + 1) % 32);
-			aChatReturn.add("Input: " + (((mInput * (mState + 1)) / 16) + ((mInput * (mState + 1)) % 16 == 0 ? 0 : 1)));
-			aChatReturn.add("Output: " + ((mOutput * (mState + 1)) / 16));
+			aChatReturn.add(LH.tt("Input: ") + (((mInput * (mState + 1)) / 16) + ((mInput * (mState + 1)) % 16 == 0 ? 0 : 1)));
+			aChatReturn.add(LH.tt("Output: ") + ((mOutput * (mState + 1)) / 16));
 			updateClientData();
 			return 1000;
 		}
@@ -154,16 +154,16 @@ public class MultiTileEntityEngineElectric extends TileEntityBase09FacingSingle 
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
 				if (mStopped) {
-					aChatReturn.add("Stopped");
+					aChatReturn.add(LH.tt("Stopped"));
 				} else {
 					if (mActive) {
-						aChatReturn.add("Running");
+						aChatReturn.add(LH.tt("Running"));
 					} else {
-						aChatReturn.add("Capable of Running");
+						aChatReturn.add(LH.tt("Capable of Running"));
 					}
 				}
-				aChatReturn.add("Input: " + (((mInput * (mState + 1)) / 16) + ((mInput * (mState + 1)) % 16 == 0 ? 0 : 1)));
-				aChatReturn.add("Output: " + ((mOutput * (mState + 1)) / 16));
+				aChatReturn.add(LH.tt("Input: ") + (((mInput * (mState + 1)) / 16) + ((mInput * (mState + 1)) % 16 == 0 ? 0 : 1)));
+				aChatReturn.add(LH.tt("Output: ") + ((mOutput * (mState + 1)) / 16));
 			}
 			return 1;
 		}

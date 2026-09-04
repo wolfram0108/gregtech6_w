@@ -197,11 +197,11 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 	public void switchMode(ItemStack aStack, Player aPlayer) {
 		setMode(aStack, (getMode(aStack) + 1) % (mOwned?3:5));
 		switch ((int)getMode(aStack)) {
-		case 0: UT.Entities.sendchat(aPlayer, "Single Block Mode"); break;
-		case 1: UT.Entities.sendchat(aPlayer, "4m Line Mode"); break;
-		case 2: UT.Entities.sendchat(aPlayer, "3mx3m Area Mode"); break;
-		case 3: UT.Entities.sendchat(aPlayer, "Single Slab Mode"); break;
-		case 4: UT.Entities.sendchat(aPlayer, "3mx3m Slab Mode"); break;
+		case 0: UT.Entities.sendchat(aPlayer, LH.tt("Single Block Mode")); break;
+		case 1: UT.Entities.sendchat(aPlayer, LH.tt("4m Line Mode")); break;
+		case 2: UT.Entities.sendchat(aPlayer, LH.tt("3mx3m Area Mode")); break;
+		case 3: UT.Entities.sendchat(aPlayer, LH.tt("Single Slab Mode")); break;
+		case 4: UT.Entities.sendchat(aPlayer, LH.tt("3mx3m Slab Mode")); break;
 		}
 	}
 	

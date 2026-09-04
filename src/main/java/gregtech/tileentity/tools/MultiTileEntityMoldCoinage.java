@@ -90,7 +90,7 @@ public class MultiTileEntityMoldCoinage extends TileEntityBase07Paintable implem
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		aList.add(Chat.CYAN     + LH.get(LH.RECIPES_MOLD_COINAGE));
-		aList.add(Chat.CYAN     + LH.get(LH.RECIPES_MOLD_SELECT) + " (Doesn't work right now)");
+		aList.add(Chat.CYAN     + LH.get(LH.RECIPES_MOLD_SELECT) + LH.tt(" (Doesn't work right now)"));
 		aList.add(Chat.ORANGE   + LH.get(LH.NO_GUI_CLICK_TO_INTERACT)   + " (" + LH.get(LH.FACE_TOP) + ")");
 	}
 	
@@ -99,8 +99,8 @@ public class MultiTileEntityMoldCoinage extends TileEntityBase07Paintable implem
 		if (aIsServerSide) updateVisualData();
 	}
 
-	/** Что видно в форме для монет. Чистый пересчёт из слота — центр зовёт его и из тика, и перед сборкой клиентского
-	 *  снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	/** What is visible in the coin mold. A pure recomputation from the slot — the center calls it both from the tick and before
+	 *  assembling the client snapshot (see {@code TileEntityBase03TicksAndSync.updateVisualData}). */
 	@Override
 	public void updateVisualData() {
 		if (isClientSide()) return;

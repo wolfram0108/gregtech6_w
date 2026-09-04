@@ -88,7 +88,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		aList.add(LH.Chat.CYAN + (ST.valid(mBerry)?LH.get(mBerry.getItem().getDescriptionId(), mBerry.getDisplayName().getString()):"Rightclick with a Berry to set Output"));
+		aList.add(LH.Chat.CYAN + (ST.valid(mBerry)?LH.get(mBerry.getItem().getDescriptionId(), mBerry.getDisplayName().getString()):LH.tt("Rightclick with a Berry to set Output")));
 	}
 	
 	@Override
@@ -159,7 +159,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null && ST.valid(mBerry)) aChatReturn.add("Grows " + (CODE_CLIENT ? mBerry.getDisplayName().getString() : LH.get(mBerry.getDisplayName().getString())));
+			if (aChatReturn != null && ST.valid(mBerry)) aChatReturn.add(LH.tt("Grows ") + (CODE_CLIENT ? mBerry.getDisplayName().getString() : LH.get(mBerry.getDisplayName().getString())));
 			return 1;
 		}
 		return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);

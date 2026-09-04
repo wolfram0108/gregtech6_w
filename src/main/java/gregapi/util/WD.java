@@ -28,7 +28,7 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-// F5: net.minecraftforge.fluids.BlockFluidClassic/BlockFluidFinite удалены (см. liquid_classic/liquid_finite ниже).
+// F5: net.minecraftforge.fluids.BlockFluidClassic/BlockFluidFinite are gone from the engine; see liquid_classic/liquid_finite below.
 import net.minecraftforge.fluids.IFluidBlock;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -74,8 +74,8 @@ import gregapi.block.BlockBase;
 import gregapi.block.multitileentity.MultiTileEntityBlock;
 import gregapi.block.metatype.BlockStones;
 import net.minecraft.core.Direction;
-// F#(WD-block): доступ к блокам мира переучен на BlockPos/BlockState (world.getBlockState(pos).getBlock() —
-// BlockGetter.java:32 + BlockBehaviour.java:521 getBlock()); координатные типы/шейпы/рейтрейс — ниже.
+// F#(WD-block): world access goes through BlockPos/BlockState now (world.getBlockState(pos).getBlock() —
+// BlockGetter.java:32 + BlockBehaviour.java:521 getBlock()); coordinate types, shapes and raytrace below.
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -123,9 +123,9 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class WD {
-	/** F-bounds центр (instanceof-безопасно): 1.7.10 {@code WD.setBlockBounds(aBlock, ...)} мутировал bounds блока
-	 *  (рендер per-pass / коллизия); neo bounds immutable → делегируем GT6-блоку (хранит сам, {@link gregapi.block.IBlock}),
-	 *  не-GT6 блок игнорируется (рендер-использование отложено на F3-клиент-проход). */
+	/** F-bounds center (instanceof-safe): 1.7.10 {@code WD.setBlockBounds(aBlock, ...)} mutated the block's bounds
+	 *  (per-pass render / collision); neo bounds are immutable → delegate to the GT6 block (stores it itself, {@link gregapi.block.IBlock}),
+	 *  a non-GT6 block is ignored (render usage deferred to the F3 client pass). */
 	public static void setBlockBounds(net.minecraft.world.level.block.Block aBlock, float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		if (aBlock instanceof gregapi.block.IBlock) ((gregapi.block.IBlock)aBlock).setBlockBounds(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
 	}
@@ -145,18 +145,18 @@ public class WD {
 		return null;
 	}
 	// ==========================================================================================================
-	// BUG-103, корень «при генерации мира»: ВОРДГЕН УБИРАЕТ СУЩНОСТИ ИЗ ЧУЖОГО ПОТОКА.
+	// BUG-103, root cause "during world generation": WORLDGEN REMOVES ENTITIES FROM A FOREIGN THREAD.
 	//
-	// В 1.7.10 генерация шла в главном потоке сервера (IWorldGenerator.generate из chunk provider), поэтому
-	// «убить предметы, выпавшие при генерации» было обычной строкой. В 26.1.2 генерация чанка исполняется
-	// worker-потоками, а состав сущностей — забота серверного потока: discard() тянет цепочку
-	// Callback.onRemove → stopTracking → onTrackingEnd → ChunkMap.removeEntity, то есть правит entityMap
-	// и EntityLookup.byId. Пока серверный поток обходит ту же карту (ChunkMap.tick:1206), правка из воркера
-	// рвёт fastutil-итератор — NPE «this.wrapped is null», в стеке мода нет.
+	// In 1.7.10 generation ran on the server main thread (IWorldGenerator.generate from the chunk provider),
+	// so "kill items dropped by generation" was an ordinary line. In 26.1.2 chunk generation runs on worker
+	// threads, while entity bookkeeping is the server thread's job: discard() drags the chain
+	// Callback.onRemove -> stopTracking -> onTrackingEnd -> ChunkMap.removeEntity, i.e. it mutates entityMap
+	// and EntityLookup.byId. While the server thread walks that same map (ChunkMap.tick:1206), a worker-thread
+	// mutation tears the fastutil iterator — NPE "this.wrapped is null", not in the mod's own stack.
 	//
-	// ЕДИНЫЙ приём на весь мод: и ПОИСК, и удаление откладываются в серверный поток (он же выполняет их сразу,
-	// в ближайшую же свою очередь). Наблюдаемый результат тот же — сущности исчезают; меняется только поток.
-	// Вне сервера (клиентский/тестовый уровень) выполняется на месте, как раньше.
+	// SINGLE technique for the whole mod: both the SEARCH and the removal are deferred to the server thread
+	// (which executes them right away, on its very next tick). The observable result is the same — entities
+	// disappear; only the thread changes. Off-server (client/test level) it runs in place, as before.
 	// ==========================================================================================================
 	public static <T extends net.minecraft.world.entity.Entity> void discardEntitiesSafely(LevelAccessor aWorld, Class<T> aClass, AABB aBox, java.util.function.Predicate<T> aFilter) {
 		if (aWorld == null || aClass == null || aBox == null) return;
@@ -195,12 +195,12 @@ public class WD {
 			if (MD.TC.mLoaded && tTileEntity instanceof INode) return F;
 		}
 		BlockPos tObstrPos = new BlockPos(aX, aY, aZ);
-		BlockState tObstrState = state(aWorld, tObstrPos); // было aWorld.getBlock(x,y,z) — BlockGetter.java:32
+		BlockState tObstrState = state(aWorld, tObstrPos); // was aWorld.getBlock(x,y,z) — BlockGetter.java:32
 		Block tBlock = tObstrState.getBlock();
 		if (tBlock instanceof TrapDoorBlock || tBlock instanceof DoorBlock || tBlock instanceof LadderBlock) return F;
-		// было tBlock.getCollisionBoundingBoxFromPool(world,x,y,z) — BlockBehaviour.getCollisionShape(level,pos)
-		// (BlockBehaviour.java:674) даёт локальный VoxelShape; .move(pos).bounds() переносит в мировые координаты
-		// (VoxelShape.java:39,81); пустой шейп = старое null-возврату (нет коллизии).
+		// was tBlock.getCollisionBoundingBoxFromPool(world,x,y,z) — BlockBehaviour.getCollisionShape(level,pos)
+		// (BlockBehaviour.java:674) gives a local VoxelShape; .move(pos).bounds() carries it into world coordinates
+		// (VoxelShape.java:39,81); an empty shape is the old null return (no collision).
 		VoxelShape tObstrShape = tObstrState.getCollisionShape(aWorld, tObstrPos);
 		if (tObstrShape.isEmpty()) return F;
 		AABB tBoundingBox = tObstrShape.move(tObstrPos.getX(), tObstrPos.getY(), tObstrPos.getZ()).bounds();
@@ -216,9 +216,9 @@ public class WD {
 	}
 	
 	public static HitResult getMOP(LevelAccessor aWorld, Player aPlayer, boolean aFlag) {
-		Vec3 vec3 = new Vec3( // 1.7.10 Vec3.createVectorHelper(x,y,z) удалён -> neo ctor new Vec3(double,double,double).
+		Vec3 vec3 = new Vec3( // 1.7.10 Vec3.createVectorHelper(x,y,z) removed -> neo ctor new Vec3(double,double,double).
 		  aPlayer.xo + (aPlayer.getX() - aPlayer.xo)
-		, aPlayer.yo + (aPlayer.getY() - aPlayer.yo) + (aWorld.isClientSide() ? aPlayer.getEyeHeight() - aPlayer.getEyeHeight(net.minecraft.world.entity.Pose.STANDING) : aPlayer.getEyeHeight()) // F6-eye: 1.7.10 getDefaultEyeHeight() -> neo getEyeHeight(Pose.STANDING) (стоячая высота глаз, Entity.java:3381). isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
+		, aPlayer.yo + (aPlayer.getY() - aPlayer.yo) + (aWorld.isClientSide() ? aPlayer.getEyeHeight() - aPlayer.getEyeHeight(net.minecraft.world.entity.Pose.STANDING) : aPlayer.getEyeHeight()) // F6-eye: 1.7.10 getDefaultEyeHeight() -> neo getEyeHeight(Pose.STANDING) (standing eye height, Entity.java:3381). isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
 		, aPlayer.zo + (aPlayer.getZ() - aPlayer.zo)
 		);
 		float  tPitch = aPlayer.xRotO + (aPlayer.getXRot() - aPlayer.xRotO);
@@ -227,31 +227,31 @@ public class WD {
 		float  tX     =  Mth.sin(-tYaw   * 0.017453292F - (float)Math.PI);
 		float  tW     = -Mth.cos(-tPitch * 0.017453292F);
 		float  tY     =  Mth.sin(-tPitch * 0.017453292F);
-		double tReach = 5; // 1.20.1: атрибута/метода дальности ещё нет, движковая константа — 5 (как и фолбэк 26.x-ветки)
-		// было aWorld.func_147447_a(from,to,stopOnLiquid,ignoreBlockWithoutBoundingBox,returnLastUncollidableBlock=F) —
+		double tReach = 5; // 1.20.1: no reach attribute/method yet, engine constant is 5 (same fallback as the 26.x branch)
+		// was aWorld.func_147447_a(from,to,stopOnLiquid,ignoreBlockWithoutBoundingBox,returnLastUncollidableBlock=F) —
 		// neo: BlockGetter.clip(ClipContext) (BlockGetter.java:65). stopOnLiquid=aFlag -> ClipContext.Fluid.ANY/NONE
-		// (ClipContext.java:96-110, ANY подбирает любую непустую FluidState, NONE — никогда); Block.OUTLINE — тот же
-		// режим формы, которым реально пользуется ванильный player-look-raytrace (Item.getPlayerPOVHitResult,
-		// Item.java:362-365); returnLastUncollidableBlock здесь всегда F (аналога нет, не задействован).
+		// (ClipContext.java:96-110, ANY accepts any non-empty FluidState, NONE — never); Block.OUTLINE is the same
+		// shape mode the vanilla player-look raytrace actually uses (Item.getPlayerPOVHitResult,
+		// Item.java:362-365); returnLastUncollidableBlock is always F here (no equivalent, unused).
 		return aWorld.clip(new ClipContext(vec3, vec3.add(tX * tW * tReach, tY * tReach, tZ * tW * tReach), ClipContext.Block.OUTLINE, aFlag ? ClipContext.Fluid.ANY : ClipContext.Fluid.NONE, aPlayer));
 	}
 	
-	// F6: было `WorldProvider aProvider`-перегрузки (числовой `dimensionId`, `UT.Reflection.getLowercaseClass`
-	// по имени java-класса провайдера стороннего мода) ПАРАЛЛЕЛЬНО с `Level aWorld`-перегрузками, вызывавшими их
-	// через `aWorld.provider` — `net.minecraft.world.WorldProvider` в neo удалён целиком (нет ни в одном из 3
-	// корней референса), из-за чего компилятор не мог выбрать между двумя `dimXXX(...)`-перегрузками с одним
-	// именем (ambiguous). `WorldProvider`-перегрузки убраны, остался один вход — `dimXXX(Level)`.
-	// Собственная (не мод-зависимая) идентификация ванильных измерений переведена дословно на neo-эквиваленты
-	// (`Level.dimension()`==`Level.OVERWORLD/NETHER/END`, см. `decisions/README.md` «Dimension-identity»).
-	// Идентификация измерений СТОРОННИХ модов шла через reflection по имени java-класса `WorldProvider`-подкласса
-	// этого мода (`"WorldProviderCaves".equalsIgnoreCase(...)` и т.п.) либо (dimTF) через числовой
-	// `TwilightForestMod.dimensionID` — ни один из 3 корней референса не содержит neo-эквивалента для этих
-	// древних 1.7.10-модов (не портированы), это foreign-gated (древние 1.7.10-моды не портированы): F корректно, пока мод отсутствует.
-	/** F6 dimension-identity ЦЕНТР: у neo-измерения нет числового id, ключ измерения = {@code ResourceKey<Level>}.
-	 *  {@code Level} даёт {@code dimension()} напрямую; worldgen-приёмник {@code WorldGenLevel}/{@code ServerLevelAccessor}
-	 *  знает свой {@code ServerLevel} через {@code getLevel()} → {@code getLevel().dimension()}. Единственный вход на весь
-	 *  мод, приёмник {@code LevelAccessor} (общий супертип Level и WorldGenLevel) — заменяет прямой {@code aWorld.dimension()},
-	 *  которого на голом {@code LevelAccessor} нет. */
+	// F6: used to have `WorldProvider aProvider` overloads (numeric `dimensionId`, `UT.Reflection.getLowercaseClass`
+	// by the foreign mod's provider java class name) IN PARALLEL with `Level aWorld` overloads calling them
+	// through `aWorld.provider` — `net.minecraft.world.WorldProvider` is gone from neo entirely (not in any of the
+	// 3 reference roots), so the compiler could not choose between the two same-named `dimXXX(...)` overloads
+	// (ambiguous). The `WorldProvider` overloads are removed, leaving a single entry point — `dimXXX(Level)`.
+	// Vanilla dimension identity (mod-independent) is ported verbatim to the neo equivalents
+	// (`Level.dimension()`==`Level.OVERWORLD/NETHER/END`, see `decisions/README.md` "Dimension-identity").
+	// FOREIGN mod dimension identity went through reflection on the mod's `WorldProvider` subclass java class name
+	// (`"WorldProviderCaves".equalsIgnoreCase(...)` etc.) or (dimTF) through the numeric
+	// `TwilightForestMod.dimensionID` — none of the 3 reference roots contains a neo equivalent for these
+	// ancient 1.7.10 mods (not ported), this is foreign-gated (ancient 1.7.10 mods not ported): F is correct while the mod is absent.
+	/** F6 dimension-identity CENTER: a neo dimension has no numeric id, the dimension key is {@code ResourceKey<Level>}.
+	 *  {@code Level} gives {@code dimension()} directly; the worldgen receiver {@code WorldGenLevel}/{@code ServerLevelAccessor}
+	 *  knows its {@code ServerLevel} through {@code getLevel()} → {@code getLevel().dimension()}. The single entry point for the
+	 *  whole mod takes {@code LevelAccessor} (the common supertype of Level and WorldGenLevel) — replaces the direct {@code aWorld.dimension()},
+	 *  which the bare {@code LevelAccessor} does not have. */
 	public static net.minecraft.resources.ResourceKey<Level> dimKey(LevelAccessor aWorld) {
 		if (aWorld instanceof Level) return ((Level)aWorld).dimension();
 		if (aWorld instanceof net.minecraft.world.level.ServerLevelAccessor) return ((net.minecraft.world.level.ServerLevelAccessor)aWorld).getLevel().dimension();
@@ -262,61 +262,61 @@ public class WD {
 
 	public static boolean dimPlanet(LevelAccessor aWorld) {return aWorld != null && dimKey(aWorld) != Level.OVERWORLD && dimKey(aWorld) != Level.NETHER && dimKey(aWorld) != Level.END && !(dimMYST(aWorld) || dimATUM(aWorld) || dimWTCH(aWorld) || dimA97(aWorld) || dimCW2(aWorld) || dimTF(aWorld) || dimERE(aWorld) || dimBTL(aWorld) || dimENVM(aWorld) || dimDD(aWorld) || dimLM(aWorld) || dimAETHER(aWorld) || dimALF(aWorld) || dimTROPIC(aWorld) || dimCANDY(aWorld));}
 
-	public static boolean dimMYST(LevelAccessor aWorld) {return aWorld != null && MD.MYST.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimMYST — Mystcraft-провайдер определялся по имени java-класса ("com.xcompwiz.mystcraft"), WorldProvider удалён, аналога нет ни в одном из 3 корней референса */}
+	public static boolean dimMYST(LevelAccessor aWorld) {return aWorld != null && MD.MYST.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimMYST — the Mystcraft provider was identified by java class name ("com.xcompwiz.mystcraft"), WorldProvider is gone, no equivalent exists in any of the 3 reference roots */}
 
-	public static boolean dimCANDY(LevelAccessor aWorld) {return aWorld != null && MD.CANDY.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCANDY — CandyCraft-провайдер по имени класса "WorldProviderCandy" */}
+	public static boolean dimCANDY(LevelAccessor aWorld) {return aWorld != null && MD.CANDY.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimCANDY — the CandyCraft provider by class name "WorldProviderCandy" */}
 
-	public static boolean dimTROPIC(LevelAccessor aWorld) {return aWorld != null && MD.TROPIC.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimTROPIC — Tropicraft-провайдер по имени класса "WorldProviderTropicraft" */}
+	public static boolean dimTROPIC(LevelAccessor aWorld) {return aWorld != null && MD.TROPIC.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimTROPIC — the Tropicraft provider by class name "WorldProviderTropicraft" */}
 
-	public static boolean dimATUM(LevelAccessor aWorld) {return aWorld != null && MD.ATUM.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimATUM — Atum-провайдер по имени класса "AtumWorldProvider" */}
+	public static boolean dimATUM(LevelAccessor aWorld) {return aWorld != null && MD.ATUM.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimATUM — the Atum provider by class name "AtumWorldProvider" */}
 
-	public static boolean dimTF(LevelAccessor aWorld) {return aWorld != null && MD.TF.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimTF — сравнение с числовым TwilightForestMod.dimensionID, WorldProvider.dimensionId удалён вместе с числовой identity измерений */}
+	public static boolean dimTF(LevelAccessor aWorld) {return aWorld != null && MD.TF.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimTF — compared against the numeric TwilightForestMod.dimensionID, WorldProvider.dimensionId was removed along with numeric dimension identity */}
 
-	public static boolean dimBTL(LevelAccessor aWorld) {return aWorld != null && MD.BTL.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimBTL — Betweenlands-провайдер по имени класса "WorldProviderBetweenlands" */}
+	public static boolean dimBTL(LevelAccessor aWorld) {return aWorld != null && MD.BTL.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimBTL — the Betweenlands provider by class name "WorldProviderBetweenlands" */}
 
-	public static boolean dimERE(LevelAccessor aWorld) {return aWorld != null && MD.ERE.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimERE — Erebus-провайдер по имени класса "WorldProviderErebus" */}
+	public static boolean dimERE(LevelAccessor aWorld) {return aWorld != null && MD.ERE.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimERE — the Erebus provider by class name "WorldProviderErebus" */}
 
-	public static boolean dimALF(LevelAccessor aWorld) {return aWorld != null && MD.ALF.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimALF — Alfheim-провайдер по имени класса "WorldProviderAlfheim" */}
+	public static boolean dimALF(LevelAccessor aWorld) {return aWorld != null && MD.ALF.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimALF — the Alfheim provider by class name "WorldProviderAlfheim" */}
 
-	public static boolean dimDD(LevelAccessor aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimDD — Underdark-провайдер по имени класса "WorldProviderUnderdark" */}
+	public static boolean dimDD(LevelAccessor aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimDD — the Underdark provider by class name "WorldProviderUnderdark" */}
 
-	public static boolean dimLM(LevelAccessor aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimLM — EndOfTime-провайдер по имени класса "WorldProviderEndOfTime" */}
+	public static boolean dimLM(LevelAccessor aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimLM — the EndOfTime provider by class name "WorldProviderEndOfTime" */}
 
-	public static boolean dimENVM(LevelAccessor aWorld) {return aWorld != null && MD.ENVM.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimENVM — Enviromine Caves-провайдер по имени класса "WorldProviderCaves" */}
+	public static boolean dimENVM(LevelAccessor aWorld) {return aWorld != null && MD.ENVM.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimENVM — the Enviromine Caves provider by class name "WorldProviderCaves" */}
 
-	public static boolean dimGC(LevelAccessor aWorld) {return aWorld != null && MD.GC.mLoaded && F; /* F6/F10 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimGC — Galacticraft-измерение определялось `aWorld.provider instanceof IGalacticraftWorldProvider`, WorldProvider удалён из движка (та же болезнь, что у семейства dimXXX выше) */}
+	public static boolean dimGC(LevelAccessor aWorld) {return aWorld != null && MD.GC.mLoaded && F; /* F6/F10 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimGC — the Galacticraft dimension was determined by `aWorld.provider instanceof IGalacticraftWorldProvider`, WorldProvider was removed from the engine (the same issue as the dimXXX family above) */}
 
-	public static boolean dimA97(LevelAccessor aWorld) {return aWorld != null && MD.A97_MINING.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimA97 — Aroma1997 Mining-провайдер по имени класса "WorldProviderMiner" */}
+	public static boolean dimA97(LevelAccessor aWorld) {return aWorld != null && MD.A97_MINING.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimA97 — the Aroma1997 Mining provider by class name "WorldProviderMiner" */}
 
 	public static boolean dimCW2(LevelAccessor aWorld) {return aWorld != null && (dimCW2AquaCavern(aWorld) || dimCW2Caveland(aWorld) || dimCW2Cavenia(aWorld) || dimCW2Cavern(aWorld) || dimCW2Caveworld(aWorld));}
 
-	public static boolean dimCW2AquaCavern(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2AquaCavern — по имени класса "WorldProviderAquaCavern" */}
+	public static boolean dimCW2AquaCavern(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimCW2AquaCavern — by class name "WorldProviderAquaCavern" */}
 
-	public static boolean dimCW2Caveland(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Caveland — по имени класса "WorldProviderCaveland" */}
+	public static boolean dimCW2Caveland(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimCW2Caveland — by class name "WorldProviderCaveland" */}
 
-	public static boolean dimCW2Cavenia(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Cavenia — по имени класса "WorldProviderCavenia" */}
+	public static boolean dimCW2Cavenia(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimCW2Cavenia — by class name "WorldProviderCavenia" */}
 
-	public static boolean dimCW2Cavern(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Cavern — по имени класса "WorldProviderCavern" */}
+	public static boolean dimCW2Cavern(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimCW2Cavern — by class name "WorldProviderCavern" */}
 
-	public static boolean dimCW2Caveworld(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Caveworld — по имени класса "WorldProviderCaveworld" */}
+	public static boolean dimCW2Caveworld(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimCW2Caveworld — by class name "WorldProviderCaveworld" */}
 
-	public static boolean dimWTCH(LevelAccessor aWorld) {return aWorld != null && MD.WTCH.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimWTCH — Witchery Dream World-провайдер по имени класса "WorldProviderDreamWorld" */}
+	public static boolean dimWTCH(LevelAccessor aWorld) {return aWorld != null && MD.WTCH.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimWTCH — the Witchery Dream World provider by class name "WorldProviderDreamWorld" */}
 
-	public static boolean dimAETHER(LevelAccessor aWorld) {return aWorld != null && (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimAETHER — Aether-провайдер по имени класса "AetherWorldProvider"/"WorldProviderAether" */}
+	public static boolean dimAETHER(LevelAccessor aWorld) {return aWorld != null && (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, the foreign-dimension key exists only once the mod is ported; MD.*.mLoaded absent -> false is correct): dimAETHER — the Aether provider by class name "AetherWorldProvider"/"WorldProviderAether" */}
 
-	/** было ручное 1.7.10 dimension-travel (DimensionManager/ridingEntity/removePlayerEntityDangerously/ClientboundRespawnPacket/
-	 *  theItemInWorldManager/getConfigurationManager/FMLCommonHandler.firePlayerChangedDimensionEvent/createEntityByName — все удалены) —
-	 *  neo Entity.teleportTo(ServerLevel,x,y,z,Set<Relative>,yRot,xRot,resetCamera) (Entity.java:3257) выполняет весь цикл кросс-мерного
-	 *  перемещения (спешивание/respawn-пакет/inventory-sync/пере-создание сущности) внутри. Целевой мир по int-dim через WD.dimensionId
-	 *  (getAllLevels:1239). resetCamera=F, координаты абсолютные (пустой Set<Relative>). F-dimension caveat: сам move() работает 1:1 (Entity.teleportTo); лишь модовые int-id зависят от WD.dimensionId-карты (foreign-gated). */
+	/** used to be manual 1.7.10 dimension-travel (DimensionManager/ridingEntity/removePlayerEntityDangerously/ClientboundRespawnPacket/
+	 *  theItemInWorldManager/getConfigurationManager/FMLCommonHandler.firePlayerChangedDimensionEvent/createEntityByName — all removed) —
+	 *  neo Entity.teleportTo(ServerLevel,x,y,z,Set<Relative>,yRot,xRot,resetCamera) (Entity.java:3257) performs the entire cross-dimension
+	 *  move cycle (dismount/respawn packet/inventory-sync/entity re-creation) internally. Target world by int-dim via WD.dimensionId
+	 *  (getAllLevels:1239). resetCamera=F, coordinates are absolute (empty Set<Relative>). F-dimension caveat: move() itself works 1:1 (Entity.teleportTo); only mod int-ids depend on the WD.dimensionId map (foreign-gated). */
 	public static boolean move(Entity aEntity, int aDimension, double aX, double aY, double aZ) {
 		MinecraftServer tServer = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
 		if (tServer == null || !(aEntity.level() instanceof ServerLevel)) return F;
 		ServerLevel tTargetWorld = null;
 		for (ServerLevel tLevel : tServer.getAllLevels()) if (WD.dimensionId(tLevel) == aDimension) {tTargetWorld = tLevel; break;}
 		if (tTargetWorld == null || tTargetWorld == aEntity.level()) return F;
-		// Ветка 1.20.1: Set<Relative> (26.x) не существует; перенос между мирами — teleportTo(ServerLevel,x,y,z,Set,yaw,pitch)
-		// тоже отсутствует. Форма 1.7.10 — сменить измерение и поставить координаты (ServerLevel.java / Entity.java).
+		// Branch 1.20.1: Set<Relative> (26.x) does not exist; the cross-world teleportTo(ServerLevel,x,y,z,Set,yaw,pitch)
+		// overload is also absent. 1.7.10 form: switch dimension and set coordinates (ServerLevel.java / Entity.java).
 		if (aEntity instanceof net.minecraft.server.level.ServerPlayer tSP) {tSP.teleportTo(tTargetWorld, aX+0.5, aY+0.5, aZ+0.5, aEntity.getYRot(), aEntity.getXRot()); return T;}
 		net.minecraft.world.entity.Entity tMoved = aEntity.changeDimension(tTargetWorld);
 		if (tMoved == null) return F;
@@ -328,18 +328,18 @@ public class WD {
 	/** Marks a Chunk dirty so it is saved */
 	public static boolean mark(LevelAccessor aWorld, int aX, int aZ) {
 		if (!(aWorld instanceof Level) || aWorld.isClientSide()) return F;
-		// БЕЗ-ПОДГРУЗКИ (правка №2, 2026-08-09): 1.7.10 getChunkFromBlockCoords на невыгруженном давал EmptyChunk,
-		// markDirty на нём был no-op — то есть оригинал НЕ грузил чанк ради пометки. Порт звал грузящий
-		// Level.getChunk(int,int) (тикет unknown на каждый вызов, ServerChunkCache.java:242). Невыгруженный чанк
-		// помечать незачем — его состояние уже на диске.
+		// NO-LOAD (edit #2, 2026-08-09): 1.7.10 getChunkFromBlockCoords on an unloaded chunk gave an EmptyChunk,
+		// markDirty on it was a no-op — meaning the original did NOT load the chunk just to mark it. The port called
+		// the loading Level.getChunk(int,int) (ticket unknown on every call, ServerChunkCache.java:242). An unloaded
+		// chunk has nothing to mark — its state is already on disk.
 		net.minecraft.world.level.chunk.LevelChunk aChunk = chunkNow((Level)aWorld, aX >> 4, aZ >> 4);
 		if (aChunk == null) return F;
-		aChunk.setUnsaved(true); // было aChunk.setUnsaved(true) — neo: LevelChunk.setUnsaved(true) (см. Level.java:868 aWorld.getChunkAt(pos).setUnsaved(true))
+		aChunk.setUnsaved(true); // was aChunk.setUnsaved(true) — neo: LevelChunk.setUnsaved(true) (see Level.java:868 aWorld.getChunkAt(pos).setUnsaved(true))
 		return T;
 	}
 	/** Marks a Chunk dirty so it is saved */
 	public static boolean mark(Object aTileEntity) {
-		// было .getWorldObj()/.x/.z — neo: BlockEntity.getLevel() (BlockEntity.java:89) + .getBlockPos() (BlockEntity.java:232)
+		// used to be .getWorldObj()/.x/.z — neo: BlockEntity.getLevel() (BlockEntity.java:89) + .getBlockPos() (BlockEntity.java:232)
 		return aTileEntity instanceof BlockEntity && mark(((BlockEntity)aTileEntity).getLevel(), ((BlockEntity)aTileEntity).getBlockPos().getX(), ((BlockEntity)aTileEntity).getBlockPos().getZ());
 	}
 	
@@ -360,30 +360,30 @@ public class WD {
 	/** to get a TileEntity properly, according to my additional Interfaces. Normally you should set aLoadUnloadedChunks to false, unless you have already checked these Coordinates, or you want to load Chunks */
 	public static BlockEntity te(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
-		// БЕЗ-ПОДГРУЗКИ (правка №2, 2026-08-09): чтение НИКОГДА не грузит чанк и не ставит тикет — контракт
-		// 1.7.10 (blockExists+EmptyChunk). Прежний путь и при ПОЛОЖИТЕЛЬНОМ гейте шёл Level.getBlockEntity →
-		// getChunk(FULL,true) → тикет unknown НА КАЖДЫЙ вызов даже по загруженному чанку (ServerChunkCache.java:242)
-		// — это продлевало жизнь чанкам (замер BUG-106: 4769 серверных чанков при норме ~1400). Флаг
-		// aLoadUnloadedChunks сохранён сигнатурно, но грузить больше не может (решение пользователя 2026-08-09:
-		// оптимизация важнее 1:1, централизация обязательна).
+		// NO-LOAD (edit #2, 2026-08-09): reading NEVER loads the chunk and never sets a ticket — the 1.7.10
+		// contract (blockExists+EmptyChunk). The previous path, even with a POSITIVE gate, went Level.getBlockEntity →
+		// getChunk(FULL,true) → ticket unknown on EVERY call even for an already-loaded chunk (ServerChunkCache.java:242)
+		// — this extended chunk lifetime (measurement BUG-106: 4769 server chunks against a norm of ~1400). The
+		// aLoadUnloadedChunks flag is kept in the signature but can no longer load (user decision 2026-08-09:
+		// optimization outweighs 1:1, centralization is mandatory).
 		if (aWorld instanceof Level tL) {
 			net.minecraft.world.level.chunk.LevelChunk tChunk = chunkNow(tL, aX >> 4, aZ >> 4);
 			if (tChunk == null || tL.isOutsideBuildHeight(tPos)) return null;
-			BlockEntity rTileEntity = tChunk.getBlockEntity(tPos); // ленивое создание из NBT — как сделал бы движок
+			BlockEntity rTileEntity = tChunk.getBlockEntity(tPos); // lazy creation from NBT — the same as the engine would do
 			if (rTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)rTileEntity).isDead()) return null;
 			if (rTileEntity != null) return rTileEntity;
 			rTileEntity = LAST_BROKEN_TILEENTITY.get();
-			// было .x/.y/.z — neo: BlockEntity.getBlockPos() (BlockEntity.java:232)
+			// used to be .x/.y/.z — neo: BlockEntity.getBlockPos() (BlockEntity.java:232)
 			if (rTileEntity != null && rTileEntity.getBlockPos().getX() == aX && rTileEntity.getBlockPos().getY() == aY && rTileEntity.getBlockPos().getZ() == aZ) return rTileEntity;
-			Block tBlock = tChunk.getBlockState(tPos).getBlock(); // было aWorld.getBlock(x,y,z) — BlockGetter.java:32
+			Block tBlock = tChunk.getBlockState(tPos).getBlock(); // used to be aWorld.getBlock(x,y,z) — BlockGetter.java:32
 			return tBlock instanceof IBlockTileEntity ? ((IBlockTileEntity)tBlock).getTileEntity(aWorld, aX, aY, aZ) : null;
 		}
 		return null;
 	}
-	/** F-world: read-only доступ (BlockGetter = бывш. IBlockAccess). Оригинал GT6 звал aWorld.getTileEntity(x,y,z)
-	 *  напрямую на IBlockAccess (MultiTileEntityBlock.receiveDataX, BlockBaseFluid) — централизуем через WD.te,
-	 *  как и Level-версия. Если это Level — делегируем в полную версию (chunk-load, 1:1 поведение); иначе плоское
-	 *  чтение (BlockGetter не грузит чанки — это уже read-view, aLoadUnloadedChunks нечему грузить). */
+	/** F-world: read-only access (BlockGetter = former IBlockAccess). The GT6 original called aWorld.getTileEntity(x,y,z)
+	 *  directly on IBlockAccess (MultiTileEntityBlock.receiveDataX, BlockBaseFluid) — centralize through WD.te,
+	 *  same as the Level version. If it's a Level — delegate to the full version (chunk-load, 1:1 behavior); otherwise a flat
+	 *  read (BlockGetter doesn't load chunks — it's already a read-view, aLoadUnloadedChunks has nothing to load). */
 	public static BlockEntity te(BlockGetter aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {
 		if (aWorld instanceof Level) return te((Level)aWorld, aX, aY, aZ, aLoadUnloadedChunks);
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
@@ -395,67 +395,69 @@ public class WD {
 		Block tBlock = state(aWorld, tPos).getBlock();
 		return tBlock instanceof IBlockTileEntity ? ((IBlockTileEntity)tBlock).getTileEntity(aWorld, aX, aY, aZ) : null;
 	}
-	/** F6-worldgen/lighting КРИТ (дедлок при генерации): BE-доступ БЕЗ форс-загрузки чанка. Блок-методы, которые движок
-	 *  зовёт ВО ВРЕМЯ генерации чанка / расчёта света ({@link gregapi.block.multitileentity.MultiTileEntityBlock#getLightEmission}
-	 *  и т.п.), НЕ смеют идти через обычный {@link #te} — тот форсирует {@code Level.getBlockState}→{@code getChunk}→
-	 *  {@code CompletableFuture.join} на ТЕКУЩЕМ генерируемом чанке → light-engine-поток ждёт чанк, который сам же генерит →
-	 *  вечный DEADLOCK (jstack: BlockLightEngine.getEmission→MTE.getLightEmission→WD.te→ServerChunkCache.getChunk.join).
-	 *  Берём BE ТОЛЬКО из уже-FULL чанка: {@code getChunk(cx,cz,FULL,false)} неблокирующий (null, если чанк ещё не готов) →
-	 *  тогда возвращаем null (движок пересчитает светимость BE после финализации чанка). Для не-Level BlockGetter (чанк/регион)
-	 *  {@code getBlockEntity} и так неблокирующий (чтение из карты BE). */
+	/** F6-worldgen/lighting CRITICAL (deadlock during generation): BE access WITHOUT force-loading the chunk. Block methods that the engine
+	 *  calls DURING chunk generation / light computation ({@link gregapi.block.multitileentity.MultiTileEntityBlock#getLightEmission}
+	 *  etc.) must NOT go through the regular {@link #te} — it forces {@code Level.getBlockState}→{@code getChunk}→
+	 *  {@code CompletableFuture.join} on the CURRENTLY generating chunk → the light-engine thread waits on the chunk it is generating itself →
+	 *  permanent DEADLOCK (jstack: BlockLightEngine.getEmission→MTE.getLightEmission→WD.te→ServerChunkCache.getChunk.join).
+	 *  Take the BE ONLY from an already-FULL chunk: {@code getChunk(cx,cz,FULL,false)} is non-blocking (null if the chunk isn't ready yet) →
+	 *  then return null (the engine recomputes BE light emission after chunk finalization). For a non-Level BlockGetter (chunk/region)
+	 *  {@code getBlockEntity} is non-blocking anyway (reading from the BE map). */
 	public static BlockEntity teNonForcing(BlockGetter aWorld, int aX, int aY, int aZ) {
-		// КРИТ: getChunk(cx,cz,FULL,false) НЕ неблокирующий — requireChunk=false лишь «вернуть null вместо throw», но
-		// main-thread-future + join ОСТАЁТСЯ → на off-thread (light-поток при генерации) всё равно дедлок.
-		// КРИТ-2 (ADAPT-005, живая проба): getChunkNow НЕ годится — у него жёсткий гейт «только main-поток»
-		// (ServerChunkCache.getChunkNow:183 `Thread.currentThread() != mainThread -> null`), а BlockLightEngine.getEmission
-		// зовёт нас именно С LIGHT-ПОТОКА → BE всегда null → динамический свет BE (IMTE_GetLightValue) на сервере МЁРТВ.
-		// Правильный путь — лок-фри цепь самого chunk-движка: chunkMap.getVisibleChunkIfPresent (ChunkMap.java:255, public)
-		// → ChunkHolder.getLatestChunk (GenerationChunkHolder.java:263 — AtomicReference + future.getNow, БЕЗ thread-гейта
-		// и БЕЗ join; getChunkForLighting НЕ годится — у давно-FULL чанка futures промежуточных стадий сброшены → null).
-		// Для ещё-генерируемого чанка вернёт ProtoChunk (не LevelChunk) → null → запечённый дефолт (анти-дедлок сохранён).
-		// BE читаем из карты чанка (getBlockEntities().get) — чистое чтение без side-effect-создания BE с чужого потока.
+		// CRITICAL: getChunk(cx,cz,FULL,false) is NOT non-blocking — requireChunk=false only means "return null instead of throw", but
+		// the main-thread future + join REMAINS → on an off-thread (light thread during generation) it still deadlocks.
+		// CRITICAL-2 (ADAPT-005, live probe): getChunkNow doesn't work — it has a hard "main thread only" gate
+		// (ServerChunkCache.getChunkNow:183 `Thread.currentThread() != mainThread -> null`), and BlockLightEngine.getEmission
+		// calls us precisely FROM THE LIGHT THREAD → BE is always null → dynamic BE light (IMTE_GetLightValue) is DEAD on the server.
+		// The correct path is the lock-free chain of the chunk engine itself: chunkMap.getVisibleChunkIfPresent (ChunkMap.java:255, public)
+		// → ChunkHolder.getLatestChunk (GenerationChunkHolder.java:263 — AtomicReference + future.getNow, WITHOUT a thread gate
+		// and WITHOUT join; getChunkForLighting doesn't work — for a long-FULL chunk the intermediate-stage futures are cleared → null).
+		// For a still-generating chunk it returns a ProtoChunk (not LevelChunk) → null → the baked default (anti-deadlock preserved).
+		// BE is read from the chunk's map (getBlockEntities().get) — a clean read without side-effect BE creation from a foreign thread.
 		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
 			net.minecraft.server.level.ChunkHolder tHolder = tSL.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.asLong(aX >> 4, aZ >> 4));
 			net.minecraft.world.level.chunk.ChunkAccess tChunk = tHolder == null ? null : tHolder.getLastAvailable(); // 1.20.1: ChunkHolder.getLastAvailable()
-			// FULL-чанк может прийти обёрнутым в ImposterProtoChunk — разворачиваем (getWrapped:255).
+			// A FULL chunk may arrive wrapped in ImposterProtoChunk — unwrap it (getWrapped:255).
 			if (tChunk instanceof net.minecraft.world.level.chunk.ImposterProtoChunk tIPC) tChunk = tIPC.getWrapped();
 			return tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC.getBlockEntities().get(new BlockPos(aX, aY, aZ)) : null;
 		}
 		return aWorld == null ? null : aWorld.getBlockEntity(new BlockPos(aX, aY, aZ));
 	}
-	/** F-world: 1.7.10 World.blockExists(x,y,z) = «чанк с этим блоком загружен». Порт централизовал вызовы как
-	 *  WD.exists, но метод не был определён. БЕЗ-ПОДГРУЗКИ (правка №2): прежний hasChunkAt шёл через
-	 *  getChunk(FULL,false)+managedBlock (Level.java:695) — не грузил, но качал очередь main-потока; теперь
-	 *  лок-фри взгляд на видимый холдер — точный смысл 1.7.10 «чанк в loadedChunkHashMap». */
+	/** F-world: 1.7.10 World.blockExists(x,y,z) = "chunk holding this block is loaded". The port centralized calls as
+	 *  WD.exists, but the method was never defined. NO-LOAD (edit #2): the previous hasChunkAt went through
+	 *  getChunk(FULL,false)+managedBlock (Level.java:695) — didn't load, but pumped the main-thread queue; now
+	 *  a lock-free look at the visible holder — the exact meaning of 1.7.10's "chunk in loadedChunkHashMap". */
 	public static boolean exists(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		return aWorld instanceof Level tL && chunkNow(tL, aX >> 4, aZ >> 4) != null;
 	}
 
-	/** ЦЕНТР чтения чанка (правка №2, 2026-08-09): единственный способ мода получить чанк для ЧТЕНИЯ.
-	 *  НИКОГДА не грузит чанк, НИКОГДА не ставит тикет (грузящий Level.getChunk ставит unknown-тикет на
-	 *  КАЖДЫЙ вызов даже по уже загруженному чанку — ServerChunkCache.java:242; замер BUG-106: эти тикеты
-	 *  держали 4769 серверных чанков при норме ~1400). Сервер: зеркало getChunkNow (ServerChunkCache.java:182-211),
-	 *  но без гейта «только main-поток» — лок-фри цепь видимый-холдер → getChunkIfPresent(FULL) (AtomicReference,
-	 *  без join; тот же приём, что teNonForcing ниже). Клиент: ClientChunkCache.getChunk(...,false) — чтение карты.
-	 *  null = чанк не загружен до FULL → для читателей это «воздух/нет», контракт 1.7.10 blockExists+EmptyChunk. */
+	/** CENTER for chunk reading (edit #2, 2026-08-09): the only way for the mod to get a chunk for READING.
+	 *  NEVER loads the chunk, NEVER sets a ticket (the loading Level.getChunk sets an unknown ticket on
+	 *  EVERY call even for an already-loaded chunk — ServerChunkCache.java:242; measurement BUG-106: these tickets
+	 *  held 4769 server chunks against a norm of ~1400). Server: mirrors getChunkNow (ServerChunkCache.java:182-211),
+	 *  but without the "main thread only" gate — a lock-free chain visible-holder → getChunkIfPresent(FULL) (AtomicReference,
+	 *  no join; the same approach as teNonForcing below). Client: ClientChunkCache.getChunk(...,false) — reads the map.
+	 *  null = chunk not loaded to FULL → for readers this means "air/nothing", the 1.7.10 blockExists+EmptyChunk contract. */
 	public static net.minecraft.world.level.chunk.LevelChunk chunkNow(Level aWorld, int aChunkX, int aChunkZ) {
 		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
-			// ⚠️ ИСПРАВЛЕНИЕ ОШИБКИ БЭКПОРТА (корень BP-BUG-008, вскрытие 2026-08-16). Прежняя редакция ветки читала
-			// ChunkHolder.getFullChunk() (ChunkHolder.java:111) как «FULL-чанк уже есть». Это ДРУГОЙ признак: он смотрит
-			// поле fullChunkFuture, а его строит ChunkMap.prepareAccessibleChunk (ChunkMap.java:768-776) — getChunkRangeFuture
-			// РАДИУСА 1 (все 9 чанков 3×3) плюс задача в mainThreadMailbox. Движок же отдаёт чанк наружу гораздо раньше:
-			// Level.getChunkAt → ServerChunkCache.getChunk(FULL,true) ждёт только СТАТУСНЫЙ future самого чанка
-			// (ChunkHolder.getOrScheduleFuture(ChunkStatus.FULL), ServerChunkCache.java:200-208). Между этими двумя
-			// моментами лежит окно, в котором движок блоками чанка уже живёт (BE тикают, setBlock/getBlockState работают),
-			// а мод отвечал «чанка нет» — то есть ВЕСЬ чанк читался как воздух-без-сущностей (te/state/exists/mark/
-			// precipitationHeight). Отсюда потеря построек: чистка сирот в MultiTileEntityBlock.onNeighborBlockChange
-			// видела WD.te == null у живых MTE и сносила их пачкой, ровно в границах одного чанка.
-			// Признак теперь тот же, что у движка, — зеркало ServerChunkCache.getChunkNow (ServerChunkCache.java:157-190),
-			// как и на main (WD.java:441-450 ветки 26.1.2, где взят getChunkIfPresent(ChunkStatus.FULL)).
-			// На main-потоке ПЕРЕИСПОЛЬЗУЕМ сам движковый метод: он несёт кэш последних 4 чанков и Forge-байпас
-			// currentlyLoading (ChunkMap.java:719-724 — чанк в процессе загрузки, поле package-private, снаружи не видно).
-			// Вне main-потока (light-поток, клиентский рендер) у getChunkNow жёсткий гейт «только main» → там лок-фри
-			// взгляд на тот же СТАТУСНЫЙ future, без join и без thread-гейта.
+			// BACKPORT BUG FIX (root BP-BUG-008, uncovered 2026-08-16). The previous branch revision read
+			// ChunkHolder.getFullChunk() (ChunkHolder.java:111) as "a FULL chunk already exists". That is a DIFFERENT
+			// predicate: it looks at the fullChunkFuture field, which ChunkMap.prepareAccessibleChunk builds
+			// (ChunkMap.java:768-776) — getChunkRangeFuture of RADIUS 1 (all 9 chunks in a 3x3) plus a task on
+			// mainThreadMailbox. The engine hands the chunk out much earlier than that:
+			// Level.getChunkAt -> ServerChunkCache.getChunk(FULL,true) only waits on the chunk's own STATUS future
+			// (ChunkHolder.getOrScheduleFuture(ChunkStatus.FULL), ServerChunkCache.java:200-208). Between those two
+			// moments there is a window where the engine already lives in the chunk's blocks (BEs tick, setBlock/getBlockState
+			// work), while the mod answered "no such chunk" — i.e. the WHOLE chunk was read as air-with-no-entities
+			// (te/state/exists/mark/precipitationHeight). Hence the lost builds: orphan cleanup in
+			// MultiTileEntityBlock.onNeighborBlockChange saw WD.te == null for live MTEs and tore them down in bulk,
+			// exactly at one chunk's borders.
+			// The predicate now matches the engine's own — a mirror of ServerChunkCache.getChunkNow (ServerChunkCache.java:157-190),
+			// same as on main (WD.java:441-450 of the 26.1.2 branch, which uses getChunkIfPresent(ChunkStatus.FULL)).
+			// On the main thread we REUSE the engine method itself: it carries a cache of the last 4 chunks and the Forge bypass
+			// currentlyLoading (ChunkMap.java:719-724 — chunk in the process of loading, a package-private field, invisible from outside).
+			// Off the main thread (light thread, client render) getChunkNow has a hard "main only" gate -> there we use a lock-free
+			// look at that same STATUS future, without join and without the thread gate.
 			if (tSL.getServer() != null && tSL.getServer().isSameThread()) return tSL.getChunkSource().getChunkNow(aChunkX, aChunkZ);
 			net.minecraft.server.level.ChunkHolder tHolder = tSL.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.asLong(aChunkX, aChunkZ));
 			if (tHolder == null) return null;
@@ -466,33 +468,33 @@ public class WD {
 		return aWorld.getChunkSource().getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.ChunkStatus.FULL, F) instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC : null;
 	}
 
-	/** ЦЕНТР ПРИЗНАКА «В КЛЕТКЕ НЕТ BlockEntity — ДОКАЗУЕМО» (корень BP-BUG-008, вторая половина).
+	/** CENTER for the "the cell PROVABLY has no BlockEntity" predicate (root BP-BUG-008, second half).
 	 *
-	 *  <p>В 1.7.10 «TE не найдена» означало ровно одно — сироту, потому что вопрос и действие шли по ОДНОМУ пути:
-	 *  {@code World.getTileEntity} грузил чанк ({@code World.java:2141} → {@code getChunkFromChunkCoords}), а
-	 *  {@code Chunk.func_150806_e} читал единственную карту {@code chunkTileEntityMap}, заполняемую синхронно с
-	 *  загрузкой чанка. Стадии «сущность ещё упакована» не существовало вовсе.
+	 *  <p>In 1.7.10 "TE not found" meant exactly one thing — an orphan, because the question and the action went through ONE path:
+	 *  {@code World.getTileEntity} loaded the chunk ({@code World.java:2141} → {@code getChunkFromChunkCoords}), and
+	 *  {@code Chunk.func_150806_e} read the single {@code chunkTileEntityMap} map, filled synchronously with the
+	 *  chunk load. A "entity still packed" stage did not exist at all.
 	 *
-	 *  <p>В 1.20.1 ответ «нет BE» стал многозначным, и КАЖДОЕ значение — не сиротство:
+	 *  <p>In 1.20.1 the "no BE" answer became multi-valued, and EACH value is NOT orphanhood:
 	 *  <ul>
-	 *  <li>чанк не виден моду (окно промоции/выгрузки) — {@link #chunkNow} вернёт null, а {@code Level.setBlock}
-	 *      тот же чанк ЗАГРУЗИТ и запишет: спрашиваем неблокирующе, действуем блокирующе;</li>
-	 *  <li>сущность ещё «упакована» в {@code LevelChunk.pendingBlockEntities} — распаковка идёт лишь в
-	 *      {@code postProcessGeneration} ({@code LevelChunk.java:514-518} ← {@code ChunkMap.prepareTickingChunk}), то есть
-	 *      чанк обязан дойти до TICKING; до этого карта {@code blockEntities} пуста при полном содержимом на диске;</li>
-	 *  <li>сущность MTE ещё не реконструирована из стаба ({@code GT6WorldgenFeature.drainStubs}, 16 чанков за тик);</li>
-	 *  <li>{@link #te} дополнительно снимает с ответа «мёртвую» сущность ({@code ITileEntityUnloadable.isDead}) — это
-	 *      состояние жизненного цикла, а не отсутствие.</li>
+	 *  <li>the chunk is not visible to the mod (promotion/unload window) — {@link #chunkNow} returns null, while {@code Level.setBlock}
+	 *      WILL load that same chunk and write to it: we ask non-blockingly, we act blockingly;</li>
+	 *  <li>the entity is still "packed" in {@code LevelChunk.pendingBlockEntities} — unpacking happens only at
+	 *      {@code postProcessGeneration} ({@code LevelChunk.java:514-518} ← {@code ChunkMap.prepareTickingChunk}), i.e. the
+	 *      chunk must reach TICKING; before that the {@code blockEntities} map is empty despite full content on disk;</li>
+	 *  <li>the MTE entity is not yet reconstructed from its stub ({@code GT6WorldgenFeature.drainStubs}, 16 chunks per tick);</li>
+	 *  <li>{@link #te} additionally filters out a "dead" entity from the answer ({@code ITileEntityUnloadable.isDead}) —
+	 *      this is a lifecycle state, not absence.</li>
 	 *  </ul>
 	 *
-	 *  <p><b>Что делает признак.</b> Спрашивает чанк НАПРЯМУЮ и только его: {@code LevelChunk.getBlockEntity(pos)} сам
-	 *  распаковывает закладку ({@code pendingBlockEntities.remove} + промоция, {@code LevelChunk.java:303-310}) — тем же
-	 *  приёмом, каким закладку снимает воронка записи руды ({@code PrefixBlock:969-971}). Стаб — тоже сущность, и тоже
-	 *  ответ «есть». Фильтр {@code isDead} НЕ применяется: мёртвая сущность существует. Чанк не виден — ответ «не
-	 *  доказано»: судить о клетке, которой не видим, нельзя.
+	 *  <p><b>What the predicate does.</b> Asks the chunk DIRECTLY and only it: {@code LevelChunk.getBlockEntity(pos)} itself
+	 *  unpacks the pending entry ({@code pendingBlockEntities.remove} + promotion, {@code LevelChunk.java:303-310}) — the same
+	 *  technique the ore-registering hopper uses to lift the pending entry ({@code PrefixBlock:969-971}). A stub is also an entity, also
+	 *  an "exists" answer. The {@code isDead} filter is NOT applied: a dead entity exists. Chunk not visible — the answer is "not
+	 *  proven": one cannot judge a cell that is not visible.
 	 *
-	 *  <p><b>Цена.</b> Признак зовётся ТОЛЬКО в ветке, где {@link #te} уже вернул null, — то есть в горячем пути соседских
-	 *  апдейтов не выполняется ни разу, пока всё в порядке. Сам он — один lookup карты чанка, без аллокаций сверх позиции. */
+	 *  <p><b>Cost.</b> The predicate is called ONLY in the branch where {@link #te} has already returned null — on the hot path of
+	 *  neighbor updates it never runs while everything is fine. It is itself a single chunk-map lookup, with no allocation beyond the position. */
 	public static boolean teProvenAbsent(Level aWorld, int aX, int aY, int aZ) {
 		if (aWorld == null) return F;
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
@@ -501,12 +503,12 @@ public class WD {
 		return tChunk != null && tChunk.getBlockEntity(tPos) == null;
 	}
 
-	/** ЦЕНТР гейта «блоки здесь тикают» (правка №2в, решение пользователя 2026-08-09: «где замерла вода —
-	 *  замирает и труба», один закон для GT6 и ванили). Движковый предикат ServerLevel.shouldTickBlocksAt
-	 *  (ServerLevel.java:480 → DistanceManager.inBlockTickingRange) — ровно тот же гейт, которым движок
-	 *  выключает BlockEntityTicker, случайные тики и жидкости в пограничных чанках. В 1.7.10 градации не было
-	 *  (любой загруженный чанк тикал целиком) — глобальные тик-списки GT6 без этого гейта тикали технику там,
-	 *  где движок уже всё заморозил. Не-BlockEntity (нет позиции) не гейтится. */
+	/** CENTER for the "blocks tick here" gate (edit #2c, user decision 2026-08-09: "wherever water freezes,
+	 *  the pipe freezes too" — one law for GT6 and vanilla). The engine predicate ServerLevel.shouldTickBlocksAt
+	 *  (ServerLevel.java:480 → DistanceManager.inBlockTickingRange) is exactly the same gate the engine uses to
+	 *  disable BlockEntityTicker, random ticks and fluids in border chunks. In 1.7.10 there was no gradation
+	 *  (any loaded chunk ticked in full) — GT6's global tick lists without this gate ticked machinery where
+	 *  the engine had already frozen everything. Non-BlockEntity (no position) is not gated. */
 	public static boolean blockTicking(Object aTileEntity) {
 		if (!(aTileEntity instanceof BlockEntity tTE)) return T;
 		Level tLevel = tTE.getLevel();
@@ -516,9 +518,9 @@ public class WD {
 		return !(aWorld instanceof net.minecraft.server.level.ServerLevel tSL) || tSL.shouldTickBlocksAt(aPos);
 	}
 
-	/** ЦЕНТР чтения стейта (правка №2): все чтения блоков внутри WD идут сюда. Level → через chunkNow
-	 *  (невыгружено = воздух, без тикетов); прочие BlockGetter (вью чанка, рендер-регион) — прямое чтение,
-	 *  оно неблокирующее по природе. */
+	/** CENTER for state reading (edit #2): all block reads inside WD go through here. Level → via chunkNow
+	 *  (unloaded = air, no tickets); other BlockGetters (chunk view, render region) — direct read,
+	 *  which is non-blocking by nature. */
 	public static BlockState state(BlockGetter aView, BlockPos aPos) {
 		if (aView instanceof Level tL) {
 			if (tL.isOutsideBuildHeight(aPos)) return NB.defaultBlockState();
@@ -527,50 +529,50 @@ public class WD {
 		}
 		return aView.getBlockState(aPos);
 	}
-	/** F-world: 1.7.10 World-небовидимость(x,y,z) -> neo canSeeSky(BlockPos) (BlockAndLightGetter.java:17). */
+	/** F-world: 1.7.10 World sky-visibility(x,y,z) -> neo canSeeSky(BlockPos) (BlockAndLightGetter.java:17). */
 	public static boolean canSeeSky(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		return aWorld != null && aWorld.canSeeSky(new BlockPos(aX, aY, aZ));
 	}
-	/** F-world/F-hardness: 1.7.10 WD.hardness(Block, world,x,y,z) = Block.getBlockHardness (Forge-точка per-position).
-	 *  GT6-иерархии (контракт IBlock: BlockBase per-meta / PrefixBlock per-material / MTE per-TE mHardness) — диспатч
-	 *  в их getBlockHardness; прежний путь через Properties.destroyTime был слеп к ним (у MTE destroyTime=0 → износ
-	 *  инструмента при добыче машин = 0). Vanilla-блок — его defaultBlockState (аргумент-блок важнее блока на позиции:
-	 *  вызыватели типа BlockMetaType.getBlockHardness спрашивают WD.hardness(Blocks.STONE, ...) с ЧУЖОЙ позиции). */
+	/** F-world/F-hardness: 1.7.10 WD.hardness(Block, world,x,y,z) = Block.getBlockHardness (a Forge per-position hook).
+	 *  GT6 hierarchies (IBlock contract: BlockBase per-meta / PrefixBlock per-material / MTE per-TE mHardness) — dispatch
+	 *  to their getBlockHardness; the previous path via Properties.destroyTime was blind to them (MTE destroyTime=0 → tool
+	 *  wear when harvesting machines = 0). A vanilla block — its defaultBlockState (the argument block matters more than the block at
+	 *  the position: callers like BlockMetaType.getBlockHardness ask WD.hardness(Blocks.STONE, ...) with a FOREIGN position). */
 	public static float hardness(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (aBlock instanceof gregapi.block.IBlock tBlock && aWorld instanceof Level tLevel) return tBlock.getBlockHardness(tLevel, aX, aY, aZ);
 		return aBlock.defaultBlockState().getDestroySpeed(aWorld, new BlockPos(aX, aY, aZ));
 	}
-	/** F-hardness ЦЕНТР (ревизия захода №4 п.1): vanilla-формула прогресса добычи — 1.7.10
-	 *  ForgeHooks.blockStrength(hardness, player, world, x, y, z) в ОДНОМ месте. Была продублирована в 4 Block-корнях
-	 *  (BlockBase/PrefixBlock/MTE-Block/MTE-Internal — общего предка нет, но формула-то одна); корни зовут центр,
-	 *  добавляя свои гейты (MTE — per-TE IMTE_GetPlayerRelativeBlockHardness) поверх. hardness<0 = неразрушим. */
+	/** F-hardness CENTER (pass #4 item 1 revision): the vanilla harvest-progress formula — 1.7.10
+	 *  ForgeHooks.blockStrength(hardness, player, world, x, y, z) in ONE place. It was duplicated across 4 Block roots
+	 *  (BlockBase/PrefixBlock/MTE-Block/MTE-Internal — no common ancestor, but it's the same formula); the roots call the center,
+	 *  adding their own gates (MTE — per-TE IMTE_GetPlayerRelativeBlockHardness) on top. hardness<0 = indestructible. */
 	public static float destroyProgress(float aHardness, net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos) {
 		if (aHardness < 0) return 0.0F;
-		int tDivider = canHarvestBlock(aState, aWorld, aPos, aPlayer) ? 30 : 100; // тот же центр права на дроп, что и у блоков GT6
+		int tDivider = canHarvestBlock(aState, aWorld, aPos, aPlayer) ? 30 : 100; // same drop-right center used by GT6 blocks
 		return aPlayer.getDestroySpeed(aState) / aHardness / (float)tDivider;
 	}
-	/** F9-harvest-level ЦЕНТР: 1.7.10 Block.getHarvestLevel(int aMeta) (числовой требуемый уровень добычи 0=дерево/
-	 *  1=камень/2=железо/3=алмаз) удалён по ИМЕНИ, но способность есть под tag-моделью neo. GT6-блок хранит свой уровень
-	 *  (BlockBase.getHarvestLevel(meta)); vanilla-блок — через neo tier-теги BlockTags.NEEDS_*_TOOL (тот же смысл: какой
-	 *  ярус инструмента требуется). Прямой маппинг STONE=1/IRON=2/DIAMOND=3, иначе 0. Используется в проверке «инструмент
-	 *  достаточно силён» (MultiItemTool.getDigSpeed:517, было degraded до 0 = любой инструмент копал любой блок). */
-	/** BUG-071 ЦЕНТР (позиционный): требуемый уровень блока В ЭТОЙ ПОЗИЦИИ. Нужен потому, что мета порта у части
-	 *  иерархий занята под другое (prefix — ID материала, MTE — подтип в BE) и на harvest-путях вырождается в 0,
-	 *  а 1.7.10 держал в мете именно ТРЕБУЕМОЕ КАЧЕСТВО и звал getHarvestLevel(мета). Диспетчер тонкий: величину
-	 *  знает сам блок (контракт {@link gregapi.block.IBlock#getHarvestLevel(BlockGetter,int,int,int)}), ванильным —
-	 *  прежний путь через tier-теги. Потребители — мосты добычи (право и скорость) в GT_API_Proxy. */
+	/** F9-harvest-level CENTER: 1.7.10 Block.getHarvestLevel(int aMeta) (numeric required harvest level 0=wood/
+	 *  1=stone/2=iron/3=diamond) was removed by NAME, but the capability exists under neo's tag model. A GT6 block stores its own level
+	 *  (BlockBase.getHarvestLevel(meta)); a vanilla block — via neo tier tags BlockTags.NEEDS_*_TOOL (the same meaning: which
+	 *  tool tier is required). Direct mapping STONE=1/IRON=2/DIAMOND=3, otherwise 0. Used in the "tool
+	 *  strong enough" check (MultiItemTool.getDigSpeed:517, used to be degraded to 0 = any tool dug any block). */
+	/** BUG-071 CENTER (positional): the required block level AT THIS POSITION. Needed because in the port, meta for some
+	 *  hierarchies is taken by something else (prefix — material ID, MTE — subtype in the BE) and degenerates to 0 on harvest paths,
+	 *  while 1.7.10 held the REQUIRED QUALITY right in meta and called getHarvestLevel(meta). The dispatcher is thin: the
+	 *  value is known by the block itself (contract {@link gregapi.block.IBlock#getHarvestLevel(BlockGetter,int,int,int)}), for vanilla —
+	 *  the previous path via tier tags. Consumers — the harvest bridges (permission and speed) in GT_API_Proxy. */
 	public static int harvestLevel(BlockGetter aWorld, int aX, int aY, int aZ) {
 		Block tBlock = block(aWorld, aX, aY, aZ);
 		if (tBlock instanceof gregapi.block.IBlock tGT) return tGT.getHarvestLevel(aWorld, aX, aY, aZ);
 		return harvestLevel(tBlock, meta(aWorld, aX, aY, aZ));
 	}
 	public static int harvestLevel(Block aBlock, int aMeta) {
-		// диспатч по КОНТРАКТУ IBlock (все GT6-иерархии: BlockBase/MTE-Block/Internal/Prefix/Rail — общего предка нет;
-		// прежний instanceof BlockBase был слеп к MTE → машины «без уровня» — класс «две Block-иерархии»)
+		// dispatch by the IBlock CONTRACT (all GT6 hierarchies: BlockBase/MTE-Block/Internal/Prefix/Rail — no common ancestor;
+		// the previous instanceof BlockBase was blind to MTE → machines "without a level" — class "two Block hierarchies")
 		if (aBlock instanceof gregapi.block.IBlock tBlock) return tBlock.getHarvestLevel(aMeta);
-		// точные данные оригинала перед обобщением по tier-тегам; 1.7.10-дефолт «уровень не задан» = -1
-		// (Block.java:2490), и он переносится как есть: потребители клампят его сами тем же приёмом, что
-		// оригинал (`MultiItemTool.java:482` bind4 → 0), а сравнение «инструмент сильнее» с -1 верно и так
+		// exact original data before falling back to tier tags; the 1.7.10 default "level not set" = -1
+		// (Block.java:2490), and it is carried over as-is: consumers clamp it themselves the same way
+		// the original does (`MultiItemTool.java:482` bind4 → 0), and the "tool is stronger" comparison against -1 is correct anyway
 		// (`ForgeHooks.java:115`).
 		VanillaPassport tPassport = vanillaPassport(aBlock);
 		if (tPassport != null) return tPassport.mLevel();
@@ -580,33 +582,33 @@ public class WD {
 		if (tState.is(net.minecraft.tags.BlockTags.NEEDS_STONE_TOOL )) return 1;
 		return 0;
 	}
-	/** F-block-resistance ЦЕНТР: 1.7.10 {@code Block.setResistance(float)} — RUNTIME-правка explosion-resistance (GT усиливает
-	 *  vanilla-блоки против взрывов, глобально на общий Block-объект). neo {@code BlockBehaviour.explosionResistance} =
-	 *  {@code protected final float} (BlockBehaviour.java:81, присвоено в конструкторе — не inline-константа) → сеттера нет.
-	 *  Поле открыто Access Transformer'ом и пишется ПРЯМО — канон GT6 (ADR F2 §2.3), тот же приём, что у
-	 *  {@code Item.maxDamage} в {@code ST.setMaxDamage}. Рефлексии здесь больше нет: на 1.20.1 {@code Field.set}
-	 *  в final-поле не проходит вовсе (тот же класс дефекта, что дал 29 молчаливых отказов в {@code ST.setItem}).
-	 *  Читается поле живьём — {@code Block.getExplosionResistance()} → {@code return this.explosionResistance}
-	 *  (Block.java:336-337). GT6-1.7.10 делал ровно эту глобальную мутацию vanilla-блока. */
+	/** F-block-resistance CENTER: 1.7.10 {@code Block.setResistance(float)} — a RUNTIME patch of explosion-resistance (GT strengthens
+	 *  vanilla blocks against explosions, globally on the shared Block object). neo {@code BlockBehaviour.explosionResistance} =
+	 *  {@code protected final float} (BlockBehaviour.java:81, assigned in the constructor — not an inline constant) → no setter.
+	 *  The field is opened by the Access Transformer and written DIRECTLY — GT6 canon (ADR F2 §2.3), the same technique used by
+	 *  {@code Item.maxDamage} in {@code ST.setMaxDamage}. No reflection here: on 1.20.1 {@code Field.set}
+	 *  on a final field does not go through at all (the same defect class that gave 29 silent failures in {@code ST.setItem}).
+	 *  The field is read live — {@code Block.getExplosionResistance()} → {@code return this.explosionResistance}
+	 *  (Block.java:336-337). GT6-1.7.10 performed exactly this global mutation of the vanilla block. */
 	public static void setResistance(Block aBlock, float aResistance) {
 		if (aBlock != null) aBlock.explosionResistance = aResistance;
 	}
-	/** F-tool ЦЕНТР: 1.7.10 {@code Block.getHarvestTool(int aMeta)} (Forge-точка на vanilla Block, строка-тип
-	 *  инструмента "pickaxe"/"shovel"/"axe"...) удалён по ИМЕНИ; GT6-блок хранит ({@code BlockBase.getHarvestTool(meta)}),
-	 *  vanilla-блок → "" (как ядро инлайнит UT.java:1202, ItemBlockBase:109). Централизует инлайн {@code instanceof BlockBase}. */
-	/** BUG-071 ЦЕНТР: уровень ИНСТРУМЕНТА для заданного класса — 1:1 {@code Item.getHarvestLevel(stack, toolClass)}
-	 *  из 1.7.10 (recompSrc {@code Item.java:1457-1461}: карта {@code toolClasses} класс→уровень, {@code -1} если класс
-	 *  предмету чужой). Инструменты GT6 отвечают своим методом (тот же, что и в оригинале). У ванильных предметов в neo
-	 *  карты классов больше нет: принадлежность классу выражена ТЕГОМ предмета, а числового яруса нет вовсе (заменён
-	 *  тегами {@code INCORRECT_FOR_*_TOOL}) — поэтому ярус спрашиваем У ДВИЖКА эталонными блоками (needs_stone/iron/
-	 *  diamond), а не таблицей констант. Ответ кэшируем по предмету: набор ванильных ярусов за игру не меняется. */
+	/** F-tool CENTER: 1.7.10 {@code Block.getHarvestTool(int aMeta)} (a Forge hook on vanilla Block, string-typed
+	 *  tool "pickaxe"/"shovel"/"axe"...) was removed by NAME; a GT6 block stores it ({@code BlockBase.getHarvestTool(meta)}),
+	 *  a vanilla block → "" (as the core inlines UT.java:1202, ItemBlockBase:109). Centralizes the inline {@code instanceof BlockBase}. */
+	/** BUG-071 CENTER: the TOOL level for a given class — 1:1 {@code Item.getHarvestLevel(stack, toolClass)}
+	 *  from 1.7.10 (recompSrc {@code Item.java:1457-1461}: a {@code toolClasses} class→level map, {@code -1} if the class
+	 *  is foreign to the item). GT6 tools answer through their own method (same as the original). Vanilla items in neo
+	 *  no longer have a class map at all: class membership is expressed by an item TAG, and there is no numeric tier at all (replaced
+	 *  by {@code INCORRECT_FOR_*_TOOL} tags) — so we ask the ENGINE with reference blocks (needs_stone/iron/
+	 *  diamond) for the tier instead of a constants table. The answer is cached per item: the set of vanilla tiers never changes during a game. */
 	public static int toolLevel(ItemStack aStack, String aToolClass) {
 		if (ST.invalid(aStack) || !UT.Code.stringValid(aToolClass)) return -1;
 		if (aStack.getItem() instanceof gregapi.item.multiitem.MultiItemTool tTool) return tTool.getHarvestLevel(aStack, aToolClass);
 		if (!vanillaToolClassMatches(aStack, aToolClass)) return -1;
 		return vanillaToolTier(aStack);
 	}
-	/** Принадлежность ванильного предмета классу инструмента (1.7.10: наличие ключа в {@code toolClasses}). */
+	/** Whether a vanilla item belongs to a tool class (1.7.10: presence of the key in {@code toolClasses}). */
 	private static boolean vanillaToolClassMatches(ItemStack aStack, String aToolClass) {
 		switch (aToolClass) {
 		case TOOL_pickaxe: return aStack.is(net.minecraft.tags.ItemTags.PICKAXES);
@@ -615,12 +617,12 @@ public class WD {
 		case TOOL_hoe    : return aStack.is(net.minecraft.tags.ItemTags.HOES);
 		case TOOL_sword  : return aStack.is(net.minecraft.tags.ItemTags.SWORDS);
 		case TOOL_shears : return aStack.getItem() == net.minecraft.world.item.Items.SHEARS;
-		default          : return F; // wrench/crowbar/cutter/… — ванильных носителей этих классов не существует
+		default          : return F; // wrench/crowbar/cutter/… — no vanilla carriers of these classes exist
 		}
 	}
-	/** Числовой ярус ванильного инструмента (0..3) — спрашиваем движок эталонами, кэш по предмету.
-	 *  Публичный, потому что ту же величину показывают стенды (`gt6toolmatrixprobe`/`gt6toolyard`): второй копии
-	 *  этой лесенки в дереве быть не должно — она была заведена дважды и сведена сюда. */
+	/** Numeric tier of a vanilla tool (0..3) — asked from the engine via reference blocks, cached per item.
+	 *  Public because rigs display the same value (`gt6toolmatrixprobe`/`gt6toolyard`): a second copy of
+	 *  this ladder must not exist in the tree — it was set up twice and was consolidated here. */
 	private static final Map<net.minecraft.world.item.Item, Integer> VANILLA_TOOL_TIERS = new HashMap<>();
 	public static int vanillaToolTier(ItemStack aStack) {
 		Integer tCached = VANILLA_TOOL_TIERS.get(aStack.getItem());
@@ -630,42 +632,42 @@ public class WD {
 			if (aStack.isCorrectToolForDrops(Blocks.IRON_ORE.defaultBlockState()))    rTier = 1; // needs_stone_tool
 			if (aStack.isCorrectToolForDrops(Blocks.DIAMOND_ORE.defaultBlockState())) rTier = 2; // needs_iron_tool
 			if (aStack.isCorrectToolForDrops(Blocks.OBSIDIAN.defaultBlockState()))    rTier = 3; // needs_diamond_tool
-		} catch (Throwable e) {/* эталон недоступен — остаётся 0 */}
+		} catch (Throwable e) {/* reference block unavailable — stays 0 */}
 		VANILLA_TOOL_TIERS.put(aStack.getItem(), rTier);
 		return rTier;
 	}
 
-	/** F-tool ЦЕНТР (продолжение): у ванильных блоков класс инструмента 1.7.10 ЗАДАН ДАННЫМИ, а не выводим —
-	 *  ни один neo-тег ему не равен ({@code MINEABLE_WITH_*} шире: держит двери, заборы, бочки, листву, а
-	 *  класса {@code hoe} у ванили 1.7.10 не было вовсе). Берём из паспорта; вне таблицы — {@code ""}, что для
-	 *  правила добычи равносильно 1.7.10-дефолту {@code null} («спроси ванильное правило», {@code ForgeHooks:104}),
-	 *  поскольку все потребители сверяют класс через {@code equalsIgnoreCase} и пустая строка не совпадает ни с чем. */
+	/** F-tool CENTER (continued): for vanilla blocks the 1.7.10 tool class is DATA-DEFINED, not derived —
+	 *  no neo tag is equivalent to it ({@code MINEABLE_WITH_*} is broader: it covers doors, fences, barrels, foliage, and
+	 *  a {@code hoe} class did not exist for 1.7.10 vanilla at all). Taken from the passport; outside the table — {@code ""}, which for
+	 *  the harvest rule is equivalent to the 1.7.10 default {@code null} ("ask the vanilla rule", {@code ForgeHooks:104}),
+	 *  since all consumers compare the class via {@code equalsIgnoreCase} and an empty string matches nothing. */
 	public static String harvestTool(Block aBlock, int aMeta) {
-		// диспатч по КОНТРАКТУ IBlock (см. harvestLevel выше: instanceof BlockBase был слеп к MTE/Prefix/Rail —
-		// ключ не «видел» машину своим блоком → canHarvestBlock=false → машина не добывалась ВООБЩЕ после
-		// requiresCorrectToolForDrops; поймано судьёй gt6seamprobe)
+		// dispatch by the IBlock CONTRACT (see harvestLevel above: instanceof BlockBase was blind to MTE/Prefix/Rail —
+		// the key did not "see" the machine as its own block → canHarvestBlock=false → the machine was NOT harvestable at all after
+		// requiresCorrectToolForDrops; caught by the gt6seamprobe judge)
 		if (aBlock instanceof gregapi.block.IBlock tBlock) return tBlock.getHarvestTool(aMeta);
 		VanillaPassport tPassport = vanillaPassport(aBlock);
 		return tPassport != null && tPassport.mTool() != null ? tPassport.mTool() : "";
 	}
 	/**
-	 * BUG-071 ЦЕНТР ПРАВА НА ДРОП — один на весь мод. Дословный перенос Forge 1.7.10
+	 * BUG-071 SINGLE center for drop-eligibility — one for the whole mod. Verbatim port of Forge 1.7.10
 	 * {@code ForgeHooks.canHarvestBlock} ({@code gt6-original build/tmp/recompSrc/net/minecraftforge/common/
-	 * ForgeHooks.java:95-116}): материал без требования → можно; нет стека / класс инструмента блоку не задан →
-	 * ванильный вердикт; уровень инструмента &lt; 0 (класс предмету чужой) → ванильный вердикт; иначе сравнение
-	 * УРОВНЕЙ по позиции.
+	 * ForgeHooks.java:95-116}): material with no requirement -> allowed; no stack / block has no tool class assigned ->
+	 * vanilla verdict; tool level &lt; 0 (class foreign to the item) -> vanilla verdict; otherwise compare
+	 * LEVELS at the position.
 	 *
-	 * <p><b>Ветка 1.20.1 — сменился ДОМ, не правило.</b> В 26.x единственной точкой был обработчик события
-	 * {@code PlayerEvent.HarvestCheck}, потому что там событие несло мир и позицию. В 1.20.1 оно их не несёт вовсе
-	 * ({@code PlayerEvent.java:69-81} — только player + state + success), а мир с позицией даёт другой хук того же
-	 * движка: {@code IForgeBlock.canHarvestBlock(BlockState, BlockGetter, BlockPos, Player)}
-	 * ({@code IForgeBlock.java:167-170}), и именно через него движок и спрашивает
+	 * <p><b>Branch 1.20.1 — the HOME changed, not the rule.</b> On 26.x the single entry point was the
+	 * {@code PlayerEvent.HarvestCheck} event handler, because that event carried the world and the position. On 1.20.1 it
+	 * does not carry them at all ({@code PlayerEvent.java:69-81} — only player + state + success), while the world and
+	 * position come from a different hook of the same engine: {@code IForgeBlock.canHarvestBlock(BlockState, BlockGetter, BlockPos, Player)}
+	 * ({@code IForgeBlock.java:167-170}), and this is exactly the hook the engine asks through
 	 * ({@code Player.hasCorrectToolForDrops(state, level, pos)} → {@code IForgeBlockState.canHarvestBlock}).
-	 * Поэтому правило переехало сюда, а корни блоков GT6 его лишь зовут.</p>
+	 * So the rule moved here, and the GT6 block roots merely call it.</p>
 	 *
-	 * <p>Зачем оно вообще: без позиции правило считается как {@code Item.isCorrectToolForDrops(stack, state)}, а у
-	 * GT6 подтип блока живёт в BlockEntity/карте чанка — на этом пути мета вырождается в 0, и требуемый уровень
-	 * становился нулевым для ВСЕХ руд и машин (BUG-071, замер gt6harvestprobe).</p>
+	 * <p>Why it matters at all: without a position the rule is computed as {@code Item.isCorrectToolForDrops(stack, state)},
+	 * and GT6's block subtype lives in the BlockEntity/chunk map — on that path meta degenerates to 0, and the required level
+	 * became zero for ALL ores and machines (BUG-071, measured by gt6harvestprobe).</p>
 	 */
 	public static boolean canHarvestBlock(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.entity.player.Player aPlayer) {
 		try {
@@ -675,16 +677,16 @@ public class WD {
 			String tTool = harvestTool(tBlock, meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));
 			if (gregapi.util.ST.invalid(tStack) || !UT.Code.stringValid(tTool)) return net.minecraftforge.common.ForgeHooks.isCorrectToolForDrops(aState, aPlayer); // :102-107
 			int tToolLevel = toolLevel(tStack, tTool);
-			if (tToolLevel < 0) return net.minecraftforge.common.ForgeHooks.isCorrectToolForDrops(aState, aPlayer);        // :109-113 — класс чужой
+			if (tToolLevel < 0) return net.minecraftforge.common.ForgeHooks.isCorrectToolForDrops(aState, aPlayer);        // :109-113 — class foreign to the item
 			return tToolLevel >= harvestLevel(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());                              // :115
 		} catch (Throwable e) {
-			// право на дроп не должно ронять разрушение блока — падаем на ванильный вердикт
+			// drop eligibility must not crash block destruction — fall back to the vanilla verdict
 			return net.minecraftforge.common.ForgeHooks.isCorrectToolForDrops(aState, aPlayer);
 		}
 	}
 
-	/** F-motion: 1.7.10 WD.motionX(Entity)/Y/Z (public поля) -> neo Vec3 getDeltaMovement()/setDeltaMovement (Entity.java).
-	 *  Покомпонентная запись обязана сохранять две другие оси -> централизуем здесь ОДИН раз (философия §2). */
+	/** F-motion: 1.7.10 WD.motionX(Entity)/Y/Z (public fields) -> neo Vec3 getDeltaMovement()/setDeltaMovement (Entity.java).
+	 *  Component-wise writes must preserve the other two axes -> centralize here ONCE (philosophy §2). */
 	public static double motionX(Entity aEntity) {return aEntity.getDeltaMovement().x;}
 	public static double motionY(Entity aEntity) {return aEntity.getDeltaMovement().y;}
 	public static double motionZ(Entity aEntity) {return aEntity.getDeltaMovement().z;}
@@ -697,42 +699,42 @@ public class WD {
 	 *  true for partial occluders (slabs, stairs) AND for every GT6 cross block (Properties lack noOcclusion),
 	 *  so WD.set stripped grass under saplings on placement (original WD.java:482 passed isOpaqueCube). */
 	public static boolean opaque(Block aBlock) {return aBlock.defaultBlockState().isSolidRender(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO);}
-	/** F-harvest-event (decisions/): 1.7.10 {@code ForgeEventFactory.fireBlockHarvesting} фаерил HarvestDropsEvent —
-	 *  внешние моды правили список дропа и шанс, метод возвращал шанс. neo: модель дропов = движко-fired
-	 *  {@code BlockDropsEvent} при спавне через loot-систему, ПРЯМОГО EventHooks-эквивалента НЕТ (сверено
-	 *  neoforge/event/EventHooks.java). GT6 спавнит дроп ВРУЧНУЮ ({@code WD.dropBlockAsItem}), минуя loot; no-op:
-	 *  возвращаем {@code aDropChance} как есть, GT6-дроп сохранён 1:1. F-harvest-event impossible-1:1: хук
-	 *  внешне-модовой модификации дропа в neo нет для manual-drop пути; GT6-дроп 1:1. */
+	/** F-harvest-event (decisions/): 1.7.10 {@code ForgeEventFactory.fireBlockHarvesting} fired HarvestDropsEvent —
+	 *  external mods edited the drop list and chance, the method returned the chance. neo: the drop model = engine-fired
+	 *  {@code BlockDropsEvent} on spawning through the loot system, there is NO DIRECT EventHooks equivalent (checked against
+	 *  neoforge/event/EventHooks.java). GT6 spawns the drop MANUALLY ({@code WD.dropBlockAsItem}), bypassing loot; no-op:
+	 *  return {@code aDropChance} as-is, GT6 drop preserved 1:1. F-harvest-event impossible-1:1: a hook for
+	 *  external-mod drop modification does not exist in neo for the manual-drop path; GT6 drop 1:1. */
 	public static float fireBlockHarvesting(java.util.List<ItemStack> aDrops, Level aWorld, Block aBlock, int aX, int aY, int aZ, int aMeta, int aFortune, float aDropChance, boolean aSilkTouch, Player aPlayer) {return aDropChance;}
-	/** F-render: 1.7.10 Block-нормальный-куб = isOpaque && renderAsNormalBlock && !canProvidePower — ТОЧНО «redstone
-	 *  conductor» (полный непрозрачный блок, не источник сигнала). neo BlockState.isRedstoneConductor(BlockGetter,
-	 *  BlockPos) (BlockBehaviour.java:616) — канонический преемник (§8). */
+	/** F-render: 1.7.10 Block-normal-cube = isOpaque && renderAsNormalBlock && !canProvidePower — EXACTLY a "redstone
+	 *  conductor" (a full opaque block, not a signal source). neo BlockState.isRedstoneConductor(BlockGetter,
+	 *  BlockPos) (BlockBehaviour.java:616) — the canonical successor (§8). */
 	public static boolean normalCube(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 		return aBlock.defaultBlockState().isRedstoneConductor(aWorld, new BlockPos(aX, aY, aZ));
 	}
 	/** F-plant: 1.7.10 Block.canSustainPlant(IBlockAccess,x,y,z,side,IPlantable):boolean -> neo
-	 *  IBlockExtension.canSustainPlant(BlockState,BlockGetter,BlockPos,Direction,BlockState):TriState (растение как
-	 *  BlockState, не IPlantable). ЦЕНТР перевода на весь мод. Не-DEFAULT ответ почвы — её слово (хуки модов и
-	 *  GT6-блоков: BlockStones:644, MultiTileEntityBlock:474). DEFAULT: в 1.7.10 его НЕ СУЩЕСТВОВАЛО — решала
-	 *  таблица почв Block.canSustainPlant:2237-2252 (recompSrc) по типу растения; воспроизводится дословно, тип
-	 *  выражен тем же ванильным блоком-представителем, каким вызыватели выражали IPlantable. Расщеплённые семьи
-	 *  (dirt:0..2 -> DIRT/COARSE_DIRT/PODZOL, sand:0..1 -> SAND/RED_SAND) — через центр Flattened (headOf).
-	 *  ⛔ Прежнее тело сворачивало toBoolean(F): DEFAULT становился «не растёт» — саженцы деревьев GT6 сносило с
-	 *  травы первым же тиком, цветы-B не держались на песке; копии с toBoolean(T) в цветах/саженцах наоборот
-	 *  держали цветок на камне и в воздухе (замер gt6flowerprobe, 2026-07-30). */
+	 *  IBlockExtension.canSustainPlant(BlockState,BlockGetter,BlockPos,Direction,BlockState):TriState (plant expressed as
+	 *  BlockState, not IPlantable). CENTER for the whole mod's translation. A non-DEFAULT soil answer is its own word (mod hooks and
+	 *  GT6 blocks: BlockStones:644, MultiTileEntityBlock:474). DEFAULT: it DID NOT EXIST in 1.7.10 — the soil
+	 *  table Block.canSustainPlant:2237-2252 (recompSrc) decided by plant type; reproduced verbatim, the type
+	 *  is expressed by the same vanilla representative block that callers used to express IPlantable. Split families
+	 *  (dirt:0..2 -> DIRT/COARSE_DIRT/PODZOL, sand:0..1 -> SAND/RED_SAND) — via the Flattened center (headOf).
+	 *  ⛔ The previous body collapsed toBoolean(F): DEFAULT became "does not grow" — GT6 tree saplings were knocked off
+	 *  grass on the very first tick, B-flowers did not hold on sand; copies with toBoolean(T) in flowers/saplings, conversely,
+	 *  held the flower on stone and in mid-air (measurement gt6flowerprobe, 2026-07-30). */
 	public static boolean canSustainPlant(LevelAccessor aWorld, int aX, int aY, int aZ, Direction aSide, Block aPlant) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockState tSoil = state(aWorld, tPos);
-		// Ветка 1.20.1: хук отдаёт boolean и принимает IPlantable (Block.java:514) — форма 1.7.10 дословно;
-		// «плант решает сам» (TriState.DEFAULT 26.x) выражается тем, что при false мы идём дальше по своим правилам.
+		// Branch 1.20.1: the hook returns boolean and takes IPlantable (Block.java:514) — the 1.7.10 form verbatim;
+		// "the plant decides itself" (TriState.DEFAULT on 26.x) is expressed by falling through to our own rules on false.
 		if (aPlant instanceof net.minecraftforge.common.IPlantable tPlantable && tSoil.getBlock().canSustainPlant(tSoil, aWorld, tPos, aSide, tPlantable)) return T;
 		Block tSelf = tSoil.getBlock(), tHead = gregapi.data.CS.Flattened.headOf(tSelf);
 		if (tHead == null) tHead = tSelf;
 		// ADAPT-015: vanilla mud is the single mud and carries the soil rule of BlockDiggable meta 0 — reeds,
 		// bushes and Plains/Water/Desert/Beach grow, Crop and Nether do not (BlockDiggable canSustainPlant).
 		if (tSelf == Blocks.MUD) return aPlant != Blocks.WHEAT && aPlant != Blocks.NETHER_WART;
-		if (aPlant == Blocks.CACTUS)      return tSelf == Blocks.CACTUS || tHead == Blocks.SAND;  // кактус-на-кактусе (:2222) + Desert (:2239)
-		if (aPlant == Blocks.SUGAR_CANE)  return tSelf == Blocks.SUGAR_CANE                       // тростник-на-тростнике (:2227) + Beach (:2245-2251)
+		if (aPlant == Blocks.CACTUS)      return tSelf == Blocks.CACTUS || tHead == Blocks.SAND;  // cactus-on-cactus (:2222) + Desert (:2239)
+		if (aPlant == Blocks.SUGAR_CANE)  return tSelf == Blocks.SUGAR_CANE                       // reed-on-reed (:2227) + Beach (:2245-2251)
 			|| ((tSelf == Blocks.GRASS_BLOCK || tHead == Blocks.DIRT || tHead == Blocks.SAND)
 				&& (state(aWorld, tPos.west()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
 				 || state(aWorld, tPos.east()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
@@ -740,90 +742,90 @@ public class WD {
 				 || state(aWorld, tPos.south()).getFluidState().is(net.minecraft.tags.FluidTags.WATER)));
 		if (aPlant == Blocks.NETHER_WART) return tSelf == Blocks.SOUL_SAND;                       // Nether (:2240)
 		if (aPlant == Blocks.WHEAT)       return tSelf == Blocks.FARMLAND;                        // Crop (:2241)
-		if (aPlant == Blocks.LILY_PAD)    return tSoil.getFluidState().isSource() && tSoil.getFluidState().is(net.minecraft.tags.FluidTags.WATER); // Water (:2244: материал water + мета 0)
-		// Plains (:2243) — дефолтный тип BlockBush 1.7.10 (цветы, саженцы, травы)
+		if (aPlant == Blocks.LILY_PAD)    return tSoil.getFluidState().isSource() && tSoil.getFluidState().is(net.minecraft.tags.FluidTags.WATER); // Water (:2244: material water + meta 0)
+		// Plains (:2243) — the default BlockBush type in 1.7.10 (flowers, saplings, grasses)
 		return tSelf == Blocks.GRASS_BLOCK || tHead == Blocks.DIRT || tSelf == Blocks.FARMLAND;
 	}
-	/** F-spawn: 1.7.10 {@code World.setSpawnLocation(x,y,z)}. Ветка 1.20.1: форма сохранилась почти дословно —
-	 *  {@code ServerLevel.setDefaultSpawnPos(BlockPos, float)} (записи RespawnData из 26.x здесь нет).
-	 *  Централизованный переходник (worldgen задаёт мир-спавн). */
+	/** F-spawn: 1.7.10 {@code World.setSpawnLocation(x,y,z)}. Branch 1.20.1: the form survived almost verbatim —
+	 *  {@code ServerLevel.setDefaultSpawnPos(BlockPos, float)} (no RespawnData record from 26.x here).
+	 *  Centralized adapter (worldgen sets the world spawn). */
 	public static void setSpawnLocation(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		if (aWorld instanceof net.minecraft.server.level.ServerLevel sl) sl.setDefaultSpawnPos(new BlockPos(aX, aY, aZ), 0.0F);
 	}
-	/** F-worldgen: 1.7.10 {@code Arrays.fill(chunk.getBiomeArray(), (byte)Biome.X.biomeID)} — byte-массив биомов удалён;
-	 *  neo хранит биомы в per-section {@code PalettedContainer<Holder<Biome>>} (RO), единственный сеттер —
-	 *  {@code ChunkAccess.fillBiomesFromNoise(BiomeResolver, Climate.Sampler)} (ChunkAccess:447). Центр: заполняет весь
-	 *  чанк одним биомом через constant-resolver. Числовой biomeID в neo отсутствует -> адрес по {@code ResourceKey<Biome>}. */
+	/** F-worldgen: 1.7.10 {@code Arrays.fill(chunk.getBiomeArray(), (byte)Biome.X.biomeID)} — the byte biome array is gone;
+	 *  neo stores biomes in a per-section {@code PalettedContainer<Holder<Biome>>} (RO), the only setter is
+	 *  {@code ChunkAccess.fillBiomesFromNoise(BiomeResolver, Climate.Sampler)} (ChunkAccess:447). Center: fills the whole
+	 *  chunk with one biome via a constant-resolver. neo has no numeric biomeID -> addressed by {@code ResourceKey<Biome>}. */
 	public static void setBiomes(LevelAccessor aWorld, ChunkAccess aChunk, net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome> aBiome) {
 		if (!(aWorld instanceof net.minecraft.server.level.ServerLevel tSL)) return;
 		net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> tHolder = aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getOrThrow(aBiome);
 		aChunk.fillBiomesFromNoise((qx, qy, qz, sampler) -> tHolder, tSL.getChunkSource().randomState().sampler());
 	}
-	/** F-worldgen: 1.7.10 {@code new WorldGenTrees(...).generate(world,rng,x,y,z)} (WorldGenTrees удалён) -> neo
-	 *  Feature-система: размещаем ванильное {@code TreeFeatures.OAK} {@link net.minecraft.world.level.levelgen.feature.ConfiguredFeature#place}
-	 *  (ConfiguredFeature:24). FORCED-ADAPTATION: 1.7.10-параметры высоты/меты дерева -> фикс-конфиг OAK (косметика). */
+	/** F-worldgen: 1.7.10 {@code new WorldGenTrees(...).generate(world,rng,x,y,z)} (WorldGenTrees is gone) -> neo
+	 *  feature system: place the vanilla {@code TreeFeatures.OAK} {@link net.minecraft.world.level.levelgen.feature.ConfiguredFeature#place}
+	 *  (ConfiguredFeature:24). FORCED-ADAPTATION: 1.7.10 tree height/meta parameters -> a fixed OAK config (cosmetic). */
 	public static void placeTree(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		if (!(aWorld instanceof net.minecraft.server.level.ServerLevel tSL)) return;
 		aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE).getOrThrow(net.minecraft.data.worldgen.features.TreeFeatures.OAK).value().place(tSL, tSL.getChunkSource().getGenerator(), tSL.getRandom(), new BlockPos(aX, aY, aZ));
 	}
-	/** F-dimension: 1.7.10 World-провайдер числовой id -> neo числового id НЕТ (Level.dimension() =
-	 *  ResourceKey<Level>). Ванильные 1:1: overworld=0, nether=-1, end=1 (Level.java:95-97). F-dimension impossible-1:1 (neo int-dim-id нет; vanilla 0/-1/1 работают 1:1, modded->hash),
-	 *  modded-dim-id): модовым измерениям стабильного int в neo нет -> hash ключа (уникален в рамках сессии, но
-	 *  switch-кейсы GT6 всё равно только на ванильных 0/-1/1, модовые -> default; NBT-персист модового id деградирует). */
+	/** F-dimension: 1.7.10 World-provider numeric id -> neo has NO numeric id (Level.dimension() =
+	 *  ResourceKey<Level>). Vanilla 1:1: overworld=0, nether=-1, end=1 (Level.java:95-97). F-dimension impossible-1:1 (neo has no int-dim-id; vanilla 0/-1/1 work 1:1, modded->hash),
+	 *  modded-dim-id): modded dimensions have no stable int in neo -> a hash of the key (unique within a session, but
+	 *  GT6's switch-cases only match vanilla 0/-1/1 anyway, modded -> default; NBT-persisted modded id degrades). */
 	public static int dimensionId(LevelAccessor aWorld) {
 		if (aWorld == null) return 0;
 		net.minecraft.resources.ResourceKey<Level> tKey = dimKey(aWorld);
 		if (tKey == Level.OVERWORLD) return 0;
 		if (tKey == Level.NETHER) return -1;
 		if (tKey == Level.END) return 1;
-		return tKey == null ? 0 : tKey.location().hashCode(); // neo ResourceKey: location()->identifier() (ResourceKey.java:52); null-ключ (экзотический LevelAccessor без Level/ServerLevelAccessor) -> 0 как overworld-дефолт
+		return tKey == null ? 0 : tKey.location().hashCode(); // neo ResourceKey: location()->identifier() (ResourceKey.java:52); a null key (exotic LevelAccessor without Level/ServerLevelAccessor) -> 0 as the overworld default
 	}
-	/** F9: 1.7.10 WD.getMaterial(Block) удалён в neo (класс Material убран). GT6-блок (BlockBase) хранит портированный
-	 *  gregapi.block.Material; ванильные блоки 1.7.10 отвечают ТОЧНЫМИ данными оригинала — паспорт
-	 *  {@link #vanillaPassport} (171 запись, снята оракулом с живого 1.7.10). Ниже — обобщения по идентичности
-	 *  и neo-тегам: они обслуживают то, чего в паспорте нет по существу — расщеплённые neo-семьи (flatten) и
-	 *  блоки, которых в 1.7.10 НЕ СУЩЕСТВОВАЛО (медь, глубинный сланец, кораллы…). Для последних ответа
-	 *  оригинала не существует в природе, поэтому хвост {@code Material.rock} — не отложенный долг переноса,
-	 *  а классификация нового контента (журнал адаптаций), и она не участвует в паритете против 1.7.10. */
+	/** F9: 1.7.10 WD.getMaterial(Block) was removed in neo (the Material class is gone). A GT6 block (BlockBase) stores its ported
+	 *  gregapi.block.Material; 1.7.10 vanilla blocks answer with the EXACT data of the original — the passport
+	 *  {@link #vanillaPassport} (171 entries, taken by the oracle from a live 1.7.10). Below — generalizations by identity
+	 *  and neo tags: they serve what is fundamentally absent from the passport — split neo families (flatten) and
+	 *  blocks that DID NOT EXIST in 1.7.10 (copper, deepslate, corals…). For the latter no original answer
+	 *  exists in nature, so the {@code Material.rock} tail is not deferred port debt,
+	 *  but a classification of new content (adaptation log), and it does not participate in parity against 1.7.10. */
 	/** F-sound: 1.7.10 WD.playStepSound(aWorld, x, y, z, block) —
-	 *  строковый sound-path + отдельный вызов. neo: SoundType через state.getSoundType() -> getStepSound() (SoundEvent),
-	 *  Level.playSound(null,x,y,z,SoundEvent,SoundSource.BLOCKS,vol,pitch) (Level.java:444). Формула шага 1:1 (едина
-	 *  у всех вызывателей: (vol+1)/2, pitch*0.8; `*0.5`≡`/2`). Центр берёт блок — SoundType из его defaultBlockState. */
+	 *  a string sound-path + a separate call. neo: SoundType via state.getSoundType() -> getStepSound() (SoundEvent),
+	 *  Level.playSound(null,x,y,z,SoundEvent,SoundSource.BLOCKS,vol,pitch) (Level.java:444). Step formula 1:1 (the same
+	 *  for all callers: (vol+1)/2, pitch*0.8; `*0.5`≡`/2`). The center takes the block — SoundType from its defaultBlockState. */
 	public static void playStepSound(Level aWorld, double aX, double aY, double aZ, Block aBlock) {
 		net.minecraft.world.level.block.SoundType tSound = aBlock.defaultBlockState().getSoundType();
-		// 1.7.10 вызыватели играли stepSound.func_150496_b() = ЗВУК УСТАНОВКИ (все вызыватели центра — place-пути) → getPlaceSound
+		// 1.7.10 callers played stepSound.func_150496_b() = PLACEMENT SOUND (all callers of this center are place paths) → getPlaceSound
 		aWorld.playSound(null, aX, aY, aZ, tSound.getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS, (tSound.getVolume() + 1.0F) / 2.0F, tSound.getPitch() * 0.8F);
 	}
-	/** F-sound ЦЕНТР: 1.7.10 {@code Block.stepSound} (public поле {@code Block.SoundType}) удалено; neo — SoundType через
-	 *  {@code defaultBlockState().getSoundType()} ({@code SoundType.java}). Запрос звук-типа блока — в одном месте. */
+	/** F-sound CENTER: 1.7.10 {@code Block.stepSound} (public field {@code Block.SoundType}) removed; neo — SoundType via
+	 *  {@code defaultBlockState().getSoundType()} ({@code SoundType.java}). Querying a block's sound type — in one place. */
 	public static net.minecraft.world.level.block.SoundType soundType(Block aBlock) {
 		return aBlock.defaultBlockState().getSoundType();
 	}
 	/**
-	 * ПАСПОРТ ВАНИЛЬНОГО БЛОКА 1.7.10 — ДАННЫЕ, снятые с ЖИВОГО оригинала, а не выведенные из neo-тегов.
+	 * PASSPORT OF A 1.7.10 VANILLA BLOCK — DATA taken from the LIVE original, not derived from neo tags.
 	 *
-	 * <p>1.7.10 держал у каждого {@code Block} три поля, удалённые в neo ПО ИМЕНИ: {@code blockMaterial},
-	 * {@code harvestTool[16]} (дефолт <b>null</b>, {@code Block.java:2489}) и {@code harvestLevel[16]}
-	 * (дефолт <b>-1</b>, {@code :2490}). Значения ванильным блокам проставляли ДВА источника, и ни один
-	 * из них не выражается neo-тегами:</p>
+	 * <p>1.7.10 held three fields on every {@code Block}, removed in neo BY NAME: {@code blockMaterial},
+	 * {@code harvestTool[16]} (default <b>null</b>, {@code Block.java:2489}) and {@code harvestLevel[16]}
+	 * (default <b>-1</b>, {@code :2490}). Vanilla block values were set by TWO sources, and neither
+	 * of them is expressible by neo tags:</p>
 	 * <ol>
-	 *   <li>Forge — {@code ForgeHooks.initTools} ({@code ForgeHooks.java:154-189}): три списка
-	 *       ({@code ItemPickaxe:11}, {@code ItemSpade:11}, {@code ItemAxe:11}) + 9 явных строк.
-	 *       Класса {@code hoe} у ванили нет НИ У ОДНОГО блока — тег {@code MINEABLE_WITH_HOE} ему не равен;</li>
-	 *   <li>сам GT6 — {@code gregtech6/.../GT_API.java:204-209} (кровать/губка/сено под топор, TNT и
-	 *       «яйцо монстра» под кирку, обсидиан на уровень 3). В neo runtime-мутатора чужого блока нет
-	 *       ({@link gregapi.GT_API} помечает это), но мод спрашивает НЕ движок, а этот центр — поэтому
-	 *       функция восстановима без мутации ванили.</li>
+	 *   <li>Forge — {@code ForgeHooks.initTools} ({@code ForgeHooks.java:154-189}): three lists
+	 *       ({@code ItemPickaxe:11}, {@code ItemSpade:11}, {@code ItemAxe:11}) + 9 explicit strings.
+	 *       No vanilla block has a {@code hoe} class at all — the {@code MINEABLE_WITH_HOE} tag is not equivalent to it;</li>
+	 *   <li>GT6 itself — {@code gregtech6/.../GT_API.java:204-209} (bed/sponge/hay to axe, TNT and
+	 *       the "monster egg" to pickaxe, obsidian to level 3). neo has no runtime mutator for a foreign block
+	 *       ({@link gregapi.GT_API} flags this), but the mod asks NOT the engine but this center — so the
+	 *       function is recoverable without mutating vanilla.</li>
 	 * </ol>
 	 *
-	 * <p>Таблица ниже <b>сгенерирована</b> из golden-набора {@code engine_block_passport.csv}
-	 * (оракул {@code DumpEngine.dumpBlockPassport} на живом 1.7.10) — 171 запись, по одной на ванильный
-	 * блок оригинала; величины не придуманы и не обобщены. Сверяется тем же набором в
+	 * <p>The table below is <b>generated</b> from the golden set {@code engine_block_passport.csv}
+	 * (oracle {@code DumpEngine.dumpBlockPassport} on a live 1.7.10) — 171 entries, one per original vanilla
+	 * block; values are not invented or generalized. Verified against the same set in
 	 * {@code PortDump.dumpBlockPassport}.</p>
 	 *
-	 * <p>Блоки, которых в 1.7.10 не было, и расщеплённые семьи (neo-flatten: {@code leaves}/{@code leaves2}
-	 * → 12 видов листвы и т.п.) в таблице по имени не находятся — их обслуживают ветки-обобщения ниже
-	 * по тегам, как и раньше.</p>
+	 * <p>Blocks that did not exist in 1.7.10, and split families (neo-flatten: {@code leaves}/{@code leaves2}
+	 * → 12 foliage variants, etc.) are not found in the table by name — they are served by the tag-based
+	 * generalization branches below, same as before.</p>
 	 */
 	private record VanillaPassport(Material mMaterial, String mTool, int mLevel) {}
 	private static final Map<String, VanillaPassport> VANILLA_PASSPORT_BY_NAME = new HashMap<>(256);
@@ -835,38 +837,38 @@ public class WD {
 	}
 
 	/**
-	 * ПЕРЕИМЕНОВАННЫЕ И РАСЩЕПЛЁННЫЕ СЕМЬИ: где искать паспорт 1.7.10, если имени в neo больше нет.
+	 * RENAMED AND SPLIT FAMILIES: where to look for the 1.7.10 passport if the name no longer exists in neo.
 	 *
-	 * <p>Здесь НЕТ величин — только адрес. Инструмент, тир и материал по-прежнему берутся из паспорта,
-	 * снятого с живого оригинала; эта карта лишь говорит, каким neo-блокам он принадлежит. Список конечный
-	 * и посчитан машиной: из 171 записи паспорта имён, которых в neo нет, ровно 57, и лишь 12 из них несут
-	 * инструмент — они и перечислены (замер 2026-08-06).</p>
+	 * <p>There are NO values here — only an address. Tool, tier and material are still taken from the passport
+	 * captured from the live original; this map only tells which neo blocks it belongs to. The list is finite
+	 * and machine-counted: of the 171 passport entries, names absent from neo number exactly 57, and only 12 of them carry
+	 * a tool — those are the ones listed (measurement 2026-08-06).</p>
 	 *
-	 * <p>Без этого доски и брёвна оставались «без инструмента»: в 1.7.10 вся порода жила под одним именем
-	 * {@code minecraft:planks}/{@code log}, а neo расщепил их на {@code oak_planks}, {@code birch_log} и так
-	 * далее. Игрок 2026-08-06: «на stone и рудах есть, а на гравии, песке, дереве, сундуке — нет».</p>
+	 * <p>Without this, planks and logs stayed "toolless": in 1.7.10 the whole wood type lived under one name
+	 * {@code minecraft:planks}/{@code log}, while neo split them into {@code oak_planks}, {@code birch_log} and so
+	 * on. Player 2026-08-06: "stone and ores have it, but gravel, sand, wood, chest — don't".</p>
 	 */
 	private static final Map<String, net.minecraft.tags.TagKey<Block>> PASSPORT_FAMILY = new LinkedHashMap<>();
 	private static final Map<String, String> PASSPORT_RENAMED = new LinkedHashMap<>();
 	static {
-		// одно имя 1.7.10 -> целая neo-семья
+		// one 1.7.10 name -> an entire neo family
 		PASSPORT_FAMILY.put("minecraft:planks", net.minecraft.tags.BlockTags.PLANKS);
-		PASSPORT_FAMILY.put("minecraft:log"   , net.minecraft.tags.BlockTags.LOGS  ); // и log2: тег общий, паспорт тот же (axe 0)
+		PASSPORT_FAMILY.put("minecraft:log"   , net.minecraft.tags.BlockTags.LOGS  ); // and log2: shared tag, same passport (axe 0)
 		PASSPORT_FAMILY.put("minecraft:bed"   , net.minecraft.tags.BlockTags.BEDS  );
 		PASSPORT_FAMILY.put("minecraft:snow_layer", net.minecraft.tags.BlockTags.SNOW);
-		// просто переименовано
+		// simply renamed
 		PASSPORT_RENAMED.put("minecraft:grass"      , "minecraft:grass_block");
 		PASSPORT_RENAMED.put("minecraft:golden_rail", "minecraft:powered_rail");
 		PASSPORT_RENAMED.put("minecraft:lit_pumpkin", "minecraft:jack_o_lantern");
 		PASSPORT_RENAMED.put("minecraft:quartz_ore" , "minecraft:nether_quartz_ore");
-		PASSPORT_RENAMED.put("minecraft:double_stone_slab", "minecraft:smooth_stone"); // двойная плита 1.7.10 = цельный блок neo
+		PASSPORT_RENAMED.put("minecraft:double_stone_slab", "minecraft:smooth_stone"); // 1.7.10 double slab = a solid neo block
 		PASSPORT_RENAMED.put("minecraft:monster_egg", "minecraft:infested_stone");
-		// minecraft:lit_redstone_ore отдельного блока в neo не имеет (свечение стало свойством redstone_ore,
-		// а он покрыт по имени), minecraft:log2 покрыт тегом LOGS выше — обоим адрес не нужен.
+		// minecraft:lit_redstone_ore has no separate block in neo (glow became a property of redstone_ore,
+		// which is already covered by name), minecraft:log2 is covered by the LOGS tag above — neither needs an address.
 	}
 
-	/** Резолв «имя 1.7.10 -> живой neo-блок» откладывается до первого запроса: на {@code <clinit>} реестр
-	 *  блоков ещё не заполнен. Имя ищется как есть, затем среди переименованных, затем по семье. */
+	/** Resolving "1.7.10 name -> live neo block" is deferred to the first request: at {@code <clinit>} the block
+	 *  registry is not yet populated. The name is looked up as-is, then among the renamed, then by family. */
 	private static VanillaPassport vanillaPassport(Block aBlock) {
 		if (!VANILLA_PASSPORT_RESOLVED) {
 			VANILLA_PASSPORT_RESOLVED = T;
@@ -875,14 +877,14 @@ public class WD {
 				VanillaPassport tPassport = tEntry.getValue();
 				net.minecraft.resources.ResourceLocation tID = new net.minecraft.resources.ResourceLocation(PASSPORT_RENAMED.getOrDefault(tName, tName));
 				net.minecraft.core.registries.BuiltInRegistries.BLOCK.getOptional(tID).ifPresent(tBlock -> VANILLA_PASSPORT.put(tBlock, tPassport));
-			} catch (Throwable e) {/* имени нет в neo и адреса ему не задано — обслуживают ветки-обобщения */}
+			} catch (Throwable e) {/* name absent from neo and no address assigned to it — served by the generalization branches */}
 		}
 		VanillaPassport rPassport = VANILLA_PASSPORT.get(aBlock);
 		if (rPassport != null) return rPassport;
-		// ⛔ СЕМЬЮ СПРАШИВАЕМ В МОМЕНТ ВОПРОСА, а не заранее. Содержимое тегов приходит с датапаком ПОЗЖЕ, чем
-		// случается первый запрос паспорта, и предварительный обход реестра давал пусто — а промах кэшировался
-		// навсегда: доски и брёвна так и оставались «без инструмента» (замер 2026-08-06). Проверка дешёвая
-		// (4 тега), и кэшируем только НАЙДЕННОЕ — отрицательный ответ до готовности тегов не должен застывать.
+		// ⛔ THE FAMILY IS ASKED AT THE MOMENT OF THE QUERY, not ahead of time. Tag contents arrive with the datapack LATER than
+		// the first passport request happens, and a pre-emptive registry walk yielded empty — and the miss was cached
+		// forever: planks and logs stayed "toolless" (measurement 2026-08-06). The check is cheap
+		// (4 tags), and only a FOUND result is cached — a negative answer must not freeze in before tags are ready.
 		try {
 			net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
 			for (Map.Entry<String, net.minecraft.tags.TagKey<Block>> tEntry : PASSPORT_FAMILY.entrySet()) {
@@ -892,7 +894,7 @@ public class WD {
 				VANILLA_PASSPORT.put(aBlock, tPassport);
 				return tPassport;
 			}
-		} catch (Throwable e) {/* состояние/теги ещё не готовы — ответим на следующем запросе */}
+		} catch (Throwable e) {/* state/tags not ready yet — will answer on the next request */}
 		return null;
 	}
 
@@ -1071,24 +1073,24 @@ public class WD {
 	}
 
 	public static gregapi.block.Material getMaterial(Block aBlock) {
-		// ОТБОР ПО КОНТРАКТУ, не по перечислению иерархий. Прежде здесь стояли пять instanceof
-		// (BlockBase, BlockFluidBaseGT, MultiTileEntityBlock, BlockBaseFlower, BlockBaseRail), и носитель,
-		// не попавший в список, молча получал хвост `rock`: так выпал PrefixBlock — ящики отвечали «камень»
-		// вместо wood, руды в песке/гравии/грязи вместо sand/ground, корпуса машин вместо iron (27 блоков,
-		// пойманы набором engine_block_passport.csv против живого 1.7.10). Величину по-прежнему знает сам
-		// блок — центр её только спрашивает, тем же приёмом, что harvestTool/harvestLevel.
+		// SELECTION BY CONTRACT, not by enumerating hierarchies. This used to have five instanceof checks
+		// (BlockBase, BlockFluidBaseGT, MultiTileEntityBlock, BlockBaseFlower, BlockBaseRail), and a carrier
+		// missing from the list silently got the `rock` tail: that's how PrefixBlock fell through — crates answered "stone"
+		// instead of wood, ores in sand/gravel/dirt instead of sand/ground, machine housings instead of iron (27 blocks,
+		// caught by the engine_block_passport.csv set against a live 1.7.10). The value is still known by the
+		// block itself — the center only asks it, the same way as harvestTool/harvestLevel.
 		if (aBlock instanceof gregapi.block.IBlock tGT) {
 			gregapi.block.Material tMaterial = tGT.getMaterial();
 			if (tMaterial != null) return tMaterial;
 		}
-		// (РЕПОРТ ИГРОКА «батарейный бокс/бочку/тигель ломаю киркой, и они выпадают» закрыт этим же контрактом:
-		// машины/цветы/рельсы не наследуют BlockBase — машины Block, цветы FlowerBlock, рельсы BaseRailBlock —
-		// и прежде проваливались в разбор ванильных блоков, получая хвост `rock`, то есть КИРКА СЧИТАЛА МАШИНУ
-		// КАМНЕМ, хотя блок объявляет инструментом гаечный ключ. В 1.7.10 материал был методом самого блока.)
-		// ТОЧНЫЕ ДАННЫЕ ОРИГИНАЛА идут ПЕРЕД обобщениями: ветки ниже (идентичность + neo-теги) выводят материал
-		// по семье и потому неизбежно приблизительны — замер против 1.7.10 давал 51 расхождение на 114 общих
-		// ванильных блоков, почти все схлопнутые в rock (iron 14, circuits 12, glass/plants/wood по 4, piston 3).
-		// Обобщения остаются: они обслуживают расщеплённые семьи и блоки, которых в 1.7.10 не было.
+		// (PLAYER REPORT "I break a battery box/barrel/crucible with a pickaxe and it drops" is closed by this same contract:
+		// machines/flowers/rails do not extend BlockBase — machines are Block, flowers are FlowerBlock, rails are BaseRailBlock —
+		// and used to fall through into the vanilla-block parsing, getting the `rock` tail, meaning the PICKAXE TREATED THE MACHINE
+		// AS STONE, even though the block declares a wrench as its tool. In 1.7.10 the material was a method of the block itself.)
+		// EXACT ORIGINAL DATA comes BEFORE the generalizations: the branches below (identity + neo tags) derive the material
+		// by family and are therefore inevitably approximate — measurement against 1.7.10 gave 51 discrepancies out of 114 shared
+		// vanilla blocks, almost all collapsed into rock (iron 14, circuits 12, glass/plants/wood 4 each, piston 3).
+		// The generalizations remain: they serve split families and blocks that did not exist in 1.7.10.
 		VanillaPassport tPassport = vanillaPassport(aBlock);
 		if (tPassport != null) return tPassport.mMaterial();
 		net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
@@ -1112,10 +1114,10 @@ public class WD {
 		 // and worldgen branches read the fallback `rock` and dug mud like stone.
 		 || aBlock == Blocks.MUD) return gregapi.block.Material.ground;
 		if (tState.is(net.minecraft.tags.BlockTags.LEAVES))                                                      return gregapi.block.Material.leaves;
-		// BUG-013: производные деревянные блоки. 1.7.10: BlockWoodSlab/BlockDoor(wood)/trapdoor/fence/fence_gate/
-		// wooden_pressure_plate/BlockSign = Material.wood, деревянные лестницы наследуют материал донора-досок
-		// (Block.java:316,329,341 + BlockWoodSlab:22/BlockSign:25/BlockFenceGate:24 референса 1.7.10). Кнопки и
-		// ladder в 1.7.10 = Material.circuits — НЕ включены (1:1). FENCE_GATES без wooden-варианта: в ванили все ворота деревянные.
+		// BUG-013: derived wooden blocks. 1.7.10: BlockWoodSlab/BlockDoor(wood)/trapdoor/fence/fence_gate/
+		// wooden_pressure_plate/BlockSign = Material.wood, wooden stairs inherit the material of their donor planks
+		// (Block.java:316,329,341 + BlockWoodSlab:22/BlockSign:25/BlockFenceGate:24 of the 1.7.10 reference). Buttons and
+		// ladder in 1.7.10 = Material.circuits — NOT included (1:1). FENCE_GATES has no wooden variant: in vanilla all gates are wooden.
 		if (tState.is(net.minecraft.tags.BlockTags.LOGS) || tState.is(net.minecraft.tags.BlockTags.PLANKS)
 		 || tState.is(net.minecraft.tags.BlockTags.WOODEN_SLABS) || tState.is(net.minecraft.tags.BlockTags.WOODEN_STAIRS)
 		 || tState.is(net.minecraft.tags.BlockTags.WOODEN_DOORS) || tState.is(net.minecraft.tags.BlockTags.WOODEN_TRAPDOORS)
@@ -1124,73 +1126,73 @@ public class WD {
 		 || aBlock == Blocks.CRAFTING_TABLE || aBlock == Blocks.BOOKSHELF || aBlock == Blocks.CHEST || aBlock == Blocks.JUKEBOX || aBlock == Blocks.NOTE_BLOCK) return gregapi.block.Material.wood;
 		if (tState.is(net.minecraft.tags.BlockTags.WOOL_CARPETS))                                                return gregapi.block.Material.carpet;
 		if (tState.is(net.minecraft.tags.BlockTags.WOOL))                                                        return gregapi.block.Material.cloth;
-		// СЕМЬИ, РАСЩЕПЛЁННЫЕ neo: в 1.7.10 это были блоки с метой-подтипом, их имён в neo больше нет, и паспорт
-		// по имени не находится. Материал брали из хвоста `rock` — замер против оригинала дал 62 таких блока
-		// (`stained_glass`/`stained_glass_pane` → glass 32 шт., `skull` → circuits 15, `wooden_button` → circuits 12,
-		// `repeater`/`comparator` → circuits 2, `portal` → portal 1). Отбор по КЛАССУ движка, а не по списку имён:
-		// список пород и цветов растёт от версии к версии, а класс у семьи один.
+		// FAMILIES SPLIT BY neo: in 1.7.10 these were blocks with a meta-subtype, their names no longer exist in neo, and the passport
+		// is not found by name. The material used to be taken from the `rock` tail — measurement against the original gave 62 such blocks
+		// (`stained_glass`/`stained_glass_pane` → glass 32 pcs., `skull` → circuits 15, `wooden_button` → circuits 12,
+		// `repeater`/`comparator` → circuits 2, `portal` → portal 1). Selection by engine CLASS, not by a name list:
+		// the list of wood types and colors grows from version to version, but a family has one class.
 		if (aBlock instanceof net.minecraft.world.level.block.StainedGlassBlock
 		 || aBlock instanceof net.minecraft.world.level.block.StainedGlassPaneBlock)                            return gregapi.block.Material.glass;
 		if (aBlock instanceof net.minecraft.world.level.block.AbstractSkullBlock)                                return gregapi.block.Material.circuits;
 		if (aBlock instanceof net.minecraft.world.level.block.DiodeBlock)                                        return gregapi.block.Material.circuits; // repeater + comparator
 		if (aBlock instanceof net.minecraft.world.level.block.ButtonBlock
-		 && tState.is(net.minecraft.tags.BlockTags.WOODEN_BUTTONS))                                             return gregapi.block.Material.circuits; // каменная кнопка в 1.7.10 = rock (хвост)
+		 && tState.is(net.minecraft.tags.BlockTags.WOODEN_BUTTONS))                                             return gregapi.block.Material.circuits; // a stone button in 1.7.10 = rock (tail)
 		if (aBlock == Blocks.NETHER_PORTAL)                                                                      return gregapi.block.Material.portal;
-		// цветочный горшок: в 1.7.10 ОДИН блок, содержимое жило в TileEntity — neo расщепил его на 38 занятых
-		// (`potted_*`) плюс пустой. Пустой находился по имени и отвечал circuits, занятые падали в хвост `rock`.
+		// flower pot: in 1.7.10 it was ONE block, contents lived in the TileEntity — neo split it into 38 occupied
+		// (`potted_*`) plus an empty one. The empty one was found by name and answered circuits, the occupied ones fell into the `rock` tail.
 		if (aBlock instanceof net.minecraft.world.level.block.FlowerPotBlock)                                    return gregapi.block.Material.circuits;
-		// BUG-012: 1.7.10 BlockTallGrass (короткая трава/папоротник) и BlockDeadBush = Material.vine
-		// (BlockTallGrass:33/BlockDeadBush:23 референса 1.7.10) — гейт ножа/косы/меча принимает vine.
-		// ADAPT-006/007 (BUSH, SHORT_DRY_GRASS) — контент, добавленный движком в 26.1.2; в 1.20.1 его нет,
-		// в оригинале 1.7.10 тоже не было — ветки сняты, состав группы вернулся к оригинальному.
+		// BUG-012: 1.7.10 BlockTallGrass (short grass/fern) and BlockDeadBush = Material.vine
+		// (BlockTallGrass:33/BlockDeadBush:23 of the 1.7.10 reference) — the knife/scythe/sword gate accepts vine.
+		// ADAPT-006/007 (BUSH, SHORT_DRY_GRASS) — content added by the engine in 26.1.2; absent on 1.20.1,
+		// and absent in the 1.7.10 original too — the branches are dropped, the group content is back to the original.
 		if (aBlock == Blocks.GRASS || aBlock == Blocks.FERN || aBlock == Blocks.DEAD_BUSH) return gregapi.block.Material.vine;
-		// BUG-012: 1.7.10 BlockDoublePlant (все 6: подсолнух/сирень/высокая трава/большой папоротник/куст роз/пион)
-		// и BlockLilyPad (BlockBush:30) = Material.plants (BlockDoublePlant:37 референса 1.7.10).
+		// BUG-012: 1.7.10 BlockDoublePlant (all 6: sunflower/lilac/tall grass/large fern/rose bush/peony)
+		// and BlockLilyPad (BlockBush:30) = Material.plants (BlockDoublePlant:37 of the 1.7.10 reference).
 		if (tState.is(net.minecraft.tags.BlockTags.SAPLINGS) || tState.is(net.minecraft.tags.BlockTags.SMALL_FLOWERS) || tState.is(net.minecraft.tags.BlockTags.FLOWERS) || tState.is(net.minecraft.tags.BlockTags.CROPS)
 		 || aBlock == Blocks.SUGAR_CANE || aBlock == Blocks.SUNFLOWER || aBlock == Blocks.LILAC || aBlock == Blocks.ROSE_BUSH || aBlock == Blocks.PEONY
 		 || aBlock == Blocks.TALL_GRASS || aBlock == Blocks.LARGE_FERN || aBlock == Blocks.LILY_PAD) return gregapi.block.Material.plants;
 		return gregapi.block.Material.rock;
 	}
 
-	/** F-block-behavior: 1.7.10 {@code Block.isReplaceable/isSideSolid/isReplaceableOreGen} удалены в neo
-	 *  (нет ни в {@code Block.java}, ни в {@code BlockBehaviour.java} ни в одном из 3 корней референса). GT6-блоки
-	 *  (BlockBase, MultiTileEntityBlock, BlockStones) определяют свои версии сами (компилируются как собственные
-	 *  методы) — централизуем здесь ВЫЗОВЫ на приёмниках статического типа ванильный {@code Block}: instanceof-
-	 *  диспетчер (виртуальный dispatch докручивает до реального override подкласса), иначе — 1.7.10 Forge-дефолт. */
-	/** было {@code tBlock.isReplaceable(aWorld, aX, aY, aZ)} — 1.7.10 {@code Block.isReplaceable} дефолт =
-	 *  {@code blockMaterial.isReplaceable()} (BlockBase его НЕ переопределяет, см. `gregtech6/.../BlockBase.java`,
-	 *  использует материал), MultiTileEntityBlock переопределяет (TileEntity-делегирование). */
+	/** F-block-behavior: 1.7.10 {@code Block.isReplaceable/isSideSolid/isReplaceableOreGen} were removed in neo
+	 *  (absent from {@code Block.java}, {@code BlockBehaviour.java}, and every one of the 3 reference roots). GT6 blocks
+	 *  (BlockBase, MultiTileEntityBlock, BlockStones) define their own versions themselves (compiled as their own
+	 *  methods) — centralize here the CALLS on receivers of static type vanilla {@code Block}: an instanceof
+	 *  dispatcher (virtual dispatch resolves down to the real subclass override), otherwise — the 1.7.10 Forge default. */
+	/** used to be {@code tBlock.isReplaceable(aWorld, aX, aY, aZ)} — the 1.7.10 {@code Block.isReplaceable} default =
+	 *  {@code blockMaterial.isReplaceable()} (BlockBase does NOT override it, see `gregtech6/.../BlockBase.java`,
+	 *  uses the material), MultiTileEntityBlock overrides it (TileEntity delegation). */
 	public static boolean replaceable(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (aBlock instanceof MultiTileEntityBlock) return ((MultiTileEntityBlock)aBlock).isReplaceable(aWorld, aX, aY, aZ);
 		return getMaterial(aBlock).isReplaceable();
 	}
-	/** было {@code aBlock.isSideSolid(aWorld, aX, aY, aZ, aSide)} — BlockBase.java:95 переопределяет (и все его
-	 *  подклассы через virtual dispatch), MultiTileEntityBlock.java:279 переопределяет (TileEntity-делегирование).
-	 *  Ванильный neo-эквивалент дефолта — {@code BlockState.isFaceSturdy(BlockGetter,BlockPos,Direction)}
+	/** used to be {@code aBlock.isSideSolid(aWorld, aX, aY, aZ, aSide)} — BlockBase.java:95 overrides it (and all its
+	 *  subclasses via virtual dispatch), MultiTileEntityBlock.java:279 overrides it (TileEntity delegation).
+	 *  The vanilla neo equivalent of the default is {@code BlockState.isFaceSturdy(BlockGetter,BlockPos,Direction)}
 	 *  (BlockBehaviour.java:876). */
 	public static boolean sideSolid(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {
 		if (aBlock instanceof BlockBase) return ((BlockBase)aBlock).isSideSolid(aWorld, aX, aY, aZ, aSide);
 		if (aBlock instanceof MultiTileEntityBlock) return ((MultiTileEntityBlock)aBlock).isSideSolid(aWorld, aX, aY, aZ, aSide);
 		return aBlock.defaultBlockState().isFaceSturdy(aWorld, new BlockPos(aX, aY, aZ), aSide);
 	}
-	/** было {@code aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, aTarget)} — BlockBase его НЕ переопределяет
-	 *  (сверено с `gregtech6/.../BlockBase.java`, дефолт), переопределяют только MultiTileEntityBlock.java:245
-	 *  (TileEntity-делегирование) и BlockStones.java:746 (каменные руды/генерация). Ванильный Forge 1.7.10
-	 *  {@code Block.isReplaceableOreGen} дефолт = identity ({@code this==target}). */
+	/** used to be {@code aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, aTarget)} — BlockBase does NOT override it
+	 *  (checked against `gregtech6/.../BlockBase.java`, default), only MultiTileEntityBlock.java:245
+	 *  (TileEntity delegation) and BlockStones.java:746 (stone ores/generation) override it. The vanilla Forge 1.7.10
+	 *  {@code Block.isReplaceableOreGen} default = identity ({@code this==target}). */
 	public static boolean oreGen(Block aBlock, LevelAccessor aWorld, int aX, int aY, int aZ, Block aTarget) {
 		if (aBlock instanceof MultiTileEntityBlock) return ((MultiTileEntityBlock)aBlock).isReplaceableOreGen(aWorld, aX, aY, aZ, aTarget);
 		if (aBlock instanceof BlockStones) return ((BlockStones)aBlock).isReplaceableOreGen(aWorld, aX, aY, aZ, aTarget);
 		return aBlock == aTarget;
 	}
-	/** было {@code aBlock.isWood(aWorld,x,y,z)} (Forge block-behavior, удалён) — GT6-блоки (MTE/BlockBaseLog) переопределяют;
-	 *  ванильный дефолт Forge = false, кроме брёвен -> neo BlockTags.LOGS (1.7.10 vanilla BlockLog.isWood=true). */
+	/** used to be {@code aBlock.isWood(aWorld,x,y,z)} (a Forge block-behavior, removed) — GT6 blocks (MTE/BlockBaseLog) override it;
+	 *  the vanilla Forge default = false, except for logs -> neo BlockTags.LOGS (1.7.10 vanilla BlockLog.isWood=true). */
 	public static boolean wood(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (aBlock instanceof MultiTileEntityBlock) return ((MultiTileEntityBlock)aBlock).isWood(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.tree.BlockBaseLog) return ((gregapi.block.tree.BlockBaseLog)aBlock).isWood(aWorld, aX, aY, aZ);
 		return aBlock.defaultBlockState().is(net.minecraft.tags.BlockTags.LOGS);
 	}
-	/** было {@code aBlock.isLeaves(aWorld,x,y,z)} (Forge block-behavior, удалён) — GT6 (MTE/BlockBaseLeaves) переопределяют;
-	 *  ванильный дефолт false, кроме листьев -> neo BlockTags.LEAVES. */
+	/** used to be {@code aBlock.isLeaves(aWorld,x,y,z)} (a Forge block-behavior, removed) — GT6 (MTE/BlockBaseLeaves) override it;
+	 *  the vanilla default is false, except for leaves -> neo BlockTags.LEAVES. */
 	public static boolean leaves(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (aBlock instanceof MultiTileEntityBlock) return ((MultiTileEntityBlock)aBlock).isLeaves(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.tree.BlockBaseLeaves) return ((gregapi.block.tree.BlockBaseLeaves)aBlock).isLeaves(aWorld, aX, aY, aZ);
@@ -1200,7 +1202,7 @@ public class WD {
 	public static byte WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD = 0;
 	
 	public static BlockEntity invalidateTileEntityWithNegativeYCoord(int aX, int aY, int aZ, BlockEntity aTileEntity) {
-		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD == 0) UT.Entities.chat(null, "Please provide the gregtech.log File to Greg, there was a weird Error");
+		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD == 0) UT.Entities.chat(null, LH.tt("Please provide the gregtech.log File to Greg, there was a weird Error"));
 		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD < 10) {
 			ERR.println("===============================");
 			ERR.println("X:" + aX);
@@ -1210,58 +1212,58 @@ public class WD {
 			new Throwable().printStackTrace(ERR);
 			ERR.println("===============================");
 		}
-		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD == 9) UT.Entities.chat(null, "Please provide the gregtech.log File to Greg, there was a LOT of weird Errors");
+		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD == 9) UT.Entities.chat(null, LH.tt("Please provide the gregtech.log File to Greg, there was a LOT of weird Errors"));
 		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD < 99) WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD++;
-		aTileEntity.setRemoved(); // было .invalidate() — neo: BlockEntity.setRemoved() (BlockEntity.java:252)
-		// F IMPOSSIBLE-1:1 + OBSOLETE (blockentity-position-immutable): было aTileEntity.y = 0 — neo BlockEntity.worldPosition
-		// (BlockEntity.java:48) protected final, задаётся конструктором, сеттера нет ни в одном из 3 корней. Недостижимо И
-		// не нужно: обнуление Y — 1.7.10-хак против бага с TE на «отрицательном» Y (тогда Y∈0..255); в neo Y∈-64..320
-		// легитимен, аномалии нет. setRemoved() выше — корректное удаление; Y-reset воспроизводить незачем.
+		aTileEntity.setRemoved(); // used to be .invalidate() — neo: BlockEntity.setRemoved() (BlockEntity.java:252)
+		// F IMPOSSIBLE-1:1 + OBSOLETE (blockentity-position-immutable): used to be aTileEntity.y = 0 — neo BlockEntity.worldPosition
+		// (BlockEntity.java:48) protected final, set by the constructor, no setter exists in any of the 3 reference roots. Unreachable AND
+		// unneeded: zeroing Y was a 1.7.10 hack against a bug with a TE at "negative" Y (back then Y∈0..255); in neo Y∈-64..320
+		// is legitimate, no anomaly. setRemoved() above is the correct removal; reproducing the Y-reset is pointless.
 		return aTileEntity;
 	}
 	
 	/** Sets the TileEntity at the passed position, with the option of turning adjacent TileEntity updates off. */
 	public static BlockEntity te(LevelAccessor aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity, boolean aCauseTileEntityUpdates) {
-		if (tileYInvalid(aWorld, aY)) return invalidateTileEntityWithNegativeYCoord(aX, aY, aZ, aTileEntity); // было aY<0 — MC26 бедрок Y=−64 легитимен, порог = дно мира getMinY()
-		// Н-5 ЦЕНТР (зеркало main): снять возможную «упакованную» закладку ПРЕЖНЕГО BE по этой позиции ДО
-		// force-подмены ниже — при смене MTE на MTE ОДНИМ И ТЕМ ЖЕ физическим Block-классом критерий «блок
-		// изменился» у LevelChunk.setBlockState на main (neo) — Block-identity (oldState.is(newBlock),
-		// LevelChunk.java:304) — физически недостижим независимо от BlockState-свойств; на этой ветке (forge
-		// 1.20.1) критерий — BlockState-instance identity (blockstate==p_62866_, LevelChunk.java:224), из-за чего
-		// в живых замерах путь чаще проходит сам (доказано стендом: COLD без этой правки уже даёт ЗЕЛЁНЫЙ на
-		// gt6pending, кейс D). Правка остаётся страховкой того же класса дефекта для путей, где BlockState-объект
-		// СОВПАДАЕТ (singleton defaultBlockState без свойств) — тогда и здесь распаковка была бы физически
-		// недостижима тем же приёмом, каким её закрывает sweepBlockEntityRemains (MultiTileEntityBlock.java) для
-		// случая «блок снят целиком»: запрос chunk.getBlockEntity(pos) сам распаковывает pendingBlockEntities и
-		// снимает запись оттуда (ChunkAccess.getBlockEntity → pendingBlockEntities.remove); put() ниже
-		// (Level.setBlockEntity/ChunkAccess.setBlockEntity) корректно снимет временно распакованный объект
-		// штатной заменой записи в карте.
+		if (tileYInvalid(aWorld, aY)) return invalidateTileEntityWithNegativeYCoord(aX, aY, aZ, aTileEntity); // used to be aY<0 — MC26 bedrock Y=−64 is legitimate, the threshold is the world floor getMinY()
+		// N-5 CENTER (mirrors main): remove a possible "packed" entry of the PREVIOUS BE at this position BEFORE
+		// the force-swap below — on an MTE-to-MTE change with the SAME physical Block class, the "block changed"
+		// criterion of LevelChunk.setBlockState on main (neo) — Block-identity (oldState.is(newBlock),
+		// LevelChunk.java:304) — is physically unreachable regardless of BlockState properties; on this branch (forge
+		// 1.20.1) the criterion is BlockState-instance identity (blockstate==p_62866_, LevelChunk.java:224), which is
+		// why in live measurements the path more often clears itself (proven by the stand: COLD without this fix already
+		// gives GREEN on gt6pending, case D). The fix remains a safety net for the same defect class on paths where the
+		// BlockState object DOES MATCH (a property-less singleton defaultBlockState) — there too the unpacking would be
+		// physically unreachable, by the same technique sweepBlockEntityRemains (MultiTileEntityBlock.java) closes for
+		// the "block fully removed" case: a chunk.getBlockEntity(pos) query itself unpacks pendingBlockEntities and
+		// removes the entry from there (ChunkAccess.getBlockEntity → pendingBlockEntities.remove); the put() below
+		// (Level.setBlockEntity/ChunkAccess.setBlockEntity) correctly removes the temporarily unpacked object through
+		// the normal map-entry replacement.
 		try {
 			ChunkAccess tPendingChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
 			BlockPos tPendingPos = new BlockPos(aX, aY, aZ);
 			if (tPendingChunk != null && tPendingChunk.getBlockEntityNbt(tPendingPos) != null) tPendingChunk.getBlockEntity(tPendingPos);
 		} catch (Throwable e) {e.printStackTrace(ERR);}
-		// F-tick (канал сместился): в 1.7.10 ОБЕ ветки (World.setTileEntity И Chunk.setTileEntity) добавляли TE в мировой
-		// тик-цикл loadedTileEntityList; в neo тикер регистрируется ТОЛЬКО через Level.setBlockEntity→addAndRegisterBlockEntity
-		// (LevelChunk.setBlockEntity/ChunkAccess — карта без тикера). Потому на реальном Level ВСЕГДА идём полным путём —
-		// иначе BE клиент-синка (receiveData*, aCauseTileEntityUpdates=F) существует, но не тикает (крышка сундука/клиент-анимации).
-		if (aWorld instanceof Level tLevel) tLevel.setBlockEntity(aTileEntity); // Level.java:681 → addAndRegisterBlockEntity (позиция из te.getBlockPos())
+		// F-tick (the channel shifted): in 1.7.10 BOTH branches (World.setTileEntity AND Chunk.setTileEntity) added the TE to the world
+		// tick cycle loadedTileEntityList; in neo the ticker is registered ONLY through Level.setBlockEntity→addAndRegisterBlockEntity
+		// (LevelChunk.setBlockEntity/ChunkAccess — a map without a ticker). So on a real Level we ALWAYS go the full path —
+		// otherwise a client-sync BE (receiveData*, aCauseTileEntityUpdates=F) exists but does not tick (chest lid/client animations).
+		if (aWorld instanceof Level tLevel) tLevel.setBlockEntity(aTileEntity); // Level.java:681 → addAndRegisterBlockEntity (position from te.getBlockPos())
 		else {
-			// F6-worldgen ЦЕНТР BE-размещения: приёмник расширен до LevelAccessor (worldgen идёт по WorldGenLevel/WorldGenRegion,
-			// а не Level). getChunk на LevelReader отдаёт ChunkAccess (Level=full-чанк, worldgen=ProtoChunk/ImposterProtoChunk).
-			// ChunkAccess.setBlockEntity(BlockEntity) (ChunkAccess.java:129, абстрактный — есть и у LevelChunk, и у ProtoChunk)
-			// кладёт BE в чанк без обновления соседей (аналог 1.7.10-ветки "без TileEntity-update"). Прежний
-			// LevelChunk.addAndRegisterBlockEntity был доступен ТОЛЬКО на full-чанке (Level) → ломал worldgen-путь; setBlockEntity
-			// на ChunkAccess работает и для ещё-генерящегося чанка (BE промотируется движком при финализации ProtoChunk→LevelChunk).
+			// F6-worldgen CENTER for BE placement: the receiver is widened to LevelAccessor (worldgen operates through WorldGenLevel/WorldGenRegion,
+			// not Level). getChunk on a LevelReader gives back ChunkAccess (Level=full chunk, worldgen=ProtoChunk/ImposterProtoChunk).
+			// ChunkAccess.setBlockEntity(BlockEntity) (ChunkAccess.java:129, abstract — exists on both LevelChunk and ProtoChunk)
+			// puts the BE into the chunk without updating neighbors (the analog of the 1.7.10 "without TileEntity-update" branch). The previous
+			// LevelChunk.addAndRegisterBlockEntity was available ONLY on a full chunk (Level) → broke the worldgen path; setBlockEntity
+			// on ChunkAccess works for a still-generating chunk too (BE is promoted by the engine when ProtoChunk→LevelChunk finalizes).
 			ChunkAccess tChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
 			if (tChunk != null) {
-				tChunk.setBlockEntity(aTileEntity); // было tChunk.func_150812_a(x&15,y,z&15,te)/addAndRegisterBlockEntity (LevelChunk-only) — neo: ChunkAccess.setBlockEntity(BlockEntity), позиция из te.getBlockPos()
-				tChunk.setUnsaved(true); // было tChunk.setUnsaved(true)
-				// F6-worldgen КРОСС-ЧАНК BE-ПЕРСИСТ (ЦЕНТР): worldgen кладёт MTE и в СОСЕДНИЕ чанки региона; в модели neo
-				// Feature.place BE-запись в уже-финализированный сосед-LevelChunk НЕ персистит (центр-ProtoChunk персистит) →
-				// srvBE=null постоянно (клиент: источники/камни/redstonelight/листва прозрачны). WD.te — ЕДИНСТВЕННАЯ точка
-				// привязки MTE-BE в worldgen (placeBlock И прямые пути) → регистрируем ЗДЕСЬ для переприкрепления, когда чанк
-				// MTE сам финализируется в LevelChunk (server-tick sweep / ChunkEvent.Load). Только worldgen (не Level), только MTE (не руды).
+				tChunk.setBlockEntity(aTileEntity); // used to be tChunk.func_150812_a(x&15,y,z&15,te)/addAndRegisterBlockEntity (LevelChunk-only) — neo: ChunkAccess.setBlockEntity(BlockEntity), position from te.getBlockPos()
+				tChunk.setUnsaved(true); // was tChunk.setUnsaved(true)
+				// F6-worldgen CROSS-CHUNK BE PERSISTENCE (CENTER): worldgen places MTE into NEIGHBORING chunks of the region too; in the neo
+				// Feature.place model a BE write into an already-finalized neighbor LevelChunk does NOT persist (only the center ProtoChunk persists) →
+				// srvBE=null permanently (client: sources/stones/redstonelight/foliage are transparent). WD.te is the ONLY point
+				// that binds an MTE BE in worldgen (placeBlock AND direct paths) → register HERE for re-attachment once the
+				// MTE's own chunk finalizes into a LevelChunk (server-tick sweep / ChunkEvent.Load). Worldgen only (not Level), MTE only (not ores).
 				if (!(aWorld instanceof Level) && aTileEntity instanceof gregapi.block.multitileentity.IMultiTileEntity) gregapi.worldgen.GT6WorldgenFeature.recordWorldgenMTE(aTileEntity);
 			}
 		}
@@ -1270,69 +1272,69 @@ public class WD {
 	
 	
 	public static boolean oxygen(Level aWorld, int aX, int aY, int aZ) {
-		return  !MD.GC.mLoaded || !dimGC(aWorld) || OxygenUtil.checkTorchHasOxygen(aWorld, NB, aX, aY, aZ); // F10: aWorld.provider instanceof IGalacticraftWorldProvider -> центр dimGC (WorldProvider удалён).
+		return  !MD.GC.mLoaded || !dimGC(aWorld) || OxygenUtil.checkTorchHasOxygen(aWorld, NB, aX, aY, aZ); // F10: aWorld.provider instanceof IGalacticraftWorldProvider -> the dimGC center (WorldProvider removed).
 	}
 	public static boolean collectable_air(LevelAccessor aWorld, int aX, int aY, int aZ) {
-		return (!MD.GC.mLoaded || !dimGC(aWorld)) && !hasCollide(aWorld, aX, aY, aZ) && !liquid(aWorld, aX, aY, aZ); // F10: aWorld.provider instanceof IGalacticraftWorldProvider -> центр dimGC.
+		return (!MD.GC.mLoaded || !dimGC(aWorld)) && !hasCollide(aWorld, aX, aY, aZ) && !liquid(aWorld, aX, aY, aZ); // F10: aWorld.provider instanceof IGalacticraftWorldProvider -> the dimGC center.
 	}
 	
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
 	public static long envTemp(LevelAccessor aWorld, int aX, int aY, int aZ) {
-		// было aWorld.getBiomeGenForCoords(x,z) (2D) — neo: LevelReader.getBiome(BlockPos) (LevelReader.java:42),
-		// возвращает Holder<Biome>; .value() (Holder.java:17) разворачивает до Biome (сигнатура envTemp(Biome,...) не меняется).
+		// used to be aWorld.getBiomeGenForCoords(x,z) (2D) — neo: LevelReader.getBiome(BlockPos) (LevelReader.java:42),
+		// returns Holder<Biome>; .value() (Holder.java:17) unwraps it to Biome (the envTemp(Biome,...) signature does not change).
 		return envTemp(aWorld.getBiome(new BlockPos(aX, aY, aZ)).value(), aX, aY, aZ);
 	}
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
 	public static long envTemp(Biome aBiome, int aX, int aY, int aZ) {
-		// было aBiome.getFloatTemperature(x,y,z) (позиция-скорректированная, удалено) -> getBaseTemperature() (Biome.java:247).
-		// F6 functional-adapted: elevation-охлаждение (climateSettings.temperatureModifier приватно) не воспроизведено — база getBaseTemperature доминирует, парити-деталь.
+		// used to be aBiome.getFloatTemperature(x,y,z) (position-adjusted, removed) -> getBaseTemperature() (Biome.java:247).
+		// F6 functional-adapted: elevation cooling (climateSettings.temperatureModifier is private) is not reproduced — the base getBaseTemperature dominates, a parity detail.
 		return Math.max(1, aBiome == null ? DEF_ENV_TEMP : (long)(C - 3 + aBiome.getBaseTemperature() * 20));
 	}
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
 	public static long envTemp(Biome aBiome) {
 		return Math.max(1, aBiome == null ? DEF_ENV_TEMP : (long)(C - 3 + aBiome.getBaseTemperature() * 20));
 	}
-	// F6-центр biome/climate/light/precipitation (было World.getBiomeGenForCoords/getLightBrightness/getPrecipitationHeight + Biome.rainfall/temperature поля — удалены):
-	/** было World.getBiomeGenForCoords(x,z) (2D, BiomeGenBase) -> Level.getBiome(BlockPos).value() (LevelReader:42, Holder.value()); 2D-форма берёт Y=getSeaLevel() (LevelReader:66) как поверхностный столбец. */
+	// F6 center for biome/climate/light/precipitation (used to be World.getBiomeGenForCoords/getLightBrightness/getPrecipitationHeight + Biome.rainfall/temperature fields — removed):
+	/** used to be World.getBiomeGenForCoords(x,z) (2D, BiomeGenBase) -> Level.getBiome(BlockPos).value() (LevelReader:42, Holder.value()); the 2D form takes Y=getSeaLevel() (LevelReader:66) as the surface column. */
 	public static Biome biome(LevelAccessor aWorld, int aX, int aZ) {return aWorld == null ? null : aWorld.getBiome(new BlockPos(aX, aWorld.getSeaLevel(), aZ)).value();}
 	public static Biome biome(LevelAccessor aWorld, int aX, int aY, int aZ) {return aWorld == null ? null : aWorld.getBiome(new BlockPos(aX, aY, aZ)).value();}
-	/** было Biome.rainfall (поле, удалено) -> Biome.getModifiedClimateSettings().downfall() (Biome.java:367 record ClimateSettings.downfall, :458 getModifiedClimateSettings). */
+	/** used to be Biome.rainfall (a field, removed) -> Biome.getModifiedClimateSettings().downfall() (Biome.java:367 record ClimateSettings.downfall, :458 getModifiedClimateSettings). */
 	public static float rainfall(Biome aBiome) {return aBiome == null ? 0 : aBiome.getModifiedClimateSettings().downfall();}
-	/** было World.getLightBrightness(x,y,z) (float 0..1) -> LevelLightEngine.getRawBrightness(pos,0)/15 (LevelLightEngine.java:146, Level.getLightEngine() :375). */
+	/** used to be World.getLightBrightness(x,y,z) (float 0..1) -> LevelLightEngine.getRawBrightness(pos,0)/15 (LevelLightEngine.java:146, Level.getLightEngine() :375). */
 	public static float lightBrightness(LevelAccessor aWorld, int aX, int aY, int aZ) {return aWorld == null ? 0 : aWorld.getLightEngine().getRawBrightness(new BlockPos(aX, aY, aZ), 0) / 15.0F;}
-	/** было World.getPrecipitationHeight(x,z) -> карта высот чанка. БЕЗ-ПОДГРУЗКИ (правка №2): Level.getHeight
-	 *  шёл через грузящий getChunk(FULL,true) (тикет на каждый вызов); 1.7.10 на невыгруженном давал 0 (EmptyChunk). */
+	/** used to be World.getPrecipitationHeight(x,z) -> the chunk's height map. NO-LOAD (edit #2): Level.getHeight
+	 *  used to go through the loading getChunk(FULL,true) (a ticket on every call); 1.7.10 gave 0 on an unloaded chunk (EmptyChunk). */
 	public static int precipitationHeight(LevelAccessor aWorld, int aX, int aZ) {
 		if (!(aWorld instanceof Level tL)) return 0;
 		net.minecraft.world.level.chunk.LevelChunk tChunk = chunkNow(tL, aX >> 4, aZ >> 4);
-		return tChunk == null ? 0 : tChunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, aX & 15, aZ & 15) + 1; // +1: getHeight чанка отдаёт Y верхнего блока, Level.getHeight — первый свободный
+		return tChunk == null ? 0 : tChunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, aX & 15, aZ & 15) + 1; // +1: the chunk's getHeight gives back the Y of the top block, Level.getHeight — the first free one
 	}
-	/** было Block.dropBlockAsItem(world,x,y,z,meta,fortune) (лут блока, удалён) -> Block.dropResources(state,level,pos) (Block.java:380).
-	 *  F6/F13 functional-adapted: fortune-параметр не нужен (все вызыватели fortune=0; dropResources — дефолтный лут). */
-	public static void dropBlockAsItem(LevelAccessor aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {if (aWorld == null) return; BlockPos tPos = new BlockPos(aX, aY, aZ); Block.dropResources(state(aWorld, tPos), aWorld, tPos, te(aWorld, tPos, F));} // 4-арг dropResources(BlockState,LevelAccessor,BlockPos,BlockEntity) (Block.java:389) — принимает LevelAccessor (3-арг брал Level)
-	/** было Block.dropBlockAsItem(world,x,y,z,ItemStack) (конкретный стек) -> Block.popResource(level,pos,stack) (Block.java:407, приёмник Level — спавн ItemEntity, gameplay). */
+	/** used to be Block.dropBlockAsItem(world,x,y,z,meta,fortune) (block loot, removed) -> Block.dropResources(state,level,pos) (Block.java:380).
+	 *  F6/F13 functional-adapted: the fortune parameter is unneeded (all callers pass fortune=0; dropResources is the default loot). */
+	public static void dropBlockAsItem(LevelAccessor aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {if (aWorld == null) return; BlockPos tPos = new BlockPos(aX, aY, aZ); Block.dropResources(state(aWorld, tPos), aWorld, tPos, te(aWorld, tPos, F));} // the 4-arg dropResources(BlockState,LevelAccessor,BlockPos,BlockEntity) (Block.java:389) — takes LevelAccessor (the 3-arg one took Level)
+	/** used to be Block.dropBlockAsItem(world,x,y,z,ItemStack) (a specific stack) -> Block.popResource(level,pos,stack) (Block.java:407, receiver Level — spawns an ItemEntity, gameplay). */
 	public static void dropBlockAsItem(Level aWorld, int aX, int aY, int aZ, ItemStack aStack) {if (aWorld != null && ST.valid(aStack)) Block.popResource(aWorld, new BlockPos(aX, aY, aZ), aStack);}
-	/** было Block.getCollisionBoundingBoxFromPool(w,x,y,z) (world-space AABB или null) -> getCollisionShape(w,pos).bounds().move(x,y,z)
-	 *  (VoxelShape.bounds:39/isEmpty:73, AABB.move:220); пустая форма -> null (1:1 с 1.7.10 «нет коллизии»). */
+	/** used to be Block.getCollisionBoundingBoxFromPool(w,x,y,z) (a world-space AABB or null) -> getCollisionShape(w,pos).bounds().move(x,y,z)
+	 *  (VoxelShape.bounds:39/isEmpty:73, AABB.move:220); an empty shape -> null (1:1 with 1.7.10's "no collision"). */
 	public static AABB collisionBox(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {if (aWorld == null) return null; BlockPos tPos = new BlockPos(aX, aY, aZ); net.minecraft.world.phys.shapes.VoxelShape tShape = state(aWorld, tPos).getCollisionShape(aWorld, tPos); return tShape.isEmpty() ? null : tShape.bounds().move(aX, aY, aZ);}
-	/** Н-9: было World.checkNoEntityCollision(AABB,Entity) — 1.7.10 фильтровал НЕ «есть хоть одна сущность», а «есть
-	 *  сущность с !isDead && preventEntitySpawning && entity!=except» (recompSrc/net/minecraft/world/World.java:2379-2394).
-	 *  Прежняя редакция это потеряла (`getEntities(...).isEmpty()` — блокирует ЛЮБАЯ сущность, включая лежащий лут).
-	 *  Восстановлено 1:1 через форджевый аналог того же фильтра — EntityGetter.isUnobstructed (EntityGetter.java:35-40)
-	 *  проверяет entity.blocksBuilding && !entity.isRemoved(); getEntities(except,bb) уже отдаёт только РЕАЛЬНО
-	 *  пересекающихся (EntitySection.getEntities:32 — entity.getBoundingBox().intersects(bb)), отдельной проверки формы
-	 *  не требуется. ⚠ EntityItem (упавший предмет) preventEntitySpawning/blocksBuilding НЕ ставит НИГДЕ в дереве —
-	 *  ни в 1.7.10, ни в forge-1.20.1 — построить блок поверх лута можно было и должно быть можно; блокируют только
-	 *  реальные препятствия (живые сущности, лодки/вагонетки, падающий блок, TNT, кристалл, стойка-немаркер, страйдер).
-	 *  null-бокс -> true (нет коллизии). */
+	/** N-9: used to be World.checkNoEntityCollision(AABB,Entity) — 1.7.10 did NOT filter "is there any entity at all", but "is there
+	 *  an entity with !isDead && preventEntitySpawning && entity!=except" (recompSrc/net/minecraft/world/World.java:2379-2394).
+	 *  The previous edition lost this (`getEntities(...).isEmpty()` — blocks ANY entity, including lying loot).
+	 *  Restored 1:1 through the forge analog of the same filter — EntityGetter.isUnobstructed (EntityGetter.java:35-40)
+	 *  checks entity.blocksBuilding && !entity.isRemoved(); getEntities(except,bb) already returns only ACTUALLY
+	 *  intersecting entities (EntitySection.getEntities:32 — entity.getBoundingBox().intersects(bb)), so a separate shape check
+	 *  is not needed. ⚠ EntityItem (a dropped item) sets preventEntitySpawning/blocksBuilding NOWHERE in the tree —
+	 *  neither in 1.7.10 nor in forge-1.20.1 — building a block over loot was, and should be, possible; only real
+	 *  obstacles block (living entities, boats/minecarts, a falling block, TNT, an end crystal, a marker-less armor stand, a strider).
+	 *  a null box -> true (no collision). */
 	public static boolean noEntityCollision(LevelAccessor aWorld, AABB aBox) {if (aWorld == null || aBox == null) return T; for (Entity tEntity : aWorld.getEntities((Entity)null, aBox)) if (!tEntity.isRemoved() && tEntity.blocksBuilding) return F; return T;}
 	public static boolean noEntityCollision(LevelAccessor aWorld, AABB aBox, Entity aExcept) {if (aWorld == null || aBox == null) return T; for (Entity tEntity : aWorld.getEntities(aExcept, aBox)) if (!tEntity.isRemoved() && tEntity.blocksBuilding) return F; return T;}
 	
-	// F6: было `WorldProvider aProvider`-перегрузки ПАРАЛЛЕЛЬНО с `Level aWorld`-перегрузками (вызов через
-	// `aWorld.provider`) — та же болезнь, что у семейства `dimXXX` выше: `WorldProvider` в neo удалён, компилятор
-	// не мог выбрать между `waterLevel(Level)`/`waterLevel(WorldProvider)` (ambiguous). Слиты в один вход
+	// F6: used to have `WorldProvider aProvider` overloads IN PARALLEL with `Level aWorld` overloads (called through
+	// `aWorld.provider`) — the same issue as the `dimXXX` family above: `WorldProvider` is removed in neo, the compiler
+	// could not choose between `waterLevel(Level)`/`waterLevel(WorldProvider)` (ambiguous). Merged into one entry
 	// `waterLevel(Level, int)`; `dimensionId == DIM_OVERWORLD` -> `Level.dimension() == Level.OVERWORLD`,
-	// `hasNoSky` -> `!dimensionType().hasSkyLight()` (см. `decisions/README.md` «Dimension-identity»).
+	// `hasNoSky` -> `!dimensionType().hasSkyLight()` (see `decisions/README.md` "Dimension-identity").
 	/** @return the Height of the Water Level that should probably be in this World. */
 	public static int waterLevel(LevelAccessor aWorld) {
 		return waterLevel(aWorld, 62);
@@ -1350,57 +1352,57 @@ public class WD {
 		return waterLevel(62);
 	}
 
-	// ===== F6-Y-scale ЦЕНТР (§4.1 decisions/F6-worldgen.md): единый адаптер высот worldgen'а (принцип 2/4). =====
-	// Мир 1.7.10 = [0..255], бедрок Y=0, море 62 (SEA_old, дефолт waterLevel). Мир MC26 = [getMinY()..getMaxY()]
-	// (обычно −64..319), бедрок на getMinY(), море getSeaLevel() (63). GT6-генераторы жёстко зашиты на старые
-	// абсолютные Y (0/255/getHeight()) → без адаптации кладут не туда (руды/вода/бедрок/поверхность мимо). Все
-	// worldgen-Y проходят через ЭТОТ центр, не копипастом по файлам — эталон section-index уже в WorldgenStoneLayers.
+	// ===== F6-Y-scale CENTER (§4.1 decisions/F6-worldgen.md): a single height adapter for worldgen (principle 2/4). =====
+	// The 1.7.10 world = [0..255], bedrock Y=0, sea 62 (SEA_old, the waterLevel default). The MC26 world = [getMinY()..getMaxY()]
+	// (usually −64..319), bedrock at getMinY(), sea at getSeaLevel() (63). GT6 generators are hard-wired to the old
+	// absolute Y (0/255/getHeight()) → without adaptation they place things in the wrong spot (ores/water/bedrock/surface off). All
+	// worldgen Y values pass through THIS center, not copy-pasted across files — the section-index reference is already in WorldgenStoneLayers.
 	private static final int OLD_BOTTOM = 0, OLD_TOP = 255, SEA_OLD = 62;
-	/** Нижняя граница мира (worldgen: заменяет жёсткий 0 / бедрок-якорь). */
+	/** Lower world bound (worldgen: replaces the hard 0 / bedrock anchor). */
 	public static int minY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMinBuildHeight();}
-	/** Верхняя граница мира ВКЛючительно (worldgen: заменяет жёсткий 255). */
+	/** Upper world bound INCLUSIVE (worldgen: replaces the hard 255). */
 	public static int maxY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMaxBuildHeight()-1;}
-	/** maxY+1 = старая семантика {@code World.getHeight()} (был 256). 1.20.1 getMaxBuildHeight() ИСКЛЮЧИТЕЛЬНЫЙ — это ровно maxY+1. */
+	/** maxY+1 = the old {@code World.getHeight()} semantics (was 256). 1.20.1 getMaxBuildHeight() is EXCLUSIVE — that is exactly maxY+1. */
 	public static int topY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMaxBuildHeight();}
-	/** Измерение по границам совпадает со старым миром 1.7.10 [0..255] → растягивать НЕЧЕГО (тождественный ремап).
-	 *  Незер и Энд в MC26 именно такие: {@code min_y=0, height=256} (`neo-decompiled/…/data/worldgen/DimensionTypes.java:72-73,105-106`),
-	 *  а вырос только Overworld (−64/384). Без этого гейта ремап тянул бы окна к ЧУЖОМУ уровню моря измерения
-	 *  (незер: {@code sea_level=32}, `NoiseGeneratorSettings.java:110`) и СЖИМАЛ подземную часть вместо растяжения. */
+	/** A dimension whose bounds match the old 1.7.10 world [0..255] → NOTHING to stretch (identity remap).
+	 *  Nether and End in MC26 are exactly like that: {@code min_y=0, height=256} (`neo-decompiled/…/data/worldgen/DimensionTypes.java:72-73,105-106`),
+	 *  and only the Overworld grew (−64/384). Without this gate the remap would pull windows to a FOREIGN dimension's sea level
+	 *  (nether: {@code sea_level=32}, `NoiseGeneratorSettings.java:110`) and SHRINK the underground part instead of stretching. */
 	private static boolean sameAsOldWorld(net.minecraft.world.level.LevelHeightAccessor aWorld) {
 		return minY(aWorld) == OLD_BOTTOM && maxY(aWorld) == OLD_TOP;
 	}
-	/** §4.1 sea-anchored: старый абсолютный Y (мир [0..255], море 62) → новый Y (мир [minY..maxY], море getSeaLevel),
-	 *  раздельно по подземной [0..62]→[minY..sea] и надземной [62..255]→[sea..maxY] части (море — якорь, не дно). */
+	/** §4.1 sea-anchored: old absolute Y (world [0..255], sea 62) → new Y (world [minY..maxY], sea getSeaLevel),
+	 *  separately for the underground [0..62]→[minY..sea] and above-ground [62..255]→[sea..maxY] parts (sea is the anchor, not the floor). */
 	public static int remapY(LevelAccessor aWorld, int aOldY) {
 		if (sameAsOldWorld(aWorld)) return aOldY;
 		int tSea = aWorld.getSeaLevel(), tMinY = minY(aWorld), tMaxY = maxY(aWorld);
 		if (aOldY <= SEA_OLD) return tMinY + Math.round((aOldY - OLD_BOTTOM) * (tSea - tMinY) / (float)(SEA_OLD - OLD_BOTTOM));
 		return tSea + Math.round((aOldY - SEA_OLD) * (tMaxY - tSea) / (float)(OLD_TOP - SEA_OLD));
 	}
-	/** §4.1 п.3, указание пользователя 2026-08-07: окно растягивается — ПЛОТНОСТЬ руды сохраняется, значит
-	 *  КОЛИЧЕСТВО растёт соразмерно выросшему объёму. Здесь — коэффициент этого роста для окна [aOldMinY..aOldMaxY]:
-	 *  новая толщина / старая (1.0 там, где мир не вырос). Один множитель на весь мод: генераторы не считают
-	 *  растяжение сами, а спрашивают центр — как и сам {@link #remapY}. */
+	/** §4.1 item 3, user instruction 2026-08-07: the window stretches — ORE DENSITY is preserved, which means the
+	 *  COUNT grows proportionally to the enlarged volume. This is the growth coefficient for the window [aOldMinY..aOldMaxY]:
+	 *  new thickness / old (1.0 where the world did not grow). One multiplier for the whole mod: generators do not compute
+	 *  the stretch themselves, they ask the center — just like {@link #remapY} itself. */
 	public static float yStretch(LevelAccessor aWorld, int aOldMinY, int aOldMaxY) {
 		if (sameAsOldWorld(aWorld)) return 1.0F;
 		int tOldSpan = Math.max(1, aOldMaxY - aOldMinY), tNewSpan = Math.max(1, remapY(aWorld, aOldMaxY) - remapY(aWorld, aOldMinY));
 		return Math.max(1.0F, tNewSpan / (float)tOldSpan);
 	}
-	/** Целое количество объектов на растянутое окно. Дробный остаток разыгрывается СЛУЧАЙНО, а не отбрасывается:
-	 *  при коэффициенте 2.05 и штучной руде (2 шт/чанк) округление вниз потеряло бы 5 % генерации, вверх — добавило 45 %. */
+	/** Integer object count for the stretched window. The fractional remainder is decided RANDOMLY, not dropped:
+	 *  at a coefficient of 2.05 and a piece-count ore (2 pcs/chunk), rounding down would lose 5% of generation, rounding up would add 45%. */
 	public static int yScaleAmount(LevelAccessor aWorld, int aOldMinY, int aOldMaxY, int aAmount, Random aRandom) {
 		float tScaled = aAmount * yStretch(aWorld, aOldMinY, aOldMaxY);
 		int rAmount = (int)tScaled;
 		if (aRandom != null && aRandom.nextFloat() < tScaled - rAmount) rAmount++;
 		return rAmount;
 	}
-	/** F-tileentity-construction Y-порог (ADR): 1.7.10 инвалидировал TE при Y<0 (мир [0..255], Y<0 = аномалия-баг).
-	 *  MC26 мир [minY..maxY] (обычно −64..319), Y<0 ЛЕГИТИМЕН (бедрок на minY=−64, бедрок-руды/источники флюидов там же)
-	 *  → инвалидируем ТОЛЬКО при Y ниже дна мира getMinY(). Единственный центр Y-порога инвалидации TE на весь мод.
-	 *  КРИТ (спам + удаление руд): БЕЗ level (getLevel()==null во время chunk-load loadStatic→readFromNBT, до attach к миру)
-	 *  НЕ инвалидируем — прежний fallback-порог 0 ложно ловил ВСЕ подземные руды (Y<0, легитимные) → setRemoved() удалял их
-	 *  BE (материал руды терялся → серое вкрапление) + печатал Throwable-стектрейс каждой (спам ×десятки тысяч). Позиция на
-	 *  загрузке легитимна (сохранена движком), а minY без level не узнать → безопасно пропустить (проверим при наличии level). */
+	/** F-tileentity-construction Y-threshold (ADR): 1.7.10 invalidated a TE at Y<0 (world [0..255], Y<0 = anomaly-bug).
+	 *  The MC26 world [minY..maxY] (usually −64..319) has Y<0 LEGITIMATE (bedrock at minY=−64, bedrock ores/fluid sources are there too)
+	 *  → invalidate ONLY below the world floor getMinY(). The single center for the TE-invalidation Y-threshold for the whole mod.
+	 *  CRITICAL (spam + ore removal): WITHOUT a level (getLevel()==null during chunk-load loadStatic→readFromNBT, before attach to the world)
+	 *  do NOT invalidate — the previous fallback threshold of 0 falsely caught ALL underground ores (Y<0, legitimate) → setRemoved() removed their
+	 *  BE (ore material was lost → a grey speck) + printed a Throwable stack trace for each one (spam ×tens of thousands). The position at
+	 *  load time is legitimate (saved by the engine), and minY cannot be known without a level → safe to skip (checked once a level is present). */
 	public static boolean tileYInvalid(LevelAccessor aLevel, int aY) {
 		return aLevel != null && aY < minY(aLevel);
 	}
@@ -1418,29 +1420,29 @@ public class WD {
 	}
 	
 	public static ItemStack stack(LevelAccessor aWorld, int aX, int aY, int aZ) {
-		Block tBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
-		// было aWorld.getBlockMetadata(x,y,z) в ветке else — числовой меты в neo больше нет (МОДЕЛЬ МЕТЫ п.4):
-		// для ванильных блоков (не IBlockExtendedMetaData) возвращаем 0, не выдумывая числовую таблицу.
+		Block tBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // used to be aWorld.getBlock(x,y,z)
+		// used to be aWorld.getBlockMetadata(x,y,z) in the else branch — neo no longer has numeric meta (META MODEL item 4):
+		// for vanilla blocks (not IBlockExtendedMetaData) return 0, without inventing a numeric table.
 		return ST.make(tBlock, 1, tBlock instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX, aY, aZ) : 0);
 	}
 
 	public static void update(BlockGetter aWorld, int aX, int aY, int aZ) {
-		// было ((Level)aWorld).markBlockForUpdate(x,y,z) — neo: Level.sendBlockUpdated(pos,old,new,flags)
-		// (Level.java:333); старое/новое состояние не отслеживались раздельно, тот же приём уже применён в
-		// GT_API_Proxy.java:1316 (getBlockState дважды, flags=3=UPDATE_ALL).
+		// used to be ((Level)aWorld).markBlockForUpdate(x,y,z) — neo: Level.sendBlockUpdated(pos,old,new,flags)
+		// (Level.java:333); the old/new state was not tracked separately, the same approach is already applied in
+		// GT_API_Proxy.java:1316 (getBlockState twice, flags=3=UPDATE_ALL).
 		BlockPos tUpdPos = new BlockPos(aX, aY, aZ);
 		BlockState tUpdState = state(aWorld, tUpdPos);
 		((Level)aWorld).sendBlockUpdated(tUpdPos, tUpdState, tUpdState, 3);
-		// КЭШ ГЕОМЕТРИИ MTE СБРАСЫВАЕТСЯ ЗДЕСЬ, В ИСТОЧНИКЕ ИЗМЕНЕНИЯ. Раньше единственным сбросом был
-		// сигнал ванильного LevelRenderer.setSectionDirty (перехват MixinLevelRenderer): пока рендерер
-		// ванильный, сигнал приходит — но мод, который его заменяет (оптимизаторы рендера и подобное),
-		// уносит сигнал с собой, и кэш квадов не сбрасывается НИКОГДА: блок остаётся нарисованным таким,
-		// каким собрался в первый раз (поставил пустую наковальню — и слиток на ней уже не появится).
-		// Через WD.update проходит КАЖДОЕ сообщение клиенту об изменении MTE (receiveData*-диспетчеры,
-		// MultiTileEntityBlock), поэтому здесь инвалидация верна по построению и ни от кого не зависит.
-		// Точечный сброс отдельного экземпляра — рядом с O(1)-схемой штампа секции (MultiTileEntityBER),
-		// а не вместо неё: mQuadCacheEpoch=MIN_VALUE никогда не совпадёт с текущей эпохой, кэш-хит не
-		// пройдёт независимо от штампа своей секции.
+		// THE MTE GEOMETRY CACHE IS RESET HERE, AT THE SOURCE OF THE CHANGE. Previously the only reset was
+		// the vanilla LevelRenderer.setSectionDirty signal (intercepted by MixinLevelRenderer): while the renderer
+		// is vanilla, the signal arrives — but a mod that replaces it (render optimizers and the like)
+		// takes the signal away with it, and the quad cache is NEVER reset: the block stays drawn as
+		// it was assembled the first time (place an empty anvil — and an ingot on it will never appear).
+		// EVERY client message about an MTE change (receiveData* dispatchers, MultiTileEntityBlock) passes
+		// through WD.update, so the invalidation here is correct by construction and depends on nothing else.
+		// Point invalidation of a single instance — alongside the O(1) section-stamp scheme (MultiTileEntityBER),
+		// not instead of it: mQuadCacheEpoch=MIN_VALUE never matches the current epoch, so the cache hit
+		// won't go through regardless of its own section's stamp.
 		if (((Level)aWorld).isClientSide()) {
 			BlockEntity tUpdTE = ((Level)aWorld).getBlockEntity(tUpdPos);
 			if (tUpdTE instanceof gregapi.tileentity.base.TileEntityBase01Root tUpdRoot) tUpdRoot.mQuadCacheEpoch = Long.MIN_VALUE;
@@ -1453,53 +1455,53 @@ public class WD {
 		}
 	}
 	
-	// было aWorld.getBlock(x,y,z) — neo: BlockGetter.getBlockState(BlockPos).getBlock() (BlockGetter.java:32); было
+	// used to be aWorld.getBlock(x,y,z) — neo: BlockGetter.getBlockState(BlockPos).getBlock() (BlockGetter.java:32); used to be
 	// WD.exists(aWorld, x, y, z) — Level.isLoaded(BlockPos) (Level.java:695).
 	public static Block block(BlockGetter aWorld, int aX, int aY, int aZ) {return state(aWorld, new BlockPos(aX, aY, aZ)).getBlock();}
 	public static Block block(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? state(aWorld, tP).getBlock() : NB;}
 	public static Block block(LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
 	public static Block block(LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
-	// МОДЕЛЬ МЕТЫ п.4: числовой меты в neo больше нет — для IBlockExtendedMetaData (свои блоки, п.1) реальное
-	// значение, иначе 0 (не выдумываем числовую таблицу для ванильных блоков).
+	// META MODEL item 4: neo no longer has numeric meta — for IBlockExtendedMetaData (own blocks, item 1) the real
+	// value, otherwise 0 (we do not invent a numeric table for vanilla blocks).
 	public static byte  meta (BlockGetter aWorld, int aX, int aY, int aZ) {
 		BlockState tState = state(aWorld, new BlockPos(aX, aY, aZ)); Block tB = tState.getBlock();
-		// BUG-025: 1.7.10-котёл (один блок, мета 0-3 = уровень воды) движок (1.13+) разложил на CAULDRON(пусто, без
-		// свойства уровня) / WATER_CAULDRON(LayeredCauldronBlock, LEVEL 1-3) — читаем уровень из split-блока, чтобы
-		// GT6-код (труба) видел мету котла как в 1.7.10 (getBlockMetadata давал 0-3). Пусто = 0 (ниже, дефолт).
+		// BUG-025: the 1.7.10 cauldron (one block, meta 0-3 = water level) was split by the engine (1.13+) into CAULDRON(empty, no
+		// level property) / WATER_CAULDRON(LayeredCauldronBlock, LEVEL 1-3) — read the level from the split block so
+		// GT6 code (pipe) sees the cauldron meta as in 1.7.10 (getBlockMetadata gave 0-3). Empty = 0 (below, default).
 		if (tB == Blocks.WATER_CAULDRON) return UT.Code.bind4(tState.getValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL));
-		// F4-flatten, обратная сторона моста записи (legacyVanillaState): у расщеплённых семейств (шерсть/ковёр/
-		// стекло/панели/терракота/tallgrass) подтип теперь выражен САМИМ блоком, а 1.7.10-код спрашивает его метой.
-		// Без этого чтения мост односторонний: записали красное стекло — прочли 0 («белое»), и сравнения вида
-		// «а не нужного ли уже цвета блок» (Behavior_Spray_Color.colorize:167) всегда ложны. Карты — тот же центр.
+		// F4-flatten, the read side of the write bridge (legacyVanillaState): for split families (wool/carpet/
+		// glass/panes/terracotta/tallgrass) the subtype is now expressed by the BLOCK ITSELF, while 1.7.10 code asks for it via meta.
+		// Without this read the bridge is one-way: write red glass — read back 0 ("white"), and checks like
+		// "is the block already the wanted color" (Behavior_Spray_Color.colorize:167) are always false. The maps are the same center.
 		int tFlat = gregapi.data.CS.Flattened.metaOf(tB);
 		if (tFlat >= 0) return UT.Code.bind4(tFlat);
 		if (tB instanceof IBlockExtendedMetaData) return UT.Code.bind4(((IBlockExtendedMetaData)tB).getExtendedMetaData(aWorld, aX, aY, aZ));
 		return UT.Code.bind4(vanillaFluidLevel(tState));
 	}
-	/** УРОВЕНЬ ВАНИЛЬНОЙ ЖИДКОСТИ (вода/лава). В 1.7.10 {@code getBlockMetadata} у воды возвращал уровень
-	 *  (0 — источник, 1-7 — убывающий поток, 8 — падающая), и на этом стоит вся 1.7.10-логика GT6: счёт
-	 *  соседей-источников ({@code BlockSwamp:106-108}, {@code BlockOcean:113,119,129}, {@code BlockRiver:94}),
-	 *  кванты растекания ({@code BlockWaterlike.getQuantaValue:227}), «черпается только источник»
-	 *  ({@code Behavior_Bucket_Container:55,62}, {@code TileEntityBase08FluidContainer:303,316}), опора кувшинки
-	 *  ({@code BlockBaseLilyPad:86,123}). Носитель того же числа в neo — {@code LiquidBlock.LEVEL}
-	 *  (LiquidBlock.java:125-128: {@code stateCache.get(min(level,8))}), семантика совпадает 1:1.
-	 *  <p>Без этой ветки любая вода читалась как «мета 0 = источник»: болотный ПОТОК рядом с ручьём становился
-	 *  ИСТОЧНИКОМ ({@code BlockSwamp:161}), источник никогда не самоудалялся ({@code BlockSwamp:155}), а кванты
-	 *  у воды всегда были полными (8) — фронт болота не затухал и расползался за пределы биома.
-	 *  <p>Собственные жидкости GT6 сюда не попадают: они {@link IBlockExtendedMetaData} (ветка выше), их
-	 *  кванты живут в {@code FLUID_META}, а унаследованный от {@code LiquidBlock} {@code LEVEL} всегда 0
-	 *  (BlockFluidBaseGT.java:152-154). Тот же приём, что уже применён к расщеплённому котлу выше. */
+	/** VANILLA FLUID LEVEL (water/lava). In 1.7.10 {@code getBlockMetadata} on water returned the level
+	 *  (0 — source, 1-7 — decreasing flow, 8 — falling), and all of GT6's 1.7.10 logic stands on this: counting
+	 *  source neighbors ({@code BlockSwamp:106-108}, {@code BlockOcean:113,119,129}, {@code BlockRiver:94}),
+	 *  spread quanta ({@code BlockWaterlike.getQuantaValue:227}), "only a source can be scooped"
+	 *  ({@code Behavior_Bucket_Container:55,62}, {@code TileEntityBase08FluidContainer:303,316}), lily-pad support
+	 *  ({@code BlockBaseLilyPad:86,123}). The carrier of the same number in neo is {@code LiquidBlock.LEVEL}
+	 *  (LiquidBlock.java:125-128: {@code stateCache.get(min(level,8))}), semantics match 1:1.
+	 *  <p>Without this branch any water read as "meta 0 = source": a swamp FLOW next to a stream became
+	 *  a SOURCE ({@code BlockSwamp:161}), the source never self-removed ({@code BlockSwamp:155}), and water
+	 *  quanta were always full (8) — the swamp front never faded and spread beyond the biome.
+	 *  <p>GT6's own fluids do not hit this: they are {@link IBlockExtendedMetaData} (branch above), their
+	 *  quanta live in {@code FLUID_META}, and the {@code LEVEL} inherited from {@code LiquidBlock} is always 0
+	 *  (BlockFluidBaseGT.java:152-154). The same approach already applied to the split cauldron above. */
 	private static int vanillaFluidLevel(BlockState aState) {
 		return aState.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock ? aState.getValue(net.minecraft.world.level.block.LiquidBlock.LEVEL) : 0;
 	}
-	/** F13-контракт: мета из СНИМКА BlockState (BlockDropsEvent.getState() / mineBlock aState). В neo removeBlock
-	 *  происходит ДО дропов и Item.mineBlock (в 1.7.10 — ПОСЛЕ), поэтому meta(aWorld,x,y,z) на harvest-путях читает
-	 *  уже ВОЗДУХ → мета 0 → протухшие рецепты молота (BUG-016) и dig-скорости. Каналом снимка контракт 1.7.10
-	 *  «мета разрушаемого блока» восстанавливается. BUG-047: раскладка меты по свойствам — знание БЛОКА (META у
-	 *  мета-семей, SHAPE+POWERED у рельса) → делегат в IBlockExtendedMetaData.getExtendedMetaData(BlockState)
-	 *  (дефолт интерфейса = прежний META-хардкод, поведение семей 1:1). */
+	/** F13 contract: meta from a SNAPSHOT BlockState (BlockDropsEvent.getState() / mineBlock aState). In neo removeBlock
+	 *  happens BEFORE drops and Item.mineBlock (in 1.7.10 — AFTER), so meta(aWorld,x,y,z) on harvest paths already
+	 *  reads AIR → meta 0 → stale hammer recipes (BUG-016) and dig speeds. Through the snapshot channel the 1.7.10
+	 *  contract "meta of the block being destroyed" is restored. BUG-047: laying out meta from properties — knowledge of the BLOCK
+	 *  (META for meta-families, SHAPE+POWERED for rail) → delegated to IBlockExtendedMetaData.getExtendedMetaData(BlockState)
+	 *  (interface default = the previous META hardcode, family behavior 1:1). */
 	public static byte  meta (net.minecraft.world.level.block.state.BlockState aState) {
-		if (!(aState.getBlock() instanceof IBlockExtendedMetaData)) return UT.Code.bind4(vanillaFluidLevel(aState)); // уровень ванильной жидкости — тот же канал, что в позиционной перегрузке выше
+		if (!(aState.getBlock() instanceof IBlockExtendedMetaData)) return UT.Code.bind4(vanillaFluidLevel(aState)); // vanilla fluid level — the same channel as in the positional overload above
 		return UT.Code.bind4(((IBlockExtendedMetaData)aState.getBlock()).getExtendedMetaData(aState));
 	}
 	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? meta((BlockGetter)aWorld, aX, aY, aZ) : 0;}
@@ -1514,12 +1516,12 @@ public class WD {
 		return set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags, WD.opaque(aBlock));
 	}
 
-	// F-tool-rotation ЦЕНТР: 1.7.10 Block.rotateBlock(World,x,y,z,ForgeDirection axis) удалён из neo (поворот —
-	// BlockState.rotate(Rotation), Y-осевой). Читаем состояние блока в позиции (вызыватели ставят блок WD.set-ом
-	// строкой выше, затем крутят) и rotate(CLOCKWISE_90): state.rotate уважает rotate-поведение каждого блока
-	// (направленные поворачиваются, ненаправленные возвращают себя — точнее прежнего Block.rotateBlock-дефолта=no-op).
-	// aAxis: neo Rotation Y-only (enum без горизонтальных осей); единственные вызыватели (worldgen dungeon) крутят
-	// вокруг SIDE_Y_POS(UP) -> Y-поворот; не-Y ось в срезе не встречается (при появлении — отдельный ADR F-tool-rotation).
+	// F-tool-rotation CENTER: 1.7.10 Block.rotateBlock(World,x,y,z,ForgeDirection axis) was removed from neo (rotation is
+	// BlockState.rotate(Rotation), Y-axis only). Read the block state at the position (callers place the block via WD.set
+	// one line above, then rotate) and rotate(CLOCKWISE_90): state.rotate respects each block's own rotate behavior
+	// (directional blocks rotate, non-directional ones return themselves — more accurate than the previous Block.rotateBlock default=no-op).
+	// aAxis: neo Rotation is Y-only (an enum without horizontal axes); the only callers (worldgen dungeon) rotate
+	// around SIDE_Y_POS(UP) -> a Y rotation; a non-Y axis does not occur in the current slice (should one appear — a separate ADR F-tool-rotation).
 	public static boolean rotateBlock(LevelAccessor aWorld, int aX, int aY, int aZ, Direction aAxis) {
 		if (aWorld == null) return F;
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
@@ -1528,25 +1530,26 @@ public class WD {
 		return tRotated != tState && aWorld.setBlock(tPos, tRotated, 3);
 	}
 
-	// F-hook-removed → ЦЕНТР (принцип 4: способность есть под другим именем). 1.7.10 Forge World.canPlaceEntityOnSide
-	// (block,x,y,z,skipColl,side,entity,stack) — удалено ИМЯ, но способность есть: neo CollisionGetter.isUnobstructed /
-	// коллизия формы. Воспроизводим семантику оригинала 1:1 (net/minecraft/world/World.java:3647-3649): (1) коллизия
-	// формы РАЗМЕЩАЕМОГО блока с сущностями, кроме размещающей (skipColl -> без проверки) — через уже существующий
-	// центр noEntityCollision(box, entity) = 1:1 с 1.7.10 checkNoEntityCollision(aabb, entity); (2) заменяемость цели —
-	// neo BlockState.canBeReplaced() (1.7.10 block1.isReplaceable); (3) «а можно ли РАЗМЕЩАЕМОМУ блоку тут стоять» —
-	// neo BlockState.canSurvive (1.7.10 aBlock.canReplace -> canPlaceBlockOnSide -> canPlaceBlockAt). Ветку «anvil на
-	// circuits» опускаем: недостижима для GT6-блоков (aBlock всегда GT6-блок, никогда Blocks.ANVIL).
+	// F-hook-removed → CENTER (principle 4: the capability exists under another name). 1.7.10 Forge World.canPlaceEntityOnSide
+	// (block,x,y,z,skipColl,side,entity,stack) — the NAME was removed, but the capability exists: neo CollisionGetter.isUnobstructed /
+	// shape collision. We reproduce the original semantics 1:1 (net/minecraft/world/World.java:3647-3649): (1) shape collision
+	// of the block BEING PLACED against entities, except the placing one (skipColl -> no check) — through the already existing
+	// center noEntityCollision(box, entity) = 1:1 with 1.7.10 checkNoEntityCollision(aabb, entity); (2) replaceability of the target —
+	// neo BlockState.canBeReplaced() (1.7.10 block1.isReplaceable); (3) "can the block BEING PLACED actually stand here" —
+	// neo BlockState.canSurvive (1.7.10 aBlock.canReplace -> canPlaceBlockOnSide -> canPlaceBlockAt). The "anvil on
+	// circuits" branch is omitted: unreachable for GT6 blocks (aBlock is always a GT6 block, never Blocks.ANVIL).
 	//
-	// ⛔ BP-BUG-016 (репорт игрока «рельса ставится бесконечно, лишние сразу выпадают в лут»). Прежняя редакция
-	// пункт (3) ОПУСКАЛА с обоснованием «block.canReplace для GT6-блока = T (BlockBase.canReplace)». Обоснование
-	// неверно: в 1.7.10 GT6 canReplace НЕ переопределял вовсе (греп по gt6-original: только ВЫЗЫВАТЕЛИ,
-	// BlockBase.java:162 и MultiTileEntityItemInternal.java:169) — он резолвился в ванильный
+	// ⛔ BP-BUG-016 (player report "rail places infinitely, the extras drop straight into loot"). The previous edition
+	// OMITTED item (3) with the justification "block.canReplace for a GT6 block = T (BlockBase.canReplace)". That
+	// justification is wrong: in 1.7.10 GT6 canReplace did NOT override it at all (grep of gt6-original: only CALLERS,
+	// BlockBase.java:162 and MultiTileEntityItemInternal.java:169) — it resolved to vanilla
 	// Block.canReplace (recompSrc net/minecraft/block/Block.java:1021-1023) -> canPlaceBlockOnSide (:1038-1041) ->
-	// canPlaceBlockAt (:1046-1049), и ИМЕННО ЭТУ ветку переопределяли рельсы (BlockRailBase: твёрдый верх снизу),
-	// кувшинки (BlockBaseLilyPad:73), саженцы (BlockBaseSapling:133), цветы. Т.е. `canReplace=T` порта — это
-	// новая, пустая деталь, а не слепок; сама проверка потерялась, и блок вставал куда угодно, чтобы в тот же
-	// тик осыпаться в лут. Дефолт canSurvive у neo = true, дефолт canPlaceBlockAt у 1.7.10 = isReplaceable(цель)
-	// (уже проверено пунктом (2)) — значит пункт (3) возвращает РОВНО переопределения, ничего сверх.
+	// canPlaceBlockAt (:1046-1049), and it was EXACTLY this branch that rails (BlockRailBase: solid block below),
+	// lily pads (BlockBaseLilyPad:73), saplings (BlockBaseSapling:133) and flowers overrode. I.e. the port's
+	// `canReplace=T` is a new, empty detail, not a copy; the check itself was lost, and the block would place
+	// anywhere, only to crumble into loot on the very same tick. neo's canSurvive default is true, 1.7.10's
+	// canPlaceBlockAt default = isReplaceable(target) (already covered by item (2)) — so item (3) returns EXACTLY
+	// the overrides, nothing extra.
 	public static boolean canPlaceEntityOnSide(LevelAccessor aWorld, Block aBlock, int aX, int aY, int aZ, boolean aSkipCollisionCheck, int aSide, Entity aEntity, ItemStack aStack) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		if (!aSkipCollisionCheck) {
@@ -1557,17 +1560,17 @@ public class WD {
 		return aBlock.defaultBlockState().canSurvive(aWorld, tPos);
 	}
 
-	/** ЦЕНТР гейта дропа от взрыва (BUG-024; консолидация BUG-047-ревизии — были копии в BlockBase/PrefixBlock/
-	 *  BlockBaseRail): ванильный взрыв дропает через loot-канал с EXPLOSION_RADIUS — 1.7.10-шанс дропа от взрыва
-	 *  = 1/размер (Explosion.doExplosionA), без гейта GT6-блоки дропались бы от TNT со 100%. true = дроп подавить. */
+	/** CENTER for the explosion-drop gate (BUG-024; consolidation of the BUG-047 revision — there used to be copies in BlockBase/PrefixBlock/
+	 *  BlockBaseRail): a vanilla explosion drops through the loot channel with EXPLOSION_RADIUS — the 1.7.10 explosion drop chance
+	 *  = 1/size (Explosion.doExplosionA), without this gate GT6 blocks would drop from TNT at 100%. true = suppress the drop. */
 	public static boolean explosionDropDenied(net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		Float tExplosionRadius = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS);
 		return tExplosionRadius != null && RNGSUS.nextFloat() >= 1.0F / tExplosionRadius;
 	}
 
-	/** ЦЕНТР waterlog-приёма (BUG-010 слэбы / BUG-047 рельсы; семантика vanilla getStateForPlacement для
-	 *  waterloggable-блоков): установка блока В воду — источник сохраняется как WATERLOGGED=true. Звать ПОСЛЕ
-	 *  установки блока; решение «была ли вода» вызыватель снимает ДО неё (сам сет воду затирает). */
+	/** CENTER for the waterlog handling (BUG-010 slabs / BUG-047 rails; semantics of vanilla getStateForPlacement for
+	 *  waterloggable blocks): placing a block INTO water — the source is preserved as WATERLOGGED=true. Call AFTER
+	 *  placing the block; the caller reads the "was there water" decision BEFORE that (the set itself overwrites the water). */
 	public static boolean waterlog(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockState tState = state(aWorld, tPos);
@@ -1576,63 +1579,64 @@ public class WD {
 	}
 
 
-	/** ЕДИНСТВЕННАЯ точка записи блока в мир из центра {@link #set}. Смысл — снять движковую ЗАГЛУШКУ
-	 *  блок-сущности, которую движок 1.20.1 кладёт в чанк на КАЖДУЮ ворлдген-запись блока с {@code BlockEntity}.
+	/** The SINGLE point that writes a block into the world from the {@link #set} center. Purpose — remove the engine's
+	 *  block-entity STUB that the 1.20.1 engine drops into the chunk on EVERY worldgen write of a block with a {@code BlockEntity}.
 	 *
-	 *  <p><b>Что делает движок.</b> {@code WorldGenRegion.setBlock} [WorldGenRegion.java:267-282]: если новый
-	 *  блок несёт сущность, а чанк ещё не полный, движок кладёт в {@code pendingBlockEntities} свою запись
-	 *  {@code {id:"DUMMY"}} — обещание «сущность создам потом, при промоции». Снимается это обещание ровно
-	 *  двумя способами: {@code ChunkAccess.removeBlockEntity} (сам движок зовёт его на соседней ветке
-	 *  [WorldGenRegion.java:283-284], когда новый блок сущности не несёт) и общим сливом
-	 *  {@code LevelChunk.postProcessGeneration} [LevelChunk.java:514-518], который выполняется ТОЛЬКО когда
-	 *  чанк становится ТИКАЮЩИМ [ChunkMap.java:747] — то есть заметно позже промоции.
+	 *  <p><b>What the engine does.</b> {@code WorldGenRegion.setBlock} [WorldGenRegion.java:267-282]: if the new
+	 *  block carries an entity and the chunk is not yet full, the engine puts its own entry {@code {id:"DUMMY"}}
+	 *  into {@code pendingBlockEntities} — a promise "I'll create the real entity later, on promotion". That promise
+	 *  is removed by exactly two means: {@code ChunkAccess.removeBlockEntity} (the engine itself calls it on the sibling
+	 *  branch [WorldGenRegion.java:283-284], when the new block carries no entity) and the general sweep
+	 *  {@code LevelChunk.postProcessGeneration} [LevelChunk.java:514-518], which runs ONLY once the chunk becomes
+	 *  TICKING [ChunkMap.java:747] — noticeably later than promotion.
 	 *
-	 *  <p><b>Почему обещание становится сиротой.</b> Штатное снятие блока обещание НЕ трогает:
-	 *  {@code BlockBehaviour.onRemove} [BlockBehaviour.java:163-166] уходит в
-	 *  {@code LevelChunk.removeBlockEntity} [LevelChunk.java:394-403], а тот чистит ТОЛЬКО карту ЖИВЫХ
-	 *  сущностей. Если ворлдген-блок исчезнет в окне «промоция … постобработка», обещание останется висеть.
-	 *  А исчезает он там ШТАТНО И ПО КАНОНУ: камешек снимает себя сам, когда рядом жидкость или пропала
-	 *  опора — {@code MultiTileEntityRock.onNeighborBlockChange} (тело 1:1 с оригиналом 1.7.10
-	 *  {@code gt6-original/.../placeables/MultiTileEntityRock.java:151-163}), а соседские апдейты приходят
-	 *  ровно тогда, когда чанк начинает тикать. Итог — движковый WARN
-	 *  «Tried to load a DUMMY block entity … but found not block entity block» и запись-призрак на диске
-	 *  (BP-BUG-009: замер — 12/16/12 варнов на ~31,9 тыс. свежих чанков).
+	 *  <p><b>Why the promise becomes an orphan.</b> The normal block-removal path does NOT touch the promise:
+	 *  {@code BlockBehaviour.onRemove} [BlockBehaviour.java:163-166] goes into
+	 *  {@code LevelChunk.removeBlockEntity} [LevelChunk.java:394-403], which cleans ONLY the map of LIVE
+	 *  entities. If a worldgen block disappears inside the "promotion ... post-processing" window, the promise
+	 *  stays hanging. And it disappears there NORMALLY AND BY CANON: a pebble removes itself when there's fluid
+	 *  next to it or its support is gone — {@code MultiTileEntityRock.onNeighborBlockChange} (body 1:1 with the
+	 *  1.7.10 original {@code gt6-original/.../placeables/MultiTileEntityRock.java:151-163}), and neighbor updates
+	 *  arrive exactly when the chunk starts ticking. The result — engine WARN
+	 *  "Tried to load a DUMMY block entity ... but found not block entity block" and a ghost entry on disk
+	 *  (BP-BUG-009: measured — 12/16/12 warnings per ~31.9k fresh chunks).
 	 *
-	 *  <p><b>Почему чиним здесь, а не в носителе.</b> Носителей у класса столько же, сколько ворлдген-блоков
-	 *  с сущностью (~150 на чанк: руды, камешки, палки, спринги), а поведение камешка — КАНОН, править его
-	 *  нельзя. Общая деталь ровно одна — эта: центр записи блока.
+	 *  <p><b>Why fixed here, not at the carrier.</b> There are as many carriers of this class as there are worldgen
+	 *  blocks with an entity (~150 per chunk: ores, pebbles, sticks, springs), and the pebble's behavior is CANON — it
+	 *  must not be changed. There is exactly one shared detail — this: the block-write center.
 	 *
-	 *  <p><b>ГРАНИЦА СНЯТИЯ — БЛОК МОДА, И ТОЛЬКО ОН (BUG-139).</b> «Обещание моду не нужно» верно ровно про
-	 *  СВОИ блоки: их сущность GT6 ставит сам ({@link #te}), как и в 1.7.10 — «Where I come from, we set the
-	 *  TileEntities ourselves» ({@code PrefixBlock.createTileEntity}); заглушек в 1.7.10 не существовало вовсе,
-	 *  а {@code Chunk.func_150807_a} снимал сущность вместе с блоком. Для ЧУЖОГО блока это неверно зеркально:
-	 *  ванильную сущность мод не ставит НИКОГДА, и движковое обещание — её ЕДИНСТВЕННЫЙ источник. Прежняя
-	 *  редакция снимала обещание без разбора владельца, и ворлдген-ванильные блоки-сущности данжей оставались
-	 *  БЕЗ сущности: эндер-сундук и кровать (весь облик рисует их BER), книга стола зачарований, портал Края,
-	 *  таблички, ванильные сундуки и маяк — блок стоит, а рисовать нечем, пока сущность не создаст ленивый
-	 *  запрос {@code Level.getBlockEntity} и не пересоберётся секция. Признак «блок мода» берётся ЦЕНТРОМ мода
-	 *  {@code ST.isGT(Block)} (тот же, которым мод отличает свой блок в {@code WorldgenOresVanilla:58}).
+	 *  <p><b>REMOVAL BOUNDARY — MOD BLOCKS, AND ONLY THOSE (BUG-139).</b> "The mod does not need the promise" is true
+	 *  exactly for OWN blocks: GT6 sets their entity itself ({@link #te}), just as in 1.7.10 — "Where I come from, we set the
+	 *  TileEntities ourselves" ({@code PrefixBlock.createTileEntity}); stubs did not exist at all in 1.7.10,
+	 *  and {@code Chunk.func_150807_a} removed the entity together with the block. For a FOREIGN block this is mirror-wrong:
+	 *  the mod NEVER sets a vanilla entity, and the engine's promise is its ONLY source. The previous
+	 *  edition removed the promise regardless of owner, and worldgen-placed vanilla block-entities in dungeons stayed
+	 *  WITHOUT an entity: the ender chest and bed (their whole look is drawn by their BER), the enchanting table's book,
+	 *  the End portal, signs, vanilla chests and the beacon — the block stands, but there's nothing to draw, until the
+	 *  entity is created by a lazy {@code Level.getBlockEntity} request and the section is rebuilt. The "mod block"
+	 *  predicate is taken from the mod's CENTER {@code ST.isGT(Block)} (the same one the mod uses to tell its own block
+	 *  apart in {@code WorldgenOresVanilla:58}).
 	 *
-	 *  <p><b>Приём движковый, своего механизма не заводим:</b> снимаем тем же {@code ChunkAccess.removeBlockEntity},
-	 *  которым это делает сам {@code WorldGenRegion}. Он чистит обе карты [ProtoChunk.java:248-251], поэтому уже
-	 *  привязанную живую сущность (порядок «блок → сущность» у {@code placeBlock} двойной: set/te/set/te)
-	 *  возвращаем на место тем же каналом {@code ChunkAccess.setBlockEntity}, каким её ставит {@link #te}.
-	 *  {@code ProtoChunk.removeBlockEntity} — чистые операции над картами, {@code setRemoved()} не зовёт.
+	 *  <p><b>The technique is engine-native, we start no mechanism of our own:</b> we remove the promise with the same
+	 *  {@code ChunkAccess.removeBlockEntity} that {@code WorldGenRegion} itself uses. It cleans both maps [ProtoChunk.java:248-251],
+	 *  so an already-attached live entity (the "block -> entity" order at {@code placeBlock} is doubled: set/te/set/te)
+	 *  is put back in place through the same channel {@code ChunkAccess.setBlockEntity} that {@link #te} uses to set it.
+	 *  {@code ProtoChunk.removeBlockEntity} is a clean map operation, it does not call {@code setRemoved()}.
 	 *
-	 *  <p><b>Симметрия с main (26.1.2): правка нужна ТОЛЬКО здесь.</b> В движке 26.1.2 обещание снимает сам
-	 *  {@code ProtoChunk.setBlockEntity} [neo-decompiled/.../ProtoChunk.java:173-175:
-	 *  {@code pendingBlockEntities.remove(pos); blockEntities.put(pos, be);}], то есть привязка настоящей
-	 *  сущности гасит заглушку автоматически. В 1.20.1 того же метода нет
-	 *  [forge-1201-decompiled/.../ProtoChunk.java:148-150 — только {@code blockEntities.put}]. Эта правка
-	 *  воспроизводит на ветке поведение более позднего движка. */
+	 *  <p><b>Symmetry with main (26.1.2): this fix is needed ONLY here.</b> On the 26.1.2 engine the promise is removed by
+	 *  {@code ProtoChunk.setBlockEntity} itself [neo-decompiled/.../ProtoChunk.java:173-175:
+	 *  {@code pendingBlockEntities.remove(pos); blockEntities.put(pos, be);}], i.e. attaching the real
+	 *  entity extinguishes the stub automatically. On 1.20.1 there is no such method
+	 *  [forge-1201-decompiled/.../ProtoChunk.java:148-150 — only {@code blockEntities.put}]. This fix
+	 *  reproduces the later engine's behavior on this branch. */
 	private static boolean setWG(LevelAccessor aWorld, BlockPos aPos, BlockState aState, int aFlags) {
 		boolean rSet = aWorld.setBlock(aPos, aState, aFlags);
-		// BUG-139: гейт ST.isGT — обещание снимаем ТОЛЬКО у блоков МОДА (их сущность ставит сам мод через WD.te).
-		// У чужого блока обещание движка — единственный источник сущности; снять его значит оставить блок без неё.
+		// BUG-139: gate ST.isGT — the promise is removed ONLY for MOD blocks (their entity is set by the mod itself through WD.te).
+		// For a foreign block the engine's promise is the sole source of the entity; removing it would leave the block without one.
 		if (rSet && aState.hasBlockEntity() && ST.isGT(aState.getBlock())) dropWorldgenBEStub(aWorld, aPos);
-		// Стартовый тик жидкости: WorldGenRegion не зовёт onPlace, а в 1.7.10 его звал сам чанк, и flowing-вода
-		// моб-фермы данжа (ориг. DungeonChunkRoomFarmMobs:198-201) растекалась сама. Приём движковый — так же
-		// планирует тик генератор структур самого движка (StructurePiece.placeBlock).
+		// Starting fluid tick: WorldGenRegion does not call onPlace, while in 1.7.10 the chunk itself called it, and the flowing water
+		// of the dungeon mob farm (original DungeonChunkRoomFarmMobs:198-201) spread on its own. The technique is engine-native — the
+		// engine's own structure generator schedules a tick the same way (StructurePiece.placeBlock).
 		if (rSet && !(aWorld instanceof Level)) {
 			net.minecraft.world.level.material.FluidState tFluid = aWorld.getFluidState(aPos);
 			if (!tFluid.isEmpty()) aWorld.scheduleTick(aPos, tFluid.getType(), 0);
@@ -1640,49 +1644,49 @@ public class WD {
 		return rSet;
 	}
 
-	/** Снятие движкового обещания. Условие — ровно то, при котором движок его пишет
-	 *  ({@code WorldGenRegion.setBlock:268}: тип чанка НЕ {@code LEVELCHUNK}), поэтому на живом мире и на
-	 *  уже-полном соседе метод не делает ничего. */
+	/** Removal of the engine's promise. The condition is exactly the one under which the engine writes it
+	 *  ({@code WorldGenRegion.setBlock:268}: chunk type is NOT {@code LEVELCHUNK}), so on a live world and on an
+	 *  already-full neighbor the method does nothing. */
 	private static void dropWorldgenBEStub(LevelAccessor aWorld, BlockPos aPos) {
-		if (aWorld instanceof Level) return; // не ворлдген — обещаний не бывает
+		if (aWorld instanceof Level) return; // not worldgen — no promises exist
 		try {
 			ChunkAccess tChunk = aWorld.getChunk(aPos.getX() >> 4, aPos.getZ() >> 4);
 			if (tChunk == null || tChunk.getStatus().getChunkType() == net.minecraft.world.level.chunk.ChunkStatus.ChunkType.LEVELCHUNK) return;
 			net.minecraft.nbt.CompoundTag tStub = tChunk.getBlockEntityNbt(aPos);
-			if (tStub == null || !"DUMMY".equals(tStub.getString("id"))) return; // чужую упакованную запись не трогаем
-			BlockEntity tLive = tChunk.getBlockEntity(aPos); // ProtoChunk: чистое чтение карты (ProtoChunk.java:153-155), промоции нет
+			if (tStub == null || !"DUMMY".equals(tStub.getString("id"))) return; // do not touch a foreign packed entry
+			BlockEntity tLive = tChunk.getBlockEntity(aPos); // ProtoChunk: a clean map read (ProtoChunk.java:153-155), no promotion
 			tChunk.removeBlockEntity(aPos);
 			if (tLive != null) tChunk.setBlockEntity(tLive);
 		} catch (Throwable e) {e.printStackTrace(ERR);}
 	}
 
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
-		// BUG-115-хвост (репорт: «остаются полублоки лавы») — ФОРС ДВИЖКА при СНЯТИИ жидкости.
-		// В 1.7.10 поток жил своим тиком: BlockDynamicLiquid.updateTick перепланировал себя, пока блок
-		// существовал, и сам рассасывался, когда источник пропадал, — уведомлять соседей было не нужно, потому
-		// весь мод снимает жидкость флагом 2 (напр. MultiTileEntityPump.drainFluid, BlockWaterlike.drain).
-		// В neo пересчёт планирует LiquidBlock.updateShape и ТОЛЬКО когда одна из сторон — ИСТОЧНИК
-		// (neo-decompiled/.../LiquidBlock.java:181). Убрали источник без UPDATE_NEIGHBORS — сосед-поток стоит
-		// рядом с воздухом, источника нет ни с одной стороны, тик не планируется, «полублок» висит вечно.
-		// Дифференциальный замер [GT6-PUMPPROBE]: две одинаковые площадки, 44 потока лавы у каждой; срез
-		// источника флагом 2 — осталось 44, флагом 3 — 0. Поэтому: снимаем жидкость — обязаны разбудить соседей.
-		// Условие узкое намеренно: только СНЯТИЕ (ставим воздух) и только если в клетке БЫЛА жидкость, — заливка
-		// ворлдгена (WD.set(..., 0) в океане/реке) не затрагивается, лишних апдейтов при генерации нет (ADAPT-009).
-		// BP-BUG-003: признак «в клетке БЫЛА жидкость» берётся ТЕМ ЖЕ способом, каким мод опознаёт жидкость везде —
-		// по КЛАССУ блока (liquid(Block) ниже), а не через FluidState. Прежний гейт по FluidState связывал этот
-		// фикс с движковым ответом блока: как только паспорт роли перевёл нефти и газ на EMPTY, снятие нефти
-		// перестало бы будить соседей и «полублоки» вернулись бы — теперь уже у нефтей. Один признак — один
-		// носитель (та же правка и тем же приёмом сделана на main, WD.java:1443-1447).
+		// BUG-115 tail (report: "half-blocks of lava remain") — FORCE THE ENGINE on fluid REMOVAL.
+		// In 1.7.10 the flow lived on its own tick: BlockDynamicLiquid.updateTick rescheduled itself while the block
+		// existed, and dissolved on its own once the source disappeared — notifying neighbors was unnecessary, which is why
+		// the whole mod removes fluid with flag 2 (e.g. MultiTileEntityPump.drainFluid, BlockWaterlike.drain).
+		// In neo the recalculation is scheduled by LiquidBlock.updateShape, and ONLY when one of the sides is a SOURCE
+		// (neo-decompiled/.../LiquidBlock.java:181). Remove a source without UPDATE_NEIGHBORS — a neighboring flow stands
+		// next to air, there is no source on any side, no tick is scheduled, and the "half-block" hangs forever.
+		// Differential measurement [GT6-PUMPPROBE]: two identical plots, 44 lava flows each; clearing the
+		// source with flag 2 — 44 remained, with flag 3 — 0. Hence: removing fluid means we must wake the neighbors.
+		// The condition is deliberately narrow: only REMOVAL (setting air) and only if the cell HAD fluid — worldgen
+		// filling (WD.set(..., 0) in an ocean/river) is not affected, no extra updates during generation (ADAPT-009).
+		// BP-BUG-003: the "the cell HAD fluid" predicate is taken the SAME way the mod recognizes fluid everywhere —
+		// by block CLASS (liquid(Block) below), not through FluidState. The previous FluidState-based gate tied this
+		// fix to the block's engine answer: the moment the role passport moved oils and gas to EMPTY, removing oil
+		// would stop waking neighbors and the "half-blocks" would return — now for oils. One predicate — one
+		// carrier (the same fix, done with the same technique, on main, WD.java:1443-1447).
 		if ((aFlags & 1) == 0 && aBlock == NB && liquid(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock())) aFlags |= 1;
 		if (aRemoveGrassBelow) {
-			Block tBlock = state(aWorld, new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
-			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) setWG(aWorld, new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)
+			Block tBlock = state(aWorld, new BlockPos(aX, aY-1, aZ)).getBlock(); // used to be aWorld.getBlock(x,y-1,z)
+			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) setWG(aWorld, new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // used to be aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)
 		}
-		// BUG-025: движок (1.13+) разложил 1.7.10-котёл (один блок, мета 0-3 = уровень воды) на РАЗНЫЕ реестровые блоки:
-		// CAULDRON(пусто, БЕЗ свойства уровня) / WATER_CAULDRON(LayeredCauldronBlock, LEVEL 1-3). Универсальный мост ниже
-		// (setBlock defaultBlockState) уровень не выражал → setMetaData(3) ставил пустой CAULDRON, теряя воду (котёл от
-		// трубы+Drain не наполнялся). Централизованный перевод «числовая мета котла ↔ split-блок+LEVEL» — здесь, в ЕДИНОМ
-		// WD-центре записи (1:1 семантика 1.7.10 setBlockMetadataWithNotify на котле): 0→пусто, 1-3→WATER_CAULDRON.LEVEL.
+		// BUG-025: the engine (1.13+) split the 1.7.10 cauldron (one block, meta 0-3 = water level) into DIFFERENT registry blocks:
+		// CAULDRON(empty, WITHOUT a level property) / WATER_CAULDRON(LayeredCauldronBlock, LEVEL 1-3). The universal bridge below
+		// (setBlock defaultBlockState) did not express the level → setMetaData(3) placed an empty CAULDRON, losing the water (a cauldron fed by
+		// a pipe+Drain did not fill). The centralized translation "numeric cauldron meta ↔ split block+LEVEL" is here, in the SINGLE
+		// WD write center (1:1 semantics of the 1.7.10 setBlockMetadataWithNotify on a cauldron): 0→empty, 1-3→WATER_CAULDRON.LEVEL.
 		if (aBlock == Blocks.CAULDRON || aBlock == Blocks.WATER_CAULDRON) {
 			byte tLevel = Code.bind4(aMeta);
 			BlockState tCauldron = tLevel <= 0
@@ -1690,19 +1694,19 @@ public class WD {
 				: Blocks.WATER_CAULDRON.defaultBlockState().setValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL, (int) Math.min(net.minecraft.world.level.block.LayeredCauldronBlock.MAX_FILL_LEVEL, tLevel));
 			return setWG(aWorld, new BlockPos(aX, aY, aZ), tCauldron, (int) aFlags);
 		}
-		// F13-legacy-meta МОСТ (заход данжей #39, живой тест: «повороты — повсеместная проблема»): worldgen GT6 ставит
-		// ванильные направленные блоки ДОСЛОВНЫМИ метами 1.7.10, а у neo-модели меты нет — прежний путь давал
-		// дефолт-стейт (поршни вниз, кнопки в воздухе, двери/кровати/рамки без ориентации). Разбор ниже.
+		// F13-legacy-meta BRIDGE (dungeon pass #39, live test: "rotations are a pervasive problem"): GT6 worldgen places
+		// vanilla directional blocks with LITERAL 1.7.10 metas, and the neo model has no meta — the previous path gave a
+		// default state (pistons facing down, buttons in mid-air, doors/beds/frames without orientation). Breakdown below.
 		{
 			BlockState tLegacy = legacyVanillaState(aWorld, aX, aY, aZ, aBlock, aMeta);
 			if (tLegacy != null) return setWG(aWorld, new BlockPos(aX, aY, aZ), tLegacy, (int)aFlags);
 		}
-		// было aWorld.setBlock(x,y,z,block,meta,flags) — neo: LevelWriter.setBlock(BlockPos,BlockState,flags) (LevelWriter.java:10).
-		// Числовой меты у BlockState нет (МОДЕЛЬ МЕТЫ п.1/4). BUG-047: 1.7.10 Chunk.func_150807_a писал блок+мету ОДНИМ
-		// сетом (onBlockAdded видел мету) — атомарный путь восстанавливает контракт: state-с-метой одним setBlock.
-		// База = текущий state при том же блоке (смена меты не трогает прочие свойства — WATERLOGGED и т.п., 1:1 с 1.7.10),
-		// иначе defaultBlockState. Равный state → setBlock сам вернёт false без мутации (гейт Chunk.java:623-625 1:1).
-		// TE-мета (PrefixBlock: getStateForExtendedMetaData=null) — прежний двухфазный путь. Для ванильных aMeta теряется (форс движка).
+		// used to be aWorld.setBlock(x,y,z,block,meta,flags) — neo: LevelWriter.setBlock(BlockPos,BlockState,flags) (LevelWriter.java:10).
+		// BlockState has no numeric meta (META MODEL item 1/4). BUG-047: 1.7.10 Chunk.func_150807_a wrote block+meta in ONE
+		// set (onBlockAdded saw the meta) — the atomic path restores the contract: a state-with-meta in one setBlock.
+		// Base = the current state if it's the same block (a meta change does not touch other properties — WATERLOGGED etc., 1:1 with 1.7.10),
+		// otherwise defaultBlockState. An equal state → setBlock itself returns false without mutation (gate Chunk.java:623-625, 1:1).
+		// TE meta (PrefixBlock: getStateForExtendedMetaData=null) — the previous two-phase path. For vanilla, aMeta is lost (engine force).
 		BlockPos tSetPos = new BlockPos(aX, aY, aZ);
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			BlockState tCur = state(aWorld, tSetPos);
@@ -1712,8 +1716,8 @@ public class WD {
 		boolean rSet = setWG(aWorld, tSetPos, aBlock.defaultBlockState(), (int)aFlags);
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			byte tNewMeta = Code.bind4(aMeta);
-			// мета — отдельный канал; но setter даёт side-effects (WD.te/WD.update), потому — только при РЕАЛЬНОМ отличии
-			// (оригинал Chunk.java:623-625 при совпадении block И meta возвращал false без мутации):
+			// meta is a separate channel; but the setter has side-effects (WD.te/WD.update), hence — only on a REAL difference
+			// (the original Chunk.java:623-625 returned false without mutation when block AND meta matched):
 			if (((IBlockExtendedMetaData)aBlock).getExtendedMetaData(aWorld, aX, aY, aZ) != tNewMeta) {
 				((IBlockExtendedMetaData)aBlock).setExtendedMetaData(aWorld, aX, aY, aZ, tNewMeta);
 				rSet = true;
@@ -1722,35 +1726,35 @@ public class WD {
 		return rSet;
 	}
 
-	/** Стейт-канал ЦЕНТРА записи (заход данжей #39): для случаев, где 1.7.10 выражал состояние ОТДЕЛЬНЫМ реестровым
-	 *  блоком, а движок 1.13+ разложил его в blockstate-свойство того же блока (lit_redstone_lamp → REDSTONE_LAMP[LIT];
-	 *  тот же класс разложения, что котёл BUG-025 выше). Числовой меты у таких состояний нет — мета-каналом не выразить. */
+	/** State channel of the write CENTER (dungeon pass #39): for cases where 1.7.10 expressed a state as a SEPARATE registry
+	 *  block, and the 1.13+ engine broke it down into a blockstate property of the same block (lit_redstone_lamp → REDSTONE_LAMP[LIT];
+	 *  the same class of split as the cauldron BUG-025 above). Such states have no numeric meta — cannot be expressed through the meta channel. */
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, BlockState aState, long aFlags) {
 		return setWG(aWorld, new BlockPos(aX, aY, aZ), aState, (int)aFlags);
 	}
 
-	// F13-legacy-meta МОСТ (заход данжей #39): карты направлений 1.7.10. Выверены ГЕОМЕТРИЕЙ данж-конструкций Грега
-	// (перекрёстная сверка, architecture/dungeons.md §8): факел меты 4 @(13,4,6) крепится ровно к smooth(13,4,7) —
-	// опора с юга, торчит на север; кнопки казарм метами 3/4 сидят на стенах z=5/z=10; кровати «head» метой 8+f
-	// строго в facing-направлении от «foot»; все 8 End-рамок мет 4-7 смотрят внутрь портала 2×2 (и несут глаз, бит4);
-	// поршни дверей метами 2/3/4/5 смотрят на дверные колонны (порядок SIDE 1.7.10 = Direction-ординалы);
-	// какао: COMPASS_FROM_SIDE (CS.java:685 — компас 0=N,1=E,2=S,3=W), мета = сторона плода ОТ ствола, а neo
-	// CocoaBlock.FACING указывает НА опору (canSurvive: pos.relative(FACING) — CocoaBlock.java:63-67) → opposite.
-	private static final Direction[] DIR_1710_TORCH   = {Direction.EAST, Direction.WEST, Direction.SOUTH, Direction.NORTH}; // мета 1..4 (факелы/кнопки: опора сзади)
-	private static final Direction[] DIR_1710_HORIZ   = {Direction.SOUTH, Direction.WEST, Direction.NORTH, Direction.EAST}; // мета&3 (кровати/End-рамки/наковальня)
-	// Дверь: полотно закрытой neo-двери лежит у кромки, ПРОТИВОПОЛОЖНОЙ FACING (петли сзади). Выверка (живой тест
-	// «дверь висит с щелью»): дверь казарм мета 1 в проёме слаб-стены z=5 (панель mSlabs[SIDE_Z_NEG] занимает
-	// z∈[0,0.5]) — полотно обязано прижаться к северной кромке → FACING=SOUTH; парная дверь мета 3 у стены
-	// z=10 (панель z∈[0.5,1]) → полотно юг → FACING=NORTH. Полный цикл: 0=E,1=S,2=W,3=N.
-	private static final Direction[] DIR_1710_DOOR    = {Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTH}; // мета&3 нижней половины двери
-	private static final Direction[] DIR_1710_COMPASS = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}; // компас (какао)
+	// F13-legacy-meta BRIDGE (dungeon pass #39): 1.7.10 direction maps. Verified by the GEOMETRY of Greg's dungeon
+	// constructs (cross-check, architecture/dungeons.md §8): torch meta 4 @(13,4,6) attaches exactly to smooth(13,4,7) —
+	// support from the south, pointing north; barracks buttons with metas 3/4 sit on walls z=5/z=10; a bed "head" with meta 8+f
+	// is strictly in the facing direction from the "foot"; all 8 End frames with meta 4-7 face into the 2×2 portal (and carry
+	// an eye, bit4); door pistons with metas 2/3/4/5 face the door columns (1.7.10's SIDE order = Direction ordinals);
+	// cocoa: COMPASS_FROM_SIDE (CS.java:685 — compass 0=N,1=E,2=S,3=W), meta = the pod's side FROM the trunk, while neo's
+	// CocoaBlock.FACING points AT the support (canSurvive: pos.relative(FACING) — CocoaBlock.java:63-67) → opposite.
+	private static final Direction[] DIR_1710_TORCH   = {Direction.EAST, Direction.WEST, Direction.SOUTH, Direction.NORTH}; // meta 1..4 (torches/buttons: support at the back)
+	private static final Direction[] DIR_1710_HORIZ   = {Direction.SOUTH, Direction.WEST, Direction.NORTH, Direction.EAST}; // meta&3 (beds/End frames/anvil)
+	// Door: a closed neo door's panel sits at the edge OPPOSITE FACING (hinges at the back). Verified (live test
+	// "door hangs with a gap"): barracks door meta 1 in the slab-wall opening z=5 (panel mSlabs[SIDE_Z_NEG] occupies
+	// z∈[0,0.5]) — the panel must hug the north edge → FACING=SOUTH; the paired door meta 3 at wall
+	// z=10 (panel z∈[0.5,1]) → panel south → FACING=NORTH. Full cycle: 0=E,1=S,2=W,3=N.
+	private static final Direction[] DIR_1710_DOOR    = {Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTH}; // meta&3 of the door's lower half
+	private static final Direction[] DIR_1710_COMPASS = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}; // compass (cocoa)
 
-	/** F13-legacy-meta МОСТ: 1.7.10-мета ванильного блока → BlockState (или подмена блока: настенный факел, вид бревна,
-	 *  двойные растения — в 1.7.10 варианты жили в мете ОДНОГО блока, движок разложил их в отдельные блоки).
-	 *  null = семья не легаси-мостится (обычный путь WD.set). Маппинги — см. комментарий у карт выше. */
-	/** База для legacy-меты: ТЕКУЩИЙ state, если в клетке стоит тот же блок, иначе дефолт. Смена направления
-	 *  не должна сбрасывать прочие свойства — горящая печь остаётся горящей, затопленный сундук затопленным;
-	 *  это ровно семантика 1.7.10, где setBlockMetadataWithNotify менял мету, а не пересоздавал блок. */
+	/** F13-legacy-meta BRIDGE: 1.7.10 vanilla-block meta → BlockState (or a block substitution: wall torch, log variant,
+	 *  double plants — in 1.7.10 variants lived in the meta of ONE block, the engine broke them into separate blocks).
+	 *  null = the family is not legacy-bridged (the regular WD.set path). Mappings — see the comment on the maps above. */
+	/** Base for legacy meta: the CURRENT state if the cell holds the same block, otherwise the default. A direction change
+	 *  must not reset other properties — a lit furnace stays lit, a flooded chest stays flooded;
+	 *  this is exactly the 1.7.10 semantics, where setBlockMetadataWithNotify changed the meta without recreating the block. */
 	private static BlockState legacyBase(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {
 		BlockState tCur = state(aWorld, new BlockPos(aX, aY, aZ));
 		return tCur.getBlock() == aBlock ? tCur : aBlock.defaultBlockState();
@@ -1758,45 +1762,45 @@ public class WD {
 
 	private static BlockState legacyVanillaState(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta) {
 		int tMeta = (int)aMeta;
-		// Поршни: мета&7 = сторона (SIDE-порядок 1.7.10 = Direction-ординалы: 0D,1U,2N,3S,4W,5E).
+		// Pistons: meta&7 = side (1.7.10 SIDE order = Direction ordinals: 0D,1U,2N,3S,4W,5E).
 		if (aBlock == Blocks.PISTON || aBlock == Blocks.STICKY_PISTON)
 			return aBlock.defaultBlockState().setValue(net.minecraft.world.level.block.DirectionalBlock.FACING, Direction.from3DDataValue(tMeta & 7));
-		// Направленная ВАНИЛЬ, которую ключ Грега адресует НАПРЯМУЮ («лицом на ткнутую сторону»,
-		// ToolCompat ставит блоку мету = aTargetSide). Без этих строк мета для них терялась, WD.set возвращал
-		// false, и ключ сваливался в запасной путь WD.rotateBlock — то есть КРУТИЛ НА 90° вместо адресного
-		// поворота, теряя семантику Грега. Порядок мет 1.7.10 = ординалы Direction (0D,1U,2N,3S,4W,5E) — тот
-		// же, что у поршня выше.
+		// Directional VANILLA that Greg's wrench addresses DIRECTLY ("face the poked side",
+		// ToolCompat sets the block's meta = aTargetSide). Without these lines their meta was lost, WD.set returned
+		// false, and the wrench fell back to the WD.rotateBlock path — meaning it ROTATED BY 90° instead of
+		// addressed rotation, losing Greg's semantics. The 1.7.10 meta order = Direction ordinals (0D,1U,2N,3S,4W,5E) —
+		// same as the piston above.
 		if (aBlock instanceof net.minecraft.world.level.block.FurnaceBlock || aBlock instanceof net.minecraft.world.level.block.ChestBlock
 		 || aBlock instanceof net.minecraft.world.level.block.EnderChestBlock || aBlock instanceof net.minecraft.world.level.block.CarvedPumpkinBlock) {
 			Direction tDirH = Direction.from3DDataValue(tMeta & 7);
 			if (tDirH.getAxis().isHorizontal()) return legacyBase(aWorld, aX, aY, aZ, aBlock).setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, tDirH);
 		}
-		// Воронка держит направление в СВОЁМ свойстве (HopperBlock FACING_HOPPER): вверх ей запрещён.
+		// The hopper holds direction in ITS OWN property (HopperBlock FACING_HOPPER): UP is forbidden for it.
 		if (aBlock instanceof net.minecraft.world.level.block.HopperBlock) {
 			Direction tDirHop = Direction.from3DDataValue(tMeta & 7);
 			if (tDirHop != Direction.UP) return legacyBase(aWorld, aX, aY, aZ, aBlock).setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING_HOPPER, tDirHop);
 		}
-		// Раздатчик и выбрасыватель (DropperBlock наследует DispenserBlock) — полные шесть сторон, как поршень.
+		// Dispenser and dropper (DropperBlock extends DispenserBlock) — all six sides, like the piston.
 		if (aBlock instanceof net.minecraft.world.level.block.DispenserBlock)
 			return legacyBase(aWorld, aX, aY, aZ, aBlock).setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.from3DDataValue(tMeta & 7));
-		// Редстоун-факел: меты 1-4 = НАСТЕННЫЙ (в neo — отдельный блок REDSTONE_WALL_TORCH); 0/5 = стоячий (дефолт).
+		// Redstone torch: metas 1-4 = WALL-mounted (in neo — a separate REDSTONE_WALL_TORCH block); 0/5 = standing (default).
 		if (aBlock == Blocks.REDSTONE_TORCH) {
 			int tSide = tMeta & 7;
 			if (tSide >= 1 && tSide <= 4) return Blocks.REDSTONE_WALL_TORCH.defaultBlockState().setValue(net.minecraft.world.level.block.RedstoneWallTorchBlock.FACING, DIR_1710_TORCH[tSide-1]);
 			return Blocks.REDSTONE_TORCH.defaultBlockState();
 		}
-		// Жидкость: мета 1.7.10 = уровень (0 источник, 1-7 поток, бит 8 «падающая»), и neo держит ту же шкалу в
-		// LiquidBlock.LEVEL (LiquidBlock.java:70-78). Без ветки мета терялась: выплеск прогара (ориг. Crucible:373-375
-		// flowing_lava меты 1) вставал ИСТОЧНИКОМ лавы и не рассасывался. Только ваниль: у жидкостей мода свой канал меты.
+		// Fluid: 1.7.10 meta = level (0 source, 1-7 flow, bit 8 "falling"), and neo holds the same scale in
+		// LiquidBlock.LEVEL (LiquidBlock.java:70-78). Without this branch the meta was lost: a crucible spill (orig. Crucible:373-375
+		// flowing_lava meta 1) landed as a lava SOURCE and never dissolved. Vanilla only: mod fluids have their own meta channel.
 		if (aBlock == Blocks.WATER || aBlock == Blocks.LAVA)
 			return aBlock.defaultBlockState().setValue(net.minecraft.world.level.block.LiquidBlock.LEVEL, Math.min(15, tMeta));
-		// Кнопки: меты 1-4 = настенные (та же карта, что факелы); прочие — дефолт-путь.
+		// Buttons: metas 1-4 = wall-mounted (the same map as torches); others — the default path.
 		if (aBlock instanceof net.minecraft.world.level.block.ButtonBlock && (tMeta & 7) >= 1 && (tMeta & 7) <= 4)
 			return aBlock.defaultBlockState()
 				.setValue(net.minecraft.world.level.block.ButtonBlock.FACE, net.minecraft.world.level.block.state.properties.AttachFace.WALL)
 				.setValue(net.minecraft.world.level.block.ButtonBlock.FACING, DIR_1710_TORCH[(tMeta & 7)-1]);
-		// Двери: мета<8 = нижняя половина (facing в мете); мета>=8 = верхняя (в мете только петля; facing/open
-		// читаем из УЖЕ поставленной нижней — 1.7.10 хранил их только внизу, порядок постановки низ→верх).
+		// Doors: meta<8 = lower half (facing in meta); meta>=8 = upper (only the hinge is in meta; facing/open
+		// is read from the ALREADY placed lower half — 1.7.10 stored them only below, placement order bottom→top).
 		if (aBlock instanceof net.minecraft.world.level.block.DoorBlock) {
 			if (tMeta < 8) return aBlock.defaultBlockState()
 				.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER)
@@ -1808,60 +1812,60 @@ public class WD {
 			if (tLower.getBlock() == aBlock) rDoor = rDoor.setValue(net.minecraft.world.level.block.DoorBlock.FACING, tLower.getValue(net.minecraft.world.level.block.DoorBlock.FACING)).setValue(net.minecraft.world.level.block.DoorBlock.OPEN, tLower.getValue(net.minecraft.world.level.block.DoorBlock.OPEN));
 			return rDoor;
 		}
-		// Кровати: бит8 = изголовье; facing (мета&3) одинаков у обеих половин (neo: HEAD в facing-направлении от FOOT).
+		// Beds: bit8 = headboard; facing (meta&3) is the same for both halves (neo: HEAD in the facing direction from FOOT).
 		if (aBlock instanceof net.minecraft.world.level.block.BedBlock)
 			return aBlock.defaultBlockState()
 				.setValue(net.minecraft.world.level.block.BedBlock.PART, (tMeta & 8) != 0 ? net.minecraft.world.level.block.state.properties.BedPart.HEAD : net.minecraft.world.level.block.state.properties.BedPart.FOOT)
 				.setValue(net.minecraft.world.level.block.BedBlock.FACING, DIR_1710_HORIZ[tMeta & 3]);
-		// Рамка End-портала: мета&3 facing + бит4 = вставленный глаз.
+		// End portal frame: meta&3 facing + bit4 = eye inserted.
 		if (aBlock == Blocks.END_PORTAL_FRAME)
 			return Blocks.END_PORTAL_FRAME.defaultBlockState()
 				.setValue(net.minecraft.world.level.block.EndPortalFrameBlock.FACING, DIR_1710_HORIZ[tMeta & 3])
 				.setValue(net.minecraft.world.level.block.EndPortalFrameBlock.HAS_EYE, (tMeta & 4) != 0);
-		// Бревно 1.7.10 (один блок log): мета&3 = вид (0=дуб,1=ель,2=берёза,3=джунгли), мета&12 = ось (0=Y,4=X,8=Z).
-		// Порт-флатнеровка в OAK_LOG теряла вид — а какао выживает ТОЛЬКО на джунглевом бревне (SUPPORTS_COCOA).
+		// 1.7.10 log (one log block): meta&3 = variant (0=oak,1=spruce,2=birch,3=jungle), meta&12 = axis (0=Y,4=X,8=Z).
+		// Port-flattening into OAK_LOG lost the variant — and cocoa survives ONLY on jungle logs (SUPPORTS_COCOA).
 		if (aBlock == Blocks.OAK_LOG && tMeta != 0) {
 			Block tLog = switch (tMeta & 3) {case 1 -> Blocks.SPRUCE_LOG; case 2 -> Blocks.BIRCH_LOG; case 3 -> Blocks.JUNGLE_LOG; default -> Blocks.OAK_LOG;};
 			Direction.Axis tAxis = switch (tMeta & 12) {case 4 -> Direction.Axis.X; case 8 -> Direction.Axis.Z; default -> Direction.Axis.Y;};
 			return tLog.defaultBlockState().setValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS, tAxis);
 		}
-		// Двойные растения 1.7.10 (один блок double_plant): мета&7 = вид, бит8 = верхняя половина.
+		// 1.7.10 double plants (one double_plant block): meta&7 = variant, bit8 = upper half.
 		if (aBlock == Blocks.SUNFLOWER && tMeta != 0) {
 			Block tPlant = switch (tMeta & 7) {case 1 -> Blocks.LILAC; case 2 -> Blocks.TALL_GRASS; case 3 -> Blocks.LARGE_FERN; case 4 -> Blocks.ROSE_BUSH; case 5 -> Blocks.PEONY; default -> Blocks.SUNFLOWER;};
 			return tPlant.defaultBlockState().setValue(net.minecraft.world.level.block.DoublePlantBlock.HALF, (tMeta & 8) != 0 ? net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER : net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER);
 		}
-		// Какао: мета&3 = компас-сторона плода ОТ ствола → neo FACING (НА опору) = opposite; возраст = мета>>2 (0..2).
+		// Cocoa: meta&3 = compass side of the pod FROM the trunk → neo FACING (AT the support) = opposite; age = meta>>2 (0..2).
 		if (aBlock == Blocks.COCOA)
 			return Blocks.COCOA.defaultBlockState()
 				.setValue(net.minecraft.world.level.block.CocoaBlock.FACING, DIR_1710_COMPASS[tMeta & 3].getOpposite())
 				.setValue(net.minecraft.world.level.block.CocoaBlock.AGE, Math.min(2, tMeta >> 2));
-		// Грядка: мета = влажность (1.7.10 clamp 7).
+		// Farmland: meta = moisture (1.7.10 clamp 7).
 		if (aBlock == Blocks.FARMLAND && tMeta != 0)
 			return Blocks.FARMLAND.defaultBlockState().setValue(net.minecraft.world.level.block.FarmBlock.MOISTURE, Math.min(net.minecraft.world.level.block.FarmBlock.MAX_MOISTURE, tMeta));
-		// Наковальня: мета&3 = горизонтальный facing (повреждение из меты>>2 в данже не встречается).
+		// Anvil: meta&3 = horizontal facing (damage from meta>>2 does not occur in dungeons).
 		if (aBlock instanceof net.minecraft.world.level.block.AnvilBlock)
 			return aBlock.defaultBlockState().setValue(net.minecraft.world.level.block.AnvilBlock.FACING, DIR_1710_HORIZ[tMeta & 3]);
-		// F4-flatten: цветные семейства (шерсть/ковёр/стекло/панели/терракота) и tallgrass — в 1.7.10 подтип жил
-		// в мете ОДНОГО блока, движок расщепил их на отдельные блоки. Карты — тот же центр CS.Flattened, что у
-		// вещей в стеке (ST.make_), объявлены там ОДИН раз. Берём worldBlock (не block): семейства, где мета
-		// блока значила не подтип (череп — положение, наковальня — поворот), разобраны ветками ВЫШЕ и сюда не
-		// доходят. Без этого Behavior_Spray_Color (WD.set(..., WHITE_STAINED_GLASS, ~mColor & 15, 3)) красил
-		// всё в белое: имя блока — белое, а мета в мире не значит ничего.
+		// F4-flatten: colored families (wool/carpet/glass/panes/terracotta) and tallgrass — in 1.7.10 the subtype lived
+		// in the meta of ONE block, the engine split them into separate blocks. The maps are the same CS.Flattened center used
+		// for stack items (ST.make_), declared there ONCE. Take worldBlock (not block): families where the block's meta
+		// meant something other than a subtype (skull — position, anvil — rotation) are handled by the branches ABOVE and do not
+		// reach here. Without this, Behavior_Spray_Color (WD.set(..., WHITE_STAINED_GLASS, ~mColor & 15, 3)) painted
+		// everything white: the block name is white, and the meta in the world means nothing.
 		Block tFlat = gregapi.data.CS.Flattened.worldBlock(aBlock, tMeta);
 		if (tFlat != null) return tFlat.defaultBlockState();
 		return null;
 	}
 
 	public static boolean set(ChunkAccess aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta) {
-		// было aChunk.func_150807_a(localX,y,localZ,block,meta) — neo: ChunkAccess.setBlockState(BlockPos,BlockState,flags)
-		// (LevelChunk.java:270 / ChunkAccess) хочет МИРОВОЙ BlockPos (маскирует &15 внутри себя, используя абсолютные
-		// координаты для heightmap/light engine) — ChunkPos.getBlockAt(localX,y,localZ) (ChunkPos.java:151) переводит
-		// локальные координаты чанка в мировые, сохраняя тот же вызывающий контракт (локальные x/z 0-15).
-		// F6-worldgen: приёмник расширен LevelChunk->ChunkAccess (worldgen пишет напрямую в генерящийся ProtoChunk/
-		// ImposterProtoChunk, не в full-чанк). setBlockState/getPos/getBlockState — все на ChunkAccess.
+		// used to be aChunk.func_150807_a(localX,y,localZ,block,meta) — neo: ChunkAccess.setBlockState(BlockPos,BlockState,flags)
+		// (LevelChunk.java:270 / ChunkAccess) wants a WORLD BlockPos (it masks &15 internally, using absolute
+		// coordinates for heightmap/light engine) — ChunkPos.getBlockAt(localX,y,localZ) (ChunkPos.java:151) converts
+		// local chunk coordinates to world ones, preserving the same calling contract (local x/z 0-15).
+		// F6-worldgen: the receiver is widened LevelChunk->ChunkAccess (worldgen writes directly into the generating ProtoChunk/
+		// ImposterProtoChunk, not the full chunk). setBlockState/getPos/getBlockState — all on ChunkAccess.
 		BlockPos tChunkSetPos = aChunk.getPos().getBlockAt(aX, aY, aZ);
-		// BUG-047: атомарный путь «state-с-метой одним сетом» — зеркало WD.set(LevelAccessor) выше (1.7.10 Chunk-контракт);
-		// TE-мета (getStateForExtendedMetaData=null) — прежний двухфазный путь ниже.
+		// BUG-047: the atomic "state-with-meta in one set" path — mirrors WD.set(LevelAccessor) above (1.7.10 Chunk contract);
+		// TE meta (getStateForExtendedMetaData=null) — the previous two-phase path below.
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			BlockState tCurChunk = aChunk.getBlockState(tChunkSetPos);
 			BlockState tNewChunk = ((IBlockExtendedMetaData)aBlock).getStateForExtendedMetaData(tCurChunk.getBlock() == aBlock ? tCurChunk : aBlock.defaultBlockState(), Code.bind4(aMeta));
@@ -1870,9 +1874,9 @@ public class WD {
 		boolean rSet = aChunk.setBlockState(tChunkSetPos, aBlock.defaultBlockState(), F) != null;
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			byte tNewMeta = Code.bind4(aMeta);
-			// мета-канал IBlockExtendedMetaData принимает BlockGetter (IBlockExtendedMetaData.java:28-29); сам ChunkAccess
-			// ЕСТЬ BlockGetter (ChunkAccess extends BlockGetter) → передаём чанк напрямую вместо LevelChunk-only getLevel()
-			// (у ProtoChunk getLevel() нет). TileEntity ищется через ChunkAccess.getBlockEntity(pos) — доступен на генерации.
+			// the IBlockExtendedMetaData meta channel takes a BlockGetter (IBlockExtendedMetaData.java:28-29); ChunkAccess itself
+			// IS a BlockGetter (ChunkAccess extends BlockGetter) → pass the chunk directly instead of the LevelChunk-only getLevel()
+			// (ProtoChunk has no getLevel()). The TileEntity is looked up via ChunkAccess.getBlockEntity(pos) — available during generation.
 			if (((IBlockExtendedMetaData)aBlock).getExtendedMetaData(aChunk, tChunkSetPos.getX(), tChunkSetPos.getY(), tChunkSetPos.getZ()) != tNewMeta) {
 				((IBlockExtendedMetaData)aBlock).setExtendedMetaData(aChunk, tChunkSetPos.getX(), tChunkSetPos.getY(), tChunkSetPos.getZ(), tNewMeta);
 				rSet = true;
@@ -1882,8 +1886,8 @@ public class WD {
 	}
 	public static boolean set(ChunkAccess aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
-			Block tBlock = aChunk.getBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ)).getBlock(); // было aChunk.getBlock(x,y-1,z)
-			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aChunk.setBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), F); // было aChunk.func_150807_a(x,y-1,z,Blocks.DIRT,0)
+			Block tBlock = aChunk.getBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ)).getBlock(); // used to be aChunk.getBlock(x,y-1,z)
+			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aChunk.setBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), F); // was aChunk.func_150807_a(x,y-1,z,Blocks.DIRT,0)
 		}
 		return set(aChunk, aX, aY, aZ, aBlock, aMeta);
 	}
@@ -1892,7 +1896,7 @@ public class WD {
 		if (aTargetBlock == null || aReplaceBlock == null) return F;
 		if (aReplaceBlock != block(aWorld, aX, aY, aZ)) return F;
 		if (aReplaceMeta != W && aReplaceMeta != meta(aWorld, aX, aY, aZ)) return F;
-		return set(aWorld, aX, aY, aZ, aTargetBlock, aTargetMeta, Block.UPDATE_CLIENTS, F); // было aWorld.setBlock(x,y,z,block,meta,2) — флаг 2=UPDATE_CLIENTS (Block.java:91-104); маршрут через центр set(...) — мета своих блоков (IBlockExtendedMetaData) не теряется
+		return set(aWorld, aX, aY, aZ, aTargetBlock, aTargetMeta, Block.UPDATE_CLIENTS, F); // used to be aWorld.setBlock(x,y,z,block,meta,2) — flag 2=UPDATE_CLIENTS (Block.java:91-104); routed through the center set(...) — meta of own blocks (IBlockExtendedMetaData) is not lost
 	}
 	public static boolean replace(LevelAccessor aWorld, BlockPos aCoords, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
 		return replace(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aReplaceBlock, aReplaceMeta, aTargetBlock, aTargetMeta);
@@ -1921,14 +1925,14 @@ public class WD {
 	}
 	
 	public static boolean sign(LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, long aFlags, String aLine1, String aLine2, String aLine3, String aLine4) {
-		// было aWorld.setBlock(x,y,z,Blocks.OAK_WALL_SIGN,aSide,flags) — aSide был прямой мета-ориентацией wall_sign
-		// (2-5); neo: WallSignBlock.FACING (EnumProperty<Direction>, WallSignBlock.java:30) через уже
-		// централизованный FORGE_DIR[side]->Direction (тот же массив, что используется по всему файлу).
+		// used to be aWorld.setBlock(x,y,z,Blocks.OAK_WALL_SIGN,aSide,flags) — aSide was the direct meta-orientation of wall_sign
+		// (2-5); neo: WallSignBlock.FACING (EnumProperty<Direction>, WallSignBlock.java:30) via the already
+		// centralized FORGE_DIR[side]->Direction (the same array used throughout the file).
 		setWG(aWorld, new BlockPos(aX, aY, aZ), Blocks.OAK_WALL_SIGN.defaultBlockState().setValue(WallSignBlock.FACING, FORGE_DIR[aSide]), (int)aFlags);
 		BlockEntity tSign = te(aWorld, aX, aY, aZ, T);
 		if (!(tSign instanceof SignBlockEntity)) return F;
-		// было signText[0..3]=String (1.7.10 мутабельный массив строк) -> neo SignText immutable (front/back):
-		// getFrontText():77 -> цепочка setMessage(index,Component):84 (возвращает новый SignText) -> setText(SignText,isFront):161.
+		// used to be signText[0..3]=String (a 1.7.10 mutable string array) -> neo SignText immutable (front/back):
+		// getFrontText():77 -> a chain of setMessage(index,Component):84 (returns a new SignText) -> setText(SignText,isFront):161.
 		((SignBlockEntity)tSign).setText(((SignBlockEntity)tSign).getFrontText()
 			.setMessage(0, net.minecraft.network.chat.Component.literal(aLine1))
 			.setMessage(1, net.minecraft.network.chat.Component.literal(aLine2))
@@ -1937,12 +1941,12 @@ public class WD {
 		return T;
 	}
 	
-	/** F-worldgen: 1.7.10 {@code World.getSeed()} -> neo только {@code ServerLevel.getSeed()}:1697 (у базового Level
-	 *  сида нет). Детерм.-per-chunk random — worldgen (сервер), где aWorld всегда ServerLevel; клиент (нет worldgen) -> 0.
-	 *  ДЕФЕКТ-ФИКС (заход данжей #39): из Feature-фазы приходит {@code WorldGenRegion} — НЕ ServerLevel → прежний гейт
-	 *  давал seed=0 (детерминизм внутри мира сохранялся — 0 одинаков для всех чанков, — но seed мира терялся). Реальный
-	 *  канал: {@code WorldGenLevel.getSeed()} ({@code WorldGenLevel.java:8}; {@code WorldGenRegion.getSeed():367}
-	 *  возвращает {@code level.getSeed()}); ServerLevel сам реализует WorldGenLevel — один гейт кроет оба. */
+	/** F-worldgen: 1.7.10 {@code World.getSeed()} -> neo has ONLY {@code ServerLevel.getSeed()}:1697 (the base Level
+	 *  has no seed). Deterministic per-chunk random — worldgen (server), where aWorld is always ServerLevel; client (no worldgen) -> 0.
+	 *  DEFECT FIX (dungeon pass #39): the {@code WorldGenRegion} arriving from the Feature phase is NOT a ServerLevel → the previous gate
+	 *  gave seed=0 (determinism within the world was preserved — 0 is the same for all chunks — but the world seed was lost). The real
+	 *  channel: {@code WorldGenLevel.getSeed()} ({@code WorldGenLevel.java:8}; {@code WorldGenRegion.getSeed():367}
+	 *  returns {@code level.getSeed()}); ServerLevel itself implements WorldGenLevel — one gate covers both. */
 	public static long seed(LevelAccessor aWorld) {return aWorld instanceof net.minecraft.world.level.WorldGenLevel tWGL ? tWGL.getSeed() : 0L;}
 	public static Random random(LevelAccessor aWorld, long aChunkX, long aChunkZ) {return random(seed(aWorld) ^ WD.dimensionId(aWorld), aChunkX >> 4, aChunkZ >> 4);}
 	public static Random random(long aSeed, long aChunkX, long aChunkZ) {
@@ -1969,61 +1973,61 @@ public class WD {
 		return rRandom.nextInt(aBound);
 	}
 	
-	public static Random random(BlockEntity aTileEntity) {return new Random(aTileEntity.getBlockPos().getX() ^ aTileEntity.getBlockPos().getY() ^ aTileEntity.getBlockPos().getZ());} // было .x/.y/.z — BlockEntity.getBlockPos() (BlockEntity.java:232)
+	public static Random random(BlockEntity aTileEntity) {return new Random(aTileEntity.getBlockPos().getX() ^ aTileEntity.getBlockPos().getY() ^ aTileEntity.getBlockPos().getZ());} // used to be .x/.y/.z — BlockEntity.getBlockPos() (BlockEntity.java:232)
 	public static int random(BlockEntity aTileEntity, int aBound) {return random(aTileEntity).nextInt(aBound);}
 	public static boolean random(BlockEntity aTileEntity, int aBound, long aTime) {return random(aTileEntity, aBound) == aTime % aBound;}
 	
 	public static boolean border(int aFromX, int aFromZ, int aToX, int aToZ) {return aFromX >> 4 != aToX >> 4 || aFromZ >> 4 != aToZ >> 4;}
 	
-	public static boolean even(BlockEntity aTileEntity) {return even(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ());} // было .x/.y/.z
+	public static boolean even(BlockEntity aTileEntity) {return even(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ());} // used to be .x/.y/.z
 	public static boolean even(BlockPos aCoords) {return even(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	public static boolean even(int... aCoords) {int i = 0; for (int tCoord : aCoords) if (tCoord % 2 == 0) i++; return i % 2 == 0;}
 	
-	public static int evenness(BlockEntity aTileEntity) {return evenness(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ());} // было .x/.y/.z
+	public static int evenness(BlockEntity aTileEntity) {return evenness(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ());} // used to be .x/.y/.z
 	public static int evenness(BlockPos aCoords) {return evenness(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	public static int evenness(int... aCoords) {int i = 0; for (int tCoord : aCoords) {i <<= 1; if (tCoord % 2 != 0) i++;} return i;}
 	
-	// было aWorld.getBlock(x,y,z)/getBlockMetadata(x,y,z)/setBlock(x,y,z,block,meta,flags) — meta через централизованный meta(...)
-	public static boolean setIfDiff(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {return (block(aWorld, aX, aY, aZ) != aBlock || meta(aWorld, aX, aY, aZ) != aMeta) && set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags, F);} // было aWorld.setBlock(x,y,z,block,meta,flags) — маршрут через центр set(...)
+	// used to be aWorld.getBlock(x,y,z)/getBlockMetadata(x,y,z)/setBlock(x,y,z,block,meta,flags) — meta through the centralized meta(...)
+	public static boolean setIfDiff(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {return (block(aWorld, aX, aY, aZ) != aBlock || meta(aWorld, aX, aY, aZ) != aMeta) && set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags, F);} // used to be aWorld.setBlock(x,y,z,block,meta,flags) — routed through the center set(...)
 
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, ItemStack aStack) {
 		Block tBlock = ST.block(aStack);
 		if (tBlock == NB) return F;
 		if (tBlock instanceof IBlockPlacable) return ((IBlockPlacable)tBlock).placeBlock(aWorld, aX, aY, aZ, (byte)6, ST.meta_(aStack), ItemNBT.get(aStack), T, F);
-		if (ST.meta_(aStack) < 16) return set(aWorld, aX, aY, aZ, tBlock, ST.meta_(aStack), Block.UPDATE_ALL, F); // было aWorld.setBlock(x,y,z,block,meta,3) — флаг 3=UPDATE_ALL; маршрут через центр set(...)
+		if (ST.meta_(aStack) < 16) return set(aWorld, aX, aY, aZ, tBlock, ST.meta_(aStack), Block.UPDATE_ALL, F); // used to be aWorld.setBlock(x,y,z,block,meta,3) — flag 3=UPDATE_ALL; routed through the center set(...)
 		return F;
 	}
 
 	public static boolean leafdecay(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return leafdecay(aWorld, aX, aY, aZ, aBlock, F, F);}
 	public static boolean leafdecay(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, boolean aOnlyTopArea) {return leafdecay(aWorld, aX, aY, aZ, aBlock, aOnlyTopArea, F);}
 	public static boolean leafdecay(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, boolean aOnlyTopArea, boolean aTreeCapitator) {
-		// F-tree: Forge Block.canSustainLeaves (блок держит листву от распада — брёвна) удалён -> neo тег
-		// BlockTags.LOGS (BlockTags.java:38; leaf-decay в neo смотрит именно логи), проверка на состоянии.
+		// F-tree: Forge Block.canSustainLeaves (a block keeps leaves from decaying — logs) was removed -> neo tag
+		// BlockTags.LOGS (BlockTags.java:38; neo's leaf-decay looks exactly at logs), checked on the state.
 		if (aBlock == null || state(aWorld, new BlockPos(aX, aY, aZ)).is(net.minecraft.tags.BlockTags.LOGS)) {
 			for (int j = (aOnlyTopArea ? 0 : -7); j <= 7; ++j) for (int i = -7; i <= 7; ++i) for (int k = -7; k <= 7; ++k) {
-				Block tBlock = state(aWorld, new BlockPos(aX+i, aY+j, aZ+k)).getBlock(); // было aWorld.getBlock(x+i,y+j,z+k)
+				Block tBlock = state(aWorld, new BlockPos(aX+i, aY+j, aZ+k)).getBlock(); // used to be aWorld.getBlock(x+i,y+j,z+k)
 				if (tBlock != NB) {
 					if (tBlock == Blocks.BROWN_MUSHROOM_BLOCK || tBlock == Blocks.RED_MUSHROOM_BLOCK) {
-						if (aTreeCapitator && Math.abs(i) <= 4 && Math.abs(k) <= 4 && j <= 0 && j >= -2) aWorld.destroyBlock(new BlockPos(aX+i, aY+j, aZ+k), T); // было aWorld.func_147480_a(x,y,z,drop) — LevelWriter.destroyBlock(BlockPos,boolean) (LevelWriter.java:18)
+						if (aTreeCapitator && Math.abs(i) <= 4 && Math.abs(k) <= 4 && j <= 0 && j >= -2) aWorld.destroyBlock(new BlockPos(aX+i, aY+j, aZ+k), T); // used to be aWorld.func_147480_a(x,y,z,drop) — LevelWriter.destroyBlock(BlockPos,boolean) (LevelWriter.java:18)
 					} else if (IL.NeLi_Wart_Block_Crimson.equal(tBlock) || IL.NeLi_ShroomLight.equal(tBlock)) {
-						if (aTreeCapitator && Math.abs(i) <= 4 && Math.abs(k) <= 4) aWorld.destroyBlock(new BlockPos(aX+i, aY+j, aZ+k), T); // было aWorld.func_147480_a(x,y,z,drop)
+						if (aTreeCapitator && Math.abs(i) <= 4 && Math.abs(k) <= 4) aWorld.destroyBlock(new BlockPos(aX+i, aY+j, aZ+k), T); // used to be aWorld.func_147480_a(x,y,z,drop)
 					} else {
 						if (WD.leaves(tBlock, aWorld, aX+i, aY+j, aZ+k)) {
-							// F-tree (BUG-005): в 1.7.10 scheduleBlockUpdate бил в updateTick листа, который САМ проверял опору и
-							// распадался (один канал). В neo 26.1.2 канал ВАНИЛЬНОЙ листвы расщеплён: scheduled tick лишь пересчитывает
-							// DISTANCE (LeavesBlock.tick:79-81), а распад живёт в randomTick:67-72 (decaying: DISTANCE==7 && !PERSISTENT).
-							// Причём scheduleTick для ванильного листа тут ВРЕДЕН: висящий pending-тик (1..100) ДЕДУПИТСЯ по (блок,поз)
-							// и блокирует каскадные delay-1 пересчёты DISTANCE от снесённых брёвен (LevelChunkTicks.schedule:52 —
-							// ticksPerPosition.add), замедляя распад ХУЖЕ ванили (замерено пробой gt6leafprobe: settle >100 тиков).
-							// -> ванильную листву НЕ scheduleTick, а форс-randomTick ТОЙ ЖЕ формулой задержки через центральную
-							// очередь сервер-тика (GT_API_Proxy.DELAYED_LEAF_DECAYS, исполнение движковыми state.tick+state.randomTick,
-							// недозревший DISTANCE добирается повторами там же). GT6-и-прочие листья — как в оригинале: scheduleTick,
-							// их updateTick распадает сам (tick-мост BlockBase -> updateTick2).
+							// F-tree (BUG-005): in 1.7.10 scheduleBlockUpdate hit the leaf's updateTick, which ITSELF checked support and
+							// decayed (a single channel). In neo 26.1.2 the VANILLA leaf channel is split: the scheduled tick only recomputes
+							// DISTANCE (LeavesBlock.tick:79-81), while decay lives in randomTick:67-72 (decaying: DISTANCE==7 && !PERSISTENT).
+							// Moreover, scheduleTick for a vanilla leaf is HARMFUL here: a pending tick (1..100) is DEDUPED by (block,pos)
+							// and blocks cascading delay-1 DISTANCE recomputations from felled logs (LevelChunkTicks.schedule:52 —
+							// ticksPerPosition.add), making decay SLOWER than vanilla (measured by the gt6leafprobe rig: settle >100 ticks).
+							// -> for vanilla leaves, do NOT scheduleTick, instead force-randomTick with the SAME delay formula through the central
+							// server-tick queue (GT_API_Proxy.DELAYED_LEAF_DECAYS, executed by the engine's state.tick+state.randomTick,
+							// an under-ripened DISTANCE catches up through repeats there too). GT6 and other leaves — as in the original: scheduleTick,
+							// their updateTick decays them itself (tick bridge BlockBase -> updateTick2).
 							if (tBlock instanceof net.minecraft.world.level.block.LeavesBlock) {
 								if (aWorld instanceof net.minecraft.server.level.ServerLevel)
 									gregapi.GT_API_Proxy.DELAYED_LEAF_DECAYS.add(new Object[] {aWorld, new BlockPos(aX+i, aY+j, aZ+k), SERVER_TIME + 1 + RNGSUS.nextInt(100), 0});
 							} else {
-								aWorld.scheduleTick(new BlockPos(aX+i, aY+j, aZ+k), tBlock, 1+RNGSUS.nextInt(100)); // было aWorld.scheduleTick(new BlockPos(x, y, z), block, delay) — ScheduledTickAccess.scheduleTick(BlockPos,Block,int) (ScheduledTickAccess.java:21)
+								aWorld.scheduleTick(new BlockPos(aX+i, aY+j, aZ+k), tBlock, 1+RNGSUS.nextInt(100)); // used to be aWorld.scheduleTick(new BlockPos(x, y, z), block, delay) — ScheduledTickAccess.scheduleTick(BlockPos,Block,int) (ScheduledTickAccess.java:21)
 							}
 						}
 					}
@@ -2034,21 +2038,21 @@ public class WD {
 		return F;
 	}
 	
-	// F5 (единый центр жидкостей): в Forge «личностью жидкости» был интерфейс IFluidBlock на общем предке
-	// BlockFluidBase (→ BlockFluidClassic/BlockFluidFinite). Порт воспроизвёл иерархию своими классами
-	// (decisions/F5-fluids.md §5): ЕДИНЫЙ маркер GT6-жидкости — BlockFluidBaseGT, его наследники BlockWaterlike
-	// (classic) / BlockBaseFluid (finite). GT6-жидкости IFluidBlock/LiquidBlock НЕ несут → классификаторы ниже
-	// спрашивают этот живой центр (тот же приём, что WD.getMaterial:530). LiquidBlock=ваниль, IFluidBlock=чужие моды (интероп).
-	public static boolean liquid(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean liquid(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof gregapi.block.fluid.BlockFluidBaseGT || aBlock instanceof IFluidBlock;} // было BlockLiquid || IFluidBlock; BlockFluidBaseGT = GT6-жидкости (IFluidBlock не несут)
+	// F5 (a single fluids center): in Forge the "identity of a fluid" was the IFluidBlock interface on the common ancestor
+	// BlockFluidBase (→ BlockFluidClassic/BlockFluidFinite). The port reproduced the hierarchy with its own classes
+	// (decisions/F5-fluids.md §5): the SINGLE marker of a GT6 fluid is BlockFluidBaseGT, its descendants BlockWaterlike
+	// (classic) / BlockBaseFluid (finite). GT6 fluids do NOT carry IFluidBlock/LiquidBlock → the classifiers below
+	// ask this live center instead (the same approach as WD.getMaterial:530). LiquidBlock=vanilla, IFluidBlock=foreign mods (interop).
+	public static boolean liquid(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
+	public static boolean liquid(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof gregapi.block.fluid.BlockFluidBaseGT || aBlock instanceof IFluidBlock;} // used to be BlockLiquid || IFluidBlock; BlockFluidBaseGT = GT6 fluids (do not carry IFluidBlock)
 
-	public static boolean liquid_classic(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_classic(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof BlockWaterlike;} // было BlockLiquid || BlockFluidClassic; BlockWaterlike = classic-стиль GT6
+	public static boolean liquid_classic(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_classic(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
+	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof BlockWaterlike;} // used to be BlockLiquid || BlockFluidClassic; BlockWaterlike = GT6 classic-style
 
-	public static boolean liquid_finite(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_finite(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean liquid_finite(Block aBlock) {return aBlock instanceof gregapi.block.fluid.BlockBaseFluid;} // было BlockFluidFinite; BlockBaseFluid = finite-стиль GT6 (единственный вызыватель — MultiTileEntityFluidSpring)
+	public static boolean liquid_finite(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_finite(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
+	public static boolean liquid_finite(Block aBlock) {return aBlock instanceof gregapi.block.fluid.BlockBaseFluid;} // used to be BlockFluidFinite; BlockBaseFluid = GT6 finite-style (the only caller — MultiTileEntityFluidSpring)
 
-	public static boolean liquid_borken(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_borken(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean liquid_borken(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_borken(state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
 	public static boolean liquid_borken(Block aBlock) {return !(aBlock instanceof IItemGT) && liquid_classic(aBlock);}
 	
 	public static boolean stone(Block aBlock, short aMeta) {
@@ -2058,7 +2062,7 @@ public class WD {
 		return BlocksGT.stoneToNormalOres.containsKey(tStack) || BlocksGT.stoneToBrokenOres.containsKey(tStack) || BlocksGT.stoneToSmallOres.containsKey(tStack);
 	}
 	
-	public static boolean floor(LevelAccessor aWorld, int aX, int aY, int aZ) {return floor(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean floor(LevelAccessor aWorld, int aX, int aY, int aZ) {return floor(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
 	public static boolean floor(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return WD.sideSolid(aBlock, aWorld, aX, aY, aZ, FORGE_DIR[SIDE_UP]) || floor(aBlock);}
 	public static boolean floor(Block aBlock) {return WD.opaque(aBlock) || aBlock instanceof SlabBlock || aBlock instanceof StairBlock || aBlock instanceof BlockMetaType;}
 	
@@ -2067,38 +2071,38 @@ public class WD {
 	public static boolean ore_stone(Block aBlock, short aMeta) {return ore(aBlock, aMeta) || stone(aBlock, aMeta);}
 	
 	public static boolean visOcc(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return visOpq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && visOpq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && visOpq(aWorld, aX, aY+1, aZ, T, aDefault) && visOpq(aWorld, aX, aY-1, aZ, T, aDefault) && visOpq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && visOpq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
-	public static boolean visOpq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? visOpq(state(aWorld, tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
-	// F3-render КОРЕНЬ «грань GT6-блока пропадает на стыке с забором/слабом/любым НЕ-полным соседом»: 1.7.10 скрывал грань,
-	// если сосед isOpaqueCube() (ПОЛНЫЙ непрозрачный куб). Порт ошибочно взял canOcclude() (WD.opaque) — а он TRUE и для слабов/
-	// лестниц/заборов (они окклюдят ЧАСТИЧНО) → грань GT6-блока против них скрывалась. Верный neo-эквивалент isOpaqueCube =
-	// BlockState.isSolidRender() (=Block.isShapeFullBlock(occlusionShape), BlockBehaviour.java:499) — TRUE только для ПОЛНОГО куба.
-	public static boolean visOpq(Block aBlock) {return aBlock.defaultBlockState().isSolidRender(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO) || VISUALLY_OPAQUE_BLOCKS.contains(aBlock);} // 1.20.1: isSolidRender берёт (BlockGetter,BlockPos); безпозиционный запрос движок делает через EmptyBlockGetter (BlockBehaviour.java:916)
+	public static boolean visOpq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? visOpq(state(aWorld, tP).getBlock()) : aDefault;} // used to be blockExists/getBlock(x,y,z)
+	// F3-render ROOT of "a GT6 block's face disappears at the seam with a fence/slab/any NOT-full neighbor": 1.7.10 hid the face
+	// if the neighbor was isOpaqueCube() (a FULL opaque cube). The port mistakenly took canOcclude() (WD.opaque) — which is TRUE also for slabs/
+	// stairs/fences (they occlude PARTIALLY) → the GT6 block's face was hidden against them too. The correct neo equivalent of isOpaqueCube =
+	// BlockState.isSolidRender() (=Block.isShapeFullBlock(occlusionShape), BlockBehaviour.java:499) — TRUE only for a FULL cube.
+	public static boolean visOpq(Block aBlock) {return aBlock.defaultBlockState().isSolidRender(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO) || VISUALLY_OPAQUE_BLOCKS.contains(aBlock);} // 1.20.1: isSolidRender takes (BlockGetter,BlockPos); the engine makes a position-less query through EmptyBlockGetter (BlockBehaviour.java:916)
 	
 	public static boolean occ(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return opq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && opq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && opq(aWorld, aX, aY+1, aZ, T, aDefault) && opq(aWorld, aX, aY-1, aZ, T, aDefault) && opq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && opq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
-	public static boolean opq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? opq(state(aWorld, tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
+	public static boolean opq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || exists(aWorld, aX, aY, aZ) ? opq(state(aWorld, tP).getBlock()) : aDefault;} // used to be blockExists/getBlock(x,y,z)
 	public static boolean opq(Block aBlock) {return WD.opaque(aBlock) && !(aBlock instanceof LeavesBlock);}
 	
-	public static boolean air(LevelAccessor aWorld, int aX, int aY, int aZ) {return air(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean air(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || (state(aWorld, new BlockPos(aX, aY, aZ)).isAir() && !(MD.TC.mLoaded && !WD.opaque(aBlock) && te(aWorld, aX, aY, aZ, T) instanceof INode));} // было aBlock.isAir(world,x,y,z) — BlockBehaviour.java:575 state.isAir()
+	public static boolean air(LevelAccessor aWorld, int aX, int aY, int aZ) {return air(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
+	public static boolean air(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || (state(aWorld, new BlockPos(aX, aY, aZ)).isAir() && !(MD.TC.mLoaded && !WD.opaque(aBlock) && te(aWorld, aX, aY, aZ, T) instanceof INode));} // used to be aBlock.isAir(world,x,y,z) — BlockBehaviour.java:575 state.isAir()
 	public static boolean air(Block aBlock) {return aBlock == NB;}
-	/** BlockGetter-вариант (без Level-only TC/INode-проверки): чистый air-тест для блок-физики (canDisplace и т.п.). */
+	/** BlockGetter variant (without the Level-only TC/INode check): a pure air test for block physics (canDisplace etc.). */
 	public static boolean air(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || state(aWorld, new BlockPos(aX, aY, aZ)).isAir();}
 	
-	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ) {return lava(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ) {return lava(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
 	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == Blocks.LAVA || aBlock == Blocks.LAVA;}
 	public static boolean lava(Block aBlock) {return aBlock == Blocks.LAVA || aBlock == Blocks.LAVA;}
 	
-	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ) {return water(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ) {return water(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
 	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == Blocks.WATER || aBlock == Blocks.WATER;}
 	public static boolean water(Block aBlock) {return aBlock == Blocks.WATER || aBlock == Blocks.WATER;}
 	
 	public static boolean waterstream(Block aBlock) {return MD.Streams.mLoaded && UT.Code.stringValidate(ST.regName(aBlock)).startsWith("streams:river/tile.water");}
 	
-	public static boolean anywater(BlockGetter aWorld, int aX, int aY, int aZ) {return anywater(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean anywater(BlockGetter aWorld, int aX, int aY, int aZ) {return anywater(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
 	public static boolean anywater(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock instanceof BlockWaterlike || water(aWorld, aX, aY, aZ, aBlock) || waterstream(aBlock);}
 	public static boolean anywater(Block aBlock) {return aBlock instanceof BlockWaterlike || water(aBlock) || waterstream(aBlock);}
 	
-	public static boolean bedrock(LevelAccessor aWorld, int aX, int aY, int aZ) {return bedrock(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean bedrock(LevelAccessor aWorld, int aX, int aY, int aZ) {return bedrock(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
 	public static boolean bedrock(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return bedrock(aBlock);}
 	public static boolean bedrock(Block aBlock) {return aBlock == Blocks.BEDROCK || IL.BTL_Bedrock.equal(aBlock);}
 	
@@ -2112,34 +2116,34 @@ public class WD {
 		return IL.AETHER_Tall_Grass.equal(aBlock);
 	}
 	
-	public static boolean irrelevant(LevelAccessor aWorld, int aX, int aY, int aZ) {return irrelevant(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean irrelevant(LevelAccessor aWorld, int aX, int aY, int aZ) {return irrelevant(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
 	public static boolean irrelevant(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock == Blocks.VINE || aBlock == Blocks.SNOW || aBlock == Blocks.FIRE || grass(aWorld, aX, aY, aZ) || anywater(aBlock);}
 	
-	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	// ⛔ Признак растения — VegetationBlock, а НЕ BushBlock. В 1.7.10 `BlockBush` был базой ВСЕХ растений
+	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
+	// ⛔ The plant predicate is VegetationBlock, NOT BushBlock. In 1.7.10 `BlockBush` was the base of ALL plants
 	// (recompSrc: BlockCrops, BlockDeadBush, BlockDoublePlant, BlockFlower, BlockLilyPad, BlockMushroom,
-	// BlockNetherWart, BlockSapling — все `extends BlockBush`), а в neo иерархия разделилась и `BushBlock`
-	// сузился до ОДНОГО блока реестра из 1875 при 72 у `VegetationBlock` (замер `M-84`). С прежним признаком
-	// 58 растений — саженцы всех пород, одуванчик, факелоцвет — переставали быть «легко вытесняемыми», хотя
-	// в оригинале ими были. Тот же переход уже сделан в `dropUnsupportedPlants` ниже: признак один на файл.
+	// BlockNetherWart, BlockSapling — all `extends BlockBush`), while in neo the hierarchy split and `BushBlock`
+	// narrowed to ONE registry block out of 1875 against 72 for `VegetationBlock` (measurement `M-84`). With the previous predicate
+	// 58 plants — saplings of every wood type, dandelion, torchflower — stopped being "easily displaceable", even though
+	// in the original they were. The same transition is already made in `dropUnsupportedPlants` below: one predicate per file.
 	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof net.minecraft.world.level.block.BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || state(aWorld, new BlockPos(aX, aY, aZ)).canBeReplaced();}
 
-	/** Клетка годится под ПОВЕРХНОСТНЫЙ объект вордгена (камешек-индикатор, палка, куст, цветок, саженец).
+	/** A cell is suitable for a SURFACE worldgen object (indicator pebble, stick, bush, flower, sapling).
 	 *
-	 *  <p>Отличается от {@link #easyRep} ровно одним: жидкость клетку НЕ освобождает. {@code easyRep} отвечает
-	 *  на вопрос «можно ли занять клетку вообще» и потому пропускает воду — она {@code replaceable} и в 1.7.10
-	 *  ({@code canBeReplacedByLeaves} у не-цельного блока) тоже давала «да». Для вордгена этого мало: у всех
-	 *  генераторов поверхности гейт на жидкость стоит у ОПОРЫ (блок, на который ставим), а сама целевая клетка
-	 *  сверху не проверялась ничем, кроме {@code easyRep}.</p>
+	 *  <p>Differs from {@link #easyRep} by exactly one thing: fluid does NOT free the cell. {@code easyRep} answers
+	 *  the question "can the cell be occupied at all" and therefore lets water through — it is {@code replaceable} and in 1.7.10
+	 *  ({@code canBeReplacedByLeaves} for a non-solid block) also gave "yes". For worldgen this is not enough: every
+	 *  surface generator's fluid gate sits on the SUPPORT (the block being placed on), while the target cell itself
+	 *  was checked by nothing but {@code easyRep}.</p>
 	 *
-	 *  <p>Пока луч идёт от неба, вода ловится раньше опоры и дыра не видна. Но {@code WorldgenOresLarge:118}
-	 *  бросает луч не от неба, а от «верх жилы + 25» — под океаном и над подземным аквифером эта высота уже
-	 *  НИЖЕ уровня воды: луч упирается в песок дна (законная опора), а индикатор встаёт прямо в воду. Замер по
-	 *  свежему миру: камешков в воде 332 из 7983 (у 99 % под ними рудная жила), палок 1 из 186 — у палок в
-	 *  списке опор нет песка, а дно на 78 % песчаное, отсюда и разница в частоте при общем корне.</p>
+	 *  <p>While the ray comes from the sky, water is caught before the support and the hole is invisible. But {@code WorldgenOresLarge:118}
+	 *  casts its ray not from the sky, but from "vein top + 25" — under an ocean and above an underground aquifer this height is already
+	 *  BELOW the water level: the ray stops at the floor sand (a legitimate support), and the indicator lands right in the water. Measurement on
+	 *  a fresh world: pebbles in water 332 out of 7983 (99% of them have an ore vein below), sticks 1 out of 186 — sticks have
+	 *  no sand in their support list, and the floor is 78% sand, hence the difference in frequency for the same root cause.</p>
 	 *
-	 *  <p>В 1.7.10 индикаторов под водой не было, поэтому поведение возвращается к оригинальному. Проверяется и
-	 *  {@code FluidState}: в neo вода бывает не только отдельным блоком, но и {@code waterlogged}-состоянием. */
+	 *  <p>In 1.7.10 there were no indicators underwater, so the behavior reverts to the original. {@code FluidState} is also
+	 *  checked: in neo water occurs not only as a separate block but also as a {@code waterlogged} state. */
 	public static boolean easyRepDry(LevelAccessor aWorld, int aX, int aY, int aZ) {return easyRepDry(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());}
 	public static boolean easyRepDry(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {
 		if (!easyRep(aWorld, aX, aY, aZ, aBlock)) return F;
@@ -2147,37 +2151,37 @@ public class WD {
 		return !getMaterial(tState.getBlock()).isLiquid() && tState.getFluidState().isEmpty();
 	}
 
-	/** F6-worldgen, класс «потерянный каскад опоры». В 1.7.10 вордген достраивал мир по ЖИВОМУ {@code World.setBlock}
-	 *  с оповещением соседей, и движок сам ронял то, что осталось без опоры ({@code BlockDoublePlant
-	 *  .onNeighborBlockChange -> checkAndDropBlock}). В neo вордген идёт по {@code WorldGenRegion}, а тот пишет
-	 *  состояние прямо в чанк и соседей НЕ оповещает вовсе ({@code neo-decompiled/server/level/WorldGenRegion.java:257-262})
-	 *  — канал пропал молча. GT6 же занимает поверхность ПОСЛЕ ванильной растительности (шаг
-	 *  {@code TOP_LAYER_MODIFICATION}, {@code GT6WorldgenFeature:146}) и вытесняет её сознательно: {@code easyRep}
-	 *  разрешает замещать {@code BushBlock}, а к нему относится и НИЖНЯЯ половина двублочного растения
-	 *  (tall_grass, large_fern). Верхняя половина оставалась висеть в воздухе — симптом игрока «высокая трава над камнем».
+	/** F6-worldgen, class "lost support cascade". In 1.7.10 worldgen finished the world through LIVE {@code World.setBlock}
+	 *  with neighbor notification, and the engine itself dropped whatever was left without support ({@code BlockDoublePlant
+	 *  .onNeighborBlockChange -> checkAndDropBlock}). In neo worldgen goes through {@code WorldGenRegion}, which writes
+	 *  the state straight into the chunk and does NOT notify neighbors at all ({@code neo-decompiled/server/level/WorldGenRegion.java:257-262})
+	 *  — the channel vanished silently. GT6, meanwhile, occupies the surface AFTER vanilla vegetation (the
+	 *  {@code TOP_LAYER_MODIFICATION} step, {@code GT6WorldgenFeature:146}) and deliberately displaces it: {@code easyRep}
+	 *  permits replacing {@code BushBlock}, and that includes the LOWER half of a two-block plant
+	 *  (tall_grass, large_fern). The upper half stayed hanging in mid-air — the player's "tall grass floating over stone" symptom.
 	 *
-	 *  <p>Чинится ОДНИМ проходом на чанк, а не в каждом генераторе: путей записи много и они разнородны —
-	 *  {@code placeBlock} у MTE (камни/палки/кусты: {@code WorldgenOnSurface}, {@code WorldgenOresLarge:119},
-	 *  {@code WorldgenOresBedrock:181}) и {@code WD.set} у слоёв породы ({@code WorldgenStoneLayers:126-176},
-	 *  включая ветку REPLACEABLE_BLOCKS). Финальная уборка за вордгеном — приём самого оригинала: рядом
-	 *  тем же способом добиваются выпавшие при генерации предметы ({@code GT6WorldGenerator}).</p>
+	 *  <p>Fixed by ONE pass per chunk, not in every generator: there are many, heterogeneous write paths —
+	 *  {@code placeBlock} on an MTE (stones/sticks/bushes: {@code WorldgenOnSurface}, {@code WorldgenOresLarge:119},
+	 *  {@code WorldgenOresBedrock:181}) and {@code WD.set} for stone layers ({@code WorldgenStoneLayers:126-176},
+	 *  including the REPLACEABLE_BLOCKS branch). A final sweep after worldgen is the original's own approach: nearby,
+	 *  items dropped during generation are cleaned up the same way ({@code GT6WorldGenerator}).</p>
 	 *
-	 *  <p>Обход — по непустым секциям чанка (пустые пропускаются целиком) с дешёвым предфильтром по типу блока:
-	 *  проверяется ровно то, что {@code easyRep} и разрешает вытеснять, — {@code BushBlock} (трава, папоротники,
-	 *  цветы, саженцы, обе половины двублочных). По карте высот идти НЕЛЬЗЯ: во время генерации она ещё не
-	 *  достроена и полоса у поверхности промахивается мимо части случаев (замерено: 14 висящих против 7).</p>
-	 *  @return сколько блоков снято. */
+	 *  <p>Traversal is over non-empty chunk sections (empty ones are skipped entirely) with a cheap block-type pre-filter:
+	 *  it checks exactly what {@code easyRep} allows displacing — {@code BushBlock} (grass, ferns,
+	 *  flowers, saplings, both halves of two-block plants). Walking by the height map is NOT ALLOWED: during generation it is not yet
+	 *  finished, and a surface-level strip misses part of the cases (measured: 14 hanging vs. 7).</p>
+	 *  @return how many blocks were removed. */
 	public static int dropUnsupportedPlants(LevelAccessor aWorld, net.minecraft.world.level.chunk.ChunkAccess aChunk) {
 		int rDropped = 0;
 		int tMinX = aChunk.getPos().getMinBlockX(), tMinZ = aChunk.getPos().getMinBlockZ();
-		// Обход СВЕРХУ ВНИЗ по всей обитаемой колонне через getBlockState самого чанка. Ни карта высот, ни
-		// LevelChunkSection.hasOnlyAir() во время генерации доверия не заслуживают — оба уже дали промах
-		// (полоса по карте высот: 7 висящих осталось; пропуск «пустых» секций: 20, то есть уборка почти не шла).
-		// Дорогую часть снимает предфильтр по типу: canSurvive спрашивается только у VegetationBlock.
-		// ⛔ Именно VegetationBlock, а НЕ BushBlock: в 1.7.10 BlockDoublePlant наследовал BlockBush, но в neo
-		// иерархия разделилась — DoublePlantBlock extends VegetationBlock, BushBlock extends VegetationBlock,
-		// и двублочные растения (ровно наш случай) под instanceof BushBlock НЕ попадают. Замерено: с фильтром
-		// по BushBlock уборка просмотрела 1 кустовой блок при 2395 двойных растениях в тех же чанках.
+		// Traversal TOP TO BOTTOM through the entire habitable column via the chunk's own getBlockState. Neither the height map, nor
+		// LevelChunkSection.hasOnlyAir() deserves trust during generation — both already produced a miss
+		// (height-map strip: 7 hanging left; skipping "empty" sections: 20, meaning the sweep barely ran).
+		// The expensive part is removed by a type pre-filter: canSurvive is asked only of VegetationBlock.
+		// ⛔ Specifically VegetationBlock, NOT BushBlock: in 1.7.10 BlockDoublePlant extended BlockBush, but in neo
+		// the hierarchy split — DoublePlantBlock extends VegetationBlock, BushBlock extends VegetationBlock,
+		// and two-block plants (exactly our case) do NOT fall under instanceof BushBlock. Measured: with a
+		// BushBlock filter the sweep saw 1 bush block out of 2395 double plants in the same chunks.
 		int tTop = Math.min(maxY(aChunk), 200), tBottom = Math.max(minY(aChunk)+1, 40);
 		for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) for (int tY = tTop; tY >= tBottom; tY--) {
 			BlockPos tPos = new BlockPos(tMinX+i, tY, tMinZ+j);
@@ -2189,19 +2193,19 @@ public class WD {
 		return rDropped;
 	}
 
-	// было aWorld.getBiomeGenForCoords(x,z) — LevelReader.getBiome(BlockPos) (LevelReader.java:42); F6-центр
-	// BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам (unwrapKey().location()), сырой
-	// .value().biomeName (мёртвое 1.7.10-поле) больше не нужен — gregapi/code/BiomeNameSet.java.
+	// used to be aWorld.getBiomeGenForCoords(x,z) — LevelReader.getBiome(BlockPos) (LevelReader.java:42); the F6 center
+	// BiomeNameSet.contains(Holder<Biome>) resolves identity itself (unwrapKey().location()), the raw
+	// .value().biomeName (a dead 1.7.10 field) is no longer needed — gregapi/code/BiomeNameSet.java.
 	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ              ) {int tLevel = waterLevel(aWorld); return                                                                                       UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));}
 	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {int tLevel = waterLevel(aWorld); return waterstream(aBlock) || ((aBlock == Blocks.WATER || aBlock == Blocks.WATER) && UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ))));}
 	
-	public static boolean hasCollide(LevelAccessor aWorld, int aX, int aY, int aZ) {return hasCollide(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	// было aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null — BlockState.getCollisionShape(level,pos).isEmpty()
-	// перевёрнуто (BlockBehaviour.java:674; VoxelShape.isEmpty(), VoxelShape.java:73); isOpaqueCube() не тронут.
+	public static boolean hasCollide(LevelAccessor aWorld, int aX, int aY, int aZ) {return hasCollide(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
+	// used to be aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null — BlockState.getCollisionShape(level,pos).isEmpty()
+	// inverted (BlockBehaviour.java:674; VoxelShape.isEmpty(), VoxelShape.java:73); isOpaqueCube() untouched.
 	public static boolean hasCollide(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return WD.opaque(aBlock) || !state(aWorld, new BlockPos(aX, aY, aZ)).getCollisionShape(aWorld, new BlockPos(aX, aY, aZ)).isEmpty();}
 
-	public static boolean hasCollide(LevelAccessor aWorld, BlockPos aCoords) {return hasCollide(aWorld, aCoords, state(aWorld, aCoords).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean hasCollide(LevelAccessor aWorld, BlockPos aCoords, Block aBlock) {return WD.opaque(aBlock) || !state(aWorld, aCoords).getCollisionShape(aWorld, aCoords).isEmpty();} // было aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null
+	public static boolean hasCollide(LevelAccessor aWorld, BlockPos aCoords) {return hasCollide(aWorld, aCoords, state(aWorld, aCoords).getBlock());} // used to be aWorld.getBlock(x,y,z)
+	public static boolean hasCollide(LevelAccessor aWorld, BlockPos aCoords, Block aBlock) {return WD.opaque(aBlock) || !state(aWorld, aCoords).getCollisionShape(aWorld, aCoords).isEmpty();} // used to be aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null
 	
 	public static boolean flaming(LevelAccessor aWorld, int aX, int aY, int aZ) {return block(aWorld, aX, aY, aZ, F) instanceof FireBlock;}
 	public static boolean burning(LevelAccessor aWorld, int aX, int aY, int aZ) {return flaming(aWorld, aX, aY, aZ) || flaming(aWorld, aX+1, aY, aZ) || flaming(aWorld, aX-1, aY, aZ) || flaming(aWorld, aX, aY+1, aZ) || flaming(aWorld, aX, aY-1, aZ) || flaming(aWorld, aX, aY, aZ+1) || flaming(aWorld, aX, aY, aZ-1);}
@@ -2212,34 +2216,34 @@ public class WD {
 	public static boolean fire(LevelAccessor aWorld, BlockPos aCoords, boolean aCheckFlammability) {return fire(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aCheckFlammability);}
 	public static boolean fire(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aCheckFlammability) {
 		BlockPos tFirePos = new BlockPos(aX, aY, aZ);
-		Block tBlock = state(aWorld, tFirePos).getBlock(); // было aWorld.getBlock(x,y,z)
+		Block tBlock = state(aWorld, tFirePos).getBlock(); // used to be aWorld.getBlock(x,y,z)
 		if (WD.getMaterial(tBlock) == Material.lava || WD.getMaterial(tBlock) == Material.fire) return F;
-		// было tBlock.getCollisionBoundingBoxFromPool(world,x,y,z)==null — BlockState.getCollisionShape(level,pos).isEmpty() (BlockBehaviour.java:674)
+		// used to be tBlock.getCollisionBoundingBoxFromPool(world,x,y,z)==null — BlockState.getCollisionShape(level,pos).isEmpty() (BlockBehaviour.java:674)
 		if (WD.getMaterial(tBlock) == Material.carpet || state(aWorld, tFirePos).getCollisionShape(aWorld, tFirePos).isEmpty()) {
 			if (MD.TC.mLoaded && te(aWorld, aX, aY, aZ, T) instanceof INode) return F;
 			// F-block: IBlockExtension.getFlammability(int meta,world,x,y,z,dir) -> BlockState.getFlammability(
-			// BlockGetter,BlockPos,Direction) (IBlockExtension.java:677) — на состоянии, не на Block.
-			if (state(aWorld, tFirePos).getFlammability(aWorld, tFirePos, FORGE_DIR[SIDE_ANY]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE,0,3)
+			// BlockGetter,BlockPos,Direction) (IBlockExtension.java:677) — on the state, not on Block.
+			if (state(aWorld, tFirePos).getFlammability(aWorld, tFirePos, FORGE_DIR[SIDE_ANY]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // used to be aWorld.setBlock(x,y,z,Blocks.FIRE,0,3)
 			if (tBlock instanceof IItemGT) return F;
 			if (aCheckFlammability) {
 				for (byte tSide : ALL_SIDES_VALID) {
 					BlockPos tAdjPos = new BlockPos(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]);
 					Block tAdjacent = block(aWorld, aX, aY, aZ, tSide);
-					if (tAdjacent == Blocks.CHEST || tAdjacent == Blocks.TRAPPED_CHEST) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE) (3-арг default meta=0,flags=3)
-					// F-block: getFlammability на BlockState соседа (IBlockExtension.java:677), pos соседа вычислен.
-					if (state(aWorld, tAdjPos).getFlammability(aWorld, tAdjPos, FORGE_DIR_OPPOSITES[tSide]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE)
+					if (tAdjacent == Blocks.CHEST || tAdjacent == Blocks.TRAPPED_CHEST) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // used to be aWorld.setBlock(x,y,z,Blocks.FIRE) (3-arg default meta=0,flags=3)
+					// F-block: getFlammability on the neighbor's BlockState (IBlockExtension.java:677), the neighbor's pos is computed.
+					if (state(aWorld, tAdjPos).getFlammability(aWorld, tAdjPos, FORGE_DIR_OPPOSITES[tSide]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // used to be aWorld.setBlock(x,y,z,Blocks.FIRE)
 				}
 			} else {
-				return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE,0,3)
+				return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // used to be aWorld.setBlock(x,y,z,Blocks.FIRE,0,3)
 			}
 		}
 		return F;
 	}
 	
 	public static boolean oreGenReplaceable(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aAllowAir) {
-		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
+		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // used to be aWorld.getBlock(x,y,z)
 		if (aBlock == NB) return aAllowAir;
-		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z) — централизованный meta(...), МОДЕЛЬ МЕТЫ п.4
+		byte aMeta = meta(aWorld, aX, aY, aZ); // used to be (byte)WD.meta(aWorld, x,y,z) — the centralized meta(...), META MODEL item 4
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		if (BlocksGT.stoneToNormalOres.containsKey(new ItemStackContainer(aBlock, 1, aMeta))) return T;
 		if (Blocks.STONE      != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.STONE     )) return T;
@@ -2256,9 +2260,9 @@ public class WD {
 	
 	public static boolean setOre(LevelAccessor aWorld, int aX, int aY, int aZ, short aID) {
 		if (aID <= 0 && aID == W) return F;
-		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
+		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // used to be aWorld.getBlock(x,y,z)
 		if (aBlock == NB) return F;
-		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z)
+		byte aMeta = meta(aWorld, aX, aY, aZ); // used to be (byte)WD.meta(aWorld, x,y,z)
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		IBlockPlacable tBlock = BlocksGT.stoneToNormalOres.get(new ItemStackContainer(aBlock, 1, aMeta));
 		if (tBlock == null) {
@@ -2277,9 +2281,9 @@ public class WD {
 	
 	public static boolean setSmallOre(LevelAccessor aWorld, int aX, int aY, int aZ, short aID) {
 		if (aID <= 0 && aID == W) return F;
-		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
+		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // used to be aWorld.getBlock(x,y,z)
 		if (aBlock == NB || WD.bedrock(aBlock)) return F;
-		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z)
+		byte aMeta = meta(aWorld, aX, aY, aZ); // used to be (byte)WD.meta(aWorld, x,y,z)
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		IBlockPlacable tBlock = BlocksGT.stoneToSmallOres.get(new ItemStackContainer(aBlock, 1, aMeta));
 		if (tBlock == null) {
@@ -2294,22 +2298,22 @@ public class WD {
 	
 	/** Removes Bedrock from that Position and replaces it with regular Stone of the region. */
 	public static boolean removeBedrock(LevelAccessor aWorld, int aX, int aY, int aZ) {
-		// было aWorld.getBlock(x,y,z) + WD.dimensionId(aWorld)==DIM_NETHER — Level.dimension()==Level.NETHER,
-		// тот же приём F6, что уже применён у dimOverworldLike/dimPlanet выше в этом файле.
+		// used to be aWorld.getBlock(x,y,z) + WD.dimensionId(aWorld)==DIM_NETHER — Level.dimension()==Level.NETHER,
+		// the same F6 approach already applied to dimOverworldLike/dimPlanet earlier in this file.
 		Block tBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(), tStone = (dimKey(aWorld) == Level.NETHER ? Blocks.NETHERRACK : Blocks.STONE);
 
 		if (tBlock == NB || bedrock(tBlock)) {
 			for (byte tSide : ALL_SIDES_BUT_BOTTOM) for (int i = 1; i < 7; i++) {
 				BlockPos tRBPos = new BlockPos(aX+OFFX[tSide]*i, aY+OFFY[tSide]*i, aZ+OFFZ[tSide]*i);
-				tBlock = state(aWorld, tRBPos).getBlock(); // было aWorld.getBlock(x,y,z)
+				tBlock = state(aWorld, tRBPos).getBlock(); // used to be aWorld.getBlock(x,y,z)
 				if (tBlock != NB && tBlock != tStone && !bedrock(tBlock)) {
-					int tMetaData = meta(aWorld, tRBPos.getX(), tRBPos.getY(), tRBPos.getZ()); // было WD.meta(aWorld, x,y,z)
+					int tMetaData = meta(aWorld, tRBPos.getX(), tRBPos.getY(), tRBPos.getZ()); // used to be WD.meta(aWorld, x,y,z)
 					if (BlocksGT.stoneToNormalOres.containsKey(new ItemStackContainer(tBlock, 1, tMetaData))) {
-						return set(aWorld, aX, aY, aZ, tBlock, tMetaData, 0, F); // было aWorld.setBlock(x,y,z,block,meta,0) — маршрут через центр set(...)
+						return set(aWorld, aX, aY, aZ, tBlock, tMetaData, 0, F); // used to be aWorld.setBlock(x,y,z,block,meta,0) — routed through the center set(...)
 					}
 				}
 			}
-			return set(aWorld, aX, aY, aZ, tStone, 0, 0, F); // было aWorld.setBlock(x,y,z,tStone,0,0) — маршрут через центр set(...)
+			return set(aWorld, aX, aY, aZ, tStone, 0, 0, F); // used to be aWorld.setBlock(x,y,z,tStone,0,0) — routed through the center set(...)
 		}
 		return F;
 	}
@@ -2317,8 +2321,8 @@ public class WD {
 	public static List<BlockPos> line(final Vec3 aStart, final Vec3 aEnd) {
 		List<BlockPos> rList = new ArrayListNoNulls<>();
 		if (Double.isNaN(aStart.x) || Double.isNaN(aStart.y) || Double.isNaN(aStart.z) || Double.isNaN(aEnd.x) || Double.isNaN(aEnd.y) || Double.isNaN(aEnd.z)) return rList;
-		// F-vec: neo Vec3 иммутабелен (поля x/y/z final) — 1.7.10 мутировал tPoint.xCoord покомпонентно;
-		// воспроизводим реассайном tPoint = new Vec3(...) (см. три ветки ниже), поведение 1:1.
+		// F-vec: neo Vec3 is immutable (fields x/y/z final) — 1.7.10 mutated tPoint.xCoord component-wise;
+		// reproduce by reassigning tPoint = new Vec3(...) (see the three branches below), behavior 1:1.
 		Vec3 tPoint = new Vec3(aStart.x, aStart.y, aStart.z);
 		
 		int sx = UT.Code.roundDown(tPoint.x);
@@ -2426,34 +2430,34 @@ public class WD {
 		ArrayList<String> rList = new ArrayListNoNulls<>();
 		long rEUAmount = 0;
 		
-		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
-		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z)
+		Block aBlock = state(aWorld, new BlockPos(aX, aY, aZ)).getBlock(); // used to be aWorld.getBlock(x,y,z)
+		byte aMeta = meta(aWorld, aX, aY, aZ); // used to be (byte)WD.meta(aWorld, x,y,z)
 		BlockEntity aTileEntity = te(aWorld, aX, aY, aZ, T);
 		
 		rList.add("--- X: " + aX + " Y: " + aY + " Z: " + aZ + " ---");
 		try {
-			// F-container: 1.7.10 TileEntity мог быть IWorldNameable.getInventoryName() (String). neo BlockEntity
-		// не Menu (instanceof AbstractContainerMenu невозможен) — кастомное имя даёт Nameable.getName():Component
-		// (Nameable.java:7), .getString() -> String для stringValid. Отладочный скан, поведение 1:1.
+			// F-container: 1.7.10 TileEntity could be IWorldNameable.getInventoryName() (String). neo BlockEntity
+		// is not a Menu (instanceof AbstractContainerMenu is impossible) — a custom name comes from Nameable.getName():Component
+		// (Nameable.java:7), .getString() -> String for stringValid. Debug scan, behavior 1:1.
 		rList.add("Name: " + (aTileEntity instanceof net.minecraft.world.Nameable tNameable && Code.stringValid(tNameable.getName().getString()) ? tNameable.getName().getString() : aBlock.getDescriptionId()) + "  MetaData: " + aMeta);
 			rList.add("Registry: " + ST.regName(aBlock));
 			if (aScanLevel >= 10) {
 				rList.add("Block Class: " + aBlock.getClass());
 				if (aTileEntity != null) rList.add("TileEntity Class: " + aTileEntity.getClass());
 			}
-			// было getExplosionResistance(Entity,World,x,y,z,eX,eY,eZ) -> нет прямого эквивалента без реального Explosion-объекта
+			// used to be getExplosionResistance(Entity,World,x,y,z,eX,eY,eZ) -> no direct equivalent without a real Explosion object
 			// (IBlockExtension.getExplosionResistance(BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]
-			// требует Explosion, которого у debug-scan нет); маршрутизируем на Block.getExplosionResistance() [Block.java:453] -
-			// тот же фолбэк, что location-sensitive default сам использует при отсутствии переопределения.
+			// requires an Explosion, which debug-scan does not have); route to Block.getExplosionResistance() [Block.java:453] -
+			// the same fallback that the location-sensitive default itself uses when there is no override.
 			float tResistance = aBlock.getExplosionResistance();
 			rList.add("Hardness: " + WD.hardness(aBlock, aWorld, aX, aY, aZ) + " - " + LH.getToolTipBlastResistance(aBlock, tResistance));
-			// F-tool: getHarvestLevel/getHarvestTool(int) — GT6-методы на BlockBase (Forge-точки на vanilla Block
-			// удалены). Отладочный скан произвольного блока: guard instanceof, ваниль -> 0/"" (нет GT6-tier).
+			// F-tool: getHarvestLevel/getHarvestTool(int) — GT6 methods on BlockBase (Forge hooks on vanilla Block
+			// are removed). Debug scan of an arbitrary block: guard instanceof, vanilla -> 0/"" (no GT6 tier).
 			int tHarvestLevel = aBlock instanceof BlockBase ? ((BlockBase)aBlock).getHarvestLevel(aMeta) : 0;
 			String tHarvestTool = aBlock instanceof BlockBase ? ((BlockBase)aBlock).getHarvestTool(aMeta) : "";
-			rList.add(tHarvestLevel == 0 && WD.getMaterial(aBlock).isAdventureModeExempt() ? "Hand-Harvestable, but " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " is faster" : "Tool to Harvest: " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " (" + tHarvestLevel + ")");
-			// F-block: Forge Block.isBeaconBase(world,x,y,z,bx,by,bz) удалён -> neo тег BlockTags.BEACON_BASE_BLOCKS
-			// (BlockTags.java:115), проверка на состоянии.
+			rList.add(tHarvestLevel == 0 && WD.getMaterial(aBlock).isAdventureModeExempt() ? LH.tt("Hand-Harvestable, but ") + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):LH.tt("None")) + LH.tt(" is faster") : LH.tt("Tool to Harvest: ") + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):LH.tt("None")) + " (" + tHarvestLevel + ")");
+			// F-block: Forge Block.isBeaconBase(world,x,y,z,bx,by,bz) was removed -> neo tag BlockTags.BEACON_BASE_BLOCKS
+			// (BlockTags.java:115), checked on the state.
 			if (state(aWorld, new BlockPos(aX, aY, aZ)).is(net.minecraft.tags.BlockTags.BEACON_BASE_BLOCKS)) rList.add("Is usable for Beacon Pyramids");
 			if (MD.GC.mLoaded && aBlock instanceof IPartialSealableBlock) rList.add(((IPartialSealableBlock)aBlock).isSealed(aWorld, aX, aY, aZ, FORGE_DIR[aSide ^ 1]) ? "Is Sealable on this Side" : "Is not Sealable on this Side");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
@@ -2524,11 +2528,11 @@ public class WD {
 			
 			try {if (aTileEntity instanceof IFluidHandler) {
 				rEUAmount+=V[3];
-				// F5: 1.7.10 IFluidHandler.getTankInfo(ForgeDirection) удалён из neo — сторону к GT6-TE несёт
-				// ЦЕНТР шва FL.getTankInfo(handler, side) (FL.java:944), тот же, которым ходят все прочие
-				// вызыватели (сенсоры, BasicMachine:705). Ручной sideless-обход getTanks/getFluidInTank здесь
-				// был И дублем центра, И потерей стороны (скан показывал танки «любой стороны» вместо видимой).
-				// F15: пустой бак -> null для FL.name (1:1 с оригиналом fluid==null->"").
+				// F5: 1.7.10 IFluidHandler.getTankInfo(ForgeDirection) was removed from neo — the side to a GT6 TE is carried by
+				// the seam CENTER FL.getTankInfo(handler, side) (FL.java:944), the same one all other
+				// callers use (sensors, BasicMachine:705). A manual sideless walk of getTanks/getFluidInTank here
+				// was BOTH a duplicate of the center AND a loss of the side (the scan showed tanks of "any side" instead of the visible one).
+				// F15: an empty tank -> null for FL.name (1:1 with the original's fluid==null->"").
 				gregapi.fluid.FluidTankInfo[] tTanks = FL.getTankInfo((IFluidHandler)aTileEntity, aSide);
 				if (tTanks != null) for (byte i = 0; i < tTanks.length; i++) {
 					rList.add("Tank " + i + ": " + (tTanks[i].fluid==null||tTanks[i].fluid.isEmpty()?0:tTanks[i].fluid.getAmount()) + " / " + tTanks[i].capacity + " " + FL.name(tTanks[i].fluid==null||tTanks[i].fluid.isEmpty()?null:tTanks[i].fluid, T));

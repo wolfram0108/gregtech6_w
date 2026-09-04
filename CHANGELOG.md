@@ -29,6 +29,10 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+### Added
+
+- GregTech speaks Russian when the game language is set to Russian, and keeps its English text unchanged in every other language.
+
 ### Fixed
 
 - Dungeon mob-farm water flows again instead of standing as a block, and the piston doors of a dungeon are closed and worked by their crank.

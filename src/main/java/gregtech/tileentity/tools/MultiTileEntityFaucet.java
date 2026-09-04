@@ -154,12 +154,12 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_softhammer)) {
 			mAutoPull = F;
-			if (aChatReturn != null) aChatReturn.add("Crucible Auto-Input: REDSTONE");
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Crucible Auto-Input: REDSTONE"));
 			return 10000;
 		}
 		if (aTool.equals(TOOL_monkeywrench)) {
 			mAutoPull = !mAutoPull;
-			if (aChatReturn != null) aChatReturn.add(mAutoPull ? "Crucible Auto-Input: AUTOMATIC" : "Crucible Auto-Input: REDSTONE");
+			if (aChatReturn != null) aChatReturn.add(mAutoPull ? LH.tt("Crucible Auto-Input: AUTOMATIC") : LH.tt("Crucible Auto-Input: REDSTONE"));
 			return 10000;
 		}
 		return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);

@@ -77,7 +77,7 @@ public class MultiTileEntityBasin extends MultiTileEntityMold {
 	@Override
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
-		if (aTool.equals(TOOL_thermometer)) {if (aChatReturn != null) aChatReturn.add("Temperature: " + mTemperature + "K"); return 10000;}
+		if (aTool.equals(TOOL_thermometer)) {if (aChatReturn != null) aChatReturn.add(LH.tt("Temperature: ") + mTemperature + "K"); return 10000;}
 		if (aTool.equals(TOOL_pincers)) {
 			if (aPlayer instanceof Player && SIDES_TOP[aSide] && pickUpItem((Player)aPlayer, F)) {
 				return 2000;

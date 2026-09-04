@@ -66,7 +66,7 @@ public abstract class MultiTileEntitySafe extends TileEntityBase09FacingSingle i
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		if (UT.Code.stringValid(mDungeonLootName)) aList.add(LH.Chat.BLINKING_CYAN + "Contains Loot of " + LH.Chat.WHITE + LH.get("loot." + mDungeonLootName));
+		if (UT.Code.stringValid(mDungeonLootName)) aList.add(LH.Chat.BLINKING_CYAN + LH.tt("Contains Loot of ") + LH.Chat.WHITE + LH.get("loot." + mDungeonLootName));
 		super.addToolTips(aList, aStack, aF3_H);
 	}
 	

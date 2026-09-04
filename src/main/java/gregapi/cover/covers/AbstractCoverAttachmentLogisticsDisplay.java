@@ -39,7 +39,7 @@ public abstract class AbstractCoverAttachmentLogisticsDisplay extends AbstractCo
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		super.addToolTips(aList, aStack, aF3_H);
-		aList.add(LH.Chat.DGRAY + "Emits Redstone and Displays Status of Logistics Core.");
+		aList.add(LH.Chat.DGRAY + LH.tt("Emits Redstone and Displays Status of Logistics Core."));
 	}
 	
 	@Override

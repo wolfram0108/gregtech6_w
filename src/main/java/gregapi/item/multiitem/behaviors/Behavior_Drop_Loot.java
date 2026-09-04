@@ -23,6 +23,7 @@
 
 package gregapi.item.multiitem.behaviors;
 
+import gregapi.data.LH;
 import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.ST;
@@ -45,7 +46,7 @@ public class Behavior_Drop_Loot extends AbstractBehaviorDefault {
 	
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
-		aList.add("Rightclick this on a Block to loot");
+		aList.add(LH.tt("Rightclick this on a Block to loot"));
 		return aList;
 	}
 	

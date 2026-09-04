@@ -107,11 +107,11 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
 				if (mSender != null && !mSender.isDead() && mSender.mTarget == this) {
-					aChatReturn.add("Is the Target");
-					aChatReturn.add("Sender is at: X: " + mSender.getBlockPos().getX() + " Y: " + mSender.getBlockPos().getY() + " Z: " + mSender.getBlockPos().getZ());
+					aChatReturn.add(LH.tt("Is the Target"));
+					aChatReturn.add(LH.tt("Sender is at: X: ") + mSender.getBlockPos().getX() + " Y: " + mSender.getBlockPos().getY() + " Z: " + mSender.getBlockPos().getZ());
 				} else {
-					aChatReturn.add(checkTarget() ? "Has Target" : "Has no loaded Target");
-					if (mTargetPos != null) aChatReturn.add("Target should be around: X: " + mTargetPos.getX() + " Y: " + mTargetPos.getY() + " Z: " + mTargetPos.getZ());
+					aChatReturn.add(checkTarget() ? LH.tt("Has Target") : LH.tt("Has no loaded Target"));
+					if (mTargetPos != null) aChatReturn.add(LH.tt("Target should be around: X: ") + mTargetPos.getX() + " Y: " + mTargetPos.getY() + " Z: " + mTargetPos.getZ());
 				}
 			}
 			return 1;
@@ -231,7 +231,7 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	public FluidTankInfo[] getTankInfo(Direction aSide) {
 		if (checkTarget()) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[mTarget.mFacing]);
-			// 1:1 с оригиналом :227-233 (звал getTankInfo(getForgeSideOfTileEntity())); сторону несёт центр FL:944.
+			// 1:1 with the original :227-233 (called getTankInfo(getForgeSideOfTileEntity())); the side is carried by the FL:944 center.
 			if (tTileEntity.mTileEntity != null) return FL.getTankInfo(tTileEntity.mTileEntity, tTileEntity.mSideOfTileEntity);
 		}
 		return ZL_FLUIDTANKINFO;

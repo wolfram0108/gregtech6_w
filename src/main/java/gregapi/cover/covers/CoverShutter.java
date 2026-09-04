@@ -55,7 +55,7 @@ public class CoverShutter extends AbstractCoverAttachment {
 	public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_screwdriver)) {
 			aData.visual(aCoverSide, (short)(aData.mVisuals[aCoverSide] == 0 ? 1 : 0));
-			if (aChatReturn != null) aChatReturn.add(aData.mVisuals[aCoverSide] == 0 ? "Normal Shutter" : "Inverted Shutter");
+			if (aChatReturn != null) aChatReturn.add(aData.mVisuals[aCoverSide] == 0 ? LH.tt("Normal Shutter") : LH.tt("Inverted Shutter"));
 			if (aData.mTileEntity instanceof ITileEntityConnector) {
 				if ((aData.mVisuals[aCoverSide] == 0) == aData.mStopped) {
 					((ITileEntityConnector)aData.mTileEntity).disconnect(aCoverSide, T);
@@ -66,7 +66,7 @@ public class CoverShutter extends AbstractCoverAttachment {
 			return 1000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add(aData.mVisuals[aCoverSide] == 0 ? "Normal Shutter" : "Inverted Shutter");
+			if (aChatReturn != null) aChatReturn.add(aData.mVisuals[aCoverSide] == 0 ? LH.tt("Normal Shutter") : LH.tt("Inverted Shutter"));
 			return 1;
 		}
 		return 0;
