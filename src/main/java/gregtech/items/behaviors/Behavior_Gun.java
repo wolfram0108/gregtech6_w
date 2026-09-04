@@ -213,7 +213,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=2000;
 				continue;
 			}
-			// 1.7.10 `Blocks.wool` = любой цвет (мета); в neo семья расщеплена — сравниваем с ГЛАВОЙ через CS.Flattened
+			// 1.7.10 `Blocks.wool` = any color (meta); in neo the family is split — compare to the HEAD via CS.Flattened
 			if (gregapi.data.CS.Flattened.headOf(aBlock) == Blocks.WHITE_WOOL || WD.getMaterial(aBlock) == Material.carpet) {
 				if (tFireAspect > 1) {
 					WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
@@ -246,9 +246,9 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower=0;
 				continue;
 			}
-			// F-collision: Block.canCollideCheck(meta,liquid) удалён (коллизия стала state+level+pos-driven,
-			// getCollisionShape). 1.7.10 (…, F)||(…, T) = «блок вообще коллидирует» — маршрут в центр
-			// WD.hasCollide (WD.java:896, было getCollisionBoundingBoxFromPool!=null), та же семантика 1:1.
+			// F-collision: Block.canCollideCheck(meta,liquid) is removed (collision is now state+level+pos-driven,
+			// getCollisionShape). 1.7.10 (…, F)||(…, T) = "the block collides at all" — routed to the center
+			// WD.hasCollide (WD.java:896, was getCollisionBoundingBoxFromPool!=null), the same semantics 1:1.
 			if (WD.hasCollide(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), aBlock)) {
 				AABB tBox = WD.collisionBox(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), aBlock);
 				if (tBox != null && tBox.clip(tPos, tAim).isPresent()) {
@@ -271,9 +271,9 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		if (aTarget instanceof Player && (((Player)aTarget).getAbilities().invulnerable || !aPlayer.canHarmPlayer((Player)aTarget))) return F;
 		// Endermen require Disjunction Enchantment on the Bullet, or having a Weakness Potion Effect on them.
 		// F-entity: getActivePotionEffect(MobEffect)->getEffect(Holder<MobEffect>) (LivingEntity.java:1006),
-		// weakness->MobEffects.WEAKNESS (MobEffects.java:75, Holder<MobEffect>). teleportRandomly() удалён
-		// (EnderMan.teleport() стал protected) — воспроизводим 1:1 через ПУБЛИЧНЫЙ LivingEntity.randomTeleport
-		// (LivingEntity.java:3705, аналог 1.7.10 teleportTo) с той же random-offset формулой, что neo
+		// weakness->MobEffects.WEAKNESS (MobEffects.java:75, Holder<MobEffect>). teleportRandomly() is removed
+		// (EnderMan.teleport() became protected) — reproduced 1:1 through the PUBLIC LivingEntity.randomTeleport
+		// (LivingEntity.java:3705, analog of the 1.7.10 teleportTo) with the same random-offset formula as the neo
 		// EnderMan.teleport() (EnderMan.java:258-260): getX()+(rand-0.5)*64 / getY()+rand(64)-32 / getZ()+(rand-0.5)*64.
 		if (aTarget instanceof EnderMan && ((EnderMan)aTarget).getEffect(MobEffects.WEAKNESS) == null && UT.NBT.getEnchantmentLevel(Enchantment_EnderDamage.KEY, aBullet) <= 0) for (int i = 0; i < 64; ++i) if (((EnderMan)aTarget).randomTeleport(aTarget.getX() + (RNGSUS.nextDouble()-0.5D)*64.0D, aTarget.getY() + (RNGSUS.nextInt(64)-32), aTarget.getZ() + (RNGSUS.nextDouble()-0.5D)*64.0D, T)) return F;
 		// EntityLivingBase, Ender Dragon and End Crystals only.
@@ -321,10 +321,10 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		}
 		
 		// To make Looting work at all...
-		// F-damage: neo DamageSource иммутабелен, флюент-мутаторы (setProjectile/setDamageBypassesArmor)
-		// живут на центре DamageSources.GregTechDamageSource (DamageSources.java:283,305) — переменную
-		// объявляем этим типом, а не базовым neo DamageSource (у него мутаторов нет). Оригинал 1.7.10
-		// тоже цепочно мутировал DamageSource; тип центра сохраняет ту же форму 1:1.
+		// F-damage: the neo DamageSource is immutable, the fluent mutators (setProjectile/setDamageBypassesArmor)
+		// live on the center DamageSources.GregTechDamageSource (DamageSources.java:283,305) — the variable is
+		// declared with that type, not the base neo DamageSource (which has no mutators). The 1.7.10 original
+		// also chain-mutated the DamageSource; the center's type preserves the same shape 1:1.
 		DamageSources.GregTechDamageSource tDamageSource = DamageSources.getCombatDamage("player", tPlayer, DamageSources.getDeathMessage(aPlayer, aTarget, (tData!=null&&tData.validMaterial() ? "[VICTIM] got killed by [KILLER] shooting a Bullet made of " + tData.mMaterial.mMaterial.getLocal() : "[VICTIM] got shot by [KILLER]")), F).setProjectile();
 		// Extremely Fast Bullets will penetrate Armor. You need a Rifle with the Power Enchantment for this. A Power 5 Carbine at point-blank could do too though.
 		if (aPower > 25000) tDamageSource.setDamageBypassesArmor();
@@ -332,9 +332,9 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		if (MD.TF.mLoaded && aTarget instanceof EntityTFLich && UT.NBT.getEnchantmentLevel(Enchantments.SMITE, aBullet) > 0) tDamageSource.setDamageBypassesArmor();
 		
 		if (aTarget.hurtOrSimulate(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
-			// F-entity: 1.7.10 instance-поле LivingEntity.maxHurtResistantTime удалено — neo хранит длительность
-			// i-frames константой LivingEntity.INVULNERABLE_DURATION=20 (LivingEntity.java:173, protected static
-			// final). Обе ветки тернара были 20 (non-living тоже 20) → сворачивается в 20 (воспроизведение, не улучшение).
+			// F-entity: the 1.7.10 instance field LivingEntity.maxHurtResistantTime is removed — neo stores the
+			// i-frame duration as the constant LivingEntity.INVULNERABLE_DURATION=20 (LivingEntity.java:173, protected static
+			// final). Both branches of the ternary were 20 (non-living was also 20) -> collapses to 20 (reproduction, not an improvement).
 			aTarget.invulnerableTime = 20;
 			if (aTarget instanceof Creeper && tFireDamage > 0 && tImplosion <= 0) ((Creeper)aTarget).ignite();
 			if (tKnockback > 0) aTarget.push(aDir.x * tKnockback * aPower / 50000.0, 0.05, aDir.z * tKnockback * aPower / 50000.0);
@@ -346,7 +346,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			return T;
 		}
 		// Print Errors to the Log and send a Chat Message informing about its existence.
-		} catch(Throwable e) {e.printStackTrace(ERR); UT.Entities.sendchat(aPlayer, "See gregtech.log for details: " + e.toString()); aTarget.discard(); return T;}
+		} catch(Throwable e) {e.printStackTrace(ERR); UT.Entities.sendchat(aPlayer, LH.tt("See gregtech.log for details: ") + e.toString()); aTarget.discard(); return T;}
 		// Just pretend we miss the Target if it was in its Invulnerability Frames, this will end up hitting whatever is behind the Target instead.
 		if (aTarget.invulnerableTime > 0) return F;
 		// It hits, but it doesn't seem to do anything.
@@ -372,13 +372,13 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			ST.give(aPlayer, aBullet);
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, NI);
-			UT.NBT.set(aGun, aNBT); // F8: detached-копия из getOrCreate — коммитим мутацию (см. ItemNBT.java)
+			UT.NBT.set(aGun, aNBT); // F8: detached copy from getOrCreate — commit the mutation (see ItemNBT.java)
 			return aGun;
 		}
 		if (ST.invalid(aBullet) || aBullet.getCount() <= 0) {
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, NI);
-			UT.NBT.set(aGun, aNBT); // F8: detached-копия из getOrCreate — коммитим мутацию (см. ItemNBT.java)
+			UT.NBT.set(aGun, aNBT); // F8: detached copy from getOrCreate — commit the mutation (see ItemNBT.java)
 			return aGun;
 		}
 		shoot(aGun, ST.amount(1, aBullet), aPlayer);
@@ -387,7 +387,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			OreDictItemData tData = OM.anydata(aBullet);
 			aBullet.setCount(aBullet.getCount()-1);
 			ST.save(aNBT, NBT_AMMO, aBullet.getCount() > 0 ? aBullet : NI);
-			UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии ДО doDamage, иначе расход патрона потеряется (см. ItemNBT.java)
+			UT.NBT.set(aGun, aNBT); // F8: commit the detached copy BEFORE doDamage, otherwise the ammo consumption would be lost (see ItemNBT.java)
 			for (OreDictMaterialStack tMat : tData.mByProducts) if (tMat.mAmount >= OP.scrapGt.mAmount && !tMat.mMaterial.containsAny(TD.Properties.EXPLOSIVE, TD.Properties.FLAMMABLE)) ST.give(aPlayer, OP.scrapGt.mat(tMat.mMaterial, tMat.mAmount/OP.scrapGt.mAmount));
 		}
 		((MultiItemTool)aItem).doDamage(aGun, 100, aPlayer, F);
@@ -414,7 +414,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot()).getCount());
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot())));
-			UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
+			UT.NBT.set(aGun, aNBT); // F8: commit the detached copy from getOrCreate (see ItemNBT.java)
 			aPlayer.getInventory().removeItem(aPlayer.getInventory().getSelectedSlot(), tConsumed);
 			ST.update(aPlayer);
 			return T;
@@ -427,7 +427,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().getItem(i+ 9).getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(i+ 9)));
-				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
+				UT.NBT.set(aGun, aNBT); // F8: commit the detached copy from getOrCreate (see ItemNBT.java)
 				aPlayer.getInventory().removeItem(i+ 9, tConsumed);
 				ST.update(aPlayer);
 				return T;
@@ -435,7 +435,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().getItem(i+18).getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(i+18)));
-				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
+				UT.NBT.set(aGun, aNBT); // F8: commit the detached copy from getOrCreate (see ItemNBT.java)
 				aPlayer.getInventory().removeItem(i+18, tConsumed);
 				ST.update(aPlayer);
 				return T;
@@ -443,7 +443,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().getItem(i+27).getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(i+27)));
-				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
+				UT.NBT.set(aGun, aNBT); // F8: commit the detached copy from getOrCreate (see ItemNBT.java)
 				aPlayer.getInventory().removeItem(i+27, tConsumed);
 				ST.update(aPlayer);
 				return T;

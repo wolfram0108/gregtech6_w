@@ -77,18 +77,18 @@ import static gregapi.data.CS.*;
  */
 public class MultiTileEntityChest extends TileEntityBase05Inventories implements IMTE_IsProvidingWeakPower, IMTE_IsProvidingStrongPower, IItemColorableRGB, ITileEntityDecolorable, ITileEntitySurface, IMTE_OnRegistrationClient, IMTE_OnRegistrationFirstClient, IMTE_SyncDataByte, IMTE_AddToolTips, IMTE_SetBlockBoundsBasedOnState, IMTE_GetSubItems, IMTE_SyncDataByteArray, IMTE_GetExplosionResistance, IMTE_GetBlockHardness, IMTE_GetComparatorInputOverride, IMTE_GetSelectedBoundingBoxFromPool, IMTE_GetCollisionBoundingBoxFromPool, IMTE_OnPlaced, IMTE_OnToolClick, IMTE_ItemFacing {
 	protected boolean mIsPainted = F, mIsTrapped = F;
-	// BUG-092: mRGBa/mFacing public — их читает вынесенный клиентский рендерер (gregapi/render/MTEChestRenderer)
+	// BUG-092: mRGBa/mFacing are public — read by the extracted client renderer (gregapi/render/MTEChestRenderer)
 	public int mRGBa = UNCOLORED;
 	public byte mFacing = 3;
 	protected byte mUsingPlayers = 0, oUsingPlayers = 0;
 
-	/** BUG-078: сундук крутит СВОЮ модель по {@code mFacing} (формула {@code COMPASS_FROM_SIDE*90 - 180}, мировая
-	 *  сторона 0..5, а не псевдо-facing {@code FACING_ROTATIONS}), поэтому величина item-формы своя — откалибрована
-	 *  живым глазом (BUG-038) и лежит ОДИН раз, в {@code CS}. Подставляет её общий центр
-	 *  {@code MultiTileEntityRegistry.applyItemFacing} — тот же, что у машин и масстоража. */
+	/** BUG-078: the chest rotates ITS OWN model by {@code mFacing} (formula {@code COMPASS_FROM_SIDE*90 - 180}, a world
+	 *  side 0..5, not the pseudo-facing {@code FACING_ROTATIONS}), so the item-form value is its own — calibrated
+	 *  by eye (BUG-038) and lives ONCE, in {@code CS}. The shared center
+	 *  {@code MultiTileEntityRegistry.applyItemFacing} substitutes it — the same one used by machines and mass storage. */
 	@Override public byte getItemFacing() {return ITEM_CHEST_FACING;}
 	@Override public void setItemFacing(byte aFacing) {mFacing = aFacing;}
-	// BUG-092: mLidAngle/oLidAngle public — их читает вынесенный клиентский рендерер (gregapi/render/MTEChestRenderer)
+	// BUG-092: mLidAngle/oLidAngle are public — read by the extracted client renderer (gregapi/render/MTEChestRenderer)
 	public float mLidAngle = 0, oLidAngle = 0;
 	protected float mHardness = 6, mResistance = 3;
 	protected OreDictMaterial mMaterial = MT.NULL;
@@ -286,7 +286,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		if (UT.Code.stringValid(mDungeonLootName)) aList.add(LH.Chat.BLINKING_CYAN + "Contains Loot of " + LH.Chat.WHITE + LH.get("loot." + mDungeonLootName));
+		if (UT.Code.stringValid(mDungeonLootName)) aList.add(LH.Chat.BLINKING_CYAN + LH.tt("Contains Loot of ") + LH.Chat.WHITE + LH.get("loot." + mDungeonLootName));
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_TAKE_PINCERS));
 	}
 	
@@ -327,20 +327,20 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	@Override public Object getGUIClient(int aGUIID, Player aPlayer) {return new ContainerClientChest(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer(int aGUIID, Player aPlayer) {return new ContainerCommonChest(aPlayer.getInventory(), this, aGUIID);}
 	
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code TileEntityRendererDispatcher.instance.renderTileEntityAt(...)}
-	 *  (пакет {@code net.minecraft.client.renderer.tileentity} удалён целиком, замены нет — item-рендер
-	 *  теперь {@code ItemStackRenderState}/{@code ItemModelResolver}, decisions/F3-render.md §2.5/§3
-	 *  "IItemRenderer"); параметр ретипирован {@code Object} (см. {@link gregapi.render.IRenderedBlockObject}). */
+	/** F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo calls): was {@code TileEntityRendererDispatcher.instance.renderTileEntityAt(...)}
+	 *  (the package {@code net.minecraft.client.renderer.tileentity} is removed entirely, no replacement — item rendering
+	 *  is now {@code ItemStackRenderState}/{@code ItemModelResolver}, decisions/F3-render.md §2.5/§3
+	 *  "IItemRenderer"); the parameter is retyped to {@code Object} (see {@link gregapi.render.IRenderedBlockObject}). */
 	@Override
 	public boolean renderItem(Block aBlock, Object aRenderer) {
 		return T;
 	}
 	
-	// BUG-092 (дедикейт): спец-рендер/модель/state ВЫНЕСЕНЫ в gregapi/render/MTEChestRenderer — клиентские
-	// типы во вложенных классах/полях/телах методов common-MTE валили линковку класса на выделенном сервере
-	// (NoClassDefFoundError: BlockEntityRenderer при Class.newInstance) и обрывали ВЕСЬ Loader_MultiTileEntities
-	// на первой регистрации. Здесь остались только ленивые invokestatic-мосты: onRegistration*Client зовутся
-	// ТОЛЬКО на клиенте, а верификатор common-класса client-типов больше не видит (neo-эквивалент @SideOnly 1.7.10).
+	// BUG-092 (dedicated server): special render/model/state MOVED OUT to gregapi/render/MTEChestRenderer — client
+	// types in nested classes/fields/method bodies of the common MTE broke class linking on a dedicated server
+	// (NoClassDefFoundError: BlockEntityRenderer on Class.newInstance) and aborted ALL of Loader_MultiTileEntities
+	// on the first registration. All that remains here are lazy invokestatic bridges: onRegistration*Client is called
+	// ONLY on the client, and the common-class verifier no longer sees client types (neo equivalent of the 1.7.10 @SideOnly).
 
 	@Override
 	public void onRegistrationFirstClient(MultiTileEntityRegistry aRegistry, short aID) {

@@ -62,11 +62,11 @@ public class BlockSpikeSteel extends BlockBaseSpike {
 	
 	@Override
 	public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {
-		aList.add(LH.Chat.ORANGE + "Deals above average Damage to anything touching it!");
-		aList.add(LH.Chat.ORANGE + "Doesn't work on Iron Golems.");
+		aList.add(LH.Chat.ORANGE + LH.tt("Deals above average Damage to anything touching it!"));
+		aList.add(LH.Chat.ORANGE + LH.tt("Doesn't work on Iron Golems."));
 		
 		if ((aMeta & 7) >= 6) {
-			aList.add(LH.Chat.CYAN + "Works in all Directions, but only does half the Wall Spikes Damage!");
+			aList.add(LH.Chat.CYAN + LH.tt("Works in all Directions, but only does half the Wall Spikes Damage!"));
 		}
 	}
 	

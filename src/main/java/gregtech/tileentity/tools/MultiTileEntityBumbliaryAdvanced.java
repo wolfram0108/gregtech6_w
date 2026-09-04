@@ -301,7 +301,7 @@ public class MultiTileEntityBumbliaryAdvanced extends TileEntityBase07Paintable 
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_thermometer)) {
-			if (aChatReturn != null) aChatReturn.add("Temperature: " + mTemperature + "K - Humidity: " + mHumidity);
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Temperature: ") + mTemperature + LH.tt("K - Humidity: ") + mHumidity);
 			return 1000;
 		}
 		if (aTool.equals(TOOL_scoop)) {
@@ -328,8 +328,8 @@ public class MultiTileEntityBumbliaryAdvanced extends TileEntityBase07Paintable 
 	
 	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACES_TBS[aSide]], mRGBa), BlockTextureDefault.get(sOverlays[FACES_TBS[aSide]])) : null;}
 	
-	// F-dist: тернар двух клиент-GUI-классов → компилятор писал их клиентский супертип в StackMapTable → верификатор грузил
-	// AbstractContainerScreen на сервере → NoClassDefFoundError обрывал загрузчик MTE. Разбито на отдельные return.
+	// F-dist: a ternary over two client-GUI classes -> the compiler wrote their client supertype into the StackMapTable -> the verifier loaded
+	// AbstractContainerScreen on the server -> NoClassDefFoundError aborted the MTE loader. Split into separate returns.
 	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {if (aGUIID == 1) return new MultiTileEntityGUIClientBumbliaryScoop(aPlayer.getInventory(), this, aGUIID); return new MultiTileEntityGUIClientBumbliary(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUICommonBumbliaryScoop(aPlayer.getInventory(), this, aGUIID) : new MultiTileEntityGUICommonBumbliary(aPlayer.getInventory(), this, aGUIID);}
 	

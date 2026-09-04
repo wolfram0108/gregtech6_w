@@ -24,39 +24,39 @@
 package gregapi.block;
 
 /**
- * ЯРЛЫК цвета карты в именах, которыми оперирует GT6 (палитра 1.7.10).
+ * A map colour LABEL under the names GT6's code uses (the 1.7.10 palette).
  *
- * <p><b>Значения цветов здесь НЕ хранятся.</b> Единственный носитель значения — движок:
- * палитра карты у него своя ({@code net.minecraft.world.level.material.MapColor}), адресуется тем же
- * индексом 0..63 и тем же порядком. Этот класс держит только соответствие «имя GT6 → индекс палитры»,
- * потому что мод адресует цвета именами, которых в движке нет.</p>
+ * <p><b>No colour values are stored here.</b> The only holder of the value is the engine:
+ * it has its own map palette ({@code net.minecraft.world.level.material.MapColor}), addressed by the same
+ * index 0..63 in the same order. This class only holds the mapping "GT6 name → palette index",
+ * because the mod addresses colours by names the engine doesn't have.</p>
  *
- * <p>Прежняя редакция несла собственную таблицу RGB — и она была мёртвым грузом: поле значения не
- * читал никто (греп по дереву = 0), фактический цвет и так брался у движка через {@link #toNeo()}.
- * Снятие таблицы поведение не меняет ни на бит и снимает вопрос о происхождении этих чисел.</p>
+ * <p>The previous revision carried its own RGB table — and it was dead weight: nothing read the value
+ * field (a tree-wide grep = 0), the actual colour was already fetched from the engine through {@link #toNeo()}.
+ * Removing the table doesn't change behaviour by a single bit and removes the question of where those numbers came from.</p>
  *
- * <p>Мост в движок — {@link #toNeo()}, одно место на весь мод (F9-bridge).</p>
+ * <p>The bridge into the engine is {@link #toNeo()}, one place for the whole mod (F9-bridge).</p>
  */
 public final class MapColor {
-	/** Индекс в 64-цветной палитре карты. Совпадает у 1.7.10 и у целевого движка. */
+	/** Index in the 64-colour map palette. Matches between 1.7.10 and the target engine. */
 	public final int colorIndex;
 
 	private MapColor(int aIndex) {
-		if (aIndex < 0 || aIndex > 63) throw new IndexOutOfBoundsException("Индекс цвета карты обязан лежать в 0..63, дано: " + aIndex);
+		if (aIndex < 0 || aIndex > 63) throw new IndexOutOfBoundsException("Map colour index must be within 0..63, given: " + aIndex);
 		colorIndex = aIndex;
 	}
 
 	private static MapColor idx(int aIndex) {return new MapColor(aIndex);}
 
-	/** Цвет палитры по индексу — для кода, который адресует цвет числом, а не именем. */
+	/** Palette colour by index — for code that addresses a colour by number, not by name. */
 	public static MapColor byId(int aIndex) {return idx(aIndex);}
 
-	/** F9-bridge: ярлык GT6 → цвет движка. Единственная точка перехода на весь мод. */
+	/** F9-bridge: GT6 label → engine colour. The single crossover point for the whole mod. */
 	public net.minecraft.world.level.material.MapColor toNeo() {
 		return net.minecraft.world.level.material.MapColor.byId(colorIndex);
 	}
 
-	// Имена — те, которыми пользуется код GT6; число справа — индекс палитры.
+	// Names as used by GT6's code; the number on the right is the palette index.
 	public static final MapColor airColor         = idx( 0);
 	public static final MapColor grassColor       = idx( 1);
 	public static final MapColor sandColor        = idx( 2);

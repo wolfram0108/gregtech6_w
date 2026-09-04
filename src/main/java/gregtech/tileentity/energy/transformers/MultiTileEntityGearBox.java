@@ -140,7 +140,7 @@ public class MultiTileEntityGearBox extends TileEntityBase07Paintable implements
 					return 10000;
 				}
 			}
-			if (aChatReturn != null) aChatReturn.add("You dont have a Gear of the corresponding Material in your Inventory!");
+			if (aChatReturn != null) aChatReturn.add(LH.tt("You dont have a Gear of the corresponding Material in your Inventory!"));
 			return 0;
 		}
 		if (aTool.equals(TOOL_monkeywrench)) {
@@ -164,19 +164,19 @@ public class MultiTileEntityGearBox extends TileEntityBase07Paintable implements
 		}
 		if (aTool.equals(TOOL_tachometer)) {
 			if (aChatReturn != null) {
-				if (FACE_CONNECTED[0][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][0]) aChatReturn.add(FACE_CONNECTED[0][mInputtedSides] ? "Accepts from Bottom" : "Emits to Bottom");
-				if (FACE_CONNECTED[1][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][1]) aChatReturn.add(FACE_CONNECTED[1][mInputtedSides] ? "Accepts from Top"    : "Emits to Top");
-				if (FACE_CONNECTED[2][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][2]) aChatReturn.add(FACE_CONNECTED[2][mInputtedSides] ? "Accepts from North"  : "Emits to North");
-				if (FACE_CONNECTED[3][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][3]) aChatReturn.add(FACE_CONNECTED[3][mInputtedSides] ? "Accepts from South"  : "Emits to South");
-				if (FACE_CONNECTED[4][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][4]) aChatReturn.add(FACE_CONNECTED[4][mInputtedSides] ? "Accepts from West"   : "Emits to West");
-				if (FACE_CONNECTED[5][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][5]) aChatReturn.add(FACE_CONNECTED[5][mInputtedSides] ? "Accepts from East"   : "Emits to East");
-				aChatReturn.add(mTransferredLast + " RU/t");
+				if (FACE_CONNECTED[0][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][0]) aChatReturn.add(FACE_CONNECTED[0][mInputtedSides] ? LH.tt("Accepts from Bottom") : LH.tt("Emits to Bottom"));
+				if (FACE_CONNECTED[1][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][1]) aChatReturn.add(FACE_CONNECTED[1][mInputtedSides] ? LH.tt("Accepts from Top")    : LH.tt("Emits to Top"));
+				if (FACE_CONNECTED[2][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][2]) aChatReturn.add(FACE_CONNECTED[2][mInputtedSides] ? LH.tt("Accepts from North")  : LH.tt("Emits to North"));
+				if (FACE_CONNECTED[3][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][3]) aChatReturn.add(FACE_CONNECTED[3][mInputtedSides] ? LH.tt("Accepts from South")  : LH.tt("Emits to South"));
+				if (FACE_CONNECTED[4][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][4]) aChatReturn.add(FACE_CONNECTED[4][mInputtedSides] ? LH.tt("Accepts from West")   : LH.tt("Emits to West"));
+				if (FACE_CONNECTED[5][mAxleGear & 63] || AXIS_XYZ[(mAxleGear >>> 6) & 3][5]) aChatReturn.add(FACE_CONNECTED[5][mInputtedSides] ? LH.tt("Accepts from East")   : LH.tt("Emits to East"));
+				aChatReturn.add(mTransferredLast + LH.tt(" RU/t"));
 			}
 			return 1;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			mGearsWork = checkGears();
-			if (aChatReturn != null) aChatReturn.add(mGearsWork ? mJammed ? "Gears interlocked properly, but they are jammed!" : "Gears interlocked properly." : "Gears interlocked improperly!");
+			if (aChatReturn != null) aChatReturn.add(mGearsWork ? mJammed ? LH.tt("Gears interlocked properly, but they are jammed!") : LH.tt("Gears interlocked properly.") : LH.tt("Gears interlocked improperly!"));
 			return 1;
 		}
 		return 0;

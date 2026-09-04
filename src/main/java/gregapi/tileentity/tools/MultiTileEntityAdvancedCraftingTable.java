@@ -55,7 +55,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-// FORCED-ADAPTATION(F18-achievements): net.minecraft.stats.AchievementList + Player.triggerAchievement удалены в neo (data-driven advancements, award() навязывает побочки — не 1:1). Косметические триггеры сняты ниже. Решение: decisions/F18-achievements.md.
+// FORCED-ADAPTATION(F18-achievements): net.minecraft.stats.AchievementList + Player.triggerAchievement are removed in neo (data-driven advancements, award() forces side effects — not 1:1). Cosmetic triggers removed below. Decision: decisions/F18-achievements.md.
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.material.Fluid;
@@ -109,7 +109,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		mUpdatedGrid = T; // Just in case someone like Greg used NEI or something to delete all Slots or so.
 		if (aPlayer != null) {
-			// FORCED-ADAPTATION(F18): aPlayer.triggerAchievement(AchievementList.openInventory/mineWood/buildWorkBench) — API удалён в neo; косметический no-op. Решение: decisions/F18-achievements.md.
+			// FORCED-ADAPTATION(F18): aPlayer.triggerAchievement(AchievementList.openInventory/mineWood/buildWorkBench) — API removed in neo; cosmetic no-op. Decision: decisions/F18-achievements.md.
 		}
 		if (SIDES_TOP[aSide]) return !isServerSide() || openGUI(aPlayer, 0);
 		if (ALONG_AXIS[aSide][mFacing]) return !isServerSide() || openGUI(aPlayer, 1);
@@ -123,20 +123,20 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		if (aTool.equals(TOOL_monkeywrench)) {
 			if (SIDES_TOP[aSide]) {
 				mBlocked16 = !mBlocked16;
-				if (aChatReturn != null) aChatReturn.add("4x4-Automation-Access: " + (mBlocked16?"OFF":"ON"));
+				if (aChatReturn != null) aChatReturn.add(LH.tt("4x4-Automation-Access: ") + (mBlocked16?LH.tt("OFF"):LH.tt("ON")));
 			} else {
 				mBlocked36 = !mBlocked36;
-				if (aChatReturn != null) aChatReturn.add("9x4-Automation-Access: " + (mBlocked36?"OFF":"ON"));
+				if (aChatReturn != null) aChatReturn.add(LH.tt("9x4-Automation-Access: ") + (mBlocked36?LH.tt("OFF"):LH.tt("ON")));
 			}
 			return 10000;
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
 			if (SIDES_TOP[aSide]) {
 				mFilter16 = !mFilter16;
-				if (aChatReturn != null) aChatReturn.add("4x4-Diversity-Filter: " + (mFilter16?"ON":"OFF"));
+				if (aChatReturn != null) aChatReturn.add(LH.tt("4x4-Diversity-Filter: ") + (mFilter16?LH.tt("ON"):LH.tt("OFF")));
 			} else {
 				mFilter36 = !mFilter36;
-				if (aChatReturn != null) aChatReturn.add("9x4-Diversity-Filter: " + (mFilter36?"ON":"OFF"));
+				if (aChatReturn != null) aChatReturn.add(LH.tt("9x4-Diversity-Filter: ") + (mFilter36?LH.tt("ON"):LH.tt("OFF")));
 			}
 			return 10000;
 		}
@@ -336,7 +336,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		if (aHoldStack != null) {
 			if (!ST.equal(aHoldStack, slot(31))) {
 				if (!aSubsequentClick && mDoSound) {
-					UT.Sounds.forActor(SFX.MC_HMM, 50, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // звук ДЕЙСТВИЯ
+					UT.Sounds.forActor(SFX.MC_HMM, 50, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // action sound
 					mDoSound = F;
 				}
 				return aHoldStack;
@@ -344,7 +344,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 			if (aHoldStack.getCount() + slot(31).getCount() > aHoldStack.getMaxStackSize()) return aHoldStack;
 			for (int i : SLOTS_CRAFTING) if (OM.is("gt:autocrafterinfinite", slot(i))) {
 				if (!aSubsequentClick && mDoSound) {
-					UT.Sounds.forActor(SFX.MC_HMM, 50, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // звук ДЕЙСТВИЯ
+					UT.Sounds.forActor(SFX.MC_HMM, 50, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // action sound
 					mDoSound = F;
 				}
 				return aHoldStack;
@@ -354,11 +354,11 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		MultiItemTool.LAST_TOOL_COORDS_BEFORE_DAMAGE = getCoords();
 		
 		// F-mod-lifecycle: 1.7.10 FMLCommonHandler.firePlayerCraftingEvent(player, crafted, InventoryCrafting) —
-		// FMLCommonHandler удалён, событие в neo не публикуется (нет ни шины, ни слушателей — вызов был бы чистым
-		// no-op). BUG-039-аудит: сам вызов СНЯТ — mirror-класс cpw.* JPMS-вырезан из рантайм-jar (build.gradle:156),
-		// линковка кидала NoClassDefFoundError в catch на КАЖДОМ крафте (тихий лог-спам). Восстановление хука для
-		// других модов — вместе с реальной 3x3-передачей (CraftingInput.of вместо EMPTY), отдельный шов при возврате
-		// крафт-события.
+		// FMLCommonHandler is removed, the event is not published in neo (no bus, no listeners — the call would be a pure
+		// no-op). BUG-039 audit: the call itself is REMOVED — the mirror class cpw.* is JPMS-stripped from the runtime jar (build.gradle:156),
+		// linking threw NoClassDefFoundError in the catch on EVERY craft (silent log spam). Restoring the hook for
+		// other mods — together with the real 3x3 transfer (CraftingInput.of instead of EMPTY) — is a separate seam for when the
+		// crafting event returns.
 		
 		ItemStack[] tRecipeStacks = {ST.amount(1, slot(21)), ST.amount(1, slot(22)), ST.amount(1, slot(23)), ST.amount(1, slot(24)), ST.amount(1, slot(25)), ST.amount(1, slot(26)), ST.amount(1, slot(27)), ST.amount(1, slot(28)), ST.amount(1, slot(29))};
 		
@@ -419,7 +419,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		
 		if (aHoldStack == null) aHoldStack = ST.copy(slot(31)); else aHoldStack.setCount(aHoldStack.getCount()+(slot(31).getCount()));
 		
-		aHoldStack.onCraftedBy(aPlayer, slot(31).getCount()); // neo ItemStack.onCraftedBy(Player,int) — 1.7.10 onCrafting(World,EntityPlayer,int) уронил Level-аргумент (ItemStack.java neo).
+		aHoldStack.onCraftedBy(aPlayer, slot(31).getCount()); // neo ItemStack.onCraftedBy(Player,int) — the 1.7.10 onCrafting(World,EntityPlayer,int) dropped the Level argument (ItemStack.java neo).
 		
 		ST.check(aPlayer, aHoldStack);
 		
@@ -585,9 +585,9 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	@Override public boolean canDrain(Direction aDirection, Fluid aFluid) {return F;}
 	@Override public FluidTankInfo[] getTankInfo(Direction aDirection) {return L1_FLUIDTANKINFO_DUMMY;}
 	
-	// F-dist: тернар двух клиент-GUI-классов заставлял компилятор писать их общий клиентский супертип в StackMapTable →
-	// верификатор грузил AbstractContainerScreen на dedicated-сервере (клиент-класс отсутствует) → NoClassDefFoundError
-	// обрывал Loader_MultiTileEntities. Разбито на отдельные return (одиночное значение → нет LUB-merge → нет загрузки).
+	// F-dist: a ternary over two client-GUI classes forced the compiler to write their common client supertype into the StackMapTable ->
+	// the verifier loaded AbstractContainerScreen on a dedicated server (client class absent) -> NoClassDefFoundError
+	// aborted Loader_MultiTileEntities. Split into separate returns (a single value -> no LUB merge -> no loading).
 	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {if (aGUIID == 1) return new ContainerClientDefault(new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID, 35, 36)); return new MultiTileEntityGUIClientAdvancedCraftingTable(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ?                               new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID, 35, 36)  : new MultiTileEntityGUICommonAdvancedCraftingTable(aPlayer.getInventory(), this, aGUIID);}
 	
@@ -615,7 +615,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 									if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
 										return aPlayer.containerMenu.getCarried();
 									}
-									aPlayer.getInventory().setItem(i, ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.getInventory().getItem(i)), i != 0 || j != 0))); // F15-границы: вход null-семантика, выход EMPTY-семантика
+									aPlayer.getInventory().setItem(i, ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.getInventory().getItem(i)), i != 0 || j != 0))); // F15 boundaries: input null-semantics, output EMPTY-semantics
 								}
 							}
 						}
@@ -629,7 +629,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 								if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
 									return aPlayer.containerMenu.getCarried();
 								}
-								aPlayer.getInventory().setItem(i, ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.getInventory().getItem(i)), i != 0 || j != 0))); // F15-границы: вход null-семантика, выход EMPTY-семантика
+								aPlayer.getInventory().setItem(i, ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.getInventory().getItem(i)), i != 0 || j != 0))); // F15 boundaries: input null-semantics, output EMPTY-semantics
 								temp = T;
 							}
 							if (temp) return aPlayer.containerMenu.getCarried();
@@ -643,12 +643,12 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 						if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
 							return aPlayer.containerMenu.getCarried();
 						}
-						aPlayer.containerMenu.setCarried(ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.containerMenu.getCarried()), i != 0))); // neo setCarried (1.7.10 InventoryPlayer.setItemStack); F15: getCarried=EMPTY ↔ 1.7.10 null-курсор.
+						aPlayer.containerMenu.setCarried(ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.containerMenu.getCarried()), i != 0))); // neo setCarried (1.7.10 InventoryPlayer.setItemStack); F15: getCarried=EMPTY <-> 1.7.10 null cursor.
 					}
 					return aPlayer.containerMenu.getCarried();
 				}
 				// LEFTCLICK
-				if (canDoCraftingOutput()) aPlayer.containerMenu.setCarried(ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.containerMenu.getCarried()), F))); // neo setCarried (см. выше); F15: EMPTY→null на входе.
+				if (canDoCraftingOutput()) aPlayer.containerMenu.setCarried(ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.containerMenu.getCarried()), F))); // neo setCarried (see above); F15: EMPTY->null on input.
 				return aPlayer.containerMenu.getCarried();
 			}
 			return null;

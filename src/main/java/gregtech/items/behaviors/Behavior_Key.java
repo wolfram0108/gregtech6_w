@@ -74,7 +74,7 @@ public class Behavior_Key extends AbstractBehaviorDefault {
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.key"));
 		CompoundTag tNBT = ItemNBT.get(aStack);
-		if (tNBT != null && tNBT.contains(NBT_KEY)) aList.add("Key ID: " + UT.Code.makeString(tNBT.getLongOr(NBT_KEY, 0L))); else aList.add("*BLANK*");
+		if (tNBT != null && tNBT.contains(NBT_KEY)) aList.add(LH.tt("Key ID: ") + UT.Code.makeString(tNBT.getLongOr(NBT_KEY, 0L))); else aList.add(LH.tt("*BLANK*"));
 		return aList;
 	}
 }

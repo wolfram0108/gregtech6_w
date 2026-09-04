@@ -87,7 +87,7 @@ public class CoverRetrieverItem extends AbstractCoverAttachment {
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		ItemStack tStack = ST.load(ItemNBT.get(aStack), "gt.filter.item");
 		if (ST.valid(tStack)) aList.add(LH.Chat.CYAN + tStack.getDisplayName());
-		aList.add(LH.Chat.ORANGE + "Not NBT sensitive!");
+		aList.add(LH.Chat.ORANGE + LH.tt("Not NBT sensitive!"));
 		super.addToolTips(aList, aStack, aF3_H);
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_TOGGLE_CONTROLLER_COVER));
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_TOGGLE_SCREWDRIVER));
@@ -98,7 +98,7 @@ public class CoverRetrieverItem extends AbstractCoverAttachment {
 	public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_screwdriver)) {
 			aData.visual(aCoverSide, (short)(aData.mVisuals[aCoverSide] == 0 ? 1 : 0));
-			if (aChatReturn != null) aChatReturn.add(aData.mVisuals[aCoverSide] == 0 ? "Normal Filter" : "Inverted Filter");
+			if (aChatReturn != null) aChatReturn.add(aData.mVisuals[aCoverSide] == 0 ? LH.tt("Normal Filter") : LH.tt("Inverted Filter"));
 			return 1000;
 		}
 		if (aTool.equals(TOOL_softhammer)) {
@@ -108,15 +108,15 @@ public class CoverRetrieverItem extends AbstractCoverAttachment {
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
 				if (aData.mNBTs[aCoverSide] == null) {
-					aChatReturn.add("Filter is empty!");
+					aChatReturn.add(LH.tt("Filter is empty!"));
 					aData.mNBTs[aCoverSide] = null;
 				} else {
 					ItemStack tStack = ST.load(aData.mNBTs[aCoverSide], "gt.filter.item");
 					if (ST.invalid(tStack)) {
-						aChatReturn.add("Filter is empty!");
+						aChatReturn.add(LH.tt("Filter is empty!"));
 						aData.mNBTs[aCoverSide] = null;
 					} else {
-						aChatReturn.add("Filters for: " + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
+						aChatReturn.add(LH.tt("Filters for: ") + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
 					}
 				}
 			}
@@ -133,7 +133,7 @@ public class CoverRetrieverItem extends AbstractCoverAttachment {
 				if (ST.valid(tStack)) {
 					aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", tStack);
 					UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);
-					UT.Entities.sendchat(aPlayer, "Filters for: " + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
+					UT.Entities.sendchat(aPlayer, LH.tt("Filters for: ") + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
 				}
 			}
 		}

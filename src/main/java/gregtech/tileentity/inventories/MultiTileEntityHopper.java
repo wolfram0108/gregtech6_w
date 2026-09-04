@@ -134,22 +134,22 @@ public class MultiTileEntityHopper extends TileEntityBase09FacingSingle implemen
 			} else {
 				if (++mMode > 64) mMode =  0;
 			}
-			if (aChatReturn != null) aChatReturn.add(mMode <= 0 ? (mExactMode ? "Emits up to 1 Stack" : "Emits up to 64 Items") : (mExactMode ? "Emits exact Stacksize of: " : "Emits divisible Stacksize of: ") + mMode);
+			if (aChatReturn != null) aChatReturn.add(mMode <= 0 ? (mExactMode ? LH.tt("Emits up to 1 Stack") : LH.tt("Emits up to 64 Items")) : (mExactMode ? LH.tt("Emits exact Stacksize of: ") : LH.tt("Emits divisible Stacksize of: ")) + mMode);
 			return 200;
 		}
 		if (aTool.equals(TOOL_monkeywrench)) {
 			mExactMode = !mExactMode;
-			if (aChatReturn != null) aChatReturn.add(mMode <= 0 ? (mExactMode ? "Emits up to 1 Stack" : "Emits up to 64 Items") : (mExactMode ? "Emits exact Stacksize of: " : "Emits divisible Stacksize of: ") + mMode);
+			if (aChatReturn != null) aChatReturn.add(mMode <= 0 ? (mExactMode ? LH.tt("Emits up to 1 Stack") : LH.tt("Emits up to 64 Items")) : (mExactMode ? LH.tt("Emits exact Stacksize of: ") : LH.tt("Emits divisible Stacksize of: ")) + mMode);
 			return 10000;
 		}
 		if (aTool.equals(TOOL_softhammer)) {
 			mExactMode = F;
 			mMode = 0;
-			if (aChatReturn != null) aChatReturn.add(mMode <= 0 ? (mExactMode ? "Emits up to 1 Stack" : "Emits up to 64 Items") : (mExactMode ? "Emits exact Stacksize of: " : "Emits divisible Stacksize of: ") + mMode);
+			if (aChatReturn != null) aChatReturn.add(mMode <= 0 ? (mExactMode ? LH.tt("Emits up to 1 Stack") : LH.tt("Emits up to 64 Items")) : (mExactMode ? LH.tt("Emits exact Stacksize of: ") : LH.tt("Emits divisible Stacksize of: ")) + mMode);
 			return 10000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add(mMode <= 0 ? (mExactMode ? "Emits up to 1 Stack" : "Emits up to 64 Items") : (mExactMode ? "Emits exact Stacksize of: " : "Emits divisible Stacksize of: ") + mMode);
+			if (aChatReturn != null) aChatReturn.add(mMode <= 0 ? (mExactMode ? LH.tt("Emits up to 1 Stack") : LH.tt("Emits up to 64 Items")) : (mExactMode ? LH.tt("Emits exact Stacksize of: ") : LH.tt("Emits divisible Stacksize of: ")) + mMode);
 			return 1;
 		}
 		return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);

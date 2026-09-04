@@ -23,6 +23,8 @@
 
 package gregapi.item.multiitem.behaviors;
 
+import gregapi.data.LH;
+
 import gregapi.code.ItemStackContainer;
 import gregapi.code.ModData;
 import gregapi.data.IL;
@@ -51,7 +53,7 @@ public class Behavior_Unlock_Item_Aspects extends AbstractBehaviorDefault {
 	
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
-		aList.add("Rightclick this on a Block to learn Item Aspects");
+		aList.add(LH.tt("Rightclick this on a Block to learn Item Aspects"));
 		return aList;
 	}
 	
@@ -65,7 +67,7 @@ public class Behavior_Unlock_Item_Aspects extends AbstractBehaviorDefault {
 					// Notify the GT Log File that someone started using this Item. Just in case someone abuses this to Lag a Server.
 					OUT.println(aPlayer.getName().getString() + " has used the Item '" + ST.make(aStack, (CompoundTag)null).getDisplayName() + "', which may or may not be lagging for a few minutes");
 					// Tell the User that this is gonna Lag.
-					UT.Entities.sendchat(aPlayer, "Unlocking this many Aspects will lag for a few minutes, if done for the first time");
+					UT.Entities.sendchat(aPlayer, LH.tt("Unlocking this many Aspects will lag for a few minutes, if done for the first time"));
 					// Make sure all Aspects are discovered first.
 					COMPAT_TC.scan(aPlayer, IL.Paper_Magic_Research_0.get(1));
 					COMPAT_TC.scan(aPlayer, IL.Paper_Magic_Research_1.get(1));
@@ -88,8 +90,8 @@ public class Behavior_Unlock_Item_Aspects extends AbstractBehaviorDefault {
 					// Prevent 16 Bit Integer Overflows because some Thaumcraft UIs use short instead of int...
 					COMPAT_TC.validate();
 					// Unlock all Aspects for Items that match the Mods for this Behavior.
-					// BUG-039 v4 (аудит JPMS-mirror): cpw GameData.getItemRegistry() (stripped-mirror, NCDFE в рантайме)
-					// → neo BuiltInRegistries.ITEM — тот же полный перебор предметов (приём Loader_ItemIterator, F12).
+					// BUG-039 v4 (JPMS-mirror audit): cpw GameData.getItemRegistry() (stripped mirror, runtime NCDFE)
+					// -> neo BuiltInRegistries.ITEM — the same full item enumeration (approach from Loader_ItemIterator, F12).
 					Iterator<Item> tIterator = net.minecraft.core.registries.BuiltInRegistries.ITEM.iterator();
 					while (tIterator.hasNext()) {
 						ItemStack tStack = ST.make(tIterator.next(), 1, W);

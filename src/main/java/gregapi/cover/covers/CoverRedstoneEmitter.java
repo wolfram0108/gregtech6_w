@@ -45,11 +45,11 @@ public class CoverRedstoneEmitter extends AbstractCoverAttachment {
 	public long onToolClick(byte aSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_cutter)) {
 			aData.value(aSide, (short)(aData.mValues[aSide] ^ B[0]), T);
-			if (aChatReturn != null) aChatReturn.add(aData.mValues[aSide] != 0 ? "Emits strong Redstone" : "Emits weak Redstone");
+			if (aChatReturn != null) aChatReturn.add(aData.mValues[aSide] != 0 ? LH.tt("Emits strong Redstone") : LH.tt("Emits weak Redstone"));
 			return 1000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add(aData.mValues[aSide] != 0 ? "Emits strong Redstone" : "Emits weak Redstone");
+			if (aChatReturn != null) aChatReturn.add(aData.mValues[aSide] != 0 ? LH.tt("Emits strong Redstone") : LH.tt("Emits weak Redstone"));
 			return 1;
 		}
 		return aData.mTileEntity.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSideClicked, aHitX, aHitY, aHitZ);

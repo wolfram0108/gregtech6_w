@@ -42,21 +42,21 @@ import gregapi.oredict.OreDictPrefix;
 import gregapi.oredict.OreDictTags;
 
 /**
- * F1-b тег-мост, ИСХОДЯЩАЯ сторона — предметы и блоки GT6 в материал-агностичных конвенционных тегах
- * {@code c:} (тот же приём, что {@link GT6HarvestTags} для добычи и {@link GT6ItemTags} для боеприпаса:
- * данные у GT6 уже есть, меняется лишь канал, которым их читает движок).
+ * F1-b tag bridge, the OUTGOING side — GT6 items and blocks into material-agnostic convention tags
+ * {@code c:} (the same approach as {@link GT6HarvestTags} for harvesting and {@link GT6ItemTags} for ammunition:
+ * GT6 already has the data, only the channel the engine reads it through changes).
  *
- * <p><b>Почему только группы, без материала.</b> Тег вешается на ЗАПИСЬ РЕЕСТРА, а по решению F1 (модель B)
- * у GT6 ОДИН {@code Item} на префикс — материал живёт компонентом стека ({@code PrefixItem.java:118}).
- * Значит {@code c:ingots} («это слиток») про наш {@code gt.meta.ingot} — ТОЧНАЯ правда, а
- * {@code c:ingots/tin} был бы ложью про все остальные материалы того же предмета. По-материальные теги мост
- * добирает другим путём — через собственную унификацию Грега (см. {@link OreDictTags}); выдумывать их здесь
- * запрещено.
+ * <p><b>Why groups only, no material.</b> The tag hangs off a REGISTRY ENTRY, and per the F1 decision (model B)
+ * GT6 has ONE {@code Item} per prefix — the material lives as a stack component ({@code PrefixItem.java:118}).
+ * So {@code c:ingots} ("this is an ingot") about our {@code gt.meta.ingot} is EXACTLY true, while
+ * {@code c:ingots/tin} would be a lie about every other material of the same item. Per-material tags are covered
+ * by the bridge a different way — through Greg's own unification (see {@link OreDictTags}); inventing them
+ * here is forbidden.
  *
- * <p><b>Перенос, а не список.</b> Провайдер обходит реестры и спрашивает у каждого GT6-предмета/блока ЕГО
- * ЖЕ префикс ({@code IPrefixItem.getPrefix}, {@code PrefixBlock.mPrefix}) — тот самый, которым его судит
- * словарь. Таблица «префикс → тег» одна и лежит в центре ({@code OreDictTags.groupItemTag/groupBlockTag});
- * второй копии в дереве быть не должно. Новый префикс попадёт в тег сам, без правки данных.
+ * <p><b>A transfer, not a list.</b> The provider walks the registries and asks each GT6 item/block for ITS
+ * OWN prefix ({@code IPrefixItem.getPrefix}, {@code PrefixBlock.mPrefix}) — the very same one the ore
+ * dictionary judges it by. The "prefix → tag" table is singular and lives in the center ({@code OreDictTags.groupItemTag/groupBlockTag});
+ * there must be no second copy in the tree. A new prefix falls into the tag on its own, with no data edits needed.
  */
 public class GT6ConventionTags extends TagsProvider<Item> {
 	public GT6ConventionTags(PackOutput aOutput, CompletableFuture<HolderLookup.Provider> aLookup) {
@@ -79,23 +79,23 @@ public class GT6ConventionTags extends TagsProvider<Item> {
 			getOrCreateRawBuilder(tTag).addElement(tID);
 			tCounts.merge(tTag.location().toString(), 1, Integer::sum);
 		}
-		CS.OUT.println("[GT6-DATAGEN] F1-b тег-мост наружу, предметы: " + tCounts);
+		CS.OUT.println("[GT6-DATAGEN] F1-b outward tag bridge, items: " + tCounts);
 	}
 
-	/** Префикс предмета — ЕГО ЖЕ канал ({@code PrefixItem.java:261}, {@code PrefixBlockItem.java:224}).
-	 *  Мета не участвует: у обоих носителей {@code getPrefix} от неё не зависит, а на фазе датагена стеки
-	 *  создавать нельзя (то же ограничение, что записано в {@code GT6ItemTags.java:89-95}). */
+	/** An item's prefix — ITS OWN channel ({@code PrefixItem.java:261}, {@code PrefixBlockItem.java:224}).
+	 *  Meta doesn't participate: for both carriers {@code getPrefix} doesn't depend on it, and at the datagen phase stacks
+	 *  can't be created (the same restriction recorded in {@code GT6ItemTags.java:89-95}). */
 	private static OreDictPrefix prefixOf(Item aItem) {
 		try {
 			if (aItem instanceof IPrefixItem tPrefixed) return tPrefixed.getPrefix(0);
-		} catch (Throwable e) {/* предмет без канала — просто не размечаем */}
+		} catch (Throwable e) {/* an item with no channel — simply don't tag it */}
 		return null;
 	}
 
 	/**
-	 * Блочная половина того же моста: {@code c:ores} и {@code c:storage_blocks} существуют и для блоков
-	 * ({@code Tags.java:201,280}). Отдельный класс, потому что {@code TagsProvider} типизирован реестром,
-	 * а не потому, что правило другое — правило одно и лежит в {@link OreDictTags}.
+	 * The block half of the same bridge: {@code c:ores} and {@code c:storage_blocks} exist for blocks too
+	 * ({@code Tags.java:201,280}). A separate class because {@code TagsProvider} is typed by the registry,
+	 * not because the rule differs — the rule is singular and lives in {@link OreDictTags}.
 	 */
 	public static class Blocks extends TagsProvider<Block> {
 		public Blocks(PackOutput aOutput, CompletableFuture<HolderLookup.Provider> aLookup) {
@@ -117,7 +117,7 @@ public class GT6ConventionTags extends TagsProvider<Item> {
 				getOrCreateRawBuilder(tTag).addElement(tID);
 				tCounts.merge(tTag.location().toString(), 1, Integer::sum);
 			}
-			CS.OUT.println("[GT6-DATAGEN] F1-b тег-мост наружу, блоки: " + tCounts);
+			CS.OUT.println("[GT6-DATAGEN] F1-b outward tag bridge, blocks: " + tCounts);
 		}
 	}
 }

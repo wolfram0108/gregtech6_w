@@ -66,7 +66,7 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	public final PrefixBlock mBlock;
 	
 	public PrefixBlockItem(Block aBlock) {
-		// F12-followup (item-split): id в Properties из ключа блока (BlockItem делит id с блоком; конструкция на RegisterEvent<Item>).
+		// F12-followup (item-split): id in Properties from the block's key (BlockItem shares id with the block; construction on RegisterEvent<Item>).
 		super(aBlock, new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock))));
 		setMaxDamage(0);
 		setHasSubtypes(T);
@@ -74,12 +74,12 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		mBlock.mPrefix.mRegisteredPrefixItems.add(this);
 		
 		if ((SHOW_HIDDEN_PREFIXES || !mBlock.mPrefix.contains(TD.Creative.HIDDEN)) && (SHOW_ORE_BLOCK_PREFIXES || "gt.meta.ore.normal.default".equalsIgnoreCase(mBlock.mNameInternal) || !mBlock.mPrefix.contains(TD.Prefix.ORE) || mBlock.mPrefix.contains(TD.Prefix.STORAGE_BASED))) {
-			// F16 (1:1 golden): видимый prefix-блок → СВОЯ prefix-вкладка (setCreativeTab(mPrefix.mCreativeTab)), НЕ ванильный
-			// tabBlock. this = BlockItem блока (в neo вкладки наполняются предметами, а не блоками) — присоединяем его.
+			// F16 (1:1 golden): a visible prefix block -> ITS OWN prefix tab (setCreativeTab(mPrefix.mCreativeTab)), NOT the vanilla
+			// tabBlock. this = the block's BlockItem (in neo, tabs are filled with items, not blocks) — join it.
 			if (mBlock.mPrefix.mCreativeTab == null) mBlock.mPrefix.mCreativeTab = new CreativeTab(mBlock.mPrefix.mNameInternal, mBlock.mPrefix.mNameCategory, this, W);
 			gregapi.item.CreativeTabsGT.joinOwnTab(this, mBlock.mPrefix.mCreativeTab);
 		} else {
-			gregapi.item.CreativeTabsGT.assign(mBlock, gregapi.item.CreativeTabsGT.BLOCK); // hidden/ore-скрытый → tabBlock (golden else)
+			gregapi.item.CreativeTabsGT.assign(mBlock, gregapi.item.CreativeTabsGT.BLOCK); // hidden/ore-hidden -> tabBlock (golden else)
 		}
 	}
 	
@@ -94,10 +94,10 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		if (aList.isEmpty()) ST.hide(this);
 	}
 	
-	// F-useOn мост: neo зовёт useOn(UseOnContext), а не 1.7.10 onItemUse. PrefixBlockItem (руды/материал-блоки) в 1.7.10
-	// НЕ имел своего onItemUse — использовал vanilla ItemBlock.onItemUse-скелет → placeBlockAt (перенос NBT-материала).
-	// Скелет воспроизведён 1:1 (образец BlockBase.onItemUse:222), завершение — свой placeBlockAt (mBlock.placeBlock+ItemNBT);
-	// мета материала берётся placeBlockAt из стека (ST.meta_) сам, переданный aMeta-аргумент им игнорируется.
+	// F-useOn bridge: neo calls useOn(UseOnContext), not the 1.7.10 onItemUse. PrefixBlockItem (ore/material blocks) in 1.7.10
+	// had NO own onItemUse — it used the vanilla ItemBlock.onItemUse skeleton -> placeBlockAt (material NBT transfer).
+	// The skeleton is reproduced 1:1 (model BlockBase.onItemUse:222), the finish is its own placeBlockAt (mBlock.placeBlock+ItemNBT);
+	// the material meta is taken by placeBlockAt from the stack (ST.meta_) itself, the passed aMeta argument is ignored by it.
 	@Override public InteractionResult useOn(UseOnContext aCtx) {return IItemGT.bridgeUseOn(this, aCtx);}
 	@Override public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aStack.getCount() == 0) return F;
@@ -120,24 +120,24 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		if (mBlock.placeBlock(aWorld, aX, aY, aZ, (byte)aSide, ST.meta_(aStack), ItemNBT.get(aStack), T, F)) {
 			if (WD.block(aWorld, aX, aY, aZ) == getBlock()) {
 				BlockPos tPos = new BlockPos(aX, aY, aZ);
-				getBlock().setPlacedBy(aWorld, tPos, aWorld.getBlockState(tPos), aPlayer, aStack); // было onBlockPlacedBy(World,x,y,z,EntityPlayer,ItemStack) -> Block.setPlacedBy(Level,BlockPos,BlockState,LivingEntity,ItemStack) (Block.java:473)
-				// onPostBlockPlaced(World,x,y,z,meta): в GT6 НИКЕМ не переопределён (греп по gregapi/: единственная ссылка — этот
-				// вызыватель) -> вызывал vanilla-no-op, ничего не терял. Общий пост-place-хук в neo вызывается движком АВТОМАТИЧЕСКИ:
-				// BlockState.onPlace(Level,BlockPos,oldState,movedByPiston) из LevelChunk.setBlockState:328 при setBlock. Явный вызов не нужен — не деградация.
+				getBlock().setPlacedBy(aWorld, tPos, aWorld.getBlockState(tPos), aPlayer, aStack); // was onBlockPlacedBy(World,x,y,z,EntityPlayer,ItemStack) -> Block.setPlacedBy(Level,BlockPos,BlockState,LivingEntity,ItemStack) (Block.java:473)
+				// onPostBlockPlaced(World,x,y,z,meta): NOT overridden by ANYONE in GT6 (grep over gregapi/: the only reference is this
+				// caller) -> called the vanilla no-op, nothing was lost. The generic post-place hook in neo is called by the engine AUTOMATICALLY:
+				// BlockState.onPlace(Level,BlockPos,oldState,movedByPiston) from LevelChunk.setBlockState:328 on setBlock. No explicit call needed — not a degradation.
 			}
 			return T;
 		}
-		UT.Entities.sendchat(aPlayer, "Cannot place Block in this Environment!");
+		UT.Entities.sendchat(aPlayer, LH.tt("Cannot place Block in this Environment!"));
 		return F;
 	}
 	
 	// @Override
-	// ⚠️ КАНАЛ РАЗОБРАН — цвет ПРЕДМЕТА в neo задаётся МОДЕЛЬЮ, не методом (реестр, 2026-07-30).
-	// У блоков этот канал уже закрыт центром GT6BlockTint + одна регистрация (см. GT_API_Proxy_Client), но
-	// у предметов API иной: ItemTintSources.register(Identifier, MapCodec<? extends ItemTintSource>) —
-	// регистрируется ТИП источника тинта, а ссылка на него стоит в json-модели предмета. Модели предметов
-	// GT6 генерируются процедурно, поэтому решается вместе с F3-рендером предметов, а не делегатом.
-	// Следствие сейчас: предметы GT6 рисуются без материального оттенка.
+	// WARNING: CHANNEL DISASSEMBLED — ITEM color in neo is set by the MODEL, not the method (registry, 2026-07-30).
+	// For blocks this channel is already closed by the GT6BlockTint center + one registration (see GT_API_Proxy_Client), but
+	// for items the API differs: ItemTintSources.register(Identifier, MapCodec<? extends ItemTintSource>) —
+	// registers the TYPE of the tint source, and the reference to it sits in the item's json model. GT6 item
+	// models are generated procedurally, so this is solved together with the F3 item renderer, not by a delegate.
+	// Current consequence: GT6 items render without the material tint.
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		if (aRenderPass == 0) {
 			short aMetaData = ST.meta_(aStack);
@@ -154,7 +154,7 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		return mBlock.getUnlocalizedName();
 	}
 	
-	// F13: neo зовёт appendHoverText (не 1.7.10 addInformation) — мост: GT6-тултип через addInformation → neo builder.
+	// F13: neo calls appendHoverText (not the 1.7.10 addInformation) — bridge: GT6 tooltip through addInformation -> neo builder.
 	@Override @SuppressWarnings({"rawtypes", "unchecked"})
 	public void appendHoverText(ItemStack aStack, net.minecraft.world.item.Item.TooltipContext aCtx, net.minecraft.world.item.component.TooltipDisplay aDisplay, java.util.function.Consumer<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
@@ -167,8 +167,8 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
-		// F13 (1:1): GT6-тултип ПОДКЛЮЧЁН — appendHoverText (выше) зовёт этот addInformation. Снятый super.addInformation
-		// в 1.7.10 vanilla был пустым (Item/ItemBlock его не наполняли) → мёртвый вызов, потери нет. Не заглушка.
+		// F13 (1:1): GT6 tooltip is WIRED UP — appendHoverText (above) calls this addInformation. The dropped super.addInformation
+		// was empty in 1.7.10 vanilla (Item/ItemBlock did not fill it) -> a dead call, no loss. Not a stub.
 		if (mBlock.mSpawnProof) aList.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_SPAWNPROOF));
 		
 		if (MD.GC.mLoaded) {
@@ -206,9 +206,9 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	
 	public final String getUnlocalizedName() {return mBlock.getUnlocalizedName();}
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
-	// Ф1.2 (мис-порт): PrefixBlockItem extends ванильный BlockItem (не ItemBlockBase) → не наследовал GT6-мост имени.
-	// getUnlocalizedName(ItemStack) выше уже даёт ключ "oredict."+prefix.dat(material) (имя зарегистрировано в PrefixBlock),
-	// но ванильный BlockItem.getName его не звал → сырой ключ у крейтов/руд-в-камне/storage. Маршрут в GT6-имя, как ItemBlockBase:137.
+	// F1.2 (port miss): PrefixBlockItem extends the vanilla BlockItem (not ItemBlockBase) -> did not inherit the GT6 name bridge.
+	// getUnlocalizedName(ItemStack) above already gives the key "oredict."+prefix.dat(material) (the name is registered in PrefixBlock),
+	// but the vanilla BlockItem.getName did not call it -> raw key on crates/ore-in-stone/storage. Route to the GT6 name, like ItemBlockBase:137.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 	public final boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
 	public ItemStack getContainerItem(ItemStack aStack) {return null;}
@@ -217,7 +217,7 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public int getItemEnchantability() {return 0;}
-	// BUG-021 v2: мост neo per-stack канала на 1.7.10-хук ниже (стак префикс-блоков = mDefaultStackSize, не 64).
+	// BUG-021 v2: bridge from the neo per-stack channel to the 1.7.10 hook below (prefix-block stack = mDefaultStackSize, not 64).
 	@Override public int getMaxStackSize(ItemStack aStack) {return UT.Code.bindStack(getItemStackLimit(aStack));}
 	public int getItemStackLimit(ItemStack aStack) {return mBlock.mPrefix.mDefaultStackSize;}
 	@Override public OreDictMaterial getMaterial(int aMetaData) {return UT.Code.exists(aMetaData, mBlock.mMaterialList) ? mBlock.mMaterialList[aMetaData] : null;}

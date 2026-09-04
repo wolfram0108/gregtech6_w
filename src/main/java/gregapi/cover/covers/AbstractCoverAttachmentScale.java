@@ -42,18 +42,18 @@ public abstract class AbstractCoverAttachmentScale extends AbstractCoverAttachme
 	public long onToolClick(byte aSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_cutter)) {
 			aData.visual(aSide, (short)(aData.mVisuals[aSide] ^ B[0]), T);
-			if (aChatReturn != null) aChatReturn.add((aData.mVisuals[aSide] & B[0]) != 0 ? "Emits strong Redstone" : "Emits weak Redstone");
+			if (aChatReturn != null) aChatReturn.add((aData.mVisuals[aSide] & B[0]) != 0 ? LH.tt("Emits strong Redstone") : LH.tt("Emits weak Redstone"));
 			return 1000;
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
 			aData.visual(aSide, (short)(aData.mVisuals[aSide] ^ B[1]), T);
-			if (aChatReturn != null) aChatReturn.add((aData.mVisuals[aSide] & B[1]) != 0 ? "Redstone scales down" : "Redstone scales up");
+			if (aChatReturn != null) aChatReturn.add((aData.mVisuals[aSide] & B[1]) != 0 ? LH.tt("Redstone scales down") : LH.tt("Redstone scales up"));
 			return 1000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
-				aChatReturn.add((aData.mVisuals[aSide] & B[0]) != 0 ? "Emits strong Redstone" : "Emits weak Redstone");
-				aChatReturn.add((aData.mVisuals[aSide] & B[1]) != 0 ? "Redstone scales down" : "Redstone scales up");
+				aChatReturn.add((aData.mVisuals[aSide] & B[0]) != 0 ? LH.tt("Emits strong Redstone") : LH.tt("Emits weak Redstone"));
+				aChatReturn.add((aData.mVisuals[aSide] & B[1]) != 0 ? LH.tt("Redstone scales down") : LH.tt("Redstone scales up"));
 			}
 			return 1;
 		}

@@ -37,28 +37,28 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
  * Base Proxy used for all my Mods.
  */
 public abstract class Abstract_Proxy {
-	/** F7 (централизованно, «одно место»): регистрация {@code @SubscribeEvent}-методов прокси на
-	 *  {@code NeoForge.EVENT_BUS} через per-method {@code addListener} — обходит запрет neo на
-	 *  {@code register(this)}, когда обработчики лежат на СУПЕРтипе (base-прокси держит их
-	 *  централизованно, а инстанс — Server/Client-подкласс; {@code EventBus.checkSupertypes} иначе бьёт
-	 *  IllegalArgumentException). {@code getClass().getMethods()} берёт РАНТАЙМ-тип → ловит base+подкласс
-	 *  (включая клиентские у *_Client) без тихого пропуска. Абстрактный event-класс (ServerTickEvent и т.п.,
-	 *  фаза 1.7.10) раскладывается на конкретные вложенные подклассы — метод берёт базу, instanceof внутри
-	 *  разрулит. Зовётся из конструктора КОНКРЕТНОГО прокси (GT_API_Proxy/GT_Proxy). */
+	/** F7 (centralized, "one place"): registers the proxy's {@code @SubscribeEvent} methods on
+	 *  {@code NeoForge.EVENT_BUS} via a per-method {@code addListener} — works around neo's ban on
+	 *  {@code register(this)} when the handlers live on a SUPERtype (the base proxy holds them
+	 *  centrally, while the instance is the Server/Client subclass; otherwise {@code EventBus.checkSupertypes}
+	 *  throws IllegalArgumentException). {@code getClass().getMethods()} takes the RUNTIME type → catches base+subclass
+	 *  (including client-only ones on *_Client) with no silent skip. An abstract event class (ServerTickEvent etc.,
+	 *  a 1.7.10-style phase) unfolds into its concrete nested subclasses — the method takes the base, instanceof inside
+	 *  sorts it out. Called from the CONCRETE proxy's constructor (GT_API_Proxy/GT_Proxy). */
 	protected final void registerSubscribeEvents() {
 		for (java.lang.reflect.Method tMethod : getClass().getMethods()) {
 			net.neoforged.bus.api.SubscribeEvent tAnnotation = tMethod.getAnnotation(net.neoforged.bus.api.SubscribeEvent.class);
 			if (tAnnotation == null || tMethod.getParameterCount() != 1) continue;
 			Class<?> tParameter = tMethod.getParameterTypes()[0];
 			if (!net.neoforged.bus.api.Event.class.isAssignableFrom(tParameter)) continue;
-			// F7 bus-раздел (форс движка): mod-bus события (IModBusEvent, напр. TextureAtlasStitchedEvent/ModelEvent/
-			// RegisterEvent) НЕЛЬЗЯ вешать на общую NeoForge.EVENT_BUS — neo бросает "IModBusEvent not allowed on the
-			// common bus" при регистрации (крашило runData/runClient на конструкции мода). Они регистрируются на mod-шине
-			// отдельно (registerClientModels/RegisterEvent-хендлеры). Здесь — только game-bus @SubscribeEvent.
+			// F7 bus split (engine force): mod-bus events (IModBusEvent, e.g. TextureAtlasStitchedEvent/ModelEvent/
+			// RegisterEvent) MUST NOT be hung on the shared NeoForge.EVENT_BUS — neo throws "IModBusEvent not allowed on the
+			// common bus" on registration (crashed runData/runClient during mod construction). They are registered on the mod bus
+			// separately (registerClientModels/RegisterEvent handlers). Here — only game-bus @SubscribeEvent.
 			if (net.neoforged.fml.event.IModBusEvent.class.isAssignableFrom(tParameter)) continue;
 			java.util.function.Consumer<net.neoforged.bus.api.Event> tDispatch = aEvent -> {
 				try {tMethod.invoke(this, aEvent);}
-				catch (ReflectiveOperationException e) {throw new RuntimeException("Abstract_Proxy: сбой диспетчеризации события " + tMethod, e);}
+				catch (ReflectiveOperationException e) {throw new RuntimeException("Abstract_Proxy: event dispatch failure " + tMethod, e);}
 			};
 			if (java.lang.reflect.Modifier.isAbstract(tParameter.getModifiers())) {
 				for (Class<?> tSub : tParameter.getDeclaredClasses()) {

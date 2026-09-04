@@ -128,7 +128,7 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
 			if (aSneaking) mMaxLength+=20; else mMaxLength++;
-			if (aChatReturn != null) aChatReturn.add("Signal Length = " + Math.abs(mMaxLength));
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Signal Length = ") + Math.abs(mMaxLength));
 			return 100;
 		}
 		if (aTool.equals(TOOL_cutter)) {
@@ -137,20 +137,20 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 			} else {
 				mStrength%=15; mStrength++;
 			}
-			if (aChatReturn != null) aChatReturn.add("Signal Strength = " + mStrength);
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Signal Strength = ") + mStrength);
 			causeBlockUpdate();
 			return 100;
 		}
 		if (aTool.equals(TOOL_softhammer)) {
 			if (aSneaking) {
 				mGlowInverted = !mGlowInverted;
-				if (aChatReturn != null) aChatReturn.add(mGlowInverted ? "Glows when unpressed!" : "Glows when pressed!");
+				if (aChatReturn != null) aChatReturn.add(mGlowInverted ? LH.tt("Glows when unpressed!") : LH.tt("Glows when pressed!"));
 				updateClientData();
 				return 1000;
 			}
 			mInverted = !mInverted;
 			mActive = !mActive;
-			if (aChatReturn != null) aChatReturn.add(mInverted ? "Emits when unpressed!" : "Emits when pressed!");
+			if (aChatReturn != null) aChatReturn.add(mInverted ? LH.tt("Emits when unpressed!") : LH.tt("Emits when pressed!"));
 			updateClientData();
 			causeBlockUpdate();
 			return 1000;
@@ -166,16 +166,16 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 					if (aSneaking) mMaxLength=20; else mMaxLength=1;
 				}
 			}
-			if (aChatReturn != null) aChatReturn.add(mLampMode ? "Lamp Mode" : mMaxLength > 0 ? "Button Mode" : "Switch Mode");
+			if (aChatReturn != null) aChatReturn.add(mLampMode ? LH.tt("Lamp Mode") : mMaxLength > 0 ? LH.tt("Button Mode") : LH.tt("Switch Mode"));
 			return 1000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
-				aChatReturn.add("Signal Strength = " + mStrength);
-				if (mMaxLength > 0) aChatReturn.add("Signal Length = " + Math.abs(mMaxLength));
-				aChatReturn.add(mLampMode ? "Lamp Mode" : mMaxLength > 0 ? "Button Mode" : "Switch Mode");
-				aChatReturn.add(mInverted ? "Emits when unpressed!" : "Emits when pressed!");
-				aChatReturn.add(mGlowInverted ? "Glows when unpressed!" : "Glows when pressed!");
+				aChatReturn.add(LH.tt("Signal Strength = ") + mStrength);
+				if (mMaxLength > 0) aChatReturn.add(LH.tt("Signal Length = ") + Math.abs(mMaxLength));
+				aChatReturn.add(mLampMode ? LH.tt("Lamp Mode") : mMaxLength > 0 ? LH.tt("Button Mode") : LH.tt("Switch Mode"));
+				aChatReturn.add(mInverted ? LH.tt("Emits when unpressed!") : LH.tt("Emits when pressed!"));
+				aChatReturn.add(mGlowInverted ? LH.tt("Glows when unpressed!") : LH.tt("Glows when pressed!"));
 			}
 			return 1;
 		}

@@ -159,9 +159,9 @@ public class MultiTileEntityLargeBoiler extends TileEntityBase10MultiBlockBase i
 		aList.add(Chat.WHITE    + LH.get("gt.tooltip.multiblock.largeboiler.4"));
 		aList.add(Chat.CYAN     + LH.get(LH.CONVERTS_FROM_X)        + " 1 L " + FL.name(Fluids.WATER, T) + " " + LH.get(LH.CONVERTS_TO_Y) + " 160 L " + FL.name(FL.Steam.make(0), T) + " " + LH.get(LH.CONVERTS_USING_Z) + " 80 " + mEnergyTypeAccepted.getLocalisedNameShort());
 		aList.add(LH.getToolTipEfficiency(mEfficiency));
-		aList.add(Chat.GREEN    + LH.get(LH.ENERGY_INPUT)           + ": " + Chat.WHITE + (mOutput/STEAM_PER_EU)                        + " " + mEnergyTypeAccepted.getLocalisedChatNameShort() + Chat.WHITE + "/t (Heat Transmitters)");
+		aList.add(Chat.GREEN    + LH.get(LH.ENERGY_INPUT)           + ": " + Chat.WHITE + (mOutput/STEAM_PER_EU)                        + " " + mEnergyTypeAccepted.getLocalisedChatNameShort() + Chat.WHITE + LH.tt("/t (Heat Transmitters)"));
 		aList.add(Chat.GREEN    + LH.get(LH.ENERGY_CAPACITY)        + ": " + Chat.WHITE + mCapacity                                     + " " + mEnergyTypeAccepted.getLocalisedChatNameShort() + Chat.WHITE);
-		aList.add(Chat.RED      + LH.get(LH.ENERGY_OUTPUT)          + ": " + Chat.WHITE + UT.Code.units(mOutput, 10000, mEfficiency, F) + " " + TD.Energy.STEAM.getLocalisedChatNameLong()      + Chat.WHITE + "/t (Pipe Holes)");
+		aList.add(Chat.RED      + LH.get(LH.ENERGY_OUTPUT)          + ": " + Chat.WHITE + UT.Code.units(mOutput, 10000, mEfficiency, F) + " " + TD.Energy.STEAM.getLocalisedChatNameLong()      + Chat.WHITE + LH.tt("/t (Pipe Holes)"));
 		aList.add(Chat.RED      + LH.get(LH.ENERGY_CAPACITY)        + ": " + Chat.WHITE + mCapacity                                     + " " + TD.Energy.STEAM.getLocalisedChatNameLong()      + Chat.WHITE);
 		aList.add(Chat.ORANGE   + LH.get(LH.REQUIREMENT_WATER_PURE));
 		aList.add(Chat.DRED     + LH.get(LH.HAZARD_EXPLOSION_STEAM));
@@ -297,7 +297,7 @@ public class MultiTileEntityLargeBoiler extends TileEntityBase10MultiBlockBase i
 		}
 		
 		if (aTool.equals(TOOL_thermometer)) {
-			if (aChatReturn != null) aChatReturn.add("Stored Heat Units: " + mEnergy + " / " + mCapacity + " HU");
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Stored Heat Units: ") + mEnergy + " / " + mCapacity + LH.tt(" HU"));
 			return 10000;
 		}
 		return 0;
@@ -306,9 +306,9 @@ public class MultiTileEntityLargeBoiler extends TileEntityBase10MultiBlockBase i
 	@Override
 	public void onMagnifyingGlass2(List<String> aChatReturn) {
 		if (mEfficiency < 10000) {
-			aChatReturn.add("Calcification: " + LH.percent(10000 - mEfficiency) + "%");
+			aChatReturn.add(LH.tt("Calcification: ") + LH.percent(10000 - mEfficiency) + "%");
 		} else {
-			aChatReturn.add("No Calcification in this Boiler");
+			aChatReturn.add(LH.tt("No Calcification in this Boiler"));
 		}
 		aChatReturn.add(mTanks[0].content("WARNING: NO WATER!!!"));
 	}

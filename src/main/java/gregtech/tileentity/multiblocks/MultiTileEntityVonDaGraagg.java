@@ -158,7 +158,7 @@ public class MultiTileEntityVonDaGraagg extends TileEntityBase10MultiBlockBase i
 	
 	@Override
 	public void onMagnifyingGlass2(List<String> aChatReturn) {
-		aChatReturn.add("Square Radius: " + mCurrentRange + "m of 256m");
+		aChatReturn.add(LH.tt("Square Radius: ") + mCurrentRange + LH.tt("m of 256m"));
 	}
 	
 	@Override public byte getDefaultSide() {return SIDE_FRONT;}

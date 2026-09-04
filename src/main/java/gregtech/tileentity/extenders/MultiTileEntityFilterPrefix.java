@@ -139,18 +139,18 @@ public class MultiTileEntityFilterPrefix extends MultiTileEntityExtender impleme
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_screwdriver)) {
 			mInverted = !mInverted;
-			if (aChatReturn != null) aChatReturn.add(mInverted ? "Blacklist Filter" : "Whitelist Filter");
+			if (aChatReturn != null) aChatReturn.add(mInverted ? LH.tt("Blacklist Filter") : LH.tt("Whitelist Filter"));
 			return 2000;
 		}
 		if (aTool.equals(TOOL_softhammer)) {
 			mInverted = F;
 			mFilter = null;
 			mCycle = null;
-			if (aChatReturn != null) aChatReturn.add("Cleared the Filter");
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Cleared the Filter"));
 			return 10000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add(mInverted ? "Blacklist Filter" : "Whitelist Filter");
+			if (aChatReturn != null) aChatReturn.add(mInverted ? LH.tt("Blacklist Filter") : LH.tt("Whitelist Filter"));
 			return 1;
 		}
 		return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);

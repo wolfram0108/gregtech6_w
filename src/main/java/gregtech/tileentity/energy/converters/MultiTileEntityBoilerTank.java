@@ -184,16 +184,16 @@ public class MultiTileEntityBoilerTank extends TileEntityBase09FacingSingle impl
 		}
 		
 		if (aTool.equals(TOOL_thermometer)) {
-			if (aChatReturn != null) aChatReturn.add("Stored Heat Units: " + mEnergy + " / " + mCapacity + " HU");
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Stored Heat Units: ") + mEnergy + " / " + mCapacity + LH.tt(" HU"));
 			return 10000;
 		}
 		
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
 				if (mEfficiency < 10000) {
-					aChatReturn.add("Calcification: " + LH.percent(10000 - mEfficiency) + "%");
+					aChatReturn.add(LH.tt("Calcification: ") + LH.percent(10000 - mEfficiency) + "%");
 				} else {
-					aChatReturn.add("No Calcification in this Boiler");
+					aChatReturn.add(LH.tt("No Calcification in this Boiler"));
 				}
 				aChatReturn.add(mTanks[0].content("WARNING: NO WATER!!!"));
 			}
@@ -242,7 +242,7 @@ public class MultiTileEntityBoilerTank extends TileEntityBase09FacingSingle impl
 		return FL.water(aFluid) ? mTanks[0].fill(aFluid, aDoFill) : 0;
 	}
 	
-	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {byte tF = mFacing /* BUG-074: компенсация item-facing перенесена в центр — MultiTileEntityBlockInternal.passRenderingToObject */; return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACES_TBS[aSide]], mRGBa), BlockTextureDefault.get(sOverlays[FACES_TBS[aSide]]), aSide!=tF?null:BlockTextureDefault.get(BI.BAROMETER), aSide!=tF?null:BlockTextureDefault.get(BI.BAROMETER_SCALE[mBarometer], CA_RED_64)) : null;}
+	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {byte tF = mFacing /* BUG-074: the item-facing compensation moved to the center — MultiTileEntityBlockInternal.passRenderingToObject */; return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACES_TBS[aSide]], mRGBa), BlockTextureDefault.get(sOverlays[FACES_TBS[aSide]]), aSide!=tF?null:BlockTextureDefault.get(BI.BAROMETER), aSide!=tF?null:BlockTextureDefault.get(BI.BAROMETER_SCALE[mBarometer], CA_RED_64)) : null;}
 	
 	@Override public void onEntityCollidedWithBlock(Entity aEntity) {if (mEnergy+mTanks[1].amount()/STEAM_PER_EU > 2000) UT.Entities.applyHeatDamage(aEntity, Math.min(10.0F, (mEnergy+mTanks[1].amount()/2) / 2000.0F));}
 	@Override public AABB getCollisionBoundingBoxFromPool() {return box(PX_P[2], PX_P[2], PX_P[2], PX_N[2], PX_N[2], PX_N[2]);}

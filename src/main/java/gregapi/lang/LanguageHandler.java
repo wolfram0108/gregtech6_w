@@ -54,71 +54,91 @@ public class LanguageHandler {
 	private static final HashMap<String, String> BUFFERMAP = new HashMap<>(), BACKUPMAP = new HashMap<>();
 	private static boolean mWritingEnabled = F;
 
-	/** Наша надстройка над таблицей движка (см. {@link #injectIntoEngine()}); пересоздаётся при каждой загрузке ресурсов. */
+	/** Our overlay over the engine table ({@link #injectIntoEngine()}); rebuilt on every resource load. */
 	private static GT6Language mEngineOverlay = null;
 
 	/**
-	 * ЦЕНТР ЛОКАЛИЗАЦИИ (BUG-082): GT6 отдаёт свои имена ДВИЖКУ, а не только себе.
+	 * LOCALIZATION CENTRE (BUG-082): GT6 hands its names to the ENGINE, not only to itself.
 	 *
-	 * <p>Оригинал 1.7.10 на каждое имя звал {@code LanguageRegistry.instance().injectLanguage("en_US", TEMPMAP)}
-	 * ({@code gregtech6/…/LanguageHandler.java:59-64, 84-95}) — строка попадала в ЖИВУЮ таблицу переводов движка,
-	 * поэтому её видел кто угодно: ваниль, NEI, Waila, любой сторонний мод. Порт этот впрыск снял, и имена GT6
-	 * остались только во внутренней {@code BACKUPMAP}; наружу они пробивались лишь точечными мостами
-	 * {@code getName(ItemStack)} у предметов и блоков. Всё, что спрашивает имя движковым способом, получало сырой
-	 * ключ — отсюда {@code fluid.steam} и {@code fluid.ic2distilledwater} в витрине Jade. Замер: в
-	 * {@code assets/gregtech6/lang/en_us.json} лежит 6 ключей, ни одного имени GT6.
+	 * <p>1.7.10 called {@code LanguageRegistry.instance().injectLanguage("en_US", TEMPMAP)} per name
+	 * ({@code LanguageHandler.java:59-64, 84-95}), so the string landed in the live translation table and anyone
+	 * could see it: vanilla, NEI, Waila, any foreign mod. The port dropped that injection and GT6 names stayed in
+	 * the internal {@code BACKUPMAP}, reaching the outside only through per-item {@code getName(ItemStack)}
+	 * bridges; everything asking the engine way got a raw key, hence {@code fluid.steam} in the Jade tooltip.
 	 *
-	 * <p><b>Как именно.</b> Дописать в готовую таблицу нельзя: клиентская собирается неизменяемой копией
-	 * ({@code ClientLanguage.loadFrom:58} — {@code new ClientLanguage(Map.copyOf(translations), …)}; замер это и
-	 * показал — {@code UnsupportedOperationException} на {@code putIfAbsent}). Мутируемой движок держит ДРУГУЮ,
-	 * серверную ({@code Language.java:39-40}). Штатная точка расширения одна и она публичная —
-	 * {@link Language#inject(Language)}: подменяем действующую таблицу НАДСТРОЙКОЙ над ней ({@link GT6Language}).
-	 * Надстройка ничего не заслоняет — она отвечает лишь на те ключи, которых движок не знает, поэтому язык
-	 * игрока и ресурспаки остаются главнее; всё остальное уходит делегату один в один.
+	 * <p><b>How.</b> Writing into the finished table is impossible: the client one is an immutable copy
+	 * ({@code ClientLanguage.loadFrom:58}, {@code Map.copyOf}) and throws {@code UnsupportedOperationException};
+	 * the mutable one the engine keeps is the server table ({@code Language.java:39-40}). The single public
+	 * extension point is {@link Language#inject(Language)}: the active table is replaced by an overlay over it
+	 * ({@link GT6Language}). The overlay hides nothing — it answers only keys the engine does not know, so the
+	 * player language and resource packs stay on top and everything else passes to the delegate unchanged.
 	 *
-	 * <p>Обе формы ключа ({@code key} и {@code key + ".name"}) — как в оригинале ({@code …:60-64}).
+	 * <p>Both key forms ({@code key} and {@code key + ".name"}) as in the original ({@code …:60-64}).
 	 *
-	 * <p>Зовётся: целиком из {@code ClientResourceLoadFinishedEvent} (перезагрузка ресурсов создаёт таблицу
-	 * заново, вместе с ней исчезает и надстройка) и точечно из {@link #add}/{@link #set} — имена GT6
-	 * регистрируются и после загрузки ресурсов.
+	 * <p>Called in full from {@code ClientResourceLoadFinishedEvent} (a resource reload rebuilds the table and
+	 * drops the overlay with it) and per key from {@link #add}/{@link #set}, since GT6 registers names later too.
 	 *
-	 * @return сколько ключей мода движок до этого не знал.
+	 * @return how many mod keys the engine did not know before.
 	 */
 	public static synchronized int injectIntoEngine() {
 		if (BACKUPMAP.isEmpty()) return 0;
 		try {
+			refreshLocaleFile();
 			Language tCurrent = Language.getInstance();
-			// Надстройку на надстройку не громоздим: работаем поверх настоящей таблицы движка.
+			// Never stack an overlay onto an overlay: always wrap the engine's own table.
 			if (tCurrent instanceof GT6Language tOurs) tCurrent = tOurs.mDelegate;
 			GT6Language tOverlay = new GT6Language(tCurrent);
 			int rInjected = 0;
-			for (Entry<String, String> tEntry : BACKUPMAP.entrySet()) rInjected += tOverlay.own(tEntry.getKey(), tEntry.getValue());
+			for (Entry<String, String> tEntry : BACKUPMAP.entrySet()) rInjected += tOverlay.own(tEntry.getKey(), engineValue(tEntry.getKey(), tEntry.getValue()));
 			mEngineOverlay = tOverlay;
 			Language.inject(tOverlay);
-			// ВТОРОЙ НОСИТЕЛЬ (MODCOMPAT-014): на клиенте таблиц две, и Language.inject ставит только одну —
-			// у I18n свой указатель, который движок трогает лишь в LanguageManager.apply. Сводим их здесь, в
-			// той же точке, где ставится надстройка: иначе каждый новый overlay расходится со вторым носителем
-			// и имена GT6 видит только первый. Сторону решает прокси — на сервере второго носителя нет.
+			// Second holder (MODCOMPAT-014): the client has two tables and Language.inject sets only one, while I18n
+			// keeps its own pointer. Synced here or every new overlay drifts from it; the proxy decides the side.
 			if (gregapi.GT_API.api_proxy != null) gregapi.GT_API.api_proxy.syncClientI18n();
 			return rInjected;
 		} catch (Throwable e) {
 			mEngineOverlay = null;
-			ERR.println("GT6 localization: не удалось отдать имена GT6 движку — у сторонних модов они останутся сырыми.");
+			ERR.println("GT6 localization: failed to hand GT6 names to the engine, foreign mods will see raw keys.");
 			e.printStackTrace(ERR);
 			return 0;
 		}
 	}
 
-	/** Один ключ — в уже поставленную надстройку. Пока её нет (мод грузится раньше ресурсов), ключ ждёт в BACKUPMAP. */
+	/** One key into the installed overlay. Until it exists (the mod loads before resources) the key waits in BACKUPMAP. */
 	private static int injectKey(String aKey, String aEnglish) {
 		GT6Language tOverlay = mEngineOverlay;
 		if (tOverlay == null || aKey == null || aEnglish == null) return 0;
-		try {return tOverlay.own(aKey, aEnglish);} catch (Throwable e) {return 0;}
+		try {return tOverlay.own(aKey, engineValue(aKey, aEnglish));} catch (Throwable e) {return 0;}
+	}
+
+	/** Translation file of the language selected in the game; null when that language has no file. */
+	private static ModConfigSpec sLocaleFile = null;
+
+	// GT6 follows the game language: switching it reloads resources, which is where the overlay is rebuilt, so
+	// re-reading the file here keeps mod names on the same language as vanilla ones.
+	private static void refreshLocaleFile() {
+		String tLocale = gregapi.GT_API.api_proxy == null ? null : gregapi.GT_API.api_proxy.selectedLanguage();
+		if (tLocale == null) {sLocaleFile = null; return;}
+		java.io.File tFile = new java.io.File(DirectoriesGT.MINECRAFT, "gregtech_" + tLocale + ".lang");
+		sLocaleFile = tFile.exists() ? new ModConfigSpec(tFile) : null;
+	}
+
+	// Order of sources: the file of the selected language, then the manual override of 1.7.10
+	// (UseThisFileAsLanguageFile, LanguageHandler:89-90), then English. BACKUPMAP always keeps English.
+	private static String engineValue(String aKey, String aEnglish) {
+		ModConfigSpec tLocale = sLocaleFile;
+		if (tLocale != null) {
+			ConfigValue tTranslated = tLocale.getCategory("LanguageFile").get(aKey);
+			if (tTranslated != null) return tTranslated.getString();
+		}
+		if (!sUseFile || sLangFile == null) return aEnglish;
+		ConfigValue tProperty = sLangFile.getCategory("LanguageFile").get(aKey);
+		return tProperty == null ? aEnglish : tProperty.getString();
 	}
 
 	/**
-	 * НАДСТРОЙКА над таблицей переводов движка: сначала спрашиваем движок, и только если он ключа не знает —
-	 * отвечаем именем GT6. Прямой аналог того, что делал {@code LanguageRegistry.injectLanguage} в 1.7.10.
+	 * OVERLAY over the engine translation table: the engine is asked first and only an unknown key is answered
+	 * with a GT6 name. Direct counterpart of what {@code LanguageRegistry.injectLanguage} did in 1.7.10.
 	 */
 	private static final class GT6Language extends Language {
 		private final Language mDelegate;
@@ -126,12 +146,12 @@ public class LanguageHandler {
 
 		GT6Language(Language aDelegate) {mDelegate = aDelegate;}
 
-		/** @return сколько форм ключа добавлено (движок их не знал). */
+		/** @return how many key forms were added (the engine did not know them). */
 		int own(String aKey, String aEnglish) {
 			int rAdded = 0;
 			if (!mDelegate.has(aKey           ) && mOwn.putIfAbsent(aKey           , aEnglish) == null) rAdded++;
 			if (!mDelegate.has(aKey + ".name" ) && mOwn.putIfAbsent(aKey + ".name" , aEnglish) == null) rAdded++;
-			if (rAdded > 0) mMerged = null; // состав изменился — объединённая карта пересоберётся при следующем запросе
+			if (rAdded > 0) mMerged = null; // Content changed: the merged map is rebuilt on the next request.
 			return rAdded;
 		}
 
@@ -145,16 +165,15 @@ public class LanguageHandler {
 		@Override public net.minecraft.util.FormattedCharSequence getVisualOrder(net.minecraft.network.chat.FormattedText aText) {return mDelegate.getVisualOrder(aText);}
 		@Override public net.minecraft.network.chat.Component getComponent(String aKey) {return mDelegate.getComponent(aKey);}
 
-		/** Объединённая карта строится ОДИН раз на состав и переиспользуется: её просит {@code I18n} при смене языка
-		 *  ({@code neo-decompiled/…/I18n.java:18} — {@code injectTranslations(locale.getLanguageData())}), а ключей
-		 *  здесь под сотню тысяч — пересобирать на каждый вызов недопустимо. Сбрасывается при добавлении ключа. */
+		/** Built once per content and reused: {@code I18n} asks for it on every language switch
+		 *  ({@code I18n.java:18}), and with ~100k keys rebuilding per call is unaffordable. Reset when a key is added. */
 		private volatile java.util.Map<String, String> mMerged = null;
 
 		@Override public java.util.Map<String, String> getLanguageData() {
 			java.util.Map<String, String> rMerged = mMerged;
 			if (rMerged == null) {
 				java.util.Map<String, String> tData = new HashMap<>(mOwn);
-				tData.putAll(mDelegate.getLanguageData()); // движок главнее — его значения перекрывают наши
+				tData.putAll(mDelegate.getLanguageData()); // The engine wins: its values override ours.
 				mMerged = rMerged = java.util.Collections.unmodifiableMap(tData);
 			}
 			return rMerged;
@@ -170,8 +189,8 @@ public class LanguageHandler {
 	
 	public static synchronized void set(String aKey, String aEnglish) {
 		BACKUPMAP.put(aKey, aEnglish);
-		// 1:1 с оригиналом (`gregtech6/…/LanguageHandler.java:59-64`): строка уходит и в ТАБЛИЦУ ДВИЖКА —
-		// см. injectIntoEngine() выше. BACKUPMAP при этом остаётся источником истины для translate()/LH.get.
+		// 1:1 with the original (LanguageHandler.java:59-64): the string also goes into the ENGINE table via
+		// injectIntoEngine(). BACKUPMAP stays the source of truth for translate()/LH.get.
 		injectKey(aKey, aEnglish);
 	}
 
@@ -181,14 +200,14 @@ public class LanguageHandler {
 		if (aKey.length() <= 0) return;
 		boolean tSave = F;
 		BACKUPMAP.put(aKey, aEnglish);
-		injectKey(aKey, aEnglish); // 1:1 с оригиналом (`…/LanguageHandler.java:84-95`): строка уходит и в таблицу движка
+		injectKey(aKey, aEnglish); // 1:1 with the original (LanguageHandler.java:84-95): also into the engine table
 		if (sLangFile == null) {
 			BUFFERMAP.put(aKey, aEnglish);
 		} else {
 			if (!BUFFERMAP.isEmpty()) {
 				tSave = T;
-				// F12 file round-trip: каждый буферизованный ключ пишется в sLangFile, иначе он никогда не попадёт в файл.
-				// (Впрыск в движок для них уже сделан выше — он идёт по КАЖДОМУ ключу сразу, не через этот буфер.)
+				// F12 file round-trip: every buffered key is written to sLangFile, or it never reaches the file at all.
+				// (Their engine injection already happened above, per key, not through this buffer.)
 				for (Entry<String, String> tEntry : BUFFERMAP.entrySet()) {
 					sLangFile.get("LanguageFile", tEntry.getKey(), tEntry.getValue());
 				}
@@ -205,16 +224,19 @@ public class LanguageHandler {
 		return translate(aKey, aDefault);
 	}
 
-	/** было {@code I18n.translateToLocal(aKey)} (1.7.10 StatCollector — ТОЛЬКО чтение lang-таблицы, перевод-или-ключ, без регистрации). */
+	/** was {@code I18n.translateToLocal(aKey)} (1.7.10 StatCollector: read-only lookup, translation-or-key, no registration). */
 	public static String get(String aKey) {
 		return translate(aKey, aKey);
 	}
 	
+	// Book pages take the same source order as every other string (engineValue): the file of the selected
+	// language first, then the manual override of 1.7.10. Keeping a second rule here would give the mod two
+	// language switches at once — the game language for names, a config flag for books.
 	public static String langfile(String aKey, String aEnglish) {
-		if (sLangFile == null) return aEnglish;
+		if (sLangFile == null) return translate(aKey, aEnglish);
 		ConfigValue tProperty = sLangFile.get("LanguageFile", aKey, aEnglish);
 		if (tProperty.wasRead() && mWritingEnabled) sLangFile.save();
-		return sUseFile?tProperty.getString():aEnglish;
+		return translate(aKey, aEnglish);
 	}
 
 	public static String translate(String aKey) {
@@ -226,13 +248,9 @@ public class LanguageHandler {
 		aKey = aKey.trim();
 		if (aKey.length() < 2) return "";
 		String
-		// 1.7.10 здесь стояли ДВА раздельных запроса к движку: FML LanguageRegistry.getStringLocalization
-		// (свой оверлей) и vanilla StatCollector.translateToLocal (файловый lang-реестр) — в 1.7.10 это
-		// были два разных подсистемы сканирования .lang-файлов. В neo/vanilla они слиты в ОДНУ систему
-		// (Language/Component), поэтому оба тира схлопнуты в один реальный вызов ниже (не дублируем
-		// одинаковый запрос дважды подряд — R1). Component.translatable(...).getString() безопасен на
-		// обеих сторонах (TranslatableContents.visit читает Language.getInstance() напрямую, класс не
-		// @OnlyIn) и деградирует до возврата самого ключа, если перевод не найден (см. Language.java:132-136).
+		// 1.7.10 asked two separate registries here (FML LanguageRegistry and vanilla StatCollector); neo merges
+		// them into one Language/Component system, so both tiers collapse into the single side-safe call below,
+		// which degrades to returning the key itself when no translation exists (Language.java:132-136).
 		rTranslation = Component.translatable(aKey).getString();
 		if (UT.Code.stringValid(rTranslation) && !aKey.equals(rTranslation)) return rTranslation;
 		rTranslation = BACKUPMAP.get(aKey);
@@ -266,12 +284,8 @@ public class LanguageHandler {
 				return tName;
 			}
 		}
-		// Не долг: метод не вызывается ни в порте, ни в оригинале (в обоих деревьях единственное вхождение —
-		// это объявление), поэтому per-stack вариация ниже никого не задевает. 1.7.10 ItemStack.getUnlocalizedName()
-		// делегировал в переопределяемый Item.getUnlocalizedName(ItemStack) — per-metadata вариация
-		// подтипов (та же развилка модели предмета, что и decisions/F1-item-metadata-model.md).
-		// В neo Item.getDescriptionId() финальный и без параметра ItemStack; per-stack вариация не
-		// воспроизведена здесь до решения F1 по компоненту MATERIAL/VARIANT.
+		// Not a debt: this method is called nowhere in either tree, so the missing per-stack variation hurts nobody.
+		// In neo Item.getDescriptionId() is final and takes no ItemStack; per-stack variation waits for decision F1.
 		return aStack.getItem().getDescriptionId() + ".name";
 	}
 	

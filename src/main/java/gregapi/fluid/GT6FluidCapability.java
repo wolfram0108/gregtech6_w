@@ -36,44 +36,46 @@ import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
 /**
- * MODCOMPAT-001 П2 — ВОЗВРАТ СТАНДАРТНОГО КАНАЛА ЖИДКОСТЕЙ БЛОКАМ (F5-capability).
+ * MODCOMPAT-001 P2 — RESTORES THE STANDARD FLUID CHANNEL FOR BLOCKS (F5-capability).
  *
- * <p><b>Что было потеряно при портировании.</b> В 1.7.10 танки GT6 торчали наружу через СТАНДАРТНЫЙ
- * Forge-интерфейс: пять TE-иерархий объявляли {@code implements IFluidHandler}
+ * <p><b>What was lost during the port.</b> In 1.7.10, GT6's tanks were exposed externally through the
+ * STANDARD Forge interface: five TE hierarchies declared {@code implements IFluidHandler}
  * ({@code tank/TileEntityBase08Barrel}, {@code connectors/MultiTileEntityPipeFluid},
  * {@code machines/MultiTileEntityBasicMachine}, {@code multiblocks/MultiTileEntityMultiBlockPart},
- * {@code tools/MultiTileEntityAdvancedCraftingTable}), и любой чужой мод — насос, труба, тултип-мод —
- * читал содержимое БЕЗ единой строчки кода про GT6. В neo сам интерфейс на BlockEntity больше ничего не
- * значит: наружу видно только то, что ЗАРЕГИСТРИРОВАНО как capability. Порт перенёс интерфейс дословно
- * (методы живут в {@code TileEntityBase01Root:809-817}), но регистрации не сделал — {@code grep} по
- * {@code RegisterCapabilitiesEvent} давал 0. Итог: снаружи танки GT6 не существуют.
+ * {@code tools/MultiTileEntityAdvancedCraftingTable}), and any foreign mod — a pump, a pipe, a tooltip mod —
+ * read the contents WITHOUT a single line of GT6-specific code. In neo the interface on a BlockEntity no
+ * longer means anything by itself: only what is REGISTERED as a capability is visible externally. The port
+ * carried the interface over verbatim (the methods live in {@code TileEntityBase01Root:809-817}), but never
+ * registered it — a {@code grep} for {@code RegisterCapabilitiesEvent} returned 0. Result: GT6's tanks don't
+ * exist from the outside.
  *
- * <p><b>Почему это одна точка, а не правка пяти классов.</b> Вся GT6-TE-иерархия живёт под ОДНИМ
- * {@code BlockEntityType} — {@code TileEntityBase01Root.MTE_TYPE} (общий placeholder-тип, F-tileentity-
- * construction). Значит и регистрация ровно одна, а какие танки показать — решает сам TE своим
- * side-aware {@code getFluidTanks(side)}, то есть тем же кодом, что и внутренний тракт. Ковер-оверрайды
- * ({@code TileEntityBase06Covers:375}) при этом соблюдаются сами собой.
+ * <p><b>Why this is one spot, not five classes to patch.</b> The whole GT6 TE hierarchy lives under ONE
+ * {@code BlockEntityType} — {@code TileEntityBase01Root.MTE_TYPE} (a shared placeholder type, F-tileentity-
+ * construction). So registration is exactly one call too, and which tanks to expose is decided by the TE
+ * itself through its side-aware {@code getFluidTanks(side)} — the same code as the internal transfer path.
+ * Cover overrides ({@code TileEntityBase06Covers:375}) are honored automatically as a result.
  *
- * <p><b>Транзакционность взята готовая, не самодельная.</b> Каждый {@link FluidTankGT} уже умеет отдавать
- * корректный {@code ResourceHandler<FluidResource>} ({@link FluidTankGT#asResourceHandler}) со
- * snapshot/rollback-семантикой neo; несколько танков стороны склеиваются штатным
- * {@link CombinedResourceHandler}. Своей транзакционной логики здесь нет — только выбор танков.
+ * <p><b>Transactionality is off-the-shelf, not homegrown.</b> Every {@link FluidTankGT} already knows how to
+ * hand out a correct {@code ResourceHandler<FluidResource>} ({@link FluidTankGT#asResourceHandler}) with
+ * neo's snapshot/rollback semantics; several of a side's tanks are glued together with the stock
+ * {@link CombinedResourceHandler}. There is no custom transactional logic here — only tank selection.
  */
 public class GT6FluidCapability {
 	private GT6FluidCapability() {}
 
-	/** Подписка на мод-шину — рядом с остальными центральными переходниками в {@code GT_API.init}. */
+	/** Subscribes to the mod bus — next to the other central adapters in {@code GT_API.init}. */
 	public static void register(IEventBus aModBus) {
 		aModBus.addListener(GT6FluidCapability::onRegisterCapabilities);
 	}
 
 	/**
-	 * Регистрация идёт ПО БЛОКАМ, а не по {@code BlockEntityType}, и это не вкусовщина, а требование движка:
-	 * {@code registerBlockEntity} раздаёт провайдер блокам из {@code BlockEntityType.validBlocks}, а
-	 * {@code MTE_TYPE} создан с ПУСТЫМ набором ({@code TileEntityBase01Root.createType()}:
-	 * {@code java.util.Set.<Block>of()}) — он общий placeholder-тип динамической GT6-иерархии. Замер это и
-	 * показал: регистрация проходила, тип BE совпадал с {@code MTE_TYPE}, танк на месте — а капа всё равно
-	 * отдавалась {@code null}. Поэтому перечисляем сами блоки: все, чей BlockEntity — GT6-корень.
+	 * Registration goes BY BLOCK, not by {@code BlockEntityType}, and that's not a stylistic choice but an
+	 * engine requirement: {@code registerBlockEntity} hands the provider to blocks from
+	 * {@code BlockEntityType.validBlocks}, and {@code MTE_TYPE} is created with an EMPTY set
+	 * ({@code TileEntityBase01Root.createType()}: {@code java.util.Set.<Block>of()}) — it is the shared
+	 * placeholder type of GT6's dynamic hierarchy. A measurement confirmed this: registration went through,
+	 * the BE type matched {@code MTE_TYPE}, the tank was in place — yet the capability still resolved to
+	 * {@code null}. So we enumerate the blocks themselves: everything whose BlockEntity is a GT6 root.
 	 */
 	private static void onRegisterCapabilities(RegisterCapabilitiesEvent aEvent) {
 		List<net.minecraft.world.level.block.Block> tBlocks = new ArrayList<>();
@@ -81,12 +83,12 @@ public class GT6FluidCapability {
 			if (tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock || tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlockInternal) tBlocks.add(tBlock);
 		}
 		if (tBlocks.isEmpty()) {
-			// Тихо пропустить нельзя: молчаливый пропуск = «танков снаружи нет» без единого следа в логе.
-			gregapi.data.CS.ERR.println("GT6 F5-capability: MTE-блоков в реестре 0 — канал жидкостей НЕ зарегистрирован!");
+			// Can't silently skip this: a silent skip means "no tanks exposed" with zero trace in the log.
+			gregapi.data.CS.ERR.println("GT6 F5-capability: 0 MTE blocks in the registry — the fluid channel was NOT registered!");
 			return;
 		}
 		aEvent.registerBlock(Capabilities.Fluid.BLOCK, GT6FluidCapability::handlerAt, tBlocks.toArray(new net.minecraft.world.level.block.Block[0]));
-		gregapi.data.CS.OUT.println("GT6 F5-capability: канал жидкостей зарегистрирован для " + tBlocks.size() + " MTE-блоков (Capabilities.Fluid.BLOCK).");
+		gregapi.data.CS.OUT.println("GT6 F5-capability: fluid channel registered for " + tBlocks.size() + " MTE blocks (Capabilities.Fluid.BLOCK).");
 		// Second half of the same class: 1.7.10 ITEM-side interface IFluidContainerItem is alive 1:1 on the
 		// items (BUG-045) but was never registered as Capabilities.Fluid.ITEM — container items looked empty
 		// to JEI and other mods. One adapter bridges the GT6 channel; items enumerated by the same rule.
@@ -97,7 +99,7 @@ public class GT6FluidCapability {
 			aEvent.registerItem(Capabilities.Fluid.ITEM,
 				(aStack, aAccess) -> aStack.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem ? new GT6ItemFluidHandler(aAccess) : null,
 				tItems.toArray(new net.minecraft.world.level.ItemLike[0]));
-			gregapi.data.CS.OUT.println("GT6 F5-capability: канал жидкостей предметов зарегистрирован для " + tItems.size() + " предметов (Capabilities.Fluid.ITEM).");
+			gregapi.data.CS.OUT.println("GT6 F5-capability: item fluid channel registered for " + tItems.size() + " items (Capabilities.Fluid.ITEM).");
 		}
 	}
 
@@ -136,22 +138,23 @@ public class GT6FluidCapability {
 		}
 	}
 
-	/** Блок-вариант провайдера: BlockEntity движок передаёт сам (может быть null, если его ещё нет). */
+	/** Block variant of the provider: the engine passes the BlockEntity itself (can be null if it doesn't exist yet). */
 	private static ResourceHandler<FluidResource> handlerAt(net.minecraft.world.level.BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.block.entity.BlockEntity aBlockEntity, Direction aSide) {
 		return aBlockEntity instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot ? handlerOf(tRoot, aSide) : null;
 	}
 
 	/**
-	 * Танки, видимые снаружи с данной стороны. {@code aSide == null} — sideless-запрос, родная
-	 * GT6-конвенция {@code SIDE_ANY} (та же, что у унаследованных мостов в {@code TileEntityBase01Root}).
-	 * {@code null} на выходе означает «капы здесь нет» — так neo и отличает блок без танков от пустого танка.
+	 * Tanks visible from the outside on the given side. {@code aSide == null} is a sideless request, GT6's
+	 * native {@code SIDE_ANY} convention (the same one used by the inherited bridges in {@code TileEntityBase01Root}).
+	 * A {@code null} return means "there's no capability here" — that's how neo tells a block with no tanks
+	 * apart from an empty tank.
 	 */
 	private static ResourceHandler<FluidResource> handlerOf(gregapi.tileentity.base.TileEntityBase01Root aTileEntity, Direction aSide) {
 		if (aTileEntity == null) return null;
 		IFluidTank[] tTanks;
 		try {
 			tTanks = aTileEntity.getFluidTanksForCapability(aSide);
-		} catch (Throwable e) {return null;} // логика конкретного TE не должна ронять чужой мод, который просто спросил капу
+		} catch (Throwable e) {return null;} // a specific TE's logic must not crash a foreign mod that just asked for the capability
 		if (tTanks == null || tTanks.length <= 0) return null;
 		List<ResourceHandler<FluidResource>> rHandlers = new ArrayList<>(tTanks.length);
 		for (IFluidTank tTank : tTanks) if (tTank instanceof FluidTankGT tGT) rHandlers.add(tGT.asResourceHandler());

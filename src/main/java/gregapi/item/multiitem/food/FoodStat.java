@@ -156,14 +156,14 @@ public class FoodStat implements IFoodStat {
 			if (tStack == null && mAutoDetectEmpty) tStack = ST.container(aStack, F);
 			ST.give(aPlayer, tStack, F);
 		}
-		// item-base: 1.7.10 playSoundAtEntity(entity,"random.burp",...) → neo Level.playSound(null,source,SoundEvent,...);
-		// "random.burp"→SoundEvents.PLAYER_BURP. Реализовано 1:1 (строка ниже).
+		// item-base: 1.7.10 playSoundAtEntity(entity,"random.burp",...) -> neo Level.playSound(null,source,SoundEvent,...);
+		// "random.burp"->SoundEvents.PLAYER_BURP. Implemented 1:1 (line below).
 		if (aMakeSound) aPlayer.level().playSound(null, aPlayer, SoundEvents.PLAYER_BURP, SoundSource.PLAYERS, 0.5F, RNGSUS.nextFloat() * 0.1F + 0.9F);
 		if (!aPlayer.level().isClientSide()) {
 			if (mExtinguish) aPlayer.extinguishFire();
 			if (mRebreathe > 0) aPlayer.setAirSupply(aPlayer.getAirSupply()+mRebreathe);
-			// было curePotionEffects(ItemStack) (кюр по конкретному ItemStack, 1.7.10) — Entity.curePotionEffects
-			// удалён целиком, ближайший реальный 1:1 по эффекту (снятие всех эффектов при питье молока) — removeAllEffects().
+			// was curePotionEffects(ItemStack) (cure by a specific ItemStack, 1.7.10) — Entity.curePotionEffects
+			// is removed entirely, the closest real 1:1 by effect (clearing all effects on drinking milk) is removeAllEffects().
 			if (mMilk) aPlayer.removeAllEffects();
 			for (int i = 3; i < mPotionEffects.length; i+=4) if (RNGSUS.nextInt(100) < mPotionEffects[i]) {
 				UT.Entities.applyPotion(aPlayer, mPotionEffects[i-3], mPotionEffects[i-2], mPotionEffects[i-1], mInvisibleParticles);
@@ -206,10 +206,10 @@ public class FoodStat implements IFoodStat {
 	
 	@Override
 	public void addAdditionalToolTips(Item aItem, List<String> aList, ItemStack aStack, boolean aF3_H) {
-		if ((!useAppleCoreFunctionality(aItem, aStack, null)) && (mFoodLevel > 0 || mSaturation > 0.0F)) aList.add(LH.Chat.RED + "Food: " + mFoodLevel + " - Saturation: " + mSaturation);
+		if ((!useAppleCoreFunctionality(aItem, aStack, null)) && (mFoodLevel > 0 || mSaturation > 0.0F)) aList.add(LH.Chat.RED + LH.tt("Food: ") + mFoodLevel + LH.tt(" - Saturation: ") + mSaturation);
 		String tString = (mTemperature >= C+40.0F?"Hot"+(mHydration==0?"":" - "):mTemperature >= C+38.0F?"Warm"+(mHydration==0?"":" - "):mTemperature <= C+34.0F?"Very Cold"+(mHydration==0?"":" - "):mTemperature <= C+36.0F?"Cold"+(mHydration==0?"":" - "):"") + (mHydration>0?"Hydration: " + mHydration:mHydration<0?"Dehydration: " + (-mHydration):"");
 		if (UT.Code.stringValid(tString) && MD.ENVM.mLoaded) aList.add(LH.Chat.RED + tString);
-		if (mExplosive) aList.add(LH.Chat.DRED + "smells like explosives");
-		if (mIsRotten) aList.add(LH.Chat.DRED + "smells rotten");
+		if (mExplosive) aList.add(LH.Chat.DRED + LH.tt("smells like explosives"));
+		if (mIsRotten) aList.add(LH.Chat.DRED + LH.tt("smells rotten"));
 	}
 }

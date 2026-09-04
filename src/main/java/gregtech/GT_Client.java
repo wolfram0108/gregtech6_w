@@ -54,27 +54,27 @@ import static gregapi.data.CS.*;
 public class GT_Client extends GT_Proxy {
 	private final PlayerModelRenderer mPlayerRenderer = new PlayerModelRenderer(mSupporterListSilver, mSupporterListGold);
 	
-	// BUG-039 v4 (аудит JPMS-mirror): RenderingRegistry.addNewArmourRendererPrefix — API armor-слоёв 1.7.10 удалён
-	// (neo: equipment assets, ItemArmorBase/F13); mirror cpw.* JPMS-вырезан из рантайма (вызов без catch = краш
-	// NoClassDefFoundError). Вызывателей 0 (греп) — индекс neo-рендером не потребляется.
+	// BUG-039 v4 (JPMS-mirror audit): RenderingRegistry.addNewArmourRendererPrefix — the 1.7.10 armor-layer API was removed
+	// (neo: equipment assets, ItemArmorBase/F13); the cpw.* mirror is JPMS-cut from the runtime (a call without catch = a
+	// NoClassDefFoundError crash). 0 callers (grep) — the index is not consumed by the neo renderer.
 	public int addArmor(String aPrefix) {return 0;}
 	
 	public GT_Client() {super();}
 	
-	/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code FMLPreInitializationEvent} из старого FML —
-	 * тип совпадает с центральным F12-переходником {@code gregapi.api.FMLPreInitializationEvent}
-	 * (см. {@code Abstract_Proxy#onProxyAfterPreInit}), сигнатура ретипирована для реального {@code @Override}. */
+	/* F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo calls): was {@code FMLPreInitializationEvent} from the old FML —
+	 * the type matches the central F12 adapter {@code gregapi.api.FMLPreInitializationEvent}
+	 * (see {@code Abstract_Proxy#onProxyAfterPreInit}), the signature was retyped for a real {@code @Override}. */
 	@Override
 	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLPreInitializationEvent aEvent) {
 		super.onProxyAfterPreInit(aMod, aEvent);
-		// F12-entity: рендереры стрел регистрируются через EntityRenderersEvent (см. registerClientRenderers),
-		// а не прямым new здесь — в PreInit нет EntityRendererProvider.Context (был краш super(null)).
+		// F12-entity: arrow renderers are registered via EntityRenderersEvent (see registerClientRenderers),
+		// not by a direct new here — PreInit has no EntityRendererProvider.Context (this used to crash super(null)).
 	}
 
-	// F12-entity: мод-шинная регистрация клиентских рендереров сущностей (замена удалённого 1.7.10
-	// RenderingRegistry.registerEntityRenderingHandler). Вызывается из GT6_Main-конструктора только на клиенте
-	// (база GT_Proxy#registerClientRenderers — no-op, сервер клиент-классы не грузит). EntityRenderersEvent —
-	// IModBusEvent, поэтому вешаем явным addListener на мод-шину (Abstract_Proxy.registerSubscribeEvents их пропускает).
+	// F12-entity: mod-bus registration of client entity renderers (replaces the removed 1.7.10
+	// RenderingRegistry.registerEntityRenderingHandler). Called from the GT6_Main constructor only on the client
+	// (the GT_Proxy#registerClientRenderers base is a no-op, the server never loads client classes). EntityRenderersEvent is
+	// an IModBusEvent, so we hook an explicit addListener onto the mod bus (Abstract_Proxy.registerSubscribeEvents skips them).
 	@Override
 	public void registerClientRenderers(IEventBus aModBus) {
 		aModBus.addListener(this::onRegisterEntityRenderers);
@@ -88,23 +88,23 @@ public class GT_Client extends GT_Proxy {
 	private boolean FIRST_CLIENT_PLAYER_TICK = T;
 	
 	/**
-	 * F3 (baked-рендер клиента), шов закрыт: было {@code cpw.mods.fml.common.gameevent.TickEvent.PlayerTickEvent}
-	 * с публичными полями {@code player}/{@code phase}/{@code side} — neo {@code PlayerTickEvent.Post}
-	 * (`neoforge-decompiled/net/neoforged/neoforge/event/tick/PlayerTickEvent.java:38-46`, "после тика" = старый
-	 * {@code END}) с геттером {@code getEntity()}; фильтр стороны — {@code getEntity().level().isClientSide()}
-	 * (событие шлётся на обеих сторонах, см. javadoc класса). {@code Component} — теперь дерево, не {@code new
-	 * Component(String)} (интерфейс, абстрактный) — {@code Component.literal(...)}, аналогично F3-правке
+	 * F3 (client baked-render), seam closed: was {@code cpw.mods.fml.common.gameevent.TickEvent.PlayerTickEvent}
+	 * with public fields {@code player}/{@code phase}/{@code side} — neo {@code PlayerTickEvent.Post}
+	 * (`neoforge-decompiled/net/neoforged/neoforge/event/tick/PlayerTickEvent.java:38-46`, "after the tick" = the old
+	 * {@code END}) with a {@code getEntity()} getter; the side filter is {@code getEntity().level().isClientSide()}
+	 * (the event is sent on both sides, see the class javadoc). {@code Component} is now a tree, not {@code new
+	 * Component(String)} (an interface, abstract) — {@code Component.literal(...)}, similar to the F3 fix
 	 * {@code GT_API_Proxy_Client#onItemTooltip}. {@code addChatComponentMessage}→{@code sendSystemMessage}
-	 * (`neo-decompiled/net/minecraft/world/entity/player/Player.java:1399`). {@code ClickEvent} — теперь
-	 * sealed-интерфейс с записями по действию ({@code ClickEvent.OpenFile(String)}/{@code .OpenUrl(URI)},
-	 * `neo-decompiled/net/minecraft/network/chat/ClickEvent.java:103-135`), стиль — {@code MutableComponent.withStyle}.
-	 * (ранее здесь была деградация из-за незакрытого "F12, config-subsystem" — {@code ConfigsGT.CLIENT.mConfig.
-	 * getConfigFile()} был недостижим, т.к. {@code gregapi.config.Config} использовал декларативный neo
-	 * {@code net.neoforged.neoforge.common.ModConfigSpec} без {@code File}-конструктора/{@code .load()}/
-	 * {@code .save()}; ЗАКРЫТО тем же чекпоинтом, что и эта ledger-метка — {@code gregapi.config.Config}
-	 * теперь использует свой {@code gregapi.config.ModConfigSpec} (динамический, файловый, воспроизводящий
-	 * 1.7.10 Forge Configuration/Property), {@code getConfigFile()} реален — кликабельная ссылка "открыть
-	 * файл" (было {@code ClickEvent.Action.OPEN_FILE}) восстановлена как {@code new ClickEvent.OpenFile(String)}).
+	 * (`neo-decompiled/net/minecraft/world/entity/player/Player.java:1399`). {@code ClickEvent} is now
+	 * a sealed interface with per-action records ({@code ClickEvent.OpenFile(String)}/{@code .OpenUrl(URI)},
+	 * `neo-decompiled/net/minecraft/network/chat/ClickEvent.java:103-135`), the style comes from {@code MutableComponent.withStyle}.
+	 * (previously there was a degradation here due to the unresolved "F12, config-subsystem" — {@code ConfigsGT.CLIENT.mConfig.
+	 * getConfigFile()} was unreachable, because {@code gregapi.config.Config} used the declarative neo
+	 * {@code net.neoforged.neoforge.common.ModConfigSpec} with no {@code File} constructor/{@code .load()}/
+	 * {@code .save()}; CLOSED by the same checkpoint as this ledger mark — {@code gregapi.config.Config}
+	 * now uses its own {@code gregapi.config.ModConfigSpec} (dynamic, file-based, reproducing
+	 * 1.7.10 Forge Configuration/Property), {@code getConfigFile()} is real — the clickable "open
+	 * file" link (was {@code ClickEvent.Action.OPEN_FILE}) is restored as {@code new ClickEvent.OpenFile(String)}).
 	 */
 	@SubscribeEvent
 	public void onPlayerTickEventClient(PlayerTickEvent.Post aEvent) {
@@ -117,16 +117,16 @@ public class GT_Client extends GT_Proxy {
 					if (!mMessage.isEmpty() && ConfigsGT.CLIENT.get(ConfigCategories.news, mMessage, T)) {
 						tPlayer.sendSystemMessage(Component.literal(mMessage));
 						tPlayer.sendSystemMessage(Component.literal(LH.Chat.DGRAY + ""));
-						tLink = Component.literal(LH.Chat.DGRAY + "disable message in the clientside gregtech.cfg");
+						tLink = Component.literal(LH.Chat.DGRAY + LH.tt("disable message in the clientside gregtech.cfg"));
 						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenFile(ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
 						tPlayer.sendSystemMessage(tLink);
 					}
 					if (mVersionOutdated) {
-						tPlayer.sendSystemMessage(Component.literal("Major GT6 Update released, for details visit"));
-						tLink = Component.literal(LH.Chat.BLUE + "https://gregtech.mechaenetia.com/1.7.10");
+						tPlayer.sendSystemMessage(Component.literal(LH.tt("Major GT6 Update released, for details visit")));
+						tLink = Component.literal(LH.Chat.BLUE + LH.tt("https://gregtech.mechaenetia.com/1.7.10"));
 						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenUrl(URI.create("https://gregtech.mechaenetia.com/1.7.10"))));
 						tPlayer.sendSystemMessage(tLink);
-						tLink = Component.literal(LH.Chat.DGRAY + "disable checker in the clientside gregtech.cfg");
+						tLink = Component.literal(LH.Chat.DGRAY + LH.tt("disable checker in the clientside gregtech.cfg"));
 						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenFile(ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
 						tPlayer.sendSystemMessage(tLink);
 					}
@@ -134,9 +134,9 @@ public class GT_Client extends GT_Proxy {
 						try {
 							int tVersion = Integer.parseInt(((String)Class.forName("ic2.core.IC2").getField("VERSION").get(null)).substring(4, 7));
 							if (tVersion < 827) {
-								tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + "Please update IndustrialCraft!"));
+								tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + LH.tt("Please update IndustrialCraft!")));
 								// IC2 Site doesn't support https.
-								tLink = Component.literal(LH.Chat.BLUE + "http://ic2api.player.to:8080/job/IC2_experimental/827/");
+								tLink = Component.literal(LH.Chat.BLUE + LH.tt("http://ic2api.player.to:8080/job/IC2_experimental/827/"));
 								tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenUrl(URI.create("http://ic2api.player.to:8080/job/IC2_experimental/827/"))));
 								tPlayer.sendSystemMessage(tLink);
 							}
@@ -145,55 +145,55 @@ public class GT_Client extends GT_Proxy {
 					if (MD.TC.mLoaded) {
 						try {
 							if (Class.forName("com.chocohead.patcher.ThaumicFixer") != null) {
-								tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + "Warning! Chocoheads ThaumicFixer needs to be uninstalled!"));
-								tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + "Not uninstalling it can lead to crashes when viewing Aspects."));
-								tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + "Lag is already fixed with a better Version of the ASM Code,"));
-								tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + "that doesn't obliterate the Thaumcraft API for no reason."));
+								tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + LH.tt("Warning! Chocoheads ThaumicFixer needs to be uninstalled!")));
+								tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + LH.tt("Not uninstalling it can lead to crashes when viewing Aspects.")));
+								tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + LH.tt("Lag is already fixed with a better Version of the ASM Code,")));
+								tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + LH.tt("that doesn't obliterate the Thaumcraft API for no reason.")));
 							}
 						} catch(Throwable e) {/**/}
 					}
 					if (MD.COG.mLoaded && !MD.PFAA.mLoaded && ConfigsGT.CLIENT.get(ConfigCategories.general, "warnings_customoregen", T)) {
-						tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + "Warning! CustomOreGen will screw up all GregTech Worldgen with its Default Configs!"));
-						tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + "If you don't even use CustomOreGen, I would highly recommend you to remove it."));
-						tLink = Component.literal(LH.Chat.DGRAY + "disable warning in the clientside gregtech.cfg");
+						tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + LH.tt("Warning! CustomOreGen will screw up all GregTech Worldgen with its Default Configs!")));
+						tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + LH.tt("If you don't even use CustomOreGen, I would highly recommend you to remove it.")));
+						tLink = Component.literal(LH.Chat.DGRAY + LH.tt("disable warning in the clientside gregtech.cfg"));
 						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenFile(ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
 						tPlayer.sendSystemMessage(tLink);
 					}
 					if (WOODMANS_BDAY) {
-						tPlayer.sendSystemMessage(Component.literal(LH.Chat.WHITE+"<"+LH.Chat.GREEN+">:]"+LH.Chat.WHITE+"> Have a nice day!"));
+						tPlayer.sendSystemMessage(Component.literal(LH.Chat.WHITE+"<"+LH.Chat.GREEN+">:]"+LH.Chat.WHITE+LH.tt("> Have a nice day!")));
 					}
 					if (APRIL_FOOLS) {
-						tPlayer.sendSystemMessage(Component.literal(CHAT_GREG + "Watch your Calendar!"));
+						tPlayer.sendSystemMessage(Component.literal(CHAT_GREG + LH.tt("Watch your Calendar!")));
 					}
 				}
 			}
 		}
 	}
 	
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code new ResourceLocation(String)} (одноаргументный
-	 *  конструктор) — {@code Identifier} конструктор {@code private} в 26.1.2, публичная фабрика для
-	 *  ванильного namespace — {@code Identifier.withDefaultNamespace(path)}
+	/** F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo calls): was {@code new ResourceLocation(String)} (a one-argument
+	 *  constructor) — the {@code Identifier} constructor is {@code private} in 26.1.2, the public factory for the
+	 *  vanilla namespace is {@code Identifier.withDefaultNamespace(path)}
 	 *  (`neo-decompiled/net/minecraft/resources/Identifier.java:49`). */
 	private Identifier WATER_OVERLAY = Identifier.withDefaultNamespace("textures/misc/underwater.png");
 
 	/**
-	 * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code net.minecraftforge.client.event.RenderBlockOverlayEvent}
-	 * (immediate-mode: {@code Tessellator}/GL11 квад болотной пелены) — заменён на
+	 * F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo calls): was {@code net.minecraftforge.client.event.RenderBlockOverlayEvent}
+	 * (immediate-mode: a {@code Tessellator}/GL11 swamp-haze quad) — replaced with
 	 * {@code RenderBlockScreenEffectEvent} (`neoforge-decompiled/net/neoforged/neoforge/client/event/
-	 * RenderBlockScreenEffectEvent.java:29-116`, {@code getBlockState()} вместо старого {@code blockForOverlay}).
-	 * Реальная перерисовка — {@code MultiBufferSource}/{@code PoseStack} из события (decisions/F3-render.md §1);
-	 * тело квада — no-op заглушка, {@code setCanceled(T)} (структурно значимый эффект — подавляет ванильный
-	 * оверлей воды в этом случае) сохранён.
+	 * RenderBlockScreenEffectEvent.java:29-116`, {@code getBlockState()} instead of the old {@code blockForOverlay}).
+	 * The actual redraw uses {@code MultiBufferSource}/{@code PoseStack} from the event (decisions/F3-render.md §1);
+	 * the quad body is a no-op stub, {@code setCanceled(T)} (a structurally meaningful effect — it suppresses the vanilla
+	 * water overlay in this case) is kept.
 	 */
 	@SubscribeEvent
 	public void receiveRenderEvent(RenderBlockScreenEffectEvent aEvent) {
 		if (aEvent.getBlockState().getBlock() == BlocksGT.Swamp) {
-			// 1.7.10 квад болотной пелены дословно (цвет (0, brightness/2, 0, 0.75), UV от yaw/pitch,
-			// плоскость z=-0.5) через канон ScreenEffectRenderer.renderFluid (26.1.2: buffer+RenderTypes.blockScreenEffect).
+			// the 1.7.10 swamp-haze quad verbatim (color (0, brightness/2, 0, 0.75), UV from yaw/pitch,
+			// plane z=-0.5) via the canon ScreenEffectRenderer.renderFluid (26.1.2: buffer+RenderTypes.blockScreenEffect).
 			try {
 				net.minecraft.world.entity.player.Player tPlayer = GT_API.api_proxy.getThePlayer();
 				if (tPlayer != null) {
-					float tBright = tPlayer.getLightLevelDependentMagicValue(); // было getBrightness(partialTicks)
+					float tBright = tPlayer.getLightLevelDependentMagicValue(); // was getBrightness(partialTicks)
 					int tColor = net.minecraft.util.ARGB.colorFromFloat(0.75F, 0F, tBright / 2F, 0F);
 					float tUo = -tPlayer.getYRot() / 64F, tVo = tPlayer.getXRot() / 64F;
 					org.joml.Matrix4f tPose = aEvent.getPoseStack().last().pose();

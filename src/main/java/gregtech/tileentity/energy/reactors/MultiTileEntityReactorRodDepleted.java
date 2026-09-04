@@ -34,9 +34,9 @@ import net.minecraft.world.item.ItemStack;
 public class MultiTileEntityReactorRodDepleted extends MultiTileEntityReactorRodBase {
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		aList.add(LH.Chat.DGRAY + "Used in Nuclear Reactor Core");
-		aList.add(LH.Chat.CYAN + "This Rod is " + LH.Chat.RED + "Depleted" + LH.Chat.CYAN + " and will not output or accept any Neutrons");
-		aList.add(LH.Chat.CYAN + "Can be centrifuged to get valuable materials");
+		aList.add(LH.Chat.DGRAY + LH.tt("Used in Nuclear Reactor Core"));
+		aList.add(LH.Chat.CYAN + LH.tt("This Rod is ") + LH.Chat.RED + LH.tt("Depleted") + LH.Chat.CYAN + LH.tt(" and will not output or accept any Neutrons"));
+		aList.add(LH.Chat.CYAN + LH.tt("Can be centrifuged to get valuable materials"));
 	}
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.generator.reactor.rods.depleted";}

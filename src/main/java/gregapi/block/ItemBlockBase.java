@@ -50,25 +50,25 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	public final IBlockBase mPlaceable;
 
 	public ItemBlockBase(Block aBlock) {
-		// F12-followup (item-split): neo Item требует id в Properties (иначе «Item id not set»); BlockItem делит id с блоком —
-		// производим из ключа уже-зарегистрированного блока (конструкция item идёт на RegisterEvent<Item>, после блока).
+		// F12-followup (item-split): neo Item requires an id in Properties (otherwise "Item id not set"); BlockItem shares its id with the block —
+		// derived from the already-registered block's key (item construction happens on RegisterEvent<Item>, after the block).
 		super(aBlock, new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock))));
 		mPlaceable = (IBlockBase)aBlock;
 		setMaxDamage(0);
 		setHasSubtypes(T);
 	}
 
-	// F-bounds: ItemBlockBase - обёртка над Block (mPlaceable/getBlock()), собственной геометрии не хранит ->
-	// маршрутизирует на ЦЕНТР WD.setBlockBounds (уже существует, gregapi/util/WD.java:122), тот же приём, что и
-	// весь остальной F-bounds шов.
+	// F-bounds: ItemBlockBase is a wrapper over Block (mPlaceable/getBlock()), it holds no geometry of its own ->
+	// routes to the WD.setBlockBounds CENTER (already exists, gregapi/util/WD.java:122), the same approach used
+	// throughout the rest of the F-bounds seam.
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		WD.setBlockBounds(getBlock(), aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
 	}
-	// симметрично setBlockBounds: чтение — с обёрнутого блока (сам ничего не хранит).
+	// Symmetric to setBlockBounds: reads come from the wrapped block (it holds nothing itself).
 	@Override public float[] getRenderBounds() {return getBlock() instanceof IBlock tI ? tI.getRenderBounds() : null;}
 	
-	// F13: neo BlockItem зовёт appendHoverText (не 1.7.10 addInformation) — мост: собираем GT6-тултип (List<String>) через
-	// addInformation ниже, отдаём в neo builder как Component. Player — из клиент-прокси (getThePlayer, null на сервере → пропуск).
+	// F13: neo BlockItem calls appendHoverText (not the 1.7.10 addInformation) — a bridge: assemble the GT6 tooltip (List<String>) via
+	// addInformation below, hand it to the neo builder as a Component. Player comes from the client proxy (getThePlayer, null on the server → skip).
 	@Override @SuppressWarnings({"rawtypes", "unchecked"})
 	public void appendHoverText(ItemStack aStack, net.minecraft.world.item.Item.TooltipContext aCtx, net.minecraft.world.item.component.TooltipDisplay aDisplay, java.util.function.Consumer<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
@@ -81,7 +81,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
-		// F13: GT6-тултип (1.7.10 addInformation-стиль); движок зовёт через appendHoverText-мост выше.
+		// F13: GT6 tooltip (1.7.10 addInformation style); the engine calls it through the appendHoverText bridge above.
 		byte aMeta = UT.Code.bind4(ST.meta_(aStack));
 		mPlaceable.addInformation(aStack, aMeta, aPlayer, aList, aF3_H);
 		if (WD.hasCollide(aPlayer.level(), 0, 0, 0, getBlock())) {
@@ -120,39 +120,39 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 		float tResistance = mPlaceable.getExplosionResistance(aMeta);
 		if (tResistance >= 4) aList.add(LH.getToolTipBlastResistance(getBlock(), tResistance));
 		
-		// F-tool: Block.getHarvestTool/getHarvestLevel удалены из vanilla neo (getBlock() статически — vanilla Block).
-		// GT6-данные живут на BlockBase (getHarvestTool/getHarvestLevel:87-88) — маршрут через каст (путь ЕСТЬ, не заглушка).
+		// F-tool: Block.getHarvestTool/getHarvestLevel were removed from vanilla neo (getBlock() is statically typed as vanilla Block).
+		// GT6 data lives on BlockBase (getHarvestTool/getHarvestLevel:87-88) — routed through a cast (the path DOES exist, not a stub).
 		String tHarvestTool = TOOL_pickaxe; int tHarvestLevel = 0;
 		if (getBlock() instanceof gregapi.block.BlockBase tBB) {tHarvestTool = tBB.getHarvestTool(aMeta); tHarvestLevel = tBB.getHarvestLevel(aMeta);}
 		aList.add(LH.getToolTipHarvest(WD.getMaterial(getBlock()), tHarvestTool, tHarvestLevel));
 		while (aList.remove(null));
 	}
 	
-	// F16 dead-interface: getCreativeTab движком neo НЕ вызывается (per-block getter удалён; вкладки — event-based).
-	// Членство блока во вкладке подключено централизованно: BlockBase ctor → CreativeTabsGT.assign(...). Метод мёртв (0 вызовов).
+	// F16 dead-interface: getCreativeTab is NOT called by the neo engine (the per-block getter was removed; tabs are event-based).
+	// Block membership in a tab is wired centrally: BlockBase ctor → CreativeTabsGT.assign(...). This method is dead (0 callers).
 	public CreativeModeTab getCreativeTab() {return null;}
 	public boolean func_150936_a(Level aWorld, int aX, int aY, int aZ, int aSide, Player aPlayer, ItemStack aStack) {return T;}
-	// F-useOn мост: neo зовёт useOn(UseOnContext)/onItemUseFirst(ItemStack,UseOnContext), а не 1.7.10
-	// onItemUse/onItemUseFirst(x,y,z,side,hit) — распаковка+делегация в существующие тела ниже (IItemGT-центр).
+	// F-useOn bridge: neo calls useOn(UseOnContext)/onItemUseFirst(ItemStack,UseOnContext), not the 1.7.10
+	// onItemUse/onItemUseFirst(x,y,z,side,hit) — unpack+delegate into the existing bodies below (the IItemGT center).
 	@Override public InteractionResult useOn(UseOnContext aCtx) {return IItemGT.bridgeUseOn(this, aCtx);}
 	@Override public InteractionResult onItemUseFirst(ItemStack aStack, UseOnContext aCtx) {return IItemGT.bridgeUseOnFirst(this, aCtx);}
 	@Override public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUseFirst(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
 	@Override public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUse(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было getBlock().getIcon(SIDE_TOP,aMeta) (vanilla Block.getIcon удалён в 26.1.2 —
-	// getBlock() статически типизирован как vanilla Block, не как наша BlockBase, поэтому центр IIconContainer недоступен здесь).
-	public Identifier getIconFromDamage(int aMeta) {throw new UnsupportedOperationException("F3 dead-interface: 1.7.10 Item.getIconFromDamage(meta) удалён из neo (НЕ @Override). ItemBlockBase — BlockItem, рендерится моделью своего блока (GT6BlockModel); GT6ItemModel пропускает BlockItem'ы. Defensive throw.");}
+	// F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode path is dead, 0 neo callers): was getBlock().getIcon(SIDE_TOP,aMeta) (vanilla Block.getIcon was removed in 26.1.2 —
+	// getBlock() is statically typed as vanilla Block, not our BlockBase, so the IIconContainer center is unreachable here).
+	public Identifier getIconFromDamage(int aMeta) {throw new UnsupportedOperationException("F3 dead-interface: 1.7.10 Item.getIconFromDamage(meta) is gone in neo (NOT @Override). ItemBlockBase is a BlockItem, rendered by its own block model (GT6BlockModel); GT6ItemModel skips BlockItems. Defensive throw.");}
 	@Override public Block getBlock() {return super.getBlock();}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public String getUnlocalizedName(ItemStack aStack) {return mPlaceable.name(UT.Code.bind4(getDamage(aStack)));}
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
-	// LOCALIZATION-display: neo getName(ItemStack) → GT6-имя (LH.get); иначе raw-ключ из vanilla-lang.
+	// LOCALIZATION-display: neo getName(ItemStack) → the GT6 name (LH.get); otherwise the raw key from vanilla lang.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
-	// F1-контракт (1.7.10 itemDamage==meta): дословный GT6-код зовёт getDamage за подтипом блока; neo-дефолт читает
-	// DAMAGE-компонент (0 у meta-предметов). Восстанавливаем на корне (как ItemBase/MTE): не-повреждаемый → ST.meta_.
+	// F1 contract (1.7.10 itemDamage==meta): verbatim GT6 code calls getDamage to get the block's subtype; neo's default reads
+	// the DAMAGE component (0 for meta items). Restored at the root (like ItemBase/MTE): non-damageable → ST.meta_.
 	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : ST.meta_(aStack);}
 	public boolean placeBlockAt(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMetaData) {return WD.set(aWorld, aX, aY, aZ, getBlock(), aMetaData, 3);}
-	// BUG-021 v2: мост neo per-stack канала на 1.7.10-хук ниже — без него ВСЯ блок-иерархия (BlockBase/слэбы/планки/
-	// логи/листва/саженцы/BlockStones — их getItemStackLimit с OP.*.mDefaultStackSize) стакалась по vanilla-дефолту 64.
+	// BUG-021 v2: a bridge from neo's per-stack channel to the 1.7.10 hook below — without it the ENTIRE block hierarchy (BlockBase/slabs/planks/
+	// logs/leaves/saplings/BlockStones — their getItemStackLimit via OP.*.mDefaultStackSize) stacked at the vanilla default of 64.
 	@Override public int getMaxStackSize(ItemStack aStack) {return UT.Code.bindStack(getItemStackLimit(aStack));}
 	public int getItemStackLimit(ItemStack aStack) {return mPlaceable.getItemStackLimit(aStack);}
 	public int getMetadata(int aMeta) {return aMeta;}

@@ -38,34 +38,34 @@ import net.neoforged.neoforge.transfer.item.VanillaContainerWrapper;
 import net.neoforged.neoforge.transfer.item.WorldlyContainerWrapper;
 
 /**
- * ВОССТАНОВЛЕНИЕ СТАНДАРТНОГО КАНАЛА ИНВЕНТАРЯ (тот же класс потери, что был у жидкостей —
- * {@link gregapi.fluid.GT6FluidCapability}, и лечится тем же приёмом).
+ * RESTORING THE STANDARD INVENTORY CHANNEL (the same loss class fluids had —
+ * {@link gregapi.fluid.GT6FluidCapability}, fixed by the same technique).
  *
- * <p><b>Что было в 1.7.10.</b> Базовые TE GT6 объявляли ванильные {@code IInventory}/{@code ISidedInventory}
- * (оригинал {@code TileEntityBase05Inventories:41}, {@code TileEntityBase06Covers:62}) — и этого хватало:
- * чужая воронка, труба, сортировщик и Waila читали инвентарь машины без единой строчки про GT6.
+ * <p><b>What 1.7.10 had.</b> GT6's base TEs declared the vanilla {@code IInventory}/{@code ISidedInventory}
+ * (original {@code TileEntityBase05Inventories:41}, {@code TileEntityBase06Covers:62}) — and that was enough:
+ * a foreign hopper, pipe, sorter, or Waila read the machine's inventory without a single line of GT6-specific code.
  *
- * <p><b>Что стало в neo.</b> Интерфейсы перенесены 1:1 ({@code Container}/{@code WorldlyContainer}), но
- * снаружи блок виден только через ЗАРЕГИСТРИРОВАННУЮ capability: {@code Capabilities.Item.BLOCK}.
- * Регистрации не было ({@code grep "Capabilities.Item"} по порту давал 0), поэтому для стороннего мода
- * инвентаря у машин GT6 просто не существовало. Jade, например, ищет содержимое именно так —
- * {@code CommonProxy.findItemHandler} → {@code level.getCapability(Capabilities.Item.BLOCK, …)}
- * (исходники Jade, ветка 26.1-neoforge, {@code CommonProxy.java:290-297}).
+ * <p><b>What changed in neo.</b> The interfaces were ported 1:1 ({@code Container}/{@code WorldlyContainer}), but
+ * from outside a block is only visible through a REGISTERED capability: {@code Capabilities.Item.BLOCK}.
+ * No registration existed ({@code grep "Capabilities.Item"} across the port returned 0), so as far as a foreign
+ * mod was concerned, GT6 machines simply had no inventory. Jade, for example, looks for content exactly this
+ * way — {@code CommonProxy.findItemHandler} -> {@code level.getCapability(Capabilities.Item.BLOCK, ...)}
+ * (Jade sources, branch 26.1-neoforge, {@code CommonProxy.java:290-297}).
  *
- * <p><b>Своей логики переноса предметов здесь нет.</b> Ванильный инвентарь оборачивается ШТАТНЫМИ
- * обёртками движка: {@link WorldlyContainerWrapper} (учитывает стороны — прямой аналог
- * {@code ISidedInventory} 1.7.10) и {@link VanillaContainerWrapper} для стороннего запроса без стороны.
- * Правила «что откуда можно брать» остаются целиком на GT6 — их задают его же
+ * <p><b>There is no custom item-transfer logic here.</b> The vanilla inventory is wrapped by the engine's OWN
+ * STANDARD wrappers: {@link WorldlyContainerWrapper} (side-aware — a direct analogue of 1.7.10's
+ * {@code ISidedInventory}) and {@link VanillaContainerWrapper} for a foreign request with no side. The rules
+ * "what can be taken from where" remain entirely GT6's own — set by its own
  * {@code getSlotsForFace/canPlaceItemThroughFace/canTakeItemThroughFace}.
  *
- * <p><b>Регистрация ПО БЛОКАМ, а не по {@code BlockEntityType}</b> — то же требование движка, что и у
- * жидкостей: {@code MTE_TYPE} создан с пустым {@code validBlocks}, и {@code registerBlockEntity} для него
- * молча не работает (замер MODCOMPAT-001 П2).
+ * <p><b>Registration is BY BLOCK, not by {@code BlockEntityType}</b> — the same engine requirement fluids had:
+ * {@code MTE_TYPE} is created with an empty {@code validBlocks}, and {@code registerBlockEntity} silently
+ * does nothing for it (measurement MODCOMPAT-001 item 2).
  */
 public class GT6ItemCapability {
 	private GT6ItemCapability() {}
 
-	/** Подписка на мод-шину — рядом с остальными центральными переходниками в {@code GT_API.init}. */
+	/** Subscription on the mod bus — alongside the other central adapters in {@code GT_API.init}. */
 	public static void register(IEventBus aModBus) {
 		aModBus.addListener(GT6ItemCapability::onRegisterCapabilities);
 	}
@@ -76,18 +76,18 @@ public class GT6ItemCapability {
 			if (tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock || tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlockInternal) tBlocks.add(tBlock);
 		}
 		if (tBlocks.isEmpty()) {
-			// Молчаливый пропуск недопустим: он равен «инвентарей снаружи нет» без единого следа в логе.
-			gregapi.data.CS.ERR.println("GT6 item-capability: MTE-блоков в реестре 0 — канал инвентаря НЕ зарегистрирован!");
+			// A silent skip is not acceptable: it amounts to "no inventories from outside" with no trace in the log.
+			gregapi.data.CS.ERR.println("GT6 item-capability: 0 MTE blocks in the registry — the inventory channel was NOT registered!");
 			return;
 		}
 		aEvent.registerBlock(Capabilities.Item.BLOCK, GT6ItemCapability::handlerAt, tBlocks.toArray(new net.minecraft.world.level.block.Block[0]));
-		gregapi.data.CS.OUT.println("GT6 item-capability: канал инвентаря зарегистрирован для " + tBlocks.size() + " MTE-блоков (Capabilities.Item.BLOCK).");
+		gregapi.data.CS.OUT.println("GT6 item-capability: inventory channel registered for " + tBlocks.size() + " MTE blocks (Capabilities.Item.BLOCK).");
 	}
 
-	/** BlockEntity движок передаёт сам (может быть null, если его ещё нет). */
+	/** The engine passes the BlockEntity itself (may be null if it does not exist yet). */
 	private static ResourceHandler<ItemResource> handlerAt(net.minecraft.world.level.BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.block.entity.BlockEntity aBlockEntity, Direction aSide) {
 		try {
-			// Пустой инвентарь — не то же самое, что его отсутствие: null означает «канала здесь нет».
+			// An empty inventory is not the same as its absence: null means "there is no channel here".
 			if (aBlockEntity instanceof Container tContainer && tContainer.getContainerSize() > 0) {
 				if (aBlockEntity instanceof WorldlyContainer tWorldly) {
 					WorldlyContainerWrapper tWrapper = new WorldlyContainerWrapper(tWorldly, aSide);
@@ -95,39 +95,39 @@ public class GT6ItemCapability {
 				}
 				return VanillaContainerWrapper.of(tContainer);
 			}
-		} catch (Throwable e) {/* логика конкретного TE не должна ронять чужой мод, который просто спросил капу */}
+		} catch (Throwable e) {/* a specific TE's logic must not crash a foreign mod that merely asked for the capability */}
 		return null;
 	}
 
 	/**
-	 * ЗАПРОС БЕЗ СТОРОНЫ — ТОЖЕ ПО ПРАВИЛАМ GT6 (BUG-082).
+	 * A REQUEST WITH NO SIDE ALSO FOLLOWS GT6'S OWN RULES (BUG-082).
 	 *
-	 * <p><b>Что было.</b> При {@code side == null} канал отдавал {@code VanillaContainerWrapper.of(...)} — ВЕСЬ
-	 * массив инвентаря, мимо фильтра мода. Наружу утекали служебные слоты, которые GT6 предметами не считает:
-	 * дисплеи жидкостей ({@code MultiTileEntityBasicMachine:470-471} — {@code FL.display(...)}) и слот схемы.
-	 * Отсюда витрина Jade, где содержимое машины показано дважды: сперва «предметами» (на деле дисплеи, в вёдрах),
-	 * затем настоящим списком жидкостей. Jade спрашивает именно без стороны — {@code Jade/CommonProxy.java:290-297}.
+	 * <p><b>What used to happen.</b> When {@code side == null} the channel returned {@code VanillaContainerWrapper.of(...)}
+	 * — the WHOLE inventory array, bypassing the mod's filter. Service slots that GT6 does not count as items leaked
+	 * outward: fluid displays ({@code MultiTileEntityBasicMachine:470-471} — {@code FL.display(...)}) and the pattern
+	 * slot. Hence Jade's showcase displaying a machine's content twice: first as "items" (actually displays, in
+	 * buckets), then as the real fluid list. Jade specifically asks with no side — {@code Jade/CommonProxy.java:290-297}.
 	 *
-	 * <p><b>Почему это дефект порта, а не движка.</b> У GT6 нет «инвентаря без стороны»: сторону 6 он называет
-	 * {@code SIDE_ANY} и отвечает на неё сам ({@code MultiTileEntityBasicMachine.updateAccessibleSlots} заполняет
-	 * {@code ACCESSIBLE[6]}, маски по умолчанию {@code 127} включают бит {@code SBIT_A=64} — {@code CS.java:646}).
-	 * neo-{@code null} и есть эта сторона: {@code FORGE_DIR[6] = null} ({@code CS.java:687}), {@code UT.Code.side(null)=6}.
-	 * Соседний канал ЖИДКОСТЕЙ так и сделан — {@code TileEntityBase01Root.getFluidTanksForCapability:766}. Предметный
-	 * канал из этой пары выпадал: одна и та же задача решалась в моде двумя разными способами.
+	 * <p><b>Why this is a port defect, not an engine one.</b> GT6 has no concept of "an inventory with no side": it
+	 * calls side 6 {@code SIDE_ANY} and answers for it itself ({@code MultiTileEntityBasicMachine.updateAccessibleSlots}
+	 * fills {@code ACCESSIBLE[6]}, the default masks {@code 127} include the {@code SBIT_A=64} bit — {@code CS.java:646}).
+	 * neo's {@code null} IS that side: {@code FORGE_DIR[6] = null} ({@code CS.java:687}), {@code UT.Code.side(null)=6}.
+	 * The neighboring FLUID channel is already built this way — {@code TileEntityBase01Root.getFluidTanksForCapability:766}.
+	 * The item channel was the one left out of this pair: the same task was solved in the mod by two different means.
 	 *
-	 * <p><b>Что здесь есть и чего нет.</b> Здесь ТОЛЬКО выбор слотов — он берётся у самого мода
-	 * ({@code getSlotsForFace(null)} → {@code TileEntityBase06Covers:322} → {@code getAccessibleSlotsFromSide2(6)},
-	 * с учётом каверов). Перекладывание, транзакции и стек-лимиты остаются штатным {@link WorldlyContainerWrapper}
-	 * — своей копии движковой механики тут нет. Форма класса — как у движкового {@code RangedResourceHandler}
-	 * ({@code size}/{@code convertIndex} + оба безындексных метода перебором), только множество индексов не
-	 * диапазон, а ответ мода.
+	 * <p><b>What is here, and what is not.</b> Here there is ONLY the slot selection — taken from the mod itself
+	 * ({@code getSlotsForFace(null)} -> {@code TileEntityBase06Covers:322} -> {@code getAccessibleSlotsFromSide2(6)},
+	 * covers included). Transferring, transactions and stack limits remain the job of the standard {@link WorldlyContainerWrapper}
+	 * — there is no private copy of the engine's mechanics here. The class's shape mirrors the engine's
+	 * {@code RangedResourceHandler} ({@code size}/{@code convertIndex} plus both index-free methods by iteration),
+	 * except the index set is not a range but the mod's own answer.
 	 */
 	private static final class SidelessView extends net.neoforged.neoforge.transfer.DelegatingResourceHandler<ItemResource> {
 		private final WorldlyContainer mContainer;
 
 		SidelessView(WorldlyContainerWrapper aDelegate, WorldlyContainer aContainer) {super(aDelegate); mContainer = aContainer;}
 
-		/** Каждый раз заново: набор доступного меняется живьём (поворот машины, надетый кавер). */
+		/** Recomputed every time: the set of accessible slots changes live (machine rotation, an installed cover). */
 		private int[] slots() {
 			int[] rSlots = mContainer.getSlotsForFace(null);
 			return rSlots == null ? new int[0] : rSlots;
@@ -142,10 +142,10 @@ public class GT6ItemCapability {
 		}
 
 		/**
-		 * Движковая обёртка при {@code side == null} свой {@code canTakeItemThroughFace} НЕ спрашивает
-		 * ({@code WorldlyContainerWrapper:84-89} — проверка стоит под {@code side != null}), а GT6 её требует и для
-		 * стороны 6: там же живёт запрет отдавать наружу служебные предметы ({@code TileEntityBase06Covers:341} —
-		 * {@code ST.debug(aStack) → F}). Спрашиваем контракт самого мода, чужой политики не копируем.
+		 * The engine's wrapper does NOT ask its own {@code canTakeItemThroughFace} when {@code side == null}
+		 * ({@code WorldlyContainerWrapper:84-89} — the check is guarded by {@code side != null}), while GT6 requires
+		 * it for side 6 too: that is also where the ban on handing out service items lives
+		 * ({@code TileEntityBase06Covers:341} — {@code ST.debug(aStack) -> F}). We ask the mod's own contract, we do not copy a foreign policy.
 		 */
 		@Override public int extract(int aIndex, ItemResource aResource, int aAmount, net.neoforged.neoforge.transfer.transaction.TransactionContext aTransaction) {
 			int tSlot = convertIndex(aIndex);

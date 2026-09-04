@@ -291,11 +291,11 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 			IItemEnergy tEnergyStats = getEnergyStats(aStack);
 			if (tEnergyStats != null) {
 				if (tEnergyStats instanceof EnergyStatDebug) {
-					aList.add(LH.Chat.RAINBOW_SLOW + "Works as Infinite Energy Battery");
+					aList.add(LH.Chat.RAINBOW_SLOW + LH.tt("Works as Infinite Energy Battery"));
 				} else {
 					for (TagData tEnergyType : tEnergyStats.getEnergyTypes(aStack)) {
 						long tCapacity = tEnergyStats.getEnergyCapacity(tEnergyType, aStack);
-						aList.add(LH.Chat.WHITE + UT.Code.makeString(Math.min(tCapacity, tEnergyStats.getEnergyStored(tEnergyType, aStack))) + " / " + UT.Code.makeString(tCapacity) + " " + tEnergyType.getLocalisedChatNameShort() + LH.Chat.WHITE + " - Size: " + tEnergyStats.getEnergySizeInputRecommended(tEnergyType, aStack));
+						aList.add(LH.Chat.WHITE + UT.Code.makeString(Math.min(tCapacity, tEnergyStats.getEnergyStored(tEnergyType, aStack))) + " / " + UT.Code.makeString(tCapacity) + " " + tEnergyType.getLocalisedChatNameShort() + LH.Chat.WHITE + LH.tt(" - Size: ") + tEnergyStats.getEnergySizeInputRecommended(tEnergyType, aStack));
 					}
 				}
 			}
@@ -303,7 +303,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 			Long[] tStats = getFluidContainerStats(aStack);
 			if (tStats != null && tStats[0] > 0) {
 				FluidStack tFluid = getFluidContent(aStack);
-				aList.add(LH.Chat.BLUE + ((tFluid==null?"No Fluids Contained":FL.name(tFluid, T))));
+				aList.add(LH.Chat.BLUE + ((tFluid==null?LH.tt("No Fluids Contained"):FL.name(tFluid, T))));
 				aList.add(LH.Chat.BLUE + ((tFluid==null?0:tFluid.getAmount()) + "L / " + tStats[0] + "L"));
 			}
 			
@@ -582,17 +582,17 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	public int getTier(ItemStack aStack) {return UT.Code.tierMax(getEnergySizeInputMax(TD.Energy.EU, aStack));}
 	public int getItemEnchantability() {return 0;}
 	/**
-	 * Входит ли NBT в ЛИЧНОСТЬ предмета (в отличие от его состояния) — для внешних витрин, сопоставляющих
-	 * предметы с выходами рецептов (JEI: {@code registerItemSubtypes}).
+	 * Does NBT count as part of the item's IDENTITY (as opposed to its state) — for external displays that match
+	 * items against recipe outputs (JEI: {@code registerItemSubtypes}).
 	 *
-	 * <p>В 1.7.10 личность = {@code item + damage} (мета), NBT в сравнение NEI не входил. В neo компоненты
-	 * заявляются явно, и части семей GT6 NBT действительно нужен: монеты/батареи/сундуки различаются
-	 * NBT-материалом, а не метой (без заявки — «duplicate items»). Поэтому дефолт здесь — {@code T}.</p>
+	 * <p>In 1.7.10 identity = {@code item + damage} (meta), NBT did not enter the NEI comparison. In neo, components
+	 * are declared explicitly, and some GT6 families genuinely need the NBT: coins/batteries/chests differ
+	 * by NBT material, not by meta (without declaring it — "duplicate items"). Hence the default here is {@code T}.</p>
 	 *
-	 * <p>Семья, у которой NBT несёт СОСТОЯНИЕ, а не личность, переопределяет метод — так поступает
-	 * {@link MultiItemTool}: витрина отдаёт инструмент голым ({@code getSubItems}: {@code ST.make(this,1,i)}),
-	 * а выход рецепта построен {@code getToolWithStats(...)} и несёт материал/прочность/ёмкость. При NBT
-	 * в личности это разные подтипы, и крафт инструмента в витрине не находится вовсе.</p>
+	 * <p>A family whose NBT carries STATE, not identity, overrides the method — that's what
+	 * {@link MultiItemTool} does: the display gives out the tool bare ({@code getSubItems}: {@code ST.make(this,1,i)}),
+	 * while the recipe output is built by {@code getToolWithStats(...)} and carries material/durability/capacity. With NBT
+	 * counted as identity these would be different subtypes, and the tool's recipe would not be found in the display at all.</p>
 	 */
 	public boolean identityIncludesNBT() {return T;}
 

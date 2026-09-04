@@ -65,17 +65,17 @@ public class MultiTileEntityReactorRodBreeder extends MultiTileEntityReactorRodB
 
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		aList.add(LH.Chat.DGRAY + "Used in Nuclear Reactor Core");
-		aList.add(LH.Chat.CYAN + "Absorbs Neutrons to breed into an " + LH.Chat.WHITE + "Enriched Rod");
-		aList.add(LH.Chat.CYAN + "Emits half the Heat per Neutron on this Rod");
-		aList.add(LH.Chat.CYAN + "Can't breed with Neutrons from " + LH.Chat.RED + "Moderated" + LH.Chat.CYAN + " Fuel Rods");
-		aList.add(LH.Chat.CYAN + "The " + LH.Chat.YELLOW + "Loss" + LH.Chat.CYAN + " value gets subtracted from Neutrons entering this Rod");
-		aList.add(LH.Chat.CYAN + "This applies to each side where Neutrons enter, not to the total of all sides");
-		aList.add(LH.Chat.CYAN + "Remaining Neutrons on this Rod get added to the breeding process");
+		aList.add(LH.Chat.DGRAY + LH.tt("Used in Nuclear Reactor Core"));
+		aList.add(LH.Chat.CYAN + LH.tt("Absorbs Neutrons to breed into an ") + LH.Chat.WHITE + LH.tt("Enriched Rod"));
+		aList.add(LH.Chat.CYAN + LH.tt("Emits half the Heat per Neutron on this Rod"));
+		aList.add(LH.Chat.CYAN + LH.tt("Can't breed with Neutrons from ") + LH.Chat.RED + LH.tt("Moderated") + LH.Chat.CYAN + LH.tt(" Fuel Rods"));
+		aList.add(LH.Chat.CYAN + LH.tt("The ") + LH.Chat.YELLOW + LH.tt("Loss") + LH.Chat.CYAN + LH.tt(" value gets subtracted from Neutrons entering this Rod"));
+		aList.add(LH.Chat.CYAN + LH.tt("This applies to each side where Neutrons enter, not to the total of all sides"));
+		aList.add(LH.Chat.CYAN + LH.tt("Remaining Neutrons on this Rod get added to the breeding process"));
 		if (mProductName.equals("")) mProductName = ST.meta(aStack.copy(), mProduct).getDisplayName().getString();
-		aList.add(LH.Chat.GREEN + "Turns into: " + LH.Chat.WHITE + mProductName);
-		aList.add(LH.Chat.CYAN + "Needed: " + LH.Chat.WHITE + mDurability + LH.Chat.PURPLE + " Neutrons");
-		aList.add(LH.Chat.YELLOW + "Loss: " + LH.Chat.WHITE + mNeutronLoss + LH.Chat.PURPLE + " Neutrons");
+		aList.add(LH.Chat.GREEN + LH.tt("Turns into: ") + LH.Chat.WHITE + mProductName);
+		aList.add(LH.Chat.CYAN + LH.tt("Needed: ") + LH.Chat.WHITE + mDurability + LH.Chat.PURPLE + LH.tt(" Neutrons"));
+		aList.add(LH.Chat.YELLOW + LH.tt("Loss: ") + LH.Chat.WHITE + mNeutronLoss + LH.Chat.PURPLE + LH.tt(" Neutrons"));
 	}
 	
 	@Override

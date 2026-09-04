@@ -95,7 +95,7 @@ public class MultiTileEntityDrawerQuad extends TileEntityBase09FacingSingle impl
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_monkeywrench)) {
 			mSidedAccess = !mSidedAccess;
-			if (aChatReturn != null) aChatReturn.add("Automation-Access: " + (mSidedAccess?"Sided":"Anywhere"));
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Automation-Access: ") + (mSidedAccess?LH.tt("Sided"):LH.tt("Anywhere")));
 			return 10000;
 		}
 		return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);

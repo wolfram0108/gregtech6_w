@@ -66,13 +66,13 @@ public class BlockSpikeSharp extends BlockBaseSpike {
 	@Override
 	public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {
 		if (aMeta < 8) {
-			aList.add(LH.Chat.ORANGE + "Deals average Damage to anything touching it!");
-			aList.add(LH.Chat.ORANGE + "Doesn't work on Skeletons, Slimes and Iron Golems.");
+			aList.add(LH.Chat.ORANGE + LH.tt("Deals average Damage to anything touching it!"));
+			aList.add(LH.Chat.ORANGE + LH.tt("Doesn't work on Skeletons, Slimes and Iron Golems."));
 		} else {
-			aList.add(LH.Chat.ORANGE + "Deals large Damage to anything touching it!");
+			aList.add(LH.Chat.ORANGE + LH.tt("Deals large Damage to anything touching it!"));
 		}
 		if ((aMeta & 7) >= 6) {
-			aList.add(LH.Chat.CYAN + "Works in all Directions, but only does half the Wall Spikes Damage!");
+			aList.add(LH.Chat.CYAN + LH.tt("Works in all Directions, but only does half the Wall Spikes Damage!"));
 		}
 	}
 	

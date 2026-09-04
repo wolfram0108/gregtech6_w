@@ -36,8 +36,8 @@ import net.minecraft.world.item.ItemStack;
 public class MultiTileEntityReactorRodReflector extends MultiTileEntityReactorRodBase {
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		aList.add(LH.Chat.DGRAY + "Used in Nuclear Reactor Core");
-		aList.add(LH.Chat.CYAN + "Reflects Neutrons back to their Source, boosting the Reaction");
+		aList.add(LH.Chat.DGRAY + LH.tt("Used in Nuclear Reactor Core"));
+		aList.add(LH.Chat.CYAN + LH.tt("Reflects Neutrons back to their Source, boosting the Reaction"));
 	}
 	
 	@Override

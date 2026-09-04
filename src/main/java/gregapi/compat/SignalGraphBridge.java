@@ -57,8 +57,8 @@ public final class SignalGraphBridge {
 				? BuiltInRegistries.GAME_EVENT.get(SIGNAL_GRAPH_UPDATE.identifier()).map(h -> (Holder<GameEvent>) h).orElse(null)
 				: null;
 			sResolved = true;
-			CS.OUT.println("[GT6-SIGNALGRAPH] мост обновления чужого графа: мод загружен = " + MD.EXM.mLoaded
-				+ ", событие " + SIGNAL_GRAPH_UPDATE.identifier() + " = " + (sEvent == null ? "не найдено" : "найдено"));
+			CS.OUT.println("[GT6-SIGNALGRAPH] bridge updating a foreign graph: mod loaded = " + MD.EXM.mLoaded
+				+ ", event " + SIGNAL_GRAPH_UPDATE.identifier() + " = " + (sEvent == null ? "not found" : "found"));
 		}
 		if (sEvent != null) aLevel.gameEvent(sEvent, aPos, GameEvent.Context.of(null, null));
 	}

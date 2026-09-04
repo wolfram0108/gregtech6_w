@@ -85,15 +85,15 @@ import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.ticks.BlackholeTickAccess;
 import net.minecraft.world.ticks.LevelTickAccess;
 
-// F6, DummyWorld Level-redesign — ЗАКРЫТО (ledger `DEFERRED-LEDGER.md:431-435`): движок сменил модель мира целиком — 1.7.10 `World`
-// (ctor `(ISaveHandler,String,WorldProvider,WorldSettings,Profiler)`, `getBlock(x,y,z)`/`setBlock(x,y,z,
-// Block,meta,flags)`/`getBiomeGenForCoords(x,z)`) удалён из всех 3 корней референса целиком; neo `Level`
-// (`neo-decompiled/net/minecraft/world/level/Level.java:139-160`) — конкретный ctor
+// F6, DummyWorld Level-redesign — CLOSED (ledger `DEFERRED-LEDGER.md:431-435`): the engine swapped its whole world
+// model — the 1.7.10 `World` (ctor `(ISaveHandler,String,WorldProvider,WorldSettings,Profiler)`, `getBlock(x,y,z)`/
+// `setBlock(x,y,z,Block,meta,flags)`/`getBiomeGenForCoords(x,z)`) is removed from all 3 reference roots entirely;
+// neo's `Level` (`neo-decompiled/net/minecraft/world/level/Level.java:139-160`) has a concrete ctor
 // `(WritableLevelData,ResourceKey<Level>,RegistryAccess,Holder<DimensionType>,boolean,boolean,long,int)`
-// и совсем другой набор abstract-методов (см. ниже). Переписано как минимальный конкретный Level-подкласс:
-// ВСЕ abstract-методы Level/LevelAccessor/LevelReader/EntityGetter/CollisionGetter закрыты дамми-заглушками,
-// GT6-поведенческие точки (getBlock/setBlock/getBiomeGenForCoords/canBlockSeeTheSky) перенесены 1:1 на их
-// neo-эквиваленты (см. пометки при каждом методе).
+// and a completely different set of abstract methods (see below). Rewritten as a minimal concrete Level subclass:
+// ALL abstract methods of Level/LevelAccessor/LevelReader/EntityGetter/CollisionGetter are closed with dummy stubs,
+// GT6's behavioural points (getBlock/setBlock/getBiomeGenForCoords/canBlockSeeTheSky) are carried over 1:1 to their
+// neo equivalents (see the note at each method).
 public class DummyWorld extends Level {
 	public class GT_IteratorRandom extends Random {
 		private static final long serialVersionUID = 1L;
@@ -108,28 +108,28 @@ public class DummyWorld extends Level {
 		}
 	}
 
-	// F6 dummy-world (фейк-мир, random-hookup не требуется): оригинал делал `rand = mRandom;` (World.rand — публичное
-	// поле типа java.util.Random). В neo `Level.random` — `private final RandomSource` (интерфейс с СОВСЕМ
-	// другим контрактом: fork()/forkPositional()/nextInt()/… — `neo-decompiled/net/minecraft/util/
-	// RandomSource.java:35-57`), сеттера нет ни в одном из 3 корней. GT_IteratorRandom/mRandom сохранены
-	// структурно (поле+класс не удалены), но НЕ подключены к живому RNG движка — адаптер RandomSource
-	// был бы НОВОЙ сущностью, которой нет в GT6 (правило R2), а grep по всему дереву GT6 (`gregtech6\src`)
-	// подтверждает: ни `GT_IteratorRandom`, ни `mRandom` нигде не читаются извне этого файла — только
-	// `CS.DW` (сюда) передаётся в `recipe.matches(aCrafting, CS.DW)` (`gregapi/util/CR.java:524,562,573,681`),
-	// который не трогает `world.rand`. Отложено, реальной потери поведения нет.
+	// F6 dummy-world (fake world, random hookup not required): the original did `rand = mRandom;` (World.rand — a
+	// public field of type java.util.Random). In neo `Level.random` is `private final RandomSource` (an interface
+	// with a COMPLETELY different contract: fork()/forkPositional()/nextInt()/… — `neo-decompiled/net/minecraft/util/
+	// RandomSource.java:35-57`), and no setter exists in any of the 3 reference roots. GT_IteratorRandom/mRandom are
+	// kept structurally (the field+class are not removed), but are NOT wired to the engine's live RNG — a RandomSource
+	// adapter would be a NEW entity that GT6 doesn't have (rule R2), and a grep over the whole GT6 tree (`gregtech6\src`)
+	// confirms: neither `GT_IteratorRandom` nor `mRandom` is read anywhere outside this file — only
+	// `CS.DW` (this instance) is passed into `recipe.matches(aCrafting, CS.DW)` (`gregapi/util/CR.java:524,562,573,681`),
+	// which never touches `world.rand`. Deferred; there is no real behavioural loss.
 	public GT_IteratorRandom mRandom = new GT_IteratorRandom();
 	public ItemStack mLastSetBlock = null;
 
-	// было World.getSeaLevel()-подобной константы не было вовсе в 1.7.10 (WorldProvider.getAverageGroundLevel
-	// использовался по месту); neo добавил abstract `LevelReader.getSeaLevel()` (LevelReader.java:66) —
-	// центральный уровень воды GT6 уже вынесен в `WD.waterLevel()` (`gregapi/util/WD.java:579-580`,
-	// дефолт оверворлда 62) — переиспользуем центр вместо изобретения новой константы.
+	// previously: no World.getSeaLevel()-like constant existed at all in 1.7.10 (WorldProvider.getAverageGroundLevel
+	// was used inline); neo added abstract `LevelReader.getSeaLevel()` (LevelReader.java:66) — GT6's central
+	// water level is already factored into `WD.waterLevel()` (`gregapi/util/WD.java:579-580`,
+	// overworld default 62) — reuse the centre instead of inventing a new constant.
 	private static int mSeaLevel() {return WD.waterLevel();}
 
-	// Минимальный самодостаточный DimensionType: поля собраны из статических констант БЕЗ RegistryAccess
-	// (инфиниберн-тег ленивый, timelines/defaultClock пустые) — по образцу настоящей регистрации оверворлда
-	// (`neo-decompiled/net/minecraft/data/worldgen/DimensionTypes.java:45-63`), но без обращения к реестрам
-	// (которых у офлайн-дамми нет).
+	// Minimal self-contained DimensionType: fields are assembled from static constants WITHOUT RegistryAccess
+	// (the infiniburn tag is lazy, timelines/defaultClock are empty) — modelled after the real overworld registration
+	// (`neo-decompiled/net/minecraft/data/worldgen/DimensionTypes.java:45-63`), but without touching registries
+	// (which the offline dummy doesn't have).
 	private static final DimensionType mDimensionType = new DimensionType(
 		F, T, F, F, 1.0D,
 		-64, 384, 384,
@@ -153,35 +153,36 @@ public class DummyWorld extends Level {
 		@Override public boolean isDifficultyLocked() {return F;}
 	}
 
-	// было DummyWorld(ISaveHandler,String,WorldProvider,WorldSettings,Profiler) + DummyWorld() делегирующий
-	// в него анонимными ISaveHandler/WorldProvider-заглушками — все 4 типа параметров удалены из neo целиком
-	// (не найдены ни в одном из 3 корней референса), делегирующий ctor физически невозможен 1:1. Единственный
-	// оставшийся no-arg ctor `DummyWorld()` (обязателен, зовёт `GT_API.java:254 new DummyWorld()`) строит
-	// аргументы нового `Level`-контракта напрямую.
+	// previously: DummyWorld(ISaveHandler,String,WorldProvider,WorldSettings,Profiler) + a no-arg DummyWorld()
+	// delegating into it with anonymous ISaveHandler/WorldProvider stubs — all 4 parameter types are removed from
+	// neo entirely (not found in any of the 3 reference roots), so a delegating ctor is physically impossible 1:1.
+	// The one remaining no-arg ctor `DummyWorld()` (required, called by `GT_API.java:254 new DummyWorld()`) builds
+	// the arguments of the new `Level` contract directly.
 	public DummyWorld() {this(RegistryAccess.EMPTY);}
 
 	/**
-	 * ЕДИНСТВЕННАЯ точка появления {@code CS.DW}: строит мир, когда реестр уже загружен, и молчит, если он
-	 * уже построен. Зовётся со старта сервера — там {@code MinecraftServer.registryAccess()} полон.
-	 * Потеря не молчит: если мир не построится и здесь, в лог уйдёт причина, а не пустая ссылка.
+	 * The ONLY place {@code CS.DW} is created: builds the world once the registry is already loaded, and stays
+	 * silent if it is already built. Called from server startup, where {@code MinecraftServer.registryAccess()}
+	 * is populated. A failure is not silent: if the world still fails to build, the log gets the reason,
+	 * not an empty reference.
 	 */
 	public static synchronized void ensure(RegistryAccess aRegistryAccess) {
 		if (gregapi.data.CS.DW != null || aRegistryAccess == null) return;
 		try {
 			gregapi.data.CS.DW = new DummyWorld(aRegistryAccess);
 		} catch (Throwable e) {
-			gregapi.data.CS.ERR.println("GT6: dummy-мир не создан — проверка совпадения рецептов пойдёт без мира (" + e + ").");
+			gregapi.data.CS.ERR.println("GT6: dummy world not created — recipe matching will run without a world (" + e + ").");
 			e.printStackTrace(gregapi.data.CS.ERR);
 		}
 	}
 
 	/**
-	 * РЕЕСТР ОБЯЗАТЕЛЕН С 26.1.2. Прежде здесь стоял жёсткий {@code RegistryAccess.EMPTY}, и мир не строился
-	 * ВООБЩЕ: {@code Level.<init>} (Level.java:158) зовёт {@code PalettedContainerFactory.create}
-	 * (PalettedContainerFactory.java:25), а тот — {@code lookupOrThrow(Registries.BIOME)}, которого у пустого
-	 * реестра нет. Мод ловил это и печатал «DUMMY WORLD COULD NOT BE CREATED» при КАЖДОМ запуске, оставляя
-	 * {@code CS.DW} равным null; крафт держался лишь на том, что ванильные рецепты не читают мир в
-	 * {@code matches}. Поэтому реестр приходит снаружи — от сервера, когда он уже загружен.
+	 * THE REGISTRY IS MANDATORY AS OF 26.1.2. Previously a hardcoded {@code RegistryAccess.EMPTY} stood here, and the
+	 * world did not build AT ALL: {@code Level.<init>} (Level.java:158) calls {@code PalettedContainerFactory.create}
+	 * (PalettedContainerFactory.java:25), which in turn calls {@code lookupOrThrow(Registries.BIOME)}, and an empty
+	 * registry has none. The mod caught this and printed «DUMMY WORLD COULD NOT BE CREATED» on EVERY startup, leaving
+	 * {@code CS.DW} null; crafting only kept working because vanilla recipes don't read the world in
+	 * {@code matches}. So the registry now comes from outside — from the server, once it is already loaded.
 	 */
 	public DummyWorld(RegistryAccess aRegistryAccess) {
 		super(
@@ -196,51 +197,53 @@ public class DummyWorld extends Level {
 		);
 	}
 
-	// было protected IChunkProvider createChunkProvider() {return null;} — neo переименовал в abstract
+	// previously: protected IChunkProvider createChunkProvider() {return null;} — neo renamed this to abstract
 	// `LevelAccessor.getChunkSource()` (`neo-decompiled/net/minecraft/world/level/LevelAccessor.java:51`);
-	// та же семантика "нет чанк-провайдера у дамми" сохранена дословно.
+	// the same "the dummy has no chunk provider" semantics is kept verbatim.
 	@Override public ChunkSource getChunkSource() {
 		return null;
 	}
 
-	// было public Entity getEntityByID(int aEntityID) {return null;} — neo abstract `Level.getEntity(int)`
+	// previously: public Entity getEntityByID(int aEntityID) {return null;} — neo's abstract `Level.getEntity(int)`
 	// (Level.java:850).
 	@Override public Entity getEntity(int aEntityID) {
 		return null;
 	}
 
-	// было public boolean setBlock(int aX,int aY,int aZ,Block aBlock,int aMeta,int aFlags) — F13
-	// (`decisions/F13-block-position-meta.md`): числовая мета блока в neo удалена целиком, единый узел
-	// адресации — `BlockPos`+`BlockState` (`LevelWriter.java:10`). Переносим ту же запись в mLastSetBlock;
-	// meta-параметр у ST.make(Block,long,long) получает 0 — общего канала "meta произвольного BlockState"
-	// в центре нет (F13 §3: есть только `IBlockExtendedMetaData` для СВОИХ блоков, здесь blockState — с
-	// произвольным блоком любого вызывающего).
+	// previously: public boolean setBlock(int aX,int aY,int aZ,Block aBlock,int aMeta,int aFlags) — F13
+	// (`decisions/F13-block-position-meta.md`): the numeric block meta is removed entirely in neo, the single
+	// addressing unit being `BlockPos`+`BlockState` (`LevelWriter.java:10`). We carry the same record into
+	// mLastSetBlock; the meta parameter of ST.make(Block,long,long) gets 0 — there is no general "meta of an
+	// arbitrary BlockState" channel in the centre (F13 §3: only `IBlockExtendedMetaData` exists, for GT6's OWN
+	// blocks; here blockState comes with an arbitrary block from any caller).
 	@Override public boolean setBlock(BlockPos aPos, BlockState aState, int aFlags, int aUpdateLimit) {
 		mLastSetBlock = ST.make(aState.getBlock(), 1, 0);
 		return T;
 	}
 
-	// было public float getSunBrightnessFactor(float p_72967_1_) {return 1.0F;}
-	// F6 dummy-world (0 внешних вызовов, фейк-мир не нуждается в реальном солнце): точка перекрытия `World.getSunBrightnessFactor(float)`
-	// удалена из neo целиком — grep по всем 3 корням референса (neo-decompiled/neoforge-decompiled/
-	// fml-decompiled) пуст, замены/переименования нет. Не выдумываем несуществующий neo-метод (правило 1);
-	// не вызывается нигде извне (тот же grep `CS.DW`, что и у mRandom выше), функциональной потери нет.
+	// previously: public float getSunBrightnessFactor(float p_72967_1_) {return 1.0F;}
+	// F6 dummy-world (0 external callers, the fake world needs no real sun): the override point
+	// `World.getSunBrightnessFactor(float)` is removed from neo entirely — a grep over all 3 reference roots
+	// (neo-decompiled/neoforge-decompiled/fml-decompiled) is empty, no replacement/rename exists. We don't invent
+	// a neo method that doesn't exist (rule 1); not called from anywhere outside (same `CS.DW` grep as for mRandom
+	// above), no functional loss.
 
-	// было public Biome getBiomeGenForCoords(int aX,int aZ) {return (in area) ? plains : ocean;}
-	// F6 dummy-world (фейк-мир, дефолт-биом достаточен): 1.7.10 `BiomeGenBase.plains`/`.ocean` были статическими VM-синглтонами
-	// (прямое поле), а neo `Biome` — объект динамического датапак-реестра `Registries.BIOME`
-	// (`neo-decompiled/net/minecraft/core/registries/Registries.java:258`), НЕ в `BuiltInRegistries` —
-	// недостижим без живого `RegistryAccess`, которого у офлайн-дамми нет (`RegistryAccess.EMPTY`, см. ctor).
-	// Область-различение (было `aX>=16 && aZ>=16 && aX<32 && aZ<32`) сохранена дословно в mInArea(...) и
-	// СПОЛНА исполняется ниже (обе ветки видимы, не схлопнуты) — просто пока обе не могут вернуть настоящий
-	// `Holder<Biome>` без реестра. Не вызывается извне (grep `CS.DW` как у mRandom/sun-brightness).
+	// previously: public Biome getBiomeGenForCoords(int aX,int aZ) {return (in area) ? plains : ocean;}
+	// F6 dummy-world (fake world, a default biome is enough): the 1.7.10 `BiomeGenBase.plains`/`.ocean` were static
+	// VM singletons (a direct field), while neo's `Biome` is an object of the dynamic datapack registry
+	// `Registries.BIOME` (`neo-decompiled/net/minecraft/core/registries/Registries.java:258`), NOT in
+	// `BuiltInRegistries` — unreachable without a live `RegistryAccess`, which the offline dummy doesn't have
+	// (`RegistryAccess.EMPTY`, see the ctor). The area distinction (previously `aX>=16 && aZ>=16 && aX<32 && aZ<32`)
+	// is kept verbatim in mInArea(...) and FULLY executed below (both branches are visible, not collapsed) — the two
+	// branches simply can't return a real `Holder<Biome>` yet without a registry. Not called from outside (same
+	// `CS.DW` grep as mRandom/sun-brightness).
 	private boolean mInArea(int aX, int aZ) {
 		return aX >= 16 && aZ >= 16 && aX < 32 && aZ < 32;
 	}
 
 	@Override public Holder<Biome> getBiome(BlockPos aPos) {
-		if (mInArea(aPos.getX(), aPos.getZ())) return null; // область плейнс (было BiomeGenBase.plains)
-		return null; // вне области — океан (было BiomeGenBase.ocean)
+		if (mInArea(aPos.getX(), aPos.getZ())) return null; // plains area (was BiomeGenBase.plains)
+		return null; // outside the area — ocean (was BiomeGenBase.ocean)
 	}
 
 	@Override public Holder<Biome> getUncachedNoiseBiome(int aQuartX, int aQuartY, int aQuartZ) {
@@ -251,53 +254,54 @@ public class DummyWorld extends Level {
 		return mSeaLevel();
 	}
 
-	// было public int getFullBlockLightValue(int aX,int aY,int aZ) {return 10;}
-	// F6 dummy-world (фейк-мир, дефолт-свет достаточен): точка `World.getFullBlockLightValue(x,y,z)` удалена из neo
-	// целиком — тот же статус, что и getSunBrightnessFactor выше (grep 3 корней пуст, не вызывается извне).
+	// previously: public int getFullBlockLightValue(int aX,int aY,int aZ) {return 10;}
+	// F6 dummy-world (fake world, default light is enough): the `World.getFullBlockLightValue(x,y,z)` point is
+	// removed from neo entirely — same status as getSunBrightnessFactor above (3-root grep empty, not called
+	// from outside).
 
-	// было public boolean canBlockSeeTheSky(int aX,int aY,int aZ) {return (in area) ? aY>64 : T;} — neo
-	// default-метод `BlockAndLightGetter.canSeeSky(BlockPos)` (`BlockAndLightGetter.java:17-19`), обычно
-	// считает через getBrightness/getLightEngine (которого у дамми нет, getChunkSource()==null) — перекрыт
-	// напрямую той же координатной проверкой, минуя движковый lighting-engine (тот же приём, что оригинал
-	// применял к WorldChunkManager).
+	// previously: public boolean canBlockSeeTheSky(int aX,int aY,int aZ) {return (in area) ? aY>64 : T;} — neo's
+	// default method `BlockAndLightGetter.canSeeSky(BlockPos)` (`BlockAndLightGetter.java:17-19`) normally
+	// computes through getBrightness/getLightEngine (which the dummy doesn't have, getChunkSource()==null) —
+	// overridden directly with the same coordinate check, bypassing the engine's lighting engine (the same
+	// technique the original applied to WorldChunkManager).
 	@Override public boolean canSeeSky(BlockPos aPos) {
 		if (mInArea(aPos.getX(), aPos.getZ())) return aPos.getY() > 64;
 		return T;
 	}
 
-	// было public Block getBlock(int aX,int aY,int aZ) {return (in area && aY==64) ? Blocks.grass : NB; else NB;}
-	// — neo abstract-точка чтения блока `BlockGetter.getBlockState(BlockPos)` (`BlockGetter.java:32`,
-	// F13 §2 таблица). Перекрыт напрямую (минуя getChunkSource()==null), область/высота — дословно.
+	// previously: public Block getBlock(int aX,int aY,int aZ) {return (in area && aY==64) ? Blocks.grass : NB; else NB;}
+	// — neo's abstract block-read point `BlockGetter.getBlockState(BlockPos)` (`BlockGetter.java:32`,
+	// F13 §2 table). Overridden directly (bypassing getChunkSource()==null), area/height are kept verbatim.
 	@Override public BlockState getBlockState(BlockPos aPos) {
 		if (mInArea(aPos.getX(), aPos.getZ())) return aPos.getY() == 64 ? Blocks.GRASS_BLOCK.defaultBlockState() : NB.defaultBlockState();
 		return NB.defaultBlockState();
 	}
 
-	// было public int getBlockMetadata(int aX,int aY,int aZ) {return 0;} — числовая мета блока удалена
-	// целиком из neo (F13 §1); отдельной точки перекрытия для неё в neo-контракте Level больше нет
-	// (мета — часть самого BlockState из getBlockState(...) выше), переносить нечего.
+	// previously: public int getBlockMetadata(int aX,int aY,int aZ) {return 0;} — the numeric block meta is
+	// removed from neo entirely (F13 §1); there is no separate override point for it in neo's Level contract
+	// anymore (meta is now part of the BlockState itself from getBlockState(...) above), nothing to carry over.
 
-	// безопасная заглушка "пустого мира" (не GT6-поведенческая точка — оригинал не различал жидкость
-	// отдельно от блока в 1.7.10; чтобы не трогать getChunkSource()==null через дефолтный Level.getFluidState).
+	// safe "empty world" stub (not a GT6 behavioural point — the original didn't distinguish fluid from block
+	// separately in 1.7.10; kept here so as not to hit getChunkSource()==null through the default Level.getFluidState).
 	@Override public FluidState getFluidState(BlockPos aPos) {
 		return Fluids.EMPTY.defaultFluidState();
 	}
 
-	// --- ниже — чисто административные abstract-методы Level/LevelAccessor/LevelReader/EntityGetter/
-	// CollisionGetter, у которых нет соответствия в 1.7.10-оригинале (в нём просто не существовало этого
-	// контракта) и которые не вызываются на CS.DW нигде в дереве мода (единственный потребитель —
-	// `gregapi/util/CR.java` передаёт CS.DW только в `recipe.matches(...)`, не трогающий эти методы).
-	// Безопасные дамми-значения: готовый public no-arg конструктор/статический EMPTY-фактори там, где он
-	// есть без реестра, иначе null/empty/0/false.
+	// --- below are purely administrative abstract methods of Level/LevelAccessor/LevelReader/EntityGetter/
+	// CollisionGetter that have no counterpart in the 1.7.10 original (that contract simply didn't exist there)
+	// and are never called on CS.DW anywhere in the mod's tree (the only consumer — `gregapi/util/CR.java` —
+	// passes CS.DW only into `recipe.matches(...)`, which never touches these methods).
+	// Safe dummy values: a ready-made public no-arg constructor/static EMPTY factory where one exists without
+	// a registry, otherwise null/empty/0/false.
 
 	@Override public void gameEvent(Holder<GameEvent> aGameEvent, Vec3 aPosition, GameEvent.Context aContext) {/*Do nothing*/}
 
 	@Override public void levelEvent(Entity aSource, int aType, BlockPos aPos, int aData) {/*Do nothing*/}
 
-	// нет 1.7.10-аналога (тик-планировщик как отдельный аксессор появился только в neo); переиспользуем
-	// готовый движковый "чёрная дыра"-стаб (`neo-decompiled/net/minecraft/world/ticks/
-	// BlackholeTickAccess.java:46-48`), которым сам ванильный движок закрывает те же случаи "нет реального
-	// тик-хранилища" — не изобретаем новую абстракцию (правило R2).
+	// no 1.7.10 counterpart (a tick scheduler as a separate accessor only appeared in neo); reuse the engine's
+	// ready-made "black hole" stub (`neo-decompiled/net/minecraft/world/ticks/
+	// BlackholeTickAccess.java:46-48`), which vanilla itself uses to close the same "no real tick storage" cases —
+	// we don't invent a new abstraction (rule R2).
 	@Override public LevelTickAccess<Block> getBlockTicks() {
 		return BlackholeTickAccess.<Block>emptyLevelList();
 	}

@@ -96,8 +96,8 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 		aList.add(Chat.DGRAY    + LH.get(LH.TOOL_TO_DETAIL_MAGNIFYINGGLASS));
 	}
 	
-	/** Что видно в воронке: материал накопленной пыли. Чистый пересчёт из содержимого — центр зовёт его
-	 *  и из тика, и перед сборкой клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	/** What is visible in the funnel: the material of the accumulated dust. A pure recomputation from the content — the center calls it
+	 *  both from the tick and before assembling the client snapshot (see {@code TileEntityBase03TicksAndSync.updateVisualData}). */
 	@Override
 	public void updateVisualData() {
 		if (isClientSide()) return;
@@ -156,15 +156,15 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 		}
 		if (aTool.equals(TOOL_monkeywrench)) {
 			mMode = (byte)((DUST_TYPES.length + mMode + (aSneaking?-1:+1)) % DUST_TYPES.length);
-			if (aChatReturn != null) aChatReturn.add("Outputs in the Size of " + DUST_TYPES[mMode].mNameLocal);
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Outputs in the Size of ") + DUST_TYPES[mMode].mNameLocal);
 			updateClientData();
 			return 10000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
-				aChatReturn.add("Outputs in the Size of " + DUST_TYPES[mMode].mNameLocal);
+				aChatReturn.add(LH.tt("Outputs in the Size of ") + DUST_TYPES[mMode].mNameLocal);
 				if (mContent != null && mContent.mAmount > 0) {
-					aChatReturn.add("Contains a Fraction of " + mContent.mMaterial.mNameLocal);
+					aChatReturn.add(LH.tt("Contains a Fraction of ") + mContent.mMaterial.mNameLocal);
 				}
 			}
 			return 1;

@@ -155,7 +155,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 		if (rReturn > 0) return rReturn;
 		if (isClientSide()) return 0;
 		if (aTool.equals(TOOL_plunger)) return GarbageGT.trash(mTanks);
-		if (aTool.equals(TOOL_thermometer)) {if (aChatReturn != null) aChatReturn.add("Temperature: " + mTemperature + "K"); return 10000;}
+		if (aTool.equals(TOOL_thermometer)) {if (aChatReturn != null) aChatReturn.add(LH.tt("Temperature: ") + mTemperature + "K"); return 10000;}
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (!isCovered(UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ))) {
 				if (aChatReturn != null) {
@@ -202,10 +202,10 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 					}
 					
 					if (tFluids.isEmpty()) {
-						aChatReturn.add("=== This Fluid Pipe Network is empty ===");
+						aChatReturn.add(LH.tt("=== This Fluid Pipe Network is empty ==="));
 					} else {
-						if (tPipeEmpty) aChatReturn.add("This particular Pipe Segment is currently empty");
-						aChatReturn.add("=== This Fluid Pipe Network contains: ===");
+						if (tPipeEmpty) aChatReturn.add(LH.tt("This particular Pipe Segment is currently empty"));
+						aChatReturn.add(LH.tt("=== This Fluid Pipe Network contains: ==="));
 						for (FluidTankGT tFluid : tFluids) aChatReturn.add(tFluid.content());
 					}
 				}
@@ -349,11 +349,11 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 			if (isCovered(tSide) && mCovers.mBehaviours[tSide].interceptFluidDrain(tSide, mCovers, tSide, aTank.get())) continue;
 			
 			Block tBlock = aAdjacentOther[tSide].getBlock();
-			// Filling up Cauldrons from Vanilla. BUG-025: движок (1.13+) разложил 1.7.10-котёл на CAULDRON(пусто)/
-			// WATER_CAULDRON(LEVEL 1-3) — распознаём ОБА (было `instanceof CauldronBlock` = лишь пустой в neo → долив
-			// частичного котла не работал; оригинал 1.7.10 `Blocks.cauldron || instanceof BlockCauldron` = котёл ЛЮБОГО
-			// уровня 0-3, тогда один блок). Уровень читается/пишется через getMetaData/setMetaData → WD.meta/WD.set, где
-			// централизованный перевод меты↔split-блок (см. WD.java). Логика switch ниже — 1:1 с оригиналом, не тронута.
+			// Filling up Cauldrons from Vanilla. BUG-025: the engine (1.13+) split the 1.7.10 cauldron into CAULDRON(empty)/
+			// WATER_CAULDRON(LEVEL 1-3) — recognize BOTH (was `instanceof CauldronBlock` = only the empty one in neo -> topping up
+			// a partial cauldron did not work; the 1.7.10 original `Blocks.cauldron || instanceof BlockCauldron` = a cauldron of ANY
+			// level 0-3, a single block back then). The level is read/written through getMetaData/setMetaData -> WD.meta/WD.set, where
+			// the centralized meta<->split-block translation lives (see WD.java). The switch logic below is 1:1 with the original, untouched.
 			if ((tBlock == Blocks.CAULDRON || tBlock == Blocks.WATER_CAULDRON) && aTank.has(334) && FL.water(aTank.get())) {
 				switch(aAdjacentOther[tSide].getMetaData()) {
 				case 0:
@@ -408,10 +408,10 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 			// No Tank? Nothing to do then.
 			if (aAdjacentTanks[tSide] == null) continue;
 			// Check if the Tank can be filled with this Fluid.
-			// F5: 1.7.10 звал fill(getForgeSideOfTileEntity(), aFluid, F) — СО СТОРОНОЙ. Здесь mTileEntity — сырой
-			// BE делегата, а не capability-handle, поэтому сайдлес neo-fill терял сторону (SIDE_ANY) и приёмник со
-			// сторонним гейтом входа отсеивался на скане кандидатов (BUG-062). Сторону несёт FL.fill (fillSided,
-			// FL.java:923) — тот же канал, что и execute-путь ниже.
+			// F5: 1.7.10 called fill(getForgeSideOfTileEntity(), aFluid, F) — WITH A SIDE. Here mTileEntity is the raw
+			// delegate BE, not a capability handle, so the sideless neo-fill lost the side (SIDE_ANY) and a receiver with a
+			// side-based entry gate got filtered out during the candidate scan (BUG-062). FL.fill (fillSided,
+			// FL.java:923) carries the side — the same channel as the execute path below.
 			if (FL.fill(aAdjacentTanks[tSide], aTank.make(1), F) > 0 || FL.fill(aAdjacentTanks[tSide], aTank.get(Long.MAX_VALUE), F) > 0) {
 				// Add to a random Position in the List.
 				tTanks.add(rng(tTanks.size()+1), aAdjacentTanks[tSide]);
@@ -507,20 +507,20 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 			// Extenders should always be connectable.
 			if (aDelegator.mTileEntity instanceof ITileEntityCanDelegate) return T;
 			// Make sure at least one Tank exists at this Side to connect to.
-			// F5: 1.7.10 IFluidHandler.getTankInfo(side):FluidTankInfo[] удалён из neo IFluidHandler целиком (0
-			// замены в 3 корнях, side уже разрешена на этапе получения ссылки) — gregapi.fluid.FluidTankInfo.java
-			// сам документирует этот пробел как "consumer-файлы вне области переходника" (FluidTankInfo.java:31-32);
-			// этот вызов — тот самый непортированный consumer. UT.Code.exists(0, array) проверял только
-			// array.length>0 (наличие ХОТЯ БЫ одного танка) — тот же вопрос честно закрывается getTanks()>0
-			// (IFluidHandler.java:60), без построения фиктивного FluidTankInfo[] ради одной длины.
+			// F5: 1.7.10 IFluidHandler.getTankInfo(side):FluidTankInfo[] is entirely removed from the neo IFluidHandler (0
+			// replacements in the 3 reference roots, the side is already resolved at the point the reference is obtained) — gregapi.fluid.FluidTankInfo.java
+			// itself documents this gap as "consumer files outside the adapter's scope" (FluidTankInfo.java:31-32);
+			// this call is exactly that unported consumer. UT.Code.exists(0, array) only checked
+			// array.length>0 (the presence of AT LEAST one tank) — the same question is honestly answered by getTanks()>0
+			// (IFluidHandler.java:60), without building a fake FluidTankInfo[] just for its length.
 			if (((IFluidHandler)aDelegator.mTileEntity).getTanks() > 0) return T;
 			// Okay, nothing to do here.
 			return F;
 		}
 		if (mCapacity >= 334) {
 			Block tBlock = aDelegator.getBlock();
-			// BUG-025: распознаём и пустой CAULDRON, и наполненный WATER_CAULDRON (см. distribute выше и WD-центры) —
-			// иначе после наполнения (CAULDRON→WATER_CAULDRON) труба переставала считать котёл валидной целью подключения.
+			// BUG-025: recognize both the empty CAULDRON and the filled WATER_CAULDRON (see distribute above and the WD centers) —
+			// otherwise, after filling (CAULDRON->WATER_CAULDRON) the pipe stopped considering the cauldron a valid connection target.
 			if (tBlock == Blocks.CAULDRON || tBlock == Blocks.WATER_CAULDRON) return T;
 		}
 		return F;

@@ -35,7 +35,7 @@ displayURL="https://github.com/wolfram0108/gregtech6_w"
 
 
 # The description text for the mod (multi line!) (#mandatory)
-# Автор оригинала и происхождение — обязательная атрибуция производной работы (LGPL).
+# Original author and provenance: attribution required for a derivative work (LGPL).
 authors="Gregorius Techneticies (GregTech 6); NeoForge port by wolfram0108"
 credits="Ported from GregTech 6 for Minecraft 1.7.10 by Gregorius Techneticies."
 
@@ -54,11 +54,11 @@ Provenance of every shipped component is in NOTICE, inside this jar.
 ALPHA: playable end to end, but not finished. Worlds are not guaranteed to survive updates.
 '''
 
-# F12 (decisions/F12-registration-lifecycle.md): GT6 = три родных FML-мода Грегориуса в одном jar
-# (GAPI/GAPI_POST/GT), каждый со своим @Mod(value=...) в своём классе (gregapi.GT_API / gregapi.GT_API_Post /
-# gregtech6.GregTech6). FMLJavaModLanguageProvider (fml-decompiled :53-61) помечает @Mod(value=X) БЕЗ
-# соответствующей [[mods]]-записи для modId X как dangling entrypoint — поэтому у GAPI и GAPI_POST здесь
-# собственные metadata-записи, симметрично записи ${mod_id} (GT) выше.
+# F12 (decisions/F12-registration-lifecycle.md): GT6 is three native FML mods of the original author in one
+# jar (GAPI/GAPI_POST/GT), each with its own @Mod(value=...) in its own class (gregapi.GT_API /
+# gregapi.GT_API_Post / gregtech6.GregTech6). FMLJavaModLanguageProvider (fml-decompiled :53-61) marks
+# @Mod(value=X) WITHOUT a matching [[mods]] entry for modId X as a dangling entrypoint — hence GAPI and
+# GAPI_POST carry their own metadata entries here, mirroring the ${mod_id} (GT) entry above.
 [[mods]] #mandatory
 modId="gregapi" #mandatory
 version="${mod_version}" #mandatory
@@ -75,9 +75,9 @@ description='''
 Late-loading half of the GregTech 6 core API. Part of the GregTech 6 distribution, not a separate mod.
 '''
 
-# F12 §4.4: контент-мод GT (gregtech.GT6_Main) переведён на реальный neo-@Mod(value=gregtech) —
-# теперь его lifecycle (Loader_Fluids/Items/PrefixBlocks/…) реально запускается движком. Загружается
-# ПОСЛЕ gregapi_post (оригинал GT6_Main.java: dependencies="required-after:"+GAPI_POST).
+# F12 4.4: the content mod GT (gregtech.GT6_Main) now uses a real neo @Mod(value=gregtech), so its
+# lifecycle (Loader_Fluids/Items/PrefixBlocks/...) is actually driven by the engine. It loads AFTER
+# gregapi_post (the 1.7.10 original GT6_Main.java: dependencies="required-after:"+GAPI_POST).
 [[mods]] #mandatory
 modId="gregtech" #mandatory
 version="${mod_version}" #mandatory
@@ -86,15 +86,15 @@ description='''
 Content of GregTech 6: materials, machines, worldgen, recipes. Part of the GregTech 6 distribution.
 '''
 
-# УЛИКА R7 (доработка): {@code @Mod.depends()} на Java-стороне (gregapi.GT_API/GT_API_Post) НЕ задаёт
-# порядок загрузки — он только фильтрует entrypoint-класс по наличию modId в списке загруженных модов
-# (fml-decompiled net/neoforged/fml/javafmlmod/FMLJavaModLanguageProvider.java:33). Реальный порядок
-# строит {@code ModSorter} (fml-decompiled net/neoforged/fml/loading/ModSorter.java:194-208,
-# {@code addDependency}) из ГРАФА, построенного ИМЕННО из этих {@code [[dependencies.<owner>]]}-секций:
-# {@code ordering="BEFORE"} → ребро owner→target (owner раньше target), {@code ordering="AFTER"} →
-# ребро target→owner (owner позже target). Здесь воспроизведена структурная связь оригинала 1:1
+# Evidence R7: {@code @Mod.depends()} on the Java side (gregapi.GT_API/GT_API_Post) does NOT set the load
+# order — it only filters the entrypoint class by whether the modId is among the loaded mods
+# (fml-decompiled net/neoforged/fml/javafmlmod/FMLJavaModLanguageProvider.java:33). The real order is
+# built by {@code ModSorter} (fml-decompiled net/neoforged/fml/loading/ModSorter.java:194-208,
+# {@code addDependency}) from the GRAPH assembled out of exactly these {@code [[dependencies.<owner>]]}
+# sections: {@code ordering="BEFORE"} gives the edge owner->target (owner first), {@code ordering="AFTER"}
+# gives the edge target->owner (owner later). The structural link of the original is reproduced 1:1 here
 # (gregtech6/.../GT_API.java:109 {@code "required-before:"+GAPI_POST}, GT_API_Post.java:59
-# {@code "required-after:"+GAPI}) — с обеих сторон связки, как в оригинале.
+# {@code "required-after:"+GAPI}) — on both sides of the pair, as in the original.
 [[dependencies.gregapi]]
     modId="gregapi_post"
     type="required"
@@ -109,7 +109,7 @@ Content of GregTech 6: materials, machines, worldgen, recipes. Part of the GregT
     ordering="AFTER"
     side="BOTH"
 
-# GT-мод грузится ПОСЛЕ gregapi_post (ordering=AFTER ⇒ ребро gregapi_post→gregtech в ModSorter).
+# The GT mod loads AFTER gregapi_post (ordering=AFTER gives the edge gregapi_post->gregtech in ModSorter).
 [[dependencies.gregtech]]
     modId="gregapi_post"
     type="required"
@@ -117,8 +117,9 @@ Content of GregTech 6: materials, machines, worldgen, recipes. Part of the GregT
     ordering="AFTER"
     side="BOTH"
 
-# BUG-099: ЕДИНСТВЕННАЯ вставка мода в код движка (F2 — замена coremod-трансформеров Грегориуса).
-# Восстанавливает позицию предмета на сетке крафта, которую движок 26.1.2 отбрасывает до вызова рецепта.
+# BUG-099: the ONLY injection this mod makes into engine code (F2 — the replacement for the original
+# coremod transformers). It restores the position of an item on the crafting grid, which the 26.1.2 engine
+# discards before the recipe is called.
 [[mixins]]
 config="gregapi.mixins.json"
 
@@ -157,15 +158,16 @@ config="gregapi.mixins.json"
     ordering="NONE"
     side="BOTH"
 
-# AE2 — опциональная зависимость слоя совместимости (ADAPT-017…020). ИСТОРИЯ РЕБРА: ordering=AFTER был
-# НЕСУЩИМ, пока remove-файл ae2:has_meteorites жил в ОСНОВНОМ датапаке мода — теги применяются в порядке
-# паков модов (ResourcePackLoader.findResourcePacks -> ModList.getModFiles, LinkedHashMap), файл встаёт по
-# ПЕРВОМУ из своих модов в отсортированном порядке (ModSorter.java:191 — map+distinct), поэтому ребро
-# объявлялось у ВСЕХ ЧЕТЫРЁХ наших модов (с ребром у одного gregtech6 gregapi всплывал раньше ae2 —
-# проверено прогоном). С мастер-ключом ae2/ReplaceMeteoriteGeneration remove-файл переехал в условный
-# встроенный пак ae2replacegen (GT_API.onAddPackFinders, Pack.Position.TOP — выше паков модов независимо
-# от их сортировки), и для тега ребро больше не несущее. Оставлено как страховка: любой БУДУЩИЙ файл
-# data/ae2/** основного пака снова зависел бы от этого порядка, и тогда ребро обязано быть у всех четырёх.
+# AE2 — optional dependency of the compatibility layer (ADAPT-017...020). HISTORY OF THIS EDGE:
+# ordering=AFTER used to be load-bearing while the remove file ae2:has_meteorites lived in the mod's MAIN
+# datapack — tags are applied in mod-pack order (ResourcePackLoader.findResourcePacks ->
+# ModList.getModFiles, LinkedHashMap), and a file takes the place of the FIRST of its mods in the sorted
+# order (ModSorter.java:191 — map+distinct), so the edge had to be declared on ALL FOUR of our mods (with
+# the edge on gregtech6 alone, gregapi surfaced before ae2 — confirmed by a run). With the master key
+# ae2/ReplaceMeteoriteGeneration the remove file moved into the conditional built-in pack ae2replacegen
+# (GT_API.onAddPackFinders, Pack.Position.TOP — above mod packs regardless of their sorting), so for the
+# tag the edge is no longer load-bearing. It is kept as insurance: any FUTURE file under data/ae2/** in the
+# main pack would depend on that order again, and then the edge must be present on all four.
 [[dependencies.${mod_id}]]
     modId="ae2"
     type="optional"
@@ -200,10 +202,10 @@ config="gregapi.mixins.json"
 #[features.${mod_id}]
 #openGLVersion="[3.2,)"
 
-# More Red — опциональная зависимость слоя адаптации. Ребро НЕСУЩЕЕ: адаптация выключает рецепты мода
-# файлами data/morered/recipe/**, а файлы паков применяются в порядке модов, поэтому наш пак обязан идти
-# ПОСЛЕ мода. Ребро объявляется у ВСЕХ ЧЕТЫРЁХ наших модов — порядок определяется первым из них
-# (та же причина, что у зависимости от ae2 выше).
+# More Red — optional dependency of the adaptation layer. This edge IS load-bearing: the adaptation
+# disables the mod's recipes through files under data/morered/recipe/**, and pack files are applied in mod
+# order, so our pack must come AFTER the mod. The edge is declared on ALL FOUR of our mods — the order is
+# decided by the first of them (the same reason as for the ae2 dependency above).
 [[dependencies.${mod_id}]]
     modId="morered"
     type="optional"

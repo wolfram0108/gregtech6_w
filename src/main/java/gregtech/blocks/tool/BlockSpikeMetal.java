@@ -68,16 +68,16 @@ public class BlockSpikeMetal extends BlockBaseSpike {
 	@Override
 	public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {
 		if (aMeta < 8) {
-			aList.add(LH.Chat.ORANGE + "Deals huge Damage to any Slime touching it!");
-			aList.add(LH.Chat.ORANGE + "Does very low Damage to anything else!");
-			aList.add(LH.Chat.ORANGE + "Doesn't work on Skeletons and Iron Golems.");
+			aList.add(LH.Chat.ORANGE + LH.tt("Deals huge Damage to any Slime touching it!"));
+			aList.add(LH.Chat.ORANGE + LH.tt("Does very low Damage to anything else!"));
+			aList.add(LH.Chat.ORANGE + LH.tt("Doesn't work on Skeletons and Iron Golems."));
 		} else {
-			aList.add(LH.Chat.ORANGE + "Deals huge Damage to any Arthropod touching it!");
-			aList.add(LH.Chat.ORANGE + "Does very low Damage to anything else!");
-			aList.add(LH.Chat.ORANGE + "Doesn't work on Skeletons, Slimes and Iron Golems.");
+			aList.add(LH.Chat.ORANGE + LH.tt("Deals huge Damage to any Arthropod touching it!"));
+			aList.add(LH.Chat.ORANGE + LH.tt("Does very low Damage to anything else!"));
+			aList.add(LH.Chat.ORANGE + LH.tt("Doesn't work on Skeletons, Slimes and Iron Golems."));
 		}
 		if ((aMeta & 7) >= 6) {
-			aList.add(LH.Chat.CYAN + "Works in all Directions, but only does half the Wall Spikes Damage!");
+			aList.add(LH.Chat.CYAN + LH.tt("Works in all Directions, but only does half the Wall Spikes Damage!"));
 		}
 	}
 	

@@ -46,41 +46,41 @@ import static gregapi.data.CS.F;
 /**
  * @author Gregorius Techneticies
  *
- * F11-smelting (BUG-023) — этим классом закрыт прежний долг {@link FurnaceRecipes}: ЕДИНСТВЕННАЯ точка входа
- * GT6-плавок в ванильную печь neo. Тот же приём, что {@link GT6CraftingDispatcher} (верстак):
- * neo наполняет {@code RecipeManager} только из датапак-JSON, рантайм-add удалён — GT6 же
- * добавляет/удаляет плавки процедурно ({@code RM.add_smelting} → {@link FurnaceRecipes}, мутабельный
- * 1:1-реестр). ОДИН диспетчер типа {@code RecipeType.SMELTING} перебирает GT6-реестр в
- * {@code matches}/{@code assemble} — печь ({@code AbstractFurnaceBlockEntity.serverTick:170} через
- * {@code quickCheck.getRecipeFor}) находит и исполняет GT6-плавки штатно.
+ * F11-smelting (BUG-023) — this class closes the earlier debt of {@link FurnaceRecipes}: the ONLY entry point of
+ * GT6 smelting recipes into neo's vanilla furnace. The same technique as {@link GT6CraftingDispatcher} (crafting
+ * table): neo fills {@code RecipeManager} only from datapack JSON, runtime add was removed — while GT6
+ * adds/removes smeltings procedurally ({@code RM.add_smelting} -> {@link FurnaceRecipes}, a mutable
+ * 1:1 registry). ONE dispatcher of type {@code RecipeType.SMELTING} scans the GT6 registry in
+ * {@code matches}/{@code assemble} — the furnace ({@code AbstractFurnaceBlockEntity.serverTick:170} via
+ * {@code quickCheck.getRecipeFor}) finds and executes GT6 smeltings normally.
  *
- * <p>Ингредиент-витрина строится в конструкторе из ключей GT6-реестра (к моменту загрузки рецептов
- * data-init уже прошёл; клиентская копия рецепта строит её от клиентского реестра — GT6 наполняет
- * обе стороны): её единственные потребители — {@code RecipePropertySet.FURNACE_INPUT}
- * (shift-click-гейт меню печи, {@code AbstractFurnaceMenu.canSmelt:141} — статический СЕТ item'ов,
- * собирается {@code Ingredient::items} на reload) и витрина книги рецептов. Сама плавка судится
- * только {@code matches} (точный {@code ST.equal} с wildcard, как 1.7.10).</p>
+ * <p>The ingredient showcase is built in the constructor from the GT6 registry's keys (by the time recipes load,
+ * data-init has already run; the client-side copy of the recipe builds it from the client registry — GT6 fills
+ * both sides): its only consumers are {@code RecipePropertySet.FURNACE_INPUT}
+ * (the furnace menu's shift-click gate, {@code AbstractFurnaceMenu.canSmelt:141} — a static SET of items,
+ * assembled by {@code Ingredient::items} on reload) and the recipe book's display. The actual smelting is judged
+ * only by {@code matches} (an exact {@code ST.equal} with wildcard, as in 1.7.10).</p>
  *
- * <p>XP печи в neo — поле рецепта ({@code experience()}), не функция входа. Решение (б′), 2026-07-30:
- * диспетчеров несколько — ЭКЗЕМПЛЯР НА КЛАСС ОПЫТА (поле {@code xp} в json), {@code matches} экземпляра
- * пускает только записи, чей опыт по правилу 1.7.10 ({@code FurnaceRecipes.func_151398_b}: хук
- * предмета-результата перекрывает карту) равен его классу — печь сама находит диспетчер с верным
- * {@code experience()}. Экземпляр xp=0 — ДЕФОЛТ: берёт и классы, не покрытые ни одним json
- * ({@code KNOWN_XP}), с предупреждением в лог (экзотический XP стороннего вызова add_smelting → плавка
- * работает, опыт 0 — как до (б′)). Приём, реестр, ленивость и мутабельность — без изменений.</p>
+ * <p>Furnace XP in neo is a recipe field ({@code experience()}), not an input function. Decision (b'), 2026-07-30:
+ * there are several dispatchers — ONE INSTANCE PER XP CLASS (the {@code xp} field in json), an instance's
+ * {@code matches} only lets through entries whose experience, by the 1.7.10 rule ({@code FurnaceRecipes.func_151398_b}:
+ * the result-item hook overrides the map), equals its own class — the furnace finds the right dispatcher by its
+ * {@code experience()} on its own. The xp=0 instance is the DEFAULT: it also takes classes not covered by any json
+ * ({@code KNOWN_XP}), with a log warning (an exotic XP from a third-party add_smelting call -> smelting still
+ * works, XP is 0 — same as before (b')). The technique, the registry, the laziness and the mutability are unchanged.</p>
  *
- * <p>Отклонение-форс движка (видимо): коптильня/домна ({@code SmokerRecipes}/{@code BlastFurnaceRecipes})
- * — ветка {@code MD.EtFu} (не загружен) = 1:1 поведение 1.7.10 без EtFu; их проброс — при F10-compat.</p>
+ * <p>A visible engine-forced deviation: the smoker/blast furnace ({@code SmokerRecipes}/{@code BlastFurnaceRecipes})
+ * — the {@code MD.EtFu} branch (not loaded) = the 1:1 1.7.10 behavior without EtFu; wiring them up is deferred to F10-compat.</p>
  *
- * <p><b>Крах-класс, контракт типа.</b> Предок — именно {@link net.minecraft.world.item.crafting.SmeltingRecipe},
- * не {@code AbstractCookingRecipe}: {@code RecipeType.SMELTING} ТИПИЗИРОВАН конкретным классом
- * ({@code RecipeType.java:9} — {@code RecipeType<SmeltingRecipe> SMELTING}), поэтому любой потребитель, берущий
- * рецепт по этому типу через generic, получает от компилятора {@code checkcast} к {@code SmeltingRecipe}.
- * Потребитель, ронявший сервер, — лут-функция «выплавить дроп» ({@code SmeltItemFunction.java:41}, животное
- * сгорело в лаве): {@code Optional<RecipeHolder<SmeltingRecipe>> = getRecipeFor(RecipeType.SMELTING, …)} →
- * {@code ClassCastException} на прежнем предке {@code AbstractCookingRecipe}. Второго плеча-моста (выход без
- * контейнера) здесь не требуется: та же лут-функция в 26.1.2 читает выход через {@code assemble(input)}
- * с контейнером ({@code SmeltItemFunction.java:41-43}), а не отдельным беcконтекстным геттером, как в 1.20.1.</p>
+ * <p><b>Crash class, type contract.</b> The parent class is specifically {@link net.minecraft.world.item.crafting.SmeltingRecipe},
+ * not {@code AbstractCookingRecipe}: {@code RecipeType.SMELTING} is TYPED to a concrete class
+ * ({@code RecipeType.java:9} — {@code RecipeType<SmeltingRecipe> SMELTING}), so any consumer that fetches a
+ * recipe by this type through a generic gets a compiler-inserted {@code checkcast} to {@code SmeltingRecipe}.
+ * The consumer that used to crash the server was the "smelt the drop" loot function ({@code SmeltItemFunction.java:41},
+ * an animal that burned in lava): {@code Optional<RecipeHolder<SmeltingRecipe>> = getRecipeFor(RecipeType.SMELTING, ...)} ->
+ * a {@code ClassCastException} against the previous parent {@code AbstractCookingRecipe}. A second bridge arm (an
+ * output without a container) is not needed here: in 26.1.2 the same loot function reads the output via
+ * {@code assemble(input)} with a container ({@code SmeltItemFunction.java:41-43}), not a separate contextless getter as in 1.20.1.</p>
  */
 public final class GT6SmeltingDispatcher extends net.minecraft.world.item.crafting.SmeltingRecipe {
 	public static final MapCodec<GT6SmeltingDispatcher> CODEC = com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec(i -> i.group(
@@ -94,33 +94,34 @@ public final class GT6SmeltingDispatcher extends net.minecraft.world.item.crafti
 
 	public static final RecipeSerializer<GT6SmeltingDispatcher> SERIALIZER = new RecipeSerializer<>(CODEC, STREAM_CODEC);
 
-	/** Классы опыта, покрытые СВОИМ экземпляром (json с xp > 0); наполняется конструкторами при парсе
-	 *  датапака (обе стороны парсят свои копии), дефолт-экземпляр (xp=0) берёт всё непокрытое. */
+	/** XP classes covered by their OWN instance (a json with xp > 0); filled by constructors while parsing the
+	 *  datapack (both sides parse their own copies), the default instance (xp=0) takes everything uncovered. */
 	private static final java.util.Set<Float> KNOWN_XP = java.util.concurrent.ConcurrentHashMap.newKeySet();
-	/** Один warning на незнакомое значение, не флуд. */
+	/** One warning per unfamiliar value, not a flood. */
 	private static final java.util.Set<Float> WARNED_XP = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
 	public GT6SmeltingDispatcher() {this(0.0F);}
 
 	public GT6SmeltingDispatcher(float aExperience) {
-		// cookingTime 200 = ванильная печь 1.7.10 (фиксированные 200 тиков на плавку); XP — класс опыта экземпляра.
-		// result-шаблон — только витрина (AIR запрещён движком: «Item must be non-empty»); реальный выход всегда из assemble.
-		// ingredient-плейсхолдер: реальная витрина — ЛЕНИВЫЙ override input() ниже (конструктор зовётся при парсе
-		// датапака ДО GT6 data-init (runDeferredItemInit на server-start) — реестр плавок в этот момент ещё пуст).
+		// cookingTime 200 = the 1.7.10 vanilla furnace (a fixed 200 ticks per smelt); XP is the instance's XP class.
+		// The result template is display-only (the engine forbids AIR: "Item must be non-empty"); the real output always comes from assemble.
+		// The ingredient placeholder: the real showcase is the LAZY input() override below (the constructor is called
+		// while parsing the datapack, BEFORE GT6 data-init (runDeferredItemInit on server-start) — the smelting registry is still empty at this point).
 		super(new Recipe.CommonInfo(F), new AbstractCookingRecipe.CookingBookInfo(CookingBookCategory.MISC, ""), Ingredient.of(Items.BARRIER), new ItemStackTemplate(Items.FURNACE), aExperience, 200);
 		if (aExperience > 0) KNOWN_XP.add(aExperience);
 	}
 
-	/** Ингредиент-витрина из ключей GT6-реестра, собирается НА КАЖДЫЙ запрос (ревизия захода №4 п.4: без
-	 *  кэш-эвристики — вызовы редки: propertySet-extractor {@code RecipeManager.forSingleInput:256} на reload,
-	 *  display книги; placementInfo кэшируется движком). Отклонение-форс движка: {@code RecipePropertySet}
-	 *  (shift-click-гейт) собирается на reload рецептов, который на ПЕРВОМ старте идёт до data-init → гейт слеп до
-	 *  следующей пересборки рецептов; ручная укладка в печь и сама плавка ({@code matches} live-lookup'ом) работают всегда. */
+	/** The ingredient showcase from the GT6 registry's keys, assembled ON EVERY request (checkpoint #4 item 4
+	 *  review: no cache heuristic — calls are rare: the propertySet extractor {@code RecipeManager.forSingleInput:256}
+	 *  on reload, the recipe book display; placementInfo is cached by the engine). An engine-forced deviation:
+	 *  {@code RecipePropertySet} (the shift-click gate) is assembled on the recipe reload that, on the FIRST start,
+	 *  runs before data-init -> the gate stays blind until the next recipe rebuild; manually placing into the furnace
+	 *  and the actual smelting (via {@code matches}'s live lookup) always work. */
 	@Override public Ingredient input() {
 		java.util.LinkedHashSet<Item> tItems = new java.util.LinkedHashSet<>();
 		for (ItemStack tKey : FurnaceRecipes.smelting().getSmeltingList().keySet()) if (!tKey.isEmpty()) tItems.add(tKey.getItem());
 		if (tItems.isEmpty()) {
-			ERR.println("[GT6] GT6SmeltingDispatcher: реестр FurnaceRecipes пуст при запросе ингредиент-витрины (до data-init — штатно на первом reload)");
+			ERR.println("[GT6] GT6SmeltingDispatcher: the FurnaceRecipes registry is empty when the ingredient showcase was requested (before data-init — normal on the first reload)");
 			return Ingredient.of(Items.BARRIER);
 		}
 		return Ingredient.of(tItems.stream());
@@ -129,17 +130,17 @@ public final class GT6SmeltingDispatcher extends net.minecraft.world.item.crafti
 	@Override public boolean matches(SingleRecipeInput aInput, Level aLevel) {
 		ItemStack tResult = FurnaceRecipes.smelting().getSmeltingResult(aInput.item());
 		if (!ST.valid(tResult)) return F;
-		// класс опыта записи — по правилу 1.7.10 (хук результата перекрывает карту); каждый экземпляр берёт
-		// только СВОЙ класс, дефолт (xp=0) — нулевой и все непокрытые json'ами (экзотика → 0 + один warning)
+		// the entry's XP class — by the 1.7.10 rule (the result hook overrides the map); each instance only takes
+		// ITS OWN class, the default (xp=0) takes zero plus everything not covered by a json (exotic -> 0 + one warning)
 		float tXP = FurnaceRecipes.smelting().func_151398_b(tResult);
 		float tMine = experience();
 		if (tMine > 0) return tXP == tMine;
-		if (tXP != 0.0F && !KNOWN_XP.contains(tXP) && WARNED_XP.add(tXP)) ERR.println("[GT6] GT6SmeltingDispatcher: класс опыта " + tXP + " не покрыт экземпляром (json) — плавка работает, опыт выдаётся 0");
+		if (tXP != 0.0F && !KNOWN_XP.contains(tXP) && WARNED_XP.add(tXP)) ERR.println("[GT6] GT6SmeltingDispatcher: XP class " + tXP + " is not covered by an instance (json) — smelting still works, XP is given as 0");
 		return tXP == 0.0F || !KNOWN_XP.contains(tXP);
 	}
 
 	@Override public ItemStack assemble(SingleRecipeInput aInput) {
-		// реестр хранит ЖИВОЙ выход-стек — наружу только копия (печь мутирует результат при burn/стаковке)
+		// the registry holds the LIVE output stack — only a copy ever leaves it (the furnace mutates the result on burn/stacking)
 		ItemStack tResult = FurnaceRecipes.smelting().getSmeltingResult(aInput.item());
 		return ST.valid(tResult) ? ST.copy(tResult) : ItemStack.EMPTY;
 	}
@@ -148,12 +149,12 @@ public final class GT6SmeltingDispatcher extends net.minecraft.world.item.crafti
 		return Items.FURNACE;
 	}
 
-	// Крах-класс, продолжение: SmeltingRecipe.getSerializer() (в отличие от предка AbstractCookingRecipe) сужает
-	// возврат БЕЗ wildcard — RecipeSerializer<SmeltingRecipe> — генерики инвариантны, поэтому переопределение здесь
-	// обязано вернуть РОВНО этот тип (RecipeSerializer<GT6SmeltingDispatcher> движок отвергает: не подтип). Поле
-	// SERIALIZER остаётся RecipeSerializer<GT6SmeltingDispatcher> — им же пользуется DeferredRegister-регистрация
-	// (GT6CraftingDispatcher.SERIALIZERS.register); каст безопасен — стирание типов, тот же объект, реальный T рецепта
-	// остаётся GT6SmeltingDispatcher (extends SmeltingRecipe), кодек/стрим-кодек читают и пишут ровно его.
+	// Crash class, continued: SmeltingRecipe.getSerializer() (unlike the AbstractCookingRecipe parent) narrows the
+	// return type WITHOUT a wildcard — RecipeSerializer<SmeltingRecipe> — generics are invariant, so the override
+	// here must return EXACTLY that type (the engine rejects RecipeSerializer<GT6SmeltingDispatcher>: not a subtype).
+	// The SERIALIZER field stays RecipeSerializer<GT6SmeltingDispatcher> — the same one the DeferredRegister
+	// registration uses (GT6CraftingDispatcher.SERIALIZERS.register); the cast is safe — type erasure, the same
+	// object, the recipe's real T remains GT6SmeltingDispatcher (extends SmeltingRecipe), and the codec/stream codec read and write exactly that.
 	@SuppressWarnings("unchecked")
 	@Override public RecipeSerializer<net.minecraft.world.item.crafting.SmeltingRecipe> getSerializer() {
 		return (RecipeSerializer<net.minecraft.world.item.crafting.SmeltingRecipe>)(RecipeSerializer<?>) SERIALIZER;
@@ -164,6 +165,6 @@ public final class GT6SmeltingDispatcher extends net.minecraft.world.item.crafti
 	}
 
 	@Override public net.minecraft.world.item.crafting.RecipeBookCategory recipeBookCategory() {
-		return net.minecraft.world.item.crafting.RecipeBookCategories.FURNACE_MISC; // как SmeltingRecipe при category()=MISC (SmeltingRecipe.java:46)
+		return net.minecraft.world.item.crafting.RecipeBookCategories.FURNACE_MISC; // matches SmeltingRecipe when category()=MISC (SmeltingRecipe.java:46)
 	}
 }

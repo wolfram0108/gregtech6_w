@@ -190,21 +190,21 @@ public abstract class MultiTileEntityReactorCore extends TileEntityBase10FacingD
 		if (aTool.equals(TOOL_softhammer)) {
 			mStopped = !mStopped;
 			if (aChatReturn != null) {
-				aChatReturn.add(mStopped?"Reactor Block is OFF":"Reactor Block is ON");
+				aChatReturn.add(mStopped?LH.tt("Reactor Block is OFF"):LH.tt("Reactor Block is ON"));
 			}
 			return 10000;
 		}
 		if (aTool.equals(TOOL_thermometer)) {
 			if (aChatReturn != null) {
-				aChatReturn.add("Heat Levels: " + (oEnergy <= 0 ? "None" : oEnergy + " HU"));
+				aChatReturn.add(LH.tt("Heat Levels: ") + (oEnergy <= 0 ? LH.tt("None") : oEnergy + LH.tt(" HU")));
 			}
 			return 10000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
-				aChatReturn.add("Input: "  + mTanks[0].content());
-				aChatReturn.add("Output: " + mTanks[1].content());
-				aChatReturn.add(mStopped?"Reactor Block is OFF":"Reactor Block is ON");
+				aChatReturn.add(LH.tt("Input: ")  + mTanks[0].content());
+				aChatReturn.add(LH.tt("Output: ") + mTanks[1].content());
+				aChatReturn.add(mStopped?LH.tt("Reactor Block is OFF"):LH.tt("Reactor Block is ON"));
 			}
 			return 1;
 		}

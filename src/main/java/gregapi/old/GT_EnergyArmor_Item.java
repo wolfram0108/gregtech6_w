@@ -48,28 +48,28 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 
 /**
- * F13 (документация neo item/armor-компонентной модели): было {@code extends ItemArmor} (1.7.10, armorType/renderIndex
- * ctor-параметры + мутаторы setMaxStackSize/setMaxDamage/setNoRepair/setUnlocalizedName) — ItemArmor не существует
- * в 26.1.2 (0 в 3 корнях референса), тот же приём, что уже принят в {@code gregapi.item.ItemArmorBase} (см. этот
- * файл): {@code Item.Properties.humanoidArmor(ArmorMaterial,ArmorType)} + {@code .durability}/{@code .repairable}
- * собранные ДО {@code super()} в {@link #makeProperties}, mName-поле вместо мутируемого unlocalizedName.
+ * F13 (docs for the neo item/armor component model): was {@code extends ItemArmor} (1.7.10, armorType/renderIndex
+ * ctor params + mutators setMaxStackSize/setMaxDamage/setNoRepair/setUnlocalizedName) — ItemArmor does not exist
+ * in 26.1.2 (0 in the 3 reference roots), the same approach already adopted in {@code gregapi.item.ItemArmorBase} (see this
+ * file): {@code Item.Properties.humanoidArmor(ArmorMaterial,ArmorType)} + {@code .durability}/{@code .repairable}
+ * assembled BEFORE {@code super()} in {@link #makeProperties}, mName field instead of the mutable unlocalizedName.
  */
 public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 	public int mCharge, mTransfer, mTier, mDamageEnergyCost, mSpecials;
 	public boolean mChargeProvider;
 	public double mArmorAbsorbtionPercentage;
 	protected final String mName;
-	/** Было унаследованное поле {@code ItemArmor.armorType} (0=helmet,1=chest,2=legs,3=boots) — своё поле, та же семантика. */
+	/** Was the inherited field {@code ItemArmor.armorType} (0=helmet,1=chest,2=legs,3=boots) — now its own field, same semantics. */
 	protected final int mArmorType;
-	/** Было {@code armorInventory[0..3]} (1.7.10 boots/leggings/chest/helmet) — {@code EquipmentSlot[]}, тот же
-	 *  порядок FEET/LEGS/CHEST/HEAD, что уже принят центром брони (gregapi/GT_API_Proxy.java:1002). */
+	/** Was {@code armorInventory[0..3]} (1.7.10 boots/leggings/chest/helmet) — {@code EquipmentSlot[]}, the same
+	 *  FEET/LEGS/CHEST/HEAD order already adopted by the armor center (gregapi/GT_API_Proxy.java:1002). */
 	private static final EquipmentSlot[] ARMOR_SLOTS = {EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD};
 
 //  public static Map jumpChargeMap = new HashMap<>();
 
 	public GT_EnergyArmor_Item(int aID, String aUnlocalized, String aEnglish, int aCharge, int aTransfer, int aTier, int aDamageEnergyCost, int aSpecials, double aArmorAbsorbtionPercentage, boolean aChargeProvider, int aType, int aArmorIndex) {
-		// aArmorIndex (было renderIndex, 1.7.10 ItemArmor 2й ctor-параметр) — не имеет neo-эквивалента (рендер-модель
-		// теперь EquipmentAssets/ResourceKey, не числовой индекс), не используется, как и раньше не влиял на логику.
+		// aArmorIndex (was renderIndex, 1.7.10 ItemArmor 2nd ctor param) — has no neo equivalent (the render model
+		// is now EquipmentAssets/ResourceKey, not a numeric index), unused, same as before it never affected logic.
 		super(makeProperties(aType));
 		mName = aUnlocalized;
 		mArmorType = aType;
@@ -86,13 +86,13 @@ public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 		NeoForge.EVENT_BUS.register(this);
 	}
 
-	/** F13: собирает Properties ДО super() — durability/repair/humanoid-armor одним центром, тем же приёмом, что
+	/** F13: assembles Properties BEFORE super() — durability/repair/humanoid-armor in one center, the same approach as
 	 *  {@link gregapi.item.ItemArmorBase#makeProperties} (Item.Properties#humanoidArmor, Item.java:579). */
 	private static Item.Properties makeProperties(int aArmorType) {
 		return new Item.Properties()
-			.humanoidArmor(ArmorMaterials.DIAMOND, armorTypeFor(aArmorType)) // было ArmorMaterial.DIAMOND (1.7.10 enum) -> neo ArmorMaterials.DIAMOND (ArmorMaterials.java:24)
-			.durability(100) // было setMaxDamage(100); .durability() тоже даёт stacksTo(1), покрывает setMaxStackSize(1) (Item.java:440-444)
-			// было setNoRepair() — пустой (никогда не заполняемый) repair-тег даёт тот же эффект по следствию, приём ItemArmorBase.java:130-133
+			.humanoidArmor(ArmorMaterials.DIAMOND, armorTypeFor(aArmorType)) // was ArmorMaterial.DIAMOND (1.7.10 enum) -> neo ArmorMaterials.DIAMOND (ArmorMaterials.java:24)
+			.durability(100) // was setMaxDamage(100); .durability() also gives stacksTo(1), covers setMaxStackSize(1) (Item.java:440-444)
+			// was setNoRepair() — an empty (never populated) repair tag gives the same effect as a consequence, approach from ItemArmorBase.java:130-133
 			.repairable(TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(ModIDs.GT, "repair/none")));
 	}
 
@@ -107,48 +107,48 @@ public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 	}
 
 	public final String getUnlocalizedName() {return mName;}
-	public final Item setUnlocalizedName(String aName) {return this;} // было мутатором 1.7.10 Item; имя теперь неизменяемо через mName, приём ItemBase.java:125
+	public final Item setUnlocalizedName(String aName) {return this;} // was a mutator on the 1.7.10 Item; the name is now immutable via mName, approach from ItemBase.java:125
 
 	// @Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {
-		ItemStack tStack = aPlayer.getItemBySlot(ARMOR_SLOTS[3-mArmorType]); // было armorInventory[3-armorType] (F15: getItemBySlot никогда не null, EMPTY вместо)
+		ItemStack tStack = aPlayer.getItemBySlot(ARMOR_SLOTS[3-mArmorType]); // was armorInventory[3-armorType] (F15: getItemBySlot never null, EMPTY instead)
 		if (!tStack.isEmpty()) {
 			for (int i = 0; i < 9; i++) {
 				if (aPlayer.getInventory().getItem(i) == aStack) {
-					aPlayer.setItemSlot(ARMOR_SLOTS[3-mArmorType], aPlayer.getInventory().getItem(i)); // было armorInventory[3-armorType] = mainInventory[i] -> LivingEntity.setItemSlot (LivingEntity.java:2329)
+					aPlayer.setItemSlot(ARMOR_SLOTS[3-mArmorType], aPlayer.getInventory().getItem(i)); // was armorInventory[3-armorType] = mainInventory[i] -> LivingEntity.setItemSlot (LivingEntity.java:2329)
 					aPlayer.getInventory().setItem(i, tStack);
 					return tStack;
 				}
 			}
 		}
-		// F-item-use dead-interface: neo Item не объявляет onItemRightClick (use() — новый контракт), старый super-вызов мёртв.
-		// Честный фолбэк: возврат стека без изменений (как если бы подходящий слот не нашёлся).
+		// F-item-use dead-interface: neo Item does not declare onItemRightClick (use() is the new contract), the old super call is dead.
+		// Honest fallback: return the stack unchanged (as if no matching slot was found).
 		return aStack;
 	}
 	
 	// @Override
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было this.itemIcon=aIconRegister.registerIcon(...) — и поле Item.itemIcon,
-	// и IIconRegister удалены в 26.1.2 целиком (тот же класс проблемы, что ItemBase.java:131/getSubItems ниже в этом
-	// файле, уже сведённый к no-op); замены нет до Фазы C.
-	// F3-render: param был IIconRegister (removed-класс в сигнатуре ломает перечисление методов в GT6ItemModel.resolveIcon
-	// → NoClassDefFoundError → предмет не рисуется) → Object. Тело no-op (icon-load-фаза 1.7.10 в neo не портирована).
+	// F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo calls): was this.itemIcon=aIconRegister.registerIcon(...) — both the Item.itemIcon field
+	// and IIconRegister are removed entirely in 26.1.2 (same bug class as ItemBase.java:131/getSubItems below in this
+	// file, already reduced to a no-op); no replacement until Phase C.
+	// F3-render: the param was IIconRegister (a removed class in the signature breaks method enumeration in GT6ItemModel.resolveIcon
+	// -> NoClassDefFoundError -> the item does not render) -> Object. No-op body (the 1.7.10 icon-load phase is not ported to neo).
 	public void registerIcons(Object aIconRegister) {/**/}
 	
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
-		aList.add("Tier: " + mTier);
-		if ((mSpecials &    1) != 0) aList.add("Rebreather");
-		if ((mSpecials &    2) != 0) aList.add("Inertia Damper");
-		if ((mSpecials &    4) != 0) aList.add("Food Replicator");
-		if ((mSpecials &    8) != 0) aList.add("Medicine Module");
-		if ((mSpecials &   16) != 0) aList.add("Lamp");
-		if ((mSpecials &   32) != 0) aList.add("Solarpanel");
-		if ((mSpecials &   64) != 0) aList.add("Extinguisher Module");
-		if ((mSpecials &  128) != 0) aList.add("Jump Booster");
-		if ((mSpecials &  256) != 0) aList.add("Speed Booster");
-		if ((mSpecials &  512) != 0) aList.add("Invisibility Field");
-		if ((mSpecials & 1024) != 0) aList.add("Infinite Charge");
+		aList.add(LH.tt("Tier: ") + mTier);
+		if ((mSpecials &    1) != 0) aList.add(LH.tt("Rebreather"));
+		if ((mSpecials &    2) != 0) aList.add(LH.tt("Inertia Damper"));
+		if ((mSpecials &    4) != 0) aList.add(LH.tt("Food Replicator"));
+		if ((mSpecials &    8) != 0) aList.add(LH.tt("Medicine Module"));
+		if ((mSpecials &   16) != 0) aList.add(LH.tt("Lamp"));
+		if ((mSpecials &   32) != 0) aList.add(LH.tt("Solarpanel"));
+		if ((mSpecials &   64) != 0) aList.add(LH.tt("Extinguisher Module"));
+		if ((mSpecials &  128) != 0) aList.add(LH.tt("Jump Booster"));
+		if ((mSpecials &  256) != 0) aList.add(LH.tt("Speed Booster"));
+		if ((mSpecials &  512) != 0) aList.add(LH.tt("Invisibility Field"));
+		if ((mSpecials & 1024) != 0) aList.add(LH.tt("Infinite Charge"));
 	}
 	
 	private static void setCharge(ItemStack aStack) {

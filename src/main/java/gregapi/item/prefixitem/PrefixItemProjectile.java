@@ -75,7 +75,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		mSpeedMultiplier = aSpeedMultiplier;
 		mStabbing = aStabbing;
 		mIsBullet = aIsBullet;
-		if (aDispensable) DispenserBlock.registerBehavior(this, new MetaItemDispense()); // было dispenseBehaviorRegistry.putObject (DispenserBlock.java:61)
+		if (aDispensable) DispenserBlock.registerBehavior(this, new MetaItemDispense()); // was dispenseBehaviorRegistry.putObject (DispenserBlock.java:61)
 	}
 	
 	@Override
@@ -84,7 +84,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		if (mIsBullet) {
 			OreDictMaterial tMat = getMaterial(ST.meta(aStack));
 			int tDamage = (int)((tMat == null ? 1.0 : tMat.getWeight(getPrefix(ST.meta(aStack)).mAmount) / 50.0) * 2.0F * TFC_DAMAGE_MULTIPLIER)+1;
-			aList.add(LH.Chat.WHITE + "Bullet Damage: " + LH.Chat.RED + tDamage/2.0F + (TFC_DAMAGE_MULTIPLIER>1?"":" Hearts"));
+			aList.add(LH.Chat.WHITE + LH.tt("Bullet Damage: ") + LH.Chat.RED + tDamage/2.0F + (TFC_DAMAGE_MULTIPLIER>1?"":LH.tt(" Hearts")));
 		}
 		super.addInformation(aStack, aPlayer, aList, aF3_H);
 	}
@@ -145,8 +145,8 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 			CompoundTag tNBT = UT.NBT.getOrCreate(aStack);
 			if (!tNBT.getBoolean("gt.u").orElse(false)) {
 				tNBT.putBoolean("gt.u", T);
-				// F8: getOrCreate → detached-копия; коммитим флаг "gt.u" ДО addEnchantment, иначе он не
-				// долетит до стека и энчанты будут добавляться повторно (см. ItemNBT.java, паттерн Behavior_Arrow).
+				// F8: getOrCreate -> a detached copy; commit the "gt.u" flag BEFORE addEnchantment, otherwise it will not
+				// reach the stack and enchantments will keep being added repeatedly (see ItemNBT.java, the Behavior_Arrow pattern).
 				UT.NBT.set(aStack, tNBT);
 				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : mMaterialList[aMetaData].mEnchantmentAmmo) {
 					UT.NBT.addEnchantment(aStack, tEnchantment.mObject, tEnchantment.mObject == Enchantments.LOOTING ? tEnchantment.mAmount * mLootingMultiplier : tEnchantment.mAmount);
@@ -158,12 +158,12 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 	public ItemStack onDispense(BlockSource aSource, ItemStack aStack) {
 		Level aWorld = aSource.level();
 		Position tPosition = DispenserBlock.getDispensePosition(aSource);
-		Direction tFacing = aSource.state().getValue(DispenserBlock.FACING); // было func_149937_b(getBlockMetadata()) -> BlockSource.state()/DispenserBlock.FACING, приём ItemArmorBase.java:187
-		EntityProjectile tProjectile = getProjectile(mProjectileType, aStack, aWorld, tPosition.x(), tPosition.y(), tPosition.z()); // было Position.getX/getY/getZ() -> x()/y()/z() (Position.java:4-8)
+		Direction tFacing = aSource.state().getValue(DispenserBlock.FACING); // was func_149937_b(getBlockMetadata()) -> BlockSource.state()/DispenserBlock.FACING, approach from ItemArmorBase.java:187
+		EntityProjectile tProjectile = getProjectile(mProjectileType, aStack, aWorld, tPosition.x(), tPosition.y(), tPosition.z()); // was Position.getX/getY/getZ() -> x()/y()/z() (Position.java:4-8)
 		if (tProjectile != null) {
-			tProjectile.shoot(tFacing.getStepX(), (tFacing.getStepY() + 0.1F), tFacing.getStepZ(), mSpeedMultiplier * 1.10F, mPrecision); // было setThrowableHeading(...)/Direction.getFrontOffsetX|Y|Z() -> Projectile.shoot(double,double,double,float,float) (Projectile.java:141), Direction.getStepX|Y|Z() (Direction.java:247-255)
+			tProjectile.shoot(tFacing.getStepX(), (tFacing.getStepY() + 0.1F), tFacing.getStepZ(), mSpeedMultiplier * 1.10F, mPrecision); // was setThrowableHeading(...)/Direction.getFrontOffsetX|Y|Z() -> Projectile.shoot(double,double,double,float,float) (Projectile.java:141), Direction.getStepX|Y|Z() (Direction.java:247-255)
 			tProjectile.setProjectileStack(ST.amount(1, aStack));
-			tProjectile.pickup = AbstractArrow.Pickup.ALLOWED; // было canBePickedUp=1 (int tri-state) -> AbstractArrow.Pickup enum, ALLOWED==ordinal 1 (AbstractArrow.java:72,746-749, LEGACY_CODEC подтверждает byOrdinal-соответствие)
+			tProjectile.pickup = AbstractArrow.Pickup.ALLOWED; // was canBePickedUp=1 (int tri-state) -> AbstractArrow.Pickup enum, ALLOWED==ordinal 1 (AbstractArrow.java:72,746-749, LEGACY_CODEC confirms the byOrdinal correspondence)
 			aWorld.addFreshEntity(tProjectile);
 			if (aStack.getCount() < 100) aStack.setCount(aStack.getCount()-1);
 			return aStack;
@@ -173,14 +173,14 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		Direction enumfacing = aSource.state().getValue(DispenserBlock.FACING);
 		Position iposition = DispenserBlock.getDispensePosition(aSource);
 		ItemStack itemstack1 = aStack.split(1);
-		DefaultDispenseItemBehavior.spawnItem(aSource.level(), itemstack1, 6, enumfacing, iposition); // было doDispense -> spawnItem (DefaultDispenseItemBehavior.java:30)
+		DefaultDispenseItemBehavior.spawnItem(aSource.level(), itemstack1, 6, enumfacing, iposition); // was doDispense -> spawnItem (DefaultDispenseItemBehavior.java:30)
 		return aStack;
 	}
 
-	/** F13 (документация neo item/armor-компонентной модели): было {@code extends BehaviorProjectileDispense} с
-	 *  {@code getProjectileEntity(...)→null} (1.7.10, dead code) — neo {@code ProjectileDispenseBehavior} требует
-	 *  реального {@code ProjectileItem} в конструкторе (ProjectileDispenseBehavior.java:16), этот Item им не
-	 *  является — сведено к {@code DefaultDispenseItemBehavior}, приём уже принят {@code ItemArmorBase.java:203-208}. */
+	/** F13 (docs for the neo item/armor component model): was {@code extends BehaviorProjectileDispense} with
+	 *  {@code getProjectileEntity(...)→null} (1.7.10, dead code) — the neo {@code ProjectileDispenseBehavior} requires
+	 *  a real {@code ProjectileItem} in the constructor (ProjectileDispenseBehavior.java:16), and this Item is not
+	 *  one — reduced to {@code DefaultDispenseItemBehavior}, an approach already adopted by {@code ItemArmorBase.java:203-208}. */
 	public static class MetaItemDispense extends DefaultDispenseItemBehavior {
 		@Override
 		protected ItemStack execute(BlockSource aSource, ItemStack aStack) {return ((PrefixItemProjectile)aStack.getItem()).onDispense(aSource, aStack);}

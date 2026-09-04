@@ -1002,37 +1002,37 @@ public class Loader_Recipes_Vanilla implements Runnable {
 	}
 
 	/**
-	 * ADAPT-014 — МЕДНЫЙ ВЕК 26.1.2 ПИТАЕТСЯ ГРЕГСКОЙ МЕДЬЮ.
+	 * ADAPT-014 — THE 26.1.2 COPPER AGE RUNS ON GREGORIUS'S COPPER.
 	 *
-	 * <p><b>Чего не было в 1.7.10.</b> Меди в ванили 1.7.10 не существовало вовсе (её нет в
-	 * {@code net/minecraft/init/Items.java}). В 26.1.2 это 93 блока: окисление, воск, срез, решётка,
-	 * лампа, сундук, статуя медного голема, плюс инструменты и броня.
+	 * <p><b>What 1.7.10 did not have.</b> Copper did not exist in 1.7.10 vanilla at all (it is absent from
+	 * {@code net/minecraft/init/Items.java}). In 26.1.2 it is 93 blocks: oxidation, wax, cut, grate,
+	 * lamp, chest, the copper golem statue, plus tools and armor.
 	 *
-	 * <p><b>Приём — авторский.</b> Когда медь приходила к Грегориусу через мод-бэкпорт, он оставлял
-	 * ЧУЖОЙ блок, снимал его ванильный рецепт и выдавал свой из «любой меди»:
+	 * <p><b>The technique is the author's own.</b> When copper arrived for Gregorius via a mod backport, he kept
+	 * the FOREIGN block, stripped its vanilla recipe, and gave out his own from "any copper":
 	 * {@code Compat_Recipes_Ganys.java:118} {@code CR.remove(IL.EtFu_Block_Copper.get(1))},
-	 * {@code :121-122} {@code CR.shaped(..., 'X', OP.ingot.dat(ANY.Cu))}. Здесь то же самое,
-	 * применённое к ванили 26.1.2, где эти блоки стали ванильными.
+	 * {@code :121-122} {@code CR.shaped(..., 'X', OP.ingot.dat(ANY.Cu))}. Here the same thing is
+	 * applied to 26.1.2 vanilla, where these blocks became vanilla themselves.
 	 *
-	 * <p><b>Канон сохраняется.</b> Ванильная генерация руд удалена биом-модификатором
-	 * ({@code remove_vanilla_ores_overworld.json}, включая {@code ore_copper}); медь GT6 добывается
-	 * только переработкой минералов с дробным выходом ({@code MT.java:3806} Chalcopyrite {@code 2*U9},
-	 * {@code :3811} Tetrahedrite {@code U4}, {@code :3847} Malachite {@code U6}). Ванильный слиток меди
-	 * в обращение НЕ вводится: цель унификации {@code OP.ingot + MT.Cu} на {@code minecraft:copper_ingot}
-	 * не ставится, а все рецепты, которые его требовали, переведены на {@code ANY.Cu} —
-	 * «любая медь» ({@code ANY.java:125}: {@code MT.Cu} + {@code MT.AnnealedCopper}).
+	 * <p><b>The canon is preserved.</b> Vanilla ore generation is removed by a biome modifier
+	 * ({@code remove_vanilla_ores_overworld.json}, including {@code ore_copper}); GT6 copper is mined
+	 * only by processing minerals with a fractional yield ({@code MT.java:3806} Chalcopyrite {@code 2*U9},
+	 * {@code :3811} Tetrahedrite {@code U4}, {@code :3847} Malachite {@code U6}). The vanilla copper ingot is
+	 * NEVER put into circulation: the unification target {@code OP.ingot + MT.Cu} is never set onto
+	 * {@code minecraft:copper_ingot}, and every recipe that required it is switched to {@code ANY.Cu} —
+	 * "any copper" ({@code ANY.java:125}: {@code MT.Cu} + {@code MT.AnnealedCopper}).
 	 *
-	 * <p><b>Почему рецептами, а не тегом.</b> {@code #minecraft:copper_tool_materials} отбирает по
-	 * {@code Item}, а подтип материала GT6 живёт в компоненте ({@code ST.meta_}: {@code GT_API.SUBTYPE}),
-	 * то есть {@code gt.meta.ingot} — ОДИН предмет на все материалы. Тег сделал бы «медным материалом»
-	 * любой слиток GT6, поэтому шесть рецептов инструментов переписаны поимённо.
+	 * <p><b>Why by recipe and not by tag.</b> {@code #minecraft:copper_tool_materials} selects by
+	 * {@code Item}, while GT6's material subtype lives in a component ({@code ST.meta_}: {@code GT_API.SUBTYPE}),
+	 * i.e. {@code gt.meta.ingot} is ONE item for all materials. A tag would turn ANY GT6 ingot into a "copper
+	 * material", so the six tool recipes are rewritten by name instead.
 	 *
-	 * <p><b>Что НЕ трогается:</b> 184 из 204 ванильных медных рецептов — внутренняя кухня медного века
-	 * (резчик 64, окисление, воск, срезы). Они работают от {@code copper_block}, который игрок получает
-	 * из грегской меди первым рецептом ниже.
+	 * <p><b>What is NOT touched:</b> 184 of the 204 vanilla copper recipes — the internal machinery of the
+	 * copper age (the 64-cutter, oxidation, wax, cuts). They all work from {@code copper_block}, which the
+	 * player gets from Gregorius's copper via the very first recipe below.
 	 *
-	 * <p>{@code DEF_REM} снимает ванильный рецепт с тем же выходом — включая датапак-плечо
-	 * ({@code CR.remout:665} → {@code CR.DATAPACK_REMOVALS_OUT} → {@code GT_API.removeDatapackRecipes}).
+	 * <p>{@code DEF_REM} strips the vanilla recipe with the same output — including the datapack arm
+	 * ({@code CR.remout:665} -> {@code CR.DATAPACK_REMOVALS_OUT} -> {@code GT_API.removeDatapackRecipes}).
 	 */
 	private static void copperAge() {
 		final Object tIngot = ingot.dat(ANY.Cu), tNugget = nugget.dat(ANY.Cu);
@@ -1110,26 +1110,26 @@ public class Loader_Recipes_Vanilla implements Runnable {
 	}
 
 	/**
-	 * ADAPT-014, часть II — ПАСПОРТ МАТЕРИАЛА всему медному семейству 26.1.2.
+	 * ADAPT-014, part II — MATERIAL PASSPORT for the whole 26.1.2 copper family.
 	 *
-	 * <p><b>Зачем.</b> Тигель и шредер не имеют статических рецептов на чужие предметы: они строят рецепт
-	 * ДИНАМИЧЕСКИ из {@link gregapi.oredict.OreDictItemData} входа ({@code RecipeMapCrucible:119},
-	 * {@code RecipeMapShredder:52} — {@code OM.anydata(aInput)}). Предмет без данных в них не входит вовсе:
-	 * медный сундук, дверь, кирка, лампа были бы неплавким мусором, хотя сделаны из грегской меди.
-	 * Замер до этой правки: с паспортом 2 предмета, без паспорта — 130.
+	 * <p><b>Why.</b> The crucible and shredder have no static recipes for foreign items: they build a recipe
+	 * DYNAMICALLY from the input's {@link gregapi.oredict.OreDictItemData} ({@code RecipeMapCrucible:119},
+	 * {@code RecipeMapShredder:52} — {@code OM.anydata(aInput)}). An item with no data never enters them at all:
+	 * a copper chest, door, pickaxe, or lamp would be unmeltable junk, despite being made of Gregorius's copper.
+	 * Measurement before this fix: 2 items with a passport, 130 without.
 	 *
-	 * <p><b>Масса выведена из ванильных рецептов, а не назначена на глаз</b> (обход
-	 * {@code data/minecraft/recipe} итеративным замыканием: слиток = U, блок = 9 слитков, лестница = 3/2
-	 * блока и т.д.). Инструменты сосчитаны по числу ячеек материала в паттерне.
+	 * <p><b>The mass is derived from vanilla recipes, not eyeballed</b> (a walk over
+	 * {@code data/minecraft/recipe} via iterative closure: an ingot = U, a block = 9 ingots, stairs = 3/2
+	 * a block, etc.). Tools are counted by the number of material cells in the pattern.
 	 *
-	 * <p><b>Окисление и воск массу меди не меняют</b> — это тот же предмет в другом состоянии, поэтому
-	 * префиксы {@code waxed_}/{@code exposed_}/{@code weathered_}/{@code oxidized_} снимаются, и все 8
-	 * состояний каждой формы получают паспорт базовой. Обход идёт по РЕЕСТРУ, а не по списку из головы:
-	 * новый медный блок в будущей версии движка получит паспорт сам, без правки кода — сохраняется
-	 * свойство GT6 порождать содержимое процедурно.
+	 * <p><b>Oxidation and wax do not change copper's mass</b> — it is the same item in a different state, so
+	 * the {@code waxed_}/{@code exposed_}/{@code weathered_}/{@code oxidized_} prefixes are stripped, and all 8
+	 * states of every form get the base form's passport. The walk goes over the REGISTRY, not a hand-written
+	 * list: a new copper block in a future engine version gets its passport on its own, with no code change —
+	 * preserving GT6's property of generating content procedurally.
 	 *
-	 * <p>Вторичные материалы указываются там, где они есть в рецепте: дерево у инструментов (палки,
-	 * {@code OP.stick} = U2 каждая) и у сундука, блез и редстоун у лампы. Тогда шредер вернёт и их.
+	 * <p>Secondary materials are listed wherever the recipe has them: wood for tools (sticks,
+	 * {@code OP.stick} = U2 each) and for the chest, blaze and redstone for the lamp. The shredder will then return those too.
 	 */
 	private static void copperItemData() {
 		// base form name -> how much copper it contains (U = one ingot)
@@ -1209,6 +1209,6 @@ public class Loader_Recipes_Vanilla implements Runnable {
 			}
 			tSet++;
 		}
-		OUT.println("[GT6-COPPER] паспорт материала выдан: " + tSet + " предметов, пропущено (руда/яйцо): " + tSkip);
+		OUT.println("[GT6-COPPER] material passport issued: " + tSet + " items, skipped (ore/egg): " + tSkip);
 	}
 }

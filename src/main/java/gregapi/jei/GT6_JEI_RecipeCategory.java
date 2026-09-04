@@ -23,6 +23,8 @@
 
 package gregapi.jei;
 
+import gregapi.data.LH;
+
 import gregapi.recipes.Recipe;
 import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.util.ST;
@@ -46,25 +48,25 @@ import java.util.List;
 import static gregapi.data.CS.*;
 
 /**
- * ОДНА generic JEI-категория, инстанциируемая на каждую видимую {@link RecipeMap} (см.
- * {@link GT6_JEI_Plugin#registerCategories}). Раскладка слотов портирует 1:1 логику
- * {@code gregapi.NEI_RecipeMap.CachedDefaultRecipe} (gregapi/NEI_RecipeMap.java:147-394) — тот же
- * switch по {@code mInputItemsCount}/{@code mOutputItemsCount}, те же пиксельные координаты слотов
- * (сдвинутые на {@link #OFFSET_X}/{@link #OFFSET_Y}, как делал {@code FixedPositionedStack}, т.к. NEI
- * координировал слоты от левого угла оверлея, а JEI — от левого угла своего собственного виджета),
- * тот же алгоритм текста длительности/энергии/спецзначения ({@code drawExtras},
- * gregapi/NEI_RecipeMap.java:687-724), тут — через {@link IRecipeExtrasBuilder#addText}.
+ * ONE generic JEI category, instantiated for every visible {@link RecipeMap} (see
+ * {@link GT6_JEI_Plugin#registerCategories}). Slot layout ports 1:1 the logic of
+ * {@code gregapi.NEI_RecipeMap.CachedDefaultRecipe} (gregapi/NEI_RecipeMap.java:147-394) — the same
+ * switch on {@code mInputItemsCount}/{@code mOutputItemsCount}, the same pixel slot coordinates
+ * (shifted by {@link #OFFSET_X}/{@link #OFFSET_Y}, as {@code FixedPositionedStack} used to do, because NEI
+ * coordinated slots from the overlay's top-left corner, while JEI does so from its own widget's top-left corner),
+ * the same duration/energy/special-value text algorithm ({@code drawExtras},
+ * gregapi/NEI_RecipeMap.java:687-724), here — via {@link IRecipeExtrasBuilder#addText}.
  */
 public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe> {
-	/** См. {@code gregapi.NEI_RecipeMap.sOffsetX/sOffsetY} (gregapi/NEI_RecipeMap.java:66). */
+	/** See {@code gregapi.NEI_RecipeMap.sOffsetX/sOffsetY} (gregapi/NEI_RecipeMap.java:66). */
 	private static final int OFFSET_X = 5, OFFSET_Y = 11;
 	private static final int WIDTH = 176, HEIGHT = 161;
 
 	private final RecipeMap mMap;
-	/** Система координат ЗАЯКОРЕНА ПО ПИКСЕЛЯМ (замер canner.png: рамка входа-1 @текстуры (34,24) ⇒ предмет (35,25)
-	 *  = сырые NEI-числа слотов) → JEI-координата = NEI-число БЕЗ офсета, GUI-текстура рисуется @(0,3) с v=3
-	 *  (текстур-пиксель == JEI-пиксель); NEI.png сдвинут на 11 вверх относительно GUI-текстуры
-	 *  (сведение систем 1.7.10: машина @(−5,−8,v3), NEI @(−5,−16)) → клип v=11, высота 155 @(0,0). */
+	/** The coordinate system is ANCHORED BY PIXELS (measured from canner.png: input-1 frame @texture (34,24) ⇒ item (35,25)
+	 *  = raw NEI slot numbers) → JEI coordinate = NEI number WITHOUT an offset, the GUI texture is drawn @(0,3) with v=3
+	 *  (texture pixel == JEI pixel); NEI.png is shifted 11 up relative to the GUI texture
+	 *  (1.7.10 system reconciliation: machine @(−5,−8,v3), NEI @(−5,−16)) → clip v=11, height 155 @(0,0). */
 	private final IDrawable mBackNEI, mBackGui;
 
 	public GT6_JEI_RecipeCategory(RecipeMap aMap, RecipeType<Recipe> aType, IGuiHelper aGuiHelper) {
@@ -75,7 +77,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 			tNEI = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse((RES_PATH_GUI + "machines/NEI.png").toLowerCase(java.util.Locale.ROOT)), 0, 5, 176, 161);
 			String tGuiPath = gregapi.util.UT.Code.stringValid(aMap.mGUIPath) ? aMap.mGUIPath : RES_PATH_GUI + aMap.mNameInternal + ".png";
 			tGui = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse(tGuiPath.toLowerCase(java.util.Locale.ROOT)), 0, 3, 176, 79);
-		} catch (Throwable e) {ERR.println("JEI: фон категории '" + aMap.mNameInternal + "' не собрался: " + e);}
+		} catch (Throwable e) {ERR.println("JEI: category background '" + aMap.mNameInternal + "' failed to build: " + e);}
 		mBackNEI = tNEI; mBackGui = tGui;
 	}
 
@@ -94,7 +96,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 		try {
 			int tStartIndex = 0;
 
-			// Портировано 1:1 из gregapi/NEI_RecipeMap.java:173-278 (input-switch по mInputItemsCount).
+			// Ported 1:1 from gregapi/NEI_RecipeMap.java:173-278 (the input switch by mInputItemsCount).
 			switch (mMap.mInputItemsCount) {
 			case  0:
 				break;
@@ -212,7 +214,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 
 			tStartIndex = 0;
 
-			// Портировано 1:1 из gregapi/NEI_RecipeMap.java:285-390 (output-switch по mOutputItemsCount).
+			// Ported 1:1 from gregapi/NEI_RecipeMap.java:285-390 (the output switch by mOutputItemsCount).
 			switch (mMap.mOutputItemsCount) {
 			case  0:
 				break;
@@ -320,17 +322,17 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 				break;
 			}
 
-			// gregapi/NEI_RecipeMap.java:392-393 (флюидные слоты; проверка "!= null" — как остальной
-			// FluidStack[]-код этого порта, gregapi/recipes/Recipe.java:373/382 и др.: пустых слотов
-			// это FluidStack[]-хранилище не EMPTY-заполняет, а оставляет настоящим Java null — в отличие
-			// от ItemStack, где F15 заменил null на EMPTY).
-			// BUG-082: жидкость подаётся ТЕМ ЖЕ приёмом, что в 1.7.10 — предметом-дисплеем GT6, а не родным
-			// ингредиентом JEI. Прежняя подача (addIngredient(FLUID_STACK, ...)) теряла ВСЁ, что несёт дисплей:
-			// замер живой витрины дал в слоте тултип из ОДНОЙ строки «fluid.steam» (сырой ключ локализации!)
-			// против 11 строк дисплея — имя, Amount, Worth, формула, Temperature, State, Density, Viscosity,
-			// описание. Заодно исчезал объём: JEI рисует FluidStack долей от чужой ёмкости, поэтому малое
-			// количество выглядело «неполным», тогда как у дисплея объём — ЧИСЛО стопки (FL.java:751).
-			// Аргументы 1:1 с оригиналом, включая ведёрный масштаб КАЖДОЙ карты (mUseBucketSizeIn/Out).
+			// gregapi/NEI_RecipeMap.java:392-393 (fluid slots; the "!= null" check — like the rest of the
+			// FluidStack[] code in this port, gregapi/recipes/Recipe.java:373/382 etc.: for empty slots
+			// this FluidStack[] storage does not fill them with EMPTY, but leaves a real Java null — unlike
+			// ItemStack, where F15 replaced null with EMPTY).
+			// BUG-082: the fluid is fed via the SAME approach as in 1.7.10 — a GT6 display item, not JEI's native
+			// ingredient. The previous feed (addIngredient(FLUID_STACK, ...)) lost EVERYTHING the display carries:
+			// measuring the live UI showed a slot tooltip of ONE line "fluid.steam" (a raw localization key!)
+			// against the display's 11 lines — name, Amount, Worth, formula, Temperature, State, Density, Viscosity,
+			// description. The volume also disappeared: JEI draws a FluidStack as a fraction of someone else's capacity, so a small
+			// amount looked "incomplete", whereas for the display the volume is the stack's COUNT (FL.java:751).
+			// Arguments 1:1 with the original, including the bucket scale of EACH map (mUseBucketSizeIn/Out).
 			for (int i = 0; i < aRecipe.mFluidInputs.length && i < mMap.mInputFluidCount; i++) {
 				FluidStack tFluid = aRecipe.mFluidInputs[i];
 				if (tFluid == null) continue;
@@ -349,14 +351,14 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 		}
 	}
 
-	/** gregapi/NEI_RecipeMap.java:177 и аналоги: добавляет входной предмет-слот, если он есть, и возвращает следующий индекс. */
+	/** gregapi/NEI_RecipeMap.java:177 and analogs: adds an input item slot if it exists, and returns the next index. */
 	private static int in(IRecipeLayoutBuilder aBuilder, Recipe aRecipe, int aIndex, int aX, int aY) {
 		ItemStack tStack = aRecipe.getRepresentativeInput(aIndex);
 		if (tStack != null) aBuilder.addInputSlot(aX, aY).addItemStack(tStack);
 		return aIndex + 1;
 	}
 
-	/** gregapi/NEI_RecipeMap.java:289 и аналоги: добавляет выходной предмет-слот с шансом (как {@code handleItemTooltip}, gregapi/NEI_RecipeMap.java:664-684), возвращает следующий индекс. */
+	/** gregapi/NEI_RecipeMap.java:289 and analogs: adds an output item slot with a chance (like {@code handleItemTooltip}, gregapi/NEI_RecipeMap.java:664-684), returns the next index. */
 	private static int out(IRecipeLayoutBuilder aBuilder, Recipe aRecipe, int aIndex, int aX, int aY) {
 		ItemStack tStack = aRecipe.getOutput(aIndex);
 		if (tStack != null) {
@@ -372,41 +374,41 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 		return aIndex + 1;
 	}
 
-	/** Портировано 1:1 из gregapi/NEI_RecipeMap.java:687-724 ({@code drawExtras}) — тот же расчёт строк,
-	 *  выведенный через нативный текстовый виджет JEI ({@link IRecipeExtrasBuilder#addText}) вместо
-	 *  мёртвого F3-superseded {@code drawText} (gregapi/NEI_RecipeMap.java:640-646, no-op). */
+	/** Ported 1:1 from gregapi/NEI_RecipeMap.java:687-724 ({@code drawExtras}) — the same line computation,
+	 *  output through JEI's native text widget ({@link IRecipeExtrasBuilder#addText}) instead of
+	 *  the dead F3-superseded {@code drawText} (gregapi/NEI_RecipeMap.java:640-646, no-op). */
 	@Override
 	public void createRecipeExtras(IRecipeExtrasBuilder aBuilder, Recipe aRecipe, IFocusGroup aFocuses) {
 		try {
 			List<FormattedText> tLines = new ArrayList<>();
 			long tGUt = aRecipe.mEUt, tDuration = aRecipe.mDuration;
 			if (tGUt == 0) {
-				if (mMap.mShowVoltageAmperageInNEI) tLines.add(Component.literal("Tier: unspecified"));
+				if (mMap.mShowVoltageAmperageInNEI) tLines.add(Component.literal(LH.tt("Tier: unspecified")));
 			} else if (tGUt > 0) {
-				tLines.add(Component.literal("Costs: " + UT.Code.makeString(tGUt * tDuration) + " GU"));
+				tLines.add(Component.literal(LH.tt("Costs: ") + UT.Code.makeString(tGUt * tDuration) + " GU"));
 				if (mMap.mShowVoltageAmperageInNEI) {
-					if (!mMap.mCombinePower) tLines.add(Component.literal("Usage: " + UT.Code.makeString(tGUt) + " GU/t"));
-					tLines.add(Component.literal("Tier: " + UT.Code.makeString(tGUt / mMap.mPower) + " GU"));
-					tLines.add(Component.literal("Power: " + UT.Code.makeString(mMap.mPower)));
+					if (!mMap.mCombinePower) tLines.add(Component.literal(LH.tt("Usage: ") + UT.Code.makeString(tGUt) + " GU/t"));
+					tLines.add(Component.literal(LH.tt("Tier: ") + UT.Code.makeString(tGUt / mMap.mPower) + " GU"));
+					tLines.add(Component.literal(LH.tt("Power: ") + UT.Code.makeString(mMap.mPower)));
 				} else {
-					if (tGUt != 1 && !mMap.mCombinePower) tLines.add(Component.literal("Usage: " + UT.Code.makeString(tGUt) + " GU/t"));
+					if (tGUt != 1 && !mMap.mCombinePower) tLines.add(Component.literal(LH.tt("Usage: ") + UT.Code.makeString(tGUt) + " GU/t"));
 				}
 			} else {
 				long tAbs = -tGUt;
-				tLines.add(Component.literal("Gain: " + UT.Code.makeString(tAbs * tDuration) + " GU"));
+				tLines.add(Component.literal(LH.tt("Gain: ") + UT.Code.makeString(tAbs * tDuration) + " GU"));
 				if (mMap.mShowVoltageAmperageInNEI) {
-					if (!mMap.mCombinePower) tLines.add(Component.literal("Output: " + UT.Code.makeString(tAbs) + " GU/t"));
-					tLines.add(Component.literal("Tier: " + UT.Code.makeString(tAbs / mMap.mPower) + " GU"));
-					tLines.add(Component.literal("Power: " + UT.Code.makeString(mMap.mPower)));
+					if (!mMap.mCombinePower) tLines.add(Component.literal(LH.tt("Output: ") + UT.Code.makeString(tAbs) + " GU/t"));
+					tLines.add(Component.literal(LH.tt("Tier: ") + UT.Code.makeString(tAbs / mMap.mPower) + " GU"));
+					tLines.add(Component.literal(LH.tt("Power: ") + UT.Code.makeString(mMap.mPower)));
 				} else {
-					if (tAbs != 1 && !mMap.mCombinePower) tLines.add(Component.literal("Output: " + UT.Code.makeString(tAbs) + " GU/t"));
+					if (tAbs != 1 && !mMap.mCombinePower) tLines.add(Component.literal(LH.tt("Output: ") + UT.Code.makeString(tAbs) + " GU/t"));
 				}
 			}
-			if (tDuration > 0) tLines.add(Component.literal("Time: " + (tDuration < 1200 ? UT.Code.makeString(tDuration) + " ticks" : tDuration < 36000 ? UT.Code.makeString(tDuration/20) + " secs" : UT.Code.makeString(tDuration/1200) + " mins")));
+			if (tDuration > 0) tLines.add(Component.literal(LH.tt("Time: ") + (tDuration < 1200 ? UT.Code.makeString(tDuration) + LH.tt(" ticks") : tDuration < 36000 ? UT.Code.makeString(tDuration/20) + LH.tt(" secs") : UT.Code.makeString(tDuration/1200) + LH.tt(" mins"))));
 			if (UT.Code.stringValid(mMap.mNEISpecialValuePre) || UT.Code.stringValid(mMap.mNEISpecialValuePost))
 				tLines.add(Component.literal(mMap.mNEISpecialValuePre + UT.Code.makeString(aRecipe.mSpecialValue * mMap.mNEISpecialValueMultiplier) + mMap.mNEISpecialValuePost));
-			// NEI drawText @(10,73..123) шаг 10, чёрный без тени; addText(w,h)+setPosition (было (4,96) — 4px ширины
-			// давали текст-СТОЛБИК по букве, «Costs: 2…» вертикально)
+			// NEI drawText @(10,73..123) step 10, black without shadow; addText(w,h)+setPosition (used to be (4,96) — a 4px width
+			// produced a text COLUMN one letter wide, "Costs: 2…" running vertically)
 			if (!tLines.isEmpty()) aBuilder.addText(tLines, WIDTH - (10) - 4, 60)
 				.setPosition(15, 84).setColor(0xFF000000).setShadow(false).setLineSpacing(2);
 		} catch (Throwable e) {

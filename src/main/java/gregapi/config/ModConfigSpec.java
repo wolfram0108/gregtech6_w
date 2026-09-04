@@ -37,30 +37,29 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * F12-config-subsystem: GT6-центр, воспроизводящий 1.7.10 Forge {@code net.minecraftforge.common.
- * config.Configuration} — файловый, динамический, per-call конфиг ({@code new Configuration(File)}
- * + {@code get(category,key,default)}, читаемый/записываемый в любой момент рантайма).
+ * F12-config-subsystem: the GT6 centre reproducing 1.7.10 Forge {@code net.minecraftforge.common.
+ * config.Configuration} — a file-backed, dynamic, per-call config ({@code new Configuration(File)}
+ * plus {@code get(category,key,default)}, readable and writable at any point at runtime).
  *
- * Причина существования (см. также decisions/, DEFERRED-LEDGER.md "F12, config-subsystem"): neo
- * {@code net.neoforged.neoforge.common.ModConfigSpec} — ДЕКЛАРАТИВНАЯ модель, строится через
- * {@code Builder} на регистрации мода (ключи фиксированы заранее), не имеет ни {@code new
- * ModConfigSpec(File)}, ни {@code .load()}/{@code .save()}, ни per-call {@code get(category,key,
- * default)} → это архитектурно другая модель, несовместимая с GT6's dynamic-config-паттерном
- * ({@link gregapi.config.Config}, {@link gregapi.lang.LanguageHandler#sLangFile}). Движок сменил
- * модель → адаптируем централизованно, тем же приёмом, что F4-OreDictionary/F5-fluids/F9-block-
- * material: воспроизводим Forge-поведение в СВОЁМ, gregapi-центральном классе.
+ * Why it exists (see decisions/, DEFERRED-LEDGER.md "F12, config-subsystem"): the neo
+ * {@code net.neoforged.neoforge.common.ModConfigSpec} is a DECLARATIVE model built through a
+ * {@code Builder} at mod registration (keys fixed up front), with no {@code new ModConfigSpec(File)},
+ * no {@code .load()}/{@code .save()} and no per-call {@code get(category,key,default)} — a different
+ * architecture, incompatible with the GT6 dynamic-config pattern ({@link gregapi.config.Config},
+ * {@link gregapi.lang.LanguageHandler#sLangFile}). The engine changed the model, so it is adapted
+ * centrally, the same way as F4-OreDictionary/F5-fluids/F9-block-material: Forge behaviour is
+ * reproduced inside one gregapi-owned class.
  *
- * Формат файла — человекочитаемый, той же структуры, что 1.7.10 {@code .cfg} (категория {@code {}}-
- * блок, {@code key=value} внутри), без второстепенных возможностей исходного Forge-формата
- * (типовые префиксы S:/I:/B:/D:, списки {@code <...>}, комментарии, min/max, вложенные категории,
- * child-файлы START/END) — они не используются ни одним вызывателем в этом дереве (см. grep
- * {@code .get(} в Config.java/GT_API.java/LanguageHandler.java: только 4 скалярных перегрузки
- * boolean/int/double/String, без списков и комментариев).
+ * The file format is human-readable and structured like the 1.7.10 {@code .cfg} (a {@code {}} category
+ * block with {@code key=value} inside), without the secondary features of the Forge format (S:/I:/B:/D:
+ * type prefixes, {@code <...>} lists, comments, min/max, nested categories, START/END child files) —
+ * no caller in this tree uses them: Config.java/GT_API.java/LanguageHandler.java only ever call the
+ * four scalar overloads boolean/int/double/String.
  *
- * Референс поведения: {@code gregtech6/build/tmp/recompSrc/net/minecraftforge/common/config/
- * Configuration.java} (методы {@code get(String,String,<type>)}, {@code load()}, {@code save()},
- * {@code getConfigFile()}; {@code wasRead()}-семантика — Configuration.java:697-710: ключ уже был в
- * {@code cat.containsKey(key)} на момент {@code get()} → true, иначе создан этим вызовом → false).
+ * Behaviour reference: {@code net/minecraftforge/common/config/Configuration.java} (methods
+ * {@code get(String,String,<type>)}, {@code load()}, {@code save()}, {@code getConfigFile()};
+ * {@code wasRead()} semantics at Configuration.java:697-710 — true when the key was already in
+ * {@code cat.containsKey(key)} at {@code get()} time, false when that call created it).
  *
  * @author Gregorius Techneticies
  */
@@ -79,37 +78,40 @@ public class ModConfigSpec {
 		return mCategories.computeIfAbsent(aCategory, aKey -> new LinkedHashMap<>());
 	}
 
-	/** было {@code Configuration.getCategory(String)} — Configuration.java:132-140 (доступ к записям категории;
-	 *  1.7.10 возвращал ConfigCategory-карту). Читатели итерируют ключи (напр. кэш creative-вкладок F16). */
+	/** was {@code Configuration.getCategory(String)} (Configuration.java:132-140): access to a category's entries.
+	 *  Callers iterate the keys, e.g. the F16 creative-tab cache. */
 	public Map<String, ConfigValue> getCategory(String aCategory) {
 		return category(aCategory);
 	}
 
-	/** было {@code Configuration.get(String,String,boolean)} — Configuration.java:166-169. */
+	/** was {@code Configuration.get(String,String,boolean)} (Configuration.java:166-169). */
 	public ConfigValue get(String aCategory, String aKey, boolean aDefault) {
 		return get(aCategory, aKey, Boolean.toString(aDefault));
 	}
 
-	/** было {@code Configuration.get(String,String,int)} — Configuration.java:268-271. */
+	/** was {@code Configuration.get(String,String,int)} (Configuration.java:268-271). */
 	public ConfigValue get(String aCategory, String aKey, int aDefault) {
 		return get(aCategory, aKey, Integer.toString(aDefault));
 	}
 
-	/** было {@code Configuration.get(String,String,double)} — Configuration.java:410-413. */
+	/** was {@code Configuration.get(String,String,double)} (Configuration.java:410-413). */
 	public ConfigValue get(String aCategory, String aKey, double aDefault) {
 		return get(aCategory, aKey, Double.toString(aDefault));
 	}
 
 	/**
-	 * было {@code Configuration.get(String,String,String,String,Property.Type)} — Configuration.java:
-	 * 688-724 (общее ядро для всех 4 скалярных перегрузок). Ключ уже был в загруженном файле →
-	 * возвращает СУЩЕСТВУЮЩУЮ запись (значение не трогается, только обновляется дефолт — 1:1
-	 * Configuration.java:707), иначе создаёт новую с {@code aDefault} как текущим значением.
+	 * was {@code Configuration.get(String,String,String,String,Property.Type)} (Configuration.java:688-724),
+	 * the shared core of all four scalar overloads. A key already present in the loaded file returns the
+	 * EXISTING entry with its value untouched and only the default refreshed (1:1 Configuration.java:707);
+	 * otherwise a new entry is created with {@code aDefault} as its current value.
 	 */
 	public ConfigValue get(String aCategory, String aKey, String aDefault) {
 		Map<String, ConfigValue> tCategory = category(aCategory);
 		ConfigValue tExisting = tCategory.get(aKey);
 		if (tExisting != null) {
+			// Heal a value left by the old trimming bug: equal to the default minus its trailing spaces means it
+			// was never edited by hand, it only lost them on an earlier load, so the file repairs itself on save.
+			if (!aDefault.equals(tExisting.mValue) && aDefault.stripTrailing().equals(tExisting.mValue)) tExisting.mValue = aDefault;
 			tExisting.mDefaultValue = aDefault;
 			return tExisting;
 		}
@@ -119,9 +121,9 @@ public class ModConfigSpec {
 	}
 
 	/**
-	 * было {@code Configuration.load()} — Configuration.java:791-1051: читает файл, заполняет
-	 * категории записями с {@code wasRead=true} (Configuration.java:944: {@code new Property(name,
-	 * value, type, true)}). Отсутствующий файл — не ошибка (новая установка), просто нет записей.
+	 * was {@code Configuration.load()} (Configuration.java:791-1051): reads the file and fills categories with
+	 * {@code wasRead=true} entries (Configuration.java:944). A missing file is not an error — a fresh install
+	 * simply has no entries yet.
 	 */
 	public void load() {
 		if (mFile == null || !mFile.exists()) return;
@@ -140,22 +142,24 @@ public class ModConfigSpec {
 					continue;
 				}
 				if (tCategory == null) continue;
-				int tSplit = tTrimmed.indexOf('=');
+				// Value comes from the raw line, not the trimmed one: trailing spaces are significant in GT6 UI
+				// strings ("Loss: ", "Use ") and trim() would glue them to the next word (Configuration.java:944).
+				int tSplit = tLine.indexOf('=');
 				if (tSplit < 0) continue;
-				String tKey = tTrimmed.substring(0, tSplit).trim();
-				String tValue = tTrimmed.substring(tSplit + 1);
+				String tKey = tLine.substring(0, tSplit).trim();
+				String tValue = tLine.substring(tSplit + 1);
 				tCategory.put(tKey, new ConfigValue(tKey, tValue, true));
 			}
 		} catch (IOException e) {
-			// совпадает с Configuration.load() (Configuration.java:1028-1031) — IO-ошибка не прерывает загрузку мода.
+			// Matches Configuration.load() (Configuration.java:1028-1031): an IO error must not abort mod loading.
 			e.printStackTrace(gregapi.data.CS.ERR);
 		}
 	}
 
 	/**
-	 * было {@code Configuration.save()} — Configuration.java:1053-1117: пишет все известные на данный
-	 * момент категории/записи обратно в файл, каждая запись как {@code getString()}-значение (не
-	 * дефолт), формат {@code category {\n\tkey=value\n}\n}.
+	 * was {@code Configuration.save()} (Configuration.java:1053-1117): writes every category and entry known
+	 * so far back to the file, each as its {@code getString()} value rather than its default, in the format
+	 * {@code category {\n\tkey=value\n}\n}.
 	 */
 	public void save() {
 		if (mFile == null) return;
@@ -179,7 +183,7 @@ public class ModConfigSpec {
 				}
 			}
 		} catch (IOException e) {
-			// совпадает с Configuration.save() (Configuration.java:1101-1104) — IO-ошибка не прерывает работу мода.
+			// Matches Configuration.save() (Configuration.java:1101-1104): an IO error must not abort the mod.
 			e.printStackTrace(gregapi.data.CS.ERR);
 		}
 	}

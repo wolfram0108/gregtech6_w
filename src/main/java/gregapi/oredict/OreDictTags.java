@@ -47,84 +47,85 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 
 /**
- * F4/F1-b ТЕГ-МОСТ — ЕДИНСТВЕННОЕ место, где словарь GT6 разговаривает с системой конвенционных тегов
- * {@code c:} (`decisions/F4-oredictionary.md` §4.4, `F1-item-metadata-model.md` §6.4 — там мост объявлен
- * и отложен, здесь построен).
+ * F4/F1-b TAG BRIDGE — the ONLY place where the GT6 dictionary talks to the {@code c:} convention-tag
+ * system (`decisions/F4-oredictionary.md` §4.4, `F1-item-metadata-model.md` §6.4 — the bridge is declared
+ * and deferred there, built here).
  *
- * <p><b>Что изменил движок.</b> В 1.7.10 межмодовый обмен шёл через плоский Forge-словарь: чужой мод звал
- * {@code OreDictionary.registerOre("ingotCopper", stack)}, Forge рассылал {@code OreRegisterEvent}, GT6 его
- * ловил и сам решал, что с предметом делать ({@code OreDictManager.onOreRegistration1}). В 26.1.2 Forge-словаря
- * нет вовсе; общий язык модов — ТЕГИ пространства {@code c:} ({@code Tags.java:1051} —
- * {@code ItemTags.create(Identifier.fromNamespaceAndPath("c", name))}). Хранилище словаря порт уже
- * интернализовал ({@link OreDictionary}, роль-A F4); недоставало именно ТРАНСПОРТА к чужим модам — его и даёт
- * этот класс.
+ * <p><b>What the engine changed.</b> In 1.7.10, inter-mod exchange went through a flat Forge dictionary: a foreign
+ * mod called {@code OreDictionary.registerOre("ingotCopper", stack)}, Forge broadcast an {@code OreRegisterEvent},
+ * and GT6 caught it and decided what to do with the item itself ({@code OreDictManager.onOreRegistration1}). In
+ * 26.1.2 there is no Forge dictionary at all; the mods' common language is the {@code c:} namespace TAGS
+ * ({@code Tags.java:1051} — {@code ItemTags.create(Identifier.fromNamespaceAndPath("c", name))}). The port had
+ * already internalized the dictionary's storage ({@link OreDictionary}, F4 role A); what was missing was exactly
+ * the TRANSPORT to foreign mods — this class provides it.
  *
- * <p><b>Мост двусторонний, но стороны НЕ симметричны — так устроен движок, а не наш выбор.</b></p>
+ * <p><b>The bridge is two-way, but the sides are NOT symmetric — that is how the engine is built, not our choice.</b></p>
  *
- * <p><b>1. Внутрь (полная).</b> {@link #importFromTags()} читает РЕАЛЬНЫЙ реестр тегов
- * ({@code Registry.getTags()}, {@code Registry.java:143}), переводит каждый конвенционный тег в oredict-имя
- * GT6 по таблице ниже и подаёт содержимое в {@link OreDictionary#registerOre} — В ТОТ ЖЕ ВХОД, которым в
- * 1.7.10 приходили чужие моды. Дальше всё делает НЕТРОНУТЫЙ механизм Грега: дедуп, рассылка
- * {@code OreRegisterEvent}, разбор имени, {@code setTarget_} (унификация), {@code triggerVisibility},
- * пере-регистрации {@code LoaderOreDictReRegistrations}. Ни одной новой ветки семантики здесь нет.
+ * <p><b>1. Inbound (full).</b> {@link #importFromTags()} reads the REAL tag registry
+ * ({@code Registry.getTags()}, {@code Registry.java:143}), translates each convention tag into a GT6 oredict
+ * name via the table below, and feeds the content into {@link OreDictionary#registerOre} — the SAME entry point
+ * foreign mods used to arrive through in 1.7.10. From there the UNTOUCHED Gregorius machinery does everything: dedup,
+ * broadcasting {@code OreRegisterEvent}, name parsing, {@code setTarget_} (unification), {@code triggerVisibility},
+ * the {@code LoaderOreDictReRegistrations} re-registrations. There is not a single new semantic branch here.
  *
- * <p><b>2. Наружу (ограничена движком).</b> Тег вешается на ЗАПИСЬ РЕЕСТРА ({@code Item}), а по решению F1
- * (модель B) у GT6 ОДИН {@code Item} на префикс, материал — компонент стека
- * ({@code PrefixItem.java:118} {@code ST.make(this, 1, i)}, {@code ST.java:206} {@code meta_} = компонент
- * {@code SUBTYPE}). Значит по-материальный тег {@code c:ingots/tin} повесить НЕ НА ЧТО: пометив
- * {@code gt.meta.ingot}, мы объявили бы иридиевый слиток оловянным. Поэтому наружу отдаётся ровно то, что
- * выразимо ЧЕСТНО:
+ * <p><b>2. Outbound (limited by the engine).</b> A tag is hung on a REGISTRY ENTRY ({@code Item}), while under the F1
+ * decision (model B) GT6 has ONE {@code Item} per prefix, with the material living in a stack component
+ * ({@code PrefixItem.java:118} {@code ST.make(this, 1, i)}, {@code ST.java:206} {@code meta_} = the
+ * {@code SUBTYPE} component). So a per-material tag like {@code c:ingots/tin} has NOTHING to hang on: tagging
+ * {@code gt.meta.ingot} would declare an iridium ingot to be tin. So outbound we give exactly what can be
+ * expressed HONESTLY:
  * <ul>
- * <li>МАТЕРИАЛ-АГНОСТИЧНЫЕ группы ({@code c:ingots}, {@code c:dusts}, {@code c:gems}, {@code c:nuggets},
- *     {@code c:rods}, {@code c:ores}, {@code c:storage_blocks}, {@code c:raw_materials}) — для них
- *     «один Item на префикс» это ТОЧНОЕ утверждение, а не приближение; их выдаёт датаген-провайдер
- *     {@code gregapi.data.GT6ConventionTags}, читающий таблицу ОТСЮДА;</li>
- * <li>по-материальные теги получаются САМИ, через собственную унификацию Грега: как только входящая сторона
- *     подала чужой/ванильный предмет под именем {@code ingotCopper}, {@code setTarget_} делает ЕГО
- *     целью унификации материала — и в мире у игрока лежит именно он, уже лежащий в {@code c:ingots/copper}
- *     данными своего владельца. Ровно так GT6 и работал в 1.7.10 (медь/железо/сертус — чужие предметы).</li>
+ * <li>MATERIAL-AGNOSTIC groups ({@code c:ingots}, {@code c:dusts}, {@code c:gems}, {@code c:nuggets},
+ *     {@code c:rods}, {@code c:ores}, {@code c:storage_blocks}, {@code c:raw_materials}) — for these
+ *     "one Item per prefix" is an EXACT statement, not an approximation; they are emitted by the datagen provider
+ *     {@code gregapi.data.GT6ConventionTags}, which reads the table FROM HERE;</li>
+ * <li>per-material tags fall out ON THEIR OWN, through Gregorius's own unification: the moment the inbound side
+ *     feeds a foreign/vanilla item under the name {@code ingotCopper}, {@code setTarget_} makes IT
+ *     the material's unification target — so the item the player finds in the world is exactly that one, already
+ *     sitting in {@code c:ingots/copper} thanks to its own owner's data. That is exactly how GT6 worked in 1.7.10
+ *     (copper/iron/certus were foreign items).</li>
  * </ul>
- * Остаток (материал, которого нет ни у кого, кроме GT6) по-материальным тегом не выражается — это
- * форсированная движком граница F1-b, а не забытая ветка.
+ * The remainder (a material nobody but GT6 has) cannot be expressed by a per-material tag — this is an
+ * engine-forced F1-b boundary, not a forgotten branch.
  *
- * <p><b>Правило именования — здесь и только здесь.</b> GT6-имя это {@code prefix.mNameInternal +
- * material.mNameInternal} ({@code OreDictManager.java:527,752} — дословно 1:1 с оригиналом
- * {@code gt6-original/.../OreDictManager.java:527,752}). Конвенционное имя — {@code c:<группа>/<материал>}.
- * Значит нужны ровно две вещи: таблица «группа ⇄ префикс» и функция «имя материала ⇄ snake_case»
- * ({@link #snake}/{@link #camel}). Всё, что этим правилом не описывается, живёт ЯВНЫМ списком
- * {@link #sExceptions}, а не разбросом по коду.
+ * <p><b>The naming rule lives here, and only here.</b> A GT6 name is {@code prefix.mNameInternal +
+ * material.mNameInternal} ({@code OreDictManager.java:527,752} — verbatim 1:1 with the original
+ * {@code gt6-original/.../OreDictManager.java:527,752}). A convention name is {@code c:<group>/<material>}.
+ * So exactly two things are needed: a "group <-> prefix" table and an "material name <-> snake_case" function
+ * ({@link #snake}/{@link #camel}). Anything this rule cannot describe lives in the EXPLICIT list
+ * {@link #sExceptions}, not scattered across the code.
  *
- * <p><b>⛔ Конвенционные имена не выдумываются.</b> Каждая строка таблицы подтверждена файлом на диске:
+ * <p><b>Convention names are never invented.</b> Every table row is confirmed by a file on disk:
  * {@code neoforge-decompiled/.../common/Tags.java} (:511 dusts, :660 gems, :686 ingots, :703 nuggets,
- * :744/:201 ores, :798 raw_materials, :805 rods, :855/:280 storage_blocks) и
+ * :744/:201 ores, :798 raw_materials, :805 rods, :855/:280 storage_blocks) and
  * {@code reference/mods/Applied-Energistics-2/.../ConventionTags.java} (:61 {@code c:silicon}, :70/:73
- * certus, :81/:82 fluix, :99 sky_stone, :101 rods/wooden, :106 glass_blocks/cheap). Единственная строка БЕЗ
- * подтверждения на диске — группа {@code plates}: она внесена по требованию ТЗ и работает ТОЛЬКО на вход
- * (читаем тег, если его кто-то объявил); наружу {@code c:plates} НЕ пишется, чтобы не породить имя,
- * существование которого нечем доказать.
+ * certus, :81/:82 fluix, :99 sky_stone, :101 rods/wooden, :106 glass_blocks/cheap). The only row WITHOUT
+ * disk confirmation is the {@code plates} group: it was added by spec requirement and only works INBOUND
+ * (we read the tag if someone declared it); {@code c:plates} is NOT written outbound, so as not to invent a name
+ * whose existence cannot be proven.
  */
 public class OreDictTags {
-	private OreDictTags() {/* только статика, как у остальных центров словаря */}
+	private OreDictTags() {/* static-only, like the dictionary's other centers */}
 
-	/** Пространство имён конвенционных тегов — {@code Tags.java:1051-1053}. */
+	/** The convention tag namespace — {@code Tags.java:1051-1053}. */
 	public static final String CONVENTION = "c";
 
-	/** ЕДИНСТВЕННАЯ таблица «группа конвенционного тега → префикс GT6». Обе стороны моста читают ЕЁ. */
+	/** The SINGLE "convention tag group -> GT6 prefix" table. Both sides of the bridge read IT. */
 	private static Map<String, OreDictPrefix> sGroupToPrefix = null;
-	/** Обратная таблица (исходящая сторона): префикс → группа. Строится из той же карты, копией не является. */
+	/** The reverse table (outbound side): prefix -> group. Built from the same map, not a copy of it. */
 	private static Map<OreDictPrefix, String> sPrefixToGroup = null;
-	/** ЯВНЫЙ список исключений: конвенционный путь тега (без {@code c:}) → ГОТОВОЕ oredict-имя GT6. */
+	/** The EXPLICIT exception list: a tag's convention path (without {@code c:}) -> the READY GT6 oredict name. */
 	private static Map<String, String> sExceptions = null;
 
-	/** Ленивая сборка: таблица ссылается на {@link OP}, а тот запрещает создание префиксов после Init
-	 *  ({@code OreDictPrefix.java:105}) — статический инициализатор этого класса мог бы дёрнуть {@code OP.<clinit>}
-	 *  в чужой фазе. Отложенная сборка снимает вопрос порядка классов целиком. */
+	/** Lazy build: the table references {@link OP}, which forbids creating prefixes after Init
+	 *  ({@code OreDictPrefix.java:105}) — this class's static initializer could trigger {@code OP.<clinit>}
+	 *  in the wrong phase. Deferred building removes the class-ordering question entirely. */
 	private static void build() {
 		if (sGroupToPrefix != null) return;
 		Map<String, OreDictPrefix> tGroups = new LinkedHashMap<>();
 		// Tags.java:686 c:ingots/*        · AE2 ConventionTags:84,87,90 (copper/gold/iron)
 		tGroups.put("ingots"        , OP.ingot );
-		// Tags.java:703 c:nuggets/*       · AE2 боеприпас Matter Cannon — 67 материалов
+		// Tags.java:703 c:nuggets/*       · AE2's Matter Cannon ammo — 67 materials
 		tGroups.put("nuggets"       , OP.nugget);
 		// Tags.java:511 c:dusts/*         · AE2 ConventionTags:73,81,93,94,97,99
 		tGroups.put("dusts"         , OP.dust  );
@@ -132,16 +133,16 @@ public class OreDictTags {
 		tGroups.put("gems"          , OP.gem   );
 		// Tags.java:805 c:rods/*          · AE2 ConventionTags:101
 		tGroups.put("rods"          , OP.stick );
-		// Tags.java:744 c:ores/*          · Tags.java:201 (блочная половина)
+		// Tags.java:744 c:ores/*          · Tags.java:201 (the block half)
 		tGroups.put("ores"          , OP.ore   );
-		// Tags.java:798 c:raw_materials/* — «сырая руда» из ванили будущего, у GT6 это OP.oreRaw (OP.java:137)
+		// Tags.java:798 c:raw_materials/* — "raw ore" from a future vanilla version, in GT6 this is OP.oreRaw (OP.java:137)
 		tGroups.put("raw_materials" , OP.oreRaw);
-		// Tags.java:855 c:storage_blocks/* — берётся ОБЩИЙ префикс block (OP.java:376), а не blockSolid/blockGem/
-		// blockDust: разложить материал по конкретному виду блока умеет сам Грег — LoaderOreDictReRegistrations:230-241
-		// («blockCertusQuartz» → «blockGemCertusQuartz»). Мост говорит на его языке, а не решает за него.
+		// Tags.java:855 c:storage_blocks/* — takes the GENERIC block prefix (OP.java:376), not blockSolid/blockGem/
+		// blockDust: breaking the material down by the concrete block kind is Gregorius's own job — LoaderOreDictReRegistrations:230-241
+		// ("blockCertusQuartz" -> "blockGemCertusQuartz"). The bridge speaks his language rather than deciding for him.
 		tGroups.put("storage_blocks", OP.block );
-		// plates — БЕЗ подтверждения на диске (в Tags.java группы нет, AE2 её не спрашивает). Только на ВХОД: если
-		// тега никто не объявил, ветка молчит; наружу c:plates не пишется (см. javadoc класса).
+		// plates — WITHOUT disk confirmation (no such group in Tags.java, AE2 does not ask for it). INBOUND only: if
+		// nobody declared the tag, the branch stays silent; c:plates is not written outbound (see the class javadoc).
 		tGroups.put("plates"        , OP.plate );
 		sGroupToPrefix = tGroups;
 
@@ -150,33 +151,33 @@ public class OreDictTags {
 		sPrefixToGroup = tBack;
 
 		Map<String, String> tExceptions = new LinkedHashMap<>();
-		// c:silicon — тег БЕЗ группы (AE2 ConventionTags:61, вход инскрайбера). Имя GT6 для того же вещества —
-		// OD.itemSilicon (OD.java:235), оно же было им и в 1.7.10.
+		// c:silicon — a tag WITHOUT a group (AE2 ConventionTags:61, the inscriber's input). The GT6 name for the same
+		// substance is OD.itemSilicon (OD.java:235), which is also what it was called in 1.7.10.
 		tExceptions.put("silicon"           , OD.itemSilicon.toString());
-		// c:rods/wooden (Tags.java:812) — «wooden» это не имя материала GT6; деревянная палка у Грега это stickWood
-		// (OD.java, вход ванильного словаря OreDictionary.java:165).
+		// c:rods/wooden (Tags.java:812) — "wooden" is not a GT6 material name; Gregorius's wooden stick is stickWood
+		// (OD.java, an entry in the vanilla dictionary OreDictionary.java:165).
 		tExceptions.put("rods/wooden"       , OD.stickWood.toString());
-		// c:glass_blocks/cheap (Tags.java:673; AE2 ConventionTags:106 — на нём висят входы рецептов) — «cheap» тоже не
-		// материал; у Грега это blockGlass (OreDictionary.java:189-190: бесцветное + весь цветной ряд). Берётся именно
-		// подтег «дешёвого» стекла, а не РОДИТЕЛЬСКИЙ c:glass_blocks (Tags.java:668): тот шире на tinted_glass, которого
-		// в 1.7.10 не было и который стеклом в смысле рецептов GT6 не является — расширять состав blockGlass сверх
-		// оригинала мост не вправе.
+		// c:glass_blocks/cheap (Tags.java:673; AE2 ConventionTags:106 — recipe inputs hang off it) — "cheap" is not a
+		// material either; for Gregorius it is blockGlass (OreDictionary.java:189-190: colorless + the whole colored
+		// range). We deliberately take the "cheap glass" SUBTAG, not the PARENT c:glass_blocks (Tags.java:668): that one
+		// is wider by tinted_glass, which did not exist in 1.7.10 and is not glass in the sense of GT6 recipes — the
+		// bridge has no right to widen blockGlass's membership beyond the original.
 		tExceptions.put("glass_blocks/cheap", OD.blockGlass.toString());
-		// c:ingots/redstone_alloy — по правилу имён это RedstoneAlloy, сплав EnderIO (MT.java:1753: Si + Redstone,
-		// цель унификации LoaderUnificationTargets.java:876). Но наполняет тег More Red, а он сплавляет свой слиток
-		// из МЕДИ — его собственный tags/item/red_alloyable_ingots.json это #c:ingots/copper, — то есть по составу
-		// это RedAlloy Грега (MT.java:1749: Cu + Redstone), сплав RedPower, наследником которого мод и является.
-		// Имя тега и вещество в нём разошлись у автора тега; без этой строки медный сплав числился бы кремниевым.
-		// Условие на мод, а не на голое имя: пока такого тега никто не наполняет, правило именования верно само.
+		// c:ingots/redstone_alloy — by the naming rule this would be RedstoneAlloy, EnderIO's alloy (MT.java:1753: Si +
+		// Redstone, unification target LoaderUnificationTargets.java:876). But the tag is populated by More Red, and it
+		// smelts its ingot from COPPER — its own tags/item/red_alloyable_ingots.json is #c:ingots/copper — meaning by
+		// composition this is Gregorius's RedAlloy (MT.java:1749: Cu + Redstone), RedPower's alloy, whose successor the
+		// mod is. The tag's name and its actual substance diverged for that tag's author; without this line the copper
+		// alloy would be filed as silicon. The condition is on the mod, not the bare name: while nobody populates that tag, the naming rule is correct on its own.
 		if (MD.MR.mLoaded) tExceptions.put("ingots/redstone_alloy", OP.ingot.mNameInternal + MT.RedAlloy.mNameInternal);
 		sExceptions = tExceptions;
 	}
 
 	// ================================================================================================
-	// ПРАВИЛО ИМЕНОВАНИЯ — одно место, обе стороны
+	// NAMING RULE — one place, both sides
 	// ================================================================================================
 
-	/** {@code CertusQuartz} → {@code certus_quartz}. Обратна {@link #camel}. */
+	/** {@code CertusQuartz} -> {@code certus_quartz}. The inverse of {@link #camel}. */
 	public static String snake(String aCamel) {
 		if (UT.Code.stringInvalid(aCamel)) return "";
 		StringBuilder rName = new StringBuilder(aCamel.length() + 4);
@@ -188,7 +189,7 @@ public class OreDictTags {
 		return rName.toString();
 	}
 
-	/** {@code certus_quartz} → {@code CertusQuartz}. Обратна {@link #snake}. */
+	/** {@code certus_quartz} -> {@code CertusQuartz}. The inverse of {@link #snake}. */
 	public static String camel(String aSnake) {
 		if (UT.Code.stringInvalid(aSnake)) return "";
 		StringBuilder rName = new StringBuilder(aSnake.length());
@@ -196,10 +197,10 @@ public class OreDictTags {
 		return rName.toString();
 	}
 
-	/** Исходящее имя: пара GT6 → полное имя конвенционного тега ({@code c:ingots/iron}), либо {@code null},
-	 *  если для этого префикса конвенционной группы нет ЛИБО имя материала не переживает круг
-	 *  {@link #snake}→{@link #camel} (тогда конвенционного имени у него попросту не существует, и выдумывать
-	 *  его запрещено). */
+	/** Outbound name: a GT6 pair -> the full convention tag name ({@code c:ingots/iron}), or {@code null}
+	 *  when either this prefix has no convention group OR the material name does not survive the round trip
+	 *  {@link #snake}->{@link #camel} (in which case no convention name exists for it, and inventing
+	 *  one is forbidden). */
 	public static String tagName(OreDictPrefix aPrefix, OreDictMaterial aMaterial) {
 		build();
 		if (aPrefix == null || aMaterial == null) return null;
@@ -210,8 +211,8 @@ public class OreDictTags {
 		return CONVENTION + ":" + tGroup + "/" + tPath;
 	}
 
-	/** Входящее имя: конвенционный тег → oredict-имя GT6 ({@code c:ingots/iron} → {@code ingotIron}), либо
-	 *  {@code null}, если тег не конвенционный или его группа мосту неизвестна. */
+	/** Inbound name: a convention tag -> a GT6 oredict name ({@code c:ingots/iron} -> {@code ingotIron}), or
+	 *  {@code null} when the tag is not a convention one or its group is unknown to the bridge. */
 	public static String oreName(Identifier aTag) {
 		build();
 		if (aTag == null || !CONVENTION.equals(aTag.getNamespace())) return null;
@@ -228,11 +229,11 @@ public class OreDictTags {
 	}
 
 	// ================================================================================================
-	// ИСХОДЯЩАЯ СТОРОНА — материал-агностичные группы (то, что выразимо на записи реестра)
+	// OUTBOUND SIDE — material-agnostic groups (what is expressible on a registry entry)
 	// ================================================================================================
 
-	/** Префикс → материал-агностичный тег ПРЕДМЕТА, либо {@code null}. Второй копии этой связи в дереве быть
-	 *  не должно: её читает и датаген-провайдер, и стенд-судья. */
+	/** Prefix -> the material-agnostic ITEM tag, or {@code null}. There must be no second copy of this link
+	 *  in the tree: both the datagen provider and the stand judge read it. */
 	public static TagKey<Item> groupItemTag(OreDictPrefix aPrefix) {
 		if (aPrefix == null) return null;
 		if (aPrefix == OP.ingot ) return Tags.Items.INGOTS;         // Tags.java:686
@@ -246,8 +247,8 @@ public class OreDictTags {
 		return null;
 	}
 
-	/** То же для БЛОКА: {@code c:ores} и {@code c:storage_blocks} существуют и в блочной половине
-	 *  ({@code Tags.java:201,280}), а слитки/пыли/самородки блоками не бывают. */
+	/** The same for BLOCK: {@code c:ores} and {@code c:storage_blocks} also exist in the block half
+	 *  ({@code Tags.java:201,280}), while ingots/dusts/nuggets are never blocks. */
 	public static TagKey<Block> groupBlockTag(OreDictPrefix aPrefix) {
 		if (aPrefix == null) return null;
 		if (isStorageBlock(aPrefix)) return Tags.Blocks.STORAGE_BLOCKS; // Tags.java:280
@@ -255,14 +256,14 @@ public class OreDictTags {
 		return null;
 	}
 
-	/** Блоки-хранилища GT6 — ЯВНЫМ списком (OP.java:349,352,355 и соседние), а не по тег-данным префикса:
-	 *  {@code STORAGE_BASED} несут и ящики ({@code crateGtRaw}, OP.java:336), которые хранилищем в смысле
-	 *  {@code c:storage_blocks} не являются. */
+	/** GT6 storage blocks — by an EXPLICIT list (OP.java:349,352,355 and neighbors), not by the prefix's tag data:
+	 *  {@code STORAGE_BASED} also covers crates ({@code crateGtRaw}, OP.java:336), which are not storage in the
+	 *  {@code c:storage_blocks} sense. */
 	private static boolean isStorageBlock(OreDictPrefix aPrefix) {
 		return aPrefix == OP.blockSolid || aPrefix == OP.blockGem || aPrefix == OP.blockDust || aPrefix == OP.blockIngot || aPrefix == OP.blockRaw;
 	}
 
-	/** Рудные префиксы GT6 — тем же явным списком, что и в загрузчике руд ({@code Loader_Ores.java:52-71}). */
+	/** GT6 ore prefixes — the same explicit list as in the ore loader ({@code Loader_Ores.java:52-71}). */
 	private static boolean isOre(OreDictPrefix aPrefix) {
 		return aPrefix == OP.ore || aPrefix == OP.oreSmall || aPrefix == OP.oreVanillastone || aPrefix == OP.oreSandstone
 			|| aPrefix == OP.oreNetherrack || aPrefix == OP.oreEndstone || aPrefix == OP.oreGravel || aPrefix == OP.oreSand
@@ -270,50 +271,53 @@ public class OreDictTags {
 	}
 
 	// ================================================================================================
-	// ВХОДЯЩАЯ СТОРОНА — чужие предметы из тегов в словарь GT6
+	// INBOUND SIDE — foreign items from tags into the GT6 dictionary
 	// ================================================================================================
 
-	/** Сколько записей мост подал в словарь за последний вызов {@link #importFromTags} (для стенда-судьи). */
+	/** How many entries the bridge fed into the dictionary on the last {@link #importFromTags} call (for the stand judge). */
 	public static int sImportedEntries = 0;
-	/** Сколько конвенционных тегов мост опознал за последний вызов (для стенда-судьи). */
+	/** How many convention tags the bridge recognized on the last call (for the stand judge). */
 	public static int sImportedTags = 0;
-	/** Сколько ВАНИЛЬНЫХ записей мост пропустил, отдав их роли-B ({@link OreDictionary#initVanillaEntries}) — для стенда-судьи. */
+	/** How many VANILLA entries the bridge skipped, leaving them to role B ({@link OreDictionary#initVanillaEntries}) — for the stand judge. */
 	public static int sSkippedVanilla = 0;
 
 	/**
-	 * Читает РЕАЛЬНЫЙ реестр тегов и подаёт чужие предметы в словарь GT6 под его же именами.
+	 * Reads the REAL tag registry and feeds foreign items into the GT6 dictionary under GT6's own names.
 	 *
-	 * <p>Момент вызова — начало окна {@code GT_API.runDeferredItemInit}, сразу за
-	 * {@link OreDictionary#initVanillaEntries} и ДО регистрации собственных предметов GT6. Это не выбор
-	 * удобства, а требование семантики: {@code setTarget_(..., aOverwrite=F)} ({@code OreDictManager.java:471})
-	 * оставляет целью унификации ПЕРВОГО зарегистрированного — значит чужой предмет должен успеть до нашего,
-	 * ровно как в 1.7.10 успевали моды, грузившиеся раньше GT6. Теги в этот момент уже привязаны:
-	 * {@code WorldLoader.java:80} ({@code updateComponentsAndStaticRegistryTags}) отрабатывает ДО
-	 * {@code MinecraftServer.loadLevel} ({@code MinecraftServer.java:403-411}), внутри которого и летит
-	 * {@code LevelEvent.Load}.
+	 * <p>Call timing is the start of the {@code GT_API.runDeferredItemInit} window, right after
+	 * {@link OreDictionary#initVanillaEntries} and BEFORE GT6's own items register. This is not a matter of
+	 * convenience but a semantic requirement: {@code setTarget_(..., aOverwrite=F)} ({@code OreDictManager.java:471})
+	 * keeps the FIRST-registered item as the unification target — so a foreign item must arrive before ours,
+	 * exactly as mods that loaded before GT6 used to in 1.7.10. Tags are already bound at this point:
+	 * {@code WorldLoader.java:80} ({@code updateComponentsAndStaticRegistryTags}) runs BEFORE
+	 * {@code MinecraftServer.loadLevel} ({@code MinecraftServer.java:403-411}), inside which {@code LevelEvent.Load} fires.
 	 *
-	 * <p>Предметы GT6 из тегов НЕ подаются: у них материал живёт в компоненте стека, а из тега приходит голая
-	 * запись реестра — стек с мета-0 означал бы {@code MT.Empty} и наврал бы словарю. Свои предметы приходят
-	 * своим каналом ({@code PrefixItem.runDeferred}). Отбор — GT6-критерием {@code ST.isGT} ({@code ST.java:143}).
+	 * <p>GT6's own items are NOT fed from tags: their material lives in a stack component, while a tag only gives a
+	 * bare registry entry — a stack with meta-0 would mean {@code MT.Empty} and lie to the dictionary. GT6's own
+	 * items arrive through their own channel ({@code PrefixItem.runDeferred}). Filtering uses the GT6 criterion
+	 * {@code ST.isGT} ({@code ST.java:143}).
 	 *
-	 * <p><b>ВАНИЛЬНЫЕ предметы из тегов не подаются тоже — и это то же самое разделение ролей, только с другой
-	 * стороны.</b> Ванильный контент ведёт роль-B этого же переходника ({@link OreDictionary#initVanillaEntries}):
-	 * там он перечислен поимённо, ИМЕНАМИ ГРЕГА и с осознанными изъятиями. Тег-мост существует ради ЧУЖИХ модов —
-	 * ровно того потока, который в 1.7.10 приходил в GT6 через Forge-словарь. Два механизма, регистрирующих одно
-	 * и то же, — это не «надёжнее», а гонка, и мост в ней быстрее: он работает в начале окна, поэтому его запись
-	 * забирает себе и цель унификации ({@code setTarget_(..., aOverwrite=F)}, {@code OreDictManager.java:471}), и
-	 * паспорт предмета ({@code addItemData_} — first-wins, {@code OreDictManager.java:667-670}) у того, кто решал
-	 * осознанно: ADAPT-014 держит целью медного материала ГРЕГСКИЙ слиток и выдаёт ванильной медной руде паспорт
-	 * {@code oreVanillastone}/{@code oreDeepslate} ({@code Loader_Recipes_Vanilla.java:1100-1106,1181-1183}).
-	 * Вдобавок мост говорит именами ТЕГОВ, а не именами Грега, и на ванили это сразу видно: {@code c:ores/netherite_scrap}
-	 * дал бы «oreNetheriteScrap» там, где у Грега это {@code oreAncientDebris}, {@code c:rods/breeze} — «stickBreeze»
-	 * на материал, которого не существует, а {@code c:gems/prismarine} — «gemPrismarine» ровно тому предмету, который
-	 * роль-B перечислять ОТКАЗАЛАСЬ. Ванильный контент опознаётся тем же способом, каким его везде отличает сам Грег —
-	 * {@link gregapi.data.MD#MC}{@code .owns} (ср. {@code OreDictPrefix.java:491}), — а не отдельным списком исключений:
-	 * правило здесь смысловое («ваниль — не зона тег-моста»), поимённый список ведёт роль-B.
+	 * <p><b>VANILLA items from tags are not fed in either — and that is the same role split, just seen from the
+	 * other side.</b> Vanilla content is carried by role B of this very same adapter
+	 * ({@link OreDictionary#initVanillaEntries}): there it is listed by name, using GREGORIUS'S names and with
+	 * deliberate omissions. The tag bridge exists FOR FOREIGN mods — exactly the stream that used to reach GT6
+	 * through the Forge dictionary in 1.7.10. Two mechanisms registering the same thing is not "more reliable", it
+	 * is a race, and the bridge wins it: it runs at the start of the window, so its entry claims both the
+	 * unification target ({@code setTarget_(..., aOverwrite=F)}, {@code OreDictManager.java:471}) and the item's
+	 * passport ({@code addItemData_} — first-wins, {@code OreDictManager.java:667-670}) ahead of the side that
+	 * decided deliberately: ADAPT-014 keeps GREGORIUS'S own ingot as the copper material's target and hands the
+	 * vanilla copper ore the passport {@code oreVanillastone}/{@code oreDeepslate}
+	 * ({@code Loader_Recipes_Vanilla.java:1100-1106,1181-1183}). On top of that the bridge speaks in TAG names, not
+	 * Gregorius's names, which shows immediately on vanilla: {@code c:ores/netherite_scrap} would give
+	 * "oreNetheriteScrap" where Gregorius calls it {@code oreAncientDebris}, {@code c:rods/breeze} would give
+	 * "stickBreeze" for a material that does not exist, and {@code c:gems/prismarine} would give "gemPrismarine" for
+	 * exactly the item role B REFUSED to list. Vanilla content is recognized the same way Gregorius himself
+	 * distinguishes it everywhere — {@link gregapi.data.MD#MC}{@code .owns} (cf. {@code OreDictPrefix.java:491}) —
+	 * not by a separate exception list: the rule here is semantic ("vanilla is not the tag bridge's territory"), the
+	 * named list is role B's job.
 	 *
-	 * <p>Идемпотентен: повторный вызов гасится дедупом {@link OreDictionary#registerOre} (тот же hash-бакет,
-	 * что у Forge), поэтому перезаход в мир записей не удваивает.
+	 * <p>Idempotent: a repeat call is absorbed by {@link OreDictionary#registerOre}'s dedup (the same hash bucket
+	 * Forge used), so re-entering a world does not duplicate entries.
 	 */
 	public static int importFromTags() {
 		build();
@@ -331,7 +335,7 @@ public class OreDictTags {
 						Item tItem = tHolder.value();
 						if (tItem == null || tItem == Items.AIR) continue;
 						if (ST.isGT(tItem)) {tSkippedGT++; continue;}
-						// ваниль — не зона тег-моста, её ведёт роль-B (см. javadoc метода)
+						// vanilla is not the tag bridge's territory, role B carries it (see the method javadoc)
 						if (MD.MC.owns(tItem)) {tSkippedMC++; continue;}
 						ItemStack tStack = ST.make(tItem, 1, 0);
 						if (ST.invalid(tStack)) continue;
@@ -345,9 +349,9 @@ public class OreDictTags {
 		sImportedTags = tTags;
 		sImportedEntries = tEntries;
 		sSkippedVanilla = tSkippedMC;
-		CS.OUT.println("GT6 F1-b тег-мост (внутрь): конвенционных тегов опознано " + tTags + ", записей подано в словарь " + tEntries
-			+ ", предметов GT6 пропущено (материал в компоненте, приходят своим каналом) " + tSkippedGT
-			+ ", ванильных пропущено (ведёт роль-B OreDictionary.initVanillaEntries) " + tSkippedMC + "; по группам " + tByGroup);
+		CS.OUT.println("GT6 F1-b tag bridge (inbound): convention tags recognized " + tTags + ", entries fed into the dictionary " + tEntries
+			+ ", GT6 items skipped (material lives in the component, arrive via their own channel) " + tSkippedGT
+			+ ", vanilla items skipped (carried by role B OreDictionary.initVanillaEntries) " + tSkippedMC + "; by group " + tByGroup);
 		return tEntries;
 	}
 }

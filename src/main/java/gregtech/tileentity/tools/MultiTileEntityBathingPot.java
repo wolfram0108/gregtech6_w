@@ -77,7 +77,7 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP).orElse("")); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP).orElse("")); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: do not overwrite the default on a null lookup */
 		
 		int tCapacity = 1000;
 		if (aNBT.contains(NBT_TANK_CAPACITY)) tCapacity = UT.Code.bindInt(aNBT.getLongOr(NBT_TANK_CAPACITY, 0L));
@@ -117,13 +117,13 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 				boolean temp = T;
 				for (FluidTankGT tTank : mTanksInput) if (!tTank.isEmpty()) {
 					temp = F;
-					aChatReturn.add("Input: " + tTank.content());
+					aChatReturn.add(LH.tt("Input: ") + tTank.content());
 				}
 				for (FluidTankGT tTank : mTanksOutput) if (!tTank.isEmpty()) {
 					temp = F;
-					aChatReturn.add("Output: " + tTank.content());
+					aChatReturn.add(LH.tt("Output: ") + tTank.content());
 				}
-				if (temp) aChatReturn.add("Contains no Fluids");
+				if (temp) aChatReturn.add(LH.tt("Contains no Fluids"));
 			}
 			return mTanksInput.length + mTanksOutput.length;
 		}
@@ -151,8 +151,8 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 		}
 	}
 
-	/** Что видно в ванне. Чистый пересчёт из танков и слотов — центр зовёт его и из тика, и перед
-	 *  сборкой клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	/** What is visible in the bath. A pure recomputation from the tanks and slots — the center calls it both from the tick and before
+	 *  assembling the client snapshot (see {@code TileEntityBase03TicksAndSync.updateVisualData}). */
 	@Override
 	public void updateVisualData() {
 		if (isClientSide()) return;
@@ -230,7 +230,7 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 				slotKill(i);
 				return T;
 			}
-			ItemStack aStack = ST.n(aPlayer.getMainHandItem()), tStack = ST.container(ST.amount(1, aStack), T); // F15-граница: движок EMPTY -> GT6 null
+			ItemStack aStack = ST.n(aPlayer.getMainHandItem()), tStack = ST.container(ST.amount(1, aStack), T); // F15 boundary: engine EMPTY -> GT6 null
 			FluidStack tFluid = FL.getFluid(ST.amount(1, aStack), T);
 			
 			if (aStack != null && tFluid != null && FL.fillAll_(this, SIDE_ANY, tFluid, T)) {
@@ -281,9 +281,9 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 				}
 				if (mDisplay != 0) {
 					if (mDisplay < -1) {
-						UT.Sounds.forActor(SFX.MC_LIQUID_WATER, 5, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // звук ДЕЙСТВИЯ
+						UT.Sounds.forActor(SFX.MC_LIQUID_WATER, 5, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // action sound
 					} else {
-						UT.Sounds.forActor(SFX.MC_DIG_SAND, 5, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // звук ДЕЙСТВИЯ
+						UT.Sounds.forActor(SFX.MC_DIG_SAND, 5, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // action sound
 					}
 				}
 			}

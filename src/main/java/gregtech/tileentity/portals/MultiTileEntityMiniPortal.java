@@ -236,7 +236,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
 				if (mTarget == null) {
-					aChatReturn.add("No Target");
+					aChatReturn.add(LH.tt("No Target"));
 				} else {
 					aChatReturn.add("X: " + mTarget.getBlockPos().getX() + "   Y: " + mTarget.getBlockPos().getY() + "   Z: " + mTarget.getBlockPos().getZ());
 				}
@@ -381,7 +381,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		}
 		return null;
 	}
-	// F-container-name: neo Container УДАЛИЛ getInventoryName/hasCustomInventoryName (нет name-концепции у Container) — GT6-internal, target-делегация убрана (target.getInventoryName нет в neo).
+	// F-container-name: neo Container REMOVED getInventoryName/hasCustomInventoryName (no name concept on Container) — GT6-internal, target delegation removed (target.getInventoryName does not exist in neo).
 	public String getInventoryName() {
 		String rName = getCustomName();
 		if (UT.Code.stringValid(rName)) return rName;
@@ -396,8 +396,8 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		}
 		return 0;
 	}
-	@Override public boolean isEmpty() {for (int i = 0, n = getContainerSize(); i < n; i++) {ItemStack tStack = getItem(i); if (tStack != null && !tStack.isEmpty()) return F;} return T;} // neo Container.isEmpty() — централизовано в базе портала (все 19 подклассов), паттерн как TileEntityBase04Covers
-	@Override public void clearContent() {/* neo Clearable: портал делегирует к смежному инвентарю, своего содержимого не держит */}
+	@Override public boolean isEmpty() {for (int i = 0, n = getContainerSize(); i < n; i++) {ItemStack tStack = getItem(i); if (tStack != null && !tStack.isEmpty()) return F;} return T;} // neo Container.isEmpty() — centralized in the portal base (all 19 subclasses), same pattern as TileEntityBase04Covers
+	@Override public void clearContent() {/* neo Clearable: the portal delegates to the adjacent inventory, holds no content of its own */}
 	@Override
 	public int getMaxStackSize() {
 		if (mTarget != null) {
@@ -425,7 +425,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		return F;
 	}
 	
-	// Relay Sided Inventories (neo WorldlyContainer: getSlotsForFace/canPlaceItemThroughFace/canTakeItemThroughFace = final в базе → override ХУКИ *2(byte); target-делегация к neo-методам через FORGE_DIR[side])
+	// Relay Sided Inventories (neo WorldlyContainer: getSlotsForFace/canPlaceItemThroughFace/canTakeItemThroughFace = final in the base -> override the HOOKS *2(byte); target delegation to neo methods through FORGE_DIR[side])
 
 	@Override
 	public int[] getSlotsForFace(Direction aSide) {
@@ -462,7 +462,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		return F;
 	}
 
-	// Relay Tanks (neo IFluidHandler.fill/drain(FluidStack/int, FluidAction) — side убран; base fill/drain(Direction,...) переопределяем, тело к neo target)
+	// Relay Tanks (neo IFluidHandler.fill/drain(FluidStack/int, FluidAction) — side removed; we override the base fill/drain(Direction,...), body forwards to the neo target)
 
 	@Override
 	public int fill(Direction from, FluidStack resource, boolean doFill) {
@@ -488,7 +488,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		}
 		return null;
 	}
-	// F-fluid-relay-query: 1.7.10 canFill/canDrain(Direction,Fluid) side-based — neo IFluidHandler удалил; эквивалент = fill/drain-симуляция (SIMULATE) на target 1:1 по смыслу «примет/отдаст ли».
+	// F-fluid-relay-query: 1.7.10 canFill/canDrain(Direction,Fluid) side-based — removed by the neo IFluidHandler; the equivalent is a fill/drain simulation (SIMULATE) on the target, 1:1 in meaning to "would it accept/give it".
 	@Override
 	public boolean canFill(Direction from, Fluid fluid) {
 		if (mTarget != null) {
@@ -505,9 +505,9 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		}
 		return F;
 	}
-	// Ретрансляция tank-info к цели 1:1 (оригинал :509-515 звал mTileEntity.getTankInfo(getForgeSideOfTileEntity())).
-	// Прежняя заглушка ZL_FLUIDTANKINFO опиралась на неверную посылку «вызывателей в neo нет»: их держит центр
-	// шва FL.getTankInfo (FL.java:944) — сенсоры Fluidometer/Bucketometer, BasicMachine:705, WD-скан.
+	// Relay of tank-info to the target 1:1 (the original :509-515 called mTileEntity.getTankInfo(getForgeSideOfTileEntity())).
+	// The former ZL_FLUIDTANKINFO stub relied on the wrong premise that "there are no callers in neo": they are held by the
+	// FL.getTankInfo seam center (FL.java:944) — Fluidometer/Bucketometer sensors, BasicMachine:705, the WD scan.
 	@Override
 	public FluidTankInfo[] getTankInfo(Direction from) {
 		if (mTarget != null) {

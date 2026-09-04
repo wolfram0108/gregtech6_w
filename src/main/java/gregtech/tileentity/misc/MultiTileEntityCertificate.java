@@ -139,9 +139,9 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 				DEB.println("ST.make(\"" + ST.regName(tStack) + "\"      , 1, " + ST.meta_(tStack) + ");                            // " + ST.namesAndSizes(tStack));
 			}
 			// Now for the actual thing that this needs to do on Rightclick.
-			if (mGold  ) {UT.Entities.sendchat(aPlayer, "This Certificate is owned by" + LH.Chat._YELLOW + getCustomName()); return T;}
-			if (mSilver) {UT.Entities.sendchat(aPlayer, "This Certificate is owned by" + LH.Chat._CYAN   + getCustomName()); return T;}
-			UT.Entities.sendchat(aPlayer, "This Certificate is invalid!");
+			if (mGold  ) {UT.Entities.sendchat(aPlayer, LH.tt("This Certificate is owned by") + LH.Chat._YELLOW + getCustomName()); return T;}
+			if (mSilver) {UT.Entities.sendchat(aPlayer, LH.tt("This Certificate is owned by") + LH.Chat._CYAN   + getCustomName()); return T;}
+			UT.Entities.sendchat(aPlayer, LH.tt("This Certificate is invalid!"));
 			return T;
 		}
 		return T;

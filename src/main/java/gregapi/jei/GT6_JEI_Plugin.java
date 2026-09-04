@@ -51,58 +51,58 @@ import java.util.Map;
 import static gregapi.data.CS.*;
 
 /**
- * ЕДИНЫЙ центр JEI-совместимости GT6 (Ф1.3, decisions/ROADMAP.md §Ф1). Заменяет старый NEI-мост
- * ({@link gregapi.NEI_RecipeMap}/{@link gregapi.NEI_GT_API_Config}, codechicken.nei, недоступен на neo)
- * той же ролью: читает ЕДИНСТВЕННЫЙ центр рецептов GT6 — {@link RecipeMap#RECIPE_MAP_LIST} — и выводит
- * его в JEI. Никаких параллельных данных: категория на карту, рецепты — прямо из
- * {@link RecipeMap#getNEIAllRecipes()} (тот же метод, что дёргал старый NEI-обработчик,
- * gregapi/NEI_RecipeMap.java:523), катализаторы — из {@link RecipeMap#mRecipeMachineList}.
+ * The SINGLE center of GT6's JEI compatibility (phase 1 of the roadmap, decisions/ROADMAP.md). Replaces the old NEI bridge
+ * ({@link gregapi.NEI_RecipeMap}/{@link gregapi.NEI_GT_API_Config}, codechicken.nei, unavailable on neo)
+ * with the same role: reads the ONE-AND-ONLY GT6 recipe center — {@link RecipeMap#RECIPE_MAP_LIST} — and exposes
+ * it to JEI. No parallel data: a category per map, recipes straight from
+ * {@link RecipeMap#getNEIAllRecipes()} (the same method the old NEI handler called,
+ * gregapi/NEI_RecipeMap.java:523), catalysts from {@link RecipeMap#mRecipeMachineList}.
  *
- * Client-only: обнаруживается самой JEI по аннотации {@link JeiPlugin} (ServiceLoader/ASM-скан модов,
- * без ручной регистрации на mod-bus — см. mezz.jei.api.IModPlugin, JEI сама решает, на какой стороне
- * инстанциировать плагин; выделен в отдельный пакет {@code gregapi.jei}, чтобы не тянуть JEI-типы в
- * общий код).
+ * Client-only: discovered by JEI itself via the {@link JeiPlugin} annotation (ServiceLoader/ASM mod scan,
+ * no manual mod-bus registration — see mezz.jei.api.IModPlugin, JEI decides on which side to
+ * instantiate the plugin; split into its own {@code gregapi.jei} package so JEI types don't leak into
+ * the common code).
  *
- * <p>Крафт-рецепты GT6 (F11-буфер {@code CR.BUFFER}/{@code ICraftingRecipeGT}, диспетчер
- * {@code CustomRecipe}, decisions/F11-crafting-recipe.md §Ф1.3-crafting-jei) — тот же {@code CR.list()},
- * своя категория {@link GT6_JEI_CraftingCategory} (см. её javadoc: почему не встроенная
- * {@code RecipeTypes.CRAFTING}, и как она переиспользует нативный JEI {@code ICraftingGridHelper}).</p>
+ * <p>GT6 crafting recipes (F11 buffer {@code CR.BUFFER}/{@code ICraftingRecipeGT}, the
+ * {@code CustomRecipe} dispatcher, decisions/F11-crafting-recipe.md, section 10) — the same {@code CR.list()},
+ * its own category {@link GT6_JEI_CraftingCategory} (see its javadoc: why not the built-in
+ * {@code RecipeTypes.CRAFTING}, and how it reuses the native JEI {@code ICraftingGridHelper}).</p>
  */
 @JeiPlugin
 public final class GT6_JEI_Plugin implements IModPlugin {
 	public static final Identifier PLUGIN_UID = Identifier.fromNamespaceAndPath(MD.GT.mID, "jei_plugin");
 
-	/** RecipeMap -> её уникальный JEI-RecipeType. Заполняется в {@link #registerCategories}, читается в {@link #registerRecipes}/{@link #registerRecipeCatalysts}. */
+	/** RecipeMap -> its unique JEI RecipeType. Filled in {@link #registerCategories}, read in {@link #registerRecipes}/{@link #registerRecipeCatalysts}. */
 	private final Map<RecipeMap, RecipeType<Recipe>> mTypes = new LinkedHashMap<>();
 
-	/** BUG-056: живой рантайм JEI — единственная дверь, через которую можно ОТКРЫТЬ экран рецептов.
-	 *  JEI отдаёт его один раз ({@link #onRuntimeAvailable}); держим здесь, потому что этот класс и есть
-	 *  центр JEI-совместимости (см. docstring класса), а не заводим второй держатель. */
+	/** BUG-056: the live JEI runtime — the only door through which the recipe screen can be OPENED.
+	 *  JEI hands it over once ({@link #onRuntimeAvailable}); kept here because this class is
+	 *  the JEI compatibility center (see the class docstring), so we don't add a second holder. */
 	public static volatile mezz.jei.api.runtime.IJeiRuntime sRuntime = null;
 
-	/** Сторож витрины крафта: что было отдано и что скрыто В МОМЕНТ построения категорий (важен именно
-	 *  момент — витрина строится один раз и запоминает содержимое ячеек, см. GT6_JEI_CraftingCategory). */
+	/** Crafting showcase guard: what was shown and what was hidden AT THE MOMENT categories were built (the
+	 *  moment matters — the showcase is built once and remembers cell contents, see GT6_JEI_CraftingCategory). */
 	public static int sShownAtRegistration = -1, sHiddenAtRegistration = -1;
 
 	public static final List<String> sHiddenExamples = new ArrayList<>();
-	/** BUG-056: {@code RecipeMap.mNameNEI} -> тип категории. Тем же ключом, которым 1.7.10 звал NEI
-	 *  ({@code GuiCraftingRecipe.openRecipeGui(mNameNEI)}), теперь открывается JEI-категория. Статическая,
-	 *  потому что зовущая сторона ({@code RecipeMap.openNEI}) экземпляра плагина не видит. */
+	/** BUG-056: {@code RecipeMap.mNameNEI} -> category type. The same key 1.7.10 used to call NEI
+	 *  ({@code GuiCraftingRecipe.openRecipeGui(mNameNEI)}) now opens the JEI category. Static,
+	 *  because the caller ({@code RecipeMap.openNEI}) never sees the plugin instance. */
 	private static final Map<String, RecipeType<Recipe>> sTypesByName = new java.util.concurrent.ConcurrentHashMap<>();
-	/** BUG-056: открыть экран рецептов по имени карты. Возвращает {@code false}, если JEI не поднялся или
-	 *  такой категории нет — ровно та же семантика, что у мёртвого NEI-вызова (он тоже отдавал false). */
+	/** BUG-056: open the recipe screen by map name. Returns {@code false} if JEI didn't come up or
+	 *  no such category exists — exactly the same semantics as the dead NEI call (it also returned false). */
 	public static boolean showRecipeCategory(String aNameNEI) {
 		mezz.jei.api.runtime.IJeiRuntime tRuntime = sRuntime;
 		if (tRuntime == null || aNameNEI == null) return F;
 		RecipeType<Recipe> tType = sTypesByName.get(aNameNEI);
 		if (tType == null) return F;
 		try {tRuntime.getRecipesGui().showTypes(java.util.List.of(tType)); return T;}
-		catch (Throwable e) {ERR.println("JEI: не удалось открыть категорию '" + aNameNEI + "'"); e.printStackTrace(ERR); return F;}
+		catch (Throwable e) {ERR.println("JEI: could not open category '" + aNameNEI + "'"); e.printStackTrace(ERR); return F;}
 	}
-	/** RecipeMap -> её видимые рецепты ({@code mEnabled && !mHidden}, gregapi/recipes/Recipe.java:564), посчитанные ОДИН раз в {@link #registerCategories} и переиспользуемые в {@link #registerRecipes} (не плодим параллельный пересчёт). */
+	/** RecipeMap -> its visible recipes ({@code mEnabled && !mHidden}, gregapi/recipes/Recipe.java:564), computed ONCE in {@link #registerCategories} and reused in {@link #registerRecipes} (no parallel recomputation). */
 	private final Map<RecipeMap, List<Recipe>> mRecipes = new LinkedHashMap<>();
-	/** Ф1.3-crafting-jei: F11-буфер {@code CR.list()}, отфильтрованный до {@link ShapedOreRecipe}/{@link ShapelessOreRecipe}-наследников
-	 *  (1:1 с тем, что показывал NEI — см. {@link GT6_JEI_CraftingCategory} javadoc), посчитан ОДИН раз в {@link #registerCategories}. */
+	/** Crafting recipes in JEI: the F11 buffer {@code CR.list()}, filtered down to {@link ShapedOreRecipe}/{@link ShapelessOreRecipe} descendants
+	 *  (1:1 with what NEI used to show — see the {@link GT6_JEI_CraftingCategory} javadoc), computed ONCE in {@link #registerCategories}. */
 	private List<ICraftingRecipeGT> mCraftingRecipes = Collections.emptyList();
 
 	@Override
@@ -110,9 +110,9 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		return PLUGIN_UID;
 	}
 
-	/** F1-jei: JEI различает варианты предмета только по ЗАЯВЛЕННЫМ компонентам (registerFromDataComponentTypes);
-	 *  без заявки SUBTYPE все процедурные варианты (itemDamage 1.7.10) схлопываются в один предмет
-	 *  (лог-улика «289 duplicate items», ingredient-лист пуст по моду). Заявляем SUBTYPE всем gt-предметам. */
+	/** F1-jei: JEI tells item variants apart only by DECLARED components (registerFromDataComponentTypes);
+	 *  without a SUBTYPE declaration all procedural variants (1.7.10 itemDamage) collapse into one item
+	 *  (log evidence: "289 duplicate items", the ingredient list is empty for the mod). Declare SUBTYPE for every gt item. */
 	@Override
 	public void registerItemSubtypes(mezz.jei.api.registration.ISubtypeRegistration aRegistration) {
 		if (!gregapi.GT_API.SUBTYPE.isBound()) return;
@@ -123,15 +123,15 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			if (tKey == null) continue;
 			String tNs = tKey.getNamespace();
 			if (!tNs.equals(ModIDs.GT) && !tNs.equals("gregtech") && !tNs.equals("gregapi")) continue;
-			// SUBTYPE (мета 1.7.10) + CUSTOM_DATA (ItemNBT-центр F8: монеты/батареи/сундуки различаются NBT-материалом,
-			// не метой — 1.7.10 NEI различал их по NBT; без заявки — «389 duplicate items» Coins)
+			// SUBTYPE (1.7.10 meta) + CUSTOM_DATA (F8 ItemNBT center: coins/batteries/chests differ by NBT material,
+			// not meta — 1.7.10 NEI told them apart by NBT; without declaring it — "389 duplicate items" for Coins)
 			try {
-				// правило личности — не наше: спрашиваем центр ST (BUG-079), своей копии витрина не держит
+				// the identity rule isn't ours: we ask the ST center (BUG-079), the showcase keeps no copy of its own
 				if (gregapi.util.ST.identityIncludesNBT(tItem)) {aRegistration.registerFromDataComponentTypes(tItem, tSubtype, net.minecraft.core.component.DataComponents.CUSTOM_DATA); tCount++;}
 				else {aRegistration.registerFromDataComponentTypes(tItem, tSubtype); tMetaOnly++;}
 			} catch (Throwable e) {/**/}
 		}
-		OUT.println("[GT6-JEI] SUBTYPE+CUSTOM_DATA подтипы заявлены для " + tCount + " предметов, только SUBTYPE — для " + tMetaOnly + " (инструменты).");
+		OUT.println("[GT6-JEI] SUBTYPE+CUSTOM_DATA subtypes declared for " + tCount + " items, SUBTYPE only for " + tMetaOnly + " (tools).");
 	}
 
 
@@ -143,9 +143,9 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		mCraftingRecipes = Collections.emptyList();
 		IGuiHelper tGuiHelper = aRegistration.getJeiHelpers().getGuiHelper();
 		List<IRecipeCategory<?>> tCategories = new ArrayList<>();
-		// Единственный центр рецептов GT6 (как старый NEI_GT_API_Config.java:70): каждая карта с
-		// mNEIAllowed==true — своя JEI-категория, но только если у неё реально есть видимые рецепты
-		// (ROADMAP.md 1.3: "JEI-категорий == непустых карт").
+		// GT6's single recipe center (like the old NEI_GT_API_Config.java:70): every map with
+		// mNEIAllowed==true gets its own JEI category, but only if it actually has visible recipes
+		// (ROADMAP.md 1.3: "JEI categories == non-empty maps").
 		for (RecipeMap tMap : RecipeMap.RECIPE_MAP_LIST) {
 			if (!tMap.mNEIAllowed) continue;
 			try {
@@ -153,7 +153,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 				if (tRecipeList.isEmpty()) continue;
 				RecipeType<Recipe> tType = RecipeType.create(MD.GT.mID, tMap.mNameNEI, Recipe.class);
 				mTypes.put(tMap, tType);
-				sTypesByName.put(tMap.mNameNEI, tType); // BUG-056: тем же ключом, что звал NEI 1.7.10
+				sTypesByName.put(tMap.mNameNEI, tType); // BUG-056: the same key 1.7.10 used to call NEI
 				mRecipes.put(tMap, tRecipeList);
 				tCategories.add(new GT6_JEI_RecipeCategory(tMap, tType, tGuiHelper));
 			} catch (Throwable e) {
@@ -162,19 +162,19 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			}
 		}
 
-		// BUG-056: просмотрщик рецептов ЕСТЬ — значит иконку «показать рецепты» рисовать можно.
-		// В 1.7.10 этот же флаг взводил NEI-плагин GT6 (NEI_GT_API_Config.loadConfig/run), потому что NEI был
-		// ОПЦИОНАЛЬНЫМ модом; в 26.1.2 таким же опциональным модом является JEI, и факт «плагин загрузился»
-		// — точный аналог. Взводим здесь, а не по ModList: важно не наличие мода в списке, а то, что
-		// категории реально построены и есть что открывать.
+		// BUG-056: a recipe viewer EXISTS — so the "show recipes" icon can be drawn.
+		// In 1.7.10 the same flag was set by GT6's NEI plugin (NEI_GT_API_Config.loadConfig/run) because NEI was
+		// an OPTIONAL mod; in 26.1.2 JEI is just as optional, and the fact that "the plugin loaded"
+		// is the exact analogue. Set it here rather than from ModList: what matters is not the mod's presence in
+		// the list, but that categories were actually built and there is something to open.
 		gregapi.data.CS.NEI = T;
 
-		// Ф1.3-crafting-jei: крафт-верстак GT6 (F11-буфер) — своя категория, см. GT6_JEI_CraftingCategory javadoc.
-		// BUG-099 (требование пользователя «рецепты обязаны быть в витрине на 100%»): к Shaped/Shapeless добавлены
-		// ОБА самостоятельных типа GT6 — AdvancedCrafting1ToY (один предмет, продукт выбирается КЛЕТКОЙ) и
-		// AdvancedCraftingXToY (X предметов префикса → Y выхода). Их не показывал и NEI в 1.7.10: он умел рисовать
-		// только шейповые/бесформенные, а эти реализуют ICraftingRecipeGT напрямую. Здесь витрина ИДЁТ ДАЛЬШЕ
-		// оригинала — показывает и раскладку, то есть в какую клетку класть, иначе механику не увидеть вовсе.
+		// Crafting recipes in JEI: the GT6 crafting table (F11 buffer) gets its own category, see the GT6_JEI_CraftingCategory javadoc.
+		// BUG-099 (user requirement "recipes must be 100% present in the showcase"): BOTH of GT6's own standalone types
+		// are added alongside Shaped/Shapeless — AdvancedCrafting1ToY (one item, the product is chosen by CELL) and
+		// AdvancedCraftingXToY (X prefix items → Y output). Even 1.7.10's NEI never showed these: it only knew how to
+		// draw shaped/shapeless, while these implement ICraftingRecipeGT directly. Here the showcase GOES BEYOND
+		// the original — it also shows the layout, i.e. which cell to place what in, otherwise the mechanic can't be seen at all.
 		try {
 			List<ICraftingRecipeGT> tCraftingList = new ArrayList<>();
 			int tHidden = 0;
@@ -182,9 +182,9 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 				if (tRecipe == null) continue;
 				if (tRecipe instanceof ShapedOreRecipe || tRecipe instanceof ShapelessOreRecipe
 				 || tRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY || tRecipe instanceof gregapi.recipes.AdvancedCraftingXToY) {
-					// Правило показа — не наше, оно 1.7.10: рецепт с ПУСТЫМ списком вариантов в ячейке витрина
-					// того времени не рисовала вовсе (см. GT6_JEI_CraftingCategory.showable). Механика не тронута:
-					// рецепт остаётся в CR.BUFFER и в верстаке, скрыт только показ.
+					// The show rule isn't ours, it's 1.7.10's: the showcase of that time never drew a recipe with an
+					// EMPTY variant list in a cell (see GT6_JEI_CraftingCategory.showable). The mechanic is untouched:
+					// the recipe stays in CR.BUFFER and on the crafting table, only its display is hidden.
 					if (!GT6_JEI_CraftingCategory.showable(tRecipe)) {
 						tHidden++;
 						if (sHiddenExamples.size() < 12) try {
@@ -198,7 +198,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			}
 			sShownAtRegistration = tCraftingList.size();
 			sHiddenAtRegistration = tHidden;
-			OUT.println("[GT6-JEI] крафт-верстак: показываем " + tCraftingList.size() + " рецептов, скрыто как в NEI 1.7.10 (нечем нарисовать ячейку) — " + tHidden);
+			OUT.println("[GT6-JEI] crafting table: showing " + tCraftingList.size() + " recipes, hidden as in NEI 1.7.10 (nothing to draw the cell with) — " + tHidden);
 			if (!tCraftingList.isEmpty()) {
 				mCraftingRecipes = tCraftingList;
 				tCategories.add(new GT6_JEI_CraftingCategory(tGuiHelper));
@@ -232,22 +232,22 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		}
 	}
 
-	/** BUG-030 v2 (репорт игрока: «старый пласт жидкостей остался дублем»): JEI сам регистрирует ВСЕ source-жидкости
-	 *  реестра родным ингредиент-типом FLUID_STACK ({@code FluidStackListFactory.create}: Registry.listElements →
-	 *  filter isSource — тот же набор ~679, что GT6-дисплеи) → панель ингредиентов показывала жидкости ДВАЖДЫ.
-	 *  NEI 1.7.10 жидкостного ингредиент-типа НЕ имел — пласт был один, GT6-дисплеи (с богатым тултипом
-	 *  ItemFluidDisplay.addInformation). Снимаем родной пласт JEI целиком — 1:1 с NEI-видом; рецепт-категории GT6
-	 *  показывают жидкости display-предметами ({@code FL.display}), FLUID_STACK-ингредиенты им не нужны. */
+	/** BUG-030 v2 (player report: "the old fluid layer stayed as a duplicate"): JEI itself registers ALL source
+	 *  fluids of the registry under the native FLUID_STACK ingredient type ({@code FluidStackListFactory.create}: Registry.listElements →
+	 *  filter isSource — the same ~679 set as the GT6 displays) → the ingredient panel showed fluids TWICE.
+	 *  1.7.10's NEI had NO fluid ingredient type at all — there was only one layer, the GT6 displays (with a rich tooltip,
+	 *  ItemFluidDisplay.addInformation). We remove JEI's native layer entirely — 1:1 with the NEI look; GT6's recipe
+	 *  categories show fluids as display items ({@code FL.display}), they don't need FLUID_STACK ingredients. */
 	@Override
 	public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime aRuntime) {
-		sRuntime = aRuntime; // BUG-056: единственная дверь к экрану рецептов, см. showRecipeCategory
+		sRuntime = aRuntime; // BUG-056: the only door to the recipe screen, see showRecipeCategory
 		try {
 			mezz.jei.api.runtime.IIngredientManager tManager = aRuntime.getIngredientManager();
 			java.util.Collection<net.neoforged.neoforge.fluids.FluidStack> tFluids = new java.util.ArrayList<>(tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK));
 			if (!tFluids.isEmpty()) tManager.removeIngredientsAtRuntime(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, tFluids);
-			OUT.println("[GT6-JEI] родной FLUID_STACK-пласт снят из панели: было " + tFluids.size() + ", осталось " + tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK).size() + " (жидкости показывает GT6-дисплей, как NEI 1.7.10)");
+			OUT.println("[GT6-JEI] native FLUID_STACK layer removed from the panel: was " + tFluids.size() + ", now " + tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK).size() + " (fluids are shown by the GT6 display, as in NEI 1.7.10)");
 		} catch (Throwable e) {
-			ERR.println("JEI: не удалось снять родной FLUID_STACK-пласт (дубль жидкостей останется в панели).");
+			ERR.println("JEI: could not remove the native FLUID_STACK layer (a fluid duplicate will remain in the panel).");
 			e.printStackTrace(ERR);
 		}
 	}

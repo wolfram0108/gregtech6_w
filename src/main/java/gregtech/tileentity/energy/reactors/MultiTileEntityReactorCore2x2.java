@@ -23,6 +23,8 @@
 
 package gregtech.tileentity.energy.reactors;
 
+import gregapi.data.LH;
+
 import gregapi.data.FL;
 import gregapi.data.MT;
 import gregapi.item.IItemReactorRod;
@@ -272,8 +274,8 @@ public class MultiTileEntityReactorCore2x2 extends MultiTileEntityReactorCore im
 		}
 		if (aTool.equals(TOOL_geigercounter)) {
 			if (aChatReturn != null) {
-				aChatReturn.add("Neutron Levels: " + oNeutronCounts[0] + "n; " + oNeutronCounts[1] + "n; " + oNeutronCounts[2] + "n; " + oNeutronCounts[3] + "n");
-				aChatReturn.add(mStopped?"Reactor Block is OFF":"Reactor Block is ON");
+				aChatReturn.add(LH.tt("Neutron Levels: ") + oNeutronCounts[0] + "n; " + oNeutronCounts[1] + "n; " + oNeutronCounts[2] + "n; " + oNeutronCounts[3] + "n");
+				aChatReturn.add(mStopped?LH.tt("Reactor Block is OFF"):LH.tt("Reactor Block is ON"));
 			}
 			return 10000;
 		}

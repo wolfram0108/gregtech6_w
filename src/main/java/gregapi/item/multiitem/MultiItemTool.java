@@ -344,20 +344,20 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		IToolStats tStats = getToolStats(aStack);
 		if (tMaxDamage > 0 && tStats != null) {
 			if (tMat1 == MT.NULL) {
-				aList.add(LH.Chat.WHITE + "Durability: x" + LH.Chat.GREEN + tStats.getMaxDurabilityMultiplier());
-				aList.add(LH.Chat.WHITE + "Level: +" + LH.Chat.YELLOW + tStats.getBaseQuality());
+				aList.add(LH.Chat.WHITE + LH.tt("Durability: x") + LH.Chat.GREEN + tStats.getMaxDurabilityMultiplier());
+				aList.add(LH.Chat.WHITE + LH.tt("Level: +") + LH.Chat.YELLOW + tStats.getBaseQuality());
 				float tCombat = getToolCombatDamage(aStack);
-				aList.add(LH.Chat.WHITE + "Melee Damage: +" + LH.Chat.BLUE + (tCombat * TFC_DAMAGE_MULTIPLIER) + LH.Chat.RED + " (= " + (TFC_DAMAGE_MULTIPLIER > 1 ? ((tCombat+1)*(TFC_DAMAGE_MULTIPLIER/2.0)) + ")" : ((tCombat+1)/2) + " Hearts)"));
-				aList.add(LH.Chat.WHITE + "Mining Speed: x" + LH.Chat.PINK + tStats.getSpeedMultiplier());
+				aList.add(LH.Chat.WHITE + LH.tt("Melee Damage: +") + LH.Chat.BLUE + (tCombat * TFC_DAMAGE_MULTIPLIER) + LH.Chat.RED + " (= " + (TFC_DAMAGE_MULTIPLIER > 1 ? ((tCombat+1)*(TFC_DAMAGE_MULTIPLIER/2.0)) + ")" : ((tCombat+1)/2) + LH.tt(" Hearts)")));
+				aList.add(LH.Chat.WHITE + LH.tt("Mining Speed: x") + LH.Chat.PINK + tStats.getSpeedMultiplier());
 				if (tStats.canCollect()) aList.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_AUTOCOLLECT));
 				if (tStats.canPenetrate()) aList.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_ARMOR_PENETRATING));
 			} else {
-				aList.add(LH.Chat.WHITE + "Durability: " + LH.Chat.GREEN + UT.Code.makeString(tMaxDamage - tDamage) + " / " + UT.Code.makeString(tMaxDamage));
-				aList.add(LH.Chat.WHITE + tMat1.getLocal() + LH.Chat.YELLOW + " Level: " + (tStats.getBaseQuality() + tMat1.mToolQuality));
+				aList.add(LH.Chat.WHITE + LH.tt("Durability: ") + LH.Chat.GREEN + UT.Code.makeString(tMaxDamage - tDamage) + " / " + UT.Code.makeString(tMaxDamage));
+				aList.add(LH.Chat.WHITE + tMat1.getLocal() + LH.Chat.YELLOW + LH.tt(" Level: ") + (tStats.getBaseQuality() + tMat1.mToolQuality));
 				float tCombat = getToolCombatDamage(aStack);
-				aList.add(LH.Chat.WHITE + "Melee Damage: " + LH.Chat.BLUE + "+" + (tCombat * TFC_DAMAGE_MULTIPLIER) + LH.Chat.RED + " (= " + (TFC_DAMAGE_MULTIPLIER > 1 ? ((tCombat+1)*(TFC_DAMAGE_MULTIPLIER/2.0)) + ")" : ((tCombat+1)/2) + " Hearts)"));
-				aList.add(LH.Chat.WHITE + "Mining Speed: " + LH.Chat.PINK + Math.max(Float.MIN_NORMAL, tStats.getSpeedMultiplier() * tMat1.mToolSpeed));
-				aList.add(LH.Chat.WHITE + "Crafting Uses: " + LH.Chat.GREEN + UT.Code.divup(getEnergyStats(aStack) == null ? tMaxDamage - tDamage : Math.min(getEnergyStored(TD.Energy.EU, aStack), getEnergyCapacity(TD.Energy.EU, aStack)), tStats.getToolDamagePerContainerCraft()));
+				aList.add(LH.Chat.WHITE + LH.tt("Melee Damage: ") + LH.Chat.BLUE + "+" + (tCombat * TFC_DAMAGE_MULTIPLIER) + LH.Chat.RED + " (= " + (TFC_DAMAGE_MULTIPLIER > 1 ? ((tCombat+1)*(TFC_DAMAGE_MULTIPLIER/2.0)) + ")" : ((tCombat+1)/2) + LH.tt(" Hearts)")));
+				aList.add(LH.Chat.WHITE + LH.tt("Mining Speed: ") + LH.Chat.PINK + Math.max(Float.MIN_NORMAL, tStats.getSpeedMultiplier() * tMat1.mToolSpeed));
+				aList.add(LH.Chat.WHITE + LH.tt("Crafting Uses: ") + LH.Chat.GREEN + UT.Code.divup(getEnergyStats(aStack) == null ? tMaxDamage - tDamage : Math.min(getEnergyStored(TD.Energy.EU, aStack), getEnergyCapacity(TD.Energy.EU, aStack)), tStats.getToolDamagePerContainerCraft()));
 				if (MD.BTL.mLoaded && tMat1.contains(TD.Properties.BETWEENLANDS)) aList.add(LH.Chat.GREEN + LH.get(LH.TOOLTIP_BETWEENLANDS_RESISTANCE));
 				if (MD.TF .mLoaded && tMat1.contains(TD.Properties.MAZEBREAKER)) {
 					if (canHarvestBlock(IL.TF_Mazestone.block(), aStack)) aList.add(LH.Chat.PINK + LH.get(LH.TOOLTIP_TWILIGHT_MAZE_STONE_BREAKING));
@@ -498,22 +498,22 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	// F9-tool NEO-MINING BRIDGE (principle 4): getDigSpeed/canHarvestBlock/getHarvestLevel/onBlockDestroyed are GT6
 	// domain logic (bodies kept 1:1, calling each other directly) wired to the real engine mining path via the WD.harvestLevel/WD.hardness centers; getDestroySpeed/isCorrectToolForDrops carry no position (F13: no numeric meta in BlockState) so they use meta-0, exactly like GT6-canHarvestBlock:518 always taking (byte)0 (consistent with original:487-488), while mineBlock has a position and passes the real meta through WD.meta — the tool now digs/drops/wears by GT6 logic, not the neo default.
 	/**
-	 * ⛔ СЮДА ИДЁТ {@link #getDigSpeed} — И ЭТО 1:1, ПРОВЕРЕНО ПАРНЫМ ЗАМЕРОМ (2026-08-06).
+	 * ⛔ {@link #getDigSpeed} GOES HERE — AND THIS IS 1:1, VERIFIED BY A PAIRED MEASUREMENT (2026-08-06).
 	 *
-	 * <p><b>Здесь была ошибка, стоившая массового расхождения — оставлено как предупреждение.</b> Я проверил,
-	 * что мод в 1.7.10 не переопределял {@code Item.func_150893_a}, и заключил, что движковый канал скорости
-	 * оставался ванильным (1.0F), а логика жила только в событии {@code BreakSpeed}. Вывод неверен: движок
-	 * 1.7.10 берёт базу НЕ оттуда, а из Forge-метода {@code Item.getDigSpeed(stack, block, meta)} —
-	 * {@code EntityPlayer.getBreakSpeed:914} ({@code stack.getItem().getDigSpeed(...)}), и этот метод
-	 * {@code MultiItemTool} как раз переопределяет ({@code MultiItemTool.java:472} оригинала).</p>
+	 * <p><b>There was a bug here that cost a mass divergence — kept as a warning.</b> I checked
+	 * that the 1.7.10 mod did not override {@code Item.func_150893_a}, and concluded the engine's speed
+	 * channel stayed vanilla (1.0F), with the logic living only in the {@code BreakSpeed} event. The conclusion was wrong: the
+	 * 1.7.10 engine takes its base NOT from there, but from the Forge method {@code Item.getDigSpeed(stack, block, meta)} —
+	 * {@code EntityPlayer.getBreakSpeed:914} ({@code stack.getItem().getDigSpeed(...)}), and this is exactly the method
+	 * {@code MultiItemTool} overrides ({@code MultiItemTool.java:472} of the original).</p>
 	 *
-	 * <p>Сквозной парный замер («доля разрушения за тик», {@code ForgeHooks.blockStrength} против
-	 * {@code BlockState.getDestroyProgress}, 1360 общих пар «блок × инструмент»): в оригинале <b>1176 нулей</b> —
-	 * неподходящий инструмент не копает блок ВООБЩЕ. Редакция с ванильной базой давала нулей 0 и совпадала с
-	 * оригиналом лишь на <b>1.47 %</b>. Возврат к {@code getDigSpeed} — единственное, что даёт 1:1.</p>
+	 * <p>End-to-end paired measurement ("destruction fraction per tick", {@code ForgeHooks.blockStrength} against
+	 * {@code BlockState.getDestroyProgress}, 1360 shared "block x tool" pairs): the original has <b>1176 zeroes</b> —
+	 * an unsuitable tool does not mine the block AT ALL. The vanilla-base edit gave 0 zeroes and matched the
+	 * original on only <b>1.47%</b>. Reverting to {@code getDigSpeed} is the only thing that gives 1:1.</p>
 	 *
-	 * <p>Отсюда же следствие про витрину Jade: она молчит при нулевой скорости — но это КАНОН оригинала,
-	 * а не дефект порта. Витрину чиним витриной ({@code Compat_Jade}), механику не трогаем.</p>
+	 * <p>This also explains the Jade tooltip case: it stays silent at zero speed — but that is the ORIGINAL's canon,
+	 * not a port defect. Fix the tooltip with a tooltip fix ({@code Compat_Jade}), don't touch the mechanic.</p>
 	 */
 	@Override public float getDestroySpeed(ItemStack aStack, net.minecraft.world.level.block.state.BlockState aState) {
 		return getDigSpeed(aStack, aState.getBlock(), 0);
@@ -547,16 +547,16 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	}
 
 	/**
-	 * ПРИЗНАЁТ ЛИ ЭТОТ ИНСТРУМЕНТ БЛОК СВОИМ — без учёта уровня и без учёта того, хватит ли сил.
+	 * DOES THIS TOOL CONSIDER THE BLOCK ITS OWN — regardless of level and regardless of whether it has enough power.
 	 *
-	 * <p>Отличие от {@link #canHarvestBlock}: тот отвечает «добудет ли ПРЯМО СЕЙЧАС» и потому включает порог
-	 * качества ({@code getDigSpeed} возвращает 0 слабому инструменту). Здесь спрашивается только правило самого
-	 * инструмента ({@code IToolStats.isMinableBlock} — то же, чем GT6 решает это в игре): «это вообще по моей
-	 * части?». Ровно это нужно витринам-тултипам, которые обязаны показать значок инструмента независимо от
-	 * того, что игрок держит в руке.
+	 * <p>Difference from {@link #canHarvestBlock}: that one answers "will it harvest it RIGHT NOW" and thus includes the
+	 * quality threshold ({@code getDigSpeed} returns 0 for a weak tool). This one asks only the tool's own rule
+	 * ({@code IToolStats.isMinableBlock} — the same thing GT6 uses in-game to decide): "is this even my
+	 * business at all?". This is exactly what tooltip displays need, which must show the tool icon regardless of
+	 * what the player is holding.
 	 *
-	 * <p>Канал заведён здесь, а не у потребителя: правило принадлежит инструменту, и лазить снаружи в его
-	 * {@code getToolStats(...).isMinableBlock(...)} — обход инкапсуляции. Во всём моде такого обращения нет.
+	 * <p>The channel is set up here, not at the consumer: the rule belongs to the tool, and reaching in from outside via
+	 * {@code getToolStats(...).isMinableBlock(...)} is a break of encapsulation. No such call exists anywhere in the mod.
 	 */
 	public final boolean isMinableBlock(ItemStack aStack, Block aBlock, byte aMeta) {
 		IToolStats tStats = getToolStats(aStack);
@@ -717,9 +717,9 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return T;
 	}
 	
-	/** У инструмента NBT — это СОСТОЯНИЕ (материал, прочность, заряд), а не личность: витрина отдаёт его голым
-	 *  ({@link #getSubItems}), выход рецепта — со статистикой. Личность, как и в 1.7.10, = мета. Разбор и замер —
-	 *  в javadoc {@link MultiItem#identityIncludesNBT()} и в карточке BUG-079. */
+	/** For a tool, NBT is STATE (material, durability, charge), not identity: the display gives it out bare
+	 *  ({@link #getSubItems}), the recipe output comes with stats. Identity, same as in 1.7.10, = meta. Analysis and measurement —
+	 *  in the javadoc {@link MultiItem#identityIncludesNBT()} and in ticket BUG-079. */
 	@Override public boolean identityIncludesNBT() {return F;}
 
 	public boolean isUsableMeta(short aMeta) {

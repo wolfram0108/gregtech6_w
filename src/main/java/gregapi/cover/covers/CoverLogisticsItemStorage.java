@@ -52,7 +52,7 @@ public class CoverLogisticsItemStorage extends AbstractCoverAttachmentLogistics 
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		ItemStack tStack = ST.load(ItemNBT.get(aStack), "gt.filter.item");
 		if (ST.valid(tStack)) aList.add(LH.Chat.CYAN + tStack.getDisplayName());
-		aList.add(LH.Chat.ORANGE + "Not NBT sensitive!");
+		aList.add(LH.Chat.ORANGE + LH.tt("Not NBT sensitive!"));
 		super.addToolTips(aList, aStack, aF3_H);
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_RESET_SOFT_HAMMER));
 	}
@@ -66,15 +66,15 @@ public class CoverLogisticsItemStorage extends AbstractCoverAttachmentLogistics 
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
 				if (aData.mNBTs[aCoverSide] == null) {
-					aChatReturn.add("No Filter Set! (Priority: " + aData.mValues[aCoverSide] + ")");
+					aChatReturn.add(LH.tt("No Filter Set! (Priority: ") + aData.mValues[aCoverSide] + ")");
 					aData.mNBTs[aCoverSide] = null;
 				} else {
 					ItemStack tStack = ST.load(aData.mNBTs[aCoverSide], "gt.filter.item");
 					if (ST.invalid(tStack)) {
-						aChatReturn.add("No Filter Set! (Priority: " + aData.mValues[aCoverSide] + ")");
+						aChatReturn.add(LH.tt("No Filter Set! (Priority: ") + aData.mValues[aCoverSide] + ")");
 						aData.mNBTs[aCoverSide] = null;
 					} else {
-						aChatReturn.add("Stores: " + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack) + " (Priority: " + aData.mValues[aCoverSide] + ")");
+						aChatReturn.add(LH.tt("Stores: ") + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack) + LH.tt(" (Priority: ") + aData.mValues[aCoverSide] + ")");
 					}
 				}
 			}
@@ -91,7 +91,7 @@ public class CoverLogisticsItemStorage extends AbstractCoverAttachmentLogistics 
 				if (ST.valid(tStack)) {
 					aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", tStack);
 					UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);
-					UT.Entities.sendchat(aPlayer, "Stores: " + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
+					UT.Entities.sendchat(aPlayer, LH.tt("Stores: ") + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
 				}
 			}
 		}

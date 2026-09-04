@@ -267,7 +267,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		aList.add(Chat.CYAN + LH.get(LH.RECIPES) + ": " + Chat.WHITE + LH.get(mRecipes.mNameInternal) + (mParallel > 1 ? " (up to "+mParallel+"x processed per run)" : ""));
+		aList.add(Chat.CYAN + LH.get(LH.RECIPES) + ": " + Chat.WHITE + LH.get(mRecipes.mNameInternal) + (mParallel > 1 ? LH.tt(" (up to ")+mParallel+LH.tt("x processed per run)") : ""));
 		
 		if (mCheapOverclocking)
 		aList.add(Chat.YELLOW + LH.get(LH.CHEAP_OVERCLOCKING));
@@ -314,9 +314,9 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 				if (UT.Code.stringValid(tSideNames)) aList.add(Chat.GREEN   + LH.get(LH.ITEM_INPUT)     + ": " + Chat.WHITE + tSideNames);
 				tSideNames = "";
 			} else if (SIDES_VALID[mItemAutoInput]) {
-				aList.add(Chat.GREEN + LH.get(LH.ITEM_INPUT) + ": " + Chat.WHITE + LH.get(LH.FACES[mItemAutoInput]) + " (auto, otherwise any)");
+				aList.add(Chat.GREEN + LH.get(LH.ITEM_INPUT) + ": " + Chat.WHITE + LH.get(LH.FACES[mItemAutoInput]) + LH.tt(" (auto, otherwise any)"));
 			} else {
-				aList.add(Chat.GREEN + LH.get(LH.ITEM_INPUT) + ": " + Chat.WHITE + LH.get(LH.FACE_ANY) + " (no auto)");
+				aList.add(Chat.GREEN + LH.get(LH.ITEM_INPUT) + ": " + Chat.WHITE + LH.get(LH.FACE_ANY) + LH.tt(" (no auto)"));
 			}
 		}
 		if (mRecipes.mOutputItemsCount > 0) {
@@ -325,9 +325,9 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 				if (UT.Code.stringValid(tSideNames)) aList.add(Chat.RED     + LH.get(LH.ITEM_OUTPUT)    + ": " + Chat.WHITE + tSideNames);
 				tSideNames = "";
 			} else if (SIDES_VALID[mItemAutoOutput]) {
-				aList.add(Chat.RED + LH.get(LH.ITEM_OUTPUT) + ": " + Chat.WHITE + LH.get(LH.FACES[mItemAutoOutput]) + " (auto, otherwise any)");
+				aList.add(Chat.RED + LH.get(LH.ITEM_OUTPUT) + ": " + Chat.WHITE + LH.get(LH.FACES[mItemAutoOutput]) + LH.tt(" (auto, otherwise any)"));
 			} else {
-				aList.add(Chat.RED + LH.get(LH.ITEM_OUTPUT) + ": " + Chat.WHITE + LH.get(LH.FACE_ANY) + " (no auto)");
+				aList.add(Chat.RED + LH.get(LH.ITEM_OUTPUT) + ": " + Chat.WHITE + LH.get(LH.FACE_ANY) + LH.tt(" (no auto)"));
 			}
 		}
 		if (mRecipes.mInputFluidCount > 0) {
@@ -336,9 +336,9 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 				if (UT.Code.stringValid(tSideNames)) aList.add(Chat.GREEN   + LH.get(LH.FLUID_INPUT)    + ": " + Chat.WHITE + tSideNames);
 				tSideNames = "";
 			} else if (SIDES_VALID[mFluidAutoInput]) {
-				aList.add(Chat.GREEN + LH.get(LH.FLUID_INPUT) + ": " + Chat.WHITE + LH.get(LH.FACES[mFluidAutoInput]) + " (auto, otherwise any)");
+				aList.add(Chat.GREEN + LH.get(LH.FLUID_INPUT) + ": " + Chat.WHITE + LH.get(LH.FACES[mFluidAutoInput]) + LH.tt(" (auto, otherwise any)"));
 			} else {
-				aList.add(Chat.GREEN + LH.get(LH.FLUID_INPUT) + ": " + Chat.WHITE + LH.get(LH.FACE_ANY) + " (no auto)");
+				aList.add(Chat.GREEN + LH.get(LH.FLUID_INPUT) + ": " + Chat.WHITE + LH.get(LH.FACE_ANY) + LH.tt(" (no auto)"));
 			}
 		}
 		if (mRecipes.mOutputFluidCount > 0) {
@@ -346,9 +346,9 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 				for (byte tSide : ALL_SIDES_VALID) if (FACE_CONNECTED[tSide][mFluidOutputs]) {tSideNames += (UT.Code.stringValid(tSideNames)?", ":"")+LH.get(LH.FACES[tSide])+(tSide==mFluidAutoOutput?" (auto)":"");}
 				if (UT.Code.stringValid(tSideNames)) aList.add(Chat.RED     + LH.get(LH.FLUID_OUTPUT)   + ": " + Chat.WHITE + tSideNames);
 			} else if (SIDES_VALID[mFluidAutoOutput]) {
-				aList.add(Chat.RED + LH.get(LH.FLUID_OUTPUT) + ": " + Chat.WHITE + LH.get(LH.FACES[mFluidAutoOutput]) + " (auto, otherwise any)");
+				aList.add(Chat.RED + LH.get(LH.FLUID_OUTPUT) + ": " + Chat.WHITE + LH.get(LH.FACES[mFluidAutoOutput]) + LH.tt(" (auto, otherwise any)"));
 			} else {
-				aList.add(Chat.RED + LH.get(LH.FLUID_OUTPUT) + ": " + Chat.WHITE + LH.get(LH.FACE_ANY) + " (no auto)");
+				aList.add(Chat.RED + LH.get(LH.FLUID_OUTPUT) + ": " + Chat.WHITE + LH.get(LH.FACE_ANY) + LH.tt(" (no auto)"));
 			}
 		}
 	}
@@ -367,8 +367,8 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 		if (aTool.equals(TOOL_screwdriver)) {
 			mMode = (byte)((mMode + 1) % 4);
 			aChatReturn.add("========================================");
-			aChatReturn.add((mMode & 1) != 0 ?"Only produce when Output is completely empty":"Produce whenever there is space");
-			aChatReturn.add((mMode & 2) != 0 ?"Only accept Input on empty Input Slots":"Accept Input on all Input Slots");
+			aChatReturn.add((mMode & 1) != 0 ?LH.tt("Only produce when Output is completely empty"):LH.tt("Produce whenever there is space"));
+			aChatReturn.add((mMode & 2) != 0 ?LH.tt("Only accept Input on empty Input Slots"):LH.tt("Accept Input on all Input Slots"));
 			updateInventory();
 			return 10000;
 		}
@@ -395,22 +395,22 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 			long rOutput = 0;
 			if (FACING_TO_SIDE[mFacing][mItemAutoInput] == aSide) {
 				mDisabledItemInput = !mDisabledItemInput;
-				aChatReturn.add(mDisabledItemInput?"Auto Item Input Disabled":"Auto Item Input Enabled");
+				aChatReturn.add(mDisabledItemInput?LH.tt("Auto Item Input Disabled"):LH.tt("Auto Item Input Enabled"));
 				rOutput += 10000;
 			}
 			if (FACING_TO_SIDE[mFacing][mItemAutoOutput] == aSide) {
 				mDisabledItemOutput = !mDisabledItemOutput;
-				aChatReturn.add(mDisabledItemOutput?"Auto Item Output Disabled":"Auto Item Output Enabled");
+				aChatReturn.add(mDisabledItemOutput?LH.tt("Auto Item Output Disabled"):LH.tt("Auto Item Output Enabled"));
 				rOutput += 10000;
 			}
 			if (FACING_TO_SIDE[mFacing][mFluidAutoInput] == aSide) {
 				mDisabledFluidInput = !mDisabledFluidInput;
-				aChatReturn.add(mDisabledFluidInput?"Auto Fluid Input Disabled":"Auto Fluid Input Enabled");
+				aChatReturn.add(mDisabledFluidInput?LH.tt("Auto Fluid Input Disabled"):LH.tt("Auto Fluid Input Enabled"));
 				rOutput += 10000;
 			}
 			if (FACING_TO_SIDE[mFacing][mFluidAutoOutput] == aSide) {
 				mDisabledFluidOutput = !mDisabledFluidOutput;
-				aChatReturn.add(mDisabledFluidOutput?"Auto Fluid Output Disabled":"Auto Fluid Output Enabled");
+				aChatReturn.add(mDisabledFluidOutput?LH.tt("Auto Fluid Output Disabled"):LH.tt("Auto Fluid Output Enabled"));
 				rOutput += 10000;
 			}
 			if (rOutput > 0) {
@@ -426,12 +426,12 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	}
 	
 	public void onMagnifyingGlass(List<String> aChatReturn) {
-		aChatReturn.add((mMode & 1) != 0 ?"Only produce when Output is completely empty":"Produce whenever there is space");
-		aChatReturn.add((mMode & 2) != 0 ?"Only accept Input on empty Input Slots":"Accept Input on all Input Slots");
-		if (SIDES_VALID[mItemAutoInput  ]) aChatReturn.add(mDisabledItemInput  ?"Auto Item Input Disabled"  :"Auto Item Input Enabled"  );
-		if (SIDES_VALID[mItemAutoOutput ]) aChatReturn.add(mDisabledItemOutput ?"Auto Item Output Disabled" :"Auto Item Output Enabled" );
-		if (SIDES_VALID[mFluidAutoInput ]) aChatReturn.add(mDisabledFluidInput ?"Auto Fluid Input Disabled" :"Auto Fluid Input Enabled" );
-		if (SIDES_VALID[mFluidAutoOutput]) aChatReturn.add(mDisabledFluidOutput?"Auto Fluid Output Disabled":"Auto Fluid Output Enabled");
+		aChatReturn.add((mMode & 1) != 0 ?LH.tt("Only produce when Output is completely empty"):LH.tt("Produce whenever there is space"));
+		aChatReturn.add((mMode & 2) != 0 ?LH.tt("Only accept Input on empty Input Slots"):LH.tt("Accept Input on all Input Slots"));
+		if (SIDES_VALID[mItemAutoInput  ]) aChatReturn.add(mDisabledItemInput  ?LH.tt("Auto Item Input Disabled")  :LH.tt("Auto Item Input Enabled")  );
+		if (SIDES_VALID[mItemAutoOutput ]) aChatReturn.add(mDisabledItemOutput ?LH.tt("Auto Item Output Disabled") :LH.tt("Auto Item Output Enabled") );
+		if (SIDES_VALID[mFluidAutoInput ]) aChatReturn.add(mDisabledFluidInput ?LH.tt("Auto Fluid Input Disabled") :LH.tt("Auto Fluid Input Enabled") );
+		if (SIDES_VALID[mFluidAutoOutput]) aChatReturn.add(mDisabledFluidOutput?LH.tt("Auto Fluid Output Disabled"):LH.tt("Auto Fluid Output Enabled"));
 	}
 	
 	@Override
@@ -531,7 +531,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	
 	@Override
 	public ItemStack[] getDefaultInventory(CompoundTag aNBT) {
-		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP).orElse("")); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP).orElse("")); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: don't overwrite the default on a null lookup */
 		ACCESSIBLE_SLOTS = UT.Code.getAscendingArray(mRecipes.mInputItemsCount + mRecipes.mOutputItemsCount);
 		ACCESSIBLE_INPUTS = UT.Code.getAscendingArray(mRecipes.mInputItemsCount);
 		ACCESSIBLE_OUTPUTS = new int[mRecipes.mOutputItemsCount];
@@ -1020,7 +1020,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	@Override public void setVisualData(byte aData) {mRunning=((aData&2)!=0); mActive=((aData&1)!=0);}
 	@Override public byte getDefaultSide() {return SIDE_FRONT;}
 	@Override public boolean[] getValidSides() {return mActive ? SIDES_THIS[mFacing] : SIDES_HORIZONTAL;}
-	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {byte tF = mFacing /* BUG-074: компенсация item-facing перенесена в центр — MultiTileEntityBlockInternal.passRenderingToObject */; return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(mTexturesMaterial[FACING_ROTATIONS[tF][aSide]], mRGBa), BlockTextureDefault.get((mActive||level==null?mTexturesActive:mRunning?mTexturesRunning:mTexturesInactive)[FACING_ROTATIONS[tF][aSide]])) : null;}
+	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {byte tF = mFacing /* BUG-074: item-facing compensation was moved to the centre — MultiTileEntityBlockInternal.passRenderingToObject */; return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(mTexturesMaterial[FACING_ROTATIONS[tF][aSide]], mRGBa), BlockTextureDefault.get((mActive||level==null?mTexturesActive:mRunning?mTexturesRunning:mTexturesInactive)[FACING_ROTATIONS[tF][aSide]])) : null;}
 	
 	@Override public boolean canSave(int aSlot) {return !IL.Display_Fluid.equal(slot(aSlot), T, T);}
 	public boolean hasWork() {return mMaxProgress > 0 || mChargeRequirement > 0;}

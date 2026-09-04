@@ -85,13 +85,13 @@ public abstract class TileEntityBase11Bidirectional extends TileEntityBase10Ener
 			mStorage.mEnergy = 0; // Makes it less likely to cause overcharge when switching Modes by accident.
 			mReversed = !mReversed;
 			TE_Behavior_Energy_Converter tConverter = mConverter; mConverter = mConRevert; mConRevert = tConverter;
-			if (aChatReturn != null) aChatReturn.add(mReversed ? "Reversed" : "Normal");
+			if (aChatReturn != null) aChatReturn.add(mReversed ? LH.tt("Reversed") : LH.tt("Normal"));
 			causeBlockUpdate();
 			doEnetUpdate();
 			return 10000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null) aChatReturn.add(mReversed ? "Reversed" : "Normal");
+			if (aChatReturn != null) aChatReturn.add(mReversed ? LH.tt("Reversed") : LH.tt("Normal"));
 			return 1;
 		}
 		return 0;

@@ -58,7 +58,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-// F5/BUG-045: 1.7.10 IFluidContainerItem восстановлен как живой compat-mirror — implements 1:1 с оригиналом (:52).
+// F5/BUG-045: the 1.7.10 IFluidContainerItem is restored as a live compat mirror — implements 1:1 with the original (:52).
 public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable implements IMTE_AddToolTips, IMTE_GetMaxStackSize, ITileEntityFunnelAccessible, ITileEntityTapAccessible, ITileEntityProgress, ITileEntityConnectedTank, IFluidHandler, IFluidContainerItem, IItemRottable {
 	public FluidTankGT mTank = new FluidTankGT(16000);
 	public byte mMode = 0;
@@ -98,7 +98,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		aList.add(Chat.CYAN + mTank.contentcap());
-		if (mTank.has() && (mMode & B[1]) != 0) aList.add(Chat.CYAN + "Sealed (" + mSealedTime + ")");
+		if (mTank.has() && (mMode & B[1]) != 0) aList.add(Chat.CYAN + LH.tt("Sealed (") + mSealedTime + ")");
 		aList.add(Chat.ORANGE   + LH.get(LH.NO_GUI_FUNNEL_TAP_TO_TANK));
 		aList.add(Chat.ORANGE   + LH.get(LH.NO_POWER_CONDUCTING_FLUIDS));
 		if (onlySimple()) aList.add(Chat.ORANGE + LH.get(LH.TOOLTIP_ONLY_SIMPLE));
@@ -127,7 +127,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 			}
 			if (canBeSealed()) {
 				mMode ^= B[1];
-				aChatReturn.add((mMode & B[1]) == 0 ? "Normal" : "Sealed");
+				aChatReturn.add((mMode & B[1]) == 0 ? LH.tt("Normal") : LH.tt("Sealed"));
 				mMaxSealedTime = 0;
 				mSealedTime = 0;
 			}
@@ -140,21 +140,21 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 		}
 		if (aTool.equals(TOOL_wrench) || aTool.equals(TOOL_monkeywrench)) {
 			mMode ^= B[0];
-			aChatReturn.add((mMode & B[0]) == 0 ? "Won't fill vertically adjacent Tanks" : "Will fill vertically adjacent Tanks (depending on Gravity and State of Matter)");
+			aChatReturn.add((mMode & B[0]) == 0 ? LH.tt("Won't fill vertically adjacent Tanks") : LH.tt("Will fill vertically adjacent Tanks (depending on Gravity and State of Matter)"));
 			updateClientData();
 			updateInventory();
 			return 10000;
 		}
-		if (aTool.equals(TOOL_thermometer)) {if (aChatReturn != null) aChatReturn.add("Temperature: " + FL.temperature(mTank) + "K"); return 10000;}
+		if (aTool.equals(TOOL_thermometer)) {if (aChatReturn != null) aChatReturn.add(LH.tt("Temperature: ") + FL.temperature(mTank) + "K"); return 10000;}
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
-				aChatReturn.add((mMode & B[0]) == 0 ? "Won't fill vertically adjacent Tanks" : "Will fill vertically adjacent Tanks (depending on Gravity and State of Matter)");
+				aChatReturn.add((mMode & B[0]) == 0 ? LH.tt("Won't fill vertically adjacent Tanks") : LH.tt("Will fill vertically adjacent Tanks (depending on Gravity and State of Matter)"));
 				aChatReturn.add(mTank.contentcap());
 				if (!mTank.isEmpty() && (mMode & B[1]) != 0) {
 					if (mMaxSealedTime > 0) {
-						aChatReturn.add("Sealed (" + mSealedTime + " / " + mMaxSealedTime + ")");
+						aChatReturn.add(LH.tt("Sealed (") + mSealedTime + " / " + mMaxSealedTime + ")");
 					} else {
-						aChatReturn.add("Sealed");
+						aChatReturn.add(LH.tt("Sealed"));
 					}
 				}
 			}

@@ -80,7 +80,7 @@ public class MultiTileEntityMotorLiquid extends TileEntityBase09FacingSingle imp
 		mActivity = new TE_Behavior_Active_Trinary(this, aNBT);
 		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBooleanOr(NBT_STOPPED, false);
 		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLongOr(NBT_OUTPUT, 0L);
-		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP).orElse("")); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP).orElse("")); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: don't overwrite the default on a null lookup */
 		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShortOr(NBT_EFFICIENCY, (short)0));
 		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_EMITTED, ""));
 		mTanks[0].readFromNBT(aNBT, NBT_TANK+".0").setCapacity(mRate * 10);
@@ -166,8 +166,8 @@ public class MultiTileEntityMotorLiquid extends TileEntityBase09FacingSingle imp
 		
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
-				aChatReturn.add("Input: "  + mTanks[0].content());
-				aChatReturn.add("Output: " + mTanks[1].content());
+				aChatReturn.add(LH.tt("Input: ")  + mTanks[0].content());
+				aChatReturn.add(LH.tt("Output: ") + mTanks[1].content());
 			}
 			return 1;
 		}

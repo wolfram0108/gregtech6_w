@@ -144,7 +144,7 @@ public class MultiTileEntityCoin extends TileEntityBase04MultiTileEntities imple
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		aList.add(LH.Chat.CYAN + mMaterial.getLocal() + (mIsUnique?" (Unique)":""));
+		aList.add(LH.Chat.CYAN + mMaterial.getLocal() + (mIsUnique?LH.tt(" (Unique)"):""));
 		aList.add(LH.Chat.DGRAY + LH.get("gt.tooltip.coins.1"));
 		aList.add(LH.Chat.DGRAY + LH.get("gt.tooltip.coins.2"));
 		aList.add(LH.Chat.DGRAY + LH.get("gt.tooltip.coins.3"));
@@ -158,7 +158,7 @@ public class MultiTileEntityCoin extends TileEntityBase04MultiTileEntities imple
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && SIDES_TOP[aSide]) {
-			ItemStack aStack = ST.n(aPlayer.getMainHandItem()), tStack = getCoin(1, MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID()), getMultiTileEntityID()); // F15-граница: движок EMPTY -> GT6 null
+			ItemStack aStack = ST.n(aPlayer.getMainHandItem()), tStack = getCoin(1, MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID()), getMultiTileEntityID()); // F15 boundary: engine EMPTY -> GT6 null
 			int tIndex = (int)(Math.min(0.99F, Math.max(0, aHitX))*4)*4+(int)(Math.min(0.99F, Math.max(0, aHitZ))*4);
 			if (tStack != null) {
 				if (aStack == null) {

@@ -102,10 +102,10 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		if (aNBT.contains(NBT_CONNECTION)) mAutoPullDirections = aNBT.getByteOr(NBT_CONNECTION, (byte)0);
 		if (aNBT.contains(NBT_TEMPERATURE)) mTemperature = aNBT.getLongOr(NBT_TEMPERATURE, 0L);
 		mContent = OreDictMaterialStack.load(NBT_MATERIALS, aNBT);
-		// Облик формы (что и в каком виде в ней застыло) считается ВМЕСТЕ с логикой остывания — вывести его
-		// заново чистой формулой нельзя (материал по дороге подменяется на затвердевший). Поэтому он хранится:
-		// иначе после загрузки в чанке ВНЕ зоны симуляции (там блок-энтити не тикает, см.
-		// TileEntityBase03TicksAndSync.updateVisualData) форма с содержимым выглядела бы пустой.
+		// The mold's appearance (what and in what form solidified in it) is computed TOGETHER with the cooldown logic — it
+		// cannot be derived again by a clean formula (the material gets swapped for the hardened one along the way). So it is stored:
+		// otherwise, after loading in a chunk OUTSIDE the simulation area (block entities don't tick there, see
+		// TileEntityBase03TicksAndSync.updateVisualData), the filled mold would look empty.
 		if (aNBT.contains("gt.mold.display")) mDisplay = aNBT.getShortOr("gt.mold.display", (short)0);
 	}
 	
@@ -116,7 +116,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mUseRedstone);
 		UT.NBT.setNumber(aNBT, NBT_TEMPERATURE, mTemperature);
 		UT.NBT.setNumber(aNBT, "gt.mold", mShape);
-		UT.NBT.setNumber(aNBT, "gt.mold.display", mDisplay); // см. readFromNBT2: облик переживает выгрузку сам
+		UT.NBT.setNumber(aNBT, "gt.mold.display", mDisplay); // see readFromNBT2: the appearance survives unload on its own
 		if (mContent != null) mContent.save(NBT_MATERIALS, aNBT);
 	}
 	
@@ -133,7 +133,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		if (mShape == 0)
 		aList.add(Chat.CYAN     + LH.get(LH.RECIPES_MOLD_SELECT));
 		else
-		aList.add(Chat.CYAN     + LH.get(LH.RECIPES_MOLD) + " " + getMoldRecipe(mShape).mNameLocal + Chat._WHITE + UT.Code.displayUnits(getMoldRequiredMaterialUnits()) + " Units");
+		aList.add(Chat.CYAN     + LH.get(LH.RECIPES_MOLD) + " " + getMoldRecipe(mShape).mNameLocal + Chat._WHITE + UT.Code.displayUnits(getMoldRequiredMaterialUnits()) + LH.tt(" Units"));
 		aList.add(Chat.ORANGE   + LH.get(LH.NO_GUI_CLICK_TO_INTERACT)   + " (" + LH.get(LH.FACE_TOP) + ")");
 		if (mAcidProof) aList.add(Chat.ORANGE + LH.get(LH.TOOLTIP_ACIDPROOF));
 		aList.add(Chat.DRED     + LH.get(LH.HAZARD_MELTDOWN) + " (" + getMoldMaxTemperature() + " K)");
@@ -308,7 +308,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		if (tOutputStack != null) {
 			OreDictItemData tData = OM.anyassociation(tOutputStack);
 			if (tData != null) for (Advancement tAchievement : tData.mMaterial.mMaterial.mAchievementsForCreation) ST.achieve(aPlayer, tAchievement);
-			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15-граница: движок EMPTY -> GT6 null (тело 1:1 рассуждает null-семантикой)
+			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15 boundary: engine EMPTY -> GT6 null (the body reasons in null-semantics 1:1)
 			if (aStack == null) {
 				aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), tOutputStack);
 				slotKill(0);
@@ -334,7 +334,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	@Override
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
-		if (aTool.equals(TOOL_thermometer)) {if (aChatReturn != null) aChatReturn.add("Temperature: " + mTemperature + "K"); return 10000;}
+		if (aTool.equals(TOOL_thermometer)) {if (aChatReturn != null) aChatReturn.add(LH.tt("Temperature: ") + mTemperature + "K"); return 10000;}
 		if (aTool.equals(TOOL_chisel) && mContent == null && slot(0) == null && aHitX > PX_P[2] && aHitX < PX_N[2] && aHitZ > PX_P[2] && aHitZ < PX_N[2]) {
 			int tBit = B[((int)(5 * (aHitX - PX_P[2]) / PX_P[12]))*5+(int)(5 * (aHitZ - PX_P[2]) / PX_P[12])];
 			if ((mShape & tBit) == 0) {
@@ -347,7 +347,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		if (aTool.equals(TOOL_softhammer)) {
 			mUseRedstone = F;
 			mAutoPullDirections = 0;
-			if (aChatReturn != null) aChatReturn.add("Crucible Auto-Input: OFF & NO REDSTONE");
+			if (aChatReturn != null) aChatReturn.add(LH.tt("Crucible Auto-Input: OFF & NO REDSTONE"));
 			return 10000;
 		}
 		if (aTool.equals(TOOL_monkeywrench)) {
@@ -355,25 +355,25 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 				byte tSide = UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ);
 				if (SIDES_HORIZONTAL[tSide]) {
 					mAutoPullDirections ^= SBIT[tSide];
-					if (aChatReturn != null) aChatReturn.add(FACE_CONNECTED[tSide][mAutoPullDirections] ? "Crucible Auto-Input: ON" : "Crucible Auto-Input: OFF");
+					if (aChatReturn != null) aChatReturn.add(FACE_CONNECTED[tSide][mAutoPullDirections] ? LH.tt("Crucible Auto-Input: ON") : LH.tt("Crucible Auto-Input: OFF"));
 					return 10000;
 				}
 				mUseRedstone = !mUseRedstone;
-				if (aChatReturn != null) aChatReturn.add(mUseRedstone ? "Crucible Auto-Input: REDSTONE" + (mAutoPullDirections == 0 ? " (WARNING: No Direction Selected!)" : "") : "Crucible Auto-Input: NO REDSTONE");
+				if (aChatReturn != null) aChatReturn.add(mUseRedstone ? LH.tt("Crucible Auto-Input: REDSTONE") + (mAutoPullDirections == 0 ? LH.tt(" (WARNING: No Direction Selected!)") : "") : LH.tt("Crucible Auto-Input: NO REDSTONE"));
 				return 10000;
 			}
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
 				if (mShape == 0)
-				aChatReturn.add(Chat.CYAN       + "Use a Chisel in order to select the Shape of the Mold");
+				aChatReturn.add(Chat.CYAN       + LH.tt("Use a Chisel in order to select the Shape of the Mold"));
 				else
-				aChatReturn.add(Chat.CYAN       + "This Mold produces " + getMoldRecipe(mShape).mNameLocal);
+				aChatReturn.add(Chat.CYAN       + LH.tt("This Mold produces ") + getMoldRecipe(mShape).mNameLocal);
 				if (SIDES_TOP[aSide]) {
 					byte tSide = UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ);
-					if (SIDES_HORIZONTAL[tSide]) aChatReturn.add(FACE_CONNECTED[tSide][mAutoPullDirections] ? "Crucible Auto-Input: ON" : "Crucible Auto-Input: OFF");
+					if (SIDES_HORIZONTAL[tSide]) aChatReturn.add(FACE_CONNECTED[tSide][mAutoPullDirections] ? LH.tt("Crucible Auto-Input: ON") : LH.tt("Crucible Auto-Input: OFF"));
 				}
-				aChatReturn.add(mUseRedstone ? "Crucible Auto-Input: REDSTONE" + (mAutoPullDirections == 0 ? " (WARNING: No Direction Selected!)" : "") : "Crucible Auto-Input: NO REDSTONE");
+				aChatReturn.add(mUseRedstone ? LH.tt("Crucible Auto-Input: REDSTONE") + (mAutoPullDirections == 0 ? LH.tt(" (WARNING: No Direction Selected!)") : "") : LH.tt("Crucible Auto-Input: NO REDSTONE"));
 			}
 			return 1;
 		}

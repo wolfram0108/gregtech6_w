@@ -23,53 +23,56 @@ sourceSets.main.resources {
 
     // Exclude common development only resources from finalized outputs
     exclude("**/*.bbmodel") // BlockBench project files
-    // Шаблон считается ОТ КОРНЯ ресурсного каталога, а не от корня проекта, поэтому прежний
-    // "src/generated/**/.cache" не срабатывал: кэш датагена уезжал в jar (найдено сверкой артефакта
-    // из чистого клона с локальным — у постороннего jar оказался чище на 4 записи).
+    // The pattern is resolved from the resource-tree ROOT, not the project root, so the old
+    // "src/generated/**/.cache" never matched: the datagen cache leaked into the jar (found by
+    // diffing a clean-clone artifact against the local one — the foreign jar was 4 entries cleaner).
     exclude("**/.cache/**")
-    // ИСПОЛНЯЕМЫЕ СКРИПТЫ В ДЕРЕВЕ АССЕТОВ. Оригинал GT6 хранит РЯДОМ с текстурами личную оснастку
-    // художника: перетащил PNG на copy_into_dull.bat — тот раскопировал иконку по подпапкам
-    // DULL/FINE/FLINT/… (12 таких файлов в textures/{blocks,items}/materialicons и .../randomtools).
-    // Мод их не читает НИКОГДА — это инструмент подготовки ассетов, а не ресурс. В исходниках они
-    // остаются (репозиторий — зеркало оригинала 1:1), но в поставку не идут: площадки раздачи модов
-    // отклоняют архив с исполняемыми расширениями целиком, и весь jar становится непубликуемым.
-    // Отсекается КЛАСС расширений, а не сегодняшние двенадцать файлов: любой новый скрипт, который
-    // приедет с ассетами оригинала, отсеется молча и заранее.
+    // EXECUTABLE SCRIPTS IN THE ASSET TREE. The GT6 original keeps the artist's personal tooling
+    // RIGHT NEXT to the textures: drag a PNG onto copy_into_dull.bat and it fans the icon out across
+    // the DULL/FINE/FLINT/... subfolders (12 such files under textures/{blocks,items}/materialicons
+    // and .../randomtools). The mod NEVER reads them — they're an asset-prep tool, not a resource.
+    // They stay in the sources (the repo mirrors the original 1:1), but don't ship: mod-distribution
+    // sites reject an archive carrying executable extensions outright, making the whole jar unpublishable.
+    // The exclusion targets the CLASS of extensions, not today's twelve files: any new script that
+    // arrives with the original's assets is filtered out silently and in advance.
     exclude("**/*.bat", "**/*.cmd", "**/*.com", "**/*.exe", "**/*.msi", "**/*.scr",
             "**/*.vbs", "**/*.ps1", "**/*.sh", "**/*.bin", "**/*.dll", "**/*.so")
 }
 
-// F10 (decisions/F10-external-mod-compat.md §3.2): ЦЕНТРАЛЬНОЕ ЗЕРКАЛО чужих API — единственная точка,
-// где живут compile-only декларации интерфейсов внешних модов (IC2/AE2/…), которые GregTech6 реализует.
-// Держит ядро компилируемым, пока интеграция с модами ОТЛОЖЕНА. Возврат к реальной интеграции = удалить
-// этот каталог и подключить настоящие зависимости — в ОДНОМ месте. Аналог compileOnly dev-jar'ов оракула.
+// F10 (decisions/F10-external-mod-compat.md §3.2): CENTRAL MIRROR of foreign APIs — the single spot
+// holding compile-only interface declarations for external mods (IC2/AE2/...) that GregTech6 implements.
+// Keeps the core compiling while mod integration is DEFERRED. Returning to real integration means deleting
+// this directory and wiring up the real dependencies — in ONE place. Analogous to the oracle's compileOnly dev-jars.
 sourceSets.main.java.srcDir('src/compat-mirror/java')
 
-// Режим -PcoreOnly СНЯТ вместе с фазой массовой компиляции, которую он обслуживал: он сужал сборку до
-// ядра по двум спискам файлов, потому что контент-слой тогда ещё не компилировался. Контент собирается,
-// фаза закрыта — режим и его списки (core_unit_v2_files.txt, mirror_files.txt) убраны из репозитория.
+// The -PcoreOnly mode was REMOVED together with the mass-compilation phase it served: it narrowed the
+// build to the core via two file lists, because the content layer didn't compile yet back then. The
+// content now compiles, the phase is closed — the mode and its lists (core_unit_v2_files.txt,
+// mirror_files.txt) are removed from the repository.
 
-// Режим -PparityFull СНЯТ: он был третьим способом сказать «сверить с оригиналом» и после разделения
-// режимов (см. блок test ниже) только путал. Сверка включается наличием пути к дампам оригинала:
-//     gradlew test -Pgt6.oracle=<путь>
+// The -PparityFull mode was REMOVED: it was a third way to say "diff against the original" and, after
+// the modes were split (see the test block below), only caused confusion. Parity is enabled by the
+// presence of a path to the original's dumps:
+//     gradlew test -Pgt6.oracle=<path>
 
-// runClient/runData/runServer (module-режим дев-запуска): те же JPMS split-package crutch-классы
-// (net.minecraft.*/cpw.* из compat-mirror, зона F10), что и в test, конфликтуют с модулями minecraft/jei при
-// module-resolution (ResolutionException «Modules minecraft and gregtech6 export package net.minecraft.*»).
-// Стрипаем их из рантайм-вывода build/classes/java/main ПОСЛЕ compile, ДО запуска — ровно как stripMcMirror
-// для test. Рантайм GT6 их не зовёт: render-shim'ы (IIcon/IIconRegister/RenderBlocks) superseded пайплайном
-// GT6BlockModel (baked-модели), server-путь доказан parity-тестом. Если рантайм всё же дёрнет конкретный
-// класс → точечный NoClassDefFound укажет его, тогда адаптируем адресно. incremental=false: strip удаляет
-// .class из вывода, инкрементальная компиляция на след. прогоне путается («package does not exist») —
-// полная компиляция регенерит миражи каждый раз, strip снова удаляет → консистентно.
+// runClient/runData/runServer (dev-run module mode): the same JPMS split-package crutch classes
+// (net.minecraft.*/cpw.* from compat-mirror, F10 zone) as in test conflict with the minecraft/jei modules
+// during module resolution (ResolutionException "Modules minecraft and gregtech6 export package net.minecraft.*").
+// Strip them from the build/classes/java/main runtime output AFTER compile, BEFORE launch — exactly like
+// stripMcMirror does for test. GT6's runtime never calls them: the render shims (IIcon/IIconRegister/RenderBlocks)
+// are superseded by the GT6BlockModel pipeline (baked models), and the server path is proven by the parity
+// test. If the runtime ever does reach for a specific class, a pinpoint NoClassDefFound will name it and it
+// gets adapted then. incremental=false: stripping removes .class files from the output, and incremental
+// compilation on the next run gets confused ("package does not exist") — a full compile regenerates the
+// mirages every time, strip removes them again → consistent.
 tasks.named('compileJava').configure { options.incremental = false }
-// ОДНА задача на весь проект: и дев-запуски, и тесты снимают одни и те же crutch-классы из одного и
-// того же вывода. Прежде копий было две (для run* и для test) — и они разошлись: тестовая умела
-// configuration cache, запусковая нет, из-за чего любой дев-запуск падал на кэше конфигурации.
-// Пути вычисляются НА КОНФИГУРАЦИИ: обращение к file()/project внутри doLast несовместимо с кэшем.
+// ONE task for the whole project: both dev runs and tests strip the same crutch classes from the same
+// output. There used to be two copies (for run* and for test) and they drifted apart — the test one
+// supported the configuration cache, the run one didn't, so any dev run failed on the config cache.
+// Paths are computed AT CONFIGURATION time: touching file()/project inside doLast is incompatible with the cache.
 def mirrorDirs = ['net/minecraft', 'cpw'].collect { file("build/classes/java/main/$it") }
 def stripCompatMirror = tasks.register('stripCompatMirror') {
-    description = 'Снять compile-only зеркала (net.minecraft, cpw) из рантайм-вывода: их пакетами владеет движок'
+    description = 'Strip compile-only mirrors (net.minecraft, cpw) from the runtime output: their packages belong to the engine'
     doLast {
         int removed = 0
         mirrorDirs.each { d ->
@@ -78,7 +81,7 @@ def stripCompatMirror = tasks.register('stripCompatMirror') {
                 d.deleteDir()
             }
         }
-        println("[strip] снято ${removed} crutch-.class из рантайм-модуля")
+        println("[strip] removed ${removed} crutch .class files from the runtime module")
     }
 }
 stripCompatMirror.configure { mustRunAfter tasks.named('classes') }
@@ -87,59 +90,62 @@ stripCompatMirror.configure { mustRunAfter tasks.named('classes') }
 }
 tasks.named('test').configure { dependsOn stripCompatMirror }
 
-// РУБИЛЬНИК отладочных проб (CS.probeFlag): файлы-флаги в run/ работают ТОЛЬКО при запуске с -Pgt6probes
-// (запуски оркестратора: `gradlew runClient -Pgt6probes …`). Обычный запуск игрока — пробы/автовход-в-мир
-// мертвы, даже если флаг случайно остался (класс сбоя «стухший флаг портит игровой запуск» закрыт механически).
+// DEBUG-PROBE MASTER SWITCH (CS.probeFlag): flag files under run/ work ONLY when launched with -Pgt6probes
+// (orchestrator runs: `gradlew runClient -Pgt6probes ...`). A regular player launch — probes/auto-world-join
+// are dead even if a flag was accidentally left behind (the "stale flag corrupts a game launch" defect class
+// is closed mechanically).
 if (project.hasProperty('gt6probes')) {
-    // ОСНАСТКА ПРОВЕРКИ ЖИВЁТ ВНЕ РЕПОЗИТОРИЯ — целиком, без исключений (решение владельца 2026-08-11:
-    // «стендов внутри репозитория больше не будет никогда»). Стенд — прибор, а не продукт: он не уходит
-    // наружу, не попадает ни в историю, ни в jar, и подключается только здесь, под -Pgt6probes.
-    // Лежит в рабочей среде рядом с репозиторием: ../stands/<лаборатория>/java. Каталога нет (репозиторий
-    // склонирован сам по себе) — сборка идёт без оснастки, продукту она не нужна.
-    // Стенды автономны: подписываются на события сами (@EventBusSubscriber), production-код о них не
-    // знает ни строчкой.
+    // TEST RIGS LIVE OUTSIDE THE REPOSITORY — entirely, no exceptions (owner decision 2026-08-11:
+    // "stands will never live inside the repository again"). A stand is an instrument, not the product: it
+    // never ships, never enters history or the jar, and is wired in only here, under -Pgt6probes.
+    // It lives in the working environment next to the repo: ../stands/<lab>/java. If the directory is
+    // missing (the repo was cloned on its own), the build proceeds without the rig — the product doesn't need it.
+    // Stands are self-contained: they subscribe to events themselves (@EventBusSubscriber), and
+    // production code doesn't know about them at all.
     file('../stands').listFiles()?.each { d ->
         File tSrc = new File(d, 'java')
         if (tSrc.isDirectory()) {
             sourceSets.main.java.srcDir(tSrc)
-            logger.lifecycle("[gt6probes] внешний стенд подключён: ${d.name}")
+            logger.lifecycle("[gt6probes] external stand wired in: ${d.name}")
         }
     }
     ['runClient', 'runData', 'runServer', 'runGameTestServer'].each { rn ->
         tasks.matching { it.name == rn }.configureEach { it.jvmArgs('-Dgt6.probes=true')
-            // проброс параметров стендов (напр. -Pgt6.probeArgs=gt6.drainprobe.kind=1)
+            // forward stand parameters (e.g. -Pgt6.probeArgs=gt6.drainprobe.kind=1)
             if (project.hasProperty('gt6.probeArgs')) project.property('gt6.probeArgs').toString().split(',').each { a -> it.jvmArgs('-D' + a) } }
     }
-    logger.lifecycle("[gt6probes] оснастка проверки ВКЛЮЧЕНА: внешние стенды (-Dgt6.probes=true)")
+    logger.lifecycle("[gt6probes] test rig ENABLED: external stands (-Dgt6.probes=true)")
 }
 
-// PRODUCTION-JAR: та же JPMS split-package беда, что в run*/test, но БЕЗ фикса ⇒ ломала запуск в реальном
-// (модульном) лаунчере. compat-mirror компилирует crutch-классы в net.minecraft.*/cpw.* — пакеты, которыми
-// в рантайме ВЛАДЕЮТ реальные модули (minecraft / FML). Когда они попадают в jar, automatic-module gregtech6
-// «экспортирует» net.minecraft.client.renderer ⇒ split с модулем minecraft ⇒ FML ResolutionException при
-// загрузке мода (см. STATE.md ит.10). stripCompatMirror чистит их для dev-запусков и тестов, а `jar` от него не
-// зависел ⇒ костыль недетерминированно (в зависимости от порядка задач) попадал в production-jar.
-// Мираж по замыслу compileOnly («Аналог compileOnly dev-jar'ов оракула», см. §F10 выше) ⇒ его классы НЕ
-// должны быть в jar. Исключаем ровно тот набор, что стрипается для run/test (проверен десятками runClient с
-// полным рендером): net/minecraft (владеет модуль minecraft) + cpw (владеет FML). net/minecraftforge и прочие
-// mod-API-миражи (appeng/ic2/…) НЕ трогаем — ими в чистой сборке НИКАКОЙ модуль не владеет (безвредны), а
-// рантайм GT6 их shim'ы может звать (напр. IFluidBlock в CoverDrain); их снятие — задача F10 при реальной
-// интеграции конкретного мода, не здесь. Исключение на УРОВНЕ jar (не delete из build/classes) ⇒ не мутирует
-// общий вывод, не воюет с incremental и run-задачами.
+// PRODUCTION JAR: the same JPMS split-package trouble as in run*/test, but WITHOUT the fix ⇒ it broke
+// launches on a real (modular) launcher. compat-mirror compiles crutch classes into net.minecraft.*/cpw.* —
+// packages OWNED at runtime by real modules (minecraft / FML). Once they land in the jar, the automatic
+// module gregtech6 "exports" net.minecraft.client.renderer ⇒ split with the minecraft module ⇒ an FML
+// ResolutionException on mod load (see STATE.md item 10). stripCompatMirror cleans them for dev runs and
+// tests, but `jar` didn't depend on it ⇒ the crutch classes ended up in the production jar nondeterministically
+// (depending on task order).
+// A mirage is compileOnly by design ("analogous to the oracle's compileOnly dev-jars", see §F10 above)
+// ⇒ its classes must NOT be in the jar. We exclude exactly the set that's stripped for run/test (verified
+// with dozens of full-render runClient runs): net/minecraft (owned by the minecraft module) + cpw (owned by
+// FML). net/minecraftforge and other mod-API mirages (appeng/ic2/...) are left ALONE — no module owns them
+// in a clean build (harmless), and GT6's runtime may call their shims (e.g. IFluidBlock in CoverDrain);
+// removing those is F10's job during real integration of that specific mod, not here. The exclusion happens
+// at the jar LEVEL (not a delete from build/classes) ⇒ it doesn't mutate the shared output and doesn't fight
+// with incremental compilation or the run tasks.
 tasks.named('jar').configure {
     exclude 'net/minecraft/**'
     exclude 'cpw/**'
 }
 
-// ВОСПРОИЗВОДИМАЯ СБОРКА. По умолчанию zip-записи несут время создания файла и порядок обхода
-// файловой системы — из-за этого два прогона ОДНОГО коммита дают разный jar и разную контрольную
-// сумму (наблюдалось: локальная сборка и сборка CI из одного тега отличались размером). Тогда
-// контрольная сумма доказывает только «файл дошёл целым», но не «собран из этого исходника».
-// С этими тремя настройками любой желающий пересобирает тег и получает ПОБАЙТОВО тот же jar —
-// проверка, которая не требует доверия ни к автору, ни к площадке.
-//   preserveFileTimestamps=false — время записей фиксируется константой вместо «сейчас»;
-//   reproducibleFileOrder=true   — порядок записей сортируется вместо порядка обхода ФС;
-//   *Permissions                 — права не зависят от umask сборочной машины (Windows/Linux).
+// REPRODUCIBLE BUILD. By default zip entries carry file-creation timestamps and filesystem-traversal
+// order — so two runs of the SAME commit produce a different jar and a different checksum (observed:
+// a local build and a CI build from the same tag differed in size). Then the checksum only proves "the
+// file arrived intact," not "it was built from this source."
+// With these three settings, anyone can rebuild the tag and get the BYTE-IDENTICAL jar — a check that
+// requires trusting neither the author nor the hosting site.
+//   preserveFileTimestamps=false — entry timestamps are pinned to a constant instead of "now";
+//   reproducibleFileOrder=true   — entries are sorted instead of following filesystem-traversal order;
+//   *Permissions                 — permissions don't depend on the build machine's umask (Windows/Linux).
 tasks.withType(AbstractArchiveTask).configureEach {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
@@ -150,16 +156,16 @@ tasks.withType(AbstractArchiveTask).configureEach {
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
 
-    // JEI (mezz.jei) — просмотрщик рецептов/предметов для визуальной приёмки. Репозиторий выверен по AE2.
+    // JEI (mezz.jei) — recipe/item viewer for visual acceptance. Repository coordinates verified against AE2.
     maven {
         url = 'https://maven.blamejared.com/'
         content { includeGroup 'mezz.jei' }
     }
 
-    // Jade (тултип «на что смотрю») — нужен ТОЛЬКО для компиляции плагина совместимости
-    // (gregtech/compat/Compat_Jade.java): у GT6 свои инструменты добычи (гаечный ключ/лом/кусачки/…),
-    // и Jade умеет принимать их через HarvestToolProvider.registerHandler — но для этого надо
-    // реализовать его интерфейс ToolHandler, то есть иметь API на compile-classpath.
+    // Jade (the "what am I looking at" tooltip) is needed ONLY to compile the compatibility plugin
+    // (gregtech/compat/Compat_Jade.java): GT6 has its own harvest tools (wrench/crowbar/cutter/...),
+    // and Jade can accept them via HarvestToolProvider.registerHandler — but that requires
+    // implementing its ToolHandler interface, i.e. having the API on the compile classpath.
     maven {
         url = 'https://api.modrinth.com/maven'
         content { includeGroup 'maven.modrinth' }
@@ -197,11 +203,13 @@ neoForge {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
 
-            // Авто-вход в существующий мир для приёмочного render-probe (гейт ②): в меню DataComponents предметов НЕ bound
-            // (ItemStack NPE «Components not bound yet»), а на world-load — bound. quickPlay грузит мир при старте →
-            // level!=null → GT_API_Proxy_Client.onClientTickProbe вызывает GT6ItemModel.probeItemIcons (found/missing в gregtech.log).
-            // ОТКЛЮЧЕНО: обычный запуск в главное меню. Авто-вход в мир — через клиент-хук onAutoWorldCreate (гейт wgautoworld.flag),
-            // который на TitleScreen сам создаёт свежий CREATIVE-мир (createFreshLevel, минуя диалоги). quickPlay НЕ годится (виснет на диалоге).
+            // Auto-join an existing world for the acceptance render probe (gate ②): in the menu, item DataComponents
+            // are NOT bound (ItemStack NPE "Components not bound yet"), but on world-load they are bound. quickPlay
+            // loads the world at startup → level!=null → GT_API_Proxy_Client.onClientTickProbe calls
+            // GT6ItemModel.probeItemIcons (found/missing logged to gregtech.log).
+            // DISABLED: a regular launch goes to the main menu. Auto-join is done via the client hook onAutoWorldCreate
+            // (gated by wgautoworld.flag), which on the TitleScreen creates a fresh CREATIVE world itself
+            // (createFreshLevel, bypassing dialogs). quickPlay does NOT work (hangs on a dialog).
             // programArguments.addAll '--quickPlaySingleplayer', 'GT6WGTest'
         }
 
@@ -209,8 +217,8 @@ neoForge {
             server()
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-            // Риг «дедикейт + удалённый клиент» (BUG-094): серверу СВОЙ каталог — одновременный runClient
-            // в общем run/ дерётся за logs/latest.log и gregtech.log (Windows file-lock), судья читает кашу.
+            // "Dedicated server + remote client" rig (BUG-094): the server gets its OWN directory — a concurrent
+            // runClient sharing run/ fights over logs/latest.log and gregtech.log (Windows file lock), and the judge reads garbage.
             gameDirectory = project.file('runserver')
         }
 
@@ -220,8 +228,8 @@ neoForge {
         gameTestServer {
             type = "gameTestServer"
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-            // Свой каталог: без него прогон сыпал logs/, config/ и .cache/ прямо в корень репозитория,
-            // и этот мусор попадал под руку при коммите. Оснастка не гадит там, где лежат исходники.
+            // Own directory: without it, the run dumped logs/, config/ and .cache/ straight into the repo
+            // root, and that junk got caught up in commits. The rig doesn't litter where the sources live.
             gameDirectory = project.file('rungametest')
         }
 
@@ -232,9 +240,10 @@ neoForge {
             // gameDirectory = project.file('run-data')
 
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            // F-datagen: mod_id (gregtech6) — контейнер БЕЗ @Mod-класса; GatherDataEvent шлётся только на мод-шины из набора --mod,
-            // а датапак-провайдер (энчанты/ворлдген) подписан на шине gregapi (GT6WorldgenFeature.register из GT_API-конструктора).
-            // → --mod gregapi, иначе событие не доходит до хендлера и провайдеры не запускаются (0 ms / пустой src/generated).
+            // F-datagen: mod_id (gregtech6) is a container WITHOUT an @Mod class; GatherDataEvent is only fired on the
+            // mod buses listed in --mod, and the datapack provider (enchantments/worldgen) is subscribed on the gregapi
+            // bus (GT6WorldgenFeature.register from the GT_API constructor).
+            // → --mod gregapi, otherwise the event never reaches the handler and providers don't run (0 ms / empty src/generated).
             programArguments.addAll '--mod', 'gregapi', '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
 
@@ -263,7 +272,7 @@ neoForge {
         }
     }
 
-    // Юнит-тесты ModDevGradle: настраивает sourceSet 'test' с Minecraft на classpath.
+    // ModDevGradle unit tests: sets up the 'test' sourceSet with Minecraft on the classpath.
     unitTest {
         enable()
         testedMod = mods."${mod_id}"
@@ -279,54 +288,54 @@ configurations {
 }
 
 dependencies {
-    // JEI (аналог NEI) — инструмент визуальной приёмки. Координаты выверены по AE2, метаданные резолвятся.
-    // compileOnly-строки временно закомментированы: скачивание jar с maven.blamejared.com в этой среде
-    // отваливается по таймауту, а на compileClasspath они БЛОКИРУЮТ компиляцию ядра (которое JEI пока не
-    // импортирует — плагинов ещё нет). Раскомментировать при написании JEI-плагинов GregTech6 / когда сеть
-    // до blamejared будет стабильна. localRuntime оставлен (он на runtime-пути, компиляцию не трогает;
-    // подтянет полный JEI при запуске игры для приёмки визуала).
+    // JEI (the NEI equivalent) — a visual-acceptance tool. Coordinates verified against AE2, metadata resolves.
+    // The compileOnly lines are temporarily commented out: downloading the jar from maven.blamejared.com times
+    // out in this environment, and on the compileClasspath they BLOCK core compilation (which doesn't import
+    // JEI yet — no plugins exist yet). Uncomment when writing GregTech6's JEI plugins / once the network to
+    // blamejared is stable. localRuntime is kept (it's on the runtime path and doesn't touch compilation;
+    // it pulls in the full JEI when the game launches for visual acceptance).
     compileOnly "mezz.jei:jei-${jei_minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${jei_minecraft_version}-neoforge-api:${jei_version}"
     localRuntime "mezz.jei:jei-${jei_minecraft_version}-neoforge:${jei_version}"
 
-    // Jade — ТОЛЬКО compileOnly: плагин совместимости (gregtech/compat/Compat_Jade.java) реализует его
-    // интерфейс ToolHandler, чтобы показывать НАСТОЯЩИЕ инструменты GT6 (гаечный ключ на машинах, лом, кусачки),
-    // которых ванильными тегами выразить нельзя. В jar игрока Jade не тянется; без Jade класс плагина просто
-    // не загружается (Jade сам ищет @WailaPlugin), поэтому production-код на него НЕ ссылается.
+    // Jade — compileOnly ONLY: the compatibility plugin (gregtech/compat/Compat_Jade.java) implements its
+    // ToolHandler interface to show GT6's REAL harvest tools (wrench on machines, crowbar, cutter), which
+    // can't be expressed via vanilla tags. Jade is not pulled into the player's jar; without Jade the plugin
+    // class simply doesn't load (Jade looks up @WailaPlugin itself), so production code does NOT reference it.
     compileOnly "maven.modrinth:jade:${jade_version}"
-    // localRuntime — чтобы стенд gt6jadeprobe мог спросить РЕАЛЬНЫЙ Jade тем же вызовом, каким он рисует
-    // тултип (HarvestToolProvider.getTool). На jar игрока не влияет: localRuntime — только dev-запуски.
+    // localRuntime — so the gt6jadeprobe stand can query the REAL Jade via the same call it uses to draw the
+    // tooltip (HarvestToolProvider.getTool). Doesn't affect the player's jar: localRuntime is dev-run-only.
     localRuntime "maven.modrinth:jade:${jade_version}"
 
-    // JourneyMap (MODCOMPAT-002) — ТОЛЬКО для стенда gt6jmprobe: судья спрашивает РЕАЛЬНЫЙ JourneyMap тем же
-    // каналом, каким тот решает судьбу блока на карте (BlockMD.get → isIgnore/getTextureColor/getAlpha;
-    // декомпил-референс: journeymap-decompiled/). Production-код на него НЕ ссылается; исходники мода закрыты
-    // (ARR), поэтому compileOnly идёт с того же Modrinth-maven, что и Jade.
+    // JourneyMap (MODCOMPAT-002) — ONLY for the gt6jmprobe stand: the judge queries the REAL JourneyMap via
+    // the same channel it uses to decide a block's fate on the map (BlockMD.get → isIgnore/getTextureColor/
+    // getAlpha; decompile reference: journeymap-decompiled/). Production code does NOT reference it; the
+    // mod's sources are closed (ARR), so compileOnly comes from the same Modrinth maven as Jade.
     compileOnly "maven.modrinth:journeymap:${journeymap_version}"
     localRuntime "maven.modrinth:journeymap:${journeymap_version}"
 
-    // Applied Energistics 2 (миссия «слой совместимости GT6 ⇄ AE2», этап Э0). GT6 знает AE2 с 1.7.10:
-    // gregtech/compat/Compat_Recipes_AppliedEnergistics.java задаёт прессы, резку, sky stone; MD.AE.mLoaded
-    // сторожит все эти пути. Тот же приём, что у Jade/JourneyMap — Modrinth-maven, compileOnly + localRuntime.
-    // ⚠ ПАКЕТ appeng.* ТЕПЕРЬ ПРИНАДЛЕЖИТ ЭТОМУ JAR. Зеркала src/compat-mirror/java/appeng/ удалены (Э0):
-    // ModuleClassLoader.java:76-78 (fml) кладёт packageLookup.put(pk, moduleInfo) — при совпадении пакета в
-    // двух модулях один МОЛЧА затирает другой, порядок обхода недетерминирован. Новые зеркала в appeng.* класть
-    // НЕЛЬЗЯ: код должен ходить в настоящий API AE2.
+    // Applied Energistics 2 (mission "GT6 ⇄ AE2 compatibility layer", stage E0). GT6 has known AE2 since
+    // 1.7.10: gregtech/compat/Compat_Recipes_AppliedEnergistics.java defines presses, cutting, sky stone;
+    // MD.AE.mLoaded guards all these paths. Same approach as Jade/JourneyMap — Modrinth maven, compileOnly + localRuntime.
+    // ⚠ THE appeng.* PACKAGE NOW BELONGS TO THIS JAR. The src/compat-mirror/java/appeng/ mirrors were removed (E0):
+    // ModuleClassLoader.java:76-78 (fml) does packageLookup.put(pk, moduleInfo) — when a package collides
+    // between two modules, one SILENTLY overwrites the other, and traversal order is nondeterministic. New
+    // mirrors must NOT be placed under appeng.*: the code must talk to the real AE2 API.
     compileOnly "maven.modrinth:ae2:${ae2_version}"
     localRuntime "maven.modrinth:ae2:${ae2_version}"
-    // GuideME — обязательная зависимость AE2 (её neoforge.mods.toml: modId="guideme"); Modrinth-maven pom
-    // транзитивных зависимостей не несёт, поэтому объявляется здесь. Только runtime: наш код её не трогает.
+    // GuideME — a mandatory AE2 dependency (its neoforge.mods.toml: modId="guideme"); the Modrinth maven's
+    // pom carries no transitive dependencies, so it's declared here. Runtime only: our code doesn't touch it.
     localRuntime "maven.modrinth:guideme:${guideme_version}"
 
-    // More Red (modid "morered") — наследник RedPower: провода с 16 каналами, логические плиты. Нужен
-    // стендам совместимости по редстоуну: судья спрашивает РЕАЛЬНЫЙ мод тем же каналом, каким тот отдаёт
-    // сигнал соседу. Тот же приём, что у Jade/AE2, но источник локальный: в мавен версия под 26.1.2 не
-    // публиковалась, артефакт собран из reference/mods/MoreRed-src (см. stands/_mods/PASSPORT.md).
-    // Только localRuntime: production-код на мод не ссылается, в jar игрока он не попадает.
+    // More Red (modid "morered") — RedPower's successor: 16-channel wires, logic plates. Needed by the
+    // redstone compatibility stands: the judge queries the REAL mod via the same channel it uses to hand a
+    // signal to a neighbor. Same approach as Jade/AE2, but the source is local: no 26.1.2 build was ever
+    // published to maven, the artifact was built from reference/mods/MoreRed-src (see stands/_mods/PASSPORT.md).
+    // localRuntime only: production code doesn't reference the mod, and it doesn't reach the player's jar.
     localRuntime files("../stands/_mods/morered-26.1.2.3.jar")
-    // Sodium — сторонний конвейер отрисовки чанков, нужен ТОЛЬКО приёмке рендера: своего координатного
-    // лайтера у него нет, освещение он раскладывает по номеру вершины квада, и лишь под ним видно
-    // расхождение порядка вершин с каноном ванили. Вне -Pgt6probes не подключается вовсе.
+    // Sodium — a third-party chunk-rendering pipeline, needed ONLY for render acceptance: it has no
+    // coordinate-based lighter of its own, it spreads lighting by quad vertex index, and only under it does
+    // a vertex-order mismatch against the vanilla canon become visible. Not wired in at all outside -Pgt6probes.
     if (project.hasProperty('gt6probes')) localRuntime files("../stands/_mods/sodium-neoforge-0.9.1-mc26.1.2.jar")
     // compileOnly only: Ex Machina reaches the game inside the More Red jar and never enters the player's
     // jar. EnergyCompat needs the API to speak to foreign rotation, as its IC2 and RF branches already do.
@@ -347,48 +356,48 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
-    // --- Тестовый инструментарий (в MDK-шаблоне отсутствует; добавлено под gregtech6-neo) ---
-    // JUnit 5 — headless-юнит-тесты чистой логики (./gradlew test).
+    // --- Test tooling (absent from the MDK template; added for gregtech6-neo) ---
+    // JUnit 5 — headless unit tests for pure logic (./gradlew test).
     testImplementation platform("org.junit:junit-bom:${junit_version}")
     testImplementation "org.junit.jupiter:junit-jupiter"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
-    // NeoForge test framework — юнит-тесты в контексте MC-сервера (headless-реестры),
-    // класс помечается @ExtendWith(EphemeralTestServerProvider.class).
+    // NeoForge test framework — unit tests running in an MC-server context (headless registries),
+    // the class is annotated @ExtendWith(EphemeralTestServerProvider.class).
     testImplementation "net.neoforged:testframework:${neo_version}"
 }
 
-// ДВА РЕЖИМА ПРОЕКТА — разделены намеренно (см. README «Development tooling»).
+// TWO PROJECT MODES — split apart deliberately (see the README's "Development tooling").
 //
-//   ПРОДУКТ (по умолчанию): `gradlew build` / `gradlew test` — проверки мода САМОГО ПО СЕБЕ.
-//     Ничего сверх репозитория не требуют, работают у любого, кто склонировал, и служат гейтом CI.
+//   PRODUCT (default): `gradlew build` / `gradlew test` — checks on the mod BY ITSELF.
+//     Need nothing beyond the repository, work for anyone who cloned it, and serve as the CI gate.
 //
-//   ОСНАСТКА ФАЗЫ ПОРТА (только по требованию): сверка с оригиналом (`test -Pgt6.oracle=<путь>`) и живые
-//     стенды (`-Pgt6probes`). Отвечают на вопрос «совпадает ли с оригиналом», для чего нужны дампы
-//     живого 1.7.10 (~200 МБ, в репозиторий не входят). Этап порта закрыт: вопрос задаётся при
-//     расследовании расхождения, а не на каждый прогон.
+//   PORT-PHASE RIG (opt-in only): diffing against the original (`test -Pgt6.oracle=<path>`) and live
+//     stands (`-Pgt6probes`). They answer "does this match the original," which needs dumps of the
+//     live 1.7.10 (~200 MB, not part of the repository). The port phase is closed: the question now
+//     comes up when investigating a discrepancy, not on every run.
 //
-// Инструменты фазы НЕ выбрасываются и НЕ уходят в поставку — они переведены в режим по требованию.
-// Паритет включается НАЛИЧИЕМ пути к дампам оригинала — отдельной задачи не заводим: окружение
-// тестов Minecraft настраивает плагин сборки только для штатной `test`, самодельная Test-задача его
-// не наследует и не стартует вовсе (проверено). Один механизм вместо двух:
-//     gradlew test                         -> проверки мода самого по себе (эталон не нужен)
-//     gradlew test -Pgt6.oracle=<путь>     -> плюс сверка с дампами живого 1.7.10
+// The phase's tooling is NEITHER thrown away NOR shipped — it's switched to opt-in. Parity is enabled
+// by the PRESENCE of a path to the original's dumps — no separate task is set up: the build plugin only
+// configures the Minecraft test environment for the stock `test` task, and a homemade Test task neither
+// inherits it nor starts at all (verified). One mechanism instead of two:
+//     gradlew test                         -> checks on the mod by itself (no reference needed)
+//     gradlew test -Pgt6.oracle=<path>     -> plus a diff against the live 1.7.10 dumps
 def oraclePath = project.findProperty('gt6.oracle')
 
-// ТЕСТЫ ТОЖЕ ВНЕ РЕПОЗИТОРИЯ (решение владельца 2026-08-12: «все тесты и стенды за пределами
-// репозитория; в репозитории только согласованный минимум»). Проверка — прибор, а не продукт, и это
-// касается и JUnit-тестов, и машинерии сверки с оригиналом. Обе лежат рядом: ../stands/*/test-java
-// (+ test-resources) и подключаются, если каталог есть. Клонировал только репозиторий — тестов нет
-// вовсе, и `gradlew build` просто собирает мод.
+// TESTS ARE ALSO OUTSIDE THE REPOSITORY (owner decision 2026-08-12: "all tests and stands live outside
+// the repository; only the agreed minimum stays inside"). A test is an instrument, not the product, and
+// that applies to both the JUnit tests and the original-diffing machinery. Both live alongside the repo:
+// ../stands/*/test-java (+ test-resources), wired in if the directory exists. Clone only the repository
+// and there are no tests at all — `gradlew build` simply builds the mod.
 //
-// Сверка с оригиналом дополнительно закрыта тегом `parity`: её код подключается так же, но сами
-// проверки идут только с путём к дампам живого 1.7.10 (см. блок test ниже).
+// The original diff is further gated by the `parity` tag: its code is wired in the same way, but the
+// actual checks only run given a path to the live 1.7.10 dumps (see the test block below).
 file('../stands').listFiles()?.each { d ->
     File tSrc = new File(d, 'test-java')
     File tRes = new File(d, 'test-resources')
     if (tSrc.isDirectory()) {
         sourceSets.test.java.srcDir(tSrc)
-        logger.lifecycle("[test] внешние тесты подключены: ${d.name}")
+        logger.lifecycle("[test] external tests wired in: ${d.name}")
     }
     if (tRes.isDirectory()) sourceSets.test.resources.srcDir(tRes)
 }
@@ -398,14 +407,14 @@ test {
         if (!oraclePath) excludeTags 'parity'
     }
     if (oraclePath) systemProperty 'gt6.oracle', oraclePath.toString()
-    // Тесты поднимают ВЕСЬ мод (тысячи предметов и рецептов). На дефолтном heap процесс падает
-    // OutOfMemoryError уже во время загрузки, и тогда краснеют все проверки разом — не потому, что
-    // код неверен, а потому, что мод не догрузился.
+    // Tests boot the WHOLE mod (thousands of items and recipes). On the default heap the process fails
+    // with OutOfMemoryError already during loading, and then every check goes red at once — not because
+    // the code is wrong, but because the mod never finished loading.
     maxHeapSize = '6G'
     doFirst {
         logger.lifecycle(oraclePath
-            ? "[test] режим сверки с оригиналом: дампы ${oraclePath}"
-            : "[test] продуктовый режим: проверки мода самого по себе (сверка с оригиналом — test -Pgt6.oracle=<путь>)")
+            ? "[test] original-diff mode: dumps at ${oraclePath}"
+            : "[test] product mode: checks on the mod by itself (diff against the original — test -Pgt6.oracle=<path>)")
     }
 }
 
@@ -448,7 +457,7 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
-    options.compilerArgs << '-Xmaxerrs' << '100000' // ВРЕМЕННО (порт ядра): снять потолок в 100 ошибок, чтобы видеть хвост по всем швам
+    options.compilerArgs << '-Xmaxerrs' << '100000' // TEMPORARY (core port): lift the 100-error cap to see the tail across all seams
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
@@ -459,8 +468,8 @@ idea {
     }
 }
 
-// Печать compileClasspath main — для случаев, когда нужно собрать подмножество исходников
-// отдельным вызовом компилятора, минуя Gradle (диагностика швов).
+// Prints the main compileClasspath — for cases where a subset of sources needs to be built with a
+// separate compiler invocation, bypassing Gradle (seam diagnostics).
 tasks.register('printCompileCp') {
     def cp = sourceSets.main.compileClasspath
     doLast {

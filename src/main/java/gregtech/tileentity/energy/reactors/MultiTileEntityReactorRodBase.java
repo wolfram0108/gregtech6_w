@@ -51,8 +51,8 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityReactorRodBase extends TileEntityBase07Paintable implements IItemReactorRod, ITileEntityQuickObstructionCheck, IMTE_AddToolTips, IMTE_SetBlockBoundsBasedOnState, IMTE_GetCollisionBoundingBoxFromPool, IMTE_GetSelectedBoundingBoxFromPool {
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		aList.add(LH.Chat.DGRAY + "Used in Nuclear Reactor Core");
-		aList.add(LH.Chat.CYAN + "Empty Reactor Rod, transparent to Neutrons.");
+		aList.add(LH.Chat.DGRAY + LH.tt("Used in Nuclear Reactor Core"));
+		aList.add(LH.Chat.CYAN + LH.tt("Empty Reactor Rod, transparent to Neutrons."));
 	}
 
 	@Override

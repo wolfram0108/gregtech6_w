@@ -64,10 +64,10 @@ public abstract class AbstractCoverAttachmentLogistics extends AbstractCoverAtta
 			aData.value(aCoverSide, (short)((aData.mValues[aCoverSide]&~3)|((aData.mValues[aCoverSide] + 1) & 3)));
 			if (aChatReturn != null) {
 				switch(aData.mValues[aCoverSide]) {
-				case 0: aChatReturn.add("Priority: Unmodified"); break;
-				case 1: aChatReturn.add("Priority: Generic"); break;
-				case 2: aChatReturn.add("Priority: Semi-Filtered"); break;
-				case 3: aChatReturn.add("Priority: Filtered"); break;
+				case 0: aChatReturn.add(LH.tt("Priority: Unmodified")); break;
+				case 1: aChatReturn.add(LH.tt("Priority: Generic")); break;
+				case 2: aChatReturn.add(LH.tt("Priority: Semi-Filtered")); break;
+				case 3: aChatReturn.add(LH.tt("Priority: Filtered")); break;
 				}
 			}
 			return 10000;
@@ -77,9 +77,9 @@ public abstract class AbstractCoverAttachmentLogistics extends AbstractCoverAtta
 			if (aChatReturn != null) {
 				int tTargetSize = ((aData.mValues[aCoverSide] >> 2) & 127);
 				if (tTargetSize == 0) {
-					aChatReturn.add("Variable Target Stacksize");
+					aChatReturn.add(LH.tt("Variable Target Stacksize"));
 				} else {
-					aChatReturn.add("Target Stacksize: " + tTargetSize);
+					aChatReturn.add(LH.tt("Target Stacksize: ") + tTargetSize);
 				}
 			}
 			return 1000;
@@ -87,18 +87,18 @@ public abstract class AbstractCoverAttachmentLogistics extends AbstractCoverAtta
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null && usePriorities()) {
 				switch(aData.mValues[aCoverSide]) {
-				case 0: aChatReturn.add("Priority: Unmodified"); break;
-				case 1: aChatReturn.add("Priority: Generic"); break;
-				case 2: aChatReturn.add("Priority: Semi-Filtered"); break;
-				case 3: aChatReturn.add("Priority: Filtered"); break;
+				case 0: aChatReturn.add(LH.tt("Priority: Unmodified")); break;
+				case 1: aChatReturn.add(LH.tt("Priority: Generic")); break;
+				case 2: aChatReturn.add(LH.tt("Priority: Semi-Filtered")); break;
+				case 3: aChatReturn.add(LH.tt("Priority: Filtered")); break;
 				}
 			}
 			if (aChatReturn != null && useTargetStackSize()) {
 				int tTargetSize = ((aData.mValues[aCoverSide] >> 2) & 127);
 				if (tTargetSize == 0) {
-					aChatReturn.add("Variable Target Stacksize");
+					aChatReturn.add(LH.tt("Variable Target Stacksize"));
 				} else {
-					aChatReturn.add("Target Stacksize: " + tTargetSize);
+					aChatReturn.add(LH.tt("Target Stacksize: ") + tTargetSize);
 				}
 			}
 			return 1;

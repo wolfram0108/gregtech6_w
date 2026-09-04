@@ -166,15 +166,15 @@ public abstract class TileEntityBase10MultiBlockBase extends TileEntityBase09Fac
 			onMagnifyingGlass2(aChatReturn);
 		} else {
 			if (checkStructure(T)) {
-				aChatReturn.add("Structure did form just now!");
+				aChatReturn.add(LH.tt("Structure did form just now!"));
 			} else {
-				aChatReturn.add("Structure did not form!");
+				aChatReturn.add(LH.tt("Structure did not form!"));
 			}
 		}
 	}
 	
 	public void onMagnifyingGlass2(List<String> aChatReturn) {
-		aChatReturn.add("Structure is formed already!");
+		aChatReturn.add(LH.tt("Structure is formed already!"));
 	}
 	
 	@Override
