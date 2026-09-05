@@ -29,24 +29,32 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+## [6.0.0-1.20.1-alpha.3] — modpack-safe saves, unified mud, and world mechanics behave again
+
+The same updates and fixes as `6.0.0-alpha.7` on the main branch, adapted for Minecraft 1.20.1 / Forge.
+
 ### Added
 
-- GregTech speaks Russian when the game language is set to Russian, and keeps its English text unchanged in every other language.
+- **Glow ink sac juicing**: Glow ink sacs can be processed in the juicer to yield black ink and glowstone dust.
+
+### Changed
+
+- **Unified mud**: GregTech diggable mud is now unified with vanilla `minecraft:mud`. All GregTech processing (sifting, drying, furnace recipes, tool interactions) applies to vanilla mud, and blocks in existing worlds are migrated automatically.
+- **Lighters in crafting**: Lighters used in crafting recipes consume a single charge instead of being destroyed.
+- **Lighting candles**: GregTech lighters can light vanilla candles.
+- **More Red integration**: More Red is integrated into GregTech progression — rotational power connects directly via axles, redundant workbenches are removed, Red Alloy is unified, and logic gates use GT circuit boards.
 
 ### Fixed
 
-- Dungeon mob-farm water flows again instead of standing as a block, and the piston doors of a dungeon are closed and worked by their crank.
-- A crucible burning through, and a faucet, mold or smeltery spilling, leave a flow of lava that drains away instead of a permanent lava source.
-- Adding another mod no longer changes what is stored in GregTech inventories: a saved stack now keeps the item's name, so it survives any change to the set of installed items.
-- River water takes over the ordinary water it touches and closes gaps in its own bed again, so a river no longer runs half ordinary water; sea and swamp keep their own waters, and ordinary water still never refills itself.
-
-## [6.0.0-1.20.1-alpha.2.1] — the recipe viewer keeps one material on both sides of a card
-
-The same fix as `6.0.0-alpha.6.1` on the main branch, made against this version of the engine.
-
-### Fixed
-
-- A recipe card built from a material family no longer pairs an ingredient of one metal with a result of another: the input and the output always show the same material, whether the card cycles on its own or is focused on one result.
+- **Inventories and machines survive modpack changes**: Stored items, machines, covers, canvas paintings, and stuck arrows are now identified by registry names instead of internal numeric IDs. Adding or rearranging mods in a modpack no longer scrambles items or machine identities.
+- **Server crash during cauldron ore washing**: Washing the last unit of ore in a cauldron no longer crashes the server or corrupts the world save.
+- **Hotbar auto-refill restored**: When a tool breaks in hand, it is automatically replenished from the inventory.
+- **River water repair**: River water actively takes over touching ordinary water and heals gaps in the riverbed naturally.
+- **Dungeon mechanics restored**: Dungeon mob-farm water flows properly instead of sitting as a still block, and piston doors are properly closed and operable by their crank.
+- **Lava spills drain away**: Crucible burn-throughs and spillage from faucets, molds, or smelteries create temporary flowing lava that drains away instead of leaving permanent lava sources.
+- **Item icon shading**: Vertex ordering on flat item icons now follows engine canon.
+- **Network version mismatch refused**: The network handshake now verifies the exact mod version, preventing clients on different builds from joining and experiencing silent desyncs.
+- **Recipe viewer material consistency**: Recipe cards for material families consistently match the input and output material on the same card.
 
 ## [6.0.0-1.20.1-alpha.2] — plants, books, dyes and fluid containers behave again
 
