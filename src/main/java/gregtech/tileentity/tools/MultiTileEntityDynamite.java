@@ -148,8 +148,9 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	@Override
 	public void explode(boolean aInstant) {
 		mDontDrop = T;
+		ItemStack tTool = WD.fortuneCarrier(level, toStack(), mFortune);
 		WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), NB, 0, 3);
-		DynamiteExplosion tExplosion = mSunk ? new DynamiteExplosion(level, getOffsetXN(mFacing)+0.5, getOffsetYN(mFacing)+0.5, getOffsetZN(mFacing)+0.5, mMaxExplosionResistance, mFortune) : new DynamiteExplosion(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5, mMaxExplosionResistance, mFortune);
+		DynamiteExplosion tExplosion = mSunk ? new DynamiteExplosion(level, getOffsetXN(mFacing)+0.5, getOffsetYN(mFacing)+0.5, getOffsetZN(mFacing)+0.5, mMaxExplosionResistance, mFortune, tTool) : new DynamiteExplosion(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5, mMaxExplosionResistance, mFortune, tTool);
 		tExplosion.doExplosionA();
 		tExplosion.doExplosionB(T);
 	}
@@ -216,11 +217,19 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	public static class DynamiteExplosion extends gregapi.random.ExplosionGT {
 		public float mMaxExplosionResistance;
 		public byte mFortune;
+		/** The explosive as the loot-context TOOL: the engine reads fortune off it (WD.fortuneCarrier). */
+		public ItemStack mTool;
 
 		public DynamiteExplosion(Level aWorld, double aX, double aY, double aZ, float aMaxExplosionResistance, byte aFortune) {
+			this(aWorld, aX, aY, aZ, aMaxExplosionResistance, aFortune, ItemStack.EMPTY);
+		}
+
+		public DynamiteExplosion(Level aWorld, double aX, double aY, double aZ, float aMaxExplosionResistance, byte aFortune, ItemStack aTool) {
 			super(aWorld, null, aX, aY, aZ, 1);
 			mMaxExplosionResistance = aMaxExplosionResistance;
 			mFortune = aFortune;
+			mTool = aTool == null ? ItemStack.EMPTY : aTool;
+			isSmoking = true;
 		}
 		
 		@Override
@@ -236,13 +245,12 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 			net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(mWorld, this, tList, explosionSize);
 			DamageSource tSource = mWorld.damageSources().explosion(this);
 			for (Object tEntity : tList) if (!(tEntity instanceof ItemEntity)) ((Entity)tEntity).hurt(tSource, 2*mMaxExplosionResistance*TFC_DAMAGE_MULTIPLIER);
-			// explosionSize уже 1F (ExplosionGT-конструктор power=1, поле final).
+			// explosionSize already 1F (set by ExplosionGT constructor power=1).
 		}
 		
 		@Override
 		@SuppressWarnings("rawtypes")
 		public void doExplosionB(boolean aEffects) {
-			// F-explosion (функционально): визуал/звук взрыва идёт клиенту через explosion-packet (neo рисует/звучит сам); 1.7.10 строковый playSoundEffect/spawnParticle редундантен. Не заглушка.
 			if (isSmoking) {
 				Iterator iterator = affectedBlockPositions.iterator();
 				while (iterator.hasNext()) {
@@ -252,12 +260,14 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 					if (WD.getMaterial(tBlock) != Material.air) {
 						BlockPos tPos = new BlockPos(i, j, k);
 						BlockState tState = gregapi.util.WD.state(mWorld, tPos);
-						// F-explosion (АДАПТИРОВАНО): дроп блоков реализован через neo Block.dropResources (loot-table, строка ниже). Caveat: loot-модель распределения ≠ 1.7.10 (движок-форс). Функционально, не заглушка.
-						if (tBlock.canDropFromExplosion(tState, mWorld, tPos, this)) Block.dropResources(tState, mWorld, tPos);
+						// 1.7.10 order: the block goes first, the drop reads the snapshot state and the block entity captured here.
+						net.minecraft.world.level.block.entity.BlockEntity tBE = WD.te(mWorld, i, j, k, T);
 						if (mWorld instanceof ServerLevel tServerLevel) tBlock.onBlockExploded(tState, tServerLevel, tPos, this);
+						if (tBlock.canDropFromExplosion(tState, mWorld, tPos, this)) Block.dropResources(tState, mWorld, tPos, tBE, null, mTool);
 					}
 				}
 			}
+			sendExplosionPacket();
 		}
 	}
 }

@@ -1560,6 +1560,25 @@ public class WD {
 		return aBlock.defaultBlockState().canSurvive(aWorld, tPos);
 	}
 
+	/** CENTER of the loot-context enchantments: 1.7.10 read fortune and silk touch off the player, the engine's loot
+	 *  context carries them on THIS_ENTITY (a living breaker) or on TOOL (a breaker without hands, e.g. an explosive). */
+	public static int lootFortune(net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {return lootEnchantment(aParams, net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE);}
+	public static boolean lootSilkTouch(net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {return lootEnchantment(aParams, net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH) > 0;}
+	private static int lootEnchantment(net.minecraft.world.level.storage.loot.LootParams.Builder aParams, net.minecraft.world.item.enchantment.Enchantment aEnchantment) {
+		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);
+		if (tEntity instanceof net.minecraft.world.entity.LivingEntity tLiving) return net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantmentLevel(aEnchantment, tLiving);
+		ItemStack tTool = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.TOOL);
+		return tTool == null ? 0 : tTool.getEnchantmentLevel(aEnchantment);
+	}
+	/** Fortune of a breaker without hands (1.7.10 dropBlockAsItemWithChance(..., aFortune)): the engine reads fortune
+	 *  off TOOL, so the explosive itself becomes the tool carrying it. */
+	public static ItemStack fortuneCarrier(Level aWorld, ItemStack aTool, int aFortune) {
+		if (aFortune <= 0 || ST.invalid(aTool)) return ItemStack.EMPTY;
+		ItemStack rStack = aTool.copyWithCount(1);
+		rStack.enchant(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE, aFortune);
+		return rStack;
+	}
+
 	/** CENTER for the explosion-drop gate (BUG-024; consolidation of the BUG-047 revision — there used to be copies in BlockBase/PrefixBlock/
 	 *  BlockBaseRail): a vanilla explosion drops through the loot channel with EXPLOSION_RADIUS — the 1.7.10 explosion drop chance
 	 *  = 1/size (Explosion.doExplosionA), without this gate GT6 blocks would drop from TNT at 100%. true = suppress the drop. */

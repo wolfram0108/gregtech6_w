@@ -320,9 +320,8 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		// BUG-024: гейт дропа от взрыва — ЦЕНТР WD.explosionDropDenied (консолидация, копии искоренены).
 		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList();
 		int tX = net.minecraft.util.Mth.floor(tOrigin.x), tY = net.minecraft.util.Mth.floor(tOrigin.y), tZ = net.minecraft.util.Mth.floor(tOrigin.z);
-		int tFortune = 0;
 		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);
-		if (tEntity instanceof net.minecraft.world.entity.LivingEntity tLiving) tFortune = net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE, tLiving);
+		int tFortune = WD.lootFortune(aParams);
 		// BUG-026 (тот же F13-класс, что BUG-016): сухое/заплесневелое/сгнившее сено давало мокрый Grass Bale (вариант .0),
 		// т.к. WD.meta(мир) читал уже-air = 0. Мета из снимка aState — тот же готовый мост WD.meta(BlockState) (WD.java:828).
 		ArrayList<ItemStack> rDrops = getDrops(tLevel, tX, tY, tZ, WD.meta(aState), tFortune);

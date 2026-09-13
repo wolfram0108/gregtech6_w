@@ -29,6 +29,11 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+### Fixed
+
+- **Explosives detonate again**: Boomstick, Dynamite and Strong Dynamite now break the surrounding blocks, drop them and play the explosion when they go off.
+- **Machines drop themselves when blown up**: GregTech machines and containers destroyed by any explosion drop their item instead of vanishing, and the fortune of the explosive applies to the blocks it breaks.
+
 ## [6.0.0-1.20.1-alpha.3] — modpack-safe saves, unified mud, and world mechanics behave again
 
 The same updates and fixes as `6.0.0-alpha.7` on the main branch, adapted for Minecraft 1.20.1 / Forge.

@@ -80,24 +80,24 @@ public class ExplosionGT extends Explosion {
 		if (aWorld instanceof ServerLevel) {
 			tExplosion.doExplosionB(F);
 			if (!aSmoking) tExplosion.affectedBlockPositions.clear();
-			// F-explosion packet (АДАПТИРОВАНО): 1.7.10 S27PacketExplosion → neo ClientboundExplodePacket строится и ШЛЁТСЯ
-			// ниже (реальные ParticleTypes.EXPLOSION*/SoundEvents.GENERIC_EXPLODE по размеру взрыва) → клиент рисует/звучит взрыв.
-			// Caveat (движок-форс): блок-лист→count, точная 1.7.10-формула выбора эффекта не переносится (neo-типизир. payload). Не заглушка.
-			// Ветка 1.20.1: пакет взрыва снова несёт СПИСОК блоков и вектор отдачи игрока — форма 1.7.10
-			// S27PacketExplosion дословно (ClientboundExplodePacket.java:22), типизированной частице/звуку 26.x места нет.
-			Vec3 tCenter = new Vec3(aX, aY, aZ);
-			@SuppressWarnings("rawtypes")
-			Iterator tIterator = aWorld.players().iterator();
-			while (tIterator.hasNext()) {
-				Player tPlayer = (Player)tIterator.next();
-				if (tPlayer.distanceToSqr(aX, aY, aZ) < 4096) {
-					((ServerPlayer)tPlayer).connection.send(new ClientboundExplodePacket(aX, aY, aZ, aPower, tExplosion.affectedBlockPositions, tExplosion.getHitPlayers().get(tPlayer)));
-				}
-			}
+			tExplosion.sendExplosionPacket();
 		} else {
 			tExplosion.doExplosionB(T);
 		}
 		return tExplosion;
+	}
+
+	// Dispatches audio/visual explosion effects and client knockback via packet.
+	public void sendExplosionPacket() {
+		if (!(mWorld instanceof ServerLevel)) return;
+		@SuppressWarnings("rawtypes")
+		Iterator tIterator = mWorld.players().iterator();
+		while (tIterator.hasNext()) {
+			Player tPlayer = (Player)tIterator.next();
+			if (tPlayer.distanceToSqr(explosionX, explosionY, explosionZ) < 4096) {
+				((ServerPlayer)tPlayer).connection.send(new ClientboundExplodePacket(explosionX, explosionY, explosionZ, explosionSize, affectedBlockPositions, getHitPlayers().get(tPlayer)));
+			}
+		}
 	}
 
 	public ExplosionGT(Level aWorld, Entity aEntity, double aX, double aY, double aZ, float aPower) {
@@ -111,6 +111,7 @@ public class ExplosionGT extends Explosion {
 		explosionX = aX; explosionY = aY; explosionZ = aZ;
 		explosionSize = aPower;
 		exploder = aEntity;
+		isSmoking = true;
 	}
 
 	// protected (было private): подклассы GT6 (DynamiteExplosion в MultiTileEntityDynamite) переиспользуют центр — extends ExplosionGT + доступ к воспроизведённым 1.7.10-полям (§принцип-5, не дублировать).
@@ -118,7 +119,7 @@ public class ExplosionGT extends Explosion {
 	protected final double explosionX, explosionY, explosionZ;
 	protected final float explosionSize;
 	protected final Entity exploder;
-	protected boolean isFlaming, isSmoking;
+	protected boolean isFlaming = false, isSmoking = true;
 	protected final List<BlockPos> affectedBlockPositions = new ArrayList<>();
 	@SuppressWarnings("rawtypes")
 	private Map field_77288_k = new HashMap<>();
@@ -213,7 +214,7 @@ public class ExplosionGT extends Explosion {
 					// F-explosion (АДАПТИРОВАНО): дроп блоков от взрыва РЕАЛИЗОВАН через neo Block.dropResources (loot-table) с
 					// порогом chance=1/explosionSize (как 1.7.10 dropBlockAsItemWithChance). Caveat: neo loot-модель = роль-на-стек
 					// vs 1.7.10 роль-на-предмет — распределение при >1 дропе с блока не идентично (движок-форс). Функционально, не заглушка.
-					if (tBlock.canDropFromExplosion(tState, mWorld, tPos, this) && mWorld.getRandom().nextFloat() < 1 / explosionSize) Block.dropResources(tState, mWorld, tPos);
+					if (tBlock.canDropFromExplosion(tState, mWorld, tPos, this) && mWorld.getRandom().nextFloat() < 1 / explosionSize) Block.dropResources(tState, mWorld, tPos, mWorld.getBlockEntity(tPos));
 					if (mWorld instanceof ServerLevel tServerLevel) tBlock.onBlockExploded(tState, tServerLevel, tPos, this);
 				}
 			}

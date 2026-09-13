@@ -694,6 +694,23 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// "gregtech:blocks/<regname>", BlockBehaviour.java:982-984), а для процедурных MTE-регистраций такого JSON нет (нет datagen/loot_table) ->
 	// пустая LootTable -> 0 предметов. aMeta ниже не используется телом harvestBlock (как и в 1.7.10-оракуле) - передан 0, сигнатура сохранена.
 	@Override public void playerDestroy(Level aWorld, Player aPlayer, BlockPos aPos, BlockState aState, BlockEntity aBlockEntity, ItemStack aDestroyedWith) {harvestBlock(aWorld, aPlayer, aPos.getX(), aPos.getY(), aPos.getZ(), 0);}
+	// The MTE family has no loot table: every engine drop path except playerDestroy (explosions, pistons, destroyBlock)
+	// dropped nothing, while 1.7.10 served them all through getDrops(fortune) via LAST_BROKEN_TILEENTITY.
+	@Override public java.util.List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
+		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList();
+		BlockEntity tBE = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY);
+		if (tBE == null) {
+			net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
+			if (tOrigin == null) return super.getDrops(aState, aParams);
+			tBE = WD.te(aParams.getLevel(), net.minecraft.util.Mth.floor(tOrigin.x), net.minecraft.util.Mth.floor(tOrigin.y), net.minecraft.util.Mth.floor(tOrigin.z), T);
+		}
+		if (!(tBE instanceof IMTE_GetDrops tDrops)) return java.util.Collections.emptyList();
+		ArrayListNoNulls<ItemStack> rList = tDrops.getDrops(WD.lootFortune(aParams), WD.lootSilkTouch(aParams));
+		if (rList == null) return java.util.Collections.emptyList();
+		// Branch 1.20.1: the global loot modifier does not see blocks without loot tables, so drop processing is called from here.
+		gregapi.GT_API_Proxy.processBlockDrops(rList, aParams.getLevel(), tBE.getBlockPos(), aState, aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY));
+		return rList;
+	}
 	// было aPlayer.level().getTileEntity(x,y,z) (1.7.10 World) -> центр WD.te(...) (тот же приём, что и все остальные
 	// TE-lookup в этом файле), не прямой движковый вызов.
 	@Override public final ArrayList<String> getDebugInfo(Player aPlayer, int aX, int aY, int aZ, int aScanLevel) {BlockEntity aTileEntity = WD.te(aPlayer.level(), aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetDebugInfo ? ((IMTE_GetDebugInfo)aTileEntity).getDebugInfo(aScanLevel) : null;}
