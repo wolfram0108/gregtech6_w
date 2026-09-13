@@ -85,11 +85,8 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	/** F3-render: текущие render-bounds {minX,minY,minZ,maxX,maxY,maxZ} для GT6BlockModel (было RenderBlocks.setRenderBoundsFromBlock).
 	 *  Читает потоко-локальную копию (см. F-bounds-race выше) — в рендер-потоке это значения ЕГО пассов, не чужих. */
 	public float[] getRenderBounds() {return mRenderBoundsTL.get();}
-	// F-shape (класс «канал движка сместился»; зеркало моста MTE-иерархий MultiTileEntityBlock:296): 1.7.10-коллизия
-	// шла через vanilla-поверхность Block.addCollisionBoxesToList/getCollisionBoundingBoxFromPool (дефолт = статические
-	// bounds setBlockBounds + pos; подклассы переопределяли: Bars/Spike/LilyPad/Path/Leaves/Sapling/CFoamFresh).
-	// Оригинальный BlockBase их НЕ переопределял — поверхность жила на vanilla Block; в neo она УДАЛЕНА (VoxelShape)
-	// → дефолты восстановлены ЗДЕСЬ в корне иерархии, override-цепь подклассов работает как в 1.7.10.
+	// The 1.7.10 collision surface (addCollisionBoxesToList/getCollisionBoundingBoxFromPool) is gone from the engine,
+	// so its defaults live here at the root and the subclass override chain keeps working as in the original.
 	/** 1:1-порт vanilla-дефолта Block.getCollisionBoundingBoxFromPool (recompSrc 1.7.10: статические bounds + pos). */
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
 		float[] tB = mRenderBounds;
@@ -123,11 +120,8 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	 */
 	protected net.minecraft.world.phys.shapes.VoxelShape shapeFromState(BlockState aState, boolean aCollision) {return null;}
 
-	// Мост neo №1: getCollisionShape ← addCollisionBoxesToList (список под-боксов, сущность из EntityCollisionContext —
-	// лодка LilyPad и т.п.; pool=null у подкласса → пустая коллизия = проходим, 1:1). Гейт hasCollision — блоки с
-	// Properties.noCollission не должны отвердеть. Кэш-ветка (EmptyBlockGetter при построении BlockState-кэша:
-	// снег/isFaceSturdy/suffocation) — сначала форма ИЗ СОСТОЯНИЯ (shapeFromState), и лишь если её нет —
-	// статические bounds: зеркало 1.7.10, где эти проверки тоже читали статический mBoundingBox.
+	// Collision bridge: a null pool means a passable block, noCollission blocks must stay passable, and the
+	// state-cache path (no world) reads the state shape first, then the static bounds, as 1.7.10 read mBoundingBox.
 	@Override public net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (!hasCollision) return net.minecraft.world.phys.shapes.Shapes.empty();
 		net.minecraft.world.phys.shapes.VoxelShape tFromState = shapeFromState(aState, T);
@@ -142,13 +136,11 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		float[] tB = mRenderBounds;
 		return tB[0] <= 0 && tB[1] <= 0 && tB[2] <= 0 && tB[3] >= 1 && tB[4] >= 1 && tB[5] >= 1 ? super.getCollisionShape(aState, aWorld, aPos, aContext) : net.minecraft.world.phys.shapes.Shapes.create(new AABB(tB[0], tB[1], tB[2], tB[3], tB[4], tB[5]));
 	}
-	// Мост neo №2: getShape (outline/таргетинг/raytrace) = 1:1 семантика 1.7.10 Block.collisionRayTrace (recompSrc:
-	// СНАЧАЛА setBlockBoundsBasedOnState, ЗАТЕМ статические bounds). Пустой результат (гонка render-мутации bounds)
-	// → полный куб, не empty: empty-outline делает блок неприцеливаемым.
+	// Outline bridge in the 1.7.10 collisionRayTrace order: state bounds first, static bounds second; an empty
+	// result (render-thread bounds race) becomes a full cube, because an empty outline makes the block untargetable.
 	@Override public net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
-		// BUG-076: форма из состояния — единственный путь, который верен и в кэше (мира нет), и в живом мире.
-		// Семьи, которым нужна ещё и мировая логика (у решётки — «игрок держит такой же блок в руке → полный
-		// куб для удобства достройки»), решают это внутри своей реализации хука.
+		// The state shape is the only path valid both in the state cache (no world) and in the live world;
+		// families needing world logic (bars: same block in hand gives a full cube) handle it inside their hook.
 		net.minecraft.world.phys.shapes.VoxelShape tFromState = shapeFromState(aState, F);
 		if (tFromState != null) return tFromState.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.block() : tFromState;
 		try { setBlockBoundsBasedOnState(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()); } catch (Throwable e) {/*чужой BlockGetter/гонка — статические bounds ниже*/}
@@ -173,10 +165,8 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	/** F9: gregapi Material (портированная 1.7.10-модель) хранится блоком — neo `WD.getMaterial(Block)` удалён. */
 	protected final Material mMaterial;
 	public Material getMaterial() {return mMaterial;}
-	// F-harvest-tool (зеркало mkProps MTE/PrefixBlock — ТРЕТИЙ корень, семья BlockBase; согласовано с игроком
-	// 2026-07-22): гейт «нужен ли инструмент для дропа» решает МАТЕРИАЛ (1.7.10 EntityPlayer.canHarvestBlock →
-	// Material.isToolNotRequired). Породы/кирпичи (Material.rock) → только кирка (рука ломает /100 БЕЗ дропа);
-	// дерево/ткань/земля (isToolNotRequired) — рука дропает /30. Без гейта ВСЯ семья дропалась рукой — щедрее канона.
+	// Whether a tool is required for the drop is decided by the material, as in 1.7.10 canHarvestBlock:
+	// rock needs a pickaxe, wood/cloth/dirt drop by hand; without the gate the whole family dropped by hand.
 	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aNameInternal, Material aMaterial, SoundType aSoundType) {
 		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).lightLevel(BlockBase::lightOf);
 		if (aMaterial != null && !aMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();
@@ -200,12 +190,8 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		return tColor == null ? aProps : aProps.mapColor(tColor.toNeo());
 	}
 	public BlockBase(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType) {
-		// F16/F9 форс движка: neo `Block` immutable (данные в Properties ДО super). setStepSound встроен в Properties.sound;
-		// setBlockName удалён (имя через реестр — ST.register ниже); setCreativeTab(tabBlock) → CreativeTabsGT.assign(BLOCK) ниже
-		// (last-wins: subclass-ctor переопределит). Light ПОДКЛЮЧЁН (lightLevel(lightOf) — ленивая функция читает
-		// mLightLevel). Твёрдость/mapColor per-meta варьируются → динамические override'ы (getDestroyProgress/getMapColor), не Properties.
-		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром BLOCKS,
-		// куда ST.register клал блок), ключ санитизирован. Конструкция — на RegisterEvent через registerBlockLazy на call-site.
+		// The engine block is immutable: sound, light and id go into Properties before super; per-meta hardness
+		// and map color vary, so they stay dynamic overrides, and the name comes from the registry (ST.register).
 		super(mkProps(aNameInternal, aMaterial, aSoundType));
 		mMaterial = aMaterial;
 		mNameInternal = aNameInternal;
