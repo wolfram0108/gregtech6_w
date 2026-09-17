@@ -178,6 +178,72 @@ tasks.withType(AbstractArchiveTask).configureEach {
     filePermissions { unix(0644) }
 }
 
+// Production names: the renamer shares one method record across a type family and mutates it while
+// classes are written in parallel, so an engine name leaking into a mod type lands on a random subset.
+def reobfPins = file('gradle/reobf-pins.tsrg')
+tasks.matching { it.name == 'reobfJar' }.configureEach {
+    // Pinned families get their engine name before the parallel pass, identically on every machine.
+    remapOperation.mappings.from(reobfPins)
+    doLast { task ->
+        def log = new File(task.temporaryDir, 'console.log')
+        if (!log.isFile()) throw new GradleException("[reobf] renamer log is missing: ${log}")
+        def modJar = new java.util.zip.ZipFile(task.input.get().asFile)
+        def libJars = task.libraries.files.findAll { it.name.endsWith('.jar') }.collect { new java.util.zip.ZipFile(it) }
+        def headerParents = { byte[] bytes ->
+            def din = new DataInputStream(new ByteArrayInputStream(bytes))
+            din.skipBytes(8)
+            int count = din.readUnsignedShort()
+            def utf = [:], cls = [:]
+            for (int k = 1; k < count; k++) {
+                int tag = din.readUnsignedByte()
+                switch (tag) {
+                    case 1: utf[k] = din.readUTF(); break
+                    case 7: cls[k] = din.readUnsignedShort(); break
+                    case [8, 16, 19, 20]: din.skipBytes(2); break
+                    case 15: din.skipBytes(3); break
+                    case [3, 4, 9, 10, 11, 12, 17, 18]: din.skipBytes(4); break
+                    case [5, 6]: din.skipBytes(8); k++; break
+                    default: throw new GradleException("[reobf] unknown constant tag ${tag}")
+                }
+            }
+            din.skipBytes(4)
+            int sup = din.readUnsignedShort()
+            def out = sup ? [utf[cls[sup]]] : []
+            din.readUnsignedShort().times { out << utf[cls[din.readUnsignedShort()]] }
+            out
+        }
+        def modNames = modJar.entries().findAll { it.name.endsWith('.class') }.collect { it.name[0..-7] } as Set
+        def libIndex = [:]
+        libJars.each { z -> z.entries().each { e -> if (e.name.endsWith('.class')) libIndex.putIfAbsent(e.name[0..-7], z) } }
+        def parentCache = [:]
+        def parentsOf = { String name ->
+            if (!parentCache.containsKey(name)) {
+                def z = modNames.contains(name) ? modJar : libIndex[name]
+                parentCache[name] = z ? headerParents(z.getInputStream(z.getEntry(name + '.class')).bytes) : []
+            }
+            parentCache[name]
+        }
+        // A propagation is safe only when the name comes from an ancestor of the renamed type.
+        def event = ~/Conflicting propagated mapping for (\S+)\/([^\/(]+)(\(\S*) from (\S+)\/[^\/(]+\(\S* ?: (\S+) -> (\S+)/
+        int events = 0
+        def unsafe = []
+        log.eachLine('UTF-8') { line ->
+            def m = line =~ event
+            if (!m.find()) return
+            events++
+            String owner = m.group(1), source = m.group(4)
+            if (!modNames.contains(owner)) return
+            def seen = [] as Set, stack = [owner]
+            while (stack) { parentsOf(stack.remove(stack.size() - 1)).each { if (seen.add(it)) stack << it } }
+            if (!seen.contains(source)) unsafe << "${owner} ${owner}\n\t${m.group(2)} ${m.group(3)} ${m.group(6)}    (leaked from ${source})"
+        }
+        ([modJar] + libJars)*.close()
+        if (unsafe) throw new GradleException("[reobf] ${unsafe.size()} engine name(s) leaked into mod types; " +
+                "pin each family in ${reobfPins.name}:\n" + unsafe.join('\n'))
+        task.logger.lifecycle("[reobf] propagation events ${events}, unsafe 0")
+    }
+}
+
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
 

@@ -1,0 +1,2 @@
+gregapi/block/IBlock gregapi/block/IBlock
+	getBlock ()Lnet/minecraft/world/level/block/Block; m_40614_
