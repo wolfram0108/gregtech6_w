@@ -100,9 +100,17 @@ if [ -d "$APP_HOME/../platform" ] ; then
       *)  NFRT_ASSET_REPOSITORY=file:///$PLATFORM_HOME/minecraft/assets/objects/ ;;
     esac
     export NFRT_ASSET_REPOSITORY
-    if [ -z "$JAVA_HOME_17_X64" ] && [ -d "$PLATFORM_HOME/jdk/17/bin" ] ; then
-        JAVA_HOME_17_X64=$PLATFORM_HOME/jdk/17
-        export JAVA_HOME_17_X64
+    # The copy carries its JDKs; one named by the environment wins, as it does on CI.
+    for jdk in 17 25 ; do
+        eval "named=\${JAVA_HOME_${jdk}_X64}"
+        if [ -z "$named" ] && [ -d "$PLATFORM_HOME/jdk/$jdk/bin" ] ; then
+            eval "JAVA_HOME_${jdk}_X64=\$PLATFORM_HOME/jdk/$jdk"
+            export "JAVA_HOME_${jdk}_X64"
+        fi
+    done
+    if [ -z "$JAVA_HOME" ] && [ -d "$PLATFORM_HOME/jdk/25/bin" ] ; then
+        JAVA_HOME=$PLATFORM_HOME/jdk/25
+        export JAVA_HOME
     fi
     exec "$PLATFORM_HOME/gradle/bin/gradle" "$@"
 fi

@@ -80,3 +80,9 @@ scratchpad/
 
 ### Workspace passport, not part of the product; see the explanation on branch main.
 /PASSPORT.md
+
+### Agent tooling of this working copy (a code index, its hooks and search settings); not part of the product.
+/graft/
+/.claude/
+/.mcp.json
+/.ignore

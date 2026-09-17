@@ -44,7 +44,10 @@ setlocal EnableDelayedExpansion
 set "PLATFORM_ENCODED=!PLATFORM_URI: =%%20!"
 endlocal & set "PLATFORM_URI=%PLATFORM_ENCODED%"
 set NFRT_ASSET_REPOSITORY=file:///%PLATFORM_URI%/minecraft/assets/objects/
+@rem The copy carries its JDKs; one named by the environment wins, as it does on CI.
 if not defined JAVA_HOME_17_X64 if exist "%PLATFORM_HOME%\jdk\17\bin\java.exe" set JAVA_HOME_17_X64=%PLATFORM_HOME%\jdk\17
+if not defined JAVA_HOME_25_X64 if exist "%PLATFORM_HOME%\jdk\25\bin\java.exe" set JAVA_HOME_25_X64=%PLATFORM_HOME%\jdk\25
+if not defined JAVA_HOME if exist "%PLATFORM_HOME%\jdk\25\bin\java.exe" set JAVA_HOME=%PLATFORM_HOME%\jdk\25
 call "%PLATFORM_HOME%\gradle\bin\gradle.bat" %*
 goto end
 

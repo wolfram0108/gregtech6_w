@@ -277,6 +277,7 @@ redistributed — so you assemble your own from files you have downloaded once:
 | `minecraft/resolved/launcher_manifest.json` | a launcher manifest whose version entry, and every address inside that version's manifest, is a `file:` URI |
 | `minecraft/assets/objects/` | the game's asset objects, stored by hash as the launcher stores them |
 | `jdk/17/` | a JDK 17, used when `JAVA_HOME_17_X64` is not set |
+| `jdk/25/` | a JDK 25, used when `JAVA_HOME` or `JAVA_HOME_25_X64` is not set |
 
 ## Running
 
