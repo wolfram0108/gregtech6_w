@@ -25,6 +25,8 @@ permissions:
   # OIDC-токен и подписался как ЭТОТ workflow, attestations — чтобы запись легла в реестр репозитория.
   id-token: write
   attestations: write
+  # Reading CI runs and their artifacts: a release is built only from a commit CI already accepted.
+  actions: read
 
 jobs:
   release:
@@ -70,11 +72,42 @@ jobs:
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # A tag publishes only a commit whose CI run (build + dedicated server) succeeded.
+      - name: Guard — the tagged commit passed CI
+        id: ci
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          RUN="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --commit "$SHA" --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          if [ -z "$RUN" ]; then
+            echo "::error::No successful CI run (build.yml) for $SHA. Run CI on this commit before tagging it."
+            exit 1
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "run=$RUN"  >> "$GITHUB_OUTPUT"
+
       - name: Assemble
         run: ./gradlew assemble --no-daemon --stacktrace
 
       - name: Guard — jar purity
         run: python3 .github/ci/check_jar.py 'build/libs/*.jar'
+
+      # The published jar must equal the one CI built from the same commit, byte for byte.
+      - name: Guard — same bytes as the CI build of this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run download "${{ steps.ci.outputs.run }}" --repo "$GITHUB_REPOSITORY" -n "gregtech6-jar-${{ steps.ci.outputs.sha }}" -D ci-jar
+          OURS="$(sha256sum build/libs/*.jar | cut -d' ' -f1)"
+          THEIRS="$(sha256sum ci-jar/*.jar | cut -d' ' -f1)"
+          if [ "$OURS" != "$THEIRS" ]; then
+            echo "::error::Release jar $OURS differs from the CI jar $THEIRS of the same commit: the build is not reproducible."
+            exit 1
+          fi
+          echo "reproducible: $OURS"
 
       # Контрольная сумма кладётся рядом с jar: скачавший может убедиться, что файл дошёл целым и
       # именно тот, что собрал этот прогон.
