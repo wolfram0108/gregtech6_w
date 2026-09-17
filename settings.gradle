@@ -27,8 +27,16 @@ pluginManagement {
     }
 }
 
-// The folder of foreign mods for dev runs sits beside the repository; build.gradle reads its place from here.
+// The folder of foreign mods for dev runs sits beside the repository. Its place and its repository are declared
+// here once: local mode adds the repository to the settings, the network mode — to the project (build.gradle).
 gradle.ext.localMods = new File(settingsDir, '../stands-1.20.1/_mods')
+gradle.ext.localModsRepository = { repos ->
+    // Exclusively: no network repository is ever asked for these coordinates.
+    repos.exclusiveContent {
+        forRepository { repos.flatDir { dirs gradle.ext.localMods } }
+        filter { includeGroup 'localmods' }
+    }
+}
 
 // Local mode covers dependencies too: settings repositories win over project ones, so the network
 // repositories ModDevGradle adds to the project are never asked. build.gradle reads the switch from here.
@@ -43,11 +51,8 @@ if (gradle.ext.platformCopy) {
                 // Some tools of the engine pipeline are published as bare files, with no POM beside them.
                 metadataSources { mavenPom(); artifact() }
             }
-            // Project repositories are ignored in this mode, so the folder of foreign mods (see build.gradle) is named here.
-            exclusiveContent {
-                forRepository { flatDir { dirs gradle.ext.localMods } }
-                filter { includeGroup 'localmods' }
-            }
+            // Project repositories are ignored in this mode, so the folder of foreign mods joins the settings ones.
+            gradle.ext.localModsRepository.call(delegate)
         }
     }
 }

@@ -196,7 +196,8 @@ repositories {
     // A foreign mod API compiles from src/compat-mirror/provided, a foreign mod jar comes from ../stands-1.20.1/_mods.
 }
 // The legacy plugin also adds maven.minecraftforge.net unfiltered; nothing is taken from it, so it is never asked.
-repositories.removeAll { it.name == 'MinecraftForge' }
+// Matched by host, not by the name the plugin happens to give the repository.
+repositories.removeAll { it instanceof MavenArtifactRepository && it.url.host == 'maven.minecraftforge.net' }
 
 base {
     archivesName = mod_id
@@ -323,11 +324,8 @@ if (gradle.platformCopy) {
 // Foreign mods are never fetched: they sit beside the repository, and a bare clone builds and runs GregTech alone.
 def localMods = gradle.localMods
 // The SRG-to-named remap accepts module notation only, so the folder is read as a local flat repository,
-// and exclusively: no network repository is ever asked for these coordinates.
-repositories.exclusiveContent {
-    forRepository { repositories.flatDir { dirs localMods } }
-    filter { includeGroup 'localmods' }
-}
+// declared once in settings.gradle. In local mode the settings repositories already hold it.
+if (!gradle.platformCopy) gradle.ext.localModsRepository.call(repositories)
 // Each entry is [name, version]; the jar in the folder is <name>-<version>.jar.
 def devRunMods = [
     // JEI is the visual-acceptance viewer; Jade, JourneyMap, AE2 and More Red are what the compat stands query.
