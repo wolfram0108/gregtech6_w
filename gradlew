@@ -101,7 +101,7 @@ if [ -d "$APP_HOME/../platform" ] ; then
     esac
     export NFRT_ASSET_REPOSITORY
     # The copy carries its JDKs; one named by the environment wins, as it does on CI.
-    for jdk in 17 25 ; do
+    for jdk in 17 21 25 ; do
         eval "named=\${JAVA_HOME_${jdk}_X64}"
         if [ -z "$named" ] && [ -d "$PLATFORM_HOME/jdk/$jdk/bin" ] ; then
             eval "JAVA_HOME_${jdk}_X64=\$PLATFORM_HOME/jdk/$jdk"
