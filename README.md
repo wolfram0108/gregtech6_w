@@ -249,7 +249,7 @@ Two rules keep this from lying, both bought with failures:
 
 ## Building
 
-You need **JDK 17**, about **8 GB of free RAM** and **10 GB of disk**. The first build downloads
+You need an installed **JDK 17**, about **8 GB of free RAM** and **10 GB of disk**. The first build downloads
 NeoForge and decompiles Minecraft, which is what the memory is for (the decompiler inherits the
 Gradle JVM heap, set to 6 GB in `gradle.properties`) — and it takes a while. Later builds are fast.
 
@@ -258,6 +258,25 @@ Gradle JVM heap, set to 6 GB in `gradle.properties`) — and it takes a while. L
 ./gradlew assemble    # just the jar -> build/libs/gregtech6-<version>.jar
 ./gradlew compileJava # just compile
 ```
+
+The build downloads only the platform: Gradle, NeoForge, Minecraft and their libraries. It never
+fetches other mods or a JDK. Integrations with other mods compile against the declarations in
+`src/compat-mirror/provided`, which never enter the jar.
+
+### Building without a network
+
+If a folder named `platform` sits beside the repository (`../platform`), `gradlew` switches the build to
+local mode: nothing is downloaded, and every input comes from that folder. Without it the build works as
+described above. The folder is not part of this repository — it holds Minecraft files, which may not be
+redistributed — so you assemble your own from files you have downloaded once:
+
+| Path under `../platform` | Content |
+|---|---|
+| `gradle/` | an unpacked Gradle distribution of the version named in `gradle/wrapper/gradle-wrapper.properties` |
+| `maven/` | a Maven-layout repository with every plugin and dependency of the build, POM and module files included |
+| `minecraft/resolved/launcher_manifest.json` | a launcher manifest whose version entry, and every address inside that version's manifest, is a `file:` URI |
+| `minecraft/assets/objects/` | the game's asset objects, stored by hash as the launcher stores them |
+| `jdk/17/` | a JDK 17, used when `JAVA_HOME_17_X64` is not set |
 
 ## Running
 
@@ -268,6 +287,9 @@ Gradle JVM heap, set to 6 GB in `gradle.properties`) — and it takes a while. L
 ```
 
 Client and server deliberately use separate game directories, so both can run at once.
+
+To run with JEI, Jade, Applied Energistics 2, JourneyMap or More Red, place their jars in
+`../stands-1.20.1/_mods` under the file names that `build.gradle` lists; the runs pick up whichever are present.
 
 There is one opt-in build flag, `-Pgt6probes`, which attaches the in-engine verification stands.
 Those live **outside this repository**, in the developer's working environment (`../stands-1.20.1`);

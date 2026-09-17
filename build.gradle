@@ -35,6 +35,9 @@ sourceSets.main.resources {
 // Central mirror of foreign mod APIs (IC2/AE2/…) that GregTech6 implements, holding compile-only declarations.
 // Keeps the core compilable while integration is deferred; returning to it means wiring the real dependency here.
 sourceSets.main.java.srcDir('src/compat-mirror/java')
+// Mods present at runtime as real jars (JEI, Jade, AE2, More Red) compile against stand-ins declared here.
+// Those jars own the packages at runtime, so the set builds apart and never enters the mod's output or jar.
+sourceSets { provided { java.srcDir('src/compat-mirror/provided') } }
 
 // The -PcoreOnly mode is gone with the mass-compilation phase it served: it narrowed the build to two file lists.
 
@@ -152,12 +155,18 @@ tasks.matching { it.name == 'reobfJar' }.configureEach {
         }
         def modNames = modJar.entries().findAll { it.name.endsWith('.class') }.collect { it.name[0..-7] } as Set
         def libIndex = [:]
-        libJars.each { z -> z.entries().each { e -> if (e.name.endsWith('.class')) libIndex.putIfAbsent(e.name[0..-7], z) } }
+        libJars.each { z -> z.entries().each { e -> if (e.name.endsWith('.class')) libIndex.putIfAbsent(e.name[0..-7], { -> z.getInputStream(e).bytes }) } }
+        // Class directories are libraries too: the compile-only stand-ins arrive that way.
+        task.libraries.files.findAll { it.isDirectory() }.each { d ->
+            d.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+                if (f.name.endsWith('.class')) libIndex.putIfAbsent(d.toPath().relativize(f.toPath()).toString().replace(File.separator, '/')[0..-7], { -> f.bytes })
+            }
+        }
         def parentCache = [:]
         def parentsOf = { String name ->
             if (!parentCache.containsKey(name)) {
-                def z = modNames.contains(name) ? modJar : libIndex[name]
-                parentCache[name] = z ? headerParents(z.getInputStream(z.getEntry(name + '.class')).bytes) : []
+                def read = modNames.contains(name) ? { -> modJar.getInputStream(modJar.getEntry(name + '.class')).bytes } : libIndex[name]
+                parentCache[name] = read ? headerParents(read()) : []
             }
             parentCache[name]
         }
@@ -183,27 +192,11 @@ tasks.matching { it.name == 'reobfJar' }.configureEach {
 }
 
 repositories {
-    // Add here additional repositories if required by some of the dependencies below.
-
-    // JEI (like NEI) is the visual-acceptance recipe/item viewer; its coordinates are verified against AE2.
-    maven {
-        url = 'https://maven.blamejared.com/'
-        content { includeGroup 'mezz.jei' }
-    }
-
-    // Jade is needed only to compile the compat plugin: GT6's own harvest tools (wrench/crowbar/cutters) are shown
-    // to Jade by implementing its ToolHandler interface, which needs the API on the compile classpath.
-    maven {
-        url = 'https://api.modrinth.com/maven'
-        content { includeGroup 'maven.modrinth' }
-    }
-
-    // More Red (RedPower's successor) and its two mandatory dependencies; the author publishes them on their own maven.
-    maven {
-        url = 'https://maven.commoble.net'
-        content { includeGroupByRegex 'commoble\\..*' }
-    }
+    // No mod repositories: the build downloads only the platform (Gradle, NeoForge, Minecraft, their libraries).
+    // A foreign mod API compiles from src/compat-mirror/provided, a foreign mod jar comes from ../stands-1.20.1/_mods.
 }
+// The legacy plugin also adds maven.minecraftforge.net unfiltered; nothing is taken from it, so it is never asked.
+repositories.removeAll { it.name == 'MinecraftForge' }
 
 base {
     archivesName = mod_id
@@ -294,6 +287,61 @@ legacyForge {
 
     // The legacyForge extension has no unitTest{} block; removed since this run's goal is core compilation.
 }
+legacyForge.addModdingDependenciesTo(sourceSets.provided)
+
+// Local mode: NeoFormRuntime takes the game from the platform copy beside the repository instead of asking Mojang.
+// Its manifests under minecraft/resolved point every address at a file of that copy.
+if (gradle.platformCopy) {
+    neoFormRuntime.launcherManifestUrl = new File(gradle.platformCopy, 'minecraft/resolved/launcher_manifest.json').toURI().toString()
+    // The 1.20.1 pipeline names its tools inside mcp_config, and NeoFormRuntime downloads whatever its artifact
+    // manifest lacks. Gradle resolves them here, one configuration each: two versions of one tool are both needed.
+    def pipelineTools = [
+        'de.oceanlabs.mcp:mcp_config:1.20.1-20230612.114412@zip',
+        'net.minecraftforge:ForgeAutoRenamingTool:1.0.2:all',
+        'net.minecraftforge:forgeflower:2.0.629.0',
+        'net.minecraftforge:installertools:1.2.0:fatjar',
+        'net.minecraftforge:installertools:1.3.2:fatjar',
+        'net.minecraftforge:mergetool:1.1.7:api',
+        'org.jetbrains:annotations:24.0.1',
+    ].collect { notation ->
+        def tool = configurations.detachedConfiguration(dependencies.create(notation))
+        tool.transitive = false
+        tool
+    }
+    tasks.withType(net.neoforged.nfrtgradle.NeoFormRuntimeTask).configureEach { task ->
+        pipelineTools.each { task.addArtifactsToManifest(it) }
+    }
+    tasks.withType(net.neoforged.nfrtgradle.DownloadAssets).configureEach {
+        doFirst {
+            if (!System.getenv('NFRT_ASSET_REPOSITORY')) {
+                throw new GradleException('Local mode starts through gradlew: it tells NeoFormRuntime where the game assets are.')
+            }
+        }
+    }
+}
+
+// Foreign mods are never fetched: they sit beside the repository, and a bare clone builds and runs GregTech alone.
+def localMods = gradle.localMods
+// The SRG-to-named remap accepts module notation only, so the folder is read as a local flat repository,
+// and exclusively: no network repository is ever asked for these coordinates.
+repositories.exclusiveContent {
+    forRepository { repositories.flatDir { dirs localMods } }
+    filter { includeGroup 'localmods' }
+}
+// Each entry is [name, version]; the jar in the folder is <name>-<version>.jar.
+def devRunMods = [
+    // JEI is the visual-acceptance viewer; Jade, JourneyMap, AE2 and More Red are what the compat stands query.
+    ["jei-${jei_minecraft_version}-forge", jei_version],
+    ['jade', jade_version],
+    ['journeymap', journeymap_version],
+    ['ae2', ae2_version],
+    ['guideme', guideme_version],
+    ["morered-${minecraft_version}", morered_version],
+    // More Red embeds these two, but the dev runtime doesn't unpack embedded jars.
+    ["useitemonblockevent-${minecraft_version}", useitemonblockevent_version],
+    ["jumbofurnace-${minecraft_version}", jumbofurnace_version],
+].collect { n, v -> [notation: "localmods:${n}:${v}", jar: new File(localMods, "${n}-${v}.jar")] }
+def probeCompileMods = devRunMods*.jar
 
 // Sets up a dependency configuration called 'localRuntime'.
 // This configuration should be used instead of 'runtimeOnly' to declare
@@ -322,41 +370,16 @@ dependencies {
     annotationProcessor 'org.ow2.asm:asm-analysis:9.9.1'
     annotationProcessor 'commons-io:commons-io:2.20.0'
 
-    // The compileOnly lines are commented out: downloading from maven.blamejared.com times out here and would
-    // block core compilation, which doesn't import JEI yet; localRuntime stays, since it's runtime-only.
-    compileOnly "mezz.jei:jei-${jei_minecraft_version}-common-api:${jei_version}"
-    compileOnly "mezz.jei:jei-${jei_minecraft_version}-forge-api:${jei_version}"
-    modLocalRuntime "mezz.jei:jei-${jei_minecraft_version}-forge:${jei_version}"
-
-    // Jade is compileOnly only: the compat plugin implements its ToolHandler to show GT6's real harvest tools.
-    // Jade isn't shipped in the player's jar; without Jade the plugin class isn't loaded, so production code ignores it.
-    compileOnly "maven.modrinth:jade:${jade_version}"
-    // modLocalRuntime (SRG→named remap) lets the gt6jadeprobe stand ask the real Jade the same way it renders its tooltip.
-    modLocalRuntime "maven.modrinth:jade:${jade_version}"
-
-    // JourneyMap is only for the gt6jmprobe stand: the judge asks it through the same channel it uses to decide
-    // a block's map appearance (BlockMD.get).
-    compileOnly "maven.modrinth:journeymap:${journeymap_version}"
-    modLocalRuntime "maven.modrinth:journeymap:${journeymap_version}"
-
-    // GT6 has known AE2 since 1.7.10: presses, cutting, sky stone, all gated by MD.AE.mLoaded.
-    // The appeng.* package now belongs entirely to this jar; the old compat-mirror appeng mirrors are removed.
-    compileOnly "maven.modrinth:ae2:${ae2_version}"
-    // modLocalRuntime, not localRuntime: AE2's production jar calls the engine by SRG names, this build's
-    // dev runtime uses named mappings; without the remap the first call throws NoSuchMethodError.
-    modLocalRuntime "maven.modrinth:ae2:${ae2_version}"
-    // GuideME is AE2's mandatory dependency (its mods.toml declares it mandatory); runtime only, our code never touches it.
-    modLocalRuntime "maven.modrinth:guideme:${guideme_version}"
-
-    // More Red is needed only for the gt6moreredprobe stand: it asks the real mod through the channels it uses
-    // to decide a signal (MoreRedAPI registries, vanilla getSignal/canConnectRedstone).
-    compileOnly "commoble.morered:morered-${minecraft_version}:${morered_version}"
-    // modLocalRuntime, not localRuntime: the mod's production jar calls the engine by SRG names,
-    // the same reason as Jade, JourneyMap and AE2 above.
-    modLocalRuntime "commoble.morered:morered-${minecraft_version}:${morered_version}"
-    // The mod's mandatory dependencies (mods.toml: mandatory=true); runtime only, our code never touches them.
-    modLocalRuntime "commoble.useitemonblockevent:useitemonblockevent-${minecraft_version}:${useitemonblockevent_version}"
-    modLocalRuntime "commoble.jumbofurnace:jumbofurnace-${minecraft_version}:${jumbofurnace_version}"
+    // Stands read mod internals the stand-ins leave out, so under -Pgt6probes everything compiles against real jars.
+    if (project.hasProperty('gt6probes')) {
+        compileOnly files(probeCompileMods)
+    } else {
+        compileOnly sourceSets.provided.output
+    }
+    // Production jars call the engine by SRG names, so dev runs load them through the SRG-to-named remap.
+    // A mistyped file name would otherwise start the game without the mod and without a word.
+    if (localMods.isDirectory()) devRunMods.findAll { !it.jar.isFile() }.each { logger.lifecycle("[mods] absent from ${localMods.name}, runs go without it: ${it.jar.name}") }
+    devRunMods.findAll { it.jar.isFile() }.each { modLocalRuntime it.notation }
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar

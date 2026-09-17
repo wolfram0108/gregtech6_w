@@ -88,6 +88,25 @@ APP_BASE_NAME=${0##*/}
 # Discard cd standard output in case $CDPATH is set (https://github.com/gradle/gradle/issues/25036)
 APP_HOME=$( cd -P "${APP_HOME:-./}" > /dev/null && printf '%s\n' "$PWD" ) || exit
 
+# Local mode: a platform copy beside the repository runs its own Gradle and serves NeoFormRuntime the game
+# assets, so the build downloads nothing. Without that folder the standard wrapper below takes over.
+if [ -d "$APP_HOME/../platform" ] ; then
+    PLATFORM_HOME=$( cd -P "$APP_HOME/../platform" > /dev/null && printf '%s\n' "$PWD" ) || exit
+    case "$( uname )" in
+      CYGWIN* | MSYS* | MINGW* ) PLATFORM_HOME=$( cygpath --mixed "$PLATFORM_HOME" ) ;;
+    esac
+    case $PLATFORM_HOME in
+      /*) NFRT_ASSET_REPOSITORY=file://$PLATFORM_HOME/minecraft/assets/objects/ ;;
+      *)  NFRT_ASSET_REPOSITORY=file:///$PLATFORM_HOME/minecraft/assets/objects/ ;;
+    esac
+    export NFRT_ASSET_REPOSITORY
+    if [ -z "$JAVA_HOME_17_X64" ] && [ -d "$PLATFORM_HOME/jdk/17/bin" ] ; then
+        JAVA_HOME_17_X64=$PLATFORM_HOME/jdk/17
+        export JAVA_HOME_17_X64
+    fi
+    exec "$PLATFORM_HOME/gradle/bin/gradle" "$@"
+fi
+
 # Use the maximum available, or set MAX_FD != -1 to use that value.
 MAX_FD=maximum
 

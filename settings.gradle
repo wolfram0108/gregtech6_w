@@ -1,9 +1,53 @@
 pluginManagement {
     repositories {
-        gradlePluginPortal()
+        // Local mode: a platform copy beside the repository is the only source of plugins, and nothing is downloaded.
+        if (new File(settingsDir, '../platform').isDirectory()) {
+            maven {
+                name = 'Platform'
+                url = uri('../platform/maven')
+            }
+        } else {
+            // The portal answers any non-plugin request with a redirect to Maven Central, so it serves plugins only.
+            gradlePluginPortal {
+                content { includeGroupByRegex('net\\.neoforged(\\..+)?|gradle\\.plugin\\..+') }
+            }
+        }
+        // The single library the build plugins need is kept in the repository, for both modes.
+        exclusiveContent {
+            forRepository {
+                ivy {
+                    name = 'PluginLibs'
+                    url = uri('gradle/plugin-libs')
+                    metadataSources { artifact() }
+                    patternLayout { artifact('[artifact]-[revision].[ext]') }
+                }
+            }
+            filter { includeModule('com.google.code.gson', 'gson') }
+        }
     }
 }
 
-plugins {
-    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+// The folder of foreign mods for dev runs sits beside the repository; build.gradle reads its place from here.
+gradle.ext.localMods = new File(settingsDir, '../stands-1.20.1/_mods')
+
+// Local mode covers dependencies too: settings repositories win over project ones, so the network
+// repositories ModDevGradle adds to the project are never asked. build.gradle reads the switch from here.
+gradle.ext.platformCopy = new File(settingsDir, '../platform').isDirectory() ? new File(settingsDir, '../platform') : null
+if (gradle.ext.platformCopy) {
+    dependencyResolutionManagement {
+        repositoriesMode = RepositoriesMode.PREFER_SETTINGS
+        repositories {
+            maven {
+                name = 'Platform'
+                url = uri('../platform/maven')
+                // Some tools of the engine pipeline are published as bare files, with no POM beside them.
+                metadataSources { mavenPom(); artifact() }
+            }
+            // Project repositories are ignored in this mode, so the folder of foreign mods (see build.gradle) is named here.
+            exclusiveContent {
+                forRepository { flatDir { dirs gradle.ext.localMods } }
+                filter { includeGroup 'localmods' }
+            }
+        }
+    }
 }

@@ -35,6 +35,21 @@ set APP_HOME=%DIRNAME%
 @rem Resolve any "." and ".." in APP_HOME to make it shorter.
 for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi
 
+@rem Local mode: a platform copy beside the repository runs its own Gradle and serves NeoFormRuntime the game
+@rem assets, so the build downloads nothing. Without that folder the standard wrapper below takes over.
+if not exist "%APP_HOME%..\platform\" goto standardWrapper
+for %%i in ("%APP_HOME%..\platform") do set PLATFORM_HOME=%%~fi
+set PLATFORM_URI=%PLATFORM_HOME:\=/%
+setlocal EnableDelayedExpansion
+set "PLATFORM_ENCODED=!PLATFORM_URI: =%%20!"
+endlocal & set "PLATFORM_URI=%PLATFORM_ENCODED%"
+set NFRT_ASSET_REPOSITORY=file:///%PLATFORM_URI%/minecraft/assets/objects/
+if not defined JAVA_HOME_17_X64 if exist "%PLATFORM_HOME%\jdk\17\bin\java.exe" set JAVA_HOME_17_X64=%PLATFORM_HOME%\jdk\17
+call "%PLATFORM_HOME%\gradle\bin\gradle.bat" %*
+goto end
+
+:standardWrapper
+
 @rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
 set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
 

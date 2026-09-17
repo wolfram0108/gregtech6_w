@@ -60,8 +60,8 @@ a logo ever be added.
 4. Compile-time stand-ins for third-party mod APIs
 --------------------------------------------------
 
-The jar contains 244 classes in 28 package names owned by other projects: ic2, thaumcraft,
-forestry, codechicken, buildcraft, appeng, cofh, micdoodle8, net.minecraftforge and others.
+The jar contains 228 classes in 26 top-level package names owned by other projects: ic2,
+thaumcraft, forestry, codechicken, buildcraft, cofh, micdoodle8 and others.
 
 These are NOT those projects' code. Every one of them was written from scratch for this port
 and declares only what GregTech 6 itself implements or calls — typically an empty interface.
@@ -73,6 +73,12 @@ and this port does not rewrite the code Gregorius Techneticies wrote. They canno
 dropped from the build: 66 classes of the mod extend or implement them, and the JVM needs the
 type present to load the implementing class. They disappear one by one as real integration
 with each mod becomes possible.
+
+The source tree also holds stand-ins under src/compat-mirror/provided, for mods that exist as real
+jars at runtime (JEI, Jade, Applied Energistics 2 and More Red). Each one
+declares only the public signatures GregTech 6 calls or implements, as those mods publish them,
+and contains no implementation code. They only let the port compile without downloading those
+mods; they are not in this jar, because at runtime the real mod owns those packages.
 
 All names, trademarks and rights in those projects remain with their respective authors.
 
@@ -91,5 +97,9 @@ record was given to the upstream author, not to this port, which asks for none.
 
 gradle/wrapper/gradle-wrapper.jar is part of the Gradle build tool, licensed under the
 Apache License 2.0 by Gradle Inc.
+
+gradle/plugin-libs/gson-2.10.1.jar is Gson by Google LLC, licensed under the Apache License 2.0,
+unmodified. The build plugins need it; it is kept here so that the build never fetches it from
+Maven Central, and it is not part of the mod jar.
 
 Minecraft and NeoForge are not redistributed by this project in any form.
