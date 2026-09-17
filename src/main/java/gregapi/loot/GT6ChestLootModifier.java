@@ -36,35 +36,15 @@ import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraftforge.common.loot.IGlobalLootModifier;
 import net.minecraftforge.common.loot.LootModifier;
 
-/**
- * Ветка 1.20.1 (задача A1, workspace/tasks/consolidation/OPEN-ITEMS.md): НОСИТЕЛЬ доставки GT-добавок
- * {@code gt6mirror.minecraftforge.common.ChestGenHooks} в 10 ванильных chest-категорий.
- *
- * <p>Прежний канал мутировал живую {@code LootTable} через {@code addPool} — Forge 1.20.1 замораживает
- * каждую таблицу СИНХРОННО в том же проходе, что сеет {@code LootTableLoadEvent} (окна на мутацию нет
- * вообще), а буфер GT6 ({@code ChestGenHooks.contents}) наполняется строго позже, на server-start —
- * поэтому канал падал на КАЖДОМ старте (10 {@code RuntimeException "Attempted to modify LootTable after
- * being finalized!"}, GT-лут никуда не попадал). Правильный канал — тот же приём, что уже несёт
- * {@link GT6BlockDropsModifier} для дропа чужих блоков: {@code IGlobalLootModifier.doApply}
- * ({@code net/minecraftforge/common/loot/LootModifier.java:68}) зовётся ПОСЛЕ {@code getRandomItemsRaw}
- * ({@code ForgeHooks.java:1187-1188}) и самой {@code LootTable} не касается — заморозка ему не мешает.
- *
- * <p><b>Гейт:</b> {@link LootContext#getQueriedLootTableId()} должен совпасть с одной из 10 ванильных
- * chest-таблиц {@code ChestGenHooks.NEO_TABLE} (обратный поиск — {@code ChestGenHooks.categoryForTable});
- * иначе no-op (лут сундуков, рыбалки, мобов и чужих блоков через эту дверь не идёт). Распределение (rolls,
- * веса GT-предметов, вес «пустого» слота под ванильную часть) строит {@code ChestGenHooks.buildPool} — ТОТ
- * ЖЕ центр, что нёс прежний канал; здесь только доставка.
- */
+/** The old channel mutated a live LootTable, which Forge 1.20.1 freezes before GT6's own chest-loot buffer is even filled,
+ *  so it crashed on every start; this uses the same after-the-fact loot-modifier trick as GT6BlockDropsModifier instead. */
 public class GT6ChestLootModifier extends LootModifier {
 	public static final Codec<GT6ChestLootModifier> CODEC = RecordCodecBuilder.create(aInstance -> codecStart(aInstance).apply(aInstance, GT6ChestLootModifier::new));
 
-	/** ТОТ ЖЕ реестр GLM-сериализаторов мода, что и у {@link GT6BlockDropsModifier} — «ЕДИНСТВЕННЫЙ реестр
-	 *  GLM-сериализаторов мода» второго не заводим, добавляем сюда ещё одну запись. */
+	/** The same GLM-serializer registry as GT6BlockDropsModifier; adds one more entry rather than starting a second registry. */
 	public static final net.minecraftforge.registries.RegistryObject<Codec<GT6ChestLootModifier>> TYPE = GT6BlockDropsModifier.SERIALIZERS.register("chest_loot", () -> CODEC);
 
-	/** Пустое тело — вызов нужен только чтобы гарантированно тронуть класс (проинициализировать {@link #TYPE})
-	 *  до RegisterEvent; сам мод-бас несёт {@link GT6BlockDropsModifier#SERIALIZERS}, второй подписки не
-	 *  требуется. */
+	/** Empty on purpose: it only touches the class and initializes TYPE before RegisterEvent; no second subscription needed. */
 	public static void register() {}
 
 	public GT6ChestLootModifier(LootItemCondition[] aConditions) {super(aConditions);}

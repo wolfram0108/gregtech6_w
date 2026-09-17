@@ -39,8 +39,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только используется в instanceof/
- *  ContainerArcaneWorkbenchFixed (@Deprecated путь). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only used in an instanceof check by the
+ *  deprecated ContainerArcaneWorkbenchFixed. */
 public class ItemWandCasting extends Item {
 	public ItemWandCasting() {super(new Item.Properties());}
 

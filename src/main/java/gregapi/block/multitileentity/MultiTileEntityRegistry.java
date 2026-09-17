@@ -102,9 +102,8 @@ public class MultiTileEntityRegistry {
 	/** @param aNameInternal the internal Name of the Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!! */
 	public MultiTileEntityRegistry(String aNameInternal, MultiTileEntityBlockInternal aBlock, Class<? extends BlockItem> aItemClass, Object aItemRenderer) {
 		this(aNameInternal, regblock(aNameInternal, aBlock, aItemClass));
-		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было MinecraftForgeClient.registerItemRenderer(...) (net.minecraftforge.client
-		// удалён целиком в 26.1.2, RendererBlockTextured больше не implements IItemRenderer — decisions/F3-render.md §2.1/§3
-		// "IItemRenderer"). Реальная регистрация item-модели — RegisterBlockStateModels/ModelEvent.RegisterStandalone (Фаза C).
+		// The old Forge item-renderer registration API is gone entirely; the real item-model registration
+		// now happens through neo's model registration events instead, in a later phase.
 	}
 	/** @param aNameInternal the internal Name of the Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!! */
 	public MultiTileEntityRegistry(String aNameInternal, MultiTileEntityBlockInternal aBlock) {
@@ -117,11 +116,8 @@ public class MultiTileEntityRegistry {
 	}
 	
 	/** Whatever you do, DO NOT GET THE UTTERLY RETARDED IDEA OF ADDING YOUR MULTITILEENTITIES TO MY OWN REGISTRY!!! Create your own instance! */
-	// F-registry-id (КОРЕНЬ regFound=false): прежний REGISTRIES.get(new ItemStackContainer(Item.byId(reg))) промахивался, ПОТОМУ ЧТО
-	// REGISTRIES (ItemStackMap) заполнялся в конструкторе на PreInit — когда блок-итем ЕЩЁ НЕ зарегистрирован (neo DeferredRegister
-	// создаёт объект на RegisterEvent) → ключ mItem = Item.byBlock(mBlock) = AIR (воздух, id 0). А get по реальному Item.byId(reg) ≠ AIR →
-	// null ДАЖЕ с верным item-id (GameTest: regID=1646 валиден, regFound=false). Резолвим по СВЕЖЕМУ ключу на CALL-time (рантайм/load —
-	// итемы заморожены, Item.byBlock(mBlock) резолвится): item-id блок-итема каждого реестра. Реестров единицы (NAMED_REGISTRIES), перебор дёшев.
+	// The registry map used to be built at PreInit, before the block's item was even registered, so
+	// its key resolved to AIR; this instead resolves against a fresh key at call time, once items are frozen.
 	public static MultiTileEntityRegistry getRegistry(int aRegistryID) {
 		for (MultiTileEntityRegistry tRegistry : NAMED_REGISTRIES.values()) if (ST.id(ST.item(tRegistry.mBlock)) == aRegistryID) return tRegistry;
 		return null;
@@ -172,7 +168,7 @@ public class MultiTileEntityRegistry {
 	}
 	
 	/** Returns the MultiTileEntityRegistry ID that is currently used by this World. */
-	// F-registry-id: item-id блок-итема (Item.byId-резолвимый в getRegistry), НЕ block-id (см. коммент в getNewTileEntityContainer).
+	// This is the block-item's item-id, resolvable via Item.byId in getRegistry, not the block-id.
 	public int currentID() {return ST.id(ST.item(mBlock));}
 	
 	/** Adds a new MultiTileEntity. It is highly recommended to do this in either the PreInit or the Init Phase. PostInit might not work well.*/
@@ -220,11 +216,8 @@ public class MultiTileEntityRegistry {
 		mLastRegisteredID = aClassContainer.mID;
 		mRegistrations.add(aClassContainer);
 		if (!mCreativeTabs.containsKey(aClassContainer.mCreativeTabID)) mCreativeTabs.put(aClassContainer.mCreativeTabID, new CreativeTab(mNameInternal+"."+aClassContainer.mCreativeTabID, aCategoricalName, Item.byBlock(mBlock), aClassContainer.mCreativeTabID));
-		// F3-render (КРИТ, гейт②-находка): *Client-хуки регистрации — это TESR/immediate-mode рендер-инициализация (напр.
-		// MultiTileEntityChest.onRegistrationFirstClient → ClientRegistry.bindTileEntitySpecialRenderer, 1.7.10-API удалён в neo →
-		// NoSuchFieldException). БЕЗ try-catch необработанное исключение ОБРЫВАЛО Loader_MultiTileEntities → в runClient регистрировался
-		// лишь 1 MTE из сотен (рок/палка/машины отсутствовали → placeBlock=false, worldgen пуст). Рендер MTE = Фаза C: сбой client-хука
-		// = лог+продолжить (тот же приём, что вся отложенная F3-render-инициализация). Серверные хуки НЕ глушим (их сбой = реальный баг).
+		// A client-only render-registration hook whose old API no longer exists used to throw and abort the whole loader,
+		// registering only one MTE of hundreds; failures here are now logged and skipped, but server-side ones still are not.
 		if (sRegisteredTileEntityClassNames.add(aClassContainer.mCanonicalTileEntity.getClass().getName()) && sRegisteredTileEntities.add(aClassContainer.mCanonicalTileEntity.getClass())) {
 			if (aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationFirst) ((IMTE_OnRegistrationFirst)aClassContainer.mCanonicalTileEntity).onRegistrationFirst(this, aClassContainer.mID);
 			if (CODE_CLIENT && aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationFirstClient) try {((IMTE_OnRegistrationFirstClient)aClassContainer.mCanonicalTileEntity).onRegistrationFirstClient(this, aClassContainer.mID);} catch (Throwable e) {e.printStackTrace(ERR);}
@@ -279,19 +272,8 @@ public class MultiTileEntityRegistry {
 	public BlockEntity getNewTileEntity(int aID)                                                 {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(null  ,  0,  0,  0, aID, null); return tContainer == null ? null : tContainer.mTileEntity;}
 	public BlockEntity getNewTileEntity(Level aWorld, int aX, int aY, int aZ, int aID)           {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(aWorld, aX, aY, aZ, aID, null); return tContainer == null ? null : tContainer.mTileEntity;}
 	
-	/**
-	 * BUG-074/078 — ЕДИНСТВЕННАЯ точка компенсации item-facing для detached-TE (форма предмета, мира нет).
-	 *
-	 * <p>Путей рождения такого TE ровно два, и оба зовут этот метод: обычный item-рендер
-	 * ({@code MultiTileEntityBlockInternal.passRenderingToObject}) и BER-ветка для предметов со своим
-	 * рендерером ({@code MultiTileEntityBER.extractArgument} — сундук, масстораж). Величину задаёт сам TE
-	 * ({@code IMTE_ItemFacing.getItemFacing}), поэтому семья с иной раскладкой граней меняет
-	 * ОДНО переопределение, а не строку в каждом {@code getTexture2}.</p>
-	 *
-	 * <p>Получатели отбираются по КОНТРАКТУ {@code IMTE_ItemFacing}, а не по месту в иерархии: сундук
-	 * носит собственную грань вне {@code TileEntityBase09FacingSingle} (как и в оригинале), и отбор по
-	 * классу базы проходил мимо него — приём приходилось повторять руками в его рендер-состоянии.</p>
-	 */
+	/** The single point compensating item-facing for a detached tile entity; both birth paths call this, and the facing
+	 *  value comes from the tile entity itself, so a differently laid-out family changes one override, not every renderer. */
 	public static BlockEntity applyItemFacing(BlockEntity aTileEntity) {
 		if (aTileEntity instanceof IMultiTileEntity.IMTE_ItemFacing tFacingTE) tFacingTE.setItemFacing(tFacingTE.getItemFacing());
 		return aTileEntity;
@@ -307,28 +289,19 @@ public class MultiTileEntityRegistry {
 	public MultiTileEntityContainer getNewTileEntityContainer(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, int aID, CompoundTag aNBT) {
 		MultiTileEntityClassContainer tClass = mRegistry.get((short)aID);
 		if (tClass == null || tClass.mBlock == null) return null;
-		// F-tileentity-construction (ADR, placement-pos): при МИРОВОЙ постановке (aWorld!=null) передаём реальную (aX,aY,aZ) в
-		// no-arg-конструктор MTE через центральный канал PENDING_WORLD_POS (worldPosition в neo immutable — BlockEntity.java:48-59;
-		// вся MTE-иерархия на no-arg-ctor, см. TileEntityBase01Root). Иначе TE садится на BlockPos.ZERO, а WD.te крепит его по
-		// te.getBlockPos()=(0,0,0), не на своё место → камни/палки/источники/машины остаются без TE (region-scan gt.multitileentity=0).
-		// aWorld==null (item-form/getDrops/detached) → канал пуст → ZERO (data-контейнер, позиция не нужна). Тот же канал даёт pos и
-		// load-реконструкции MTE (getNewTileEntity с реальными координатами стаба на ChunkEvent.Load).
+		// Real placement coordinates pass through the shared PENDING_WORLD_POS channel before construction, since a tile
+		// entity's position is immutable and the whole MTE hierarchy uses a no-arg constructor; otherwise it lands at (0,0,0).
 		BlockEntity tTileEntity;
 		if (aWorld != null) gregapi.tileentity.base.TileEntityBase01Root.PENDING_WORLD_POS.set(new net.minecraft.core.BlockPos(aX, aY, aZ));
 		try {tTileEntity = (BlockEntity)UT.Reflection.callConstructor(tClass.mClass, -1, null, T);}
 		finally {gregapi.tileentity.base.TileEntityBase01Root.PENDING_WORLD_POS.remove();}
 		MultiTileEntityContainer rContainer = new MultiTileEntityContainer(tTileEntity, tClass.mBlock, tClass.mBlockMetaData);
 		if (rContainer.mTileEntity == null) return null;
-		// было TileEntity.setWorldObj(World) (1.7.10, recompSrc TileEntity.java:70) -> BlockEntity.setLevel(Level) [BlockEntity.java:93].
-		// F6-worldgen: приёмник расширен до LevelAccessor; BE.setLevel хочет полный Level → на worldgen (WorldGenLevel/
-		// ServerLevelAccessor) берём итоговый ServerLevel через getLevel() (BE к нему и привяжется при финализации чанка);
-		// на gameplay это сам Level; экзотический LevelAccessor без обоих → null (как aWorld==null: контейнер без мира).
+		// neo's setLevel replaces the old setWorldObj; since it wants a full Level, worldgen callers pass
+		// the eventual ServerLevel through getLevel() instead, falling back to null only for an exotic accessor with neither.
 		rContainer.mTileEntity.setLevel(aWorld instanceof Level tLvl ? tLvl : aWorld instanceof net.minecraft.world.level.ServerLevelAccessor tSLA ? tSLA.getLevel() : null);
-		// F-registry-id (КОРНЕВОЙ фикс load-реконструкции): registry-ID тайла = ITEM-id блок-итема, т.к. getRegistry(int) матчит его как
-		// `ST.id(ST.item(reg.mBlock)) == id` (см. getRegistry). В 1.7.10 block-id==item-id (общее id-пространство, ItemBlock делил id блока) —
-		// там ST.id(mBlock) годился. В neo BLOCK и ITEM — РАЗНЫЕ реестры с независимыми id, а `ST.id(mBlock)` резолвится в overload id(Block)=
-		// BLOCK.getId → block-id (напр. 1168) ≠ item-id → getRegistry(block-id) промахивался. Правильно: ST.id(ST.item(mBlock)) = item-id
-		// (ST.item(Block)=Item.byBlock). getMultiTileEntityRegistryID() теперь = item-id, network-safe (item-id синхронизирован клиент/сервер).
+		// 1.7.10 shared one id space between blocks and items, so using the block's own id worked there; neo keeps them
+		// in separate registries with independent ids, so this must resolve the block-item's own item-id specifically.
 		((IMultiTileEntity)rContainer.mTileEntity).initFromNBT(aNBT == null || aNBT.isEmpty() ? tClass.mParameters : UT.NBT.fuse(aNBT, tClass.mParameters), (short)aID, (short)ST.id(ST.item(mBlock)));
 		return rContainer;
 	}

@@ -95,8 +95,8 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 		return tNBTTagCompound.getInt("mTickTimer");
 	}
 
-	// F8-nbt: neo CustomData копирует тег на get() → мутацию надо вернуть в стек через ItemNBT.set (в 1.7.10 живой тег сохранял
-	// сам). Иначе состояние Sonictron (индекс/таймер) терялось. См. decisions/F8-nbt-data-components.md §7.
+	// neo's CustomData copies the tag on get(), unlike 1.7.10's live tag, so a mutation must be written back explicitly via
+	// ItemNBT.set or the state is lost.
 	public static CompoundTag setCurrentIndex(ItemStack aStack, int aIndex) {
 		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
@@ -105,7 +105,7 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 		return tNBTTagCompound;
 	}
 
-	// F8-nbt: см. setCurrentIndex выше — write-back через ItemNBT.set.
+	// Same write-back requirement as setCurrentIndex above, through ItemNBT.set.
 	public static CompoundTag setTickTimer(ItemStack aStack, int aTime) {
 		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();

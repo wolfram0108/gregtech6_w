@@ -68,8 +68,8 @@ public class MultiTileEntityUSBSwitch extends TileEntityBase08DataSwitch {
 		return null;
 	}
 
-	// F8: тег захвачен ОДИН раз в tNBT (создан, если отсутствовал), все мутации идут в него,
-	// коммит единый ItemNBT.set в конце — иначе все правки тихо терялись бы (см. ItemNBT.java).
+	// The tag is captured once into tNBT (created if absent), and all mutations go into it.
+	// A single ItemNBT.set commits the whole tree at the end; otherwise the edits would be silently lost (see ItemNBT.java).
 	@Override
 	public boolean setUSBData(byte aSide, int aUSBTier, CompoundTag aData) {
 		ItemStack tUSB = slot(mMode);

@@ -35,7 +35,6 @@
 
 package li.cil.oc.api.network;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — OpenComputers. Интерфейс сети (не {@code prefab}-класс);
- *  CompatOC.createEnvironment возвращает {@code new EnvironmentOC(...)} через этот тип.
- *  См. compat-mirror/README.md. */
+/** Compile-only mirror of the OpenComputers API: the network interface CompatOC.createEnvironment
+ *  returns its EnvironmentOC instance through. */
 public interface ManagedEnvironment {}

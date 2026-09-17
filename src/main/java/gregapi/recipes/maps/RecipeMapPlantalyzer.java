@@ -59,7 +59,7 @@ public class RecipeMapPlantalyzer extends RecipeMap {
 					CompoundTag tNBT = UT.NBT.getOrCreate(rOutput);
 					if (tNBT.getByte("scan") >= 4) return new Recipe(F, F, F, ST.array(aInput), ST.array(aInput), null, null, null, null, 1, 16, 0);
 					tNBT.putByte("scan", (byte)4);
-					UT.NBT.set(rOutput, tNBT); // F8: getOrCreate — detached-копия, коммитим назад (см. ItemNBT.java)
+					UT.NBT.set(rOutput, tNBT); // getOrCreate returns a detached copy; commit it back explicitly.
 					return new Recipe(F, F, F, ST.array(aInput), ST.array(rOutput), null, null, null, null, 64, 16, 0);
 				}
 				if (IL.FR_Tree_Sapling.equal(aInput, T, T)) try {
@@ -68,7 +68,7 @@ public class RecipeMapPlantalyzer extends RecipeMap {
 					ItemStack rOutput = ST.copy(aInput);
 					CompoundTag tNBT = UT.NBT.getOrCreate(rOutput);
 					((IIndividual)tIndividual).writeToNBT(tNBT);
-					UT.NBT.set(rOutput, tNBT); // F8: getOrCreate — detached-копия, коммитим назад (см. ItemNBT.java)
+					UT.NBT.set(rOutput, tNBT); // getOrCreate returns a detached copy; commit it back explicitly.
 					return new Recipe(F, F, F, ST.array(aInput), ST.array(rOutput), null, null, null, null, 64, 16, 0);
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 			}

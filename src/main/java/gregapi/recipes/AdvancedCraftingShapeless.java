@@ -61,8 +61,7 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 	public boolean matches(CraftingContainer aGrid, Level aWorld) {
 		if (mKeepingNBT) {
 			ItemStack tStack = null, tMainInput = ((getInput().get(0) instanceof ItemStack) ? (ItemStack)getInput().get(0) : null);
-			// F11: Forge InventoryCrafting.getSizeInventory()/getStackInSlot(i) удалены; neo-эквивалент —
-			// CraftingContainer.size()/getItem(i). Занятость слота — ST.valid(...) (getItem(i) всегда non-null).
+			// Forge's InventoryCrafting getters are gone; occupancy is checked with ST.valid(...) since getItem(i) is never null.
 			for (int i = 0; i < aGrid.getContainerSize(); i++) {
 				ItemStack tSlot = aGrid.getItem(i);
 				if (ST.valid(tSlot)) {
@@ -93,8 +92,7 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 			ST.update(rStack);
 			
 			// Keeping NBT
-			// F11: CraftingContainer.size()/getItem(i) (getStackInSlot/getSizeInventory удалены); ST.valid(...)
-			// заменяет "!= null" (getItem(i) всегда non-null, пустой слот = ItemStack.EMPTY).
+			// getItem(i) is never null (empty slot = EMPTY), so ST.valid(...) replaces the old != null occupancy check.
 			if (mKeepingNBT) {
 				ItemStack tMainInput = ((getInput().get(0) instanceof ItemStack) ? (ItemStack)getInput().get(0) : null);
 				for (int i = 0; i < aGrid.getContainerSize(); i++) {
@@ -124,8 +122,7 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 			if (mDismantleable) {
 				CompoundTag rNBT = ItemNBT.get(rStack), tNBT = UT.NBT.make();
 				if (rNBT == null) rNBT = UT.NBT.make();
-				// См. AdvancedCraftingShaped: Math.min(9, getContainerSize()) — граница меньшей сетки (инвентарь игрока 2x2)
-				// (F11-crafting-recipe.md §7), 1:1 для полного 3x3. Не заглушка.
+				// Same Math.min(9, size) bound as AdvancedCraftingShaped, for the smaller player-inventory grid.
 				for (int i = 0, j = Math.min(9, aGrid.getContainerSize()); i < j; i++) {
 					ItemStack tStack = aGrid.getItem(i);
 					if (ST.valid(tStack) && ST.container(tStack, true) == null && !(tStack.getItem() instanceof MultiItemTool)) {

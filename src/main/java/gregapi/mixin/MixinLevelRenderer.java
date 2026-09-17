@@ -32,31 +32,8 @@ import net.minecraft.client.renderer.LevelRenderer;
 
 import gregapi.render.MultiTileEntityBER;
 
-/**
- * BUG-106 №4 — сброс кэша квадов BER тем же сигналом, которым движок помечает секции на перестройку.
- *
- * <p><b>Почему именно здесь.</b> В 1.7.10 геометрия MTE жила в мэше секции 16³ и обновлялась ТОЛЬКО по
- * {@code markBlockForUpdate} (recompSrc {@code RenderGlobal.markBlockForUpdate} → секции ±1 блока).
- * В neo та же воронка — {@code LevelRenderer.setSectionDirty(IIIZ)}: в неё сводятся ВСЕ пути «картинка
- * изменилась» ({@code sendBlockUpdated} → {@code blockChanged:1432}, прямой {@code setBlock},
- * {@code setBlocksDirty}, свет; {@code viewArea.setDirty} зовётся только отсюда — :1481). Каждый
- * receiveData*-диспетчер MTE ({@code MultiTileEntityBlock:265-325}) кончается {@code WD.update} →
- * {@code ClientLevel.sendBlockUpdated:701} → сюда. Инвалидация от этой воронки даёт кэшу гранулярность
- * секций 1.7.10 — залипание возможно лишь там, где залипал бы и мэш 1.7.10 (1:1 по следствию).</p>
- *
- * <p>{@code allChanged()} — полная перезагрузка рендера (F3+A, F3+T-перешив атласа, смена дистанции):
- * кэшированные квады держат UV СТАРОГО атласа, рвём все кэши разом эпохой.</p>
- *
- * <p>Правка централизована: одно место на весь мод, все 106 классов с рендер-состоянием обслуживаются
- * одной воронкой, а не пофайловым сбросом.</p>
- *
- * <p><b>Цена сигнала.</b> Для движка это дешёвый идемпотентный флаг, поэтому он бьёт по нему пачками:
- * {@code setBlockDirty} крутит ±1 по трём осям и зовёт сюда 27 раз на ОДНО изменение блока
- * ({@code LevelRenderer.java:2385-2390}), а приход чанка добавляет свет ({@code ClientPacketListener}
- * {@code enableChunkLight:718-728}, {@code readSectionList:2310-2318}). Обработчик обязан быть O(1) —
- * см. {@code MultiTileEntityBER.onSectionDirty}: он только ПЕЧАТАЕТ секцию, а сверку делает сам MTE в
- * момент рисования. Всё, что тяжелее инкремента, здесь недопустимо.</p>
- */
+/** Resets the BER quad cache on the same signal the engine uses to mark render sections dirty, giving the cache
+ *  1.7.10's mesh-level granularity: stale rendering is possible only where 1.7.10's own mesh would be stale too. */
 @Mixin(LevelRenderer.class)
 public abstract class MixinLevelRenderer {
 

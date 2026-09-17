@@ -35,10 +35,8 @@
 
 package ic2.api.info;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Минимум для компиляции ядра; члены добираются
- *  компилятором. Реальная зависимость — при возврате к интеграции. См. compat-mirror/README.md.
- *  Поле добрано компилятором (gregapi/GT_API.java: {@code Info.POTION_RADIATION.id}, MD.IC2.mLoaded-гейт)
- *  — тот же PotionRef-паттерн, что enviromine/EnviroPotion.java (id-заглушка внешнего Potion). */
+/** Compile-only mirror of the IC2 API: the minimum needed to compile the core, following the
+ *  same PotionRef pattern as EnviroPotion for the potion id GT_API reads. */
 public class Info {
 	public static PotionRef POTION_RADIATION;
 

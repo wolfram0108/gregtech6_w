@@ -47,8 +47,8 @@ import static gregapi.data.CS.*;
 public class Loader_Ores implements Runnable {
 	@Override
 	public void run() {
-		// F12-followup (block-split): 22 прямых ore-блока → registerBlockLazy (block-phase, реестр разморожен);
-		// вся пост-настройка (списки/mDrops с oreRaw/maps/blacklist) — единый deferItemInit (server-start), порядок 1:1.
+		// 22 direct ore blocks are constructed via registerBlockLazy while the block registry is still open.
+		// Their post-setup (drop lists, oreRaw maps, blacklist) is one deferItemInit that runs at server start, in original order.
 		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.normal.bedrock", () -> {PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.normal.bedrock"          , OP.oreBedrock             , null, null, new Drops_None()          , BlockTextureCopied.get(Blocks.BEDROCK         , 0), Material.rock, SoundType.STONE  , TOOL_pickaxe,-1,3600000F,9999,9999,9999,0,0,0,1,1,1,F,F,T,T,T,T,F,F,F,F,T,T,T,T, OreDictMaterial.MATERIAL_ARRAY); BlocksGT.oreBedrock = o; return (net.minecraft.world.level.block.Block)o;});
 		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.small.bedrock", () -> {PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.small.bedrock"           , OP.oreSmall               , null, null, new Drops_None()          , BlockTextureCopied.get(Blocks.BEDROCK         , 0), Material.rock, SoundType.STONE  , TOOL_pickaxe,-1,3600000F,9999,9999,9999,0,0,0,1,1,1,F,F,T,T,T,T,F,F,F,F,T,T,T,T, OreDictMaterial.MATERIAL_ARRAY); BlocksGT.oreSmallBedrock = o; return (net.minecraft.world.level.block.Block)o;});
 		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.broken.default", () -> {PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.broken.default"          , OP.oreVanillastone        , null                                  , BlockTextureCopied.get(Blocks.COBBLESTONE     , 0), Material.rock, SoundType.STONE   , TOOL_pickaxe  , 0.50F, 0.50F,  -1,   0, T,F, OreDictMaterial.MATERIAL_ARRAY); BlocksGT.oreBroken = o; return (net.minecraft.world.level.block.Block)o;});
@@ -130,7 +130,7 @@ public class Loader_Ores implements Runnable {
 		
 		//====================================================================================================//
 		
-		// F12-followup: RM.generify использует ST.make (компоненты) → deferItemInit (server-start).
+		// RM.generify builds ItemStacks via ST.make, which needs bound components, so it runs in deferItemInit at server start.
 		gregapi.GT_API.deferItemInit(() -> {
 		if (MD.UB.mLoaded) {
 		RM.generify(ST.make(MD.UB, "igneousStone"                     , 1, W), ST.make(Blocks.STONE, 1, 0));
@@ -366,7 +366,8 @@ public class Loader_Ores implements Runnable {
 		rockset(MD.GC_GALAXYSPACE, "barnardaEsubgrunt"            , 0, "gs.barnarda.e.rock"     , OP.oreBarnardaE           , MT.STONES.BarnardaERock);
 		}*/
 		
-		// F12-followup: карты используют IL.X.get(1) (ItemStack, компоненты) + ores_normal[] (Loader_Rocks, server-start) → deferItemInit.
+		// These maps need IL.X.get(1) stacks and ores_normal[], both only ready at server start.
+		// So this runs in deferItemInit.
 		gregapi.GT_API.deferItemInit(() -> {
 		if (MD.CHSL.mLoaded) {
 		BlocksGT.stoneToNormalOres.put(new ItemStackContainer(IL.CHSL_Granite .get(1)), BlocksGT.ores_normal[5]);
@@ -422,9 +423,8 @@ public class Loader_Ores implements Runnable {
 		}
 		});
 
-		// F12-followup (block-split): перенесено из Loader_Late_Items_And_Blocks (init-фаза) — rockset использует registerBlockLazy,
-		// который работает ТОЛЬКО на preInit (DeferredRegister закрыт после RegisterEvent). Здесь preInit → регистрация корректна.
-		// Моды не загружены в parity → fallback на STONE. Для реального env с этими модами — ограничение cross-mod-тайминга (ADR отдельно).
+		// rockset() uses registerBlockLazy, which only works during preInit, before RegisterEvent fires.
+		// Moved here for that; when a referenced mod isn't loaded it falls back to STONE.
 		if (MD.AETHEL.mLoaded) {
 		rockset(MD.AETHEL, "holystone", 1, 0, "holystone", 1, "aether.holystone", OP.oreHolystone, MT.STONES.Holystone);
 		}
@@ -480,10 +480,8 @@ public class Loader_Ores implements Runnable {
 			tHidden = T;
 		}
 		
-		// F12-followup (block-split): 3 ore-блока → registerBlockLazy (block-phase, реестр разморожен); разрешённые
-		// параметры захвачены в final, блоки — в holder h[]; вся пост-настройка (maps/mDrops с oreRaw/blacklist) →
-		// deferItemInit (server-start): блоки построены, oreRaw-предметы зарегистрированы, компоненты связаны. Drops
-		// конструктору = null → пассивный self-дефолт (PrefixBlock:249), окончательный mDrops выставляется ниже 1:1.
+		// 3 ore blocks are built via registerBlockLazy; captured params are final, blocks held in array h[].
+		// Null drops use PrefixBlock's passive default; deferItemInit sets real mDrops later, in original order.
 		final ModData fMod = aMod; final Block fRock = aRock, fCobble = aCobble; final OreDictPrefix fPrefix = aPrefix;
 		final OreDictMaterial fDrops = aDrops; final String fName = aName;
 		final int fMetaA = aMetaA, fMetaB = aMetaB, fMeta = aMeta, fHarvestMin = aHarvestLevelMinimum;
@@ -521,7 +519,7 @@ public class Loader_Ores implements Runnable {
 				}
 				tOre1.mDrops = new Drops(tOre2, tOre1, OP.oreRaw.mRegisteredPrefixItems.get(0), 0, 1);
 			} else {
-				// не-загруженный мод: оригинал передавал ore/oreBroken/oreSmall.mDrops конструктору → воспроизводим здесь 1:1.
+				// When the mod isn't loaded, the original passed ore/oreBroken/oreSmall.mDrops to the ctor; reproduced 1:1.
 				tOre1.mDrops = ((PrefixBlock)BlocksGT.ore      ).mDrops;
 				tOre2.mDrops = ((PrefixBlock)BlocksGT.oreBroken).mDrops;
 				tOre3.mDrops = ((PrefixBlock)BlocksGT.oreSmall ).mDrops;

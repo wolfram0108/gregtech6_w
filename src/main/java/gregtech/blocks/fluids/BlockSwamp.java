@@ -42,11 +42,8 @@ import java.util.Random;
 
 import static gregapi.data.CS.*;
 
-/**
- * @author Gregorius Techneticies
- *
- * F5 форс движка (decisions/F5-fluids.md §5): движковые хуки — см. javadoc {@link BlockOcean}.
- */
+/** @author Gregorius Techneticies
+ *  Engine hooks are no longer real overrides for the same reason as {@link BlockOcean}'s javadoc explains. */
 public class BlockSwamp extends BlockWaterlike {
 	public static boolean PLACEMENT_ALLOWED = F, FLOWS_OUT = T;
 
@@ -58,7 +55,7 @@ public class BlockSwamp extends BlockWaterlike {
 	// @Override
 	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		if (PLACEMENT_ALLOWED) {
-			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 10+RNGSUS.nextInt(90)); // было scheduleBlockUpdate(x,y,z,block,delay)
+			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 10+RNGSUS.nextInt(90)); // was scheduleBlockUpdate(x,y,z,block,delay)
 		} else {
 			WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 		}
@@ -68,9 +65,9 @@ public class BlockSwamp extends BlockWaterlike {
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		PLACEMENT_ALLOWED = T;
 
-		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) { // было doChunksNearChunkExist(x,y,z,33) — см. BlockOcean
-			// ADAPT-009: холостые re-light + клиент-апдейт каждого тика воды сняты — обоснование см. BlockOcean.updateTick
-			if (aY > WD.minY(aWorld)) { // F6-Y-scale: было aY > 0, дно neo = getMinY()
+		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) { // was doChunksNearChunkExist(x,y,z,33), see BlockOcean
+			// Idle re-light and per-tick client updates are removed here too, for the same reason explained in BlockOcean.updateTick.
+			if (aY > WD.minY(aWorld)) { // Was aY > 0; neo's world floor is getMinY() instead of 0.
 				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
 					aWorld.scheduleTick(new BlockPos(aX, aY-1, aZ), this, tickRate);
 				}
@@ -81,7 +78,7 @@ public class BlockSwamp extends BlockWaterlike {
 			return;
 		}
 		
-		if (aY <= WD.minY(aWorld)) { // F6-Y-scale: было aY <= 0, дно neo = getMinY()
+		if (aY <= WD.minY(aWorld)) { // Was aY <= 0; neo's world floor is getMinY() instead of 0.
 			updateFlow(aWorld, aX, aY, aZ, aRandom);
 			PLACEMENT_ALLOWED = F;
 			return;
@@ -89,7 +86,7 @@ public class BlockSwamp extends BlockWaterlike {
 		
 		Block tBlock;
 
-		Holder<Biome> tBiome = aWorld.getBiome(new BlockPos(aX, aY, aZ)); // было getBiomeGenForCoords(x,z) (2D) — см. BlockOcean
+		Holder<Biome> tBiome = aWorld.getBiome(new BlockPos(aX, aY, aZ)); // was getBiomeGenForCoords(x,z) (2D), see BlockOcean
 
 		boolean tDirt = F;
 		
@@ -185,10 +182,8 @@ public class BlockSwamp extends BlockWaterlike {
 		return;
 	}
 	
-	/** Своя территория болота — биом болота ({@code BIOMES_SWAMP}, тот же центр, которым пользуется
-	 *  {@link gregtech.worldgen.WorldgenSwamp}, где болото и создаётся). Обоснование класса и замер —
-	 *  {@link BlockWaterlike#canClaim}. Уже стоящее болото за границей биома (ворлдген кладёт его по
-	 *  чанкам, а чанк пересекает границу) остаётся на месте — правило запрещает ЗАХВАТ, а не существование. */
+	/** Swamp's own territory is the swamp biome itself, the same one WorldgenSwamp creates it in; existing
+	 *  swamp outside that biome (from a chunk straddling the border) stays put, since the rule forbids claiming, not existing. */
 	@Override
 	public boolean canClaim(Level aWorld, int aX, int aY, int aZ) {
 		return BIOMES_SWAMP.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));
@@ -200,19 +195,13 @@ public class BlockSwamp extends BlockWaterlike {
 		super.onHeadInside(aEntity, aWorld, aX, aY, aZ);
 	}
 	
-	/** Болото гасит свет НАСМЕРТЬ в толще и как вода — на поверхности (оригинал `:198`:
-	 *  {@code сверху НЕ болото || мета > 0 -> LIGHT_OPACITY_WATER; иначе LIGHT_OPACITY_MAX}).
-	 *  <p>Движок спрашивает затухание ТОЛЬКО по состоянию (LightEngine.getOpacity:85 → state.getLightDampening,
-	 *  заполняется при сборке состояния — BlockBehaviour.java:518), соседей в этом канале нет. Из двух условий
-	 *  оригинала по состоянию выразимо одно — уровень: поток (мета > 0) гасит как вода, источник (мета 0) —
-	 *  насмерть. ⚠️ Отличие от 1.7.10 ровно в один блок глубины: там верхний слой (над ним воздух, а не болото)
-	 *  тоже гасил как вода, здесь он гасит насмерть. Условие «сверху болото» без соседей не проверить —
-	 *  занесено в реестр отложенного, а не спрятано. */
+	/** Swamp dampens light to death in its depth and like water at the surface, since the engine's dampening
+	 *  channel sees only the block's own state, not neighbors; this differs from 1.7.10 by exactly the topmost layer. */
 	@Override public int getLightOpacity(net.minecraft.world.level.block.state.BlockState aState) {
 		return aState.getValue(FLUID_META) > 0 ? LIGHT_OPACITY_WATER : LIGHT_OPACITY_MAX;
 	}
-	// getIcon НЕ переопределяем: тело оригинала (:199) ДОСЛОВНО совпадает с базовым (BlockWaterlike:200).
-	// Своё у болота только тинт: getRenderColor 1:1 :200, позиционный colorMultiplier 1:1 :202-210.
+	// getIcon isn't overridden since the original body is verbatim the base class's own; only the tint (getRenderColor and
+	// colorMultiplier) is swamp's own.
 	@Override public int getRenderColor(int aMeta) {return 0x0000ff00;}
 	
 	@Override

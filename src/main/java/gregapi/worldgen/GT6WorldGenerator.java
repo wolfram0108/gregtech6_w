@@ -66,45 +66,20 @@ public class GT6WorldGenerator {
 		@Override
 		public void run() {
 			if (!mGenNormal.isEmpty()) {
-				// F6: было `mWorld.getChunkFromBlockCoords(blockX,blockZ)` (взятие чанка по блок-координатам) —
-				// удалено; реальный neo-эквивалент `Level.getChunk(chunkX,chunkZ)` берёт ЧАНКОВЫЕ координаты
-				// (Level.java:202-203), поэтому блок-координаты сдвинуты `>>4`, как делал сам старый метод внутри.
+				// Was getChunkFromBlockCoords(blockX,blockZ); neo's getChunk takes chunk coordinates, so the >>4 shift happens here
+				// explicitly instead of inside the removed method.
 				ChunkAccess tChunk = mWorld.getChunk((mMinX+7) >> 4, (mMinZ+7) >> 4);
 				if (tChunk == null) return;
 				Biome[][] tBiomes = new Biome[16][16];
 				BiomeNameSet tBiomeNames = new BiomeNameSet();
-				// F6: было `tChunk.getBiomeGenForWorldCoords(x,z,worldChunkMgr)` через удалённый
-				// `WorldProvider.worldChunkMgr` (2D-биом-менеджер 1.7.10) с ручным null-фолбэком на статические
-				// `Biome.hell/sky/plains` (тоже удалены — биомы data-driven, нет compile-time констант-объектов).
-				// Реальный neo-путь: `LevelReader.getBiome(BlockPos): Holder<Biome>` (LevelReader.java:42-43,
-				// `.value()` — используемый паттерн тот же, что и в самом Level.java:952), который в отличие от
-				// 1.7.10 не возвращает null для загруженного чанка — фолбэк на hell/sky/plains поэтому исчез
-				// (недостижим на практике; см. F6-примечание ниже, если когда-либо словим NPE/ISE здесь). Имя биома
-				// (для BiomeNameSet) берётся из самого Holder через `unwrapKey()` (Holder.java:40, паттерн
-				// `unwrapKey().map(k->k.location().toString())` — как в самом Holder.java:47) — биом
-				// НЕ built-in реестр (data-driven/datapack), `BuiltInRegistries.BIOME` не существует.
-				// Y для биом-грида (R8-БРАК-ФИКС 2026-07-11): оригинал звал биом 2D (`getBiomeGenForWorldCoords`
-				// внутри принимал только x,z, Y игнорировался — 1.7.10 биомы плоские). Раньше здесь ошибочно
-				// стояло `WD.waterLevel(Level)` (GT6-специфичная "высота воды по измерению", НЕ то же самое,
-				// что высота поверхности суши) — на суше выше/ниже уровня моря это давало НЕВЕРНЫЙ биом
-				// (не 1:1 с оригинальным 2D-запросом). Реальный neo `LevelReader.getBiome(BlockPos)` 3D и
-				// ТРЕБУЕТ Y — берём высоту ПОВЕРХНОСТИ данной колонки: `Level.getHeight(Heightmap.Types,x,z)`
-				// (объявление `LevelReader.java:32`, реализация `Level.java:359`; тот же паттерн "Y поверхности
-				// перед биом/событием" использует сам движок: `ServerLevel.java:588` берёт `getHeightmapPos(...)`
-				// перед `getBiome(topPos)`, аналогично `BeaconBlockEntity.java:139`, `VillageSiege.java:121`,
-				// `Raid.java:675`). ПОКОЛОННО (i,j) — не одна высота на весь чанк, как было бы при одиночном
-				// `tBiomeY` (высота поверхности разная в каждой из 16x16 колонок).
+				// The old 2D biome lookup and its null fallback (removed constants) are replaced by getBiome(BlockPos), which
+				// never returns null for a loaded chunk; querying it needs each column's own surface height, not a chunk-wide value.
 				for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
-					// F6-примечание (не заглушка; код ниже работает): .value() может бросить, если Holder не bound — на загруженном
-					// чанке такого практически не бывает, отдельный try/catch не заводим (упадёт в общий catch
-					// вызывающего WorldgenObject, если вообще случится).
+					// Holder.value() can throw if unbound, which practically never happens on a loaded chunk; no dedicated catch, it would
+					// fall into the caller's general one.
 					int tX = mMinX+i, tZ = mMinZ+j;
-					// ТОЧНЫЙ биом-канал (R-стык-чанков 2026-07-19): было mWorld.getBiome(pos) = BiomeManager с
-					// ШУМОВЫМ ДЖИТТЕРОМ ±2-3 блока (обфускация границ для визуала/спавна) — 1.7.10 генлейер давал
-					// ТОЧНЫЙ биом per-колонка. Джиттер у границы биомов подмешивал «болото» в речные колонны →
-					// WorldgenSwamp захватывал воду/берега на речной стороне (резко по шву чанка). Реальный точный
-					// канал = сохранённый quart-биом чанка: ChunkAccess.getNoiseBiome (ChunkAccess.java:432, без
-					// джиттера; quart-координаты мира = блок >>2, Y — поверхность колонки).
+					// mWorld.getBiome uses BiomeManager, which adds a +-2-3 block noise jitter at biome borders for visuals/spawn;
+					// that let swamp claim river water at chunk seams. ChunkAccess.getNoiseBiome gives the exact biome 1.7.10's genlayer did.
 					Holder<Biome> tBiomeHolder = tChunk.getNoiseBiome(tX >> 2, mWorld.getHeight(Heightmap.Types.WORLD_SURFACE, tX, tZ) >> 2, tZ >> 2);
 					tBiomes[i][j] = tBiomeHolder.value();
 					tBiomeHolder.unwrapKey().ifPresent(k -> tBiomeNames.add(k.location().toString()));
@@ -120,12 +95,8 @@ public class GT6WorldGenerator {
 					} catch (Throwable e) {
 						e.printStackTrace(ERR);
 					}
-					// F6 impossible-1:1 (переносить нечего): было `if (tChunk.lastSaveTime==Long.MAX_VALUE) {
-					// tChunk.hasEntities=tChunk.isModified=F; throw new RuntimeException(...);}` — защита от
-					// конкретного 1.7.10-бага повреждения чанка через сигнальное значение lastSaveTime.
-					// `lastSaveTime`/`hasEntities`/`isModified` как публичные поля LevelChunk удалены (нет
-					// аналога в neo-decompiled LevelChunk.java), а сам класс повреждения чанков, под который
-					// был заточен этот детектор, в современном движке не существует — переносить нечего.
+					// Was a guard against a specific 1.7.10 chunk-corruption bug via a sentinel field value; neither the fields nor the
+					// corruption class they guarded against exist in the modern engine.
 				}
 				
 				if (mGenLargeOres != null && !mGenLargeOres.isEmpty()) {
@@ -148,21 +119,11 @@ public class GT6WorldGenerator {
 				}
 				
 				// Kill off every single Item Entity that may have dropped during Worldgen.
-				// F6: было `(List<ItemEntity>)mWorld.getEntitiesWithinAABB(Class,AABB)` (удалённый Forge-метод)
-				// + `new AABB(x1,y1,z1,x2,y2,z2)` (удалённая static-фабрика) + `Entity.setDead()`
-				// (удалён). Реальные neo-эквиваленты: `EntityGetter.getEntitiesOfClass(Class,AABB)`
-				// (EntityGetter.java:50, уже без unchecked-каста), конструктор `AABB(double x6)` (AABB.java:23),
-				// `Entity.discard()` (Entity.java:409, `remove(RemovalReason.DISCARDED)`).
-				// BUG-103: удаление идёт через центр WD (серверным потоком) — генерация чанка бежит в воркере,
-				// а состав сущностей правит только серверный поток; иначе рвётся обход ChunkMap.tick.
+				// Was a removed Forge getEntitiesWithinAABB/AABB-factory/setDead combo, replaced by their real neo equivalents;
+				// removal is routed through the server thread via WD, since a worker thread must not mutate the entity list directly.
 				WD.discardEntitiesSafely(mWorld, ItemEntity.class, new AABB(mMinX-32, 0, mMinZ-32, mMinX+48, 256, mMinZ+48), null);
-				// F6 impossible-1:1 (поле удалено; neo Heightmap пересчитывает сам, ручной сброс не нужен): было `Arrays.fill(tChunk.precipitationHeightMap,-999)` —
-				// обходной 1.7.10-хак против убийства снегом пеньков деревьев. Поле удалено, современный
-				// Heightmap-механизм (`net.minecraft.world.level.levelgen.Heightmap`) считается движком заново
-				// на лету — прямого ручного "сброса" в neo нет и, судя по всему, не нужен (движок сам
-				// пересчитывает высоты после генерации), но поведенчески не подтверждено.
-				// F6: было `tChunk.isModified = T` (публичное поле-флаг) — реальный neo-эквивалент
-				// `LevelChunk.setUnsaved(true)` (LevelChunk.java:178, вызывает `ChunkAccess.setUnsaved(true)`).
+				// The old manual heightmap-reset hack against snow killing stumps has no field left to reset; the modern Heightmap
+				// recomputes on its own, seemingly without needing one, though this isn't behaviorally confirmed.
 				tChunk.setUnsaved(true);
 			}
 		}
@@ -173,19 +134,15 @@ public class GT6WorldGenerator {
 	public static boolean PFAA = F, TFC = F;
 	
 	public static void generate(WorldGenLevel aWorld, int aX, int aZ, boolean aGalactiCraft) {
-		// F6: было `switch(WD.dimensionId(aWorld)) {case -2147483648: return; case DIM_OVERWORLD: ...}` —
-		// `WorldProvider.dimensionId` удалён, у измерения в neo нет числового id вообще (см. javadoc
-		// NoiseGenerator.java). Ветка `case -2147483648` (Integer.MIN_VALUE) была сигнальным значением "мир
-		// недогружен/провайдер не готов" — в neo `aWorld.getLevel().dimension()` для валидного `Level`-объекта всегда
-		// возвращает настоящий `ResourceKey<Level>`, такого сигнального состояния не бывает — ветка не имеет
-		// аналога (см. F6-примечание ниже). Три ванильных ветки сверены на реальные `Level.OVERWORLD/NETHER/END`
+		// Was a dimensionId switch with a MIN_VALUE case meaning "world not ready"; a valid neo Level always returns a real
+		// ResourceKey<Level> with no such not-ready signal.
 		// (Level.java:95-97).
 		ResourceKey<Level> tDim = aWorld.getLevel().dimension();
 		if (tDim == Level.OVERWORLD) {generate(new WorldGenContainer(TFC ? GEN_TFC : PFAA ? GEN_PFAA : GENERATE_STONE ? GEN_GT : GEN_OVERWORLD, TFC ? ORE_TFC : PFAA ? ORE_PFAA : GENERATE_STONE ? null : ORE_OVERWORLD, DIM_OVERWORLD, aWorld, aX, aZ)); return;}
 		if (tDim == Level.NETHER   ) {generate(new WorldGenContainer(GEN_NETHER, ORE_NETHER, DIM_NETHER, aWorld, aX, aZ)); return;}
 		if (tDim == Level.END      ) {generate(new WorldGenContainer(GEN_END   , ORE_END   , DIM_END   , aWorld, aX, aZ)); return;}
-		// F6 impossible-1:1 (сигнал «мир не готов» из 1.7.10 без neo-аналога): сигнальная ветка "мир не готов" из 1.7.10 не имеет
-		// аналога в neo (см. комментарий выше) — намеренно опущена, а не угадана.
+		// The 1.7.10 'world not ready' signal branch has no neo analog (see comment above); deliberately omitted rather than
+		// guessed at.
 
 		if (WD.dimENVM         (aWorld)) {generate(new WorldGenContainer(GENERATE_STONE ? GEN_ENVM_GT           : GEN_ENVM          , GENERATE_STONE ? null : ORE_ENVM          , DIM_ENVM          , aWorld, aX, aZ)); return;}
 		if (WD.dimA97          (aWorld)) {generate(new WorldGenContainer(GENERATE_STONE ? GEN_A97_GT            : GEN_A97           , GENERATE_STONE ? null : ORE_A97           , DIM_A97           , aWorld, aX, aZ)); return;}
@@ -209,12 +166,8 @@ public class GT6WorldGenerator {
 		if (WD.dimCANDY        (aWorld)) {generate(new WorldGenContainer(GEN_CANDY       , ORE_CANDY       , DIM_CANDY       , aWorld, aX, aZ)); return;}
 		
 		
-		// F6: было `aWorld.getBiomeGenForCoords(x,z)` (2D, удалён) + `Biome.biomeName` (поле, удалено, биомы
-		// data-driven). Реальный neo-путь: `LevelReader.getBiome(BlockPos): Holder<Biome>` (LevelReader.java:
-		// 42-43) + `Holder.unwrapKey()` для строкового идентификатора (Holder.java:40,47 — биом НЕ built-in
-		// реестр, `BuiltInRegistries.BIOME` не существует; тот же паттерн, что и в WorldGenContainer.run() выше).
-		// Y (тот же R8-фикс, что и в WorldGenContainer.run() выше): не `WD.waterLevel` (GT6-высота воды по
-		// измерению) — высота ПОВЕРХНОСТИ колонки (aX+7,aZ+7) через `Level.getHeight(Heightmap.Types,x,z)`.
+		// Was the removed 2D getBiomeGenForCoords plus the removed Biome.biomeName field; the real neo path resolves
+		// the biome via LevelReader.getBiome + Holder.unwrapKey, at per-column surface height rather than dimension water level.
 		Holder<Biome> aBiomeHolder = aWorld.getBiome(new BlockPos(aX+7, aWorld.getHeight(Heightmap.Types.WORLD_SURFACE, aX+7, aZ+7), aZ+7));
 		String aBiomeName = aBiomeHolder.unwrapKey().map(k -> k.location().toString()).orElse("");
 		if (BIOMES_VOID.contains(aBiomeName)) return;

@@ -48,12 +48,8 @@ import net.minecraft.world.level.chunk.LevelChunk;
 public abstract class WorldgenObject {
 	public boolean mEnabled, mInvalid = F;
 	public final String mName, mCategory;
-	/**
-	 * F6: было {@code Map<Integer, Boolean>} по {@code WorldProvider.dimensionId} — удалён, в neo измерение
-	 * идентифицируется {@code ResourceKey<Level>} (нет числового id вообще, не только у модовых, см.
-	 * NoiseGenerator.java javadoc). Ключ карты соответственно сменён на {@code ResourceKey<Level>} — сама
-	 * структура (кэш "разрешено ли поколение в этом измерении") и алгоритм {@link #enabled} не изменились.
-	 */
+	/** Was a Map<Integer,Boolean> keyed by the removed numeric dimensionId; neo has no numeric dimension id at all, so the
+	 *  key became ResourceKey<Level>, with the cache's logic unchanged. */
 	public final Map<ResourceKey<Level>, Boolean> mDimEnabled = new HashMap<>();
 	
 	@SafeVarargs
@@ -75,11 +71,8 @@ public abstract class WorldgenObject {
 		ResourceKey<Level> tDim = aWorld.getLevel().dimension();
 		Boolean tAllowed = mDimEnabled.get(tDim);
 		if (tAllowed != null) return tAllowed && mEnabled;
-		// F6: было `aWorld.provider.getDimensionName().replaceAll(" ", "_")` (человекочитаемое имя измерения,
-		// напр. "The Nether"->"The_Nether") — WorldProvider удалён. Ключ конфига заменён на идентификатор
-		// измерения ("namespace:path", напр. "minecraft:the_nether") через реальный ResourceKey.location()
-		// (Level.java:1030, ResourceKey.java:52) — тоже стабильная человекочитаемая строка для конфиг-файла,
-		// но без риска коллизии между одноимёнными измерениями разных модов.
+		// The old human-readable dimension name is gone with WorldProvider; the config key now uses the dimension's
+		// ResourceKey location instead, avoiding a name collision between same-named dimensions from different mods.
 		boolean tValue = getConfigFile().get(mCategory+".dim", tDim.location().toString(), T);
 		mDimEnabled.put(tDim, tValue);
 		return tValue && mEnabled;
@@ -88,8 +81,7 @@ public abstract class WorldgenObject {
 	public void reset(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {/**/}
 
 	public boolean checkForMajorWorldgen(WorldGenLevel aWorld, int aMinX, int aMinZ, int aMaxX, int aMaxZ) {
-		// F6: было `WD.dimensionId(aWorld) == DIM_OVERWORLD` (DIM_OVERWORLD=0, CS.java:904, буквально
-		// ванильный Overworld-id) — сверено на реальную константу Level.OVERWORLD (Level.java:95).
+		// Was a check against the literal vanilla Overworld numeric id; checked against the real Level.OVERWORLD constant instead.
 		if (aWorld.getLevel().dimension() == Level.OVERWORLD) {
 			if (GENERATE_STREETS && (Math.abs(aMinX) < 64 || Math.abs(aMaxX) < 64 || Math.abs(aMinZ) < 64 || Math.abs(aMaxZ) < 64)) return T;
 			if (GENERATE_BIOMES && aMinX >= -96 && aMinX <= 80 && aMinZ >= -96 && aMinZ <= 80) return T;

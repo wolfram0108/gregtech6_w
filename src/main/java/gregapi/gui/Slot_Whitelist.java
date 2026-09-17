@@ -31,11 +31,7 @@ import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.T;
 
-/**
- * @author Gregorius Techneticies
- *
- * F-GUI: {@code isItemValid}→{@code mayPlace} (движок, см. {@link Slot_Base}).
- */
+/** @author Gregorius Techneticies */
 public class Slot_Whitelist extends Slot_Base {
 	private ItemStackSet<ItemStackContainer> mWhiteList = ST.hashset();
 

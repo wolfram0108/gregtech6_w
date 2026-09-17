@@ -73,7 +73,7 @@ public class MultiTileEntityJuicer extends TileEntityBase07Paintable implements 
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* Don't overwrite the default on a null lookup. */
 		
 		mTanks = new FluidTankGT[mRecipes.mOutputFluidCount];
 		for (int i = 0; i < mTanks.length; i++) mTanks[i] = new FluidTankGT(1000000).readFromNBT(aNBT, NBT_TANK+"."+i);
@@ -114,8 +114,8 @@ public class MultiTileEntityJuicer extends TileEntityBase07Paintable implements 
 		if (aIsServerSide) updateVisualData();
 	}
 
-	/** Что видно в соковыжималке. Чистый пересчёт из танков — центр зовёт его и из тика, и перед сборкой
-	 *  клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	/** What the juicer shows. A pure recompute from the tanks, called both from the tick and before building
+	 *  the client snapshot (see TileEntityBase03TicksAndSync.updateVisualData). */
 	@Override
 	public void updateVisualData() {
 		if (isClientSide()) return;
@@ -138,7 +138,7 @@ public class MultiTileEntityJuicer extends TileEntityBase07Paintable implements 
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
-			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15-граница: движок EMPTY -> GT6 null (тело 1:1 рассуждает null-семантикой)
+			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // Engine boundary: engine EMPTY maps to GT6 null here; the body below reasons in null semantics.
 			if (SIDES_TOP[aSide]) {
 				float[] tCoords = UT.Code.getFacingCoordsClicked(aSide, aHitX, aHitY, aHitZ);
 				if (tCoords[0] <= PX_P[4] && tCoords[1] <= PX_P[4]) return T;

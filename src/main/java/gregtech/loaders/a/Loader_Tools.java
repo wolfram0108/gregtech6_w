@@ -114,8 +114,8 @@ public class Loader_Tools implements Runnable {
 		ArmorsGT.HAZMATS_CHEM       .add(tArmor);
 		}
 		
-		// F12-followup (item-split): MultiItem конструируется на RegisterEvent через supplier (Item.<init> createIntrusiveHolder
-		// требует разморож. реестр). addTool/NEI/рецепты ниже используют sMetaTool + создают стеки → отложены на server-start.
+		// MultiItem is built via a supplier at RegisterEvent: Item's ctor needs an unfrozen registry.
+		// addTool/NEI/recipes below use sMetaTool and build stacks, so they run in deferItemInit.
 		GT_API.registerItemLazy(MD.GT.mID, "gt.metatool.01", () -> ToolsGT.sMetaTool = new MultiItemToolWithCompat(MD.GT.mID, "gt.metatool.01"));
 		gregapi.GT_API.deferItemInit(() -> {
 
@@ -207,18 +207,9 @@ public class Loader_Tools implements Runnable {
 		
 		
 		
-		}); // конец отложенного addTool/NEI-блока
-		// BUG-073 (F12 oredict-timing, ФАЗА): оригинал вешает этот блок на `GAPI.mBeforePostInit` (1.7.10 :204), т.е.
-		// исполняет его ПОСЛЕ Init-фазы — а батареи `gt:re-battery1..3` попадают в словарь именно в Init
-		// (`Loader_MultiTileEntities` → `IL.set(..., "gt:re-battery1")`, :1014). Порт откладывал блок напрямую в
-		// `deferItemInit` из PreInit (`GT6_Main:190`), а очередь строго FIFO (`GT_API.runDeferredItemInit` → `remove(0)`),
-		// и Init-загрузчики кладутся в неё позже (`GT6_Main:325`) → на момент исполнения словарь ПУСТ, цикл
-		// `for (ItemStack tBattery : OreDictManager.getOres("gt:re-battery1", F))` (:359) не делает ни одной итерации,
-		// и 15 типов ЭЛЕКТРОинструментов (дрель/бензопила/дисковая пила/электроключ/…) не получают слушателей вовсе —
-		// 22 176 рецептов не рождаются. Ошибок в логе нет по той же причине: `CR.shaped` для них не зовётся.
-		// Лечение — ТОТ ЖЕ приём, что уже применён в `Abstract_Mod:270` и `GT_API.onModPostInit2:1159`: фазу оригинала
-		// сохраняем (вешаемся на `mBeforePostInit`), а исполнение откладываем до пост-bind окна. Порядок в очереди
-		// становится 1:1 с 1.7.10: [Init-загрузчики] → [этот блок] → [PostInit] → [compat/afterPostInit].
+		}); // End of the deferred addTool/NEI block.
+		// Hooked on GAPI.mBeforePostInit like the original, but deferItemInit is FIFO and Init loaders queue later,
+		// so battery ore-dict lookups ran empty; deferring to the post-bind window restores original order.
 		GAPI.mBeforePostInit.add(() -> GT_API.deferItemInit(new Runnable() {@SuppressWarnings({"rawtypes", "unchecked"})
 		@Override public void run() {
 		
@@ -394,7 +385,7 @@ public class Loader_Tools implements Runnable {
 		
 		toolHeadDrill      .addListener(new OreProcessing_Tool(JACKHAMMER_HV_Normal, tCategory + "JackhammerHV"   ,F,T,-1,V[3], MT.Blue  , new String[][] {{"SVS", "XWX", "YSY"}}, null, plateCurved.dat(MT.DATA.Electric_T[3]), spring.dat(MT.DATA.Electric_T[3]), null, tBattery, IL.PISTONS[3], tCondition));
 		}
-		}})); // BUG-073: закрываем deferItemInit ВНУТРИ обёртки mBeforePostInit (фаза оригинала + пост-bind окно)
+		}})); // Closes deferItemInit inside the mBeforePostInit wrapper, preserving both the original phase and the post-bind window.
 	}
 
 	public static class OreProcessing_Tool implements IOreDictListenerEvent {

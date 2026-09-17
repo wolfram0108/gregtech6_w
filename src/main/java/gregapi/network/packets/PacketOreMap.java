@@ -33,15 +33,8 @@ import gregapi.network.IPacket;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 
-/**
- * Ветка 1.20.1: карта материалов руды на чанк ({@link PrefixBlockOreMap}) едет клиенту ЭТИМ пакетом.
- *
- * <p>В 26.x носителем был neo-attachment, и синк вёл движок сам ({@code sync(STREAM_CODEC)} — при отправке
- * чанка игроку и при {@code chunk.syncData(TYPE)}). В Forge 1.20.1 капабилити чанка автосинка не имеет,
- * поэтому те же два момента обслуживает свой пакет — той же схемой, какой Грегориус слал всё остальное:
- * байт-ID в общей таблице канала {@code GAPI}, тело — сырой поток. Содержимое — вся карта чанка целиком,
- * ровно как отправлял attachment (он тоже слал значение целиком, а не дельту).</p>
- */
+/** 1.20.1's chunk capability has no autosync like a newer-engine attachment would, so this packet covers the same two
+ *  sync moments (chunk send, explicit resync) by hand, sending the whole per-chunk map each time, never a delta. */
 public class PacketOreMap implements IPacket {
 	public final int mChunkX, mChunkZ;
 	public final long[] mEntries;
@@ -80,25 +73,18 @@ public class PacketOreMap implements IPacket {
 	@Override
 	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
 		if (mEntries == null || !(aWorld instanceof Level tWorld)) return;
-		// Чанк уже пришёл (пакет чанка идёт по тому же соединению РАНЬШЕ — момент отправки задан ChunkWatchEvent.Watch);
-		// если его всё же нет, писать некуда — карта приедет заново со следующей отправкой чанка.
+		// The chunk packet always precedes this one on the same connection; if the chunk is still missing there's nowhere to
+		// write the data, and it simply arrives again on the next chunk send.
 		net.minecraft.world.level.chunk.ChunkAccess tChunk = tWorld.getChunkSource().getChunk(mChunkX, mChunkZ, false);
 		if (tChunk == null) return;
 		PrefixBlockOreMap tMap = PrefixBlockOreMap.existing(tChunk);
 		if (tMap == null) return;
-		// Класс «применили данные — не перерисовали» (репорт игрока: слиток при постановке белый, доложенный в
-		// стопку невидим): секция была тесселирована ДО прихода карты, и без пометки dirty движок её больше не
-		// перестраивает — данные лежат, картинка вечно старая. Помечаем ТОЛЬКО изменившиеся позиции — тем же
-		// горлышком WD.update (= sendBlockUpdated → blockChanged, секции ±1), которым идёт весь остальной синк мода.
+		// Without a dirty mark, a section tessellated before this data arrived never redraws, so the ore map on screen
+		// goes stale forever though the data is correct; only changed positions get marked, via the shared WD.update path.
 		long[] tOld = tMap.pack();
 		tMap.unpack(mEntries);
-		// ПЕРВАЯ ДОСТАВКА (у клиента карты ещё не было) — это НЕ «данные изменились», а «чанк приехал»: секции
-		// его колонки к этому моменту не тесселированы, и метить их поштучно незачем. Поштучный путь давал здесь
-		// ХУДШИЙ случай диффа — «изменились ВСЕ записи», а их в чанке сотни (перепись сейва GT6WGTest: медиана
-		// 502, p90 1083, максимум 2750), и каждая через WD.update стоила 27 движковых пометок секций.
-		// Каноничная форма момента «пришёл чанк» — одна пометка на колонку, ровно как это делает сам движок
-		// (26.x ClientPacketListener.enableChunkLight:909 — один setSectionRangeDirty на приход чанка; в 1.20.1
-		// такого метода нет, поэтому колонку метим тем же WD.update, но ОДИН раз на секцию, а не на запись).
+		// On first delivery the client had no map yet, so nothing is 'changed' -- the column just arrived and isn't tessellated
+		// yet, making a per-entry mark pointless; one mark per populated section matches what the engine itself does on arrival.
 		if (tOld.length == 0) {markColumnDirty(tWorld, mEntries); return;}
 		java.util.HashMap<Integer, Short> tOldMap = new java.util.HashMap<>(tOld.length * 2);
 		for (long tEntry : tOld) tOldMap.put((int)(tEntry >>> 16), (short)(tEntry & 0xFFFFL));
@@ -107,12 +93,11 @@ public class PacketOreMap implements IPacket {
 			Short tWas = tOldMap.remove(tKey);
 			if (tWas == null || tWas.shortValue() != tMeta) markDirty(tWorld, tKey);
 		}
-		for (Integer tKey : tOldMap.keySet()) markDirty(tWorld, tKey); // было и исчезло
+		for (Integer tKey : tOldMap.keySet()) markDirty(tWorld, tKey);
 	}
 
-	/** Пометка колонки чанка — по одной на КАЖДУЮ секцию, где записи реально есть (пустые не трогаем). Пометка
-	 *  ставится тем же горлышком WD.update, что и поштучная ветка, поэтому охват внутри чанка полный: WD.update
-	 *  метит секции ±1 вокруг блока, а мы бьём в каждую населённую секцию колонки. */
+	/** One mark per section that actually holds entries, skipping empty ones, through the same WD.update bottleneck as
+	 *  the per-entry branch -- since that call already marks the area around a block, covering the column fully. */
 	private void markColumnDirty(Level aWorld, long[] aEntries) {
 		java.util.HashSet<Integer> tSections = new java.util.HashSet<>();
 		for (long tEntry : aEntries) {
@@ -122,7 +107,7 @@ public class PacketOreMap implements IPacket {
 		}
 	}
 
-	/** Обратное преобразование ключа карты (PrefixBlockOreMap.key: ((y+2048)<<8) | ((z&15)<<4) | (x&15)) в мировую позицию. */
+	/** Inverse of the map's own key packing, back into a world position. */
 	private void markDirty(Level aWorld, int aKey) {
 		gregapi.util.WD.update(aWorld, (mChunkX << 4) | (aKey & 15), (aKey >>> 8) - 2048, (mChunkZ << 4) | ((aKey >>> 4) & 15));
 	}

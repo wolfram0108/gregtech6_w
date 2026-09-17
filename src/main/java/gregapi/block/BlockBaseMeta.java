@@ -44,10 +44,8 @@ public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi
 	/** For Creative Subsets, not actually important. */
 	private final byte mMaxMeta;
 
-	// F13 (BUG-006/009/010): семья BlockBaseMeta (логи/камни/листва/слэбы) не хранила мету → placed-блок всегда meta 0
-	// (WD.set:848 сохранял мету ТОЛЬКО для IBlockExtendedMetaData). Восстановлено ДОСЛОВНЫМ зеркалом уже работающего
-	// приёма BlockBaseFlower:75-76,145-152 / BlockFluidBaseGT: мета в BlockState-свойстве (4 бита = 0-15; WD.meta через
-	// Code.bind4). WD.set/WD.meta уже маршрутизируют в get/setExtendedMetaData; GT6BlockModel читает getExtendedMetaData.
+	// This family never stored its metadata, so every placed block came back as meta 0; fixed by
+	// mirroring the same BlockState-property technique already working for flowers and fluids.
 	public static final net.minecraft.world.level.block.state.properties.IntegerProperty META =
 		net.minecraft.world.level.block.state.properties.IntegerProperty.create("meta", 0, 15);
 	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> aBuilder) {super.createBlockStateDefinition(aBuilder); aBuilder.add(META);}
@@ -56,34 +54,24 @@ public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi
 		super(aItemClass, aNameInternal, aMaterial, aSoundType);
 		mMaxMeta = (byte)UT.Code.bind(1, 16, aMaxMeta);
 		mIcons = aIcons;
-		registerDefaultState(getStateDefinition().any().setValue(META, 0)); // порядок: после super() (createBlockStateDefinition уже отработал в Block-конструкторе)
+		registerDefaultState(getStateDefinition().any().setValue(META, 0)); // placed after super() because createBlockStateDefinition has already run inside the Block constructor
 	}
 
-	// Хранилище меты семьи — BlockState-свойство META; get/setExtendedMetaData(BlockGetter) — дефолты
-	// IBlockExtendedMetaData (консолидация захода #39: прежнее зеркало удалено, один код на всех носителей).
+	// Meta storage for this whole family is the META BlockState property; the get/set defaults come
+	// from IBlockExtendedMetaData, one shared implementation instead of separate copies per carrier.
 
 	@Override public byte maxMeta() {return mMaxMeta;}
 	public ResourceLocation getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
 	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {for (int i = 0; i < maxMeta(); i++) aList.add(ST.make(aItem, 1, i));}
 
-	// F3-render (централизация): BlockBaseMeta-контент (asphalt/concrete/cfoam/glass/…) рендерится единой GT6BlockModel
-	// через IRenderedBlock — текстура берётся из уже существующих mIcons (per-meta IIconContainer), обёрнутых в ITexture
-	// (BlockTextureDefault.get, client-safe → null на сервере). Один render-pass, полный блок, все стороны = иконка меты.
-	// Убирает «Missing model for variant Block{gregtech:gt.block.*}» (было: не-IRenderedBlock → плейсхолдер). Иконка per-side
-	// не различается (getIcon(side,meta) сам игнорирует side у этих блоков — 1:1 с оригиналом).
-	// per-side выбор — через САМ getIcon(side,meta) (наследники — BlockBaseBeam/Bale — переопределяют его
-	// per-side логикой top/side; прежний texOf(meta) игнорировал side → item/мир-формы теряли боковые грани,
-	// пойман block-item golden-компаратором: порт rye_top vs golden rye_side+rye_top).
-	/** 1.7.10 vanilla-рендер применял Block.getRenderColor(meta) (BlockColored: DYES_INT — бетон/асфальт/cfoam
-	 *  тёмные 0x202020 при мете 0); дефолт белый 1:1 vanilla Block. Пойман block-golden (тинт ffffff vs 202020). */
+	// This whole family renders through one shared GT6BlockModel via IRenderedBlock, reusing the
+	// existing per-meta icons; per-side variation still goes through getIcon itself, which subclasses override.
+	/** Defaults to white, matching vanilla Block's own default; concrete/asphalt/cfoam override it
+	 *  with their own darker tint, as 1.7.10 did. */
 	public int getRenderColor(int aMeta) {return 0xFFFFFF;}
 
-	/** BUG-101: в 1.7.10 у блока ДВА канала цвета, и движок спрашивал РАЗНЫЕ в зависимости от пути отрисовки —
-	 *  в мире {@code colorMultiplier(world,x,y,z)} (RenderBlocks: renderStandardBlock:4412, renderBlockLog,
-	 *  renderCrossedSquares — 17 точек), в инвентаре {@code getRenderColor(meta)} (renderBlockAsItem:7904 —
-	 *  ЕДИНСТВЕННЫЙ метод, где он звался, обе точки :7921/:8382). Порт свёл оба рендер-пути 1.7.10 в одну
-	 *  GT6BlockModel и подставил ИНВЕНТАРНЫЙ канал обоим: позиционный цвет (биом-оттенок листвы, радуга по
-	 *  координате) в мир не доходил вовсе. Цвет приходит параметром — путь выбирает вызыватель ниже. */
+	/** 1.7.10 asked two different color methods depending on the render path (world vs inventory);
+	 *  merging both paths into one model fed the inventory channel to both, so positional/biome tint never reached the world. */
 	private gregapi.render.ITexture texOf(byte aSide, int aMeta) {return texOf(aSide, aMeta, getRenderColor(aMeta));}
 	private gregapi.render.ITexture texOf(byte aSide, int aMeta, int aColor) {
 		if (mIcons == null || mIcons.length == 0) return null;
@@ -101,13 +89,13 @@ public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi
 			@Override public short[] getIconColor(int aRenderPass) {return tBase.getIconColor(aRenderPass);}
 			@Override public int getIconPasses() {return tBase.getIconPasses();}
 			@Override public net.minecraft.resources.ResourceLocation getTextureFile() {return tBase.getTextureFile();}
-			@Override public void registerIcons(Object aIconRegister) {/* атлас-стежка мертва (F3) */}
+			@Override public void registerIcons(Object aIconRegister) {/* atlas stitching is dead here */}
 		};
 		return aRGBa == null ? gregapi.render.BlockTextureDefault.get(tCont) : gregapi.render.BlockTextureDefault.get(tCont, aRGBa);
 	}
 	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, net.minecraft.world.item.ItemStack aStack) {return texOf(aSide, gregapi.util.ST.meta_(aStack));}
-	// BUG-101: мир-путь = мировой канал цвета (1:1 renderStandardBlock:4412). Дефолт IBlock.colorMultiplier сам
-	// отдаёт getRenderColor(meta) — у блоков без позиционного цвета значение то же, что было (бетон/асфальт/cfoam).
+	// The world path uses the world color channel; IBlock.colorMultiplier's default falls back to
+	// getRenderColor(meta), keeping the same value as before for blocks with no positional tint.
 	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {return texOf(aSide, gregapi.util.WD.meta(aWorld, aX, aY, aZ), colorMultiplier(aWorld, aX, aY, aZ));}
 	@Override public boolean usesRenderPass(int aRenderPass, net.minecraft.world.item.ItemStack aStack) {return aRenderPass == 0;}
 	@Override public boolean usesRenderPass(int aRenderPass, net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return aRenderPass == 0;}

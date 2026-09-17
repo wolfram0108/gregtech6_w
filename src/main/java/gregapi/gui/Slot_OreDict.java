@@ -27,11 +27,7 @@ import gregapi.tileentity.ITileEntityInventoryGUI;
 import gregapi.util.OM;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * @author Gregorius Techneticies
- *
- * F-GUI: {@code isItemValid}→{@code mayPlace} (движок, см. {@link Slot_Base}).
- */
+/** @author Gregorius Techneticies */
 public class Slot_OreDict extends Slot_Base {
 	private final String mWhiteList;
 

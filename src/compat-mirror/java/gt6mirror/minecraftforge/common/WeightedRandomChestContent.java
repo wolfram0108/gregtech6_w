@@ -33,9 +33,8 @@
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Пакет gt6mirror.minecraftforge.common (не net.minecraftforge.common): boot-краш ResolutionException —
-// настоящий модуль forge 1.20.1 и модуль gregtech6 экспортировали бы один и тот же пакет net.minecraftforge.*
-// (split-package), JPMS такое не резолвит; тип живой (используется рантаймом), поэтому переупакован, а не удалён.
+// Package is gt6mirror.minecraftforge.common, not net.minecraftforge.common: the real forge module and
+// gregtech6 would otherwise export the same package (JPMS split); repackaged, not deleted, since runtime uses it.
 package gt6mirror.minecraftforge.common;
 
 import java.util.Random;
@@ -43,13 +42,8 @@ import java.util.Random;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 
-/** 1.7.10 {@code net.minecraft.util.WeightedRandomChestContent} — data-holder chest-лута.
- *  BUG-039: класс живёт в {@code net.minecraftforge.common}, а НЕ в оригинальном {@code net.minecraft.util} —
- *  пакетом {@code net.minecraft.*} в рантайме владеет модуль minecraft (JPMS split-package), поэтому build.gradle
- *  исключает {@code net/minecraft/**} из jar и стрипает его из dev-запусков → класс в оригинальном пакете
- *  физически не существует в рантайме (NoClassDefFoundError). Пакет {@code net.minecraftforge} тоже занят
- *  реальным модулем forge (тот же класс split-package конфликтов, отсюда перенос в {@code gt6mirror.minecraftforge};
- *  см. {@link ChestGenHooks}). Тело 1:1; см. decisions/F-loot-chestgen-map.md. */
+/** 1.7.10's WeightedRandomChestContent, a chest-loot data holder, lives under net.minecraftforge.common here
+ *  since net.minecraft.* is a JPMS split-package owned by the real minecraft module; body matches 1:1. */
 public class WeightedRandomChestContent {
 	public ItemStack theItemId;
 	public int theMinimumChanceToGenerateItem;
@@ -63,13 +57,13 @@ public class WeightedRandomChestContent {
 		itemWeight = aWeight;
 	}
 
-	/** 1.7.10 Forge-хук: генерация стеков одного entry. Тело 1:1 ({@code ChestGenHooks.generateStacks}). */
+	/** Generates the stacks for one entry; the body is unchanged from 1.7.10. */
 	protected ItemStack[] generateChestContent(Random aRandom, Container aInventory) {
 		return ChestGenHooks.generateStacks(aRandom, theItemId, theMinimumChanceToGenerateItem, theMaximumChanceToGenerateItem);
 	}
 
-	/** 1.7.10 {@code WeightedRandomChestContent.generateChestContents} 1:1: aCount раз — взвешенный выбор entry,
-	 *  генерация его стеков, раскладка в случайные слоты инвентаря. */
+	/** Unchanged from 1.7.10: picks an entry by weight, generates its stacks, and places them into
+	 *  random inventory slots, repeated aCount times. */
 	public static void generateChestContents(Random aRandom, WeightedRandomChestContent[] aList, Container aInventory, int aCount) {
 		for (int j = 0; j < aCount; ++j) {
 			WeightedRandomChestContent tContent = getRandomItem(aRandom, aList);
@@ -81,8 +75,8 @@ public class WeightedRandomChestContent {
 		}
 	}
 
-	/** 1.7.10 {@code WeightedRandom.getRandomItem} 1:1 (рулетка по itemWeight; сам класс WeightedRandom в neo
-	 *  переработан несовместимо, потому формула воспроизведена здесь — единственном месте её использования). */
+	/** Reproduces 1.7.10's weighted-roulette selection here because neo reworked the WeightedRandom
+	 *  class incompatibly, and this is the only place that needs the original formula. */
 	public static WeightedRandomChestContent getRandomItem(Random aRandom, WeightedRandomChestContent[] aList) {
 		int tTotal = 0;
 		for (WeightedRandomChestContent tContent : aList) tTotal += tContent.itemWeight;

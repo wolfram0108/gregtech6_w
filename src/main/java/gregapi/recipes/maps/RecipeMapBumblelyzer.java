@@ -71,7 +71,7 @@ public class RecipeMapBumblelyzer extends RecipeMap {
 						ItemStack rOutput = ST.copy(aInput);
 						CompoundTag tNBT = UT.NBT.getOrCreate(rOutput);
 						((IIndividual)tIndividual).writeToNBT(tNBT);
-						UT.NBT.set(rOutput, tNBT); // F8: getOrCreate — detached-копия, коммитим назад (см. ItemNBT.java)
+						UT.NBT.set(rOutput, tNBT); // getOrCreate returns a detached copy; commit it back explicitly.
 						return new Recipe(F, F, F, ST.array(aInput), ST.array(rOutput), null, null, FL.array(FL.amount(aFluids[0], 50)), null, 64, 16, 0);
 					} catch(Throwable e) {e.printStackTrace(ERR);}
 				}

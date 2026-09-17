@@ -36,10 +36,8 @@ public class CreativeTab extends CreativeModeTab {
 	public final short mMetaData;
 
 	public CreativeTab(String aName, String aLocal, Item aItem, short aMetaData) {
-		// F16 creative-tab (1:1): 1.7.10 CreativeTabs(String) → neo CreativeModeTab через Builder. Полный builder строит
-		// CreativeTabsGT.builderFor (title/icon/displayItems; ключ-имя доступен ДО super(), захват списка членов вместо this).
-		// Сам инстанс (валидный CreativeModeTab) регистрируется CreativeTabsGT на RegisterEvent<CreativeModeTab>. Заголовок
-		// literal(aLocal): GT6-локализация не доходит до vanilla lang (BACKUPMAP) → даём готовую строку. LH.add сохраняем.
+		// 1.7.10's CreativeTabs(String) constructor becomes a neo CreativeModeTab built through CreativeTabsGT's
+		// builder; the literal title is used because GT6 localization does not reach vanilla lang at this point.
 		super(CreativeTabsGT.builderFor(aName, aLocal, aItem, aMetaData & 0xFFFF));
 		LH.add("itemGroup." + aName, aLocal);
 		mName = aName;

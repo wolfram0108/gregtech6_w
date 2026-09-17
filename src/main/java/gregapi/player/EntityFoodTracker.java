@@ -47,24 +47,9 @@ import net.minecraftforge.eventbus.api.IEventBus;
 
 import static gregapi.data.CS.*;
 
-/**
- * @author Gregorius Techneticies
- *
- * Ветка 1.20.1: 1.7.10 {@code IExtendedEntityProperties} (его реализовывал ЭТОТ же класс, ключ
- * "gt.props.food" через {@code Entity.registerExtendedProperties}/{@code getExtendedProperties}) движком
- * удалён; {@code AttachmentType} 26.x-ветки есть только у NeoForge. В Forge 1.20.1 роль обоих занимает
- * capability на сущности — {@code AttachCapabilitiesEvent<Entity>} + {@code ICapabilitySerializable}
- * ({@code AttachCapabilitiesEvent.java:24,55}; живой образец той же версии —
- * {@code Applied-Energistics-2-1.20.1 InitCapabilities.java:54-70}). Персист ведёт сам движок: тег
- * capability лежит в {@code ForgeCaps} сущности, поэтому обёртка "gt.props.food" из 1.7.10 не нужна —
- * её роль исполняет ключ {@link #ID}.
- *
- * <p><b>Носитель прикрепляется ТОЛЬКО игроку</b> — это 1:1 с оригиналом: там {@code add()} звался лишь из
- * {@code EntityJoinWorldEvent} под {@code instanceof EntityPlayer} ({@code gt6-original GT_API_Proxy.java:1536}),
- * а {@code get()} на мобе возвращал {@code null}. Разница видима: {@code UT.applyRadioactivity}
- * ({@code UT.java:3105}) при непустом трекере копит радиацию в нём ВМЕСТО наложения зелий — прикрепи мы
- * трекер мобам, поведение изменилось бы молча.</p>
- */
+/** @author Gregorius Techneticies
+ *  1.7.10's IExtendedEntityProperties is gone; an entity capability fills the same role, with the engine itself
+ *  handling persistence. The carrier attaches only to players, 1:1 with the original. */
 public class EntityFoodTracker {
 	public static ArrayListNoNulls<EntityFoodTracker> TICK_LIST = new ArrayListNoNulls<>();
 
@@ -74,7 +59,7 @@ public class EntityFoodTracker {
 	public static final ResourceLocation ID = new ResourceLocation(MD.GAPI.mID, "food_tracker");
 	public static final Capability<EntityFoodTracker> CAP = CapabilityManager.get(new CapabilityToken<EntityFoodTracker>() {});
 
-	/** Носитель: одна запись на сущность-игрока; персист ведёт движок (тег capability внутри ForgeCaps). */
+	/** One record per player entity; persistence is the engine's own job, inside its own capability store. */
 	private static final class Provider implements ICapabilitySerializable<CompoundTag> {
 		private final EntityFoodTracker mData;
 		private final LazyOptional<EntityFoodTracker> mOptional;
@@ -85,8 +70,7 @@ public class EntityFoodTracker {
 		@Override public void deserializeNBT(CompoundTag aNBT) {mData.loadNBTData(aNBT);}
 	}
 
-	/** ЕДИНСТВЕННАЯ точка подписки носителя (та же роль, что был у attachment-реестра 26.x-ветки):
-	 *  объявление капабилити — на мод-шине, прикрепление к сущности — на форж-шине. */
+	/** The only subscription point for this carrier: capability declaration on the mod bus, attachment on the Forge bus. */
 	public static void register(IEventBus aModBus) {
 		aModBus.addListener((RegisterCapabilitiesEvent aEvent) -> aEvent.register(EntityFoodTracker.class));
 		MinecraftForge.EVENT_BUS.addGenericListener(net.minecraft.world.entity.Entity.class, (AttachCapabilitiesEvent<net.minecraft.world.entity.Entity> aEvent) -> {
@@ -96,11 +80,11 @@ public class EntityFoodTracker {
 
 	public EntityFoodTracker(LivingEntity aEntity) {
 		mEntity = aEntity;
-		// Конструктор — дословно оригинальный (только присваивание). init() зовёт add() из EntityJoinLevelEvent,
-		// ровно как 1.7.10-фреймворк звал IExtendedEntityProperties.init сразу после registerExtendedProperties.
+		// The constructor is verbatim original (assignment only); init() calls add() from the entity-join event, exactly as
+		// the 1.7.10 framework called init right after registering the properties object.
 	}
 
-	/** 1:1 с оригиналом: пустые поля просто не пишутся (там это выражалось removeTag("gt.props.food")). */
+	/** 1:1 with the original: fields at their default value simply aren't written to NBT at all. */
 	public void saveNBTData(CompoundTag aNBT) {
 		if (mAlcohol     != 0) aNBT.putByte("a", mAlcohol    );
 		if (mCaffeine    != 0) aNBT.putByte("c", mCaffeine   );
@@ -119,9 +103,8 @@ public class EntityFoodTracker {
 		mRadiation   = aNBT.getByte("r");
 	}
 
-	/** Оригинал звал это один раз на регистрацию свойств. Носитель-capability переживает смену измерения
-	 *  (тот же экземпляр ServerPlayer заходит в мир повторно), поэтому вход в тик-лист защищён от дубля —
-	 *  без защиты все эффекты трекера применялись бы дважды. */
+	/** A capability carrier survives a dimension change (the same player instance re-enters), so joining the tick list is
+	 *  guarded against duplicates, or every one of its effects would apply twice. */
 	public void init(Entity aEntity, Level aWorld) {if (!TICK_LIST.contains(this)) TICK_LIST.add(this);}
 	public void changeAlcohol    (long aAmount) {mAlcohol     = UT.Code.bind7(mAlcohol     + aAmount);}
 	public void changeCaffeine   (long aAmount) {mCaffeine    = UT.Code.bind7(mCaffeine    + aAmount);}
@@ -133,15 +116,8 @@ public class EntityFoodTracker {
 	public static void tick() {
 		if (SERVER_TIME % 50 == 0) for (int i = 0; i < TICK_LIST.size(); i++) {
 			EntityFoodTracker tTracker = TICK_LIST.get(i);
-			// F-attachment: neo attachment-карта ЗАМЕНЯЕТ значение целиком (не мутирует на месте) при
-			// десериализации из NBT (AttachmentHolder.deserializeAttachments -> raw Map.put), которая
-			// идёт ПОСЛЕ конструирования сущности (Entity.load(...) вызывается отдельно от конструктора,
-			// см. Entity.java:2090 vs Entity.java:327 EntityConstructing) — значит экземпляр, созданный
-			// через add()/getData() в момент конструирования, может быть замещён в карте более новым
-			// (восстановленным из диска) экземпляром ДО того, как этот успеет потикать. Без этой проверки
-			// осиротевший (замещённый) экземпляр продолжал бы тикать со старыми (нулевыми) значениями,
-			// а реальный (текущий) экземпляр — никогда. Самоочистка ниже — тот же приём, что уже был для
-			// isRemoved() (не новая ветка управления, расширение существующей проверки).
+			// Attachment deserialization replaces the whole stored value after construction, so a fresh instance can
+			// be replaced by a disk-loaded one before it ticks; without this check the orphaned instance keeps ticking stale.
 			if (tTracker.mEntity.isRemoved() || get(tTracker.mEntity) != tTracker) {TICK_LIST.remove(i--); continue;}
 
 			if (tTracker.mAlcohol >= 100) {
@@ -258,18 +234,16 @@ public class EntityFoodTracker {
 		}
 	}
 
-	/** Было {@code registerExtendedProperties("gt.props.food", new EntityFoodTracker(aEntity))} + вызов
-	 *  {@code init} фреймворком. Сам объект в 1.20.1 уже создан провайдером капабилити при конструировании
-	 *  сущности, поэтому здесь остаётся ровно вторая половина оригинала — вход в тик-лист. */
+	/** The object itself is already built by the capability provider at entity construction; only the original's second
+	 *  half survives here -- joining the tick list. */
 	public static void add(LivingEntity aEntity) {
 		if (aEntity == null || aEntity.level().isClientSide()) return;
 		EntityFoodTracker tTracker = get(aEntity);
 		if (tTracker != null) tTracker.init(aEntity, aEntity.level());
 	}
 
-	/** Было {@code getExtendedProperties(String)} (возвращал Object + instanceof). Капабилити уже
-	 *  типизирована ключом {@link #CAP}, а отсутствие носителя (любая не-игрок сущность) даёт {@code null} —
-	 *  та же семантика, что у оригинала. */
+	/** The capability is already typed by its own key now, so no instanceof cast is needed; a non-player entity still
+	 *  returns null, the same semantics the original had. */
 	public static EntityFoodTracker get(Entity aEntity) {
 		if (aEntity == null || aEntity.level().isClientSide()) return null;
 		return aEntity.getCapability(CAP).orElse(null);

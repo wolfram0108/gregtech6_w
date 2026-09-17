@@ -73,8 +73,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	 * @param aPrefix the OreDictPrefix corresponding to this Item.
 	 */
 	public PrefixItem(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterial... aMaterialList) {
-		// F12-followup (item-split): setId в Properties (иначе «Item id not set»); ключ = (владелец, имя), санитизирован,
-		// совпадает с registerItemLazy на call-site. (было super() → super(new Item.Properties()) без id.)
+		// setId is required in Properties or construction fails; the key matches registerItemLazy's name at the call site.
 		super(new Item.Properties());
 		mPrefix = aPrefix;
 		mPrefix.mRegisteredPrefixItems.add(this);
@@ -84,21 +83,18 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 		
 		setMaxDamage(0);
 		setHasSubtypes(T);
-		// F12-followup (item-split): само-рег УБРАНА — конструкция PrefixItem идёт на RegisterEvent через call-site
-		// GT_API.registerItemLazy(modId, name, ()->new PrefixItem(...)) (Item.<init> createIntrusiveHolder требует разморож.
-		// реестр). mPrefix.mRegisteredItems.add(this) ниже остаётся в конструкторе — выполнится на RegisterEvent (паритет).
+		// Self-registration is removed: construction now happens on RegisterEvent via GT_API.registerItemLazy, since
+		// Item.<init> needs an unfrozen registry; the mPrefix membership add stays in the constructor, running at that point.
 
 		mPrefix.addTextureSet(aModIDTextures, T);
 		LH.add("oredict." + mPrefix.dat(MT.Empty).toString(), getLocalName(mPrefix, MT.Empty));
 		LH.add(mNameInternal+"."+W, "Any Sub-Item of this one"); // Local Name for the WildcardItem Variant.
-		// F12-followup (item-split, hashCode-стабильность): ItemStackContainer.hashCode = id_(Item) = Item.getId(), а до
-		// РЕГИСТРАЦИИ предмета (ctor идёт внутри DeferredRegister-supplier на RegisterEvent) getId=-1 → запись легла бы в
-		// «мёртвый» бакет, и дедуп в onOreRegistration её не находит (даёт лишний предмет). Откладываем add на server-start,
-		// где id_ стабилен (совпадает с id_ в дедуп-контейнере) → wildcard-дедуп {this,W} схлопывает все суб-предметы в 1.
+		// ItemStackContainer.hashCode uses Item.getId(), which is -1 before registration; adding to the dedup set too
+		// early would land in the wrong bucket and miss the dedup, so the add is deferred to server-start when id_ is stable.
 		gregapi.GT_API.deferItemInit(() -> mPrefix.mRegisteredItems.add(this)); // this optimizes some processes by decreasing the size of the Set.
 		
 		if (SHOW_HIDDEN_PREFIXES || !mPrefix.contains(TD.Creative.HIDDEN)) {
-			// F16 (1:1 golden): видимый prefix → СВОЯ prefix-вкладка (setCreativeTab(mPrefix.mCreativeTab)), НЕ ванильный misc.
+			// A visible prefix gets its own prefix tab, not the vanilla misc tab.
 			if (mPrefix.mCreativeTab == null) mPrefix.mCreativeTab = new CreativeTab(mPrefix.mNameInternal, mPrefix.mNameCategory, this, W);
 			gregapi.item.CreativeTabsGT.joinOwnTab(this, mPrefix.mCreativeTab);
 		} else {
@@ -110,9 +106,8 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	}
 	
 	/** This ensures, that all Materials are registered at the time this Item registers to the OreDictionary. */
-	// F12-followup (item-split): тело делает ST.make/OreDict-регистрацию (Holder.components привязаны только на server-start) →
-	// отложено в runDeferredItemInit. run() вызывается на @Init (mBeforeInit) → defer добавлен ДО postInit-дефферов, сохраняя
-	// GT6-порядок «PrefixItems до MultiItems». Guard registerOre_ «Only @Init/@PreInit» подавлён в этом окне (см. GT_API).
+	// The body does ST.make/OreDict registration, which needs components bound only at server-start, so it is
+	// deferred there; run() fires on @Init, ordering this before the postInit deferrals to keep PrefixItems before MultiItems.
 	@Override
 	public void run() {gregapi.GT_API.deferItemInit(this::runDeferred);}
 	private void runDeferred() {
@@ -139,10 +134,8 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	
 	public int getSpriteNumber() {return 1;}
 	public int getRenderPasses(int metadata) {return 2;}
-	// F3-render: тип параметра был IIconRegister (net.minecraft.client.renderer.texture — УДАЛЁН в neo, только в
-	// compat-mirror при компиляции, вырезан из рантайма). getMethod-рефлексия GT6ItemModel.resolveIcon перечисляет
-	// методы класса → сигнатура с отсутствующим типом → NoClassDefFoundError → resolveIcon возвращал null → предмет
-	// не рисовался (пусто/пурпур). Параметр → Object (метод всё равно no-op в neo), рефлексия больше не падает.
+	// The parameter type used to be IIconRegister, a type stripped from the runtime jar; reflection-based icon
+	// resolution choked on the missing type and made the item invisible, so the parameter is now Object.
 	public void registerIcons(Object aIconRegister) {/**/}
 	public boolean requiresMultipleRenderPasses() {return mPrefix.mIconIndexItem >= 0;}
 	public ResourceLocation getIconIndex(ItemStack aStack) {return getIconFromDamageForRenderPass(ST.meta_(aStack), 0);}
@@ -160,9 +153,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 		return null;
 	}
 	
-	// КАНАЛ ЖИВ — вызыватель: центр GT6ItemModel.itemColor:224 находит метод РЕФЛЕКСИЕЙ по сигнатуре
-	// (ItemStack,int) и красит им квады каждого пасса; иконки пассов идут через getIcon:146 тем же центром.
-	// Реестр мёртвых каналов рефлексию грепом не видит — прежняя метка «разобран» была ложной (2026-07-30).
+	// This channel is live: GT6ItemModel.itemColor finds this method by reflection to color each render pass's quads.
 	// @Override
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		if (aRenderPass == 0) {
@@ -183,10 +174,8 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	// @Override
 	public ItemStack getContainerItem(ItemStack aStack) {
 		if (ST.equal(aStack, mContainerItem, T)) return null;
-		// Звук крафта. В 1.7.10 getContainerItem звался и на клиенте, потому клиентский play() играл сам. В neo
-		// путь серверный (ResultSlot.onTake → getRemainingItems), а игрока в сигнатуре нет — но движок его ДАЁТ:
-		// на время этого вызова NeoForge держит крафтящего игрока в CommonHooks (ResultSlot.java:89-91). Берём
-		//носителя оттуда — это штатный канал под тот же случай, а не выдуманный источник.
+		// The crafting player isn't in this method's signature, but the engine makes it available via
+		// NeoForge's CommonHooks for the duration of this call, so it's read from there rather than invented.
 		if (mCraftingSound != null) {
 			net.minecraft.world.entity.player.Player tCrafter = net.minecraftforge.common.ForgeHooks.getCraftingPlayer();
 			if (tCrafter == null) UT.Sounds.play(mCraftingSound, 20, 1.0F);
@@ -195,12 +184,8 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 		return mContainerItem != null ? ST.amount(1, mContainerItem) : mPrefix.containerItem() != null ? ST.amount(1, mContainerItem = mPrefix.containerItem()) : null;
 	}
 	
-	// ✅ КАНАЛ ЖИВ — мост GT_API_Proxy.isBeaconPayment + подмена слота 0 BeaconMenu (реестр каналов, 2026-07-30).
-	// В 1.7.10 «можно ли платить этим маяку» решал сам предмет (Forge Item.java:1482, маяк спрашивал его:
-	// TileEntityBeacon.isItemValidForSlot:409); в neo это тег ItemTags.BEACON_PAYMENT_ITEMS (ItemTags.java:135)
-	// на Item — материал в данных стека тегу не виден, а у GT6 один предмет на префикс. Тег НЕ заполняется
-	// (иначе маяк принимал бы и неценные материалы — шире оригинала, решение пользователя 2026-07-30):
-	// пер-стековый ответ возвращён контрактом IItemBeaconPayment, тело ниже 1:1 (оригинал PrefixItem.java:168-174).
+	// Beacon-payment eligibility uses a per-stack contract instead of a global tag, since the tag can't see a
+	// stack's material and GT6 uses one item per prefix; left unfilled so only the intended materials qualify.
 	@Override
 	public boolean isBeaconPayment(ItemStack aStack) {
 		if (mPrefix.mAmount >= U && (mPrefix.contains(TD.Prefix.GEM_BASED) || mPrefix.contains(TD.Prefix.INGOT_BASED))) {
@@ -221,10 +206,8 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 		}
 	}
 	
-	// ✅ КАНАЛ ЖИВ — правило 1.7.10 «хук результата перекрывает карту» восстановлено в FurnaceRecipes.func_151398_b,
-	// до ванильной печи доносится экземплярами GT6SmeltingDispatcher по классам опыта (решение (б′), 2026-07-30).
-	// Тело 1:1 (оригинал PrefixItem.java:188-190): самоцвет → 1.0, любой другой предмет GT6-префикса → 0
-	// (Грег сознательно гасил опыт плавки слитков). Контракт IItemSmeltingExperience; дефолт не-носителя = -1.
+	// Restores the 1.7.10 rule that the result item's own hook overrides the recipe-map lookup, dispatched to
+	// the vanilla furnace via GT6SmeltingDispatcher; gems give 1.0 XP, everything else from this prefix gives 0.
 	@Override
 	public float getSmeltingExperience(ItemStack aStack) {
 		return mPrefix == OP.gem ? 1.0F : 0.0F;
@@ -234,9 +217,8 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	public final String getUnlocalizedName() {return mNameInternal;}
 	public final Item setUnlocalizedName(String aName) {return this;}
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
-	// F1-контракт (1.7.10 itemDamage==meta): meta = mID материала. Переопределения getDamage(ItemStack) здесь НЕТ и быть
-	// не должно — дефолт Forge уже отдаёт его из сырого "Damage", а само-вызов через ST.meta_ замыкает движок (см. ST.meta_).
-	// F13-мост appendHoverText → addInformation (как ItemBlockBase:65).
+	// meta equals the material id here, so getDamage(ItemStack) is deliberately not overridden: Forge's default already reads
+	// it from raw Damage, and overriding it would loop back through ST.meta_'s own call into this method.
 	@Override @SuppressWarnings({"rawtypes", "unchecked"})
 	public void appendHoverText(ItemStack aStack, net.minecraft.world.level.Level aWorld, java.util.List<net.minecraft.network.chat.Component> aTooltips, net.minecraft.world.item.TooltipFlag aFlag) {
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
@@ -244,7 +226,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 		try {addInformation(aStack, tPlayer, tList, aFlag.isAdvanced());} catch (Throwable e) {/**/}
 		for (Object o : tList) if (o != null) aTooltips.add(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
 	}
-	// LOCALIZATION-display: neo getName(ItemStack) → GT6-имя (LH.get); иначе raw-ключ из vanilla-lang.
+	// getName(ItemStack) resolves the GT6 name; otherwise falls back to the raw vanilla-lang key.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 	public final boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
@@ -252,8 +234,8 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public int getItemEnchantability() {return 0;}
-	// BUG-021 v2: мост neo per-stack канала (IItemExtension.getMaxStackSize) на 1.7.10-хук ниже — без него все
-	// префиксные предметы игнорировали mDefaultStackSize (жемчуг/платы/яйца и т.п. стакались по ItemBase-дефолту 64).
+	// Bridges neo's per-stack getMaxStackSize onto the 1.7.10 hook; without it every prefixed item ignored
+	// mDefaultStackSize and stacked at the ItemBase default of 64 instead.
 	@Override public int getMaxStackSize(ItemStack aStack) {return UT.Code.bindStack(getItemStackLimit(aStack));}
 	public int getItemStackLimit(ItemStack aStack) {return mPrefix.mDefaultStackSize;}
 	@Override public OreDictItemData getOreDictItemData(ItemStack aStack) {return UT.Code.exists(ST.meta_(aStack), mMaterialList) ? new OreDictItemData(mPrefix, mMaterialList[ST.meta_(aStack)]) : null;}

@@ -33,9 +33,8 @@
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Пакет gt6mirror.minecraftforge.fluids (не net.minecraftforge.fluids): boot-краш ResolutionException —
-// настоящий модуль forge 1.20.1 и модуль gregtech6 экспортировали бы один и тот же пакет net.minecraftforge.*
-// (split-package), JPMS такое не резолвит; тип живой (используется рантаймом), поэтому переупакован, а не удалён.
+// Package is gt6mirror.minecraftforge.fluids, not net.minecraftforge.fluids: the real forge module and
+// gregtech6 would otherwise export the same package (JPMS split); repackaged, not deleted, since runtime uses it.
 package gt6mirror.minecraftforge.fluids;
 
 import net.minecraft.world.item.ItemStack;
@@ -47,31 +46,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * F5 compile-only shim. 1.7.10 Forge {@code net.minecraftforge.fluids.FluidContainerRegistry} удалён в neo
- * целиком — весь пакет {@code net.minecraftforge} отсутствует на classpath (0 хитов во всех 3 корнях
- * референса neo/neoforge/fml, не split-package с реальным {@code net.minecraft}/{@code net.neoforged}), поэтому
- * зеркалирование в compat-mirror возможно (тот же приём, что уже применён для {@code net.minecraft.launchwrapper},
- * F2-shim). Глобальный авто-реестр full<->empty пар контейнеров (вёдра, банки...) неo-аналога не имеет — 26.1.2
- * использует per-item {@code BucketItem}+capability без единого auto-реестра (PORT-TODO(F5, авто-реестр
- * бакетов/канистр), decisions/F5-fluids.md §3,8, уже закреплено в {@code gregapi.data.FL} — владелец РЕГИСТРАЦИИ
- * остаётся no-op, эта точка НЕ меняет то решение). Здесь зеркалируется только структура Forge-класса (тип +
- * вложенные {@link FluidContainerData}/{@link FluidContainerRegisterEvent}), которую GT6 использует повсеместно
- * как ЛИТЕРАЛ item-метаданных (напр. {@code gregtech.items.MultiItemTechnological}), не только через сам реестр.
- * <p>
- * {@link #registerFluidContainer(FluidContainerData)} реализован честно (реальный локальный список + рассылка
- * события через {@code MinecraftForge.EVENT_BUS}, тот же приём, что {@code gregapi.oredict.OreDictionary.OreRegisterEvent}),
- * но в этом заходе его никто не зовёт: единственный вызыватель в GT6 — {@code gregapi.data.FL.reg/set(FluidContainerData,...)}
- * — остаётся no-op-заглушкой (F5-решение «не изобретать новый API» уже принято ДО этого захода) — реестр всегда
- * пуст в рантайме, {@link #getRegisteredFluidContainerData()} честно отражает это.
- */
+/** 1.7.10's FluidContainerRegistry has no neo equivalent (the whole class is gone); neo uses per-item
+ *  BucketItem+capability instead of a global registry (PORT-TODO(F5): no auto full<->empty registry). */
 public class FluidContainerRegistry {
 	private static final List<FluidContainerData> DATA = new ArrayList<>();
 
-	/** 1:1 Forge (эталон {@code FluidContainerRegistry.java:78}): маркер «пустой тары нет» — именно ВЕДРО.
-	 *  Потребители отличают его по предмету, поэтому подменять его на что-то другое нельзя.
-	 *  Стек строится ЛЕНИВО: класс зеркала грузится раньше ванильных реестров, а {@code new ItemStack(...)}
-	 *  в статике на этой фазе роняет инициализацию всего мода (ExceptionInInitializerError). */
+	/** The "no empty container" marker is specifically a bucket, since consumers distinguish it by
+	 *  item; it is built lazily because this class loads before vanilla registries exist. */
 	private static ItemStack nullEmptyContainer() {return new ItemStack(net.minecraft.world.item.Items.BUCKET);}
 
 	public static FluidContainerData registerFluidContainer(FluidContainerData aData) {
@@ -86,7 +67,7 @@ public class FluidContainerRegistry {
 		return Collections.unmodifiableList(DATA);
 	}
 
-	/** 1:1 зеркало полей Forge-1.7.10 {@code FluidContainerRegistry.FluidContainerData} (сверено по всем вызывающим GT6-местам: {@code .fluid}/{@code .filledContainer}/{@code .emptyContainer}). */
+	/** Mirrors the Forge 1.7.10 FluidContainerData fields exactly, checked against every GT6 call site. */
 	public static class FluidContainerData {
 		public FluidStack fluid;
 		public ItemStack filledContainer;
@@ -99,17 +80,14 @@ public class FluidContainerRegistry {
 		public FluidContainerData(FluidStack aFluid, ItemStack aFilledContainer, ItemStack aEmptyContainer, boolean aAllowNullEmptyContainer) {
 			fluid = aFluid;
 			filledContainer = aFilledContainer;
-			// 1:1 Forge (эталон gt6-oracle-dumper/.../FluidContainerRegistry.java:377): при ОТСУТСТВУЮЩЕЙ пустой таре
-			// поле НЕ обнуляется, а получает маркер NULL_EMPTYCONTAINER — и маркер этот, что важно, ВЕДРО (:78).
-			// На него завязан потребитель: Loader_Recipes_Foreign видит «пустая тара == ведро» и берёт тару из ПОЛНОГО
-			// контейнера (ST.container(filledContainer)) — так рождается рецепт наполнения бутылки напитком.
-			// Зеркало хранило null, потребитель отсекал такие записи гардом — терялось 232 рецепта наполнения
-			// (замер 2026-07-27: добавлено 284, пропущено 232), то есть вся линейка GT6-напитков и зелий.
+			// When there is no empty container the field gets the bucket marker instead of null, because
+			// Loader_Recipes_Foreign reads "empty == bucket" to source the empty side; null would drop those recipes.
 			emptyContainer = aEmptyContainer == null ? nullEmptyContainer() : aEmptyContainer;
 		}
 	}
 
-	/** 1:1 зеркало Forge-1.7.10 {@code FluidContainerRegistry.FluidContainerRegisterEvent} ({@code data}-поле — ровно то, что читает {@code OreDictManager.onFluidContainerRegistration}). */
+	/** Mirrors Forge 1.7.10's FluidContainerRegisterEvent; the data field is exactly what
+	 *  OreDictManager.onFluidContainerRegistration reads. */
 	public static class FluidContainerRegisterEvent extends Event {
 		public final FluidContainerData data;
 

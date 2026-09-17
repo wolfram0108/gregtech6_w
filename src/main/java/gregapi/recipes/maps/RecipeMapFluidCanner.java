@@ -74,7 +74,7 @@ public class RecipeMapFluidCanner extends RecipeMap {
 		return rRecipe;
 	}
 	
-	// F5/BUG-045 (1:1): восстановленный IFluidContainerItem.getCapacity(ItemStack) (compat-mirror; оригинал :73).
+	// Restored IFluidContainerItem.getCapacity(ItemStack) compat-mirror branch.
 	@Override public boolean containsInput(ItemStack aStack, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aStack != null && (super.containsInput(aStack, aTileEntity, aSpecialSlot) || (aStack.getItem() instanceof IFluidContainerItem && ((IFluidContainerItem)aStack.getItem()).getCapacity(aStack) > 0));}
 	@Override public boolean containsInput(FluidStack aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return T;}
 	@Override public boolean containsInput(Fluid aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return T;}

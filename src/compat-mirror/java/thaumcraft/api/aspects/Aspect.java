@@ -37,11 +37,10 @@ package thaumcraft.api.aspects;
 
 import net.minecraft.resources.ResourceLocation;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только объявления, используемые GregTech6
- *  (константы аспектов + минимум методов) — держит ядро компилируемым, пока интеграция с TC отложена.
- *  Значения намеренно нейтральны (интеграция не исполняется без реального TC). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only the aspect constants and methods GregTech6
+ *  references; values are neutral placeholders since none of this runs without the real mod. */
 public class Aspect {
-	// Обёртка GT6 (TC_Aspect) читает вложенный `.mAspect` — держим совместимое поле для зеркала.
+	// Kept for compatibility because GregTech6's TC_Aspect wrapper reads this nested field.
 	public final Aspect mAspect;
 
 	public Aspect() {this.mAspect = null;}
@@ -51,7 +50,7 @@ public class Aspect {
 
 	public int getMetadata() {return 0;}
 
-	// Константы-аспекты, к которым обращается GregTech6 (grep Aspect.X по gregapi/*).
+	// The aspect constants GregTech6 actually references.
 	public static final Aspect
 		  AIR       = new Aspect(), ARMOR   = new Aspect(), AURA    = new Aspect(), BEAST   = new Aspect()
 		, CLOTH     = new Aspect(), COLD    = new Aspect(), CRAFT   = new Aspect(), CROP    = new Aspect()

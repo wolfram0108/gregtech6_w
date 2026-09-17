@@ -56,15 +56,13 @@ public class Behavior_TripwireCutting extends AbstractBehaviorDefault {
 			if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 				int aMeta = WD.meta(aWorld, aX, aY, aZ) | 8;
 				WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMeta, 4, F);
-				// было removedByPlayer(World,EntityPlayer,x,y,z,willHarvest) -> IBlockExtension.onDestroyedByPlayer
+				// Replaces the removed removedByPlayer hook with IBlockExtension.onDestroyedByPlayer.
 				// (BlockState,Level,BlockPos,Player,ItemStack,boolean,FluidState) [IBlockExtension.java:238]
 				BlockPos aBlockPos = new BlockPos(aX, aY, aZ);
 				BlockState aBlockState = aWorld.getBlockState(aBlockPos);
 				if (Blocks.TRIPWIRE.onDestroyedByPlayer(aBlockState, aWorld, aBlockPos, aPlayer, T, aWorld.getFluidState(aBlockPos))) {
-					// F13 (1:1): 1.7.10 harvestBlock(World,Player,x,y,z,meta) ронял дроп tripwire (струну). Восстановлено ниже через
-					// neo Block.dropResources(state,level,pos,be,breaker,tool) [Block.java:398] — loot по инструменту игрока.
-					// onDestroyedByPlayer уже снёс блок в air; дропаем по захваченному aBlockState. Дроп восстановлен 1:1,
-					// звук остаётся.
+					// The 1.7.10 harvestBlock call used to drop the tripwire string; this restores that drop via
+					// Block.dropResources on the captured state, since onDestroyedByPlayer already cleared the block to air.
 					net.minecraft.world.level.block.Block.dropResources(aBlockState, aWorld, aBlockPos, null, aPlayer, aPlayer.getMainHandItem());
 					UT.Sounds.send(SFX.MC_SHEARS, aWorld, aX, aY, aZ);
 				}

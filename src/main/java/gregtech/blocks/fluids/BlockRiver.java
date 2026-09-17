@@ -102,8 +102,7 @@ public class BlockRiver extends BlockWaterlike {
 		return;
 	}
 	
-	// F10: реальная сигнатура net.minecraftforge.fluids.IFluidBlock — drain(Level,BlockPos,IFluidHandler.FluidAction);
-	// было (Level,int,int,int,boolean aDoDrain) старого шима.
+	// IFluidBlock's real signature is drain(Level,BlockPos,FluidAction); the old shim's was (Level,int,int,int,boolean).
 	@Override
 	public FluidStack drain(Level aWorld, BlockPos aPos, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction aAction) {
 		int aX = aPos.getX(), aY = aPos.getY(), aZ = aPos.getZ();

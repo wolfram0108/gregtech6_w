@@ -33,32 +33,10 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 
-/**
- * F12-harvest — ПЕРЕНОС GT6-ДАННЫХ О ДОБЫЧЕ В ТЕГИ (единственный канал, который слушает neo).
- *
- * <p><b>Что изменил движок.</b> В 1.7.10 «каким инструментом добывается блок и какого уровня»
- * спрашивалось МЕТОДАМИ блока — {@code Block.getHarvestTool(meta)} / {@code getHarvestLevel(meta)}, — и GT6
- * их переопределял ({@code BlockBase:191-192}, {@code PrefixBlock:715,751}, MTE — своим полем инструмента).
- * Поэтому ванильная кирка вела себя на блоках GT6 как положено, и Waila показывала строки «Effective Tool»/
- * «Currently Harvestable» без единой строчки интеграции. В neo этих методов НЕТ вовсе: и скорость, и право
- * на дроп решают ТЕГИ ({@code minecraft:mineable/*}, {@code minecraft:needs_*_tool}). Порт честно записал
- * потерю как «деградация до no-op» ({@code GT_API:436-440,451-455}) — но следствие у неё живое: для ванильных
- * инструментов и для тултип-модов блоки GT6 «ничем не добываются».
- *
- * <p><b>Что делает этот провайдер.</b> На datagen обходит реестр блоков, спрашивает у каждого GT6-блока его
- * же {@code getHarvestTool}/{@code getHarvestLevel} — те самые методы, что и в 1.7.10, — и раскладывает блок
- * по ванильным тегам. Никаких новых правил не выдумывается: источник данных прежний, меняется лишь канал,
- * которым движок их читает.
- *
- * <p><b>Границы честности.</b> (1) Тег вешается на БЛОК, а уровень у {@code PrefixBlock} зависит от материала
- * (меты) — выразить per-meta в теге нельзя, поэтому берётся МИНИМАЛЬНЫЙ уровень блока: так ни один вариант,
- * добываемый в оригинале, не станет недобываемым (точную проверку всё равно делает GT6-логика инструмента,
- * {@code MultiItemTool.getDigSpeed}). (2) Инструменты, которых в ванили нет ({@code wrench}, {@code saw},
- * {@code knife}, {@code drill}, {@code sword}), в теги НЕ маппятся — придумывать им ванильный аналог значило
- * бы менять правила, а не переносить их.
- */
+/** Carries GT6's own harvest data into tags, the only channel neo listens to. 1.7.10
+ *  asked the block itself; neo has no such methods at all, and decides purely by tag instead. */
 public class GT6HarvestTags extends TagsProvider<Block> {
-	/** 1.7.10-уровень → ванильный тег «нужен инструмент не ниже». Шкала совпадает: 1=камень, 2=железо, 3=алмаз. */
+	/** 1.7.10 level -> vanilla "needs at least this tool" tag; the scale matches: 1=stone, 2=iron, 3=diamond. */
 	private static final TagKey<?>[] NEEDS_BY_LEVEL = {null, BlockTags.NEEDS_STONE_TOOL, BlockTags.NEEDS_IRON_TOOL, BlockTags.NEEDS_DIAMOND_TOOL};
 
 	public GT6HarvestTags(PackOutput aOutput, CompletableFuture<HolderLookup.Provider> aLookup) {
@@ -73,14 +51,10 @@ public class GT6HarvestTags extends TagsProvider<Block> {
 			if (tID == null || !(tID.getNamespace().equals(CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
 			String tTool = harvestToolOf(tBlock);
 			TagKey<Block> tMineable = mineableTag(tTool);
-			if (tMineable == null) {tSkipped++; continue;} // GT6-специфичный инструмент — ванильного тега нет, не выдумываем
+			if (tMineable == null) {tSkipped++; continue;} // a GT6-specific tool has no vanilla tag, so none is invented
 			int tLevel = harvestLevelOf(tBlock);
-			// ГРАНИЦА ШКАЛ. У GT6 уровень 0..15 (+9999 у бедрок-класса), ванильных ступеней ТРИ: камень(1)/железо(2)/
-			// алмаз(3). Всё, что ВЫШЕ 3, ванильной системой не выражается — и если просто «не поставить needs_*», блок
-			// останется в mineable/* без единого требования, то есть ЛЮБАЯ ванильная кирка получит право на дроп там,
-			// где GT6 требует уровень выше алмазного. Это ОСЛАБЛЕНИЕ канона (замер: таких блоков 5, включая уровень
-			// 9999). Правильный перенос — не давать таким блокам ванильный mineable-тег вовсе: ванильным инструментом
-			// их и не добыть, ровно как в GT6. Свои инструменты GT6 судит собственной логикой (MultiItemTool.getDigSpeed).
+			// Scale mismatch: GT6 goes 0..15 (plus 9999 for bedrock-tier); vanilla only has three steps
+			// (stone/iron/diamond). Above 3, leaving the block untagged is the correct 1:1 translation, not a free pass.
 			if (tLevel >= NEEDS_BY_LEVEL.length) {tOverScale++; continue;}
 			getOrCreateRawBuilder(tMineable).addElement(tID);
 			if (tLevel > 0 && NEEDS_BY_LEVEL[tLevel] != null) {
@@ -90,8 +64,8 @@ public class GT6HarvestTags extends TagsProvider<Block> {
 			tTagged++;
 		}
 		CS.OUT.println("GT6 F12-harvest: размечено блоков тегами добычи " + tTagged + ", пропущено: не-ванильный инструмент " + tSkipped + ", уровень выше ванильной шкалы " + tOverScale);
-		// ДИАГНОСТИКА ГРАНИЦЫ ШКАЛ: у GT6 уровень добычи 0..15, ванильных тегов ТРИ (камень/железо/алмаз).
-		// Всё, что выше 3, в ванильной системе не выражается — надо знать, сколько таких, прежде чем полагаться на теги.
+		// Diagnostic for that same scale mismatch: counts how many blocks fall above vanilla's three tool
+		// tiers, before relying on the tags at all.
 		java.util.Map<Integer, Integer> tHist = new java.util.TreeMap<>();
 		java.util.Map<String, Integer> tTools = new java.util.TreeMap<>();
 		for (Block tBlock : BuiltInRegistries.BLOCK) {
@@ -104,29 +78,28 @@ public class GT6HarvestTags extends TagsProvider<Block> {
 		CS.OUT.println("GT6 F12-harvest DIAG инструменты: " + tTools);
 	}
 
-	/** Инструмент блока — ЕГО ЖЕ 1.7.10-метод; мета 0, потому что тег вешается на блок целиком. */
+	/** A block's tool is its own 1.7.10 method, asked with meta 0, since the tag applies to the whole block. */
 	private static String harvestToolOf(Block aBlock) {
 		try {
 			if (aBlock instanceof gregapi.block.prefixblock.PrefixBlock tP) return tP.getHarvestTool(0);
 			if (aBlock instanceof gregapi.block.BlockBase tB) return tB.getHarvestTool(0);
 			if (aBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock tM) return tM.getHarvestTool(0);
-		} catch (Throwable e) {/* блок без канала — просто не размечаем */}
+		} catch (Throwable e) {/* a block with no channel is simply left untagged */}
 		return null;
 	}
 
-	/** Уровень блока — ЕГО ЖЕ 1.7.10-метод. Для семейств по мете берём минимальный (см. «Границы честности»). */
+	/** A block's level is its own 1.7.10 method; for meta-based families, the minimum across metas is used. */
 	private static int harvestLevelOf(Block aBlock) {
 		try {
 			if (aBlock instanceof gregapi.block.prefixblock.PrefixBlock tP) return tP.getHarvestLevel(0);
 			if (aBlock instanceof gregapi.block.BlockBase tB) return tB.getHarvestLevel(0);
 			if (aBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock tM) return tM.getHarvestLevel(0);
-		} catch (Throwable e) {/* см. выше */}
+		} catch (Throwable e) {/* see above */}
 		return 0;
 	}
 
-	/** Ванильный тег «копается этим инструментом» по GT6-типу инструмента, либо null, если ванильного тега нет.
-	 *  Публичный, потому что ту же связь читает верификационная оснастка (судья витрины BUG-070): ей надо знать,
-	 *  разметил ли блок ЭТОТ механизм. Второй копии этой таблицы в дереве быть не должно. */
+	/** Vanilla "mined with this tool" tag for a GT6 tool name, or null if vanilla has none; public
+	 *  because the acceptance-display judge reads the same mapping to check whether this mechanism tagged a block. */
 	public static TagKey<Block> mineableTag(String aTool) {
 		if (aTool == null) return null;
 		if (aTool.equals(CS.TOOL_pickaxe)) return BlockTags.MINEABLE_WITH_PICKAXE;

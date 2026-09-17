@@ -37,11 +37,8 @@ package cofh.api.energy;
 
 import net.minecraft.core.Direction;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — CoFH RF-API (энергия, "новая" версия — флаг
- *  EnergyCompat.RF_ENERGY_NEW: некоторые моды не включают этот файл). Реально используется —
- *  EnergyCompat.java:213,258: receiveEnergy. Методы extractEnergy/getEnergyStored/
- *  getMaxEnergyStored реального API не используются в EnergyCompat/ToolCompat (греп 0) —
- *  не добавлены. */
+/** Compile-only mirror of the CoFH RF energy API's newer shape; some mods omit this interface
+ *  entirely, which is why EnergyCompat gates its use behind the RF_ENERGY_NEW flag. */
 public interface IEnergyReceiver {
 	int receiveEnergy(Direction aFrom, int aMaxReceive, boolean aSimulate);
 }

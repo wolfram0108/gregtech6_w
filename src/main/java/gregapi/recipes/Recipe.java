@@ -501,7 +501,7 @@ public class Recipe {
 			
 			try {
 				// Now look for the Recipes inside the Item HashMaps, but only when the Recipes usually have Items.
-				if (mInputItemsCount > 0) for (ItemStack tStack1 : aInputs) if (ST.valid(tStack1)) { // F15: было tStack1 != null (1.7.10 null=нет-предмета); neo ItemStack.EMPTY != null проходит проверку, но getStack_(EMPTY)=null → NPE ниже. ST.valid ловит и null, и EMPTY.
+				if (mInputItemsCount > 0) for (ItemStack tStack1 : aInputs) if (ST.valid(tStack1)) { // ST.valid catches both null and EMPTY, since EMPTY passes a plain null check but breaks the lookup below it.
 					Collection<Recipe>
 					tRecipes = mRecipeItemMap.get(tStack1);
 					if (tRecipes != null) for (Recipe tRecipe : tRecipes) if (!tRecipe.mFakeRecipe && tRecipe.isRecipeInputEqual(F, T, aFluids, aInputs)) return tRecipe.mEnabled&&UT.Code.abs_greater_equal(aSize*mPower, tRecipe.mEUt)?oRecipe=tRecipe:null;
@@ -645,12 +645,8 @@ public class Recipe {
 			return aRecipe;
 		}
 		
-		// BUG-056: 1.7.10 звал мод NEI напрямую — `codechicken.nei.recipe.GuiCraftingRecipe.openRecipeGui(mNameNEI)`.
-		// В 26.1.2 мода NEI нет и быть не может: его классы живут только в src/compat-mirror (зеркало для
-		// компиляции), поэтому в проде вызов давал NoClassDefFoundError, молча проглатывался catch(Throwable)
-		// и метод ВСЕГДА возвращал false — иконка «показать рецепты» была мертва. Роль NEI занял JEI; открытие
-		// экрана — клиентское действие, поэтому идёт через прокси (общий код не тянет client-only классы).
-		// Ключ прежний: mNameNEI, та же строка, которой карта звалась в NEI.
+		// The original recipe-browser hook called NEI directly, whose classes only exist as a compat mirror now;
+		// the call always failed silently, making the "show recipes" icon dead. JEI now fills that role instead.
 		public boolean openNEI   (                  ) {try {return gregapi.GT_API.api_proxy != null && gregapi.GT_API.api_proxy.openRecipeGui(mNameNEI);} catch(Throwable e) {/**/} return F;}
 		public boolean guiRecipes(Object... aOutputs) {try {codechicken.nei.recipe.GuiCraftingRecipe.openRecipeGui(mNameNEI, aOutputs); return T;} catch(Throwable e) {/**/} return F;}
 		public boolean guiUsesNEI(Object... aInputs ) {try {codechicken.nei.recipe.GuiUsageRecipe   .openRecipeGui(mNameNEI, aInputs ); return T;} catch(Throwable e) {/**/} return F;}
@@ -790,7 +786,7 @@ public class Recipe {
 				ItemStack aInput = aInputs[i];
 				if (ST.valid(aInput)) {
 					if ((aDontCheckStackSizes || aInput.getCount() >= ST.size(tInput)) && OreDictManager.INSTANCE.equal_(F, aInput, tInput, mNoNBTChecks || !(ItemNBT.get(tInput) != null))) {
-						if (aDecreaseStacksizeBySuccess) aInput.setCount(aInput.getCount()-(ST.size(tInput))); // F-size0-catalyst: ST.size=0 для size-0-катализатора (shape/mold) → не расходуется, как 1.7.10 stackSize=0
+						if (aDecreaseStacksizeBySuccess) aInput.setCount(aInput.getCount()-(ST.size(tInput))); // A size-0 catalyst (shape/mold) is not consumed, matching the original's stackSize-0 convention.
 						tChecked[i] = T;
 						temp = F;
 						break;
@@ -822,7 +818,7 @@ public class Recipe {
 		if (!checkStacksEqual(F, aDontCheckStackSizes, aInputs)) return F;
 		
 		if (aDecreaseStacksizeBySuccess) {
-			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (FluidStack aFluid : aFluidInputs) if (aFluid != null && FL.equal(aFluid, tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {aFluid.shrink(tFluid.getAmount()); break;} // было aFluid.amount -= X — neo FluidStack.getAmount() метод (не lvalue), мутатор shrink(int) (FluidStack.java:208)
+			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (FluidStack aFluid : aFluidInputs) if (aFluid != null && FL.equal(aFluid, tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {aFluid.shrink(tFluid.getAmount()); break;} // FluidStack.amount is no longer a mutable field; use the shrink(int) mutator instead.
 			checkStacksEqual(T, F, aInputs);
 		}
 		
@@ -923,12 +919,8 @@ public class Recipe {
 		
 		if (aOptimize) {
 			for (int i = 0; i < aInputs.length; i++) if (aInputs[i] != NI && ST.meta_(aInputs[i]) != W) for (int j = 0; j < aOutputs.length; j++) {
-				// F-size0-catalyst (Ф4 шаг 3): в 1.7.10 «stackSize -= ...» мог дать РОВНО 0, и стек при этом оставался
-				// стеком того же предмета — так GT6 выражает катализатор (форма/мольд не тратится). В neo setCount(0)
-				// превращает стек в EMPTY, то есть в ВОЗДУХ: рецепт «камень + форма блока -> камень» вырождался во
-				// вход-воздух с выходом null и, из-за проверки коллизий, НАВСЕГДА занимал место настоящих рецептов
-				// этой формы (замер: 934 не созданных рецепта экструдера). Идём через центр логического размера
-				// ST.size_/ST.size, который держит ноль маркером ZEROSIZE.
+				// Setting count to zero in neo turns the stack into EMPTY (air), losing the catalyst marker a size-0 stack
+				// used to carry in 1.7.10; going through the central logical-size helper keeps that marker intact instead.
 				if (aOutputs[j] != null && ST.equal_(aInputs[i], aOutputs[j], F)) {
 					if (ST.size(aInputs[i]) >= ST.size(aOutputs[j])) {
 						ST.size_(ST.size(aInputs[i])-ST.size(aOutputs[j]), aInputs[i]);
@@ -950,7 +942,7 @@ public class Recipe {
 				if (temp) {
 					for (int j = 0; j < aInputs      .length; j++) if (aInputs [j] != null) aInputs [j].setCount(aInputs [j].getCount()/(l));
 					for (int j = 0; j < aOutputs     .length; j++) if (aOutputs[j] != null) aOutputs[j].setCount(aOutputs[j].getCount()/(l));
-					for (int j = 0; j < aFluidInputs .length; j++) aFluidInputs [j].setAmount(aFluidInputs [j].getAmount() / l); // neo FluidStack.getAmount() не lvalue -> setAmount(getAmount()/l)
+					for (int j = 0; j < aFluidInputs .length; j++) aFluidInputs [j].setAmount(aFluidInputs [j].getAmount() / l); // FluidStack.getAmount() isn't an lvalue; divide and write back with setAmount instead.
 					for (int j = 0; j < aFluidOutputs.length; j++) aFluidOutputs[j].setAmount(aFluidOutputs[j].getAmount() / l);
 					aDuration /= l;
 					break;

@@ -34,7 +34,7 @@
  */
 
 package forestry.api.lepidopterology;
-/** Forestry-mirror (compile-only; настоящий Forestry в рантайме, гейт MD.FR.mLoaded). */
+/** Compile-only Forestry mirror; the real mod supplies the implementation at runtime, gated by MD.FR.mLoaded. */
 public interface IEntityButterfly {
 	Object getButterfly();
 }

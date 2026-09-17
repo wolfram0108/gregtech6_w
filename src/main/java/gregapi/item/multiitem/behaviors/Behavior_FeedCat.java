@@ -32,10 +32,9 @@ import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.UT;
 import net.minecraft.world.entity.Entity;
-// F-entity-identity: 1.7.10 EntityOcelot БЫЛ приручаемым котом (отдельного Cat до 1.14 не было) -> neo Cat
-// (Cat extends TamableAnimal, Cat.java:69); neo Ocelot extends Animal — НЕ приручаем ("trust", не tame).
+// 1.7.10's EntityOcelot was the tameable cat; neo splits this into Cat (tameable) and an untameable Ocelot.
 import net.minecraft.world.entity.animal.Cat;
-// F-entity-ai: 1.7.10 EntityAITasks/EntityAITaskEntry/EntityAITempt удалены -> neo GoalSelector/WrappedGoal/TemptGoal.
+// The 1.7.10 goal-task classes are gone; neo uses GoalSelector/WrappedGoal/TemptGoal instead.
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.goal.TemptGoal;
 import net.minecraft.world.entity.player.Player;
@@ -48,19 +47,17 @@ public class Behavior_FeedCat extends AbstractBehaviorDefault {
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (aEntity instanceof Cat) {
 			Cat tCat = (Cat)aEntity;
-			// 1.7.10: ((EntityOcelot)aEntity).tasks.taskEntries -> ищем активный EntityAITempt.
-			// neo: goalSelector.getAvailableGoals() -> WrappedGoal, getGoal() instanceof TemptGoal (ловит CatTemptGoal, Cat.java:637) + isRunning() (WrappedGoal.java:76).
+			// Looks up the active TemptGoal the same way the original scanned its task list for EntityAITempt.
 			for (WrappedGoal tTask : tCat.goalSelector.getAvailableGoals()) if (tTask.getGoal() instanceof TemptGoal && tTask.isRunning()) {
 				if (aPlayer.distanceToSqr(aEntity) < 9.0D) {
 					UT.Entities.consumeCurrentItem(aPlayer);
 					if (!aPlayer.level().isClientSide()) {
 						if (RNGSUS.nextInt(3) == 0) {
 							tCat.setTame(T);
-							// 1.7.10 setTameSkin(1+rng(3)) — int-скин 0-3. neo: модель сменилась на registry Holder<CatVariant>
-							// (setVariant private, Cat.java:121) -> публичный путь Entity.setComponent (Entity.java:4064) +
-							// случайный вариант из реестра (оригинал тоже рандомил скин при приручении).
+							// The old int skin index became a registry-backed CatVariant holder; a random variant is picked the same
+							// way the original randomized the skin on taming.
 							tCat.setVariant(net.minecraft.core.registries.BuiltInRegistries.CAT_VARIANT.getRandom(tCat.getRandom()).orElseThrow().value());
-							tCat.setOwnerUUID(aPlayer.getUUID()); // 1:1 с 1.7.10 func_152115_b(player.getUniqueID()) — TamableAnimal.java:137
+							tCat.setOwnerUUID(aPlayer.getUUID()); // 1:1 with 1.7.10's func_152115_b(player.getUniqueID()).
 							for (int i = 0; i < 7; ++i) aEntity.level().addParticle(net.minecraft.core.particles.ParticleTypes.HEART, aEntity.getX() + (RNGSUS.nextFloat() * aEntity.getBbWidth() * 2.0F) - aEntity.getBbWidth(), aEntity.getY() + 0.5D + (RNGSUS.nextFloat() * aEntity.getBbHeight()), aEntity.getZ() + (RNGSUS.nextFloat() * aEntity.getBbWidth() * 2.0F) - aEntity.getBbWidth(), RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D);
 							tCat.level().broadcastEntityEvent(aEntity, (byte)7);
 						} else {

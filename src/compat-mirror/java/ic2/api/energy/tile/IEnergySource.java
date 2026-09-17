@@ -38,15 +38,12 @@ package ic2.api.energy.tile;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Сверено javap ic2:IC2Classic:1.2.1.8-dev
- *  (ic2.api.energy.tile.IEnergySource extends IEnergyEmitter; emitsEnergyTo унаследован
- *  оттуда — здесь объявлен напрямую, как в IEnergySink). Реально используются —
- *  EnergyCompat.java:121, WD.java:1246: emitsEnergyTo, getSourceTier.
- *  Методы getOfferedEnergy/drawEnergy реального API не используются (греп 0) — не добавлены. */
+/** Compile-only mirror of the IC2 API: emitsEnergyTo is declared directly here rather than
+ *  inherited through IEnergyEmitter, for the same reason as IEnergySink. */
 public interface IEnergySource {
 	boolean emitsEnergyTo(BlockEntity aReceiver, Direction aSide);
 	int getSourceTier();
-	// GT6 вызывает в MultiTileEntityWireElectric.161-162 (javap IC2Classic:1.2.1.8-dev: double/void).
+	// Called from MultiTileEntityWireElectric; the real API's signatures are double and void.
 	double getOfferedEnergy();
 	void drawEnergy(double amount);
 }

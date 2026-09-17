@@ -69,34 +69,31 @@ import static net.minecraftforge.common.PlantType.PLAINS;
 @Optional.InterfaceList(value = {
 	@Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock", modid = ModIDs.GC)
 })
-// IRenderedCross: 1.7.10 getRenderType()==1 (:90 оригинала, крест drawCrossedSquares) — единственный носитель
-// renderType 1 в дереве (греп). Без него саженец шёл кубической цепочкой IRenderedBlock и рисовался «кубом
-// с шестью саженцами» (приёмка 2026-07-30). Тот же контракт, что у BlockBaseFlower.
+// Without this, the sapling rendered as a solid cube instead of a cross, since 1.7.10's render
+// type 1 was the only signal telling the renderer to draw crossed squares; same contract as BlockBaseFlower.
 public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantable, BonemealableBlock, IOxygenReliantBlock, gregapi.render.IRenderedCross {
 	public BlockBaseSapling(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, Math.min(8, aMaxMeta), aIcons);
 		setBlockBounds(0.1F, 0.0F, 0.1F, 0.9F, 0.8F, 0.9F);
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
-		// было setTickRandomly(true) (1.7.10 runtime мутатор, вызов ПОСЛЕ super()) -> перенесено на реальную
-		// override-точку BlockBehaviour.isRandomlyTicking(BlockState) [BlockBehaviour.java:382-384] ниже (в отличие
-		// от setHardness/setResistance у этой точки ЕСТЬ override, не no-op).
-		// F12-hardness: 1.7.10 setHardness(0) заменён getBlockHardness ниже (OAK_SAPLING) → подключён к neo через
-		// BlockBase.getDestroyProgress (централизованно, 1:1). Runtime-мутатор не нужен.
+		// setTickRandomly's old runtime-mutator call is replaced by overriding isRandomlyTicking below,
+		// since unlike setHardness/setResistance this override point actually exists on neo's Block.
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W)));
 	}
 
-	// было setTickRandomly(true) — см. комментарий в конструкторе выше.
+	// replaces the old setTickRandomly(true) call; see the constructor's comment above
 	@Override public boolean isRandomlyTicking(BlockState aState) {return T;}
 
 	public abstract boolean grow(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, byte aMeta, Random aRandom);
 
-	// neo BonemealableBlock.performBonemeal — маршрут в GT6 grow() (централизовано в базе сапплингов, покрывает AB/CD).
+	// Routes neo's performBonemeal into GT6's own grow(), centralized here in the sapling base so it covers every sapling
+	// family.
 	@Override public void performBonemeal(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {
-		grow(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()), UT.Code.random(aRandom)); // конвертер — ЦЕНТР UT.Code.random
+		grow(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()), UT.Code.random(aRandom)); // the RandomSource-to-Random converter lives in the single center UT.Code.random
 	}
-	@Override public boolean isBonemealSuccess(Level aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {return aRandom.nextFloat() < 0.45F;} // ванильный шанс сапплинга (SaplingBlock)
-	@Override public boolean isValidBonemealTarget(net.minecraft.world.level.LevelReader aWorld, BlockPos aPos, BlockState aState, boolean aIsClient) {return T;} // сапплинг всегда bonemeal-цель
+	@Override public boolean isBonemealSuccess(Level aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {return aRandom.nextFloat() < 0.45F;} // vanilla's own sapling-growth chance
+	@Override public boolean isValidBonemealTarget(net.minecraft.world.level.LevelReader aWorld, BlockPos aPos, BlockState aState, boolean aIsClient) {return T;} // a sapling is always a valid bonemeal target
 	
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	@Override public int damageDropped(int aMeta) {return aMeta & 7;}
@@ -113,17 +110,15 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeSapling.mDefaultStackSize);}
 	@Override public ResourceLocation getIcon(int aSide, int aMeta) {return mIcons[aMeta & 15].getIcon(0);}
-	// F3-render (IRenderedCross): та же per-мета иконка, что getIcon выше; aWorld==null = item-рендер,
-	// aX несёт МЕТУ СТЕКА (контракт IRenderedCross, как у BlockBaseFlower).
+	// Same per-meta icon lookup as getIcon above; aWorld==null means an item render, where aX carries the stack's own meta,
+	// the same contract as BlockBaseFlower.
 	@Override public ResourceLocation getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (mIcons == null || mIcons.length == 0) return null;
 		gregapi.render.IIconContainer tIcon = mIcons[(aWorld == null ? aX : WD.meta(aWorld, aX, aY, aZ)) & 15];
 		return tIcon == null ? null : tIcon.getIcon(0);
 	}
-	// 1:1 оригинала: canSustainPlant почвы через ЦЕНТР WD.canSustainPlant — он несёт таблицу почв 1.7.10 для
-	// TriState.DEFAULT. ⛔ Прежняя копия здесь сворачивала toBoolean(T) («саженец стоит на чём угодно»), а
-	// наследник BlockTreeSaplingAB:76 шёл через центр со старым toBoolean(F) («ни на чём») — его и сносило
-	// с травы первым же тиком (замер gt6flowerprobe, 2026-07-30).
+	// Goes through the shared WD.canSustainPlant center; an earlier copy here collapsed its result to always true, while a
+	// descendant used a stale always-false version instead, knocking saplings off grass on the very first tick.
 	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return WD.canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, Blocks.OAK_SAPLING);}
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return null;}
 	public int getRenderType() {return 1;}
@@ -138,8 +133,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	@Override
 	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (!aWorld.isClientSide() && !WD.oxygen(aWorld, aX, aY, aZ)) {WD.set(aWorld, aX, aY, aZ, Blocks.DEAD_BUSH, 0, 3); return;}
-		// было World.getBlockLightValue(x,y,z) (комбинированный блок+небо свет, recompSrc World.java:864-922) ->
-		// LevelReader.getMaxLocalRawBrightness(BlockPos) [LevelReader.java:163], тот же комбинированный смысл.
+		// neo's getMaxLocalRawBrightness replaces the old combined block+sky light lookup, with the same meaning.
 		if (aWorld.isClientSide() || checkAndDropBlock(aWorld, aX, aY, aZ) || aWorld.getMaxLocalRawBrightness(new BlockPos(aX, aY+1, aZ)) < 9 || aRandom.nextInt(7) != 0) return;
 		tryGrow(aWorld, aX, aY, aZ, aRandom);
 	}
@@ -152,19 +146,15 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 			WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMeta | 8, 2, F);
 			return F;
 		}
-		// 1.7.10 TerrainGen.saplingGrowTree(World,Random,x,y,z) — veto-событие роста дерева — СПОСОБНОСТЬ ЕСТЬ в neo:
-		// ForgeEventFactory.blockGrowFeature(LevelAccessor,RandomSource,BlockPos,@Nullable Holder<ConfiguredFeature>)
-		// (ForgeEventFactory.java:760; тот же путь, что vanilla AbstractTreeGrower.java:26-28 — гейт по Result.DENY,
-		// событие в 1.20.1 не cancellable). GT6 растит императивно (свой grow(),
-		// ConfiguredFeature нет) -> holder=null (@Nullable допускает); интересует только отмена (isCanceled), ровно как
-		// оригинал возвращал allow/veto. RandomSource = aWorld.getRandom() (aRandom тут java.util.Random). Реальный порт.
+		// 1.7.10's tree-growth veto event has a real neo equivalent, ForgeEventFactory.blockGrowFeature, the
+		// same path vanilla's own AbstractTreeGrower uses; GT6 grows imperatively, so only the cancellation result matters.
 		return net.minecraftforge.event.ForgeEventFactory.blockGrowFeature(aWorld, aWorld.getRandom(), new net.minecraft.core.BlockPos(aX, aY, aZ), null).getResult() != net.minecraftforge.eventbus.api.Event.Result.DENY && grow(aWorld, aX, aY, aZ, aMeta, aRandom);
 	}
 	
 	public int getMaxHeight(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, int aMaxTreeHeight) {
 		aMaxTreeHeight--;
 		int rMaxHeight = 0;
-		while (rMaxHeight++ < aMaxTreeHeight) if (aY+rMaxHeight >= WD.topY(aWorld) || !canPlaceTree(aWorld, aX, aY+rMaxHeight, aZ)) return rMaxHeight-1; // BUG-089: было getHeight() (в MC26 = COUNT 384, не верх) — потолок через центр F6-Y-scale
+		while (rMaxHeight++ < aMaxTreeHeight) if (aY+rMaxHeight >= WD.topY(aWorld) || !canPlaceTree(aWorld, aX, aY+rMaxHeight, aZ)) return rMaxHeight-1; // the ceiling now comes from the shared Y-scale center, not getHeight(), which returns the total count, not the top
 		return rMaxHeight;
 	}
 	
@@ -174,19 +164,13 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	
 	public boolean canPlaceTree(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ) {
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
-		// было BlockTallGrass/BlockLeavesBase (1.7.10 vanilla generic-базы) -> TallGrassBlock [TallGrassBlock.java:15,
-		// Blocks.java:707-732 - SHORT_GRASS/FERN оба instanceof TallGrassBlock, тот же класс что раньше нёс оба meta-
-		// варианта единого BlockTallGrass] / LeavesBlock [LeavesBlock.java:29 - абстрактная база всех vanilla-листьев].
+		// neo's TallGrassBlock/LeavesBlock replace the old generic vanilla base classes, covering the same variants through
+		// instanceof.
 		return tBlock == this || tBlock instanceof TallGrassBlock || tBlock instanceof SnowLayerBlock || tBlock instanceof LeavesBlock || canBeReplacedByLeavesOf(tBlock, aWorld, aX, aY, aZ);
 	}
 
-	// F13 functional-adapted: 1.7.10 vanilla Block.canBeReplacedByLeaves(World,x,y,z) — generic overridable-хук; neo Block
-	// такой generic-точки не имеет. Подключено instanceof-диспетчером по ВСЕМ GT6-переопределениям (BlockBase/PrefixBlock/
-	// BlockBaseRail/BlockBaseFlower/MultiTileEntityBlock — полный набор, грепом "canBeReplacedByLeaves" по gregapi/block).
-	// Дефолт — 1:1 vanilla Block:1995-1998 (recompSrc): {@code !func_149730_j()} = «НЕ полный непрозрачный куб»
-	// (снимок isOpaqueCube); neo-канон признака — isSolidRender (тот же, что WD.visOpq:1371). ⛔ Прежний дефолт
-	// был константой F: ВОЗДУХ считался «незаменяемым листьями» → getMaxHeight давал 0 → деревья GT6 не могли
-	// вырасти нигде (замер gt6flowerprobe: мета 8 взведена, grow отказывал; 2026-07-30).
+	// neo's Block has no generic override point for this, so it's wired through an instanceof dispatcher across every
+	// GT6 override; the default checks the same isSolidRender flag as WD.visOpq, matching vanilla's isOpaqueCube.
 	private static boolean canBeReplacedByLeavesOf(Block aBlock, net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ) {
 		if (aBlock instanceof gregapi.block.BlockBase) return ((gregapi.block.BlockBase)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.prefixblock.PrefixBlock) return ((gregapi.block.prefixblock.PrefixBlock)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
@@ -215,10 +199,8 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		return T;
 	}
 	
-	// F10: реальная сигнатура net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не старый шим
-	// (BlockGetter,int,int,int). getPlant — 1:1 канонический паттерн реального BushBlock.getPlant (forge-1201
-	// decompiled net/minecraft/world/level/block/BushBlock.java:42): состояние по позиции, иначе дефолтное.
-	// getPlantMetadata убран — реальный интерфейс его не содержит (мета внутри BlockState).
+	// The real IPlantable signature is (BlockGetter,BlockPos); getPlant follows the real BushBlock.getPlant
+	// pattern (state by position, else default). getPlantMetadata is removed, since the real interface has no such method.
 	@Override public PlantType getPlantType(BlockGetter aWorld, BlockPos aPos) {return PLAINS;}
 	@Override public BlockState getPlant(BlockGetter aWorld, BlockPos aPos) {BlockState tState = aWorld.getBlockState(aPos); return tState.getBlock() != this ? defaultBlockState() : tState;}
 	public boolean func_149851_a(Level aWorld, int aX, int aY, int aZ, boolean aIsRemote) {return T;}

@@ -79,9 +79,8 @@ public class FoodStatDrink extends FoodStat {
 		}
 	}
 
-	// F12/F5: source-Fluid отложен (FluidGT-split, createIntrusiveHolder только на RegisterEvent) → FL.create(...) теперь
-	// возвращает config-holder FluidGT, а не Fluid. Drink хранит лишь ИМЯ (mFluid=String) → берём FluidGT.mName напрямую,
-	// БЕЗ резолва движкового Fluid (не нужен) → отложка не требуется. Перегрузки 1:1 с Fluid-версиями выше.
+	// Fluid registration is deferred (intrusive holders only exist from RegisterEvent onward), so FL.create now
+	// returns a config holder instead of a Fluid; this class only needs the fluid's name, so no resolve is required.
 	public FoodStatDrink(gregapi.fluid.FluidGT aFluid, String aToolTip, int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, int aRadiation, UseAnim aAction, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, int... aPotionEffects) {
 		this(aFluid == null ? null : aFluid.mName, aToolTip, aFoodLevel, aSaturation, aHydration, aTemperature, aTemperatureEffect, aAlcohol, aCaffeine, aDehydration, aSugar, aFat, aRadiation, aAction, aAlwaysEdible, aInvisibleParticles, aIsRotten, aPotionEffects);
 	}

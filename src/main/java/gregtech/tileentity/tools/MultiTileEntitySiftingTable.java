@@ -66,7 +66,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 		super.readFromNBT2(aNBT);
 		if (aNBT.contains(NBT_STATE)) mState = aNBT.getByte(NBT_STATE);
 		if (aNBT.contains(NBT_PROGRESS)) mClickCount = aNBT.getByte(NBT_PROGRESS);
-		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* Don't overwrite the default on a null lookup. */
 	}
 	
 	@Override
@@ -83,8 +83,8 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 		aList.add(Chat.ORANGE   + LH.get(LH.NO_GUI_CLICK_TO_INTERACT)   + " (" + LH.get(LH.FACE_TOP) + ")");
 	}
 	
-	/** Что видно на столе просеивания: вход и ожидаемый выход. Чистый пересчёт из слота — центр зовёт его
-	 *  и из тика, и перед сборкой клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	/** What the sifting table shows: input and expected output. A pure recompute from the slot, called from the tick
+	 *  and before building the client snapshot (see TileEntityBase03TicksAndSync.updateVisualData). */
 	@Override
 	public void updateVisualData() {
 		if (isClientSide()) return;

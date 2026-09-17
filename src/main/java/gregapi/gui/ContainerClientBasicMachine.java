@@ -46,32 +46,15 @@ public class ContainerClientBasicMachine extends ContainerClient {
 		drawString(fontRendererObj, mContainer.mTileEntity.hasCustomInventoryNameGUI()?mContainer.mTileEntity.getInventoryNameGUI():LH.get(mRecipes.mNameInternal), 8,  4, 4210752);
 	}
 
-	/**
-	 * Зона клика «показать рецепты» вокруг стрелки прогресса — взята ДОСЛОВНО ИЗ ОРИГИНАЛА, а не из
-	 * собственной прикидки по отрисовке.
-	 *
-	 * <p>1.7.10, {@code gregapi/NEI_RecipeMap.java:70}:
-	 * {@code transferRects.add(new RecipeTransferRect(new Rectangle(70-sOffsetX, 24-sOffsetY, 36, 18), …))}
-	 * при {@code sOffsetX = 5, sOffsetY = 11} ({@code :66}) — то есть в координатах САМОГО GUI зона равна
-	 * {@code (70, 24)} размером {@code 36×18}. Те же числа после вычета оффсета видны в проверках
-	 * {@code :420}/{@code :425} как {@code Rectangle(65, 13, 36, 18)}.</p>
-	 *
-	 * <p>⚠️ Зона ШИРЕ самой стрелки: стрелка рисуется с {@code x+78} шириной 20
-	 * ({@link #drawGuiContainerBackgroundLayer2}), а кликабельны 36 пикселей начиная с {@code x+70}.
-	 * Первая моя редакция брала границы из отрисовки (78, 20 px) и была уже оригинальной — игрок,
-	 * кликнув по краю зоны, рецептов бы не получил.</p>
-	 */
+	/** Click zone taken verbatim from the original NEI recipe-transfer rectangle, which is wider than the
+	 *  arrow's drawn bounds; using the drawn bounds instead missed clicks at the edge of the real zone. */
 	protected boolean isOverProgressBar(double aMouseX, double aMouseY) {
 		int tX = leftPos + 70, tY = topPos + 24;
 		return aMouseX >= tX && aMouseX < tX + 36 && aMouseY >= tY && aMouseY < tY + 18;
 	}
 
-	/**
-	 * BUG-056 часть Б: клик по СТРЕЛКЕ ПРОГРЕССА открывает список рецептов этой машины — ровно тот жест,
-	 * которым это делалось в 1.7.10 (там его обрабатывал оверлей мода NEI, см.
-	 * {@link ContainerClient#openRecipesForThisGUI}). Клик обрабатывается только если попали в стрелку и
-	 * экран рецептов реально открылся; иначе управление уходит дальше по штатной цепочке.
-	 */
+	/** Clicking the progress arrow opens this machine's recipe list, the same gesture NEI's overlay used to
+	 *  provide in 1.7.10; falls through to normal handling when the click misses the arrow. */
 	@Override
 	public boolean mouseClicked(double aMouseX, double aMouseY, int aButton) {
 		if (isOverProgressBar(aMouseX, aMouseY) && openRecipesForThisGUI()) return true;

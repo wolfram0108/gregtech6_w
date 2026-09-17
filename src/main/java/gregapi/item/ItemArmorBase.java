@@ -56,28 +56,9 @@ import java.util.List;
 
 import static gregapi.data.CS.*;
 
-/**
- * @author Gregorius Techneticies
- *
- * Ветка 1.20.1: возвращена форма оригинала. 1.7.10 звал
- * {@code super(EnumHelper.addArmorMaterial("armor."+name, aDurability, aShields, aEnchantability), …, aSlot)} —
- * то есть СВОЙ материал брони с данными GT6 и наследование от {@code ItemArmor}. В 1.20.1 это доступно
- * дословно: {@code ArmorMaterial} — ИНТЕРФЕЙС ({@code ArmorMaterial.java:6-21}), а не запись 26.x, поэтому
- * {@link Material} ниже — прямой эквивалент {@code EnumHelper.addArmorMaterial}; носитель — {@code ArmorItem}
- * ({@code ArmorItem.java:66}), прямой наследник {@code ItemArmor}.
- *
- * <p>{@code ISpecialArmor} (динамическая защита оригинала) в 1.20.1 движком удалён; защита идёт атрибутами,
- * которые {@code ArmorItem} строит из {@code material.getDefenseForType(type)} ({@code ArmorItem.java:70,74-82}).
- * Массив {@code aShields} GT6 попадает туда без изменения значений — тот же канал, что нёс
- * {@code getArmorDisplay} оригинала ({@code gt6-original ItemArmorBase.java:138}).</p>
- *
- * <p>Прочность абсолютна, как у оригинала ({@code setMaxDamage(aDurability)}): {@code ArmorItem} зовёт
- * {@code Properties.defaultDurability(...)} ({@code ArmorItem.java:67}), а он не перебивает уже заданное
- * {@code durability(aDurability)}. Непочинимость ({@code getIsRepairable} = F,
- * {@code gt6-original :149}) выражена {@code Ingredient.EMPTY} — {@code isValidRepairItem} тогда всегда false
- * ({@code ArmorItem.java:97-99}). Зачаровываемость 0 работает как есть: {@code ArmorItem.getEnchantmentValue}
- * просто отдаёт значение материала ({@code :89-91}), никаких требований «&gt;0» в 1.20.1 нет.</p>
- */
+/** @author Gregorius Techneticies
+ *  1.20.1's ArmorMaterial is an interface, not a data record, so it matches 1.7.10's EnumHelper.addArmorMaterial again;
+ *  ISpecialArmor is gone, so defense flows through attributes ArmorItem builds from material.getDefenseForType. */
 @Optional.InterfaceList(value = {
   @Optional.Interface(iface = "ic2.api.item.IMetalArmor", modid = ModIDs.IC2),
   @Optional.Interface(iface = "forestry.api.apiculture.IArmorApiarist", modid = ModIDs.FR)
@@ -89,14 +70,13 @@ public class ItemArmorBase extends ArmorItem implements IItemUpdatable, IItemGT,
 	public int mEnchantability;
 	public boolean mMetalArmor = F, mBeeArmor = F;
 	public String mArmorTexture, mArmorName;
-	/** 1.7.10 {@code ItemArmor.armorType} (int 0-3) сохранён как есть; типизированный слот — {@code getType()}. */
+	/** 1.7.10's ItemArmor.armorType (int 0-3) is kept as-is; getType() is the typed view of the same slot. */
 	protected final int mArmorSlot;
-	// F3-render: 1.7.10 ItemArmorBase.getIconFromDamage→mIcon (registerIcon "modID:armor/<name>/<slot>") утрачен при порте
-	// (registerIcons/IIconRegister-хук мёртв в neo) → GT6ItemModel.resolveIcon возвращал null → броня-предмет не рисовался.
-	// Восстанавливаем 1:1: ленивое построение того же ResourceLocation (armor/<name>/<slot>) при первом запросе.
+	// The old icon-registration hook died with the port (registerIcons is dead in neo), so armor stopped rendering at all.
+	// Restored 1:1: the same ResourceLocation (armor/<name>/<slot>) is built lazily on first request instead.
 	protected net.minecraft.resources.ResourceLocation mIcon;
 	public net.minecraft.resources.ResourceLocation getIconFromDamage(int aMeta) {
-		if (mIcon == null) mIcon = new net.minecraft.resources.ResourceLocation((mModID + ":armor/" + mArmorName + "/" + mArmorSlot).toLowerCase(java.util.Locale.ROOT)); // sprite-id БЕЗ "textures/" (items.json prefix:"" → textures/items/armor/<name>/<slot>.png)
+		if (mIcon == null) mIcon = new net.minecraft.resources.ResourceLocation((mModID + ":armor/" + mArmorName + "/" + mArmorSlot).toLowerCase(java.util.Locale.ROOT)); // Sprite id has no "textures/" prefix: items.json supplies it, mapping to textures/items/armor/<name>/<slot>.png.
 		return mIcon;
 	}
 
@@ -115,12 +95,11 @@ public class ItemArmorBase extends ArmorItem implements IItemUpdatable, IItemGT,
 		mMetalArmor = aMetalArmor;
 		mBeeArmor = aBeeArmor;
 		LH.add(mName, aEnglish);
-		// F13/F16: golden setCreativeTab(tabCombat) → централизованный CreativeTabsGT.assign + BuildCreativeModeTabContentsEvent.
+		// Centralized through CreativeTabsGT.assign and BuildCreativeModeTabContentsEvent, not a direct setCreativeTab call.
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.COMBAT);
 		if (UT.Code.stringValid(aEnglishTooltip)) LH.add(mTooltip = mName + ".tooltip_main", aEnglishTooltip); else mTooltip = null;
-		// F12-followup (item-split): само-регистрация УБРАНА — конструкция идёт на RegisterEvent через
-		// GT_API.registerItemLazy(name, ()->new ItemArmorBase(...)) на call-site (Item.<init> createIntrusiveHolder требует
-		// разморож. реестр). Рецепт (ST.make(this)+aRecipe) создаёт стеки → отложен на server-start (компоненты привязаны там).
+		// Self-registration is removed: construction now happens on RegisterEvent via GT_API.registerItemLazy, since
+		// Item.<init> needs an unfrozen registry; recipe-stack creation is deferred to server-start for the same reason.
 		if (aRecipe != null && aRecipe.length > 0) {
 			final Object[] fRecipe = aRecipe;
 			gregapi.GT_API.deferItemInit(() -> {
@@ -131,30 +110,24 @@ public class ItemArmorBase extends ArmorItem implements IItemUpdatable, IItemGT,
 		}
 	}
 
-	/**
-	 * Прямой эквивалент {@code EnumHelper.addArmorMaterial("armor."+name, aDurability, aShields, aEnchantability)}
-	 * оригинала: {@code ArmorMaterial} в 1.20.1 — интерфейс, поэтому свой материал объявляется как есть.
-	 * Прочность материала здесь не участвует — оригинал задавал её абсолютно ({@code setMaxDamage}), и это
-	 * делает {@code Properties.durability(aDurability)} в конструкторе.
-	 */
+	/** Direct equivalent of EnumHelper.addArmorMaterial, declared as-is since ArmorMaterial is an interface on 1.20.1.
+	 *  The material's own durability plays no role: durability is set absolutely by Properties.durability in the ctor. */
 	private static final class Material implements ArmorMaterial {
 		private final String mMaterialName;
 		private final int[] mShields;
 		private final int mEnchantability;
 		private Material(String aName, int[] aShields, int aEnchantability) {mMaterialName = aName; mShields = aShields; mEnchantability = aEnchantability;}
 
-		/** aShields[] — индексы 1:1 с собственным aSlot-соглашением GT6 (0=head, 1=chest, 2=legs, 3=boots;
-		 *  см. gregtech/loaders/a/Loader_Tools.java). Порядок сохранён дословно. */
+		/** aShields[] indices are 1:1 with GT6's own slot convention (0=head, 1=chest, 2=legs, 3=boots), kept in that exact order. */
 		@Override public int getDefenseForType(ArmorItem.Type aType) {
 			int tIndex = armorTypeToSlot(aType);
 			return mShields != null && mShields.length > tIndex ? mShields[tIndex] : 0;
 		}
-		/** Не используется: прочность задана абсолютно (см. javadoc класса). Отдаём 1, чтобы
-		 *  {@code defaultDurability} никогда не занижал уже выставленное значение. */
+		/** Unused, since durability is set absolutely (see the class javadoc); returning 1 keeps defaultDurability harmless. */
 		@Override public int getDurabilityForType(ArmorItem.Type aType) {return 1;}
 		@Override public int getEnchantmentValue() {return mEnchantability;}
 		@Override public SoundEvent getEquipSound() {return SoundEvents.ARMOR_EQUIP_GENERIC;}
-		/** Оригинал: {@code getIsRepairable} всегда F. Пустой ингредиент не совпадает ни с чем. */
+		/** The original's getIsRepairable was always false; an empty ingredient matches nothing, giving the same result. */
 		@Override public Ingredient getRepairIngredient() {return Ingredient.EMPTY;}
 		@Override public String getName() {return mMaterialName;}
 		@Override public float getToughness() {return 0.0F;}
@@ -181,7 +154,7 @@ public class ItemArmorBase extends ArmorItem implements IItemUpdatable, IItemGT,
 		return 0;
 	}
 
-	// Движок зовёт appendHoverText (не 1.7.10 addInformation) — мост: GT6-тултип через addInformation.
+	// The engine calls appendHoverText, not 1.7.10's addInformation; this bridges to GT6's own addInformation-based tooltip.
 	@Override @SuppressWarnings({"rawtypes", "unchecked"})
 	public void appendHoverText(ItemStack aStack, Level aWorld, List<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
@@ -191,7 +164,7 @@ public class ItemArmorBase extends ArmorItem implements IItemUpdatable, IItemGT,
 		for (Object o : tList) if (o != null) aBuilder.add(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
 	}
 
-	/** 1:1 с оригиналом ({@code gt6-original ItemArmorBase.java:136}) — тот же канал Forge, та же строка. */
+	/** 1:1 with the original: the same Forge channel, returning the same string. */
 	@Override public String getArmorTexture(ItemStack aStack, Entity aEntity, EquipmentSlot aSlot, String aType) {return mArmorTexture;}
 
 	@SuppressWarnings("unchecked")
@@ -214,11 +187,8 @@ public class ItemArmorBase extends ArmorItem implements IItemUpdatable, IItemGT,
 		return aStack;
 	}
 
-	/**
-	 * F13 (РЕАЛИЗОВАНО): 1.7.10 {@code BehaviorProjectileDispense} с {@code getProjectileEntity→null} был dead-кодом (обычный
-	 * dispense). neo {@code ProjectileDispenseBehavior} требует реального {@code ProjectileItem} (этот Item им не является) →
-	 * корректно сведено к {@code DefaultDispenseItemBehavior} = прежнее фактическое поведение (null-projectile == обычный dispense).
-	 */
+	/** The 1.7.10 dispense behavior with a null projectile entity was already dead code (plain dispense); neo's
+	 *  ProjectileDispenseBehavior requires a real ProjectileItem, so this correctly reduces to DefaultDispenseItemBehavior. */
 	public static class GT_Item_Dispense extends DefaultDispenseItemBehavior {
 		@Override
 		protected ItemStack execute(BlockSource aSource, ItemStack aStack) {
@@ -226,17 +196,15 @@ public class ItemArmorBase extends ArmorItem implements IItemUpdatable, IItemGT,
 		}
 	}
 
-	// F13/F10: IMetalArmor/IArmorApiarist — F10-compat-зеркала (compat-mirror, IC2/Forestry не загружены). Методы функциональны
-	// (возвращают mMetalArmor/mBeeArmor); НЕ @Override пока интерфейсы-зеркала пусты (реальная IC2/Forestry-интеграция позже). Не заглушки.
-	// (нечего переопределять), тела 1:1 сохранены для реальной IC2/Forestry-интеграции позже.
+	// IMetalArmor/IArmorApiarist are compat-mirror interfaces (IC2/Forestry not loaded); the methods stay
+	// functional but without @Override while the mirror interfaces are empty, ready for real integration later.
 	public boolean isMetalArmor(ItemStack aStack, Player aPlayer) {return mMetalArmor;}
 	public boolean protectEntity(LivingEntity aPlayer, ItemStack aArmor, String aCause, boolean doProtect) {return mBeeArmor;}
 	public boolean protectPlayer(Player aPlayer, ItemStack aArmor, String aCause, boolean doProtect) {return mBeeArmor;}
 	public String toString() {return mName;}
-	/** F13: 1.7.10 getUnlocalizedName() override → neo Item.getDescriptionId() final (не переопределяем); оставлен доменным
-	 *  методом (mName), используется классом внутренне для GT6-именования. Функционален, не заглушка. */
+	/** neo's Item.getDescriptionId() is final and can't be overridden, so this stays a domain method GT6 uses internally. */
 	public final String getUnlocalizedName() {return mName;}
-	// LOCALIZATION-display: neo getName(ItemStack) → GT6-имя брони (LH.get(mName)); иначе raw-ключ из vanilla-lang.
+	// getName(ItemStack) resolves the GT6 armor name via the language handler; otherwise falls back to the raw lang key.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = gregapi.lang.LanguageHandler.get(mName); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 	public String getUnlocalizedName(ItemStack aStack) {return mName;}
 	public boolean isItemStackUsable(ItemStack aStack) {return T;}
@@ -246,7 +214,6 @@ public class ItemArmorBase extends ArmorItem implements IItemUpdatable, IItemGT,
 	@Override public void updateItemStack(ItemStack aStack) {isItemStackUsable(aStack);}
 	@Override public void updateItemStack(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {updateItemStack(aStack);}
 
-	/** 1:1: было {@code onCreated(ItemStack,World,EntityPlayer)}; в 1.20.1 сигнатура вернулась дословно —
-	 *  {@code onCraftedBy(ItemStack, Level, Player)} ({@code Item.java:251}). */
+	/** 1:1: the old onCreated(ItemStack,World,EntityPlayer) is onCraftedBy(ItemStack,Level,Player) again on 1.20.1, unchanged. */
 	@Override public void onCraftedBy(ItemStack aStack, Level aWorld, Player aPlayer) {isItemStackUsable(aStack);}
 }

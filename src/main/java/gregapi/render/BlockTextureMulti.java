@@ -27,16 +27,9 @@ import static gregapi.data.CS.*;
 
 import net.minecraft.world.level.block.Block;
 
-/**
- * @author Gregorius Techneticies
- *
- * Lets Multiple ITextures Render overlay over each other.
- *
- * I should have done this much earlier...
- *
- * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): {@code RenderBlocks} удалён в 26.1.2 — параметр заменён
- * нейтральным держателем {@code Object aRenderer} (см. {@link ITexture}).
- */
+/** @author Gregorius Techneticies
+ *  Lets multiple ITextures render overlay over each other.
+ *  RenderBlocks was removed in 26.1.2; the parameter became a neutral Object aRenderer holder (see {@link ITexture}). */
 public class BlockTextureMulti implements ITexture {
 	private final ITexture[] mTextures;
 	

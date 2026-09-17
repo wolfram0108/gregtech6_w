@@ -99,8 +99,8 @@ public interface IItemBumbleBee {
 	
 	public static class Util {
 		public static CompoundTag getBumbleTag(ItemStack aBumbleBee) {
-			// F8: getOrCreate возвращает detached-копию (иммутабельный CustomData); мутацию setTag
-			// нужно закоммитить явным UT.NBT.set, иначе "gt.bumble" не долетит до стека (см. ItemNBT.java).
+			// getOrCreate returns a detached copy of the immutable CustomData; the mutation must be committed back
+			// explicitly with UT.NBT.set or the tag never reaches the stack.
 			CompoundTag aNBT = UT.NBT.getOrCreate(aBumbleBee), rBumbleTag = aNBT.getCompound("gt.bumble");
 			if (rBumbleTag == null || rBumbleTag.isEmpty()) rBumbleTag = getBumbleGenes(RNGSUS);
 			aNBT.put("gt.bumble", rBumbleTag);
@@ -109,7 +109,7 @@ public interface IItemBumbleBee {
 		}
 
 		public static ItemStack setBumbleTag(ItemStack aBumbleBee, CompoundTag aBumbleTag) {
-			// F8: захват detached-тега, мутация, явный commit — иначе setTag потеряется (см. ItemNBT.java).
+			// The detached tag is captured, mutated, then committed explicitly, or the setTag change would be lost.
 			CompoundTag aNBT = UT.NBT.getOrCreate(aBumbleBee);
 			aNBT.put("gt.bumble", aBumbleTag);
 			UT.NBT.set(aBumbleBee, aNBT);

@@ -68,11 +68,8 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	
 	@Override
 	public void onRegistrationFirst(MultiTileEntityRegistry aRegistry, short aID) {
-		// F12 SUPERSEDED (не заглушка): было GameRegistry.registerTileEntity(getClass(), getTileEntityName()) — регистрация
-		// КЛАССА тайла под именем. MultiTileEntity — динамическая система (32000 вариантов на класс), не сводимая к
-		// neo-модели «тип-на-класс»; ВСЯ иерархия обслуживается ОДНИМ generic BlockEntityType MTE_TYPE (GT_API.java:195,
-		// TileEntityBase01Root::createType, RegisterEvent<BlockEntityType>). Per-MTE регистрация здесь не нужна —
-		// parity mte.csv=100% доказывает: все MTE регистрируются/работают через generic-тип (адаптер построен, не отложен).
+		// Was GameRegistry.registerTileEntity(getClass(), name); MultiTileEntity is a dynamic system with 32000
+		// variants per class, served by one generic MTE_TYPE instead, so per-class registration here is unnecessary.
 	}
 	
 	@Override
@@ -113,11 +110,10 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 			}
 		}
 		// read the Coords if it has them.
-		// F8: BlockPos на BlockEntity в 26.1.2 неизменяем и уже верно выставлен движком до
-		// вызова loadAdditional (см. комментарий в TileEntityBase01Root.readFromNBT) -
-		// назначить x/y/z из NBT здесь невозможно и не нужно.
+		// neo's BlockPos is immutable and already set correctly by the engine before loadAdditional runs, so assigning x/y/z
+		// from NBT here is neither possible nor needed.
 		// make sure Y is not negative because this causes crashes.
-		if (WD.tileYInvalid(getLevel(), getBlockPos().getY())) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this); // было Y<0 — порог = дно мира getMinY() (бедрок MC26 Y=−64 легитимен; notick-MTE: камни/палки)
+		if (WD.tileYInvalid(getLevel(), getBlockPos().getY())) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this); // was Y<0; threshold is now the world floor getMinY() (bedrock at Y=-64 is legitimate; notick-MTE: stones/sticks)
 		// read the custom Name.
 		if (aNBT.contains("display")) mCustomName = aNBT.getCompound("display").getString("Name");
 		// And now your custom readFromNBT.
@@ -126,8 +122,7 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	
 	public void readFromNBT2(CompoundTag aNBT) {/**/}
 
-	/** F6-дедик: личность в клиентский пакет чанка (разбор — {@code TileEntityBase01Root.getUpdateTag}). Вторая
-	 *  иерархия MTE (notick) несёт те же два поля и отдаёт их тем же каналом — приём один на обе, без второй адаптации. */
+	/** The non-ticking MTE hierarchy carries the same two identity fields through the same channel as the ticking one. */
 	@Override protected void writeMTEIdentity(CompoundTag aNBT) {
 		aNBT.putShort(NBT_MTE_ID, mMTEID);
 		aNBT.putShort(NBT_MTE_REG, mMTERegistry);

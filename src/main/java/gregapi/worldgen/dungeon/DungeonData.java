@@ -55,27 +55,14 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-// F6-worldgen (данжи per-chunk, снятие Level-пленника): в 1.7.10 DungeonData extends WorldAndCoords (носитель
-// полного World — populate-фаза это позволяла). В neo данж-код исполняется в Feature-фазе, где мир = WorldGenRegion,
-// а разворот в ServerLevel (прежний super(aWorld.getLevel())) давал реентрантный дедлок getChunk().join (см.
-// WorldgenDungeonGT.generate). WorldAndCoords — gameplay-база (BlockEntity и пр.), её тип менять нельзя → DungeonData
-// (единственный центр данж-подсистемы: ВСЕ чтения/записи комнат идут через него — аудит: прямых WD.set/placeBlock
-// мимо aData в комнатах ноль) объявляет носитель сам: mWorld = WorldGenLevel-регион. WD-центры и IBlockPlacable
-// принимают LevelAccessor — комнаты не тронуты.
-//
-// Маска записи mWrite (механизм per-chunk «переигрывание»): движок разрешает фиче писать только ±1 чанк от
-// генерируемого (neo ChunkPyramid.java:33 blockStateWriteRadius(1), WorldGenRegion.ensureCanWrite:225), а данж —
-// до 9×9 чанков. Каждый чанк области ПЕРЕИГРЫВАЕТ весь данж детерминированно (общий Random от якоря — см.
-// WorldgenDungeonGT), но ФИЗИЧЕСКИ пишет только клетку своего чанка: mWrite=T только у неё. Гейт стоит в приватных
-// низах place/rotate НИЖЕ вычисления аргументов — потребление Random (next() в аргументах) идентично в пишущем и
-// переигрывающем режимах, иначе клетки разошлись бы. Подавленная запись возвращает T («успех») — возвраты set
-// нигде не ветвят поток комнат (аудит architecture/dungeons.md).
+// Dungeon code runs in the Feature phase on a WorldGenRegion, not the full World 1.7.10 had, and unwrapping
+// to ServerLevel deadlocked; the mWrite mask lets every chunk replay the dungeon while writing only its own cell.
 public class DungeonData {
 	public final WorldGenLevel mWorld;
 	public final int mX, mY, mZ;
-	/** Владение клеткой: клетка совпадает с генерируемым чанком (гейт generateVein/light-координат). */
+	/** Cell ownership: matches the chunk currently being generated, gating generateVein and light coordinates. */
 	public final boolean mWrite;
-	/** Координатный гейт записи (см. низы place/rotate): чанк, который сейчас генерируется. */
+	/** Coordinate write gate (see the internals of place/rotate): the chunk currently being generated. */
 	public final int mChunkX, mChunkZ;
 	public final MultiTileEntityRegistry mMTERegistryGT;
 	public final BlockStones mPrimary, mSecondary;
@@ -112,13 +99,8 @@ public class DungeonData {
 		mRandom = aRandom;
 	}
 	
-	// Низы записи (ЕДИНСТВЕННЫЕ точки, где данж-подсистема физически трогает мир) — КООРДИНАТНЫЙ гейт маски:
-	// позицию пишет ТОЛЬКО тот чанк, которому она принадлежит (не «автор»-клетка!). Причина: комнаты пишут и в
-	// СОСЕДНИЕ клетки (FarmMobs строит башни-платформы ±16 в клетках-нулях и коридорах, коридор вырезает себя в
-	// башне ПОЗЖЕ — порядок «комнаты → коридоры» у Грега значим). Гейт по автору дал бы гонку порядка генерации
-	// чанков (ферма, сгенерированная позже коридора, затирала бы его проход); координатный гейт воспроизводит
-	// ПОЛНЫЙ порядок записей 1.7.10 внутри каждого чанка. Вызывать ТОЛЬКО с уже вычисленными аргументами: next()
-	// потребляется в выражениях аргументов вызывателя, поэтому Random-цепочка идентична во всех переигрываниях.
+	// The only points where the dungeon touches the world, gated by which chunk a position belongs to, not which
+	// room authored it, since rooms write into neighboring cells too and an author-based gate would race generation order.
 	private boolean owned(int aX, int aZ) {return (aX >> 4) == mChunkX && (aZ >> 4) == mChunkZ;}
 	private boolean place(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, short aMeta, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
 		return !owned(aX, aZ) || aBlock.placeBlock(mWorld, aX, aY, aZ, aSide, aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
@@ -130,7 +112,7 @@ public class DungeonData {
 		return !owned(aX, aZ) || WD.set(mWorld, aX, aY, aZ, aState, aFlags);
 	}
 	private void rotate(int aX, int aY, int aZ) {
-		if (owned(aX, aZ)) WD.rotateBlock(mWorld, aX, aY, aZ, FORGE_DIR[SIDE_Y_POS]); // F-tool-rotation центр (блок уже поставлен низом place выше)
+		if (owned(aX, aZ)) WD.rotateBlock(mWorld, aX, aY, aZ, FORGE_DIR[SIDE_Y_POS]); // The shared tool-rotation placement center (the block is already placed by the write above).
 	}
 
 	public int next(int aNumber) {return mRandom.nextInt(aNumber);}
@@ -201,21 +183,16 @@ public class DungeonData {
 	public boolean glassglow  (int aX, int aY, int aZ) {return set(aX, aY, aZ, BlocksGT.GlowGlass, mColor, 2);}
 	public boolean colored    (int aX, int aY, int aZ) {return set(aX, aY, aZ, BlocksGT.Concrete, mColor, 2);}
 	
-	// F6-worldgen (лампы данжа ГОРЯТ, заход #39): 1.7.10 ставил при aGenerateRedstoneBrick!=0 ОТДЕЛЬНЫЙ блок
-	// Blocks.lit_redstone_lamp (ориг. DungeonData.java:160/166), а лампы «без своего кирпича» (ветка 0 — коридоры,
-	// узором смежные с RSTBR) зажигал пост-цикл нотификаций WorldgenDungeonGT (в neo снят: Level-каст + LIGHT после
-	// FEATURES). Движок 1.13+ разложил lit-блок в свойство REDSTONE_LAMP[LIT] — числовой метой не выразить → стейт-канал
-	// WD.set(state). Итоговое состояние мира 1.7.10 = обе ветки горят; стабильность держит RSTBR-мост сигнала
-	// (BlockStones.getSignal:754 = 15, 1:1 ориг. :733) — лампа без сигнала штатно потухнет при первом апдейте (тот же
-	// self-healing, что в 1.7.10).
+	// 1.7.10 lit a lamp via a separate block plus a post-generation notification pass for corridor lamps (removed
+	// in neo); the lit state is now a BlockState property set via the state channel, self-healing off on first update.
 	public boolean lamp(int aX, int aY, int aZ, Block aPrimary, Block aSecondary, int aGenerateRedstoneBrick) {
-		if (mWrite) mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ)); // маска: свет чинит только клетка-владелец
+		if (mWrite) mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ)); // mask: only the owning cell repairs light
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
 		return place(Blocks.REDSTONE_LAMP.defaultBlockState().setValue(net.minecraft.world.level.block.RedstoneLampBlock.LIT, Boolean.TRUE), mX+aX, mY+aY, mZ+aZ, 2);
 	}
 
 	public boolean lamp(int aX, int aY, int aZ, int aGenerateRedstoneBrick) {
-		if (mWrite) mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ)); // маска: свет чинит только клетка-владелец
+		if (mWrite) mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ)); // mask: only the owning cell repairs light
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
 		return place(Blocks.REDSTONE_LAMP.defaultBlockState().setValue(net.minecraft.world.level.block.RedstoneLampBlock.LIT, Boolean.TRUE), mX+aX, mY+aY, mZ+aZ, 2);
 	}
@@ -381,11 +358,8 @@ public class DungeonData {
 	
 	public boolean pot(int aX, int aY, int aZ) {
 		int tIndex = next(BlocksGT.POT_FLOWER_TILES.length);
-		// F16 flower-pot ЗАКРЫТ (BUG-039 v4): 1.7.10 наполнял горшок через TileEntityFlowerPot-BE — в neo наполненный
-		// горшок = POTTED_*-блок; выбор — центр BlocksGT.potted (контент POT_FLOWER_TILES/METAS 1:1 оригинала).
-		// FORCED-ADAPTATION: ветки GT6-цветов оригинала (50%: FlowersA/FlowersB по next1in2) требуют СВОИХ
-		// potted-блоков + моделей (несоразмерно декоративной фиче; регистрация N блоков ради горшков в данжах) —
-		// деградация принята: ванильное растение того же ролла; наполненность горшков данжа 1:1, видовой состав сужен.
+		// A filled flower pot is a POTTED_* block in neo, not a BE, chosen via the central BlocksGT.potted; the
+		// original's GT6-specific flower species narrow to a vanilla plant of the same roll, since dedicating models was too much.
 		Block tPotted = BlocksGT.potted(BlocksGT.POT_FLOWER_TILES[tIndex], BlocksGT.POT_FLOWER_METAS[tIndex]);
 		set(aX, aY, aZ, tPotted == null ? Blocks.FLOWER_POT : tPotted, 0, 2);
 		return T;
@@ -395,7 +369,7 @@ public class DungeonData {
 		return pot(aX, aY, aZ);
 	}
 	
-	/** Стейт-канал (зеркало WD.set(state) — для состояний, не выразимых метой: равновесие поршней двери и т.п.). */
+	/** State channel, mirroring WD.set(state) for states not expressible as meta (e.g. a door's piston balance). */
 	public boolean set(int aX, int aY, int aZ, net.minecraft.world.level.block.state.BlockState aState, int aFlags) {
 		return place(aState, mX+aX, mY+aY, mZ+aZ, aFlags);
 	}

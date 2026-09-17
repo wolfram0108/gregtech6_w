@@ -71,7 +71,7 @@ public class MultiTileEntityFluidCapNozzle extends TileEntityBase11AttachmentSma
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
-			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15-граница: движок EMPTY -> GT6 null (тело 1:1 рассуждает null-семантикой)
+			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // Engine boundary: engine EMPTY maps to GT6 null here; the body below reasons in null semantics.
 			if (aStack != null) {
 				FluidStack tFluid = FL.getFluid(ST.amount(1, aStack), T);
 				if (FL.gas(tFluid, F) && tFluid.getAmount() > 0 && (mAcidProof || !FL.acid(tFluid))) {
@@ -84,8 +84,8 @@ public class MultiTileEntityFluidCapNozzle extends TileEntityBase11AttachmentSma
 							ST.give(aPlayer, ST.container(ST.amount(1, aStack), T), T);
 							return T;
 						}
-						// F5/BUG-045 (1:1): восстановленный IFluidContainerItem.drain(ItemStack,...) (compat-mirror; оригинал :83-87);
-						// прежний FluidUtil.getFluidHandler-путь был мёртв (capability для GT6-предметов не регистрируется).
+						// Restores IFluidContainerItem.drain(ItemStack,...) (compat mirror; matches the original).
+						// The previous FluidUtil.getFluidHandler path was dead since GT6 items don't register that capability.
 						if (aStack.getItem() instanceof IFluidContainerItem && aStack.getCount() == 1) {
 							UT.Sounds.send(SFX.MC_FIZZ, 1.0F, 2.0F, this, F);
 							((IFluidContainerItem)aStack.getItem()).drain(aStack, ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).capnozzleFill(tDelegator.mSideOfTileEntity, tFluid, T), T);

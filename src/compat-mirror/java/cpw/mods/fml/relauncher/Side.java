@@ -35,9 +35,8 @@
 
 package cpw.mods.fml.relauncher;
 
-/** F10 ЗЕРКАЛО (compile-only) — legacy Forge/FML 1.7.10 (пакет cpw.mods.fml не существует
- *  на neo-classpath). Только используемое GregTech6 (FMLCommonHandler.getEffectiveSide().
- *  isServer()/isClient()). См. compat-mirror/README.md. */
+/** Compile-only mirror of legacy Forge/FML 1.7.10; the cpw.mods.fml package does not exist on
+ *  the neo classpath, used only via FMLCommonHandler.getEffectiveSide(). */
 public enum Side {
 	CLIENT, SERVER;
 

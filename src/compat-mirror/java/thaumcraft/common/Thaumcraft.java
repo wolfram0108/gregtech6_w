@@ -40,9 +40,8 @@ import java.util.Map;
 
 import thaumcraft.api.aspects.AspectList;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только объявления, используемые GregTech6
- *  (CompatTC.validate: Thaumcraft.proxy.getPlayerKnowledge().aspectsDiscovered.values()).
- *  См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only the chain CompatTC.validate reads,
+ *  proxy.getPlayerKnowledge().aspectsDiscovered. */
 public class Thaumcraft {
 	public static CommonProxy proxy = new CommonProxy();
 

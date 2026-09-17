@@ -59,7 +59,8 @@ public class WorldgenOcean extends WorldgenObject {
 		boolean temp = T;
 		for (String tName : aBiomeNames) if (BIOMES_OCEAN.contains(tName)) {temp = F; break;}
 		if (temp) return F;
-		// F6-Y-scale: старт скана = реальная поверхность воды (MC26 море getSeaLevel()=63, GT6-дефолт waterLevel=62 → иначе верхний слой не замещался); нижняя граница minY (был жёсткий 0); индекс секции getSectionIndex (getSections()[0]=мин-секция при min-Y!=0), НЕ tY>>4 (эталон WorldgenStoneLayers d6dc0f2d).
+		// Scan starts at the real water surface (MC26 sea level 63 vs. GT6's default 62) and stops at the true floor minY.
+		// Section index comes from getSectionIndex, not tY>>4 (same fix as WorldgenStoneLayers).
 		int tHeight = Math.max(WD.waterLevel(aWorld, mHeight), aWorld.getSeaLevel());
 		final LevelChunkSection[] tStorages = aChunk.getSections();
 		final int tMinY = WD.minY(aWorld);
@@ -75,9 +76,8 @@ public class WorldgenOcean extends WorldgenObject {
 				
 				if (tPlacedNone) {
 					tPlacedNone = F;
-					// F5 surface-B: собственное worldgen-плечо льда СНЯТО (как у River) — Ocean теперь LiquidBlock,
-					// поверхность frozen-ocean замораживает ванильная SnowAndFreezeFeature:34 (TOP_LAYER_MODIFICATION,
-					// после этого прохода) через Biome.shouldFreeze:161. Источник льда один, ванильный (корень BUG-066).
+					// Ocean's own ice-generation shoulder is removed (like River's): Ocean is now a LiquidBlock, and vanilla's
+					// SnowAndFreezeFeature freezes the frozen-ocean surface itself, after this pass, via Biome.shouldFreeze.
 					BlockOcean.UPDATE_TICK = (aBiomeNames.size() > 1);
 					BlockOcean.PLACEMENT_ALLOWED = T;
 					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.Ocean, 0, 0)) {
@@ -86,8 +86,8 @@ public class WorldgenOcean extends WorldgenObject {
 						return F;
 					}
 					BlockOcean.PLACEMENT_ALLOWED = F;
-					// Стартовый тик 1:1 onBlockAdded Ocean (гейт UPDATE_TICK: чистый океан-чанк не тикает —
-					// оригинальная оптимизация); см. WorldgenSwamp (neo прото-чанк без колбэков).
+					// Starting tick matches the original 1:1 (onBlockAdded Ocean), gated by UPDATE_TICK: a pure ocean chunk
+					// doesn't tick at all, the original optimization; see WorldgenSwamp (neo proto-chunk has no callbacks).
 					if (BlockOcean.UPDATE_TICK) aWorld.scheduleTick(new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ), BlocksGT.Ocean, 10+RNGSUS.nextInt(90));
 				} else {
 					tStorage.setBlockState(tX, tY & 15, tZ, BlocksGT.Ocean.defaultBlockState());

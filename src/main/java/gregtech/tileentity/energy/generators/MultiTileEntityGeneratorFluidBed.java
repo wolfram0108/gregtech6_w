@@ -66,7 +66,7 @@ import net.minecraftforge.fluids.IFluidTank;
 /**
  * @author Gregorius Techneticies
  */
-// ADAPT-005: + IMTE_GetLightValue — горящий бокс светит как ванильная печь (конфиг machines/burning_box_light_value, 0=1:1)
+// Adds IMTE_GetLightValue: a burning box glows like a vanilla furnace (config burning_box_light_value, 0=original).
 public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSingle implements IFluidHandler, ITileEntityTapAccessible, ITileEntityFunnelAccessible, ITileEntityEnergy, ITileEntityRunningActively, IMTE_GetCollisionBoundingBoxFromPool, IMTE_OnEntityCollidedWithBlock, gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetLightValue {
 	private static int FLAME_RANGE = 2;
 	
@@ -86,8 +86,8 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 		mBurning = aNBT.getBoolean(NBT_ACTIVE);
 		mOutput1 = ST.load(aNBT, NBT_INV_OUT + ".1");
 		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
-		// F16 MTE-canonical-init: RECIPE_MAPS.get может вернуть null (карта ещё не зарегистрирована при построении
-		// канонического инстанса на server-start) — не перезатираем дефолт mRecipes (FM.FluidBed), иначе NPE на :87.
+		// RECIPE_MAPS.get can return null if the map isn't registered yet when the canonical instance is built at server start;
+		// the default mRecipes (FM.FluidBed) is kept instead of overwritten, avoiding an NPE.
 		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMap = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP)); if (tMap != null) mRecipes = tMap;}
 		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
 		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
@@ -165,7 +165,7 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aSide != mFacing) return F;
 		if (isServerSide() && !mBurning) {
-			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15-граница: движок EMPTY -> GT6 null (тело 1:1 рассуждает null-семантикой)
+			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // Engine boundary: engine EMPTY maps to GT6 null here; the body below reasons in null semantics.
 			if (aStack == null) {
 				if (slotHas(1)) {
 					aPlayer.getInventory().setItem(aPlayer.getInventory().selected, slot(1));
@@ -180,7 +180,7 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 			} else if (!slotHas(0)) {
 				if (canInsertItem2(0, aStack, SIDE_INSIDE)) {
 					slot(0, aStack);
-					aPlayer.getInventory().setItem(aPlayer.getInventory().selected, ST.nn(NI)); // F15-граница: GT6 null -> движок EMPTY (setItem(null) на NonNullList кидает NPE, глотался catch(Throwable) -> печь и рука делили один ItemStack = BUG-046)
+					aPlayer.getInventory().setItem(aPlayer.getInventory().selected, ST.nn(NI)); // Engine boundary: GT6 null maps to engine EMPTY; setItem(null) on a NonNullList threw, once swallowed silently.
 					return T;
 				}
 			} else if (ST.equal(aStack, slot(0))) {
@@ -219,10 +219,10 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 	}
 	
 	@Override public boolean onTickCheck(long aTimer) {return mBurning != oBurning || super.onTickCheck(aTimer);}
-	@Override public void onTickResetChecks(long aTimer, boolean aIsServerSide) {super.onTickResetChecks(aTimer, aIsServerSide); if (oBurning != mBurning) updateLightValue(); oBurning = mBurning;} // ADAPT-005: пересчёт света (сервер)
-	@Override public void setVisualData(byte aData) {boolean tBurning = ((aData & 1) != 0); if (tBurning != mBurning) {mBurning = tBurning; updateLightValue();} else mBurning = tBurning;} // ADAPT-005: пересчёт света (клиент)
+	@Override public void onTickResetChecks(long aTimer, boolean aIsServerSide) {super.onTickResetChecks(aTimer, aIsServerSide); if (oBurning != mBurning) updateLightValue(); oBurning = mBurning;} // Recalculates light on the server when the burning state changes.
+	@Override public void setVisualData(byte aData) {boolean tBurning = ((aData & 1) != 0); if (tBurning != mBurning) {mBurning = tBurning; updateLightValue();} else mBurning = tBurning;} // Recalculates light on the client.
 
-	// ADAPT-005 (нововведение по запросу игрока, ADAPTATIONS.md): в 1.7.10 горящий бокс света НЕ давал; конфиг 0 = 1:1
+	// In 1.7.10 the burning box gave no light; config default 0 keeps that behavior unless the player changes it.
 	@Override public int getLightValue() {return mBurning ? BURNING_BOX_LIGHT_VALUE : 0;}
 	
 	@Override public byte getVisualData() {return (byte)(mBurning?1:0);}
@@ -257,7 +257,7 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 		return mTank.fill(aFluid, aDoFill);
 	}
 	
-	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {byte tF = mFacing /* BUG-074: компенсация item-facing перенесена в центр — MultiTileEntityBlockInternal.passRenderingToObject */; return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACING_ROTATIONS[tF][aSide]], mRGBa), BlockTextureDefault.get((mBurning?sOverlaysActive:sOverlays)[FACING_ROTATIONS[tF][aSide]])): null;}
+	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {byte tF = mFacing /* Item-facing compensation now lives in the center, MultiTileEntityBlockInternal.passRenderingToObject. */; return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACING_ROTATIONS[tF][aSide]], mRGBa), BlockTextureDefault.get((mBurning?sOverlaysActive:sOverlays)[FACING_ROTATIONS[tF][aSide]])): null;}
 	
 	@Override public void onEntityCollidedWithBlock(Entity aEntity) {if (mBurning) UT.Entities.applyHeatDamage(aEntity, Math.min(10.0F, mRate / 10.0F));}
 	@Override public AABB getCollisionBoundingBoxFromPool() {return box(0, 0, 0, 1, 0.875, 1);}

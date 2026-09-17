@@ -37,8 +37,8 @@ package twilightforest.item;
 
 import net.minecraft.world.item.Item;
 
-/** TwilightForest-mirror (compile-only; настоящий TF инициализирует поля в рантайме,
- *  доступ гейтится {@code MD.TF.mLoaded}). */
+/** Compile-only Twilight Forest mirror; the real mod initializes these fields at runtime,
+ *  reached only when MD.TF.mLoaded is true. */
 public class TFItems {
 	public static Item crumbleHorn, peacockFan, oreMagnet, giantPick;
 }

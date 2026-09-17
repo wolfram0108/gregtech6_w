@@ -33,9 +33,8 @@
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Пакет gt6mirror.minecraftforge.common (не net.minecraftforge.common): boot-краш ResolutionException —
-// настоящий модуль forge 1.20.1 и модуль gregtech6 экспортировали бы один и тот же пакет net.minecraftforge.*
-// (split-package), JPMS такое не резолвит; тип живой (используется рантаймом), поэтому переупакован, а не удалён.
+// Package is gt6mirror.minecraftforge.common, not net.minecraftforge.common: the real forge module and
+// gregtech6 would otherwise export the same package (JPMS split); repackaged, not deleted, since runtime uses it.
 package gt6mirror.minecraftforge.common;
 
 import java.util.ArrayList;
@@ -62,48 +61,8 @@ import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
-/** 1.7.10 {@code net.minecraftforge.common.ChestGenHooks} — реестр chest-лута. ЕДИНСТВЕННЫЙ центр адаптации
- *  F-loot (BUG-039): neo сделал лут data-driven (JSON LootTable), 1.7.10-механика «единый взвешенный список
- *  категории» воспроизводится здесь и только здесь; контент (Loader_Loot и потребители getOneItem) — verbatim.
- *
- *  <p>Контракт полей/методов — ТОЧНО 1.7.10-Forge ({@code chestInfo}/{@code contents}/{@code countMin}/{@code countMax}):
- *  на эти имена рефлексией завязан GT6-код ({@code ChestGenHooksChestReplacer} и «MineTweaker does Reflection
- *  the wrong way» — Loader_Loot). Формулы getCount/generateStacks/getOneItem — 1:1 из референса
- *  (gt6-oracle-dumper recompSrc ChestGenHooks.java:109-243).
- *
- *  <p>Два рантайм-пути:
- *  <ul><li><b>GT6-категории (gt.*)</b> — содержимое целиком в {@code contents}: getOneItem/getItems/getCount —
- *  формулы 1:1, никакого neo-контекста не нужно (мешки Bag_Loot_*, книги, Unboxinator, ST.generateLoot).</li>
- *  <li><b>Ванильные категории</b> — vanilla-часть живёт в data-driven таблице движка; GT-добавки из
- *  {@code contents} СОБИРАЮТСЯ в СТОЯЛЫЙ (никогда не привязанный к таблице) {@link LootPool} с точным
- *  1.7.10-распределением (см. {@link #buildPool}) и доставляются {@code IGlobalLootModifier}-центром
- *  {@code gregapi.loot.GT6ChestLootModifier} (единственный вызыватель buildPool); getOneItem семплирует
- *  итоговую таблицу (vanilla+GT) на живом сервере.</li></ul>
- *
- *  <p>Тайминг (задача A1, workspace/tasks/consolidation/OPEN-ITEMS.md): Forge 1.20.1 замораживает КАЖДУЮ
- *  {@code LootTable} сразу после посева {@code LootTableLoadEvent}, СИНХРОННО, в том же проходе загрузки
- *  серверных ресурсов ({@code ForgeHooks.readLootTable} → {@code loadLootTable} → {@code ret.freeze()},
- *  forge-1201-decompiled {@code ForgeHooks.java:886-890}) — окна между «событие отстреляло» и «таблица
- *  заморожена» НЕТ вообще, ни на первой загрузке, ни на любой последующей. GT6 data-init (буфер {@code
- *  contents}) наполняется СТРОГО позже — на {@code LevelEvent.Load} ({@code GT_API.onLevelLoadEarlyItemInit},
- *  уже ПОСЛЕ того, как ресурсы сервера загружены и заморожены). Прежняя пара каналов
- *  (LootTableLoadEvent-слушатель + догоняющая инъекция из onLevelLoadEarlyItemInit) поэтому НИКОГДА не
- *  успевала: первый видел пустой буфер, второй — уже мёртвую таблицу (10 {@code RuntimeException
- *  "Attempted to modify LootTable after being finalized!"} на КАЖДОМ старте, GT-лут в 10 ванильных
- *  категориях не попадал никуда). Штатный канал Forge для добавления лута в ЧУЖУЮ (в т.ч. уже
- *  замороженную) таблицу — {@code IGlobalLootModifier} ({@code ForgeHooks.modifyLoot}, зовётся ПОСЛЕ
- *  {@code getRandomItemsRaw}, самой таблицы не касается вовсе): {@code GT6ChestLootModifier.doApply} на
- *  каждом реальном броске лута строит {@link #buildPool} заново из ЖИВОГО {@code contents} — заморозка
- *  таблицы ему не мешает, потому что он её не трогает.
- *
- *  <p>REPLACE/read-путь ванильных категорий — ЗАКРЫТ РЕШЕНИЕМ (FORCED-ADAPTATION, BUG-039 v4): канал 1.7.10
- *  (подмена ванильного сундука на GT6-сундук В МОМЕНТ генерации его лута) в neo исчез — лут ленивый
- *  (наполнение при первом открытии), у генерации структур пер-сундук-хука нет, подмена при открытии ломала бы
- *  UX (сундук меняется под открытым GUI). Деградация принята: ванильные структурные сундуки остаются
- *  ванильными (GT-лут в них уже есть ADD-путём); trapped-фича GT6-сундуков в структурах не переносится.
- *  Compat_IC2 (iridium→scrapbox) — вернуться ТОЛЬКО при реальной интеграции IC2 (F10; мода для 26.1.2 нет).
- *  {@link #getItems(Random)} для ванильных категорий оставлен throw — СТРАЖ от нового использования мёртвого
- *  канала, не отложенность. См. decisions/F-loot-chestgen-map.md §6.9. */
+/** Sole center of the loot-table adaptation: 1.7.10's ChestGenHooks/WeightedRandomChestContent are reproduced here,
+ *  and field/method names must match 1.7.10-Forge exactly, since GT6 code reflects on them by name. */
 public class ChestGenHooks {
 	public static final String
 		MINESHAFT_CORRIDOR       = "mineshaftCorridor",
@@ -117,16 +76,11 @@ public class ChestGenHooks {
 		BONUS_CHEST              = "bonusChest",
 		DUNGEON_CHEST            = "dungeonChest";
 
-	/** GT6 chest-категория -> neo vanilla loot-таблица. 9/10 1:1; villageBlacksmith -> weaponsmith (neo раздробил
-	 *  village на 12 таблиц; кузнец=weaponsmith — ближайший 1:1 по содержимому, ADR §3). */
+	/** Maps each GT6 chest category to a neo vanilla loot table; villageBlacksmith maps to weaponsmith,
+	 *  the closest match after neo split the village loot into twelve separate tables. */
 	private static final Map<String, ResourceLocation> NEO_TABLE = new LinkedHashMap<>();
-	/** Суммарный вес vanilla-содержимого категории в 1.7.10 (массивы структур + Forge-init enchanted_book: +1 везде,
-	 *  +2 library; кузнец/бонус/диспенсер — без книги). Выведено скриптом из референса (recompSrc:
-	 *  WorldGenDungeons.field_111189_a=119, mineshaftChestContents=79, itemsToGenerateInTemple=72,
-	 *  junglePyramidsChestContents=72, junglePyramidsDispenserContents=30, strongholdChestContents=98,
-	 *  strongholdLibraryChestContents=42, strongholdRoomCrossingChestContents=61, villageBlacksmithChestContents=94,
-	 *  WorldServer.bonusChestContent=64). Роль: вес «пустого» entry в инъектируемом pool — эмулирует «слот достался
-	 *  ванили», давая GT-предметам ТОЧНО 1.7.10-вероятность на слот (vanilla-часть сундука генерит сам движок). */
+	/** The total weight of 1.7.10's vanilla chest contents per category, computed from the original
+	 *  structure-generation data, used as the weight of an "empty" entry so GT items keep the exact 1.7.10 odds. */
 	private static final Map<String, Integer> VANILLA_WEIGHT_1710 = new HashMap<>();
 	static {
 		NEO_TABLE.put(DUNGEON_CHEST           , new ResourceLocation("minecraft", "chests/simple_dungeon"));
@@ -152,8 +106,7 @@ public class ChestGenHooks {
 		VANILLA_WEIGHT_1710.put(BONUS_CHEST             ,  64);
 	}
 
-	// Имя/тип полей — ТОЧНО 1.7.10 (chestInfo=HashMap, contents=ArrayList): рефлексия ChestGenHooksChestReplacer
-	// и гейты Loader_Loot ищут именно их.
+	// Field names and types match 1.7.10 exactly because ChestGenHooksChestReplacer finds them by reflection.
 	private static final HashMap<String, ChestGenHooks> chestInfo = new HashMap<>();
 	private static boolean hasInit = false;
 	static {
@@ -163,8 +116,8 @@ public class ChestGenHooks {
 	private static void init() {
 		if (hasInit) return;
 		hasInit = true;
-		// 1.7.10-Forge init() наполнял категории vanilla-массивами структур + counts. В neo vanilla-содержимое живёт
-		// в data-driven таблицах движка (contents хранит только GT-добавки) — воспроизводим counts 1:1 (референс
+		// 1.7.10 filled these with vanilla contents too; here contents holds only GT additions, since
+		// vanilla content now lives in the engine's data-driven tables, with the original counts kept 1:1.
 		// ChestGenHooks.init:51-60).
 		addInfo(MINESHAFT_CORRIDOR      ,  3,  7);
 		addInfo(PYRAMID_DESERT_CHEST    ,  2,  7);
@@ -192,12 +145,8 @@ public class ChestGenHooks {
 		return chestInfo.get(aCategory);
 	}
 
-	/** 1:1 (референс :109-134): count стеков из source; больше maxStackSize — сплит по 1.
-	 *  BUG-060 (класс BUG-002 «протухший Holder»): шаблоны contents создаются на data-init ПЕРВОГО мира сессии;
-	 *  энчанты 1.21+ — пер-серверный datapack-реестр → Holder'ы шаблона протухают при смене мира → краш-энкод
-	 *  container_set_content при открытии GUI с таким предметом. Freshen ЗДЕСЬ — единственная точка, через
-	 *  которую идут ВСЕ выдачи шаблонов (getOneItem всех вызывателей: сейфы/мешки/Unboxinator/Twilight/stats-loot
-	 *  + generateChestContents); повторный freshen в ST.generateLoot идемпотентен. */
+	/** Refreshes the stack here because enchantment templates are created against the first world's
+	 *  registry; opening a GUI with a stale Holder from another world crashes, and this is the one choke point for issuance. */
 	public static ItemStack[] generateStacks(Random aRandom, ItemStack aSource, int aMin, int aMax) {
 		int tCount = aMin + (aMax > aMin ? aRandom.nextInt(aMax - aMin + 1) : 0);
 		ItemStack[] rStacks;
@@ -237,8 +186,8 @@ public class ChestGenHooks {
 		if (aItem != null) contents.add(aItem);
 	}
 
-	/** 1:1-эквивалент (референс :180-191): 1.7.10 сравнивал item+meta (и wildcard-мету); в neo меты нет —
-	 *  сравнение по item (F4-flattening). */
+	/** 1.7.10 compared item and metadata (including wildcard meta); neo has no metadata, so this
+	 *  compares by item only, following the block/item flattening the engine did. */
 	public void removeItem(ItemStack aItem) {
 		Iterator<WeightedRandomChestContent> tIterator = contents.iterator();
 		while (tIterator.hasNext()) {
@@ -249,24 +198,21 @@ public class ChestGenHooks {
 		}
 	}
 
-	/** GT6-категории (gt.*) — contents = полное содержимое, 1:1. Ванильные категории — их взвешенный список живёт
-	 *  в data-driven таблице движка и без LootContext как список НЕ читается: отдать один contents = тихая потеря
-	 *  vanilla-части (запрещено ADR) → видимый PORT-TODO-сбой до re-экспрессии REPLACE-пути в IGlobalLootModifier
-	 *  (единственные вызыватели — ChestGenHooksChestReplacer.getItems и гейтованный MD.IC Compat_IC2). */
+	/** For vanilla categories the weighted list lives in the engine's data-driven table and cannot be
+	 *  read without a LootContext, so this throws (PORT-TODO) instead of silently losing the vanilla part. */
 	public WeightedRandomChestContent[] getItems(Random aRandom) {
 		if (NEO_TABLE.containsKey(category)) throw new UnsupportedOperationException(
 			"PORT-TODO(F-loot REPLACE): взвешенный список ванильной категории '" + category + "' живёт в data-driven LootTable (без LootContext не читается); ре-экспрессировать вызывателя в IGlobalLootModifier — decisions/F-loot-chestgen-map.md");
 		return contents.toArray(new WeightedRandomChestContent[contents.size()]);
 	}
 
-	/** 1:1 (референс :225-228; max ЭКСКЛЮЗИВНО — так в Forge 1.7.10, воспроизводим). */
+	/** The max bound is exclusive here, matching how Forge 1.7.10 implemented this roll. */
 	public int getCount(Random aRandom) {
 		return countMin < countMax ? countMin + aRandom.nextInt(countMax - countMin) : countMin;
 	}
 
-	/** GT6-категории — 1:1 (weighted из contents + generateStacks, референс :237-243). Ванильные категории —
-	 *  семпл итоговой neo-таблицы (vanilla + инъектированные GT-пулы) на живом сервере; вне сервера → null
-	 *  (как оригинал вне мира). */
+	/** GT6 categories roll from contents directly; vanilla categories instead sample the resulting
+	 *  neo table (vanilla plus injected GT pools) on a live server, returning null outside one. */
 	public ItemStack getOneItem(Random aRandom) {
 		if (NEO_TABLE.containsKey(category)) return getOneVanillaItem(aRandom);
 		WeightedRandomChestContent tItem = WeightedRandomChestContent.getRandomItem(aRandom, getItems(aRandom));
@@ -297,25 +243,17 @@ public class ChestGenHooks {
 	public void setMin(int aValue) {countMin = aValue;}
 	public void setMax(int aValue) {countMax = aValue;}
 
-	// ------------------------------------------------------------------ neo-доставка (ADD-путь, задача A1) ---
 
-	/** Обратный поиск: neo-таблица -> GT6-категория. Единственный вызыватель — {@code GT6ChestLootModifier}
-	 *  (доставка живёт там, gregapi.loot — доставка неймспейсно отделена от compat-mirror), сам центр
-	 *  соответствия категория<->таблица остаётся здесь, в единственном месте, где он и заведён. */
+	/** Reverse lookup: neo table -> GT6 category. Its only caller is GT6ChestLootModifier (delivery lives there,
+	 *  kept separate from compat-mirror); the mapping itself stays here, the one place it's defined. */
 	public static String categoryForTable(ResourceLocation aTable) {
 		for (Map.Entry<String, ResourceLocation> tEntry : NEO_TABLE.entrySet())
 			if (tEntry.getValue().equals(aTable)) return tEntry.getKey();
 		return null;
 	}
 
-	/** Собирает СТОЯЛЫЙ (ни к какой {@code LootTable} не привязанный, никогда не замораживаемый) {@link LootPool}
-	 *  с GT-добавками категории — ТА ЖЕ формула распределения 1:1, что несла прежняя addPool-инъекция: rolls =
-	 *  1.7.10-count категории (формула getCount 1:1), внутри — GT-entries с их весами + «пустой» entry с весом
-	 *  vanilla-суммы 1.7.10 ({@link #VANILLA_WEIGHT_1710}). Каждый ролл: с вероятностью W_v/(W_v+ΣW_gt) слот
-	 *  «достался ванили» (пусто — её генерит родная часть таблицы), иначе GT-предмет по весу → P(слот=GT-предмет i)
-	 *  = w_i/(W_v+ΣW_gt) — ровно как в едином списке 1.7.10. Строится заново на каждый вызов из живого буфера
-	 *  {@code contents} (единственный вызыватель — {@code GT6ChestLootModifier.doApply}, на каждый реальный
-	 *  бросок лута этой категории) — поэтому НЕ зависит от момента заморозки ванильной таблицы (задача A1). */
+	/** Builds a standalone LootPool (never attached to a table, never frozen) with the category's GT additions,
+	 *  using the exact 1.7.10 weighted-list distribution; rebuilt fresh from the live buffer on every real loot roll. */
 	public static LootPool buildPool(String aCategory) {
 		ChestGenHooks tHook = chestInfo.get(aCategory);
 		if (tHook == null || tHook.contents.isEmpty()) return null;
@@ -330,13 +268,8 @@ public class ChestGenHooks {
 					.setWeight(Math.max(1, tContent.itemWeight))
 					.apply(SetItemCountFunction.setCount(UniformGenerator.between(
 						tContent.theMinimumChanceToGenerateItem, Math.max(tContent.theMinimumChanceToGenerateItem, tContent.theMaximumChanceToGenerateItem))));
-			// Identity GT6-предметов в ветке 1.20.1 живёт в NBT-теге стека (мета MultiItem, реестр/ID
-			// MultiTileEntity — монеты/мешки/книги/сундуки), а LootItem.lootTableItem несёт только тип Item: без
-			// переноса выпадали бы «голые» дефолты. Переносим тег штатной SetNbtFunction (SetNbtFunction.java:34) —
-			// это ровно тот же стек, что нёс WeightedRandomChestContent 1.7.10. Отдельная лут-функция под damage
-			// НЕ нужна и была бы ВРЕДНА: подтип лежит ВНУТРИ того же тега (IForgeItem.setDamage:472 —
-			// getOrCreateTag().putInt("Damage")), а SetItemDamageFunction трактует значение как ДОЛЮ от maxDamage
-			// (SetItemDamageFunction.java:41) и у мета-предметов GT6 (maxDamage=0) обнулила бы подтип молча.
+			// GT6 item identity on this branch lives in the stack's NBT tag, while LootItem.lootTableItem only carries the type.
+			// The tag is carried over with the vanilla SetNbtFunction; a damage-based loot function would corrupt the subtype.
 			if (tContent.theItemId.getTag() != null)
 				tItem.apply(net.minecraft.world.level.storage.loot.functions.SetNbtFunction.setTag(tContent.theItemId.getTag().copy()));
 			tPool.add(tItem);

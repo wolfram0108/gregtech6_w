@@ -23,17 +23,9 @@
 
 package gregapi.config;
 
-/**
- * F12-config-subsystem: GT6-центр, воспроизводящий 1.7.10 Forge {@code net.minecraftforge.common.
- * config.Property} — единственная запись динамического, файлового конфига {@link ModConfigSpec}.
- * Причина существования: neo {@code net.neoforged.neoforge.common.ModConfigSpec.ConfigValue} —
- * ДЕКЛАРАТИВНАЯ модель (значение фиксируется на этапе Builder при регистрации мода, без per-call
- * {@code get(category,key,default)} и без {@code wasRead()} в духе 1.7.10) — архитектурно
- * несовместима с GT6's dynamic-config-паттерном. Референс поведения: {@code gregtech6/build/tmp/
- * recompSrc/net/minecraftforge/common/config/Property.java}.
- *
- * @author Gregorius Techneticies
- */
+/** @author Gregorius Techneticies
+ *  Reproduces Forge 1.7.10's dynamic, file-backed Property: neo's ModConfigSpec.ConfigValue is a declarative
+ *  model fixed at builder registration, with no per-call get(category,key,default) or wasRead(). */
 public class ConfigValue {
 	final String mName;
 	String mValue;
@@ -49,16 +41,14 @@ public class ConfigValue {
 
 	public String getName() {return mName;}
 
-	/** было {@code Property.getString()} — сырое строковое значение свойства (Property не имеет перегрузки с параметром-дефолтом). */
+	/** No default-value overload exists here because the original Property.getString() never had one either. */
 	public String getString() {return mValue;}
 
-	/** было {@code Property.getBoolean(boolean)} — Property.java:728-738. */
 	public boolean getBoolean(boolean aDefault) {
 		if ("true".equalsIgnoreCase(mValue) || "false".equalsIgnoreCase(mValue)) return Boolean.parseBoolean(mValue);
 		return aDefault;
 	}
 
-	/** было {@code Property.getInt(int)} — Property.java:691-701. */
 	public int getInt(int aDefault) {
 		try {
 			return Integer.parseInt(mValue);
@@ -67,7 +57,7 @@ public class ConfigValue {
 		}
 	}
 
-	/** было {@code Property.getInt()} — Property.java:671-681 (без параметра — фолбэк на собственный дефолт свойства). */
+	/** With no argument, this falls back to the property's own default value instead of a caller-supplied one. */
 	public int getInt() {
 		try {
 			return Integer.parseInt(mValue);
@@ -76,7 +66,6 @@ public class ConfigValue {
 		}
 	}
 
-	/** было {@code Property.getDouble(double)} — Property.java:792-802. */
 	public double getDouble(double aDefault) {
 		try {
 			return Double.parseDouble(mValue);
@@ -85,10 +74,7 @@ public class ConfigValue {
 		}
 	}
 
-	/**
-	 * было {@code Property.wasRead()} — Property.java:994-1003: true, если значение уже существовало в
-	 * загруженном из файла конфиге на момент этого {@code get(category,key,default)}-вызова; false, если
-	 * запись только что создана этим вызовом с дефолтным значением (новый ключ).
-	 */
+	/** True if the value already existed in the loaded config file at this get() call; false if this call
+	 *  just created the entry with its default (a new key). */
 	public boolean wasRead() {return mWasRead;}
 }

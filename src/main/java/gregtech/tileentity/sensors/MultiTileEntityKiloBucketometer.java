@@ -57,7 +57,7 @@ public class MultiTileEntityKiloBucketometer extends MultiTileEntitySensorTE {
 			}
 		}
 		Block tBlock = aDelegator.getBlock();
-		// F5 §6.2: «сколько в клетке» — один вопрос центру (ванильные источники, воды GT6, кванты нефтей).
+		// "How much is in this cell" is one question to the center (vanilla sources, GT6 waters, oil quanta).
 		FluidStack tFluid = FL.drainable(aDelegator.mWorld, new net.minecraft.core.BlockPos(aDelegator.mX, aDelegator.mY, aDelegator.mZ));
 		if (tFluid != null) return tFluid.getAmount() / 1000000;
 		return 0;

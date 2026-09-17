@@ -28,19 +28,8 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.AbstractLogger;
 
-/**
- * F2-coremod (отложенная фаза): GT6 подсовывает «пустой» Logger в ASM-трансформеры (gregtech.asm.transformers.
- * MicroBlock_FixLoggerCrash / MultiPart_FixLoggerCrash — {@code Logger FAKE_LOGGER = new LoggerFML(...)}), чтобы
- * подавить чужие лог-краши. Реализация — тотальный no-op: {@code isEnabled(...)} везде false, значит ни один
- * лог не пишется (1:1 с прежним «пустым логгером»).
- *
- * Прежняя версия реализовывала весь интерфейс {@code org.apache.logging.log4j.Logger} вручную (~150 no-op
- * методов). Log4j 2.25.2 (текущий на neo-classpath) расширил интерфейс десятками overload'ов (warn/error/…
- * ×0-10 Object, Supplier/MessageSupplier-варианты) — ручной список хрупок к каждому version-bump и не собирался.
- * Переведено на {@code extends AbstractLogger}: базовый класс даёт ВСЕ convenience-методы, оставляя абстрактными
- * лишь семейство {@code isEnabled(...)} + ядро {@code logMessage(...)} (из ExtendedLogger) + {@code getLevel()}.
- * Их и реализуем no-op — устойчиво к будущим версиям Log4j.
- */
+/** Feeds a no-op Logger to ASM transformers to suppress foreign log crashes; extends AbstractLogger instead
+ *  of hand-implementing the whole Logger interface, since that manual list broke on every log4j version bump. */
 public class LoggerFML extends AbstractLogger {
 	private static final long serialVersionUID = 1L;
 	public String mName = "";

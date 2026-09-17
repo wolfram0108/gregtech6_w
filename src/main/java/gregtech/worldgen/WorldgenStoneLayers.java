@@ -87,10 +87,8 @@ public class WorldgenStoneLayers extends WorldgenObject {
 			OreDictMaterial tLastRock = MT.STONES.Deepslate, tLastOre = null;
 			
 			for (int tY = aChunk.getMinBuildHeight()+1; tY < tMaxHeight; tY++) {
-				// F6-Y-scale (КРИТ, чинит «GT6-камень/руды пластами в воздухе»): getSections()[0] = секция getMinSectionY()
-				// (мир с ненулевым min-Y, MC 26), а НЕ y=0. Старое `aStorages[tY>>4]` читало блок на мир-Y = tY-|minY|
-				// (глубокий камень), тогда как запись WD.set/placeBlock идёт на АБСОЛЮТНЫЙ tY → GT6-слой садился в воздух
-				// на |minY| блоков выше камня, а реальный камень не заменялся. Верный индекс секции — getSectionIndex(tY).
+				// getSections()[0] is the section at getMinSectionY(), not at y=0, once the world has a non-zero min-Y.
+				// The old aStorages[tY>>4] read stone below the write position; getSectionIndex(tY) is the correct index.
 				final int tSectionIndex = aChunk.getSectionIndex(tY);
 				final LevelChunkSection aStorage = (tSectionIndex >= 0 && tSectionIndex < aStorages.length) ? aStorages[tSectionIndex] : null;
 				final Block aBlock = (aStorage == null ? NB : aStorage.getBlockState(i, tY & 15, j).getBlock());

@@ -35,6 +35,6 @@
 
 package codechicken.nei.recipe;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — NEI. Базовый класс NEI_RecipeMap.CachedDefaultRecipe
- *  (getIngredients/getResult/getOtherStacks в оригинале не @Override — маркер). См. compat-mirror/README.md. */
+/** Compile-only mirror of the NEI API: the base class of NEI_RecipeMap.CachedDefaultRecipe,
+ *  kept as a marker since its methods are not @Override on the real type either. */
 public class CachedRecipe {}

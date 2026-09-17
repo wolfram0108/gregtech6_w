@@ -50,7 +50,7 @@ public class BlockColored extends BlockMetaType {
 	public BlockColored(Class<? extends BlockItem> aItemClass, Material aVanillaMaterial, SoundType aVanillaSoundType, String aName, String aDefaultLocalised, OreDictMaterial aMaterial, float aResistanceMultiplier, float aHardnessMultiplier, int aHarvestLevel, IIconContainer[] aIcons) {
 		super(aItemClass, aVanillaMaterial, aVanillaSoundType, aName, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, 16, aIcons);
 		if (aDefaultLocalised != null) for (int i = 0; i < 16; i++) LH.add(getUnlocalizedName()+"."+i, DYE_NAMES[i] + " " + aDefaultLocalised);
-		// F12-followup (block-split): OM.data(ST.make(...)) — ItemStack → компоненты только на server-start → deferItemInit.
+		// Deferred to server start, like everywhere else building an ItemStack, since components only exist by then.
 		if (aMaterial != null) gregapi.GT_API.deferItemInit(() -> {for (int i = 0; i < 16; i++) OM.data(ST.make(this, 1, i), new OreDictItemData(aMaterial, U));});
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
 	}

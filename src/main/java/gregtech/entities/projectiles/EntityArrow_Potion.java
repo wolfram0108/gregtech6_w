@@ -36,8 +36,8 @@ import static gregapi.data.CS.*;
 
 public class EntityArrow_Potion extends EntityArrow_Material {
 	
-	// F12-entity: тип-ctor = фабрика (EntitiesGT.ARROW_POTION, ссылка EntityArrow_Potion::new). Convenience-ctor'ы
-	// передают ARROW_POTION в protected type-ctor'ы EntityArrow_Material (иначе потион-стрела получила бы ARROW_MATERIAL).
+	// The type-ctor is the registry factory; convenience ctors pass ARROW_POTION into the parent's protected type-ctors, or
+	// a potion arrow would end up with the wrong entity type.
 	public EntityArrow_Potion(EntityType<? extends EntityArrow_Potion> aType, Level aWorld) {
 		super(aType, aWorld);
 	}

@@ -30,16 +30,9 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
-/**
- * @author Gregorius Techneticies
- *
- * Игровая логика чара {@code Enchantment_EnderDamage} (оригинал 1.7.10 —
- * {@code gregapi/enchants/Enchantment_EnderDamage.java:82-92}, метод {@code func_151367_b}).
- * В 26.x-версии порта тело жило в record-е {@code EnchantmentEntityEffect} (движок диспетчерил чары
- * data-driven); в 1.20.1 движковая модель чар снова императивная — {@code Enchantment.doPostHurt}
- * ({@code forge-1201-decompiled/.../enchantment/Enchantment.java:121}), поэтому носитель снова
- * обычный метод, вызываемый из {@link Enchantment_EnderDamage}. Значения не изменены.
- */
+/** @author Gregorius Techneticies
+ *  1.20.1 runs enchantments imperatively via Enchantment.doPostHurt rather than a data-driven record, so this
+ *  body is an ordinary method again, called from Enchantment_EnderDamage; values are unchanged. */
 public final class EnchantmentEffect_Ender {
 	private EnchantmentEffect_Ender() {}
 

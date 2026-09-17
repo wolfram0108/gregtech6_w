@@ -35,9 +35,9 @@
 
 package vazkii.botania.api;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Минимум для компиляции ядра; члены добираются
- *  компилятором. Реальная зависимость — при возврате к интеграции. См. compat-mirror/README.md. */
+/** Compile-only mirror of a third-party API: the minimum needed to compile the core, with
+ *  members added as the compiler demands them; the real dependency returns only if integration resumes. */
 public class BotaniaAPI {
-    /** Реально используется GregTech (Compat_Recipes_Botania: registerManaInfusionRecipe(output, inputOreDict, mana)). */
+    /** Actually called from Compat_Recipes_Botania: registerManaInfusionRecipe(output, inputOreDict, mana). */
     public static Object registerManaInfusionRecipe(net.minecraft.world.item.ItemStack aOutput, String aInput, int aMana) {return null;}
 }

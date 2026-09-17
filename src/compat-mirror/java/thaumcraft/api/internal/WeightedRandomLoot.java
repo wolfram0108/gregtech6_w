@@ -40,8 +40,8 @@ import java.util.List;
 
 import net.minecraft.world.item.ItemStack;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только объявления, используемые GregTech6
- *  (CompatTC.onServerStarting: перебор lootBagCommon, чтение .item). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only the field CompatTC.onServerStarting reads
+ *  while iterating lootBagCommon. */
 public class WeightedRandomLoot {
 	public ItemStack item;
 

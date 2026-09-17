@@ -43,45 +43,27 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
 
-/**
- * F3-render (client): единая item-модель ВСЕХ GT6-предметов (аналог блочной {@link GT6BlockModel} — та же централизация 1:1).
- * Берём per-meta иконку предмета (GT6 {@code getIconIndex(ItemStack)}/{@code getIcon(stack,pass)} возвращают
- * {@link ResourceLocation}, порт сохранил) → плоские front/back-quads из спрайта (стиль item/generated) либо 3D-форму
- * блока ({@link GT6BlockModel#buildInventoryQuads} = {@code renderInventoryBlock}). Регистрируется рантайм-инъекцией
- * в {@code ModelEvent.ModifyBakingResult} (без тысяч JSON — мод процедурный). Икону резолвим рефлексией (общего
- * интерфейса нет: MultiItem/PrefixItem/ItemBlock — россыпь), boot/render-safe.
- *
- * <p><b>Ветка 1.20.1.</b> Здесь item-модель — {@link BakedModel} + {@link ItemOverrides}: движок сначала спрашивает
- * {@code getOverrides().resolve(model, stack, level, entity, seed)} ({@code ItemRenderer.getModel}), и ЭТА точка —
- * носитель «модель зависит от стека», которым в 26.x был {@code ItemModel.update(ItemStackRenderState, stack, ...)}.
- * Разрешённая модель отдаёт готовые квады, {@link ItemTransforms} и признаки gui3d/blockLight. Пиксельного кэша GUI
- * (26.x {@code GuiItemAtlas}) в 1.20.1 нет — вместе с ним исчезли {@code appendModelIdentityElement}/{@code setAnimated}:
- * это не потеря поведения, а исчезнувший в 1.20.1 класс дефекта. Глинт и свет ставит сам {@code ItemRenderer}.
- */
+/** One item model for every GT6 item, the same centralization as the block model: per-meta icon becomes flat quads or
+ *  the block's 3D form. Registered by runtime injection since the mod is procedural, with icon lookup done by reflection. */
 public class GT6ItemModel implements BakedModel {
 
 	// ================================================================================================================
-	// Правка №3 (BUG-106): КЭШ ГЕОМЕТРИИ ПРЕДМЕТОВ. Замер JFR (52 мин живой игры): ~40% ВСЕХ аллокаций клиента —
-	// пересборка одних и тех же квадов каждый кадр (sideQuad 12.6%, boundedFace-семья ~27%). Плоская геометрия —
-	// ЧИСТАЯ функция (спрайт, тинт, ободок): кэшируем глобально; BakedQuad иммутабелен — безопасно разделяется
-	// между кадрами и слоями (движок сам так делает с ванильными baked-моделями). 3D-форма блока-предмета —
-	// функция (блок, мета, NBT стека). Сброс — при перепечке моделей (onModifyBakingResult → invalidateCaches:
-	// атлас пересоздан, старые спрайты мертвы). Отступление от 1.7.10 (там immediate-mode каждый кадр) одобрено
-	// пользователем 2026-08-09: «оптимизация важнее 1:1, централизация обязательна».
+	// Flat item geometry is a pure function of sprite/tint/outline, so it's cached globally; BakedQuad is immutable,
+	// so sharing it across frames and layers is as safe as the engine's own baked models already do, resetting only on rebake.
 	// ================================================================================================================
 	private record FlatKey(TextureAtlasSprite mSprite, int mColor, boolean mSides) {}
 	private record InvKey(net.minecraft.world.level.block.Block mBlock, short mMeta, CompoundTag mTag) {}
-	/** Ключ разрешённой per-стек модели: тот же состав, что у 26.x-identity (предмет + GT6-мета + NBT). */
+	/** Key for a resolved per-stack model: item plus GT6 meta plus NBT, the same identity used elsewhere in the mod. */
 	private record ModelKey(net.minecraft.world.item.Item mItem, short mMeta, CompoundTag mTag) {}
 	private static final java.util.concurrent.ConcurrentHashMap<FlatKey, List<BakedQuad>> sFlatCache = new java.util.concurrent.ConcurrentHashMap<>();
 	private static final java.util.concurrent.ConcurrentHashMap<InvKey, List<BakedQuad>> sInvCache = new java.util.concurrent.ConcurrentHashMap<>();
 	private static final java.util.concurrent.ConcurrentHashMap<ModelKey, Baked> sModelCache = new java.util.concurrent.ConcurrentHashMap<>();
 
-	/** Сброс кэшей геометрии — зовётся из onModifyBakingResult при каждой перепечке моделей/атласов. */
+	/** Cache reset, called from onModifyBakingResult on every model/atlas rebake. */
 	public static void invalidateCaches() {sFlatCache.clear(); sInvCache.clear(); sModelCache.clear(); sSideFaceCache.clear(); sVanillaTransforms.clear(); sVanillaTransformsTried.clear(); sBarOverlayIcons = null;}
 
-	/** Правка №3: кэш рефлексивных Method — прежде getClass().getMethod(...) звался на КАЖДЫЙ пасс КАЖДОГО
-	 *  видимого предмета каждый кадр (аллокации в reflection-машинерии видны в JFR). null-значение — «метода нет». */
+	/** Caches reflective Method lookups, since getClass().getMethod(...) was previously called on every render pass
+	 *  of every visible item, every frame; a cached null means 'no such method'. */
 	private static final java.util.concurrent.ConcurrentHashMap<String, java.lang.reflect.Method> sMethodCache = new java.util.concurrent.ConcurrentHashMap<>();
 	private static final java.lang.reflect.Method NO_METHOD;
 	static {java.lang.reflect.Method m = null; try {m = Object.class.getMethod("hashCode");} catch (Throwable e) {} NO_METHOD = m;}
@@ -93,9 +75,9 @@ public class GT6ItemModel implements BakedModel {
 		return rMethod == NO_METHOD ? null : rMethod;
 	}
 
-	/** Плоская геометрия предмета (front+back+опц. ободок) из кэша; сборка — только на промах. */
+	/** Flat item geometry (front + back + optional outline) from cache, built only on a cache miss. */
 	private static List<BakedQuad> flatQuads(TextureAtlasSprite aSprite, int aColor, boolean aSides) {
-		if (sFlatCache.size() > 16384) sFlatCache.clear(); // предохранитель размера (JEI листает тысячи предметов)
+		if (sFlatCache.size() > 16384) sFlatCache.clear(); // size safety valve (JEI pages through thousands of items)
 		return sFlatCache.computeIfAbsent(new FlatKey(aSprite, aColor, aSides), aKey -> {
 			java.util.ArrayList<BakedQuad> rQuads = new java.util.ArrayList<>(aSides ? 10 : 2);
 			rQuads.add(flatFace(aSprite, true, aColor));
@@ -105,12 +87,12 @@ public class GT6ItemModel implements BakedModel {
 		});
 	}
 
-	// ==================== корневая модель: точка «модель зависит от стека» ====================
+	// The root model, where 'this model depends on the stack' actually happens, starts here.
 
 	private final ItemOverrides mOverrides = new ItemOverrides() {
 		@Override
 		public BakedModel resolve(BakedModel aModel, ItemStack aStack, ClientLevel aLevel, LivingEntity aEntity, int aSeed) {
-			try {return modelFor(aStack);} catch (Throwable e) {return aModel;} // render-safe: сбой одного предмета не рушит рендер
+			try {return modelFor(aStack);} catch (Throwable e) {return aModel;} // Render-safe: a failure resolving one item's model doesn't crash rendering as a whole.
 		}
 	};
 
@@ -120,21 +102,16 @@ public class GT6ItemModel implements BakedModel {
 	@Override public boolean isGui3d() {return false;}
 	@Override public boolean usesBlockLight() {return false;}
 	@Override public boolean isCustomRenderer() {return false;}
-	/** BP-BUG-007, ПРЕДМЕТНОЕ ПЛЕЧО канала слоя. Спрашивают именно ЭТУ модель: {@code RenderTypeHelper
-	 *  .getFallbackItemRenderType:63-68} для {@code BlockItem} зовёт {@code model.getRenderTypes(block
-	 *  .defaultBlockState(), …)} у item-модели, а не у блочной. Без этого ответа дефолт
-	 *  {@code IForgeBakedModel:85-88} уходил в {@code ItemBlockRenderTypes.getRenderLayers}, где блоков GT6 нет,
-	 *  и стекло в GUI рисовалось CUTOUT — непрозрачным. Формула — общий центр, своей копии не заводим. */
+	/** The item-side arm of the render-layer channel: the engine specifically asks the ITEM model for this, not the block
+	 *  model, and without answering here GUI glass rendered opaque, since the default table knows nothing about GT6 blocks. */
 	@Override public net.minecraftforge.client.ChunkRenderTypeSet getRenderTypes(BlockState aState, RandomSource aRandom, net.minecraftforge.client.model.data.ModelData aData) {
 		return GT6BlockModel.renderTypesOf(aState, null);
 	}
 	@Override public TextureAtlasSprite getParticleIcon() {return GT6QuadBuilder.resolveSprite(gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0));}
 	@Override public ItemTransforms getTransforms() {return ItemTransforms.NO_TRANSFORMS;}
 
-	/** ЦЕНТР item-рендера, воспроизводит {@code RendererBlockTextured.renderInventoryBlock} (референс): предмет-БЛОК →
-	 *  3D-геометрия блока (canonical-TE/block-level, buildInventoryQuads); предмет-ПРЕДМЕТ (материал/MultiItem) →
-	 *  плоские иконки ПО РЕНДЕР-ПАССАМ с per-pass тинтом (getColorFromItemStack) — как ванильный мульти-пасс item-icon
-	 *  (PrefixItem: 2 пасса, pass0 тинт материала). */
+	/** The center of item rendering, reproducing the original's renderInventoryBlock: a block item gets 3D geometry,
+	 *  a plain item gets flat per-pass icons with per-pass tint, the same as the original's multi-pass item icon. */
 	private static Baked modelFor(ItemStack aStack) {
 		if (sModelCache.size() > 16384) sModelCache.clear();
 		CompoundTag tTag = aStack.getTag();
@@ -144,8 +121,8 @@ public class GT6ItemModel implements BakedModel {
 	private static Baked build(ItemStack aStack) {
 		net.minecraft.world.item.Item tItem = aStack.getItem();
 		if (tItem instanceof net.minecraft.world.item.BlockItem tRailBI && tRailBI.getBlock() instanceof gregapi.block.misc.BlockBaseRail tRail) {
-			// Рельс — block-item без IRenderedBlock: flat-путь его иконку не резолвит (getIconIndex у ItemBlockBase нет).
-			// Рисуем плоскую straight-иконку рельса (мета 0) напрямую, как ванильный item рельса.
+			// The rail is a block-item without IRenderedBlock, so the flat-icon path can't resolve it; its straight icon
+			// (meta 0) is drawn directly instead, like the vanilla rail item.
 			return buildRailItem(tRail);
 		}
 		if (tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof IRenderedBlock) {
@@ -154,19 +131,18 @@ public class GT6ItemModel implements BakedModel {
 		return buildFlatItem(aStack, tItem);
 	}
 
-	// ==================== разрешённая per-стек модель ====================
+	// The resolved per-stack model starts here.
 
-	/** Готовая модель конкретного стека: квады + позы + признаки. {@code mWorldVariant} — та же модель без
-	 *  GUI-only оверлеев (см. BUG-028), выбирается в {@link Baked#applyTransform} по контексту отрисовки. */
+	/** The finished model for one stack: quads, poses, and flags; mWorldVariant is the same model without GUI-only
+	 *  overlays, picked by applyTransform depending on where it's being drawn. */
 	private static final class Baked implements BakedModel {
 		final List<BakedQuad> mQuads;
 		final ItemTransforms mTransforms;
 		final boolean mGui3d, mBlockLight;
 		final TextureAtlasSprite mParticle;
 		Baked mWorldVariant = this;
-		/** 1.7.10 renderItem TESR-классов (Chest/MassStorage): item-форму рисовал спец-рендер. Носитель 1.20.1 —
-		 *  {@code isCustomRenderer()==true} → движок уходит в {@code IClientItemExtensions.getCustomRenderer()}
-		 *  ({@code ItemRenderer.render:...}), то есть в BEWLR {@link MultiTileEntityBER#SPECIAL_ITEM_FORM}. */
+		/** 1.7.10's TESR item renderers drew a special item form directly; this engine version routes the same case through
+		 *  isCustomRenderer(), into a BEWLR custom renderer instead. */
 		boolean mCustomRenderer = false;
 
 		Baked(List<BakedQuad> aQuads, ItemTransforms aTransforms, boolean aGui3d, boolean aBlockLight, TextureAtlasSprite aParticle) {
@@ -179,9 +155,8 @@ public class GT6ItemModel implements BakedModel {
 		@Override public boolean isGui3d() {return mGui3d;}
 		@Override public boolean usesBlockLight() {return mBlockLight;}
 		@Override public boolean isCustomRenderer() {return mCustomRenderer;}
-		/** BP-BUG-007: ВТОРОЙ носитель предметного плеча — разрешённая per-стек модель. Движок спрашивает слой
-		 *  именно у той модели, которую отдал {@code ItemOverrides}, поэтому ответ обязан быть и здесь; иначе
-		 *  класс закрыт наполовину и стекло остаётся непрозрачным ровно у тех предметов, что идут через кэш. */
+		/** The second carrier of the item-side render-layer channel: the engine asks the layer of whatever model
+		 *  ItemOverrides actually resolved, so leaving this unanswered would still leave cached items with opaque glass. */
 		@Override public net.minecraftforge.client.ChunkRenderTypeSet getRenderTypes(BlockState aState, RandomSource aRandom, net.minecraftforge.client.model.data.ModelData aData) {
 			return GT6BlockModel.renderTypesOf(aState, null);
 		}
@@ -189,11 +164,8 @@ public class GT6ItemModel implements BakedModel {
 		@Override public ItemTransforms getTransforms() {return mTransforms;}
 		@Override public TextureAtlasSprite getParticleIcon() {return mParticle;}
 
-		/** BUG-028: полоски прочности/заряда рисуются ТОЛЬКО в инвентаре/GUI. В 1.7.10 развилка «инвентарь vs предмет
-		 *  в мире» жила в самом рендер-движке (getRenderPasses всегда отдаёт base+2), поэтому мост-адаптер порта
-		 *  воспроизводит её здесь, централизованно. Носитель контекста в 1.20.1 — {@code applyTransform}: движок зовёт
-		 *  его ПЕРЕД сбором квадов и рисует ВОЗВРАЩЁННУЮ модель ({@code ItemRenderer.render} →
-		 *  {@code ForgeHooksClient.handleCameraTransforms}), то есть это штатная точка «модель зависит от контекста». */
+		/** Durability/charge bars draw only in inventory/GUI, a split 1.7.10's render engine made for it automatically;
+		 *  this port's bridge reproduces that split centrally here, using applyTransform as the render-context carrier instead. */
 		@Override
 		public BakedModel applyTransform(ItemDisplayContext aContext, PoseStack aPoseStack, boolean aLeftHand) {
 			mTransforms.getTransform(aContext).apply(aLeftHand, aPoseStack);
@@ -201,11 +173,11 @@ public class GT6ItemModel implements BakedModel {
 		}
 	}
 
-	// ==================== ветви сборки ====================
+	// The model-assembly branches start here.
 
-	/** Предмет-форма БЛОКА: 3D-геометрия блока в инвентаре через {@link GT6BlockModel#buildInventoryQuads} (= renderInventoryBlock). */
+	/** Item-form of a block: 3D geometry in the inventory via {@link GT6BlockModel#buildInventoryQuads}. */
 	private static Baked buildBlockInventory(ItemStack aStack, net.minecraft.world.level.block.Block aBlock) {
-		// Правка №3: 3D-форма блока-предмета — функция (блок, мета, NBT стека); кэш глобальный, сборка на промах.
+		// A block-item's 3D form is a pure function of block, meta, and stack NBT; the cache is global, built only on a miss.
 		if (sInvCache.size() > 16384) sInvCache.clear();
 		CompoundTag tTag = aStack.getTag();
 		List<BakedQuad> tBuilt = sInvCache.computeIfAbsent(new InvKey(aBlock, gregapi.util.ST.meta_(aStack), tTag == null ? null : tTag.copy()), aKey -> {
@@ -213,32 +185,29 @@ public class GT6ItemModel implements BakedModel {
 			try { GT6BlockModel.buildInventoryQuads(tQB, aBlock, aStack); } catch (Throwable e) {}
 			return java.util.List.copyOf(tQB.quads());
 		});
-		// КОРЕНЬ «блоки в инвентаре — плоская тёмная грань, не 3D-куб»: buildInventoryQuads даёт куб в 0..1, но без display-
-		// трансформации движок рисует его фронтально (видна одна грань; диффуз на неповёрнутой грани тёмный). В 1.7.10
-		// изометрию блока-предмета применял движок (RenderBlocks.renderBlockAsItem), здесь — ItemTransforms модели. Берём
-		// КАНОНИЧЕСКУЮ block-GUI трансформацию (изометрия 30/225, scale 0.625) ИЗ ДВИЖКА (block/block.json), не хардкодим.
+		// Raw cube geometry renders front-on and dark without a display transform, which 1.7.10's engine applied automatically;
+		// the canonical isometric GUI transform is read from the engine's own block/block model here, not hardcoded.
 		TextureAtlasSprite tParticle = tBuilt.isEmpty() ? null : tBuilt.get(0).getSprite();
 		Baked rBaked = new Baked(tBuilt, blockGuiTransforms(), true, true, tParticle);
-		// 1.7.10 renderItem TESR-классов (Chest/MassStorage) звал renderTileEntityAt(this,0,0,0,0) на canonical-TE
-		// (данные из NBT стека). Носитель 1.20.1 — BEWLR: модель объявляет isCustomRenderer, движок уходит в
-		// IClientItemExtensions.getCustomRenderer() → MultiTileEntityBER.SPECIAL_ITEM_FORM (тот же диспетч по классу TE).
+		// 1.7.10's TESR renderers called their TE renderer directly on a canonical TE built from stack NBT; the carrier here
+		// is BEWLR instead, reached once the model declares isCustomRenderer, with the same class-based dispatch as before.
 		if (tBuilt.isEmpty() && MultiTileEntityBER.extractSpecialItemForm(aStack) != null) rBaked.mCustomRenderer = true;
 		return rBaked;
 	}
 
-	/** Рельс в инвентаре: плоская straight-иконка (мета 0, primary) — как ванильный item рельса. Иконка рельса лежит
-	 *  среди блок-текстур (iconsets/rail_*), потому резолв ITEMS→BLOCKS. Переиспользует flat-геометрию (front+back + ободок BUG-031). */
+	/** The rail's inventory icon is a flat straight-track icon, like vanilla's own rail item; the icon itself lives
+	 *  among block textures, which is why this resolves items to blocks rather than the other way round. */
 	private static Baked buildRailItem(gregapi.block.misc.BlockBaseRail aRail) {
 		ResourceLocation tIcon = aRail.getIcon(0, 0);
 		TextureAtlasSprite tSprite = tIcon == null ? null : GT6QuadBuilder.resolveSprite(tIcon, GT6QuadBuilder.ATLAS_ITEMS);
 		if (tSprite == null && tIcon != null) tSprite = GT6QuadBuilder.resolveSprite(tIcon, GT6QuadBuilder.ATLAS_BLOCKS);
 		if (tSprite == null) return new Baked(java.util.List.of(), ItemTransforms.NO_TRANSFORMS, false, false, null);
-		// BUG-112: рельс — плоская иконка и НЕ full3D (в 1.7.10 его ItemBlock не звал setFull3D) → положение «плашмя»;
-		// плоский предмет в GUI full-bright (эталон ItemModelGenerator = GuiLight.FRONT) → usesBlockLight=false.
+		// The rail is a flat icon, not full-3D (1.7.10's own ItemBlock never marked it so), giving it a flat, ground-lying
+		// pose; a flat item is full-bright in the GUI too, matching vanilla's own default for such icons.
 		return new Baked(flatQuads(tSprite, -1, true), flatItemTransforms(false), false, false, tSprite);
 	}
 
-	/** Предмет-ПРЕДМЕТ (материал/MultiItem): по РЕНДЕР-ПАССАМ getIcon(stack,pass) + тинт getColorFromItemStack(stack,pass). */
+	/** Material/MultiItem items: one flat icon per render pass, via getIcon(stack,pass) and getColorFromItemStack(stack,pass). */
 	private static Baked buildFlatItem(ItemStack aStack, net.minecraft.world.item.Item aItem) {
 		java.util.ArrayList<BakedQuad> tGui = new java.util.ArrayList<>();
 		java.util.ArrayList<BakedQuad> tWorld = new java.util.ArrayList<>();
@@ -252,50 +221,42 @@ public class GT6ItemModel implements BakedModel {
 			if (tSprite == null) tSprite = GT6QuadBuilder.resolveSprite(tIcon, GT6QuadBuilder.ATLAS_BLOCKS);
 			if (tSprite == null) continue;
 			int tColor = itemColor(aItem, aStack, tPass);
-			// BUG-028: признак бар-оверлея — членство в ЦЕНТРАЛЬНОМ реестре иконок мода (НЕ index-математика «последние 2»:
-			// у PrefixItem пасс 1 — легальный слой материала, бар-иконок не отдаёт → его не заденем).
+			// The bar-overlay flag comes from membership in the mod's own central icon registry, not from assuming 'the last
+			// two passes are always bars' -- a material item's own tint pass would otherwise be caught by that assumption.
 			boolean tBar = isBarOverlayIcon(tIcon);
-			// BUG-031: «толщина» — ободок 1px по контуру (бар-оверлею не строим, 1.7.10 рисовал бар плоско)
+			// The 1px outline gives a flat item its 'thickness'; skipped for bar overlays, since 1.7.10 drew those flat.
 			List<BakedQuad> tQuads = flatQuads(tSprite, tColor, !tBar);
 			tGui.addAll(tQuads);
 			if (tBar) tHasBars = true; else tWorld.addAll(tQuads);
 			if (tParticle == null) tParticle = tSprite;
 		}
-		// BUG-112: положение в руке/на земле/в рамке. Канал различия — тот же, что в 1.7.10: isFull3D().
+		// Hand/ground/frame pose is decided by the same channel 1.7.10 used for it: isFull3D().
 		ItemTransforms tTransforms = flatItemTransforms(isFull3D(aItem));
 		Baked rGui = new Baked(java.util.List.copyOf(tGui), tTransforms, false, false, tParticle);
-		// вне GUI (первое/третье лицо, земля, рамка) бар-оверлейные пассы пропускаем — 1:1 с 1.7.10
+		// Bar-overlay passes are skipped anywhere outside the GUI (in hand, on the ground, in a frame), 1:1 with 1.7.10.
 		if (tHasBars) rGui.mWorldVariant = new Baked(java.util.List.copyOf(tWorld), tTransforms, false, false, tParticle);
 		return rGui;
 	}
 
-	// Канонические трансформации ванильных моделей — кэш по пути модели; читаются ИЗ ДВИЖКА один раз (после bake).
+	// Canonical vanilla model transforms, cached by model path and read from the engine once, right after bake.
 	private static final java.util.Map<String, ItemTransforms> sVanillaTransforms = new java.util.concurrent.ConcurrentHashMap<>();
 	private static final java.util.Set<String> sVanillaTransformsTried = java.util.concurrent.ConcurrentHashMap.newKeySet();
-	/** ItemTransforms ванильного {@code minecraft:block/block} (его {@code display.gui} — изометрия 30/225, scale 0.625). */
+	/** The ItemTransforms of vanilla's own block/block model: its GUI display is the 30/225 isometric transform at 0.625 scale. */
 	private static ItemTransforms blockGuiTransforms() {return vanillaTransforms("block/block");}
 
-	/** Тот же канал, что и в 1.7.10: {@code Item.isFull3D()} (у GT6 его несут {@code MultiItemTool} — все инструменты и
-	 *  мечи — и {@code ItemBase.setFull3D()} — спреи, паяльник от {@code GT_Tool_Item}). Спрашиваем КОНТРАКТ базового
-	 *  класса предметов мода, а не иерархию инструментов. */
+	/** Same channel as 1.7.10's Item.isFull3D(), asked via the mod's base item contract, not the tool hierarchy. */
 	private static boolean isFull3D(net.minecraft.world.item.Item aItem) {
 		return aItem instanceof gregapi.item.ItemBase tBase && tBase.isFull3D();
 	}
 
-	/** BUG-112: положение ПЛОСКОГО предмета. В 1.7.10 его задавал сам движок и различал ровно два случая по
-	 *  {@code Item.isFull3D()} — «как рукоять» (RenderPlayer:353-374: поворот -100/45, scale 0.625) для инструментов и
-	 *  мечей, и «плашмя» для остальных иконок. Носитель этого различия — ItemTransforms модели: ванильные
-	 *  {@code item/handheld} и {@code item/generated} несут ровно те же два положения. Потому берём их ИЗ ДВИЖКА тем же
-	 *  приёмом, что и {@code block/block} выше, — углы не выдумываем. */
+	/** In 1.7.10 the engine itself picked between exactly two flat-item poses by isFull3D(); the carrier here is the
+	 *  model's ItemTransforms, taken from vanilla's own two matching models rather than invented angles. */
 	private static ItemTransforms flatItemTransforms(boolean aFull3D) {
 		return vanillaTransforms(aFull3D ? "item/handheld" : "item/generated");
 	}
 
-	/** ItemTransforms ванильной модели по её пути ({@code block/block} — изометрия 30/225 scale 0.625; {@code item/handheld}
-	 *  и {@code item/generated} — два положения предмета в руке). Берутся из движкового {@code ModelBakery.getModel(rl)}
-	 *  ({@code ModelBakery.java:229}, публичный) → {@code BlockModel.getTransforms()} ({@code BlockModel.java:270}),
-	 *  НЕ хардкод-константами (§«не выдумывать константы»). В 26.x публичного геттера не было и приходилось лезть
-	 *  отражением в {@code ModelBakery.resolvedModels}; в 1.20.1 канал открыт — отражение снято. */
+	/** Reads a vanilla model's own ItemTransforms through the engine's public model-bakery getter, not a hardcoded
+	 *  constant; that getter is open on this engine version, where a newer branch had to reach it by reflection instead. */
 	private static ItemTransforms vanillaTransforms(String aModelPath) {
 		ItemTransforms rCached = sVanillaTransforms.get(aModelPath);
 		if (rCached != null || sVanillaTransformsTried.contains(aModelPath)) return rCached;
@@ -308,31 +269,29 @@ public class GT6ItemModel implements BakedModel {
 				if (tTr != null) sVanillaTransforms.put(aModelPath, tTr);
 				return tTr;
 			}
-		} catch (Throwable e) {/* модель недоступна -> fallback NO_TRANSFORMS */}
+		} catch (Throwable e) {/* Model unavailable, so it falls back to NO_TRANSFORMS. */}
 		return null;
 	}
 
-	/** Число рендер-пассов предмета (PrefixItem.getRenderPasses(int)=2). Нет метода → 1 пасс. */
+	/** Item render pass count via PrefixItem.getRenderPasses(int)=2 when present, else 1 pass. */
 	private static int itemRenderPasses(Object aItem, ItemStack aStack) {
 		try { java.lang.reflect.Method m = cachedMethod(aItem.getClass(), "getRenderPasses", int.class); if (m != null) { Object r = m.invoke(aItem, (int)gregapi.util.ST.meta_(aStack)); if (r instanceof Integer ri && ri > 0) return Math.min(ri, 8); } } catch (Throwable e) {}
 		return 1;
 	}
-	/** Иконка предмета на пасс: GT6 {@code getIcon(stack,pass)} (=getIconFromDamageForRenderPass); fallback pass0 getIconIndex/getIconFromDamage. */
+	/** Per-pass item icon via GT6's getIcon(stack,pass), falling back to getIconIndex/getIconFromDamage for pass 0. */
 	private static ResourceLocation iconForPass(Object aItem, ItemStack aStack, int aPass) {
 		try { java.lang.reflect.Method m = cachedMethod(aItem.getClass(), "getIcon", ItemStack.class, int.class); if (m != null) { Object o = m.invoke(aItem, aStack, aPass); if (o instanceof ResourceLocation id) return id; } } catch (Throwable e) {}
 		if (aPass == 0) { ResourceLocation r = tryIcon(aItem, "getIconIndex", ItemStack.class, aStack); if (r == null) r = tryIcon(aItem, "getIconFromDamage", int.class, aStack.getDamageValue()); return r; }
 		return null;
 	}
-	/** GT6 {@code getColorFromItemStack(stack,pass)} → 0xRRGGBB (pass0 = материал-тинт, иначе 0xFFFFFF белый). */
+	/** GT6's getColorFromItemStack(stack,pass) returns 0xRRGGBB: material tint on pass 0, white on every other pass. */
 	private static int itemColor(Object aItem, ItemStack aStack, int aPass) {
 		try { java.lang.reflect.Method m = cachedMethod(aItem.getClass(), "getColorFromItemStack", ItemStack.class, int.class); if (m != null) { Object c = m.invoke(aItem, aStack, aPass); if (c instanceof Integer ci) return ci; } } catch (Throwable e) {}
 		return 0xFFFFFF;
 	}
 
-	// BUG-028: центральный набор бар-оверлейных иконок мода — Textures.ItemIcons.DURABILITY_BAR ∪ ENERGY_BAR (те же
-	// IIconContainer'ы, что отдаёт MultiItemTool.getIcon на последних 2 пассах). Не хардкод-строки и не index-эвристика — опора
-	// на существующий центральный реестр текстур. Ленивый кэш (иконки резолвятся лениво getIcon→run() после bake атласа; строим
-	// при первом рендере); кэшируем только непустой (полностью резолвнутый) набор.
+	// The mod's central set of bar-overlay icons, read from the same texture registry those icons already live in,
+	// not a hardcoded list; cached lazily since icons only resolve once the atlas has finished baking.
 	private static java.util.Set<ResourceLocation> sBarOverlayIcons;
 	private static java.util.Set<ResourceLocation> barOverlayIcons() {
 		if (sBarOverlayIcons != null) return sBarOverlayIcons;
@@ -344,11 +303,10 @@ public class GT6ItemModel implements BakedModel {
 		if (!tSet.isEmpty()) sBarOverlayIcons = tSet;
 		return tSet;
 	}
-	/** BUG-028: иконка пасса — бар-оверлей прочности/заряда (GUI-only)? Мембершип по центральному реестру мода. */
+	/** Is this pass icon a GUI-only durability/charge bar overlay? Decided by membership in the central icon registry. */
 	private static boolean isBarOverlayIcon(ResourceLocation aIcon) { return aIcon != null && barOverlayIcons().contains(aIcon); }
 
-	/** Икона предмета: GT6 {@code getIconIndex(ItemStack)} (PrefixItem/MultiItem) → ResourceLocation; иначе {@code getIconFromDamage(int)}.
-	 *  public — переиспользуется скан-оснасткой рендера (GT6RenderProbe) для приёмки «иконки не пурпур». */
+	/** Resolves an item's icon through GT6's own channel; kept public for a render probe to check for missing icons. */
 	public static ResourceLocation resolveIcon(ItemStack aItem) {
 		Object tItem = aItem.getItem();
 		ResourceLocation r = tryIcon(tItem, "getIconIndex", ItemStack.class, aItem);
@@ -365,11 +323,11 @@ public class GT6ItemModel implements BakedModel {
 		} catch (Throwable ignored) {return null;}
 	}
 
-	/** Плоская грань предмета 16×16 (плоскость z=8/16) из спрайта, front (+Z) либо back (−Z), с тинтом aColor (0xRRGGBB). */
+	/** A flat 16x16 item face at z=8/16 from a sprite, front (+Z) or back (-Z), tinted by aColor (0xRRGGBB). */
 	private static BakedQuad flatFace(TextureAtlasSprite aSprite, boolean aFront, int aColor) {
 		int r=(aColor>>16)&0xFF, g=(aColor>>8)&0xFF, b8=aColor&0xFF;
 		Direction tDir = aFront ? Direction.SOUTH : Direction.NORTH;
-		float z = aFront ? 8.5f/16f : 7.5f/16f; // разнести front/back на 1px (как ItemModelGenerator): обе на z=0.5 → z-fight, тёмная задняя грань проступает
+		float z = aFront ? 8.5f/16f : 7.5f/16f; // front/back are 1px apart, as ItemModelGenerator does; at z=0.5 both would z-fight and show the dark back face
 		float[][] c = aFront
 			? new float[][]{{0,0,z, 0,16},{0,1,z, 0,0},{1,1,z, 16,0},{1,0,z, 16,16}}
 			: new float[][]{{1,0,z, 16,16},{1,1,z, 16,0},{0,1,z, 0,0},{0,0,z, 0,16}};
@@ -377,29 +335,26 @@ public class GT6ItemModel implements BakedModel {
 		QuadBakingVertexConsumer.Buffered b = new QuadBakingVertexConsumer.Buffered();
 		b.setSprite(aSprite);
 		b.setDirection(tDir);
-		b.setTintIndex(-1); // тинт материала УЖЕ запечён в вершины; tintIndex по умолчанию 0 → движок домножил бы ещё раз через ItemColors
-		b.setShade(false);  // плоский предмет — ровный свет (эталон ItemModelGenerator/GuiLight.FRONT), без направленного затенения
+		b.setTintIndex(-1); // Material tint is already baked into the vertices; a default tintIndex would make the engine multiply it in again.
+		b.setShade(false);  // A flat item gets even, front-lit light, matching vanilla's own convention for such icons, with no directional shading.
 		// Same canonical vertex numbering as block faces: one order for the whole mod, see GT6QuadBuilder.EMIT_ORDER.
 		for (int idx = 0; idx < 4; idx++) {
 			final int i = GT6QuadBuilder.EMIT_ORDER[idx];
 			b.vertex(c[i][0], c[i][1], c[i][2]);
-			b.color(r, g, b8, 255); // тинт материала (белая проба подтвердила: цвет-механизм работает; корень — свет)
+			b.color(r, g, b8, 255); // material tint (a white-swatch probe confirmed the color path works; the root cause was lighting)
 			b.normal(n.x(), n.y(), n.z());
-			b.uv(aSprite.getU(c[i][3]), aSprite.getV(c[i][4])); // getU/getV 1.20.1 сами делят на 16 (шкала 0..16, канон 1.7.10) — см. GT6QuadBuilder.boundedFace
+			b.uv(aSprite.getU(c[i][3]), aSprite.getV(c[i][4])); // 1.20.1's own getU/getV already divide by 16 (the 1.7.10 texture scale) internally.
 			b.endVertex();
 		}
 		return b.getQuad();
 	}
 
-	// ==================== BUG-031: боковой ободок «толщины» плоского предмета ====================
-	// Дословная транскрипция движкового ItemModelGenerator.bakeSideFaces/getSideFaces/checkTransition/isTransparent:
-	// для КАЖДОГО непрозрачного пикселя спрайта, у которого сосед прозрачен, строится боковая грань толщиной 1px
-	// (z=7.5..8.5/16) по контуру силуэта — та самая «толщина», отличающая ванильный плоский предмет от плоской картинки.
-	// Ваниль делает скан ОДИН раз при bake модели; здесь результат скана кэшируется по спрайту (сами quad'ы дешёвые).
+	// A literal transcription of the engine's own flat-item side-face algorithm: a 1px face is built along every
+	// silhouette edge, the same 'thickness' that makes a flat item look real; the scan result is cached per sprite.
 
-	/** Канон SideDirection (ItemModelGenerator.SideDirection): UP→Direction.UP, DOWN→DOWN, LEFT→EAST, RIGHT→WEST. */
+	/** The engine's own side-direction mapping (up/down/left/right to up/down/east/west), taken as canon, not reinvented. */
 	private static final Direction[] SIDE_DIRS = {Direction.UP, Direction.DOWN, Direction.EAST, Direction.WEST};
-	/** Кэш пиксельного скана: имя спрайта → список граней {dirIdx, x, y} (union по всем кадрам анимации, как ваниль). */
+	/** Pixel-scan cache: sprite name to face list {dirIdx,x,y}, unioned across all animation frames like vanilla does. */
 	private static final java.util.concurrent.ConcurrentHashMap<String, int[][]> sSideFaceCache = new java.util.concurrent.ConcurrentHashMap<>();
 
 	private static void addSideQuads(List<BakedQuad> aOut, TextureAtlasSprite aSprite, int aColor) {
@@ -408,10 +363,10 @@ public class GT6ItemModel implements BakedModel {
 		float tXScale = 16.0F / tC.width(), tYScale = 16.0F / tC.height(); // bakeSideFaces:117-118
 		for (int[] tFace : tFaces) {
 			int tDir = tFace[0]; float x = tFace[1], y = tFace[2];
-			// UV (bakeSideFaces:124-135): подрез 0.1px от краёв пикселя; вертикальные грани — V перевёрнут
+			// UV per bakeSideFaces: inset 0.1px from pixel edges, with V flipped on vertical faces.
 			float u0 = x + 0.1F, u1 = x + 1.0F - 0.1F, v0, v1;
 			if (tDir <= 1) {v0 = y + 0.1F; v1 = y + 1.0F - 0.1F;} else {v0 = y + 1.0F - 0.1F; v1 = y + 0.1F;} // isHorizontal = UP|DOWN
-			// Геометрия (bakeSideFaces:137-186): границы строки в пикселях → масштаб → flip Y текстуры (y вниз) в модель (y вверх)
+			// Geometry per bakeSideFaces: pixel-row bounds scaled and flipped from texture-space Y-down into model-space Y-up.
 			float tStartX = x, tStartY = y, tEndX = x, tEndY = y;
 			switch (tDir) {
 				case 0: tEndX = x + 1.0F; break;                                    // UP
@@ -432,7 +387,7 @@ public class GT6ItemModel implements BakedModel {
 		}
 	}
 
-	/** Пиксельный скан контура (getSideFaces/checkTransition/isTransparent), кэш по спрайту. */
+	/** The pixel-contour scan for the side outline above, cached per sprite since sprites don't change. */
 	private static int[][] sideFacesOf(TextureAtlasSprite aSprite) {
 		net.minecraft.client.renderer.texture.SpriteContents tC = aSprite.contents();
 		String tKey = tC.name().toString();
@@ -441,19 +396,19 @@ public class GT6ItemModel implements BakedModel {
 		java.util.LinkedHashSet<Integer> tSet = new java.util.LinkedHashSet<>();
 		try {
 			int w = tC.width(), h = tC.height();
-			int[] tFrames = tC.getUniqueFrames().toArray(); // 1.20.1: getUniqueFrames отдаёт IntStream (SpriteContents.java:162)
+			int[] tFrames = tC.getUniqueFrames().toArray(); // 1.20.1's own getUniqueFrames returns an IntStream here, not the older array form.
 			for (int f = 0; f < tFrames.length; f++) {
 				int tFrame = tFrames[f];
 				for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
 					if (sideTransparent(tC, tFrame, x, y, w, h)) continue;
-					// checkTransition: сосед (x-stepX, y-stepY) прозрачен → грань (шаги Direction: UP=(0,1) → сосед (x,y-1) и т.д.)
+					// checkTransition: a transparent neighbor at (x-stepX, y-stepY) means a face is needed there.
 					if (sideTransparent(tC, tFrame, x,     y - 1, w, h)) tSet.add(sideKey(0, x, y)); // UP
 					if (sideTransparent(tC, tFrame, x,     y + 1, w, h)) tSet.add(sideKey(1, x, y)); // DOWN
 					if (sideTransparent(tC, tFrame, x - 1, y,     w, h)) tSet.add(sideKey(2, x, y)); // LEFT (EAST)
 					if (sideTransparent(tC, tFrame, x + 1, y,     w, h)) tSet.add(sideKey(3, x, y)); // RIGHT (WEST)
 				}
 			}
-		} catch (Throwable e) {tSet.clear();} // пиксели недоступны — предмет остаётся без ободка (перед/зад целы)
+		} catch (Throwable e) {tSet.clear();} // pixels unavailable -> item stays without an outline (front/back are intact)
 		int[][] rFaces = new int[tSet.size()][]; int i = 0;
 		for (int tKey2 : tSet) rFaces[i++] = new int[]{tKey2 >>> 28, (tKey2 >>> 14) & 0x3FFF, tKey2 & 0x3FFF};
 		sSideFaceCache.put(tKey, rFaces);
@@ -461,15 +416,14 @@ public class GT6ItemModel implements BakedModel {
 	}
 	private static int sideKey(int aDir, int aX, int aY) {return (aDir << 28) | (aX << 14) | aY;}
 	private static boolean sideTransparent(net.minecraft.client.renderer.texture.SpriteContents aC, int aFrame, int aX, int aY, int aW, int aH) {
-		return aX < 0 || aY < 0 || aX >= aW || aY >= aH || aC.isTransparent(aFrame, aX, aY); // isTransparent (вне спрайта = прозрачно)
+		return aX < 0 || aY < 0 || aX >= aW || aY >= aH || aC.isTransparent(aFrame, aX, aY); // isTransparent treats anything outside the sprite's own bounds as transparent too.
 	}
 
-	/** Боковой quad по канону FaceBakery: порядок вершин FaceInfo (MIN=from/MAX=to),
-	 *  UV по индексу вершины (u→minU для 0,1 / maxU для 2,3; v→minV для 0,3 / maxV для 1,2).
-	 *  Прямой FaceInfo-порядок даёт тот же winding, что реверс в {@link #flatFace} (сверено по SOUTH-циклу). */
+	/** Follows the engine's own FaceInfo vertex order for a side quad; checked to give the same winding as the reversed
+	 *  order flatFace uses elsewhere, so both stay consistent. */
 	private static BakedQuad sideQuad(TextureAtlasSprite aSprite, Direction aDir, float[] aFrom, float[] aTo, float aMinU, float aMinV, float aMaxU, float aMaxV, int aColor) {
 		int r = (aColor >> 16) & 0xFF, g = (aColor >> 8) & 0xFF, b8 = aColor & 0xFF;
-		// FaceInfo: селектор from/to по осям для 4 вершин грани (1=to, 0=from)
+		// FaceInfo: from/to selector per axis for each of a face's 4 vertices (1=to, 0=from).
 		int[][] tSel;
 		switch (aDir) {
 			case UP:   tSel = new int[][]{{0,1,0},{0,1,1},{1,1,1},{1,1,0}}; break;
@@ -482,12 +436,12 @@ public class GT6ItemModel implements BakedModel {
 		b.setSprite(aSprite);
 		b.setDirection(aDir);
 		b.setTintIndex(-1);
-		b.setShade(false); // как flatFace: единая яркость модели плоского предмета
+		b.setShade(false); // Same as flatFace: one uniform brightness for the whole flat-item model.
 		for (int i = 0; i < 4; i++) {
 			b.vertex((tSel[i][0] == 1 ? aTo[0] : aFrom[0]) / 16f, (tSel[i][1] == 1 ? aTo[1] : aFrom[1]) / 16f, (tSel[i][2] == 1 ? aTo[2] : aFrom[2]) / 16f);
 			b.color(r, g, b8, 255);
 			b.normal(n.x(), n.y(), n.z());
-			b.uv(aSprite.getU(i == 0 || i == 1 ? aMinU : aMaxU), aSprite.getV(i == 0 || i == 3 ? aMinV : aMaxV)); // getU/getV 1.20.1 сами делят на 16
+			b.uv(aSprite.getU(i == 0 || i == 1 ? aMinU : aMaxU), aSprite.getV(i == 0 || i == 3 ? aMinV : aMaxV)); // 1.20.1's own getU/getV already divide by 16 internally, same as the earlier note above.
 			b.endVertex();
 		}
 		return b.getQuad();

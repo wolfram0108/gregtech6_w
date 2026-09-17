@@ -29,10 +29,8 @@ import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.render.IconContainerCopied;
 import gregapi.util.UT;
-// ⛔ АТЛАС БЛОКОВ — У ОБЩЕГО НОСИТЕЛЯ, НЕ У КЛИЕНТСКОГО. TextureAtlas помечен @OnlyIn(Dist.CLIENT)
-// (forge-1201-decompiled/net/minecraft/client/renderer/texture/TextureAtlas.java:25): его загрузка на
-// выделенном сервере роняет класс (BP-BUG-022). Значение ТО ЖЕ: сам движок объявляет LOCATION_BLOCKS
-// псевдонимом этого поля — TextureAtlas.java:30 «LOCATION_BLOCKS = InventoryMenu.BLOCK_ATLAS».
+// The block atlas belongs to the shared holder, not the client one: TextureAtlas is
+// @OnlyIn(Dist.CLIENT), and loading it on a dedicated server crashes the class.
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.resources.ResourceLocation;
@@ -176,8 +174,8 @@ public class Textures {
 		public ResourceLocation mIcon;
 		public ITexture mTexture = new BlockTextureDefault(this);
 
-		// КРИТ (прозрачные блоки): mIcon строился ТОЛЬКО в run() из sBlockIconload (1.7.10 icon-load-фаза, в neo НЕ портирована) →
-		// mIcon=null → 0 quads → прозрачно (rockores/crystalores и все iconset-блоки). Фикс: ленивое построение при первом getIcon.
+		// mIcon used to be built only by the 1.7.10 icon-load phase, which is not ported, so it stayed null and the
+		// block rendered with zero quads (transparent); it is now built lazily on first getIcon call.
 		@Override public ResourceLocation getIcon(int aRenderPass) {if (mIcon == null) run(); return mIcon;}
 
 		private BlockIcons() {
@@ -186,8 +184,8 @@ public class Textures {
 
 		@Override
 		public void run() {
-			// F3-render: было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути (см. gregapi.render.TextureSet). Адаптировано.
-			// lowercase: имя энума ЗАГЛАВНОЕ (ORE_ANTHRACITE), а neo ResourceLocation требует lowercase + файлы лоуэркейзены (iconsets/ore_anthracite.png).
+			// The old icon-registration hook is gone; the enum's name is UPPERCASE, but neo's ResourceLocation requires a lowercase
+			// path and lowercase asset files, so it's lowercased explicitly here.
 				try { mIcon = new ResourceLocation((RES_PATH_BLOCK + "iconsets/" + this).toLowerCase(java.util.Locale.ROOT)); } catch (Throwable e) { mIcon = null; }
 		}
 
@@ -718,9 +716,8 @@ public class Textures {
 			protected ResourceLocation mIcon;
 			protected String mIconName;
 
-			// КРИТ (прозрачные блоки): mIcon раньше строился ТОЛЬКО в run() из sBlockIconload — а эта 1.7.10 icon-load-фаза в neo
-			// НЕ портирована → run() не звался → mIcon=null → getIcon отдавал null → putFace пропускал грань → 0 quads (BlockStones/
-			// RockOres и ВСЕ CustomIcon-блоки прозрачны). Фикс: ленивое построение при первом getIcon (как TextureSet.getIcon).
+			// mIcon used to be built only by the removed icon-load phase, leaving it null and making these blocks
+			// render with zero quads; it is now built lazily on first getIcon call, the same fix as TextureSet.getIcon.
 			@Override public ResourceLocation getIcon(int aRenderPass) {if (mIcon == null) run(); return mIcon;}
 
 			public CustomIcon(String aIconName) {
@@ -730,10 +727,8 @@ public class Textures {
 
 			@Override
 			public void run() {
-				// F3-render: было GT_API.sBlockIcons.registerIcon(mIconName) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути. Адаптировано.
-				// КРИТ (прозрачные блоки): пути CustomIcon содержат ЗАГЛАВНЫЕ варианты (stones/X/STONE, COBBLE, BRICKS...), а neo
-				// ResourceLocation ТРЕБУЕТ lowercase (заглавные → ResourceLocationException) + текстур-файлы лоуэркейзены. Без lowercase
-				// mIcon=null → putFace пропускает грань → 0 quads → блок ПРОЗРАЧНЫЙ (BlockStones/RockOres и все CustomIcon-блоки).
+				// Without lowercasing, the uppercase paths in CustomIcon fail ResourceLocation parsing, leaving mIcon null; that skips
+				// the face entirely in putFace, so the block renders fully transparent instead of textured.
 				try { mIcon = new ResourceLocation(mIconName.toLowerCase(java.util.Locale.ROOT)); } catch (Throwable e) { mIcon = null; }
 			}
 
@@ -853,9 +848,8 @@ public class Textures {
 		protected ResourceLocation mIcon, mOverlay;
 		protected boolean mUseOverlay;
 
-		// F3-render (ленивый, тот же приём, что TextureSet.java:97 / BI.Icon): mIcon строился ТОЛЬКО в run() из sItemIconload
-		// (1.7.10 icon-load-фаза), а она в neo НЕ портирована (GT_API.sItemIconload обнуляется на init) → mIcon оставался null →
-		// getIcon возвращал null → предмет (напр. VOID/RENDERING_ERROR) не рисовался. Строим ЛЕНИВО при первом запросе.
+		// mIcon used to be built only by the removed 1.7.10 item icon-load phase, leaving it null so the item
+		// failed to render; it is now built lazily on first request, the same pattern as TextureSet.
 		@Override public ResourceLocation getIcon(int aRenderPass) {if (mIcon == null) run(); return aRenderPass==1&&mOverlay!=null?mOverlay:mIcon;}
 
 		private ItemIcons() {
@@ -874,9 +868,7 @@ public class Textures {
 
 		@Override
 		public void run() {
-			// F3-render: было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути. Адаптировано.
-			// toLowerCase: enum-имена uppercase (VOID/RENDERING_ERROR), а neo ResourceLocation требует lowercase-путь (иначе parse
-			// бросает) + ассеты лежат lowercase (iconsets/void.png) — тот же приём, что ItemBase.registerIcons.
+			// The old icon-registration hook is gone; enum names are UPPERCASE but neo's ResourceLocation needs a lowercase path.
 			mIcon       = new ResourceLocation((RES_PATH_ITEM + "iconsets/" + this).toLowerCase(java.util.Locale.ROOT));
 			if (mUseOverlay)
 			mOverlay    = new ResourceLocation((RES_PATH_ITEM + "iconsets/" + this + "_OVERLAY").toLowerCase(java.util.Locale.ROOT));
@@ -886,8 +878,7 @@ public class Textures {
 			protected ResourceLocation mIcon, mOverlay;
 			protected String mIconName;
 
-			// F3-render (ленивый, тот же приём, что TextureSet.java:97): mIcon строился ТОЛЬКО в run() из sItemIconload —
-			// эта 1.7.10 icon-load-фаза в neo не портирована → строим ЛЕНИВО при первом запросе.
+			// mIcon used to be built only by the removed icon-load phase; it is now built lazily on first request.
 			@Override public ResourceLocation getIcon(int aRenderPass) {if (mIcon == null) run(); return aRenderPass==1?mOverlay:mIcon;}
 
 			public CustomIcon(String aIconName) {
@@ -897,8 +888,7 @@ public class Textures {
 
 			@Override
 			public void run() {
-				// F3-render: было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути. Адаптировано.
-				// toLowerCase: neo ResourceLocation требует lowercase-путь (иначе parse бросает), ассеты lowercase — как ItemBase.registerIcons.
+				// The old icon-registration hook is gone; neo's ResourceLocation needs a lowercase path, matching lowercase assets.
 				mIcon       = new ResourceLocation(mIconName.toLowerCase(java.util.Locale.ROOT));
 				mOverlay    = new ResourceLocation((mIconName + "_OVERLAY").toLowerCase(java.util.Locale.ROOT));
 			}

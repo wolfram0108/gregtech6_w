@@ -4,9 +4,8 @@
 # Note that there are a couple of TOML lists in this file.
 # Find more information on toml format here:  https://github.com/toml-lang/toml
 
-# Загрузчик мода — на Forge 1.20.1 оба поля ОБЯЗАТЕЛЬНЫ (26.x давал им дефолты, отсюда их не было
-# в шаблоне): без них dedicated падает InvalidModFileException «Missing ModLoader in file».
-# Диапазон — мажор Forge 47.x, тот же принцип, что versionRange зависимости ниже.
+# Both loader fields are mandatory on Forge 1.20.1, unlike 26.x which defaulted them.
+# A dedicated server fails to start without them.
 modLoader="javafml" #mandatory
 loaderVersion="[47,)" #mandatory
 
@@ -41,7 +40,7 @@ displayURL="https://github.com/wolfram0108/gregtech6_w"
 
 
 # The description text for the mod (multi line!) (#mandatory)
-# Автор оригинала и происхождение — обязательная атрибуция производной работы (LGPL).
+# Required attribution for a derivative work under the original mod's license.
 authors="Gregorius Techneticies (GregTech 6); NeoForge port by wolfram0108"
 credits="Ported from GregTech 6 for Minecraft 1.7.10 by Gregorius Techneticies."
 
@@ -60,11 +59,8 @@ Provenance of every shipped component is in NOTICE, inside this jar.
 ALPHA: playable end to end, but not finished. Worlds are not guaranteed to survive updates.
 '''
 
-# F12 (decisions/F12-registration-lifecycle.md): GT6 = три родных FML-мода Грегориуса в одном jar
-# (GAPI/GAPI_POST/GT), каждый со своим @Mod(value=...) в своём классе (gregapi.GT_API / gregapi.GT_API_Post /
-# gregtech6.GregTech6). FMLJavaModLanguageProvider (fml-decompiled :53-61) помечает @Mod(value=X) БЕЗ
-# соответствующей [[mods]]-записи для modId X как dangling entrypoint — поэтому у GAPI и GAPI_POST здесь
-# собственные metadata-записи, симметрично записи ${mod_id} (GT) выше.
+# GT6 is really three of Gregorius's own separate mods bundled in one jar.
+# The loader flags any @Mod without a matching entry here as dangling, so each needs its own block.
 [[mods]] #mandatory
 modId="gregapi" #mandatory
 version="${mod_version}" #mandatory
@@ -81,9 +77,8 @@ description='''
 Late-loading half of the GregTech 6 core API. Part of the GregTech 6 distribution, not a separate mod.
 '''
 
-# F12 §4.4: контент-мод GT (gregtech.GT6_Main) переведён на реальный neo-@Mod(value=gregtech) —
-# теперь его lifecycle (Loader_Fluids/Items/PrefixBlocks/…) реально запускается движком. Загружается
-# ПОСЛЕ gregapi_post (оригинал GT6_Main.java: dependencies="required-after:"+GAPI_POST).
+# The content mod is now a real neo @Mod, so its lifecycle actually runs.
+# It loads after the other two, matching the original's own dependency order.
 [[mods]] #mandatory
 modId="gregtech" #mandatory
 version="${mod_version}" #mandatory
@@ -92,15 +87,8 @@ description='''
 Content of GregTech 6: materials, machines, worldgen, recipes. Part of the GregTech 6 distribution.
 '''
 
-# УЛИКА R7 (доработка): {@code @Mod.depends()} на Java-стороне (gregapi.GT_API/GT_API_Post) НЕ задаёт
-# порядок загрузки — он только фильтрует entrypoint-класс по наличию modId в списке загруженных модов
-# (fml-decompiled net/neoforged/fml/javafmlmod/FMLJavaModLanguageProvider.java:33). Реальный порядок
-# строит {@code ModSorter} (fml-decompiled net/neoforged/fml/loading/ModSorter.java:194-208,
-# {@code addDependency}) из ГРАФА, построенного ИМЕННО из этих {@code [[dependencies.<owner>]]}-секций:
-# {@code ordering="BEFORE"} → ребро owner→target (owner раньше target), {@code ordering="AFTER"} →
-# ребро target→owner (owner позже target). Здесь воспроизведена структурная связь оригинала 1:1
-# (gregtech6/.../GT_API.java:109 {@code "required-before:"+GAPI_POST}, GT_API_Post.java:59
-# {@code "required-after:"+GAPI}) — с обеих сторон связки, как в оригинале.
+# @Mod.depends() on the Java side doesn't actually order loading - it only checks a dependency is present at all.
+# Real load order comes from these ordering=BEFORE/AFTER sections instead, reproducing the original's link on both sides.
 [[dependencies.gregapi]]
     modId="gregapi_post"
     mandatory=true
@@ -115,7 +103,7 @@ Content of GregTech 6: materials, machines, worldgen, recipes. Part of the GregT
     ordering="AFTER"
     side="BOTH"
 
-# GT-мод грузится ПОСЛЕ gregapi_post (ordering=AFTER ⇒ ребро gregapi_post→gregtech в ModSorter).
+# This mod loads after the other one, per the ordering direction declared here.
 [[dependencies.gregtech]]
     modId="gregapi_post"
     mandatory=true
@@ -123,8 +111,8 @@ Content of GregTech 6: materials, machines, worldgen, recipes. Part of the GregT
     ordering="AFTER"
     side="BOTH"
 
-# BUG-099: ЕДИНСТВЕННАЯ вставка мода в код движка (F2 — замена coremod-трансформеров Грегориуса).
-# Восстанавливает позицию предмета на сетке крафта, которую движок 26.1.2 отбрасывает до вызова рецепта.
+# The mod's one and only insertion into engine code, replacing the original's coremod transformers.
+# Restores crafting-grid item position that 26.1.2 otherwise discards early.
 [[mixins]]
 config="gregapi.mixins.json"
 
@@ -142,7 +130,7 @@ config="gregapi.mixins.json"
     # The type of the dependency. Can be one of "required", "optional", "incompatible" or "discouraged" (case insensitive).
     # 'required' requires the mod to exist, 'optional' does not
     # 'incompatible' will prevent the game from loading when the mod exists, and 'discouraged' will show a warning
-    mandatory=true #mandatory — формат Forge 1.20.1; type="required" появился позже (neo)
+    mandatory=true # mandatory is the Forge 1.20.1 spelling; type="required" is a later neo spelling.
     # Optional field describing why the dependency is required or why it is incompatible
     # reason="..."
     # The version range of the dependency

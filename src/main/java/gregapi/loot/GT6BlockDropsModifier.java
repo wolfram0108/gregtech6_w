@@ -39,27 +39,12 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 
-/**
- * Ветка 1.20.1: НОСИТЕЛЬ обработки дропа блока для ЧУЖИХ блоков (ванильных и модовых).
- *
- * <p>Правило (унификация, конверсия дропа инструментом GT6, сбор в инвентарь, огненный аспект, listва и
- * прочее) живёт в одном месте — {@code gregapi.GT_API_Proxy#processBlockDrops}; здесь только доставка.
- * В 1.7.10 доставкой было событие {@code BlockEvent.HarvestDropsEvent}. В Forge 1.20.1 события со списком
- * дропов произвольного блока нет вовсе (ни {@code HarvestDropsEvent} — снят движком, ни
- * {@code BlockDropsEvent} — он только у NeoForge), а единственный хук, получающий этот список, —
- * глобальный модификатор лута: {@code LootModifier.doApply(ObjectArrayList<ItemStack>, LootContext)}
- * ({@code net/minecraftforge/common/loot/LootModifier.java:68}), который движок зовёт для КАЖДОЙ
- * сработавшей лут-таблицы ({@code ForgeHooks.java:1187-1188}).</p>
- *
- * <p><b>Гейт:</b> обрабатываем только дроп БЛОКА — по наличию {@code BLOCK_STATE} в контексте
- * ({@code LootContextParams.BLOCK_STATE}); лут сундуков, рыбалки и мобов через эту дверь не проходит.
- * Собственные блоки GT6 сюда не попадают (они не имеют лут-таблиц и отдают список сами) — они зовут тот
- * же центр напрямую из своего {@code getDrops}.</p>
- */
+/** Carries foreign (vanilla/modded) block-drop handling; the rule itself lives in one place (GT_API_Proxy),
+ *  this is only delivery, since this version has no drop-list event -- the global loot modifier is the only hook. */
 public class GT6BlockDropsModifier extends LootModifier {
 	public static final Codec<GT6BlockDropsModifier> CODEC = RecordCodecBuilder.create(aInstance -> codecStart(aInstance).apply(aInstance, GT6BlockDropsModifier::new));
 
-	/** ЕДИНСТВЕННЫЙ реестр GLM-сериализаторов мода. Регистрируется тем же мод-басом, что и остальные центры. */
+	/** The mod's only global-loot-modifier serializer registry, on the same mod bus as the rest of the centers. */
 	public static final DeferredRegister<Codec<? extends IGlobalLootModifier>> SERIALIZERS = DeferredRegister.create(ForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, gregapi.data.MD.GT.mID);
 	public static final net.minecraftforge.registries.RegistryObject<Codec<GT6BlockDropsModifier>> TYPE = SERIALIZERS.register("block_drops", () -> CODEC);
 

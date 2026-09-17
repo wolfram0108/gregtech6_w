@@ -55,7 +55,7 @@ public class ContainerClientChest extends ContainerClient {
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer2(float par1, int par2, int par3) {
-		// был GL11.glColor4f(1,1,1,1) — в neo цвет пер-blit (дефолт белый), сброс состояния не существует
+		// Per-blit color in neo defaults to white; there is no separate reset call to make.
 		int k = (width - xSize) / 2;
 		int l = (height - ySize) / 2;
 		drawTexturedModalRect(k, l, 0, 0, xSize, mRows * 18 + 17);

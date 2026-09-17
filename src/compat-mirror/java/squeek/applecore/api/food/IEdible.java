@@ -37,7 +37,7 @@ package squeek.applecore.api.food;
 
 import net.minecraft.world.item.ItemStack;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — AppleCore. Метод, который переопределяет GT6. */
+/** Compile-only mirror of the AppleCore API: the method GregTech6 overrides. */
 public interface IEdible {
     FoodValues getFoodValues(ItemStack aStack);
 }

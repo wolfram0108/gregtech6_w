@@ -85,12 +85,8 @@ public class GT_Tool_BranchCutter extends ToolStats {
 	
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch) {
-		// F-harvest: 1.7.10 HarvestDropsEvent.dropChance (шанс выпадения ванильного дропа) удалён — neo BlockDropsEvent
-		// роняет getDrops() всегда (dropChance=1.0 эквивалент), а кастомный дроп задаётся aDrops ниже -> буст-строка no-op.
-		// 1.7.10: `Blocks.leaves` = дуб/ель/берёза/джунгли (мета 0-3), `Blocks.leaves2` = акация/тёмный дуб.
-		// В neo обе семьи расщеплены на отдельные блоки, а мета блока в мире больше не несёт породу — сравнение
-		// с одним членом ловило только дуб/акацию и всегда роняло ДУБОВЫЙ саженец. Породу берём из положения
-		// блока в семье (центр CS.Flattened), им же `ST.make` подставит саженец нужной породы.
+		// neo's leaves families are split into separate blocks and meta no longer carries species, so comparing
+		// against one leaves constant always dropped an oak sapling; species is read via CS.Flattened's family position instead.
 		Block tLeavesHead = gregapi.data.CS.Flattened.headOf(aBlock);
 		if (tLeavesHead == Blocks.OAK_LEAVES) {
 			aDrops.clear();
@@ -104,7 +100,7 @@ public class GT_Tool_BranchCutter extends ToolStats {
 			aDrops.add(ST.make(Blocks.VINE, 1, 0));
 		} else if (aBlock instanceof BlockBaseLeaves) {
 			aDrops.clear();
-			aDrops.addAll(((BlockBaseLeaves)aBlock).getDrops(aPlayer.level(), aX, aY, aZ, aMetaData, aFortune)); // было getItemDropped(meta,rng,fortune)+damageDropped(meta) (1.7.10) -> GT6-leaves getDrops-центр
+			aDrops.addAll(((BlockBaseLeaves)aBlock).getDrops(aPlayer.level(), aX, aY, aZ, aMetaData, aFortune)); // was getItemDropped/damageDropped (1.7.10); now GT6's own leaves-drops center
 
 		} else if (IL.IC2_Leaves_Rubber.equal(aBlock)) {
 			aDrops.clear();

@@ -35,21 +35,13 @@ import java.util.List;
 
 import static gregapi.data.CS.*;
 
-/**
- * F11 ПЕРЕХОДНИК — замена Forge {@code net.minecraftforge.oredict.ShapelessOreRecipe} (см.
- * {@code decisions/F11-crafting-recipe.md}). Дословный аналог Forge-семантики бесформенного ore-рецепта,
- * но сетка — neo {@code CraftingContainer} ({@code getItem}/{@code size}), сравнение стеков — GT6 {@code ST.equal}
- * (учитывает материал-компонент, F1), ore-имена — F4 {@code OreDictionary.getOres}.
- *
- * <p>Каждый вход — {@code ItemStack} (точный) либо {@code List<ItemStack>} (ore-альтернативы). Это тот же
- * формат, что читает {@code AdvancedCraftingShapeless.matches} через {@code getInput()}
- * ({@code instanceof ItemStack} / {@code instanceof Iterable}).</p>
- */
+/** Replaces Forge's own ShapelessOreRecipe: same semantics, over CraftingContainer, GT6's own stack equality, and
+ *  the ore dictionary for names. Each input is an exact stack or a list of ore alternatives, same format as elsewhere. */
 public class ShapelessOreRecipe implements ICraftingRecipeGT {
 	protected final ItemStack mOutput;
-	/** Каждый элемент: {@code ItemStack} (точный вход) или {@code List<ItemStack>} (ore-альтернативы). */
+	/** Each element is either an exact ItemStack or a List<ItemStack> of ore alternatives. */
 	protected final List<Object> mInput = new ArrayList<>();
-	/** F4 роль-C: ore-версия ванильного датапак-рецепта (см. {@code ShapedOreRecipe.mVanillaReplacement}). */
+	/** Marks this as an ore-recipe substitute for a vanilla datapack recipe, same as ShapedOreRecipe.mVanillaReplacement. */
 	public boolean mVanillaReplacement = F;
 	public net.minecraft.resources.ResourceLocation mSourceId = null;
 
@@ -68,7 +60,7 @@ public class ShapelessOreRecipe implements ICraftingRecipeGT {
 		}
 	}
 
-	/** Совпадение стека сетки с входом (точный {@code ItemStack} или любой из ore-списка). */
+	/** Whether a grid stack matches this input, either the exact stack or any of the ore-list alternatives. */
 	protected static boolean ingredientMatches(ItemStack aStack, Object aTarget) {
 		if (aTarget instanceof ItemStack) return ST.equal(aStack, (ItemStack)aTarget, T);
 		if (aTarget instanceof List) for (Object tAlt : (List<?>)aTarget) if (tAlt instanceof ItemStack && ST.equal(aStack, (ItemStack)tAlt, T)) return T;
@@ -94,7 +86,7 @@ public class ShapelessOreRecipe implements ICraftingRecipeGT {
 	@Override
 	public ItemStack getCraftingResult(CraftingContainer aGrid) {return ST.copy(mOutput);}
 
-	/** @return список входов ({@code ItemStack} / {@code List<ItemStack>}) — как у Forge-{@code getInput()}. */
+	/** @return the list of inputs (ItemStack / List<ItemStack>), matching Forge's own getInput(). */
 	public List<Object> getInput() {return mInput;}
 
 	@Override public int getRecipeSize() {return mInput.size();}

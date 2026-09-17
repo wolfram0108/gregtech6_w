@@ -47,25 +47,12 @@ import net.minecraftforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;
 
-/**
- * R8-фикс (GPT-возврат): вызовы {@code new FoodStat(...)} ниже в {@code addItems()} оканчиваются
- * numeric-id квадруплетами {@code potionId, duration, level, chance} (1.7.10 {@code Potion.xxx.id}).
- * {@code Potion}/{@code MobEffect} статические инстансы удалены из neo целиком (data-driven), поэтому
- * значения ниже — ЛИТЕРАЛЬНЫЕ 1.7.10-id, сверенные с оракульным декомпилом
- * {@code gregtech6/build/tmp/recompSrc/net/minecraft/potion/Potion.java} (комментарий с именем эффекта
- * перед каждым числом — не выдумано, взято из оракула). Канал рабочий: {@code UT.Entities.applyPotion
- * (Entity,int aID,...)} (gregapi/util/UT.java) мапит id через {@code VANILLA_POTION_IDS} (напр. 10 то
- * есть {@code MobEffects.REGENERATION}) на реальный {@code MobEffect} — R8-переревизия (GPT)
- * потребовала полного аудита: таблица покрывает ВСЕ vanilla id, реально используемые в GT6 (1-20,22,23,
- * включая 23 = saturation/field_76443_y в Pill_Cure_All), сверенные тем же оракулом. Деградируют ТОЛЬКО
- * незарегистрированные кастом-зелья чужих модов {@code PotionsGT.ID_*} (id меньше 0, silent no-op —
- * не новая деградация, приёмка оригинала). Данные GT6 (id/длительность/
- * усиление/шанс) для каждой еды сохранены 1:1 с {@code gregtech6/}.
- */
+/** The numbers here are literal 1.7.10 potion ids (their static Potion instances are gone on neo), mapped to a real
+ *  MobEffect through a lookup table; only unregistered foreign custom ids silently degrade, as the original did too. */
 public class MultiItemFood extends MultiItemRandomWithCompat implements IItemRottable {
 	public MultiItemFood(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		// F16 creative-tab: своя GT-вкладка (icon+displayItems), регистрируется CreativeTabsGT на RegisterEvent<CreativeModeTab>. 1:1.
+		// Its own creative tab, registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>, 1:1 with the original.
 		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Nature & Foods", this, (short)12000);
 	}
 	

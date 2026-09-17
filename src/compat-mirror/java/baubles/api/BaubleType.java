@@ -35,8 +35,8 @@
 
 package baubles.api;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Baubles. Только константы, используемые GregTech6
- *  (PrefixItemChain/PrefixItemRing.getBaubleType). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Baubles API: only the constants GregTech6 actually reads
+ *  (PrefixItemChain/PrefixItemRing.getBaubleType). */
 public enum BaubleType {
 	AMULET, RING, BELT, HEAD, BODY, CHARM, TRINKET
 }

@@ -33,18 +33,14 @@
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Пакет gt6mirror.minecraftforge.common (не net.minecraftforge.common): boot-краш ResolutionException —
-// настоящий модуль forge 1.20.1 и модуль gregtech6 экспортировали бы один и тот же пакет net.minecraftforge.*
-// (split-package), JPMS такое не резолвит; тип живой (используется рантаймом), поэтому переупакован, а не удалён.
+// Package is gt6mirror.minecraftforge.common, not net.minecraftforge.common: the real forge module and
+// gregtech6 would otherwise export the same package (JPMS split); repackaged, not deleted, since runtime uses it.
 package gt6mirror.minecraftforge.common;
 
 import net.minecraft.advancements.Advancement;
 
-/** BUG-039 v4: перемещён из net.minecraft.stats (JPMS вырезал пакет из рантайма -> getstatic из GT_Tool_* кидал NoClassDefFoundError при крафте инструментов; канон WRCC). 1.7.10 {@code net.minecraft.stats.AchievementList} — реестр ванильных достижений. neo удалил Achievement/
- *  AchievementList/triggerAchievement (→ data-driven advancements). Ядро приняло F18-решение: выдача достижений —
- *  централизованный no-op ({@code ST.achieve(Entity, Advancement)} возвращает T без действия, decisions/F18-achievements.md),
- *  т.к. единственный neo-API PlayerAdvancements.award навязывает рецепты+xp+чат — не 1:1. Эти константы — типоносители,
- *  передаваемые в тот no-op (значение игнорируется); null консистентен с F18. Достижения не входят в golden-паритет. */
+/** Moved here because the real package is missing from the runtime module graph, which crashed
+ *  tool crafting; achievement awarding is a centralized no-op since neo's advancement API is not 1:1 with this. */
 public class AchievementList {
 	public static final Advancement acquireIron = null, buildPickaxe = null, buildBetterPickaxe = null,
 		buildSword = null, buildHoe = null, buildFurnace = null;

@@ -32,13 +32,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import static gregapi.data.CS.*;
 
-/**
- * F-tileentity-construction (LOAD-путь): concrete-заглушка, которую neo создаёт на world-load для GT6-MTE, чей
- * конкретный класс НЕ выводится из блока (MTE-машины: класс = sub-ID из сохранённого NBT, недоступен в
- * {@code BlockEntityType.create(pos,state)}). Прежний supplier {@code ->null} падал NPE ({@code BlockEntity.loadStatic:206}).
- * Заглушка лишь захватывает сырой NBT в {@link #loadAdditional}; реальный MTE реконструируется через реестр и заменяет
- * заглушку на {@code ChunkEvent.Load} (там доступен {@code Level} + позиция, замена {@code setBlockEntity} безопасна).
- */
+/** A concrete stub neo creates on world-load for GT6 machines whose class comes from saved NBT, unavailable
+ *  to BlockEntityType.create; it only captures raw NBT, and the registry replaces it with the real MTE on ChunkEvent.Load. */
 public class TileEntityLoaderStub extends TileEntityBase01Root {
 	public CompoundTag mLoadedNBT = null;
 
@@ -46,30 +41,22 @@ public class TileEntityLoaderStub extends TileEntityBase01Root {
 
 	@Override public String getTileEntityName() {return "gt.te.loader";}
 
-	// Захват сырого NBT (заглушка не знает конкретный класс MTE — конкретный readFromNBT прогонять некому);
-	// реконструкция — на ChunkEvent.Load. super.load зовём: в 1.20.1 именно BlockEntity.load разбирает
-	// форжевые ForgeData/ForgeCaps (BlockEntity.java:53-56), а базовый GT6-readFromNBT ограничен проверкой Y.
+	// Captures raw NBT since the stub can't run a concrete class's readFromNBT.
+	// super.load still runs, since it parses Forge's own chunk data.
 	@Override public void load(CompoundTag aNBT) {
 		super.load(aNBT);
 		mLoadedNBT = aNBT.copy();
 	}
 
-	/** LOAD-путь БЕЗ ПОТЕРЬ (корень BUG-057): чанк может сохраниться РАНЬШЕ, чем реконструкция стаба добежит
-	 *  (очередь server-tick с квотой; транзитные/граничные чанки выгружаются раньше; при save/shutdown тик не идёт).
-	 *  Базовый {@code saveAdditional} прогонял GT6-мост {@code writeToNBT}, который для стаба писал только id/x/y/z —
-	 *  {@code gt.mte.reg}/{@code gt.mte.id} и все данные MTE стирались с диска НАВСЕГДА (блок навсегда прозрачен).
-	 *  Стаб — прозрачный переносчик: возвращает захваченный NBT на диск ровно как прочитал (идемпотентный round-trip). */
+	/** A chunk can save before the stub's reconstruction catches up, and writing only id/x/y/z through the normal
+	 *  GT6 NBT bridge would erase all MTE data forever; the stub instead round-trips its captured NBT unchanged. */
 	@Override protected void saveAdditional(CompoundTag aNBT) {
 		if (mLoadedNBT == null) {super.saveAdditional(aNBT); return;}
 		aNBT.merge(mLoadedNBT);
 	}
 
-	/** F6-дедик, ТОТ ЖЕ приём прозрачного переносчика, но в СЕТЬ (разбор — {@code TileEntityBase01Root.getUpdateTag}):
-	 *  чанк уходит игроку тем же тиком, что грузится, а реконструкция стаба отложена на server-tick с квотой
-	 *  (GT6WorldgenFeature.drainStubs) — значит в момент сборки пакета в позиции нередко стоит ещё сам стаб, а не
-	 *  настоящий MTE. Личность он несёт (захвачена в mLoadedNBT) и обязан отдать её клиенту, иначе тот получит BE без
-	 *  reg/id и не сможет реконструировать — блок останется прозрачным. Отдаётся ровно личность, не весь захваченный
-	 *  NBT: серверные поля машины клиенту не нужны и не уходят. */
+	/** Same transparent-carrier trick as getUpdateTag, but reconstruction here is deferred with a quota, so the stub
+	 *  itself is often what's still in place when the chunk packet builds; it must hand over its captured identity alone. */
 	@Override protected void writeMTEIdentity(CompoundTag aNBT) {
 		if (mLoadedNBT == null) return;
 		if (mLoadedNBT.contains(NBT_MTE_REG)) aNBT.putShort(NBT_MTE_REG, mLoadedNBT.getShort(NBT_MTE_REG));

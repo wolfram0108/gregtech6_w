@@ -106,7 +106,7 @@ public interface IMultiTileEntity extends ITileEntitySpecificPlacementBehavior {
 	public static interface IMTE_GetCollisionBoundingBoxFromPool    extends IMultiTileEntity {public AABB getCollisionBoundingBoxFromPool();}
 	public static interface IMTE_GetSelectedBoundingBoxFromPool     extends IMultiTileEntity {public AABB getSelectedBoundingBoxFromPool();}
 	public static interface IMTE_UpdateTick                         extends IMultiTileEntity {public void updateTick(Random aRandom);}
-	public static interface IMTE_RandomDisplayTick                  extends IMultiTileEntity {public void randomDisplayTick(net.minecraft.util.RandomSource aRandom);} // было java.util.Random - Block.animateTick теперь принимает RandomSource [Block.java:355]
+	public static interface IMTE_RandomDisplayTick                  extends IMultiTileEntity {public void randomDisplayTick(net.minecraft.util.RandomSource aRandom);} // neo's animateTick now takes a RandomSource instead of the old java.util.Random.
 	public static interface IMTE_OnBlockDestroyedByPlayer           extends IMultiTileEntity {public void onBlockDestroyedByPlayer(int aRandom);}
 	public static interface IMTE_OnBlockAdded                       extends IMultiTileEntity {public void onBlockAdded();}
 	public static interface IMTE_DropXpOnBlockBreak                 extends IMultiTileEntity {public void dropXpOnBlockBreak(int aXP);}
@@ -165,24 +165,12 @@ public interface IMultiTileEntity extends ITileEntitySpecificPlacementBehavior {
 	public static interface IMTE_AddHitEffects                      extends IMultiTileEntity {public boolean addHitEffects(Level aWorld, HitResult aTarget, ParticleEngine aRenderer);}
 	public static interface IMTE_AddDestroyEffects                  extends IMultiTileEntity {public boolean addDestroyEffects(int aMetaData, ParticleEngine aRenderer);}
 
-	/**
-	 * BUG-074/078 — контракт «у меня есть грань, которую надо подменить у ФОРМЫ ПРЕДМЕТА» (detached-TE, {@code level == null}).
-	 *
-	 * <p>1.7.10 компенсировал это ГЕОМЕТРИЕЙ и одной строкой на всех: {@code glRotatef(90,0,1,0)} в
-	 * {@code RendererBlockTextured.renderInventoryBlock:58}. Под ту же строку попадал и сундук — его item-форма
-	 * рисуется через {@code renderItem} ({@code MultiTileEntityChest:323}), который зовётся оттуда же ({@code :78}).
-	 * В neo baked-quad пайплайне этого поворота нет, поэтому компенсация делается подстановкой псевдо-facing
-	 * в момент рождения detached-TE — ЕДИНСТВЕННЫМ центром {@code MultiTileEntityRegistry.applyItemFacing}.</p>
-	 *
-	 * <p>Отбор получателей идёт по ЭТОМУ контракту, а не по месту в иерархии: носитель грани не обязан
-	 * жить под {@code TileEntityBase09FacingSingle} (сундук наследует {@code TileEntityBase05Inventories}
-	 * и держит своё поле {@code mFacing} — так же, как в оригинале). Величину задаёт сам TE через
-	 * {@code getItemFacing()}, поэтому семья с иной раскладкой граней меняет ОДНО переопределение.</p>
-	 */
+	/** 1.7.10 compensated this with one shared geometry rotation for every rendered item; neo's baked-quad pipeline has
+	 *  no such rotation, so this substitutes a pseudo-facing when a detached tile entity is born, through one shared center. */
 	public static interface IMTE_ItemFacing extends IMultiTileEntity {
-		/** Величина псевдо-facing для item-формы. Дефолт годится семьям с раскладкой {@code FACING_ROTATIONS} (машины, бойлеры, генераторы, турбины, динамо). */
+		/** The pseudo-facing value for the item form; the default fits families using the FACING_ROTATIONS layout. */
 		public default byte getItemFacing() {return gregapi.data.CS.ITEM_MACHINE_FACING;}
-		/** Ставит величину в собственное поле грани. Реализуется носителем поля — оно у семей разное. */
+		/** Writes the value into the carrier's own facing field, which differs per family. */
 		public void setItemFacing(byte aFacing);
 	}
 

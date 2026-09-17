@@ -27,62 +27,39 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockAndTintGetter;
 
-/**
- * F3-render рельсов (client): воспроизведение vanilla {@code RenderBlocks.renderBlockRail} — плоский рельс-quad на
- * y=1/16 с иконкой рельса (straight/turned/active выбирает сам {@link gregapi.block.misc.BlockBaseRail#getIcon} по
- * мете), ориентация/наклон/угол — по мете. BUG-047: мета жива — мост IBlockExtendedMetaData рельса (мета ↔
- * SHAPE+POWERED в BlockState, выравнивание vanilla updateDir), {@code WD.meta} здесь читает реальную форму.
- * Рендер процедурный — тем же приёмом, что вся F3-render ветка (см. {@link GT6BlockModel}). BlockBaseRail наследует
- * vanilla {@code BaseRailBlock} и НЕ является IRenderedBlock, потому обрабатывается отдельной веткой, а не box-цепочкой.
- * <p>Мета рельса (1:1 vanilla): 0=плоский N-S, 1=плоский E-W, 2/3=подъём восток/запад (E-W трек), 4/5=подъём
- * север/юг (N-S трек), 6..9=углы SE/SW/NW/NE (turned-иконка). Power/detector-рельсы углов не имеют (биты 0-2 —
- * направление, бит 3 — питание; getIcon по биту питания даёт active-иконку).
- */
+/** Reproduces vanilla RenderBlocks.renderBlockRail as a flat quad at y=1/16, since BlockBaseRail extends vanilla
+ *  BaseRailBlock rather than IRenderedBlock and needs its own branch, with meta mapped to shape via a dedicated bridge. */
 public final class RailRenderer {
 	private RailRenderer() {}
 
-	private static final float Y = 1.0F / 16.0F; // рельс на 1px над низом блока (vanilla 0.0625)
+	private static final float Y = 1.0F / 16.0F; // rail sits 1px above the block bottom (vanilla 0.0625).
 
-	/** Собрать quad'ы рельса в позиции (x,y,z) по его текущей мете. */
+	/** Collects a rail's quads at a position from its current meta. */
 	public static void collectRailQuads(GT6QuadBuilder aQB, BlockAndTintGetter aLevel, int aX, int aY, int aZ, gregapi.block.misc.BlockBaseRail aRail) {
 		int tMeta = gregapi.util.WD.meta(aLevel, aX, aY, aZ) & 0xFF;
-		ResourceLocation tIcon = aRail.getIcon(0, tMeta); // primary/secondary (straight/turned либо active) выбирает сам блок
+		ResourceLocation tIcon = aRail.getIcon(0, tMeta); // primary/secondary (straight/turned or active) is picked by the block itself.
 		if (tIcon == null) return;
-		// Форма: power/detector — только направление (биты 0-2, углов нет); обычный рельс — мета 0..9.
+		// Power/detector rails only encode direction (bits 0-2, no corners); a regular rail uses the full meta 0..9.
 		int tShape = (aRail.mPowerRail || aRail.mDetectorRail) ? (tMeta & 7) : (tMeta & 15);
 		boolean tCorner = tShape >= 6 && tShape <= 9;
-		boolean tEW = (tShape == 1 || tShape == 2 || tShape == 3); // E-W ориентация трека
+		boolean tEW = (tShape == 1 || tShape == 2 || tShape == 3); // E-W track orientation.
 		float[][] c = tCorner ? cornerQuad(tShape - 6) : flatQuad(tEW);
-		if (tShape >= 2 && tShape <= 5) raise(c, tShape); // наклонные — поднять два угла со стороны подъёма
-		// bothSides: рельс виден и сверху, и снизу (vanilla рисует up+down грань) — 1:1.
+		if (tShape >= 2 && tShape <= 5) raise(c, tShape); // ascending (2-5): raise the two corners on the uphill side.
+		// bothSides: a rail is visible from above and below, 1:1 with vanilla drawing both an up and a down face.
 		aQB.fluidQuad(c, Direction.UP, tIcon, gregapi.data.CS.UNCOLOURED, true);
 	}
 
-	/** Плоский горизонтальный quad рельса; углы 0=(x0,z0) 1=(x1,z0) 2=(x1,z1) 3=(x0,z1). UV: для N-S трека V идёт вдоль
-	 *  Z (рельсы север-юг), для E-W — V вдоль X (поворот текстуры на 90°). {x,y,z,u,v}, u,v в 0..16. */
+	/** Flat horizontal rail quad; UV runs along Z for a north-south track or along X for east-west. */
 	private static float[][] flatQuad(boolean aEW) {
 		if (aEW) return new float[][]{{0,Y,0, 0,0},{1,Y,0, 0,16},{1,Y,1, 16,16},{0,Y,1, 16,0}};
 		return new float[][]{{0,Y,0, 0,0},{1,Y,0, 16,0},{1,Y,1, 16,16},{0,Y,1, 0,16}};
 	}
 
-	/** Н-10: направление поворота UV угловой иконки — НЕ линейный цикл `+90°` на форму, а таблица, снятая по
-	 *  вершинам оригинала ({@code reference/gt6-original/build/tmp/recompSrc/net/minecraft/client/renderer/
-	 *  RenderBlocks.java:2613-2697}, {@code renderBlockMinecartTrack}, ветки {@code l==6/7/8/9}). Там для КАЖДОЙ
-	 *  из 4 угловых мет геометрия вершин выставлена ОТДЕЛЬНО (l=6 — те же вершины, что «прямая NS»; l=7 — те же,
-	 *  что «прямая EW»; l=8 и l=9 — свои уникальные наборы), а UV идёт всегда в ОДНОМ и том же порядке
-	 *  (maxU,minV)→(maxU,maxV)→(minU,maxV)→(minU,minV). Пересчёт по вершинам даёт сдвиг «физический угол блока
-	 *  → угол текстуры» (по часовой стрелке, NW→NE→SE→SW→NW) для l=6,7,8,9 = 0,−1,+2,+1 соответственно.
-	 *  Формы 6 (SE) и 8 (NW) — сдвиги 0 и +2 — САМООБРАТНЫ по модулю 4 (−0≡0, −2≡+2), поэтому старый линейный
-	 *  `aRot=tShape-6` (сдвиги 0,+1,+2,+3) на них случайно совпадал с оригиналом и не проявлял дефект. Для 7 (SW,
-	 *  оригинал −1≡3) и 9 (NE, оригинал +1) линейная формула давала сдвиги +1 и +3 — ровно противоположное
-	 *  направление, текстура угла повёрнута на 180° не в ту сторону. Это чисто рендерная ошибка: физическая форма
-	 *  рельса (RailShape в BlockState, читаемая RailState/минкартом) этой таблицы не касается и не портится ею —
-	 *  трогается только то, какой кусок картинки-«turned» ложится в какой угол блока.
-	 *  Индекс — {@code tShape-6} (0..3 для SE,SW,NW,NE), значение — сдвиг по модулю 4. Судья данных —
-	 *  {@code stands/renderlab/GT6RailCornerUVStand} (main) / {@code stands-1.20.1/renderlab/GT6RailCornerUVStand}. */
-	private static final int[] CORNER_ROT = {0, 3, 2, 1}; // SE,SW,NW,NE — сдвиг ≡ vanilla (0,-1,+2,+1) mod 4
+	/** The corner-icon UV rotation isn't a linear +90 cycle by shape; it's a table recovered from the original's actual
+	 *  vertex layout (0,-1,+2,+1 for SE,SW,NW,NE), since a naive linear formula rotated two corners the wrong way. */
+	private static final int[] CORNER_ROT = {0, 3, 2, 1}; // SE,SW,NW,NE: shift matches vanilla (0,-1,+2,+1) mod 4.
 
-	/** Угловой quad (turned-иконка): базовая позиция + UV, повёрнутый по {@link #CORNER_ROT} (1:1 vanilla поворот угла рельса). */
+	/** Corner quad (turned icon): base position and UV rotated by {@link #CORNER_ROT}, 1:1 with vanilla's rail-corner rotation. */
 	private static float[][] cornerQuad(int aRot) {
 		float[][] uv  = {{0,0},{16,0},{16,16},{0,16}};
 		float[][] pos = {{0,Y,0},{1,Y,0},{1,Y,1},{0,Y,1}};
@@ -96,14 +73,14 @@ public final class RailRenderer {
 		return c;
 	}
 
-	/** Наклон (ascending 2-5): поднять два угла со стороны подъёма на +1 по Y (низкий край на уровне рельса, высокий на +1). */
+	/** Ascending tilt: raises the two corners on the uphill side by +1 on Y, leaving the low edge at rail level. */
 	private static void raise(float[][] c, int aShape) {
 		int[] hi;
 		switch (aShape) {
-		case 2:  hi = new int[]{1,2}; break; // подъём на восток (x=1)
-		case 3:  hi = new int[]{0,3}; break; // подъём на запад (x=0)
-		case 4:  hi = new int[]{0,1}; break; // подъём на север (z=0)
-		default: hi = new int[]{2,3}; break; // 5 — подъём на юг (z=1)
+		case 2:  hi = new int[]{1,2}; break; // ascending east (x=1).
+		case 3:  hi = new int[]{0,3}; break; // ascending west (x=0).
+		case 4:  hi = new int[]{0,1}; break; // ascending north (z=0).
+		default: hi = new int[]{2,3}; break; // 5, ascending south (z=1).
 		}
 		for (int i : hi) c[i][1] += 1.0F;
 	}

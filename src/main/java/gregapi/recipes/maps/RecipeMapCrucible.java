@@ -54,22 +54,15 @@ public class RecipeMapCrucible extends RecipeMapSpecialSingleInput {
 	
 	private List<Recipe> mBufferedDynamicRecipes = null;
 
-	/** F11-JEI, класс «динамическая мапа исчезла из витрины»: рецепты плавки не хранятся, а ПОРОЖДАЮТСЯ
-	 *  {@link #getRecipeFor} (1:1 оригинала). NEI 1.7.10 это устраивало — он спрашивал по клику на предмет
-	 *  ({@code NEI_RecipeMap.loadCraftingRecipes/loadUsageRecipes:571,580}); JEI регистрирует категории заранее и
-	 *  берёт список у {@code getNEIAllRecipes} ({@code GT6_JEI_Plugin:142-143}), поэтому пустой список = категории
-	 *  НЕТ ВООБЩЕ (симптом игрока: «в JEI нет ни одного крафта тигля, хотя чёрный песок плавится»).
-	 *  Приём восстановления тот же, что уже применён у {@code RecipeMapHammer:54} — материалы берутся из реестров
-	 *  префиксов, стеки из самого материала, отбор делает сам {@code getRecipeFor} (не плавится → null → выпадает).
-	 *  Так же ловятся и предметы-БЛОКИ: чёрный песок зарегистрирован как {@code blockDust} Магнетита
-	 *  ({@code BlockSands:51-53}), то есть лежит в {@code mRegisteredItems} своего материала. */
+	/** These recipes are generated on demand, which JEI can't browse like the original per-click viewer did;
+	 *  materials are pulled straight from the prefix registries, the same fix already used for the hammer map. */
 	@Override
 	public List<Recipe> getNEIAllRecipes() {
 		List<Recipe> rList = super.getNEIAllRecipes();
 		if (mBufferedDynamicRecipes == null) {
 			mBufferedDynamicRecipes = new ArrayListNoNulls<>();
 			HashSetNoNulls<OreDictMaterial> tMaterials = new HashSetNoNulls<>();
-			// Префиксы — ровно те, что перечисляет getNEIRecipes ниже: набор входов тигля один, в двух местах не расходится.
+			// Same prefixes as the display list below, so both stay in sync with a single set of crucible inputs.
 			for (OreDictPrefix tPrefix : new OreDictPrefix[] {OP.ingot, OP.blockIngot, OP.gem, OP.blockGem, OP.dust, OP.blockDust
 			, OP.crushed, OP.crushedPurified, OP.crushedCentrifuged, OP.chunk, OP.rubble, OP.pebbles, OP.cluster
 			, OP.cleanGravel, OP.dirtyGravel, OP.crystalline, OP.reduced}) tMaterials.addAll(tPrefix.mRegisteredMaterials);

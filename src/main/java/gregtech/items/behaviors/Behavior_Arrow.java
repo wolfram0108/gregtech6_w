@@ -73,7 +73,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 			Enchantments.applyBullshitA((LivingEntity)aEntity, aPlayer, aStack);
 			Enchantments.applyBullshitB(aPlayer, aEntity, aStack);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
-			if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().selected, ST.nn(NI)); // F15-граница: GT6 null -> движок EMPTY
+			if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().selected, ST.nn(NI)); // The engine/GT6 empty-stack boundary maps GT6 null to engine EMPTY.
 			return F;
 		}
 		return F;

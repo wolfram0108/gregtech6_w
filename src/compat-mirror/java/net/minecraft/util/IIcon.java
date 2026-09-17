@@ -35,12 +35,8 @@
 
 package net.minecraft.util;
 
-/**
- * F3-render compile-only shim. 1.7.10 net.minecraft.util.IIcon — интерфейс атласной текстуры, удалён в neo
- * (заменён TextureAtlasSprite + модельная система). Поверхность 1:1 с оригиналом
- * (gregtech6/build/tmp/recompSrc/net/minecraft/util/IIcon.java), БЕЗ @SideOnly (cpw.mods.fml нет в neo).
- * РЕАЛЬНЫЙ рендер отложен на F3-клиент-проход; здесь только тип для сборки ядра.
- */
+/** Compile-only shim for 1.7.10's IIcon, removed in neo in favor of TextureAtlasSprite; mirrors
+ *  the original surface exactly since real rendering is handled by a later client-side pass. */
 public interface IIcon {
 	int getIconWidth();
 	int getIconHeight();

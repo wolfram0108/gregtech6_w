@@ -25,18 +25,13 @@ package gregapi.render;
 
 import static gregapi.data.CS.*;
 
-// ⛔ АТЛАС БЛОКОВ — У ОБЩЕГО НОСИТЕЛЯ, НЕ У КЛИЕНТСКОГО. TextureAtlas помечен @OnlyIn(Dist.CLIENT)
-// (forge-1201-decompiled/net/minecraft/client/renderer/texture/TextureAtlas.java:25): его загрузка на
-// выделенном сервере роняет класс (BP-BUG-022). Значение ТО ЖЕ: сам движок объявляет LOCATION_BLOCKS
-// псевдонимом этого поля — TextureAtlas.java:30 «LOCATION_BLOCKS = InventoryMenu.BLOCK_ATLAS».
+// The block atlas belongs to the shared holder, not the client one: TextureAtlas is
+// @OnlyIn(Dist.CLIENT), and loading it on a dedicated server crashes the class.
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.resources.ResourceLocation;
 
-/**
- * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): конструкторы принимали {@code IIcon} (тип удалён в 26.1.2) —
- * теперь принимают {@link ResourceLocation} как нейтральный держатель ссылки на текстуру, форвард-совместимый
- * с будущим {@code Material(ResourceLocation)} (decisions/F3-render.md §2.3).
- */
+/** Constructors took IIcon (removed); they now take ResourceLocation as a neutral texture reference.
+ *  Forward-compatible with a future Material(ResourceLocation). */
 public class IconContainerDefault implements IIconContainer {
 	public final ResourceLocation mTextureFile;
 	public final ResourceLocation mIcon;

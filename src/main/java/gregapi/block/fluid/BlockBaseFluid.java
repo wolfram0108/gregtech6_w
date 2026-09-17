@@ -59,21 +59,17 @@ import java.util.Random;
 
 import static gregapi.data.CS.*;
 
-/**
- * @author Gregorius Techneticies
- *
- * F5 форс движка (decisions/F5-fluids.md §5): было {@code extends BlockFluidFinite} (Forge, удалён в neo) —
- * общий предок с {@link gregapi.block.fluid.BlockWaterlike} воспроизведён ОДИН раз в {@link BlockFluidBaseGT}
- * (см. его javadoc). Тела GT6-собственных методов (updateTick/tryToFlowVerticallyInto/updateFluidBlocks/...) —
- * 1:1, только API-свод.
- */
+/** @author Gregorius Techneticies
+ *  Forge's BlockFluidFinite was removed, so the shared ancestor with BlockWaterlike is now reproduced
+ *  once in BlockFluidBaseGT; only the API surface changed here, method bodies stay 1:1. */
 public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT, IBlockOnHeadInside {
 	public static int FLUID_UPDATE_FLAGS = 2;
 	
 	public final String mNameInternal;
 	public final int mFlammability, mAmountPerQuanta, mDensityDir;
 	public final Fluid mFluid;
-	// F12-followup (block-split): было final; FL.make(=new FluidStack) требует компоненты (server-start), присваивание отложено.
+	// No longer final: FL.make needs registry components that only exist at server start, so
+	// assignment is deferred to then.
 	public FluidStack mQuanta;
 	
 	public BlockBaseFluid(String aNameInternal, FL aFluid, int aFlammability) {
@@ -83,28 +79,16 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		this(aNameInternal, aFluid.fluid(), aFlammability, aMaterial);
 	}
 	public BlockBaseFluid(String aNameInternal, Fluid aFluid, int aFlammability) {
-		// было aFluid.isGaseous()/aFluid.getTemperature() — Forge-only data-holder-методы на самом Fluid;
-		// neo net.minecraft.world.level.material.Fluid их не несёт (данные расщеплены в FluidType, F5-доклад
-		// §1/§3) — центр FL.gas(Fluid)/FL.temperature(Fluid) уже воспроизводит то же самое (gregapi/data/FL.java).
+		// neo's Fluid no longer carries these Forge-only data methods (that data moved to FluidType),
+		// so the FL.gas/FL.temperature centers reproduce the same information instead.
 		this(aNameInternal, aFluid, aFlammability, FL.gas(aFluid) ? MaterialGas.instance : FL.temperature(aFluid) > 500 ? Material.lava : Material.water);
 	}
 	public BlockBaseFluid(String aNameInternal, Fluid aFluid, int aFlammability, Material aMaterial) {
 		this(aNameInternal, aFluid, 125, aFlammability, aMaterial);
 	}
 	public BlockBaseFluid(String aNameInternal, Fluid aFluid, int aAmountPerQuanta, int aFlammability, Material aMaterial) {
-		// было super(aFluid, aMaterial) + setResistance(FL.gas(mFluid)?1:30) — neo Block immutable (Properties
-		// ДО super, F16/F9 форс движка, см. BlockFluidBaseGT); resistance считаем от параметра aFluid (mFluid
-		// ещё не присвоен на этой стадии — тот же самый Fluid).
-		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром/call-site).
-		// .replaceable().liquid().pushReaction(DESTROY).noLootTable() — 1:1 c 1.7.10 MaterialOil/MaterialGas
-		// (MaterialLiquid: setReplaceable + setNoPushMobility; дропов у Forge BlockFluidBase не было) — без
-		// replaceable в neo НЕЛЬЗЯ поставить блок в жидкость (у vanilla-воды тот же набор флагов, Blocks.java:297-304).
-		// MODCOMPAT-002 (все 10 мировых жидкостей GT6 невидимы на карте): цвет на карте — тот же 1.7.10-дефолт
-		// «из материала» (`recompSrc/.../Block.java:232-235`), в neo его надо задать явно (дефолт = MapColor.NONE
-		// = «пропустить блок»). Мост и источник — общие с остальными иерархиями, см. BlockBase.mapColorOf.
-		// РОЛЬ ЭТОЙ СЕМЬИ (паспорт роли, BlockFluidBaseGT): содержимая жидкость с материалом воды/лавы несёт
-		// СВОЮ жидкость и обещает среду тегом (геотермальная вода), прочая — движку не жидкость вовсе и рисуется
-		// своей моделью по квантам (нефти, газ). Выражение 1:1 с main (BlockBaseFluid.java:108 ветки main).
+		// neo Block Properties are immutable and must be built before super(), so resistance is computed from
+		// the aFluid parameter directly, not mFluid (not yet assigned); map color and role are set explicitly (BlockFluidBaseGT).
 		super(gregapi.block.BlockBase.mapColorOf(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(FL.gas(aFluid) ? 1F : 30F), aMaterial), aMaterial, aFluid,
 			aMaterial == Material.water || aMaterial == Material.lava ? EngineRole.OWN_TAGGED_FLUID : EngineRole.NO_ENGINE_FLUID);
 		mFluid = aFluid;
@@ -113,36 +97,33 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		mDensityDir = densityDir;
 		mFlammability = aFlammability;
 		mNameInternal = aNameInternal;
-		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site (Loader_Blocks); ЗДЕСЬ — только BlockItem.
+		// Only the BlockItem is registered here; the block itself registers lazily at its call site.
 		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GT, mNameInternal, () -> gregapi.GT_API.blockItemFor(this, gregapi.block.fluid.ItemBlockFluidGT.class));
 		FL.BLOCKS.put(FL.regName(mFluid), this);
 		displacements.put(this, F);
 		LanguageHandler.set(getLocalizedName(), getLocalizedName()); // WAILA is retarded...
 		// Speaking of retarded, only allowing one type of Block per Fluid is retarded too! So I guess I gotta override all pre-existing Fluids with my Version to make sure shit works.
-		// F5 (гигиена лога): 1.7.10 Forge-поле Fluid.block в neo-mirror отсутствует — рефлексия сыпала
-		// NoSuchFieldException-трейс на КАЖДУЮ регистрацию fluid-блока (×6 за старт, спам, репорт игрока).
-		// Связь fluid→block централизована заменой FL.BLOCKS (строки выше) и УЖЕ работает — сеттер оставлен
-		// 1:1-следом с выключенным логом (aLogErrors=F): если mirror однажды получит поле, канал оживёт сам.
+		// The Forge field this reflects into doesn't exist on the neo mirror, which used to spam a NoSuchFieldException on every
+		// registration; the link is centralized through FL.BLOCKS instead, and this call is kept silent so it stays harmless.
 		UT.Reflection.setField(Fluid.class, aFluid, "block", this, F);
 	}
 	
-	/** BUG-115: {@code IFluidBlock} вернулся общему предку — {@code getFluid()} снова есть, 1:1 с 1.7.10. */
-	// В 1.20.1 LiquidBlock.getFluid() объявлен как FlowingFluid (LiquidBlock.java:175), а Forge-IFluidBlock.getFluid() —
-	// как Fluid: ковариантный возврат покрывает оба. Носитель берём ЦЕНТРОМ базы (liquidCarrierFor), своей копии не заводим.
+	/** Restored after the shared ancestor regained IFluidBlock; matches 1.7.10 exactly. */
+	// LiquidBlock.getFluid() returns FlowingFluid while Forge's IFluidBlock.getFluid() returns Fluid; a
+	// covariant return covers both, taken from the shared center liquidCarrierFor.
 	@Override public net.minecraft.world.level.material.FlowingFluid getFluid() {return liquidCarrierFor(mMaterial, mFluid);}
 
-	/** «Какую жидкость держит клетка» — второй, отдельный вопрос паспорта роли (см. предок): у содержимой
-	 *  жидкости это её собственная {@code mFluid}, а не носитель-предок. Второго хранилища не заводим. */
+	/** "Which fluid does this cell hold" is a separate question from the ancestor's role (see there):
+	 *  for content fluids it's their own mFluid, not the carrier. */
 	@Override public Fluid ownFluid() {return mFluid;}
 
-	/** было Forge {@code BlockFluidFinite.canDrain:332-335} — тело 1:1 ({@code return true}); finite-жидкость
-	 *  черпается на любом уровне, в отличие от classic-ветки ({@link gregtech.blocks.fluids.BlockWaterlike}),
-	 *  где GT6 перекрывает его своим «мета 0 = источник». */
-	// F10: реальная сигнатура net.minecraftforge.fluids.IFluidBlock — canDrain(Level,BlockPos); было
-	// (Level,int,int,int) старого шима.
+	/** A finite fluid can be drained from any level, unlike the classic branch where GregTech6
+	 *  overrides this with its own "meta 0 is the source" rule. */
+	// The real net.minecraftforge.fluids.IFluidBlock signature is canDrain(Level,BlockPos).
+	// Not the old shim's (Level,int,int,int).
 	@Override public boolean canDrain(Level aWorld, net.minecraft.core.BlockPos aPos) {return T;}
 
-	// F10: реальная сигнатура — drain(Level,BlockPos,IFluidHandler.FluidAction); было (Level,int,int,int,boolean aDoDrain).
+	// The real signature is drain(Level,BlockPos,IFluidHandler.FluidAction), not the old (Level,int,int,int,boolean).
 	@Override
 	public FluidStack drain(Level aWorld, net.minecraft.core.BlockPos aPos, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction aAction) {
 		int aX = aPos.getX(), aY = aPos.getY(), aZ = aPos.getZ();
@@ -174,7 +155,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	}
 	
 	public void updateFluidBlocks(Level aWorld, int aX, int aY, int aZ, boolean aAll) {
-		// F6-Y-scale: было inside(0, aWorld.getHeight(), aY+j) — границы мира neo [minY..topY), не [0..256).
+		// neo's world bounds are [minY, topY), not the old fixed [0, 256), so this checks against them instead.
 		for (int j = mDensityDir > 0 ? -1 : 0; j < (mDensityDir > 0 ? 1 : 2); j++) if (UT.Code.inside(WD.minY(aWorld), WD.topY(aWorld), aY+j)) for (int i = -4; i <= 4; i++) for (int k = -4; k <= 4; k++) if (i != 0 || j != 0 || k != 0) {
 			if (WD.block(aWorld, aX+i, aY+j, aZ+k) == this && (aAll || WD.meta(aWorld, aX+i, aY+j, aZ+k) > (j == 0 ? Math.abs(i) : 0))) {
 				aWorld.scheduleTick(new BlockPos(aX+i, aY+j, aZ+k), this, tickRate);
@@ -199,8 +180,8 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		int tRemainingQuanta = WD.meta(aWorld, aX, aY, aZ)+1;
 
 		// Trash Fluid Blocks that get in contact with the vertical World Limits.
-		// F6-Y-scale: было aY <= 0 || aY+1 >= aWorld.getHeight() (мир 1.7.10 [0..255]); neo дно = getMinY() (-64) —
-		// бедрок-источники живут НИЖЕ нуля, старая проверка мгновенно трэшила их жидкость (эталон WorldgenOcean d6dc0f2d).
+		// neo's world floor is getMinY() (-64), below zero, so bedrock-level fluid sources used to get
+		// trashed instantly by the old fixed-zero check; this reads the real floor instead.
 		if (aY <= WD.minY(aWorld) || aY+1 >= WD.topY(aWorld)) {
 			if (WD.set(aWorld, aX, aY, aZ, NB, 0, FLUID_UPDATE_FLAGS | 1)) GarbageGT.trash(FL.mul(mQuanta, tRemainingQuanta));
 			return;
@@ -292,7 +273,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		// First do the Water specific check.
 		if (mLighterThanWater) {
 			int tY = aY;
-			// F6-Y-scale: было ++tY < aWorld.getHeight() — верх мира neo = topY (320), no-arg getHeight()=COUNT(384).
+			// neo's world ceiling is topY (320), not the total height count (384) that the no-arg getHeight() returns.
 			while (++tY < WD.topY(aWorld) && WD.anywater(aWorld, aX, tY, aZ));
 			if (tY-1 > aY) {
 				Block tBlock = WD.block(aWorld, aX, tY, aZ);
@@ -326,7 +307,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 			Block tBlock = WD.block(aWorld, aX, tY, aZ);
 			
 			// Swap with any finite Fluid Blocks "above" this one unless they are also compressed.
-			if (tBlock instanceof BlockBaseFluid) { // было instanceof BlockFluidFinite (Forge) — GT6-Finite-стиль воплощён ТОЛЬКО в BlockBaseFluid (BlockWaterlike=Classic-стиль, F5-доклад §5)
+			if (tBlock instanceof BlockBaseFluid) { // the Forge BlockFluidFinite style now lives only in this class
 				int tMeta = WD.meta(aWorld, aX, tY, aZ);
 				if (tMeta > 7) return aAmount;
 				WD.set(aWorld, aX, aY, aZ, tBlock, tMeta, FLUID_UPDATE_FLAGS | 1);
@@ -375,7 +356,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 			}
 			return aAmount;
 		}
-		if (tBlock instanceof BlockFluidBaseGT) { // было instanceof BlockFluidBase (Forge, общий предок Classic+Finite) — BlockFluidBaseGT воспроизводит тот же общий предок (F5-доклад §5)
+		if (tBlock instanceof BlockFluidBaseGT) { // BlockFluidBaseGT now reproduces that same shared Forge ancestor
 			if (mDensityDir > 0 ? getDensity(aWorld, aX, tY, aZ) > density : getDensity(aWorld, aX, tY, aZ) < density) {
 				WD.set(aWorld, aX, aY, aZ, tBlock, WD.meta(aWorld, aX, tY, aZ), FLUID_UPDATE_FLAGS | 1);
 				set(aWorld, aX, tY, aZ, aAmount - 1, T);
@@ -398,93 +379,56 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		return aAmount;
 	}
 	
-	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
-	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering). Позиция(aX,aY,aZ) в исходнике
-	// была позицией СОСЕДА -> aNeighbor.getBlock()/aNeighbor.isAir() эквивалентны без потерь для block-identity веток.
-	// F3 functional-adapted (neo skipRendering сигнатура потеряла World/BlockPos → per-TE culling недостижим; используется vanilla-дефолт super.skipRendering, 1:1 по следствию): ITileEntitySurface-проверка соседа недостижима -
-	// новая сигнатура не передаёт позицию соседа для WD.te-поиска; используется дефолт "не ITileEntitySurface" ветки.
+	// neo's skipRendering has inverted semantics and drops the neighbor's position, which this
+	// branch never needed; the per-tile-surface check that did need it now falls back to vanilla's default.
 	@Override
 	public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
 		Block aBlock = aNeighbor.getBlock();
 		if (aBlock == NB) return F;
 		if (aBlock == this || WD.getMaterial(aBlock) == Material.water || WD.visOpq(aBlock)) return T;
-		if (aNeighbor.isAir()) return F; // было aBlock.isAir(world,x,y,z) — BlockState.isAir()
+		if (aNeighbor.isAir()) return F; // now just BlockState.isAir()
 		return F;
 	}
 	
-	// было Forge BlockFluidFinite.getQuantaValue(IBlockAccess,x,y,z) (@Override там же) — тело 1:1, GT6 сама
-	// свой getQuantaValue не переопределяла (жила на унаследованном Finite-теле), нужен getQuantaValueBelow.
+	// Ported body-for-body from Forge's BlockFluidFinite; GregTech6 never overrode this itself,
+	// it just lived on the inherited body, and getQuantaValueBelow needs it.
 	public int getQuantaValue(BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir()) return 0;
 		if (WD.block(aWorld, aX, aY, aZ) != this) return -1;
 		return WD.meta(aWorld, aX, aY, aZ)+1;
 	}
 
-	// F5-B2 (реверс воды mc26, content-жидкости): погружение/утопление/push идут через getFluidState (см. BlockWaterlike),
-	// а движок применяет эффекты только для fluid в теге FluidTags.WATER/LAVA (EntityFluidInteraction).
-	// BP-BUG-003: СОБСТВЕННОГО ОТВЕТА ЗДЕСЬ БОЛЬШЕ НЕТ — «какая здесь жидкость» решает паспорт роли предка
-	// (BlockFluidBaseGT.getFluidState, final). Прежняя развилка по материалу была ВТОРЫМ источником того же ответа
-	// и расходилась с ролью: не-вода/не-лава уходила в super, а super после репарентинга предка на LiquidBlock —
-	// это состояние носителя-предка, то есть САМА GT6-жидкость; нефти и газ объявляли движку непустой FluidState и
-	// при этом рисовались моделью (2 геометрии на клетку). Роль отвечает за обе семьи одинаково; сюда семья отдаёт
-	// ТОЛЬКО свою шкалу квантов — ниже.
-	/** Шкала finite-семьи для паспорта роли: {@code FLUID_META+1} = 1..8 квантов (мета 7 = полная клетка).
-	 *  Тело 1:1 с main ({@code BlockBaseFluid.quantaOfState:415} ветки main) — на нём же стоит ВЫСОТА клетки:
-	 *  движок берёт её из {@code FluidState.getOwnHeight()} (= уровень/9), поэтому «источник всегда» рисовал
-	 *  гейзер ПОЛНОЙ клеткой при любом кванте (репорт игрока 2026-08-16).
-	 *  <p><b>Почему flowing-состояние здесь безопасно</b> (прежняя редакция держала «источник всегда» из страха
-	 *  «движок стикает FLOWING и удалит GT6-поток»): единственный вход в {@code FluidState.tick} для нашей клетки —
-	 *  {@code LevelChunk.postProcessGeneration:499-501} (тикает позиции, помеченные при генерации), а помечает их
-	 *  {@code WorldGenRegion.setBlock:287-289} ТОЛЬКО при {@code state.hasPostProcess(...)}, чей дефолт —
-	 *  константа {@code false} ({@code BlockBehaviour.java:1011-1013}); GT6-блоки его не переопределяют. Все
-	 *  остальные планировщики ванильного fluid-тика — каналы {@code LiquidBlock} ({@code onPlace}/
-	 *  {@code neighborChanged}/{@code updateShape}) — перекрыты в общем предке (шов F5 surface-B). Поэтому
-	 *  {@code ServerLevel.tickFluid} для GT6-жидкости не вызывается ни разу, и собственный поток GT6 (updateTick
-	 *  по FLUID_META) остаётся единственным. То же устройство живёт на main и принято игроком (BUG-119). */
+	// There's no answer of this block's own anymore: "which fluid is here" is decided entirely by the
+	// ancestor's role (BlockFluidBaseGT.getFluidState, final); the old material branch disagreed, drawing two geometries.
+	/** This family's quanta scale for the role passport: FLUID_META+1 = 1..8 (meta 7 = full cell), matching main;
+	 *  cell height comes from getOwnHeight(). A flowing state is safe: no vanilla tick is ever scheduled for this block. */
 	@Override protected int engineLevelOfState(BlockState aState) {return aState.getValue(FLUID_META) + 1;}
 
-	// F5-B block-контракт (проходимость): материал-жидкость/газ (масла/кислоты/газы) — ПРОХОДИМЫ, нельзя стоять на них
-	// как на твёрдом блоке (оригинал: Forge BlockFluidBase — коллайдера нет, canDisplace). getCollisionShape/getShape=empty.
-	// В ОТЛИЧИЕ от BlockWaterlike здесь НЕТ getRenderShape=INVISIBLE: материал-жидкость РИСУЕТСЯ своей текстурой через
-	// GT6BlockModel (IRenderedBlock getTexture→renderTexture→FluidGT), а не через vanilla FluidRenderer.
-	// F5 surface-B: после репарентинга предка на LiquidBlock его INVISIBLE (:136) перекрывается обратно в MODEL —
-	// различие «чем рисуется» между иерархиями живёт в потомках, как и в 1.7.10 (у водоподобных — ванильная вода,
-	// здесь — своя текстура жидкости).
-	// BP-BUG-003: собственного ответа здесь БОЛЬШЕ НЕТ — оба движковых ответа выводит паспорт роли предка
-	// (BlockFluidBaseGT.getRenderShape, final). Прежнее безусловное MODEL спорило с getFluidState ниже:
-	// у содержимой жидкости с материалом water (геотермальная вода) движок рисовал и жидкость, и модель.
+	// Content fluids/gas are walkable, not solid (no collision, matching Forge's original BlockFluidBase);
+	// unlike BlockWaterlike this one is NOT invisible -- it draws its own texture via GT6BlockModel, not vanilla's renderer.
 	@Override public net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 	@Override public net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 
 	@Override public Block getBlock() {return this;}
-	public final String getUnlocalizedName() {return FL.name(mFluid, F);} // было mFluid.getUnlocalizedName() (Forge Fluid) — FL.name(Fluid,boolean) центр (F5, см. BlockWaterlike)
-	public String getLocalizedName() {return FL.name(mFluid, T);} // было LH.get(mFluid.getUnlocalizedName()) — FL.name(...,T) уже включает LH-локализацию (FL.java:952)
+	public final String getUnlocalizedName() {return FL.name(mFluid, F);} // replaced by the FL.name center
+	public String getLocalizedName() {return FL.name(mFluid, T);} // FL.name(..., true) already includes the LH localization step
 	public void registerBlockIcons(Object aIconRegister) {/**/}
-	/** 1:1 оригинала (:362): было {@code SIDES_VERTICAL[aSide]?mFluid.getStillIcon():mFluid.getFlowingIcon()}.
-	 *  У GT6-жидкости still==flowing — одна текстура на жидкость (FL.create → CustomIcon("fluids/имя"),
-	 *  зафиксировано в центре {@link gregapi.render.BlockTextureFluid#icon()}), поэтому развилка по стороне
-	 *  вырождается; спрашиваем центр, чтобы «какая текстура» осталось в одном месте. */
+	/** GT6 fluids use the same texture for still and flowing, so the side branch degenerates; this
+	 *  still asks the shared center so "which texture" stays defined in one place. */
 	@Override public net.minecraft.resources.ResourceLocation getIcon(int aSide, int aMeta) {return renderTexture() instanceof gregapi.render.BlockTextureFluid tTex ? tTex.icon() : null;}
-	/** 1:1 оригинала (:363-364): оба тинта = {@code mFluid.getColor()}. Цвет берём из ТОГО ЖЕ центра,
-	 *  который красит блок в рендере ({@link gregapi.render.BlockTextureFluid#mRGBa}) — не заводя второй источник. */
+	/** Both tints come from the same center that colors the block in the renderer, avoiding a second source of truth. */
 	@Override public int getRenderColor(int aMeta) {return renderTexture() instanceof gregapi.render.BlockTextureFluid tTex && tTex.mRGBa != null ? gregapi.util.UT.Code.getRGBInt(tTex.mRGBa) : 0x00ffffff;}
 	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return getRenderColor(0);}
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}
 
-	// F3-render (флюид-блок ВИДИМ): было мёртвый getRenderType()=RendererBlockFluid.RENDER_ID (1.7.10) + getIcon/getRenderColor
-	// без реализации → флюид-блок (нефть/газ/гео-вода worldgen'а) НЕ рисовался (прозрачный). Канал IRenderedBlock (та же
-	// централизованная модель GT6BlockModel, что у всех грег-блоков) объявлен ОДИН РАЗ в общем предке BlockFluidBaseGT —
-	// как в 1.7.10 один RendererBlockFluid обслуживал обе жидкостные иерархии. Здесь остаётся только СВОЁ:
-	// Текстура+цвет флюида — из центра F5 (BlockTextureFluid → FluidGT.of(mFluid): still-иконка + mRGBa + свечение). Одна текстура
-	// на все грани/один проход, полный куб. Кэшируем (mFluid final). alpha=T (флюид полупрозрачный, если слой это позволит).
+	// The old render-type channel had no real implementation, so fluid blocks (oil, gas, geothermal water) were invisible;
+	// IRenderedBlock is now declared once in the shared ancestor, the same centralized model every GT6 block uses.
 	private gregapi.render.ITexture mRenderTexture = null;
 	@Override public gregapi.render.ITexture renderTexture() {if (mRenderTexture == null && CODE_CLIENT) mRenderTexture = gregapi.render.BlockTextureFluid.get(mFluid, T); return mRenderTexture;}
 
-	/** было shouldSideBeRendered(IBlockAccess,x,y,z,side) (:348-356 оригинала) — тело 1:1, world-aware
-	 *  (координаты СОСЕДА). Читает {@link gregapi.render.RendererBlockFluid} — neo skipRendering потерял
-	 *  World/BlockPos, а fluid-мешу видимость нужна per-позиции (грань к соседней жидкости/opaque скрыта,
-	 *  склоны угловых высот смыкают уровни без дыр). */
+	/** Kept the world-aware body because fluid-mesh visibility genuinely needs per-position info
+	 *  (hiding faces against neighboring fluid, joining corner-height slopes), which neo's skipRendering no longer passes. */
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == NB) return T;
@@ -494,9 +438,8 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		if (tTileEntity instanceof ITileEntitySurface) return !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]);
 		return T;
 	}
-	// высота поверхности 1:1 Forge BlockFluidBase.getFluidHeightForRender: сверху жидкость → полный куб,
-	// иначе quanta/quantaPerBlock(8) * 0.875 (кванты живут в мете, getQuantaValue). Единственная ветка рендера, которая у
-	// этой иерархии СВОЯ (у водоподобных мировой меш не строится вовсе — RenderShape.INVISIBLE); остальное — общий предок.
+	// Ported 1:1 from Forge's getFluidHeightForRender; the only render branch this hierarchy owns
+	// itself, since water-like fluids skip world meshing entirely.
 	@Override public boolean setBlockBounds(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {
 		Block tAbove = WD.block(aWorld, aX, aY - mDensityDir, aZ);
 		float tHeight = tAbove == this || tAbove instanceof BlockFluidBaseGT || WD.getMaterial(tAbove).isLiquid()
@@ -504,12 +447,11 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		setBlockBounds(0, 0, 0, 1, tHeight, 1);
 		return T;
 	}
-	// getLightOpacity() — в общем предке BlockFluidBaseGT (F3 light-opacity ЦЕНТР): значение 1.7.10 у обеих
-	// иерархий одинаково, копия здесь была дублем; движок спрашивает его через getLightBlock(BlockState,BlockGetter,BlockPos).
+	// getLightOpacity lives on the shared ancestor BlockFluidBaseGT now, the central light-opacity bridge; the
+	// 1.7.10 value was identical for both hierarchies, so the copy here was a duplicate.
 	
-	// F-fire мост: было Forge Block.getFlammability/getFireSpreadSpeed(IBlockAccess,x,y,z,side) — в neo канал огня
-	// живёт в IBlockExtension.getFlammability/getFireSpreadSpeed(BlockState,BlockGetter,BlockPos,Direction)
-	// (IBlockExtension.java:677/721, читает FireBlock). Старая сигнатура была мёртвой — нефть не поджигалась.
+	// neo moved fire spread to IBlockExtension's getFlammability/getFireSpreadSpeed; the old Forge
+	// signature was dead, so oil never actually caught fire before this bridge.
 	@Override public int getFlammability(BlockState aState, BlockGetter aLevel, BlockPos aPos, Direction aDirection) {return mFlammability;}
 	@Override public int getFireSpreadSpeed(BlockState aState, BlockGetter aLevel, BlockPos aPos, Direction aDirection) {return mFlammability;}
 	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
@@ -520,8 +462,8 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	public boolean isOpaqueCube() {return F;}
 	public boolean func_149730_j() {return F;}
 	public boolean getTickRandomly() {return F;}
-	// renderAsNormalBlock() — в общем предке BlockFluidBaseGT (F3 shade ЦЕНТР): значение 1.7.10 у обеих
-	// иерархий одинаково, копия здесь была дублем; движок спрашивает его через getShadeBrightness.
+	// Moved to the shared ancestor for the same reason as getLightOpacity above: both hierarchies
+	// had the same 1.7.10 value, and the engine reads it via getShadeBrightness.
 	public boolean isAir(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
 	
@@ -532,29 +474,16 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		return this;
 	}
 	
-	// ================= СРЕДА GT6 (BP-ADAPT-002): вязкость + плавание — канал МОДА, а не движка =================
-	// Перенос main 1:1 (BUG-120, требование пользователя 2026-08-11 сверх 1:1): во ВСЕХ нефтях плаваешь,
-	// лёгкие — как вода, тяжёлые — вязнешь. Оригинал 1.7.10 (Loader_Blocks:149-150) ставил setWeb() только двум
-	// тяжёлым — «паутина, да/нет», без всплытия; main обобщил это в ШКАЛУ (BlockBaseFluid.java:515), её и
-	// переносим вместе с величинами. Приём движковый: makeStuckInBlock умножает ход и гасит инерцию
-	// (Entity.move: stuckSpeedMultiplier, Entity.java:171,625-626), плюс подъём при зажатом прыжке — свой
-	// аналог движкового подъёма пловца.
-	//
-	// ⛔ ПОЧЕМУ НЕ FluidType, хотя на 1.20.1 он ЖИВОЙ (в отличие от main). Движок здесь действительно зовёт
-	// физику типа (LivingEntity.java:2031 — moveInFluid перехватывает ВСЁ движение в жидкости; Entity.java:1190
-	// canSwimInFluidType), и у ветки собственный тип уже есть (FluidGT.GTFluidType:217). Но путь выбран тот же,
-	// что на main: величины ниже уже приняты игроком живьём, и перевод на движковую физику дал бы ветке ДРУГОЕ
-	// поведение, которого у main нет, — плюс задел движка тянет чужую семантику (лодки, спринт-плавание, урон
-	// падения). Вариант «выразить средой движка» остаётся опцией в карточке BP-ADAPT-002 на явное желание
-	// пользователя; FluidType на ветке остаётся тем, чем уже является, — данные, имя и клиентские текстуры.
+	// Ported from main 1:1 (buoyancy in every oil, not just the two 1.7.10 marked as webs): makeStuckInBlock
+	// slows movement and a held jump adds lift, the same trick vanilla uses for swimmers. FluidType stays data/texture-only.
 	public float mMediumDragH = 0, mMediumDragV = 0, mMediumRise = 0;
-	/** aDragH/aDragV — множители хода по горизонтали/вертикали (1 = не мешает, паутина = 0.25/0.05);
-	 *  aRise — импульс всплытия за тик при зажатом прыжке (0 = всплытия нет). */
+	/** aDragH/aDragV are movement multipliers (1 = no hindrance, cobweb-like = 0.25/0.05);
+	 *  aRise is the per-tick rise impulse while holding jump, 0 meaning no buoyancy. */
 	public BlockBaseFluid setMedium(double aDragH, double aDragV, double aRise) {
 		mMediumDragH = (float)aDragH; mMediumDragV = (float)aDragV; mMediumRise = (float)aRise;
 		return this;
 	}
-	/** 1.7.10 setWeb: вязнуть как в паутине — константы ванильного WebBlock (WebBlock.java:28,33), без всплытия. */
+	/** Matches 1.7.10's cobweb behavior exactly, using vanilla WebBlock's own constants, with no buoyancy. */
 	public BlockBaseFluid setWeb() {return setMedium(0.25, 0.05, 0);}
 	
 	public boolean set(Level aWorld, int aX, int aY, int aZ, int aMeta, boolean aBlockUpdate) {
@@ -564,29 +493,23 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	}
 	
 	/** This Function has been named wrong. It should be onEntityOverlapWithBlock */
-	// было onEntityCollidedWithBlock(World,x,y,z,Entity) -> BlockBehaviour.entityInside(BlockState,Level,BlockPos,Entity) [BlockBehaviour.java:393];
-	// новые параметры effectApplier/isPrecise (батч damage-эффектов, F16-концепция без 1.7.10-аналога) не используются - GT6 их и раньше не применял.
+	// Was onEntityCollidedWithBlock(World,x,y,z,Entity); neo's entityInside gained effectApplier/isPrecise
+	// params (no 1.7.10 analog) that GT6 doesn't use, since it never used them before either.
 	@Override public void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity) {
 		if (mMediumDragH > 0) {
-			aEntity.makeStuckInBlock(defaultBlockState(), new Vec3(mMediumDragH, mMediumDragV, mMediumDragH)); // было setInWeb() — 1.7.10 Entity.setInWeb() удалён; тот же приём, что ванильный WebBlock.entityInside (WebBlock.java:28,33)
-			// Всплытие: строго ОДИН импульс за тик — от клетки, где стоят ноги (aPos == blockPosition()); без этого
-			// гейта тело, пересекающее две клетки столба, получало бы двойной толчок. Инерцию move гасит сам
-			// (Entity.java:625-626), поэтому скорость всплытия = (импульс − гравитация) × mMediumDragV, стабильная.
+			aEntity.makeStuckInBlock(defaultBlockState(), new Vec3(mMediumDragH, mMediumDragV, mMediumDragH)); // setInWeb() no longer exists, so this follows the same technique as vanilla WebBlock.entityInside
+			// Exactly one buoyancy impulse per tick, gated to the cell the feet stand in, or a body spanning two
+			// cells would get pushed twice; move() damps inertia itself, so rise speed settles at (impulse - gravity) x drag.
 			if (mMediumRise > 0 && aEntity instanceof LivingEntity tLiving && tLiving.jumping && aPos.equals(aEntity.blockPosition())) {
-				// ПЛАВНОСТЬ У ПОВЕРХНОСТИ (живой тест пользователя на main 2026-08-11): полный импульс у поверхности
-				// ВЫБРАСЫВАЛ тело из жидкости, тик снаружи ронял обратно — дрожь микропрыжками с частотой тиков.
-				// Импульс масштабируется ПОГРУЖЕНИЕМ (архимедово плечо): глубже блока — полный, у поверхности —
-				// убывает до равновесия «импульс = гравитация» (глубина ног ≈ 0.08/mMediumRise), где тело плавно
-				// зависает в поверхности, не выпрыгивая. Побочно верно и для лужи: мелкий слой не поднимает.
+				// Smoothing at the surface: a full impulse there launched the body out, and the next tick dropped it
+				// back in -- a jittery bounce. Scaling the impulse by depth lets it settle at equilibrium near the surface instead.
 				double tDepth;
 				if (aWorld.getBlockState(aPos.above()).getBlock() == this) tDepth = 1;
 				else tDepth = Math.max(0, Math.min(1, aPos.getY() + (aState.getValue(FLUID_META) + 1) / 8.0 - aEntity.getY()));
 				if (tDepth > 0) {
 					if (tLiving.horizontalCollision) {
-						// ВЫХОД НА БЕРЕГ (живой тест на main 2026-08-11: равновесное всплытие не даёт запрыгнуть на кромку).
-						// Приём движка для воды 1:1 — LivingEntity.java:2064-2065: упёрся в стену в жидкости → вертикаль 0.3.
-						// Толчок ставится ДО замедлителя, который умножит весь ход на mMediumDragV (Entity.java:625-626),
-						// поэтому делится на него — на выходе ровно движковые 0.3 в любой нефти.
+						// Climbing onto the shore uses the engine's own water trick 1:1 (a wall in liquid gives 0.3 vertical speed);
+						// the push is set before the drag multiplier divides the whole motion, so it still comes out to 0.3 in any oil.
 						Vec3 tV = tLiving.getDeltaMovement();
 						tLiving.setDeltaMovement(tV.x, 0.3F / mMediumDragV, tV.z);
 					} else tLiving.addDeltaMovement(new Vec3(0, mMediumRise * tDepth, 0));
@@ -601,7 +524,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	public void onHeadInside(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
 		if (!aWorld.isClientSide() && !mEffectsBreathing.isEmpty() && !UT.Entities.isImmuneToBreathingGases(aEntity)) {
 			for (int[] tEffects : mEffectsBreathing) UT.Entities.applyPotion(aEntity, tEffects[0], tEffects[1], tEffects[2], F);
-			if (getMaterial() != Material.water && SERVER_TIME % 20 == 0) aEntity.hurt(aWorld.damageSources().drown(), 2.0F); // было attackEntityFrom(DamageSource.drown,...) — см. BlockWaterlike (GT_API_Proxy.java:744 precedent)
+			if (getMaterial() != Material.water && SERVER_TIME % 20 == 0) aEntity.hurt(aWorld.damageSources().drown(), 2.0F); // see BlockWaterlike for the drowning-damage equivalent
 		}
 	}
 	

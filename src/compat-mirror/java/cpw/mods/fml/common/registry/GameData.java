@@ -39,9 +39,8 @@ import java.util.Collections;
 
 import net.minecraft.world.item.Item;
 
-/** F10 ЗЕРКАЛО (compile-only) — legacy Forge/FML 1.7.10 (пакет cpw.mods.fml не существует
- *  на neo-classpath). Только используемое GregTech6 (Behavior_Unlock_Item_Aspects:
- *  GameData.getItemRegistry().iterator()). См. compat-mirror/README.md. */
+/** Compile-only mirror of legacy Forge/FML 1.7.10; the cpw.mods.fml package does not exist on
+ *  the neo classpath, and only getItemRegistry() is actually called, from Behavior_Unlock_Item_Aspects. */
 public class GameData {
 	public static Iterable<Item> getItemRegistry() {return Collections.emptyList();}
 }

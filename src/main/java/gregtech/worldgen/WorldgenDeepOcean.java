@@ -51,7 +51,7 @@ public class WorldgenDeepOcean extends WorldgenObject {
 	@Override
 	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (!aBiomeNames.contains("Deep Ocean")) return F;
-		int i = 3 + aRandom.nextInt(9), j = WD.waterLevel(aWorld)-32 + aRandom.nextInt(9), k = 3 + aRandom.nextInt(9), m = 0, n = 0; // F6-Y-scale: база пилона Y=30 была sea-32 (sea_old=62) → якорим к морю (дно нового океана).
+		int i = 3 + aRandom.nextInt(9), j = WD.waterLevel(aWorld)-32 + aRandom.nextInt(9), k = 3 + aRandom.nextInt(9), m = 0, n = 0; // Pylon base Y=30 used to be sea-32 (old sea level 62); now anchored to the sea (new ocean floor).
 		if (WD.anywater(WD.block(aChunk, i, j, k))) {
 			switch (new NoiseGenerator(aWorld).get(aMinX+8, 32, aMinZ+8, 16)) {
 			default:

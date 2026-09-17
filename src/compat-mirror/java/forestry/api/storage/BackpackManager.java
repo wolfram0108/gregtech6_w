@@ -40,9 +40,8 @@ import java.util.Map;
 
 import net.minecraft.world.item.ItemStack;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Forestry. Только статика, используемая
- *  GregTech6 (CompatFR.addToBackpacks: definitions.get(aType).addValidItem(aStack)),
- *  вызов уже обёрнут в try/catch(Throwable) в оригинале. См. compat-mirror/README.md. */
+/** Compile-only mirror of the Forestry API: only the static map CompatFR.addToBackpacks touches,
+ *  already wrapped in a try/catch there in case the real type differs. */
 public class BackpackManager {
 	public static Map<String, Definition> definitions = new LinkedHashMap<>();
 

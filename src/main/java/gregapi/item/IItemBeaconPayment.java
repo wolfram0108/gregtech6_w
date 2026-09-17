@@ -25,16 +25,9 @@ package gregapi.item;
 
 import net.minecraft.world.item.ItemStack;
 
-/**
- * Контракт-возрождение Forge-хука 1.7.10 {@code Item.isBeaconPayment(ItemStack)} (Forge Item.java:1482,
- * удалён в neo — оплата маяка стала данными: тег {@code ItemTags.BEACON_PAYMENT_ITEMS}, ItemTags.java:135).
- * Тег стоит на Item и не видит материал в данных стека, а GT6 держит один предмет на префикс — поэтому
- * пер-стековый ответ носителя возвращается мостом: {@code GT_API_Proxy.isBeaconPayment(ItemStack)}
- * (центральный предикат: тег ИЛИ этот контракт) + подмена слота 0 ванильного {@code BeaconMenu} на
- * открытии меню (сервер {@code PlayerContainerEvent.Open}, клиент {@code ScreenEvent.Opening}).
- * Отбор носителей — по контракту, не по иерархии.
- */
+/** Revives Forge 1.7.10's Item.isBeaconPayment hook, removed for a tag that can't see per-stack material
+ *  data; the per-stack answer is bridged through a central predicate plus a beacon-menu slot substitution. */
 public interface IItemBeaconPayment {
-	/** @return true, если этим стеком можно оплатить маяк (в 1.7.10 маяк спрашивал сам предмет: TileEntityBeacon.isItemValidForSlot:409). */
+	/** @return true if the stack can pay for the beacon; in 1.7.10 TileEntityBeacon.isItemValidForSlot asked the item. */
 	public boolean isBeaconPayment(ItemStack aStack);
 }

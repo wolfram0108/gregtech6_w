@@ -36,24 +36,16 @@ import java.util.Map;
 
 import static gregapi.data.CS.*;
 
-/**
- * F11 ПЕРЕХОДНИК — замена Forge {@code net.minecraftforge.oredict.ShapedOreRecipe} (см.
- * {@code decisions/F11-crafting-recipe.md}). Дословный аналог Forge-семантики фигурного ore-рецепта:
- * разбор паттерна (строки + {@code Character}→ингредиент), матчинг сетки со сдвигом/зеркалом. Сетка —
- * {@code CraftingContainer} 1.20.1 ({@code getWidth}/{@code getHeight}/{@code getItem(i)}) — прямой наследник
- * 1.7.10 {@code InventoryCrafting}: приходит ЦЕЛИКОМ, с пустыми клетками, поэтому перебор смещений оригинала
- * восстановлен дословно. Сравнение стеков — GT6 {@code ST.equal} (материал в damage, F8), ore-имена —
- * F4 {@code OreDictionary.getOres}.
- */
+/** Replaces Forge's own ShapedOreRecipe: pattern parsing and shifted/mirrored grid matching, using CraftingContainer
+ *  (a direct successor of 1.7.10's InventoryCrafting), GT6's own stack equality, and the ore dictionary for names. */
 public class ShapedOreRecipe implements ICraftingRecipeGT {
 	protected final ItemStack mOutput;
-	/** Ячейки row-major, размер {@code mWidth*mHeight}. Каждая: {@code null} (пусто), {@code ItemStack} или {@code List<ItemStack>}. */
+	/** Row-major cells; each is null (empty), a single ItemStack, or a List<ItemStack> of alternatives. */
 	protected final Object[] mInput;
 	protected final int mWidth, mHeight;
 	protected boolean mMirrored = F;
-	/** F4 роль-C: рецепт — ore-версия ВАНИЛЬНОГО датапак-рецепта (не родной GT6). В 1.7.10 такие Forge-замены
-	 *  НЕ были ICraftingRecipeGT и потому обрабатывались сканом Loader_Recipes_Replace — маркер сохраняет
-	 *  им этот статус; {@code mSourceId} — ключ датапак-оригинала для подавления при замене. */
+	/** Marks this as an ore-recipe substitute for a vanilla datapack recipe rather than a native GT6 one;
+	 *  mSourceId is the datapack recipe's own key, used to suppress it when this replacement applies. */
 	public boolean mVanillaReplacement = F;
 	public net.minecraft.resources.ResourceLocation mSourceId = null;
 
@@ -61,13 +53,13 @@ public class ShapedOreRecipe implements ICraftingRecipeGT {
 		mOutput = ST.copy(aResult);
 		int tIdx = 0;
 
-		// Forge-формат: ведущий Boolean = зеркало; если следом Object[] — это и есть реальный recipe.
+		// Forge's format: a leading Boolean means mirrored, followed by the actual recipe array.
 		if (aRecipe.length > 0 && aRecipe[0] instanceof Boolean) {
 			mMirrored = (Boolean)aRecipe[0];
 			if (aRecipe.length > 1 && aRecipe[1] instanceof Object[]) aRecipe = (Object[])aRecipe[1]; else tIdx = 1;
 		}
 
-		// Паттерн: либо String[] (строки-ряды), либо последовательность String.
+		// Pattern is either an array of row strings or a flat sequence of strings.
 		StringBuilder tShape = new StringBuilder();
 		int tWidth = 0, tHeight = 0;
 		if (aRecipe[tIdx] instanceof String[]) {
@@ -75,7 +67,7 @@ public class ShapedOreRecipe implements ICraftingRecipeGT {
 		} else {
 			while (tIdx < aRecipe.length && aRecipe[tIdx] instanceof String) {String tRow = (String)aRecipe[tIdx++]; tWidth = tRow.length(); tShape.append(tRow); tHeight++;}
 		}
-		// Карта символ→ингредиент из оставшихся пар (Character, ingredient).
+		// Builds the symbol-to-ingredient map from the remaining (Character, ingredient) pairs.
 		Map<Character, Object> tMap = new HashMap<>();
 		for (; tIdx < aRecipe.length; tIdx += 2) {
 			Character tChar = (Character)aRecipe[tIdx];
@@ -83,30 +75,23 @@ public class ShapedOreRecipe implements ICraftingRecipeGT {
 			if (tIn instanceof ItemStack) tMap.put(tChar, ST.copy((ItemStack)tIn));
 			else if (tIn instanceof List) tMap.put(tChar, tIn);
 			else if (tIn instanceof String) tMap.put(tChar, OreDictionary.getOres((String)tIn));
-			// Forge 1.7.10 превращал Item/Block-ячейку в new ItemStack(item, 1, 0) — МЕТА 0, не джокер
-			// (голый new ItemStack(damageable) в порт-семантике ST.meta_ читается как W и матчил бы ЛЮБОЙ
-			// износ — так рецепты universal-hazmat принимали битую броню, оригинал требует целую).
+			// Forge turned an Item/Block cell into meta 0, not a wildcard; a bare ItemStack here would otherwise
+			// match any durability and let damaged armor pass a recipe meant to require an intact one.
 			else if (tIn instanceof ItemLike) tMap.put(tChar, ST.make(((ItemLike)tIn).asItem(), 1, 0));
 			else throw new IllegalArgumentException("Invalid shaped ore recipe ingredient: " + tIn);
 		}
 
 		Object[] tCells = new Object[tWidth * tHeight];
 		char[] tChars = tShape.toString().toCharArray();
-		for (int i = 0; i < tChars.length && i < tCells.length; i++) tCells[i] = tMap.get(tChars[i]); // ' ' отсутствует в карте → null (пусто)
+		for (int i = 0; i < tChars.length && i < tCells.length; i++) tCells[i] = tMap.get(tChars[i]); // A space with no map entry means an empty cell.
 
-		// Паттерн хранится КАК ОБЪЯВЛЕН. Нормализация краёв (обрезка пустых рядов/столбцов) — приём
-		// 26.x-порта под подрезанную сетку; в 1.20.1 сетка приходит целиком, паттерн ищется перебором
-		// смещений (см. matches), и обрезка изменила бы семантику: `"  "`/`" S"` совпало бы в любой из
-		// девяти клеток вместо четырёх, как у Forge 1.7.10.
+		// The pattern is stored exactly as declared; trimming empty edge rows/columns doesn't apply since the grid
+		// arrives whole and offsets are scanned, so trimming would let a small pattern match anywhere, not at a fixed offset.
 		mWidth = tWidth; mHeight = tHeight; mInput = tCells;
 	}
 
-	// Форма Forge 1.7.10 восстановлена дословно (recompSrc net/minecraftforge/oredict/ShapedOreRecipe.java:173-190,
-	// checkMatch:194-245): сетка приходит ПОЛНОЙ, паттерн ищется перебором смещений, а вне окна паттерна
-	// слот обязан быть пуст. Разница только в границе перебора: 1.7.10 брал константы MAX_CRAFT_GRID_W/H = 3
-	// (getStackInRowAndColumn вне сетки отдавал null), 1.20.1 отдаёт реальные getWidth()/getHeight()
-	// (forge-1201-decompiled net/minecraft/world/inventory/CraftingContainer.java:8-12) — исход тот же,
-	// и это же делает ванильный ShapedRecipe.matches (ShapedRecipe.java:57-66).
+	// Forge 1.7.10's own matching is restored verbatim: the grid arrives full, the pattern is found by scanning offsets,
+	// and any slot outside its window must be empty -- the same approach vanilla's own ShapedRecipe.matches takes.
 	@Override
 	public boolean matches(CraftingContainer aGrid, Level aWorld) {
 		for (int x = 0; x <= aGrid.getWidth() - mWidth; x++) for (int y = 0; y <= aGrid.getHeight() - mHeight; y++) {
@@ -131,15 +116,15 @@ public class ShapedOreRecipe implements ICraftingRecipeGT {
 	@Override
 	public ItemStack getCraftingResult(CraftingContainer aGrid) {return ST.copy(mOutput);}
 
-	/** Forge {@code setMirrored}: разрешить зеркальное совпадение. Возвращает себя для цепочки. */
+	/** Forge's setMirrored: allow a mirrored match. Returns itself for chaining. */
 	public ShapedOreRecipe setMirrored(boolean aMirrored) {mMirrored = aMirrored; return this;}
 
-	/** @return входы ячеек ({@code null}/{@code ItemStack}/{@code List<ItemStack>}) — как у Forge-{@code getInput()} ({@code Object[]}). */
+	/** @return the cell inputs (null/ItemStack/List<ItemStack>), matching Forge's Object[] getInput(). */
 	public Object[] getInput() {return mInput;}
 
-	/** Read-only геттер на {@link #mWidth} (Ф1.3-crafting-jei: ширина сетки нужна JEI-раскладке; не ломает F11-шов, шире протокол не меняет). */
+	/** Grid width is needed for JEI's layout; a read-only getter, doesn't widen the crafting contract. */
 	public int getWidth() {return mWidth;}
-	/** Read-only геттер на {@link #mHeight} (Ф1.3-crafting-jei: высота сетки нужна JEI-раскладке; не ломает F11-шов, шире протокол не меняет). */
+	/** Grid height is needed for JEI's layout; a read-only getter, doesn't widen the crafting contract. */
 	public int getHeight() {return mHeight;}
 
 	@Override public int getRecipeSize() {return mWidth * mHeight;}

@@ -38,21 +38,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 import static gregapi.data.CS.T;
 
-/**
- * @author Gregorius Techneticies (перенос архитектуры), порт — F-GUI
- *
- * F-GUI (шов «GUI/меню»): ЕДИНСТВЕННАЯ реализация {@link MenuProvider} мода — серверный центр открытия
- * GUI. 1.7.10 {@code EntityPlayer.openGui(mod,id,world,x,y,z)} диспетчерил через {@code IGuiHandler}
- * автоматически (Forge network registry); в neo такого нет — единственный путь открыть контейнер с
- * сервера — {@code Player.openMenu(MenuProvider, Consumer<RegistryFriendlyByteBuf>)}
- * (`neo-decompiled/net/minecraft/world/entity/player/Player.java:844`, реально —
- * `neo-decompiled/net/minecraft/server/level/ServerPlayer.java:1414-1461`,
- * `neoforge-decompiled/net/neoforged/neoforge/common/extensions/IPlayerExtension.java:75-77`).
- * Единственный вызыватель — {@code gregapi.tileentity.base.TileEntityBase01Root#openGUI} (единственное
- * место мода, вызывавшее {@code player.openGui(...)} в оригинале — сверено, {@code grep .openGui(} по
- * всему {@code gregtech6/src}). Маршрут ({@code id → getGUIServer}) ТОТ ЖЕ, что и клиентская реконструкция
- * контейнера ({@link ContainerCommon#createFromNetwork}) — централизация сохранена.
- */
+/** @author Gregorius Techneticies (architecture carried over), port by this project
+ *  The only MenuProvider implementation in the mod: neo requires Player.openMenu(MenuProvider) since
+ *  Forge's IGuiHandler auto-dispatch is gone; the single caller is the same method that opened GUIs before. */
 public class GT6MenuProvider implements MenuProvider {
 	private final Level mLevel;
 	private final BlockPos mPos;
@@ -64,8 +52,7 @@ public class GT6MenuProvider implements MenuProvider {
 		mGUIID = aGUIID;
 	}
 
-	/** Заголовок окна для сетевого пакета открытия — источник берётся из {@code ITileEntityInventoryGUI}
-	 *  (уже централизованный контракт «есть ли у инвентаря своё имя»), LOCALIZATION-центр {@code LH.get}. */
+	/** Window title for the open-menu packet, sourced from the inventory's own name contract via LH.get. */
 	@Override
 	public Component getDisplayName() {
 		BlockEntity tTileEntity = WD.te(mLevel, mPos, T);
@@ -76,9 +63,8 @@ public class GT6MenuProvider implements MenuProvider {
 		return Component.literal("");
 	}
 
-	/** Серверное создание контейнера — тот же маршрут {@code getGUIServer}, что и клиентская
-	 *  реконструкция ({@link ContainerCommon#createFromNetwork}); windowId прокинут через мост
-	 *  {@link ContainerCommon#withWindowID} (см. его javadoc про форс движка на {@code containerId}). */
+	/** Server-side container creation uses the same getGUIServer route as client reconstruction; windowId
+	 *  passes through the {@link ContainerCommon#withWindowID} bridge. */
 	@Override
 	public AbstractContainerMenu createMenu(int aWindowID, Inventory aInv, Player aPlayer) {
 		BlockEntity tTileEntity = WD.te(aPlayer.level(), mPos, T);

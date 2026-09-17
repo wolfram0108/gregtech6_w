@@ -27,22 +27,16 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 
-/**
- * F3-render: маркер «cross-модель» (растения/цветы — X-форма из 2 диагональных плоскостей, а не куб).
- * {@link GT6BlockModel} ветвится по нему: вместо 6 граней куба зовёт {@link GT6QuadBuilder#crossFace} с иконкой,
- * которую отдаёт {@link #getCrossIcon} (per-мета через {@code WD.meta}). Наследует {@link IRenderedBlock} (чтобы
- * инъекция {@code onModifyBakingResult}, фильтрующая по {@code IRenderedBlock}, покрывала и cross-блоки), но
- * кубические методы IRenderedBlock cross-путём НЕ вызываются — здесь дефолтные заглушки для контракта.
- */
+/** Marks a block as a cross-model (plants/flowers: an X from two diagonal planes, not a cube); GT6BlockModel
+ *  branches on it via {@link #getCrossIcon}, not the 6-face path; extends IRenderedBlock only for baking injection. */
 public interface IRenderedCross extends IRenderedBlock {
-	/** Иконка cross-модели (растение) для позиции; per-мета — сам блок читает {@code WD.meta}.
-	 *  {@code aWorld==null} = item-рендер: {@code aX} несёт МЕТУ СТЕКА (1.7.10 renderBlockAsItem рисовал
-	 *  drawCrossedSquares с иконкой по метадате предмета — иначе все варианты выглядят метой 0). */
+	/** Cross-model icon for a position; when aWorld is null (item render), aX carries the stack's meta
+	 *  instead, matching 1.7.10's renderBlockAsItem behavior. */
 	ResourceLocation getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ);
-	/** Оттенок cross-модели (0..255 RGBa), {@code null} = белый (без тинта). */
+	/** Cross-model tint (0..255 RGBa); null means white, i.e. no tint. */
 	default short[] getCrossRGBa(BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 
-	// --- Дефолты IRenderedBlock: cross-путь GT6BlockModel их НЕ зовёт (ветвится на getCrossIcon), нужны лишь для контракта интерфейса. ---
+	// IRenderedBlock's cubic defaults below are never called on the cross path; they only satisfy the interface.
 	@Override default ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override default ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override default boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return aRenderPass == 0;}

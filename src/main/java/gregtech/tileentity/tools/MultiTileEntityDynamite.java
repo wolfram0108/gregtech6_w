@@ -213,7 +213,8 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.dynamite";}
 	
-	// F-explosion: extends GT6-ЦЕНТР ExplosionGT (переиспользует воспроизведённые 1.7.10-поля explosionX/Y/Z/exploder/isSmoking/affectedBlockPositions + neo-паттерны), НЕ neo Explosion-интерфейс (принцип 5).
+	// Extends the GT6 center ExplosionGT (reuses ported 1.7.10 fields explosionX/Y/Z/exploder/isSmoking plus neo patterns),
+	// not neo's Explosion interface.
 	public static class DynamiteExplosion extends gregapi.random.ExplosionGT {
 		public float mMaxExplosionResistance;
 		public byte mFortune;

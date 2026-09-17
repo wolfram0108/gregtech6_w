@@ -40,9 +40,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только используется в instanceof
- *  (TileEntityBase08FluidContainer) — конструктор никогда не зовётся без реального TC.
- *  См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only used in an instanceof check by
+ *  TileEntityBase08FluidContainer; the constructor is never actually called. */
 public class TileCrucible extends BlockEntity {
 	public TileCrucible(BlockEntityType<?> aType, BlockPos aPos, BlockState aState) {super(aType, aPos, aState);}
 }

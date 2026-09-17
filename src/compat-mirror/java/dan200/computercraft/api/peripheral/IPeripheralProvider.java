@@ -35,7 +35,6 @@
 
 package dan200.computercraft.api.peripheral;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — ComputerCraft. Минимум для компиляции ядра; члены
- *  добираются компилятором (CompatCC.getPeripheral не @Override — маркер-интерфейс).
- *  См. compat-mirror/README.md. */
+/** Compile-only mirror of the ComputerCraft API, kept as a marker interface since
+ *  CompatCC.getPeripheral is not @Override on the real type either. */
 public interface IPeripheralProvider {}

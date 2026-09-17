@@ -37,13 +37,7 @@ public interface IMultiBlockFluidHandler extends ITileEntityMultiBlockController
 	public boolean canFill              (MultiTileEntityMultiBlockPart aPart, byte aSide, Fluid aFluid);
 	public boolean canDrain             (MultiTileEntityMultiBlockPart aPart, byte aSide, Fluid aFluid);
 	public FluidTankInfo[] getTankInfo  (MultiTileEntityMultiBlockPart aPart, byte aSide);
-	/** Сами танки, видимые со стороны ЭТОЙ части. Седьмой метод контракта: в 1.7.10 его не требовалось —
-	 *  часть объявляла {@code IFluidHandler} и чужой мод спрашивал её напрямую шестью методами выше. В neo/1.20.1
-	 *  наружу видно только через capability, а её присутствие решает список танков стороны
-	 *  ({@code getTankInfo} -> {@code getFluidTanks}, см. {@code GT6FluidCapability.hasTanks});
-	 *  без этого метода стенка танка отдавала «танков нет», и
-	 *  содержимое многоблока было видно только на контроллере (репорт игрока: Jade молчит на стенках).
-	 *  Реализация уже есть у всех носителей — {@code TileEntityBase01Root:847} и переопределение
-	 *  {@code TileEntityBase10MultiBlockBase:212}; здесь метод только объявлен в контракте. */
+	/** 1.7.10 exposed tanks by declaring IFluidHandler on the part directly; here visibility goes only through the
+	 *  capability, whose presence depends on this list, so without it a wall part reported having no tanks at all. */
 	public net.minecraftforge.fluids.IFluidTank[] getFluidTanks(MultiTileEntityMultiBlockPart aPart, byte aSide);
 }

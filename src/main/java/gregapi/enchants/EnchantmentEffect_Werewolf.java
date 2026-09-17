@@ -39,16 +39,9 @@ import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.RNGSUS;
 
-/**
- * @author Gregorius Techneticies
- *
- * Игровая логика чара {@code Enchantment_WerewolfDamage} (оригинал 1.7.10 —
- * {@code gregapi/enchants/Enchantment_WerewolfDamage.java:91-111}, метод {@code func_151367_b}).
- * В 26.x-версии порта тело жило в record-е {@code EnchantmentEntityEffect} (движок диспетчерил чары
- * data-driven); в 1.20.1 движковая модель чар снова императивная — {@code Enchantment.doPostHurt}
- * ({@code forge-1201-decompiled/.../enchantment/Enchantment.java:121}), поэтому носитель снова
- * обычный метод, вызываемый из {@link Enchantment_WerewolfDamage}. Значения не изменены.
- */
+/** @author Gregorius Techneticies
+ *  1.20.1 runs enchantments imperatively via Enchantment.doPostHurt rather than a data-driven record, so this
+ *  body is an ordinary method again, called from Enchantment_WerewolfDamage; values are unchanged. */
 public final class EnchantmentEffect_Werewolf {
 	private EnchantmentEffect_Werewolf() {}
 

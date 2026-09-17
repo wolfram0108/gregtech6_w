@@ -320,9 +320,8 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 	public long mLiquidUnit = U, mGasUnit = U, mPlasmaUnit = U;
 	/** References to this Materials Fluid States. The amount of the FluidStack equals one Material Unit. It is usually either 144 or 1000, but other amounts are possible. Use "Util.translateUnits" for easy Math. */
 	public FluidStack mLiquid, mGas, mPlasma;
-	// F5-lazy: neo-FluidStack НЕЛЬЗЯ материализовать в MT.<clinit> (Holder.components жидкости ещё не привязаны на
-	// @Mod-конструкции, neo Holder.java:273 «Components not bound yet»). Храним FL+amount, mLiquid/mGas/mPlasma создаём
-	// ЛЕНИВО по первому обращению к геттеру (когда жидкости уже зарегистрированы). decisions/F5-fluids.md.
+	// A neo FluidStack can't be built inside MT's static initializer since components aren't bound yet at
+	// @Mod construction, so the FL reference and amount are stored and materialized lazily on first access.
 	private FL mLiquidFL, mGasFL, mPlasmaFL;
 	private long mLiquidFLAmount, mGasFLAmount, mPlasmaFLAmount;
 	/** The Tags for this Material */
@@ -1287,8 +1286,8 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 		return this;
 	}
 	
-	/** F5-lazy: задать жидкость по FL+amount БЕЗ создания FluidStack (отложенная материализация — см. поля mLiquidFL).
-	 *  Заменяет eager-путь liquid(FL.X.make(amount)) в MT.<clinit>, где Holder.components ещё не привязаны. */
+	/** Sets a fluid by FL+amount without building a FluidStack yet, replacing the eager liquid(...) call used
+	 *  in MT's static initializer, where components are not bound yet. */
 	public OreDictMaterial liquid(FL aFluid, long aAmount) {return liquid(aFluid, aAmount, mLiquidUnit);}
 	public OreDictMaterial liquid(FL aFluid, long aAmount, long aUnit) {
 		if (aFluid != null) {mLiquidFL = aFluid; mLiquidFLAmount = aAmount; mLiquidUnit = aUnit;}
@@ -1360,11 +1359,8 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 		return rFluid;
 	}
 
-	/** F5-lazy: материализовать mLiquid/mGas/mPlasma из отложенных FL+amount (заданных в MT.<clinit>, когда FluidStack ещё
-	 *  нельзя было создать — Holder.components не привязаны). Вызывать, когда жидкости уже зарегистрированы: лениво из геттеров
-	 *  ИЛИ явно (напр. дампер паритета читает поле mLiquid). Идемпотентно (материализует один раз) + заполняет FLUID_MAP по
-	 *  regName. ⚠️ FLUID_MAP теперь заполняется при первой материализации, не в момент liquid()-объявления (F5-followup:
-	 *  для полного мода — детерминированный проход после регистрации жидкостей; в core-дампе несущественно). */
+	/** Materializes the deferred liquid/gas/plasma fields once fluids are registered; idempotent, and also
+	 *  fills FLUID_MAP by name at that point rather than at the original liquid()-declaration time. */
 	public void materializeFluids() {
 		if (mLiquid == null && mLiquidFL != null) {mLiquid = mLiquidFL.make(mLiquidFLAmount); fluidMapPut(mLiquid, mLiquidFLAmount, mLiquidUnit);}
 		if (mGas    == null && mGasFL    != null) {mGas    = mGasFL   .make(mGasFLAmount);    fluidMapPut(mGas,    mGasFLAmount,    mGasUnit);}

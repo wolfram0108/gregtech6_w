@@ -37,11 +37,8 @@ package ic2.api.tile;
 
 import net.minecraft.core.Direction;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Сверено javap ic2:IC2Classic:1.2.1.8-dev
- *  (ic2.api.tile.IEnergyStorage, оригинал ForgeDirection → neo Direction). Реально
- *  используются — WD.java:1254,1255: getStored, getCapacity, isTeleporterCompatible.
- *  Методы setStored/addEnergy/getOutput/getOutputEnergyUnitsPerTick реального API не
- *  используются (греп 0) — не добавлены. */
+/** Compile-only mirror of the IC2 API: only getStored, getCapacity, and isTeleporterCompatible
+ *  are actually called, from WD; the rest of the real interface is unused and left out. */
 public interface IEnergyStorage {
 	int getStored();
 	int getCapacity();

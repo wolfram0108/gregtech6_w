@@ -95,9 +95,8 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			GuiUsageRecipe.usagehandlers.add(this);
 		}
 		
-		/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code FMLInterModComms.sendRuntimeMessage(sender,modId,method,String)}
-		 * (Forge 1.7.10, тип+метод удалены) — neo {@code InterModComms.sendTo(senderModId,modId,method,Supplier<?>)}
-		 * (`fml-decompiled/net/neoforged/fml/InterModComms.java:27`), тот же паттерн уже применён строкой выше (:88). */
+		/* Forge 1.7.10's FMLInterModComms.sendRuntimeMessage was removed; neo's InterModComms.sendTo
+		   takes a Supplier instead of a String, the same pattern used one line above. */
 		InterModComms.sendTo(GAPI.getModID(), "NEIPlugins", "register-crafting-handler", () -> MD.GAPI.mID+"@"+getRecipeName()+"@"+getOverlayIdentifier());
 		return this;
 	}
@@ -641,10 +640,8 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		GuiDraw.drawTexturedModalRect(-5, -8, 0, 3, 176,  79);
 	}
 
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code Minecraft.getInstance().fontRenderer.drawString(...)}
-	 *  (`getMinecraft()`→{@code getInstance()}, поле `fontRenderer`→{@code font}, метод {@code drawString}
-	 *  удалён у {@code Font} — текст экрана рисуется через {@code GuiGraphicsExtractor}, см. javadoc
-	 *  {@link gregapi.gui.ContainerClient} class); тот же паттерн, что {@code GuiDraw} F10-зеркало выше (no-op). */
+	/** 1.7.10 drew text via fontRenderer.drawString, a method neo's Font class no longer has; screen
+	 *  text now goes through GuiGraphicsExtractor instead, so this stays a no-op like the GuiDraw mirror above. */
 	public static void drawText(int aX, int aY, String aString, int aColor) {
 		//
 	}

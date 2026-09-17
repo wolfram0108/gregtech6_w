@@ -40,10 +40,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только объявления, используемые GregTech6
- *  (ContainerArcaneWorkbenchFixed — @Deprecated путь, не исполняется без реального TC). Реализует
- *  {@link Container} — ContainerArcaneWorkbenchFixed.onCraftMatrixChanged(mTileEntity) требует эту
- *  совместимость (реальный TileArcaneWorkbench у Thaumcraft — тоже инвентарь). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API, implementing Container because
+ *  ContainerArcaneWorkbenchFixed.onCraftMatrixChanged needs that compatibility, as the real tile does too. */
 public class TileArcaneWorkbench implements Container {
 	public ItemStack[] stackList = new ItemStack[0];
 

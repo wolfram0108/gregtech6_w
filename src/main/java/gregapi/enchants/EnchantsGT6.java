@@ -31,30 +31,11 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-/**
- * Центральный переходник ENCHANT — ЕДИНСТВЕННОЕ место мода, которое регистрирует 4 GT6-чара
- * ({@code werebane}/{@code dissolving}/{@code disjunction}/{@code radioactivity}) в реестре
- * {@code ForgeRegistries.ENCHANTMENTS} ({@code forge-1201-decompiled/net/minecraftforge/registries/
- * ForgeRegistries.java:74}).
- *
- * <p>В 1.20.1 чары — снова обычные объекты реестра с императивными колбэками (как в 1.7.10), а не
- * датапак-записи с {@code EnchantmentEntityEffect}, как в 26.x. Поэтому сборка чара (стоимость,
- * уровни, слоты, эффект) вернулась В САМ класс чара — {@link Enchantment_WerewolfDamage} и соседи, —
- * и здесь остаётся только регистрация. Прежний {@code bootstrap(BootstrapContext)}, реестр
- * {@code ENCHANTMENT_ENTITY_EFFECT_TYPE} и {@code DeferredHolder} сняты: в 1.20.1 таких сущностей
- * нет вовсе.
- *
- * <p>{@code INSTANCE}-объекты создаются при инициализации своих классов (как оригинальный
- * {@code INSTANCE = this} в конструкторе, {@code gt6-original/.../Enchantment_WerewolfDamage.java:75}),
- * поэтому {@code MT.init()} может раздавать их материалам через {@code addEnchantmentFor*} независимо
- * от момента {@link #register(IEventBus)} — тот же порядок, что в оригинале.
- *
- * <p>Точка подписки — {@link #register(IEventBus)} из центрального @Mod-конструктора
- * {@code gregapi.GT_API#GT_API(IEventBus)} (тот же мод-бас, что {@code ITEMS}/{@code BLOCKS}).
- */
+/** The only place in the mod that registers GT6's 4 enchants into ForgeRegistries.ENCHANTMENTS; on 1.20.1 they're ordinary
+ *  imperative registry objects again, so cost/levels/slots/effect assembly moved back into each enchant class. */
 public class EnchantsGT6 {
 
-	/** Центральный DeferredRegister чар — ЕДИНСТВЕННОЕ место мода, которое пишет в реестр чар. */
+	/** The only place in the mod that writes to the enchantment registry. */
 	private static final DeferredRegister<Enchantment> ENCHANTMENTS = DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, MD.GAPI.mID);
 
 	public static final RegistryObject<Enchantment> WEREBANE      = ENCHANTMENTS.register("werebane"     , () -> Enchantment_WerewolfDamage.INSTANCE);
@@ -62,7 +43,7 @@ public class EnchantsGT6 {
 	public static final RegistryObject<Enchantment> DISJUNCTION   = ENCHANTMENTS.register("disjunction"  , () -> Enchantment_EnderDamage   .INSTANCE);
 	public static final RegistryObject<Enchantment> RADIOACTIVITY = ENCHANTMENTS.register("radioactivity", () -> Enchantment_Radioactivity .INSTANCE);
 
-	/** ENCHANT: центральная точка подписки, вызывается ОДИН раз из {@code GT_API} тем же мод-басом. */
+	/** The central enchantment subscription point, called once from GT_API on the same mod bus. */
 	public static void register(IEventBus aModBus) {
 		ENCHANTMENTS.register(aModBus);
 	}

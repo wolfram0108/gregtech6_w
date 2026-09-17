@@ -37,9 +37,8 @@ package forestry.api.genetics;
 
 import net.minecraft.world.item.ItemStack;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Forestry. Только статика, используемая
- *  GregTech6 (RecipeMapPlantalyzer/RecipeMapBumblelyzer: AlleleManager.alleleRegistry.getIndividual(aStack)).
- *  См. compat-mirror/README.md. */
+/** Compile-only mirror of the Forestry API: only the static field
+ *  RecipeMapPlantalyzer/RecipeMapBumblelyzer read through AlleleManager.alleleRegistry. */
 public class AlleleManager {
 	public static IAlleleRegistry alleleRegistry = new IAlleleRegistry();
 

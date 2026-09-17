@@ -95,36 +95,32 @@ public class WorldgenOresLarge extends WorldgenObject {
 		if (GENERATING_SPECIAL) return F;
 		if (mDistance > 0 && Math.abs(aMinX) <= mDistance && Math.abs(aMinZ) <= mDistance) return F;
 		
-		// F6 §4.1: окно жилы [mMinY..mMaxY] (старый мир 0..255) растягивается sea-anchored под MC26 (-64..319).
+		// The vein window [mMinY..mMaxY] (defined for the old 0..255 world) stretches sea-anchored for MC26's taller world.
 		int tRMinY = WD.remapY(aWorld, mMinY), tRMaxY = WD.remapY(aWorld, mMaxY);
-		// F6 §4.1 (указание пользователя 2026-08-07): жила ПЛОСКАЯ — занимает 7 слоёв (tMinY-1..tMinY+5) на любой
-		// высоте окна. Растянув окно, но оставив ОДНУ жилу, мы разредили бы жилы по объёму ровно во столько раз,
-		// во сколько окно выросло. Поэтому число жил на опорный чанк = растяжение окна (под морем 2, изредка 3);
-		// каждая получает СВОЮ высоту из того же детерминированного per-chunk потока (сид чанка не меняется).
+		// A vein is flat, occupying only 7 layers, so stretching the window while keeping one vein per chunk would
+		// thin veins by the stretch factor; vein count scales with it instead, each getting its own height from the same stream.
 		java.util.Random tVeinRandom = WD.random(aWorld, aOriginChunkX, aOriginChunkZ);
 		int tVeins = WD.yScaleAmount(aWorld, mMinY, mMaxY, 1, tVeinRandom);
 		for (int tVein = 0; tVein < tVeins; tVein++) {
 		int tMinY = tRMinY + tVeinRandom.nextInt(Math.max(1, tRMaxY - tRMinY - 5));
 
-		// F6: было `WD.dimensionId(aWorld) == 0` (буквально ванильный Overworld) — сверено на реальную
-		// константу Level.OVERWORLD (Level.java:95), как и в WorldgenObject.checkForMajorWorldgen.
+		// Was a check against the literal vanilla Overworld id 0; checked against the real Level.OVERWORLD constant instead, as
+		// elsewhere.
 		if (mIndicatorRocks && (!(GENERATE_STREETS && aWorld.getLevel().dimension() == Level.OVERWORLD) || (Math.abs(aMinX) >= 64 && Math.abs(aMaxX) >= 64 && Math.abs(aMinZ) >= 64 && Math.abs(aMaxZ) >= 64))) {
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 			if (tRegistry != null) {
 				for (int i = 0, j = 1+aRandom.nextInt(3); i < j; i++) {
 					int tX = aMinX + aRandom.nextInt(16), tZ = aMinZ + aRandom.nextInt(16);
 					for (int tY = Math.min(WD.topY(aWorld), tMinY+25); tY >= tMinY-10 && tY > WD.minY(aWorld); tY--) {
-						// F6: было `Block tContact = aChunk.getBlock(tX&15, tY, tZ&15)` — LevelChunk.getBlock(int,int,int)
-						// удалён; реальный neo — LevelChunk.getBlockState(BlockPos):BlockState (LevelChunk.java:210).
+						// LevelChunk.getBlock(int,int,int) is gone; the real neo equivalent is LevelChunk.getBlockState(BlockPos).
 						BlockState tContact = aChunk.getBlockState(new BlockPos(tX, tY, tZ));
-						// F6: было `WD.getMaterial(tContact).isLiquid()` — WD.getMaterial(Block) удалён (§C5); 1:1-замена
-						// «материал блока — жидкость» это реальный BlockState.liquid() (BlockBehaviour.java:586, поле
-						// `liquid` напрямую наследует старое Material.isLiquid).
+						// WD.getMaterial(Block) is gone; the 1:1 replacement for 'material is liquid' is BlockState.liquid(), which inherits the
+						// same value the old Material.isLiquid held.
 						if (tContact.liquid()) break;
-						// F6 (1:1): было isOpaqueCube() (пропуск не-цельных блоков при спуске) — через центр WD.opaque.
+						// Was isOpaqueCube() for skipping non-solid blocks while descending; replaced by the central WD.opaque helper.
 						if (!WD.opaque(tContact.getBlock())) continue;
-						// F6 (1:1): индикатор ставится только на grass/ground/sand/rock. WD.getMaterial(Block) РЕАЛИЗОВАН
-						// (vanilla-классификация по идентичности+тегам, WD.java:474) — стух-тег снят.
+						// The indicator only goes on grass/ground/sand/rock materials; WD.getMaterial(Block) is fully implemented by identity
+						// and tags, so the stale marker here is removed.
 						gregapi.block.Material tMat = WD.getMaterial(tContact.getBlock());
 						if (tMat != gregapi.block.Material.grass && tMat != gregapi.block.Material.ground && tMat != gregapi.block.Material.sand && tMat != gregapi.block.Material.rock) break;
 						if (WD.easyRepDry(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(3)!=0?ST.save(NBT_VALUE, OP.rockGt.mat(UT.Code.select(mTop, mTop, mBottom, mBetween, mSpread), 1)):UT.NBT.make(), F, T);
@@ -153,7 +149,7 @@ public class WorldgenOresLarge extends WorldgenObject {
 				WD.setOre(aWorld, tX, tMinY-1+aRandom.nextInt(7), tZ, mSpread.mID);
 			}
 		}
-		} // F6 §4.1: конец цикла по жилам (tVeins)
+		} // End of the loop over veins (tVeins).
 		return T;
 	}
 	

@@ -38,9 +38,8 @@ package codechicken.nei.recipe;
 import java.util.ArrayList;
 import java.util.List;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — NEI. Минимум для RecipeMap.openNEI/guiRecipes,
- *  NEI_RecipeMap.init/NEI_GT_API_Config, GT_RectHandler.transferRect (возврат — boolean,
- *  используется как условие). См. compat-mirror/README.md. */
+/** Compile-only mirror of the NEI API: the minimum for RecipeMap.openNEI/guiRecipes and
+ *  NEI_GT_API_Config; GT_RectHandler.transferRect returns boolean since it is used as a condition. */
 public class GuiCraftingRecipe {
     public static List<TemplateRecipeHandler> craftinghandlers = new ArrayList<>();
 

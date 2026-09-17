@@ -156,8 +156,7 @@ public class GT_BaseCrop extends CropCard {
 		return maxSize();
 	}
 	
-	// F3 superseded-render: было registerSprites(IIconRegister){textures=new IIcon[]...} — 1.7.10 атлас-стежка мертва
-	// (F10 IC2-crop, ветка недостижима: IC2 не портирован, GT_BaseCrop не грузится). Тип-параметр IIconRegister и IIcon[]
-	// (mirror-классы, удалены из neo/production-jar) в сигнатуре ломали рефлексию → Object, тело снято.
+	// IIconRegister and IIcon[] are mirror types stripped from the runtime jar and broke reflection when left
+	// in the signature; this branch is unreachable anyway since IC2 is not ported and this class never loads.
 	public void registerSprites(Object iconRegister) {/**/}
 }

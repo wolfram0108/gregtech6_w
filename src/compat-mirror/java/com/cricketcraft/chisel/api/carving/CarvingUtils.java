@@ -35,7 +35,7 @@
 
 package com.cricketcraft.chisel.api.carving;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Chisel. Минимум для RM.addChisel. */
+/** Compile-only mirror of the Chisel API: the minimum RM.addChisel needs. */
 public class CarvingUtils {
     public static Object getDefaultGroupFor(String aName) {
         return null;

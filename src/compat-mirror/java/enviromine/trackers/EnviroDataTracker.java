@@ -35,7 +35,7 @@
 
 package enviromine.trackers;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — EnviroMine. Минимум для изменения температуры/влаги. */
+/** Compile-only mirror of the EnviroMine API: the minimum needed to adjust temperature and humidity. */
 public class EnviroDataTracker {
     public float bodyTemp;
 

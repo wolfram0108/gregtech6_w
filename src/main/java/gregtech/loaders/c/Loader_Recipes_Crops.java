@@ -40,9 +40,8 @@ import net.minecraftforge.fluids.FluidStack;
 import static gregapi.data.CS.*;
 import static gregapi.data.OP.*;
 
-// Э0 (слой AE2): из слушателей ниже сняты 10 строк с вызовом мельницы AE2 — кварцевой мельницы у AE2 под
-// 1.20.1 нет (метод удалён в RM.java вместе с носителем). Соседние рецепты тех же слушателей (RM.crop/
-// crop_nut/Squeezer/Juicer) не тронуты: дробление тех же плодов у GT6 своё, через Mortar/Shredder в
+// Ten calls to AE2's now-nonexistent grinder are removed from these listeners.
+// GT6's own grinding recipes for the same crops elsewhere are untouched.
 // RM.mortarize.
 public class Loader_Recipes_Crops implements Runnable {
 	@Override public void run() {

@@ -36,10 +36,8 @@ import gregapi.data.MT;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gregapi.worldgen.WorldgenObject;
-// F-layer-decouple: gregtech.tileentity.placeables.MultiTileEntityCoin — CONTENT-класс (вне ядра-272/среза,
-// не портирован). Прямой import из gregapi-worldgen = утечка core->content. Данные COIN_MAP (Map<OreDictMaterial,
-// ItemStack>) читаются рефлексией по имени класса в рантайме (когда контент загружен) — приём GT6 для
-// кросс-слойного доступа (UT.Reflection.getFieldContent, см. использование ниже). Значение — CORE-тип ItemStack.
+// MultiTileEntityCoin is a content-layer class; a direct import here would leak core into content, so COIN_MAP is read
+// by reflection on class name instead, GT6's usual cross-layer trick.
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Item;
@@ -138,19 +136,16 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		if (!getConfigFile().get(mCategory, "Room.Farming.Mobs"      , T)) mTags.add(TAG_FARM_MOBS);
 		if (!getConfigFile().get(mCategory, "Room.Farming.Crop"      , T)) mTags.add(TAG_FARM_CROP);
 		if (!getConfigFile().get(mCategory, "Room.Farming.Fish"      , T)) mTags.add(TAG_FARM_FISH);
-		INSTANCE = this; // redstone-wake (isDungeonAreaChunk); боевая регистрация одна — Loader_Worldgen
+		INSTANCE = this; // redstone-wake (isDungeonAreaChunk); the one real registration is Loader_Worldgen
 	}
 	
 	public WorldgenDungeonGT() {this(null, F, 100, 3, 7, 20, 20, 6, F, F, F, F, F, F, F, F);}
 
-	/** Единственная боевая регистрация (Loader_Worldgen); для redstone-wake (см. isDungeonAreaChunk). */
+	/** The one real registration, done by Loader_Worldgen; kept for redstone-wake (see isDungeonAreaChunk). */
 	public static WorldgenDungeonGT INSTANCE = null;
 
-	/** F6-worldgen redstone-wake: принадлежит ли чанк потенциальной данж-области (зеркало порогов generate:
-	 *  якорная формула + координатные пороги + probability от якорного tRandom). Нужен слушателю первой загрузки
-	 *  чанка (GT_API_Proxy): в 1.7.10 редстоун-цепи данжа оживлял flags=3 при постановке факелов (нотификации
-	 *  соседей в populate), WorldGenRegion апдейтов не шлёт вовсе → провода рождаются с POWER=0 и цепь двери
-	 *  мертва до первого пинка. Ложноположительный ответ безвреден (скан впустую). */
+	/** Does this chunk belong to a potential dungeon area, mirroring generate's own thresholds? Needed since
+	 *  WorldGenRegion sends no neighbor updates during generation, leaving wires born at POWER=0 until this wakes them. */
 	public static boolean isDungeonAreaChunk(net.minecraft.server.level.ServerLevel aLevel, int aChunkX, int aChunkZ) {
 		WorldgenDungeonGT tGen = INSTANCE;
 		if (tGen == null) return F;
@@ -164,9 +159,8 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		return tRandom.nextInt(tGen.mProbability) == 0;
 	}
 	
-	/** Доводка редстоун-цепей данжа в чанке: то, что в 1.7.10 делал flags=3 факелов при populate. Окно высоты —
-	 *  собственное окно генератора [mMinY..mMaxY] плюс высота конструкций комнаты, а не зашитое число: конфиг мира
-	 *  окно двигает. Идемпотентна — цепь просто приходит в равновесие. */
+	/** Settles a dungeon's redstone chain in a chunk, replacing 1.7.10's flags=3 torch notifications at populate time;
+	 *  idempotent, since it just lets the chain reach equilibrium. */
 	public static void wakeRedstone(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.world.level.chunk.LevelChunk aChunk) {
 		WorldgenDungeonGT tGen = INSTANCE;
 		if (tGen == null) return;
@@ -188,32 +182,19 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	
 	@Override
 	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
-		// F6-worldgen (данжи per-chunk, снятие отложки #39). Два форса среды против схемы 1.7.10 «якорный чанк рисует
-		// весь данж разом»: (1) фиче разрешена запись только ±1 чанк от генерируемого (neo ChunkPyramid.java:29-35
-		// blockStateWriteRadius(1), WorldGenRegion.ensureCanWrite:225) — данж же занимает до 9×9 чанков; (2) прежний
-		// разворот региона в ServerLevel давал реентрантный дедлок getChunk().join. МЕХАНИЗМ: каждый чанк данж-области
-		// детерминированно ПЕРЕИГРЫВАЕТ весь данж (общий tRandom от якоря — WD.random по seed мира, воспроизводим из
-		// любого чанка) и физически пишет ТОЛЬКО клетку своего чанка (маска DungeonData.mWrite). Межклеточное состояние
-		// (mGeneratedKeys/mTags/layout/цепочка Random клеток) воспроизводится идентично во всех чанках области, потому
-		// что ни выбор комнат, ни Random-потребление от мира не зависят (аудит architecture/dungeons.md: возвраты
-		// generate комнат безусловны, кроме generateVein — детерминизирован в DungeonChunkRoomMiningBedrock).
-		//
-		// ВНИМАНИЕ: aRandom (общий чанковый Random воркген-контейнера) для данж-решений НЕПРИГОДЕН — его состояние на
-		// входе зависит от Random-потребления предыдущих воркгенов чанка и НЕвоспроизводимо из соседнего чанка. Данж
-		// сидит на собственном tRandom от якоря (соль отделяет поток данжа от рудных WD.random тех же координат).
+		// A feature may only write +-1 chunk from the one generating, and unwrapping the region to ServerLevel
+		// deadlocked, so every chunk deterministically replays it from a shared anchor-seeded Random, writing only its own cell.
 		if (checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ)) return F;
-		// Инвариант дна (замена прежнего чтения бедрока под ЯКОРЕМ, при переигрывании недоступного): генератор MC26
-		// кладёт бедрок на minY всегда (SurfaceRules verticalGradient "bedrock_floor" bottom()..aboveBottom(5) —
-		// SurfaceRuleData.java:280) → проверка дна ТЕКУЩЕГО чанка (всегда доступен) даёт тот же ответ, что дала бы
-		// якорная: T на канонических генераторах, F на суперфлэт-подобных (интент Грега — отсечь миры без бедрока).
+		// MC26 always places bedrock at minY, so checking the current chunk's own floor (always reachable) gives the same answer
+		// the unreachable anchor-chunk check would have.
 		if (!WD.bedrock(aWorld, aMinX+8, WD.minY(aWorld), aMinZ+8)) return F;
 
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 
 		if (tRegistry == null) return F;
 
-		// Поиск якоря, чья область может накрывать текущий чанк: формула якоря 1:1 (период mMaxSize+4 > радиуса
-		// области (2+mMaxSize)/2 → максимум один кандидат на ось в окне).
+		// Searches for an anchor whose area may cover the current chunk; the anchor formula is 1:1, since its period always
+		// exceeds the area radius, giving at most one candidate per axis.
 		int tCurChunkX = aMinX >> 4, tCurChunkZ = aMinZ >> 4, tReach = (2+mMaxSize)/2;
 		int tAnchorChunkX = Integer.MIN_VALUE, tAnchorChunkZ = Integer.MIN_VALUE;
 		for (int i = -tReach; i <= tReach && tAnchorChunkX == Integer.MIN_VALUE; i++) if (Math.abs(tCurChunkX+i)%(mMaxSize+4) == (mMaxSize+4)/2) tAnchorChunkX = tCurChunkX+i;
@@ -221,15 +202,16 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		if (tAnchorChunkX == Integer.MIN_VALUE || tAnchorChunkZ == Integer.MIN_VALUE) return F;
 		int tAnchorMinX = tAnchorChunkX << 4, tAnchorMinZ = tAnchorChunkZ << 4;
 
-		// Пороги данжа 1:1, но на ЯКОРНЫХ координатах (одинаковый вердикт из каждого чанка области).
+		// Dungeon thresholds are 1:1, evaluated on the anchor's coordinates so every chunk in the area reaches the same verdict.
 		if (Math.abs(tAnchorMinZ) < 256+mMaxSize*16 && Math.abs(tAnchorMinX) < 256+mMaxSize*16) return F;
 		if ((GENERATE_STREETS && WD.dimensionId(aWorld) == DIM_OVERWORLD) && (Math.abs(tAnchorMinX) < 256+mMaxSize*16 || Math.abs(tAnchorMinZ) < 256+mMaxSize*16)) return F;
 
-		// Собственный детерминированный Random данжа: WD.random-центр (двойной Random Грега) по seed мира ^ dim ^ соль.
+		// The dungeon's own deterministic Random, seeded through the central WD.random helper by world seed, dimension and a
+		// dedicated salt.
 		Random tRandom = WD.random(WD.seed(aWorld) ^ WD.dimensionId(aWorld) ^ "gt.dungeon".hashCode(), tAnchorChunkX, tAnchorChunkZ);
 		if (tRandom.nextInt(mProbability) != 0) return F;
 
-		// F6 §4.1: окно глубины данжа [mMinY..mMaxY] (старый мир) растягивается sea-anchored под MC26.
+		// The dungeon's depth window stretches sea-anchored for MC26's taller world, same as the ore windows elsewhere.
 		int tRMinY = WD.remapY(aWorld, mMinY), tRMaxY = WD.remapY(aWorld, mMaxY);
 		int tOffsetY = tRMinY + tRandom.nextInt(Math.max(1, tRMaxY-tRMinY)), tColor = tRandom.nextInt(16);
 		
@@ -251,23 +233,22 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		if (!(mPortalMyst     && MD.MYST.mLoaded)) tTags.add(TAG_PORTAL_MYST);
 		
 		long[] tKeyIDs = new long[tGeneratedKeys.length];
-		// F6-worldgen (детерминизация ключей): было 1+Math.max(RNGSUS.nextInt(1000000), System.nanoTime()) — nanoTime
-		// давал МЕЖ-данжевую уникальность ID, но невоспроизводим между переигрываниями чанков области. Дет-эквивалент:
-		// long от якорного tRandom (>>>1 — неотрицательный) — тот же масштаб уникальности (2^63), разные данжи → разные
-		// якоря → разные потоки → разные ID; семантика «ключ подходит только своему данжу» сохранена.
+		// nanoTime gave unique key IDs but isn't reproducible across chunk replays; a long from the anchor's own
+		// deterministic Random gives the same scale of uniqueness while staying identical on every replay of the same dungeon.
 		tKeyIDs[0] = 1+(tRandom.nextLong()>>>1);
 		for (int i = 1; i < tKeyIDs.length; i++) tKeyIDs[i] = tKeyIDs[i-1]-1;
 		ItemStack[] tKeyStacks = new ItemStack[tKeyIDs.length];
 		for (int i = 0; i < tKeyIDs.length; i++) tKeyStacks[i] = IL.KEYS[tRandom.nextInt(IL.KEYS.length)].getWithNameAndNBT(1, "Key #"+(i+1), UT.NBT.makeLong(NBT_KEY, tKeyIDs[i]));
 
-		// База области = якорь минус пол-layout (1:1 прежнему aMinX -= (len/2)*16, но от якоря).
+		// Area base is the anchor minus half the room layout, the same formula as before but measured from the anchor instead of
+		// a fixed origin.
 		int tBaseX = tAnchorMinX - (tRoomLayout   .length / 2) * 16;
 		int tBaseZ = tAnchorMinZ - (tRoomLayout[0].length / 2) * 16;
-		// Клетка текущего чанка в layout; вне области — данжа в этом чанке нет.
+		// Current chunk's cell in the layout; falling outside it means this chunk has no dungeon in it at all.
 		int tCellI = tCurChunkX - (tBaseX >> 4), tCellJ = tCurChunkZ - (tBaseZ >> 4);
 		if (tCellI < 0 || tCellI >= tRoomLayout.length || tCellJ < 0 || tCellJ >= tRoomLayout[0].length) return F;
 
-		// Маркер у потолка (F6-Y-scale: был 254) — запись, значит только клетка-владелец (маска per-chunk).
+		// Marker near the ceiling (was a hardcoded 254); writing it happens only for the owning cell, per the per-chunk mask.
 		WD.set(aWorld, tBaseX+8+tCellI*16, WD.maxY(aWorld)-1, tBaseZ+8+tCellJ*16, NB, 0, 3);
 
 		for (int i = 0, j = 0, k = -1, l = 0; k >= -IMPORTANT_ROOM_COUNT && l < 10000; l++) {
@@ -287,15 +268,12 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		
 		@SuppressWarnings("unchecked")
 		java.util.Map<gregapi.oredict.OreDictMaterial, net.minecraft.world.item.ItemStack> tCoinMap = (java.util.Map<gregapi.oredict.OreDictMaterial, net.minecraft.world.item.ItemStack>)UT.Reflection.getFieldContent("gregtech.tileentity.placeables.MultiTileEntityCoin", "COIN_MAP", T, T);
-		// F6-worldgen (детерминизация): no-index-форма UT.Code.select сидит на глобальном RNGSUS (UT.java:1333) —
-		// невоспроизводима между переигрываниями (материал монет разошёлся бы по клеткам одного данжа). Явная
-		// индексация от якорного tRandom — то же распределение Cu×3/Ag×2/Au×2/Pt×1, один материал на весь данж
-		// (1:1-интент); индексная перегрузка select здесь неприменима (ambiguous с varargs-формой из-за боксинга).
-		// Бросок ВНЕ тернарника — потребление tRandom безусловно (инвариант переигрывания).
+		// The no-index select() form sits on a global Random, unreproducible across chunk replays; explicit indexing
+		// from the anchor's Random gives the same distribution, keeping one material per dungeon, rolled unconditionally.
 		gregapi.oredict.OreDictMaterial[] tCoinMats = {MT.Cu, MT.Cu, MT.Cu, MT.Ag, MT.Ag, MT.Au, MT.Au, MT.Pt};
 		gregapi.oredict.OreDictMaterial tCoinMat = tCoinMats[tRandom.nextInt(tCoinMats.length)];
 		net.minecraft.world.item.ItemStack tCoinStack = tCoinMap == null ? null : tCoinMap.get(tCoinMat);
-		CompoundTag tCoin = tCoinStack == null ? null : gregapi.code.ItemNBT.get(tCoinStack); // getTagCompound()->ItemNBT.get (neo NBT через DataComponents)
+		CompoundTag tCoin = tCoinStack == null ? null : gregapi.code.ItemNBT.get(tCoinStack); // getTagCompound()->ItemNBT.get (neo NBT via DataComponents)
 		if (tCoin == null) tCoin = UT.NBT.make(); else tCoin = (CompoundTag)tCoin.copy();
 		
 		boolean
@@ -350,13 +328,11 @@ public class WorldgenDungeonGT extends WorldgenObject {
 			}
 		}
 		
-		// Ранний выход по пустой клетке ЗАПРЕЩЁН: комнаты пишут и в соседние клетки (FarmMobs: башни-платформы ±16
-		// в клетках-нулях и коридорах) — чанк ЛЮБОЙ клетки layout обязан переиграть данж, чтобы записать то, что
-		// в него кладут соседи (координатный гейт низов DungeonData). Вне layout выход уже был (проверка границ выше).
+		// Early-exiting on an empty cell is forbidden, since rooms write into neighboring cells (FarmMobs towers), so any layout
+		// cell's chunk must still replay the dungeon for its neighbors' writes.
 
-		// Оба клеточных цикла — 1:1 (порядок значим: комнаты мутируют mGeneratedKeys/mTags, коридоры их читают;
-		// FarmMobs кладёт башню в клетку коридора, коридор вырезает себя в ней ПОЗЖЕ — порядок записей воспроизводится
-		// внутри каждого чанка координатным гейтом низов DungeonData). markUnsaved — только свой чанк.
+		// Both per-cell loops are 1:1, since their order matters (rooms mutate shared state corridors read, and a corridor
+		// carves into a tower cell later); DungeonData's coordinate gate reproduces that order.
 		for (int i = 1; i < tRoomLayout.length-1; i++) for (int j = 1; j < tRoomLayout[i].length-1; j++) if (tRoomLayout[i][j] > 0) {
 			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).setUnsaved(true);
 
@@ -403,12 +379,8 @@ public class WorldgenDungeonGT extends WorldgenObject {
 
 			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).setUnsaved(true);
 		}
-		// F6-worldgen (пост-световой цикл 1.7.10 СНЯТ): (1) в пирамиде MC26 шаги INITIALIZE_LIGHT/LIGHT идут ПОСЛЕ
-		// FEATURES (ChunkPyramid.java:36-37) — свет чанка полностью пересчитывается движком после фич, ручной
-		// checkBlock из воркгена холост; (2) WD.update внутри цикла кастует мир к Level (WD.java:816
-		// sendBlockUpdated) — на WorldGenRegion это ClassCastException, а клиент-апдейты из генерации бессмысленны:
-		// чанк ещё не отправлен ни одному клиенту (тот же класс решения, что ADAPT-009 П1 — холостые апдейты).
-		// tLightUpdateCoords продолжает собираться клеткой-владельцем (структура DungeonData 1:1) — потребителей нет.
+		// 1.7.10's post-generation light-notification cycle is removed: MC26 already runs light after features,
+		// and casting a WorldGenRegion to Level for it would throw a ClassCastException besides; nothing consumes that data now.
 		return T;
 	}
 	
@@ -469,9 +441,8 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	
 	public static boolean setFlowerPot(WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {
 		int tIndex = aRandom.nextInt(BlocksGT.POT_FLOWER_TILES.length);
-		// F16 flower-pot ЗАКРЫТ (BUG-039 v4): 1.7.10 «FLOWER_POT + TileEntityFlowerPot.func_145964_a» — в neo горшок
-		// без BE, наполненный горшок = POTTED_*-блок; выбор — центр BlocksGT.potted (контент POT_FLOWER_TILES/METAS 1:1).
-		// Прежний путь через mirror-класс был JPMS-миной (NCDFE при генерации данжа).
+		// A filled flower pot is a POTTED_* block via the central BlocksGT.potted, not a BE method; the old mirror-class path
+		// used to crash class loading during dungeon generation.
 		Block tPotted = BlocksGT.potted(BlocksGT.POT_FLOWER_TILES[tIndex], BlocksGT.POT_FLOWER_METAS[tIndex]);
 		WD.set(aWorld, aX, aY, aZ, tPotted == null ? Blocks.FLOWER_POT : tPotted, 0, 2);
 		return T;
@@ -484,7 +455,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	
 	public static boolean setBlock(WorldGenLevel aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags, int aRotationCount) {
 		WD.set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags);
-		while (aRotationCount-->0) WD.rotateBlock(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_Y_POS]); // F-tool-rotation центр (блок уже поставлен WD.set выше)
+		while (aRotationCount-->0) WD.rotateBlock(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_Y_POS]); // The shared tool-rotation placement center (the block is already placed by WD.set above).
 		return T;
 	}
 }

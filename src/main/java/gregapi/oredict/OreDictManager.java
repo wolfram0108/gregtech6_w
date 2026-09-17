@@ -45,18 +45,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.MinecraftForge;
-// F5 (bookkeeping восстановлен в FL.FULL_TO_DATA/EMPTY_TO_FLUID_TO_DATA): gt6mirror.minecraftforge.fluids.FluidContainerRegistry/
-// FluidContainerData/FluidContainerRegisterEvent — оригинальный Forge-пакет удалён движком целиком (0 хитов
-// во всех 3 корнях референса neo/neoforge/fml); т.к. ВЕСЬ net.minecraftforge отсутствует на classpath (не
-// split-package), тип compile-mirror-зеркалирован в compat-mirror (F2-приём, см. gregtech.asm-shim) —
-// gt6mirror.minecraftforge.fluids.FluidContainerRegistry (+ вложенные FluidContainerData/FluidContainerRegisterEvent).
-// Авто-РЕГИСТРАЦИЯ (владелец — gregapi.fluid/FL.reg/set) остаётся no-op (decisions/F5-fluids.md §3,8
-// «авто-реестр бакетов/канистр» — не изобретать новый API), поэтому этот конструктор-цикл и
-// onFluidContainerRegistration ниже компилируются и сохраняют управляющий поток 1:1, но реестр всегда пуст
-// в рантайме (никто в дереве не зовёт registerFluidContainer). Часть зафиксированного "Хвост F5: ~106
-// consumer-файлов" в DEFERRED-LEDGER.md §A — эта строка один из consumer'ов, не отдельная новая находка.
-// FluidStack.amount (1.7.10 public-поле) → neo private+getAmount/setAmount (F5-класс, тот же приём, что уже
-// применяется остальными потребителями FluidStack) — точечно переведено на setAmount(0) ниже.
+// The whole Forge fluid-container-registry package is gone from the engine, so its types are compile-mirrored here since
+// net.minecraftforge isn't on the classpath at all; auto-registration stays a deliberate no-op rather than a new API.
 import gt6mirror.minecraftforge.fluids.FluidContainerRegistry;
 import gt6mirror.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 import gt6mirror.minecraftforge.fluids.FluidContainerRegistry.FluidContainerRegisterEvent;
@@ -321,11 +311,8 @@ public final class OreDictManager {
 		if (aEvent.getClass() != OreRegisterEvent.class) return;
 		String aModID = MD.UNKNOWN.mID;
 		ModData aMod = MD.UNKNOWN;
-		// F4: Forge Loader.instance()/ModList.instance().activeModContainer() удалены; неo-эквивалент "текущий
-		// активный мод-контейнер" — ModLoadingContext.getActiveContainer() (fml-decompiled/.../ModLoadingContext.java:17-21).
-		// Никогда не null (по умолчанию контейнер "minecraft"), но это ветвление всё равно фактически вырождено:
-		// живой межмод-OreRegisterEvent-поток из F4 §4.2/§4.4 отложен на тег-мост (фаза 12) — сюда попадает
-		// только собственный replay GT6 (mIsRunningInIterationMode=T, эта ветка пропускается).
+		// Replaces the removed Forge active-mod-container lookup with ModLoadingContext's neo equivalent; this
+		// branch is effectively dormant since GT6's own replay always takes the other path.
 		ModContainer tContainer = ModLoadingContext.get().getActiveContainer();
 		if (!mIsRunningInIterationMode && tContainer != null) {
 			aModID = tContainer.getModId();
@@ -545,7 +532,7 @@ public final class OreDictManager {
 	}
 	public boolean setTarget_(OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack, boolean aOverwrite, boolean aAlreadyRegistered, boolean aIgnoreBlacklist) {
 		isAddingOre++;
-		ItemNBT.set(aStack = ST.amount(1, aStack), null); // F8 стык: было setTagCompound(null) — ItemNBT-мост (gregapi.code.ItemNBT)
+		ItemNBT.set(aStack = ST.amount(1, aStack), null); // Bridges through the central ItemNBT helper instead of a direct tag-compound clear.
 		if (!aAlreadyRegistered) registerOre_(aPrefix.mNameInternal + aMaterial.mNameInternal, aStack);
 		addAssociation_(aPrefix, aMaterial, aStack);
 		if ((aIgnoreBlacklist || !isBlacklisted(aStack)) && (aOverwrite || ST.invalid(sName2StackMap.get(aPrefix.mNameInternal + aMaterial.mNameInternal)))) sName2StackMap.put(aPrefix.mNameInternal + aMaterial.mNameInternal, aStack);
@@ -619,8 +606,8 @@ public final class OreDictManager {
 	public ItemStack setStack_(boolean aUseBlackList, ItemStack aStack) {
 		ItemStack tStack = getStack_(aUseBlackList, aStack);
 		if (tStack == null || ST.equal(aStack, tStack)) return aStack;
-		// F-itemstack-mutation IMPOSSIBLE-1:1: 1.7.10 func_150996_a (смена Item in-place) невозможна — neo ItemStack.item final
-		// (шов item-final централизован в ST.set); сохраняем meta oredict-канонического стека (Item поменять нельзя).
+		// Swapping an item type in place is impossible since neo's ItemStack.item is final (centralized in ST.set);
+		// the meta of the oredict-canonical stack is kept since the item itself cannot be changed.
 		return ST.meta_(aStack, ST.meta_(tStack));
 	}
 	
@@ -633,11 +620,10 @@ public final class OreDictManager {
 		ItemStack rStack = null;
 		if (tAssociation == null || (aUseBlackList && tAssociation.mBlocked)) return ST.copy(aStack);
 		if (tAssociation.mUnificationTarget == null) tAssociation.mUnificationTarget = sName2StackMap.get(tAssociation.toString());
-		// F-size0-catalyst: ЛОГИЧЕСКИЙ размер (ST.size), не raw getCount — унификация size-0-катализатора (напр. lens в
-		// laserengraver, ST.amount(0,...)) хранится как count=1+маркер ZEROSIZE; getCount()=1 потерял бы «0» и маркер.
-		// ST.amount(ST.size=0, target) пере-применяет маркер. Для обычных стеков ST.size=getCount → без изменений.
+		// Uses the logical size (ST.size), not the raw count, so a size-0 catalyst stack (its count=1 plus a marker)
+		// keeps that marker through unification instead of losing it to a plain getCount() of 1.
 		if (ST.invalid(rStack = ST.amount(ST.size(aStack), tAssociation.mUnificationTarget))) return ST.copy(aStack);
-		ItemNBT.set(rStack, ItemNBT.get(aStack)); // F8 стык: было ST.setNBT(rStack, ItemNBT.get(aStack)) — ItemNBT-мост
+		ItemNBT.set(rStack, ItemNBT.get(aStack)); // Bridges through the central ItemNBT helper instead of a direct tag copy.
 		return rStack;
 	}
 	
@@ -682,7 +668,7 @@ public final class OreDictManager {
 			aStack = ST.amount(1, aStack);
 		}
 		if (!aData.mBlackListed) aData.mBlackListed = isBlacklisted(aStack);
-		// F5/BUG-045 (1:1): восстановленный IFluidContainerItem.getCapacity(ItemStack) (compat-mirror; оригинал :659).
+		// Restored IFluidContainerItem.getCapacity(ItemStack) compat-mirror branch.
 		if (!aData.mBlocked) aData.mBlocked = (aData.mBlackListed || ST.block(aStack) != NB || FL.getFluid(aStack, T) != null || (aStack.getItem() instanceof IFluidContainerItem && ((IFluidContainerItem)aStack.getItem()).getCapacity(aStack) > 0));
 		sItemStack2DataMap.put(new ItemStackContainer(aStack), aData);
 		if (aData.validMaterial()) {
@@ -713,7 +699,7 @@ public final class OreDictManager {
 		OreDictItemData rData = null;
 		if (aAllowOverride) {
 			OreDictItemData tData = null;
-			CompoundTag tNBT = ItemNBT.get(aStack); // F8 стык: было ItemNBT.get(aStack) — ItemNBT-мост
+			CompoundTag tNBT = ItemNBT.get(aStack); // Bridges through the central ItemNBT helper instead of a direct tag read.
 			if (tNBT != null && tNBT.contains(NBT_RECYCLING_MATS)) {
 				List<OreDictMaterialStack> tList = OreDictMaterialStack.loadList(NBT_RECYCLING_MATS, tNBT);
 				if (!tList.isEmpty()) rData = new OreDictItemData(tList.remove(0), tList.toArray(ZL_MS));
@@ -785,9 +771,8 @@ public final class OreDictManager {
 	}
 	public boolean registerOre_(Object aName, ItemStack aStack) {
 		if (CR.DELATE == aName) {if (MD.GT.mLoaded) CR.delate(aStack); return MD.GT.mLoaded;}
-		// F12-followup (oredict-timing): guard «Only @Init/@PreInit» подавлён в окне runDeferredItemInit (server-start) —
-		// neo привязывает Holder.components только там, потому весь stack-based контент-пайплайн GT6 (init-фаза) сдвинут
-		// в это окно; sDeferredItemInitRunning ограничивает послабление ровно этим окном (см. GT_API.runDeferredItemInit).
+		// neo only binds Holder.components at server-start, so the whole stack-based content pipeline is deferred
+		// there too; this flag narrows the "init-phase only" guard's exception to exactly that deferred window.
 		if (Abstract_Mod.sStartedPostInit > 0 && !gregapi.GT_API.sDeferredItemInitRunning) throw new IllegalStateException("Late OreDict Registration using GT OreDict Utility. Only @Init and @PreInit are allowed for this when you use this Function instead of the Forge one.");
 		String tName = aName.toString();
 		if (UT.Code.stringInvalid(tName)) return F;

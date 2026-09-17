@@ -87,7 +87,7 @@ public class GT_Tool_Spade extends ToolStats {
 		if (BlocksGT.harvestableSpade.contains(aBlock)) {
 			aDrops.clear();
 			aDrops.add(ST.make(aBlock, 1, aMetaData));
-			/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
+			/* neo: BlockDropsEvent getDrops() always falls; dropChance removed */;
 			return 0;
 		}
 		return 0;

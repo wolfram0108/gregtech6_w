@@ -64,9 +64,8 @@ public class WorldgenOresSmall extends WorldgenObject {
 	@Override
 	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (GENERATING_SPECIAL) return F;
-		// F6 §4.1 (указание пользователя 2026-08-07): окно [mMinY..mMaxY] задано в старом мире [0..255] — растягиваем
-		// sea-anchored через центр, а КОЛИЧЕСТВО домножаем на то же растяжение, чтобы плотность руды на объём осталась
-		// как в 1.7.10 (окно выросло вдвое под морем → и россыпи вдвое больше). Оба ответа даёт WD, формулы здесь нет.
+		// The window stretches sea-anchored and the count is multiplied by the same stretch factor, keeping ore density per
+		// volume equal to 1.7.10; both come from the central WD helpers.
 		int tMinY = WD.remapY(aWorld, mMinY), tMaxY = WD.remapY(aWorld, mMaxY);
 		int tAmount = WD.yScaleAmount(aWorld, mMinY, mMaxY, mAmount, aRandom);
 		for (int i = 0, j = Math.max(1, tAmount/2 + aRandom.nextInt(1+tAmount)/2); i < j; i++) WD.setSmallOre(aWorld, aMinX+aRandom.nextInt(16), tMinY+aRandom.nextInt(Math.max(1, tMaxY-tMinY)), aMinZ+aRandom.nextInt(16), mMaterial.mID);

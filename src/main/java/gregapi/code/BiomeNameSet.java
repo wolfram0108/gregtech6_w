@@ -40,29 +40,8 @@ public class BiomeNameSet extends AbstractSet<String> {
 	private transient HashMap<String, Object> map;
 	private static final Object OBJECT = new Object();
 
-	/**
-	 * F6: было {@code ((BiomeGenBase)aName).biomeName} — поле {@code Biome.biomeName} (человекочитаемое имя
-	 * биома 1.7.10) удалено, биомы в neo data-driven и собственного display-name поля не несут. Идентичность
-	 * биома в neo — реестровый ключ ({@code identifier().toString()}, "namespace:path"), тот же приём, что
-	 * уже применяет диспетчер {@code GT6WorldGenerator.java:96-98,204-205}: {@code Holder<Biome>.unwrapKey()}
-	 * (Holder.java:40) -> {@code ResourceKey<Biome>.location()} (ResourceKey.java:52) -> {@code
-	 * Identifier.toString()} (Identifier.java:126, "namespace:path"). {@code ResourceKey<Biome>} напрямую
-	 * (как датаген-константы {@code net.minecraft.world.level.biome.Biomes.RIVER/...}, используемые в
-	 * {@code CS.java}-наборах {@code BIOMES_*}) резолвится тем же {@code identifier()}.
-	 * F6 (документация biomeName-семантики): голый {@code Biome}-инстанс без {@code Holder}/{@code ResourceKey}
-	 * (передаётся {@code StoneLayerOres.check/set(...,Biome aBiome,...)} — {@code aBiome} там берётся из
-	 * {@code tBiomes[i][j]=tBiomeHolder.value()} в {@code GT6WorldGenerator.java}, т.е. Holder уже развёрнут
-	 * и потерян до вызова) не несёт обратной ссылки на реестровый ключ ни в одном из 3 корней референса
-	 * ({@code Biome} — {@code final class} без registry-back-ref-поля/метода); ключ взять НЕГДЕ без
-	 * {@code RegistryAccess}-поиска по значению в этой точке — форс движка, возвращаем "" (не угадываем API).
-	 * Протяжка {@code Holder<Biome>} до вызова ИССЛЕДОВАНА (не пропущена): {@code tBiomes[][]} — параметр
-	 * {@code WorldgenObject.generate/reset(...,Biome[][] aBiomes,...)} (`gregapi/worldgen/WorldgenObject.java:
-	 * 61,81`), виртуально переопределённый ~50 leaf-worldgen классами (`gregtech/worldgen/**`, grep
-	 * `Biome[][]|Biome aBiome` по дереву = 55 файлов) — смена типа элемента на {@code Holder<Biome>} ломает
-	 * ПУБЛИЧНУЮ сигнатуру базового класса и ВСЕ 50 override разом; тот же самый "хвост" уже сознательно
-	 * отложен отдельным чекпоинтом (`STATE.md`/`DEFERRED-LEDGER.md` §F6 "Хвост F6": "~40 leaf-worldgen
-	 * классов ... их generate-сигнатуры не тронуты") — не расширяем сейчас поверх границы этой задачи.
-	 */
+	/** 1.7.10's human-readable Biome.biomeName field is gone; neo biomes are data-driven with no display-name
+	 *  field of their own, so identity is the registry key instead; a bare Biome with no Holder/ResourceKey returns "". */
 	public static String biomeKeyName(Object aName) {
 		if (aName instanceof Holder<?> aHolder) return aHolder.unwrapKey().map(k -> k.location().toString()).orElse("");
 		if (aName instanceof ResourceKey<?> aKey) return aKey.location().toString();
@@ -70,22 +49,8 @@ public class BiomeNameSet extends AbstractSet<String> {
 		return aName.toString();
 	}
 
-	/**
-	 * КЛЮЧ ГОЛОГО {@code Biome} — поиском по живому реестру.
-	 *
-	 * <p>Раньше здесь стояло {@code return ""}, и это делало МЁРТВЫМИ все ветки, куда биом приходит без
-	 * {@code Holder}: {@code WD.biome(...)} отдаёт {@code .value()} (WD.java:1185-1186), поэтому
-	 * {@code contains(...)} возвращал false ВСЕГДА. Так молча не работали: влажность биома для гниения сена
-	 * ({@code BlockBaleGrass:113}), поиск магического биома и Энда компасом пчелы
-	 * ({@code MultiItemBumbles:234,266}), гены пчёл по пустыне/меса ({@code IItemBumbleBee:141}), опознание
-	 * лунного, марсианского и космического камня ({@code MultiTileEntityRock:105-107,189,231}).
-	 *
-	 * <p>Обратной ссылки на ключ у {@code Biome} действительно нет ({@code final class} без registry-back-ref),
-	 * но сам реестр её знает: {@code registryAccess().lookupOrThrow(Registries.BIOME).getResourceKey(value)}.
-	 * Реестр берём у текущего сервера ({@code ServerLifecycleHooks.getCurrentServer()}); вне сервера (датаген,
-	 * ранняя загрузка) отвечаем "" — прежним поведением, а не выдумкой. Результат кэшируется: вызовы идут из
-	 * тиков блоков.
-	 */
+	/** Resolves the key directly from the live registry since a bare Biome has no back-reference; the previous
+	 *  unconditional empty return silently broke every caller lacking a Holder (hay decay, bee compass, rock id). */
 	private static final java.util.Map<Biome, String> BIOME_KEY_CACHE = new java.util.WeakHashMap<>();
 	public static String keyOfBiome(Biome aBiome) {
 		if (aBiome == null) return "";

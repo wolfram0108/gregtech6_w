@@ -38,30 +38,8 @@ import java.util.Map;
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;
 
-/**
- * F5 центральный переходник — танк GT6. Внутренняя логика (fill/drain/capacity/voidExcess/
- * preventDraining/адаптивная ёмкость по {@code RecipeMap.mMinInputTankSizes}) сохранена 1:1
- * (`decisions/F5-fluids.md` §4).
- *
- * <p><b>Ветка 1.20.1: фасада больше нет — интерфейс вернулся к оригинальному.</b> В 1.7.10 танк
- * реализовывал {@code net.minecraftforge.fluids.IFluidTank}, и это был ЕДИНСТВЕННЫЙ его наружный
- * контракт. Тот же интерфейс живёт в Forge 1.20.1 дословно
- * ({@code forge-1201-decompiled/net/minecraftforge/fluids/IFluidTank.java}: {@code getFluid}/
- * {@code getFluidAmount}/{@code getCapacity}/{@code isFluidValid}/{@code fill(FluidStack,FluidAction)}/
- * {@code drain(int,FluidAction)}/{@code drain(FluidStack,FluidAction)}) — значит танк снова просто танк.
- * Второй фасад ({@code ResourceHandler<FluidResource>} поверх {@code FluidStacksResourceHandler} с
- * двусторонней синхронизацией и защитой от реентрантности) существовал ТОЛЬКО потому, что transfer-API
- * 26.x не понимал {@code IFluidTank}; в 1.20.1 его нет, и вместе с ним снята вся эта машинерия.
- * Наружный, side-aware вид на танки строит не танк, а капа-мост базового TileEntity
- * ({@code TileEntityBase01Root.getCapability} → {@code gregapi/fluid/GT6FluidCapability.java}) —
- * ровно как в 1.7.10, где наружу смотрел TE, а не сам танк.
- *
- * <p>Трение long-vs-int (`decisions/F5-fluids.md` §4, §8): {@link #mAmount} остаётся {@code long}
- * (GT6 объёмы огромны), на границе с {@link FluidStack} ({@code int}) клампится через
- * {@link UT.Code#bindInt} — ровно как в 1.7.10, где {@code FluidStack.amount} тоже был {@code int}.
- * Единственный страдающий канал — ОДНОМОМЕНТНЫЙ перенос свыше {@code Integer.MAX_VALUE}; NBT-round-trip
- * не страдает ({@code writeToNBT}/{@code readFromNBT} хранят полный {@code long} через {@code "LAmount"}).
- */
+/** On 1.20.1 the tank is just a tank again, implementing IFluidTank directly, the same interface Forge kept 1:1.
+ *  The second ResourceHandler facade only existed because the 26.x transfer-API didn't understand IFluidTank. */
 public class FluidTankGT implements IFluidTank {
 	public final FluidTankGT[] AS_ARRAY = new FluidTankGT[] {this};
 
@@ -398,8 +376,8 @@ public class FluidTankGT implements IFluidTank {
 	@Override public FluidStack getFluid() {if (mFluid != null) mFluid.setAmount(UT.Code.bindInt(mAmount)); return mFluid;}
 	@Override public int getFluidAmount() {return UT.Code.bindInt(mAmount);}
 	@Override public int getCapacity() {return UT.Code.bindInt(capacity());}
-	@Override public boolean isFluidValid(FluidStack aStack) {return T;} // GT6 1.7.10 танк исторически не фильтровал жидкости на этом уровне (фильтрация — на уровне RecipeMap/ковера)
-	/** @deprecated см. {@link FluidTankInfo} — форж-1.7.10 совместимость, не часть текущего IFluidTank. */
+	@Override public boolean isFluidValid(FluidStack aStack) {return T;} // GT6's 1.7.10 tank never filtered fluids at this level; filtering happens on the recipe map or cover.
+	/** @deprecated Forge 1.7.10 compatibility only; not part of the current IFluidTank contract. */
 	@Deprecated public FluidTankInfo getInfo() {return new FluidTankInfo(isEmpty() ? null : mFluid.copy(), UT.Code.bindInt(capacity()));}
 
 }

@@ -533,13 +533,12 @@ public enum IL implements IItemContainer {
 	;
 	private ItemStack mStack;
 	private boolean mHasNotBeenSet = T;
-	// F12-lazy: neo нельзя создать ItemStack (ST.make) в preInit (Holder.components не привязаны, Holder.java:273), а предмет —
-	// в preInit сконструировать (intrusive-holder нужен открытый реестр = RegisterEvent). Храним Supplier<Item> (DeferredItem
-	// реализует его — .get() отдаёт предмет после RegisterEvent); mStack материализуем ЛЕНИВО в рантайме (компоненты привязаны).
+	// An ItemStack cannot be built in preInit, and the item itself cannot be constructed until the registry
+	// opens; a Supplier is stored instead and the stack is materialized lazily once components are bound.
 	private java.util.function.Supplier<Item> mItemSupplier;
-	/** F12-lazy: задать предмет через Supplier (DeferredItem) — конструкция/ST.make откладываются. */
+	/** Takes a Supplier (DeferredItem) instead of the item itself, so construction and ST.make are deferred until needed. */
 	public IItemContainer set(java.util.function.Supplier<Item> aItemSupplier) {mHasNotBeenSet = F; mItemSupplier = aItemSupplier; return this;}
-	/** F12-lazy: материализовать mStack из отложенного supplier по первому обращению (в рантайме компоненты уже привязаны). */
+	/** Materializes mStack from the deferred supplier on first access, once components are bound at runtime. */
 	private void ensureMaterialized() {
 		if (mStack == null && mItemSupplier != null) {Item tItem = mItemSupplier.get(); if (tItem != null) mStack = ST.amount(1, ST.make(tItem, 1, 0));}
 	}
@@ -604,7 +603,7 @@ public enum IL implements IItemContainer {
 	
 	@Override
 	public Item item() {
-		ensureMaterialized(); // F12-lazy: материализовать отложенный предмет перед чтением mStack
+		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + name() + "' has not been set to an Item at this time!");
 		if (ST.invalid(mStack)) return null;
 		return mStack.getItem();
@@ -640,7 +639,7 @@ public enum IL implements IItemContainer {
 	
 	@Override
 	public ItemStack get(long aAmount, Object... aReplacements) {
-		ensureMaterialized(); // F12-lazy: материализовать отложенный предмет перед чтением mStack
+		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + name() + "' has not been set to an Item at this time!");
 		if (ST.invalid(mStack)) return ST.copyFirst(aReplacements);
 		return ST.amount(aAmount, OM.get_(mStack));
@@ -649,7 +648,7 @@ public enum IL implements IItemContainer {
 	@Override
 	@SuppressWarnings("deprecation")
 	public ItemStack getWildcard(long aAmount, Object... aReplacements) {
-		ensureMaterialized(); // F12-lazy: материализовать отложенный предмет перед чтением mStack
+		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + name() + "' has not been set to an Item at this time!");
 		if (ST.invalid(mStack)) return ST.copyFirst(aReplacements);
 		return ST.copyAmountAndMeta(aAmount, W, OM.get_(mStack));
@@ -657,7 +656,7 @@ public enum IL implements IItemContainer {
 	
 	@Override
 	public ItemStack wild(long aAmount, Object... aReplacements) {
-		ensureMaterialized(); // F12-lazy: материализовать отложенный предмет перед чтением mStack
+		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + name() + "' has not been set to an Item at this time!");
 		if (ST.invalid(mStack)) return ST.copyFirst(aReplacements);
 		return ST.copyAmountAndMeta(aAmount, W, OM.get_(mStack));
@@ -665,7 +664,7 @@ public enum IL implements IItemContainer {
 	
 	@Override
 	public ItemStack getUndamaged(long aAmount, Object... aReplacements) {
-		ensureMaterialized(); // F12-lazy: материализовать отложенный предмет перед чтением mStack
+		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + name() + "' has not been set to an Item at this time!");
 		if (ST.invalid(mStack)) return ST.copyFirst(aReplacements);
 		return ST.copyAmountAndMeta(aAmount, 0, OM.get_(mStack));
@@ -673,7 +672,7 @@ public enum IL implements IItemContainer {
 	
 	@Override
 	public ItemStack getAlmostBroken(long aAmount, Object... aReplacements) {
-		ensureMaterialized(); // F12-lazy: материализовать отложенный предмет перед чтением mStack
+		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + name() + "' has not been set to an Item at this time!");
 		if (ST.invalid(mStack)) return ST.copyFirst(aReplacements);
 		return ST.copyAmountAndMeta(aAmount, mStack.getMaxDamage()-1, OM.get_(mStack));
@@ -683,7 +682,7 @@ public enum IL implements IItemContainer {
 	public ItemStack getWithName(long aAmount, String aDisplayName, Object... aReplacements) {
 		ItemStack rStack = get(1, aReplacements);
 		if (ST.invalid(rStack)) return null;
-		ST.name_(rStack, aDisplayName); // F1 стык: было rStack.setStackDisplayName(aDisplayName) — репойнт на центр ST.name_
+		ST.name_(rStack, aDisplayName); // Display-name setting is repointed through the central ST.name_ helper, not the stack method directly.
 		return ST.amount(aAmount, rStack);
 	}
 	
@@ -692,7 +691,7 @@ public enum IL implements IItemContainer {
 		ItemStack rStack = get(1, aReplacements);
 		if (ST.invalid(rStack)) return null;
 		UT.NBT.set(rStack, aNBT);
-		if (aDisplayName != null) ST.name_(rStack, aDisplayName); // F1 стык: было rStack.setStackDisplayName(aDisplayName) — репойнт на центр ST.name_
+		if (aDisplayName != null) ST.name_(rStack, aDisplayName); // Display-name setting is repointed through the central ST.name_ helper, not the stack method directly.
 		return ST.amount(aAmount, rStack);
 	}
 	
@@ -706,7 +705,7 @@ public enum IL implements IItemContainer {
 	
 	@Override
 	public ItemStack getWithMeta(long aAmount, long aMetaValue, Object... aReplacements) {
-		ensureMaterialized(); // F12-lazy: материализовать отложенный предмет перед чтением mStack
+		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + name() + "' has not been set to an Item at this time!");
 		if (ST.invalid(mStack)) return ST.copyFirst(aReplacements);
 		return ST.copyAmountAndMeta(aAmount, aMetaValue, OM.get_(mStack));
@@ -714,7 +713,7 @@ public enum IL implements IItemContainer {
 	
 	@Override
 	public ItemStack getWithDamage(long aAmount, long aMetaValue, Object... aReplacements) {
-		ensureMaterialized(); // F12-lazy: материализовать отложенный предмет перед чтением mStack
+		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + name() + "' has not been set to an Item at this time!");
 		if (ST.invalid(mStack)) return ST.copyFirst(aReplacements);
 		return ST.copyAmountAndMeta(aAmount, aMetaValue, OM.get_(mStack));
@@ -722,7 +721,7 @@ public enum IL implements IItemContainer {
 	
 	@Override
 	public ItemStack getWithNBT(long aAmount, CompoundTag aNBT, Object... aReplacements) {
-		ensureMaterialized(); // F12-lazy: материализовать отложенный предмет перед чтением mStack
+		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + name() + "' has not been set to an Item at this time!");
 		if (ST.invalid(mStack)) return ST.copyFirst(aReplacements);
 		ItemStack rStack = ST.amount(aAmount, OM.get_(mStack));
@@ -732,7 +731,7 @@ public enum IL implements IItemContainer {
 	
 	@Override
 	public IItemContainer registerOre(Object... aOreNames) {
-		ensureMaterialized(); // F12-lazy: материализовать отложенный предмет перед чтением mStack
+		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + name() + "' has not been set to an Item at this time!");
 		for (Object tOreName : aOreNames) OM.reg(tOreName, get(1));
 		return this;
@@ -740,7 +739,7 @@ public enum IL implements IItemContainer {
 	
 	@Override
 	public IItemContainer registerWildcardAsOre(Object... aOreNames) {
-		ensureMaterialized(); // F12-lazy: материализовать отложенный предмет перед чтением mStack
+		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + name() + "' has not been set to an Item at this time!");
 		for (Object tOreName : aOreNames) OM.reg(tOreName, wild(1));
 		return this;

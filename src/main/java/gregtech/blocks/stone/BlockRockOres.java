@@ -65,7 +65,7 @@ public class BlockRockOres extends BlockBaseMeta {
 		LH.add(getUnlocalizedName()+ ".7", "Milky Quartz");
 		LH.add(getUnlocalizedName()+ ".8", "Nether Quartz");
 		
-		// F12-followup (block-split): OM.reg/COMPAT_IC2.valuable используют ST.make → server-start → deferItemInit.
+		// OM.reg/COMPAT_IC2.valuable below need ST.make, only valid after server start, so deferred via deferItemInit.
 		gregapi.GT_API.deferItemInit(() -> {
 		for (int i = 0; i < maxMeta(); i++) OM.reg(ST.make(this, 1, i), OP.oreDense.dat(ORE_MATERIALS[i]));
 

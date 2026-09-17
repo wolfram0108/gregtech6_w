@@ -61,7 +61,7 @@ import java.util.List;
 import static gregapi.data.CS.*;
 
 public class Override_Drops {
-	public static void handleDrops(LivingEntity aDead, String aClass, java.util.Collection<ItemEntity> aDrops, DamageSource aDamage, int aLooting, boolean aBurn, boolean aPlayerKill) { // neo LivingDropsEvent.getDrops() -> Collection<ItemEntity> (было List; тело использует лишь add/remove(Object)/iterate)
+	public static void handleDrops(LivingEntity aDead, String aClass, java.util.Collection<ItemEntity> aDrops, DamageSource aDamage, int aLooting, boolean aBurn, boolean aPlayerKill) { // neo LivingDropsEvent.getDrops() -> Collection<ItemEntity>, was a List; body only uses add/remove/iterate
 		if (UT.Code.stringInvalid(aClass) || "EntityTFLichMinion".equalsIgnoreCase(aClass) || "EntitySkeletonBoss".equalsIgnoreCase(aClass)) return;
 		final boolean aSpace = aClass.startsWith("entityevolved") || aClass.startsWith("entityalien");
 		boolean tReplaceIron = aClass.startsWith("entitygaia");
@@ -179,7 +179,7 @@ public class Override_Drops {
 			if (aPlayerKill) {
 			@SuppressWarnings("rawtypes")
 			List tList = aDead.level().getEntities(aDead, aDead.getBoundingBox().inflate(32, 32, 32));
-			for (int i = 0; i < tList.size(); i++) if (tList.get(i) instanceof Player) {for (int j = 0; j < tList.size(); j++) if (tList.get(j) instanceof net.minecraft.world.entity.monster.ZombifiedPiglin) ((net.minecraft.world.entity.monster.ZombifiedPiglin)tList.get(j)).hurt(aDead.level().damageSources().playerAttack((Player)tList.get(i)), 0); break;}// было DamageSource.causePlayerDamage (1.7.10 статик удалён) -> neo damageSources().playerAttack(Player)
+			for (int i = 0; i < tList.size(); i++) if (tList.get(i) instanceof Player) {for (int j = 0; j < tList.size(); j++) if (tList.get(j) instanceof net.minecraft.world.entity.monster.ZombifiedPiglin) ((net.minecraft.world.entity.monster.ZombifiedPiglin)tList.get(j)).hurt(aDead.level().damageSources().playerAttack((Player)tList.get(i)), 0); break;}// was DamageSource.causePlayerDamage, a removed 1.7.10 static; neo damageSources().playerAttack(Player)
 			
 			if (RNGSUS.nextInt( 2) == 0) aDrops.add(ST.entity(aDead, RNGSUS.nextBoolean()?OP.rockGt.mat(MT.Netherrack, 1):ST.make(Items.FLINT, 1, 0)));
 			if (RNGSUS.nextInt( 3) == 0) aDrops.add(ST.entity(aDead, Items.BONE, 1, 0));

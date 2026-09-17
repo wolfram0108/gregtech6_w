@@ -35,9 +35,8 @@
 
 package codechicken.nei.api;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — NEI. Контракт, реализуемый NEI_GT_API_Config
- *  (loadConfig не @Override в оригинале, но getName/getVersion — часть реального интерфейса).
- *  См. compat-mirror/README.md. */
+/** Compile-only mirror of the NEI API: the contract NEI_GT_API_Config implements; getName and
+ *  getVersion are part of the real interface, but loadConfig is not @Override there either. */
 public interface IConfigureNEI {
 	void loadConfig();
 	String getName();

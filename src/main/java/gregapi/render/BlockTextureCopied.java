@@ -30,19 +30,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.resources.ResourceLocation;
 
-/**
- * @author Gregorius Techneticies
- *
- * glow-эвристика (fire/lava/flowing_lava/glowstone/lit_redstone_lamp) — это ДАННЫЕ (набор
- * самосветящихся ванильных блоков), перенесена 1:1 (REMAP-RULES §A: данные не гатим).
- * F3 block-icon-data ЗАКРЫТ: {@code Block.getIcon(side,meta)} удалён из neo (baked-model рендер) — спрайт грани
- * копируемого ванильного блока резолвится из его baked {@code BlockStateModel} ({@link GT6QuadBuilder#resolveBlockFaceIcon}).
- * [Метка отложенности «block-render-color» СНЯТА 2026-08-06.] Прежняя её формулировка («для биом-тинта нужен
- * {@code BlockColors}») несла НЕВЕРНУЮ модель: 1.7.10 звал здесь {@code Block.getRenderColor(meta)} —
- * СТАТИЧЕСКИЙ цвет рендера БЕЗ мира и биома; биомный канал {@code colorMultiplier(world,x,y,z)} этот класс
- * не звал и в оригинале. Канал восстановлен методом {@link #vanillaRenderColor} — переопределения ванили
- * 1.7.10 перенесены как ДАННЫЕ (сверено по декомпилу {@code recompSrc}, тела в javadoc метода).
- */
+/** @author Gregorius Techneticies
+ *  Glow (fire/lava/glowstone/lit redstone lamp) is DATA ported 1:1; Block.getIcon(side,meta) is gone in neo, so
+ *  copied-block face icons resolve from the baked BlockStateModel and render color from vanillaRenderColor below. */
 public class BlockTextureCopied implements ITexture {
 	private final Block mBlock;
 	private final byte mSide, mMeta;
@@ -109,43 +99,16 @@ public class BlockTextureCopied implements ITexture {
 	}
 
 	public BlockTextureCopied(Block aBlock, int aSide, int aMeta) {
-		// glow — ДАННЫЕ (самосветящиеся ванильные блоки). Оригинал (BlockTextureCopied.java:100):
-		//   aBlock == Blocks.FIRE || Blocks.LAVA || Blocks.LAVA || Blocks.GLOWSTONE || Blocks.REDSTONE_LAMP
-		// fire/lava/glowstone → neo 1:1 (REMAP-RULES §C блок-флэттен: lowercase→uppercase neo-константа).
-		// Два оставшихся токена разобраны после закрытия шва block-flatten (BUG-080, CS.Flattened):
-		//  · flowing_lava — в neo отдельного блока НЕТ, текучая лава это та же Blocks.LAVA с FluidState,
-		//    то есть токен уже покрыт условием `aBlock == Blocks.LAVA` (дубль оригинала — у Грега LAVA стоит
-		//    в списке дважды, ровно потому что там это были два разных блока);
-		//  · lit_redstone_lamp — в neo это Blocks.REDSTONE_LAMP со свойством LIT, block-идентичности нет:
-		//    различие живёт в BlockState, а сюда приходит Block. Вызывателей на лампу в дереве 0
-		//    (греп BlockTextureCopied.get/new по FIRE|LAVA|GLOWSTONE|LAMP: только LAVA, GLOWSTONE, OBSIDIAN
-		//    и портал Aether), поэтому расхождение ненаблюдаемо; при появлении вызывателя различие берётся
-		//    из состояния позиции, а не из блок-идентичности. Долгом это не является — движковое расхождение.
-		// Цвет: 4-й аргумент был aBlock.getRenderColor(aMeta). Для GT6-блоков канал — контракт IBlock#getRenderColor
-		// (общего Block-предка у иерархий GT6 нет); для ванильных — vanillaRenderColor ниже (переопределения
-		// 1.7.10 как данные; дефолт 1.7.10 Block.getRenderColor = 0xFFFFFF = UNCOLOURED — для прочих 1:1 и так).
+		// Glow is DATA (self-lit vanilla blocks); flowing lava is just Blocks.LAVA with a FluidState, already covered here.
+		// Color comes from IBlock#getRenderColor for GT6 blocks, else vanillaRenderColor below (1.7.10 default: white).
 		this(aBlock, aSide, aMeta
 			, aBlock instanceof gregapi.block.IBlock tGT6 ? tGT6.getRenderColor(aMeta) : vanillaRenderColor(aBlock, aMeta), F
 			, aBlock == Blocks.FIRE || aBlock == Blocks.LAVA || aBlock == Blocks.GLOWSTONE
 			, aBlock == Blocks.FIRE || aBlock == Blocks.LAVA || aBlock == Blocks.GLOWSTONE);
 	}
 
-	/** [снятие метки block-render-color 2026-08-06] Восстановленный канал 1.7.10 {@code Block.getRenderColor(meta)}
-	 *  для ВАНИЛЬНЫХ блоков: статический цвет рендера, БЕЗ мира и биома (биомный {@code colorMultiplier} этот класс
-	 *  не звал и в оригинале). Данные — ВСЕ переопределения ванили 1.7.10 (recompSrc, полный греп по
-	 *  {@code net/minecraft/block}: Grass, Leaves, OldLeaf, LilyPad, Stem, TallGrass, Vine — 7 + дефолт):
-	 *  · {@code BlockOldLeaf}: meta&3==1 (ель) → {@code getFoliageColorPine()} = 0x619961 — neo-константа
-	 *    {@code FoliageColor.FOLIAGE_EVERGREEN} несёт ту же величину; ==2 (берёза) → 0x80A755 = {@code FOLIAGE_BIRCH};
-	 *    прочее и {@code BlockLeaves}-база (дуб/джунгли/акация/тёмный дуб) → {@code getFoliageColorBasic()} =
-	 *    colormap(0.5,1.0) — neo {@code FoliageColor.get(0.5,1.0)}, та же формула по тому же colormap;
-	 *  · {@code BlockGrass}/{@code BlockTallGrass} (meta 1/2 → в neo SHORT_GRASS/FERN; meta 0 dead shrub →
-	 *    в neo DEAD_BUSH, у него 1.7.10 давал белый) → {@code ColorizerGrass.getGrassColor(0.5,1.0)} —
-	 *    neo {@code GrassColor.getDefaultColor()} = буквально {@code get(0.5,1.0)};
-	 *  · {@code BlockVine} → foliage basic; · {@code BlockLilyPad} → константа 2129968;
-	 *  · {@code BlockStem} → формула из меты 1:1 (attached-стебли — расщепление того же блока 1.7.10).
-	 *  Листвы, которых в 1.7.10 нет (cherry/azalea/mangrove/pale_oak), канала не имели — дефолт, не выдумываем.
-	 *  Модовые блоки: 1.7.10 диспатчил виртуально и чужие переопределения работали; в neo канала нет ни у кого —
-	 *  восстановимы только ванильные данные, чужие получают дефолт (граница шва, честно). */
+	/** Restores 1.7.10 Block.getRenderColor(meta) for vanilla blocks: a static color, independent of world or biome.
+	 *  Data is every vanilla override from 1.7.10 (leaves, grass, vines, lily pad, stem); other mods get the default color. */
 	private static int vanillaRenderColor(Block aBlock, int aMeta) {
 		if (aBlock == Blocks.SPRUCE_LEAVES) return net.minecraft.world.level.FoliageColor.getEvergreenColor() & 0xFFFFFF;
 		if (aBlock == Blocks.BIRCH_LEAVES)  return net.minecraft.world.level.FoliageColor.getBirchColor() & 0xFFFFFF;
@@ -160,9 +123,8 @@ public class BlockTextureCopied implements ITexture {
 	}
 
 	private ResourceLocation getIcon(int aSide) {
-		// F3 block-icon-data: было mBlock.getIcon(mSide==SIDE_ANY?aSide:mSide, mMeta) + catch→RENDERING_ERROR (1:1) —
-		// Block.getIcon удалён из neo (baked-model рендер); спрайт грани резолвим из baked BlockStateModel ванильного
-		// блока (централизованный GT6QuadBuilder.resolveBlockFaceIcon, §3). mMeta учтён (Flattening-варианты, см. резолвер).
+		// Block.getIcon is gone in neo (baked-model rendering); the face sprite is resolved from the vanilla block's baked
+		// BlockStateModel via the centralized GT6QuadBuilder.resolveBlockFaceIcon, meta included for Flattening variants.
 		try {
 			return GT6QuadBuilder.resolveBlockFaceIcon(mBlock, mSide == SIDE_ANY ? aSide : mSide, mMeta);
 		} catch (Throwable e) {

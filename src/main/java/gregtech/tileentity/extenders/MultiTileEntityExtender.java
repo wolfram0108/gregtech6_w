@@ -333,7 +333,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	public FluidTankInfo[] getTankInfo(Direction aDirection) {
 		if ((mModes & EXTENDER_TANK) != 0) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(UT.Code.side(aDirection)), F, T);
-			// 1:1 с оригиналом :334 (getTankInfo(getForgeSideOfTileEntity())); сторону несёт центр шва FL:944.
+			// Matches the original 1:1 (getTankInfo(getForgeSideOfTileEntity())); the side is carried by the FL seam center.
 			if (tTileEntity.mTileEntity != null) return FL.getTankInfo(tTileEntity.mTileEntity, tTileEntity.mSideOfTileEntity);
 		}
 		return ZL_FLUIDTANKINFO;

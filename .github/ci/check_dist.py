@@ -35,7 +35,7 @@ import pathlib
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _ci import summary  # noqa: E402  — общий центр вывода гейтов
+from _ci import summary  # noqa: E402 -- single shared sink for all gate output
 
 PREFIXES = ("net/minecraft/client/", "com/mojang/blaze3d/", "snownee/jade/overlay/", "snownee/jade/impl/")
 CLASSES_ROOT = pathlib.Path("build/classes/java/main")
@@ -67,11 +67,11 @@ def parse_pool(data: bytes):
             pos += 4
         elif tag in (5, 6):
             pos += 8
-            i += 1                       # long/double занимают две ячейки
+            i += 1                       # long and double constants occupy two slots in the constant pool
         elif tag == 15:
             pos += 3
         else:
-            return None                  # неизвестный тег — класс не наш, пропускаем
+            return None                  # unknown constant-pool tag means this class is not ours; skip it
         i += 1
     this_class = int.from_bytes(data[pos + 2:pos + 4], "big")
     names = {utf[v] for v in klass.values() if v in utf}
@@ -114,7 +114,7 @@ def main() -> int:
             continue
         name, names, descs = parsed
         if not (SRC_ROOT / (name.split("$")[0] + ".java")).exists():
-            foreign += 1                 # класс оснастки, не продукт
+            foreign += 1                 # this class belongs to the test harness, not the shipped product
             continue
         found = hits(names) + hits(descs)
         if found:
@@ -129,14 +129,14 @@ def main() -> int:
         else:
             viol.append((name, found))
 
-    # ПОЗИТИВНЫЙ КОНТРОЛЬ: списки не пусты, значит носители обязаны находиться. Ноль найденных при
-    # непустом реестре означает ослепший сканер (не тот каталог, чужой формат), а не чистое дерево.
+    # Positive control: the registry lists are non-empty, so carriers must exist somewhere.
+    # Finding zero here would mean a blind scanner (wrong path or format), not a clean tree.
     if (client_ok or latent_ok) and not carriers:
         summary("### ❌ Dist purity\n\nScanner found no carriers at all while the registry is not "
                 "empty — the scan is blind, verdict withheld.")
         return 2
 
-    if "--list" in sys.argv:                      # локальный разбор: весь состав носителей с именами
+    if "--list" in sys.argv:                      # local breakdown of every carrier found, listed by name, for diagnosing misses
         for name, found in carriers:
             mark = "CLIENT" if listed(name, client_ok) else ("LATENT" if listed(name, latent_ok) else "!! UNLISTED")
             print("%-11s %s" % (mark, name))

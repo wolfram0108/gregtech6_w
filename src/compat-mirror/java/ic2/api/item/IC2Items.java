@@ -37,10 +37,8 @@ package ic2.api.item;
 
 import net.minecraft.world.item.ItemStack;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API IC2. GT6 зовёт статический IC2Items.getItem(String). Реальный мод
- *  не грузится (guard MD.IC2.mLoaded) -> возвращаем null = штатный путь «IC2 не установлен» (вызыватель ST.mkic
- *  уже обрабатывает null, печатает предупреждение). Честная отложенность F10, не тихий стаб (neo-пути к IC2 нет —
- *  мод не портирован). См. compat-mirror/README.md. */
+/** Compile-only mirror of the IC2 API: returns null when the real mod is not loaded, which is
+ *  the normal "IC2 not installed" path -- the caller already handles null and warns about it. */
 public interface IC2Items {
 	static ItemStack getItem(String name) {return null;}
 }

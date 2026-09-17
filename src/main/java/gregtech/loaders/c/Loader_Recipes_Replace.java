@@ -123,18 +123,14 @@ public class Loader_Recipes_Replace implements Runnable {
 		NON_REPLACEABLE.add(ST.make(MD.NC, "ItemToolThermometer"                , 1, W));
 		
 		
-		// F11-recipe-scan (перенос скана в окно server-start): в 1.7.10 скан бежал на PostInit по готовому
-		// CraftingManager и обрабатывал Forge-ЗАМЕНЫ ванильных рецептов (ShapedOreRecipe — НЕ ICraftingRecipeGT).
-		// В neo их эквивалент — ore-версии F4 роли-C (маркер mVanillaReplacement), а появляются они только на
-		// server-start -> скан отложен в GT_API.deferRecipeScan (исполняется после роли-C, до finalizeRecipeLoading).
-		// Датапак-оригинал заменённого рецепта подавляется центром GT_API.removeDatapackRecipes (в 1.7.10 эту роль
-		// исполнял remove из живого CraftingManager-списка).
+		// The scan used to run at PostInit against a finished CraftingManager; its neo input (role-C ore-versions)
+		// only exists after server start, so it's deferred to run after role-C, before finalizeRecipeLoading.
 		gregapi.GT_API.deferRecipeScan(() -> {
 		List<ItemStack> tStickList = OreDictionary.getOres(OD.stickWood.toString());
 		HashSetNoNulls<Object> tAlreadyScannedItems = new HashSetNoNulls<>();
 		ArrayListNoNulls<RecipeReplacement> tList = new ArrayListNoNulls<>();
 		java.util.Set<net.minecraft.resources.ResourceLocation> tSuppress = new java.util.HashSet<>();
-		List<ICraftingRecipeGT> tRecipeList = CR.list(); // CR.list() отдаёт GT6-буфер ICraftingRecipeGT (не neo Recipe)
+		List<ICraftingRecipeGT> tRecipeList = CR.list(); // CR.list() returns the GT6 buffer of ICraftingRecipeGT, not neo Recipe objects.
 		boolean tUseProgressBar = UT.LoadingBar.start("Looking up Recipes", tRecipeList.size());
 		for (int l = 0; l < tRecipeList.size(); l++) {
 			ICraftingRecipeGT tRecipe = tRecipeList.get(l);
@@ -144,8 +140,8 @@ public class Loader_Recipes_Replace implements Runnable {
 			if (aOutput.getCount() != 1) continue;
 			if (aOutput.getMaxDamage() <= 0) continue;
 			if (aOutput.getMaxStackSize() != 1) continue;
-			// 1:1-фильтр 1.7.10: shapeless (любые) — скип; РОДНЫЕ GT6-рецепты (ICraftingRecipeGT) — скип;
-			// обрабатываются только замены ванильных (в 1.7.10 — Forge ShapedOreRecipe, здесь — роль-C с маркером).
+			// 1:1 filter from 1.7.10: shapeless recipes and native GT6 recipes (ICraftingRecipeGT) are skipped.
+			// Only vanilla-recipe replacements (role-C, marked) are processed.
 			if (!(tRecipe instanceof gregapi.recipes.ShapedOreRecipe tShapedOre) || !tShapedOre.mVanillaReplacement) continue;
 			if (ST.block(aOutput) != NB) continue;
 			if (COMPAT_IC2 != null && COMPAT_IC2.isReactorItem(aOutput)) continue;
@@ -153,7 +149,7 @@ public class Loader_Recipes_Replace implements Runnable {
 			if (NON_REPLACEABLE.contains(aOutput, T)) continue;
 			if (sNonReplaceableNames.contains(aOutput.getItem().getDescriptionId())) continue;
 
-			Object[] tRecipeInputs = tShapedOre.getInput(); // формат ячеек 1:1 с Forge getInput(): null | ItemStack | List<ItemStack>
+			Object[] tRecipeInputs = tShapedOre.getInput(); // Cell format matches Forge's getInput() 1:1: null, a single ItemStack, or a List<ItemStack>.
 
 			if (tRecipeInputs == null || tRecipeInputs.length <= 0) continue;
 			
@@ -255,8 +251,8 @@ public class Loader_Recipes_Replace implements Runnable {
 				if (tPlate == null || aReplacer.mShape == null || aReplacer.mShape.length <= 0) continue;
 				if (!ConfigsGT.RECIPES.get(ConfigCategories.Recipes.recipereplacements, aRecipe.mMat+"."+aReplacer.mName, T)) continue;
 				if (!tRecipeList.remove(aRecipe.mRecipe)) continue;
-				// заменённая ore-версия удалена из буфера — подавляем и её датапак-оригинал (в 1.7.10 удаление
-				// из CraftingManager снимало рецепт целиком; ore-версия и оригинал здесь — одна функция).
+				// When a replaced ore-version is removed from the buffer, its datapack original is suppressed too.
+				// In 1.7.10 removing from CraftingManager dropped the whole recipe; here they're the same function.
 				if (aRecipe.mRecipe instanceof gregapi.recipes.ShapedOreRecipe tSrc && tSrc.mSourceId != null) tSuppress.add(tSrc.mSourceId);
 				Object tNamePlate = OreDictionary.getOres(OP.plate.dat(aRecipe.mMat).toString()).isEmpty() ? OP.ingot.dat(aRecipe.mMat) : OP.plate.dat(aRecipe.mMat), tNameCurve = OreDictionary.getOres(OP.plateCurved.dat(aRecipe.mMat).toString()).isEmpty() ? tNamePlate : OP.plateCurved.dat(aRecipe.mMat);
 				switch (aReplacer.mShape.length) {
@@ -269,16 +265,15 @@ public class Loader_Recipes_Replace implements Runnable {
 
 		if (tUseProgressBar) UT.LoadingBar.finish();
 		gregapi.GT_API.removeDatapackRecipes(gregapi.GT_API.sCurrentServerForRecipeScan, tSuppress);
-		}); // конец GT_API.deferRecipeScan
+		}); // End of GT_API.deferRecipeScan.
 	}
 
 	public static ItemStack getRecipeOutput(ICraftingRecipeGT aRecipe, ItemStack... aStacks) {
 		if (aRecipe == null || aStacks == null) return null;
 		boolean tAny = F; for (ItemStack s : aStacks) if (s != null) {tAny = T; break;}
 		if (!tAny) return null;
-		// Сетка 3×3 строится ЕДИНСТВЕННЫМ центром GT6 — CR.crafting(ItemStack...) (форма оригинала
-		// gt6-original CR.java:577-580); локальной копии сборки здесь больше нет. GT6-рецепт судится своими
-		// matches/getCraftingResult (ICraftingRecipeGT), а не ванильным assemble.
+		// The 3x3 grid is built by the single central CR.crafting(...), matching the original.
+		// A GT6 recipe judges itself via its own matches, not vanilla's assemble.
 		CraftingContainer aCrafting = gregapi.util.CR.crafting(aStacks);
 		if (!aRecipe.matches(aCrafting, DW)) return null;
 		ItemStack rOutput = aRecipe.getCraftingResult(aCrafting);
@@ -287,7 +282,7 @@ public class Loader_Recipes_Replace implements Runnable {
 	}
 	
 	public static class RecipeReplacement {
-		public final ICraftingRecipeGT mRecipe; // GT6-буфер CR.list() (не neo Recipe)
+		public final ICraftingRecipeGT mRecipe; // GT6's own buffer, CR.list(), not neo's Recipe type.
 		public final OreDictPrefix mPrefix;
 		public OreDictMaterial mMat, mRod;
 		public RecipeReplacement(ICraftingRecipeGT aRecipe, OreDictPrefix aPrefix, OreDictMaterial aMat, OreDictMaterial aRod) {mRecipe = aRecipe; mPrefix = aPrefix; mMat = aMat; mRod = aRod;}

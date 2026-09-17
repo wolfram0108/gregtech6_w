@@ -33,20 +33,12 @@ import gregapi.util.UT;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.DataSlot;
 
-/**
- * F-GUI: {@code detectAndSendChanges}→{@code broadcastChanges}, старый int-индексный прогресс-бар
- * ({@code ContainerListener.sendProgressBarUpdate}, движок убрал целиком) → {@code DataSlot}
- * (`neo-decompiled/net/minecraft/world/inventory/AbstractContainerMenu.java:132-142,205-213` — добавляется
- * через {@code addDataSlot}, синхронизируется САМИМ движком внутри {@code super.broadcastChanges()}, ручная
- * рассылка по {@code crafters} не нужна). Клиентский приём значения — {@code updateProgressBar(int,int)}→
- * {@code setData(int,int)} (движок переименовал; `ClientPacketListener.java:1505` — реальный клиентский
- * вызыватель, `BeaconMenu.java:78`/`LecternMenu.java:47-86` — эталон того же паттерна оверрайда без
- * {@code @OnlyIn(CLIENT)}, метод общий для обеих сторон).
- */
+/** Engine renamed detectAndSendChanges to broadcastChanges and replaced the manual progress-bar broadcast
+ *  with DataSlot, synchronized by the engine itself inside super.broadcastChanges(). */
 public class ContainerCommonBasicMachine extends ContainerCommon {
 	private RecipeMap mRecipes;
 
-	/** F-GUI: движковый DataSlot заменяет ручную рассылку прогресс-бара, см. javadoc класса. */
+	/** The engine's own DataSlot replaces manual progress-bar broadcasting here. */
 	private final DataSlot mProgressBarSlot;
 
 	public ContainerCommonBasicMachine(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, RecipeMap aRecipes, int aGUIID) {
@@ -288,10 +280,8 @@ public class ContainerCommonBasicMachine extends ContainerCommon {
 
 	@Override
 	public void broadcastChanges() {
-		// F-GUI R8-фикс: ContainerCommon-конструктор зовёт broadcastChanges() (виртуальный диспетч попадает
-		// сюда) ДО того, как addDataSlot(...) успел выполниться (он в теле ЭТОГО подкласса, после super(...))
-		// — mProgressBarSlot ещё null на первом вызове; null-гейт (1.7.10 тут был примитив short, конструктора
-		// не боялся); первый реальный синк прогресса произойдёт на следующем тике, поведение не теряется.
+		// The superclass constructor calls broadcastChanges() before this subclass's own addDataSlot() has run,
+		// so the slot is still null on the first call; the real sync happens on the next tick instead.
 		if (mProgressBarSlot != null) {
 			MultiTileEntityBasicMachine tTE = (MultiTileEntityBasicMachine)mTileEntity;
 			if (tTE.mSuccessful) {

@@ -76,8 +76,7 @@ public class Loader_Rails implements Runnable {
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.rail.detector.tungstencarbide", () -> {BlockBaseRail b = new BlockBaseRail(null, "gt.block.rail.detector.tungstencarbide", "Tungstencarbide Detector Track", F, T, 1.60F, 24, MT.TungstenCarbide.mToolQuality-1, Textures.BlockIcons.RAIL_DETECTOR_TUNGSTENCARBIDE, Textures.BlockIcons.RAIL_DETECTOR_ACTIVE_TUNGSTENCARBIDE); BlocksGT.RailTungstenCarbideDetector = b; return b;});
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.rail.detector.adamantium", () -> {BlockBaseRail b = new BlockBaseRail(null, "gt.block.rail.detector.adamantium"     , "Adamantium Detector Track"     , F, T, 4.00F,100, MT.Ad             .mToolQuality-1, Textures.BlockIcons.RAIL_DETECTOR_ADAMANTIUM     , Textures.BlockIcons.RAIL_DETECTOR_ACTIVE_ADAMANTIUM); BlocksGT.RailAdamantiumDetector = b; return b;});
 		
-		// F12-followup (block-split): рецепты рельсов — deferItemInit (server-start): поля BlocksGT.RailX заселены
-		// RegisterEvent'ом (registerBlockLazy выше) + компоненты связаны (ST.make).
+		// Rail recipes run in deferItemInit at server start, once RailX fields and ST.make components are ready.
 		gregapi.GT_API.deferItemInit(() -> {
 		if (MD.RC.mLoaded) {
 			CR.shaped(ST.make((Block)BlocksGT.RailSteel                     , 12, 0), CR.DEF_REV_NCC, "R R", "RBR", "R R", 'R', OP.railGt.dat(ANY.Steel         ), 'B', IL.RC_Bed_Wood);

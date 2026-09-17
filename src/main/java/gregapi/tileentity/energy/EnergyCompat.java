@@ -40,10 +40,8 @@ import static gregapi.data.CS.*;
  * For mostly Internal Use.
  */
 public class EnergyCompat {
-	// Э0 (слой AE2): AE_ENERGY снят из списка. Флаг сторожил спец-случай «EU напрямую в AE2» —
-	// appeng.tile.powersink.IC2 (AE2 rv2 реализовывал приёмник энергии IC2 сам). У AE2 под 1.20.1 такого
-	// класса нет: в пакете appeng.blockentity.powersink остались только AEBasePoweredBlockEntity и
-	// IExternalPowerSink, а энергию извне она принимает движковой FE-капой — её и кормит мост feHandler ниже.
+	// This flag guarded AE2's own direct EU receiver, which doesn't exist on the 1.20.1 build.
+	// AE2 now takes energy through the shared FE bridge below instead.
 	public static boolean RF_ENERGY = F, RF_ENERGY_NEW = F, FL_ENERGY = F, WD_ENERGY = F, IC_ENERGY = F, BB_ENERGY = F, GC_ENERGY = F, BC_LASER = F;
 	
 	/** Gets Called once during postInit to see which Interfaces are there and Classloaded. */
@@ -110,8 +108,7 @@ public class EnergyCompat {
 		// IMPORTANT: Ignore the Fact that this SEEMS to be unused. It does exist, SOMETIMES.
 		if (aTarget instanceof gregtech.api.interfaces.tileentity.IEnergyConnected) return ((gregtech.api.interfaces.tileentity.IEnergyConnected)aTarget).inputEnergyFrom(aSide) || ((gregtech.api.interfaces.tileentity.IEnergyConnected)aTarget).outputsEnergyTo(aSide);
 		
-		// Э0 (слой AE2): ветка AE_ENERGY (appeng.tile.powersink.IC2) снята — носителя нет, см. поле выше.
-		// Связь с AE2 теперь решает общий FE-мост в конце этого же метода.
+		// That branch is gone with its carrier; AE2 connectivity now goes through the general FE bridge later in this method.
 
 		if (FL_ENERGY && (aTarget instanceof com.rwtema.funkylocomotion.blocks.TilePusher || aTarget instanceof com.rwtema.funkylocomotion.blocks.TileBooster)) return T;
 		
@@ -130,17 +127,14 @@ public class EnergyCompat {
 		// IMPORTANT: Ignore the Fact that IEnergyConnection is SUPPOSEDLY part of IEnergyHandler. There is versions of the RF API in circulation, where this is NOT the case!!!
 		if (RF_ENERGY && (EMIT_EU_AS_RF || isElectricRFReceiver(aTarget)) && (aTarget instanceof cofh.api.energy.IEnergyHandler || (RF_ENERGY_NEW && aTarget instanceof cofh.api.energy.IEnergyReceiver))) return !(aTarget instanceof cofh.api.energy.IEnergyConnection) || ((cofh.api.energy.IEnergyConnection)aTarget).canConnectEnergy(FORGE_DIR[aSide]);
 
-		// Мост GT6 -> движковая FE-капа: capability net.minecraftforge.energy.IEnergyStorage (Forge 1.20.1),
-		// работает с ЛЮБЫМ FE-приёмником, не только AE2. Гейт тот же, что у RF-плеча выше: ключ
-		// Emit_EU_as_RF_from_Blocks либо белый список электро-приёмников.
+		// Bridges GT6 energy to the engine's FE capability, working with any FE receiver, not just AE2.
+		// Gated the same way as the RF arm above.
 		if ((EMIT_EU_AS_RF || isElectricRFReceiver(aTarget)) && feHandler(aTarget, aSide) != null) return T;
 
 		return F;
 	}
 
-	/** Мост GT6 -> движковая FE-капа: FE-приёмник соседа со стороны {@code aSide}, capability
-	 *  {@code ForgeCapabilities.ENERGY} (net.minecraftforge.energy, Forge 1.20.1). Одно место на весь мод —
-	 *  его спрашивают и предикат связи, и вставка энергии; больше эту капу не спрашивает никто. */
+	/** One place in the whole mod asks for this capability; both the connectivity check and the energy insertion call it. */
 	public static net.minecraftforge.energy.IEnergyStorage feHandler(BlockEntity aReceiver, byte aSide) {
 		if (aReceiver == null || aReceiver.getLevel() == null) return null;
 		try {
@@ -169,17 +163,11 @@ public class EnergyCompat {
 			aSize = Math.abs(aSize);
 			
 			// Applied Energistics gets a special case.
-			// Э0 (слой AE2): спец-случай снят — в 1.7.10 AE2 сама реализовывала приёмник EU
-			// (appeng.tile.powersink.IC2), у версии под 1.20.1 этого класса нет, а энергию извне она берёт
-			// движковой FE-капой (appeng/blockentity/powersink/AEBasePoweredBlockEntity + ForgeEnergyAdapter).
-			// Её кормит общий мост GT6 → FE ниже по этому же методу, отдельного плеча AE2 не нужно.
+			// AE2's own EU receiver doesn't exist on the 1.20.1 build.
+			// It now takes energy through the same general FE bridge, no separate arm needed.
 
-			// Мост GT6 -> движковая FE-капа: работает с ЛЮБЫМ FE-приёмником, не только AE2. Курс — авторский
-			// RF_PER_EU = 4 (CS:217). Целые пакеты и никаких потерь: у этой капы нет транзакций — вместо пробы
-			// транзакцией сперва идёт ПРОБА (simulate=T, приёмник не тронут), по ней считается число целых
-			// пакетов, неполный пакет не проводится вовсе; фиксация — реальным вызовом (simulate=F) и только
-			// на целые пакеты. Гейт тот же, что у мёртвого RF-плеча ниже: ключ Emit_EU_as_RF_from_Blocks либо
-			// белый список.
+			// Works with any FE receiver, not just AE2; this capability has no transaction, so a simulated probe first counts
+			// whole packets, and only those get committed - no partial packet is ever sent.
 			if (EMIT_EU_AS_RF || isElectricRFReceiver(aReceiver)) {
 				net.minecraftforge.energy.IEnergyStorage tFE = feHandler(aReceiver, aSide);
 				if (tFE != null) {
@@ -187,10 +175,10 @@ public class EnergyCompat {
 					long tCost = aSize * RF_PER_EU;
 					if (tCost <= 0) return 0;
 					int tWanted = UT.Code.bind31(aAmount * tCost);
-					// ПРОБА: simulate=T, приёмник не тронут.
+					// Probe: simulate=true, the receiver is left untouched.
 					long tPackets = tFE.receiveEnergy(tWanted, T) / tCost;
 					if (tPackets <= 0) return 0;
-					// ФИКСАЦИЯ: simulate=F, ровно на целые пакеты.
+					// Commit: simulate=false, moving exactly the whole packets the probe found.
 					long tMoved = tFE.receiveEnergy(UT.Code.bind31(tPackets * tCost), F) / tCost;
 					if (tMoved <= 0) return 0;
 					return tMoved;

@@ -28,10 +28,8 @@ import gregapi.render.BlockTextureDefault;
 import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.util.UT;
-// ⛔ АТЛАС БЛОКОВ — У ОБЩЕГО НОСИТЕЛЯ, НЕ У КЛИЕНТСКОГО. TextureAtlas помечен @OnlyIn(Dist.CLIENT)
-// (forge-1201-decompiled/net/minecraft/client/renderer/texture/TextureAtlas.java:25): его загрузка на
-// выделенном сервере роняет класс (BP-BUG-022). Значение ТО ЖЕ: сам движок объявляет LOCATION_BLOCKS
-// псевдонимом этого поля — TextureAtlas.java:30 «LOCATION_BLOCKS = InventoryMenu.BLOCK_ATLAS».
+// The block atlas belongs to the shared holder, not the client one: TextureAtlas is
+// @OnlyIn(Dist.CLIENT), and loading it on a dedicated server crashes the class.
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.resources.ResourceLocation;
 
@@ -177,11 +175,11 @@ public class BI {
 
 		protected Icon(String aIconName) {mIconName = aIconName; if (GT_API.sBlockIconload != null) GT_API.sBlockIconload.add(this);}
 
-		// Ленивое построение (репорт игрока: нет индикатора давления бойлера): цикл sBlockIconload в neo не гоняется →
-		// mIcon оставался null → слои BAROMETER/BAROMETER_SCALE молча пропускались putFace. Тот же приём, что у ВСЕХ
-		// icon-классов Textures.java:173/716/851/883 и TextureSet:99/156 — BI.Icon был единственным без него.
+		// The icon-load pass never runs in neo, so lazy construction on first read is needed here like every
+		// other icon class already does; this was the one icon class missing it.
 		@Override public ResourceLocation getIcon(int aRenderPass) {if (mIcon == null) run(); return mIcon;}
-		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
+		// Was GT_API.sBlockIcons.registerIcon(...) (IIconRegister removed); the ResourceLocation is now built
+		// directly from the same path.
 		@Override public void run() {mIcon = new ResourceLocation(RES_PATH_API_BLOCK + mIconName);}
 		@Override public ResourceLocation getTextureFile() {return InventoryMenu.BLOCK_ATLAS;}
 		@Override public short[] getIconColor(int aRenderPass) {return UNCOLOURED;}

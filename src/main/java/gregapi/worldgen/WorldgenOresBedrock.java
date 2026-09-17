@@ -61,11 +61,8 @@ public class WorldgenOresBedrock extends WorldgenObject {
 	public final Block mFlower;
 	public final byte mFlowerMeta;
 	
-	// F6-worldgen: neo генерит чанки ПАРАЛЛЕЛЬНО (worker-потоки, стадия FEATURES). Прежние public static boolean флаги
-	// координации «бедрок-руда XOR флюид-родник на чанк» КЛОББЕРИЛИСЬ между параллельными чанками (chunk B сбрасывал флаг,
-	// что читал chunk A между reset и generate) → флюид-родники не спавнились (гейт не проходил). ThreadLocal: у каждого
-	// worker-потока свой флаг → координация в рамках одного чанка (генерится одним потоком, WorldgenObject-ы последовательно
-	// reset-фаза→generate-фаза) ЦЕЛА; параллельные чанки не мешают. 1:1 с 1.7.10 (там chunk-gen серийный, static работал).
+	// neo generates chunks in parallel worker threads, so the old static coordination flags between bedrock ore and fluid
+	// springs got clobbered across chunks; ThreadLocal keeps that coordination intact within one chunk's own thread instead.
 	private static final ThreadLocal<Boolean> TL_GENERATED_NO_BEDROCK_ORE = ThreadLocal.withInitial(() -> Boolean.TRUE);
 	private static final ThreadLocal<Boolean> TL_CAN_GENERATE_BEDROCK_ORE = ThreadLocal.withInitial(() -> Boolean.TRUE);
 	public static boolean generatedNoBedrockOre() {return TL_GENERATED_NO_BEDROCK_ORE.get();}
@@ -165,7 +162,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 			ItemStack tRock = (tRegistry == null ? null : OP.oreRaw.mat(mMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : mMaterial, 1));
 			boolean tFlowers = (mIndicatorFlowers && !BIOMES_WASTELANDS.contains(aBiomes[8][8])), tRocks = ST.valid(tRock);
 			
-			// F6-Y-scale: no-arg getHeight()=COUNT(384) в MC26 ≠ верх мира → WD.topY (maxY+1 = старая семантика getHeight()).
+			// no-arg getHeight() returns 384 in MC26, not the world's top; WD.topY (maxY+1) restores the old getHeight() meaning.
 			int tMinHeight = Math.min(WD.topY(aWorld)-2, WD.waterLevel(aWorld)-1)
 			,   tMaxHeight = Math.min(WD.topY(aWorld)-1, tMinHeight * 2 + 16);
 			// Generate first an 8x8 of 4, then a 16x16 of 8, and at the end a 32x32 of 16 Rocks/Flowers. That way the Pattern gets denser in the middle, and Chunk Boundary Issues of GalactiCraft wont be as terrible.
@@ -197,7 +194,8 @@ public class WorldgenOresBedrock extends WorldgenObject {
 	
 	public static boolean generateVein(OreDictMaterial aMaterial, net.minecraft.world.level.LevelAccessor aWorld, int aDimType, int aMinX, int aMinZ, Random aRandom) {
 		try {
-			// F6-Y-scale: бедрок MC26 на getMinY() (был Y=0). Бедрок-руда/жила якорятся к дну мира (tMinY), жила растёт вверх относительно него.
+			// MC26's bedrock floor sits at getMinY() instead of Y=0, so the bedrock ore vein anchors to that floor and grows upward
+			// relative to it.
 			final int tMinY = WD.minY(aWorld);
 			Block tStone = WD.block(aWorld, aMinX+8, tMinY, aMinZ+8);
 			// Requires existing Bedrock!
@@ -217,7 +215,8 @@ public class WorldgenOresBedrock extends WorldgenObject {
 			int[] tD1 = new int[] { 5,  4,  2,  1,  0,  2,  5};
 			int[] tD2 = new int[] {11, 12, 14, 15, 16, 14, 11};
 			// Portion a Muffin shaped Ore Blob around the Bedrock Spot.
-			// F6-Y-scale: маффин-жила Y 1..6 — ОТНОСИТЕЛЬНО бедрока (tD1/tD2 индексируются tY, поэтому tY 1..6 сохраняем; абсолютная высота = tMinY+tY).
+			// The vein's Y range stays relative to the bedrock floor (tY 1..6), since the lookup tables are indexed by it; absolute
+			// height is tMinY+tY.
 			for (int tY = 1; tY < tD1.length; tY++) { final int tAbsY = tMinY + tY; for (int tX = tD1[tY]; tX < tD2[tY]; tX++) for (int tZ = tD1[tY]; tZ < tD2[tY]; tZ++) {
 				if (generatedNoBedrockOre()) if (tStone != NB) {
 					WD.set(aWorld, aMinX+tX, tAbsY, aMinZ+tZ, tStone, 0, 0);

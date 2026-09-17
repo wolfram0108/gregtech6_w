@@ -58,15 +58,11 @@ public class Compat_Recipes_MoreRed extends CompatMods {
 		OreDictManager.INSTANCE.setTarget(OP.ingot, MT.RedAlloy, MD.MR, "red_alloy_ingot", 0);
 		CR.remout(MD.MR, "red_alloy_ingot");
 
-		// Провод мода собирался из ТРЁХ СЛИТКОВ В РЯД, а ту же сетку занимает авторский разбор GT6
-		// (AdvancedCraftingXToY: 3 слитка -> 27 самородков, Loader_Recipes_Handlers), причём безформенный —
-		// он берёт любые три слитка. Кто из двух ответит игроку, решает порядок рецептов, а он не задан:
-		// на одной машине выходил провод, на другой самородки. Спор снимается сменой сетки, а не борьбой за
-		// приоритет: пластина режется кусачками — приём GT6, и этой сетки не занимает никто.
+		// The mod's wire recipe collided with GT6's own 3-ingots-to-nuggets disassembly on the same grid, with
+		// the winner depending on undefined recipe order; moving the mod's wire to a different grid resolves the conflict instead.
 		CR.remout(MD.MR, "red_alloy_wire");
-		// Сторона важна: у GT6 «пластина, затем кусачки» — его собственный жест, поэтому провод мода берёт
-		// ЗЕРКАЛЬНУЮ пару «кусачки, затем пластина». Зеркалирования во флаге нет (DEF = BUF|NO_REM), значит
-		// две сетки останутся разными, и спорить им не о чем.
+		// Side matters here: GT6's own gesture is plate-then-shears, so the mod's wire deliberately uses the mirrored
+		// shears-then-plate order, keeping the two grids from colliding.
 		CR.shaped(ST.make(MD.MR, "red_alloy_wire", 4, 0), CR.DEF_REV_NCC, "xP", 'P', OP.plate.dat(MT.RedAlloy));
 
 
@@ -78,13 +74,13 @@ public class Compat_Recipes_MoreRed extends CompatMods {
 		// Material passports for the mod's own parts. GT6 derives a craft's content from the content of its
 		// ingredients, and without these the plates and wires count as nothing, making every tooltip built on
 		// them wrong. The shares are read off the mod's own recipes, not assigned.
-		OM.data(ST.make(MD.MR, "stone_plate"              , 1, 0), new OreDictItemData(MT.Stone   , U8));  // 3 слэба -> 12 плит
-		OM.data(ST.make(MD.MR, "red_alloy_wire"           , 1, 0), new OreDictItemData(MT.RedAlloy, U4));  // 3 слитка -> 12 проводов
-		// 8 проводов и одна шерсть дают 8 кабелей, то есть кабель это ровно один провод.
+		OM.data(ST.make(MD.MR, "stone_plate"              , 1, 0), new OreDictItemData(MT.Stone   , U8));  // 3 slabs -> 12 plates
+		OM.data(ST.make(MD.MR, "red_alloy_wire"           , 1, 0), new OreDictItemData(MT.RedAlloy, U4));  // 3 ingots -> 12 wires
+		// Eight wires plus one wool give eight cables, i.e. one cable is exactly one wire.
 		for (net.minecraft.world.item.DyeColor tColor : net.minecraft.world.item.DyeColor.values()) {
 			OM.data(ST.make(MD.MR, tColor + "_network_cable", 1, 0), new OreDictItemData(MT.RedAlloy, U4));
 		}
-		OM.data(ST.make(MD.MR, "bundled_network_cable"    , 1, 0), new OreDictItemData(MT.RedAlloy, U4));  // 3 кабеля -> 3 пучка
+		OM.data(ST.make(MD.MR, "bundled_network_cable"    , 1, 0), new OreDictItemData(MT.RedAlloy, U4));  // 3 cables -> 3 bundles
 		OM.data(ST.make(MD.MR, "redwire_post"             , 1, 0), new OreDictItemData(MT.Fe, U, new OreDictMaterialStack(MT.RedAlloy, U)));
 		OM.data(ST.make(MD.MR, "redwire_post_plate"       , 1, 0), new OreDictItemData(MT.Fe, U, new OreDictMaterialStack(MT.RedAlloy, U), new OreDictMaterialStack(MT.Stone, 3*U4)));
 		OM.data(ST.make(MD.MR, "redwire_post_relay_plate" , 1, 0), new OreDictItemData(MT.Fe, U, new OreDictMaterialStack(MT.RedAlloy, U), new OreDictMaterialStack(MT.Redstone, 2*U), new OreDictMaterialStack(MT.Stone, 3*U4)));

@@ -201,11 +201,8 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 		addToList(aX, aY, aZ);
 	}
 	
-	/** F5 §6.2, порядок работы: клетки С ОБЪЁМОМ идут раньше пустых. В оригинале порядка не было — там
-	 *  источник и поток несли разные блоки, и вопрос не возникал. Без порядка насос перемалывает натекающую
-	 *  воду поверх ещё не снятых источников (репорт: «бесконечно убирает протоки, неэффективно»).
-	 *  Обход с конца — тот же, что у прежнего {@code removeLast()}; если клеток с объёмом нет, берём
-	 *  последнюю, то есть поведение вырождается в оригинальное (пресечение). */
+	/** Cells with volume are drained before empty ones; the original never needed this, since source/flow were separate blocks.
+	 *  Without it the pump ground inflowing water instead of draining sources; degenerates to original when no cell has volume. */
 	private BlockPos pollNextToDrain() {
 		for (int i = mPumpList.size() - 1; i >= 0; i--) {
 			BlockPos tPos = mPumpList.get(i);
@@ -230,19 +227,17 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 		Block aBlock = getBlock(aCoords);
 		// Seems like someone removed or replaced a Fluid Block! Scan again!
 		if (!mPumpedFluids.contains(aBlock)) return F;
-		// F5 §6.2 (decisions/F5-fluids.md): СКОЛЬКО РЕАЛЬНО В КЛЕТКЕ спрашиваем у центра, а не выводим из типа
-		// блока. В 1.7.10 источник и поток были РАЗНЫМИ блоками, и три ветки (вода / лава / IFluidBlock) их
-		// этим и различали; в neo блок один, различие ушло в FluidState — дословный перенос терял смысл
-		// (BUG-115: океан и болото уходили в никуда; BUG-116: потоки молотились вхолостую).
+		// How much is actually in the cell is asked of the center, not derived from block type: in 1.7.10 source and flow
+		// were different blocks; in neo there's one block, and a literal port lost that distinction (oceans/swamps drained away).
 		FluidStack tDrained = FL.drainable(level, aCoords);
 		if (tDrained != null) {
-			// ДОБЫЧА: берём ровно то, что есть (у нефтей и газа объём несёт и «поток» — кванты в мете),
-			// энергия — пропорционально взятому, как в оригинале.
+			// Extraction: take exactly what's there (oil/gas carry volume as flow-quanta in the meta too).
+			// Energy cost is proportional to what was taken, as in the original.
 			mTank.setFluid(tDrained);
 			mEnergy -= Math.max(16, UT.Code.units(mTank.amount(), 1000, 2048, T));
 		} else {
-			// ПРЕСЕЧЕНИЕ: брать нечего (поток воды/лавы/реки/океана/болота), но снять обязаны — иначе он
-			// восстанавливает водоём и откачка не сходится никогда. Стоит минимум и добычей не считается.
+			// Suppression: nothing to take (water/lava/river/ocean/swamp flow), but it must still be removed,
+			// or the body of water regenerates and draining never finishes; costs the minimum, not counted as extraction.
 			mEnergy -= 16;
 		}
 		// something prevented the setBlock Function! Scan again!

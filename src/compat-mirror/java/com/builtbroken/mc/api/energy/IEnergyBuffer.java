@@ -35,8 +35,8 @@
 
 package com.builtbroken.mc.api.energy;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Voltz/UniversalElectricity (builtbroken). Реально
- *  используется — EnergyCompat.java:206: addEnergyToStorage. */
+/** Compile-only mirror of the Voltz/UniversalElectricity energy API: only addEnergyToStorage
+ *  is actually called, from EnergyCompat. */
 public interface IEnergyBuffer {
 	long addEnergyToStorage(long aEnergy, boolean aSimulate);
 }

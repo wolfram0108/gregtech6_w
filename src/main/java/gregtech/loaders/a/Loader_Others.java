@@ -42,9 +42,8 @@ import net.minecraft.world.level.block.Blocks;
 public class Loader_Others implements Runnable {
 	@Override
 	public void run() {
-		// F12-followup (block-split, MTE): регистр+material-блоки СТРОЯТ neo-Block → только на RegisterEvent (реестр разморожен).
-		// Оборачиваем в deferBlockInit (исполнится на RegisterEvent<Block>); setMapColor/дедуп работают там (блок построен).
-		// Loader_MultiTileEntities (init) повторно вызовет getOrCreate — вернёт те же блоки из карты (без конструкции).
+		// Registry and material blocks construct the neo Block, which is only possible during RegisterEvent (registry unfrozen).
+		// Wrapped in deferBlockInit; Loader_MultiTileEntities calls getOrCreate again later and gets the same cached blocks.
 		gregapi.GT_API.deferBlockInit(() -> {
 		new MultiTileEntityRegistry("gt.multitileentity");
 

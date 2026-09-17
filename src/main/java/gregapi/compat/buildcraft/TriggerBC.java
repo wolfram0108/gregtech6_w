@@ -43,7 +43,7 @@ import net.minecraft.core.Direction;
 
 public abstract class TriggerBC implements ITriggerExternal, ITriggerProvider {
 	public final String mModID, mName;
-	// F3 superseded-render: было IIcon mIcon (1.7.10 атлас-стежка, тип удалён в neo) — F10 BuildCraft-триггер, ветка мертва (BC не портирован).
+	// IIcon no longer exists in neo, and this BuildCraft trigger is unreachable anyway since BC is not ported.
 	public Object mIcon;
 	
 	public TriggerBC(String aModID, String aName, String aDesciption) {
@@ -58,7 +58,8 @@ public abstract class TriggerBC implements ITriggerExternal, ITriggerProvider {
 	
 	public String getUniqueTag() {return mModID + ":" + mName;}
 	public Object getIcon() {return mIcon;}
-	// F3 superseded-render: было registerIcons(IIconRegister) {mIcon = aIconRegister.registerIcon(...)} — 1.7.10 атлас-стежка мертва (F10 BuildCraft, ветка недостижима). Тип-параметр → Object (mirror-класс IIconRegister удалён из neo/production-jar, в сигнатуре ломал рефлексию).
+	// Object avoids referencing IIconRegister, whose mirror type was stripped from the runtime jar and would
+	// break reflection; this trigger is unreachable anyway since BuildCraft itself is not ported.
 	public void registerIcons(Object aIconRegister) {/**/}
 	public int maxParameters() {return 0;}
 	public int minParameters() {return 0;}

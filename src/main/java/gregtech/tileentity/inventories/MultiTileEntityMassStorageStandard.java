@@ -114,13 +114,13 @@ public class MultiTileEntityMassStorageStandard extends MultiTileEntityMassStora
 	@Override
 	public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {
 		if (!aShouldSideBeRendered[aSide]) return null;
-		byte tF = mFacing; // BUG-078: item-facing подставляет центр MultiTileEntityRegistry.applyItemFacing (величина — getItemFacing) // BUG-038: item-форма (detached-TE) — калибруемый facing
+		byte tF = mFacing; // Item-facing is supplied by the center MultiTileEntityRegistry.applyItemFacing; calibratable for a detached item form.
 		if (aRenderPass == 0) {
 			int aIndex = aSide<2?aSide:aSide==tF?2:aSide==OPOS[tF]?3:4;
 			return BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[aIndex], mRGBa, mMaterial.contains(TD.Properties.GLOWING)), BlockTextureDefault.get(sOverlays[aIndex]), (mMode & B[3]) == 0 ? null : BlockTextureDefault.get(Textures.BlockIcons.DUCT_TAPE));
 		}
 		if (aSide == tF) {
-			// F15-size0 (BUG-015 v2): ЛОГИЧЕСКИЙ счёт ST.count — ZEROSIZE-призрак («тип запомнен, штук 0») показывает 0, не 1
+			// Logical count via ST.count: a ZEROSIZE ghost stack ("type remembered, 0 units") shows as 0, not 1.
 			if (ST.count(slot(1)) >= mMaxStorage) switch(aRenderPass) {
 			case 1: return null;
 			case 2: return BlockTextureDefault.get(BI.CHAR_1        , CA_RED_255, F, T, T, T);

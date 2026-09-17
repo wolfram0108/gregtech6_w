@@ -66,7 +66,8 @@ public class DungeonChunkEntrance extends DungeonChunkPillar {
 		}
 		
 		int tHeight = 10+aData.mY;
-		// F6-Y-scale: no-arg getHeight()=COUNT(384) в MC26 ≠ верх мира → WD.topY (maxY+1 = старая семантика getHeight()); тот же приём — WorldgenOresBedrock:164.
+		// no-arg getHeight() returns 384 in MC26, not the world's top; WD.topY restores the old getHeight() meaning, the same
+		// trick as WorldgenOresBedrock.
 		for (int eY = WD.topY(aData.mWorld)-32, tAirAmount = 0; tHeight < eY && tAirAmount < 100; tHeight++) {
 			tAirAmount = 0;
 			for (int tX = 3+aData.mX, eX = tX + 10; tX < eX; tX++) for (int tZ = 3+aData.mZ, eZ = tZ + 10; tZ < eZ; tZ++) {

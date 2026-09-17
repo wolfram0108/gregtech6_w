@@ -29,17 +29,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.BlockGetter;
 
-/**
- * @author Gregorius Techneticies
- *
- * F3-render: в 1.7.10 диспетчер реализовывал {@code ISimpleBlockRenderingHandler}+{@code IItemRenderer}
- * (immediate-mode {@code RenderBlocks}/{@code Tesselator}/{@code GL11}) — стек удалён в 26.1.2. РЕАЛИЗОВАНА
- * замена (decisions/F3-render.md §8): логика {@code renderWorldBlock} воспроизведена 1:1 в
- * {@link GT6BlockModel} ({@code BakedModel} + Forge {@code ModelData}), item-рендер — {@link GT6ItemModel}
- * ({@code BakedModel} + {@code ItemOverrides}), регистрация — рантайм-инъекция в {@code ModelEvent.ModifyBakingResult}.
- * Этот класс держит лишь серверную поверхность: {@code mRenderID}/{@code INSTANCE} (11+ мест как "есть ли
- * рендерер"/"id рендер-типа") — no-op-совместимость; реальный рендер — в GT6BlockModel/GT6ItemModel.
- */
+/** The old immediate-mode block/item render dispatcher is gone; its logic now lives in GT6BlockModel/GT6ItemModel.
+ *  This class only keeps the server-visible surface (mRenderID/INSTANCE, checked in 11+ places) as a compat shim. */
 public class RendererBlockTextured {
 	public final int mRenderID;
 	public static RendererBlockTextured INSTANCE;
@@ -50,7 +41,7 @@ public class RendererBlockTextured {
 		mRenderID = aRenderID;
 	}
 
-	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
+	/** Was immediate-mode Tesselator/GL11 drawing; the same logic is reproduced 1:1 in GT6BlockModel.collectParts. */
 	public static boolean renderNegativeYFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
@@ -58,7 +49,7 @@ public class RendererBlockTextured {
 		return T;
 	}
 
-	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
+	/** Was immediate-mode Tesselator/GL11 drawing; the same logic is reproduced 1:1 in GT6BlockModel.collectParts. */
 	public static boolean renderPositiveYFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
@@ -66,7 +57,7 @@ public class RendererBlockTextured {
 		return T;
 	}
 
-	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
+	/** Was immediate-mode Tesselator/GL11 drawing; the same logic is reproduced 1:1 in GT6BlockModel.collectParts. */
 	public static boolean renderNegativeZFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
@@ -74,7 +65,7 @@ public class RendererBlockTextured {
 		return T;
 	}
 
-	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
+	/** Was immediate-mode Tesselator/GL11 drawing; the same logic is reproduced 1:1 in GT6BlockModel.collectParts. */
 	public static boolean renderPositiveZFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
@@ -82,7 +73,7 @@ public class RendererBlockTextured {
 		return T;
 	}
 
-	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
+	/** Was immediate-mode Tesselator/GL11 drawing; the same logic is reproduced 1:1 in GT6BlockModel.collectParts. */
 	public static boolean renderNegativeXFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
@@ -90,7 +81,7 @@ public class RendererBlockTextured {
 		return T;
 	}
 
-	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
+	/** Was immediate-mode Tesselator/GL11 drawing; the same logic is reproduced 1:1 in GT6BlockModel.collectParts. */
 	public static boolean renderPositiveXFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;

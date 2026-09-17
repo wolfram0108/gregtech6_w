@@ -38,9 +38,8 @@ package thaumcraft.api.aspects;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только объявления, используемые GregTech6.
- *  Chainable add(Aspect,int) — GT6 строит наборы `new AspectList().add(Aspect.X, n).add(...)`.
- *  См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only the chainable add(Aspect, int),
+ *  which GregTech6 uses to build aspect sets. */
 public class AspectList {
 	/** CompatTC.validate(): for (Map.Entry<Aspect,Integer> : tList.aspects.entrySet()). */
 	public Map<Aspect, Integer> aspects = new LinkedHashMap<>();
@@ -55,7 +54,7 @@ public class AspectList {
 
 	public Aspect[] getAspects() {return new Aspect[0];}
 
-	/** gregtech.asm.transformers.Thaumcraft_AspectLagFix: {@code aspects.copy()} — реальная неглубокая копия аспект-карты (не {@code this}, чтобы кэш-мутация не текла в оригинал). */
+	/** A real shallow copy, not this, so mutating the cached result never leaks back into the original. */
 	public AspectList copy() {
 		AspectList rCopy = new AspectList();
 		rCopy.aspects.putAll(aspects);

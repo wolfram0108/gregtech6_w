@@ -60,56 +60,25 @@ import twilightforest.TFTreasureTable;
 
 import static gregapi.data.CS.*;
 
-/**
- * @author Gregorius Techneticies
- *
- * This loads after compatible Mods. The regular API loads before all compatible Mods.
- *
- * F12 (жизненный цикл, decisions/F12-registration-lifecycle.md): второй из трёх родных FML-модов
- * Грегориуса (GAPI_POST) переносится как отдельный neo-{@code @Mod}, на своём месте, симметрично
- * {@code gregapi.GT_API}. Оригинальная FML-строка {@code dependencies="required-after:"+GAPI+"; after:"+…}
- * несла структурный порядок (GAPI_POST грузится после GAPI — обязателен для 3-модовой связки GT6) и
- * ~200 мягких order-хинтов для внешних совместимых модов (compat-mirror, зона F10). Внешние
- * order-хинты не перенесены — F10, когда те моды появятся в дереве как neo-цели (тот же приём, что в
- * {@code gregapi.GT_API}).
- * F12-depends foreign-gated (при подключении compat-mirror-модов добавить сюда как
- * мягкие order-хинты).
- *
- * УЛИКА R7 (исправлено): {@code depends()} ждёт СЫРОЙ {@code String[]} modId, без парсера префиксов
- * старого FML (fml-decompiled {@code net/neoforged/fml/common/Mod.java:16},
- * {@code FMLJavaModLanguageProvider.java:33,67-70} — строка вида {@code "required-after:"+modId} не
- * находится в загруженном списке модов и приводит к тому, что весь entrypoint-класс отфильтровывается
- * из загрузки). Передан чистый {@code ModIDs.GAPI}.
- *
- * УЛИКА R8 (доработка): {@code depends()} — только REQUIRED-гейт наличия modId (fml-decompiled
- * {@code FMLJavaModLanguageProvider.java:33}), порядок он НЕ задаёт. Реальный порядок (GAPI_POST
- * строго после GAPI) задаёт {@code ModSorter} (fml-decompiled
- * {@code net/neoforged/fml/loading/ModSorter.java:194-208}) из графа
- * {@code [[dependencies.gregapi_post]]} с {@code ordering="AFTER"} в
- * {@code src/main/templates/META-INF/neoforge.mods.toml} (симметрично {@code [[dependencies.gregapi]]}
- * с {@code ordering="BEFORE"} там же) — не из Java-аннотации.
- *
- * Снят FML-1.7.10-хак перестановки {@code activeModList} через reflection ({@code LoadController}/
- * {@code ModContainer}, был в {@code onModPreInit2} ниже) — его функцию (гарантия, что GAPI_POST
- * инициализируется последним среди совместимых модов) теперь даёт {@code ordering}-граф в
- * {@code neoforge.mods.toml}, читаемый {@code ModSorter}.
- */
+/** @author Gregorius Techneticies
+ *  This loads after compatible mods; the regular API loads before them.
+ *  Ported as its own neo @Mod; a mods.toml ordering graph (not FML's old runtime reorder hack) keeps it loading last. */
 @Mod(ModIDs.GAPI_POST)
 public class GT_API_Post extends Abstract_Mod {
 	@SuppressWarnings("unused")
-	// javafml 1.20.1 конструирует @Mod-класс БЕЗАРГУМЕНТНЫМ конструктором; мод-шина берётся из
-	// контекста загрузки (форма 1.20.1, тем же приёмом, что gregapi.GT_API).
+	// javafml 1.20.1 constructs the @Mod class with a no-arg constructor; the mod bus is fetched from
+	// the loading context, the same form as gregapi.GT_API.
 	public GT_API_Post() {
 		IEventBus aModBus = FMLJavaModLoadingContext.get().getModEventBus();
 		GAPI_POST = this;
 
-		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на мод-шину напрямую, тем же
-		// приёмом, что в gregapi.GT_API (decisions/F12-registration-lifecycle.md §4).
+		// Subscribes lifecycle phases directly to the mod bus instead of the old @Mod.EventHandler
+		// annotation dispatcher, the same technique as gregapi.GT_API.
 		aModBus.addListener(this::onPreLoad);
 		aModBus.addListener(this::onLoad);
 		aModBus.addListener(this::onPostLoad);
 
-		// Серверные фазы — на игровой шине, не на мод-шине (как в gregapi.GT_API).
+		// Server phases are on the game bus, not the mod bus, as in gregapi.GT_API.
 		MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
 		MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
 		MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
@@ -121,43 +90,30 @@ public class GT_API_Post extends Abstract_Mod {
 	@Override public String getModNameForLog() {return "GT_API_POST";}
 	@Override public Abstract_Proxy getProxy() {return null;}
 
-	// PreInit. Замена {@code @Mod.EventHandler onPreLoad(FMLPreInitializationEvent)}: подписан в
-	// конструкторе на FMLConstructModEvent (мод-шина). Тот же приём, что gregapi.GT_API#onPreLoad.
+	// PreInit, subscribed in the constructor to FMLConstructModEvent instead of the old
+	// @Mod.EventHandler annotation, the same technique as gregapi.GT_API#onPreLoad.
 	public void onPreLoad(FMLConstructModEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModPreInit(new FMLPreInitializationEvent(FMLPaths.CONFIGDIR.get().toFile())));}
-	// Init. Замена {@code @Mod.EventHandler onLoad(FMLInitializationEvent)}: подписан на FMLCommonSetupEvent.
+	// Init, subscribed to FMLCommonSetupEvent instead of the old @Mod.EventHandler annotation.
 	public void onLoad(FMLCommonSetupEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModInit(new FMLInitializationEvent()));}
-	// PostInit. Замена {@code @Mod.EventHandler onPostLoad(FMLPostInitializationEvent)}: подписан на
-	// FMLLoadCompleteEvent. Здесь же (через Abstract_Mod.onModPostInit, когда финализированы все GT-API-моды)
-	// срабатывает CR.stopBuffering() — стык с F11 (gregapi/api/Abstract_Mod.java:288), точка вызова не тронута.
+	// PostInit, subscribed to FMLLoadCompleteEvent instead of the old annotation; this is also where
+	// CR.stopBuffering() fires once every GT-API mod has finished post-init, unchanged from before.
 	public void onPostLoad(FMLLoadCompleteEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModPostInit(new FMLPostInitializationEvent()));}
 
-	// Серверные фазы — подписаны в конструкторе на MinecraftForge.EVENT_BUS (игровая шина), не на мод-шину.
+	// Server phases are subscribed in the constructor to MinecraftForge.EVENT_BUS (game bus), not the mod bus.
 	public void onServerStarting  (ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
 	public void onServerStarted   (ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
 	public void onServerStopping  (ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
 	public void onServerStopped   (ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
 
 	@Override
-	// F12 boot-timing: тело data-init нельзя ИСПОЛНЯТЬ в preInit (ST.make: Holder.components не привязаны, Holder.java:273),
-	// поэтому оно отложено. Но ПОСТАНОВКА в очередь остаётся здесь, на preInit — и это существенно (BUG-081).
-	// В 1.7.10 порядок «цели унификации → addItems мультипредметов» держался РАЗНЫМИ ФАЗАМИ Forge: цели ставил
-	// onModPreInit2 (оригинал GT_API_Post:77,118 — new LoaderUnificationTargets().run()), а MultiItemRandom.addItems
-	// читал их уже в @Init. Когда порт свёл оба в ОДНУ отложенную очередь, относительный порядок стал зависеть от
-	// того, кто раньше позвал deferItemInit; постановка с onModInit2 уводила цели ЗА addItems, и OP.stick.mat(MT.Blaze)
-	// возвращал null (OreDictManager:572 — после начала Init фолбэк на генерацию отключён, берётся только цель).
-	// Ставим в очередь на той же фазе, что и оригинал: FIFO тогда воспроизводит порядок 1.7.10 (preInit → init).
+	// Data-init can't run during preInit (Holder isn't bound yet), so it is deferred, but it must be
+	// queued at the same phase as 1.7.10, so the FIFO order reproduces the original relative ordering.
 	public void onModPreInit2(FMLPreInitializationEvent aEvent) {gregapi.GT_API.deferItemInit(this::onModPreInit2Deferred);}
-	// F12: тело бывшего onModPreInit2 (blacklists/Loaders/byproducts) исполняется из очереди, где реестр привязан.
+	// Runs from the deferred queue, where the registry is already bound, unlike the original phase.
 	private void onModPreInit2Deferred() {
 		// Fixing Items of certain Mods.
-		// F12 impossible-1:1 (foreign-item maxDamage/hasSubtypes immutable в neo, пост-хок сеттеров нет): Item.setMaxDamage(int)/
-		// setHasSubtypes(boolean) (1.7.10 runtime-мутаторы на уже созданном чужом Item) удалены из
-		// движка — neo не имеет пост-хок сеттеров maxDamage/hasSubtypes на Item; они задаются
-		// НЕИЗМЕНЯЕМО через Item.Properties (durability(...)) ТОЛЬКО в момент регистрации самого Item
-		// (тот же класс проблемы, что gregapi/GT_API.java:298 item-container-runtime-mutator). Целевые
-		// Item'ы (MD.GrC_Grapes "grc.grapes", MD.FR "letters", MD.FZ "acid") принадлежат чужим
-		// compat-модам (F10) — их регистрация вне зоны GT6, ретроактивная мутация недостижима из
-		// мод-кода. Не найдено ни в одном из 3 корней референса — деградация до no-op.
+		// No 1:1 possible: neo sets maxDamage/hasSubtypes immutably via Item.Properties at registration,
+		// with no post-hoc setter, and these foreign-mod items are never registered by GregTech6, so this degrades to a no-op.
 
 		OM.blacklist(ST.make(MD.GrC_Bees, "grcbees.BeesWax", 1, 1));
 		OM.blacklist(ST.make(MD.GrC_Bees, "grcbees.BeesWax", 1, 2));
@@ -243,11 +199,10 @@ public class GT_API_Post extends Abstract_Mod {
 	}
 	
 	@Override
-	public void onModInit2(FMLInitializationEvent aEvent) {gregapi.GT_API.deferItemInit(this::onModInit2Deferred);} // F1/F12/F16: ВЕСЬ Init-data-init (loaders/recipes/associations — ST.make) отложен на server-start (post-bind); onModInit2(CommonSetup) НЕ пост-bind. НЕ в паритет-данных.
+	public void onModInit2(FMLInitializationEvent aEvent) {gregapi.GT_API.deferItemInit(this::onModInit2Deferred);} // all Init data-init is deferred to server start, since CommonSetup runs before registries are bound
 	private void onModInit2Deferred() {
-		// бывший preInit-data-init (blacklists/loaders/цели унификации) поставлен в очередь ОТДЕЛЬНО, на фазе
-		// preInit (см. onModPreInit2) — к этому моменту он уже исполнен. Вызов отсюда убран: он возвращал
-		// цели унификации ЗА addItems мультипредметов и ронял вход рецепта в null (BUG-081).
+		// Removed from here because calling it at this phase pushed unification targets after
+		// multi-item addItems, making recipe lookups resolve to null; it now runs earlier via onModPreInit2's own queue.
 		new LoaderWoodDictionary().run();
 		
 		// Atum violates the "Items have to be created in preInit" Rule...
@@ -743,7 +698,7 @@ public class GT_API_Post extends Abstract_Mod {
 	}
 	
 	@Override
-	public void onModPostInit2(FMLPostInitializationEvent aEvent) {gregapi.GT_API.deferItemInit(() -> onModPostInit2Deferred(aEvent));} // F1/F12/F16: PostInit-data-init (ST.make) отложен на server-start (post-bind)
+	public void onModPostInit2(FMLPostInitializationEvent aEvent) {gregapi.GT_API.deferItemInit(() -> onModPostInit2Deferred(aEvent));} // PostInit data-init is deferred to server start too, for the same registry-binding reason
 	private void onModPostInit2Deferred(FMLPostInitializationEvent aEvent) {
 		if (DISABLE_ALL_IC2_COMPRESSOR_RECIPES  ) ic2.api.recipe.Recipes.compressor.getRecipes().clear();
 		if (DISABLE_ALL_IC2_EXTRACTOR_RECIPES   ) ic2.api.recipe.Recipes.extractor .getRecipes().clear();
@@ -752,8 +707,8 @@ public class GT_API_Post extends Abstract_Mod {
 		if (DISABLE_ALL_IC2_CENTRIFUGE_RECIPES  ) ic2.api.recipe.Recipes.centrifuge.getRecipes().clear();
 		
 		// Clearing the AE Grindstone Recipe List.
-		// Э0 (слой AE2): очистка снята вместе с носителем — кварцевой мельницы (Grindstone) у AE2 под 1.20.1
-		// нет, вместе с ней исчез и её реестр AEApi.instance().registries().grinder(), который здесь стирался.
+		// Cleanup removed along with its carrier: AE2 has no Grindstone under 1.20.1, so the registry
+		// it used to clear doesn't exist either.
 		
 		// Well Netherite Plus is very special with its Compat Items... This is WAY too late in the loading Cycle! (I am aware that the Ancient Dust got removed in later Versions)
 		if (MD.NePl.mLoaded) {
@@ -801,16 +756,12 @@ public class GT_API_Post extends Abstract_Mod {
 			BlocksGT.FLOWERS.add(ST.block(MD.BOTA, "shinyFlower"       ));
 		}
 		
-		// Форма оригинала (gt6-original …/GT_API_Post.java:735) восстановлена: реестр чар в 1.20.1 снова СТАТИЧЕСКИЙ
-		// (BuiltInRegistries.ENCHANTMENT, Enchantment.java:27-29), сервер для обхода не нужен, а элемент обхода — сам
-		// ОБЪЕКТ Enchantment, то есть та же валюта, что у material.addEnchantmentFor* и у TFTreasureTable.addEnchantedBook.
-		// Отличие от 1.7.10 ровно одно: идентичность по path-имени ключа реестра ("magnetization") вместо getName()
-		// ("enchantment.Magnetization") — числовых id и плоских имён в 1.20.1 нет. Custom-энчанты внешних модов (F10):
-		// мод не загружен -> записи в реестре нет -> назначение пропущено, ровно как в 1.7.10.
+		// Original form restored: the enchantment registry is static again on 1.20.1, so no server is needed
+		// to iterate it; the only real difference from 1.7.10 is identity by registry-key path, not getName().
 		for (java.util.Map.Entry<net.minecraft.resources.ResourceKey<Enchantment>, Enchantment> tEnchEntry : net.minecraftforge.registries.ForgeRegistries.ENCHANTMENTS.getEntries()) {
 			Enchantment tEnchant = tEnchEntry.getValue(), tEnchValue = tEnchant;
 			String tEnchName = tEnchEntry.getKey().location().getPath();
-			if ("magnetization".equalsIgnoreCase(tEnchName)) { // F10 foreign-gated: Magneticraft-энчант, идентификация по path-имени (сработает при наличии мода)
+			if ("magnetization".equalsIgnoreCase(tEnchName)) { // Magneticraft enchantment, identified by path name; only resolves when that mod is loaded
 				for (OreDictMaterial tMaterial : MT.ALL_MATERIALS_REGISTERED_HERE) {
 					if (tMaterial == MT.NeodymiumMagnetic) {
 						tMaterial.addEnchantmentForTools(tEnchant, 3).addEnchantmentForWeapons(tEnchant, 3).addEnchantmentForArmors(tEnchant, 3);
@@ -840,7 +791,7 @@ public class GT_API_Post extends Abstract_Mod {
 					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.troll_vault    , "uncommon" )).addEnchantedBook(tEnchValue, 1);
 				}
 			}
-			if ("cold_touch".equalsIgnoreCase(tEnchName)) { // F10 foreign-gated: внешний энчант, идентификация по path-имени (сработает при наличии мода)
+			if ("cold_touch".equalsIgnoreCase(tEnchName)) { // foreign enchantment, identified by path name; only resolves when that mod is loaded
 				MT.Ice                  .addEnchantmentForDamage(tEnchant, 1);
 				MT.Snow                 .addEnchantmentForDamage(tEnchant, 1);
 				MT.FrozenIron           .addEnchantmentForDamage(tEnchant, 2);
@@ -858,7 +809,7 @@ public class GT_API_Post extends Abstract_Mod {
 				MT.InfusedWater         .addEnchantmentForArmors(tEnchant, 1);
 				MT.Cryotheum            .addEnchantmentForArmors(tEnchant, 1);
 			}
-			if ("implosion".equalsIgnoreCase(tEnchName)) { // F10 foreign-gated: Railcraft crowbar.implosion, идентификация по path-имени (сработает при наличии мода)
+			if ("implosion".equalsIgnoreCase(tEnchName)) { // Railcraft crowbar.implosion enchantment, identified by path name; resolves only if that mod is loaded
 				for (OreDictMaterial tMat : ANY.Emerald   .mToThis) tMat.addEnchantmentForWeapons(tEnchant, 5).addEnchantmentForAmmo(tEnchant, 7);
 				for (OreDictMaterial tMat : ANY.Sapphire  .mToThis) tMat.addEnchantmentForWeapons(tEnchant, 3).addEnchantmentForAmmo(tEnchant, 5);
 				for (OreDictMaterial tMat : ANY.Garnet    .mToThis) tMat.addEnchantmentForWeapons(tEnchant, 2).addEnchantmentForAmmo(tEnchant, 4);

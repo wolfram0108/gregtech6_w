@@ -40,9 +40,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.CraftingContainer;
 import cpw.mods.fml.relauncher.Side;
 
-/** F10 ЗЕРКАЛО (compile-only) — legacy Forge/FML 1.7.10 (пакет cpw.mods.fml не существует
- *  на neo-classpath). Только используемое GregTech6 (WD/UT/TileEntityBase01Root/
- *  DelegatorTileEntity/WorldAndCoords/MultiTileEntityAdvancedCraftingTable). См. compat-mirror/README.md. */
+/** Compile-only mirror of legacy Forge/FML 1.7.10; the cpw.mods.fml package does not exist on
+ *  the neo classpath, and only what those call sites use is mirrored. */
 public class FMLCommonHandler {
 	private static final FMLCommonHandler INSTANCE = new FMLCommonHandler();
 

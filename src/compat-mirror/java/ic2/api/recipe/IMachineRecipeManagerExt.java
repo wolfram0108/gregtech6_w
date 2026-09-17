@@ -38,10 +38,8 @@ package ic2.api.recipe;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Сверено javap ic2:IC2Classic:1.2.1.8-dev
- *  (ic2.api.recipe.IMachineRecipeManagerExt extends IMachineRecipeManager):
- *  addRecipe(IRecipeInput,NBTTagCompound,boolean,ItemStack...):boolean — UT.java:3398/3400
- *  (addSimpleIC2MachineRecipe, {@code instanceof IMachineRecipeManagerExt} ветка). */
+/** Compile-only mirror of the IC2 API: only the addRecipe overload UT's addSimpleIC2MachineRecipe
+ *  reaches through an instanceof IMachineRecipeManagerExt check. */
 public interface IMachineRecipeManagerExt extends IMachineRecipeManager {
 	boolean addRecipe(IRecipeInput aInput, CompoundTag aMetadata, boolean aOverwrite, ItemStack... aOutput);
 }

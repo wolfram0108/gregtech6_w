@@ -51,7 +51,8 @@ public class WorldgenFluid extends WorldgenBlob {
 			return T;
 		}
 		if (WD.bedrock(aWorld, aX, aY, aZ, tTargetedBlock)) {
-			// F6-Y-scale: случайный бедрок-слой был Y=1..4 (гарантированный Y=0 не трогаем); MC26 бедрок на getMinY() → minY+1..minY+4.
+			// The random bedrock layer was Y=1..4, leaving the guaranteed Y=0 alone; MC26's bedrock floor at getMinY() shifts this
+			// to minY+1..minY+4.
 			final int tMinY = WD.minY(aWorld);
 			return aY >= tMinY+1 && aY <= tMinY+4 ? WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0) : doBedrockStuff(aWorld, aX, aY, aZ, aRandom);
 		}

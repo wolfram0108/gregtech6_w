@@ -35,7 +35,7 @@
 
 package mekanism.api;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Mekanism. Минимум для blacklist-вызова GT6. */
+/** Compile-only mirror of the Mekanism API: the minimum GregTech6's blacklist call needs. */
 public class MekanismAPI {
     public static void addBoxBlacklist(Object aBlock, long aMeta) {}
 }

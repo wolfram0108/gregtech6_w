@@ -195,8 +195,7 @@ public enum OD {
 	, itemBlood
 	, itemPoison
 	, itemBarkDry
-	// ADAPT-001: сухая листва как трут. В 1.7.10 такого ингредиента быть не могло — ванильный
-	// minecraft:leaf_litter появился позже. Тот же класс тегов, что itemGrassDry/itemBarkDry.
+	// Dry leaf litter as tinder: the same tag class as itemGrassDry/itemBarkDry, filling a gap 1.7.10 had no block for.
 	, itemLeafLitter
 	, itemLubricant
 	, itemLubricantEarly

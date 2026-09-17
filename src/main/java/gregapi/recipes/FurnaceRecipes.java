@@ -32,32 +32,18 @@ import gregapi.util.ST;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
-/**
- * F11-smelting ЦЕНТР. 1.7.10 vanilla {@code net.minecraft.item.crafting.FurnaceRecipes} — мутабельный singleton
- * ({@code getSmeltingResult}/{@code addSmelting}/{@code getSmeltingList}/{@code getSmeltingExperience}) — удалён из
- * neo: ванильные плавки стали data-driven ({@code RecipeManager} + датапаки, НЕИЗМЕНЯЕМЫ в рантайме). Порт наивно
- * переименовал {@code FurnaceRecipes} -> neo {@code RecipeManager} (у которого нет {@code smelting()}). GT6 же
- * добавляет/удаляет/итерирует плавки в рантайме (RM.add_smelting/rem_smelting/get_smelting/RecipeMapFurnace) —
- * воспроизводим прежний API 1:1 поверх GT6-собственного мутабельного хранилища.
- *
- * <p>ИНТЕГРАЦИЯ с ванильной печью neo ЗАКРЫТА (BUG-023, подтверждён живым тестом игрока): её делает
- * {@link GT6SmeltingDispatcher} — единственная точка входа GT6-плавок в печь, рецепт типа
- * {@code RecipeType.SMELTING} перебирает ЭТОТ реестр в {@code matches}/{@code assemble}, и печь находит
- * плавки штатно ({@code AbstractFurnaceBlockEntity.serverTick} → {@code quickCheck.getRecipeFor}).
- * Ни recipe-provider/датаген, ни mixin в {@code RecipeManager} не понадобились. Здесь — сам GT6-реестр плавок
- * (add/remove/query/iterate), 1:1 с 1.7.10.
- * Тот же приём, что F12-config (gregapi.config.ModConfigSpec) — воссоздание удалённого движкового API как GT6-класса.
- */
+/** Vanilla's mutable FurnaceRecipes singleton is gone (smelting is now immutable datapack data), but GT6
+ *  still mutates smelting at runtime, so this reproduces the old API 1:1 over GT6's own mutable storage. */
 public class FurnaceRecipes {
 	private static final FurnaceRecipes INSTANCE = new FurnaceRecipes();
 
-	/** 1.7.10 FurnaceRecipes.smelting() — singleton-доступ. */
+	/** 1.7.10's FurnaceRecipes.smelting() singleton accessor. */
 	public static FurnaceRecipes smelting() {return INSTANCE;}
 
 	private final Map<ItemStack, ItemStack> mSmeltingList   = new HashMap<>();
 	private final Map<ItemStack, Float>     mExperienceList = new HashMap<>();
 
-	/** 1.7.10 getSmeltingResult(input): первый выход, чей вход совпадает (ST.equal с wildcard, как итерация GT6). */
+	/** 1.7.10's getSmeltingResult: first output whose input matches, wildcard-aware, same as GT6's own iteration. */
 	public ItemStack getSmeltingResult(ItemStack aInput) {
 		if (ST.invalid(aInput)) return NI;
 		for (Map.Entry<ItemStack, ItemStack> tEntry : mSmeltingList.entrySet()) if (ST.equal(aInput, tEntry.getKey(), T)) return tEntry.getValue();
@@ -71,13 +57,11 @@ public class FurnaceRecipes {
 		mExperienceList.put(aOutput, aExperience);
 	}
 
-	/** 1.7.10 getSmeltingList(): мутабельная карта — GT6 итерирует и удаляет через entrySet().iterator().remove(). */
+	/** 1.7.10's getSmeltingList: a mutable map GT6 iterates and removes from directly. */
 	public Map<ItemStack, ItemStack> getSmeltingList() {return mSmeltingList;}
 
-	/** 1.7.10 func_151398_b = getSmeltingExperience(output). Правило 1:1 (recompSrc FurnaceRecipes:115-135):
-	 *  СНАЧАЛА хук предмета-результата, его ответ != -1 ПЕРЕКРЫВАЕТ карту (у GT6-предметов: самоцвет → 1.0,
-	 *  иначе 0 — анти-фарм Грега); не-носитель контракта = дефолт 1.7.10 Item.getSmeltingExperience = -1
-	 *  «спроси карту»; нет и в карте → 0. */
+	/** Matches the original rule: the result item's own hook is asked first and its non-(-1) answer overrides
+	 *  the map; a type that doesn't implement the hook gets the vanilla default of -1 (ask the map), else 0. */
 	public float func_151398_b(ItemStack aOutput) {
 		if (ST.invalid(aOutput)) return 0.0F;
 		if (aOutput.getItem() instanceof gregapi.item.IItemSmeltingExperience tItem) {
@@ -88,42 +72,16 @@ public class FurnaceRecipes {
 		return 0.0F;
 	}
 
-	/**
-	 * ВОЗВРАТ ВАНИЛЬНОЙ ЧАСТИ СПИСКА — то, чем этот список БЫЛ в 1.7.10.
-	 *
-	 * <p>Там {@code FurnaceRecipes.smelting()} был ВАНИЛЬНЫМ singleton'ом: ванильные плавки лежали в нём
-	 * изначально, GT6 доливал свои через {@code RM.add_smelting}, и печь GT6 (Oven), спрашивая
-	 * {@code RM.get_smelting} → {@code getSmeltingResult}, видела и то и другое. Порт воссоздал класс как
-	 * GT6-собственное хранилище (шов F11-smelting), а ванильные рецепты в neo — data-driven и живут в
-	 * {@code RecipeManager}. Список остался наполовину пустым, и Oven переставал плавить руду, еду, глину:
-	 * замер gt6ovenprobe — 1 из 8 ванильных сырьевых предметов (проходил только песок, эту плавку GT6
-	 * добавляет себе сам), при 74 ванильных рецептах в мире.
-	 *
-	 * <p>Здесь список приводится к прежнему содержимому. ПРИОРИТЕТ GT6: если вход уже знаком (GT6 задал свою
-	 * плавку для этого предмета), ванильная пропускается — в 1.7.10 тот же порядок обеспечивался тем, что GT6
-	 * доливал СВОЁ поверх ванильного и перекрывал его при поиске.
-	 *
-	 * <p><b>РЕШЕНИЕ ПОЛЬЗОВАТЕЛЯ 2026-07-29 — переносим ВСЕ ванильные плавки, включая рецепты предметов,
-	 * которых в 1.7.10 не существовало</b> ({@code raw_iron}/{@code raw_copper}/{@code raw_gold} появились
-	 * в 1.17: там руда плавилась блоком, промежуточного «сырья» не было). Строго 1:1 это не воспроизведение,
-	 * а решение: увязка ресурсов НОВЫХ версий отложена до полного завершения порта, отдельной задачей.
-	 * Риск при этом теоретический: ванильные руды мод выключает сам — {@code GT6_Main.java:132},
-	 * {@code mDisableVanillaOres} по умолчанию {@code T}, — поэтому до нового сырья игрок в норме не доходит.
-	 *
-	 * @return сколько ванильных плавок добавлено.
-	 */
+	/** Restores the vanilla half of this list, lost when the class became GT6's own storage instead of vanilla's;
+	 *  by user decision every vanilla recipe is imported, including items that did not exist in 1.7.10. */
 	public int importVanilla(net.minecraft.server.MinecraftServer aServer) {
 		if (aServer == null) return 0;
 		int rAdded = 0;
 		try {
 			net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
 			if (tLevel == null) return 0;
-			// ⛔ Фильтруем instanceof: в реестре типа SMELTING лежит НЕ ТОЛЬКО ванильный SmeltingRecipe, но и
-			// собственный мост GT6 — GT6SmeltingDispatcher (BUG-023), который отдаёт GT6-плавки ванильной печи.
-			// Диспетчер здесь пропускаем осознанно: он не носитель данных, а переходник в ЭТОТ же реестр.
-			// BP-BUG-010: диспетчер САМ стал SmeltingRecipe (контракт типа 1.20.1), поэтому отсев по классу его
-			// больше не ловит — исключаем его ИМЕНЕМ, иначе перебирали бы собственную живую витрину входов.
-			// 1.20.1: обёртки «рецепт+id» нет — getAllRecipesFor отдаёт сами рецепты
+			// The SMELTING registry also holds GT6's own bridge dispatcher, which relays into this same registry rather than
+			// carrying data; since it's now a SmeltingRecipe itself, filtering by class can't exclude it, so it's excluded by name.
 			// (forge-1201-decompiled RecipeManager.java:96-98).
 			for (net.minecraft.world.item.crafting.Recipe<?> tAny
 				: tLevel.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING)) {
@@ -132,7 +90,7 @@ public class FurnaceRecipes {
 				for (Ingredient tIngredient : tRecipe.getIngredients()) for (ItemStack tItem : tIngredient.getItems()) {
 					ItemStack tIn = ST.amount(1, tItem);
 					if (ST.invalid(tIn)) continue;
-					// GT6 приоритетнее: свою плавку не перекрываем
+					// A GT6 recipe already registered for this input takes priority and is not overwritten.
 					if (ST.valid(getSmeltingResult(tIn))) continue;
 					ItemStack tOut = tRecipe.assemble(new net.minecraft.world.SimpleContainer(tIn), tLevel.registryAccess());
 					if (ST.invalid(tOut)) continue;

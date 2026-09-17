@@ -35,7 +35,7 @@
 
 package enviromine;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — EnviroMine. Только id зелий, читаемые GT_API. */
+/** Compile-only mirror of the EnviroMine API: only the potion ids GT_API reads. */
 public class EnviroPotion {
     public static PotionRef dehydration;
     public static PotionRef frostbite;

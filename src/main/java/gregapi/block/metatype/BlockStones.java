@@ -145,8 +145,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		}
 		
 		OP.blockSolid.disableItemGeneration(mMaterial);
-		// F12-followup (block-split): весь дата-инит (setTarget/OM.data/OM.reg_/mEqualBlocks/texture/RC/COMPAT_FR) использует
-		// ST.make → компоненты только на server-start → deferItemInit (порядок 1:1).
+		// All this data-init builds ItemStacks, so it is deferred to server start, keeping the original order.
 		gregapi.GT_API.deferItemInit(() -> {
 		OreDictManager.INSTANCE.setTarget(OP.blockSolid, aMaterial, ST.make(this, 1, SMOTH));
 		
@@ -250,7 +249,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 			LH.add(getUnlocalizedName()+".14", aDefaultLocalised+" Windmill Tiles B Slab");
 			LH.add(getUnlocalizedName()+".15", aDefaultLocalised+" Square Bricks Slab");
 		}
-		// F12-followup (block-split): OM.data/mEqualBlocks используют ST.make → server-start → deferItemInit.
+		// Deferred to server start for the same reason: OM.data/mEqualBlocks both build an ItemStack.
 		gregapi.GT_API.deferItemInit(() -> {
 		OM.data(ST.make(this, 1, STONE), new OreDictItemData(mMaterial, 9*U2));
 		OM.data(ST.make(this, 1, COBBL), new OreDictItemData(mMaterial, 9*U2));
@@ -285,8 +284,8 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		RM.add_smelting(OP.blockDust.mat(mMaterial, 1), ST.make(this, 1, STONE), F, F, F);
 		
 		CR.shaped(gearGtSmall.mat(     mMaterial, 1), CR.DEF    , "X ", " f", 'X', OP.stone.dat(mMaterial));
-		// 1.7.10 minecraft:stone_stairs = лестница ИЗ БУЛЫЖНИКА (исторический мисноминг ванили; DataFixer
-		// stone_stairs.0 -> cobblestone_stairs). neo Blocks.STONE_STAIRS — ДРУГОЙ, новый блок из камня.
+		// 1.7.10's "stone_stairs" was actually cobblestone stairs, a historic vanilla misnomer;
+		// neo's STONE_STAIRS is a genuinely different, new block, so cobblestone stairs are used here instead.
 		CR.shaped(ST.make(Blocks.COBBLESTONE_STAIRS, 1, 0), CR.DEF_MIR, " X", "XX", 'X', OP.rockGt.dat(mMaterial)); // TODO Stairs
 		CR.shaped(ST.make(mSlabs[0]      , 1, COBBL), CR.DEF    , "  ", "XX", 'X', OP.rockGt.dat(mMaterial));
 		
@@ -648,15 +647,13 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	
 	@Override
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {
-		// было ForgeDirection.offsetX/Y/Z (1.7.10 public-поля) -> neo Direction.getStepX()/getStepY()/getStepZ() [Direction.java:247]
-		// F10: getPlantType — реальная сигнатура net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не int x,y,z.
+		// Was ForgeDirection.offsetX/Y/Z (1.7.10 public fields) -> neo Direction.getStepX/Y/Z; the real
+		// IPlantable.getPlantType takes (BlockGetter,BlockPos), not (x,y,z).
 		return PLANTABLE[WD.meta(aWorld, aX, aY, aZ)] && aPlant.getPlantType(aWorld, new BlockPos(aX+aSide.getStepX(), aY+aSide.getStepY(), aZ+aSide.getStepZ())) == PlantType.CAVE;
 	}
 	
-	// было IGrowable.func_149851_a/func_149852_a/func_149853_b (1.7.10) -> BonemealableBlock.isValidBonemealTarget
-	// (LevelReader,BlockPos,BlockState)/isBonemealSuccess(Level,RandomSource,BlockPos,BlockState)/performBonemeal
-	// (ServerLevel,RandomSource,BlockPos,BlockState) [BonemealableBlock.java:14-18]; координаты через aPos.getX/Y/Z(),
-	// тот же приём, что и весь остальной файл.
+	// neo's bonemeal contract is BonemealableBlock's isValidBonemealTarget/isBonemealSuccess/
+	// performBonemeal instead of the old SRG-named IGrowable methods.
 	@Override public boolean isValidBonemealTarget(LevelReader aWorld, BlockPos aPos, BlockState aState, boolean aIsClient) {return MOSSY[WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())];}
 	@Override public boolean isBonemealSuccess(Level aWorld, RandomSource aRandom, BlockPos aPos, BlockState aState) {return MOSSY[WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())];}
 	@Override public void performBonemeal(ServerLevel aWorld, RandomSource aRandom, BlockPos aPos, BlockState aState) {
@@ -757,7 +754,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(ST.make(this, 1, mBlock == this && aMeta == STONE ? COBBL : aMeta));}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return SEALABLE[aMeta] && super.isSealable(aMeta, aSide);}
-	// было isProvidingWeakPower(IBlockAccess,x,y,z,side) -> BlockBehaviour.getSignal(BlockState,BlockGetter,BlockPos,Direction) [BlockBehaviour.java:356]
+	// neo asks weak redstone power through BlockBehaviour.getSignal instead of the old isProvidingWeakPower.
 	@Override public int getSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) == RSTBR ? 15 : 0;}
 	public boolean shouldCheckWeakPower(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return mBlock == this && WD.meta(aWorld, aX, aY, aZ) != RSTBR;}
 	@Override public void onNeighborBlockChange2(Level aWorld, int aX, int aY, int aZ, Block aBlock) {if (MOSSY[WD.meta(aWorld, aX, aY, aZ)] && WD.burning(aWorld, aX, aY, aZ)) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate(aWorld));}

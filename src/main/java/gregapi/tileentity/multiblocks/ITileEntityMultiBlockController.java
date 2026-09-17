@@ -49,7 +49,7 @@ public interface ITileEntityMultiBlockController extends ITileEntityUnloadable, 
 	
 	public static class Util {
 		public static boolean checkAndSetTarget(ITileEntityMultiBlockController aController, int aX, int aY, int aZ, int aRegistryMeta, int aRegistryID, int aDesign, int aMode, BlockPos aClickedAt, Entity aPlayer, Container aInventory) {
-			BlockEntity tTileEntity = WD.te(aController.getWorld(), aX, aY, aZ, T); // WD.te принимает Level/BlockGetter, не ITileEntityMultiBlockController -> aController.getWorld().
+			BlockEntity tTileEntity = WD.te(aController.getWorld(), aX, aY, aZ, T); // WD.te takes a Level/BlockGetter, not ITileEntityMultiBlockController -> aController.getWorld().
 			if (tTileEntity == aController) return T;
 			
 			if ((aInventory != null || aPlayer != null) && (aClickedAt == null || (Math.abs(aX-aClickedAt.getX()) < 2 && Math.abs(aY-aClickedAt.getY()) < 2 && Math.abs(aZ-aClickedAt.getZ()) < 2))) {

@@ -32,28 +32,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.DamageEnchantment;
 import net.minecraft.world.item.enchantment.Enchantment;
 
-/**
- * @author Gregorius Techneticies
- *
- * Модель чар в 1.20.1 — та же императивная, что в 1.7.10: {@code Enchantment} наследуется, эффект
- * висит на переопределённом {@code doPostHurt} ({@code forge-1201-decompiled/.../enchantment/
- * Enchantment.java:121} = 1.7.10 {@code func_151367_b}, {@code gt6-original/build/tmp/recompSrc/
- * .../Enchantment.java:182}). Поэтому оригинальная форма восстановлена дословно; data-driven
- * обвязка 26.x (датапак-реестр, {@code EnchantmentEntityEffect}) в 1.20.1 не существует и снята.
- *
- * <p>Диспетчер — СВОЙ у GT6: {@code UT.Enchantments.applyBullshitA(жертва, атакующий, оружие)}
- * зовёт {@code doPostHurt(жертва, атакующий, lvl)} по чарам брони жертвы И по чарам оружия
- * ({@code gt6-original/.../UT.java:2434-2456}); вызыватели — ToolStats, PrefixItemProjectile,
- * EntityArrow_Material, Behavior_Arrow, Behavior_Gun. Слоты в конструкторе нужны только ванильному
- * пути ({@code EnchantmentHelper.doPostHurtEffects}), GT6-путь их не гейтит.
- *
- * <p>{@code weight}=2 оригинального конструктора {@code EnchantmentDamage(id, weight, type)} →
- * {@code Rarity.RARE} (веса {@code Rarity}: COMMON 10 / UNCOMMON 5 / RARE 2 / VERY_RARE 1,
- * {@code Enchantment.java:158-170}). {@code type}={@code -1} сохранён дословно: он не индексирует
- * массивы родителя, потому что {@code getMinCost}/{@code getMaxCost} переопределены здесь (ровно
- * как в оригинале), а {@code getDamageBonus}/{@code doPostAttack} при {@code -1} дают 0/no-op
- * ({@code DamageEnchantment.java:39-46,57-64}).
- */
+/** @author Gregorius Techneticies
+ *  1.20.1's enchantment model is imperative, like 1.7.10: doPostHurt is overridden directly, no data-driven wrapper needed.
+ *  GT6's own dispatcher calls doPostHurt for both victim-armor and weapon enchants; ctor slots only gate vanilla's path. */
 public class Enchantment_WerewolfDamage extends DamageEnchantment {
 	public static final Enchantment_WerewolfDamage INSTANCE = new Enchantment_WerewolfDamage();
 	

@@ -35,7 +35,7 @@
 
 package twilightforest;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Twilight Forest. Минимум для WD.dimTF. */
+/** Compile-only mirror of the Twilight Forest API: the minimum WD.dimTF needs. */
 public class TwilightForestMod {
     public static int dimensionID;
 }

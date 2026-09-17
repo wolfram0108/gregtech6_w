@@ -106,27 +106,28 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	
 	public MapColor mMapColor = null;
 
-	/** F-bounds (тот же приём, что BlockBase.java): последние заданные bounds (1.7.10 мутировал Block.mBoundingBox);
-	 *  neo bounds immutable -> храним сами, рендер-использование отложено на F3-клиент-проход. IBlock-обязательный метод. */
+	/** Same trick as BlockBase: stores the last-set bounds itself, since neo bounds are immutable;
+	 *  render use is deferred to a later client pass. Required by the IBlock contract. */
 	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
 	}
 	@Override public float[] getRenderBounds() {return mRenderBounds;}
 
-	/** F9-хвост: gregapi Material хранится MTE-блоком (тот же паттерн, что BlockBase); neo убрал ванильный Block.getMaterial()/blockMaterial. */
+	/** gregapi Material is stored by the MTE block itself (same pattern as BlockBase); neo removed
+	 *  vanilla's own Block.getMaterial()/blockMaterial. */
 	protected final Material mMaterial;
 	public Material getMaterial() {return mMaterial;}
 
 	public static String getName(String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
-		// F9/sound: было aSoundType.soundName (1.7.10 String-категория звука) в рег-ключе MTE. neo SoundType без имени —
-		// воспроизводим 1.7.10-soundName 1:1 (значения сверены ФАКТИЧЕСКИ по golden-дампу: iron/machine(METAL)→"stone",
+		// Was aSoundType.soundName (a 1.7.10 String category) in the MTE registration key; neo's
+		// SoundType carries no name, so the 1.7.10 name is reproduced 1:1, values checked against the golden dump.
 		// rock(STONE)→"stone", cloth/redstonelight(WOOL)→"cloth", leaves/tnt(GRASS)→"grass", wood(WOOD)→"wood").
 		return "gt.block.multitileentity." + aNameOfVanillaMaterialField + "." + soundName(aSoundType) + "." + aTool + "." + aHarvestLevelOffset + "." + aHarvestLevelMinimum + "." + aHarvestLevelMaximum + "." + aOpaque + "." + aNormalCube;
 	}
 
-	/** 1.7.10 SoundType.soundName-эквивалент для рег-ключа MTE (сверено по golden-дампу). Прочие SoundType в getOrCreate не
-	 *  встречаются — fallback на break-sound ResourceLocation (проявится в engine-дампе как diff, а не тихо-неверно). */
+	/** 1.7.10 SoundType.soundName equivalent for the MTE key (checked against the golden dump); any other
+	 *  SoundType falls back to its break-sound path, which shows up as a diff, not a silent wrong answer. */
 	private static String soundName(SoundType aSoundType) {
 		if (aSoundType == SoundType.WOOL)  return "cloth";
 		if (aSoundType == SoundType.METAL) return "stone";
@@ -163,43 +164,24 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	 * @param aOpaque if this Block is Opaque.
 	 * @param aNormalCube if this Block is a normal Cube (for Redstone Stuff).
 	 */
-	// F16/F13: Properties при ctor — sound(step-звук) + noOcclusion для non-opaque (иначе рендер solid + свет блокируется). setId обязателен.
+	// Properties at construction set the step sound plus noOcclusion for non-opaque blocks
+	// (otherwise render treats them as solid and blocks light); setId is mandatory.
 	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(SoundType aSoundType, String aRegName, boolean aOpaque, String aTool, Material aVanillaMaterial) {
-		// F-shape: dynamicShape() ОБЯЗАТЕЛЕН — иначе neo кэширует getCollisionShape (строит его раз с EmptyBlockGetter/
-		// BlockPos.ZERO, BlockBehaviour:916) → per-BE форма (getCollisionShape-мост ниже, MTE-Rock/трубы) игнорируется,
-		// снег/коллизия/isFaceSturdy берутся из статического кэша = полный куб. dynamicShape → кэш не строится → мост живёт.
-		// F-shape ПОБОЧКА (труба исчезала под водой): dynamicShape() => shape-кэш не строится => calculateSolid()
-		// (BlockBehaviour:472-478) возвращает false при cache==null => legacySolid=false => blocksMotion()=false =>
-		// ванильная вода считает блок проницаемым (FlowingFluid.canHoldFluid) и УНИЧТОЖАЕТ его при затоплении.
-		// 1.7.10: у MTE твёрдый Material (machine/rock) — вода обтекала. forceSolidOn() (BlockBehaviour:473) => 1:1.
+		// dynamicShape() is mandatory: without it neo caches getCollisionShape once and ignores the per-BE
+		// shape bridge below, so snow/collision/isFaceSturdy all read a cached full cube.
 		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().forceSolidOn().sound(aSoundType);
 		if (!aOpaque) p = p.noOcclusion();
-		// BUG-064 (Jade молчал про инструмент на машинах): в 1.7.10 твёрдость блока спрашивалась ПОЗИЦИОННО —
-		// getBlockHardness(World,x,y,z) (оригинал :299), и GT6 отдавал её из TE, а дефолтом при отсутствии
-		// IMTE_GetBlockHardness было 1.0F. В neo позиционного канала нет: BlockState.getDestroySpeed финален и
-		// возвращает статический Properties.destroyTime (BlockBehaviour:636-638), который здесь не задавался —
-		// то есть СНАРУЖИ любая машина GT6 выглядела «ломается мгновенно». На этом и молчал Jade: его ванильный
-		// обработчик пропускает блок, если `!requiresCorrectToolForDrops && getDestroySpeed == 0`
-		// (исходники Jade 26.1-neoforge, SimpleToolHandler:45-47). Ставим ТО ЖЕ дефолтное значение GT6 (1.0F);
-		// точная per-TE твёрдость по-прежнему живёт в getDestroyProgress ниже и от этого поля не зависит —
-		// он считает прогресс сам (WD.destroyProgress по TE-hardness) и super не зовёт.
+		// 1.7.10 asked block hardness positionally and GT6 answered from the TE, defaulting to 1.0F when absent;
+		// neo's default (0) made every GT6 machine look instantly breakable, which is also why Jade stayed silent about its tool.
 		p = p.destroyTime(1.0F);
-		// F-harvest-tool (1:1 GT6, ИСПРАВЛЕНО по репорту игрока «верёвки/наковальни должны ломаться руками»):
-		// в 1.7.10 гейт «нужен ли инструмент для харвеста» решал МАТЕРИАЛ (EntityPlayer.canHarvestBlock →
-		// Material.isToolNotRequired), а НЕ строка getHarvestTool — она задавала лишь ЭФФЕКТИВНЫЙ инструмент.
-		// aUtilStone/Wood/Wool-сеты (наковальни/верёвки/леса/камешки) на Material.redstoneLight (инструмент НЕ
-		// требует) → рука ломала (/30) И дропала; инструмент требуют только материалы с setRequiresTool
-		// (MaterialMachines/rock/iron/anvil). Прежний гейт «mTool непуст» вешал флаг на ВСЁ — руки лишались и
-		// дропа, и /30-скорости. neo-эквивалент 1.7.10-семантики: requiresCorrectToolForDrops ⟺ материал требует
-		// инструмент (и инструмент назначен).
+		// 1.7.10 decided "does this need a tool" by MATERIAL (isToolNotRequired), not by the harvest-tool
+		// string; the old gate wrongly required a tool for everything, including ropes that should break by hand.
 		if (aTool != null && !aTool.isEmpty() && aVanillaMaterial != null && !aVanillaMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();
 		return p;
 	}
 	protected MultiTileEntityBlock(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
-		// F12-followup (block-split, MTE): setId в Properties (neo Block требует id); namespace=GT (gt.multitileentity — контент
-		// GT6, golden = gregtech:; совпадает с реестром ST.register→registerBlock ниже). Имя вычисляется тем же getName(...), что и mNameInternal (стр. ниже) → ключ совпадает.
-		// Конструкция идёт на RegisterEvent через GT_API.deferBlockInit (call-site getOrCreate/Loader_Others).
-		// F16: sound(aSoundType) (step-звук). F13/F16: non-opaque → .noOcclusion() (иначе рендер solid + свет блокируется). mkProps ниже.
+		// setId in Properties (neo requires it); namespace=GT for gt.multitileentity content.
+		// Construction happens at RegisterEvent via GT_API.deferBlockInit. Step sound and noOcclusion come from mkProps below.
 		super(mkProps(aSoundType, getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube), aOpaque, aTool, aVanillaMaterial));
 		mMaterial = aVanillaMaterial;
 		if (GAPI.mStartedInit) throw new IllegalStateException("Blocks can only be initialised within preInit!");
@@ -209,7 +191,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		
 		MULTITILEENTITYBLOCKMAP.put(aModID + ":" + mNameInternal, this);
 		
-		// F16: setStepSound ПОДКЛЮЧЕН — звук выставлен в mkProps выше (.sound(aSoundType) при ctor). Не заглушка.
+		// The step sound is wired through mkProps above (.sound() at construction). Not a stub.
 		mOpaque = aOpaque;
 		mNormalCube = aNormalCube;
 		
@@ -218,8 +200,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		mHarvestLevelMinimum = Math.max(0, aHarvestLevelMinimum);
 		mHarvestLevelMaximum = Math.max(aHarvestLevelMinimum, aHarvestLevelMaximum);
 		
-		// F13/F16: opaque ПОДКЛЮЧЕН в Properties при ctor (mkProps выше: non-opaque → .noOcclusion() → neo рендер/свет корректны).
-		// Собственные isOpaqueCube()/getLightOpacity() читают mOpaque для GT6-внутренней логики. Не заглушка.
+		// Opaque is wired into Properties at construction (mkProps: non-opaque -> noOcclusion, correct
+		// render/light); GT6's own isOpaqueCube/getLightOpacity still read mOpaque for internal logic. Not a stub.
 
 		if (MD.Mek.mLoaded) try {MekanismAPI.addBoxBlacklist(this, W);} catch(Throwable e) {e.printStackTrace(ERR);}
 		// F12-followup (block-split): ST.hide → ST.make (ItemStack) → server-start → deferItemInit.
@@ -227,128 +209,48 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	}
 	
 	// @Override
-	/** @return {@code true} = BlockEntity снимать НЕЛЬЗЯ (сработало вето {@code IMTE_BreakBlock}); во всех прочих
-	 *  исходах {@code false}, и вызыватель обязан отдать снятие движку ({@code super.onRemove}) — см. разбор там. */
+	/** true means the BlockEntity must NOT be removed (the IMTE_BreakBlock veto fired); every other outcome
+	 *  is false, and the caller must let the engine remove it via super.onRemove (see there). */
 	public final boolean breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMetaData) {
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
-		// было aTileEntity.shouldRefresh(...) (1.7.10 TileEntity.shouldRefresh, УДАЛЁН в neo BlockEntity целиком,
-		// не найден ни в одном из 3 корней) - GT6 сам реализует его на TileEntityBase01Root (не vanilla-override
-		// больше, обычный метод), поэтому маршрутизируем через cast; не-GT6-TE (не должно происходить для MTE)
-		// трактуем как "refresh=true" (дефолт TileEntityBase01Root.mShouldRefresh), чтобы не потерять срабатывание.
+		// Was aTileEntity.shouldRefresh(...) (removed from neo's BlockEntity entirely); GT6 implements it itself
+		// on TileEntityBase01Root as an ordinary method now, routed through a cast; a non-GT6 TE defaults to refresh=true.
 		boolean tShouldRefresh = !(aTileEntity instanceof gregapi.tileentity.base.TileEntityBase01Root) || ((gregapi.tileentity.base.TileEntityBase01Root)aTileEntity).shouldRefresh(this, aBlock, aMetaData, aMetaData, aWorld, aX, aY, aZ);
-		// ⚠️ Ранние выходы НЕ означают «BE оставить». Единственное «оставить» — вето интерфейса ниже; всё прочее
-		// снимает движок через super.onRemove у вызывателя (страховка 1.7.10 Chunk.func_150807_a:660-664).
+		// Early exits here don't mean "leave the BE": the only "leave it" case is the interface veto below;
+		// everything else lets the engine remove it via the caller's super.onRemove, matching 1.7.10's own safety net.
 		if (aTileEntity == null || !tShouldRefresh) return F;
-		if (aTileEntity instanceof IMTE_BreakBlock && ((IMTE_BreakBlock)aTileEntity).breakBlock()) return T; // контракт: «return true to prevent the TileEntity from being removed»
+		if (aTileEntity instanceof IMTE_BreakBlock && ((IMTE_BreakBlock)aTileEntity).breakBlock()) return T; // contract: return true to prevent the TileEntity from being removed
 		if (aTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData && ((IMTE_HasMultiBlockMachineRelevantData)aTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, (byte)aMetaData, T);
-		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ)); // было aWorld.removeTileEntity(x,y,z) (1.7.10 World), neo Level.removeBlockEntity(BlockPos) [Level.java:688]
+		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ)); // Was aWorld.removeTileEntity(x,y,z) (1.7.10 World); neo is Level.removeBlockEntity(BlockPos).
 		return F;
 	}
 
-	/** РЕПОРТ ИГРОКА («положил 4 батареи в батарейный бокс и разрушил его — выпал только бокс, батареи исчезли;
-	 *  касается всех машин GT6»): у тела {@link #breakBlock} выше НЕ БЫЛО ВЫЗЫВАТЕЛЯ, и вместе с дропом содержимого
-	 *  молчали цепочка {@code IMTE_BreakBlock.breakBlock()} (14 переопределений: бокс, сейф, масс-хранилище, тигель,
-	 *  танк, трубы, полка, смеситель, …) и оповещение мультиблоков {@code causeMachineUpdate}.
-	 *  <p><b>Кто звал его в 1.7.10.</b> Сам движок: {@code Chunk.func_150807_a:658}
-	 *  {@code block1.breakBlock(worldObj, x,y,z, block1, k1)} — на СЕРВЕРЕ и при ЛЮБОЙ смене клетки (блок ИЛИ мета;
-	 *  совпавшая пара отсекается раньше, {@code Chunk.java:623}), причём блок в секции уже НОВЫЙ, а TileEntity ещё
-	 *  жив ({@code Chunk.java:653-658}). Аргументы — СТАРЫЕ блок и мета.
-	 *  <p><b>Тот же момент в 1.20.1</b> — {@code BlockBehaviour.onRemove} [BlockBehaviour.java:163-168]: единственный
-	 *  вызыватель во всём движке — {@code LevelChunk.setBlockState} [LevelChunk.java:246-250], и условия совпадают
-	 *  дословно (секция уже новая, BlockEntity ещё в чанке, клиент отсечён {@code !level.isClientSide}). Ваниль
-	 *  вытряхивает содержимое контейнеров именно оттуда ({@code ChestBlock.onRemove:218-227} → {@code Containers.dropContents}).
-	 *  На main (26.x) этот же момент движок отдаёт как {@code BlockEntity.preRemoveSideEffects} [LevelChunk.java:311],
-	 *  туда и повешен мост {@code TileEntityBase05Inventories:155}; в 1.20.1 хука на BlockEntity нет вовсе, поэтому
-	 *  мост живёт здесь — ОДИН на все MTE (наследуется {@code MultiTileEntityBlockWithCompat}), россыпи по TE нет.
-	 *  <p><b>Дроп владеет GT6, а не ванилью.</b> Глушить нечего: база {@code BlockBehaviour.onRemove} содержимое НЕ
-	 *  роняет (её единственное действие — {@code removeBlockEntity}), а MTE-контейнер ванильного дропа не имеет
-	 *  вовсе — двойного дропа не возникает и ванильный путь чужих блоков не задет.
-	 *  <p><b>Гейта на смену БЛОКА здесь нет намеренно</b> (в отличие от {@code BlockBaseTree}/{@code PrefixBlock}):
-	 *  1.7.10-условие — «блок ИЛИ мета изменились», а у MTE-блока свойств BlockState нет вовсе (мета не выражается
-	 *  стейтом, {@code IBlockExtendedMetaData:49}→0, см. {@link #blockMetaDataAt}), поэтому «стейт сменился» ⟺
-	 *  «блок сменился», и хук зовётся ровно в 1.7.10-случаях. Приём «поставить блок дважды со сменой меты»
-	 *  ({@code MultiTileEntityBlockInternal.placeBlock:157,165}) сюда не попадает: оба сета дают ОДИН И ТОТ ЖЕ
-	 *  {@code defaultBlockState}, второй отсекается {@code LevelChunk.java:224-226} — как и в 1.7.10 ({@code Chunk.java:623}).
-	 *  <p><b>{@code super.onRemove} не зовётся намеренно:</b> его единственное действие — {@code level.removeBlockEntity(pos)},
-	 *  а тело {@link #breakBlock} делает это само (строка выше) со своими гейтами ({@code shouldRefresh};
-	 *  {@code IMTE_BreakBlock.breakBlock()==true} = «BlockEntity не снимать»). В 1.7.10 снятие TE точно так же
-	 *  принадлежало телу breakBlock, а не движку (ванильный {@code Block.breakBlock} — пустой дефолт), и вызов super
-	 *  здесь ломал бы вето интерфейса. */
-	/** ⚠️ ИСПРАВЛЕНИЕ ОШИБКИ ПЕРЕНОСА (регресс, найден по потере построек игрока: блок снят, а BlockEntity осталась
-	 *  привязанной — «призрак», на место которого больше ничего не поставить). Первая редакция моста звала ТОЛЬКО
-	 *  {@link #breakBlock}, не зовя {@code super}, и тем забрала у движка его БЕЗУСЛОВНУЮ обязанность снять BE
-	 *  ({@code BlockBehaviour.onRemove}, BlockBehaviour.java:163-168), отдав её телу с ДВУМЯ ранними выходами
-	 *  (строки {@code aTileEntity == null || !tShouldRefresh} и вето {@code IMTE_BreakBlock}). На этих выходах BE
-	 *  оставалась висеть под снятым блоком.
-	 *  <p><b>Чего не хватало.</b> В 1.7.10 у тела breakBlock была СТРАХОВКА самого движка: {@code Chunk.func_150807_a}
-	 *  после вызова {@code block1.breakBlock(...)} (:658) ещё раз спрашивал {@code te.shouldRefresh(...)} и, если тот
-	 *  соглашался, сам звал {@code removeTileEntity} (:660-664) — «фантомную» TE подчищал движок. Я перенёс тело, но
-	 *  не перенёс страховку; в 1.20.1 её роль исполняет ровно {@code super.onRemove}.
-	 *  <p><b>Правило теперь.</b> Сперва GT6-цепочка (дроп содержимого, {@code IMTE_BreakBlock}, оповещение
-	 *  мультиблоков) — она обязана отработать ДО снятия BE, потому что читает её. Затем {@code super.onRemove}
-	 *  ВСЕГДА, кроме единственного случая: интерфейс {@code IMTE_BreakBlock.breakBlock()} вернул {@code true}, что по
-	 *  его же контракту значит «не снимать BlockEntity» (IMultiTileEntity.java:87) — это канон 1.7.10, и там BE тоже
-	 *  переживала снятие блока. Ранний выход по {@code shouldRefresh} снятие BE больше НЕ пропускает.
-	 *  <p>Повторное снятие BE безопасно: {@link #breakBlock} мог снять её сам, а {@code super} на отсутствующей BE —
-	 *  no-op ({@code LevelChunk.removeBlockEntity} на пустой позиции ничего не делает). */
+	/** This body had no caller at all: the engine's own removal hook (BlockBehaviour.onRemove) never called
+	 *  it, so drop-on-break for MTE containers and multiblock update notification were both silently dead. */
+	/** Regression fix: the first bridge called only breakBlock, not super, taking over the engine's own
+	 *  unconditional duty to remove the BlockEntity, leaving a ghost BE on early exits; super now runs after, unless vetoed. */
 	@Override public void onRemove(BlockState aState, Level aWorld, BlockPos aPos, BlockState aNewState, boolean aMovedByPiston) {
 		boolean tKeepBlockEntity = breakBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), blockMetaDataAt(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));
 		if (!tKeepBlockEntity) {super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston); sweepBlockEntityRemains(aWorld, aPos, aNewState);}
 	}
 
-	/** ДОБОР ОСТАТКА BE (корень BP-BUG-008, вскрытие 2026-08-15). {@code super.onRemove} отдаёт снятие движковому
-	 *  {@code Level.removeBlockEntity} → {@code LevelChunk.removeBlockEntity} [LevelChunk.java:394-408], и тот
-	 *  промахивается мимо BlockEntity в ДВУХ состояниях чанка — обоих законных и обоих встречающихся в живом мире:
-	 *
-	 *  <p><b>1. Запись ещё «упакована».</b> {@code LevelChunk.removeBlockEntity} снимает только из {@code blockEntities}
-	 *  и НЕ трогает {@code pendingBlockEntities} — в отличие от {@code ProtoChunk.removeBlockEntity}
-	 *  [ProtoChunk.java:250-253], который чистит оба хранилища. Распаковка (слив {@code pendingBlockEntities}) идёт
-	 *  лишь в {@code LevelChunk.postProcessGeneration} [LevelChunk.java:514-518], а его единственный вызыватель —
-	 *  {@code ChunkMap.prepareTickingChunk} [ChunkMap.java:747], то есть чанк обязан дойти до TICKING. Чанк на кромке
-	 *  радиуса (загружен, но не тикает) до распаковки не доходит: снятие блока проходит бесшумно, закладка остаётся
-	 *  и уходит на диск сиротой с полными тегами — «призрак» без коллизии, на место которого ничего не поставить.
-	 *
-	 *  <p><b>2. Чанк ещё не объявлен загруженным.</b> Тело {@code LevelChunk.removeBlockEntity} целиком закрыто
-	 *  условием {@code isInLevel()} = {@code loaded || isClientSide} [LevelChunk.java:340-342, 394-395], а
-	 *  {@code loaded} выставляется лишь на промоции в FULL [ChunkMap.java:717], уже после конструктора чанка. Снятие,
-	 *  попавшее в это окно, движок не выполняет вовсе — даже через {@code super}.
-	 *
-	 *  <p><b>Приём взят существующий, не новый.</b> Запрос {@code chunk.getBlockEntity(pos)} распаковывает закладку
-	 *  сам ({@code pendingBlockEntities.remove} + промоция, [LevelChunk.java:303-310]) — этим же приёмом снимает
-	 *  закладку воронка записи руды ({@code PrefixBlock:969-971}). Дальше остаток снимается штатно, а на случай окна
-	 *  №2 (штатный путь — no-op) сущность помечается снятой: Forge-патч {@code LevelChunk.getBlockEntity}
-	 *  [LevelChunk.java:299-302] выкидывает помеченную из карты при первом же обращении, а
-	 *  {@code getBlockEntityNbtForSaving} [LevelChunk.java:374] на снятой сущности уходит в ветку закладки и на диск
-	 *  её не пишет — сирота не рождается ни в памяти, ни в файле.
-	 *
-	 *  <p><b>Смена MTE на MTE не задета:</b> при {@code aNewState.hasBlockEntity()} остаток принадлежит уже НОВОМУ
-	 *  блоку (движок создаёт его тут же, {@code LevelChunk.java:260-271}) — трогать его нельзя, и мы не трогаем.
-	 *  Это условие относится к смене между РАЗНЫМИ Java-классами Block. Смена MTE на MTE ОДНИМ И ТЕМ ЖЕ
-	 *  физическим Block-классом ({@code MultiTileEntityBlockInternal.placeBlock} — GT6 держит личность машины в
-	 *  meta/BE, не в типе Block) ставит один и тот же {@code defaultBlockState} дважды — {@code LevelChunk.setBlockState:224}
-	 *  отсекает это как no-op, {@code onRemove} вообще не вызывается. Для неё закладка снимается централизованно
-	 *  в {@code WD.te} (Н-5), тем же приёмом {@code chunk.getBlockEntity(pos)}, что и здесь.
-	 *
-	 *  <p><b>1.7.10.</b> Там снятие TE принадлежало телу {@code breakBlock} ({@code MultiTileEntityBlock:145-152}
-	 *  оригинала — {@code aWorld.removeTileEntity(x,y,z)} последней строкой), а разделения «живая сущность / упакованная
-	 *  закладка» в чанке не существовало вовсе: {@code Chunk.chunkTileEntityMap} был один. Добор восстанавливает тот
-	 *  же итог — «после снятия блока сущности в клетке нет», — а не вводит новое поведение. */
+	/** super.onRemove's own removal misses a BlockEntity in two legitimate chunk states: one where the entry
+	 *  is still an unpacked pending record, or the chunk isn't loaded yet; the sweep unpacks it so nothing saves as a ghost. */
 	private static void sweepBlockEntityRemains(Level aWorld, BlockPos aPos, BlockState aNewState) {
 		if (aWorld == null || aNewState.hasBlockEntity()) return;
 		try {
 			net.minecraft.world.level.chunk.LevelChunk tChunk = aWorld.getChunkAt(aPos);
 			if (tChunk == null) return;
-			BlockEntity tRemains = tChunk.getBlockEntity(aPos); // распаковывает закладку (см. разбор выше)
+			BlockEntity tRemains = tChunk.getBlockEntity(aPos); // unpacks the pending record (see the analysis above)
 			if (tRemains == null) return;
 			tChunk.removeBlockEntity(aPos);
-			if (!tRemains.isRemoved()) tRemains.setRemoved(); // окно «чанк ещё не loaded»: штатное снятие — no-op
+			if (!tRemains.isRemoved()) tRemains.setRemoved(); // window where the chunk isn't loaded yet: the normal removal path is a no-op here
 		} catch (Throwable e) {e.printStackTrace(ERR);}
 	}
 
-	// было @Override Block.getMapColor(int) (1.7.10) - удалён в neo; собственный byte-meta dispatcher
-	// остаётся обычным GT6-методом (не движковый override). super.getMapColor(aMeta) (vanilla-дефолт = материал)
-	// заменён на mMaterial.getMaterialMapColor() - тот же источник дефолта, 1:1.
+	// Was @Override Block.getMapColor(int) (removed in neo); kept as an ordinary GT6 method, not an engine
+	// override. super.getMapColor(meta) becomes mMaterial.getMaterialMapColor(), the same default source, 1:1.
 	public MapColor getMapColor(int aMeta) {
 		return mMapColor == null ? mMaterial.getMaterialMapColor() : mMapColor;
 	}
@@ -356,8 +258,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		mMapColor = aMapColor;
 		return this;
 	}
-	// F13: getMapColor(int) → IBlockExtension.getMapColor(BlockState,BlockGetter,BlockPos,MapColor). Мост gregapi.block.MapColor→
-	// движковый централизован в MapColor.toNeo() (F9-bridge, индексы 0-63 совпадают). Возвращаем GT6-цвет блока 1:1; null → дефолт.
+	// Bridges the int-meta getMapColor above onto IBlockExtension's engine hook, through the shared
+	// MapColor.toNeo() center; returns this block's own color, or the default on null.
 	@Override public final net.minecraft.world.level.material.MapColor getMapColor(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.level.material.MapColor aDefaultColor) {
 		MapColor tGT = getMapColor(0);
 		return tGT != null ? tGT.toNeo() : aDefaultColor;
@@ -372,23 +274,14 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override public final void receiveDataInteger  (BlockGetter aWorld, int aX, int aY, int aZ, int    aData, INetworkHandler aNetworkHandler)                                                                                        {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof ITileEntitySynchronising) ((ITileEntitySynchronising)aTileEntity).processPacket(aNetworkHandler); if (aTileEntity instanceof IMTE_SyncDataInteger    ) if (((IMTE_SyncDataInteger    )aTileEntity).receiveDataInteger    (aData, aNetworkHandler)) WD.update(aWorld, aX, aY, aZ);}
 	@Override public final void receiveDataLong     (BlockGetter aWorld, int aX, int aY, int aZ, long   aData, INetworkHandler aNetworkHandler)                                                                                        {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof ITileEntitySynchronising) ((ITileEntitySynchronising)aTileEntity).processPacket(aNetworkHandler); if (aTileEntity instanceof IMTE_SyncDataLong       ) if (((IMTE_SyncDataLong       )aTileEntity).receiveDataLong       (aData, aNetworkHandler)) WD.update(aWorld, aX, aY, aZ);}
 	@Override public final void receiveDataByteArray(BlockGetter aWorld, int aX, int aY, int aZ, byte[] aData, INetworkHandler aNetworkHandler)                                                                                        {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof ITileEntitySynchronising) ((ITileEntitySynchronising)aTileEntity).processPacket(aNetworkHandler); if (aTileEntity instanceof IMTE_SyncDataByteArray  ) if (((IMTE_SyncDataByteArray  )aTileEntity).receiveDataByteArray  (aData, aNetworkHandler)) WD.update(aWorld, aX, aY, aZ);}
-	/** F17-ит.12 (decisions/F17-chunk-be-sync.md, «дыра следует за действием»): 1.7.10-контракт синка — пакет
-	 *  ОБНОВЛЯЕТ существующий клиент-TE, создание нового — только когда TE нет/не тот. Порт пересоздавал BE
-	 *  БЕЗУСЛОВНО (путь писался для отсутствующего BE) → зрелый клиент-BE выбрасывался при каждом полном синке
-	 *  (апдейт соседа) → в момент немедленной перестройки меша BE «сырой» → notick-MTE (стены) прозрачны в месте
-	 *  действия до следующей перестройки. Reuse прежде создания — центрально для ВСЕХ MTE и всех типов пакетов. */
+	/** 1.7.10's sync contract updates an EXISTING client TE and only creates a new one when there isn't one;
+	 *  the port recreated it unconditionally on every sync, throwing away a mature client BE. Reuse is centralized here. */
 	private static BlockEntity reuseOrCreateClientTE(Level aWorld, int aX, int aY, int aZ, short aID1, short aID2, INetworkHandler aNetworkHandler, boolean aSnapshotHasCovers) {
 		BlockEntity tExisting = WD.te(aWorld, aX, aY, aZ, T);
 		if (tExisting instanceof IMultiTileEntity tMTE && !tExisting.isRemoved()
 		 && tMTE.getMultiTileEntityRegistryID() == aID1 && tMTE.getMultiTileEntityID() == aID2) {
-			// BUG-114: пакет с IDs — ПОЛНЫЙ СНИМОК клиентского состояния, и в 1.7.10 он закрывал даже то, чего
-			// в нём нет: приём ВСЕГДА создавал TE заново (оригинал MultiTileEntityBlock:172 tRegistry.getNewTileEntity),
-			// и всё несинхронизированное рождалось дефолтным. Порт переиспользует BE (F17-ит.12 выше), поэтому
-			// УСЛОВНУЮ часть снимка гасим сами. Условная часть в дереве одна — кавер-блок: отправитель шлёт его
-			// только при hasCovers() (TileEntityBase06Covers:176, notick/TileEntityBase04Covers:217), остальное
-			// (краска, визуал, направление) едет всегда. Снятие ПОСЛЕДНЕГО кавера давало снимок без кавер-данных —
-			// и старые каверы жили на клиенте до перезагрузки секции. Канал гашения — тот же приёмный метод
-			// (receiveDataCovers(null, ...) → mCovers = null, TileEntityBase06Covers:101-103), своего не заводим.
+			// A packet's IDs are a FULL client-state snapshot, and 1.7.10 closed even what wasn't in it by always
+			// recreating the TE; reuse means the one conditional part, covers, must now be actively cleared when absent.
 			if (!aSnapshotHasCovers && tExisting instanceof IMTE_SyncDataCovers tCovers) tCovers.receiveDataCovers((short[])null, (short[])null, aNetworkHandler);
 			return tExisting;
 		}
@@ -419,31 +312,12 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override public final void receiveDataLong     (BlockGetter aWorld, int aX, int aY, int aZ, long aData  , INetworkHandler aNetworkHandler, short[] aCoverVisuals, boolean[] aVisualsToSync)                                       {if (!(aWorld instanceof Level)) return; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity == null) return; WD.te((Level)aWorld, aX, aY, aZ, aTileEntity, F); if (aTileEntity instanceof ITileEntitySynchronising) ((ITileEntitySynchronising)aTileEntity).processPacket(aNetworkHandler); if (aTileEntity instanceof IMTE_SyncDataCovers) ((IMTE_SyncDataCovers)aTileEntity).receiveDataCovers(aCoverVisuals, aVisualsToSync, aNetworkHandler); if (aTileEntity instanceof IMTE_SyncDataLong     ) ((IMTE_SyncDataLong     )aTileEntity).receiveDataLong     (aData, aNetworkHandler); WD.update(aWorld, aX, aY, aZ);}
 	@Override public final void receiveDataByteArray(BlockGetter aWorld, int aX, int aY, int aZ, byte[] aData, INetworkHandler aNetworkHandler, short[] aCoverVisuals, boolean[] aVisualsToSync)                                       {if (!(aWorld instanceof Level)) return; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity == null) return; WD.te((Level)aWorld, aX, aY, aZ, aTileEntity, F); if (aTileEntity instanceof ITileEntitySynchronising) ((ITileEntitySynchronising)aTileEntity).processPacket(aNetworkHandler); if (aTileEntity instanceof IMTE_SyncDataCovers) ((IMTE_SyncDataCovers)aTileEntity).receiveDataCovers(aCoverVisuals, aVisualsToSync, aNetworkHandler); if (aTileEntity instanceof IMTE_SyncDataByteArray) ((IMTE_SyncDataByteArray)aTileEntity).receiveDataByteArray(aData, aNetworkHandler); WD.update(aWorld, aX, aY, aZ);}
 	public final boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return !(aTileEntity instanceof IMTE_GetBlocksMovement) || ((IMTE_GetBlocksMovement)aTileEntity).getBlocksMovement();}
-	// было super.addCollisionBoxesToList(...) (1.7.10 Block, УДАЛЁН из neo целиком - box-list-коллизия
-	// заменена движком на VoxelShape-систему). Дефолт inline-порт 1:1 вместо super-вызова (Block.java:661-669 recompSrc):
-	// getCollisionBoundingBoxFromPool + intersects-проверка, тот же алгоритм, что был у vanilla-дефолта.
+	// Was super.addCollisionBoxesToList (removed from neo entirely, box-list collision replaced by
+	// VoxelShape); the vanilla default's own algorithm is inlined here 1:1 instead of a super call.
 	@SuppressWarnings("unchecked") public final void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_AddCollisionBoxesToList) ((IMTE_AddCollisionBoxesToList)aTileEntity).addCollisionBoxesToList(aAABB, aList, aEntity); else if (aTileEntity != null) {AABB tBox = getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ); if (tBox != null && aAABB.intersects(tBox)) aList.add(tBox);}}
 	public final AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetCollisionBoundingBoxFromPool ? ((IMTE_GetCollisionBoundingBoxFromPool)aTileEntity).getCollisionBoundingBoxFromPool() : aTileEntity == null ? null : new AABB(aX, aY, aZ, aX+1, aY+1, aZ+1);}
-	// F-shape (класс «канал движка сместился», как F-tick/useOn): 1.7.10 getCollisionBoundingBoxFromPool/getSelectedBoundingBox
-	// (AABB) удалены — neo форма блока через VoxelShape (getCollisionShape=коллизия/снег, getShape=outline). БЕЗ моста MTE-блоки
-	// давали дефолтный ПОЛНЫЙ КУБ → снег ложился на камешки (SnowLayerBlock.canSurvive→isFaceFull(getCollisionShape,UP)),
-	// коллизия/outline полные (камешек непроходим). Порядок диспатча = 1:1 с 1.7.10-цепью (World.getCollidingBoundingBoxes →
-	// addCollisionBoxesToList): СНАЧАЛА IMTE_AddCollisionBoxesToList (список под-боксов; леса/верёвка = проходимая рама,
-	// трубы = рукава по mConnections, машины через базу TE04/TE06 = дефолтный полный бокс), фолбэк — broad-phase
-	// getCollisionBoundingBoxFromPool. Сущность (шифт-проверки Scaffold design 1) — из EntityCollisionContext (null для
-	// Empty-контекста = 1:1 с aEntity==null). BE-AABB абсолютные (box()=pos+bounds) → относительный VoxelShape (move(-pos));
-	// пустой список/null → Shapes.empty (проходим, снег не ляжет). Централизованно на весь MTE-слой.
-	// ⛔ БЕЗ гейта instanceof Level: движок зовёт форму и с CHUNK-BlockGetter — BlockCollisions.computeNext:90
-	// isSuffocating(chunk,pos) → isCollisionShapeFullBlock → (dynamicShape, кэша нет) живой getCollisionShape(chunk).
-	// Гейт отдавал super=ПОЛНЫЙ КУБ → «блок душит» → LocalPlayer.moveTowardsClosestSpace каждый тик выталкивал
-	// игрока из проходимых MTE (леса/верёвка) — карабканье обрывалось (судья gt6climbprobe: onClimbable=true,
-	// игрок лез, но suffocateCell=true выталкивал). TE-лукапу Level не нужен — BlockGetter.getBlockEntity достаточно.
-	// Правка №4 (BUG-106): кэш ВОКСЕЛИЗАЦИИ форм. Боксы у MTE дискретны (доли 1/16 от mConnections/боундов) —
-	// одинаковые наборы боксов встречаются у тысяч блоков, а Shapes.create/or (дорогая вокселизация) звался на
-	// КАЖДЫЙ запрос коллизии каждого тика (~2% всех аллокаций по JFR). Ключ — точные координаты боксов в
-	// локальной системе блока: одинаковые боксы → та же (иммутабельная, разделяемая) форма. Сами боксы
-	// по-прежнему собираются живым TE-вызовом (зависимость от сущности/соседей сохранена 1:1) — кэшируется
-	// только преобразование «боксы → воксель-форма», оно чистая функция.
+	// 1.7.10's box-list collision has no VoxelShape equivalent on Block, so without this bridge MTE blocks
+	// defaulted to a full cube, breaking snow placement and letting players suffocate inside walkable MTEs.
 	private static final class ShapeKey {
 		private final double[] mCoords; private final int mHash;
 		ShapeKey(double[] aCoords) {mCoords = aCoords; mHash = java.util.Arrays.hashCode(aCoords);}
@@ -452,7 +326,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	}
 	private static final java.util.concurrent.ConcurrentHashMap<ShapeKey, net.minecraft.world.phys.shapes.VoxelShape> SHAPE_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 	private static net.minecraft.world.phys.shapes.VoxelShape cachedShape(List<AABB> aBoxes, BlockPos aPos) {
-		if (SHAPE_CACHE.size() > 8192) SHAPE_CACHE.clear(); // предохранитель (формы дискретны — реальный размер сотни)
+		if (SHAPE_CACHE.size() > 8192) SHAPE_CACHE.clear(); // safety margin (shapes are discrete -- the real size is in the hundreds)
 		double[] tCoords = new double[aBoxes.size() * 6];
 		int i = 0;
 		for (AABB tBox : aBoxes) {
@@ -474,41 +348,36 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 			List<AABB> tList = new ArrayList<>();
 			tMulti.addCollisionBoxesToList(new AABB(aPos.getX()-1, aPos.getY()-1, aPos.getZ()-1, aPos.getX()+2, aPos.getY()+2, aPos.getZ()+2), tList, aContext instanceof net.minecraft.world.phys.shapes.EntityCollisionContext tEntityContext ? tEntityContext.getEntity() : null);
 			if (tList.isEmpty()) return net.minecraft.world.phys.shapes.Shapes.empty();
-			return cachedShape(tList, aPos); // правка №4: вокселизация из кэша
+			return cachedShape(tList, aPos); // cached voxelization
 		}
 		if (tTileEntity instanceof IMTE_GetCollisionBoundingBoxFromPool tPool) {
 			AABB tBox = tPool.getCollisionBoundingBoxFromPool();
-			return tBox == null ? net.minecraft.world.phys.shapes.Shapes.empty() : cachedShape(java.util.List.of(tBox), aPos); // правка №4
+			return tBox == null ? net.minecraft.world.phys.shapes.Shapes.empty() : cachedShape(java.util.List.of(tBox), aPos); // same fix
 		}
-		return super.getCollisionShape(aState, aWorld, aPos, aContext); // TE null/без интерфейсов → полный куб (1:1 pool-фолбэк)
+		return super.getCollisionShape(aState, aWorld, aPos, aContext); // no TE or no matching interface -> full cube (1:1 with the old pool fallback)
 	}
 	@Override public net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (aWorld instanceof Level tLevel) {
 			BlockEntity tTileEntity = WD.te(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 			if (tTileEntity instanceof IMTE_GetSelectedBoundingBoxFromPool tSel) {
 				AABB tBox = tSel.getSelectedBoundingBoxFromPool();
-				if (tBox != null) return cachedShape(java.util.List.of(tBox), aPos); // правка №4: вокселизация из кэша
+				if (tBox != null) return cachedShape(java.util.List.of(tBox), aPos); // cached voxelization
 			}
 		}
-		return super.getShape(aState, aWorld, aPos, aContext); // обычные MTE (машины/сундуки) — полный куб (как было)
+		return super.getShape(aState, aWorld, aPos, aContext); // ordinary MTE (machines/chests) -> full cube, as before
 	}
 	public final void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_UpdateTick) ((IMTE_UpdateTick)aTileEntity).updateTick(aRandom);}
 	public final void onBlockDestroyedByPlayer(Level aWorld, int aX, int aY, int aZ, int aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockDestroyedByPlayer) ((IMTE_OnBlockDestroyedByPlayer)aTileEntity).onBlockDestroyedByPlayer(aRandom);}
-	// было onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167]
+	// neo calls onPlace(BlockState, Level, BlockPos, BlockState, boolean) instead of the old onBlockAdded.
 	@Override public final void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnBlockAdded) ((IMTE_OnBlockAdded)aTileEntity).onBlockAdded();}
-	// было super.dropXpOnBlockBreak(...) (1.7.10 Block, УДАЛЁН из neo целиком). Дефолт inline-порт 1:1 вместо
-	// super-вызова (Block.java:843-854 recompSrc): цикл EntityXPOrb-спавна -> neo ExperienceOrb.award(ServerLevel,Vec3,int)
-	// (ExperienceOrb.java:190, тот же split-алгоритм внутри award/awardWithDirection).
+	// Was super.dropXpOnBlockBreak (removed from neo entirely); the vanilla default's own XP-orb spawn loop
+	// is inlined here 1:1 via ExperienceOrb.award, the same split algorithm as before.
 	public final void dropXpOnBlockBreak(Level aWorld, int aX, int aY, int aZ, int aXP) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_DropXpOnBlockBreak) ((IMTE_DropXpOnBlockBreak)aTileEntity).dropXpOnBlockBreak(aXP); else if (!aWorld.isClientSide() && aWorld instanceof ServerLevel aServerWorld) ExperienceOrb.award(aServerWorld, new Vec3(aX+0.5, aY+0.5, aZ+0.5), aXP);}
-	// F13: 1.7.10 Block.collisionRayTrace удалён — neo коллизия-raytrace генерик поверх VoxelShape/getShape (не per-Block-override).
-	// TE-интерфейс IMTE_CollisionRayTrace без implementor'ов (0, сверено) → мёртвая compile-поверхность, не заглушка (терять нечего).
+	// 1.7.10's collisionRayTrace has no neo hook (raytracing is generic over VoxelShape/getShape now);
+	// the TE interface has zero implementors -- a dead compile surface, not a stub, since there's nothing to lose.
 	public final HitResult collisionRayTrace(Level aWorld, int aX, int aY, int aZ, Vec3 aVectorA, Vec3 aVectorB) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_CollisionRayTrace ? ((IMTE_CollisionRayTrace)aTileEntity).collisionRayTrace(aVectorA, aVectorB) : null;}
-	// было aPlayer.getHeldItem() (1.7.10 EntityPlayer no-arg, дефолтная рука) -> neo Player.getMainHandItem() (Player.java:2257)
-	// U4-МОСТ активации (репорты игрока: штабель слитков/монет не пополняется кликом — ставится НОВЫЙ блок выше;
-	// GUI батарейного бокса не открывается): GT6 onBlockActivated ниже — 1:1-порт, но ОСИРОТЕЛ («канал сместился»):
-	// Ветка 1.20.1: хук снова ОДИН и он публичный — use(BlockState,Level,BlockPos,Player,InteractionHand,BlockHitResult)
-	// (BlockBehaviour.java), ровно как 1.7.10 onBlockActivated (расщепление на useItemOn/useWithoutItem и результат
-	// SUCCESS_SERVER — черты 26.x, в 1.20.1 их нет). true → SUCCESS (клик поглощён, установка не происходит).
+	// 1.20.1's click channel is one public method again, use(), matching 1.7.10's onBlockActivated exactly;
+	// without this bridge stacking items by click and opening machine GUIs both silently stopped working.
 	@Override public net.minecraft.world.InteractionResult use(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.InteractionHand aHand, net.minecraft.world.phys.BlockHitResult aHit) {
 		if (aHand == net.minecraft.world.InteractionHand.MAIN_HAND && bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
 			return net.minecraft.world.InteractionResult.SUCCESS;
@@ -522,23 +391,24 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 
 	public final boolean onBlockActivated(Level aWorld, int aX, int aY, int aZ, Player aPlayer, int aSide, float aHitX, float aHitY, float aHitZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aPlayer != null && IL.TC_Thaumometer.equal(aPlayer.getMainHandItem(), T, T) && (!(aTileEntity instanceof ITileEntityBookShelf) || !((ITileEntityBookShelf)aTileEntity).isShelfFace(UT.Code.side(aSide)))) return F; return aTileEntity instanceof IMTE_OnBlockActivated && ((IMTE_OnBlockActivated)aTileEntity).onBlockActivated(aPlayer, UT.Code.side(aSide), aHitX, aHitY, aHitZ);}
 	public final void onEntityWalking(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnEntityWalking) ((IMTE_OnEntityWalking)aTileEntity).onEntityWalking(aEntity);}
-	// было onBlockClicked(World,x,y,z,EntityPlayer) -> BlockBehaviour.attack(BlockState,Level,BlockPos,Player) [BlockBehaviour.java:353]
+	// Was onBlockClicked(World,x,y,z,EntityPlayer) -> BlockBehaviour.attack(BlockState,Level,BlockPos,Player).
 	@Override public final void attack(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnBlockClicked) ((IMTE_OnBlockClicked)aTileEntity).onBlockClicked(aPlayer); else super.attack(aState, aWorld, aPos, aPlayer);}
-	// F13: 1.7.10 Block.velocityToAddToEntity удалён (ванильный дефолт был пуст; эффект имели лишь BlockPistonMoving/Portal) —
-	// нет neo-хука. TE-интерфейс IMTE_VelocityToAddToEntity без implementor'ов (0, сверено) → мёртвая поверхность, не заглушка.
+	// 1.7.10's Block.velocityToAddToEntity is gone (its vanilla default was empty anyway); the TE
+	// interface has zero implementors -- a dead surface, not a stub.
 	public final void velocityToAddToEntity(Level aWorld, int aX, int aY, int aZ, Entity aEntity, Vec3 aVector) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_VelocityToAddToEntity) ((IMTE_VelocityToAddToEntity)aTileEntity).velocityToAddToEntity(aEntity, aVector);}
-	// было isProvidingWeakPower(IBlockAccess,x,y,z,side) -> BlockBehaviour.getSignal(BlockState,BlockGetter,BlockPos,Direction) [BlockBehaviour.java:356]
+	// neo asks weak redstone power through BlockBehaviour.getSignal instead of the old isProvidingWeakPower.
 	@Override public final int getSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_IsProvidingWeakPower ? ((IMTE_IsProvidingWeakPower)aTileEntity).isProvidingWeakPower(UT.Code.side(aSide)) : super.getSignal(aState, aWorld, aPos, aSide);}
-	// было onEntityCollidedWithBlock(World,x,y,z,Entity) -> BlockBehaviour.entityInside(BlockState,Level,BlockPos,Entity) [BlockBehaviour.java:393];
-	// новые параметры effectApplier/isPrecise (батч damage-эффектов, F16-концепция без 1.7.10-аналога) не используются - GT6 их и раньше не применял.
+	// Was onEntityCollidedWithBlock(World,x,y,z,Entity); neo's entityInside gained effectApplier/isPrecise
+	// params (no 1.7.10 analog) that GT6 doesn't use, since it never used them before either.
 	@Override public final void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnEntityCollidedWithBlock) ((IMTE_OnEntityCollidedWithBlock)aTileEntity).onEntityCollidedWithBlock(aEntity); else super.entityInside(aState, aWorld, aPos, aEntity);}
-	// было isProvidingStrongPower(IBlockAccess,x,y,z,side) -> BlockBehaviour.getDirectSignal(BlockState,BlockGetter,BlockPos,Direction) [BlockBehaviour.java:363]
+	// neo asks strong redstone power through getDirectSignal instead of the old isProvidingStrongPower.
 	@Override public final int getDirectSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_IsProvidingStrongPower ? ((IMTE_IsProvidingStrongPower)aTileEntity).isProvidingStrongPower(UT.Code.side(aSide)) : super.getDirectSignal(aState, aWorld, aPos, aSide);}
 	public final boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return !(aTileEntity instanceof IMTE_CanBlockStay) || ((IMTE_CanBlockStay)aTileEntity).canBlockStay();}
-	// было onFallenUpon(World,x,y,z,Entity,dist) -> Block.fallOn(Level,BlockState,BlockPos,Entity,double) [Block.java:484] - fallDistance теперь double, не float.
+	// Was onFallenUpon(World,x,y,z,Entity,dist) -> Block.fallOn(Level,BlockState,BlockPos,Entity,double);
+	// fall distance is now double, not float.
 	@Override public final void fallOn(Level aWorld, BlockState aState, BlockPos aPos, Entity aEntity, float aFallDistance) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnFallenUpon) ((IMTE_OnFallenUpon)aTileEntity).onFallenUpon(aEntity, aFallDistance); else super.fallOn(aWorld, aState, aPos, aEntity, aFallDistance);}
-	// F13: 1.7.10 Block.onBlockHarvested/onBlockPreDestroy удалены — neo destroy-пайплайн зовёт playerWillDestroy
-	// (Level,BlockPos,BlockState,Player) перед снятием блока. Ниже neo-хук диспетчит оба TE-хука 1:1. GT6-методы сохранены.
+	// 1.7.10's onBlockHarvested/onBlockPreDestroy are both gone; neo's playerWillDestroy fires before
+	// block removal, and this hook dispatches both original TE hooks from it 1:1.
 	@Override public void playerWillDestroy(Level aWorld, BlockPos aPos, BlockState aState, Player aPlayer) {
 		BlockEntity tTE = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		int tMeta = WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
@@ -549,112 +419,93 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final void onBlockHarvested(Level aWorld, int aX, int aY, int aZ, int aMetaData, Player aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockHarvested) ((IMTE_OnBlockHarvested)aTileEntity).onBlockHarvested(aMetaData, aPlayer);}
 	public final void onBlockPreDestroy(Level aWorld, int aX, int aY, int aZ, int aMetaData) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockPreDestroy) ((IMTE_OnBlockPreDestroy)aTileEntity).onBlockPreDestroy(aMetaData);}
 	// F13: 1.7.10 Block.fillWithRain(World,x,y,z) → neo Block.handlePrecipitation(state,level,pos,precipitation) (overridable).
-	// Ниже neo-хук диспетчит IMTE_FillWithRain при ДОЖДЕ (fillWithRain был rain-specific), 1:1. GT6-метод сохранён.
+	// Dispatches IMTE_FillWithRain on rain (was rain-specific fillWithRain), 1:1; the GT6 method itself is unchanged.
 	@Override public void handlePrecipitation(BlockState aState, Level aWorld, BlockPos aPos, net.minecraft.world.level.biome.Biome.Precipitation aPrecipitation) {
 		BlockEntity tTE = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		if (aPrecipitation == net.minecraft.world.level.biome.Biome.Precipitation.RAIN && tTE instanceof IMTE_FillWithRain) ((IMTE_FillWithRain)tTE).fillWithRain();
 		else super.handlePrecipitation(aState, aWorld, aPos, aPrecipitation);
 	}
 	public final void fillWithRain(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_FillWithRain) ((IMTE_FillWithRain)aTileEntity).fillWithRain();}
-	// было hasComparatorInputOverride()/getComparatorInputOverride(World,x,y,z,side) -> BlockBehaviour.hasAnalogOutputSignal(BlockState)
-	// [BlockBehaviour.java:226] / BlockBehaviour.getAnalogOutputSignal(BlockState,Level,BlockPos,Direction) [BlockBehaviour.java:310];
-	// дефолт (без IMTE-хука) = 0, тот же дефолт, что и у движка (BlockBehaviour.java:311).
+	// Was hasComparatorInputOverride()/getComparatorInputOverride -> hasAnalogOutputSignal/getAnalogOutputSignal;
+	// default (no IMTE hook) is 0, matching the engine's own default.
 	@Override public final boolean hasAnalogOutputSignal(BlockState aState) {return T;}
-	// Ветка 1.20.1: getAnalogOutputSignal стороны не несёт (BlockBehaviour.java:317) — как и 1.7.10
-	// getComparatorInputOverride(World,x,y,z,side), где side приходил из позиции компаратора. Спрашиваем
-	// сторону SIDE_UNKNOWN — тот же вход, что GT6 даёт остальным бесстороним запросам.
+	// 1.20.1's getAnalogOutputSignal carries no side, same as 1.7.10's version; SIDE_UNKNOWN is passed,
+	// the same input GT6 gives every other sideless query.
 	@Override public final int getAnalogOutputSignal(BlockState aState, Level aWorld, BlockPos aPos) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_GetComparatorInputOverride ? ((IMTE_GetComparatorInputOverride)aTileEntity).getComparatorInputOverride(SIDE_UNKNOWN) : aTileEntity instanceof IMTE_IsProvidingWeakPower ? ((IMTE_IsProvidingWeakPower)aTileEntity).isProvidingWeakPower(SIDE_UNKNOWN) : 0;}
-	// было getLightValue(IBlockAccess,x,y,z) -> IForgeBlock.getLightEmission(BlockState,BlockGetter,BlockPos);
-	// в 1.20.1 отдельного признака «свет динамический» нет — хук зовётся всегда. Дефолт (без IMTE-хука) =
-	// aState.getLightEmission() (запечённое в Properties значение), тот же дефолт, что вернул бы super.getLightValue.
-	// F6-worldgen КРИТ (дедлок): свет-движок зовёт getLightEmission ВО ВРЕМЯ генерации чанка (hasDynamicLightEmission=T) →
-	// обычный WD.te форсит getChunk.join генерируемого чанка → light-поток ждёт сам себя → вечное зависание входа в мир.
-	// Берём BE НЕблокирующе (WD.teNonForcing: только из уже-FULL чанка, иначе null → запечённый дефолт; BE-свет пересчитается после gen).
+	// The light engine calls getLightEmission DURING chunk generation, and a normal WD.te lookup forces the
+	// generating chunk to finish first, deadlocking entry; a non-forcing lookup avoids this and defaults with no BE yet.
 	@Override public final int getLightEmission(BlockState aState, BlockGetter aWorld, BlockPos aPos) {BlockEntity aTileEntity = WD.teNonForcing(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()); return aTileEntity instanceof IMTE_GetLightValue ? UT.Code.bind4(((IMTE_GetLightValue)aTileEntity).getLightValue()) : aState.getLightEmission();}
 	public final boolean isLadder(BlockGetter aWorld, int aX, int aY, int aZ, LivingEntity aEntity) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsLadder && ((IMTE_IsLadder)aTileEntity).isLadder(aEntity);}
-	// было isLadder(IBlockAccess,x,y,z,EntityLivingBase) -> IBlockExtension.isLadder(BlockState,LevelReader,BlockPos,LivingEntity) [IBlockExtension.java:178].
-	// НЕ статический BlockTags.CLIMBABLE (тот дефолт интерфейса, для блоков без переопределения) - per-position динамический хук: LivingEntity.onClimbable()
-	// зовёт его напрямую через CommonHooks.isLivingOnLadder(state,level,pos,entity) [LivingEntity.java:1755, CommonHooks.java:404-428], а не через тег -
-	// per-BE логика (Scaffold.mDesign!=3) переносится 1:1, архитектурного разрыва нет. LevelReader extends BlockGetter (сверено) - прямой делегат.
+	// Was isLadder(IBlockAccess,x,y,z,EntityLivingBase) -> IBlockExtension.isLadder; not the static
+	// CLIMBABLE tag default, since LivingEntity calls this per-position hook directly, not through a tag.
 	@Override public final boolean isLadder(BlockState aState, LevelReader aWorld, BlockPos aPos, LivingEntity aEntity) {return isLadder(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aEntity);}
 	public final boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsNormalCube ? ((IMTE_IsNormalCube)aTileEntity).isNormalCube() : mNormalCube;}
 	public final boolean isReplaceable(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsReplaceable ? ((IMTE_IsReplaceable)aTileEntity).isReplaceable() : getMaterial().isReplaceable();}
 	public final boolean isBurning(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsBurning && ((IMTE_IsBurning)aTileEntity).isBurning();}
 	public final boolean isAir(BlockGetter aWorld, int aX, int aY, int aZ) {if (aWorld == null) return F; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsAir && ((IMTE_IsAir)aTileEntity).isAir();}
-	// было removedByPlayer(World,EntityPlayer,x,y,z,willHarvest) -> IBlockExtension.onDestroyedByPlayer
-	// (BlockState,Level,BlockPos,Player,ItemStack,boolean,FluidState) [IBlockExtension.java:238], возвращает
-	// boolean "блок реально уничтожен" - тот же контракт, что и старый removedByPlayer.
+	// Was removedByPlayer(...) -> IBlockExtension.onDestroyedByPlayer.
+	// Same contract: returns whether the block was actually destroyed.
 	@Override public final boolean onDestroyedByPlayer(BlockState aBlockState, Level aWorld, BlockPos aPos, Player aPlayer, boolean aWillHarvest, FluidState aFluid) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity); return aTileEntity instanceof IMTE_RemovedByPlayer ? ((IMTE_RemovedByPlayer)aTileEntity).removedByPlayer(aWorld, aPlayer, aWillHarvest) : super.onDestroyedByPlayer(aBlockState, aWorld, aPos, aPlayer, aWillHarvest, aFluid);}
 	public final boolean canCreatureSpawn(MobCategory aType, BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_CanCreatureSpawn && ((IMTE_CanCreatureSpawn)aTileEntity).canCreatureSpawn(aType);}
 	public final boolean isBed(BlockGetter aWorld, int aX, int aY, int aZ, LivingEntity aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsBed && ((IMTE_IsBed)aTileEntity).isBed(aPlayer);}
-	// БАГ-фикс: было instanceof IMTE_VelocityToAddToEntity (не тот интерфейс) при касте к IMTE_GetBedSpawnPosition - исправлено на правильный instanceof.
+	// Bug fix: this cast used the wrong interface (IMTE_VelocityToAddToEntity instead of
+	// IMTE_GetBedSpawnPosition); corrected.
 	public final BlockPos getBedSpawnPosition(BlockGetter aWorld, int aX, int aY, int aZ, Player aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetBedSpawnPosition ? ((IMTE_GetBedSpawnPosition)aTileEntity).getBedSpawnPosition(aPlayer) : null;}
 	public final void setBedOccupied(BlockGetter aWorld, int aX, int aY, int aZ, Player aPlayer, boolean aOccupied) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_SetBedOccupied) ((IMTE_SetBedOccupied)aTileEntity).setBedOccupied(aPlayer, aOccupied);}
 	public final int getBedDirection(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetBedDirection ? ((IMTE_GetBedDirection)aTileEntity).getBedDirection() : 0;}
 	public final boolean isBedFoot(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsBedFoot && ((IMTE_IsBedFoot)aTileEntity).isBedFoot();}
-	// F13: 1.7.10 Forge Block.beginLeavesDecay нет в neo (leaf-decay-система иная). IMTE_BeginLeavesDecay без implementor'ов (0,
-	// сверено) → мёртвая compile-поверхность, не заглушка. Дефолт был пустым телом
-	// (Block.java:1956 recompSrc) - отсутствие super-вызова 1:1 эквивалентно "ничего не делать".
+	// Forge's Block.beginLeavesDecay has no neo hook. Zero implementors -- dead surface. Vanilla
+	// default was an empty body, so no super call is 1:1 with doing nothing.
 	public final void beginLeavesDecay(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_BeginLeavesDecay) ((IMTE_BeginLeavesDecay)aTileEntity).beginLeavesDecay();}
-	// F13: 1.7.10 Forge Block.canSustainLeaves нет в neo. IMTE_CanSustainLeaves без implementor'ов (0) → мёртвая поверхность.
-	// Дефолт был false (Block.java:1967-1970 recompSrc) - подставлен напрямую вместо super. Не заглушка.
+	// Forge's Block.canSustainLeaves has no neo hook. Zero implementors -- dead surface. Vanilla
+	// default was false, substituted directly instead of a super call. Not a stub.
 	public final boolean canSustainLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_CanSustainLeaves ? ((IMTE_CanSustainLeaves)aTileEntity).canSustainLeaves() : F;}
 	public final boolean isLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsLeaves && ((IMTE_IsLeaves)aTileEntity).isLeaves();}
 	public final boolean canBeReplacedByLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_CanBeReplacedByLeaves && ((IMTE_CanBeReplacedByLeaves)aTileEntity).canBeReplacedByLeaves();}
-	public final boolean isWood(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsWood ? ((IMTE_IsWood)aTileEntity).isWood() : F;}// было super.isWood (Forge 1.7.10 Block.isWood дефолт = false; neo Block метода не имеет)
-	public final boolean isReplaceableOreGen(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, Block aTarget) {if (GAPI.mStartedServerStarted < 1) return F; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsReplaceableOreGen ? ((IMTE_IsReplaceableOreGen)aTileEntity).isReplaceableOreGen(aTarget) : (aTarget == this);}// было super.isReplaceableOreGen (Forge 1.7.10 Block.isReplaceableOreGen дефолт = identity this==target)
-	// было canConnectRedstone(IBlockAccess,x,y,z,side) -> IBlockExtension.canConnectRedstone(BlockState,BlockGetter,BlockPos,Direction) [IBlockExtension.java:904]
+	public final boolean isWood(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsWood ? ((IMTE_IsWood)aTileEntity).isWood() : F;}// was super.isWood (Forge 1.7.10 default = false; neo's Block has no such method)
+	public final boolean isReplaceableOreGen(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, Block aTarget) {if (GAPI.mStartedServerStarted < 1) return F; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsReplaceableOreGen ? ((IMTE_IsReplaceableOreGen)aTileEntity).isReplaceableOreGen(aTarget) : (aTarget == this);}// was super.isReplaceableOreGen (Forge 1.7.10 default = identity, this==target)
+	// Was canConnectRedstone(IBlockAccess,x,y,z,side).
+	// -> IBlockExtension.canConnectRedstone(BlockState,BlockGetter,BlockPos,Direction).
 	@Override public final boolean canConnectRedstone(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_CanConnectRedstone ? ((IMTE_CanConnectRedstone)aTileEntity).canConnectRedstone(UT.Code.side(aSide)) : super.canConnectRedstone(aState, aWorld, aPos, aSide);}
 	public final boolean canPlaceTorchOnTop(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_CanPlaceTorchOnTop ? ((IMTE_CanPlaceTorchOnTop)aTileEntity).canPlaceTorchOnTop() : isSideSolid(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_TOP]);}
-	// F13: 1.7.10 Forge Block.isFoliage нет в neo. IMTE_IsFoliage без implementor'ов (0) → мёртвая поверхность.
-	// Дефолт был false (Block.java:2156-2159 recompSrc) - подставлен напрямую вместо super. Не заглушка.
+	// Forge's Block.isFoliage has no neo hook. Zero implementors -- dead surface. Vanilla default
+	// was false, substituted directly. Not a stub.
 	public final boolean isFoliage(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsFoliage ? ((IMTE_IsFoliage)aTileEntity).isFoliage() : F;}
-	// Ветка 1.20.1: сигнатура вернулась к 1.7.10 дословно — canSustainPlant(BlockState,BlockGetter,BlockPos,Direction,
-	// IPlantable):boolean (Block.java:514), тип IPlantable снова настоящий (net.minecraftforge.common.IPlantable),
-	// TriState (черта 26.x) не участвует. Дефолт (нет IMTE-хука) = ванильное правило super — та же семантика
-	// «движок решит», что и раньше.
+	// 1.20.1's signature matches 1.7.10 verbatim again: canSustainPlant(...,IPlantable), with the real
+	// IPlantable type, no TriState involved; default (no IMTE hook) is vanilla's own rule, same as before.
 	@Override public final boolean canSustainPlant(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide, IPlantable aPlantable) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (!(aTileEntity instanceof IMTE_CanSustainPlant)) return super.canSustainPlant(aState, aWorld, aPos, aSide, aPlantable); return ((IMTE_CanSustainPlant)aTileEntity).canSustainPlant(UT.Code.side(aSide), aPlantable);}
-	// F13: 1.7.10 Block.onPlantGrow удалён из neo (нет хука). IMTE_OnPlantGrow без implementor'ов (0) → мёртвая поверхность.
-	// Ванильный дефолт был пуст → отсутствие super-вызова 1:1 эквивалентно "ничего не делать". Не заглушка.
+	// 1.7.10's Block.onPlantGrow is gone from neo (no hook). Zero implementors -- dead surface.
+	// Vanilla default was empty, so no super call is 1:1 with doing nothing. Not a stub.
 	public final void onPlantGrow(Level aWorld, int aX, int aY, int aZ, int sX, int sY, int sZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnPlantGrow) ((IMTE_OnPlantGrow)aTileEntity).onPlantGrow(sX, sY, sZ);}
 	public final boolean isFertile(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsFertile && ((IMTE_IsFertile)aTileEntity).isFertile();}
 	public final boolean rotateBlock(Level aWorld, int aX, int aY, int aZ, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_RotateBlock && ((IMTE_RotateBlock)aTileEntity).rotateBlock(UT.Code.side(aSide));}
 	public final Direction[] getValidRotations(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetValidRotations ? ((IMTE_GetValidRotations)aTileEntity).getValidRotations() : ZL_FORGEDIRECTION;}
 	public final float getEnchantPowerBonus(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetEnchantPowerBonus ? ((IMTE_GetEnchantPowerBonus)aTileEntity).getEnchantPowerBonus() : 0;}
-	// было getEnchantPowerBonus(World,x,y,z) -> IBlockExtension.getEnchantPowerBonus(BlockState,BlockGetter,BlockPos) [IBlockExtension.java:520].
-	// aWorld тут только BlockGetter (слабее прежнего World) - существующий 1.7.10-метод выше типизирован Level; делегируем только
-	// когда действительно Level (как getCollisionShape/receiveData в этом файле), иначе дефолт 0 (тот же дефолт, что даёт IMTE-диспетчер без TE).
+	// Was getEnchantPowerBonus(World,...) -> IBlockExtension's version, which only guarantees a BlockGetter
+	// (weaker than the old Level); delegates only when it really is a Level, else the same 0 default as without a TE.
 	@Override public final float getEnchantPowerBonus(BlockState aState, net.minecraft.world.level.LevelReader aWorld, BlockPos aPos) {return aWorld instanceof Level tLevel ? getEnchantPowerBonus(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : 0;}
 	public final boolean recolourBlock(Level aWorld, int aX, int aY, int aZ, Direction aSide, int aColor) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_RecolourBlock && ((IMTE_RecolourBlock)aTileEntity).recolourBlock(UT.Code.side(aSide), (byte)aColor);}
 	public final boolean shouldCheckWeakPower(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_ShouldCheckWeakPower ? ((IMTE_ShouldCheckWeakPower)aTileEntity).shouldCheckWeakPower(UT.Code.side(aSide)) : isNormalCube(aWorld, aX, aY, aZ);}
-	// было shouldCheckWeakPower(IBlockAccess,x,y,z,side) -> IBlockExtension.shouldCheckWeakPower(BlockState,SignalGetter,BlockPos,Direction) [IBlockExtension.java:544].
-	// SignalGetter extends BlockGetter (сверено, SignalGetter.java:10) - прямой делегат; Direction->int через ЦЕНТР UT.Code.side(Direction) (тот же приём, что все остальные side-мосты в этом файле), делегат берёт исходный int-overload.
+	// Was shouldCheckWeakPower(IBlockAccess,...) -> IBlockExtension's version on SignalGetter (extends
+	// BlockGetter, a direct delegate); Direction converts to int through the center UT.Code.side.
 	@Override public final boolean shouldCheckWeakPower(BlockState aState, net.minecraft.world.level.SignalGetter aWorld, BlockPos aPos, Direction aSide) {return shouldCheckWeakPower(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), UT.Code.side(aSide));}
-	// было getWeakChanges(IBlockAccess,x,y,z) -> IBlockExtension.getWeakChanges(BlockState,LevelReader,BlockPos)
-	// [IBlockExtension.java:557], дефолт false (совпадает с прежним vanilla-дефолтом).
+	// Was getWeakChanges(IBlockAccess,x,y,z) -> IBlockExtension.getWeakChanges; default false matches the old vanilla default.
 	@Override public final boolean getWeakChanges(BlockState aState, LevelReader aWorld, BlockPos aPos) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_GetWeakChanges ? ((IMTE_GetWeakChanges)aTileEntity).getWeakChanges() : F;}
 	public final boolean addHitEffects(Level aWorld, HitResult aTarget, ParticleEngine aRenderer) {BlockEntity aTileEntity = WD.te(aWorld, ((BlockHitResult)aTarget).getBlockPos().getX(), ((BlockHitResult)aTarget).getBlockPos().getY(), ((BlockHitResult)aTarget).getBlockPos().getZ(), T); return aTileEntity instanceof IMTE_AddHitEffects && ((IMTE_AddHitEffects)aTileEntity).addHitEffects(aWorld, aTarget, aRenderer);}
 	public final boolean addDestroyEffects(Level aWorld, int aX, int aY, int aZ, int aMetaData, ParticleEngine aRenderer) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_AddDestroyEffects && ((IMTE_AddDestroyEffects)aTileEntity).addDestroyEffects(aMetaData, aRenderer);}
-	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
-	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering) И новая сигнатура не
-	// передаёт World/BlockPos вовсе - невозможно определить TileEntity соседнего блока (IMTE_ShouldSideBeRendered),
-	// как это делал 1.7.10-оригинал через aWorld.getTileEntity(aX-OFFX[side],...). F3 functional-adapted (neo skipRendering сигнатура потеряла World/BlockPos → per-TE culling недостижим; используется vanilla-дефолт super.skipRendering, 1:1 по следствию):
-	// custom per-TE диспетчеризация недостижима без позиции; используем ванильный дефолт (тот же fallback,
-	// что и в старой ветке super.shouldSideBeRendered, просто под новым именем/полярностью).
+	// Was shouldSideBeRendered(...) -> BlockBehaviour.skipRendering, with INVERTED semantics and a signature
+	// that dropped World/BlockPos entirely, making the old per-TE lookup impossible; falls back to the vanilla default.
 	@Override public final boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return super.skipRendering(aState, aNeighbor, aDir);}
 	public final void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_SetBlockBoundsBasedOnState) ((IMTE_SetBlockBoundsBasedOnState)aTileEntity).setBlockBoundsBasedOnState(this); else if (aTileEntity == null) setBlockBounds(-999, -999, -999, -998, -998, -998); else setBlockBounds(0, 0, 0, 1, 1, 1);}
 	public final AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity == null ? new AABB(-999, -999, -999, -998, -998, -998) : aTileEntity instanceof IMTE_GetSelectedBoundingBoxFromPool ? ((IMTE_GetSelectedBoundingBoxFromPool)aTileEntity).getSelectedBoundingBoxFromPool() : new AABB(aX, aY, aZ, aX+1, aY+1, aZ+1);}
-	// было randomDisplayTick(World,x,y,z,Random) -> Block.animateTick(BlockState,Level,BlockPos,RandomSource) [Block.java:355]
+	// Was randomDisplayTick(World,x,y,z,Random) -> Block.animateTick(BlockState,Level,BlockPos,RandomSource).
 	@Override public final void animateTick(BlockState aState, Level aWorld, BlockPos aPos, RandomSource aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_RandomDisplayTick) ((IMTE_RandomDisplayTick)aTileEntity).randomDisplayTick(aRandom); else super.animateTick(aState, aWorld, aPos, aRandom);}
 	public final void onBlockExploded(Level aWorld, int aX, int aY, int aZ, Explosion aExplosion) {if (aWorld.isClientSide()) return; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity); if (aTileEntity instanceof IMTE_OnBlockExploded) ((IMTE_OnBlockExploded)aTileEntity).onExploded(aExplosion); else WD.set(aWorld, aX, aY, aZ, NB, 0, 3);}
-	// было onBlockExploded(World,x,y,z,Explosion) -> IBlockExtension.onBlockExploded(BlockState,ServerLevel,BlockPos,Explosion)/Block.wasExploded(ServerLevel,BlockPos,Explosion)
-	// [IBlockExtension.java:775, Block.java:457]; вызывается из BlockBehaviour.onExplosionHit(...,ServerLevel,...) [BlockBehaviour.java:173-193] (уже сервер-only по типу параметра).
-	// GT6-метод выше УЖЕ сам ставит воздух в fallback-ветке (WD.set(...,NB,0,3)) - эквивалент дефолтного neo-тела (level.setBlock(pos,AIR,3)+wasExploded no-op),
-	// поэтому прямой делегат без вызова super/wasExploded 1:1 воспроизводит оригинал (там GT6 тоже полностью подменял, не звал super).
+	// Was onBlockExploded(...) -> IBlockExtension.onBlockExploded/Block.wasExploded. GT6's method already
+	// sets air in its fallback branch, matching neo's own default body, so a direct delegate without super/wasExploded is 1:1.
 	@Override public final void onBlockExploded(BlockState aState, Level aWorld, BlockPos aPos, Explosion aExplosion) {onBlockExploded(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aExplosion);}
-	// F13: 1.7.10 Block.getPickBlock(HitResult,World,x,y,z,Player) удалён — neo middle-click идёт через
-	// IBlockExtension.getCloneItemStack(LevelReader,BlockPos,BlockState,boolean,Player). Ниже — этот neo-хук
-	// делегирует в GT6-getPickBlock (TE-диспетчер IMTE_GetPickBlock), восстанавливая поведение 1:1. GT6-методы сохранены.
+	// 1.7.10's getPickBlock is gone; neo's middle-click goes through IBlockExtension.getCloneItemStack
+	// instead, which this hook delegates into GT6's own getPickBlock dispatcher, restoring the behavior 1:1.
 	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.phys.HitResult aTarget, net.minecraft.world.level.BlockGetter aLevel, net.minecraft.core.BlockPos aPos, Player aPlayer) {
 		BlockEntity tTE = WD.te(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		ItemStack r = tTE instanceof IMTE_GetPickBlock ? ((IMTE_GetPickBlock)tTE).getPickBlock(null) : null;
@@ -664,35 +515,27 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ                      ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetPickBlock?((IMTE_GetPickBlock)aTileEntity).getPickBlock(aTarget):null;}
 	@Override public final ItemStack getItemStackFromBlock(BlockGetter aWorld, int aX, int aY, int aZ, byte aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetStackFromBlock?((IMTE_GetStackFromBlock)aTileEntity).getStackFromBlock(aSide):null;}
 	public final int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetFlammability ? ((IMTE_GetFlammability)aTileEntity).getFlammability(UT.Code.side(aSide), getMaterial().getCanBurn()) : getMaterial().getCanBurn() ? 150 : 0;}
-	// было getFlammability(IBlockAccess,x,y,z,side) -> IBlockExtension.getFlammability(BlockState,BlockGetter,BlockPos,Direction) [IBlockExtension.java:677]. Прямой делегат (типы совпадают 1:1).
+	// Was getFlammability(IBlockAccess,...) -> IBlockExtension.getFlammability, a direct delegate (types match 1:1).
 	@Override public final int getFlammability(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return getFlammability(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aSide);}
 	public final int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetFireSpreadSpeed ? ((IMTE_GetFireSpreadSpeed)aTileEntity).getFireSpreadSpeed(UT.Code.side(aSide), getMaterial().getCanBurn()) : getMaterial().getCanBurn() ? 150 : 0;}
-	// было getFireSpreadSpeed(IBlockAccess,x,y,z,side) -> IBlockExtension.getFireSpreadSpeed(BlockState,BlockGetter,BlockPos,Direction) [IBlockExtension.java:721]. Прямой делегат (типы совпадают 1:1).
+	// Was getFireSpreadSpeed(IBlockAccess,...) -> IBlockExtension.getFireSpreadSpeed, a direct delegate (types match 1:1).
 	@Override public final int getFireSpreadSpeed(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return getFireSpreadSpeed(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aSide);}
-	// F13: 1.7.10 isFireSource(World,x,y,z,side) -> IBlockExtension.isFireSource(BlockState,LevelReader,BlockPos,Direction) [IBlockExtension.java:736] СУЩЕСТВУЕТ в neo,
-	// но IMTE_IsFireSource без implementor'ов во всём дереве (сверено grep'ом) -> мёртвая compile-поверхность, мост не добавлен (нечего подключать).
+	// 1.7.10's isFireSource DOES exist as a neo hook, but the TE interface has zero implementors
+	// anywhere in the tree -- nothing to wire a bridge to.
 	public final boolean isFireSource(Level aWorld, int aX, int aY, int aZ, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsFireSource && ((IMTE_IsFireSource)aTileEntity).isFireSource(UT.Code.side(aSide));}
 	public final boolean canEntityDestroy(BlockGetter aWorld, int aX, int aY, int aZ, Entity aEntity) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return !(aTileEntity instanceof IMTE_CanEntityDestroy) || ((IMTE_CanEntityDestroy)aTileEntity).canEntityDestroy(aEntity);}
-	// было canEntityDestroy(IBlockAccess,x,y,z,Entity) -> IBlockExtension.canEntityDestroy(BlockState,BlockGetter,BlockPos,Entity) [IBlockExtension.java:748]. Прямой делегат (типы совпадают 1:1).
+	// Was canEntityDestroy(IBlockAccess,...) -> IBlockExtension.canEntityDestroy, a direct delegate (types match 1:1).
 	@Override public final boolean canEntityDestroy(BlockState aState, BlockGetter aWorld, BlockPos aPos, Entity aEntity) {return canEntityDestroy(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aEntity);}
 	@Override public final long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_OnToolClick ? ((IMTE_OnToolClick)aTileEntity).onToolClick(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ) : 0;}
 	@Override public final OreDictMaterialStack getMaterialAtSide(BlockGetter aWorld, int aX, int aY, int aZ, byte aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetMaterialAtSide?((IMTE_GetMaterialAtSide)aTileEntity).getMaterialAtSide(aSide):null;}
 	@Override public final boolean removeMaterialFromSide(Level aWorld, int aX, int aY, int aZ, byte aSide, OreDictMaterialStack aMaterial) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_RemoveMaterialFromSide && ((IMTE_RemoveMaterialFromSide)aTileEntity).removeMaterialFromSide(aSide, aMaterial);}
 	public final void dropBlockAsItemWithChance(Level aWorld, int aX, int aY, int aZ, int aMeta, float aChance, int aFortune) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_GetDrops) {ArrayListNoNulls<ItemStack> tList = ((IMTE_GetDrops)aTileEntity).getDrops(aFortune, F); aChance = WD.fireBlockHarvesting(tList, aWorld, this, aX, aY, aZ, aMeta, aFortune, aChance, F, LAST_HARVESTING_PLAYER.get()); for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);}}
-	// было EnchantmentHelper.getSilkTouchModifier(Player)/getFortuneModifier(Player) (1.7.10) - удалены в neo;
-	// реальный neo: EnchantmentHelper.getEnchantmentLevel(Holder<Enchantment>,LivingEntity) по Holder из RegistryAccess
-	// (сверено, EnchantmentHelper.java:292 + Enchantments.SILK_TOUCH/FORTUNE), тот же приём, что уже принят и
-	// одобрен ревизией в GT_API_Proxy.onBlockHarvestingEvent (GT_API_Proxy.java:1450-1451).
-	public final void harvestBlock(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {if (aPlayer == null) aPlayer = LAST_HARVESTING_PLAYER.get(); aPlayer.awardStat(Stats.BLOCK_MINED.get(this), 1); /* было Stats.mineBlockStatArray[getIdFromBlock(this)] (1.7.10 int-ID) -> Stats.BLOCK_MINED.get(Block) [Stats.java:12] + Player.awardStat [Player.java:1413] */ UT.Entities.exhaust(aPlayer, 0.025F); Enchantment tSilkTouchHolder = Enchantments.SILK_TOUCH; Enchantment tFortuneHolder = Enchantments.BLOCK_FORTUNE; boolean aSilkTouch = EnchantmentHelper.getEnchantmentLevel(tSilkTouchHolder, aPlayer) > 0; int aFortune = EnchantmentHelper.getEnchantmentLevel(tFortuneHolder, aPlayer); float aChance = 1.0F; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_GetDrops) {ArrayListNoNulls<ItemStack> tList = ((IMTE_GetDrops)aTileEntity).getDrops(aFortune, aSilkTouch); aChance = WD.fireBlockHarvesting(tList, aWorld, this, aX, aY, aZ, aMeta, aFortune, aChance, aSilkTouch, aPlayer); for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);}}
+	// Was EnchantmentHelper.getSilkTouchModifier/getFortuneModifier (both removed from neo); the real
+	// replacement is getEnchantmentLevel by Holder from RegistryAccess, already reviewed and accepted in GT_API_Proxy.
+	public final void harvestBlock(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {if (aPlayer == null) aPlayer = LAST_HARVESTING_PLAYER.get(); aPlayer.awardStat(Stats.BLOCK_MINED.get(this), 1); /* was Stats.mineBlockStatArray[int id] (1.7.10) -> Stats.BLOCK_MINED.get(Block) + Player.awardStat */ UT.Entities.exhaust(aPlayer, 0.025F); Enchantment tSilkTouchHolder = Enchantments.SILK_TOUCH; Enchantment tFortuneHolder = Enchantments.BLOCK_FORTUNE; boolean aSilkTouch = EnchantmentHelper.getEnchantmentLevel(tSilkTouchHolder, aPlayer) > 0; int aFortune = EnchantmentHelper.getEnchantmentLevel(tFortuneHolder, aPlayer); float aChance = 1.0F; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_GetDrops) {ArrayListNoNulls<ItemStack> tList = ((IMTE_GetDrops)aTileEntity).getDrops(aFortune, aSilkTouch); aChance = WD.fireBlockHarvesting(tList, aWorld, this, aX, aY, aZ, aMeta, aFortune, aChance, aSilkTouch, aPlayer); for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);}}
 	public final ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aUnusableMetaData, int aFortune) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_GetDrops) return ((IMTE_GetDrops)aTileEntity).getDrops(aFortune, F); return ST.arraylist();}
-	// F-loot (IMTE_GetDrops-канал, аудит LIVE-DEFECTS.md): 1.7.10 harvestBlock(World,EntityPlayer,x,y,z,meta) БЫЛ реальным Forge/vanilla-override
-	// (оракул: @Override, gregtech6/.../MultiTileEntityBlock.java:261); в neo метода с этим именем/сигнатурой нет вовсе (0 вхождений во всех 3
-	// корнях-референсах). Реальный дроп-хук при разрушении блока игроком теперь Block.playerDestroy(Level,Player,BlockPos,BlockState,BlockEntity,
-	// ItemStack) [Block.java:467], зовётся из ServerPlayerGameMode.destroyBlock после успешного removeBlock (ServerPlayerGameMode.java:296) -
-	// единственный реальный вызыватель дропов при разрушении блока игроком. БЕЗ моста MTE-блоки (IMTE_GetDrops-реализаторы: базы TE03/TE04 и
-	// прочие) НЕ дропали НИЧЕГО: vanilla-дефолт playerDestroy зовёт dropResources по loot-table (BlockBehaviour.Properties.drops дефолтно
-	// "gregtech:blocks/<regname>", BlockBehaviour.java:982-984), а для процедурных MTE-регистраций такого JSON нет (нет datagen/loot_table) ->
-	// пустая LootTable -> 0 предметов. aMeta ниже не используется телом harvestBlock (как и в 1.7.10-оракуле) - передан 0, сигнатура сохранена.
+	// 1.7.10's harvestBlock was a real engine override; neo has no method by that name or signature at all.
+	// The real drop hook is now playerDestroy; without this bridge every MTE dropped nothing, having no loot table.
 	@Override public void playerDestroy(Level aWorld, Player aPlayer, BlockPos aPos, BlockState aState, BlockEntity aBlockEntity, ItemStack aDestroyedWith) {harvestBlock(aWorld, aPlayer, aPos.getX(), aPos.getY(), aPos.getZ(), 0);}
 	// The MTE family has no loot table: every engine drop path except playerDestroy (explosions, pistons, destroyBlock)
 	// dropped nothing, while 1.7.10 served them all through getDrops(fortune) via LAST_BROKEN_TILEENTITY.
@@ -711,18 +554,11 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		gregapi.GT_API_Proxy.processBlockDrops(rList, aParams.getLevel(), tBE.getBlockPos(), aState, aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY));
 		return rList;
 	}
-	// было aPlayer.level().getTileEntity(x,y,z) (1.7.10 World) -> центр WD.te(...) (тот же приём, что и все остальные
-	// TE-lookup в этом файле), не прямой движковый вызов.
+	// Was aPlayer.level().getTileEntity(x,y,z) (1.7.10 World) -> the center WD.te(...), the same trick as
+	// every other TE lookup in this file, not a direct engine call.
 	@Override public final ArrayList<String> getDebugInfo(Player aPlayer, int aX, int aY, int aZ, int aScanLevel) {BlockEntity aTileEntity = WD.te(aPlayer.level(), aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetDebugInfo ? ((IMTE_GetDebugInfo)aTileEntity).getDebugInfo(aScanLevel) : null;}
-	// ДИАГНОСТИКА (2026-07-21, не реализовано - нет чистого 1:1-канала): 1.7.10 isSideSolid(IBlockAccess,x,y,z,side) БЫЛ прямым
-	// Forge-override (per-side boolean). Проверено во всех 3 корнях: IBlockExtension.java НЕ содержит isSideSolid вовсе (0 вхождений) -
-	// neo вычисляет "твёрдость грани" исключительно из VoxelShape (BlockBehaviour.isFaceSturdy(dir,SupportType), BlockBehaviour.java:876-881,
-	// через SupportType.isSupporting -> state.getBlockSupportShape(level,pos) [BlockBehaviour.java:282-284], protected и переопределяем, НО
-	// дефолт этого метода = this.getCollisionShape(...) - тот самый VoxelShape, что уже отдаёт наш getCollisionShape-мост выше (строка ~295,
-	// IMTE_GetCollisionBoundingBoxFromPool) - т.е. канал КОСВЕННО уже покрыт ОБЩЕЙ формой блока, а не независимым per-side boolean.
-	// IMTE_IsSideSolid даёт НЕЗАВИСИМЫЙ boolean на каждую из 6 граней (7 реализаторов: Covers/Placeable/Sandwich/Stick/Rock/FluidSpring) -
-	// синтез одной VoxelShape с разной твёрдостью per-face (объединение full-face-boxes на "solid" гранях) - это НОВАЯ геометрическая
-	// логика, а не распаковка+диспетч 1:1, поэтому НЕ реализовано здесь (вне рамок этой задачи, оставлено оркестратору/ADR).
+	// Not implemented: 1.7.10's isSideSolid was a real per-side Forge override, but the real neo interface
+	// has no such method -- face solidity comes purely from VoxelShape; a true per-face answer is new geometry, deferred.
 	public final boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsSideSolid?((IMTE_IsSideSolid)aTileEntity).isSideSolid(UT.Code.side(aSide)):mOpaque;}
 	public final boolean isBeaconBase(BlockGetter aWorld, int aX, int aY, int aZ, int aBeaconX, int aBeaconY, int aBeaconZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsBeaconBase && ((IMTE_IsBeaconBase)aTileEntity).isBeaconBase(aBeaconX, aBeaconY, aBeaconZ);}
 	public final int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetLightOpacity?((IMTE_GetLightOpacity)aTileEntity).getLightOpacity():mOpaque?LIGHT_OPACITY_MAX:LIGHT_OPACITY_NONE;}
@@ -730,33 +566,30 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final boolean func_149730_j() {return mOpaque;}
 	public final boolean renderAsNormalBlock() {return mOpaque || mNormalCube;}
 
-	// F3 shade МОСТ (иерархия MTE — отдельная от BlockBase, наследует Block напрямую; разбор канала — в BlockBase).
-	// Машины/трубы/каверы без mOpaque и без mNormalCube в 1.7.10 соседей не затемняли, а neo-дефолт судит по
-	// коллизии и тушил бы ими всё вокруг до 0.2.
+	// Shade bridge (MTE is a separate hierarchy from BlockBase, inheriting Block directly): machines/
+	// pipes/covers without mOpaque/mNormalCube never darkened neighbors in 1.7.10; neo's default darkens all around them.
 	@Override public float getShadeBrightness(BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
 
-	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
+	/** Body 1:1 with 1.7.10's Block.isBlockNormalCube; see BlockBase for the same method. */
 	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
 	public final boolean isNormalCube()  {return mNormalCube;}
-	// было canProvidePower() -> BlockBehaviour.isSignalSource(BlockState) [BlockBehaviour.java:218]
+	// neo asks this through isSignalSource instead of the old canProvidePower.
 	@Override public final boolean isSignalSource(BlockState aState) {return !mNormalCube;}
 	@Override public final Block getBlock() {return this;}
 	public final String getUnlocalizedName() {return mNameInternal;}
-	// LOCALIZATION (РЕАЛИЗОВАНО): 1.7.10 vanilla Block.getLocalizedName() @Override удалён из neo (нет метода) → @Override снят,
-	// метод функционален через ЦЕНТР локализации LH.get(key) (как FluidGT/BlockBaseFluid.getLocalizedName). Вся адаптация к движку —
-	// в одном месте (gregapi.lang.LanguageHandler). Не заглушка. localization.csv=100% подтверждает.
+	// 1.7.10's vanilla @Override Block.getLocalizedName is gone from neo (no such method), so @Override is
+	// dropped, but the method is functional through the localization center LH.get. Not a stub.
 	public final String getLocalizedName() {return LH.get(mNameInternal);}
 	public final String getHarvestTool(int aMeta) {return mTool;}
 	public final boolean isToolEffective(String aType, int aMeta) {return getHarvestTool(aMeta).equals(aType);}
 	public final int getHarvestLevel(int aMeta) {return (int)UT.Code.bind_(mHarvestLevelMinimum, mHarvestLevelMaximum, mHarvestLevelOffset + aMeta);}
-	/** BUG-071: величина, которую 1.7.10 держал в мете ЭТОГО блока, — {@code mBlockMetaData} класса MTE
-	 *  (при регистрации туда кладут {@code материал.mToolQuality}: Loader_MultiTileEntities:895 и далее).
-	 *  В порте мета блока стейтом не выражается (IBlockExtendedMetaData:49 → 0), поэтому берём её из класса,
-	 *  который стоит В ЭТОЙ ПОЗИЦИИ: BE знает свой реестр и ID. Формула уровня остаётся ОДНА (метод выше). */
+	/** 1.7.10 kept this value in the MTE class's own mBlockMetaData (set from the material's mToolQuality
+	 *  at registration); block meta can't be a BlockState property here, so it's read from the class standing at this position. */
 	@Override public int getHarvestLevel(BlockGetter aWorld, int aX, int aY, int aZ) {
 		return getHarvestLevel(blockMetaDataAt(aWorld, aX, aY, aZ));
 	}
-	/** 1.7.10-мета MTE-блока в позиции: {@code mBlockMetaData} его класса (0, если BE ещё нет — как пустая мета). */
+	/** The 1.7.10-style MTE block meta at a position: the class's own mBlockMetaData.
+	 *  0 if there's no BE yet, matching an empty meta. */
 	public static int blockMetaDataAt(BlockGetter aWorld, int aX, int aY, int aZ) {
 		try {
 			BlockEntity tTileEntity = aWorld.getBlockEntity(new BlockPos(aX, aY, aZ));
@@ -767,38 +600,19 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 			return tClass == null ? 0 : tClass.mBlockMetaData;
 		} catch (Throwable e) {return 0;}
 	}
-	// BUG-071 (ветка 1.20.1): было canHarvestBlock(EntityPlayer,meta) -> IForgeBlock.canHarvestBlock(BlockState,
-	// BlockGetter,BlockPos,Player) [IForgeBlock.java:167-170]. Прежний passthrough в ForgeHooks считал правило БЕЗ
-	// позиции, а подтип MTE живёт в BlockEntity — требуемый уровень вырождался в 0 для всех машин. Зовём центр
-	// (WD.canHarvestBlock), который в 26.x-ветке стоял в обработчике PlayerEvent.HarvestCheck.
+	// On 1.20.1, was canHarvestBlock(EntityPlayer,meta) -> IForgeBlock.canHarvestBlock; the old
+	// passthrough judged the rule without a position, so the required level always came out 0; now calls WD.canHarvestBlock.
 	@Override public final boolean canHarvestBlock(BlockState aState, BlockGetter aWorld, BlockPos aPos, Player aPlayer) {return gregapi.util.WD.canHarvestBlock(aState, aWorld, aPos, aPlayer);}
 	public final boolean hasTileEntity(int aMeta) {return T;}
 	public final boolean canSilkHarvest() {return F;}
 	public final int getRenderBlockPass() {return ITexture.Util.MC_ALPHA_BLENDING?1:0;}
 	public final BlockEntity createNewTileEntity(Level aWorld, int aMeta) {return null;}
 	public final BlockEntity createTileEntity(Level aWorld, int aMeta) {return null;}
-	// было EntityBlock.newBlockEntity(BlockPos,BlockState) (neo, EntityBlock.java:14, обязательный т.к. класс implements
-	// EntityBlock) - GT6 TE-создание для MultiTileEntityBlock идёт НЕ через это (сверено оригиналом: createNewTileEntity/
-	// createTileEntity УЖЕ возвращают null и в 1.7.10-оракуле, MultiTileEntityBlock.java:282-283), а через
-	// MultiTileEntityRegistry.getNewTileEntity (см. receiveData выше) - сетевой/явный путь.
-	// BUG-117, второй носитель класса «EntityBlock отвечает null на заглушку DUMMY»: null здесь ДОСТИЖИМ только
-	// для позиции БЕЗ живой сущности (promotePendingBlockEntity, LevelChunk:373-381; при живой сущности/стабе
-	// заглушка не спрашивается) — и тогда движок печатал WARN:627, а блок оставался призраком без сущности.
-	// Отдаём TileEntityLoaderStub — ровно то, что фабрика MTE_TYPE отдаёт этому же блоку на LOAD-пути
-	// (TileEntityBase01Root.createType:178): контракт соблюдён, WARN невозможен, а стаб без захваченного NBT
-	// штатно деградирует по канону BUG-057 (реконструкция: нет ключей reg/id → air, шелухи не остаётся).
+	// GT6's own TE creation for this block doesn't go through EntityBlock.newBlockEntity at all (it always
+	// returned null even in 1.7.10); returning a real stub here satisfies the contract so the engine's WARN never fires.
 	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return new gregapi.tileentity.base.TileEntityLoaderStub(aPos, aState);}
-	// F-tick (шов «тики BE», центр на весь MTE-класс): 1.7.10 World сам тикал TileEntity с canUpdate()==true
-	// (updateEntity каждый тик, ОБЕ стороны — recompSrc World.updateEntities); в neo тики BE идут ТОЛЬКО через
-	// EntityBlock.getTicker → BlockEntityTicker (Level.tickBlockEntities). Без шва весь механизм TE03+ мёртв:
-	// onTick*, sendClientData-синк клиенту (place-путь), анимации (mLidAngle), doBlockUpdate. canUpdate 1:1 (TE01:572).
-	// BUG-138: ОТБОР ДЕЛАЕТ ДВИЖОК, а не наша лямбда после отбора. В 1.7.10 признак нёс сам TE (Forge-хук canUpdate(),
-	// оригинал TileEntityBase01Root:440), и нетикающая половина иерархии вынесена автором в пакет notick; здесь вопроса нет и в список берётся каждый, кому этот метод
-	// выдал тикер (LevelChunk.updateBlockEntityTicker: ticker==null → removeBlockEntityTicker). Пока тикер выдавался
-	// всем, движок каждый тик гонял по списку блок-сущностей мира и спрашивал shouldTickBlocksAt — 8,46 % профиля
-	// живого клиента уходило на отбор, ещё 4,94 % на вызов лямбды, которая тут же выходила.
-	// Признак тика объявлен типом блок-сущности (единственный различитель, который движок даёт в этот хук: блок и
-	// состояние у всех MTE общие) — см. TileEntityBase01Root.MTE_TYPE_NOTICK.
+	// 1.7.10's World ticked every TileEntity with canUpdate()==true itself; neo only ticks a BlockEntity
+	// that getTicker returns a ticker for. The ENGINE filters now, by block-entity TYPE, not a per-instance lambda.
 	@Override public final <T extends BlockEntity> net.minecraft.world.level.block.entity.BlockEntityTicker<T> getTicker(Level aLevel, BlockState aState, net.minecraft.world.level.block.entity.BlockEntityType<T> aType) {
 		if (aType != gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE) return null;
 		return (tLevel, tPos, tState, tBE) -> {
@@ -816,33 +630,24 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final void registerBlockIcons(Object aIconRegister) {/**/}
 	public final ResourceLocation getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);}
 	public final ResourceLocation getIcon(int aSide, int aMetaData) {return Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);}
-	// F3-render (отложенная фаза): 1.7.10 Block.getRenderType()/super.getRenderType() удалён из neo (рендер
-	// data-driven через модели/getRenderShape; getRenderType в neo-пайплайне не вызывается — вызыватели ушли,
-	// см. ToolCompat instanceof-миграцию). super.getRenderType() -> -1 («нет кастом-render-ID»); при живом GT6-
-	// клиент-рендерере возвращает его mRenderID. Метод сохранён для клиентской F3-фазы, движком не зовётся.
+	// 1.7.10's Block.getRenderType is gone from neo's own render pipeline and isn't called by it; kept
+	// only for a later client-rendering phase, where a live GT6 renderer still reads it.
 	public final int getRenderType() {return RendererBlockTextured.INSTANCE==null?-1:RendererBlockTextured.INSTANCE.mRenderID;}
 	@Override public final IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T); return tTileEntity instanceof IRenderedBlockObject ? (IRenderedBlockObject)tTileEntity : null;}
-	// было onBlockEventReceived(World,x,y,z,id,data) -> BlockBehaviour.triggerEvent(BlockState,Level,BlockPos,int,int)
+	// Was onBlockEventReceived(World,x,y,z,id,data) -> BlockBehaviour.triggerEvent(BlockState,Level,BlockPos,int,int).
 	// [BlockBehaviour.java:206]; TileEntity.receiveClientEvent(id,data) -> BlockEntity.triggerEvent(int,int) [BlockEntity.java:270]
 	@Override public final boolean triggerEvent(BlockState aState, Level aWorld, BlockPos aPos, int aID, int aParam) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity == null || aTileEntity.triggerEvent(aID, aParam);}
-	// было getPlayerRelativeBlockHardness(EntityPlayer,World,x,y,z) -> BlockBehaviour.getDestroyProgress
-	// (BlockState,Player,BlockGetter,BlockPos) [BlockBehaviour.java:340]
-	// F-hardness (найдено по живому репорту «машины ломаются рукой»): БЫЛО — TE-гейт поверх super.getDestroyProgress,
-	// но super берёт state.getDestroySpeed = Properties.destroyTime, который mkProps НЕ задаёт (дефолт 0) → деление
-	// на 0 → Infinity → ЛЮБОЙ MTE ломался МГНОВЕННО чем угодно. 1.7.10-цепь слома: getPlayerRelativeBlockHardness
-	// (оригинал :298) поверх ForgeHooks.blockStrength с PER-TE hardness (getBlockHardness :299 → IMTE, mHardness из
-	// NBT_HARDNESS регистрации). СТАЛО 1:1: blockStrength по TE-hardness (h<0 → 0-неразрушим; digSpeed/h/(canHarvest
-	// ?30:100) — рука на машине-с-инструментом = /100 и полная твёрдость, как в 1.7.10) → затем TE-гейт
+	// The old TE gate sat on top of super.getDestroyProgress, whose destroySpeed defaulted to 0, dividing
+	// by zero, breaking instantly; fixed to compute progress from the same per-TE hardness the 1.7.10 chain used.
 	// IMTE_GetPlayerRelativeBlockHardness (TileEntityBase01Root:1108 allowInteraction → max(v,1e-4) | 0).
 	private static long sLastDigZeroDiag = 0;
 	@Override public final float getDestroyProgress(BlockState aState, Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
 		BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		float tHardness = aTileEntity instanceof IMTE_GetBlockHardness ? ((IMTE_GetBlockHardness)aTileEntity).getBlockHardness() : 1.0F;
-		float tOriginal = WD.destroyProgress(tHardness, aPlayer, aState, aWorld, aPos); // vanilla-формула — ЦЕНТР WD.destroyProgress
+		float tOriginal = WD.destroyProgress(tHardness, aPlayer, aState, aWorld, aPos); // the vanilla formula lives in the single center WD.destroyProgress
 		float rResult = aTileEntity instanceof IMTE_GetPlayerRelativeBlockHardness ? ((IMTE_GetPlayerRelativeBlockHardness)aTileEntity).getPlayerRelativeBlockHardness(aPlayer, tOriginal) : tOriginal;
-		// [GT6-DIG-ZERO] диагностика живого мира (всегда активна, троттл 1с, только сервер): нулевой прогресс при
-		// НЕ-неразрушимом блоке = аномалия цепи (stats-null/unusable/quality<level/isMinable) — печатаем компоненты,
-		// чтобы лог игрока называл причину. В штатной игре не срабатывает (рука даёт >0).
+		// Always-on live diagnostic (server-only, throttled to 1/s): zero progress on a destructible block is
+		// an anomaly in the chain, so its components are logged to name the cause; never fires in ordinary play.
 		if (rResult <= 0.0F && tHardness >= 0 && aWorld instanceof Level tLevel && !tLevel.isClientSide() && System.currentTimeMillis() - sLastDigZeroDiag > 1000) {
 			sLastDigZeroDiag = System.currentTimeMillis();
 			ItemStack tHand = aPlayer.getMainHandItem();
@@ -857,9 +662,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 					.append(" usable=").append(tTool.isItemStackUsable(tHand))
 					.append(" digSpeed=").append(tTool.getDigSpeed(tHand, aState.getBlock(), 0))
 					.append(" quality=").append(tStats == null ? "-" : String.valueOf(tStats.getBaseQuality() + tTool.getPrimaryMaterial(tHand).mToolQuality))
-					// BUG-071: уровень берём ПОЗИЦИОННЫМ центром. Прежний вызов по мете 0 после восстановления
-					// пер-материальности печатал бы ноль для любой машины — диагностика вводила бы в заблуждение
-					// ровно там, где её и читают («почему не ломается»).
+					// The level comes from the positional center now; the old by-meta-0 call would print zero
+					// for any machine after per-material restoration, misleading exactly the diagnostic meant to explain the cause.
 					.append(" нужен-уровень=").append(WD.harvestLevel(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()))
 					.append(" нужен-tool=").append(WD.harvestTool(aState.getBlock(), 0));
 			}
@@ -867,40 +671,31 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		}
 		return rResult;
 	}
-	// F13: движок-facing динамическая твёрдость (скорость добычи игроком) ПОДКЛЮЧЕНА выше через getDestroyProgress
-	// (стр. ~469, TE-диспетчер IMTE_GetPlayerRelativeBlockHardness). Этот getBlockHardness — внутренний GT6-хелпер
-	// (TE-твёрдость для собственной логики), не стаб; движок его не зовёт (у него getDestroyProgress).
+	// The engine-facing dynamic hardness is already wired above through getDestroyProgress; this
+	// getBlockHardness is an internal GT6 helper for its own logic, not a stub -- the engine never calls it.
 	public final float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetBlockHardness?((IMTE_GetBlockHardness)aTileEntity).getBlockHardness():1.0F;}
-	// было getExplosionResistance(Entity,World,x,y,z,expX,expY,expZ) -> IBlockExtension.getExplosionResistance
-	// (BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]; Explosion.getDirectSourceEntity()/center() заменяют потерянные параметры
+	// Was getExplosionResistance(Entity,World,...) -> IBlockExtension's version; Explosion.getDirectSourceEntity()/
+	// center() replace the lost parameters.
 	@Override public final float getExplosionResistance(BlockState aState, BlockGetter aWorld, BlockPos aPos, Explosion aExplosion) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); Vec3 aCenter = aExplosion.getPosition(); return aTileEntity instanceof IMTE_GetExplosionResistance?((IMTE_GetExplosionResistance)aTileEntity).getExplosionResistance(aExplosion.getDirectSourceEntity(), aCenter.x, aCenter.y, aCenter.z):1.0F;}
-	// было onNeighborChange(IBlockAccess,x,y,z,tileX,Y,Z) -> IBlockExtension.onNeighborChange(BlockState,LevelReader,BlockPos,BlockPos) [IBlockExtension.java:534]
+	// Was onNeighborChange(IBlockAccess,x,y,z,tileX,Y,Z).
+	// -> IBlockExtension.onNeighborChange(BlockState,LevelReader,BlockPos,BlockPos).
 	@Override public final void onNeighborChange(BlockState aState, LevelReader aWorld, BlockPos aPos, BlockPos aNeighbor) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (!LOCK) {LOCK = T; if (aTileEntity instanceof ITileEntity) ((ITileEntity)aTileEntity).onAdjacentBlockChange(aNeighbor.getX(), aNeighbor.getY(), aNeighbor.getZ()); LOCK = F;} if (aTileEntity instanceof IMTE_OnNeighborChange) ((IMTE_OnNeighborChange)aTileEntity).onNeighborChange(aWorld, aNeighbor.getX(), aNeighbor.getY(), aNeighbor.getZ());}
-	// F17-ит.13 «дыра следует за действием»: чистка сирот (BE=null → снести блок) — ТОЛЬКО СЕРВЕР. В 1.7.10 ветка
-	// на клиенте была мертва по инварианту «клиент-TE существует синхронно с чанком» (движок клал TE из chunk-NBT);
-	// в neo-порте клиент-BE едет АСИНХРОННО (GT6-пакеты, F17) → отсутствие BE на клиенте = состояние синка, не
-	// сиротство. Апдейт соседа в это окно удалял блок ЛОКАЛЬНО у клиента (сервер блок хранил; следующий серверный
-	// апдейт позиции возвращал его) → «блуждающая дыра» в стенах + дропы синк-пакетов в клиент-воздух.
-	/** ⚠️ КОРЕНЬ BP-BUG-008 (потеря построек игрока, вскрытие 2026-08-16 по стеку снятия MTE).
-	 *  Ветка чистки сирот — канон 1.7.10 ({@code MultiTileEntityBlock:302} оригинала: {@code if (aTileEntity == null)
-	 *  aWorld.setBlockToAir(aX, aY, aZ);}) и остаётся на месте. Дефектом был её ПРИЗНАК: {@code WD.te == null} в 1.20.1
-	 *  означает не только сироту (разбор — {@link gregapi.util.WD#teProvenAbsent}). Живой случай: 22 трубы одного чанка
-	 *  снесены за ОДИН тик — тикающая MTE соседнего чанка звала {@code updateNeighborsAt}, у соседей {@code WD.te}
-	 *  отвечал null (чанк не был виден центру чтения), блок сносился, снос будил следующих соседей — домино в границах
-	 *  чанка. Признак заменён на доказуемый; сама ветка, её сторона и её действие не изменены. */
+	// Orphan cleanup (BE==null -> remove block) is server-only: in 1.7.10 the client branch was dead by
+	// invariant; the port's client BE now arrives asynchronously, so a missing one there means syncing, not orphaned.
+	/** Root cause of players losing builds: the orphan-cleanup branch itself is 1.7.10 canon and
+	 *  stays; the defect was its TRIGGER -- WD.te==null on 1.20.1 doesn't only mean orphaned; a chunk race could trip it too. */
 	public final void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (!LOCK) {LOCK = T; if (aTileEntity instanceof ITileEntity) ((ITileEntity)aTileEntity).onAdjacentBlockChange(aX, aY, aZ); LOCK = F;} if (aTileEntity instanceof IMTE_OnNeighborBlockChange) ((IMTE_OnNeighborBlockChange)aTileEntity).onNeighborBlockChange(aWorld, aBlock); if (aTileEntity == null && !aWorld.isClientSide() && WD.teProvenAbsent(aWorld, aX, aY, aZ)) {traceOrphanSweep(aWorld, aX, aY, aZ); WD.set(aWorld, aX, aY, aZ, NB, 0, 3);}}
 
-	/** Ветка чистки сирот отработала ЗАКОННО (BE доказуемо нет). Событие редкое и ценное для охоты за породителем
-	 *  сирот (BP-BUG-009), поэтому видимо всегда: первые 20 и каждое 500-е — тот же приём, что у счётчиков шелухи и
-	 *  сирот в {@code GT6WorldgenFeature.reconstructMTE}. Молчание счётчика = сирот в мире не рождается. */
+	/** A legitimate sweep (BE provably gone). Rare and worth hunting for its own root cause, so it's
+	 *  always logged: first 20, then every 500th, same convention as other leak counters. */
 	private static final java.util.concurrent.atomic.AtomicLong sOrphanBlocksSwept = new java.util.concurrent.atomic.AtomicLong();
 	private static void traceOrphanSweep(Level aWorld, int aX, int aY, int aZ) {
 		long tN = sOrphanBlocksSwept.incrementAndGet();
 		if (tN <= 20 || tN % 500 == 0) OUT.println("[GT6-MTEORPHAN] блок-сирота снят (BE доказуемо нет) @" + aX + ", " + aY + ", " + aZ
 			+ " чанк=[" + (aX >> 4) + ", " + (aZ >> 4) + "] тик=" + aWorld.getGameTime() + " всего=" + tN);
 	}
-	// F-neighbor (канал сместился): 1.7.10 World.notifyBlocksOfNeighborChange звал Block.onNeighborBlockChange; neo-вход —
-	// BlockBehaviour.neighborChanged. Мост по образцу BlockFluidBaseGT:154; GT6-канал (IMTE_OnNeighborBlockChange + чистка сирот) цел.
+	// 1.7.10's World.notifyBlocksOfNeighborChange called Block.onNeighborBlockChange; neo's
+	// entry point is BlockBehaviour.neighborChanged. Bridged the same way as BlockFluidBaseGT.
 	@Override public void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, BlockPos aFromPos, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}

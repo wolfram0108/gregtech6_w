@@ -38,8 +38,7 @@ package thaumcraft.api.research;
 import net.minecraft.world.item.ItemStack;
 import thaumcraft.api.aspects.AspectList;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только объявления, используемые GregTech6
- *  (CompatTC.addResearch). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only the fields CompatTC.addResearch reads. */
 public class ResearchItem {
 	public int displayColumn, displayRow;
 

@@ -36,34 +36,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * F12-config-subsystem: GT6-центр, воспроизводящий 1.7.10 Forge {@code net.minecraftforge.common.
- * config.Configuration} — файловый, динамический, per-call конфиг ({@code new Configuration(File)}
- * + {@code get(category,key,default)}, читаемый/записываемый в любой момент рантайма).
- *
- * Причина существования (см. также decisions/, DEFERRED-LEDGER.md "F12, config-subsystem"): neo
- * {@code net.neoforged.neoforge.common.ModConfigSpec} — ДЕКЛАРАТИВНАЯ модель, строится через
- * {@code Builder} на регистрации мода (ключи фиксированы заранее), не имеет ни {@code new
- * ModConfigSpec(File)}, ни {@code .load()}/{@code .save()}, ни per-call {@code get(category,key,
- * default)} → это архитектурно другая модель, несовместимая с GT6's dynamic-config-паттерном
- * ({@link gregapi.config.Config}, {@link gregapi.lang.LanguageHandler#sLangFile}). Движок сменил
- * модель → адаптируем централизованно, тем же приёмом, что F4-OreDictionary/F5-fluids/F9-block-
- * material: воспроизводим Forge-поведение в СВОЁМ, gregapi-центральном классе.
- *
- * Формат файла — человекочитаемый, той же структуры, что 1.7.10 {@code .cfg} (категория {@code {}}-
- * блок, {@code key=value} внутри), без второстепенных возможностей исходного Forge-формата
- * (типовые префиксы S:/I:/B:/D:, списки {@code <...>}, комментарии, min/max, вложенные категории,
- * child-файлы START/END) — они не используются ни одним вызывателем в этом дереве (см. grep
- * {@code .get(} в Config.java/GT_API.java/LanguageHandler.java: только 4 скалярных перегрузки
- * boolean/int/double/String, без списков и комментариев).
- *
- * Референс поведения: {@code gregtech6/build/tmp/recompSrc/net/minecraftforge/common/config/
- * Configuration.java} (методы {@code get(String,String,<type>)}, {@code load()}, {@code save()},
- * {@code getConfigFile()}; {@code wasRead()}-семантика — Configuration.java:697-710: ключ уже был в
- * {@code cat.containsKey(key)} на момент {@code get()} → true, иначе создан этим вызовом → false).
- *
- * @author Gregorius Techneticies
- */
+/** Config subsystem: reproduces 1.7.10 Forge's Configuration (file-backed, per-call
+ *  get(category,key,default), read/write at any time). */
 public class ModConfigSpec {
 	private final File mFile;
 	private final Map<String, Map<String, ConfigValue>> mCategories = new TreeMap<>();
@@ -79,33 +53,29 @@ public class ModConfigSpec {
 		return mCategories.computeIfAbsent(aCategory, aKey -> new LinkedHashMap<>());
 	}
 
-	/** было {@code Configuration.getCategory(String)} — Configuration.java:132-140 (доступ к записям категории;
-	 *  1.7.10 возвращал ConfigCategory-карту). Читатели итерируют ключи (напр. кэш creative-вкладок F16). */
+	/** Was Configuration.getCategory(String): access to a category's entries; readers iterate keys
+	 *  (e.g. the creative-tab cache). */
 	public Map<String, ConfigValue> getCategory(String aCategory) {
 		return category(aCategory);
 	}
 
-	/** было {@code Configuration.get(String,String,boolean)} — Configuration.java:166-169. */
+	/** Was Configuration.get(String,String,boolean). */
 	public ConfigValue get(String aCategory, String aKey, boolean aDefault) {
 		return get(aCategory, aKey, Boolean.toString(aDefault));
 	}
 
-	/** было {@code Configuration.get(String,String,int)} — Configuration.java:268-271. */
+	/** Was Configuration.get(String,String,int). */
 	public ConfigValue get(String aCategory, String aKey, int aDefault) {
 		return get(aCategory, aKey, Integer.toString(aDefault));
 	}
 
-	/** было {@code Configuration.get(String,String,double)} — Configuration.java:410-413. */
+	/** Was Configuration.get(String,String,double). */
 	public ConfigValue get(String aCategory, String aKey, double aDefault) {
 		return get(aCategory, aKey, Double.toString(aDefault));
 	}
 
-	/**
-	 * было {@code Configuration.get(String,String,String,String,Property.Type)} — Configuration.java:
-	 * 688-724 (общее ядро для всех 4 скалярных перегрузок). Ключ уже был в загруженном файле →
-	 * возвращает СУЩЕСТВУЮЩУЮ запись (значение не трогается, только обновляется дефолт — 1:1
-	 * Configuration.java:707), иначе создаёт новую с {@code aDefault} как текущим значением.
-	 */
+	/** Was Configuration.get(String,String,String,String,Property.Type), the shared core of all four
+	 *  scalar overloads. A key already in the file returns the EXISTING entry; otherwise a new one is created with aDefault. */
 	public ConfigValue get(String aCategory, String aKey, String aDefault) {
 		Map<String, ConfigValue> tCategory = category(aCategory);
 		ConfigValue tExisting = tCategory.get(aKey);
@@ -118,11 +88,8 @@ public class ModConfigSpec {
 		return tNew;
 	}
 
-	/**
-	 * было {@code Configuration.load()} — Configuration.java:791-1051: читает файл, заполняет
-	 * категории записями с {@code wasRead=true} (Configuration.java:944: {@code new Property(name,
-	 * value, type, true)}). Отсутствующий файл — не ошибка (новая установка), просто нет записей.
-	 */
+	/** Was Configuration.load(): reads the file, fills categories with entries; a missing file isn't an
+	 *  error (fresh install), just no entries. */
 	public void load() {
 		if (mFile == null || !mFile.exists()) return;
 		try (BufferedReader tReader = new BufferedReader(new InputStreamReader(new FileInputStream(mFile), StandardCharsets.UTF_8))) {
@@ -147,16 +114,13 @@ public class ModConfigSpec {
 				tCategory.put(tKey, new ConfigValue(tKey, tValue, true));
 			}
 		} catch (IOException e) {
-			// совпадает с Configuration.load() (Configuration.java:1028-1031) — IO-ошибка не прерывает загрузку мода.
+			// Matches Configuration.load(): an IO error doesn't abort mod loading.
 			e.printStackTrace(gregapi.data.CS.ERR);
 		}
 	}
 
-	/**
-	 * было {@code Configuration.save()} — Configuration.java:1053-1117: пишет все известные на данный
-	 * момент категории/записи обратно в файл, каждая запись как {@code getString()}-значение (не
-	 * дефолт), формат {@code category {\n\tkey=value\n}\n}.
-	 */
+	/** Was Configuration.save(): writes every known category/entry back to the file, each as its current
+	 *  string value, not the default. */
 	public void save() {
 		if (mFile == null) return;
 		try {
@@ -179,7 +143,7 @@ public class ModConfigSpec {
 				}
 			}
 		} catch (IOException e) {
-			// совпадает с Configuration.save() (Configuration.java:1101-1104) — IO-ошибка не прерывает работу мода.
+			// Matches Configuration.save(): an IO error doesn't abort the mod.
 			e.printStackTrace(gregapi.data.CS.ERR);
 		}
 	}

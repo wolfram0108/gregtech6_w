@@ -150,7 +150,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return T;
 		
-		ItemStack aStack = ST.n(aPlayer.getMainHandItem()), tStack = ST.container(ST.amount(1, aStack), T); // F15-граница: движок EMPTY -> GT6 null
+		ItemStack aStack = ST.n(aPlayer.getMainHandItem()), tStack = ST.container(ST.amount(1, aStack), T); // The engine/GT6 empty-stack boundary maps engine EMPTY to GT6 null.
 		FluidStack tFluid = FL.getFluid(ST.amount(1, aStack), T);
 		if (aStack != null && isFluidAllowed(tFluid) && mTank.fillAll(tFluid)) {
 			aStack.setCount(aStack.getCount()-1);
@@ -168,12 +168,12 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 			if (aStack == null) return T;
 			if (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood() || FoodStatFluid.INSTANCE.alwaysEdible(aStack.getItem(), aStack, aPlayer)) {
 				switch(FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack)) {
-				case EAT : UT.Sounds.send(SFX.MC_EAT  , this, F); break; // было "case eat" (1.7.10 enum-конвенция) -> UPPER_CASE (UseAnim.java:16)
+				case EAT : UT.Sounds.send(SFX.MC_EAT  , this, F); break; // Was lowercase "eat" per 1.7.10 enum style; UseAnim uses UPPER_CASE.
 				default  : UT.Sounds.send(SFX.MC_DRINK, this, F); break;
 				}
 				mTank.remove(250);
-				// было Item.onEaten(ItemStack,World,EntityPlayer) (1.7.10) -> neo Item.finishUsingItem(ItemStack,Level,LivingEntity)
-				// (Item.java:232), тот же приём возврата-как-statement (результат отбрасывался и там, и там).
+				// Was Item.onEaten(ItemStack,World,EntityPlayer) in 1.7.10, now Item.finishUsingItem, with the same
+				// discarded-return-value idiom on both sides.
 				aStack.getItem().finishUsingItem(aStack, level, aPlayer);
 			}
 		}
@@ -280,9 +280,8 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		return F;
 	}
 	
-	/** ADAPT-003 (согласованное отклонение, требование игрока 2026-07-23; журнал ADAPTATIONS.md): зачерпывание работает и СО СТАКОМ
-	 *  пустых ёмкостей — тратится 1 из стака, полный уходит в свободный слот (ведро-механика vanilla).
-	 *  Оригинальный гейт 1.7.10 (:275) требовал ровно 1 в руке; centrally здесь — накрывает все ёмкости. */
+	/** Approved deviation: scooping now works with a whole stack of empty containers, spending one and placing
+	 *  the filled result in a free slot (bucket mechanic), instead of 1.7.10's gate requiring exactly one in hand. */
 	private ItemStack scoopResult(Player aPlayer, ItemStack aStack, ItemStack aTarget) {
 		if (aTarget != aStack && FL.getFluid(aTarget, T) != null) {
 			aStack.shrink(1);
@@ -296,7 +295,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		if (canPickUpFluids() && aStack.getCount() >= 1) {
 			ItemStack aTarget = aStack.getCount() == 1 ? aStack : ST.amount(1, aStack);
 			HitResult tTarget = WD.getMOP(aWorld, aPlayer, T);
-			// было World.canMineBlock(EntityPlayer,x,y,z) (1.7.10) -> neo Level.mayInteract(Entity,BlockPos) (Level.java:887)
+			// Was World.canMineBlock(EntityPlayer,x,y,z) in 1.7.10, now Level.mayInteract(Entity,BlockPos).
 			if (tTarget != null && tTarget.getType() == HitResult.Type.BLOCK && aWorld.mayInteract(aPlayer, ((BlockHitResult)tTarget).getBlockPos())) {
 				Block tBlock = WD.block(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ());
 				if (tBlock == Blocks.WATER || tBlock == Blocks.WATER) {
@@ -313,7 +312,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 					return scoopResult(aPlayer, aStack, aTarget);
 				}
 				if (tBlock == Blocks.LAVA || tBlock == Blocks.LAVA) {
-					if (FL.drainable(aWorld, ((BlockHitResult)tTarget).getBlockPos()) != null && aItem.fill(aTarget, FL.Lava.make(1000), F) == 1000) { // F5 §6.2 — центр вместо «мета 0»
+					if (FL.drainable(aWorld, ((BlockHitResult)tTarget).getBlockPos()) != null && aItem.fill(aTarget, FL.Lava.make(1000), F) == 1000) { // Uses the central helper instead of hardcoding meta 0.
 						WD.set(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), NB, 0, 3);
 						aItem.fill(aTarget, FL.Lava.make(1000), T);
 					}
@@ -332,34 +331,34 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 					return scoopResult(aPlayer, aStack, aTarget);
 				}
 				if (tBlock instanceof IFluidBlock) {
-					FluidStack tDrained = FL.drainable(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // F5 §6.2 — центр
+					FluidStack tDrained = FL.drainable(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // Uses the central helper for the same reason as above.
 					if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aTarget, tDrained, F) == tDrained.getAmount()) {
 						// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 						aItem.fill(aTarget, tDrained, T);
-						FL.drainCell(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // F5 §6.2 — центр
+						FL.drainCell(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // Uses the central helper for the same reason as above.
 					}
 					return scoopResult(aPlayer, aStack, aTarget);
 				}
 				
-				// было tTarget.blockX/Y/Z += OFFX/Y/Z[sideHit] (сдвиг на соседний блок по стороне удара); neo BlockPos immutable -> переприсвоить BlockHitResult на relative(getDirection())
+				// Was a direct blockX/Y/Z += offset shift by hit side; neo's BlockPos is immutable, so the BlockHitResult is reassigned
+				// via relative(getDirection()) instead.
 				tTarget = new BlockHitResult(tTarget.getLocation(), ((BlockHitResult)tTarget).getDirection(), ((BlockHitResult)tTarget).getBlockPos().relative(((BlockHitResult)tTarget).getDirection()), ((BlockHitResult)tTarget).isInside());
 				tBlock = WD.block(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ());
 				
 				if (tBlock instanceof IFluidBlock) {
-					FluidStack tDrained = FL.drainable(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // F5 §6.2 — центр
+					FluidStack tDrained = FL.drainable(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // Uses the central helper for the same reason as above.
 					if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aTarget, tDrained, F) == tDrained.getAmount()) {
 						// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 						aItem.fill(aTarget, tDrained, T);
-						FL.drainCell(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // F5 §6.2 — центр
+						FL.drainCell(aWorld, ((BlockHitResult)tTarget).getBlockPos()); // Uses the central helper for the same reason as above.
 					}
 					return scoopResult(aPlayer, aStack, aTarget);
 				}
 			}
 		}
 		if (isDrinkable() && aStack.getCount() == 1 && (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood() || FoodStatFluid.INSTANCE.alwaysEdible(aStack.getItem(), aStack, aPlayer))) {
-			// было setItemInUse(ItemStack,int) (1.7.10) -> neo LivingEntity.startUsingItem(InteractionHand) (LivingEntity.java:3529),
-			// длительность больше не параметр — берётся движком из Item.getUseDuration(ItemStack,LivingEntity) (Item.java:328);
-			// getMaxItemUseDuration(aItem,aStack) ниже остаётся источником этого числа для будущего Item-хука (F13, вне этого шва).
+			// Was setItemInUse(ItemStack,int) in 1.7.10; neo's startUsingItem takes no duration, since the engine now
+			// reads it from Item.getUseDuration, which getMaxItemUseDuration below still feeds for a future Item hook.
 			aPlayer.startUsingItem(InteractionHand.MAIN_HAND);
 			return aStack;
 		}
@@ -371,7 +370,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	}
 	
 	public UseAnim getItemUseAction(MultiTileEntityItemInternal aItem, ItemStack aStack) {
-		return isDrinkable() && aStack.getCount() == 1 ? FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack) : UseAnim.NONE; // было UseAnim.none (1.7.10 enum-конвенция) -> UPPER_CASE (UseAnim.java:15)
+		return isDrinkable() && aStack.getCount() == 1 ? FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack) : UseAnim.NONE; // UseAnim's enum constants are UPPER_CASE now, not the 1.7.10 lowercase convention.
 	}
 	
 	public ItemStack onEaten(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
@@ -381,9 +380,8 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		
 		if (tFoodLevel > 0) {
 			if (FoodStatFluid.INSTANCE.useAppleCoreFunctionality(aStack.getItem(), aStack, aPlayer)) {
-				// F10 foreign-gated impossible-1:1 (AppleCore ItemFoodProxy addStats): тот же неразрешимый 1:1 разрыв, что
-				// gregapi/item/multiitem/MultiItemRandom.java (FoodData.func_151686_a убран целиком в neo,
-				// компонентная FoodProperties-модель без per-item override hook) — тот же честный фолбэк.
+				// Same unresolvable gap as MultiItemRandom.java: neo's component-based FoodProperties model has no per-item override
+				// hook AppleCore's addStats needs, so the same honest fallback applies here.
 				UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, aStack.getItem());
 				aPlayer.getFoodData().eat(tFoodLevel, FoodStatFluid.INSTANCE.getSaturation(aStack.getItem(), aStack, aPlayer));
 			} else {

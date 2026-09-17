@@ -41,8 +41,7 @@ import thaumcraft.api.crafting.IArcaneRecipe;
 import thaumcraft.api.crafting.InfusionEnchantmentRecipe;
 import thaumcraft.api.crafting.InfusionRecipe;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только объявления, используемые GregTech6
- *  (CompatTC.addResearch: набор конструкторов ResearchPage(...)). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only the constructors CompatTC.addResearch calls. */
 public class ResearchPage {
 	public ResearchPage(String aText) {}
 	@SuppressWarnings("rawtypes")

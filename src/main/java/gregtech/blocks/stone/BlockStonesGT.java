@@ -56,6 +56,6 @@ public class BlockStonesGT extends BlockStones {
 	
 	
 	public boolean canEntityDestroy(BlockGetter aWorld, int aX, int aY, int aZ, Entity aEntity) {
-		return (mWitherProof && aEntity instanceof WitherBoss) ? F : T /* neo IBlockExtension.canEntityDestroy иной сигнатуры; база GT6 хук не несёт -> дефолт true */;
+		return (mWitherProof && aEntity instanceof WitherBoss) ? F : T /* neo's canEntityDestroy has a different signature than the GT6 base hook, which doesn't cover it, so it defaults to true. */;
 	}
 }

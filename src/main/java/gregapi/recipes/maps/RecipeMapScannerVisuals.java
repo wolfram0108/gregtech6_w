@@ -51,9 +51,8 @@ import static gregapi.data.CS.*;
 public class RecipeMapScannerVisuals extends RecipeMap {
 	public RecipeMapScannerVisuals(Collection<Recipe> aRecipeList, String aUnlocalizedName, String aNameLocal, String aNameNEI, long aProgressBarDirection, long aProgressBarAmount, String aNEIGUIPath, long aInputItemsCount, long aOutputItemsCount, long aMinimalInputItems, long aInputFluidCount, long aOutputFluidCount, long aMinimalInputFluids, long aMinimalInputs, long aPower, String aNEISpecialValuePre, long aNEISpecialValueMultiplier, String aNEISpecialValuePost, boolean aShowVoltageAmperageInNEI, boolean aNEIAllowed, boolean aConfigAllowed, boolean aNeedsOutputs, boolean aCombinePower, boolean aUseBucketSizeIn, boolean aUseBucketSizeOut) {
 		super(aRecipeList, aUnlocalizedName, aNameLocal, aNameNEI, aProgressBarDirection, aProgressBarAmount, aNEIGUIPath, aInputItemsCount, aOutputItemsCount, aMinimalInputItems, aInputFluidCount, aOutputFluidCount, aMinimalInputFluids, aMinimalInputs, aPower, aNEISpecialValuePre, aNEISpecialValueMultiplier, aNEISpecialValuePost, F, aShowVoltageAmperageInNEI, aNEIAllowed, aConfigAllowed, aNeedsOutputs, aCombinePower, aUseBucketSizeIn, aUseBucketSizeOut);
-		// F12-followup (item-split): RecipeMap строится на RM.<clinit> (до server-start), но mMappings.put(ST.make) создаёт
-		// ItemStack → компоненты только на server-start. mMappings читается лишь в findRecipe после старта (guard там) →
-		// откладываем заполнение в deferItemInit (server-start). Иначе RM.<clinit> падает → NoClassDefFoundError на весь RM.
+		// RecipeMap fields build in the class initializer, before server start, but ST.make needs item components that
+		// only exist after boot; population is deferred to server-start via deferItemInit to avoid a class-init crash.
 		gregapi.GT_API.deferItemInit(() -> {
 		mMappings.put(Items.FLINT_AND_STEEL , W, ST.make(Blocks.FIRE, 1, 0));
 		mMappings.put(Items.SUGAR_CANE           , W, ST.make(Blocks.SUGAR_CANE, 1, 0));

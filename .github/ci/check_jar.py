@@ -27,12 +27,12 @@ import sys
 import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _ci import summary  # noqa: E402  — общий центр вывода гейтов
+from _ci import summary  # noqa: E402 -- single shared sink for all gate output
 
 FORBIDDEN_PREFIXES = ("net/minecraft/", "cpw/")
 
-# Расширения, из-за которых площадки раздачи модов отклоняют архив целиком (чёрный список
-# CurseForge/Modrinth: исполняемые файлы и командные скрипты любой платформы).
+# Extensions that make mod-hosting platforms reject the whole archive outright.
+# CurseForge/Modrinth blacklist: executables and shell or batch scripts for any platform.
 FORBIDDEN_SUFFIXES = (
     ".bat", ".cmd", ".com", ".exe", ".msi", ".scr",
     ".vbs", ".ps1", ".sh", ".bin", ".dll", ".so",

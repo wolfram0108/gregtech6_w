@@ -63,11 +63,8 @@ public class Loader_Blocks implements Runnable {
 		
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.asphalt", () -> {BlockAsphalt b = new BlockAsphalt("gt.block.asphalt"); BlocksGT.Asphalt = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.Asphalt, 1, W), F, TC.stack(TC.TERRA, 1), TC.stack(TC.ITER, 1));
-		// F12-followup (block-split): всё, что читает лениво-заселяемые поля BlocksGT.* (NEI-redirects, рецепты, IMC),
-		// — deferItemInit (server-start), как у братьев Loader_Rails/Rocks/Woods: поля заселяет RegisterEvent<Block>,
-		// а этот run() исполняется на FMLConstructModEvent, РАНЬШЕ него — синхронное чтение даёт null, и CR.shaped
-		// молча отбрасывает рецепт (CR.java: ST.invalid(aResult) -> return F). До правки так терялись все 16+5
-		// рецептов LongDistWire/LongDistPipe и 16 армирований бетона (сверка crafting.jsonl против golden 2026-08-06).
+		// Anything reading lazily-populated BlocksGT.* fields is deferred, since those fields only fill on RegisterEvent<Block>,
+		// which runs after this constructor-time method; reading them synchronously silently dropped 21 recipes before this fix.
 		gregapi.GT_API.deferItemInit(() -> ItemsGT.addNEIRedirects(BlocksGT.Asphalt));
 
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.concrete", () -> {BlockConcrete b = new BlockConcrete("gt.block.concrete"); BlocksGT.Concrete = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
@@ -150,8 +147,8 @@ public class Loader_Blocks implements Runnable {
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.River          , 1, W), F, TC.stack(TC.AQUA, 3), TC.stack(TC.MOTUS, 3));
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.Ocean          , 1, W), F, TC.stack(TC.AQUA, 3), TC.stack(TC.TEMPESTAS, 3));
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.Swamp          , 1, W), F, TC.stack(TC.AQUA, 3), TC.stack(TC.VENEMUM, 1));
-		// F12-followup (block-split): имена блоков читаются ВНУТРИ supplier — IMC-сообщение потребляется на
-		// InterModProcessEvent, ПОСЛЕ RegisterEvent<Block>; синхронный ST.regName здесь дал бы null (поля ленивые).
+		// Block names are read inside the supplier, since the IMC message fires after RegisterEvent<Block>; reading them
+		// synchronously here would give null.
 		InterModComms.sendTo(MD.IC2C.mID, "watergen", () -> {
 			ListTag tNBTList = new ListTag();
 			tNBTList.add(StringTag.valueOf(ST.regName(BlocksGT.River)));
@@ -162,11 +159,8 @@ public class Loader_Blocks implements Runnable {
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.fluid.water.geothermal", () -> {BlockBaseFluid b = new BlockBaseFluid("gt.block.fluid.water.geothermal"  , FL.Water_Geothermal,    0, Material.water      ).setLighterThanWater().addEffectBathing(/*regeneration*/10, 100, 0).addEffectBathing(/*resistance*/11, 2400, 2); BlocksGT.WaterGeothermal = b; return b;});
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.WaterGeothermal, 1, W), F, TC.stack(TC.AQUA, 3), TC.stack(TC.SANO, 3));
 		
-		// СРЕДА НЕФТЕЙ (BP-ADAPT-002, перенос main BUG-120 1:1; решение пользователя 2026-08-11, сверх 1:1):
-		// во всех нефтях плаваешь, лёгкие — как вода, тяжёлые — вязнешь. Оригинал :149-150 ставил setWeb()
-		// только двум тяжёлым (паутина, без всплытия) — заменено шкалой setMedium(гориз., верт., подъём при
-		// прыжке); канал и обоснование — BlockBaseFluid.setMedium. Величины взяты с main КАК ЕСТЬ (они там
-		// уже приняты живой игрой), своей калибровки ветка не заводит. Газ среды не получает — как на main.
+		// Every oil now has graduated swim/sink behavior instead of the original's cobweb-like no-float on only the two
+		// heaviest oils; values are carried over from the main branch as already-accepted live-play numbers, unchanged here.
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.fluid.oil.extraheavy", () -> {BlockBaseFluid b = new BlockBaseFluid("gt.block.fluid.oil.extraheavy"    , FL.Oil_ExtraHeavy  , 1000, MaterialOil.instance).setLighterThanWater().addEffectBreathing(/*poison*/19, 300, 0).addEffectBreathing(/*confusion*/9, 120, 0).addEffectBathing(PotionsGT.ID_FLAMMABLE, 300, 1).addEffectBathing(PotionsGT.ID_STICKY  , 300, 1).addEffectBathing(/*blindness*/15, 60, 1).setMedium(0.30, 0.20, 0.14); BlocksGT.OilExtraHeavy = b; return b;});
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.fluid.oil.heavy", () -> {BlockBaseFluid b = new BlockBaseFluid("gt.block.fluid.oil.heavy"         , FL.Oil_Heavy       , 1000, MaterialOil.instance).setLighterThanWater().addEffectBreathing(/*poison*/19, 300, 0).addEffectBreathing(/*confusion*/9, 120, 0).addEffectBathing(PotionsGT.ID_FLAMMABLE, 300, 1).addEffectBathing(PotionsGT.ID_STICKY  , 300, 1).addEffectBathing(/*blindness*/15, 60, 1).setMedium(0.50, 0.40, 0.14); BlocksGT.OilHeavy = b; return b;});
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.fluid.oil.medium", () -> {BlockBaseFluid b = new BlockBaseFluid("gt.block.fluid.oil.medium"        , FL.Oil_Medium      , 1000, MaterialOil.instance).setLighterThanWater().addEffectBreathing(/*poison*/19, 300, 0).addEffectBreathing(/*confusion*/9, 120, 0).addEffectBathing(PotionsGT.ID_FLAMMABLE, 300, 1).addEffectBathing(PotionsGT.ID_SLIPPERY, 300, 1).addEffectBathing(/*blindness*/15, 60, 1).setMedium(0.80, 0.80, 0.14); BlocksGT.OilMedium = b; return b;});
@@ -180,7 +174,7 @@ public class Loader_Blocks implements Runnable {
 		
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.longdistwire.01", () -> {BlockLongDistWire b = new BlockLongDistWire("gt.block.longdistwire.01", Textures.BlockIcons.LONG_DIST_WIRES_01, new byte[] {4, 4, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8}); BlocksGT.LongDistWire01 = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 		
-		gregapi.GT_API.deferItemInit(() -> { // F12-followup (block-split): рецепты — deferItemInit, поле LongDistWire01 заселяет RegisterEvent<Block>
+		gregapi.GT_API.deferItemInit(() -> { // Recipes are deferItemInit; the LongDistWire01 field fills on RegisterEvent<Block>.
 		CR.shaped(ST.make(BlocksGT.LongDistWire01, 1, 0), CR.DEF_REV_NCC, "RSR", "PWP", "RSR", 'R', OP.plate.dat(ANY.Rubber), 'P', OP.plateCurved.dat(ANY.Cu), 'S', OP.plateCurved.dat(MT.Al), 'W', OP.wireGt16.dat(MT.Sn));
 		CR.shaped(ST.make(BlocksGT.LongDistWire01, 1, 1), CR.DEF_REV_NCC, "RSR", "PWP", "RSR", 'R', OP.plate.dat(ANY.Rubber), 'P', OP.plateCurved.dat(ANY.Cu), 'S', OP.plateCurved.dat(MT.Al), 'W', OP.wireGt16.dat(MT.Pb));
 		CR.shaped(ST.make(BlocksGT.LongDistWire01, 1, 2), CR.DEF_REV_NCC, "RSR", "PWP", "RSR", 'R', OP.plate.dat(ANY.Rubber), 'P', OP.plateCurved.dat(ANY.Cu), 'S', OP.plateCurved.dat(MT.Al), 'W', OP.wireGt16.dat(ANY.Cu));
@@ -201,7 +195,7 @@ public class Loader_Blocks implements Runnable {
 
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.longdistpipe.01", () -> {BlockLongDistPipe b = new BlockLongDistPipe("gt.block.longdistpipe.01", Textures.BlockIcons.LONG_DIST_PIPES_01, new long[] {-1, MT.StainlessSteel.mMeltingPoint, MT.W.mMeltingPoint, MT.Ad.mMeltingPoint, MT.Draconium.mMeltingPoint, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}); BlocksGT.LongDistPipe01 = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 		
-		gregapi.GT_API.deferItemInit(() -> { // F12-followup (block-split): рецепты — deferItemInit, поле LongDistPipe01 заселяет RegisterEvent<Block>
+		gregapi.GT_API.deferItemInit(() -> { // Recipes are deferItemInit; the LongDistPipe01 field fills on RegisterEvent<Block>.
 		CR.shaped(ST.make(BlocksGT.LongDistPipe01, 1, 0), CR.DEF_REV_NCC, "SPS", "PwP", "SPS", 'P', OP.pipeMedium.dat(MT.Electrum       ), 'S', OP.plate.dat(ANY.Plastic));
 		CR.shaped(ST.make(BlocksGT.LongDistPipe01, 1, 1), CR.DEF_REV_NCC, "SPS", "PwP", "SPS", 'P', OP.pipeMedium.dat(MT.StainlessSteel ), 'S', OP.plate.dat(ANY.Plastic));
 		CR.shaped(ST.make(BlocksGT.LongDistPipe01, 1, 2), CR.DEF_REV_NCC, "SPS", "PwP", "SPS", 'P', OP.pipeMedium.dat(ANY.W             ), 'S', OP.plate.dat(ANY.Plastic));

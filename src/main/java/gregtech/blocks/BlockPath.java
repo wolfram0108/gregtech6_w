@@ -74,7 +74,7 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 		if (COMPAT_FR  != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W)));
 	}
 	
-	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) { // GT6-хук (не neo @Override); мост дропа зовёт его как у core-блоков
+	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) { // GT6 hook (not a neo @Override); the drop bridge calls it like on core blocks
 		switch(aMeta) {
 		case  1: return ST.arraylist(IL.AETHER_Dirt.get(1));
 		case  2: return ST.arraylist(IL.BoP_Dirt_Loamy.get(1));
@@ -91,9 +91,8 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 		}
 	}
 	
-	/** 1:1 с оригиналом: сверху грань рисуется всегда, вбок — только если сосед не грядка и не непрозрачный
-	 *  (дорожка утоплена, к сплошному соседу грань не нужна). Контракт по состояниям — движковый канал neo
-	 *  (skipRendering) мира не даёт, прежняя 1.7.10-сигнатура вызывателей не имела. Центр — BlockMetaType. */
+	/** 1:1 with the original: the top face always draws, sides only against a non-opaque, non-crop-bed neighbor, via the same
+	 *  by-state contract and BlockMetaType center. */
 	@Override public boolean shouldSideBeRendered(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.block.state.BlockState aNeighbor, byte aSide) {
 		if (SIDES_TOP[aSide]) return T;
 		Block tBlock = aNeighbor.getBlock();

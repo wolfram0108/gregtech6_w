@@ -38,8 +38,8 @@ package forestry.api.recipes;
 import java.util.Map;
 import net.minecraft.world.item.ItemStack;
 
-/** Forestry-mirror (compile-only; настоящий Forestry предоставляет реализацию в рантайме,
- *  вызов гейтится {@code MD.FR.mLoaded} — тело здесь никогда не исполняется). */
+/** Compile-only Forestry mirror; the real mod supplies the implementation at runtime, and the
+ *  call is gated by MD.FR.mLoaded, so this body never actually runs. */
 public interface ICentrifugeRecipe {
 	ItemStack getInput();
 	Map<ItemStack, Float> getAllProducts();

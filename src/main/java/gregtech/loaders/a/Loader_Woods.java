@@ -40,9 +40,8 @@ public class Loader_Woods implements Runnable {
 	@Override
 	@SuppressWarnings("deprecation")
 	public void run() {
-		// F12-followup (block-split): 28 конструкций деревьев → registerBlockLazy (конструкция на RegisterEvent<Block>,
-		// реестр разморожен); поле BlocksGT.X и VISUALLY_OPAQUE_BLOCKS.add — внутри supplier (нужен инстанс). Пост-настройка
-		// (ST.make/CR.shaped/OM/OreDict, ниже) — deferItemInit (server-start): поля заселены RegisterEvent'ом + компоненты связаны.
+		// 28 tree constructs build via registerBlockLazy at RegisterEvent<Block>; fields need the instance.
+		// Post-setup (ST.make/CR.shaped/OM/OreDict) runs in deferItemInit, once fields are populated.
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.log.1"            , () -> {BlockTreeLog1             b = new BlockTreeLog1            ("gt.block.log.1"            ); BlocksGT.Log1             = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.log.1.fireproof"  , () -> {BlockTreeLog1FireProof    b = new BlockTreeLog1FireProof   ("gt.block.log.1.fireproof"  ); BlocksGT.Log1FireProof    = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.log.a"            , () -> {BlockTreeLogA             b = new BlockTreeLogA            ("gt.block.log.a"            ); BlocksGT.LogA             = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});

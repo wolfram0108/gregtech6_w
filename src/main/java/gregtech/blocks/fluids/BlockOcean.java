@@ -38,14 +38,9 @@ import java.util.Random;
 
 import static gregapi.data.CS.*;
 
-/**
- * @author Gregorius Techneticies
- *
- * F5 форс движка (decisions/F5-fluids.md §5): движковые хуки (onBlockAdded/onNeighborBlockChange/updateTick)
- * больше НЕ реальные {@code @Override} — neo {@code Block}-тик-точка иная сигнатура
- * (BlockBehaviour.tick(BlockState,ServerLevel,BlockPos,RandomSource)), рантайм-мост — F3 (как и у
- * {@link gregapi.block.BlockBase#updateTick}, тот же приём: `// @Override` вместо `@Override`).
- */
+/** @author Gregorius Techneticies
+ *  neo's block tick hook has a different signature, so these are no longer real overrides; the runtime
+ *  bridge uses the same '// @Override' trick as {@link gregapi.block.BlockBase#updateTick}. */
 public class BlockOcean extends BlockWaterlike {
 	public static boolean PLACEMENT_ALLOWED = F, FLOWS_OUT = T, SPREAD_TO_AIR = F, UPDATE_TICK = T;
 
@@ -57,7 +52,7 @@ public class BlockOcean extends BlockWaterlike {
 	// @Override
 	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		if (PLACEMENT_ALLOWED) {
-			if (UPDATE_TICK) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 10+RNGSUS.nextInt(90)); // было scheduleBlockUpdate(x,y,z,block,delay)
+			if (UPDATE_TICK) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 10+RNGSUS.nextInt(90)); // was scheduleBlockUpdate(x,y,z,block,delay)
 		} else {
 			WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
 		}
@@ -73,16 +68,10 @@ public class BlockOcean extends BlockWaterlike {
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		PLACEMENT_ALLOWED = UPDATE_TICK = T;
 
-		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) { // было doChunksNearChunkExist(x,y,z,33) — LevelReader.hasChunksAt(x0,y0,z0,x1,y1,z1) тот же checkChunksExist-инлайн
-			// ADAPT-009 (лаги воды у моря, замер [GT6-WATERPROBE]): холостые func_147451_t (re-light) + WD.update
-			// (markBlockForUpdate) КАЖДЫЙ тик КАЖДОГО блока воды — СНЯТЫ. В 1.7.10 оба были дешёвыми; в neo это
-			// 2 light-enqueue + SectionBlocksUpdate-пакет → клиент ремешил 150-260 секций/с у моря (главный корень
-			// лагов). Реальные изменения сигналятся сами: neo setBlock чинит свет и шлёт клиенту (флаги WD.set).
-			// Тот же приём у самого Грега в BlockWaterlike.updateFlow: «Here was an else Block that only caused huge
-			// amounts of Network Lag with no purpose». Свет-хак getLightOpacity, ради которого стоял re-light, в
-			// порте не существует (заглушка LIGHT_OPACITY_NONE ниже, см. getLightOpacity). Каскад тика вниз по колонне —
-			// механика (питает над-логику Ocean/River/Swamp), ОСТАВЛЕН 1:1.
-			if (aY > WD.minY(aWorld)) { // F6-Y-scale: было aY > 0, дно neo = getMinY()
+		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) { // was doChunksNearChunkExist(x,y,z,33) -> LevelReader.hasChunksAt, the same inlined check
+			// Idle re-light plus a forced client update on every tick of every water block are removed: cheap in 1.7.10,
+			// they cost 2 light-enqueues and a section-update packet each in neo, remeshing 150-260 sections/sec near the sea.
+			if (aY > WD.minY(aWorld)) { // Was aY > 0; neo's world floor is getMinY() instead of 0.
 				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
 					aWorld.scheduleTick(new BlockPos(aX, aY-1, aZ), this, tickRate);
 				}
@@ -93,7 +82,7 @@ public class BlockOcean extends BlockWaterlike {
 			return;
 		}
 		
-		if (aY <= WD.minY(aWorld)) { // F6-Y-scale: было aY <= 0, дно neo = getMinY()
+		if (aY <= WD.minY(aWorld)) { // Was aY <= 0; neo's world floor is getMinY() instead of 0.
 			updateFlow(aWorld, aX, aY, aZ, aRandom);
 			PLACEMENT_ALLOWED = F;
 			return;
@@ -101,9 +90,9 @@ public class BlockOcean extends BlockWaterlike {
 		
 		Block tBlock;
 
-		Holder<Biome> tBiome = aWorld.getBiome(new BlockPos(aX, aY, aZ)); // было getBiomeGenForCoords(x,z) (2D) — LevelReader.getBiome(BlockPos) (F6-центр, см. WD.java envTemp/infiniteWater)
+		Holder<Biome> tBiome = aWorld.getBiome(new BlockPos(aX, aY, aZ)); // Was getBiomeGenForCoords(x,z) (2D); LevelReader.getBiome(BlockPos) is the shared biome-lookup center (see WD.java).
 
-		boolean tHasNoOceanAround = T, tHasOceanBiome = BIOMES_OCEAN_BEACH.contains(tBiome); // было tBiome.biomeName — BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам
+		boolean tHasNoOceanAround = T, tHasOceanBiome = BIOMES_OCEAN_BEACH.contains(tBiome); // was tBiome.biomeName; BiomeNameSet.contains(Holder<Biome>) resolves identity itself
 		byte tOceanCounter = 0;
 		ArrayListNoNulls<BlockPos> tList = new ArrayListNoNulls<>();
 		for (byte tSide : ALL_SIDES_HORIZONTAL) {
@@ -129,10 +118,8 @@ public class BlockOcean extends BlockWaterlike {
 			if (WD.meta(aWorld, aX, aY-1, aZ) == 0) tOceanCounter++;
 		} else if (WD.anywater(tBlock)) {
 			tHasNoOceanAround = F;
-			// ADAPT (класс «признак сменил носитель», см. BlockWaterlike.canClaim): захват воды ПОД собой —
-			// вторая ветка конверсии у океана, в 1.7.10 не ограниченная ничем, потому что океан и не мог
-			// оказаться вне океанских биомов: крупная вода САМА была биомом. Своя территория океана — тот же
-			// BIOMES_OCEAN_BEACH, который он уже спрашивает выше (tHasOceanBiome).
+			// Claiming water below itself is ocean's second conversion branch, unrestricted in 1.7.10 since large water was itself a
+			// biome; ocean's own territory is the same BIOMES_OCEAN_BEACH it already checks above.
 			if (canClaim(aWorld, aX, aY-1, aZ) && WD.set(aWorld, aX, aY-1, aZ, this, 0, WATER_UPDATE_FLAGS)) tOceanCounter++;
 		}
 		
@@ -171,27 +158,16 @@ public class BlockOcean extends BlockWaterlike {
 		return;
 	}
 	
-	// F3 light-opacity: затухание света океан теперь получает из ЦЕНТРА (BlockFluidBaseGT.getLightDampening →
-	// getLightOpacity(BlockState) = LIGHT_OPACITY_WATER), как и остальные жидкости GT6 — вместо прежнего
-	// мёртвого метода, который движок не звал и который отдавал LIGHT_OPACITY_NONE (глубина не темнела вовсе).
-	//
-	// СОБСТВЕННЫЙ хак океана из 1.7.10 (:164-167, помечен самим автором «TODO FIX THIS SHIT») НЕ воспроизведён:
-	//   мета==0 && воздух сверху && воздух через один && блок снизу пропускает свет  ->  16, иначе 0.
-	// Все три условия — про СОСЕДЕЙ, а neo-канал затухания видит только состояние блока
-	// (LightEngine.getOpacity:85 → state.getLightDampening, заполняется при сборке состояния, BlockBehaviour:518).
-	// Перенести нечего без второго механизма (пересчёт по соседям) — отложено, см. details/DEFERRED-LEDGER.md.
-	// Разница для игрока: у поверхностного слоя океана нет добавочного затемнения; толща гаснет как вода (3).
+	// Light dampening now comes from the shared BlockFluidBaseGT center instead of a dead method the engine
+	// never called; ocean's own neighbor-dependent 1.7.10 hack can't port since dampening only sees the block's own state.
 
-	// getIcon НЕ переопределяем: тело оригинала (:169 `Blocks.water.getIcon(aSide,aMeta)`) ДОСЛОВНО совпадает
-	// с базовым (BlockWaterlike:200) — копия была бы дублем детали. Своё у океана только тинт (ниже, 1:1 :170-171).
+	// getIcon isn't overridden here since the original body is verbatim the base class's own; only the tint below is ocean's
+	// own.
 	@Override public int getRenderColor(int aMeta) {return 0x00c0c0c0;}
 	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00c0c0c0;}
 
-	/** Своя территория океана — океанские и пляжные биомы ({@code BIOMES_OCEAN_BEACH}, тот же набор, который
-	 *  тик уже спрашивает как {@code tHasOceanBiome}, :106). Обоснование класса и замер — {@link
-	 *  BlockWaterlike#canClaim}; болотный близнец — {@link BlockSwamp#canClaim}. Ограничитель оригинала
-	 *  {@code BIOMES_RIVER_LAKE} (:147) оставлен на месте: он выражает ДРУГОЕ правило («в реках и озёрах
-	 *  захватывать только сплошным фронтом»), и внутри своей территории работает как в 1.7.10. */
+	/** Ocean's own territory is the same ocean/beach biome set the tick already checks; the original's separate
+	 *  BIOMES_RIVER_LAKE limiter expresses a different rule (solid-front claiming in rivers/lakes) and is left untouched. */
 	@Override
 	public boolean canClaim(Level aWorld, int aX, int aY, int aZ) {
 		return BIOMES_OCEAN_BEACH.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));

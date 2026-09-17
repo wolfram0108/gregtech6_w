@@ -37,10 +37,8 @@ package net.minecraft.client.renderer.texture;
 
 import net.minecraft.util.IIcon;
 
-/**
- * F3-render compile-only shim. 1.7.10 IIconRegister — регистратор атласных иконок, удалён в neo.
- * Поверхность 1:1 с оригиналом (без @SideOnly). Реальная регистрация текстур отложена на F3.
- */
+/** Compile-only shim for 1.7.10's IIconRegister, removed in neo; mirrors the original surface
+ *  exactly since real texture registration is handled by a later client-side pass. */
 public interface IIconRegister {
 	IIcon registerIcon(String name);
 }

@@ -65,7 +65,7 @@ public class WorldgenPit extends WorldgenObject {
 		
 		int tX = aMinX-16, tZ = aMinZ-16, tUpperBound = WD.waterLevel(aWorld)+16, tLowerBound = WD.waterLevel(aWorld)-8;
 		for (int i = 0; i < 48; i++) for (int j = 0; j < 48; j++) if (SHAPE[i][j]) {
-			Block tBlock = NB, tLastBlock = WD.block(aWorld, tX+i, WD.waterLevel(aWorld)+9, tZ+j); // F6-Y-scale: Y=71 был sea+9 (sea_old=62) → якорим к морю.
+			Block tBlock = NB, tLastBlock = WD.block(aWorld, tX+i, WD.waterLevel(aWorld)+9, tZ+j); // Y=71 used to be sea+9 (old sea level 62); now anchored to the sea.
 			for (int tY = tUpperBound, tGenerated = 0; tY >= tLowerBound && tGenerated < 7; tY--, tLastBlock = tBlock) {
 				tBlock = WD.block(aWorld, tX+i, tY, tZ+j);
 				if (tBlock == mBlock && mMeta == WD.meta(aWorld, tX+i, tY, tZ+j)) {tGenerated++; continue;}

@@ -35,7 +35,6 @@
 
 package forestry.api.farming;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Forestry. Минимум для компиляции ядра; члены
- *  добираются компилятором (CompatFR implements IFarmable, методы не @Override — маркер).
- *  См. compat-mirror/README.md. */
+/** Compile-only mirror of the Forestry API, kept as a marker interface since
+ *  CompatFR's implementation is not @Override on the real type either. */
 public interface IFarmable {}

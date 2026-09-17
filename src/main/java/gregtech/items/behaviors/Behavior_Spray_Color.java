@@ -152,10 +152,8 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 	
 	private boolean colorize(Level aWorld, int aX, int aY, int aZ, byte aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
-		// F4-flatten: список выше перечисляет ОДИН блок на семью, потому что в 1.7.10 он и был всей семьёй
-		// (stained_glass = все 16 оттенков). После расщепления «перекрасить уже цветное» перестало проходить
-		// проверку — поймано живым стендом GT6-FLATTENPROBE (REPAINT красное→жёлтое: осталось красным).
-		// Спрашиваем принадлежность цветовой семье у центра CS.Flattened, а не перечисляем 16 оттенков здесь.
+		// The list above names one block per family, since 1.7.10's single block was the whole family; family
+		// membership is asked through the central CS.Flattened instead of listing all 16 split-off shades here.
 		if (aBlock != NB && (mAllowedVanillaBlocks.contains(aBlock) || gregapi.data.CS.Flattened.isColored(aBlock) || aBlock.defaultBlockState().is(net.minecraft.tags.BlockTags.WOOL) || IL.TE_Rockwool.block() == aBlock || aBlock == BlocksGT.Grass)) {
 			if (aBlock == Blocks.TERRACOTTA  ) return WD.set(aWorld, aX, aY, aZ, Blocks.WHITE_TERRACOTTA, ~mColor & 15, 3);
 			if (aBlock == Blocks.GLASS_PANE     ) return WD.set(aWorld, aX, aY, aZ, Blocks.WHITE_STAINED_GLASS_PANE   , ~mColor & 15, 3);
@@ -174,10 +172,8 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 			}
 			return WD.meta(aWorld, aX, aY, aZ) != (~mColor & 15) && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ~mColor & 15, 3, F);
 		}
-		// F-block-recolor: было aBlock.recolourBlock(world,x,y,z,FORGE_DIR[aSide],~mColor&15) — 1.7.10 Forge-метод на
-		// ЛЮБОМ Block (дефолт false) удалён из neo. GT6-блоки, что его переопределяли, несут recolourBlock как СВОЙ метод
-		// (BlockColored; MultiTileEntityBlock → делегирует IMTE_RecolourBlock тайла) — зовём его; прочие блоки не
-		// перекрашиваются (1:1 с forge-дефолтом false). Это единственная точка вызова (централизация §3).
+		// Forge's recolourBlock hook on every Block is gone; GT6 blocks that overrode it now carry it as their own method
+		// instead, called here as the sole call site, with everything else left unrecolored, 1:1 with Forge's old default.
 		if (aBlock instanceof gregapi.block.metatype.BlockColored tBC) return tBC.recolourBlock(aWorld, aX, aY, aZ, FORGE_DIR[aSide], ~mColor & 15);
 		if (aBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock tMTE) return tMTE.recolourBlock(aWorld, aX, aY, aZ, FORGE_DIR[aSide], ~mColor & 15);
 		return F;

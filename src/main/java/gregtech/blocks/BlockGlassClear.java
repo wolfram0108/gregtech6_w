@@ -78,11 +78,8 @@ public class BlockGlassClear extends BlockColored {
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(OP.scrapGt.mat(MT.Glass, mBlock == this ? 80 : 40));}
 	
 	
-	/** 1:1 с оригиналом (`gregtech6/.../BlockGlassClear.java:76-80`): грань к соседу-стеклу ТОГО ЖЕ блока
-	 *  рисуется только при РАЗНОЙ мете (разные цвета) либо при несовпадении сторон половинок; одинаковые
-	 *  стёкла сливаются в сплошной объём. Правило переехало на контракт по СОСТОЯНИЯМ: движковый канал
-	 *  neo (skipRendering) мира не даёт, а прежняя 1.7.10-сигнатура осталась без вызывателей — из-за чего
-	 *  между блоками стекла рисовалась стенка (найдено игроком сверкой с 1.7.10). Центр — BlockMetaType. */
+	/** 1:1 with the original: a face to a same-glass neighbor draws only at a different meta or mismatched half; identical
+	 *  glass merges solid. The rule moved onto a by-state contract since neo's skipRendering channel gives no world to query. */
 	@Override public boolean shouldSideBeRendered(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.block.state.BlockState aNeighbor, byte aSide) {
 		if (aSide == OPOS[mSide]) return T;
 		Block aBlock = aNeighbor.getBlock();

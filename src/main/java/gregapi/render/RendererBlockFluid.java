@@ -32,19 +32,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 
-/**
- * F3-render: в 1.7.10 рисовал жидкостный блок immediate-mode ({@code renderWorldBlock} через Tessellator).
- * Здесь — тот же класс с той же геометрией, но «нарисуй сейчас» → «дай quad'ы» ({@link GT6QuadBuilder#fluidQuad},
- * зовёт {@link GT6BlockModel#collectParts}). Геометрия 1:1 с оригиналом {@code RendererBlockFluid.renderWorldBlock}:
- * кванта-высота ({@code getFluidHeightForRender}), угловые высоты усреднением по соседям 3×3
- * ({@code getFluidHeightAverage} — склоны смыкают соседние уровни без дыр), боковые грани до угловых высот
- * с RENDER_OFFSET-вдавливанием, газ ({@code densityDir>0}) — ЗЕРКАЛЬНО ОТ ПОТОЛКА ({@code y+1-height}),
- * поворот текстуры поверхности по направлению потока ({@link BlockFluidBaseGT#getFlowDirection}).
- * Отличия от 1.7.10 — только канал движка: brightness/LIGHT_*-множители не проставляются (diffuse/lightmap
- * делает neo-пайплайн per-quad по Direction), все грани двусторонние unculled (1.7.10 рисовал без backface-cull;
- * видимость решает 1:1-логика shouldSideBeRendered, не neo-cull).
- * {@code RENDER_ID}/{@code INSTANCE} — no-op-совместимость (читаются блок-классами как "id рендер-типа").
- */
+/** Same class and geometry as 1.7.10's immediate-mode renderWorldBlock, just 'draw now' turned into 'give me a
+ *  quad'; RENDER_ID/INSTANCE are no-op compatibility shims read elsewhere as 'is there a renderer'. */
 public class RendererBlockFluid {
 	public static int RENDER_ID = 0;
 	public static RendererBlockFluid INSTANCE;
@@ -54,15 +43,12 @@ public class RendererBlockFluid {
 		RENDER_ID = aRenderID;
 	}
 
-	/** 1:1 константы оригинала (:48-49). */
-	/** ⚠ 0.875, НЕ 0.8888889. Оригинал 1.7.10 применяет ровно этот множитель, причём в ДВУХ ролях сразу
-	 *  (RenderBlockFluid.java:38 — порог в усреднении углов, :68 и :71 — множитель доли объёма). Порт держал
-	 *  здесь 0.8888889 (=8/9), и это расходилось с эталоном на всех клетках: живой замер обеих версий одним
-	 *  способом (BUG-086, эталон gregapi.GT6OracleFluidProbe в живом 1.7.10) дал сумму высот 0.875 против
-	 *  0.889 при полностью совпавшем растекании — 7 клеток, кванты 2/1/1/1/1/1/1 в обеих версиях. */
+	/** 1:1 with the original's constants. */
+	/** Must stay 0.875, not 0.8888889: the original 1.7.10 applies exactly this value in two roles at once (an
+	 *  averaging threshold and a volume-fraction multiplier), confirmed against a live 1.7.10 measurement of fluid height. */
 	public static final float MAX_FLUID_HEIGHT = 0.875F, RENDER_OFFSET = 0.0010000000474974513F;
 
-	/** было {@code getFluidHeightAverage(float[])} (:51-63) — тело 1:1. */
+	/** Was getFluidHeightAverage(float[]) in the original; body is 1:1. */
 	public static float getFluidHeightAverage(float[] aFlow) {
 		float total = 0, end = 0;
 		int count = 0;
@@ -77,9 +63,8 @@ public class RendererBlockFluid {
 		return end;
 	}
 
-	/** было {@code getFluidHeightForRender(IBlockAccess,x,y,z,BlockFluidBase,Block)} (:65-73) — тело 1:1
-	 *  ({@code instanceof IFluidBlock} → {@code instanceof BlockFluidBaseGT}: GT6-жидкости; vanilla-вода
-	 *  покрыта веткой {@code getMaterial().isLiquid()}). */
+	/** Was getFluidHeightForRender(...) in the original, body 1:1; the IFluidBlock check maps to
+	 *  BlockFluidBaseGT for GT6 fluids, with vanilla water covered separately. */
 	public static float getFluidHeightForRender(BlockGetter aWorld, int aX, int aY, int aZ, BlockFluidBaseGT aFluidBlock, Block aBlock) {
 		if (aBlock == null) aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == aFluidBlock) {
@@ -90,8 +75,7 @@ public class RendererBlockFluid {
 		return !WD.getMaterial(aBlock).isSolid() && WD.block(aWorld, aX, aY - aFluidBlock.dir(), aZ) == aFluidBlock ? 1 : UT.Code.bindF(aFluidBlock.getQuantaPercentage(aWorld, aX, aY, aZ)) * MAX_FLUID_HEIGHT;
 	}
 
-	/** было {@code renderWorldBlock} (:78-283) — та же структура/условия/вершины, координаты локальные (0..1,
-	 *  baked-модель), Tessellator.addVertexWithUV → {@link GT6QuadBuilder#fluidQuad}. */
+	/** Was renderWorldBlock in the original: same structure and vertices, emitting a quad instead of an immediate-mode vertex. */
 	public static void collectFluidQuads(GT6QuadBuilder aQB, BlockGetter aWorld, int aX, int aY, int aZ, BlockBaseFluid aFluid) {
 		if (!(aFluid.renderTexture() instanceof BlockTextureFluid tTex) || !tTex.isValidTexture()) return;
 		ResourceLocation tIcon = tTex.icon();
@@ -134,7 +118,7 @@ public class RendererBlockFluid {
 			heightNE = flow11;
 		}
 
-		// ВЕРХ (поверхность; у газа — нижняя граница, зеркально от потолка) — вершины/UV 1:1 (:127-187).
+		// Top face (surface, or the lower boundary for gas mirrored from the ceiling): vertices and UV are 1:1 with the original.
 		if (renderTop) {
 			double flowDir = BlockFluidBaseGT.getFlowDirection(aWorld, aX, aY, aZ);
 
@@ -166,7 +150,7 @@ public class RendererBlockFluid {
 			}
 		}
 
-		// НИЗ (у газа — плоскость у потолка) — 1:1 (:189-199, renderFaceYNeg/YPos на y+RENDER_OFFSET).
+		// Bottom face (the ceiling plane for gas): 1:1 with the original.
 		if (renderBottom) {
 			if (aDir < 0) {
 				aQB.fluidQuad(new float[][] {
@@ -179,7 +163,7 @@ public class RendererBlockFluid {
 			}
 		}
 
-		// БОКА — стороны/вершины/UV 1:1 (:201-279): u 0..8, v по высоте (1-ty)*16*0.5 (полутекстура flowing).
+		// Side faces: 1:1 with the original, using a half-texture V coordinate scaled by fluid height for the flowing look.
 		for (int side = 0; side < 4; ++side) {
 			if (!renderSides[side]) continue;
 

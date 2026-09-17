@@ -38,8 +38,7 @@ package thaumcraft.api.research;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только объявления, используемые GregTech6
- *  (CompatTC.addResearch: ResearchCategories.getResearchList(aCategory)). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only getResearchList, called from CompatTC.addResearch. */
 public class ResearchCategories {
 	private static final Map<String, ResearchCategoryList> sLists = new LinkedHashMap<>();
 

@@ -35,6 +35,6 @@
 
 package codechicken.nei.recipe;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — NEI. Только тип-параметр
- *  (NEI_RecipeMap.handleItemTooltip(GuiRecipe,...) не @Override). См. compat-mirror/README.md. */
+/** Compile-only mirror of the NEI API: only used as a type parameter, since
+ *  NEI_RecipeMap.handleItemTooltip(GuiRecipe, ...) is not @Override on the real type either. */
 public class GuiRecipe {}

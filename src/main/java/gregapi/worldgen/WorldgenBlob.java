@@ -73,8 +73,8 @@ public abstract class WorldgenBlob extends WorldgenObject {
 			if (temp) return F;
 		}
 		if (aRandom.nextInt(mProbability) == 0) {
-			// F6 §4.1 (указание пользователя 2026-08-07): тот же приём, что в WorldgenOresSmall — окно растягивается
-			// sea-anchored, количество домножается на растяжение (плотность вкраплений на объём = 1.7.10). Центр — WD.
+			// Same trick as WorldgenOresSmall: the window stretches sea-anchored and the count is multiplied by the same stretch,
+			// via the central WD helpers, keeping density unchanged.
 			int tRMinY = WD.remapY(aWorld, mMinY), tRMaxY = WD.remapY(aWorld, mMaxY);
 			int tAmount = WD.yScaleAmount(aWorld, mMinY, mMaxY, mAmount, aRandom);
 			for (int i = 0; i < tAmount; i++) {

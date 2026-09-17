@@ -52,13 +52,8 @@ public class BlockStonesWitherProof extends BlockStones {
 		return !(aEntity instanceof WitherBoss);
 	}
 
-	// Подключение 1.7.10-канала к движку тем же приёмом, что у братьев PrefixBlock:586 и
-	// MultiTileEntityBlock:535 — прямой делегат, типы совпадают 1:1 (IBlockExtension:748).
-	// Мост стоит ЗДЕСЬ, а не в корне BlockBase: в оригинале правило живёт ровно в трёх классах
-	// (PrefixBlock:471, MultiTileEntityBlock:256, BlockStonesWitherProof:45), в базе его нет —
-	// заводить метод в корне значило бы добавить сущность, которой у Грегориуса не было.
-	// Без моста иссушитель ломал эти камни: ванильный дефолт судит по тегу WITHER_IMMUNE, а блоки
-	// GT6 в него не входят.
+	// Bridged directly here rather than in the BlockBase root, since the original rule lived in only three classes; without
+	// it, the wither destroyed these blocks because vanilla's default checks a tag GT6 blocks aren't in.
 	@Override public boolean canEntityDestroy(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos, Entity aEntity) {
 		return canEntityDestroy(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aEntity);
 	}

@@ -57,14 +57,9 @@ import java.util.Random;
 
 import static gregapi.data.CS.*;
 
-/**
- * @author Gregorius Techneticies
- *
- * F5 форс движка (decisions/F5-fluids.md §5): было {@code extends BlockFluidClassic} (Forge, удалён в neo) —
- * общий предок с {@link gregapi.block.fluid.BlockBaseFluid} воспроизведён ОДИН раз в
- * {@link BlockFluidBaseGT} (см. его javadoc). Тела GT6-собственных методов (updateFlow/getFlowVector/
- * getQuantaValue/shouldSideBeRendered/onHeadInside/...) — 1:1, только API-свод.
- */
+/** @author Gregorius Techneticies
+ *  Was Forge's removed BlockFluidClassic; its shared ancestor with BlockBaseFluid is reproduced once in
+ *  {@link BlockFluidBaseGT} instead. GT6's own method bodies here stay 1:1, only the API surface changed. */
 public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock, IItemGT, IBlockOnHeadInside {
 	// A state change reaches the client only with the UPDATE_CLIENTS bit set (Level.markAndNotifyBlock);
 	// 1.7.10 got that from the per-tick WD.update this port dropped, so the flag itself has to carry it.
@@ -89,25 +84,20 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		if (aHide) gregapi.GT_API.deferItemInit(() -> ST.hide(this));
 	}
 
-	/** BUG-115: {@code IFluidBlock} вернулся общему предку — {@code getFluid()} снова есть, 1:1 с 1.7.10. */
+	/** Restored after the shared ancestor regained IFluidBlock; matches 1.7.10 exactly. */
 	@Override public net.minecraft.world.level.material.FlowingFluid getFluid() {return liquidCarrierFor(mMaterial, mFluid);}
 
-	/** «Какую жидкость держит клетка» — второй, отдельный вопрос паспорта роли (см. предок): у мировой воды это
-	 *  её собственная {@code mFluid} (морская/болотная/речная), а не носитель-предок. Второго хранилища не заводим. */
+	/** A second, separate question from the ancestor's own answer.
+	 *  World water carries its own fluid field (sea/swamp/river), not a shared one. */
 	@Override public Fluid ownFluid() {return mFluid;}
 
-	// F10: реальная сигнатура net.minecraftforge.fluids.IFluidBlock — drain(Level,BlockPos,IFluidHandler.FluidAction),
-	// canDrain(Level,BlockPos); было (Level,int,int,int,boolean aDoDrain) старого шима.
+	// IFluidBlock's real drain/canDrain signatures take (Level,BlockPos[,FluidAction]).
+	// The old shim's took raw coordinates instead.
 	@Override
 	public FluidStack drain(Level aWorld, net.minecraft.core.BlockPos aPos, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction aAction) {
 		if (aAction.execute()) WD.set(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), NB, 0, 2);
-		// BP-BUG-004. Отдаём mFluid, а НЕ getFluid(). Это два разных вопроса, склеенных при гашении ошибок
-		// компиляции (dbf7e154): getFluid() на 1.20.1 обязан быть FlowingFluid (LiquidBlock.java:175 — сузить
-		// тип нельзя), поэтому он отвечает НОСИТЕЛЕМ-предком через liquidCarrierFor, а тот по материалу water
-		// даёт ванильную Fluids.WATER. Насос/дрейн читают эту клетку через FL.drainable -> drain(...) и получали
-		// пресную воду вместо FL.Ocean/FL.Swamp. Приём тот же, что уже у содержимых жидкостей
-		// (BlockBaseFluid.drain -> mQuanta из mFluid) — одна форма ответа на обе иерархии. Спрашиваем ЦЕНТР
-		// (ownFluid — тот же вопрос в паспорте роли), чтобы «какую жидкость держит клетка» жило в одном месте.
+		// getFluid() must stay a FlowingFluid here and so answers as the ancestor's plain-water carrier, not this cell's
+		// actual fluid; drains ask the center (ownFluid) instead, keeping that question in one place for both hierarchies.
 		return FL.make(ownFluid(), 1000);
 	}
 
@@ -116,17 +106,16 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		return WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) == 0;
 	}
 	
-	/** было Forge {@code BlockFluidClassic.getLargerQuanta(IBlockAccess,x,y,z,compare)} — тело 1:1 (нужно
-	 *  ТОЛЬКО {@link #updateFlow}, у {@link gregapi.block.fluid.BlockBaseFluid} свой quanta-поток). */
+	/** Was Forge's BlockFluidClassic.getLargerQuanta, body 1:1; only needed by updateFlow, since BlockBaseFluid has its own
+	 *  separate quanta flow. */
 	protected int getLargerQuanta(BlockGetter aWorld, int aX, int aY, int aZ, int aCompare) {
 		int tQuantaRemaining = getQuantaValue(aWorld, aX, aY, aZ);
 		if (tQuantaRemaining <= 0) return aCompare;
 		return tQuantaRemaining >= aCompare ? tQuantaRemaining : aCompare;
 	}
 
-	/** было 1.7.10 {@code Block.isBlockSolid(IBlockAccess,x,y,z,side)} (Forge-хелпер на ВСЕХ Block,
-	 *  {@code side}-параметр в оригинале не используется телом) — {@code aSide} сохранён в сигнатуре 1:1
-	 *  (вызывающий {@link #getFlowVector} передаёт его), тело — {@code WD.getMaterial(...).isSolid()}. */
+	/** Was Forge's isBlockSolid helper, whose side parameter the original body never used either; aSide is kept 1:1 in the
+	 *  signature only because the caller passes it. */
 	protected boolean isBlockSolid(BlockGetter aWorld, int aX, int aY, int aZ, byte aSide) {
 		return WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isSolid();
 	}
@@ -156,8 +145,8 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 					WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 				} else {
 					WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), quantaPerBlock - expQuanta, 3, F);
-					aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate); // было aWorld.scheduleBlockUpdate(x,y,z,block,delay) — ScheduledTickAccess.scheduleTick(BlockPos,Block,int)
-					aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), this); // было aWorld.notifyBlocksOfNeighborChange(x,y,z,block) — LevelAccessor.updateNeighborsAt(BlockPos,Block)
+					aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate); // was aWorld.scheduleBlockUpdate(x,y,z,block,delay); ScheduledTickAccess.scheduleTick(BlockPos,Block,int)
+					aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), this); // was aWorld.notifyBlocksOfNeighborChange(x,y,z,block); LevelAccessor.updateNeighborsAt(BlockPos,Block)
 				}
 			}
 		}
@@ -178,10 +167,8 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		if (WD.exists(aWorld, aX+1, aY, aZ)) flowTo(aWorld, aX+1, aY, aZ  , tFlowMeta);
 	}
 
-	// B4 (слабы/неполные блоки «как mc26»): растекание на waterloggable-блок (slab/stairs/fence — SimpleWaterloggedBlock)
-	// → WATERLOG его (вода внутри, блок остаётся), как vanilla-вода mc26; иначе — прежний displace+set. Waterlogging нет в
-	// 1.7.10 (там вода не переживала слабы) — изобретено канонично neo (SimpleWaterloggedBlock/WATERLOGGED). Централизовано:
-	// один хелпер на все 4 направления растекания (был повтор displaceIfPossible+WD.set).
+	// Spreading onto a waterloggable block (slab/stairs/fence) now waterlogs it instead of displacing it, like
+	// vanilla mc26 water; waterlogging didn't exist in 1.7.10, so this is centralized into one helper for all 4 directions.
 	public boolean flowTo(Level aWorld, int aX, int aY, int aZ, int aMeta) {
 		net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(aX, aY, aZ);
 		net.minecraft.world.level.block.state.BlockState tSt = aWorld.getBlockState(tP);
@@ -196,7 +183,7 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	
 	// @Override
 	public Vec3 getFlowVector(BlockGetter aWorld, int aX, int aY, int aZ) {
-		Vec3 rVector = new Vec3(0, 0, 0); // было Vec3.createVectorHelper(0,0,0) — Forge/1.7.10-only фабрика, neo конструктор Vec3(double,double,double)
+		Vec3 rVector = new Vec3(0, 0, 0); // was Vec3.createVectorHelper(0,0,0), a Forge/1.7.10-only factory; neo constructor Vec3(double,double,double)
 		int tDecay = quantaPerBlock - getQuantaValue(aWorld, aX, aY, aZ);
 		for (byte tSide : ALL_SIDES_HORIZONTAL) {
 			int tX = aX+OFFX[tSide], tZ = aZ+OFFZ[tSide];
@@ -206,7 +193,7 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 					tOtherDecay = quantaPerBlock - getQuantaValue(aWorld, tX, aY-1, tZ);
 					if (tOtherDecay >= 0) {
 						int tPower = tOtherDecay - (tDecay - quantaPerBlock);
-						rVector = rVector.add((tX - aX) * tPower, 0, (tZ - aZ) * tPower); // было .addVector(...) — Vec3.add(double,double,double)
+						rVector = rVector.add((tX - aX) * tPower, 0, (tZ - aZ) * tPower); // was .addVector(...); Vec3.add(double,double,double)
 					}
 				}
 			} else if (tOtherDecay >= 0) {
@@ -238,77 +225,33 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		return -1;
 	}
 
-	// F5-B (реверс воды mc26): движок применяет погружение/утопление/плавание/push/current/туман ТОЛЬКО через
-	// getFluidState(pos), и entity отслеживает лишь fluid в теге FluidTags.WATER (EntityFluidInteraction:251 +
-	// getTrackerFor:124 — иначе tracker=null и никаких эффектов; isInWater = isInFluid(FluidTags.WATER)). Мировая
-	// вода GT6 (Ocean/River/Swamp, Material.water) отдаёт vanilla WATER FluidState по своим квантам (meta 0 =
-	// source полный; meta>0 = flowing, amount = quantaPerBlock-meta) → игрок ведёт себя как в воде mc26, включая
-	// весь vanilla-рендер воды. Кванты и разлив остаются на GT6 (updateFlow); vanilla fluid-tick НЕ планируется
-	// (блок не LiquidBlock, scheduleTick — только свой block-tick), двойного разлива нет.
-	// BP-BUG-003: СОБСТВЕННОГО ОТВЕТА ЗДЕСЬ БОЛЬШЕ НЕТ — «какая здесь жидкость» решает паспорт роли предка
-	// (BlockFluidBaseGT.getFluidState, final), общий на обе семьи. Сюда семья отдаёт ТОЛЬКО свою шкалу квантов.
-	/** Шкала classic-семьи для паспорта роли: мета 0 = полный источник, дальше убывающий поток
-	 *  ({@code quantaPerBlock − meta}). Тело 1:1 с прежним собственным ответом этой семьи: при мете 0 роль отдаёт
-	 *  {@code Fluids.WATER.defaultFluidState()} (уровень достиг quantaPerBlock), иначе
-	 *  {@code Fluids.FLOWING_WATER.getFlowing(clamp(quantaPerBlock − meta, 1, 8), false)} — те же два ответа,
-	 *  что были здесь до вывода их в центр. */
+	// The engine's swim/drown/push/fog behavior keys strictly on the vanilla WATER fluid tag, so GT6 world water
+	// reports vanilla water scaled by its own quanta; this family now only supplies that scale, not the fluid choice.
+	/** The classic family's quanta scale: meta 0 is a full source, otherwise a flowing level.
+	 *  That level is quantaPerBlock minus meta, the same two answers this family always gave. */
 	@Override protected int engineLevelOfState(net.minecraft.world.level.block.state.BlockState aState) {
 		int tMeta = aState.getValue(FLUID_META);
 		return tMeta <= 0 ? quantaPerBlock : quantaPerBlock - tMeta;
 	}
 
-	// F5-B block-контракт: getRenderShape=INVISIBLE / getShape=empty / getCollisionShape / propagatesSkylightDown=false
-	// НАСЛЕДУЮТСЯ от настоящего LiquidBlock (:82,:115,:136,:147) — 4 ручные копии эталона сняты при репарентинге
-	// предка (F5 surface-B, BlockFluidBaseGT). Вода рисуется через getFluidState→WATER (neo FluidRenderer).
-	//
-	// R1-заморозка: собственный randomTick-перенос УДАЛЁН (F5 surface-B) — блок теперь LiquidBlock, и оба
-	// ванильных плеча видят его сами: рантайм ServerLevel.tickPrecipitation:592 (погодный тик чанка) и worldgen
-	// SnowAndFreezeFeature:34 — через Biome.shouldFreeze:161. Источник льда снова ОДИН, ванильный, как в 1.7.10.
+	// Four block-contract methods are now inherited from a real LiquidBlock instead of manually copied, after
+	// re-parenting to it; the custom freeze-tick logic is removed too, since both vanilla freeze paths see it on their own.
 
-	// ⚠️ КАНАЛ ИЗБЫТОЧЕН — роль закрыта движком + швом F5-B, ЗАМЕРЕНО живым стендом gt6waterface
-	// (геометрия ванильного FluidRenderer.tesselate, PASS 8/0 ДВАЖДЫ, 2026-07-30). Прежний разбор предполагал
-	// «будет стенка между водами» — замер ОПРОВЕРГ. Три ветки правила 1.7.10 закрыты так:
-	// (1) сосед — вода по материалу (река|океан|ваниль): у ВСЕХ водоподобных getFluidState → единый ванильный
-	//     WATER (шов F5-B, :234), поэтому дефолт соседа «та же жидкость → скрыть» (IBlockExtension:1077)
-	//     прячет грань сам — замер: грани НЕТ во всех парах, обе стороны;
-	// (2) визуально непрозрачный сосед (WD.visOpq): ванильная окклюзия полного куба (FluidRenderer:89,135,299)
-	//     — замер: грань к камню НЕ строится;
-	// (3) сосед-MTE с непрозрачной поверхностью (ITileEntitySurface): ПРИНЯТОЕ ОТКЛОНЕНИЕ — канал соседа
-	//     shouldHideAdjacentFluidFace(BlockState,Direction,FluidState) не несёт Level/BlockPos, TE не достать
-	//     (тот же класс ограничения, что skipRendering у BlockBaseFluid:378). Следствие для глаза идентично:
-	//     isSurfaceOpaque=true означает полную непрозрачную пластину вплотную к грани клетки — грань воды за
-	//     ней не видна; отличие — только невидимые квады. Замер: грань есть, поверхность закрывает её собой.
-	// Контроли стенда: грань к стеклу ЕСТЬ (позитив), к нефти ЕСТЬ (MaterialOil, не water — 1:1 Loader_Blocks:150).
+	// This whole channel turned out redundant, closed by the engine plus a shared fluid-face-hiding seam and
+	// confirmed by a live stand: all water-like blocks share one fluid state whose default hides same-fluid faces.
 	// @Override
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == NB) return T;
 		if (WD.getMaterial(aBlock) == Material.water || WD.visOpq(aBlock)) return F;
-		if (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir()) return T; // было aBlock.isAir(world,x,y,z) — BlockState.isAir()
+		if (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir()) return T; // now just BlockState.isAir()
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity instanceof ITileEntitySurface) return !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]);
 		return T;
 	}
 	
-	/**
-	 * МОЖНО ЛИ обратить ЧУЖУЮ воду в этой клетке в свою (ветка конверсии {@code tList} у Ocean/Swamp).
-	 *
-	 * <p>Класс «признак сменил носитель». В 1.7.10 ограничителем служил СПИСОК БИОМОВ: у болота
-	 * {@code BIOMES_INFINITE_WATER} (BlockSwamp:164 оригинала), у океана {@code BIOMES_RIVER_LAKE}. Это
-	 * работало, потому что всякая крупная вода 1.7.10 САМА БЫЛА биомом — {@code ocean}/{@code river}/
-	 * {@code beach}/{@code frozenRiver}, и список их перечислял. В mc26 биомы 3D, и вода стоит внутри
-	 * обычных биомов суши: разлив у мангрового болота лежит в {@code minecraft:savanna}, которой ни в одном
-	 * списке нет. Ограничитель перестал накрывать те же случаи — механизм цел, изменился мир.
-	 *
-	 * <p>Замер (живой стенд {@code gt6swampprobe}, два прогона): весь захват шёл в {@code minecraft:savanna},
-	 * 425 клеток за 3600 тиков в радиусе 40, из них из ванильной воды 425, из воздуха 0 — то есть болото не
-	 * растекалось, а ело чужую воду, и остановиться не могло: воды в районе оставалось ещё 1587 клеток.
-	 *
-	 * <p>Дефолт — прежнее поведение (можно везде). Переопределяет тот, у кого «своя территория» выражается
-	 * биомом: {@link BlockSwamp}. ⚠️ {@link BlockOcean} — ВТОРОЙ ЭКЗЕМПЛЯР ТОГО ЖЕ КЛАССА (та же ветка
-	 * конверсии со списком {@code BIOMES_RIVER_LAKE}), но собственного замера по нему нет, поэтому его
-	 * поведение НЕ меняется — правка без замера в этом проекте запрещена.
-	 */
+	/** Whether foreign water in a cell may be converted to our own; in 1.7.10 the limiter was a biome list
+	 *  because every large water body was itself a biome, but mc26 water sits inside ordinary land biomes now. */
 	public boolean canClaim(Level aWorld, int aX, int aY, int aZ) {return T;}
 
 	// A bed that stands still never schedules a tick, so an old seam of plain water would sit there forever.
@@ -352,28 +295,18 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	public void registerBlockIcons(Object aIconRegister) {/**/}
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}
-	// getLightOpacity() — в общем предке BlockFluidBaseGT (F3 light-opacity ЦЕНТР): значение 1.7.10 у обеих
-	// иерархий одинаково, копия здесь была дублем; движок спрашивает его через getLightBlock(BlockState,BlockGetter,BlockPos).
-	/** 1:1 оригинала (:200): {@code Blocks.water.getIcon(aSide, aMeta)} — водоподобные рисуются ВАНИЛЬНОЙ водой,
-	 *  не иконкой своей жидкости. Тот же спрайт уже держит центр {@link gregapi.render.BlockTextureFluid}
-	 *  (см. {@link #renderTexture()}) — спрашиваем его, чтобы «какая текстура» осталось в одном месте. */
+	// getLightOpacity lives on the shared ancestor BlockFluidBaseGT now, the central light-opacity bridge; the
+	// 1.7.10 value was identical for both hierarchies, so the copy here was a duplicate.
+	/** 1:1 with the original: water-like blocks render as vanilla water, not their own fluid's icon; the sprite
+	 *  is already held by the central BlockTextureFluid, asked here so 'which texture' stays in one place. */
 	@Override public net.minecraft.resources.ResourceLocation getIcon(int aSide, int aMeta) {return renderTexture() instanceof gregapi.render.BlockTextureFluid tTex ? tTex.icon() : null;}
-	/** 1:1 оригинала (:201-202): {@code 0x00ffffff} — без собственного тинта. Потомки, у которых оттенок СВОЙ
-	 *  (Ocean 0x00c0c0c0, Swamp 0x0000ff00), перекрывают эти два метода своими значениями, как в оригинале. */
+	/** 1:1 with the original: 0x00ffffff means no tint of its own; subclasses with their own hue (Ocean, Swamp) override both
+	 *  methods, as the original did. */
 	@Override public int getRenderColor(int aMeta) {return 0x00ffffff;}
 	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00ffffff;}
 	
-	// BUG-068 (F3-render, item-форма): предмет реки/океана/болота показывался пурпурной заглушкой — у него не было НИКАКОЙ
-	// модели. Канал item-модели GT6 инжектится только блокам-IRenderedBlock (GT_API_Proxy_Client:258), а JSON-моделей в моде
-	// нет вовсе. Сам канал теперь объявлен в общем предке (BlockFluidBaseGT) — как в 1.7.10 один RendererBlockFluid обслуживал
-	// ОБЕ жидкостные иерархии; здесь остаётся ровно то, что у водоподобных СВОЁ, — текстура.
-	// 1:1 оригинала (:200-201): getIcon → Blocks.water.getIcon, т.е. ВАНИЛЬНАЯ вода (НЕ иконка своей жидкости, в отличие от
-	// BlockBaseFluid), getRenderColor → 0x00ffffff, т.е. без собственного тинта. В 1.7.10 сам спрайт воды был синим, в 26.1 он
-	// серый и цвет даёт движок — поэтому «как ванильная вода» выражаем существующим центром BlockTextureFluid: для не-GT6
-	// жидкости он отдаёт block/water_still + ванильный водный тинт (BlockTextureFluid:92-94, ветка заведена в BUG-049).
-	// Через mFluid брать нельзя: у океана/болота своей жидкости в GT6 нет вовсе (seawater/waterdirty — чужие имена, FL.create
-	// на них не зовётся ни в оригинале, ни в порте), а у реки своя текстура riverwater есть, но она — иконка ЖИДКОСТИ (ёмкости
-	// и дисплеи), блок же в 1.7.10 рисовался ванильной водой.
+	// The item-form had no model at all since GT6 only injects item models into IRenderedBlock blocks; the
+	// render channel now lives in the shared BlockFluidBaseGT ancestor, only the texture staying here as water-like's own.
 	private gregapi.render.ITexture mRenderTexture = null;
 	@Override public gregapi.render.ITexture renderTexture() {
 		if (mRenderTexture == null && CODE_CLIENT) mRenderTexture = gregapi.render.BlockTextureFluid.get(net.minecraft.world.level.material.Fluids.WATER, T);
@@ -382,11 +315,8 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 
 	public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
 	public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
-	// ADAPT-009/флора: блок с водным FluidState (kelp/seagrass/коралл/waterlogged — содержат воду В СЕБЕ) для
-	// GT6-воды = «вода», НЕ цель вытеснения. Расширение того же 1.7.10-принципа «жидкость не вытесняет жидкость»
-	// (isLiquid-гейт ниже) на water-контейнеры, которых в 1.7.10 не существовало (waterlogging — 1.13+); без гейта
-	// растекание сносило всю подводную растительность (canDisplace: material растений не blocksMovement). Тот же
-	// приём, что B4-waterlog в flowTo. Vanilla-вода поведение не меняет (и так isLiquid).
+	// Blocks that merely contain water (kelp, seagrass, coral, waterlogged blocks) now count as water themselves
+	// for displacement, extending 1.7.10's liquid-can't-displace-liquid rule to water containers that didn't exist back then.
 	private boolean holdsWater(BlockGetter aWorld, int aX, int aY, int aZ) {return aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getFluidState().is(net.minecraft.tags.FluidTags.WATER);}
 	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !holdsWater(aWorld, aX, aY, aZ) && !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
 	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !holdsWater(aWorld, aX, aY, aZ) && !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
@@ -396,8 +326,8 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	public boolean isOpaqueCube() {return F;}
 	public boolean func_149730_j() {return F;}
 	public boolean getTickRandomly() {return F;}
-	// renderAsNormalBlock() — в общем предке BlockFluidBaseGT (F3 shade ЦЕНТР): значение 1.7.10 у обеих
-	// иерархий одинаково, копия здесь была дублем; движок спрашивает его через getShadeBrightness.
+	// Moved to the shared ancestor for the same reason as getLightOpacity above: both hierarchies
+	// had the same 1.7.10 value, and the engine reads it via getShadeBrightness.
 	public boolean isAir(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
 	
@@ -412,7 +342,7 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	public void onHeadInside(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
 		if (!aWorld.isClientSide() && !mEffects.isEmpty() && (FL.gas(mFluid) ? !UT.Entities.isImmuneToBreathingGases(aEntity) : !UT.Entities.isWearingFullChemHazmat(aEntity))) {
 			for (int[] tEffects : mEffects) UT.Entities.applyPotion(aEntity, tEffects[0], tEffects[1], tEffects[2], F);
-			if (getMaterial() != Material.water && SERVER_TIME % 20 == 0) aEntity.hurt(aWorld.damageSources().drown(), 2.0F); // было attackEntityFrom(DamageSource.drown,...) — 1.7.10 static DamageSource-поля удалены; DamageSources.drown() (GT_API_Proxy.java:744 precedent)
+			if (getMaterial() != Material.water && SERVER_TIME % 20 == 0) aEntity.hurt(aWorld.damageSources().drown(), 2.0F); // was attackEntityFrom(DamageSource.drown,...); the static field is gone, replaced by DamageSources.drown().
 		}
 	}
 }

@@ -128,8 +128,8 @@ public class Loader_Rocks implements Runnable {
 		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.normal.shale", () -> {gregapi.block.prefixblock.PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.normal.shale", OP.oreShale               , null                                  , BlockTextureDefault.get(((BlockStonesGT)BlocksGT.stones[16]).mIcons[0]), Material.rock, SoundType.STONE, TOOL_pickaxe  , 0.50F, 0.75F,  0, ((BlockStonesGT)BlocksGT.stones[16]).mHarvestLevel  , F,F, OreDictMaterial.MATERIAL_ARRAY); BlocksGT.ores_normal[16]=o; return (net.minecraft.world.level.block.Block)o;});
 		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.broken.shale", () -> {gregapi.block.prefixblock.PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.broken.shale", OP.oreShale               , null                                  , BlockTextureDefault.get(((BlockStonesGT)BlocksGT.stones[16]).mIcons[1]), Material.rock, SoundType.STONE, TOOL_pickaxe  , 0.25F, 0.37F, -1, ((BlockStonesGT)BlocksGT.stones[16]).mHarvestLevel-1, T,F, OreDictMaterial.MATERIAL_ARRAY); BlocksGT.ores_broken[16]=o; return (net.minecraft.world.level.block.Block)o;});
 		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.small.shale", () -> {gregapi.block.prefixblock.PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.small.shale", OP.oreSmall               , new Drops_SmallOre(((BlockStonesGT)BlocksGT.stones[16]).mMaterial)  , BlockTextureDefault.get(((BlockStonesGT)BlocksGT.stones[16]).mIcons[0]), Material.rock, SoundType.STONE, TOOL_pickaxe  , 0.50F, 0.75F, -1, ((BlockStonesGT)BlocksGT.stones[16]).mHarvestLevel  , F,F, OreDictMaterial.MATERIAL_ARRAY); BlocksGT.ores_small[16]=o; return (net.minecraft.world.level.block.Block)o;});
-		// F12-followup (block-split): пост-регистрационная настройка (mDrops/stoneToOres/silk/generify) использует
-		// сконструированные блоки (RegisterEvent) + зарегистрированные prefix-items + стеки (ST.make) → отложена на server-start.
+		// Post-registration setup (mDrops/stoneToOres/silk/generify) needs built blocks and stacks,
+		// so it's deferred to server start.
 		gregapi.GT_API.deferItemInit(() -> {
 		for (int i = 0; i < BlocksGT.stones.length; i++) {
 			VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.stones[i]);
@@ -316,6 +316,6 @@ public class Loader_Rocks implements Runnable {
 		BlocksGT.blockToSilk.put(IL.BOTA_Andesite_Smooth    , ST.make(BlocksGT.Andesite, 1, 7));
 		BlocksGT.blockToSilk.put(IL.BOTA_Andesite_Bricks    , ST.make(BlocksGT.Andesite, 1, 3));
 		BlocksGT.blockToSilk.put(IL.BOTA_Andesite_Chiseled  , ST.make(BlocksGT.Andesite, 1, 6));
-		}); // конец отложенной пост-регистрационной настройки Loader_Rocks
+		}); // End of Loader_Rocks's deferred post-registration setup.
 	}
 }

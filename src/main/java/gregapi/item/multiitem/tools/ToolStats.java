@@ -55,14 +55,9 @@ import java.util.List;
 
 import static gregapi.data.CS.*;
 
-/**
- * @author Gregorius Techneticies
- *
- * F8 (переклассифицировано): {@code Enchantments.BLOCK_FORTUNE}/{@code Enchantments.MOB_LOOTING} (статические
- * инстансы 1.7.10) удалены — зачарования data-driven, {@code Holder<Enchantment>} требует живой
- * {@code RegistryAccess}, недоступный в статическом контексте (тот же класс проблемы, что
- * {@code UT.NBT.getEnchantmentLevelLootingFortune}) — деградация до пустого массива.
- */
+/** @author Gregorius Techneticies
+ *  Enchantments are data-driven now; a Holder<Enchantment> needs a live RegistryAccess that a static field doesn't have,
+ *  so these static Enchantment instances degrade to an empty array instead. */
 public abstract class ToolStats implements IToolStats {
 	public static final Enchantment[] FORTUNE_ENCHANTMENT = new Enchantment[0];
 	public static final net.minecraft.world.item.enchantment.Enchantment[] LOOTING_ENCHANTMENT = new net.minecraft.world.item.enchantment.Enchantment[0];
@@ -115,9 +110,8 @@ public abstract class ToolStats implements IToolStats {
 		return 0;
 	}
 
-	// F9-flatten: 1.7.10 meta-семейства расщеплены на отдельные neo-блоки (флэттенинг, константы verified javap). Порт 1:1
-	// с оригиналом (ToolStats.java:111-145): tallgrass meta1(grass)/2(fern)->SHORT_GRASS/FERN; double_plant meta2/3->TALL_GRASS/
-	// LARGE_FERN. Мод-ветки (TF/Aether/BoP) — F10 (вне scope CHARTER), сохранены 1:1, мёртвы без мода (IL.*.equal=F / MD.BoP.mLoaded=F).
+	// The 1.7.10 meta-based block families are split into separate neo blocks; mod branches (TF/Aether/BoP) are
+	// out of scope and kept 1:1 but dead without those mods loaded.
 	public boolean harvestGrass(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch) {
 		if (aBlock == Blocks.GRASS || aBlock == Blocks.FERN) {
 			aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
@@ -149,8 +143,8 @@ public abstract class ToolStats implements IToolStats {
 		return F;
 	}
 
-	// F9-flatten: 1.7.10 tallgrass meta0(dead-shrub) + deadbush -> оба neo Blocks.DEAD_BUSH (оба роняли dead-stick, объединены 1:1).
-	// TF/BoP-ветки — F10 (вне scope), сохранены 1:1, мёртвы без мода. Порт 1:1 с оригиналом (ToolStats.java:148-176).
+	// 1.7.10's dead-shrub meta and the separate deadbush block both map to neo's single Blocks.DEAD_BUSH,
+	// since both dropped a dead stick originally.
 	public boolean harvestStick(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch) {
 		if (aBlock == Blocks.DEAD_BUSH) {
 			aDrops.add(OP.stick.mat(MT.WOODS.Dead, 1+RNGSUS.nextInt(2+aFortune)));
@@ -201,9 +195,8 @@ public abstract class ToolStats implements IToolStats {
 		return ZL_INTEGER;
 	}
 
-	// F18 achievements→advancements (подсистема, decisions/F18-achievements.md): AchievementList удалён; neo = data-driven
-	// Advancements + CriteriaTriggers. GT6-достижение крафта инструмента = собственный CriteriaTrigger (advancement JSON +
-	// регистрация триггера) — отдельная подсистема (task #26). no-op = текущее состояние до её постройки.
+	// AchievementList is gone; neo uses data-driven Advancements and CriteriaTriggers instead. A dedicated
+	// GT6 CriteriaTrigger for tool-crafting achievements is its own subsystem; this stays a no-op until it exists.
 	@Override
 	public void onToolCrafted(ItemStack aStack, Player aPlayer) {
 		//
@@ -227,9 +220,8 @@ public abstract class ToolStats implements IToolStats {
 	@Override
 	public void afterDealingDamage(float aNormalDamage, float aMagicDamage, int aFireAspect, boolean aCriticalHit, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		if (aEntity instanceof LivingEntity && aFireAspect > 0) aEntity.setSecondsOnFire(aFireAspect * 4);
-		// F8 (1:1): 1.7.10 tKnockback = sprint + getKnockbackModifier(player,entity) (уровень Knockback-чары). neo-эквивалент —
-		// EnchantmentHelper.modifyKnockback(sl,weapon,victim,source,base) [EnchantmentHelper.java:217]: base=0 → чистый вклад
-		// Knockback-чары со стека. server-only (нужен ServerLevel). Было утеряно — восстановлено. Спринт-компонент 1:1.
+		// The neo equivalent of the original sprint+knockback-enchant formula is EnchantmentHelper.modifyKnockback
+		// with a base of zero, isolating the enchantment's own contribution; this needs a ServerLevel so it is server-only.
 		int tKnockback = (aPlayer.isSprinting()?1:0) + net.minecraft.world.item.enchantment.EnchantmentHelper.getKnockbackBonus(aPlayer);
 		if (tKnockback > 0) {
 			aEntity.push(-Mth.sin((float)(aPlayer.getYRot() * Math.PI / 180)) * tKnockback * 0.5, 0.1, Mth.cos((float)(aPlayer.getYRot() * Math.PI / 180)) * tKnockback * 0.5);
@@ -237,14 +229,12 @@ public abstract class ToolStats implements IToolStats {
 			aPlayer.setDeltaMovement(tMotion.x * 0.6, tMotion.y, tMotion.z * 0.6);
 			aPlayer.setSprinting(F);
 		}
-		// item-base impossible-1:1: Player.onCriticalHit/onEnchantmentCritical (1.7.10 КЛИЕНТ-feedback hooks) удалены —
-		// крит-удар в 26.1.2 полностью внутренний server-расчёт, public override-точки для мод-кода нет. Крит-УРОН
-		// применяется (tDamage*=1.5 в вызывателе); утрачен лишь клиент-визуал частиц → no-op ВЕРЕН.
+		// The 1.7.10 client-feedback critical-hit hooks are gone; critical hits are now fully server-internal with no
+		// public override point, so only the particle feedback is lost while the actual damage bonus still applies.
 		if (aEntity instanceof LivingEntity) Enchantments.applyBullshitA((LivingEntity)aEntity, aPlayer, aStack);
 		Enchantments.applyBullshitB(aPlayer, aEntity, aStack);
 		if (aEntity instanceof LivingEntity) aPlayer.awardStat(Stats.DAMAGE_DEALT, Math.round((aNormalDamage+aMagicDamage) * 10));
-		// item-base: 1.7.10 Entity.hurtResistantTime → neo Entity.invulnerableTime (переименовано, поле ЕСТЬ) — контроль
-		// частоты повторного удара инструментом. Восстановлено 1:1 (было ошибочно снято как «поле отсутствует»).
+		// 1.7.10's hurtResistantTime is renamed invulnerableTime in neo; the field still exists and controls hit-rate.
 		aEntity.invulnerableTime = Math.max(1, getHurtResistanceTime(aEntity.invulnerableTime, aEntity));
 		UT.Entities.exhaust(aPlayer, getExhaustionPerAttack(aEntity));
 	}
@@ -252,7 +242,7 @@ public abstract class ToolStats implements IToolStats {
 	@Override
 	public void afterBreaking(ItemStack aStack, Player aPlayer) {
 		// If you work so hard that your Tool breaks, you should probably take a break yourself. :P
-		// ADAPT-002: Mining Fatigue при поломке инструмента ослаблен III→I (amplifier 2→0) по запросу игрока. Weakness 1:1 (III).
+		// Mining Fatigue on tool breakage is weakened from III to I by request; the Weakness effect stays at III.
 		UT.Entities.applyPotion(aPlayer, MobEffects.WEAKNESS      ,  300, 2, F);
 		UT.Entities.applyPotion(aPlayer, MobEffects.DIG_SLOWDOWN, 1200, 0, F);
 	}

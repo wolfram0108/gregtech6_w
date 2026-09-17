@@ -65,21 +65,16 @@ import static gregapi.data.CS.*;
 public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlockOnWalkOver, IBlockToolable, IRenderedBlock, gregapi.block.IBlockExtendedMetaData {
 	public final OreDictMaterial mMat1, mMat2;
 
-	// BUG-072 (тот же класс, что BUG-071): у шипа ВСЯ его суть живёт в мете 0..15 — младшие биты это сторона
-	// установки (onBlockPlaced ниже), бит 8 это ВТОРОЙ материал (рецепты :72-73, OM.data :84, getHarvestLevel ниже).
-	// Канала меты у этой иерархии не было вовсе: BlockBase контракт IBlockExtendedMetaData не реализует, поэтому
-	// WD.meta(...) отдавал 0 ВСЕГДА — шип вёл себя как подтип 0 (ориентация «низ», дроп первого варианта, уровень
-	// добычи от первого материала). Приём взят готовый — тот же, которым канал возвращён решёткам
-	// (BlockBaseBars:62,69): хранение в BlockState-свойстве META, маршрутизация get/setExtendedMetaData — дефолты
-	// интерфейса. Своей сущности не заводим.
+	// This hierarchy had no meta channel at all, so a spike always behaved as its subtype 0 no matter what was placed; fixed
+	// with the same META BlockState property and interface-default routing already restored for bars.
 	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> aBuilder) {super.createBlockStateDefinition(aBuilder); aBuilder.add(gregapi.block.BlockBaseMeta.META);}
 
 	public BlockBaseSpike(String aNameInternal, OreDictMaterial aMat1, OreDictMaterial aMat2) {
 		super(null, aNameInternal, Material.iron, SoundType.METAL);
-		registerDefaultState(getStateDefinition().any().setValue(gregapi.block.BlockBaseMeta.META, 0)); // после super — как BlockBaseBars:73
+		registerDefaultState(getStateDefinition().any().setValue(gregapi.block.BlockBaseMeta.META, 0)); // placed after super(), the same as BlockBaseBars
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.REDSTONE);
 		mMat1 = aMat1; mMat2 = aMat2;
-		// F12-followup (block-split): рецепты/OM.data используют ST.make → server-start → deferItemInit.
+		// Deferred to server start, since these recipes and OM.data both build an ItemStack.
 		gregapi.GT_API.deferItemInit(() -> {
 		CR.shaped(ST.make(this, 1, 0), CR.DEF_NCC, "BTB", "TPT", "BTB", 'B', OP.toolHeadSword.dat(mMat1), 'P', OP.plate.dat(mMat1), 'T', OP.screw.dat(mMat1));
 		CR.shaped(ST.make(this, 1, 6), CR.DEF_NCC, "TBT", "BPB", "TBT", 'B', OP.toolHeadSword.dat(mMat1), 'P', OP.plate.dat(mMat1), 'T', OP.screw.dat(mMat1));
@@ -120,8 +115,8 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 	}
 	
-	// было Entity.motionX/motionZ (1.7.10 public мутируемые поля) -> neo Vec3 (getDeltaMovement()) immutable ->
-	// Entity.setDeltaMovement(double,double,double) [Entity.java:3672], тот же эффект.
+	// neo's movement vector is immutable, so this calls setDeltaMovement instead of mutating fields directly, with the same
+	// effect.
 	@Override public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {if ((WD.meta(aWorld, aX, aY, aZ) & 7) != SIDE_UP) {Vec3 tMotion = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(tMotion.x * 0.1, tMotion.y, tMotion.z * 0.1);}}
 	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return (aMeta & 7) < 6 ? (aMeta & 8) | OPOS[aSide] : aMeta;}
 	@Override public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {if (useGravity(WD.meta(aWorld, aX, aY, aZ))) UT.Sounds.send(SFX.MC_ANVIL_LAND, 1, 2, aWorld, aX, aY, aZ);}
@@ -141,13 +136,12 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	@Override public boolean doesWalkSpeed(byte aMeta) {return T;}
 	@Override public boolean doesPistonPush(byte aMeta) {return T;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
-	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
-	// [BlockBehaviour.java:160]; исходное тело - константа T (всегда рендерить), не зависела от позиции/соседа,
-	// переносится без потерь с инверсией (shouldRender=T -> skipRendering=F).
+	// Ported losslessly with the inverted semantics, since the original body was a constant
+	// "always render" that never depended on position or neighbor.
 	@Override public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return F;}
 	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0)); aList.add(ST.make(aItem, 1, 6)); aList.add(ST.make(aItem, 1, 7)); aList.add(ST.make(aItem, 1, 8)); aList.add(ST.make(aItem, 1, 14)); aList.add(ST.make(aItem, 1, 15));}
 
-	// F13: neo middle-click через IBlockExtension.getCloneItemStack — делегируем в GT6-getPickBlock (meta-specific), 1:1.
+	// Delegates to GregTech6's own meta-aware getPickBlock, matching 1.7.10's middle-click behavior exactly.
 	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.phys.HitResult aTarget, net.minecraft.world.level.BlockGetter aLevel, net.minecraft.core.BlockPos aPos, Player aPlayer) {
 		int aMeta = WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ());
 		return ST.make(this, 1, (aMeta & 7) < 6 ? aMeta & 8 : aMeta);
@@ -157,23 +151,16 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		return ST.make(this, 1, (aMeta & 7) < 6 ? aMeta & 8 : aMeta);
 	}
 	
-	// ⚠️ КАНАЛ ЧУЖОГО МОДА — 1.7.10 rotateBlock/getValidRotations были Forge-каналами для ключей ДРУГИХ
-	// модов (свой поворот GT6 делает сам — onToolClick ниже, ветка TOOL_wrench/TOOL_rotator, она жива и
-	// вызывателя имеет). В neo этой пары нет: поворот инструментом идёт через
-	// IBlockExtension.getToolModifiedState(state, context, ItemAbility, simulate) (:814) — иная модель,
-	// без «списка допустимых осей», а ключей сторонних модов в сборке нет. Подключать нечего и некому.
+	// This was a Forge channel for other mods' rotation keys, not GT6's own (which uses onToolClick
+	// instead); neo has no equivalent pair and no such third-party mod exists in this build, so there is nothing to wire here.
 	// @Override
 	public boolean rotateBlock(Level aWorld, int aX, int aY, int aZ, Direction aAxis) {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
 		return (aMeta & 7) < 6 && WD.set(aWorld, aX, aY, aZ, this, (aMeta & 8) | (((aMeta & 7) + 1) % 6), 3);
 	}
 	
-	// ⚠️ КАНАЛ ЧУЖОГО МОДА — вторая половина пары с rotateBlock выше: Forge-канал «какие оси допустимы»
-	// для ключей ДРУГИХ модов. В neo такой пары нет (поворот инструментом идёт через
-	// IBlockExtension.getToolModifiedState:814, без списка осей), ключей сторонних модов в сборке нет,
-	// а свой поворот GT6 делает сам — onToolClick, ветка TOOL_wrench/TOOL_rotator, она жива.
-	// было ForgeDirection.VALID_DIRECTIONS (1.7.10, все 6 реальных направлений, без UNKNOWN) -> neo Direction
-	// не имеет UNKNOWN-константы вовсе (Direction.java:33-38, ровно 6 значений) -> Direction.values() 1:1.
+	// The other half of that same unused third-party channel; the direction list itself maps 1:1
+	// since neo's Direction has no UNKNOWN constant to exclude, unlike 1.7.10's ForgeDirection.
 	// @Override
 	public Direction[] getValidRotations(Level aWorld, int aX, int aY, int aZ) {
 		return (WD.meta(aWorld, aX, aY, aZ) & 7) < 6 ? Direction.values() : null;
@@ -191,24 +178,14 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		return ToolCompat.onToolClick(this, aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 	}
 	
-	/**
-	 * BUG-076: форма шипа ИЗ СОСТОЯНИЯ (сторона крепления — младшие 3 бита меты, живут в BlockState-свойстве META).
-	 *
-	 * <p>Причина та же, что у решёток: neo строит BlockState-кэш формы на {@code EmptyBlockGetter}
-	 * ({@code BlockBehaviour:916}), где мира нет, а 1.7.10-канал {@link #getCollisionBoundingBoxFromPool}
-	 * читает мету ИЗ МИРА — в кэше это давало полный куб (замер: все 5 классов шипов). Координаты берутся
-	 * из {@link #localBox(byte)} — единственного источника на класс, его же использует мировой канал.</p>
-	 *
-	 * <p>Outline оригинала — всегда полный куб (`:201` {@code getSelectedBoundingBoxFromPool}), поэтому из
-	 * состояния отдаётся форма только для коллизии; для прицела возвращается {@code null} и мосты идут
-	 * прежним путём (полный куб), как в 1.7.10.</p>
-	 */
+	/** Same reasoning as the bars: neo builds the block-shape cache with no real world, so the mounting side must come from
+	 *  BlockState rather than the world; outline stays the original's fixed full cube, only collision reads state. */
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape shapeFromState(net.minecraft.world.level.block.state.BlockState aState, boolean aCollision) {
 		if (!aCollision) return null;
 		return net.minecraft.world.phys.shapes.Shapes.create(localBox((byte)(getExtendedMetaData(aState) & 7)));
 	}
 
-	/** ЕДИНСТВЕННЫЙ источник формы шипа, локальные координаты 0..1 (1:1 оригинал `:182-190`). */
+	/** The single source of the spike's shape, in local 0..1 coordinates. */
 	private static AABB localBox(byte aSide) {
 		switch (aSide) {
 		case SIDE_X_POS: return new AABB(0.4  , 0    , 0    , 1    , 1    , 1    );
@@ -223,14 +200,14 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 
 	// @Override
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
-		// BUG-076: координаты — из общего localBox(сторона), здесь только перенос в мировые.
+		// Coordinates come from the shared localBox, just translated into world coordinates here.
 		return localBox((byte)(WD.meta(aWorld, aX, aY, aZ) & 7)).move(aX, aY, aZ);
 	}
 
 
 	// @Override
-	// было super.addCollisionBoxesToList(...) (1.7.10 Block, УДАЛЁН из neo целиком). Дефолт inline-порт 1:1 вместо
-	// super-вызова (Block.java:661-669 recompSrc), тот же приём, что уже принят в MultiTileEntityBlock/BlockBaseLilyPad.
+	// Inline-ports vanilla's own default body instead of calling a removed super method, the same technique used in
+	// MultiTileEntityBlock and BlockBaseLilyPad.
 	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {
 		if (aEntity instanceof ItemEntity || aEntity instanceof ExperienceOrb || aEntity instanceof Projectile) return;
 		AABB tBox = getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ);
@@ -239,17 +216,12 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	
 	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+1, aZ+1);}
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было Blocks.IRON_BARS.getIcon(2,0) (vanilla Block.getIcon удалён в 26.1.2 целиком).
-	/** 1:1 оригинала (:175): {@code Blocks.iron_bars.getIcon(2, 0)} — спрайт ВАНИЛЬНЫХ решёток. neo-резолв
-	 *  ванильного блока в {@link ResourceLocation} уже централизован в {@link gregapi.render.GT6QuadBuilder#resolveBlockFaceIcon}
-	 *  — спрашиваем его, второго резолвера не заводим. Только клиент: атлас существует лишь там. */
-	// ⛔ Сторону НЕЛЬЗЯ определять по CS.CODE_CLIENT: в одиночной игре его выставляют ОБА прокси —
-	// GT_API_Proxy_Client:93 ставит T, GT_API_Proxy_Server:32 ставит F, и побеждает тот, кто
-	// инициализировался последним. Из-за этого канал молча отдавал null, рендер подставлял серую
-	// CFoam-заглушку, и крошка решёток/шипов оставалась серой (найдено живым тестом игрока).
-	// Физическая сторона — FMLEnvironment.dist.isClient(), тот же канон, что в GT_API:378.
-	// Гейт обязателен: resolveBlockFaceIcon трогает Minecraft.getInstance(), а на выделенном сервере
-	// этого класса нет (класс дефекта BUG-084 — клиентский тип в общем коде).
+	// Vanilla's own getIcon was removed entirely, so the vanilla iron-bars sprite is resolved through
+	// GT6's own shared resolver instead.
+	/** Matches the original 1:1: the vanilla iron-bars sprite, resolved through the shared center
+	 *  GT6QuadBuilder#resolveBlockFaceIcon (no second resolver); client-only, since the atlas only exists there. */
+	// Side can't be judged by CS.CODE_CLIENT: in singleplayer both proxies set it, and whichever
+	// initializes last wins, sometimes leaving it null. FMLEnvironment.dist.isClient() is used instead, since it can't race.
 	public ResourceLocation getIcon(int aSide, int aMeta) {return net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient() ? gregapi.render.GT6QuadBuilder.resolveBlockFaceIcon(net.minecraft.world.level.block.Blocks.IRON_BARS, 2, 0) : null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
@@ -271,8 +243,7 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		@Override public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {return APRIL_FOOLS ? 5 : 13;}
 		@Override public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return mTextureUsed;}
 		@Override public boolean usesRenderPass(int aRenderPass, boolean[] aShouldSideBeRendered) {return T;}
-		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было RenderBlocks aRenderer (тип удалён в 26.1.2) — параметр Object,
-		// тот же нейтральный держатель, что gregapi.render.IRenderedBlockObject#renderItem/renderBlock.
+		// RenderBlocks itself was removed, so the parameter is a neutral Object, the same holder used elsewhere.
 		@Override public boolean renderItem (Block aBlock, Object aRenderer) {return F;}
 		@Override public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
 		@Override public IRenderedBlockObject passRenderingToObject(ItemStack aStack) {mTextureUsed = mTextureNormal; return this;}

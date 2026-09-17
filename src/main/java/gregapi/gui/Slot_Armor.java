@@ -28,18 +28,9 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * @author Gregorius Techneticies
- *
- * F-GUI: {@code getSlotStackLimit}→{@code getMaxStackSize}, {@code isItemValid}→{@code mayPlace} (движок,
- * см. {@link Slot_Base}). {@code Item.isValidArmor(ItemStack,int,Entity)} движок убрал целиком — заменено
- * центральным neo-эквивалентом {@code ItemStack.canEquip(EquipmentSlot,LivingEntity)}
- * (`neoforge-decompiled/net/neoforged/neoforge/common/extensions/IItemStackExtension.java:215-216`,
- * делегирует в `IItemExtension.java:264` — «Determines if the specific ItemStack can be placed in the
- * specified armor slot, for the entity», дословно та же роль); {@code mArmorType} (старый индекс 0..3) →
- * {@link #ARMOR_SLOTS} в том же порядке FEET/LEGS/CHEST/HEAD, что уже установлен центром брони
- * (`gregapi/GT_API_Proxy.java:994`, комментарий «порядок FEET/LEGS/CHEST/HEAD соответствует старому 0..3»).
- */
+/** @author Gregorius Techneticies
+ *  Item.isValidArmor was removed entirely; replaced with the engine's own ItemStack.canEquip, which fills
+ *  the same role. mArmorType (old 0..3 index) maps to the same FEET/LEGS/CHEST/HEAD order used elsewhere. */
 public class Slot_Armor extends Slot_Base {
 	private static final EquipmentSlot[] ARMOR_SLOTS = {EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD};
 

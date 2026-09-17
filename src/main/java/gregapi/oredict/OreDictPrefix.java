@@ -76,15 +76,15 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 	public CreativeModeTab mCreativeTab = null;
 	
 	public ItemStack mContainerItem = null;
-	// F5/F8-lazy: ItemStack НЕЛЬЗЯ создать в OP.<clinit> (Item.Holder.components не привязаны на @Mod-конструкции, neo
-	// Holder.java:273). Храним Item, mContainerItem материализуем лениво по первому обращению через containerItem().
+	// An ItemStack cannot be created in OP's static initializer (Item holder components are not bound yet at
+	// @Mod construction); the Item is stored and the container stack is materialized lazily on first access.
 	private net.minecraft.world.item.Item mContainerItemLazy = null;
-	/** F5/F8-lazy-геттер mContainerItem: материализует из отложенного Item (когда компоненты уже привязаны). */
+	/** Materializes the container item from the deferred Item field, once components are bound. */
 	public ItemStack containerItem() {
 		if (mContainerItem == null && mContainerItemLazy != null) mContainerItem = ST.make(mContainerItemLazy, 1, 0);
 		return mContainerItem;
 	}
-	/** F5/F8-lazy-сеттер: отложить создание ItemStack (заменяет eager mContainerItem = ST.make(item) в OP.<clinit>). */
+	/** Defers ItemStack creation, replacing the eager assignment used in OP's static initializer. */
 	public OreDictPrefix containerItemLazy(net.minecraft.world.item.Item aItem) {mContainerItemLazy = aItem; return this;}
 	@SuppressWarnings("rawtypes")
 	private ICondition mCondition = ICondition.TRUE;
@@ -220,10 +220,8 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		for (OreDictPrefix tPrefix : VALUES) tPrefix.applyStackSizes();
 	}
 	
-	// Ревизия захода №4 п.3: applyStackSizes зовётся многократно (mod-load событие компонентов + server-start 1:1-место;
-	// в 1.7.10 — на каждый логин через PacketPrefix), а каждый вызов создавал НОВЫЙ анонимный слушатель → дубли в
-	// mListenersOre (эффект идемпотентен, но список рос). Флажок ставит слушатель один раз; addListenerInternal
-	// реплеит прошлые регистрации — семантика не меняется.
+	// applyStackSizes runs more than once (component load plus server-start), and each call used to add a new
+	// anonymous listener, growing the listener list although the effect stayed idempotent; a flag now applies it once.
 	private boolean mStackSizeListenerApplied = F;
 	public OreDictPrefix applyStackSizes() {
 		if (contains(PREFIX_UNUSED)) return this;

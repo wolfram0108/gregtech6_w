@@ -57,7 +57,7 @@ public class WorldgenMarsRocks extends WorldgenObject {
 		if (tRegistry == null) return F;
 		for (int i = 0, j = 1+aRandom.nextInt(2); i < j; i++) {
 			int tX = aMinX + aRandom.nextInt(16), tZ = aMinZ + aRandom.nextInt(16);
-			for (int tY = gregapi.util.WD.topY(aWorld)-50; tY > gregapi.util.WD.minY(aWorld); tY--) /* BUG-089: было getHeight()-50 и дно 0 — границы через центр F6-Y-scale */ {
+			for (int tY = gregapi.util.WD.topY(aWorld)-50; tY > gregapi.util.WD.minY(aWorld); tY--) /* Was getHeight()-50 and floor 0; bounds now go through the shared world-height-bounds center. */ {
 				Block tContact = WD.block(aChunk, tX&15, tY, tZ&15);
 				if (WD.getMaterial(tContact).isLiquid()) break;
 				if (tContact == NB || WD.air(aWorld, tX, tY, tZ, tContact)) continue;

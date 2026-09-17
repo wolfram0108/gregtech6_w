@@ -54,8 +54,7 @@ public class GT_SolderingTool_Item extends GT_Tool_Item {
 	
 	// @Override
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ) {
-		// F-item-use: 1.7.10 super.onItemUseFirst(старая сигнатура) = дефолт Item (no-op, false); neo Item.onItemUseFirst
-		// сменил сигнатуру на (ItemStack,UseOnContext) — vestigial-вызов убран (результат и так отбрасывался, метод возвращает false).
+		// The onItemUseFirst result was already discarded, and neo changed its signature, so the vestigial call is removed.
 		if (aWorld.isClientSide()) {
 			return false;
 		}

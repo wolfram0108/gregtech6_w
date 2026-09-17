@@ -69,7 +69,7 @@ public class WorldgenFluidSpring extends WorldgenObject {
 
 		WorldgenOresBedrock.setCanGenerateBedrockOre(F);
 		
-		// F6-Y-scale: бедрок MC26 на getMinY() (был Y=0) — родник и слои жидкости якорятся к дну мира (tMinY).
+		// MC26's bedrock sits at getMinY() (was Y=0); the spring and its liquid layers are anchored to the world floor (tMinY).
 		final int tMinY = WD.minY(aWorld);
 		Block tBlock = WD.block(aWorld, aMinX+8, tMinY, aMinZ+8);
 		if (tBlock != BlocksGT.oreBedrock && tBlock != BlocksGT.oreSmallBedrock && !WD.bedrock(tBlock)) return F;
@@ -90,7 +90,7 @@ public class WorldgenFluidSpring extends WorldgenObject {
 		switch (mIndicatorType) {
 		// Yellow or Brown Grass.
 		case  1: case  2: case  3:
-			// F6-Y-scale: no-arg getHeight()=COUNT в MC26 → WD.topY (maxY+1 = старая getHeight()).
+			// neo's no-arg getHeight()=COUNT, not the old getHeight(); replaced with WD.topY (maxY+1, the old getHeight() value).
 			int tMinHeight = Math.min(WD.topY(aWorld)-2, WD.waterLevel(aWorld)-1)
 			,   tMaxHeight = Math.min(WD.topY(aWorld)-1, tMinHeight * 2 + 16);
 			for (int i = 0; i < 6; i++) {

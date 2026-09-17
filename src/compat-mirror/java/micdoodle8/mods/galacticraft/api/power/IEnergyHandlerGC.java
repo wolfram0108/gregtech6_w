@@ -35,8 +35,7 @@
 
 package micdoodle8.mods.galacticraft.api.power;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Galacticraft. Реально используются —
- *  EnergyCompat.java:183-189: getEnergyStoredGC, getMaxEnergyStoredGC, receiveEnergyGC. */
+/** Compile-only mirror of the Galacticraft API: only the three methods EnergyCompat actually calls. */
 public interface IEnergyHandlerGC {
 	float getEnergyStoredGC(EnergySource aDir);
 	float getMaxEnergyStoredGC(EnergySource aDir);

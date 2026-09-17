@@ -65,34 +65,24 @@ public class WorldgenBlackSand extends WorldgenObject {
 				tBlock = WD.block(aWorld, tX+i, tY, tZ+j);
 				byte tMeta = WD.meta(aWorld, tX+i, tY, tZ+j);
 				if (tBlock == BlocksGT.Sands && tMeta == aMeta) {tGenerated++; continue;}
-				// F6: было `!tBlock.isOpaqueCube()` (1.7.10 Block-уровневый метод, удалён движком). 1:1-замена —
-				// `BlockState.isSolidRender(aWorld, tPos)` (объявление `BlockBehaviour.java:654`, поле `solidRender` там же
-				// строится как "occlusion shape — полный куб" (`BlockBehaviour.java:499`) — тот же смысл, что у
-				// старого isOpaqueCube: цельный непрозрачный для рендера/освещения блок). Старый метод был
-				// block-уровневым, без учёта состояния/меты — берём `defaultBlockState()` (тоже без учёта меты,
-				// как и раньше).
+				// 1.7.10's block-level isOpaqueCube() is gone; the 1:1 replacement is BlockState.isSolidRender, the same
+				// solid-occluding meaning, still checked without regard to block state, matching the old behavior.
 				if (!tBlock.defaultBlockState().isSolidRender(aWorld, new net.minecraft.core.BlockPos(tX+i, tY, tZ+j))) {if (tGenerated > 0) break; continue;}
-				// F6: `Blocks.DIRT/gravel/sand/clay` — старые 1.7.10-имена полей (нижний регистр); реальные
-				// поля neo — `Blocks.DIRT/GRAVEL/SAND/CLAY` (`Blocks.java:85,322,342,2099`), то же переименование,
-				// что применено волной 1 по всему остальному дереву.
+				// Blocks.DIRT/gravel/sand/clay were the old 1.7.10 lowercase field names.
+				// The real neo fields are Blocks.DIRT/GRAVEL/SAND/CLAY.
 				if ((tBlock == Blocks.DIRT || tBlock == Blocks.COARSE_DIRT) || tBlock == Blocks.GRAVEL || tBlock == Blocks.SAND || tBlock == Blocks.CLAY || tBlock == BlocksGT.oreSmallGravel || tBlock == BlocksGT.oreGravel || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreRedSand) {
-					// F6 (1:1): не забирать дёрн под деревьями/кустами/растениями. WD.getMaterial(Block) РЕАЛИЗОВАН
-					// (vanilla-классификация, WD.java:474) — стух-тег снят.
+					// Don't strip turf under trees/bushes/plants, matching the original; WD.getMaterial(Block) is now implemented.
 					if (tGenerated <= 0 && (WD.getMaterial(tLastBlock) == gregapi.block.Material.wood || WD.getMaterial(tLastBlock) == gregapi.block.Material.gourd)) continue;
 				} else {
 					if (tGenerated > 0) {
-						// F6 (1:1): не сверлить второй слой сквозь неопознанный НЕ-камень. WD.getMaterial реализован — стух-тег снят.
+						// Don't drill the second layer through an unrecognized non-stone block; WD.getMaterial is now implemented.
 						if (WD.getMaterial(tBlock) != gregapi.block.Material.rock) break;
 					} else {
 						continue;
 					}
 				}
-				// F6 (1:1 оригинала :72 `aWorld.setBlock(tX+i, tY, tZ+j, BlocksGT.Sands, aMeta, 3)`): ставим ЧЕРЕЗ ЦЕНТР
-				// WD.set(...,Block,meta,flags) — он и доставляет мету в BlockState (BlockBaseMeta несёт её свойством
-				// META, BlockBaseMeta:47-48, и реализует IBlockExtendedMetaData). Тем же вызовом ставит этот же блок
-				// сосед по ворлдгену — WorldgenCenterBiomes:91. Прежний прямой setBlock(defaultBlockState()) шёл мимо
-				// центра и ронял мету в 0: из трёх вариантов (0 Magnetite / 1 BasalticMineralSand / 2 GraniticMineralSand)
-				// генерировался только первый, хотя aMeta считается шумом выше (:57) и читается при сверке (:63).
+				// Placed through the center WD.set(...,Block,meta,flags), which delivers meta into BlockState, matching the original.
+				// A direct setBlock(defaultBlockState()) bypassed the center and dropped meta to 0, so only Magnetite ever generated.
 				WD.set(aWorld, tX+i, tY, tZ+j, BlocksGT.Sands, aMeta, 3);
 				tGenerated++;
 			}

@@ -103,7 +103,7 @@ public class BlockGrass extends BlockBaseMeta {
 	
 	@Override
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {
-		// F10: getPlantType — реальная сигнатура net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не int x,y,z.
+		// getPlantType's real signature takes (BlockGetter,BlockPos), not raw x,y,z coordinates.
 		PlantType tType = aPlant.getPlantType(aWorld, new BlockPos(aX+aSide.getStepX(), aY+aSide.getStepY(), aZ+aSide.getStepZ()));
 		return tType == PlantType.PLAINS || (tType == PlantType.BEACH && (WD.anywater(aWorld, aX+1, aY, aZ) || WD.anywater(aWorld, aX-1, aY, aZ) || WD.anywater(aWorld, aX, aY, aZ+1) || WD.anywater(aWorld, aX, aY, aZ-1)));
 	}

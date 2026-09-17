@@ -166,8 +166,8 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 		}
 	}
 
-	/** Какие книги стоят на полке. Чистый пересчёт из слотов — центр зовёт его и из тика, и перед сборкой
-	 *  клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	/** Which books sit on the shelf, a pure recompute from the slots called both from the tick and before assembling a client
+	 *  snapshot. */
 	@Override
 	public void updateVisualData() {
 		if (isClientSide()) return;

@@ -25,17 +25,14 @@ package gregapi.old;
 
 import gregapi.render.IIconContainer;
 
-/**
- * F3-render: 1.7.10 рисовал квад иконки immediate-mode ({@code Tessellator}) — стек удалён в 26.1.2. Замена рисования —
- * {@link gregapi.render.GT6QuadBuilder}/{@code QuadBakingVertexConsumer} (F3-render.md §8). {@code IIcon}→{@link IIconContainer}.
- * Этот util НЕ вызывается ни из одного места мода (нет ссылающихся файлов) — мёртв, тело no-op.
- */
+/** The immediate-mode Tessellator drawing this used is gone in 26.1.2; its replacement is GT6QuadBuilder.
+ *  Nothing in the mod calls this utility any more, so the body is left as a dead no-op. */
 public class GT_RenderUtil {
 	public static void renderItemIcon(IIconContainer icon, double size, double z, float nx, float ny, float nz) {
 		renderItemIcon(icon, 0, 0, size, size, z, nx, ny, nz);
 	}
 
-	/** F3-render: было immediate-mode рисование квада; мёртв (см. class javadoc). No-op. */
+	/** Dead, see the class javadoc; body is a no-op. */
 	public static void renderItemIcon(IIconContainer icon, double xStart, double yStart, double xEnd, double yEnd, double z, float nx, float ny, float nz) {
 		if (icon == null) return;
 		//

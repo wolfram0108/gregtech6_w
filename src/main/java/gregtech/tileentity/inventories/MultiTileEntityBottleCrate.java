@@ -86,8 +86,8 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 		if (aIsServerSide && mInventoryChanged) {updateVisualData(); updateClientData();}
 	}
 
-	/** Что стоит в ящике: содержимое каждой бутыли. Чистый пересчёт из слотов — центр зовёт его и из тика,
-	 *  и перед сборкой клиентского снимка (см. {@code TileEntityBase03TicksAndSync.updateVisualData}). */
+	/** What the crate shows: each bottle's contents. A pure recompute from the slots, called both from the tick and before
+	 *  building the client snapshot (see TileEntityBase03TicksAndSync.updateVisualData). */
 	@Override
 	public void updateVisualData() {
 		if (isClientSide()) return;

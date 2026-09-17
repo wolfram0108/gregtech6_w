@@ -73,38 +73,26 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	/** For Creative Subsets, not actually important. */
 	private final byte mMaxMeta;
 
-	/** F3-render/meta: вариант цветка (per-ore индикатор бедрок-руд) — в blockstate-property (синкается с чанком, без TE):
-	 *  WD.set→setExtendedMetaData ставит, WD.meta→getExtendedMetaData читает, GT6BlockModel рисует cross по нему (IRenderedCross). */
+	/** The flower's ore-indicator variant lives in a synced BlockState property rather than a tile
+	 *  entity, routed through WD.set/WD.meta, and GT6BlockModel reads it to draw the cross model. */
 	public static final net.minecraft.world.level.block.state.properties.IntegerProperty META = net.minecraft.world.level.block.state.properties.IntegerProperty.create("meta", 0, 15);
 	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<Block, BlockState> aBuilder) {super.createBlockStateDefinition(aBuilder); aBuilder.add(META);}
-	/** F9: было super(Material.plants) — BlockFlower(1.7.10, recompSrc Block.java:26) — переходник не
-	 *  распространён на классы вне BlockBase (F9 4-bis, тот же приём переиспользован: собственное mMaterial/
-	 *  getMaterial(), не новая абстракция). */
+	/** The Material bridge isn't extended to classes outside BlockBase, so this keeps its own
+	 *  mMaterial/getMaterial() instead of a new shared abstraction. */
 	protected final Material mMaterial = Material.plants;
 	public Material getMaterial() {return mMaterial;}
 
 	/** @param aSpeed is usually 0.4F */
 	public BlockBaseFlower(Class<? extends ItemBlockBase> aItemClass, String aNameInternal, long aMaxMeta, IIconContainer[] aIcons) {
-		// F16/F9 форс движка: 1.7.10 BlockFlower(int) отбирал группу суб-типов (не эффект) - концепт исчез; neo
-		// FlowerBlock(SuspiciousStewEffects,Properties) [FlowerBlock.java:36] требует эффект похлёбки - GT6-цветы
-		// декоративные (без спец-эффекта) -> SuspiciousStewEffects.EMPTY [SuspiciousStewEffects.java:25], тот же
-		// Properties.of()-дефолт, что и остальные BlockBase-наследники (F9-мост твёрдости отложен туда же).
-		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром/call-site).
-		// F16: golden setStepSound(soundTypeGrass) — runtime-мутатор в neo невозможен, задаём в Properties.sound(GRASS) при ctor (1:1).
-		// F16 noCollision (репорт игрока: трава под цветком → земля, цветок затемнён): 1.7.10 BlockFlower — без
-		// коллизии и isOpaqueCube=false; neo-эквивалент — Properties.noCollision() (hasCollision=false И canOcclude=false,
-		// BlockBehaviour:1078-1082, так собран vanilla DANDELION). Без него canOcclude=true → occlusion-форма непуста →
-		// faceShapeOccludes с полной верхней гранью травы = «свет заблокирован» → SpreadingSnowyDirtBlock убивал траву.
-		// MODCOMPAT-002: цвет на карте. 1.7.10 BlockFlower наследовал Material.plants (BlockFlower.java:26), а тот
-		// несёт foliageColor — то есть цветы на карте были цвета листвы. В neo дефолт «нет цвета», задаём явно тем
-		// же мостом и из того же материала, что остальные иерархии (см. BlockBase.mapColorOf).
+		// FlowerBlock's constructor now requires a stew effect, so decorative GT6 flowers pass EMPTY; noCollision() is also
+		// required, or occlusion treats the flower as solid and kills the grass underneath it, as happened before this fix.
 		super(net.minecraft.world.effect.MobEffects.SATURATION, 0, gregapi.block.BlockBase.mapColorOf(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollission().sound(net.minecraft.world.level.block.SoundType.GRASS), gregapi.block.Material.plants));
-		registerDefaultState(getStateDefinition().any().setValue(META, 0)); // F3-render/meta: дефолт META=0
+		registerDefaultState(getStateDefinition().any().setValue(META, 0)); // defaults to META=0
 		mMaxMeta = (byte)(UT.Code.bind4(aMaxMeta-1)+1);
 		mIcons = aIcons;
 		mNameInternal = aNameInternal;
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
-		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site (Loader_Blocks); ЗДЕСЬ — только BlockItem.
+		// Only the BlockItem is registered here; the block itself registers lazily at its call site.
 		final Class<? extends net.minecraft.world.item.BlockItem> tItemClass = aItemClass==null?gregapi.block.ItemBlockBase.class:aItemClass;
 		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GT, mNameInternal, () -> (net.minecraft.world.item.BlockItem)gregapi.util.UT.Reflection.callConstructor(tItemClass, 0, null, gregapi.data.CS.T, this));
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
@@ -112,17 +100,17 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	}
 	
 	public final String getUnlocalizedName() {return mNameInternal;}
-	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {/* IBlock-хук; F-shape отложена core-wide, FlowerBlock несёт свой neo SHAPE */}
-	@Override public float[] getRenderBounds() {return null;/* цветы — cross-рендер (IRenderedCross), bounds не хранят */}
-	// neo BonemealableBlock: GT6-цветы декоративны — костная мука неприменима (как ванильные одиночные цветы).
+	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {/* shape is deferred core-wide; FlowerBlock carries its own neo shape instead */}
+	@Override public float[] getRenderBounds() {return null;/* flowers use cross rendering and store no bounds */}
+	// GT6 flowers are decorative, so bonemeal has no effect, the same as vanilla's single flowers.
 	@Override public boolean isValidBonemealTarget(net.minecraft.world.level.LevelReader aWorld, BlockPos aPos, BlockState aState, boolean aIsClient) {return F;}
 	@Override public boolean isBonemealSuccess(net.minecraft.world.level.Level aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {return F;}
 	@Override public void performBonemeal(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {/**/}
 	@Override public String name(byte aMeta) {return mNameInternal + "." + aMeta;}
 	public String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mNameInternal);}
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return 0;}
-	// было getExplosionResistance(Entity,World,x,y,z,eX,eY,eZ) -> IBlockExtension.getExplosionResistance
-	// (BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]; исходное тело игнорировало все параметры (константа 0).
+	// neo asks explosion resistance through IBlockExtension instead of the old Entity-based overload; the original body
+	// ignored every parameter anyway, returning a constant 0.
 	@Override public float getExplosionResistance(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.level.Explosion aExplosion) {return 0;}
 	public float getExplosionResistance(Entity aEntity) {return 0;}
 	public String getHarvestTool(int aMeta) {return TOOL_sword;}
@@ -138,17 +126,17 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
 	public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 
-	// F3 light-opacity МОСТ (цветы наследуют ванильный FlowerBlock, а не BlockBase — свой мост, см. разбор там).
+	// Its own copy of the light-opacity bridge, since flowers extend vanilla FlowerBlock, not BlockBase.
 	@Override public int getLightBlock(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.lightDampening(getLightOpacity());}
 
-	// F3 shade МОСТ (цветы наследуют ванильный FlowerBlock, а не BlockBase — свой мост, см. разбор там).
+	// Its own copy of the shade bridge, for the same reason: flowers extend vanilla FlowerBlock, not BlockBase.
 	@Override public float getShadeBrightness(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
 
-	/** 1.7.10 {@code Block.isBlockNormalCube()} ({@code Block.java:502-504}) — тело 1:1, см. {@code BlockBase}. */
+	/** Body 1:1 with 1.7.10's Block.isBlockNormalCube; see BlockBase for the same method. */
 	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
 
-	/** 1.7.10-значение приходило от ванильного предка {@code BlockBush.renderAsNormalBlock()} = false
-	 *  ({@code BlockBush.java:108-111}); в neo этого метода у предка нет — переносим явно, 1:1. */
+	/** 1.7.10 got this false from vanilla BlockBush itself; neo's ancestor has no such method,
+	 *  so it is set explicitly here instead, 1:1. */
 	public boolean renderAsNormalBlock() {return F;}
 	public Item getItemDropped(int par1, Random aRandom, int par3) {return Item.byBlock(this);}
 	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
@@ -160,11 +148,8 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	@Override public byte maxMeta() {return mMaxMeta;}
 	public ResourceLocation getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
 
-	// F3-render/meta (IBlockExtendedMetaData): вариант цветка в blockstate-property META; get/setExtendedMetaData —
-	// дефолты интерфейса (консолидация захода #39: зеркало удалено; прежний локальный сеттер гейтился на Level —
-	// дефолт шире и вернее 1:1: пишет и LevelAccessor-регион, и ChunkAccess ворлдгена, как остальная семья).
-	// F3-render (IRenderedCross): текстура cross-модели per-мета (getIcon уже per-мета из mIcons); GT6BlockModel рисует X-форму.
-	// aWorld==null = item-рендер, aX несёт МЕТУ СТЕКА (контракт IRenderedCross; прежде item всегда рисовал мету 0).
+	// Uses the shared IBlockExtendedMetaData defaults instead of a Level-gated local setter, since the default correctly
+	// writes both the live region and worldgen's ChunkAccess; aWorld==null means an item render, aX carrying the stack's meta.
 	@Override public ResourceLocation getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (mIcons == null || mIcons.length == 0) return null;
 		IIconContainer tIcon = mIcons[UT.Code.bind4(aWorld == null ? aX : WD.meta(aWorld, aX, aY, aZ)) % mIcons.length];
@@ -188,29 +173,22 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	@Override public int getItemStackLimit(ItemStack aStack) {return 64;}
 	@Override public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {return aStack;}
 	
-	// F10: сигнатура реального net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не старый шим
-	// (BlockGetter,int,int,int) — старая форма не была @Override и молча не срабатывала (наследуется от
-	// FlowerBlock/BushBlock). getPlantMetadata убран — реальный интерфейс его не содержит (мета внутри BlockState).
+	// The real IPlantable signature is (BlockGetter,BlockPos), not the old (BlockGetter,x,y,z) shim,
+	// which was never actually an override and silently never fired. getPlantMetadata is removed: the real interface has none.
 	@Override public PlantType getPlantType(BlockGetter aWorld, BlockPos aPos) {return PlantType.PLAINS;}
 	@Override public BlockState getPlant(BlockGetter aWorld, BlockPos aPos) {BlockState tState = aWorld.getBlockState(aPos); return tState.getBlock() != this ? defaultBlockState() : tState;}
-	// 1:1 оригинала (:131): кислород + canSustainPlant почвы через ЦЕНТР WD.canSustainPlant — он несёт таблицу
-	// почв 1.7.10 для TriState.DEFAULT. ⛔ Прежняя копия здесь сворачивала toBoolean(T): цветок «стоял» на камне
-	// и в воздухе — снос не работал вовсе (замер gt6flowerprobe, 2026-07-30).
+	// Goes through the shared WD.canSustainPlant center; an earlier copy collapsed its tri-state
+	// result to always true, so flowers stood on stone or even air and never got removed for lacking support.
 	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return WD.oxygen(aWorld, aX, aY, aZ) && WD.canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, Blocks.DANDELION);}
 	public boolean func_149851_a(Level aWorld, int aX, int aY, int aZ, boolean aIsRemote) {return T;}
 	public boolean func_149852_a(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return T;}
 	public void func_149853_b(Level aWorld, Random aRandom, int aX, int aY, int aZ) {ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, 1, WD.meta(aWorld, aX, aY, aZ));}
-	// было Block.onBlockPlaced(World,x,y,z,side,hitX,hitY,hitZ,meta) (1.7.10 vanilla override-точка, дефолт identity
-	// return meta [recompSrc Block.java:1067-1069]) - удалено из neo целиком; GT6-own reintroduced generic-hook (тот
-	// же приём, что BlockBaseSpike/BlockBaseLog/BlockBaseBeam уже переопределяют), дефолт-идентичность как в оригинале.
+	// Reintroduced as a plain generic hook, the same technique as its siblings, since neo removed
+	// this vanilla override point entirely; the default still just returns the meta unchanged, as before.
 	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return aMeta;}
 	
-	// BUG-006-приём для иерархии ВНЕ BlockBase (цветок стоит на ванильном FlowerBlock, мостов BlockBase:312 /
-	// PrefixBlock / BlockBaseRail у него нет): loot-таблиц у GT6 нет, neo-дефолт getDrops(loot) отдавал ПУСТО —
-	// снос тиком/опорой и добыча не роняли НИЧЕГО (приёмка 2026-07-30: «цветок исчезает без лута»; судья
-	// gt6flowerprobe показывал «дроп-сущностей 0», но судил только снос — слепота исправлена). Формула дропа —
-	// дефолт 1.7.10 Block.getDrops: quantityDropped копий ST(getItemDropped, 1, damageDropped) из СОБСТВЕННЫХ
-	// методов ниже (:132-149, 1:1 оригинала :97-101). Мета — из СНИМКА aState (BUG-016/026).
+	// Bridged separately here since this hierarchy sits on vanilla FlowerBlock and has none of BlockBase's drop bridges;
+	// without it, flowers removed by decay or lost support dropped nothing at all, since GT6 has no loot tables.
 	@Override public java.util.List<ItemStack> getDrops(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
 		if (tOrigin == null) return super.getDrops(aState, aParams);
@@ -222,16 +200,8 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		return rDrops;
 	}
 
-	// КАНАЛ ПОДКЛЮЧЁН (2026-07-30, реестр мёртвых каналов): 1.7.10 checkAndDropBlock звался из
-	// updateTick/onNeighborBlockChange ванильного BlockBush (recompSrc :53-56, :62-64; setTickRandomly(true) :22)
-	// и сносил цветок, когда canBlockStay:193 говорило «нельзя» (кислород WD.oxygen + почва). Neo-эквиваленты
-	// ниже — оба канала ванильной базы, к которым цветок и в 1.7.10 был прикреплён:
-	//  (1) canSurvive → canBlockStay: его читает унаследованный VegetationBlock.updateShape (:28-40 референса)
-	//      — снос при обновлении соседа, роль onNeighborBlockChange; и он же гейт постановки. Правило ЗАМЕНЯЕТ
-	//      ванильное целиком, как @Override canBlockStay в 1.7.10 (:131 оригинала). LevelReader без Level
-	//      (регион генерации) → ванильное правило почвы, приём как isFireSource у PrefixBlock;
-	//  (2) isRandomlyTicking + randomTick → checkAndDropBlock: random-плечо 1:1 (BlockBush:22,:62-64) —
-	//      кислород меняется и без обновления соседей.
+	// Wires two neo hooks to the same 1.7.10 removal rule: canSurvive (called on neighbor updates, reading canBlockStay) and
+	// randomTick (catching oxygen changes with no neighbor update at all), matching where the original was attached.
 	@Override public boolean canSurvive(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.LevelReader aWorld, BlockPos aPos) {
 		return aWorld instanceof Level tLevel ? canBlockStay(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : super.canSurvive(aState, aWorld, aPos);
 	}
@@ -254,25 +224,20 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
-		// F16 flower-pot ЗАКРЫТ РЕШЕНИЕМ (BUG-039 v4, FORCED-ADAPTATION): 1.7.10-ветка «посадить GT6-цветок в горшок»
-		// работала через TileEntityFlowerPot-BE (mirror-класс, в рантайме NCDFE — был краш ПКМ 2026-07-19). В neo
-		// наполненный горшок = отдельный POTTED_*-блок: для GT6-цветов потребовалась бы регистрация N собственных
-		// potted-блоков + моделей — несоразмерно декоративной фиче. Деградация принята: GT6-цветы в горшок не
-		// сажаются (no-op, ваниль сажается ванилью); данжен-горшки наполняются центром BlocksGT.potted.
+		// Potting a GT6 flower is a no-op, a deliberate degradation: neo represents a filled pot as its own separate block per
+		// plant, and registering that many custom potted blocks for a decorative feature was judged disproportionate.
 		if (tBlock == Blocks.FLOWER_POT) return F;
 
 		if (tBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;
-		// было tBlock != Blocks.tallgrass (1.7.10 единый BlockTallGrass, meta grass/fern) -> neo раздвоил на
-		// Blocks.GRASS/Blocks.FERN, оба instanceof TallGrassBlock [TallGrassBlock.java:15, Blocks.java:707-732] -
-		// instanceof как 1:1-эквивалент identity-проверки единого класса (второй tBlock!=DEAD_BUSH дубль-баг порта устранён).
+		// Was tBlock != Blocks.tallgrass (one 1.7.10 class for grass/fern); neo split it into GRASS/FERN, both
+		// instanceof TallGrassBlock -- the same identity check, expressed by type instead of by a single constant.
 		} else if (tBlock != Blocks.VINE && !(tBlock instanceof net.minecraft.world.level.block.TallGrassBlock) && tBlock != Blocks.DEAD_BUSH && !WD.replaceable(tBlock, aWorld, aX, aY, aZ)) {
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 		}
 
-		// World.canPlaceEntityOnSide восстановлен 1:1 через ЦЕНТР WD.canPlaceEntityOnSide (Forge-хук удалён по ИМЕНИ,
-		// способность есть — коллизия формы с исключением размещающего + заменяемость цели; централизован в WD.java).
-		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == WD.maxY(aWorld) && getMaterial().isSolid()) /* BUG-089: было aY == 255 — верх мира через центр F6-Y-scale */ || !WD.canPlaceEntityOnSide(aWorld, this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
+		// Restored through the same shared center WD.canPlaceEntityOnSide as the rest of the block hierarchies.
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == WD.maxY(aWorld) && getMaterial().isSolid()) /* the world ceiling now comes from the single Y-scale center, not a hardcoded 255 */ || !WD.canPlaceEntityOnSide(aWorld, this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
 
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, onBlockPlaced(aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, aItem.getMetadata(aStack.getDamageValue())))) {
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);

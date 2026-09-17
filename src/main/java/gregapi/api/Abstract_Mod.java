@@ -154,41 +154,13 @@ public abstract class Abstract_Mod {
 		for (Runnable tRunnable : aList) try {tRunnable.run();} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
 	
-	// ------------------------------ порядок фаз загрузки (Forge 1.20.1) ------------------------------
 
-	/**
-	 * Отложенные тела фаз одной стадии загрузки: класс события стадии → (modId GT-мода → тело фазы).
-	 * {@link ConcurrentHashMap}, потому что складывают сюда параллельные потоки загрузчика (см. ниже).
-	 */
+	/** Deferred phase bodies for one load stage: stage-event class -> (GT mod's modId -> phase body).
+	 *  A ConcurrentHashMap, since the loader's parallel threads write into it concurrently (see below). */
 	private static final Map<Class<?>, Map<String, Runnable>> sPhaseTasks = new ConcurrentHashMap<>();
 
-	/**
-	 * ЕДИНАЯ точка запуска фазы загрузки GT-мода. Весь мод обращается только сюда — из
-	 * {@code onPreLoad}/{@code onLoad}/{@code onPostLoad} всех @Mod-классов GT6.
-	 *
-	 * <p><b>Зачем.</b> FML 1.7.10 гонял фазы (PreInit/Init/PostInit) ПОСЛЕДОВАТЕЛЬНО, в порядке загрузки
-	 * модов: GAPI → GAPI_POST → GT. Весь монолит на этот порядок опирается (например
-	 * {@code GT6_Main.onModPreInit2} читает {@code ConfigsGT.GREGTECH}, который создаёт
-	 * {@code GT_API.onModPreInit2}). Forge 1.20.1 такого порядка не даёт: события стадий —
-	 * {@code ParallelTransition} с {@code ThreadSelector.PARALLEL}
-	 * ({@code forge-1201-decompiled/net/minecraftforge/fml/core/ModStateProvider.java:56,79,124} +
-	 * {@code ParallelTransition.java:32}), а раздача идёт через {@code ModList.futureVisitor}, который
-	 * просто {@code gather}-ит фьючерсы ВСЕХ контейнеров без рёбер между ними (fmlcore 47.4.22,
-	 * {@code ModList.futureVisitor}/{@code gather}). Зависимо-упорядоченная параллельная раздача
-	 * ({@code LoadingModList.getDependencies(IModInfo)}), на которую опирается ветка 26.x, в
-	 * {@code fmlloader} 1.20.1 ОТСУТСТВУЕТ (есть только в fml1206/fml1211/fml2612). Отсюда падение
-	 * boot-ступени 5: фаза GT стартовала раньше фазы GAPI.
-	 *
-	 * <p><b>Как.</b> Тело фазы не исполняется в параллельном диспетче, а откладывается в очередь
-	 * СВОЕЙ стадии ({@link ParallelDispatchEvent#enqueueWork}). Очередь стадии крутится ОДНИМ потоком
-	 * и ПОСЛЕ того, как параллельная раздача этой стадии завершилась целиком
-	 * ({@code ParallelTransition.finalActivityGenerator}: {@code stage.getDeferredWorkQueue().runTasks()}
-	 * после {@code prev}). Первое же тело, дошедшее до очереди, прогоняет ВСЕ накопленные тела стадии в
-	 * порядке загрузки модов движка — {@link ModList#forEachModInOrder} идёт по
-	 * {@code sortedContainers}, то есть по результату {@code ModSorter} из объявленных зависимостей
-	 * ({@code mods.toml}: gregapi → gregapi_post → gregtech). Это ровно семантика FML 1.7.10:
-	 * один поток, все моды, порядок загрузки.
-	 */
+	/** Single authoritative point running a GT mod's load phase: Forge 1.20.1's stage events dispatch in
+	 *  parallel with no ordering between mods, unlike 1.7.10 FML's strict sequential load order. */
 	public static void runPhaseInModLoadOrder(ParallelDispatchEvent aModEvent, Abstract_Mod aMod, Runnable aPhase) {
 		Map<String, Runnable> tTasks = sPhaseTasks.computeIfAbsent(aModEvent.getClass(), aKey -> new ConcurrentHashMap<>());
 		tTasks.put(aMod.getModID(), aPhase);
@@ -318,9 +290,8 @@ public abstract class Abstract_Mod {
 			OUT.println(getModNameForLog() + ": PostInit-Phase finished!");
 			ORD.println(getModNameForLog() + ": PostInit-Phase finished!");
 			
-			// F12-followup (item-split): compat.onPostLoad (рецепт-загрузчики) + mAfterPostInit (MultiItem.addItems) делают
-			// ST.make/CR/RM → компоненты только на server-start. На postInit они падали молча (try/catch) → рецепты/предметы
-			// терялись (низкий prefixes-паритет). Откладываем ОБА в deferItemInit (server-start), порядок сохранён.
+			// Both used to fail silently at postInit because components only exist at server start;
+			// deferring both to deferItemInit fixes the silent item/recipe loss while keeping their order.
 			gregapi.GT_API.deferItemInit(() -> {
 			if (!mCompatClasses.isEmpty()) {
 				UT.LoadingBar.start("Loading Compat (PostInit)", mCompatClasses.size());
@@ -357,8 +328,8 @@ public abstract class Abstract_Mod {
 	}
 	
 	public void onModServerStarting(ServerStartingEvent aEvent) {
-		// DUMMY-МИР строится здесь, а не на конструировании мода: Level требует реестр биомов, которого на той
-		// фазе ещё нет (см. gregapi.dummies.DummyWorld.ensure и GT_API, где стояла падавшая попытка).
+		// Built here rather than at mod construction because a Level needs the biome registry,
+		// which does not exist yet at that earlier phase.
 		gregapi.dummies.DummyWorld.ensure(aEvent.getServer().registryAccess());
 		loadRunnables(mBeforeServerStarting);
 		mStartedServerStarting++;

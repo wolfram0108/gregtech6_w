@@ -38,8 +38,7 @@ package forestry.api.recipes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
 
-/** Forestry-mirror (compile-only; настоящий Forestry предоставляет реализацию в рантайме,
- *  вызов гейтится {@code MD.FR.mLoaded}). */
+/** Compile-only Forestry mirror; the real mod supplies the implementation at runtime, gated by MD.FR.mLoaded. */
 public interface ISqueezerRecipe {
 	ItemStack[] getResources();
 	ItemStack getRemnants();

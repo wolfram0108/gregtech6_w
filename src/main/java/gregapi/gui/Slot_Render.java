@@ -29,18 +29,9 @@ import gregapi.tileentity.ITileEntityInventoryGUI;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/**
- * @author Gregorius Techneticies
- *
- * F-GUI: {@code putStack}→{@code set}; body deliberately bypasses the GT6 GUI-abstraction (uses the raw
- * base {@code Slot.container}/{@code inventory} field, exactly like the original, NOT {@code mInventory})
- * — {@code inventory.setInventorySlotContents}→{@code container.setItem} (движок), {@code getWorldObj().isClientSide()}
- * →{@code getLevel().isClientSide()} (движок, `neo-decompiled/net/minecraft/world/level/Level.java:163`).
- * ГРАНИЦА null↔EMPTY (доработка R8): этот {@code set} НЕ трогает GT6-инвентарь ({@code mInventory}/
- * {@code setInventorySlotContentsGUI}) вообще — пишет ТОЛЬКО в raw neo {@code container.setItem(...)}
- * (`Slot.java:65` — сам движковый {@code Container}, ждёт {@code ItemStack.EMPTY}, не {@code null}) — мост
- * EMPTY→null здесь НЕ нужен, {@code aStack} уже приходит в neo-конвенции (EMPTY) от вызывающего кода.
- */
+/** @author Gregorius Techneticies
+ *  Deliberately bypasses the GT6 GUI abstraction and writes through the raw base Slot container field, as
+ *  the original did; needs no EMPTY<->null bridge since callers already pass neo-convention stacks. */
 public class Slot_Render extends Slot_Holo {
 	public Slot_Render(ITileEntityInventoryGUI aInventory, int aIndex, int aX, int aY) {
 		super(aInventory, aIndex, aX, aY, F, F, 0);

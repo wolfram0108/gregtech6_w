@@ -26,20 +26,8 @@ package gregapi.fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidTank;
 
-/**
- * F5 компат-заглушка: Forge-1.7.10 {@code net.minecraftforge.fluids.FluidTankInfo} — простая
- * неизменяемая пара (жидкость, ёмкость), которую отдавал {@code IFluidHandler.getTankInfo()}. Ни в
- * Forge 1.20.1 (греп по {@code forge-1201-decompiled/net/minecraftforge/fluids/} — класса нет: там
- * {@code IFluidHandler} отдаёт содержимое поштучно через {@code getFluidInTank}/{@code getTankCapacity}),
- * ни в 26.x прямого аналога нет — воспроизведена по фактическому использованию в дереве (2-арг конструктор,
- * поля {@code fluid}/{@code capacity}: {@code gregapi.data.CS.java:834}, {@code FluidTankGT.getInfo()}).
- * [Метка отложенности «consumer-файлы не мигрированы» СНЯТА 2026-08-06 — пережила собственный фикс:
- * в оригинале ровно 14 вызывателей {@code getTankInfo}, в порте у всех 14 есть плечо — 12 ходят через
- * ЦЕНТР шва {@code FL.getTankInfo} ({@code FL.java:944}, side-aware поверх движкового API), сенсоры
- * Fluidometer/Bucketometer/KiloBucketometer, BasicMachine:705, WD:2061, Bridge/Extender/MiniPortal/
- * LongDistancePipelineFluid; 1 — контракт {@code IMultiBlockFluidHandler} (1:1 с оригиналом :396);
- * 1 — {@code MultiTileEntityPipeFluid:506-511}, длина берётся из движкового API напрямую (документировано там).]
- */
+/** Forge 1.7.10's IFluidHandler.getTankInfo() returned this simple immutable (fluid, capacity) pair; no engine version now
+ *  has a direct analog, so it's reproduced here from how the tree actually uses it. */
 public final class FluidTankInfo {
 	public final FluidStack fluid;
 	public final int capacity;
@@ -49,9 +37,7 @@ public final class FluidTankInfo {
 		capacity = aCapacity;
 	}
 
-	/** Forge-1.7.10 {@code FluidTankInfo(IFluidTank)} = пара (текущая жидкость, ёмкость бака).
-	 *  Forge 1.20.1 сохранил {@code IFluidTank.getFluid()}/{@code getCapacity()} дословно
-	 *  ({@code forge-1201-decompiled/net/minecraftforge/fluids/IFluidTank.java}) — 1:1. */
+	/** Forge 1.20.1 kept IFluidTank.getFluid()/getCapacity() verbatim, so this constructor stays 1:1 with 1.7.10. */
 	public FluidTankInfo(IFluidTank aTank) {
 		this(aTank.getFluid(), aTank.getCapacity());
 	}

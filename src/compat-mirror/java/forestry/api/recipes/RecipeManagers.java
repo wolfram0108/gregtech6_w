@@ -35,8 +35,8 @@
 
 package forestry.api.recipes;
 
-/** Forestry-mirror (compile-only; настоящий Forestry инициализирует эти менеджеры в рантайме).
- *  GT6 обращается только под {@code MD.FR.mLoaded}. */
+/** Compile-only Forestry mirror; the real mod initializes these managers at runtime, and
+ *  GregTech6 only reaches them when MD.FR.mLoaded is true. */
 public class RecipeManagers {
 	public static ICentrifugeManager centrifugeManager;
 	public static ISqueezerManager   squeezerManager;

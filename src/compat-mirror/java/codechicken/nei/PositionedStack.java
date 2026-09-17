@@ -37,14 +37,13 @@ package codechicken.nei;
 
 import net.minecraft.world.item.ItemStack;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — NEI. Поля/методы, используемые GregTech6
- *  (NEI_RecipeMap.FixedPositionedStack extends PositionedStack, GuiDraw-подсказки).
- *  См. compat-mirror/README.md. */
+/** Compile-only mirror of the NEI API: only the members GregTech6 uses
+ *  (NEI_RecipeMap.FixedPositionedStack extends PositionedStack, plus GuiDraw tooltips). */
 public class PositionedStack {
 	public int relx, rely;
-	/** Текущий отображаемый представитель (может совпадать с одним из {@link #items}). */
+	/** The currently displayed representative, which may be one of {@link #items}. */
 	public ItemStack item;
-	/** Полный набор перестановок (wildcard-мета разворачивается сюда). */
+	/** The full set of permutations; wildcard metadata expands into this array. */
 	public ItemStack[] items = new ItemStack[0];
 
 	public PositionedStack(Object aItem, int aX, int aY) {this(aItem, aX, aY, false);}

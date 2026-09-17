@@ -35,6 +35,6 @@
 
 package cpw.mods.fml.common;
 
-/** F10 ЗЕРКАЛО (compile-only) — legacy Forge/FML 1.7.10 (пакет cpw.mods.fml не существует
- *  на neo-classpath). Только тип-параметр (GT_ASM_Dummy.registerBus). См. compat-mirror/README.md. */
+/** Compile-only mirror of legacy Forge/FML 1.7.10; the cpw.mods.fml package does not exist on
+ *  the neo classpath, used here only as a type parameter for GT_ASM_Dummy.registerBus. */
 public class LoadController {}

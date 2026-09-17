@@ -82,7 +82,7 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 		if (SIDES_INVALID[aSource]) {WD.set(aWorld, aX, aY, aZ, NB, 0, 3); return;}
 		
 		// Stop once you reach the bottom of the Map.
-		if (aY <= WD.minY(aWorld)) return; // F6-Y-scale: было aY <= 0, дно neo = getMinY()
+		if (aY <= WD.minY(aWorld)) return; // Was aY <= 0; neo's world floor is getMinY() instead of 0.
 		
 		// We are going down? Carve out Dirt, Gravel, Sand and the likes.
 		if (SIDES_BOTTOM[aFlow] && SIDES_HORIZONTAL[aSource]) {
@@ -176,8 +176,7 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 		return quantaPerBlock;
 	}
 	
-	// F10: реальная сигнатура net.minecraftforge.fluids.IFluidBlock — drain(Level,BlockPos,IFluidHandler.FluidAction);
-	// было (Level,int,int,int,boolean aDoDrain) старого шима.
+	// IFluidBlock's real signature is drain(Level,BlockPos,FluidAction); the old shim's was (Level,int,int,int,boolean).
 	@Override
 	public FluidStack drain(Level aWorld, BlockPos aPos, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction aAction) {
 		return FL.Water.make(1000);

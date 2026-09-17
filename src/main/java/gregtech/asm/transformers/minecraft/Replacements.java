@@ -51,18 +51,20 @@ public class Replacements {
 		if (aVictim instanceof Villager) {
 			Villager aVillager = (Villager)aVictim;
 			Level aWorld = aVillager.level();
-			// neo: villager-зомби — отдельный класс ZombieVillager (1.7.10 Zombie.setVillager(true) удалён). F-ASM: метод мёртв в neo (коремод не применяется) → Mixin, тело портируется на neo-символы для компиляции.
+			// 1.7.10's Zombie.setVillager(true) is gone; neo models a villager zombie as the separate ZombieVillager class. The
+			// coremod itself is dead, kept only Mixin-ported to compile.
 			net.minecraft.world.entity.monster.ZombieVillager tZombieVillager = new net.minecraft.world.entity.monster.ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, aWorld);
-			tZombieVillager.copyPosition(aVillager); // было copyLocationAndAnglesFrom
-			// onSpawnWithEgg/finalizeSpawn (инициализация конверсии) движок делает сам — в neo требует ServerLevelAccessor+EntitySpawnReason, опущено в мёртвом ASM-теле.
+			tZombieVillager.copyPosition(aVillager); // was copyLocationAndAnglesFrom
+			// onSpawnWithEgg/finalizeSpawn conversion init is now done by the engine itself, needing arguments this dead body
+			// doesn't have, so it's omitted here.
 			tZombieVillager.setCanPickUpLoot(false);
-			tZombieVillager.setPersistenceRequired(); // было func_110163_bv (не деспавнить)
-			tZombieVillager.setBaby(aVillager.isBaby()); // было setChild
-			tZombieVillager.setCustomName(aVillager.getCustomName()); // было setCustomNameTag/getCustomNameTag (Component, не String)
+			tZombieVillager.setPersistenceRequired(); // was func_110163_bv (don't despawn)
+			tZombieVillager.setBaby(aVillager.isBaby()); // was setChild
+			tZombieVillager.setCustomName(aVillager.getCustomName()); // was setCustomNameTag/getCustomNameTag (Component, not String)
 			aVillager.setCustomName(null);
 			aWorld.addFreshEntity(tZombieVillager);
-			aWorld.levelEvent(1016, tZombieVillager.blockPosition(), 0); // было playAuxSFXAtEntity(null,1016,x,y,z,0)
-			aVillager.discard(); // было removeEntity
+			aWorld.levelEvent(1016, tZombieVillager.blockPosition(), 0); // was playAuxSFXAtEntity(null,1016,x,y,z,0)
+			aVillager.discard(); // was removeEntity
 		}
 	}
 	
@@ -125,7 +127,7 @@ public class Replacements {
 
 	public static boolean BlockStaticLiquid_isFlammable(Level world, int x, int y, int z) {
 		net.minecraft.core.BlockPos p = new net.minecraft.core.BlockPos(x, y, z);
-		return WD.block(world, x, y, z).isFlammable(world.getBlockState(p), world, p, Direction.UP); // было ForgeDirection.UNKNOWN (нет в neo) → UP-дефолт
+		return WD.block(world, x, y, z).isFlammable(world.getBlockState(p), world, p, Direction.UP); // was ForgeDirection.UNKNOWN (no neo equivalent) -> UP default
 	}
 
 	public static boolean EntityAICreeperSwell_shouldExecute(Creeper swellingCreeper) {

@@ -51,15 +51,13 @@ public class Loader_Fluids implements Runnable {
 		FL.create("Butane"                   , null                  , MT.Butane             , 2).setDensity(-1000);
 		FL.create("Propylene"                , null                  , MT.Propylene          , 2);
 		FL.create("Ethylene"                 , null                  , MT.Ethylene           , 2);
-		// BUG-117-хвост, тот же признак, что lingering: тара EtFu без фолбэка, а функция в neo — ваниль
-		// (Items.DRAGON_BREATH). Приём — существующий IL.get(1, фолбэк), как у EtFu_Bottle_Honey/HBM_Bottle_Mercury.
-		// Без фолбэка поставщик отдавал null → канистра-рецепт без входа («Recipe has no Inputs» ×1 каждый запуск).
+		// Same defect class as the lingering-potion fix: EtFu's container had no fallback, and the function is now vanilla, so
+		// it gets the same IL.get(1, fallback) trick used elsewhere.
 		FL.create("dragonbreath"             , "Dragon's Breath"     , null                  , 2,   1000,   300, () -> IL.EtFu_Dragon_Breath.get(1, ST.make(net.minecraft.world.item.Items.DRAGON_BREATH, 1, 0)), () -> IL.Bottle_Empty.get(1), 250).setDensity(100).setLuminosity(5);
 		FL.create("netherair"                , "Nether Air"          , null                  , 2,   1000,   370).setDensity(0);
 		FL.create("enderair"                 , "Ender Air"           , null                  , 2,   1000,   280).setDensity(0);
 		FL.create("Steam"                    , "Steam"               , MT.H2O                , 2, 160000, C+100).setDensity(-1000);
-		// F12/F5: MT.H2O.mGas — отложенная FluidGT-ассоциация (создаётся на server-start); FL.Steam.make тоже требует
-		// зарегистрированной жидкости. Весь блок отложен на server-start (post-RegisterEvent), где стеки валидны.
+		// MT.H2O.mGas and FL.Steam.make both need a fluid bound only at server start, so this whole block is deferred there.
 		gregapi.GT_API.deferItemInit(() -> {
 			MT.Ice.mGas = MT.H2O.mGas;
 			gregapi.fluid.FluidGT tSteam = gregapi.fluid.FluidGT.of(MT.H2O.mGas.getFluid());
@@ -121,8 +119,8 @@ public class Loader_Fluids implements Runnable {
 		FL.create("fieryblood"               , "Fiery Blood"         , null                  , 1,      L,  1500).setLuminosity(10);
 		FL.create("fierytears"               , "Fiery Tears"         , null                  , 1,      L,  1500).setLuminosity(10);
 		
-		// F12/F5: FL.create регистрирует жидкость (рано, до RegisterEvent), но FL.make создаёт FluidStack (source-Fluid
-		// привязан только на server-start) → make+add отложены на server-start (post-bind).
+		// FL.create registers the fluid early, but FL.make needs a source-Fluid bound only at server start, so building and
+		// adding the stack is deferred there.
 		gregapi.fluid.FluidGT fSquidInk = FL.create("squidink"    , "Squid Ink"       , null, 1, L, 300);
 		gregapi.fluid.FluidGT fIndigo   = FL.create("indigo"      , "Indigo Dye"      , null, 1, L, 300);
 		gregapi.GT_API.deferItemInit(() -> {DYE_FLUIDS[0].add(FL.make(fSquidInk.getFluid(), L)); DYE_FLUIDS[4].add(FL.make(fIndigo.getFluid(), L));});
@@ -135,7 +133,8 @@ public class Loader_Fluids implements Runnable {
 		
 		for (byte i = 0; i < 16; i++) {
 			final int fi = i;
-			// FL.create — регистрация рано; FL.make (стек) + присвоение массивов — отложены на server-start (source-Fluid привязан).
+			// FL.create registers early, but building the stack and assigning it into the array needs the source-Fluid, bound only
+			// at server start.
 			gregapi.fluid.FluidGT fDyeWater = FL.create("dye.watermixed." + DYE_OREDICTS_POST[i].toLowerCase(), tDyeWaterMixed, "Water Mixed " + DYE_NAMES[i] + " Dye", null, DYES[i], 1,   L, 300, null, null, 0, FluidsGT.SIMPLE, FluidsGT.DYE);
 			gregapi.fluid.FluidGT fDyeFlower = FL.create("dye.flower."     + DYE_OREDICTS_POST[i].toLowerCase(), tDyeFlower    , DYE_NAMES[i] + " Flower Dye"          , null, DYES[i], 1,   L, 300, null, null, 0, FluidsGT.SIMPLE, FluidsGT.DYE);
 			gregapi.fluid.FluidGT fDyeChemical = FL.create("dye.chemical."   + DYE_OREDICTS_POST[i].toLowerCase(), tDyeChemical  , "Chemical " + DYE_NAMES[i] + " Dye"   , null, DYES[i], 1,   L, 300, null, null, 0, FluidsGT.SIMPLE, FluidsGT.DYE);
@@ -320,7 +319,8 @@ public class Loader_Fluids implements Runnable {
 		
 		
 		// Those Potions are broken duplicates, which have been improved with Redstone or Glowstone despite the lack of said upgrade availability in the first place, so I need to at least add them for emptying the Bottles.
-		// F12/F5: FL.make(name)/ST.make/IL.get — load-time стек+fluid-value доступ (fluid привязан только на RegisterEvent, компоненты — на server-start) → весь блок отложен на server-start.
+		// FL.make/ST.make/IL.get all need a fluid or components bound only later than mod construction, so this whole block is
+		// deferred to server start.
 		gregapi.GT_API.deferItemInit(() -> {
 		FL.reg(FL.make("potion.damage"               , 250), ST.make(Items.POTION, 1, 0b010000001001100), IL.Bottle_Empty.get(1));
 		FL.reg(FL.make("potion.damage.splash"        , 250), ST.make(Items.POTION, 1, 0b100000001001100), IL.Bottle_Empty.get(1));
@@ -340,16 +340,12 @@ public class Loader_Fluids implements Runnable {
 		FL.reg(FL.make("potion.waterbreathing.splash", 250), ST.make(Items.POTION, 1, 0b100000000101101), IL.Bottle_Empty.get(1));
 		FL.reg(FL.make("potion.invisibility"         , 250), ST.make(Items.POTION, 1, 0b010000000101110), IL.Bottle_Empty.get(1));
 		FL.reg(FL.make("potion.invisibility.splash"  , 250), ST.make(Items.POTION, 1, 0b100000000101110), IL.Bottle_Empty.get(1));
-		}); // конец отложенного блока «broken duplicate potions»
+		}); // end of the deferred 'broken duplicate potions' block
 		
 		
 		// Et Futurum Lingering Potions
-		// BUG-117-хвост / «функция, не авторство» (решение пользователя 2026-08-10): в 1.7.10 lingering-зелья нёс
-		// мод Et Futurum (бэкпорт из 1.9) — в современном движке это ВАНИЛЬ (Items.LINGERING_POTION). Тара
-		// замощена на ванильный предмет (30 строк ниже, было ST.make(MD.EtFu, "lingering_potion", 1, мета) →
-		// null без EtFu, жидкости было не во что налить); мета — тем же мостом ST.legacyPotion. Прочие
-		// EtFu/NeLi-ветки НЕ ремаплены — канон «мод-компат оптом не ремапить» действует, здесь точечное
-		// исключение по признаку «функция стала ванилью».
+		// 1.7.10's lingering potions were carried by a mod backporting a later vanilla feature; the container
+		// is remapped to the now-vanilla item as a targeted exception, since the canon forbids remapping a mod wholesale.
 		new FoodStatDrink(FL.create("potion.damage.lingering"                    , tIconPotion, "Lingering Harming Brew"                  , null, UT.Code.getRGBaArray(UT.Entities.potionColor(/*harm*/7)), 1, 1000, 300, () -> ST.make(net.minecraft.world.item.Items.LINGERING_POTION, 1,  8268), () -> IL.Bottle_Empty.get(1), 250)                  , LH.Chat.RED   + "Instant Damage I"        ,  0, 0.0F  ,   0, C+37,  0.00F, UseAnim.DRINK, T, F, F, /*harm*/7,   1, 0, 100);
 		new FoodStatDrink(FL.create("potion.damage.strong.lingering"             , tIconPotion, "Strong Lingering Harming Brew"           , null, UT.Code.getRGBaArray(UT.Entities.potionColor(/*harm*/7)), 1, 1000, 300, () -> ST.make(net.minecraft.world.item.Items.LINGERING_POTION, 1,  8236), () -> IL.Bottle_Empty.get(1), 250).setLuminosity(10), LH.Chat.RED   + "Instant Damage II"       ,  0, 0.0F  ,   0, C+37,  0.00F, UseAnim.DRINK, T, F, F, /*harm*/7,   1, 1, 100);
 		new FoodStatDrink(FL.create("potion.health.lingering"                    , tIconPotion, "Lingering Healing Brew"                  , null, UT.Code.getRGBaArray(UT.Entities.potionColor(/*heal*/6)), 1, 1000, 300, () -> ST.make(net.minecraft.world.item.Items.LINGERING_POTION, 1,  8261), () -> IL.Bottle_Empty.get(1), 250)                  , LH.Chat.PINK  + "Instant Health I"        ,  0, 0.0F  ,   0, C+37,  0.00F, UseAnim.DRINK, T, F, F, /*heal*/6,   1, 0, 100);
@@ -684,7 +680,7 @@ public class Loader_Fluids implements Runnable {
 		new FoodStatDrink(FL.create("medicine.laxative"                          , "Laxative"                                , null                  , 1, 1000, 300)                                                                                         , "Removes 10 Hunger/Saturation"                                    ,  0, 0.0F  ,   0, C+37,  0.00F,  0,  0,  0,  0,  0, UseAnim.DRINK, T, F, F, /*hunger*/17, 300,10, 100);
 		
 		
-		// F12/F5: FL.make(name) резолвит fluid-value (привязан на RegisterEvent) → отложено на server-start.
+		// FL.make(name) resolves a fluid value bound only at RegisterEvent, so this is deferred to server start.
 		gregapi.GT_API.deferItemInit(() -> {
 			DYE_FLUIDS[DYE_INDEX_Blue].add(FL.make("blueberryjuice", 250));
 			DYE_FLUIDS[DYE_INDEX_Red ].add(FL.make("binnie.juicecranberry", 250));
@@ -700,7 +696,8 @@ public class Loader_Fluids implements Runnable {
 		}
 		
 		
-		// F12/F5: FL.X.fluid() резолвит source-Fluid (привязан на server-start) → setDensity-config отложен туда же (of()-каст).
+		// FL.X.fluid() resolves a source-Fluid bound only at server start, so the density config here is deferred to the same
+		// point.
 		gregapi.GT_API.deferItemInit(() -> {
 			gregapi.fluid.FluidGT tAir;
 			if ((tAir = gregapi.fluid.FluidGT.of(FL.Air       .fluid())) != null) tAir.setDensity(0);
@@ -709,11 +706,11 @@ public class Loader_Fluids implements Runnable {
 		});
 		
 		
-		// F12/F5: контейнер-регистрации (FL.X.make/ST.make/IL.get — стек+fluid-value) load-unsafe (fluid привязан на RegisterEvent, компоненты на server-start) → весь блок отложен на server-start.
+		// Container registrations need a stack and fluid value that aren't safe to build at load time, so this whole block is
+		// deferred to server start.
 		gregapi.GT_API.deferItemInit(() -> {
-		// F5 (1:1): static-init Forge FluidContainerRegistry:80-83 регистрировал ванильные вёдра ДО любого мода —
-		// порт воссоздал реестр (FL.java:1062), но потерял эти две записи ДВИЖКА. Без них FL.getFluid(ведро воды)=NF,
-		// и деревянное ведро GT6 на ванильной воде съедало блок, оставаясь пустым (вердикт живой приёмки 2026-07-30).
+		// Forge used to register vanilla buckets before any mod ran; recreating that registry lost these two
+		// entries, so GT6's own wooden bucket on vanilla water consumed the block while staying empty until they were restored.
 		FL.reg(FL.Water                   .make(1000), ST.make(Items.WATER_BUCKET                  , 1, 0), ST.make(Items.BUCKET, 1, 0));
 		FL.reg(FL.Lava                    .make(1000), ST.make(Items.LAVA_BUCKET                   , 1, 0), ST.make(Items.BUCKET, 1, 0));
 		FL.reg(FL.Air                     .make(1000), IL.Cell_Air                                 .get(1), IL.Cell_Empty.get(1), F, T, T);
@@ -768,7 +765,7 @@ public class Loader_Fluids implements Runnable {
 		FL.reg(FL.Tar                     .make(1000), IL.DRPG_Bucket_Tar                          .get(1), ST.make(Items.BUCKET, 1, 0), F, T, T);
 		FL.reg(FL.make("sulfuric_acid_fluid"  , 1000), ST.make(MD.HBM, "item.bucket_sulfuric_acid" , 1, 0), ST.make(Items.BUCKET, 1, 0), F, T, F);
 		FL.reg(FL.make("sulfuricacid"         , 1000), ST.make(MD.HBM, "item.bucket_sulfuric_acid" , 1, 0), ST.make(Items.BUCKET, 1, 0), F, T, T);
-		}); // конец отложенного блока контейнер-регистраций
+		}); // end of the deferred container-registration block
 
 		/* TODO
 		FL.registerFluidContainer(FL.make("potion.poison"        , 125), IL.Arrow_Head_Glass_Poison          .get(1), IL.Arrow_Head_Glass_Empty.get(1));

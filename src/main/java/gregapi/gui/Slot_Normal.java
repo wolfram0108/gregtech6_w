@@ -25,14 +25,9 @@ package gregapi.gui;
 
 import gregapi.tileentity.ITileEntityInventoryGUI;
 
-/**
- * @author Gregorius Techneticies
- *
- * F-GUI (доработка R1/R8): оригинальный {@code putStack} (`gregtech6/.../Slot_Normal.java`) был БАЙТ-В-БАЙТ
- * идентичен {@code Slot_Base.putStack} — избыточный override уже в оригинале. Убран (не переопределяем) —
- * наследуется {@link Slot_Base#set}, который несёт мост {@code EMPTY→null} на запись в GT6-инвентарь;
- * поведение то же самое, дублирования (R1) больше нет.
- */
+/** @author Gregorius Techneticies
+ *  The original putStack override was byte-for-byte identical to Slot_Base's; removed as redundant, since
+ *  the inherited set() already carries the same EMPTY<->null bridge with no behavior change. */
 public class Slot_Normal extends Slot_Base {
 	public Slot_Normal(ITileEntityInventoryGUI aInventory, int aIndex, int aX, int aY) {
 		super(aInventory, aIndex, aX, aY);

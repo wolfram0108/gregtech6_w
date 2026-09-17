@@ -71,7 +71,7 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 		super(ItemBlockBase.class, aNameInternal, Material.plants, SoundType.GRASS, aMaxMeta, aIcons);
 		setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.015625F, 1.0F);
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
-		// F12-followup (block-split): RM.chisel/COMPAT_FR используют ST.make → server-start → deferItemInit.
+		// Deferred to server start, since RM.chisel and COMPAT_FR both build an ItemStack here.
 		gregapi.GT_API.deferItemInit(() -> {
 		RM.chisel(aNameInternal, ST.make(this, 1, W));
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
@@ -81,10 +81,10 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	@Override public int getHarvestLevel(int aMeta) {return 0;}
-	// было super.addCollisionBoxesToList(...) (1.7.10 Block, УДАЛЁН из neo целиком). Дефолт inline-порт 1:1 вместо
-	// super-вызова (Block.java:661-669 recompSrc), тот же приём, что уже принят в MultiTileEntityBlock.
+	// Inline-ports vanilla's own default body instead of calling a removed super method, the same technique already used in
+	// MultiTileEntityBlock.
 	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {if (!(aEntity instanceof Boat)) {AABB tBox = getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ); if (tBox != null && aAABB.intersects(tBox)) aList.add(tBox);}}
-	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return aY >= WD.minY(aWorld) && aY < WD.topY(aWorld) && WD.getMaterial(WD.block(aWorld, aX, aY - 1, aZ)) == Material.water && WD.meta(aWorld, aX, aY - 1, aZ) == 0;} // BUG-089: было aY >= 0 && aY < 256 — границы мира через центр F6-Y-scale
+	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return aY >= WD.minY(aWorld) && aY < WD.topY(aWorld) && WD.getMaterial(WD.block(aWorld, aX, aY - 1, aZ)) == Material.water && WD.meta(aWorld, aX, aY - 1, aZ) == 0;} // world bounds now come from the shared Y-scale center, not the old fixed [0, 256) range
 	// 1.7.10 canPlaceBlockAt override (original :73 = isReplaceable(target) && canBlockStay) is expressed by the
 	// engine channel: target replaceability is clause (2) of WD.canPlaceEntityOnSide, support is canSurvive below —
 	// same bridge as BlockBaseFlower:235. Removal on lost support stays the GT6 checkAndDropBlock channel (1:1).
@@ -100,10 +100,8 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return F;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
-	// F10: реальная сигнатура net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не старый шим
-	// (BlockGetter,int,int,int). getPlant — 1:1 канонический паттерн реального BushBlock.getPlant (forge-1201
-	// decompiled net/minecraft/world/level/block/BushBlock.java:42): состояние по позиции, иначе дефолтное.
-	// getPlantMetadata убран — реальный интерфейс его не содержит (мета внутри BlockState).
+	// The real IPlantable signature is (BlockGetter,BlockPos); getPlant follows the real BushBlock.getPlant
+	// pattern (state by position, else default). getPlantMetadata is removed, since the real interface has no such method.
 	@Override public PlantType getPlantType(BlockGetter aWorld, BlockPos aPos) {return WATER;}
 	@Override public BlockState getPlant(BlockGetter aWorld, BlockPos aPos) {BlockState tState = aWorld.getBlockState(aPos); return tState.getBlock() != this ? defaultBlockState() : tState;}
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.LILY_PAD, aWorld, aX, aY, aZ);}
@@ -113,7 +111,7 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	public void checkAndDropBlock(Level aWorld, int aX, int aY, int aZ) {
 		if (!canBlockStay(aWorld, aX, aY, aZ)) {
 			WD.dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);
-			// было Block.getBlockById(0) (1.7.10 static-реестр по числовому ID, 0=воздух) -> centre-константа NB (=Blocks.AIR, CS.java:876)
+			// the old numeric-id lookup for air is replaced by the shared NB constant (Blocks.AIR)
 			WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
 		}
 	}
@@ -123,9 +121,9 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 		HitResult tPos = WD.getMOP(aWorld, aPlayer, T);
 		if (tPos == null || tPos.getType() != HitResult.Type.BLOCK) return aStack;
 		int aX = ((BlockHitResult)tPos).getBlockPos().getX(), aY = ((BlockHitResult)tPos).getBlockPos().getY(), aZ = ((BlockHitResult)tPos).getBlockPos().getZ();
-		// было World.canMineBlock(EntityPlayer,x,y,z) -> Level.mayInteract(Entity,BlockPos) [Level.java:887], тот же смысл (spawn-protection дефолт true).
+		// neo's mayInteract replaces the old canMineBlock, with the same spawn-protection meaning.
 		if (!aWorld.mayInteract(aPlayer, new BlockPos(aX, aY, aZ)) || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), ((BlockHitResult)tPos).getDirection(), aStack)) return aStack;
-		// было World.isAirBlock(x,y,z) -> LevelReader.isEmptyBlock(BlockPos) [LevelReader.java:84-86]
+		// neo's isEmptyBlock replaces the old isAirBlock check.
 		if (WD.getMaterial(WD.block(aWorld, aX, aY, aZ)) == Material.water && WD.meta(aWorld, aX, aY, aZ) == 0 && aWorld.isEmptyBlock(new BlockPos(aX, aY+1, aZ))) {
 			WD.set(aWorld, aX, aY+1, aZ, this, ST.meta_(aStack), 3);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) {aStack.setCount(aStack.getCount()-1);}

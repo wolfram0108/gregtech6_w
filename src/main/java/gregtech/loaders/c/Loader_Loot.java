@@ -46,9 +46,8 @@ import static gregapi.data.TD.Properties.RANDOM_SMALL_GEM_ORE;
 public class Loader_Loot implements Runnable {
 	@Override
 	public void run() {
-		// BUG-039 (F-loot): гейт отложенности СНЯТ — 1.7.10 chest-loot API воспроизведён центрально в shim
-		// gt6mirror.minecraftforge.common.ChestGenHooks/WeightedRandomChestContent (буфер + инъекция LootPool в
-		// data-driven таблицы движка + getOneItem для мешков/книг/Unboxinator). Этот файл — 1:1 с оригиналом.
+		// 1.7.10's chest-loot API is reproduced centrally in a shim buffer that feeds neo's data-driven tables.
+		// This file is a 1:1 port of the original.
 		new ChestGenHooksChestReplacer(ChestGenHooks.DUNGEON_CHEST       , 32745);
 		new ChestGenHooksChestReplacer(ChestGenHooks.MINESHAFT_CORRIDOR  ,   500);
 		new ChestGenHooksChestReplacer(ChestGenHooks.STRONGHOLD_LIBRARY  ,   508);

@@ -35,8 +35,8 @@
 
 package iguanaman.hungeroverhaul.config;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Iguana Tweaks for Hunger. Только поле, используемое
- *  GregTech6 (Behavior_Bucket_Simple: IguanaConfig.milkedTimeout). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Iguana Tweaks for Hunger API: only the field
+ *  Behavior_Bucket_Simple actually reads, milkedTimeout. */
 public class IguanaConfig {
 	public static int milkedTimeout = 0;
 }

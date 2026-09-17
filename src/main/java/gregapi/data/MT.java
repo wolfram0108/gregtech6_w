@@ -2986,7 +2986,7 @@ public class MT {
 			Amordrine               .addEnchantmentForArmors(Enchantments.BLAST_PROTECTION, 5);
 			RedMatter               .addEnchantmentForArmors(Enchantments.BLAST_PROTECTION, 5);
 			Infinity                .addEnchantmentForArmors(Enchantments.BLAST_PROTECTION,10);
-			// F8 (1:1 golden): material→кастом-чара назначения (были в конструкторах Enchantment_*; порт-классы стали KEY-холдерами).
+			// Material-to-enchantment assignments moved here since the Enchantment_* port classes are now just KEY holders.
 			Hg                      .addEnchantmentForDamage(gregapi.enchants.Enchantment_EnderDamage.INSTANCE, 3);
 			Ag                      .addEnchantmentForDamage(gregapi.enchants.Enchantment_EnderDamage.INSTANCE, 4);
 			RedMeteor               .addEnchantmentForDamage(gregapi.enchants.Enchantment_EnderDamage.INSTANCE, 3);
@@ -3892,14 +3892,8 @@ public class MT {
 		MoonTurf     = stone    ( 8514, "Moon Turf"               , 207, 207, 207, 255)                                                                                                                                                                      .aspects(TC.ALIENIS     , 1).qual(1, 3.0, 16, 1).setGenerifying(Stone).addSourceOf(He,He_3),
 		MarsRock     = stone    ( 8515, "Mars Stone"              , 189,  77,  77, 255, MELTING, MOLTEN)                                                                                                                                                     .aspects(TC.ALIENIS     , 1).qual(1, 5.0, 32, 1).setGenerifying(Stone).setLocal("Mars"),
 		MarsSand     = stone    ( 8516, "Mars Sand"               , 207,  66,  66, 255)                                                                                                                                                                      .aspects(TC.ALIENIS     , 1).qual(1, 3.0, 16, 1).setGenerifying(Stone),
-		// Слой AE2. СПЛАВЛЕНИЯ компонентов нет: на main его пробовали и сняли — живой стенд доказал, что
-		// оно невозможно по правилам самого Грега (обсидиан при 1300 K перерождается в лаву, перидот при
-		// 1525 K отсеивается «не плавится» — к 2200 K половины состава уже нет). Промышленный синтез у
-		// Грега свой: Смеситель, пыли по этому же setMcfg -> 9 пыли SkyStone (Loader_Recipes_Other, 1:1).
-		// ЗАВОДСКОЙ ПУТЬ «пыль -> блок» — двумя тегами, дословно тем же приёмом, каким Грег дал его
-		// соседям по семье камней: MoonRock и MarsRock несут ровно MELTING, MOLTEN. Никаких новых
-		// сущностей и констант: MELTING (TD.Processing) пускает материал в тигель, MOLTEN
-		// (TD.ItemGenerator) заводит ему расплав. Температура 2200 K уже стояла в строке — не трогаем.
+		// SkyStone has no FUSION recipe: live testing showed it's impossible under Greg's own rules before it gets hot enough.
+		// Its dust->block path instead carries MELTING/MOLTEN, the tags MoonRock/MarsRock use for the same industrial route.
 		SkyStone     = stonecent( 8528, "Sky Stone"               ,  81,  92,  96, 255, MELTING, MOLTEN)                                                            .setMcfg( 0, Peridot        , 2*U, RareEarth        , 1*U, MeteoricIron     , 1*U, Obsidian         , 5*U).aspects(TC.VOLATUS     , 1).qual(1, 5.0, 64, 2).setGenerifying(Stone).heat(2200),
 		Holystone    = stone    ( 8522, "Holystone"               , 172, 172, 172, 255)                                                                                                                                                                      .aspects(TC.LUX         , 1).qual(1, 5.0,128, 1).setGenerifying(Stone).heat(2000),
 		Livingrock   = stone    ( 8521, "Livingrock"              , 195, 205, 195, 255)                                                                                                                                                                      .aspects(TC.VICTUS      , 1).qual(1, 5.0,128, 2).setGenerifying(Stone).heat(1800),

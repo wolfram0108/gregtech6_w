@@ -97,8 +97,8 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	
 	private boolean mAllowedToAddItems = F;
 	
-	// F12-followup (oredict-timing): addItems() делает ST.make/OM.reg (Holder.components привязаны только на server-start).
-	// run() вызывается на @Init (mBeforeInit) → отложено в runDeferredItemInit (тот же приём, что PrefixItem.run).
+	// addItems() calls ST.make/OM.reg, which need components bound only at server-start; run() itself fires on
+	// @Init, so the work is deferred into runDeferredItemInit the same way PrefixItem.run defers its own init.
 	@Override
 	public final void run() {gregapi.GT_API.deferItemInit(() -> {mAllowedToAddItems = T; addItems();});}
 	
@@ -107,9 +107,8 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		isItemStackUsable(aStack);
 		IFoodStat tStat = mFoodStats.get((short)getDamage(aStack));
-		// было setItemInUse(ItemStack,int) (1.7.10, явная длительность) -> neo LivingEntity.startUsingItem(InteractionHand)
-		// (LivingEntity.java:3529) — длительность больше не параметр, берётся движком из Item.getUseDuration(ItemStack,LivingEntity)
-		// (Item.java:328); 1.7.10 не знал рук (единственный слот) -> MAIN_HAND (тот же приём, что MultiItem.java:227).
+		// Replaces the removed setItemInUse(ItemStack,int) with startUsingItem(InteractionHand); duration now comes
+		// from Item.getUseDuration instead of being passed explicitly, and MAIN_HAND stands in for the single 1.7.10 hand.
 		if (tStat != null && (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood() || tStat.alwaysEdible(this, aStack, aPlayer))) aPlayer.startUsingItem(InteractionHand.MAIN_HAND);
 		return super.onItemRightClick(aStack, aWorld, aPlayer);
 	}
@@ -283,10 +282,8 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		return this;
 	}
 	
-	// BUG-019: три 1.7.10-хука ниже (getMaxItemUseDuration/getItemUseAction/onEaten) остались мёртвыми именами —
-	// движок их не звал, у предметов нет CONSUMABLE-компонента → getUseDuration дефолт 0 → жевание не стартовало,
-	// finishUsingItem не наступал, вся еда иерархии была несъедобной. Мосты на современные каналы (референс
-	// Item.java:232/317/328); GT6-методы сохранены как тела 1:1 (потребление стека/тара — внутри FoodStat.onEaten:149-153).
+	// The three hooks below went dead without a CONSUMABLE component, so use duration defaulted to 0 and
+	// nothing in this hierarchy was edible; they are now bridged onto the modern channels, bodies kept 1:1.
 	@Override public int getUseDuration(ItemStack aStack) {return getMaxItemUseDuration(aStack);}
 	@Override public UseAnim getUseAnimation(ItemStack aStack) {return getItemUseAction(aStack);}
 	@Override public ItemStack finishUsingItem(ItemStack aStack, Level aWorld, net.minecraft.world.entity.LivingEntity aEntity) {
@@ -301,7 +298,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	// @Override
 	public UseAnim getItemUseAction(ItemStack aStack) {
 		IFoodStat tStat = mFoodStats.get((short)getDamage(aStack));
-		return tStat == null ? UseAnim.NONE : tStat.getFoodAction(this, aStack); // было UseAnim.none (1.7.10 enum-конвенция) -> UPPER_CASE (UseAnim.java:15)
+		return tStat == null ? UseAnim.NONE : tStat.getFoodAction(this, aStack); // UseAnim's enum constants are UPPER_CASE now, not the 1.7.10 lowercase convention.
 	}
 	
 	// @Override
@@ -315,13 +312,8 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 			if (tFoodLevel * tSaturationLevel > 0) {
 				if (tStat.useAppleCoreFunctionality(this, aStack, aPlayer) && MD.APC.mLoaded) {
 					// F10 foreign-gated impossible-1:1 (AppleCore ItemFoodProxy addStats): 1.7.10 FoodStats.addStats(ItemFood,ItemStack)
-					// (SRG func_151686_a) давал AppleCore подменить итоговое питание через полиморфный ItemFood-хук
-					// (ItemFoodProxy). В neo FoodData (FoodData.java) такого метода нет вовсе — компонентная
-					// FoodProperties-модель без per-item override hook; 1:1 недостижимо архитектурно (не только
-					// переименование). Ветка недостижима в рантайме (MD.APC.mLoaded==F, AppleCore не портирован,
-					// decisions/F10-external-mod-compat.md) — сохраняем попытку сконструировать AppleCore-мост
-					// (compat-mirror squeek.applecore.api.food.ItemFoodProxy) и питаем тем же результатом, что и
-					// without-AppleCore ветка ниже.
+					// AppleCore used to override the final food value via a polymorphic hook that neo's FoodData has no
+					// equivalent of; unreachable anyway since AppleCore isn't ported, so this compat-mirror attempt is kept.
 					UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, this);
 					aPlayer.getFoodData().eat(tFoodLevel, tSaturationLevel);
 				} else {
@@ -380,7 +372,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	}
 	
 	@Override
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
+	// The old icon-registration hook (IIconRegister) is gone; the same path is now used to build a ResourceLocation directly.
 	public void registerIcons(Object aIconRegister) {
 		for (short aMeta = 0, tMaxMeta = (short)mEnabledItems.length(); aMeta < tMaxMeta; aMeta++) if (mEnabledItems.get(aMeta)) {
 			for (byte k = 1; k < mIconList[aMeta].length; k++) {
@@ -390,11 +382,8 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		}
 	}
 
-	// F3-render (ленивый триггер, тот же приём, что ItemBase.getIconFromDamage): registerIcons(IIconRegister) в neo НЕ
-	// вызывается (Forge texture-stitch хук удалён) → mIconList оставался null → getIconIndex/getIconFromDamage возвращали
-	// null → предмет не рисовался (пусто). Наполняем mIconList ЛЕНИВО при первом запросе иконки тем же registerIcons-перебором.
-	// protected: подклассы (MultiItemBumbles), переопределяющие getIconFromDamage со своим чтением mIconList, обязаны
-	// тоже лениво триггерить наполнение (иначе минуют родительский триггер) — тот же централизованный приём.
+	// registerIcons(IIconRegister) is never called in neo, so the icon list stayed null and items failed to
+	// render; it now fills lazily on first request, and subclasses reading it must trigger that fill themselves.
 	protected boolean mIconsRegistered = F;
 	protected void ensureIconsRegistered() {if (!mIconsRegistered) {mIconsRegistered = T; registerIcons(null);}}
 
@@ -430,10 +419,8 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		return UT.Code.exists(aMetaData, mIconList) ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 	}
 
-	// КАНАЛ ИЗБЫТОЧЕН — тело ИДЕНТИЧНО getIconFromDamage:424 (и в оригинале 1.7.10 :396-403 оба отдают
-	// mIconList[meta][0] — пассы у MultiItemRandom иконку не меняли). Роль закрыта живым путём: центр
-	// GT6ItemModel.iconForPass:227 зовёт getIcon(ItemStack,int):414 рефлексией. Прежняя метка «разобран»
-	// была ложной (2026-07-30).
+	// This channel is redundant with getIconFromDamage (render passes never changed the icon here, in the
+	// original either); GT6ItemModel.iconForPass already reaches this method by reflection, so it is still live.
 	// @Override
 	public ResourceLocation getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
 		ensureIconsRegistered();
@@ -456,8 +443,8 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	
 	public boolean setSetup(ItemStack aStack, String aSetup) {
 		if (OM.is(OD_USB_STICKS[2], aStack)) {
-			// F8: тег захвачен ОДИН раз (ItemNBT.get копирует), обе мутации идут в один и тот же
-			// объект, коммит явный ниже — иначе setTag/setByte-правки потерялись бы (см. ItemNBT.java).
+			// The tag is captured once, both mutations go into the same object, and the commit below is explicit, or
+			// the setTag/setByte edits would be lost.
 			CompoundTag tNBT = ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make();
 			tNBT.put(NBT_USB_DATA, UT.NBT.makeString(UT.NBT.makeString(NBT_REACTOR_SETUP_NAME, ""+aSetup.hashCode()), NBT_REACTOR_SETUP, aSetup));
 			tNBT.putByte(NBT_USB_TIER, (byte)2);
@@ -468,7 +455,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	}
 
 	public void setPlanName(ItemStack aStack, String aName) {
-		// F8: тег захвачен ОДИН раз, вложенная мутация коммитится явным ItemNBT.set (см. ItemNBT.java).
+		// The tag is captured once; the nested mutation is committed back explicitly with ItemNBT.set.
 		CompoundTag tNBT = ItemNBT.get(aStack);
 		tNBT.getCompound(NBT_USB_DATA).putString(NBT_REACTOR_SETUP_NAME, aName);
 		ItemNBT.set(aStack, tNBT);

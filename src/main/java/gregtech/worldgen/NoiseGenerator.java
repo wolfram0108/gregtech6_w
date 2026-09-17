@@ -34,35 +34,20 @@ public class NoiseGenerator {
 	public NoiseGenerator(long aSeed) {
 		mSeed = (int)aSeed;
 	}
-	/**
-	 * F6: orig `mOffsetY = 512 * aWorld.provider.dimensionId; mSeed = (int)aWorld.getSeed();` —
-	 * {@code WorldProvider}/{@code dimensionId} удалены, dimension identity в neo — {@code ResourceKey<Level>}
-	 * ({@code Level.dimension()}, neo-decompiled Level.java:1030). Нет собственно "числового id" измерения
-	 * вообще (даже для ванильных — Overworld/Nether/End с 1.6+ различаются только ключом реестра), поэтому
-	 * 1:1 воспроизвести формулу можно только для трёх ВАНИЛЬНЫХ измерений, для которых исторический
-	 * 1.7.10-id общеизвестен и стабилен (Overworld=0, Nether=-1, End=1) — сверено по реальным константам
-	 * {@link Level#OVERWORLD}/{@link Level#NETHER}/{@link Level#END} (Level.java:95-97). GT6 использовал это
-	 * значение только как offset для отделения шумовых полей разных измерений друг от друга — инвариант
-	 * "одно измерение -> один и тот же offset" сохранён для vanilla; для модовых измерений 1.7.10 id тоже
-	 * не был стабильной величиной (назначался DimensionManager по порядку регистрации), поэтому 1:1 портировать
-	 * нечего — гатим.
-	 */
+	/** 1.7.10 used the numeric dimensionId as a noise-field offset; neo has no numeric dimension id at all.
+	 *  Only the three vanilla dimensions had a historically stable 1.7.10 id, so the offset is kept only for them. */
 	public NoiseGenerator(WorldGenLevel aWorld) {
 		int tDimOffset;
 		if (aWorld.getLevel().dimension() == Level.OVERWORLD) tDimOffset = 0;
 		else if (aWorld.getLevel().dimension() == Level.NETHER) tDimOffset = -1;
 		else if (aWorld.getLevel().dimension() == Level.END) tDimOffset = 1;
 		else {
-			// F6 impossible-1:1 (нет neo int-dim-id, vanilla overworld/nether/end работают 1:1): модовое/неизвестное измерение — нет числового id в neo
-			// (и в 1.7.10 он не был портируемой величиной для модовых измерений), offset оставлен 0.
+			// No neo integer dimension id exists (modded ones weren't a portable value in 1.7.10 either), so it gets offset 0.
 			tDimOffset = 0;
 		}
 		mOffsetY = 512 * tDimOffset;
-		// F6-worldgen (BUG-033 fix #2): seed берётся ПРЯМО с WorldGenLevel — getSeed() объявлен на самом интерфейсе
-		// (WorldGenLevel.java:8), а не только на ServerLevel. Прежний `instanceof ServerLevel` был ЛОЖНЫМ допущением:
-		// в новом Feature.place-механизме aWorld — это WorldGenRegion (НЕ ServerLevel), поэтому ветка проваливалась в
-		// защитный дефолт mSeed=42 → узор слоёв был ОДИНАКОВ в любом мире независимо от сида. getSeed() на регионе даёт
-		// настоящий сид мира (WorldGenRegion делегирует его в ServerLevel).
+		// Seed is read straight off WorldGenLevel: getSeed() is declared on the interface itself, not only ServerLevel.
+		// The old instanceof ServerLevel check fell through on a WorldGenRegion, making every world's layer pattern identical.
 		mSeed = (int) aWorld.getSeed();
 	}
 	public NoiseGenerator setFrequency(float aFrequency) {

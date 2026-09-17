@@ -43,12 +43,8 @@ public interface IItemProjectile {
 	
 	/** Class for being able to set the ItemStack when launching the Projectile. And for de-obfuscation of Parameters. */
 	public static abstract class EntityProjectile extends Arrow {
-		// F-entity-construction (ЗАКРЫТО): РЕАЛЬНЫЙ EntityType протягивается сюда подклассами (EntityArrow_Material/
-		// _Potion → gregtech.entities.EntitiesGT.ARROW_*), заменяя прежний плейсхолдер EntityType.ARROW. neo Arrow
-		// позиционные ctor'ы (Level,x,y,z,…)/(Level,shooter,…) внутри ХАРДКОДЯТ EntityType.ARROW (neo-decompiled
-		// Arrow.java:29,34), поэтому строим через тип-ctor super(aType,aWorld) + setPos / shootFromRotation.
-		// Скоростной ctor воспроизводит 1.7.10 EntityArrow(World,shooter,speed): позиция у глаз стрелка, скорость от
-		// взгляда (vanilla setThrowableHeading(..., speed*1.5, 1.0) ≡ neo shootFromRotation(shooter,pitch,yaw,0,speed*1.5,1.0)).
+		// The real EntityType is supplied by subclasses since neo's positional Arrow constructors hardcode
+		// EntityType.ARROW internally; construction instead goes through the type-carrying super constructor.
 		protected EntityProjectile(EntityType<? extends Arrow> aType, Level aWorld) {
 			super(aType, aWorld);
 		}
@@ -63,20 +59,14 @@ public interface IItemProjectile {
 			shootFromRotation(aShootingEntity, aShootingEntity.getXRot(), aShootingEntity.getYRot(), 0.0F, aSpeed * 1.5F, 1.0F);
 		}
 
-		// F-arrow-enchants ЦЕНТР: в 1.7.10 оба метода жили на ДВИЖКОВОМ предке EntityArrow
-		// (setKnockbackStrength(int) / getDamage()), поэтому обработчик выстрела применял чары лука к любому
-		// снаряду GT6 без различения типа. neo AbstractArrow оставил только setBaseDamage: своего knockback у
-		// стрелы нет вовсе (движок считает его из приватного firedFromWeapon, задаваемого лишь конструктором
-		// Arrow(Level,…,weapon), который хардкодит EntityType.ARROW — снарядам GT6 со своим EntityType недоступен),
-		// а baseDamage private без геттера. Держим оба здесь, на общем предке снарядов GT6 — том же уровне,
-		// на котором их держал оригинал, чтобы приём не расползался по подклассам.
+		// Knockback and damage lived on the engine's own arrow superclass in 1.7.10; neo's AbstractArrow computes
+		// knockback only from a field GT6's own entity types cannot set, and exposes no damage getter at all.
 		protected int mKnockback = 0;
 
-		/** 1.7.10 {@code EntityArrow.setKnockbackStrength(int)}: величина отбрасывания, применяется при попадании. */
+		/** 1.7.10 EntityArrow.setKnockbackStrength(int): the knockback magnitude, applied when the arrow hits its target. */
 		public void setKnockbackStrength(int aKnockback) {mKnockback = aKnockback;}
 
-		/** 1.7.10 {@code EntityArrow.getDamage()}: neo {@code AbstractArrow.baseDamage} private и без геттера
-		 *  (есть только сеттер, AbstractArrow.java:671) — единственное место чтения на весь мод. */
+		/** AbstractArrow.baseDamage is private with no getter; this is the only read of it in the whole mod. */
 		public double getBaseDamageGT() {
 			try {
 				java.lang.reflect.Field tField = net.minecraft.world.entity.projectile.AbstractArrow.class.getDeclaredField("baseDamage");

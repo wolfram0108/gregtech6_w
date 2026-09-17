@@ -54,7 +54,8 @@ public class BlockVanillaOresA extends BlockBaseMeta {
 	
 	public BlockVanillaOresA(String aUnlocalised) {
 		super(null, aUnlocalised, Material.rock, SoundType.STONE, ORE_MATERIALS.length, Textures.BlockIcons.VANILLA_ORES_A);
-		// F12-followup (block-split): OM.reg/ST.make/COMPAT_* — ItemStack → server-start → deferItemInit (весь дата/локал/compat-блок).
+		// The whole data/localization/compat block below needs an ItemStack from ST.make, only valid after server start, so it's
+		// deferred via deferItemInit.
 		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Sulfur Ore"      );
 		LH.add(getUnlocalizedName()+ ".1", "Apatite Ore"     );

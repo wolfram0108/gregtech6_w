@@ -99,8 +99,8 @@ public abstract class TileEntityBase05Paintable extends TileEntityBase04Covers i
 	public boolean decolorItem(ItemStack aStack) {
 		if (unpaint()) {
 			if (ItemNBT.has(aStack)) {
-				// F8: тег захвачен ОДИН раз (ItemNBT.get копирует), обе мутации идут в один и тот же
-				// объект, коммит явный ниже — иначе removeTag-правки потерялись бы (см. ItemNBT.java).
+				// The tag is captured once (ItemNBT.get copies it) and both mutations share that object, committed explicitly below, or
+				// the removeTag edit would be lost.
 				CompoundTag tNBT = ItemNBT.get(aStack);
 				tNBT.remove(NBT_PAINTED);
 				tNBT.remove(NBT_COLOR);

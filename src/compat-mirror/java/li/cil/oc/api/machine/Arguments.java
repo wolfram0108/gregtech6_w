@@ -35,8 +35,7 @@
 
 package li.cil.oc.api.machine;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — OpenComputers. Только метод, используемый
- *  EnvironmentOC.invoke (aArgs.toArray()). См. compat-mirror/README.md. */
+/** Compile-only mirror of the OpenComputers API: only toArray(), called from EnvironmentOC.invoke. */
 public interface Arguments {
 	Object[] toArray();
 }

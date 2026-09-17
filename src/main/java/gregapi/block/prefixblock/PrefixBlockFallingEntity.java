@@ -57,28 +57,19 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	protected ItemStack mStack;
 	protected CompoundTag mBlockNBT;
 
-	/**
-	 * F12-entity: РЕАЛЬНЫЙ падающий блок для собственной логики — точный аналог {@code super.func_145805_f()}
-	 * оригинала (PrefixBlockFallingEntity.java:87,98,116-118).
-	 * <p>Хранилище то же, что у 1.7.10 — приватное поле базы ({@code FallingBlockEntity.blockState}); своей копии
-	 * состояния не заводим. Задаётся оно в конструкторе через штатное чтение NBT базы (единственный путь: поле
-	 * приватно, конструктор с ним закрыт, сеттера нет — FallingBlockEntity.java:64,79), поэтому и сохранение с
-	 * загрузкой работают базовым механизмом, без собственного ключа.
-	 * <p>ПУБЛИЧНЫЙ геттер при этом переопределён на гравий (:120-122 оригинала) — движку и рендеру автор намеренно
-	 * показывал не сам блок. Разделение ровно то же: логика зовёт этот метод, движок — {@link #getBlockState()}.
-	 */
+	/** The real falling block is read straight from the base class's own private field, with no separate copy, since
+	 *  the author deliberately made the public getter show gravel while internal logic reads fallingBlock() instead. */
 	protected Block fallingBlock() {return super.getBlockState().getBlock();}
 
-	/** Записать реальный падающий блок в приватное поле базы штатным путём — её же чтением NBT.
-	 *  Ветка 1.20.1: NBT-канал сущности снова CompoundTag (Entity.java), поэтому промежуточный
-	 *  ValueOutput/ProblemReporter 26.x не нужен — кладём тег прямо, как это делал 1.7.10. */
+	/** Writes the real falling block into the base's private field through its own normal channel --
+	 *  reading NBT. 1.20.1's entity NBT is CompoundTag again, so no intermediate wrapper is needed. */
 	private void initFallingBlock(Level aWorld, net.minecraft.world.level.block.state.BlockState aState) {
 		CompoundTag tNBT = UT.NBT.make();
 		tNBT.put("BlockState", net.minecraft.nbt.NbtUtils.writeBlockState(aState));
 		super.readAdditionalSaveData(tNBT);
 	}
 
-	/** Фабрика движка ({@code EntityType.EntityFactory}): вызывается при спавне на клиенте и при загрузке с диска. */
+	/** The engine's entity factory, called both on client-side spawn and when loading from disk. */
 	public PrefixBlockFallingEntity(EntityType<? extends PrefixBlockFallingEntity> aType, Level aWorld) {
 		super(aType, aWorld);
 	}
@@ -90,21 +81,15 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	public PrefixBlockFallingEntity(Level aWorld, double aX, double aY, double aZ, IBlockPlacable aBlock, ItemStack aStack) {
 		super(gregapi.GT_API.METABLOCK_FALLING.get(), aWorld);
 		setPos(aX, aY, aZ);
-		setStartPos(blockPosition()); // 1:1 приватного neo-конструктора (FallingBlockEntity.java:88) — иначе точка старта нулевая
+		setStartPos(blockPosition()); // matches the private neo constructor exactly, or the starting point would be null
 		mBlock = aBlock;
 		mStack = aStack;
 		mBlockNBT = ItemNBT.get(aStack);
-		initFallingBlock(aWorld, ((Block)aBlock).defaultBlockState()); // 1:1 оригинала: (Block)aBlock, мета 0
+		initFallingBlock(aWorld, ((Block)aBlock).defaultBlockState()); // matches the original: (Block)aBlock, meta 0
 	}
 
-	/**
-	 * 1:1 оригинала (:120-122): {@code public Block func_145805_f() {return Blocks.gravel;}} — публичный геттер
-	 * блока, единственный, которым падающую сущность видят движок и рендер. Мета-блок GT6 рисуется своей моделью
-	 * по данным из TileEntity, которых у сущности нет, поэтому автор подменил визуал гравием; собственная логика
-	 * от подмены не страдает — она читает {@link #fallingBlock()}. В neo этот геттер обслуживает и спавн-пакет
-	 * ({@code Block.getId(this.getBlockState())}, FallingBlockEntity.java:363), то есть гравий увидит и клиент —
-	 * ровно как в 1.7.10, где приватное поле базы на клиент вообще не синхронизировалось.
-	 */
+	/** Deliberately returns gravel, not the real block: engine and renderer only ever see this getter (also driving the
+	 *  spawn packet), while internal logic reads the real block through fallingBlock(), exactly matching 1.7.10's split. */
 	@Override
 	public net.minecraft.world.level.block.state.BlockState getBlockState() {
 		return Blocks.GRAVEL.defaultBlockState();
@@ -124,7 +109,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 			int aY = UT.Code.roundDown(getY());
 			int aZ = UT.Code.roundDown(getZ());
 			if (time == 1) {
-				if (WD.block(level(), aX, aY, aZ) != fallingBlock()) { // 1:1 оригинала :87 — сверка с РЕАЛЬНЫМ блоком (super.func_145805_f()), не с визуалом
+				if (WD.block(level(), aX, aY, aZ) != fallingBlock()) { // checks against the real block, not the gravel visual, matching the original
 					discard();
 					return;
 				}
@@ -135,17 +120,13 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 				setDeltaMovement(v.x * 0.699999988079071D, v.y * -0.5D, v.z * 0.699999988079071D);
 				if (WD.block(level(), aX, aY, aZ) != Blocks.MOVING_PISTON) {
 					discard();
-					// 1:1 оригинала :98 — «нельзя поставить блок в эту клетку» через ЦЕНТР WD.canPlaceEntityOnSide
-					// (тот же, к которому подключены BlockBase/BlockBaseFlower/BlockBaseRail/BlockRailRoad/MultiTileEntityCoin).
-					// Прежде здесь стоял WD.hasCollide(…, падающий блок), а он первым же термом спрашивает opaque(САМОГО блока):
-					// для любой сплошной руды это безусловное «занято» → приземление всегда сваливалось в дроп предметом,
-					// placeBlock не вызывался ни разу (короткое замыкание ||). fallingBlock() — РЕАЛЬНЫЙ блок, не визуал.
-					// mBlock == null — страховка чтения старого сейва (см. readAdditionalSaveData): уходим в ветку дропа предметом.
+					// Checks placement legality through the shared WD.canPlaceEntityOnSide center; the previous check asked whether
+					// the falling block itself was opaque first, making solid ore unconditionally "occupied" and dropped as an item.
 					if (!WD.canPlaceEntityOnSide(level(), fallingBlock(), aX, aY, aZ, T, 1, null, mStack) || FallingBlock.isFree(WD.block(level(), aX, aY - 1, aZ).defaultBlockState()) || mBlock == null || !mBlock.placeBlock(level(), aX, aY, aZ, (byte)1, ST.meta_(mStack), ItemNBT.get(mStack), T, T)) {
 						if (dropItem) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) {spawnAtLocation(tStack);}} else {spawnAtLocation(mStack);}
 					}
 				}
-			} else if (time > 100 && !level().isClientSide() && (aY < WD.minY(level())+1 || aY > WD.topY(level())) || time > 600) { // BUG-089: было aY < 1 || aY > 256 — границы мира через центр F6-Y-scale
+			} else if (time > 100 && !level().isClientSide() && (aY < WD.minY(level())+1 || aY > WD.topY(level())) || time > 600) { // world bounds now come from the shared Y-scale center, not the old fixed [1, 256] range
 				if (dropItem) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) {spawnAtLocation(tStack);}} else {spawnAtLocation(mStack);}
 				discard();
 			}
@@ -157,33 +138,27 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	public boolean causeFallDamage(float aFallDistance, float aDamageModifier, DamageSource aDamageSource) {
 		int i = Mth.ceil(aFallDistance - 1.0F);
 		if (i > 0) for (Entity tEntity : new ArrayListNoNulls<Entity>(level().getEntities(this, getBoundingBox()))) {
-			if (tEntity instanceof LivingEntity) tEntity.hurt(damageSources().fallingBlock(this), TFC_DAMAGE_MULTIPLIER * Math.min(Mth.floor((float)i * 2), 40));// было DamageSource.fallingBlock (1.7.10 статик удалён) -> neo damageSources().fallingBlock(Entity=падающий блок=this)
+			if (tEntity instanceof LivingEntity) tEntity.hurt(damageSources().fallingBlock(this), TFC_DAMAGE_MULTIPLIER * Math.min(Mth.floor((float)i * 2), 40));// neo's damageSources().fallingBlock replaces the old static DamageSource field.
 		}
 		return false;
 	}
 
-	/**
-	 * Ветка 1.20.1: NBT-канал сущности снова {@code CompoundTag} —
-	 * {@code addAdditionalSaveData(CompoundTag)}/{@code readAdditionalSaveData(CompoundTag)}
-	 * ({@code Entity.java}), то есть форма 1.7.10 {@code writeEntityToNBT}/{@code readEntityFromNBT} дословно;
-	 * мост через ValueOutput/ValueInput (26.x) снят вместе с этими типами. super вызывается первым, чтобы
-	 * сохранить собственные данные FallingBlockEntity (Time/DropItem/BlockState/TileEntityData).
-	 */
+	/** 1.20.1: entity NBT is CompoundTag again, so this is 1.7.10's writeEntityToNBT/readEntityFromNBT form
+	 *  verbatim; the ValueOutput/ValueInput bridge is gone along with those 26.x types. super runs first. */
 	@Override
 	protected void addAdditionalSaveData(CompoundTag aNBT) {
 		super.addAdditionalSaveData(aNBT);
 		aNBT.putShort("MetaData", ST.meta_(mStack));
 		if (mBlockNBT != null) aNBT.put("TileEntityData", mBlockNBT);
-		// Реальный падающий блок сохраняет САМА база (пишет своё приватное поле, куда его положил конструктор
-		// через initFallingBlock) — ровно как 1.7.10 сохранял его базовым writeEntityToNBT. Своего ключа не нужно.
+		// The base class itself persists the real falling block, exactly as 1.7.10's own base save method did; no separate key is
+		// needed.
 	}
 
 	@Override
 	protected void readAdditionalSaveData(CompoundTag aNBT) {
 		super.readAdditionalSaveData(aNBT);
-		// 1:1 оригинала (:115-118): блок и стек восстанавливаются из РЕАЛЬНОГО блока (там — super.func_145805_f()),
-		// который база уже подняла из NBT строкой выше. Страховка на не-GT6 блок (чужой или повреждённый сейв):
-		// mBlock остаётся null, и сущность при приземлении уходит в ветку дропа предметом — вместо краха приведения.
+		// Rebuilds from the real block the base class already loaded from NBT one line above; a non-GT6 or corrupted block leaves
+		// mBlock null, which the landing logic then treats as "just drop an item" instead of crashing on a bad cast.
 		mBlock = fallingBlock() instanceof IBlockPlacable tPlacable ? tPlacable : null;
 		mStack = ST.make(fallingBlock(), 1, aNBT.getShort("MetaData"));
 		mBlockNBT = aNBT.contains("TileEntityData") ? aNBT.getCompound("TileEntityData") : null;

@@ -27,12 +27,8 @@ import static gregapi.data.CS.*;
 
 import net.minecraft.world.level.block.Block;
 
-/**
- * @author Gregorius Techneticies
- *
- * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): {@code RenderBlocks} удалён в 26.1.2 — параметр заменён
- * нейтральным держателем {@code Object aRenderer} (см. {@link ITexture}).
- */
+/** @author Gregorius Techneticies
+ *  RenderBlocks was removed in 26.1.2; the parameter became a neutral Object aRenderer holder (see {@link ITexture}). */
 public class BlockTextureSided implements ITexture {
 	private final IIconContainer[] mIconContainers;
 	

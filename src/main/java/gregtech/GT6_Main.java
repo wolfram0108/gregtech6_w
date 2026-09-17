@@ -91,34 +91,25 @@ import java.util.Map.Entry;
 
 import static gregapi.data.CS.*;
 
-/**
- * @author Gregorius Techneticies
- *
- * F12 (decisions/F12-registration-lifecycle.md §4,4.4): контент-мод GT переведён на реальный neo-{@code @Mod}
- * (value=gregtech) + конструктор-подписки фаз, как {@code gregapi.GT_API_Post}. {@code @SidedProxy}→{@code FMLEnvironment.dist},
- * {@code @Mod.EventHandler}→подписка на шину. Теперь его lifecycle (Loader_Fluids/Items/PrefixBlocks/…) реально
- * запускается движком (был мёртвый {@code cpw.mods.fml} — neo его игнорировал, загрузчики не бежали).
- */
+/** Ported to a real neo @Mod with constructor-time phase subscriptions.
+ *  The old FML annotations were silently ignored by neo, so its lifecycle never actually ran before. */
 @Mod(ModIDs.GT)
 public class GT6_Main extends Abstract_Mod {
-	// F12: замена @SidedProxy (neo не имеет annotation-диспетчера сторон) — сторона по FMLEnvironment.dist, как gregapi.GT_API#api_proxy.
-	// Присваивается в конструкторе (не инлайн в статик-инициализаторе поля): клиентский GT_Client в конструкции
-	// строит PlayerModelRenderer (client-render), а @SidedProxy оригинала инъектировался FML при конструировании
-	// мода (после class-init) — тот же тайминг, class-init не тянет client-render раньше времени.
+	// Side is picked via FMLEnvironment.dist in the constructor, not a static field initializer.
+	// Keeps the same timing as the original's FML-injected proxy.
 	public static GT_Proxy gt_proxy;
 
-	// javafml 1.20.1 конструирует @Mod-класс БЕЗАРГУМЕНТНЫМ конструктором; мод-шина берётся из
-	// контекста загрузки (форма 1.20.1, тем же приёмом, что gregapi.GT_API).
+	// javafml 1.20.1 constructs the @Mod class with a no-arg constructor; the mod bus is fetched from
+	// the loading context, the same form as gregapi.GT_API.
 	public GT6_Main() {
 		IEventBus aModBus = FMLJavaModLoadingContext.get().getModEventBus();
 		GT = this;
 		gt_proxy = FMLEnvironment.dist.isClient() ? new GT_Client() : new GT_Server();
 		NW_GT = new NetworkHandler(MD.GT.mID, "GREG");
-		// F12-entity: центральная регистрация EntityType мода (EntitiesGT.ARROW_*) на мод-шину + клиентские
-		// рендереры сущностей через EntityRenderersEvent (registerClientRenderers — no-op на сервере).
+		// Central EntityType registration for the mod's arrows, plus client renderers wired through EntityRenderersEvent.
 		gregtech.entities.EntitiesGT.register(aModBus);
 		gt_proxy.registerClientRenderers(aModBus);
-		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на шину (образец gregapi.GT_API_Post).
+		// Replaces the old annotation-driven phase dispatch with explicit bus subscriptions, matching the pattern used elsewhere.
 		aModBus.addListener(this::onPreLoad);
 		aModBus.addListener(this::onLoad);
 		aModBus.addListener(this::onPostLoad);
@@ -130,10 +121,8 @@ public class GT6_Main extends Abstract_Mod {
 	
 	@Override
 	public void onModPreInit2(FMLPreInitializationEvent aEvent) {
-		// FORCED-ADAPTATION(F12-mod-order): 1.7.10 переставлял GregTech в конец FML modController.activeModList
-		// (рефлексия Loader.instance().modController) чтобы грузиться последним. Neo удалил LoadController/ModContainer/
-		// Loader — порядок загрузки декларативный через зависимости (@Mod dependencies="required-after:GAPI_POST" выше +
-		// mods.toml). Приём переносится на neo-механизм зависимостей; рефлексивная перестановка obsolete и удалена.
+		// 1.7.10 reflectively pushed itself to the end of FML's load order.
+		// Neo has no such loader to reorder; order is now declarative via mod dependencies instead.
 		
 		gt_proxy.mSkeletonsShootGTArrows = ConfigsGT.GREGTECH.get("general", "SkeletonsShootGTArrows", 16);
 		gt_proxy.mFlintChance            = (int)UT.Code.bind(1, 100, ConfigsGT.GREGTECH.get("general", "FlintAndSteelChance", 30));
@@ -157,10 +146,8 @@ public class GT6_Main extends Abstract_Mod {
 			COMPAT_IC2.scrapbox(200.0F, IL.IC2_Scrap.get(1));
 		}
 		
-		// F12-entity (ЗАКРЫТО): 1.7.10 EntityRegistry.registerModEntity(EntityArrow_Material/_Potion, …) заменён
-		// центральным DeferredRegister<EntityType<?>> в gregtech.entities.EntitiesGT (тот же приём, что
-		// gregapi.GT_API.ITEMS/BLOCKS); регистрация на мод-шину — в конструкторе GT6_Main. Фабрика EntityType —
-		// тип-ctor (EntityType,Level) сущностей; рендереры — EntityRenderersEvent (GT_Client#registerClientRenderers).
+		// Replaces the old per-call EntityRegistry.registerModEntity with a central DeferredRegister.
+		// The same pattern already used for items and blocks.
 		
 		for (OreDictMaterial tWood : ANY.Wood.mToThis) OP.plate.disableItemGeneration(tWood);
 		OP.blockDust             .disableItemGeneration(MT.OREMATS.Magnetite, MT.OREMATS.GraniticMineralSand, MT.OREMATS.BasalticMineralSand);
@@ -179,8 +166,8 @@ public class GT6_Main extends Abstract_Mod {
 		OP.crushedCentrifuged    .disableItemGeneration(MT.Ad, MT.Fe, MT.Si, MT.Al, MT.Ti, MT.W, MT.F, MT.Ta, MT.Nb, MT.Dilithium);
 		OP.crushedCentrifugedTiny.disableItemGeneration(MT.Ad, MT.Fe, MT.Si, MT.Al, MT.Ti, MT.W, MT.F, MT.Ta, MT.Nb, MT.Dilithium);
 		
-		// F12 boot-timing: эти рецепты создают ItemStack (ST.make) — невозможно в preInit (FMLConstructModEvent, Holder.components
-		// не привязаны, «Components not bound»); отложены на server-start (post-bind), как ore-target'ы/рецепты в gregapi.GT_API.onLoad.
+		// Building a stack here is impossible during preInit, since components aren't bound yet.
+		// Deferred to server start, like other recipes.
 		gregapi.GT_API.deferItemInit(() -> {
 		RM.pulverizing(ST.make(Blocks.COBBLESTONE, 1, W), ST.make(Blocks.SAND, 1, 0), null, 0, F);
 		RM.pulverizing(ST.make(Blocks.STONE, 1, 0), ST.make(Blocks.COBBLESTONE, 1, 0), null, 0, F);
@@ -317,7 +304,7 @@ public class GT6_Main extends Abstract_Mod {
 		
 		new Loader_Late_Items_And_Blocks().run();
 		
-		if (MD.IC2C.mLoaded) for (int i = 0; i <= 6; i++) {final var tIMC = ST.save(UT.NBT.makeInt("Key", i), "Value", IL.IC2_Machine.get(1)); net.minecraftforge.fml.InterModComms.sendTo(MD.IC2C.mID, "generatorDrop", () -> tIMC);}// было FMLInterModComms.sendMessage (1.7.10 FML, удалён -> neo InterModComms.sendTo; i вынесен в effectively-final tIMC для лямбды)
+		if (MD.IC2C.mLoaded) for (int i = 0; i <= 6; i++) {final var tIMC = ST.save(UT.NBT.makeInt("Key", i), "Value", IL.IC2_Machine.get(1)); net.minecraftforge.fml.InterModComms.sendTo(MD.IC2C.mID, "generatorDrop", () -> tIMC);}// Was the old FML inter-mod message API, now InterModComms.sendTo.
 		
 		ArrayListNoNulls<Runnable> tList = new ArrayListNoNulls<>(F,
 			new Loader_MultiTileEntities(),
@@ -327,25 +314,23 @@ public class GT6_Main extends Abstract_Mod {
 			new Loader_ItemIterator()
 		);
 		
-		if (MD.MO.mLoaded) try {/*FORCED-ADAPTATION(F3-texture): neo текстуры data-driven (model JSON); программный cross-mod setBlockTextureName удалён neo*/;} catch(Throwable e) {e.printStackTrace(ERR);}
+		if (MD.MO.mLoaded) try {/* Textures are data-driven model JSON now; the old cross-mod programmatic texture setter no longer exists. */;} catch(Throwable e) {e.printStackTrace(ERR);}
 
-		// F12-followup (oredict-timing): init-загрузчики (MultiTileEntities/Books/OreProcessing/ItemIterator) делают
-		// ST.make/OM.data (MTE cable/wire/pipe, ore-обработка) → компоненты привязаны только на server-start. Тот же приём,
-		// что уже применён к onModPostInit2. MTE-блоки конструируются отдельно через deferBlockInit (RegisterEvent);
-		// aRegistry.add лишь регистрирует метаданные+OreDict-данные (ST.make возврата) — безопасно откладывается.
+		// These loaders also build stacks before components are bound, so they're deferred the same way; block
+		// construction is handled separately, since registering block metadata alone is already safe earlier.
 		gregapi.GT_API.deferItemInit(() -> {for (Runnable tRunnable : tList) try {tRunnable.run();} catch(Throwable e) {e.printStackTrace(ERR);}});
 	}
 	
 	@Override
 	public void onModPostInit2(FMLPostInitializationEvent aEvent) {
-		// F12-followup (item-split): весь postInit — рецепты/ST.make/FL.make → компоненты только на server-start.
-		// Откладываем ВСЁ тело в deferItemInit (выполнится в runDeferredItemInit на server-start); ничего в GT до старта не зависит.
+		// The whole postInit body builds stacks and fluids, so it's deferred wholesale to server start.
+		// Nothing here needs to run earlier.
 		gregapi.GT_API.deferItemInit(() -> {
 		ItemStack tLignite = ST.make(MD.UB, "ligniteCoal", 1, 0);
 		if (ST.valid(tLignite)) CR.remove(tLignite, tLignite, tLignite, tLignite, tLignite, tLignite, tLignite, tLignite, tLignite);
 		
 		Block tBlock = ST.block(MD.FR, "beehives", NB);
-		if (tBlock != NB) {/*FORCED-ADAPTATION(F-harvest): neo harvest-level=block-tags; программный cross-mod setHarvestLevel удалён neo*/ GT_Tool_Scoop.sBeeHiveMaterial = WD.getMaterial(tBlock);}
+		if (tBlock != NB) {/* Harvest level is expressed as block tags now; the old cross-mod programmatic setter no longer exists. */ GT_Tool_Scoop.sBeeHiveMaterial = WD.getMaterial(tBlock);}
 		
 //      if (IL.FR_Butterfly     .get(1) != null)    RecipeMap.sScannerFakeRecipes.addFakeRecipe(F, ST.array(IL.FR_Butterfly     .getWildcard(1)}                                , ST.array(IL.FR_Butterfly      .getWithName(1, "Scanned Butterfly"     )}, null                                                    , FL.array(MT.Honey.liquid(U/20, T)}, null, 500, 2, 0);
 //      if (IL.FR_Larvae        .get(1) != null)    RecipeMap.sScannerFakeRecipes.addFakeRecipe(F, ST.array(IL.FR_Larvae        .getWildcard(1)}                                , ST.array(IL.FR_Larvae         .getWithName(1, "Scanned Larvae"        )}, null                                                    , FL.array(MT.Honey.liquid(U/20, T)}, null, 500, 2, 0);
@@ -686,20 +671,12 @@ public class GT6_Main extends Abstract_Mod {
 	}
 	
 	@Override public void onModServerStarted2(net.minecraftforge.event.server.ServerStartedEvent aEvent) {
-		// F11-smelting, ВОЗВРАТ 1.7.10-СОСТОЯНИЯ СПИСКА ПЛАВОК.
-		// Оригинал (gregtech6/.../GT_API_Proxy_Client.java:525-529) делал это при входе в мир: список плавок там
-		// был ВАНИЛЬНЫМ singleton'ом, то есть уже содержал ванильные рецепты, а GT6 доливал свои — и печь GT6
-		// (Oven) плавила и руду, и еду. В neo ванильные рецепты data-driven и приходят с датапаком, поэтому
-		// момент тот же (мир загружен, RecipeManager наполнен), а сторона — серверная: список общий для обеих.
+		// 1.7.10 did this on world entry, topping up an already-populated vanilla singleton so GT6's furnace could smelt
+		// both ore and food; neo's vanilla recipes are data-driven too, so the same moment (recipes loaded) still applies.
 		int tImported = gregapi.recipes.FurnaceRecipes.smelting().importVanilla(aEvent.getServer());
 
-		// ВИТРИНА (1:1 :527-529): сама печь список не читает — RecipeMapFurnace.findRecipe вычисляет плавку на
-		// лету, а список нужен NEI/JEI, чтобы игрок ВИДЕЛ, что в печь класть. Оригинал наполнял его фейковыми
-		// рецептами, найденными той же findRecipe. Замер до правки: 0 записей = пустая категория в JEI.
-		// ⚠️ Итог считаем по ПРИРОСТУ размера карты, а не по возврату addFakeRecipe: у этой карты
-		// add(...) заканчивается вызовом addToItemMap, который в RecipeMapNonGTRecipes:47 переопределён как
-		// null (1:1 с оригиналом) — рецепт при этом в список попадает. Возврат null здесь означает
-		// «не индексирован», а не «не добавлен».
+		// The furnace itself doesn't read this list; it exists only so JEI/NEI can show accepted items, and was empty
+		// before this fix. Counted by the map's size growing, since its indexing hook returns null by design, not by failure.
 		int tBefore = RM.Furnace.mRecipeListSize;
 		for (java.util.Map.Entry<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tEntry
 			: new java.util.ArrayList<>(gregapi.recipes.FurnaceRecipes.smelting().getSmeltingList().entrySet())) {
@@ -718,7 +695,8 @@ public class GT6_Main extends Abstract_Mod {
 	@Override public String getModNameForLog() {return "GT_Mod";}
 	@Override public Abstract_Proxy getProxy() {return gt_proxy;}
 
-	// F12: подписаны в конструкторе (замена @Mod.EventHandler). PreInit→FMLConstructModEvent, Init→FMLCommonSetupEvent, PostInit→FMLLoadCompleteEvent (маппинг как gregapi.GT_API_Post).
+	// Subscribed in the constructor instead of via @Mod.EventHandler.
+	// PreInit/Init/PostInit map to the three matching neo lifecycle events.
 	public void onPreLoad         (FMLConstructModEvent aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().toFile())));}
 	public void onLoad            (FMLCommonSetupEvent  aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModInit(new gregapi.api.FMLInitializationEvent()));}
 	public void onPostLoad        (FMLLoadCompleteEvent aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModPostInit(new gregapi.api.FMLPostInitializationEvent()));}

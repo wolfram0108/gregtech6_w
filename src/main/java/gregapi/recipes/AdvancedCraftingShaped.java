@@ -61,9 +61,8 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 	public boolean matches(CraftingContainer aGrid, Level aWorld) {
 		if (mKeepingNBT) {
 			ItemStack tStack = null;
-			// F11: Forge InventoryCrafting.getSizeInventory()/getStackInSlot(i) удалены; neo-эквивалент —
-			// CraftingContainer.size()/getItem(i). getItem(i) никогда не null (пустой слот = ItemStack.EMPTY), поэтому
-			// занятость слота проверяется ST.valid(...), а не сравнением с null (CraftingContainer.java:85-96).
+			// Forge's InventoryCrafting getters are gone; CraftingContainer.getItem(i) is never null (empty slot = EMPTY), so
+			// slot occupancy is checked with ST.valid(...) instead of comparing to null.
 			for (int i = 0; i < aGrid.getContainerSize(); i++) {
 				ItemStack tSlot = aGrid.getItem(i);
 				if (ST.valid(tSlot) && (ItemNBT.get(tSlot) != null)) {
@@ -85,8 +84,7 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 			ST.update(rStack);
 			
 			// Keeping NBT
-			// F11: CraftingContainer.size()/getItem(i) (getStackInSlot/getSizeInventory удалены); ST.valid(...)
-			// заменяет "!= null" (getItem(i) всегда non-null, пустой слот = ItemStack.EMPTY).
+			// getItem(i) is never null (empty slot = EMPTY), so ST.valid(...) replaces the old != null occupancy check.
 			if (mKeepingNBT) for (int i = 0; i < aGrid.getContainerSize(); i++) {
 				ItemStack tSlot = aGrid.getItem(i);
 				if (ST.valid(tSlot) && (ItemNBT.get(tSlot) != null)) {
@@ -113,8 +111,8 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 			if (mDismantleable) {
 				CompoundTag rNBT = ItemNBT.get(rStack), tNBT = UT.NBT.make();
 				if (rNBT == null) rNBT = UT.NBT.make();
-				// 1.7.10 InventoryCrafting фикс-9 (3x3). В 1.20.1 сетка тоже приходит целиком, но её габарит задаёт стол
-				// (верстак 3x3, инвентарь игрока 2x2) — Math.min(9, getContainerSize()) даёт 1:1 на 3x3 и не выходит за границы меньшей.
+				// 1.7.10's grid was fixed at 3x3; on 1.20.1 grid size depends on the table (bench 3x3, player inventory 2x2), so
+				// Math.min(9, size) matches a full bench exactly without overrunning a smaller grid.
 				for (int i = 0, j = Math.min(9, aGrid.getContainerSize()); i < j; i++) {
 					ItemStack tStack = aGrid.getItem(i);
 					if (ST.valid(tStack) && ST.container(tStack, T) == null && !(tStack.getItem() instanceof MultiItemTool)) {

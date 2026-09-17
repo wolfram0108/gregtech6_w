@@ -81,8 +81,8 @@ public class BlockGlassGlow extends BlockColored {
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(OP.scrapGt.mat(MT.Glass, mBlock == this ? 80 : 40));}
 	
 	
-	/** То же правило, что у прозрачного стекла (1:1 оригинала): одинаковые светящиеся стёкла сливаются,
-	 *  разные меты/стороны — грань рисуется. Контракт по состояниям, центр — BlockMetaType. */
+	/** Same rule as clear glass: identical glowing glass merges into one volume, different meta or sides draw a face, via the
+	 *  same state contract and BlockMetaType center. */
 	@Override public boolean shouldSideBeRendered(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.block.state.BlockState aNeighbor, byte aSide) {
 		if (aSide == OPOS[mSide]) return T;
 		Block aBlock = aNeighbor.getBlock();

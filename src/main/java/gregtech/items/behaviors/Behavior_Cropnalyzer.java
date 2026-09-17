@@ -55,7 +55,7 @@ public class Behavior_Cropnalyzer extends AbstractBehaviorDefault {
 			if (aItem.useEnergy(TD.Energy.EU, aStack, tUsedEnergy, aPlayer, aPlayer.getInventory(), aWorld, aX, aY, aZ, T)) UT.Entities.sendchat(aPlayer, tList, F);
 			return T;
 		}
-		UT.Sounds.forActor(SFX.IC_SCANNER, 20, 1.0F, aPlayer, aX, aY, aZ); // звук ДЕЙСТВИЯ: рождается на сервере, адресуется действующему
+		UT.Sounds.forActor(SFX.IC_SCANNER, 20, 1.0F, aPlayer, aX, aY, aZ); // the sound of the ACTION is born on the server, addressed to the acting player
 		return aPlayer instanceof ServerPlayer;
 	}
 	

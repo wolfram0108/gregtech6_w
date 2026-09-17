@@ -60,7 +60,7 @@ public class WorldgenSwamp extends WorldgenObject {
 		boolean temp = T;
 		for (String tName : aBiomeNames) if (BIOMES_SWAMP.contains(tName)) {temp = F; break;}
 		if (temp) return F;
-		// F6-Y-scale: старт скана = реальная поверхность воды (getSeaLevel), нижняя граница minY, индекс секции getSectionIndex (эталон WorldgenStoneLayers d6dc0f2d).
+		// Scan start is the real water surface (getSeaLevel), lower bound is minY, section index via getSectionIndex.
 		int tHeight = Math.max(WD.waterLevel(aWorld, mHeight), aWorld.getSeaLevel());
 		final LevelChunkSection[] tStorages = aChunk.getSections();
 		final int tMinY = WD.minY(aWorld);
@@ -84,10 +84,8 @@ public class WorldgenSwamp extends WorldgenObject {
 						return F;
 					}
 					BlockSwamp.PLACEMENT_ALLOWED = F;
-					// Стартовый тик 1:1 onBlockAdded (10+rand(90)): в 1.7.10 populate шёл по живому миру и
-					// onBlockAdded планировал его сам; neo прото-чанк колбэков не даёт → планируем явно
-					// (тик персистится в ProtoChunkTicks). Отсюда каскад вниз (updateTick тикает aY-1) —
-					// конверсия грязи болотом и вся над-логика вод оживают без соседского события.
+					// Starting tick matches the original 1:1: in 1.7.10 populate ran over the live world and scheduled it itself.
+					// neo's proto-chunk gives no callbacks, so it's scheduled explicitly here, cascading down without a neighbor event.
 					aWorld.scheduleTick(new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ), BlocksGT.Swamp, 10+RNGSUS.nextInt(90));
 				} else {
 					tStorage.setBlockState(tX, tY & 15, tZ, BlocksGT.Swamp.defaultBlockState());

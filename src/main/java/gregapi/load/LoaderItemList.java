@@ -1728,12 +1728,8 @@ public class LoaderItemList implements Runnable {
 		IL.TG_Spawner_Bug                       .set(ST.make(MD.TG, "TGMonsterSpawner"                      , 1, 0));
 		IL.TG_Spawner_Zombie                    .set(ST.make(MD.TG, "TGMonsterSpawner"                      , 1, 1));
 		
-		// F12 impossible-1:1 (foreign TG-блоки immutable в neo; свойства задаются при ctor через Properties, не runtime): 1.7.10 Block.setHardness(1000).setResistance(6000000).setHarvestLevel(pickaxe,3)
-		// — runtime-мутация свойств блока удалена (neo блоки иммутабельны, strength/harvest задаются при конструкции через
-		// BlockBehaviour.Properties). TG_Ore_Cluster — блоки внешнего мода (TG), их Properties недоступны из GT6 для правки в neo
-		// (в 1.7.10 Block был изменяемым синглтоном). No-op: значения прочности внешних кластер-руд не переопределяются (честная
-		// деградация, neo-пути нет — чужой блок иммутабелен). Восстановление — при F12-интеграции мода TG.
-		// if (IL.TG_Ore_Cluster_1.block() != NB) IL.TG_Ore_Cluster_1.block().setHardness(1000)...; (аналогично _2)
+		// The foreign mod's ore-cluster blocks are immutable in neo, and their Properties aren't reachable from
+		// GT6 code, so this degrades honestly to a no-op until that mod is integrated.
 		
 		
 		IL.MFR_Hammer                           .set(ST.make(MD.MFR, "hammer"                               , 1, 0)); ItemsGT.SPECIAL_CASE_TOOLS.add(IL.MFR_Hammer.wild(1));

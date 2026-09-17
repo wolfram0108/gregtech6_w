@@ -35,7 +35,6 @@
 
 package buildcraft.api.statements;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API BuildCraft. extends IStatement — как в реальном BC
- *  (ITriggerExternal->ITrigger->IStatement), чтобы TriggerBC (implements ITriggerExternal) годился аргументом
- *  StatementManager.registerStatement(IStatement). Реальный мод не грузится. См. compat-mirror/README.md. */
+/** Compile-only mirror of the BuildCraft API, extending IStatement like the real hierarchy so
+ *  TriggerBC still type-checks as an IStatement argument; the real mod never loads. */
 public interface ITriggerExternal extends IStatement {}

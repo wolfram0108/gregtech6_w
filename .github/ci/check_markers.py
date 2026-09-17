@@ -20,7 +20,7 @@ import pathlib
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _ci import summary  # noqa: E402  — общий центр вывода гейтов
+from _ci import summary  # noqa: E402 -- single shared sink for all gate output
 
 MARKERS = ("PORT-TODO", "SILENT-STUB")
 SCAN_ROOT = pathlib.Path("src/main/java")

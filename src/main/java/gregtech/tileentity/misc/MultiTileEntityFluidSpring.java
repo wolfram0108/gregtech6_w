@@ -52,9 +52,8 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntities implements IMTE_OnRegistration, ITileEntitySurface, IMTE_IsSideSolid, IMTE_GetExplosionResistance, IMTE_GetBlockHardness, IMTE_GetLightOpacity, IMTE_SyncDataShort {
 	public FluidStack mFluid = FL.Water.make(1);
 	public boolean mActive = F;
-	// ADAPT-004 (нововведение по запросу игрока, ADAPTATIONS.md): конфиг-множитель темпа produce. Читается ОДИН раз
-	// на mod-load в Loader_Worldgen (рядом с tInfiniteOil/Gas). Применяется при produce (не в worldgen-NBT) → живо
-	// действует на ВСЕ родники (старые+новые). Дефолт 1.0 → делитель == amount → поведение строго 1:1 с оригиналом.
+	// Config multiplier for produce rate, read once at mod-load in Loader_Worldgen; applied at produce time.
+	// Not in worldgen NBT, so it affects all springs, old and new.
 	public static double PRODUCTION_MULTIPLIER = 1.0;
 	
 	@Override
@@ -109,7 +108,7 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 		if (aIsServerSide) {
 			boolean tProduce = F;
 			if (mActive) {
-				// ADAPT-004: делитель шанса = amount/множитель → шанс = множитель/amount; кламп делителя ≥1 (шанс не выше 1/тик).
+				// Chance divisor = amount/multiplier, so chance = multiplier/amount; divisor clamped to at least 1.
 				tProduce = (rng((int) Math.max(1, Math.round(mFluid.getAmount() / PRODUCTION_MULTIPLIER))) == 0);
 			} else if (SERVER_TIME % 20 == 1 && !WD.liquid(getBlockAtSide(SIDE_UP))) {
 				tProduce = mActive = T;
@@ -121,10 +120,10 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 					if (WD.liquid_finite(tBlock)) {
 						if (tAbove == tBlock) {
 							WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, UT.Code.bind4(getMetaDataAtSide(SIDE_UP)+8), 3);
-							((gregapi.block.fluid.BlockFluidBaseGT)tBlock).onBlockAdded(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ()); // было tBlock.updateTick(...) → порт-транскрипция randomTick оказалась no-op (дефолт neo randomTick пуст, BlockBehaviour:334); течение — через ЕДИНЫЙ центральный планировщик тика блока (тот же, что зовёт постановка/сосед-апдейт)
+							((gregapi.block.fluid.BlockFluidBaseGT)tBlock).onBlockAdded(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ()); // tBlock.updateTick(...) became a no-op port (neo's randomTick default is empty); now uses the central tick scheduler.
 						} else if (WD.liquid(tAbove) || WD.air(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tAbove)) {
 							WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, 7, 3);
-							((gregapi.block.fluid.BlockFluidBaseGT)tBlock).onBlockAdded(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ()); // было tBlock.updateTick(...) → порт-транскрипция randomTick оказалась no-op (дефолт neo randomTick пуст, BlockBehaviour:334); течение — через ЕДИНЫЙ центральный планировщик тика блока (тот же, что зовёт постановка/сосед-апдейт)
+							((gregapi.block.fluid.BlockFluidBaseGT)tBlock).onBlockAdded(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ()); // tBlock.updateTick(...) became a no-op port (neo's randomTick default is empty); now uses the central tick scheduler.
 						}
 					} else {
 						if (tAbove == tBlock) {

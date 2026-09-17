@@ -35,7 +35,7 @@
 
 package codechicken.nei.api;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — NEI. Минимум для ST.hide/NEI_RecipeMap/NEI_GT_API_Config. */
+/** Compile-only mirror of the NEI API: the minimum needed for ST.hide, NEI_RecipeMap, and NEI_GT_API_Config. */
 public class API {
     public static void hideItem(Object aStack) {}
     public static void registerRecipeHandler(Object aHandler) {}

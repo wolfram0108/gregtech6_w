@@ -137,7 +137,7 @@ public class EntityAIBetterAttackOnCollide extends Goal {
 					tAttacking = F;
 					
 					tHeld.setCount(tHeld.getCount()-1);
-					if (tHeld.getCount() <= 0) mCreature.setItemSlot(EquipmentSlot.MAINHAND, ST.nn(NI)); // F15: NI (null 1.7.10) в экипировку движка — только через центр, иначе NPE в broadcast (класс MultiTileEntityLocker:74)
+					if (tHeld.getCount() <= 0) mCreature.setItemSlot(EquipmentSlot.MAINHAND, ST.nn(NI)); // A null (1.7.10 style) into engine equipment needs the central null/empty-stack bridge, or broadcast NPEs.
 					
 					if (!mWorld.isClientSide()) {
 						PrimedTnt entitytntprimed = new PrimedTnt(mWorld, mCreature.getX(), mCreature.getY(), mCreature.getZ(), mCreature);

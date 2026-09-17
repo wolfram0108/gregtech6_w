@@ -41,10 +41,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Map;
 
-/** F10 ЗЕРКАЛО (compile-only) — legacy Forge/FML 1.7.10 coremod-контракт (пакет cpw.mods.fml
- *  не существует на neo-classpath; ASM-coremod-система в neo — иная модель, отдельный шов вне
- *  зоны F10). Только используемое GregTech6 (GT_ASM implements IFMLLoadingPlugin).
- *  См. compat-mirror/README.md. */
+/** Compile-only mirror of the legacy Forge/FML 1.7.10 coremod contract; neo's ASM coremod system
+ *  is a different model handled elsewhere, and this exists only so GT_ASM can implement the interface. */
 public interface IFMLLoadingPlugin {
 	String[] getASMTransformerClass();
 	String getModContainerClass();

@@ -111,11 +111,8 @@ public class Thaumcraft_AspectLagFix implements IClassTransformer {
 		return basicClass;
 	}
 
-	// F-util, IntHashMap-removed: net.minecraft.util.IntHashMap (1.7.10) удалён в neo, а net.minecraft.util
-	// НА classpath (992 классов, не пустой пакет) — split-package, compat-mirror-shim запрещён (конфликт).
-	// Рефактор на HashMap<Integer,Object> (та же семантика int-ключ->Object, lookup->get, addKey->put, 1:1);
-	// fastutil Int2ObjectOpenHashMap<Object> отвергнут — put(int,Object) неоднозначен с унаследованным
-	// Map<Integer,Object>.put(Integer,Object) при V=Object (оба boxing-applicable, JLS 15.12.2.5 tie).
+	// 1.7.10's IntHashMap is gone, and mirroring net.minecraft.util here would split that package with the real
+	// one on the classpath; refactored to plain HashMap<Integer,Object>, since fastutil's put(int,Object) tied ambiguously.
 	private static HashMap<Item, HashMap<Integer, Object>> cacheItemHash = new HashMap<>();
 
 	public static int getCachedItemHash(Item item, int meta) {

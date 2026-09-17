@@ -37,7 +37,7 @@ package ganymedes01.etfuturum.recipes;
 
 import net.minecraft.world.item.ItemStack;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Et Futurum. Минимум для вызовов RM/GT_API_Proxy. */
+/** Compile-only mirror of the Et Futurum API: the minimum RM/GT_API_Proxy calls need. */
 public class SmokerRecipes {
     public SmeltingBlacklist smeltingBlacklist;
 

@@ -37,10 +37,8 @@ package thaumcraft.api.aspects;
 
 import net.minecraft.core.Direction;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Thaumcraft. Полный интерфейс эссентия-транспорта
- *  (сверено TC4 API), параметр стороны адаптирован к neo {@link Direction}. Реально GregTech
- *  использует takeEssentia/getEssentiaType/getEssentiaAmount (Behavior_Plunger_Essentia).
- *  См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: the full essentia-transport interface, though
+ *  GregTech6 only actually calls takeEssentia/getEssentiaType/getEssentiaAmount. */
 public interface IEssentiaTransport {
 	boolean isConnectable(Direction face);
 	boolean canInputFrom(Direction face);

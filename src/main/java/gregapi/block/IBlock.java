@@ -31,78 +31,38 @@ import net.minecraft.world.level.block.Block;
  */
 public interface IBlock {
 	public Block getBlock();
-	/** F-bounds: 1.7.10 мутировал Block.mBoundingBox (рендер per-pass + коллизия). neo bounds immutable →
-	 *  GT6-блок хранит последние заданные bounds сам; рендер-использование отложено на F3-клиент-проход. */
+	/** 1.7.10 mutated the block's bounding box directly for both render and collision; neo bounds are
+	 *  immutable, so the block stores its own last-set copy instead, with real render use deferred to a later client pass. */
 	public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ);
-	/** F-bounds (чтение, пара к setBlockBounds): последние заданные render-bounds {minX,minY,minZ,maxX,maxY,maxZ}.
-	 *  Единый контракт для ВСЕХ Block-иерархий GT6 (BlockBase/флюиды/MTE/rail/prefix — общего предка нет);
-	 *  читает GT6BlockModel.applyBounds (1.7.10 RenderBlocks.setRenderBoundsFromBlock) — под-боксы render-пассов. */
+	/** The last render-bounds set, read back by GT6BlockModel.applyBounds; a single contract shared
+	 *  across every GT6 block hierarchy, since they have no common ancestor of their own. */
 	public float[] getRenderBounds();
-	/** F3 block-icon-data (читают ЦЕНТРЫ {@link gregapi.render.GT6QuadBuilder#resolveBlockFaceIcon} — лицо блока,
-	 *  и {@code GT6BlockModel.particleMaterial} — крошка разрушения): 1.7.10 держал {@code Block.getIcon(side, meta)}
-	 *  на САМОМ ванильном Block, поэтому канал был у каждого блока по определению движка и каждая GT6-иерархия просто
-	 *  перекрывала его своим (BlockBaseMeta/Log/Beam/Leaves/Rail/Grass/Path — свои спрайты, PrefixBlock — по материалу,
-	 *  MultiTileEntityBlock — CFOAM_HARDENED, жидкости — текстура жидкости). neo этот метод удалил вместе с {@code IIcon},
-	 *  и контракт восстановлен здесь — по той же причине, что {@link #getRenderBounds()} и {@link #getHarvestTool(int)}:
-	 *  общего Block-предка у иерархий GT6 нет.
-	 *  <p>Дефолт — {@code null} = «канал иконки у этой иерархии не заведён» (в 1.7.10 ему соответствовал
-	 *  унаследованный от ваниль-Block {@code blockIcon}, которого в neo нет); потребитель уходит на штатный baked-путь.
-	 *  ⛔ Носитель канала обязан ОТВЕЧАТЬ, а не бросать: до 2026-07-29 шесть классов бросали здесь
-	 *  {@code UnsupportedOperationException}, и оба центра-потребителя были обвешаны {@code catch (Throwable)} —
-	 *  исключение в живом канале, замазанное на стороне читателя. */
+	/** 1.7.10 kept getIcon(side, meta) on vanilla Block itself, so every block had it by definition;
+	 *  neo removed that along with IIcon, so this restores the contract since GT6's hierarchies share no common Block ancestor. */
 	default net.minecraft.resources.ResourceLocation getIcon(int aSide, int aMeta) {return null;}
-	/** F3 block-render-color (пара к {@link #getIcon}): 1.7.10 {@code Block.getRenderColor(meta)} — тинт блока,
-	 *  и {@code colorMultiplier(world,x,y,z)} — тинт per-позиция. Оба удалены из neo Block. Дефолт — белый
-	 *  ({@code 0x00ffffff} = «без собственного тинта», ровно как отдавал ванильный Block). */
+	/** Pairs with getIcon: 1.7.10 had both a per-meta tint and a per-position tint on Block itself,
+	 *  both removed from neo; the default here is white, meaning no tint of its own, same as vanilla's default. */
 	default int getRenderColor(int aMeta) {return 0x00ffffff;}
 	default int colorMultiplier(net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {return getRenderColor(gregapi.util.WD.meta(aWorld, aX, aY, aZ));}
-	/** F3 render-pass (ветка 1.20.1): 1.7.10 {@code Block.getRenderBlockPass()} — 0 = обычный проход (alpha-test,
-	 *  «дырявые» текстуры решёток/труб/шипов), 1 = проход с блендингом (стёкла, жидкости). Метод жил на ванильном
-	 *  Block, и GT6-иерархии его перекрывали (BlockMetaType, MultiTileEntityBlock[Internal], PrefixBlock,
-	 *  BlockBaseFluid, BlockWaterlike, BlockGlassClear/Glow). В Block'е 1.20.1 канала нет — слой выбирает МОДЕЛЬ
-	 *  ({@code IForgeBakedModel.getRenderTypes(state, rand, ModelData)} → {@code ChunkRenderTypeSet}), и читает она
-	 *  ровно этот контракт: 0 → {@code RenderType.cutout()}, 1 → {@code RenderType.translucent()}.
-	 *  Объявлен здесь по той же причине, что {@link #getIcon} и {@link #getRenderBounds()} — общего Block-предка
-	 *  у иерархий GT6 нет. Дефолт 0 = обычный проход (дефолт ванильного Block 1.7.10). */
+	/** 1.7.10's Block.getRenderBlockPass() (0=cutout, 1=translucent) lived on vanilla Block and GT6 overrode it;
+	 *  1.20.1 reads this contract from the baked model. Declared here since GT6's hierarchies share no Block ancestor. */
 	default int getRenderBlockPass() {return 0;}
-	/** F-tool (читают ЦЕНТРЫ WD.harvestTool/WD.harvestLevel): 1.7.10 Forge держал getHarvestTool(int)/getHarvestLevel(int)
-	 *  на САМОМ Block — каждая GT6-иерархия отвечала своими полями (BlockBase.mTool, MTE-Block.mTool, PrefixBlock.mTool,
-	 *  Rail=crowbar). neo эту точку удалил; контракт восстанавливает её на едином IBlock (общего Block-предка у иерархий
-	 *  нет — та же причина, что getRenderBounds выше). Носители перекрывают дефолт автоматически одноимёнными
-	 *  существующими методами; не-носители (жидкости, Internal — как в 1.7.10 без override) — дефолт «без инструмента». */
+	/** 1.7.10 Forge kept the harvest-tool query on Block itself, answered per hierarchy from its own
+	 *  fields; neo removed that point, so this restores it on the shared IBlock contract instead. */
 	default String getHarvestTool(int aMeta) {return "";}
-	/** Дефолт -1, а не 0: ровно так его держал 1.7.10 ({@code Block.java:2490} — массив уровней инициализирован
-	 *  -1, «уровень не задан»). Носители, не перекрывающие метод (жидкости GT6, MTE-Internal), в оригинале
-	 *  отдавали именно -1 — сверено набором {@code engine_block_passport.csv}. Потребители к этому готовы:
-	 *  клампят тем же приёмом, что оригинал ({@code MultiItemTool.java:482} → {@code bind4} даёт 0), либо
-	 *  сравнивают «инструмент сильнее» ({@code ForgeHooks.java:115}), где -1 верно означает «требования нет». */
+	/** Defaults to -1, not 0, matching 1.7.10's own "level not set" value exactly; callers already
+	 *  clamp it or compare it the same way the original did, where -1 correctly means no requirement. */
 	default int getHarvestLevel(int aMeta) {return -1;}
-	/** F9 (читает ЦЕНТР {@link gregapi.util.WD#getMaterial}): 1.7.10 {@code Block.getMaterial()} — материал блока,
-	 *  у GT6 это ДЕЙСТВУЮЩЕЕ правило инструментов ({@code GT_Tool_*.isMinableBlock} сверяет именно его), а не
-	 *  украшение. Точка удалена из neo, и центр отбирал носителей ПЕРЕЧИСЛЕНИЕМ ИЕРАРХИЙ — из-за чего
-	 *  {@code PrefixBlock} в список не попал и его 27 блоков падали в общий хвост {@code rock}: ящики отвечали
-	 *  «камень» вместо {@code wood}, руды в песке/гравии/грязи — вместо {@code sand}/{@code ground}, корпуса
-	 *  машин — вместо {@code iron} (замер против 1.7.10, набор {@code engine_block_passport.csv}). Отбор по
-	 *  КОНТРАКТУ, как у harvestTool/harvestLevel выше. Дефолт {@code null} = «контракт величины не несёт»
-	 *  (носители-предметы вроде {@code ItemBlockBase}), центр тогда идёт своим разбором дальше. */
+	/** This is an active tool-requirement rule for GT6, not decoration; the center used to select carriers by enumerating
+	 *  hierarchies and missed PrefixBlock's 27 blocks, so selection now goes by this shared contract instead. */
 	default Material getMaterial() {return null;}
-	/** BUG-071 (пер-материальность уровня): в 1.7.10 движок звал {@code getHarvestLevel(мета блока)}, и мета несла
-	 *  ОСМЫСЛЕННУЮ величину — у prefix-блока это {@code bind4(материал.mToolQuality)} (PrefixBlock:435 оригинала),
-	 *  у MTE-блока {@code mBlockMetaData} класса (= {@code mToolQuality} материала машины, Loader_MultiTileEntities:895).
-	 *  В порте канал меты занят ДРУГИМ (ID материала / подтип в BE), а на harvest-путях мета вырождается в 0
-	 *  (IBlockExtendedMetaData:49) — связь «материал → требуемый уровень» терялась целиком.
-	 *  Здесь контракт восстанавливает точку, которую 1.7.10 имел даром: «уровень блока В ЭТОЙ ПОЗИЦИИ». Дефолт —
-	 *  прежнее поведение (уровень по мете порта); иерархии, у которых мета занята под другое, перекрывают его и
-	 *  отдают 1.7.10-величину сами (знание о своей мете остаётся в блоке, как и было у Грегориуса).
-	 *  Читает ЦЕНТР {@link gregapi.util.WD#harvestLevel(net.minecraft.world.level.BlockGetter,int,int,int)}. */
+	/** 1.7.10's block meta carried the material's tool-quality level directly; here that meta slot is occupied by something
+	 *  else, so this contract restores the link, overridden by any hierarchy whose meta means something different. */
 	default int getHarvestLevel(net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {
 		return getHarvestLevel(gregapi.util.WD.meta(aWorld, aX, aY, aZ));
 	}
-	/** F-hardness (читает ЦЕНТР WD.hardness): 1.7.10 Block.getBlockHardness(World,x,y,z) — Forge-точка per-position
-	 *  твёрдости; GT6-иерархии несут свои значения (BlockBase-подклассы per-meta, PrefixBlock per-material,
-	 *  MTE-блоки per-TE mHardness из NBT_HARDNESS) — носители перекрывают дефолт автоматически одноимёнными
-	 *  методами. Дефолт = vanilla: destroyTime реального state на позиции. Потребитель — износ инструмента
-	 *  (MultiItemTool.onBlockDestroyed: урон × твёрдость, 1:1 оригинал). */
+	/** A Forge per-position hardness point that GT6 hierarchies answer with their own per-meta,
+	 *  per-material, or per-tile values; the default falls back to vanilla's own destroy time. */
 	default float getBlockHardness(net.minecraft.world.level.Level aWorld, int aX, int aY, int aZ) {
 		net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(aX, aY, aZ);
 		return aWorld.getBlockState(tPos).getDestroySpeed(aWorld, tPos);

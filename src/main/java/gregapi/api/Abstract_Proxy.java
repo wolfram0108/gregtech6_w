@@ -37,24 +37,16 @@ import net.minecraftforge.event.server.ServerStoppingEvent;
  * Base Proxy used for all my Mods.
  */
 public abstract class Abstract_Proxy {
-	/** F7 (централизованно, «одно место»): регистрация {@code @SubscribeEvent}-методов прокси на
-	 *  {@code MinecraftForge.EVENT_BUS} через per-method {@code addListener} — обходит запрет neo на
-	 *  {@code register(this)}, когда обработчики лежат на СУПЕРтипе (base-прокси держит их
-	 *  централизованно, а инстанс — Server/Client-подкласс; {@code EventBus.checkSupertypes} иначе бьёт
-	 *  IllegalArgumentException). {@code getClass().getMethods()} берёт РАНТАЙМ-тип → ловит base+подкласс
-	 *  (включая клиентские у *_Client) без тихого пропуска. Абстрактный event-класс (ServerTickEvent и т.п.,
-	 *  фаза 1.7.10) раскладывается на конкретные вложенные подклассы — метод берёт базу, instanceof внутри
-	 *  разрулит. Зовётся из конструктора КОНКРЕТНОГО прокси (GT_API_Proxy/GT_Proxy). */
+	/** Registers proxy @SubscribeEvent methods on MinecraftForge.EVENT_BUS one by one via addListener,
+	 *  working around neo's ban on register(this) when handlers live on a supertype, not the instance's own class. */
 	protected final void registerSubscribeEvents() {
 		for (java.lang.reflect.Method tMethod : getClass().getMethods()) {
 			net.minecraftforge.eventbus.api.SubscribeEvent tAnnotation = tMethod.getAnnotation(net.minecraftforge.eventbus.api.SubscribeEvent.class);
 			if (tAnnotation == null || tMethod.getParameterCount() != 1) continue;
 			Class<?> tParameter = tMethod.getParameterTypes()[0];
 			if (!net.minecraftforge.eventbus.api.Event.class.isAssignableFrom(tParameter)) continue;
-			// F7 bus-раздел (форс движка): mod-bus события (IModBusEvent, напр. TextureAtlasStitchedEvent/ModelEvent/
-			// RegisterEvent) НЕЛЬЗЯ вешать на общую MinecraftForge.EVENT_BUS — neo бросает "IModBusEvent not allowed on the
-			// common bus" при регистрации (крашило runData/runClient на конструкции мода). Они регистрируются на mod-шине
-			// отдельно (registerClientModels/RegisterEvent-хендлеры). Здесь — только game-bus @SubscribeEvent.
+			// Mod-bus events (IModBusEvent) can't be listened on the common MinecraftForge.EVENT_BUS -- neo throws on registration.
+			// They register on the mod bus separately (registerClientModels/RegisterEvent handlers). Only game-bus events belong here.
 			if (net.minecraftforge.fml.event.IModBusEvent.class.isAssignableFrom(tParameter)) continue;
 			java.util.function.Consumer<net.minecraftforge.eventbus.api.Event> tDispatch = aEvent -> {
 				try {tMethod.invoke(this, aEvent);}

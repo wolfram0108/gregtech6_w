@@ -50,7 +50,8 @@ public class BlockSands extends BlockBaseMeta {
 		MT.OREMATS.BasalticMineralSand.mTextureDust = BlockTextureCopied.get(this, SIDE_TOP, 1);
 		MT.OREMATS.GraniticMineralSand.mTextureDust = BlockTextureCopied.get(this, SIDE_TOP, 2);
 		
-		// F12-followup (block-split): OM.reg/getRecipeFor/COMPAT_* используют ST.make → server-start → deferItemInit.
+		// OM.reg/getRecipeFor/COMPAT_* below need ST.make, which only works after server start, so this whole block is deferred
+		// via deferItemInit.
 		gregapi.GT_API.deferItemInit(() -> {
 		OM.reg(ST.make(this, 1, 0), OP.blockDust.dat(MT.OREMATS.Magnetite          ));
 		OM.reg(ST.make(this, 1, 1), OP.blockDust.dat(MT.OREMATS.BasalticMineralSand));

@@ -61,8 +61,7 @@ public class GT_Spray_Pepper_Item extends GT_Tool_Item {
 	
 	// @Override
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ) {
-		// F-item-use: 1.7.10 super.onItemUseFirst(старая сигнатура) = дефолт Item (no-op, false); neo сменил на
-		// (ItemStack,UseOnContext) — vestigial-вызов убран (результат отбрасывался, метод возвращает false).
+		// Same as the other onItemUseFirst cleanups: the result was discarded and neo changed the signature.
 		if (aWorld.isClientSide()) {
 			return false;
 		}

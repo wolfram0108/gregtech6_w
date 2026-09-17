@@ -917,9 +917,8 @@ public class Loader_MultiTileEntities implements Runnable {
 		aMat = MT.DATA.Electric_T[7];   aRegistry.add("Long Distance Transformer Endpoint ("+VN[7]+")"      , "Long Distance Transport"             , 10067, 10060, aClass, aMat.mToolQuality, 16, aMachine     , UT.NBT.make(NBT_MATERIAL, aMat, NBT_HARDNESS,   4.0F, NBT_RESISTANCE,   4.0F, NBT_INPUT, V[7], NBT_OUTPUT, V[7], NBT_WASTE_ENERGY, F, NBT_ENERGY_ACCEPTED, TD.Energy.EU, NBT_ENERGY_EMITTED, TD.Energy.EU), "WMW", "MxM", "WMW", 'M', aRegistry.getItem(10047), 'W', OP.cableGt04.dat(MT.AnnealedCopper));
 		aMat = MT.DATA.Electric_T[8];   aRegistry.add("Long Distance Transformer Endpoint ("+VN[8]+")"      , "Long Distance Transport"             , 10068, 10060, aClass, aMat.mToolQuality, 16, aMachine     , UT.NBT.make(NBT_MATERIAL, aMat, NBT_HARDNESS,   4.0F, NBT_RESISTANCE,   4.0F, NBT_INPUT, V[8], NBT_OUTPUT, V[8], NBT_WASTE_ENERGY, F, NBT_ENERGY_ACCEPTED, TD.Energy.EU, NBT_ENERGY_EMITTED, TD.Energy.EU), "WMW", "MxM", "WMW", 'M', aRegistry.getItem(10048), 'W', OP.cableGt04.dat(MT.AnnealedCopper));
 		
-		// F16 (1:1): трубы/провода Long Distance — в СОБСТВЕННУЮ MTE-вкладку 10060 «Long Distance Transport», где эндпоинты
-		// (оригинал: BlocksGT.LongDist*.setCreativeTab(aRegistry.mCreativeTabs.get((short)10060))). joinOwnTab = neo-эквивалент
-		// setCreativeTab(собственная вкладка); НЕ ванильная TRANSPORT (это была бы другая вкладка → раздел без труб/проводов).
+		// Long Distance pipes/wires get their own MTE tab, matching the original's setCreativeTab call.
+		// joinOwnTab is the neo equivalent; vanilla's TRANSPORT tab would be the wrong section.
 		gregapi.item.CreativeTabsGT.joinOwnTab(net.minecraft.world.item.Item.byBlock(BlocksGT.LongDistPipe01), aRegistry.mCreativeTabs.get((short)10060));
 		gregapi.item.CreativeTabsGT.joinOwnTab(net.minecraft.world.item.Item.byBlock(BlocksGT.LongDistWire01), aRegistry.mCreativeTabs.get((short)10060));
 
@@ -2036,7 +2035,7 @@ public class Loader_MultiTileEntities implements Runnable {
 		aRegistry.add("Tapped Maple"                                        , "Untyped"                             , 32761, 32764, MultiTileEntitySapHoleMaple.class                       ,                 0,  1, aWooden        , null);
 		aRegistry.add("Tapped Rainbowood"                                   , "Untyped"                             , 32760, 32764, MultiTileEntitySapHoleRainbowood.class                  ,                 0,  1, aWooden        , null);
 		aRegistry.add("Berry Bush"                                          , "Untyped"                             , 32759, 32764, MultiTileEntityBush.class                               ,                 0, 64, aBush          , UT.NBT.make(NBT_HARDNESS, 0.5F, NBT_RESISTANCE, 0.3F)); RM.biomass(aRegistry.getItem());
-		// 1.7.10 Blocks.pumpkin = РЕЗНАЯ тыква (DataFixer pumpkin.0 -> carved_pumpkin); neo PUMPKIN — без лица
+		// 1.7.10 Blocks.pumpkin was the carved pumpkin (DataFixer pumpkin.0 -> carved_pumpkin); neo's PUMPKIN has no face.
 		aRegistry.add("Greg o'Lantern"                                      , "Untyped"                             , 32758, 32764, MultiTileEntityGregOLantern.class                       ,                 0, 64, aUtilWood      , null, "Pk", "T ", 'P', Blocks.CARVED_PUMPKIN, 'T', OD.blockTorch); RM.biomass(aRegistry.getItem());
 		aRegistry.add("Sandwich"                                            , "Untyped"                             , 32105, 32764, MultiTileEntitySandwich.class                           ,                 0, 64, aUtilWool      , null);
 		aRegistry.add("Rock"                                                , "Untyped"                             , 32757, 32764, gregtech.tileentity.misc.MultiTileEntityRock.class      ,                 0, 64, aUtilStone     , null); // yes I have to pass the "gregtech.tileentity.misc.MultiTileEntityRock" Version!

@@ -56,15 +56,12 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	
 	@Override public String getTileEntityName() {return "gt.MetaBlockTileEntity";}
 	
-	// F3-render #2 (руда рендерилась материалом «none»): getUpdateTag по умолчанию ПУСТ (BlockEntity:245) → на загрузке чанка
-	// клиент НЕ получал mMetaData (материал руды) → рендер материала «none» / «загрузка». saveCustomOnly отдаёт данные через
-	// saveAdditional→writeToNBT (mMetaData «m»); клиент применяет через handleUpdateTag→loadWithComponents→loadAdditional→readFromNBT.
+	// getUpdateTag defaults to empty, so the client never received the ore's material on chunk load and rendered it as blank;
+	// this sends it through saveCustomOnly instead, applied client-side through the normal update-tag chain.
 	@Override public net.minecraft.nbt.CompoundTag getUpdateTag() {return saveWithoutMetadata();}
 
-	// F3-render (руды-материал): GT6-оптимизация mBlocked (не синкать окклюдированные руды кастом-пакетом) НЕСОВМЕСТИМА с neo —
-	// клиенту нужны данные BE (mMetaData=материал) на chunk-load, иначе вкрапление серое. Возвращаем СТАНДАРТНЫЙ neo BE-пакет
-	// (несёт getUpdateTag=saveCustomOnly=«m»-материал) ВСЕМ trackers → материал синкается надёжно. Флаг mBlocked обновляем (нужен
-	// прочей логике); кастом PacketSyncDataShort больше не нужен (neo-пакет несёт то же). RE-APPLY 2026-07-17 (безопасно после снятия server-tick worldgen).
+	// GT6's old optimization of skipping sync for occluded ore is incompatible with neo, which needs the tile data on
+	// chunk load regardless, or the ore renders grey; this always returns the standard neo update packet instead now.
 	@Override public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
 		mBlocked = WD.visOcc(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), F, T);
 		return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
@@ -97,16 +94,11 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	
 	private ITexture mTexture;
 
-	/** F3-render #2: приход mMetaData (материал) при синке — сбросить кэш текстуры, иначе меш остаётся с material=none. */
+	/** Clears the cached texture whenever the synced material arrives, or the mesh would stay stuck on "no material". */
 	public void receiveMetaData(short aMetaData) {mMetaData = aMetaData; mTexture = null;}
 
-	/** Хвост правки №1 (WARN-флуд DUMMY): сущность, рождённая движком через {@code newBlockEntity} (заглушка
-	 *  ворлдгена), приходит с дефолтным {@code mMetaData=W} — материал дочитывается из карты чанка в момент
-	 *  постановки в мир ({@code setLevel} — единственный такой хук в 26.1.2, {@code onLoad} удалён). Обычно эта
-	 *  однодневка тут же снимается миграцией (та же цепочка загрузки чанка), но в ветке «ворлдген догнал уже
-	 *  живой чанк» ({@code WorldGenRegion:268-274}) она доживает до следующей загрузки — и без фолбэка отвечала
-	 *  бы «материала нет» вместо карты. Сущности из NBT/placeBlock сюда не попадают: их материал уже прочитан
-	 *  (readFromNBT/createTileEntity идут ДО постановки в мир). */
+	/** A worldgen stub tile entity arrives with a placeholder material, re-read from the chunk-wide map here at setLevel, since
+	 *  that stub can occasionally survive until the next load instead of being replaced immediately. */
 	@Override public void setLevel(net.minecraft.world.level.Level aLevel) {
 		super.setLevel(aLevel);
 		if (mMetaData == W && aLevel != null && getBlockState().getBlock() instanceof PrefixBlock)
@@ -120,13 +112,12 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 		return mTexture;
 	}
 	
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было RenderBlocks aRenderer (тип удалён в 26.1.2) — параметр Object,
-	// тот же нейтральный держатель, что gregapi.render.IRenderedBlockObject#renderItem/renderBlock.
+	// RenderBlocks itself was removed, so the parameter is a neutral Object, the same holder used elsewhere.
 	@Override public boolean renderItem(Block aBlock, Object aRenderer) {return F;}
 	@Override public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
 	@Override public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {return F;}
 	@Override public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {return 1;}
-	@Override public void readFromNBT(CompoundTag aNBT) {super.readFromNBT(aNBT); mMetaData = aNBT.getShort("m"); if (aNBT.contains("gt.nbt.drop")) mItemNBT = aNBT.getCompound("gt.nbt.drop"); mTexture = null;/*F3-render #2: перестроить текстуру после загрузки/синка материала*/}
+	@Override public void readFromNBT(CompoundTag aNBT) {super.readFromNBT(aNBT); mMetaData = aNBT.getShort("m"); if (aNBT.contains("gt.nbt.drop")) mItemNBT = aNBT.getCompound("gt.nbt.drop"); mTexture = null;/* rebuild the texture after the material loads or syncs */}
 	@Override public void writeToNBT(CompoundTag aNBT) {super.writeToNBT(aNBT); aNBT.putShort("m", mMetaData); if (mItemNBT != null && !mItemNBT.isEmpty()) aNBT.put("gt.nbt.drop", mItemNBT);}
 	@Override public void processPacket(INetworkHandler aNetworkHandler) {/**/}
 	@Override public Object getGUIClient(int aGUIID, Player aPlayer) {return null;}

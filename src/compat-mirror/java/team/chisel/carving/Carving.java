@@ -35,7 +35,7 @@
 
 package team.chisel.carving;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Chisel. Минимум для RM/GT_API. */
+/** Compile-only mirror of the Chisel API: the minimum RM/GT_API needs. */
 public class Carving {
     public static Chisel chisel;
 
@@ -46,7 +46,7 @@ public class Carving {
             return null;
         }
 
-        /** Реально используется GregTech (Loader_Rocks: getGroup(Block, meta).addVariation). */
+        /** Actually called from Loader_Rocks: getGroup(Block, meta).addVariation. */
         public Group getGroup(net.minecraft.world.level.block.Block aBlock, int aMeta) {
             return new Group();
         }

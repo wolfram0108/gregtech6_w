@@ -253,95 +253,30 @@ public class CS {
 	/** A few Default Values for Light Opacity. */
 	public static final int LIGHT_OPACITY_NONE = 0, LIGHT_OPACITY_LEAVES = 1, LIGHT_OPACITY_WATER = 3, LIGHT_OPACITY_MAX = 255;
 
-	/**
-	 * F3 light-opacity ЦЕНТР ПЕРЕВОДА ШКАЛЫ: значение 1.7.10 {@code getLightOpacity()} → neo
-	 * {@code getLightBlock(BlockState,BlockGetter,BlockPos)}.
-	 *
-	 * <p>В 1.7.10 непрозрачность вычиталась из уровня света (0..15), а {@code 255} был сентинелом «гасит
-	 * полностью»; в neo тот же смысл несёт значение шкалы 0..15 ({@code LightEngine.getOpacity:85-87} берёт
-	 * {@code state.getLightBlock()} и вычитает его). Поэтому величины до 15 переносятся КАК ЕСТЬ
-	 * (вода 3, листва 1, прозрачное 0), а всё, что 15 и выше — включая 255 — становится 15.
-	 *
-	 * <p>Перевод живёт здесь, рядом с самими константами, чтобы у него было ОДНО место на весь мод:
-	 * мосты в {@code BlockBase}/{@code PrefixBlock}/{@code BlockBaseFlower}/{@code BlockBaseRail}
-	 * зовут его, а не повторяют арифметику.
-	 *
-	 * <p>⚠️ {@code BlockFluidBaseGT} — исключение и в этом списке НЕ значится: он отдаёт движку сырое
-	 * значение 1.7.10 ({@code getLightDampening → getLightOpacity → LIGHT_OPACITY_WATER}), без перевода.
-	 * Поведение от этого не меняется — все потребители {@code getLightDampening()} сравнивают
-	 * ({@code >=15}, {@code >0}, {@code !=0}, {@code max(1,·)}, {@code getLightBlockInto(...)<15}),
-	 * поэтому 255 у болота и 15 неотличимы. Прежняя редакция этого абзаца числила жидкости среди
-	 * вызывателей — текст не соответствовал коду (найдено при разборе BUG-140, 2026-08-21).
-	 */
+	/** Light-opacity translator: 1.7.10's 0..255 getLightOpacity() scale maps onto neo's 0..15 getLightBlock().
+	 *  Below 15 passes through unchanged; 15 and above (including the 255 sentinel) become 15. BlockFluidBaseGT is exempt. */
 	public static int lightDampening(int aOpacity1710) {
 		return aOpacity1710 >= 15 ? 15 : Math.max(0, aOpacity1710);
 	}
 
-	/** Значения затенения соседних граней (ambient occlusion) 1.7.10: нормальный куб тушит до 0.2, всё
-	 *  остальное не тушит вовсе. Величины дословно из {@code Block.getAmbientOcclusionLightValue}
-	 *  (1.7.10 {@code Block.java:1334-1337}). */
+	/** Ambient-occlusion shading values from 1.7.10: a normal cube dims neighbors to 0.2, everything else
+	 *  does not dim at all. */
 	public static final float SHADE_NORMAL_CUBE = 0.2F, SHADE_NONE = 1.0F;
 
-	/**
-	 * F3 shade ЦЕНТР ПЕРЕВОДА ПРИЗНАКА: правило 1.7.10 {@code getAmbientOcclusionLightValue()} → neo
-	 * {@code getShadeBrightness(BlockState, BlockGetter, BlockPos)}.
-	 *
-	 * <p>Значение отвечает за то, насколько блок затемняет грани СОСЕДЕЙ (в 1.7.10 его читал собственный
-	 * AO-рендер GT6 у всех шести соседей — {@code gregapi/render/ITexture.java:386-527}; в neo то же делает
-	 * {@code BlockModelLighter:50-128}). Числа в обеих версиях одинаковы (0.2 и 1.0), сменился ПРИЗНАК, по
-	 * которому они выбираются:
-	 * <ul>
-	 * <li>1.7.10 — «нормальный куб»: {@code blockMaterial.blocksMovement() && renderAsNormalBlock()}
-	 *     ({@code Block.java:502-504});</li>
-	 * <li>neo — «коллизия есть полный куб»: {@code state.isCollisionShapeFullBlock(...)}
-	 *     ({@code BlockBehaviour.java:306-308}).</li>
-	 * </ul>
-	 * Признаки не совпадают: блок с полной коллизией, но с {@code renderAsNormalBlock()==F} (стёкла, пути,
-	 * половинки, MTE без {@code mOpaque}) в 1.7.10 не затемнял ничего, а neo-дефолт заставляет его тушить
-	 * соседей до 0.2. Ваниль обеих версий ведёт себя одинаково ({@code BlockGlass.java:39} ↔
-	 * {@code TransparentBlock.java:30}), то есть расхождение вносил порт, а не движок.
-	 *
-	 * <p>Перевод живёт здесь, рядом с {@link #lightDampening}, тем же приёмом: мосты в корнях
-	 * ({@code BlockBase}/{@code PrefixBlock}/{@code MultiTileEntityBlock}/{@code BlockFluidBaseGT}/
-	 * {@code BlockBaseRail}/{@code BlockBaseFlower}) зовут его и передают СВОЙ 1.7.10-признак, а величины
-	 * не повторяют.
-	 */
+	/** Converts 1.7.10 getAmbientOcclusionLightValue() to neo getShadeBrightness(): the numbers are unchanged,
+	 *  but the selecting predicate differs, so callers must pass their own 1.7.10 predicate, not the neo default. */
 	public static float shadeBrightness(boolean aNormalCube1710) {
 		return aNormalCube1710 ? SHADE_NORMAL_CUBE : SHADE_NONE;
 	}
 
-	/**
-	 * F6: {@code BiomeGenBase.xxx}-статики (1.7.10) заменены на {@code Biomes.XXX} — {@code ResourceKey<Biome>}
-	 * датаген-константы (`net.minecraft.world.level.biome.Biomes`), которые {@code BiomeNameSet}
-	 * (`gregapi/code/BiomeNameSet.java`) резолвит через {@code identifier().toString()}. Маппинг сверен
-	 * дословно по официальной миграционной таблице Mojang, зашитой в референс: базовые id 1.13-flattening
-	 * (`neo-decompiled/net/minecraft/util/datafix/fixes/ChunkHeightAndBiomeFix.java:492-578`) + переименования/
-	 * слияния Caves&Cliffs 1.18 (`neo-decompiled/net/minecraft/util/datafix/fixes/CavesAndCliffsRenames.java`).
-	 * 11 биомов 1.7.10 не имеют СОБСТВЕННОГО ключа в современном {@code Biomes.java} — engine СЛИЛ их в
-	 * базовый биом того же семейства при flattening (по той же миграционной таблице): {@code jungleHills
-	 * /desertHills/taigaHills/coldTaigaHills/megaTaigaHills/forestHills/birchForestHills/extremeHillsEdge
-	 * /iceMountains/mesaPlateau} → соответствующий {@code jungle/desert/taiga/snowy_taiga/
-	 * old_growth_pine_taiga/forest/birch_forest/windswept_hills/snowy_plains/badlands} — тот САМЫЙ базовый
-	 * биом, который в каждом наборе уже присутствует отдельной константой (не выдумка, а прямое следствие
-	 * слияния: раз "Hills"-вариант в neo больше не существует как отдельная сущность, набор с базовым
-	 * биомом уже покрывает весь рельеф, который раньше делился на равнинный+холмистый подвид) — инертные
-	 * строковые литералы удалены как избыточные (полное закрытие, метка не нужна). Единственное
-	 * исключение — {@code mushroomIslandShore} (id15 mushroom_field_shore, ChunkHeightAndBiomeFix:507, слит
-	 * в mushroom_fields, CavesAndCliffsRenames:27): в {@code BIOMES_OCEAN_BEACH}/{@code BIOMES_INFINITE_WATER}
-	 * поглотитель {@code Biomes.MUSHROOM_FIELDS} ЕЩЁ не стоял в наборе — литерал заменён на реальную
-	 * константу (не удалён); в {@code BIOMES_SHROOM} поглотитель уже стоял ({@code mushroomIsland} рядом) —
-	 * там литерал удалён как избыточный, тем же приёмом, что и остальные 10.
-	 */
+	/** Biome constants follow Mojang's own flattening and Caves & Cliffs rename tables; biomes with no surviving
+	 *  1.7.10-era key were folded into the base biome of the same family that the migration merged them into. */
 	public static final Set<String>
 	  BIOMES_RIVER          = new BiomeNameSet(Biomes.RIVER, Biomes.FROZEN_RIVER, "Lush River", "Estuary", "Twilight Stream", "Tropical River", "Riparian Zone", "Sandstone Canyon", "Sandstone Canyon 2", "Creek Bed", "rwg_riverIce", "Ice River", "rwg_riverCold", "Cold River", "rwg_riverTemperate", "Temperate River", "rwg_riverHot", "Hot River", "rwg_riverWet", "Wet River", "rwg_riverOasis", "River Oasis")
 	, BIOMES_RIVER_LAKE     = new BiomeNameSet(Biomes.RIVER, Biomes.FROZEN_RIVER, "Lush River", "Estuary", "Twilight Stream", "Tropical River", "Riparian Zone", "Sandstone Canyon", "Sandstone Canyon 2", "Creek Bed", "rwg_riverIce", "Ice River", "rwg_riverCold", "Cold River", "rwg_riverTemperate", "Temperate River", "rwg_riverHot", "Hot River", "rwg_riverWet", "Wet River", "rwg_riverOasis", "River Oasis", "Tropical Lake", "Twilight Lake", "Lake", "Oasis", "Woodland Lake", "Woodland Lake Edge") // "Ephemeral Lake", "Ephemeral Lake Edge" those are vapourizing Lakes that vanish depending on Season.
 	, BIOMES_LAKE           = new BiomeNameSet("Tropical Lake", "Twilight Lake", "Lake", "Oasis", "Woodland Lake", "Woodland Lake Edge", "Ephemeral Lake", "Ephemeral Lake Edge")
-	// ADAPT-009/П2 (закрытие дыры, согласовано игроком 2026-07-25): + все ванильные океаны 1.13+ (Biomes.java:50-58
-	// референса; deep_warm_ocean в 26.1.2 НЕ существует). В 1.7.10 ванильных океанов было 3 (ocean/deepOcean/
-	// frozenOcean) и набор покрывал ВСЕ; интент Грега «все океаны мира = SeaWater» виден по мод-литералам ниже
-	// («Cold Ocean»/«Hot Ocean»/... биомы сторонних генераторов). Без новых ключей море в cold/lukewarm/warm_ocean
-	// оставалось ВАНИЛЬНЫМ, и на каждом стыке GT6-океан вечно конвертировал его в рантайме (фронт = лаги, замер
-	// [GT6-WATERPROBE]); worldgen-замена бесплатна.
+	// Adds the vanilla 1.13+ ocean variants: without them, sea in those biomes stayed vanilla water and every
+	// boundary with a GT6 ocean converted it at runtime, which is a needless per-chunk cost.
 	, BIOMES_OCEAN          = new BiomeNameSet(Biomes.OCEAN, Biomes.FROZEN_OCEAN, Biomes.DEEP_OCEAN, Biomes.COLD_OCEAN, Biomes.DEEP_COLD_OCEAN, Biomes.LUKEWARM_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN, Biomes.WARM_OCEAN, Biomes.DEEP_FROZEN_OCEAN, "Coral Reef", "Kelp Forest", "Mangrove", "Ocean Oil Field", "Improved Oceans", "Tropical Ocean", "rwg_oceanIce", "rwg_oceanCold", "rwg_oceanTemperate", "rwg_oceanHot", "rwg_oceanWet", "rwg_oceanOasis", "Ice Ocean", "Cold Ocean", "Temperate Ocean", "Hot Ocean", "Wet Ocean", "Ocean Oasis")
 	, BIOMES_OCEAN_BEACH    = new BiomeNameSet(Biomes.OCEAN, Biomes.FROZEN_OCEAN, Biomes.DEEP_OCEAN, Biomes.COLD_OCEAN, Biomes.DEEP_COLD_OCEAN, Biomes.LUKEWARM_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN, Biomes.WARM_OCEAN, Biomes.DEEP_FROZEN_OCEAN, Biomes.BEACH, Biomes.SNOWY_BEACH, Biomes.STONY_SHORE, Biomes.MUSHROOM_FIELDS, "Coral Reef", "Kelp Forest", "Mangrove", "Ocean Oil Field", "Improved Oceans", "Tropical Ocean", "rwg_oceanIce", "rwg_oceanCold", "rwg_oceanTemperate", "rwg_oceanHot", "rwg_oceanWet", "rwg_oceanOasis", "Ice Ocean", "Cold Ocean", "Temperate Ocean", "Hot Ocean", "Wet Ocean", "Ocean Oasis", "Tropical Beach")
 	, BIOMES_INFINITE_WATER = new BiomeNameSet(Biomes.OCEAN, Biomes.FROZEN_OCEAN, Biomes.DEEP_OCEAN, Biomes.COLD_OCEAN, Biomes.DEEP_COLD_OCEAN, Biomes.LUKEWARM_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN, Biomes.WARM_OCEAN, Biomes.DEEP_FROZEN_OCEAN, Biomes.BEACH, Biomes.SNOWY_BEACH, Biomes.STONY_SHORE, Biomes.MUSHROOM_FIELDS, "Coral Reef", "Kelp Forest", "Mangrove", "Ocean Oil Field", "Improved Oceans", "Tropical Ocean", "rwg_oceanIce", "rwg_oceanCold", "rwg_oceanTemperate", "rwg_oceanHot", "rwg_oceanWet", "rwg_oceanOasis", "Ice Ocean", "Cold Ocean", "Temperate Ocean", "Hot Ocean", "Wet Ocean", "Ocean Oasis", "Tropical Beach", Biomes.RIVER, Biomes.FROZEN_RIVER, "Lush River", "Estuary", "Twilight Stream", "Tropical River", "Riparian Zone", "Sandstone Canyon", "Sandstone Canyon 2", "Creek Bed", "rwg_riverIce", "Ice River", "rwg_riverCold", "Cold River", "rwg_riverTemperate", "Temperate River", "rwg_riverHot", "Hot River", "rwg_riverWet", "Wet River", "rwg_riverOasis", "River Oasis", "Tropical Lake", "Twilight Lake", "Lake", "Oasis", "Woodland Lake", "Woodland Lake Edge")
@@ -354,7 +289,7 @@ public class CS {
 	, BIOMES_MESA           = new BiomeNameSet(Biomes.BADLANDS, Biomes.WOODED_BADLANDS, "Canyon", "Mesa (Bryce)", "Mesa", "Clay Hills")
 	, BIOMES_SAVANNA        = new BiomeNameSet(Biomes.SAVANNA, Biomes.SAVANNA_PLATEAU, "Steppe", "Subterranean Savannah", "Oak Savanna", "Savannah", "Savanna", "Shrubland", "Shrublands", "Roofed Shrublands", "Xeric Savanna", "Xeric Shrubland", "Prairie", "Canyon")
 
-	// ADAPT-009/П2: + mangrove_swamp (ванильное болото 1.19, Biomes.java:15 референса) — тот же класс дыры, что океаны 1.13+ выше.
+	// Adds the vanilla mangrove swamp biome, the same class of gap as the 1.13+ oceans above.
 	, BIOMES_SWAMP          = new BiomeNameSet(Biomes.SWAMP, Biomes.MANGROVE_SWAMP, "Green Swamplands", "DeepSwamp", "Land of Lakes Marsh", "Marsh", "Lush Swamp", "Moor", "Mire", "Bog", "Twilight Swamp", "Submerged Swamp", "Fire Swamp")
 	, BIOMES_WILLOW         = new BiomeNameSet(Biomes.SWAMP, "Green Swamplands", "DeepSwamp", "Land of Lakes Marsh", "Marsh", "Lush Swamp", "Moor", "Mire", "Bog", "Twilight Swamp", "Submerged Swamp")
 
@@ -708,30 +643,17 @@ public class CS {
 	
 	/** Those are not representing actual directions! They are for the "FACING_ROTATIONS" Array-Map */
 	public static final byte                SIDE_LEFT = 2, SIDE_FRONT = 3, SIDE_RIGHT = 4, SIDE_BACK = 5;
-	/** BUG-038: псевдо-facing для ИТЕМ-формы машин (detached-TE, level==null). Компенсирует потерянный при порте
-	 *  1.7.10-поворот item-геометрии IRenderedBlock (RendererBlockTextured.renderInventoryBlock: glRotatef(90,0,1,0)),
-	 *  которого нет в neo baked-quad пайплайне → в инвентаре машины смотрели не передней гранью. Калибруется одним
-	 *  значением {SIDE_LEFT/FRONT/RIGHT/BACK}; влияет ТОЛЬКО на выбор текстур item-формы, не на мир/размещение. */
+	/** Compensates for the item-form rotation lost when the port moved off the 1.7.10 IRenderedBlock render
+	 *  path: without it, machines did not face front-first in the inventory icon. */
 	public static byte                      ITEM_MACHINE_FACING = SIDE_LEFT;
-	/** BUG-038: то же для item-формы СУНДУКА (свой рендерер MultiTileEntityRendererChest, поворот модели по mFacing,
-	 *  а не FACING_ROTATIONS — потому здесь мировая сторона 0..5, не псевдо-facing). Калибруется отдельным числом. */
+	/** Same compensation for the chest item form, which uses its own renderer keyed by mFacing rather than
+	 *  FACING_ROTATIONS, so it needs a separate calibration value. */
 	public static byte                      ITEM_CHEST_FACING = 2;
-	/** BUG-038: то же для item-формы MASS STORAGE (getTexture2 через aSide==mFacing + BER-дисплей предмета; формула
-	 *  поворота COMPASS_FROM_SIDE*90 БЕЗ -180 сундука → отдельное число). Мировая сторона 0..5. */
+	/** Same compensation for the mass storage item form, whose rotation formula omits the chest's extra
+	 *  180-degree term, so it needs its own calibration value. */
 	public static byte                      ITEM_MASSSTORAGE_FACING = 2;
-	/** BUG-075: доворот содержимого в витрине MassStorage (градусы вокруг Y), общий для блоков и предметов.
-	 *  Восполняет половину снятого в BUG-015 v4 (d502c870) поворота `glRotatef(180, 0,0,1)` из оригинала
-	 *  (MultiTileEntityMassStorage:725): вокруг Z он отражал картинку СРАЗУ по X и по Y, снят был по причине,
-	 *  касавшейся только Y (y-вниз GUI-рендера 1.7.10), и вместе с ней ушло отражение по X — горизонталь
-	 *  осталась зеркальной. Взято поворотом, а не scale(-1,1,1): для плоской модели зеркальность та же,
-	 *  но хиральность и отбраковка граней не ломаются. Величина ЭМПИРИЧЕСКАЯ (репорты игрока: «блоки
-	 *  перевёрнуты на 180», «предметы отражены по горизонтали»), калибруется одним числом; 0 — выключено.
-	 *
-	 *  <p>СНЯТО в 0 (репорт 2026-08-09 со скриншотом витрины): 180 разворачивали содержимое ИЗНАНКОЙ на всех
-	 *  четырёх гранях сразу — у плоской пластины это читается как зеркальная цифра, у блока как «показан снизу
-	 *  и сзади». Лицом наружу содержимое ставит уже поворот по грани {@code COMPASS_FROM_SIDE*90}
-	 *  ({@code MTEMassStorageRenderer:116}); таблица {@code {north:0, south:2, west:3, east:1}} ровно для этого
-	 *  и рассчитана, а полуоборот поверх неё был лишним для ОБЕИХ веток, не только для блочной. */
+	/** Yaw correction for mass storage display content: restores half of a rotation removed upstream for an
+	 *  unrelated reason, which had also cancelled a needed horizontal mirror. */
 	public static float                     MASSSTORAGE_DISPLAY_YAW = 0;
 
 	/** Converts Sides to a Top-Bottom-Side Value, this limits the Range to a Number between [0 and 2] */
@@ -751,9 +673,9 @@ public class CS {
 											CUBE_3[] = {{ 0, 0, 0}, { 0,-1, 0}, { 0,+1, 0}, { 0, 0,-1}, { 0, 0,+1}, {-1, 0, 0}, {+1, 0, 0}, { 0,-1,-1}, { 0,-1,+1}, {-1,-1, 0}, {+1,-1, 0}, { 0,+1,-1}, { 0,+1,+1}, {-1,+1, 0}, {+1,+1, 0}, {-1, 0,-1}, {+1, 0,+1}, {+1, 0,-1}, {-1, 0,+1}, {-1,-1,-1}, {+1,-1,+1}, {+1,-1,-1}, {-1,-1,+1}, {-1,+1,-1}, {+1,+1,+1}, {+1,+1,-1}, {-1,+1,+1}};
 	
 	/** Side->ForgeDirection Mappings. */
-	public static final Direction[]    FORGE_DIR = {Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, null}; // было Direction.UNKNOWN — neo Direction без UNKNOWN; slot-6 (SIDE_UNKNOWN) = null (neo-идиома «нет направления»)
+	public static final Direction[]    FORGE_DIR = {Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, null}; // neo Direction has no UNKNOWN; slot 6 maps to null as the neo idiom for "no direction".
 	/** Side->Opposite Mappings with ForgeDirection. */
-	public static final Direction[]    FORGE_DIR_OPPOSITES = {Direction.UP, Direction.DOWN, Direction.SOUTH, Direction.NORTH, Direction.EAST, Direction.WEST, null}; // было Direction.UNKNOWN — см. FORGE_DIR
+	public static final Direction[]    FORGE_DIR_OPPOSITES = {Direction.UP, Direction.DOWN, Direction.SOUTH, Direction.NORTH, Direction.EAST, Direction.WEST, null}; // null again stands in for the removed Direction.UNKNOWN here, for the same reason as {@code FORGE_DIR}.
 	
 	/** Compass alike Array for the proper ordering of North, East, South and West. */
 	public static final byte[]              COMPASS_DIRECTIONS      = {SIDE_NORTH, SIDE_EAST, SIDE_SOUTH, SIDE_WEST};
@@ -984,24 +906,14 @@ public class CS {
 	
 	/** Not really Constants, but they set using the Config and therefore should be constant. */
 	public static boolean D1 = F, D2 = F, D3 = F, ALWAYS_TRUE = T, ALWAYS_FALSE = F, EXPERIMENTS = F, CLIENT_BLOCKUPDATE_SOUNDS = F, NEI = F, NEI_NH = F, TOOL_SOUNDS = T, TOOL_SOUNDS_SETTING = T, EMIT_EU_AS_RF = F, DISABLE_GT6_CRAFTING_RECIPES = F, ENABLE_ADDING_IC2_MACERATOR_RECIPES = T, DISABLE_ALL_IC2_MACERATOR_RECIPES = F, ENABLE_ADDING_IC2_EXTRACTOR_RECIPES = T, DISABLE_ALL_IC2_EXTRACTOR_RECIPES = F, ENABLE_ADDING_IC2_COMPRESSOR_RECIPES = T, DISABLE_ALL_IC2_COMPRESSOR_RECIPES = F, ENABLE_ADDING_IC2_OREWASHER_RECIPES = T, DISABLE_ALL_IC2_OREWASHER_RECIPES = F, ENABLE_ADDING_IC2_CENTRIFUGE_RECIPES = T, DISABLE_ALL_IC2_CENTRIFUGE_RECIPES = F, SLOW_LEAF_DECAY = F, FAST_LEAF_DECAY = T, FORCE_GRAVEL_NO_FLINT = F, NERFED_WOOD = T, FOOD_OVERDOSE_DEATH = T, NUTRITION_SYSTEM = T, OBSTRUCTION_CHECKS = T, OWNERSHIP_RESET = F, SPAWN_ZONE_MOB_PROTECTION = T, SPAWN_NO_BATS = T, SPAWN_HOSTILES_ONLY_IN_DARKNESS = T, CONSTANT_ENERGY = T, RAIN_EXPLOSIONS = F, WATER_EXPLOSIONS = F, THUNDER_EXPLOSIONS = F, FIRE_EXPLOSIONS = F, OVERCHARGE_EXPLOSIONS = F, FIRE_BREAKING = F, RAIN_BREAKING = F, WATER_BREAKING = F, THUNDER_BREAKING = F, OVERCHARGE_BREAKING = F, SHOW_MICROBLOCKS = F, SHOW_CHEM_FORMULAS = T, SHOW_INTERNAL_NAMES = F, SHOW_HIDDEN_MATERIALS = F, SHOW_HIDDEN_PREFIXES = F, SHOW_ORE_BLOCK_PREFIXES = F, SHOW_HIDDEN_ITEMS = F, SHOW_BUMBLEBEES = F, DRINKS_ALWAYS_DRINKABLE = F, HUNGER_BY_INVENTORY_WEIGHT = F, TOOL_BREAK_FATIQUE = T, INVENTORY_UNIFICATION = T, XP_ORB_COMBINING = T, ADVENTURE_MODE_KIT = F, SURVIVAL_INTO_ADVENTURE_MODE = F, MOBS_DROP_LEAD = T, MOBS_DROP_MEAT = T, MOBS_DROP_JUNK = T, MOBS_DROP_BOOK = T, MOBS_DROP_NAME = T, ZOMBIES_DIG_WITH_TOOLS = F, ZOMBIES_DIG_TILEENTITIES = F, ZOMBIES_HOLD_PICKAXES = T, ZOMBIES_HOLD_TNT = T, ZOMBIES_IGNITE_HELD_TNT = T, DISPLAY_TEMP_TOOLTIP = T, GENERATE_STONE = T, GENERATE_STREETS = F, GENERATE_NEXUS = F, GENERATE_TESTING = F, GENERATE_BEACON = F, GENERATE_BIOMES = F, GENERATING_SPECIAL = F, HARDER_MOB_SPAWNERS = T, BLAST_RESISTANT_MOB_SPAWNERS = T
-	/** Вода восстанавливается сама (ванильный бесконечный источник). В GT6 этого нет НИКОГДА — вода конечна,
-	 *  это канон мода, а не настройка порта. Дефолт F восстанавливает канон; T возвращает ваниль. Канал движка
-	 *  26.1.2 — правило мира water_source_conversion (ставит GT_API.applyWaterSourceConversionRule). */
+	/** GT6 water never regenerates on its own, unlike the vanilla infinite source; the default here restores
+	 *  that canon, and the water_source_conversion world rule is what the engine actually reads. */
 	, WATER_SOURCE_CONVERSION = F
-	/** Слой AE2, мастер-ключ ae2/ReplaceMeteoriteGeneration (GregTech.cfg): GT6 замещает генерацию AE2.
-	 *  Двигает ОБЕ стороны сразу — «есть метеорит — нет жилы, нет метеорита — есть жила»: T = метеориты AE2
-	 *  погашены (встроенный пак ae2replacegen) И заведена бедрок-жила метеоритного железа (Loader_Worldgen);
-	 *  F = метеориты живут, жила не заводится. Без AE2 в сборке всегда T (метеоритов нет, жила нужна — на ней
-	 *  пять сплавов MT). Значение ставит GT_API.onModPreInit2 по образцу флагов ic2.
-	 *  Здесь же им гейтится гашение крафта компаса метеоритов: метеориты погашены — искать компасу нечего. */
+	/** AE2 layer master key: true suppresses AE2 meteorites AND adds the meteoric-iron vein; false leaves
+	 *  meteorites and skips the vein. Always true without AE2 in the build; also gates the meteor-compass recipe. */
 	, AE2_REPLACE_METEORITE_GENERATION = T
-	/** Узел ae2/DisableAllQuartzToolRecipes (GregTech.cfg), поднятый во флаг: он двигает ДВЕ вещи сразу и
-	 *  потому обязан быть ОДНИМ решением в одном месте. Первая — гашение 14 кварцевых инструментов AE2
-	 *  (Compat_Recipes_AppliedEnergistics). Вторая — встроенный пак ae2gtrecipes: погасив оба кварцевых
-	 *  КЛЮЧА, мы убили и вход крафта Network Tool (его рецепт просит тег ae2:quartz_wrench), а он ME-механика
-	 *  и обязан остаться крафтируемым — пак переопределяет его вход на ключ Грега. Выключил узел — вернулись
-	 *  и кварцевые ключи, и родной рецепт: пак не подключается. Без AE2 в сборке значение роли не играет.
-	 *  Ставится в GT_API.onModPreInit2 рядом с мастер-ключом. */
+	/** ae2/DisableAllQuartzToolRecipes moves two things at once, so it's one flag: suppresses AE2's 14
+	 *  quartz tools, and rewires the Network Tool's recipe onto GregTech's own wrench. Irrelevant without AE2. */
 	, AE2_KILL_QUARTZ_TOOLS = T;
 	/** Date based Shenanigans */
 	@SuppressWarnings("deprecation")
@@ -1013,18 +925,14 @@ public class CS {
 	/** This means that Client or Server specific Base Files are definitely existing and loaded! Not if the World is actually client side or server side! */
 	public static boolean CODE_UNCHECKED = T, CODE_CLIENT = F, CODE_SERVER = F;
 
-	/** Единый рубильник ОТЛАДОЧНЫХ проб/аудитов/автовхода-в-мир (не игровая механика). Активен ТОЛЬКО при запуске
-	 *  с -Pgt6probes (build.gradle пробрасывает -Dgt6.probes=true в run-задачи) — запуски оркестратора. Обычный
-	 *  `gradlew runClient` игрока проб не видит, даже если файлы-флаги случайно остались в run/ (класс сбоя
-	 *  «стухший флаг портит игровой запуск» закрыт механически, не гигиеной). */
+	/** Single switch for all debug probes/audits/auto-login; only live under -Pgt6probes, so a leftover flag
+	 *  file cannot silently affect a normal player launch. */
 	public static boolean probeFlag(String aFlagFile) {return Boolean.getBoolean("gt6.probes") && new java.io.File(aFlagFile).exists();}
 	
 	/** Not really Constants, but they set using the Config and therefore should be constant. */
 	public static double HARDNESS_MULTIPLIER_SAND = 1.0, HARDNESS_MULTIPLIER_ROCK = 1.0, HARDNESS_MULTIPLIER_ORES = 1.0;
-	/** ADAPT-005 (нововведение по запросу игрока, ADAPTATIONS.md): уровень света ГОРЯЩИХ топочных машин (burning box'ы
-	 *  и родственные классы горения). Оригинал 1.7.10 света НЕ давал (IMTE_GetLightValue у генераторов отсутствовал) —
-	 *  0 в конфиге возвращает строгое 1:1. Дефолт 13 = ванильная горящая печь. ЦЕНТР класса: новые «горящие» машины
-	 *  подключаются этим же полем (IMTE_GetLightValue -> mBurning ? BURNING_BOX_LIGHT_VALUE : 0), не своими константами. */
+	/** Light level for burning machines: the 1.7.10 original gave off none, so 0 reproduces that exactly, while
+	 *  13 defaults to a vanilla furnace's glow; new burning machines should hook into this same field. */
 	public static int BURNING_BOX_LIGHT_VALUE = 13;
 	/** Those are the values derived directly by the Configuration File. DO NOT USE THEM, USE THE VALUES ABOVE INSTEAD!!! */
 	public static double CONFIG_HARDNESS_MULTIPLIER_SAND = 1.0, CONFIG_HARDNESS_MULTIPLIER_ROCK = 1.0, CONFIG_HARDNESS_MULTIPLIER_ORES = 1.0;
@@ -1043,8 +951,8 @@ public class CS {
 	/** Gets set when a TileEntity gets broken, in order to be able to access it for Drops, even though it just got deleted. */
 	public static ThreadLocal<BlockEntity> LAST_BROKEN_TILEENTITY = new ThreadLocal<>();
 
-	/** было Forge 1.7.10 Block.harvesters (static ThreadLocal<EntityPlayer>, унаследованное поле) - удалено в neo,
-	 *  своё GT6-поле с тем же назначением (кто ломает блок прямо сейчас, для fireBlockHarvesting без явного Player). */
+	/** Forge's static ThreadLocal<EntityPlayer> harvesters field is gone in neo; this is GT6's own replacement
+	 *  for the same purpose (who is breaking a block right now, for fireBlockHarvesting without an explicit player). */
 	public static ThreadLocal<net.minecraft.world.entity.player.Player> LAST_HARVESTING_PLAYER = new ThreadLocal<>();
 	
 	/** If you have to give something a World Parameter but there is no World... (Dummy World) */
@@ -1312,7 +1220,7 @@ public class CS {
 	/** A Set of different NBT Keys I use for Stuff. */
 	public static final String
 	  NBT_HIDDEN                    = "gt.hidden"                   // Boolean
-	, NBT_ZEROSIZE                  = "gt.zerosize"                 // Boolean; маркер size-0-катализатора (F-size0-catalyst, центр ST.size_)
+	, NBT_ZEROSIZE                  = "gt.zerosize"                 // Boolean; size-0-catalyst marker (see the shared ST.size_ center).
 	, NBT_COLOR                     = "gt.color"                    // Integer
 	, NBT_PAINTED                   = "gt.painted"                  // Boolean
 	, NBT_TEXTURE                   = "gt.texture"                  // String
@@ -1794,10 +1702,8 @@ public class CS {
 		oreSmall , oreSmallSandstone , oreSmallNetherrack , oreSmallEndstone , oreSmallAtumLimestone , oreSmallAtumSand, oreSmallGravel, oreSmallMud, oreSmallSand, oreSmallRedSand, oreSmallBedrock;
 		
 		public static BlockBaseFluid OilLight, OilMedium, OilHeavy, OilExtraHeavy, GasNatural, WaterGeothermal;
-		// F5 поверхность B РЕАЛИЗОВАНА (решение decisions/F5-fluids.md §5, принято 2026-07-19): оригинал был
-		// BlockFluidClassic Ocean/Swamp/River/RiverAdvanced; BlockFluidClassic удалён в neo, выбран кастомный
-		// BlockWaterlike extends BlockFluidBaseGT (quanta-текучесть GT6 != ванильный FlowingFluid), поэтому
-		// тип поля — общий Block, а не LiquidBlock.
+		// BlockFluidClassic is gone in neo, so these fields hold a custom BlockWaterlike (quanta-based flow, unlike
+		// vanilla FlowingFluid) and are typed as plain Block rather than LiquidBlock.
 		public static Block Ocean, Swamp, River, RiverAdvanced;
 		
 		public static BlockBase Sands, Diggables, Grass, Paths, RockOres, CrystalOres, VanillaOresA;
@@ -1862,10 +1768,8 @@ public class CS {
 		public static final Block[] POT_FLOWER_TILES = {Blocks.CACTUS, Blocks.BROWN_MUSHROOM, Blocks.RED_MUSHROOM, Blocks.DANDELION, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY};
 		public static final byte [] POT_FLOWER_METAS = {0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8};
 
-		/** F16 flower-pot ЗАКРЫТ: 1.7.10 «горшок + TileEntityFlowerPot.func_145964_a(растение, мета)» — в neo горшок
-		 *  без BE, наполненный горшок = отдельный POTTED_*-блок. ЕДИНСТВЕННЫЙ центр выбора potted-варианта для
-		 *  1.7.10-пары (блок, мета); порядок мет POPPY — 1:1 референс BlockFlower.field_149859_a (poppy, blueOrchid,
-		 *  allium, houstonia, tulipRed, tulipOrange, tulipWhite, tulipPink, oxeyeDaisy). null = нет potted-эквивалента. */
+		/** The only place that maps a 1.7.10 (block, meta) pair to its potted-flower equivalent, since neo replaced
+		 *  the flower-pot block entity with a separate POTTED_* block per plant; ordering follows the vanilla source. */
 		public static Block potted(Block aPlant, long aMeta) {
 			if (aPlant == Blocks.CACTUS        ) return Blocks.POTTED_CACTUS;
 			if (aPlant == Blocks.BROWN_MUSHROOM) return Blocks.POTTED_BROWN_MUSHROOM;
@@ -1891,50 +1795,19 @@ public class CS {
 		@Deprecated public static BlockBase Sapling = Saplings_AB, Leaves = Leaves_AB;
 	}
 
-	/**
-	 * F4-flatten ЦЕНТР: 1.7.10-пара «представитель семейства + мета» → neo-вариант.
-	 *
-	 * <p><b>Зачем.</b> В 1.7.10 подтип ванильной вещи жил в МЕТЕ одного предмета/блока
-	 * ({@code stained_glass:14} = красное стекло, {@code dye:1} = красный краситель). Движок 1.13 «The
-	 * Flattening» расщепил каждое такое семейство на отдельные предметы. Порт же продолжал звать первого
-	 * члена семьи и вешать мету: {@code ST.make_} кладёт её в компонент {@link gregapi.GT_API#SUBTYPE}
-	 * ({@code ST.java:198}), а ванильная вещь этот компонент НЕ ЧИТАЕТ — значит на выходе всегда белое
-	 * стекло / чернильный мешок, а мета мертва. Замер 2026-07-26: 1125 вхождений мёртвой меты в дампе
-	 * данных, 477 мест в коде, 15 семейств (DEFERRED-LEDGER, запись «block-flatten»).</p>
-	 *
-	 * <p><b>Почему здесь и в такой форме.</b> Это продолжение приёма {@link BlocksGT#potted(Block, long)} —
-	 * там точно так же 1.7.10-пара (блок, мета) отображается в neo-блок. Один дом на все семейства: карты
-	 * объявлены ЗДЕСЬ ровно один раз, а зовут их два уже существующих центра — {@code ST.make_} (вещи в
-	 * стеке) и {@code WD.legacyVanillaState} (блоки в мире). Правка центра чинит все 477 мест разом, а
-	 * исходник GT6 остаётся verbatim-1:1 — переписывать места поимённо значило бы размазать адаптацию по
-	 * файлам вопреки закону захода (PORTING-LAW) и философии «адаптируем централизованно, не пофайлово».</p>
-	 *
-	 * <p><b>Откуда порядок.</b> Из карты Mojang {@code ItemStackTheFlatteningFix} (ресурс
-	 * {@code flattening.txt}, лежит в проекте) — не из памяти: порядок неочевиден и у семейств РАЗНЫЙ
-	 * ({@code wool:0} = белая, а {@code dye:0} = ЧЁРНЫЙ краситель, {@code dye:15} = костная мука).
-	 * Имена 1.13 промежуточные и в 26.1.2 переименованы ещё раз — каждая константа ниже проверена грепом
-	 * по {@code neo-decompiled} ({@code rose_red}→{@code RED_DYE}, {@code cactus_green}→{@code GREEN_DYE},
-	 * {@code dandelion_yellow}→{@code YELLOW_DYE}, {@code clownfish}→{@code TROPICAL_FISH},
-	 * {@code grass}→{@code SHORT_GRASS}); существование каждой сверх того стережёт компилятор.</p>
-	 *
-	 * <p><b>Границы (сознательно НЕ покрыто).</b> {@code W} (wildcard 32767) — не подтип, а «любой»:
-	 * резолв его не трогает, семантика «любого» — отдельный ход через теги. Зелья ({@code POTION}, 89 мест)
-	 * — в neo не предметы-варианты, а компоненты: инхерентно, отмечено F-potion-data. Плиты
-	 * ({@code stone_slab}, 31 место) — у них мета несёт И материал, И половину блока (бит 8), а оригинал
-	 * местами зовёт {@code double_stone_slab}: требует отдельной сверки, здесь не гадаем. Инструменты и
-	 * прочие вещи с износом мете-подтипу не подлежат — их тут нет, значит резолв их не касается.</p>
-	 */
+	/** Central map from a 1.7.10 (family head, meta) pair to its flattened neo item, since engine flattening
+	 *  split each family into separate items while the port still writes the old meta. */
 	public static class Flattened {
-		/** {@code Items.dye:0..15} — ВНИМАНИЕ: 0 = чёрный (чернила), 15 = белый (костная мука). */
+		/** Items.dye:0..15 ordering is reversed from what it looks like: 0 is black, 15 is white. */
 		public static final Item[] DYE = {
 			Items.INK_SAC, Items.RED_DYE, Items.GREEN_DYE, Items.COCOA_BEANS, Items.LAPIS_LAZULI, Items.PURPLE_DYE, Items.CYAN_DYE, Items.LIGHT_GRAY_DYE,
 			Items.GRAY_DYE, Items.PINK_DYE, Items.LIME_DYE, Items.YELLOW_DYE, Items.LIGHT_BLUE_DYE, Items.MAGENTA_DYE, Items.ORANGE_DYE, Items.BONE_MEAL};
-		/** {@code Items.fish:0..3}; меты 4+ давали моды (MaCu/ENCHIRIDION) — neo-эквивалента нет, не покрыто. */
+		/** Items.fish:0..3; higher metas belonged to mods with no neo equivalent, so left uncovered. */
 		public static final Item[] FISH = {Items.COD, Items.SALMON, Items.TROPICAL_FISH, Items.PUFFERFISH};
 		/** {@code Items.cooked_fish:0..1}. */
 		public static final Item[] COOKED_FISH = {Items.COOKED_COD, Items.COOKED_SALMON};
 
-		/** Цветовой порядок 1.7.10 (общий для wool/carpet/stained_glass/panes/terracotta): 0 = белый … 15 = чёрный. */
+		/** Shared 1.7.10 color order for wool/carpet/stained_glass/panes/terracotta: 0 white through 15 black. */
 		public static final Block[] WOOL = {
 			Blocks.WHITE_WOOL, Blocks.ORANGE_WOOL, Blocks.MAGENTA_WOOL, Blocks.LIGHT_BLUE_WOOL, Blocks.YELLOW_WOOL, Blocks.LIME_WOOL, Blocks.PINK_WOOL, Blocks.GRAY_WOOL,
 			Blocks.LIGHT_GRAY_WOOL, Blocks.CYAN_WOOL, Blocks.PURPLE_WOOL, Blocks.BLUE_WOOL, Blocks.BROWN_WOOL, Blocks.GREEN_WOOL, Blocks.RED_WOOL, Blocks.BLACK_WOOL};
@@ -1953,16 +1826,14 @@ public class CS {
 			Blocks.LIGHT_GRAY_TERRACOTTA, Blocks.CYAN_TERRACOTTA, Blocks.PURPLE_TERRACOTTA, Blocks.BLUE_TERRACOTTA, Blocks.BROWN_TERRACOTTA, Blocks.GREEN_TERRACOTTA, Blocks.RED_TERRACOTTA, Blocks.BLACK_TERRACOTTA};
 		/** 1.7.10 {@code tallgrass:0..2}. */
 		public static final Block[] TALLGRASS = {Blocks.DEAD_BUSH, Blocks.GRASS, Blocks.FERN};
-		/** 1.7.10 {@code Items.skull:0..5} — GT6 зовёт черепа именно как ПРЕДМЕТ (дроп мобов
-		 *  {@code Override_Drops:774-789}, данные {@code LoaderItemData:2472}, {@code ST.skull(player)} с метой 3);
-		 *  у БЛОКА черепа мета 1.7.10 значила положение (пол/стена), а тип жил в TileEntitySkull — поэтому
-		 *  семейство только предметное. */
+		/** Skull identity lived on the item in 1.7.10 (block meta meant placement, not type, with the type held
+		 *  in the block entity instead), so this family only covers the item side. */
 		public static final Item[] SKULL = {Items.SKELETON_SKULL, Items.WITHER_SKELETON_SKULL, Items.ZOMBIE_HEAD, Items.PLAYER_HEAD, Items.CREEPER_HEAD, Items.DRAGON_HEAD};
-		/** 1.7.10 {@code anvil:0..2} (степень повреждения). */
+		/** 1.7.10 anvil:0..2 meta order is increasing damage: undamaged, chipped, damaged. */
 		public static final Block[] ANVIL = {Blocks.ANVIL, Blocks.CHIPPED_ANVIL, Blocks.DAMAGED_ANVIL};
 
-		// Каменно-земляные семьи: в 1.7.10 это были подтипы ОДНОГО блока, и рецепты звали их джокером
-		// (например «любой камень»). Порядок — карта Mojang, как и у цветовых рядов.
+		// These were subtypes of one block in 1.7.10, so recipes referenced them with a wildcard meta; ordering
+		// follows Mojang's own flattening map, as with the color families.
 		/** 1.7.10 {@code stone:0..6}. */
 		public static final Block[] STONE = {Blocks.STONE, Blocks.GRANITE, Blocks.POLISHED_GRANITE, Blocks.DIORITE, Blocks.POLISHED_DIORITE, Blocks.ANDESITE, Blocks.POLISHED_ANDESITE};
 		/** 1.7.10 {@code sand:0..1}. */
@@ -1978,127 +1849,83 @@ public class CS {
 		/** 1.7.10 {@code coal:0..1}. */
 		public static final Item[] COAL = {Items.COAL, Items.CHARCOAL};
 
-		/**
-		 * Семейства, где мета = подтип И В СТЕКЕ, И В МИРЕ (цвет/вид никуда не девается при установке блока).
-		 */
-		/** Цветовые семьи (16 оттенков): ими оперируют краскопульты — «покрасить» и «смыть краску». */
+		/** Families where meta still means subtype both in the stack and once the block is placed. */
+		/** Color families (16 shades) are what the spray-paint tool and its remover operate on. */
 		private static final Block[][] COLOR_FAMILIES = {WOOL, CARPET, STAINED_GLASS, STAINED_GLASS_PANE, TERRACOTTA};
-		/** {@code Blocks.sapling:0..5} — порядок пород 1.7.10: дуб, ель, берёза, джунгли, акация, тёмный дуб. */
+		/** Blocks.sapling:0..5 order: oak, spruce, birch, jungle, acacia, dark oak. */
 		public static final Block[] SAPLING = {
 			Blocks.OAK_SAPLING, Blocks.SPRUCE_SAPLING, Blocks.BIRCH_SAPLING, Blocks.JUNGLE_SAPLING, Blocks.ACACIA_SAPLING, Blocks.DARK_OAK_SAPLING};
-		/** {@code Blocks.leaves:0..3} — дуб, ель, берёза, джунгли (акация и тёмный дуб жили в отдельном {@code leaves2}). */
+		/** Blocks.leaves:0..3: oak, spruce, birch, jungle (acacia and dark oak lived in leaves2). */
 		public static final Block[] LEAVES = {
 			Blocks.OAK_LEAVES, Blocks.SPRUCE_LEAVES, Blocks.BIRCH_LEAVES, Blocks.JUNGLE_LEAVES};
-		/** {@code Blocks.leaves2:0..1} — акация, тёмный дуб. Отдельная семья, как и в 1.7.10. */
+		/** Blocks.leaves2:0..1: acacia, dark oak, kept as its own family just like in 1.7.10. */
 		public static final Block[] LEAVES2 = {Blocks.ACACIA_LEAVES, Blocks.DARK_OAK_LEAVES};
 
 		private static final Block[][] WORLD_FAMILIES = {WOOL, CARPET, STAINED_GLASS, STAINED_GLASS_PANE, TERRACOTTA, TALLGRASS, SAPLING, LEAVES, LEAVES2};
-		/**
-		 * Семейства, где мета = подтип ТОЛЬКО В СТЕКЕ. У блока в мире та же мета значила ДРУГОЕ, поэтому
-		 * подставлять по ней вариант нельзя: у наковальни биты 0-1 — поворот (их разбирает ветка
-		 * {@code AnvilBlock} в {@code WD.legacyVanillaState}), и лишь биты 2-3 — износ.
-		 */
+		/** Families where meta means subtype only in the stack: the anvil's world-block meta means damage in
+		 *  bits 2-3, but rotation in bits 0-1, so a block-side substitution here would be wrong. */
 		private static final Block[][] STACK_ONLY_FAMILIES = {ANVIL};
 		private static final Item [][] ITEM_FAMILIES  = {DYE, FISH, COOKED_FISH, SKULL};
-		/**
-		 * Семьи, которые нужны ТОЛЬКО для понимания джокера ({@link #sameFamily}), но НЕ для подстановки по мете.
-		 * Причина осторожности: подстановка меняла бы результат {@code ST.make(Blocks.STONE, 1, 1)} с камня на
-		 * гранит во ВСЕХ вызывателях, а замер дампа показывает, что ненулевой меты у этих блоков в данных порта
-		 * нет вовсе — то есть чинить там нечего, а риск задеть чужой смысл меты есть. Джокер же («любой камень»)
-		 * встречается в рецептах и без такой подстановки не работает.
-		 */
+		/** Needed only to recognize a wildcard match, not to substitute by meta: substituting here would change
+		 *  results for callers that never see nonzero meta on these blocks in real data, for no benefit. */
 		private static final Block[][] WILDCARD_ONLY_BLOCK_FAMILIES = {STONE, SAND, DIRT, SANDSTONE, QUARTZ_BLOCK, STONE_BRICKS};
 		private static final Item [][] WILDCARD_ONLY_ITEM_FAMILIES  = {COAL};
 
-		/**
-		 * Ищем блок среди ВСЕХ членов семьи, не только среди глав. В 1.7.10 семья была ОДНИМ блоком, и мета
-		 * задавала подтип целиком, поэтому «взять красное стекло и поставить мету 4» законно значило «жёлтое
-		 * стекло». Ровно на это опирается перекраска уже окрашенного блока
-		 * ({@code Behavior_Spray_Color.colorize:167} — {@code WD.set(..., WD.block(...), ~mColor & 15, 3, F)}):
-		 * там на входе не глава семьи, а текущий цветной блок. Поиск только по главе оставил бы этот путь
-		 * сломанным (перекрасить красное стекло в жёлтое было бы нельзя).
-		 */
+		/** Searches every family member, not just the head, because repainting an already-colored block (from
+		 *  e.g. red glass to yellow) starts from a non-head member and would otherwise fail to resolve. */
 		private static Block find(Block[][] aFamilies, Block aBlock, long aMeta) {
 			for (Block[] tFamily : aFamilies) for (Block tMember : tFamily) if (tMember == aBlock) return aMeta < tFamily.length ? tFamily[(int)aMeta] : null;
 			return null;
 		}
 
-		/** Вариант для ВЕЩИ В СТЕКЕ; {@code null} = вещь не из семейства либо мета вне семьи (вызыватель оставляет всё как было). */
+		/** null means the item is not part of any family, or the meta is out of range; callers leave the stack unchanged. */
 		public static Block block(Block aBlock, long aMeta) {
 			if (aMeta <= 0 || aMeta == W) return null;
 			Block rBlock = find(WORLD_FAMILIES, aBlock, aMeta);
 			return rBlock != null ? rBlock : find(STACK_ONLY_FAMILIES, aBlock, aMeta);
 		}
 
-		/** Вариант для БЛОКА В МИРЕ — только семейства, где мета и там означает подтип (см. {@link #STACK_ONLY_FAMILIES}). */
+		/** World-block variant, restricted to families where meta means subtype on the placed block too. */
 		public static Block worldBlock(Block aBlock, long aMeta) {
 			if (aMeta <= 0 || aMeta == W) return null;
 			return find(WORLD_FAMILIES, aBlock, aMeta);
 		}
 
-		/**
-		 * Блок — любой оттенок цветовой семьи? Нужен там, где 1.7.10-код перечислял ОДИН блок семьи, потому что
-		 * он и был всей семьёй: списки «что можно красить» ({@code Behavior_Spray_Color:147}) и «с чего смывать»
-		 * ({@code Behavior_Spray_Color_Remover:105-107}). Живой стенд поймал ровно это: покрасить чистое стекло
-		 * можно, а перекрасить уже красное — нет, потому что в списке стоял только {@code WHITE_STAINED_GLASS}.
-		 */
+		/** Needed wherever 1.7.10 code enumerated a single block standing in for its whole color family, such as
+		 *  the paint/remove-paint eligibility lists; a live test caught a case where only the white member was listed. */
 		public static boolean isColored(Block aBlock) {
 			for (Block[] tFamily : COLOR_FAMILIES) for (Block tMember : tFamily) if (tMember == aBlock) return T;
 			return F;
 		}
 
-		/** Глава семьи блока (тот вариант, что в 1.7.10 был блоком-семьёй) либо {@code null}. Позволяет сравнивать
-		 *  «это стекло/панель/терракота вообще» одной проверкой, не перечисляя 16 оттенков в каждом вызывателе. */
+		/** The family head lets callers ask "is this glass/pane/terracotta at all" with one comparison instead of
+		 *  sixteen per-shade checks. */
 		public static Block headOf(Block aBlock) {
 			for (Block[] tFamily : WORLD_FAMILIES     ) for (Block tMember : tFamily) if (tMember == aBlock) return tFamily[0];
 			for (Block[] tFamily : STACK_ONLY_FAMILIES) for (Block tMember : tFamily) if (tMember == aBlock) return tFamily[0];
-			// Джокерные семьи (камень/земля/песок/песчаник/кварц/каменный кирпич): подстановка по мете им запрещена
-			// намеренно (см. WILDCARD_ONLY_BLOCK_FAMILIES), но ПРИНАДЛЕЖНОСТЬ семье знать надо — в 1.7.10 это был
-			// один блок, и сравнение `aBlock == Blocks.dirt` ловило все подтипы. Ответ на «кто глава» подстановки не
-			// делает, поэтому список безопасно спрашивать и здесь. Ровно так же поступает headItemOf для предметов.
+			// Wildcard-only families deliberately forbid meta substitution but still need membership answered, since
+			// in 1.7.10 they were one block and comparisons like aBlock == Blocks.dirt matched every subtype.
 			for (Block[] tFamily : WILDCARD_ONLY_BLOCK_FAMILIES) for (Block tMember : tFamily) if (tMember == aBlock) return tFamily[0];
 			return null;
 		}
 
-		/**
-		 * Два предмета — члены ОДНОГО расщеплённого семейства?
-		 *
-		 * <p>Нужен центру сравнения стеков ({@code ST.equal_}) для 1.7.10-джокера: там, где оригинал писал
-		 * {@code ST.make(Blocks.stained_glass, 1, W)} — «ЛЮБОЕ цветное стекло» — в neo семья расщеплена, и
-		 * один стек всю её не выражает. Вместо размножения рецепта на 16 копий (раздуло бы реестр и разошлось
-		 * бы с эталоном) джокер остаётся ОДНОЙ записью, а понимание «джокер главы = любой член семьи» живёт
-		 * здесь, в тех же картах. Проверять этот путь имеет смысл только когда мета одного из стеков — {@code W}.</p>
-		 */
+		/** Backs the 1.7.10 wildcard convention in stack comparison: a wildcard-meta stack of the family head now
+		 *  has to match any split-off member rather than exploding into one recipe entry per variant. */
 		public static boolean sameFamily(Item aItem1, Item aItem2) {
 			if (aItem1 == null || aItem2 == null || aItem1 == aItem2) return F;
 			Item tHead = headItemOf(aItem1);
 			return tHead != null && tHead == headItemOf(aItem2);
 		}
 
-		/**
-		 * Глава семьи как ПРЕДМЕТ (то, чем вся семья была в 1.7.10) либо {@code null} — вещь не расщеплена.
-		 *
-		 * <p>Примитив, на котором стоят и {@link #sameFamily}, и джокер-ключ карт ({@code ItemStackMap.get}):
-		 * там, где 1.7.10 писал «предмет + мета {@code W}» и этим покрывал ВСЕ подтипы, neo-эквивалент —
-		 * «глава семьи + {@code W}». Держим его здесь, в тех же картах, чтобы понимание «джокер = вся семья»
-		 * не расползлось по вызывателям.</p>
-		 *
-		 * <p>Ответ должен быть дешёвым: его спрашивает поиск рецепта на каждый вход машины (Recipe:505),
-		 * поэтому перебор семейств делается ОДИН раз, лениво, и дальше это обычный поиск по хешу. Лениво —
-		 * потому что {@code Block.asItem()} требует уже заполненного реестра предметов, а класс грузится раньше.</p>
-		 *
-		 * <p>Не путать с {@link #headOf(Block)}: тот отвечает про БЛОК В МИРЕ и по построению видит только
-		 * семейства, где мета и в мире означает подтип. Здесь речь о ВЕЩИ В СТЕКЕ, поэтому участвуют все
-		 * семейства, включая те, что заведены исключительно ради джокера ({@link #WILDCARD_ONLY_BLOCK_FAMILIES}).
-		 * Множества разные — это два разных вопроса, а не две копии одного.</p>
-		 */
+		/** The item-side family head, the primitive behind {@link #sameFamily} and the wildcard map key, since a
+		 *  1.7.10 wildcard item now needs "family head + wildcard"; built lazily since the item registry loads later. */
 		public static Item headItemOf(Item aItem) {
 			if (aItem == null) return null;
 			java.util.Map<Item, Item> tHeads = HEADS;
 			if (tHeads == null) {
 				tHeads = new java.util.IdentityHashMap<>();
-				// putIfAbsent, а не put: вещь может числиться в двух семьях (например DEAD_BUSH — и в TALLGRASS),
-				// и порядок перебора обязан остаться прежним — выигрывает первое совпадение, как в find/headOf.
+				// putIfAbsent, not put: an item can belong to two families (e.g. dead bush is also tallgrass), and the
+				// first match must keep winning, matching the iteration order used by find/headOf.
 				for (Item [][] tFamilies : new Item [][][] {ITEM_FAMILIES , WILDCARD_ONLY_ITEM_FAMILIES }) for (Item [] tFamily : tFamilies) for (Item  tMember : tFamily) tHeads.putIfAbsent(tMember, tFamily[0]);
 				for (Block[][] tFamilies : new Block[][][] {WORLD_FAMILIES, STACK_ONLY_FAMILIES, WILDCARD_ONLY_BLOCK_FAMILIES}) for (Block[] tFamily : tFamilies) for (Block tMember : tFamily) {
 					Item tMemberItem = tMember.asItem(), tHeadItem = tFamily[0].asItem();
@@ -2110,14 +1937,13 @@ public class CS {
 		}
 		private static java.util.Map<Item, Item> HEADS = null;
 
-		/** Обратное чтение: номер варианта внутри семьи (1.7.10-мета) либо −1, если вещь не из семейства.
-		 *  Нужен там, где GT6 сравнивает «а не нужного ли уже подтипа этот блок» ({@code colorize:167}). */
+		/** Reverse lookup: the 1.7.10 meta for a family member, or -1 if the block is not in any family. */
 		public static int metaOf(Block aBlock) {
 			for (Block[] tFamily : WORLD_FAMILIES     ) for (int i = 0; i < tFamily.length; i++) if (tFamily[i] == aBlock) return i;
 			for (Block[] tFamily : STACK_ONLY_FAMILIES) for (int i = 0; i < tFamily.length; i++) if (tFamily[i] == aBlock) return i;
 			return -1;
 		}
-		/** Вариант предмета по 1.7.10-мете; {@code null} — см. {@link #block}. */
+		/** null has the same meaning as {@link #block}: item not in this family, or meta out of range. */
 		public static Item item(Item aItem, long aMeta) {
 			if (aMeta <= 0 || aMeta == W) return null;
 			for (Item[] tFamily : ITEM_FAMILIES) if (tFamily[0] == aItem) return aMeta < tFamily.length ? tFamily[(int)aMeta] : null;
@@ -2166,9 +1992,8 @@ public class CS {
 		private static ItemStackSet<ItemStackContainer> get(String aToolType) {ItemStackSet<ItemStackContainer> rSet = TOOL_LISTS.get(aToolType); if (rSet == null) TOOL_LISTS.put(aToolType, rSet = ST.hashset()); return rSet;}
 		public static boolean contains(String aToolType, ItemStack aStack) {return get(aToolType).contains(aStack, T);}
 		public static boolean contains(String aToolType, ItemStackContainer aStack) {return get(aToolType).contains(aStack, T);}
-		/** Предметы, являющиеся инструментом такого типа. Тот же реестр, что и {@link #contains}, только на чтение
-		 *  списком — нужен интеграции с тултип-модами: у GT6 инструменты СВОИ (гаечный ключ на машинах, лом, кусачки),
-		 *  и показать их можно, лишь имея сами стеки (gregtech/compat/Compat_Jade.java). Новых сущностей не заводим. */
+		/** Same registry as {@link #contains}, read-only as a list: mod tooltip integrations need the actual stacks
+		 *  to display GT6's own tools (wrench, crowbar, cutters), not just a type check. */
 		public static java.util.Collection<ItemStackContainer> list(String aToolType) {return java.util.Collections.unmodifiableCollection(get(aToolType));}
 		public static boolean add(String aToolType, ItemStackContainer aStack) {if (TOOL_LIST.add(aStack)) return get(aToolType).add(aStack); return F;}
 		public static boolean add(ItemStackContainer aStack, String aToolType) {if (TOOL_LIST.add(aStack)) return get(aToolType).add(aStack); return F;}
@@ -2356,12 +2181,8 @@ public class CS {
 	
 	/** Class Containing MOD ID Strings used in GT, since they are very common Parameters. */
 	public static class ModIDs {
-		/** Принадлежит ли namespace самому моду (обе его половины — ядро и контент).
-		 *  ЦЕНТР признака: спрашивают и клиентский рендер (инъекция моделей блокам и предметам GT6),
-		 *  и общий код (процедурный источник клиентских ресурсов на ветке 1.20.1). Живёт здесь, а не в
-		 *  клиентском прокси, по двум причинам сразу: копия признака в двух местах — дублирование
-		 *  сущности, а ссылка на клиентский класс из общего кода — протечка клиентского типа в
-		 *  classloading выделенного сервера. Общий центр снимает обе беды разом. */
+		/** Lives here rather than on the client proxy so both the client render path and the common datagen code
+		 *  can ask it without either duplicating the check or leaking a client-only type into the dedicated server. */
 		public static boolean isGregNamespace(String aNS) {return GT.equals(aNS) || GAPI.equals(aNS);}
 		/** MOD ID Strings */
 		@SuppressWarnings("hiding")
@@ -2419,9 +2240,8 @@ public class CS {
 		, TE_DYNAMICS       = "ThermalDynamics"
 		, TE_DRILLS         = "rfdrills"
 		
-		// Э0 (слой AE2): было "appliedenergistics2" (id мода в 1.7.10). AE2 под 1.20.1 объявляет себя как "ae2"
-		// (appeng/api/ids/AEConstants.java:31 MOD_ID = "ae2", то же в её mods.toml) — со старым id MD.AE.mLoaded
-		// всегда F, и весь AE-код мода был мёртв.
+		// AE2 layer: was "appliedenergistics2" (1.7.10 mod id); AE2 on 1.20.1 declares itself "ae2", so
+		// the old id always failed mLoaded and left all AE2-aware code dead.
 		, AE                = "ae2"
 		, MO                = "mo"
 		

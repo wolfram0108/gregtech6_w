@@ -35,9 +35,10 @@
 
 package micdoodle8.mods.galacticraft.core.energy;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Минимум для компиляции ядра; члены добираются
- *  компилятором. Реальная зависимость — при возврате к интеграции. См. compat-mirror/README.md. */
+/** Compile-only mirror of a third-party API: the minimum needed to compile the core, with
+ *  members added as the compiler demands them; the real dependency returns only if integration resumes. */
 public interface EnergyConfigHandler {
-	/** Galacticraft EU-конверсия. Compile-only (dead-path MD.GC.mLoaded); value 1 (non-zero, без div-by-zero даже если достигнут). PORT-TODO(F10): реальное значение при интеграции GC. */
+	/** Galacticraft EU conversion ratio; compile-only and unreachable, so kept at 1 to avoid a division by zero.
+	 *  PORT-TODO(F10): plug in the real value when Galacticraft integration returns. */
 	float IC2_RATIO = 1;
 }

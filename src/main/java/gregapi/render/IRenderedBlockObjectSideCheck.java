@@ -26,12 +26,8 @@ package gregapi.render;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraft.world.level.block.Block;
 
-/**
- * @author Gregorius Techneticies
- *
- * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): {@code RenderBlocks} удалён в 26.1.2 — параметр заменён
- * нейтральным держателем {@code Object aRenderer} (см. {@link ITexture}).
- */
+/** @author Gregorius Techneticies
+ *  RenderBlocks was removed in 26.1.2; the parameter became a neutral Object aRenderer holder (see {@link ITexture}). */
 public interface IRenderedBlockObjectSideCheck {
 	/** returning false stops all the other Rendering from happening on that Side. */
 	public boolean renderFullBlockSide(Block aBlock, Object aRenderer, byte aSide);

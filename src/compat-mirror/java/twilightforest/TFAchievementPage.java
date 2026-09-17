@@ -37,7 +37,7 @@ package twilightforest;
 
 import net.minecraft.advancements.Advancement;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Twilight Forest. Только поля достижений, которые зовёт ST. */
+/** Compile-only mirror of the Twilight Forest API: only the achievement fields ST calls. */
 public class TFAchievementPage {
     public static Advancement twilightProgressNaga;
     public static Advancement twilightProgressLich;

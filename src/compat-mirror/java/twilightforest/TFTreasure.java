@@ -41,11 +41,8 @@ import net.minecraft.world.level.block.Block;
 
 import java.util.Random;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Twilight Forest. Минимум для наследника GT6.
- *  Добавлены 8 статических полей — GT_API_Post.java:795-809 читает их НАПРЯМУЮ (не рефлексией)
- *  как аргумент {@code UT.Reflection.getFieldContent(TFTreasure.tower_library, "ultrarare")}:
- *  сама рефлексия идёт по строковому имени вложенного поля (useless/common/uncommon/rare/ultrarare,
- *  уже существовали ниже), а верхний статический field-access должен резолвиться компилятором. */
+/** Compile-only mirror of the Twilight Forest API: the static fields are accessed directly so they
+ *  compile, while the nested field they hold is then read by name through reflection. */
 public class TFTreasure {
     protected TFTreasureTable useless;
     protected TFTreasureTable common;

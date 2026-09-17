@@ -179,26 +179,8 @@ public interface IItemEnergy {
 			return 0;
 		}
 
-		/**
-		 * Мост GT6 -> движковая FE-капа предмета ({@code net.minecraftforge.energy.IEnergyStorage} через
-		 * {@code ForgeCapabilities.ENERGY}, Forge 1.20.1). Третья ветка этой же воронки, рядом с плечом IC2 —
-		 * зарядники GT6 в неё уже ходят, править их не надо. Работает с ЛЮБЫМ предметом, несущим эту капу
-		 * (не только AE2).
-		 *
-		 * <p>Курс — авторский {@code RF_PER_EU = 4} (CS:217).
-		 *
-		 * <p><b>Целые пакеты и никаких потерь.</b> GT6 меряет энергию пакетами {@code aSize} EU. У этой капы нет
-		 * транзакций — вместо пробы транзакцией используется {@code simulate=T}: сперва спрашивается, сколько
-		 * возьмут/отдадут, БЕЗ изменения предмета. По пробе считается число ЦЕЛЫХ пакетов; неполный пакет не
-		 * проводится вовсе (иначе энергия ушла бы, а вызыватель списал бы целый пакет). Фиксация — вторым
-		 * вызовом с {@code simulate=F} и ровно на целые пакеты, и только когда просят по-настоящему
-		 * ({@code aDo}); при {@code aDo=F} возвращается лишь ответ пробы.
-		 *
-		 * <p><b>Вольтажного предиката здесь НЕТ, и это факт, а не упущение.</b> У плеча IC2 он есть, потому что
-		 * IC2 объявляет предмету ТИР ({@code CompatIC2EUItem.insidevolt} считает по тиру). {@code IEnergyStorage}
-		 * не несёт ни тира, ни напряжения — только объём, ёмкость, приём и извлечение. Следствие: FE-предмет
-		 * заряжается зарядником ЛЮБОГО тира.
-		 */
+		/** Bridges GT6 to the engine's FE capability; unlike the IC2 leg, IEnergyStorage carries no tier or voltage at all,
+		 *  so an FE item charges from a charger of any tier -- a fact about the capability, not an oversight. */
 		private static long fe(ItemStack aStack, long aSize, long aAmount, boolean aDo, boolean aInject) {
 			if (ST.invalid(aStack) || aSize <= 0 || aAmount <= 0) return 0;
 			try {
@@ -207,11 +189,11 @@ public interface IItemEnergy {
 				long tCost = aSize * RF_PER_EU;
 				if (tCost <= 0) return 0;
 				int tWanted = UT.Code.bind31(aAmount * tCost);
-				// ПРОБА: simulate=T, предмет не тронут.
+				// Probe: simulate=true, the item stays untouched.
 				long tPackets = (aInject ? tFE.receiveEnergy(tWanted, T) : tFE.extractEnergy(tWanted, T)) / tCost;
 				if (tPackets <= 0) return 0;
 				if (!aDo) return tPackets;
-				// ФИКСАЦИЯ: simulate=F, ровно на целые пакеты.
+				// Commit: simulate=false, moving exactly the whole packets the probe found.
 				long tMoved = (aInject ? tFE.receiveEnergy(UT.Code.bind31(tPackets * tCost), F) : tFE.extractEnergy(UT.Code.bind31(tPackets * tCost), F)) / tCost;
 				if (tMoved <= 0) return 0;
 				return tMoved;

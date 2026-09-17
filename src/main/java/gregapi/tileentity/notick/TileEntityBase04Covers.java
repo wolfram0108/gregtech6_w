@@ -370,27 +370,17 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 		return canExtractItem2(aSlot, aStack, UT.Code.side(aSide));
 	}
 	
-	// F14/WorldlyContainer: neo-мосты (getSlotsForFace/canPlaceItemThroughFace/canTakeItemThroughFace)
-	// поверх GT6-своих getAccessibleSlotsFromSide2/canInsertItem2/canExtractItem2 (1.7.10-имена
-	// getAccessibleSlotsFromSide(int)/canInsertItem/canExtractItem выше — не члены neo WorldlyContainer,
-	// сохранены как внутренние). Тот же централизованный мост, что и в base/TileEntityBase06Covers:322-349
-	// (notick-иерархия параллельна; MultiTileEntityMultiBlockPart наследует ОТСЮДА). Direction<->byte через
-	// UT.Code.side; cover-перехват 1:1 со старой формой.
-	// F14-inventory-contract: neo Container.stillValid(Player) (1.7.10 isUseableByPlayer) — центрально в notick-базе,
-	// объявляющей WorldlyContainer/Container (покрывает ВСЕ notick-TE: BunkerBlock и др.). Тело 1:1 с base/
-	// TileEntityBase05Inventories:106 (isDead + allowInteraction + дистанция <=64). Остальные Container-методы notick-TE
-	// уже удовлетворены выше по цепочке; недоставало только stillValid.
+	// neo bridges (getSlotsForFace etc.) sit centrally over GT6's own 1.7.10-named methods here, mirroring base
+	// TileEntityBase06Covers for the parallel notick hierarchy; only stillValid was still missing from this side.
 	@Override public boolean stillValid(Player aPlayer) {return !isDead() && allowInteraction(aPlayer) && aPlayer.distanceToSqr(getBlockPos().getX() + 0.5D, getBlockPos().getY() + 0.5D, getBlockPos().getZ() + 0.5D) <= 64D;}
 
-	// F14-inventory-contract: полный neo Container-мост поверх GT6-старых имён этого класса (getStackInSlot/
-	// getSizeInventory/setInventorySlotContents/decrStackSize/getStackInSlotOnClosing/isItemValidForSlot ниже).
-	// Централизует контракт для ВСЕХ notick-TE (BunkerBlock и др.); параллель base/TileEntityBase05Inventories:112-120.
-	// Виртуальная диспетчеризация: подкласс, переопределяющий старые имена, автоматически получает и neo-поведение.
+	// Full neo Container bridge over this class's old GT6 names, centralizing the contract for every notick-TE;
+	// virtual dispatch means a subclass overriding the old names automatically gets the neo behavior too.
 	@Override public int getContainerSize() {return getSizeInventory();}
 	@Override public ItemStack getItem(int aSlot) {return getStackInSlot(aSlot);}
-	/** F15/F-break (тот же приём, что TileEntityBase05Inventories): neo BlockEntity.preRemoveSideEffects вытряхивает
-	 *  Container через vanilla Containers.dropContents — NPE на GT6-null-слотах + двойной дроп; дроп владеет GT6 breakBlock. */
-	public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {/* дроп — GT6 breakBlock */}
+	/** Same trick as TileEntityBase05Inventories: vanilla's dropContents would NPE on GT6's null slots and double-drop, so
+	 *  drop ownership stays with GT6's own breakBlock. */
+	public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {/* drop belongs to GT6 breakBlock */}
 	@Override public void setItem(int aSlot, ItemStack aStack) {setInventorySlotContents(aSlot, aStack);}
 	@Override public ItemStack removeItem(int aSlot, int aDecrement) {return decrStackSize(aSlot, aDecrement);}
 	@Override public ItemStack removeItemNoUpdate(int aSlot) {return getStackInSlotOnClosing(aSlot);}

@@ -57,8 +57,8 @@ public interface IItemRottable {
 			return aStack;
 		}
 
-		// F5/BUG-045: восстановлено 1:1 с оригиналом (:56-73) на живом compat-mirror IFluidContainerItem
-		// (ItemStack-arg методы, null-семантика пустоты) — per-stack мутации идут в NBT самого aStack.
+		// Restored 1:1 from the original over the live IFluidContainerItem compat mirror; per-stack mutation
+		// goes into aStack's own NBT.
 		public static ItemStack rotting(ItemStack aStack, IFluidContainerItem aItem) {
 			FluidStack tFluid = aItem.getFluid(aStack);
 			if (tFluid != null) {

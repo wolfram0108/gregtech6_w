@@ -119,50 +119,12 @@ import java.util.*;
 
 import static gregapi.data.CS.*;
 
-/**
- * @author Gregorius Techneticies
- *
- * This loads before compatible Mods, except Micdoodlecore. GT_API_Post loads after all compatible Mods.
- *
- * F12 (жизненный цикл, decisions/F12-registration-lifecycle.md): три родных FML-мода Грегориуса
- * (GAPI/GAPI_POST/GT) переносятся как три отдельных neo-{@code @Mod} на своих местах — этот класс
- * остаётся точкой входа мода GAPI. Оригинальная FML-строка {@code dependencies=} несла как
- * структурный порядок (GAPI грузится перед GAPI_POST — обязателен для 3-модовой связки GT6), так и
- * ~150 мягких order-хинтов для внешних совместимых модов (compat-mirror, зона F10). Внешние
- * order-хинты в {@code depends()} не перенесены — они не влияют на компиляцию/жизненный цикл самого
- * GT6 и относятся к F10 (compat-mirror), когда те моды реально появятся в дереве как neo-цели.
- * F12-depends (условная заметка, не заглушка): order-хинты depends() к compat-mirror-модам не перенесены — они не
- * влияют на компиляцию/жизненный цикл GT6; ЕСЛИ те моды появятся в дереве как neo-цели, добавить сюда мягкие order-хинты.
- *
- * УЛИКА R7 (исправлено): {@code depends()} ждёт СЫРОЙ {@code String[]} modId, без парсера префиксов
- * старого FML (fml-decompiled {@code net/neoforged/fml/common/Mod.java:16},
- * {@code FMLJavaModLanguageProvider.java:33,67-70} — строка вида {@code "required-before:"+modId} не
- * находится в загруженном списке модов и приводит к тому, что весь entrypoint-класс отфильтровывается
- * из загрузки). Передан чистый {@code ModIDs.GAPI_POST}.
- *
- * УЛИКА R8 (доработка): {@code depends()} здесь фильтрует entrypoint только по НАЛИЧИЮ modId
- * (fml-decompiled {@code FMLJavaModLanguageProvider.java:33}) — он НЕ задаёт порядок загрузки
- * (структурный факт "GAPI перед GAPI_POST" в {@code depends()} НЕ выражается). Реальный порядок
- * задан {@code ModSorter} (fml-decompiled {@code net/neoforged/fml/loading/ModSorter.java:194-208})
- * из графа {@code [[dependencies.gregapi]]}/{@code [[dependencies.gregapi_post]]} с полем
- * {@code ordering="BEFORE"/"AFTER"} в {@code src/main/templates/META-INF/neoforge.mods.toml} —
- * см. комментарий там же. {@code depends()} здесь остаётся как НЕЗАВИСИМЫЙ REQUIRED-гейт
- * (не грузить entrypoint, если GAPI_POST отсутствует в списке модов), а не как источник порядка.
- */
+/** The three original FML mods become three separate neo @Mod entry points; depends() here only gates
+ *  presence (a raw modId, not old FML's "required-before:" prefix, which would drop the entrypoint). */
 @Mod(ModIDs.GAPI)
 public class GT_API extends Abstract_Mod {
-	/**
-	 * Замена {@code @SidedProxy}: neo не имеет annotation-диспетчера сторон, поэтому сторона выбирается
-	 * напрямую по {@link FMLEnvironment#getDist()} (сверено: {@code DistExecutor} в этой версии neo не
-	 * существует — decisions/F12-registration-lifecycle.md §7).
-	 *
-	 * Присваивается в конструкторе ПОСЛЕ {@link MT#init()} (не инлайн в статик-инициализаторе поля):
-	 * клиентский {@link GT_API_Proxy_Client} в своём конструкторе читает {@code MT.*.mRGBa}, а построение
-	 * материалов идёт через {@link #STACKMAPS}. Инлайн-инициализация поля api_proxy шла бы в порядке
-	 * class-init ДО STACKMAPS (объявлен ниже) → на клиенте MT тянулся раньше времени и падал NPE
-	 * ("STACKMAPS is null"). Оригинальный {@code @SidedProxy} инъектировался FML при конструировании мода
-	 * (после class-init) — тот же тайминг воспроизведён построением прокси в конструкторе.
-	 */
+	/** Replaces @SidedProxy: neo has no side-dispatch annotation, so the side is chosen via FMLEnvironment#getDist().
+	 *  Assigned after MT#init(), not inline in the static initializer, or class-init would run before STACKMAPS exists. */
 	public static GT_API_Proxy api_proxy;
 
 	public static final Collection<Map<ItemStackContainer, ?>> STACKMAPS = new ArrayListNoNulls<>();
@@ -170,81 +132,51 @@ public class GT_API extends Abstract_Mod {
 	/** Used to register Icons. It is not necessary to make those into Lists */
 	public static Set<Runnable> sBlockIconload = new HashSetNoNulls<>(), sItemIconload = new HashSetNoNulls<>();
 	/** The Icon Registers from Blocks and Items. They will get set right before the corresponding Icon Load Phase as executed in the Runnable List above. */
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 net.minecraft.client.renderer.texture.IIconRegister
-	// удалён из движка целиком (атлас-стежка теперь baked-модели, не immediate-mode Icon-регистрация).
-	// Тот же класс проблемы, что gregapi/render/TextureSet.java registerIcons(Object) (уже переведено) —
-	// поле типизировано как Object (та же деградация), консьюмеры (BI/Textures.java) уже переведены на ResourceLocation.
+	// 1.7.10's IIconRegister is gone entirely (atlas stitching is now baked models); same class of problem as
+	// TextureSet.registerIcons(Object) — typed as Object, with consumers already moved to ResourceLocation.
 	public static Object sBlockIcons, sItemIcons;
 
-	/**
-	 * Централизованный мост регистрации F12: ЕДИНСТВЕННАЯ точка, через которую весь мод регистрирует
-	 * Item/Block в NeoForge DeferredRegister (замена разрозненных прямых DeferredRegister-вызовов,
-	 * найденных ревизией R3 в GT6_Main/GT_API_Proxy/ST — decisions/F12-registration-lifecycle.md).
-	 * GT6 создаёт Item/Block ЗАРАНЕЕ ({@code new SomeItem()}), затем в оригинале регистрировал уже
-	 * готовый экземпляр ({@code GameRegistry.registerItem(item, name)}). DeferredRegister ожидает
-	 * Supplier; оборачиваем уже созданный экземпляр в Supplier, возвращающий его же — при однократной
-	 * загрузке мода (без hot-reload реестров) это эквивалентно оригинальному поведению.
-	 */
+	/** The single point through which the whole mod registers Item/Block in NeoForge's DeferredRegister,
+	 *  replacing scattered direct DeferredRegister calls found across GT6_Main/GT_API_Proxy/ST. */
 	public static final DeferredRegister<net.minecraft.world.item.Item>  ITEMS  = DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.ITEMS, ModIDs.GAPI);
 	public static final DeferredRegister<net.minecraft.world.level.block.Block> BLOCKS = DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.BLOCKS, ModIDs.GAPI);
 
-	/** F12-followup (subtype-meta): GT6 1.7.10 хранит ПОДТИП предмета в damage-value (getItemDamage 0..32767) — meta-предметы
-	 *  (PrefixItem/MultiItem, maxDamage=0) держат тысячи подтипов на одном Item через meta. neo клампит setDamageValue к
-	 *  [0,maxDamage] (IItemExtension.setDamage) → у maxDamage=0 ВСЯ meta схлопывается в 0 (все материал-стеки становятся
-	 *  идентичны → унификация/рецепты/MTE ломаются). Переиспользовать DAMAGE нельзя: он же durability реальных предметов
-	 *  (maxDamage>0). Централизованная адаптация — ОТДЕЛЬНЫЙ компонент подтипа; {@code ST.meta_} get/set идёт через него,
-	 *  минуя кламп. Persistent (NBT ItemStack.CODEC) + network-synced. Ставится только при meta!=0 (meta-0 = без компонента,
-	 *  стекуется с ванилла). */
-	/** F12-followup (MTE-type-timing): единый placeholder-BlockEntityType всей MTE-иерархии. Создание BlockEntityType зовёт
-	 *  createIntrusiveHolder → только на RegisterEvent<BlockEntityType> (размороженный реестр). Регистрируем supplier'ом
-	 *  {@code TileEntityBase01Root.createType} (он создаёт+кэширует MTE_TYPE); прежде <clinit> создавал его лениво на
-	 *  server-start → «Registry is already frozen» → рушился весь Loader_MultiTileEntities (cables/wires/pipes = 0). */
+	/** GT6 1.7.10 stores an item's subtype in the damage value; neo clamps setDamageValue to [0,maxDamage],
+	 *  so a maxDamage=0 meta-item would collapse every subtype to 0, breaking unification/recipes/MTEs. */
+	/** One placeholder BlockEntityType for the whole MTE hierarchy: creating one calls createIntrusiveHolder,
+	 *  only valid during RegisterEvent<BlockEntityType>; the old lazy <clinit> creation hit a frozen registry. */
 	public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(net.minecraft.core.registries.Registries.BLOCK_ENTITY_TYPE, ModIDs.GAPI);
 	public static final Object MTE_TYPE_HOLDER = BLOCK_ENTITIES.register("mte", gregapi.tileentity.base.TileEntityBase01Root::createType);
-	/** BUG-138: ВТОРОЙ тип той же иерархии — нетикающая половина ({@code gregapi.tileentity.notick}, {@code super(F)}).
-	 *  Он существует не ради данных, а ради единственного вопроса, который движок задаёт про блок-сущность до тика:
-	 *  {@code EntityBlock.getTicker(level, state, type)}. Блок и состояние у всех MTE общие, тип — единственный
-	 *  различитель; подробности и замер — {@code TileEntityBase01Root.MTE_TYPE_NOTICK}. */
+	/** Second type of the same hierarchy — the non-ticking half (super(F)): it exists only to answer the engine's
+	 *  one pre-tick question, EntityBlock.getTicker(level, state, type). */
 	public static final Object MTE_TYPE_NOTICK_HOLDER = BLOCK_ENTITIES.register("mte_notick", gregapi.tileentity.base.TileEntityBase01Root::createTypeNoTick);
 
-	/** F12-entity: центральный реестр EntityType контента gregapi — тот же приём, что ITEMS/BLOCKS/BLOCK_ENTITIES выше
-	 *  (и что gregtech.entities.EntitiesGT у своих стрел). Заменяет удалённый 1.7.10
-	 *  {@code EntityRegistry.registerModEntity} (оригинал GT_API.java:722). */
+	/** Central EntityType registry for gregapi content, the same pattern as ITEMS/BLOCKS/BLOCK_ENTITIES above.
+	 *  Replaces the removed 1.7.10 EntityRegistry.registerModEntity. */
 	public static final DeferredRegister<net.minecraft.world.entity.EntityType<?>> ENTITIES = DeferredRegister.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, ModIDs.GAPI);
 
-	/** F12-entity: падающий мета-блок. Параметры 1:1 из оригинала
-	 *  {@code registerModEntity(PrefixBlockFallingEntity.class, "gt.MetaBlockFallingEntity", 0, this, 160, 1, T)}:
-	 *  trackingRange 160 блоков = 10 чанков ({@code clientTrackingRange}), updateFrequency 1 ({@code updateInterval}).
-	 *  Габарит — как у ванильного FALLING_BLOCK (0.98×0.98, {@code EntityType.java:492}), от которого 1.7.10-класс
-	 *  наследовался. Имя реестра из «gt.MetaBlockFallingEntity» приведено к lowercase (neo ResourceLocation запрещает
-	 *  заглавные) — тот же приём, что у {@code EntitiesGT}. */
+	/** The falling meta-block; parameters match the original registerModEntity call: trackingRange 160, updateFrequency 1.
+	 *  Hitbox matches vanilla's FALLING_BLOCK; the registry name is lowercased since ResourceLocation forbids uppercase. */
 	public static final net.minecraftforge.registries.RegistryObject<net.minecraft.world.entity.EntityType<gregapi.block.prefixblock.PrefixBlockFallingEntity>> METABLOCK_FALLING =
 		ENTITIES.register("gt_metablockfallingentity", () -> net.minecraft.world.entity.EntityType.Builder.<gregapi.block.prefixblock.PrefixBlockFallingEntity>of(gregapi.block.prefixblock.PrefixBlockFallingEntity::new, net.minecraft.world.entity.MobCategory.MISC)
 			.sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(1)
 			.build("gt_metablockfallingentity"));
 
-	/** BUG-113: свои звуки мода. В 1.7.10 звук адресовался ИМЕНЕМ, а объявлялся только в ассетах
-	 *  ({@code assets/gregapi/sounds.json}) — никакой регистрации не требовалось, движок брал запись по имени.
-	 *  В neo имя обязано иметь {@code SoundEvent} в реестре, иначе {@code Registry.getValue} отдаёт null и звук
-	 *  молча не играется (путь проигрывания — {@code UT.Sounds.SoundWithLocation.play}). Ключи берём ИЗ ТОГО ЖЕ
-	 *  ФАЙЛА, что и 1.7.10, — список звуков не дублируется в коде и переживает пополнение ассетов. */
+	/** GT6's own sounds. In 1.7.10 a sound only needed a name in sounds.json; the engine looked it up by name.
+	 *  neo requires a registered SoundEvent for that name, or the sound never plays; keys come from that same file. */
 	public static final DeferredRegister<net.minecraft.sounds.SoundEvent> SOUND_EVENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.SOUND_EVENT, ModIDs.GAPI);
 	static {
 		for (String tKey : soundKeysFromAssets()) SOUND_EVENTS.register(tKey, () -> net.minecraft.sounds.SoundEvent.createVariableRangeEvent(new net.minecraft.resources.ResourceLocation(ModIDs.GAPI, tKey)));
 	}
-	/** Имена звуков, объявленных модом в {@code assets/<namespace>/sounds.json} — единственный источник истины.
-	 *  ⛔ ЧИТАТЬ ЧЕРЕЗ CLASSLOADER НЕЛЬЗЯ: в dev-среде ресурсы лежат в каталоге и {@code getResourceAsStream}
-	 *  их отдаёт, а в собранном jar мод грузится модульным загрузчиком FML, ресурс не выдаётся, список
-	 *  оказывается пустым — и звуки молча не регистрируются. Ровно этим отличался запуск из исходников
-	 *  (звук был) от запуска с jar (звука не было). Штатный путь FML к файлам СВОЕГО мода — ModList/ModFile,
-	 *  он одинаков в обеих средах; classloader остаётся запасным. */
+	/** The only source of truth is the mod's own sounds.json. Reading it via the classloader fails in the shipped jar
+	 *  (FML's modular loader doesn't serve mod resources that way), silently registering zero sounds. */
 	private static java.util.List<String> soundKeysFromAssets() {
 		String tPath = "assets/" + ModIDs.GAPI + "/sounds.json";
 		java.util.List<String> rKeys = java.util.List.of();
 		try (java.io.InputStream tIn = GT_API.class.getResourceAsStream("/" + tPath)) {
 			if (tIn != null) rKeys = soundKeysFrom(tIn);
-		} catch (Throwable e) {/* запасной путь ниже */}
-		// запасной путь — там, где физически лежит сам класс: каталог в dev-среде, jar в поставке
+		} catch (Throwable e) {/* Fallback path below. */}
+		// Fallback path: wherever the class itself physically lives — a directory in dev, a jar in the shipped build.
 		if (rKeys.isEmpty()) try {
 			java.net.URI tSelf = GT_API.class.getProtectionDomain().getCodeSource().getLocation().toURI();
 			java.io.File tRoot = new java.io.File(tSelf);
@@ -257,7 +189,7 @@ public class GT_API extends Abstract_Mod {
 					if (tEntry != null) rKeys = soundKeysFrom(tZip.getInputStream(tEntry));
 				}
 			}
-		} catch (Throwable e) {/* звуков не будет — это видно по строке ниже */}
+		} catch (Throwable e) {/* If empty, no sounds will register — visible in the line below. */}
 		OUT.println("GT6 sounds: объявлено в " + tPath + " и зарегистрировано " + rKeys.size() + " звуков " + rKeys);
 		return rKeys;
 	}
@@ -268,46 +200,34 @@ public class GT_API extends Abstract_Mod {
 		}
 	}
 
-	// F8/F1: компонентов SUBTYPE и ZEROSIZE (и самого реестра DATA_COMPONENT_TYPE) в 1.20.1 не существует.
-	// Подтип предмета вернулся в damage — центр `ST.meta_` (damage-канал 1.7.10 здесь полностью жив,
-	// IForgeItem.java:435-438,472-475); маркер size-0-катализатора вернулся в NBT стека — центр `ST.size_`
-	// (ключ CS.NBT_ZEROSIZE). Оба канала — те же, что в оригинале, поэтому отдельных сущностей не нужно.
+	// On 1.20.1 the SUBTYPE/ZEROSIZE data components don't exist; subtype is back in damage (ST.meta_) and
+	// the size-0-catalyst marker is back in stack NBT (ST.size_), the same channels as the original.
 
-	/** F1/F12/F16 item-model сепарация: GT6-предметы делали OreDict-данные+рецепты (ST.make = стек себя) В КОНСТРУКТОРЕ, но
-	 *  neo конструирует предмет @RegisterEvent (реестр открыт для intrusive-holder), а стеки можно только @пост-freeze
-	 *  (Holder.components привязаны позже). Конструктор регистрирует свой stack-init сюда (Runnable, без стеков), а
-	 *  {@link #runDeferredItemInit()} выполняет их в setup (пост-bind). См. decisions/F12-registration-lifecycle.md. */
+	/** GT6 items used to build OreDict data and recipes (ST.make) right in the constructor, but neo constructs
+	 *  the item at RegisterEvent while stacks can only be built post-freeze (Holder.components bind later). */
 	public static final List<Runnable> DEFERRED_ITEM_INIT = new ArrayListNoNulls<>();
 	public static void deferItemInit(Runnable aInit) {if (aInit != null) DEFERRED_ITEM_INIT.add(aInit);}
-	/** F12-followup (oredict-timing): окно исполнения отложенного stack-init на server-start. В 1.7.10 GT6 весь контент-пайплайн
-	 *  (make-стеки → OreDict-регистрация → рецепты) шёл @Init/@PreInit; neo привязывает Holder.components только на server-start
-	 *  (ReloadableServerResources) → тот же пайплайн физически сдвинут сюда. OreDictManager.registerOre_ имеет guard
-	 *  «Only @Init/@PreInit» (sStartedPostInit>0 → throw) — во время ЭТОГО окна guard подавляется: это init GT6, сдвинутый во времени. */
+	/** Window where the deferred stack-init runs at server start: in 1.7.10 the whole pipeline ran at Init/PreInit;
+	 *  neo only binds Holder.components at server start, so the pipeline physically moved here. */
 	public static boolean sDeferredItemInitRunning = false;
-	/** true после ПЕРВОГО осушения очереди: до этого момента варианты god-предметов ещё не насыпаны (addItems
-	 *  в очереди), и судить наполненность вкладок/предметов по getSubItems нельзя — перечислитель пуст не потому,
-	 *  что вариантов нет, а потому, что их время не пришло (см. CreativeTabsGT.isTabEmpty). */
+	/** True only after the queue has drained once: before that, god-item variants aren't added yet (still queued),
+	 *  so judging a tab/item empty by getSubItems would be wrong (see CreativeTabsGT.isTabEmpty). */
 	public static boolean sDeferredItemInitDone = false;
 
-	/** F11-recipe-scan: очередь сканов ЧУЖИХ рецептов (Loader_Recipes_Replace). В 1.7.10 скан бежал на PostInit
-	 *  по готовому CraftingManager; в neo его вход (ore-версии ванильных рецептов, F4 роль-C) появляется только
-	 *  на server-start — очередь исполняется в {@link #onLevelLoadEarlyItemInit} ПОСЛЕ роли-C и ДО
-	 *  {@code finalizeRecipeLoading} (чтобы пересборка propertySets/дисплеев увидела уже подавленные рецепты). */
+	/** Queue of foreign-recipe scans. In 1.7.10 the scan ran at PostInit against a finished CraftingManager;
+	 *  its neo input (ore-versions, role-C) only appears at server start, so it runs after role-C, before finalize. */
 	public static final List<Runnable> DEFERRED_RECIPE_SCAN = new ArrayListNoNulls<>();
 	public static void deferRecipeScan(Runnable aScan) {if (aScan != null) DEFERRED_RECIPE_SCAN.add(aScan);}
-	/** Сервер текущего окна recipe-scan (ненулевой только во время исполнения очереди) — для {@link #removeDatapackRecipes}. */
+	/** The server for the current recipe-scan window (non-null only while the queue runs), used by removeDatapackRecipes. */
 	public static net.minecraft.server.MinecraftServer sCurrentServerForRecipeScan = null;
 
-	/** F11-recipe-scan: ПОДАВЛЕНИЕ датапак-рецептов — neo-эквивалент 1.7.10 {@code CraftingManager.getRecipeList().remove(...)}
-	 *  (в 1.7.10 Replace удалял заменённый рецепт из живого списка; в neo {@code RecipeManager} рантайм-удаления не имеет,
-	 *  {@code RecipeMap} immutable). Карта пересобирается публичной фабрикой {@code RecipeMap.create} без подавленных,
-	 *  private-поле {@code RecipeManager.recipes} подменяется рефлексией — приём прецедентен (подмена
-	 *  {@code AbstractMinecart.behavior}, JDK 25 пишет private instance-поля). Зовётся ДО finalizeRecipeLoading. */
-	/** Все когда-либо подавленные ключи — для переприменения после /reload (карта датапака пересоздаётся). */
+	/** Neo equivalent of 1.7.10's CraftingManager.getRecipeList().remove(...): neo's RecipeManager has no
+	 *  runtime removal, so the map is rebuilt without suppressed entries and swapped in by reflection. */
+	/** Every key ever suppressed, so it can be reapplied after /reload (the datapack's recipe map gets recreated). */
 	public static final java.util.Set<net.minecraft.resources.ResourceLocation> SUPPRESSED_DATAPACK_RECIPES = new java.util.HashSet<>();
 
 	public void onDatapackSyncReapplySuppression(net.minecraftforge.event.OnDatapackSyncEvent aEvent) {
-		if (aEvent.getPlayer() != null) return; // вход игрока — карта не пересоздавалась; переприменение нужно только на /reload
+		if (aEvent.getPlayer() != null) return; // Player join doesn't recreate the map; reapplication is only needed on /reload.
 		removeDatapackRecipes(aEvent.getPlayerList().getServer(), new java.util.HashSet<>(SUPPRESSED_DATAPACK_RECIPES));
 	}
 
@@ -315,9 +235,8 @@ public class GT_API extends Abstract_Mod {
 		if (aServer == null || aRemove == null || aRemove.isEmpty()) return;
 		SUPPRESSED_DATAPACK_RECIPES.addAll(aRemove);
 		try {
-			// 1.20.1: пересборка списка рецептов — ПУБЛИЧНЫЙ API движка, replaceRecipes(Iterable<Recipe<?>>)
-			// (forge-1201-decompiled RecipeManager.java:173); рефлексия на приватное поле, нужная в 26.x, не нужна.
-			// Обёртки «рецепт+id» нет — id носит сам рецепт (Recipe.getId(), Recipe.java:52).
+			// 1.20.1: rebuilding the recipe list uses the engine's public API, replaceRecipes(Iterable<Recipe<?>>);
+			// the reflection needed on 26.x isn't needed here.
 			net.minecraft.world.item.crafting.RecipeManager tRM = aServer.getRecipeManager();
 			java.util.List<net.minecraft.world.item.crafting.Recipe<?>> tKeep = new java.util.ArrayList<>();
 			int tBefore = 0;
@@ -326,67 +245,46 @@ public class GT_API extends Abstract_Mod {
 			OUT.println("GT_API: datapack recipes suppressed (F11-recipe-scan): " + (tBefore - tKeep.size()) + " of " + aRemove.size() + " requested.");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
-	// drain-loop: коллбэк может добавить новый deferItemInit (вложенная отложка, напр. блок→слэб) — обрабатываем FIFO
-	// без ConcurrentModification; список опустошается полностью, включая добавленное во время выполнения.
+	// The drain loop: a callback can add a new deferItemInit itself (nested deferral, e.g. block -> slab).
+	// Processed FIFO without ConcurrentModification, draining anything added mid-run too.
 	public static void runDeferredItemInit() {
 		sDeferredItemInitRunning = true;
-		// F4 роль-B: ванильные записи словаря, которые в 1.7.10 заводил сам Forge ДО модов
-		// (OreDictionary.initVanillaEntries — там же улики и границы переноса). Зовём в самом начале окна,
-		// потому что весь stack-based контент GT6 регистрируется ниже по этой очереди и обязан видеть
-		// уже наполненный ванильный словарь — ровно тот порядок, что был в 1.7.10.
+		// Vanilla dictionary entries that Forge itself seeded before any mod loaded in 1.7.10; called first here,
+		// since GT6's own stack-based content below needs to see an already-populated vanilla dictionary.
 		try {gregapi.oredict.OreDictionary.initVanillaEntries();} catch(Throwable e) {e.printStackTrace(ERR);}
-		// F1-b тег-мост, ВХОДЯЩАЯ сторона (decisions/F4-oredictionary.md §4.4): в 1.7.10 чужие моды сами звали
-		// OreDictionary.registerOre и GT6 ловил их событием; на этой версии общий язык модов — теги forge:, и
-		// мост читает их РЕАЛЬНЫЙ реестр, подавая содержимое в тот же вход словаря. Место вызова не произвольно:
-		// setTarget_ с aOverwrite=F оставляет целью унификации ПЕРВОГО зарегистрированного — значит чужой предмет
-		// обязан успеть до собственных стеков GT6 (очередь ниже), ровно как успевали моды, грузившиеся раньше GT6.
+		// Incoming tag bridge: in 1.7.10 foreign mods called OreDictionary.registerOre themselves; here the common
+		// language is forge: tags, read by the bridge and fed into the same dictionary entry point.
 		try {gregapi.oredict.OreDictTags.importFromTags();} catch(Throwable e) {e.printStackTrace(ERR);}
 		try {while (!DEFERRED_ITEM_INIT.isEmpty()) {Runnable tInit = DEFERRED_ITEM_INIT.remove(0); try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);}}}
 		finally {sDeferredItemInitRunning = false; sDeferredItemInitDone = true;}
 	}
 
-	/** F12-followup (block-split, MTE): некоторые GT6-подсистемы (MultiTileEntityRegistry/MultiTileEntityBlock) СТРОЯТ
-	 *  neo-Block вне DeferredRegister-supplier И вне preInit (getOrCreate вызывается и на preInit, и на init, с дедупом и
-	 *  setMapColor на возврате) — их нельзя выразить одним registerBlockLazy. Их конструирующий код оборачивается в
-	 *  deferBlockInit(Runnable): очередь выполняется НА RegisterEvent&lt;Block&gt; (реестр разморожен → intrusive-holder ок),
-	 *  а сама регистрация блока идёт через {@link #registerBlock} (ветка event.register, т.к. DeferredRegister уже мог быть
-	 *  обработан). BlockItem регистрируется в ITEMS-DR (RegisterEvent&lt;Item&gt; позже). */
+	/** Some GT6 subsystems build the neo Block outside any DeferredRegister supplier and outside preInit,
+	 *  so they can't be expressed as a single registerBlockLazy; wrapped in deferBlockInit(Runnable) instead. */
 	public static final List<Runnable> DEFERRED_BLOCK_INIT = new ArrayListNoNulls<>();
 	public static void deferBlockInit(Runnable aInit) {if (aInit != null) DEFERRED_BLOCK_INIT.add(aInit);}
-	/** Активное RegisterEvent&lt;Block&gt; во время слива DEFERRED_BLOCK_INIT; ненулевой ⇒ {@link #registerBlock} регистрирует
-	 *  блок напрямую в реестр этого события (DeferredRegister этой фазы уже обработан). */
+	/** Active RegisterEvent<Block> during the DEFERRED_BLOCK_INIT drain; when non-null, registerBlock registers
+	 *  the block directly into this event's registry, since this phase's DeferredRegister may already be done. */
 	public static net.minecraftforge.registries.RegisterEvent sBlockRegisterEvent = null;
 	private static void runDeferredBlockInit(net.minecraftforge.registries.RegisterEvent aEvent) {
 		sBlockRegisterEvent = aEvent;
 		try {for (Runnable tInit : DEFERRED_BLOCK_INIT) try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_BLOCK_INIT.clear();}
 		finally {sBlockRegisterEvent = null;}
 	}
-	/** HIGHEST: событие блок-реестра открывается ДО всех DeferredRegister-диспетчеров и держится открытым всю фазу.
-	 *  Иначе блок, построенный внутри чужого DR-supplier'а (слэбы BlockMetaType), регистрировался бы отложенно —
-	 *  а порядок регистрации задаёт ИМЕНА наборов (замер: `gt.block.glass.slab.0` уезжал в `…slab.1`, 17 рецептов
-	 *  плавки меняли вход). Открытое событие сохраняет прежний, немедленный порядок 1:1. */
+	/** Opens the block-registry event before any DeferredRegister dispatcher, or a block built inside another
+	 *  DR supplier would register out of order, changing set names and shifting some recipe inputs. */
 	private static void onRegisterEventOpen(net.minecraftforge.registries.RegisterEvent aEvent) {
 		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.BLOCK)) sBlockRegisterEvent = aEvent;
 	}
-	/** LOWEST: после всех DeferredRegister — слить очередь отложенной конструкции и закрыть событие. */
+	/** After every DeferredRegister has run: drain the deferred construction queue and close the event. */
 	private static void onRegisterEvent(net.minecraftforge.registries.RegisterEvent aEvent) {
 		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.BLOCK)) {
 			try {runDeferredBlockInit(aEvent);} finally {sBlockRegisterEvent = null;}
 		}
 	}
 
-	/** Зарегистрировать ТОЛЬКО блок (без BlockItem — он у вызывателя уже заведён своим путём).
-	 *
-	 *  ЗАЧЕМ ЦЕНТР. Реестры этой версии загрузчика — форджевы обёртки (`NamespacedWrapper`), и прямой
-	 *  {@code Registry.register(BuiltInRegistries.BLOCK, …)} на них запрещён: «Can not register to a locked
-	 *  registry» (`NamespacedWrapper.registerMapping:75`). Регистрировать разрешено только через реестр
-	 *  активного {@code RegisterEvent}. На 26.1.2 обёрток нет и прямой вызов проходит — отсюда и разошлись
-	 *  ветки; здесь путь один и живёт в этом центре, а не россыпью по вызывателям.
-	 *
-	 *  ФАЗА. Блок могли построить внутри чужого обработчика того же события (DeferredRegister-supplier), где
-	 *  {@link #sBlockRegisterEvent} ещё не выставлен. Тогда регистрация откладывается в ту же очередь
-	 *  {@link #DEFERRED_BLOCK_INIT}, которая сливается на этом же {@code RegisterEvent&lt;Block&gt;} —
-	 *  слушатель центра стоит приоритетом {@code LOWEST} и идёт после всех DeferredRegister. */
+	/** Registers only the block (caller wires its own BlockItem). This loader's registries forbid a direct
+	 *  Registry.register call outside the active RegisterEvent's own registry; 26.1.2 has no such wrapper. */
 	public static void registerBlockOnly(Block aBlock, String aRegistryName) {
 		if (aBlock == null || aRegistryName == null) return;
 		if (sBlockRegisterEvent == null) {deferBlockInit(() -> registerBlockOnly(aBlock, aRegistryName)); return;}
@@ -394,17 +292,10 @@ public class GT_API extends Abstract_Mod {
 			, new net.minecraft.resources.ResourceLocation(ModIDs.GT, sanitizeRegName(aRegistryName)), () -> aBlock);
 	}
 
-	/**
-	 * F12: мод-шина, сохранённая из конструктора, чтобы лениво созданные под-неймспейсы могли
-	 * подписаться на {@code RegisterEvent} (см. {@link #itemsFor(String)}).
-	 */
+	/** Mod bus saved from the constructor, so lazily created sub-namespaces can subscribe to RegisterEvent later. */
 	private static IEventBus sModBus = null;
-	/**
-	 * F12: по одному {@code DeferredRegister<net.minecraft.world.item.Item>} на неймспейс-владелец. GT6 позволяет создавать
-	 * Item под чужим modId (аддоны через {@code PrefixItem}), а {@code DeferredRegister} привязан к
-	 * одному неймспейсу — поэтому центр держит карту неймспейс→реестр. Это по-прежнему ОДИН центр
-	 * (весь мод сюда обращается), просто с учётом неймспейса, как было в {@code GameRegistry.registerItem(item,name,modId)}.
-	 */
+	/** One DeferredRegister<Item> per namespace owner: GT6 lets addons create Items under a foreign modId,
+	 *  but DeferredRegister is bound to one namespace, so the center keeps a namespace->registry map. */
 	private static final Map<String, DeferredRegister<net.minecraft.world.item.Item>> ITEMS_BY_NS = new HashMap<>();
 	static {ITEMS_BY_NS.put(ModIDs.GAPI, ITEMS);}
 
@@ -418,24 +309,20 @@ public class GT_API extends Abstract_Mod {
 		return rReg;
 	}
 
-	/** F12/R3-мост, вызывается из {@code gregapi.util.ST.register(Item, String)}: регистрация под
-	 *  неймспейсом GAPI (был прямой выдуманный {@code DeferredRegister.registerItem(...)}). */
+	/** Bridge for Item registration, called from ST.register(Item, String): registers under the GAPI namespace
+	 *  (previously a made-up direct DeferredRegister.registerItem(...) call). */
 	public static net.minecraftforge.registries.RegistryObject<Item> registerItem(Item aItem, String aRegistryName) {
 		return registerItem(aItem, aRegistryName, ModIDs.GAPI);
 	}
 
-	/** F12/R3-мост: регистрация Item под неймспейсом владельца {@code aModIDOwner} (замена выдуманного
-	 *  3-арг {@code DeferredRegister.registerItem(item, name, modId)} из {@code PrefixItem}/{@code ItemFluidDisplay};
-	 *  соответствует оригиналу {@code GameRegistry.registerItem(item, name, modId)}). Централизовано —
-	 *  весь мод регистрирует Item только через этот метод. */
+	/** Bridge: registers an Item under the owner namespace aModIDOwner (replaces the invented
+	 *  3-arg DeferredRegister.registerItem, matching the original GameRegistry.registerItem(item, name, modId)). */
 	public static net.minecraftforge.registries.RegistryObject<Item> registerItem(Item aItem, String aRegistryName, String aModIDOwner) {
 		return itemsFor(aModIDOwner).register(aRegistryName, () -> aItem);
 	}
 
-	/** F12-followup (item-split): ленивая регистрация — supplier КОНСТРУИРУЕТ предмет на RegisterEvent (реестр разморожен →
-	 *  {@code Item.<init>}→{@code createIntrusiveHolder} валиден), а не эагерно в preInit (реестр заморожен → freeze). Call-site:
-	 *  {@code GT_API.registerItemLazy(modId, name, () -> Field = new ItemX(...))} — supplier строит предмет, присваивает поле и
-	 *  возвращает его. Тот же приём, что fluid-split (FluidGT source-supplier). Заменяет эагер {@code new ItemX()} + self-register. */
+	/** Lazy registration: the supplier constructs the item at RegisterEvent (registry unfrozen), not eagerly
+	 *  in preInit (registry frozen); same trick as fluid-split's source-supplier. */
 	public static net.minecraftforge.registries.RegistryObject<Item> registerItemLazy(String aModIDOwner, String aRegistryName, java.util.function.Supplier<? extends Item> aSupplier) {
 		return itemsFor(aModIDOwner).register(sanitizeRegName(aRegistryName), aSupplier);
 	}
@@ -448,29 +335,23 @@ public class GT_API extends Abstract_Mod {
 		return rReg;
 	}
 
-	/** F12-followup (block-split): ленивая регистрация БЛОКА — supplier конструирует блок на RegisterEvent (реестр разморожен →
-	 *  {@code Block.<init>}→{@code createIntrusiveHolder}+setId валидны). BlockItem регистрирует САМ конструктор блока через
-	 *  {@link #registerItemLazy} (работает на RegisterEvent&lt;Block&gt;, т.к. RegisterEvent&lt;Item&gt; ещё не сработал). Call-site:
-	 *  {@code GT_API.registerBlockLazy(modId, name, () -> Field = new BlockX(...))}. Тот же приём, что item/fluid-split. */
+	/** Lazy block registration: the supplier constructs the block at RegisterEvent, when createIntrusiveHolder
+	 *  and setId are valid; its BlockItem registers itself via registerItemLazy, same form as item/fluid split. */
 	public static void registerBlockLazy(String aModIDOwner, String aRegistryName, java.util.function.Supplier<? extends Block> aBlockSupplier) {
 		blocksFor(aModIDOwner).register(sanitizeRegName(aRegistryName), aBlockSupplier);
 	}
 
-	/** neo {@link net.minecraft.resources.ResourceLocation}-путь допускает только [a-z0-9/._-]; GT6-имена предметов содержат
-	 *  заглавные (напр. {@code gt.meta.dustSmall}) — санитизируем ТОЛЬКО ключ регистрации (тот же приём, что
-	 *  {@code FluidGT.safeRegName}). Идентичность предмета для oredict/паритета — по объекту/{@code mNameInternal}, не по ключу. */
+	/** neo's ResourceLocation path only allows [a-z0-9/._-], but GT6 item names contain uppercase.
+	 *  Only the registration KEY is sanitized (same trick as FluidGT.safeRegName); identity is by object, not key. */
 	public static String sanitizeRegName(String aName) {
 		String rName = aName.toLowerCase().replaceAll("[^a-z0-9/._-]", "_");
 		return rName.isEmpty() ? "unnamed" : rName;
 	}
 
-	/** F12/R3-мост, вызывается из {@code gregapi.util.ST.register(Block, String, Class)} (был прямой
-	 *  выдуманный {@code DeferredRegister.registerBlock(...)}). Пара Block+BlockItem регистрируется под
-	 *  одним и тем же именем — как было в оригинальном {@code GameRegistry.registerBlock(Block, Class, String)}. */
-	/** F12-followup (item-split): центральная сборка BlockItem для блока. neo {@code BlockItem} НЕ имеет (Block)-конструктора
-	 *  (только (Block,Properties)) → {@code callConstructor(BlockItem.class,...)} вернул бы null; строим напрямую с id,
-	 *  производным из ключа уже-зарегистрированного блока (BlockItem делит id с блоком). Кастомный класс
-	 *  (ItemBlockBase/PrefixBlockItem/ItemBlockMetaType/…) имеет (Block)-конструктор и сам ставит id из ключа блока. */
+	/** Bridge called from ST.register(Block, String, Class): Block and BlockItem register under
+	 *  the same name, matching the original GameRegistry.registerBlock(Block, Class, String). */
+	/** Central BlockItem assembly for a block. neo's BlockItem has no (Block)-only constructor, so it's built
+	 *  directly with an id derived from the block's already-registered key. */
 	public static BlockItem blockItemFor(Block aBlock, Class<? extends BlockItem> aItemClass) {
 		if (aItemClass != null && aItemClass != BlockItem.class) {
 			BlockItem rItem = (BlockItem)UT.Reflection.callConstructor(aItemClass, 0, null, T, aBlock);
@@ -481,12 +362,8 @@ public class GT_API extends Abstract_Mod {
 
 	public static net.minecraftforge.registries.RegistryObject<Block> registerBlock(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {
 		if (sBlockRegisterEvent != null) {
-			// F12-followup (block-split, MTE): вызвано из deferBlockInit во время RegisterEvent<Block> — блок УЖЕ построен
-			// (реестр разморожен), регистрируем его напрямую в реестр события (ключ санитизирован, совпадает с setId блока);
-			// BlockItem — в ITEMS-DR (обработается на RegisterEvent<Item> позже). DeferredRegister BLOCKS уже мог быть обработан.
-			// F12-namespace (MTE): namespace=GT — gt.multitileentity контент GT6 (golden gregtech:), не gregapi. Единственные
-			// вызыватели registerBlock — MTE (ST.register из MultiTileEntityRegistry/MultiTileEntityBlock). Ключ реестра/item-DR
-			// совпадает с setId блока (ModIDs.GT) и ключом предмета (BuiltInRegistries.BLOCK.getKey(block)=GT). ~17k рецептов паритета.
+			// Called from deferBlockInit during RegisterEvent<Block>: the block is already built, registered directly
+			// into the event's own registry; its BlockItem goes into the ITEMS DeferredRegister, resolved later.
 			sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK, new net.minecraft.resources.ResourceLocation(ModIDs.GT, sanitizeRegName(aRegistryName)), () -> aBlock);
 			itemsFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
 			return null;
@@ -499,10 +376,8 @@ public class GT_API extends Abstract_Mod {
 	private LoggerPlayerActivity mPlayerLogger;
 
 	@SuppressWarnings("unchecked")
-	// javafml 1.20.1 конструирует @Mod-класс БЕЗАРГУМЕНТНЫМ конструктором
-	// (FMLModContainer.constructMod → modClass.getDeclaredConstructor()); аргумент IEventBus появился
-	// только в 26.x. Мод-шина берётся из контекста загрузки — форма 1.20.1, сверена с живым образцом
-	// (reference/mods/Applied-Energistics-2-1.20.1/.../AppEngBase.java:125) и с членом
+	// javafml 1.20.1 constructs the @Mod class with a no-arg constructor (the IEventBus form only appeared
+	// in 26.x); the mod bus is fetched from the loading context instead, matching the 1.20.1 form.
 	// FMLJavaModLoadingContext.getModEventBus()Lnet/minecraftforge/eventbus/api/IEventBus;.
 	public GT_API() {
 		IEventBus aModBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -512,8 +387,8 @@ public class GT_API extends Abstract_Mod {
 		
 		// A bunch of Code that is there to statically initialize the Database in the right order and without crashes.
 		MT.init();
-		// Замена @SidedProxy: строим сторонний прокси здесь, ПОСЛЕ MT.init() (клиентский прокси в ctor читает
-		// MT.*.mRGBa), а не инлайн в статик-инициализаторе поля — иначе class-init тянул MT до STACKMAPS и падал NPE.
+		// Replaces @SidedProxy: the side-specific proxy is built here, after MT.init(), not inline in the static
+		// initializer, which would run class-init before STACKMAPS exists and throw NPE.
 		api_proxy = FMLEnvironment.dist.isClient() ? new GT_API_Proxy_Client() : new GT_API_Proxy_Server();
 		BI.BAROMETER.toString();
 		OP.ore.toString();
@@ -528,12 +403,8 @@ public class GT_API extends Abstract_Mod {
 		IMTE_CanConnectRedstone.class.toString();
 		
 		
-		// F6/26.1.2: здесь мир больше НЕ строится. Level.<init> требует реестр биомов
-		// (Level.java:158 → PalettedContainerFactory:25 → lookupOrThrow(Registries.BIOME)), а на фазе
-		// конструирования мода реестров ещё нет — попытка падала каждый запуск, и CS.DW оставался null.
-		// Мир создаётся, когда реестр появляется: gregapi.dummies.DummyWorld.ensure(server.registryAccess()),
-		// вызывается на старте сервера (Abstract_Mod.onModServerStarting) — раньше рецептов он не нужен,
-		// его единственные потребители зовут recipe.matches(...) уже в игре.
+		// The world is no longer built here: Level.<init> needs the biome registry, which doesn't exist yet at
+		// mod-construction time. The dummy world is created once the registry exists, at server start instead.
 		
 		IconsGT.INDEX_BLOCK_GAS       = TextureSet.addToAll(MD.GT.mID, F, "gas");
 		IconsGT.INDEX_BLOCK_PLASMA    = TextureSet.addToAll(MD.GT.mID, F, "plasma");
@@ -556,25 +427,19 @@ public class GT_API extends Abstract_Mod {
 		OP.wire             .addTextureSet(MD.GT, F);
 		OP.foil             .addTextureSet(MD.GT, F);
 		
-		// F12 boot-timing: блок vanilla-ore-target'ов (ST.make(Blocks.X) = ItemStack) ПЕРЕНЕСЁН в onLoad
-		// (FMLCommonSetupEvent), т.к. в @Mod-конструкции neo ещё не привязал Holder.components предметов
-		// (крах "Components not bound yet", Holder.java:273). Порядок «registered first» сохранён — блок в
-		// САМОМ НАЧАЛЕ onLoad, до остального data-init. См. STATE.md «СИСТЕМНАЯ НАХОДКА F12» / decisions/F12.
+		// The vanilla-ore-target block (ST.make(Blocks.X) = ItemStack) moved to onLoad, since neo hasn't bound
+		// item Holder.components yet during @Mod construction.
 		
 		// F12: "fixing missing container items" (1.7.10 setContainerItem: mushroom_stew->bowl, potion/experience_bottle->
-		// glass_bottle) — В NEO НЕ НУЖНО: ваниль УЖЕ несёт эти remainder по умолчанию (сверено референс:
-		// Items.java MUSHROOM_STEW = ...usingConvertsTo(BOWL); potion/experience_bottle аналогично). Операция избыточна →
-		// корректный no-op (ничего не «missing»), не заглушка. GT6-собственные предметы задают craftRemainder на регистрации.
+		// Not needed in neo: vanilla already carries these craft remainders by default; a correct no-op, not a stub.
+		// GT6's own items set craftRemainder on registration instead.
 		
 		// Fixing Max Stacksizes that don't make sense.
 		ST.forceProperMaxStacksizes();
 		
 		// Fixing some Adventure Mode things.
-		// 1.7.10 правил здесь ЧУЖОЙ объект: Blocks.bed/sponge/hay_block -> "axe", tnt/monster_egg -> "pickaxe",
-		// obsidian -> "pickaxe" 3 (оригинал GT_API.java:204-209). Мутатора чужого блока в neo нет
-		// (harvest-tier задаётся неизменяемо при регистрации), НО мод спрашивает не движок, а свой центр:
-		// все шесть значений лежат в паспорте WD.vanillaPassport, снятом оракулом с ЖИВОГО 1.7.10 — то есть
-		// уже вместе с этой правкой, потому что дампер мерил мод в сборе. Функция на месте, мутация не нужна.
+		// The original mutated a foreign object here (bed/sponge -> "axe", tnt -> "pickaxe"); neo has no such
+		// mutator. The mod asks its own center instead: all six values live in WD.vanillaPassport.
 
 		try {
 			// The Access Transformer should make this work
@@ -584,130 +449,85 @@ public class GT_API extends Abstract_Mod {
 			e.printStackTrace(ERR);
 		}
 
-		// F12 impossible-1:1 (harvest-tier в neo immutable при ctor + data-driven BlockTags.MINEABLE_WITH_*, не runtime-мутатор): reflection-хак "AxeItem/ItemPickaxe.field_150917_c/
-		// field_150915_c" (приватный статический Set<Block> "эффективных" блоков 1.7.10) не имеет 1:1
-		// аналога — инструмент-эффективность в neo тоже data-driven (те же BlockTags.MINEABLE_WITH_*),
-		// подобных изменяемых static-полей на Item-классах в декомпиле нет. Не найдено ни в одном из
-		// 3 корней референса — деградация до no-op.
+		// 1.7.10's reflection hack on a private static "effective tools" field has no neo equivalent: tool
+		// effectiveness is data-driven there too, and no such mutable static field exists in the decompile.
 
-		// F12: центральные DeferredRegister этого мода — на мод-шину; шину запоминаем, чтобы лениво
-		// созданные под-неймспейсы (itemsFor) тоже успели подписаться на RegisterEvent.
+		// The mod's own central DeferredRegisters register on the mod bus; the bus is remembered so lazily
+		// created sub-namespaces (itemsFor) can subscribe to RegisterEvent in time too.
 		sModBus = aModBus;
 		ITEMS .register(aModBus);
 		BLOCKS.register(aModBus);
-		BLOCK_ENTITIES.register(aModBus); // F12-followup (MTE-type-timing): placeholder MTE_TYPE на RegisterEvent<BlockEntityType> (до freeze)
-		ENTITIES.register(aModBus); // F12-entity: EntityType падающего мета-блока (замена EntityRegistry.registerModEntity, оригинал GT_API.java:722)
-		SOUND_EVENTS.register(aModBus); // BUG-113: свои звуки мода (в 1.7.10 хватало sounds.json, в neo нужен SoundEvent в реестре)
-		// F12-followup (block-split, MTE): слив DEFERRED_BLOCK_INIT на RegisterEvent<Block> (реестр разморожен) — единая
-		// точка для подсистем, чьё конструирование блока нельзя выразить одним registerBlockLazy (см. deferBlockInit).
-		// Пара слушателей держит блок-реестр открытым всю фазу регистрации: HIGHEST открывает (до DeferredRegister),
-		// LOWEST сливает отложенную очередь и закрывает (после них). Порядок регистрации остаётся исходным.
+		BLOCK_ENTITIES.register(aModBus); // Placeholder MTE_TYPE on RegisterEvent<BlockEntityType>, before the registry freezes.
+		ENTITIES.register(aModBus); // EntityType of the falling meta-block, replacing EntityRegistry.registerModEntity.
+		SOUND_EVENTS.register(aModBus); // GT6's own sounds: 1.7.10 needed only sounds.json, neo needs a registered SoundEvent.
+		// Pair of listeners keeps the block registry open for the whole phase: HIGHEST opens it before any
+		// DeferredRegister, LOWEST drains the deferred queue and closes it after them.
 		aModBus.addListener(net.minecraftforge.eventbus.api.EventPriority.HIGHEST, GT_API::onRegisterEventOpen);
 		aModBus.addListener(net.minecraftforge.eventbus.api.EventPriority.LOWEST, GT_API::onRegisterEvent);
-		// F6: центральный ворлдген-переходник (Feature/PlacedFeature/BiomeModifier) — тот же мод-бас,
-		// единая точка подписки (decisions/F6-worldgen.md, gregapi/worldgen/GT6WorldgenFeature.java).
+		// Central worldgen adapter (Feature/PlacedFeature/BiomeModifier), on the same mod bus — one subscription point.
 		gregapi.worldgen.GT6WorldgenFeature.register(aModBus);
-		// ENCHANT: центральный переходник кастомных чар-эффектов — тот же мод-бас, единая точка подписки
-		// (gregapi/enchants/EnchantsGT6.java; закрывает стык F6↔ENCHANT wiring, метка `ENCHANT, регистрация`).
+		// Central adapter for custom enchantment effects, on the same mod bus — one subscription point.
 		gregapi.enchants.EnchantsGT6.register(aModBus);
-		// Правка №1 (BUG-106): карта материалов руды на чанке — тот же мод-бас, единая точка подписки
+		// Chunk-level ore material map, on the same mod bus — one subscription point.
 		// (gregapi/block/prefixblock/PrefixBlockOreMap.java).
 		gregapi.block.prefixblock.PrefixBlockOreMap.register(aModBus);
-		// BUG-090: центральный DeferredRegister GT6-зельев-эффектов (flammable/slippery/conductive/sticky/
-		// insanity — «функция, не авторство»: IE/EnviroMine для 26.1.2 нет) — тот же мод-бас, единая точка
-		// подписки (gregapi/potion/MobEffectsGT.java; int-id встают в PotionsGT.ID_* на postInit ниже).
+		// Central DeferredRegister for GT6's own potion effects (flammable/slippery/conductive/sticky/insanity),
+		// since neither IE nor EnviroMine exist for 26.1.2.
 		gregapi.potion.MobEffectsGT.register(aModBus);
-		// F5: центральные DeferredRegister жидкостей (FluidType+Fluid) — тот же мод-бас, единая точка
-		// подписки (decisions/F5-fluids.md §3, gregapi/fluid/FluidGT.java; закрывает прежний долг F12↔F5 wiring).
+		// Central DeferredRegisters for fluids (FluidType+Fluid), on the same mod bus, closing a prior registration wiring gap.
 		gregapi.fluid.FluidGT.FLUID_TYPES.register(aModBus);
 		gregapi.fluid.FluidGT.FLUIDS.register(aModBus);
-		// F5-capability: подписки на мод-шину здесь БОЛЬШЕ НЕТ. В 26.x капы объявлялись событием
-		// RegisterCapabilitiesEvent (регистрация провайдеров по блокам); в 1.20.1 капу объявляет сам
-		// BlockEntity методом getCapability(Capability, Direction) — единственный мост стоит в общем корне
-		// иерархии (TileEntityBase01Root), а знание «что показать» живёт в gregapi/fluid/GT6FluidCapability.java
-		// и gregapi/tileentity/GT6ItemCapability.java. Это форма 1.7.10: наружный контракт нёс сам TE.
-		// Ветка 1.20.1: носитель трекера еды — capability на сущности (в 1.7.10 IExtendedEntityProperties,
-		// в 26.x attachment). Единая точка подписки, ни один другой файл её не дублирует
+		// No mod-bus subscription for capabilities here anymore: on 1.20.1 a BlockEntity declares its own via
+		// getCapability, with the single bridge at the common root and "what to expose" in GT6FluidCapability.
 		// (gregapi/player/EntityFoodTracker.java).
 		gregapi.player.EntityFoodTracker.register(aModBus);
 		// BUG-145 mirror: the ITEM arm of the fluid view — stacks of live IFluidContainerItem items
 		// expose FLUID_HANDLER_ITEM; one listener, declared next to the other capability seams.
 		gregapi.fluid.GT6FluidCapability.registerItemCapabilities();
-		// Ветка 1.20.1: доставка обработки дропа ЧУЖИХ блоков — глобальный модификатор лута (событий со списком
-		// дропов у Forge 1.20.1 нет); правило живёт в GT_API_Proxy.processBlockDrops, здесь только реестр кодека.
+		// On 1.20.1 foreign-block drop handling is delivered via a global loot modifier (Forge 1.20.1 has no
+		// drop-list event); the rule lives in GT_API_Proxy.processBlockDrops, only the codec registration is here.
 		gregapi.loot.GT6BlockDropsModifier.register(aModBus);
-		// Задача A1 (workspace/tasks/consolidation/OPEN-ITEMS.md): доставка GT-добавок ChestGenHooks в 10
-		// ванильных chest-таблиц — ТЕМ ЖЕ реестром GLM-сериализаторов (GT6BlockDropsModifier.SERIALIZERS уже
-		// подписан строкой выше), здесь только гарантия, что вторая запись (chest_loot) в него попадёт.
+		// Uses the same GLM-serializer registry that GT6BlockDropsModifier already subscribed above.
+		// This line only guarantees the second entry (chest_loot) makes it in too.
 		gregapi.loot.GT6ChestLootModifier.register();
-		// F11: центральный крафт-верстак-диспетчер (CustomRecipe SERIALIZERS) — тот же мод-бас, единая точка
-		// подписки (decisions/F11-crafting-recipe.md §7, gregapi/recipes/GT6CraftingDispatcher.java; закрывает
-		// прежний долг F12↔F11 wiring).
+		// Central crafting-bench dispatcher (CustomRecipe SERIALIZERS), on the same mod bus.
 		GT6CraftingDispatcher.register(aModBus);
-		// F14: центральный MenuType GUI (ContainerCommon) — тот же мод-бас, единая точка подписки (decisions/F14-gui-menu.md)
+		// Central GUI MenuType (ContainerCommon), on the same mod bus.
 		gregapi.gui.ContainerCommon.register(aModBus);
-		// F3-render (client): единый динамический тип модели GT6BlockModel на mod-bus (RegisterBlockStateModels).
-		// Только клиент — делегируем в клиент-прокси (server: no-op), общий код не грузит client-only классы.
+		// Single dynamic model type GT6BlockModel, registered on the mod bus (client-only): delegated to the
+		// client proxy, no-op on server, so common code never loads client-only classes.
 		api_proxy.registerClientModels(aModBus);
-		// F16-creative-tab: единый хендлер наполнения вкладок (замена россыпи setCreativeTab) — тот же мод-бас.
+		// Single tab-filling handler (CreativeTabsGT), replacing scattered setCreativeTab calls; on the same mod bus.
 		gregapi.item.CreativeTabsGT.register(aModBus);
-		// F16: отдельного носителя stack-size-override здесь больше нет. С Access Transformer'ом ветки
-		// ST.setMaxStackSize снова мутирует поле предмета прямо (как 1.7.10), и вызовы стоят в 1:1-точках фаз
-		// (ST.forceProperMaxStacksizes — GT_API:520 и :1402; OreDictPrefix.applyAllStackSizes — GT_API:1400).
-		// GameTest'ы (проверка механик в РЕАЛЬНОМ мире) — ОСНАСТКА, а не поставка: живут в src/gametest/java,
-		// подключаются флагом -Pgt6probes и подписываются на мод-шину сами (@EventBusSubscriber). Отсюда их
-		// больше не зовут — production-код об оснастке не знает.
+		// No separate stack-size-override carrier here anymore: with the branch's Access Transformer,
+		// ST.setMaxStackSize mutates the item field directly again, as in 1.7.10.
 
-		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на мод-шину напрямую.
-		// GT6-трёхфазный контракт (Pre/Init/Post) сохранён 1:1 поверх родных событий жизненного цикла neo:
+		// Replaces the @Mod.EventHandler dispatcher: each phase subscribes to the mod bus directly, keeping
+		// GT6's original three-phase (Pre/Init/Post) contract over neo's own lifecycle events.
 		// PreInit -> FMLConstructModEvent; Init -> FMLCommonSetupEvent; PostInit -> FMLLoadCompleteEvent
 		// (decisions/F12-registration-lifecycle.md §4).
 		aModBus.addListener(this::onPreLoad);
 		aModBus.addListener(this::onLoad);
 		aModBus.addListener(this::onPostLoad);
-		// Слой AE2: условный встроенный датапак ae2replacegen (гашение метеоритов) — мод-шина.
+		// AE2 layer: the conditional built-in datapack ae2replacegen (meteorite-generation suppression), on the mod bus.
 		aModBus.addListener(this::onAddPackFinders);
 
-		// Серверные фазы GT6 (Abstract_Mod уже на родных событиях neo) — на игровой шине, не на мод-шине.
+		// GT6's server phases (Abstract_Mod is already on neo's native events) subscribe on the game bus, not the mod bus.
 		MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
 		MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
 		MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
 		MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
-		// BUG-033 (КОРЕНЬ): отложенная item-init должна добежать ДО пре-генерации стартовой зоны — см. onLevelLoadEarlyItemInit.
+		// Root cause note: deferred item-init must finish before spawn-area pre-generation runs (see below).
 		MinecraftForge.EVENT_BUS.addListener(this::onLevelLoadEarlyItemInit);
-		// F11-recipe-scan (граница M-52): /reload пересоздаёт RecipeMap датапака — подавление Replace
-		// переприменяется на OnDatapackSyncEvent (player==null = reload; стреляет ДО отправки рецептов клиенту).
+		// Reload boundary: /reload recreates the datapack's RecipeMap, so Replace's suppression is reapplied
+		// on OnDatapackSyncEvent (player==null means reload), before recipes are sent to the client.
 		MinecraftForge.EVENT_BUS.addListener(this::onDatapackSyncReapplySuppression);
 	}
 
-	/** BUG-033 fix (КОРЕНЬ стартовой зоны) + F12 refinement. **ЕДИНАЯ авторитетная точка исполнения отложенной
-	 *  item-init** ({@link #runDeferredItemInit}, наполняет в т.ч. worldgen-реестр {@code GEN_GT} через
-	 *  {@code Loader_Worldgen}). Прежде F12 держал drain на {@code ServerStartingEvent}, но в порядке загрузки neo
-	 *  пре-генерация стартовой зоны идёт РАНЬШЕ: {@code MinecraftServer.loadLevel()} = {@code createLevels()} [здесь
-	 *  летит {@code LevelEvent.Load}] → {@code prepareLevels()} [«Preparing spawn area», спавн-worldgen] → и лишь ПОТОМ
-	 *  {@code runServer()} шлёт {@code ServerStartingEvent} (сверено neo {@code MinecraftServer.java:403-411,733-739}).
-	 *  Итог прежнего порядка: {@code GEN_GT} пуст на спавне → стартовая зона рождалась ЧИСТОЙ ВАНИЛЬЮ (deepslate/руды/
-	 *  породы не замещались), чанки исследования (после ServerStarting) — нормальные GT6.
-	 *  <p>Фикс: drain на загрузке overworld-уровня — это в {@code createLevels()} (реестры уже заморожены
-	 *  {@code compositeAccess()} = post-bind, ST.make валиден), но ДО {@code prepareLevels()}. Тогда {@code GEN_GT}
-	 *  готов к пре-гену спавна. **Это ЕДИНСТВЕННЫЙ drain** — точка ПОЗЖЕ (ServerStarting) убрана: очередь наполняется
-	 *  только на mod-load (все {@code deferItemInit} в конструкторах/загрузчиках, ДО загрузки уровня), к
-	 *  {@code LevelEvent.Load} она полна, drain её осушает целиком, после ничего не добавляется → ServerStarting-вызов
-	 *  был доказанным no-op (живой полный тест игрока на версии с обоими вызовами это подтвердил: всё — рецепты/вкладки/
-	 *  предметы/генерация — работает при drain'е на LevelEvent.Load, т.е. этот момент пост-bind для ВСЕХ отложек). */
-	/** Вода не восстанавливается сама — это ШТАТНОЕ поведение GT6, а не нововведение порта (подтверждено
-	 *  пользователем живой проверкой в 1.7.10: источник между двумя источниками там НЕ появляется). Порт это
-	 *  поведение потерял, здесь оно ВОССТАНАВЛИВАЕТСЯ. Механизм 1.7.10 в исходнике не опознан (проверены события
-	 *  Forge, ASM-патчи GT6, рефлексия по Blocks.water, конфиги, подмена блоков) — воспроизводится РЕЗУЛЬТАТ.
-	 *  В движке 26.1.2 его даёт ЕДИНСТВЕННЫЙ канал — правило мира
-	 *  {@code water_source_conversion} ({@code GameRules.java:92}, дефолт true), которое читает сама ванильная
-	 *  вода ({@code WaterFluid.canConvertToSource:76-77}). Никакой иной точки у мода нет: жидкость ванильная,
-	 *  её {@code FluidType} принадлежит движку. Поэтому правило выставляется ОДИН раз на загрузке overworld —
-	 *  там же, где мод уже приводит мир в своё состояние. Лава не трогается (в 1.7.10 она и так конечна).
-	 *
-	 *  Настройка {@code general.WaterSourceConversion} возвращает ВАНИЛЬНОЕ поведение (дефолт F = вода конечна,
-	 *  как в GT6). ⚠️ Правило пишется в сам мир (level.dat): после снятия мода оно останется выключенным, пока
-	 *  игрок не вернёт его командой — побочный эффект единственного доступного канала. */
+	/** Single authoritative drain point for deferred item-init: the old ServerStartingEvent drain ran too late,
+	 *  since neo's boot order pre-generates the spawn area before that event fires, leaving GEN_GT empty. */
+	/** Water not regenerating on its own is GT6's normal behavior (confirmed live in 1.7.10), not a port artifact.
+	 *  The only channel here is the vanilla game rule water_source_conversion, set once at overworld load. */
 	private void applyWaterSourceConversionRule(net.minecraft.server.level.ServerLevel aLevel) {
 		try {
 			boolean tWanted = gregapi.data.CS.WATER_SOURCE_CONVERSION;
@@ -722,29 +542,19 @@ public class GT_API extends Abstract_Mod {
 		if (aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel && tLevel.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
 			applyWaterSourceConversionRule(tLevel);
 			runDeferredItemInit();
-			// BUG-054: гейт shift-click ванильной печи (RecipePropertySet.FURNACE_INPUT → AbstractFurnaceMenu.canSmelt:142)
-			// собирается движком на loadLevel ДО этой data-init (FurnaceRecipes ещё пуст → GT6SmeltingDispatcher.input()
-			// отдаёт плейсхолдер BARRIER) → ванильная печь не признаёт GT6-обжигаемое, shift не кладёт его во входной слот.
-			// Пересобираем propertySet ПОСЛЕ наполнения FurnaceRecipes: input() теперь непуст → forSingleInput(SMELTING)
-			// (RecipeManager:257, свежий input(), не кэш) собирает GT6-входы → canSmelt(GT6)=true. ТОТ ЖЕ вызов, что движок
-			// делает на reload (MinecraftServer.java:356,1588), идемпотентен. Топливо (isFuel) не затронуто — оно идёт через
-			// FurnaceFuelBurnTimeEvent, независимо от propertySet. Сама плавка/ручная укладка работали и до фикса (matches live-lookup).
+			// The vanilla furnace's shift-click gate is built by the engine before this data-init runs, while
+			// FurnaceRecipes is still empty; rebuilding the propertySet afterward fixes it, idempotently.
 			net.minecraft.server.MinecraftServer tServer = tLevel.getServer();
-			// F4 роль-C: замена ванильных верстак-рецептов ore-версиями (в 1.7.10 это делал сам Forge в
-			// initVanillaEntries, вторая половина). Именно здесь: RecipeManager полон датапаком, словарь
-			// полон ванилью (роль-B в начале drain'а выше) и GT6-стеками (сам drain). Идемпотентно.
+			// Replaces vanilla crafting-bench recipes with ore-versions, the same thing Forge did in 1.7.10.
+			// Right here: RecipeManager and the dictionary are both already fully populated; idempotent.
 			gregapi.oredict.OreDictionary.initVanillaRecipeReplacements(tServer);
-			// F11-recipe-scan: сканы чужих рецептов (Loader_Recipes_Replace) — ПОСЛЕ роли-C (их вход — её
-			// ore-версии, как в 1.7.10 входом были Forge-замены) и ДО finalizeRecipeLoading ниже (подавление
-			// датапак-рецептов должно попасть в пересборку propertySets/дисплеев recipe book).
+			// Foreign-recipe scans run after role-C (their input is its ore-versions, as in 1.7.10) and before
+			// finalizeRecipeLoading below, so recipe-book propertySets/displays see the suppression.
 			sCurrentServerForRecipeScan = tServer;
 			try {for (Runnable tScan : DEFERRED_RECIPE_SCAN) try {tScan.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_RECIPE_SCAN.clear();}
 			finally {sCurrentServerForRecipeScan = null;}
-			// BUG-091-хвост, датапак-плечо CR.remove (см. CR.DATAPACK_REMOVALS): в 1.7.10 remove(...) удалял и
-			// ВАНИЛЬНЫЕ рецепты живого CraftingManager (бревно→4 доски и т.п.); их neo-наследники в датапаке
-			// подавляются здесь ТЕМ ЖЕ судом, что 1.7.10 — matches() накопленной сеткой, — тем же центром
-			// removeDatapackRecipes, что Replace. Собственный GT6CraftingDispatcher исключён (он матчится на
-			// те же сетки — подавили бы сами себя).
+			// Datapack side of CR.remove: 1.7.10's remove(...) also stripped vanilla recipes from the live
+			// CraftingManager; their neo descendants are suppressed here by the same judge, matches() against the grid.
 			if (tServer != null) try {
 				java.util.Set<net.minecraft.resources.ResourceLocation> tRemove = new java.util.HashSet<>();
 				for (net.minecraft.world.item.ItemStack[] tGrid : gregapi.util.CR.DATAPACK_REMOVALS) {
@@ -752,13 +562,11 @@ public class GT_API extends Abstract_Mod {
 					for (net.minecraft.world.item.crafting.Recipe<?> tAny : tServer.getRecipeManager().getRecipes()) {
 						if (!(tAny instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
 						if (tAny instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
-						try {if (tCraft.matches(tInput, tServer.overworld())) tRemove.add(tAny.getId());} catch(Throwable e) {/*чужой рецепт упал на matches — не наш суд*/}
+						try {if (tCraft.matches(tInput, tServer.overworld())) tRemove.add(tAny.getId());} catch(Throwable e) {/* A foreign recipe failed matches() — not our judgment to make. */}
 					}
 				}
-				// Второе плечо ТОГО ЖЕ класса — снятие по ВЫХОДУ (CR.delate/CR.remout, см. CR.DATAPACK_REMOVALS_OUT).
-				// Суд ровно тот, что был у 1.7.10-remout: сравнение выхода рецепта с накопленным, NBT игнорируется.
-				// Выход берётся getResultItem(registryAccess) — прямой наследник 1.7.10 IRecipe.getRecipeOutput()
-				// (forge-1201-decompiled Recipe.java:19), тем же приёмом, что роль-C (OreDictionary.initVanillaRecipeReplacements).
+				// Second arm of the same class: removal by OUTPUT (CR.delate/CR.remout), matching 1.7.10's remout exactly.
+				// Output comes from getResultItem(registryAccess), the descendant of 1.7.10's getRecipeOutput().
 				for (net.minecraft.world.item.ItemStack tOut : gregapi.util.CR.DATAPACK_REMOVALS_OUT) {
 					for (net.minecraft.world.item.crafting.Recipe<?> tAny : tServer.getRecipeManager().getRecipes()) {
 						if (!(tAny instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
@@ -766,11 +574,11 @@ public class GT_API extends Abstract_Mod {
 						try {
 							net.minecraft.world.item.ItemStack tResult = tCraft.getResultItem(tServer.registryAccess());
 							if (gregapi.util.ST.valid(tResult) && gregapi.util.ST.equal(tResult, tOut, T)) tRemove.add(tAny.getId());
-						} catch(Throwable e) {/*чужой рецепт упал на getResultItem — не наш суд*/}
+						} catch(Throwable e) {/* A foreign recipe failed getResultItem — not our judgment to make. */}
 					}
 				}
-				// Третье плечо ТОГО ЖЕ класса — снятие по ТИПУ рецепта (CR.remoutType). Набор не осушается:
-				// он описывает станок, а не разовую заявку, и переприменяется на каждой загрузке мира.
+				// Third arm of the same class: removal by recipe TYPE (CR.remoutType). Not drained: it describes a
+				// machine, not a one-off request, and is reapplied on every world load.
 				if (!gregapi.util.CR.DATAPACK_REMOVALS_TYPE.isEmpty()) {
 					for (net.minecraft.world.item.crafting.Recipe<?> tAny : tServer.getRecipeManager().getRecipes()) {
 						net.minecraft.resources.ResourceLocation tType = net.minecraftforge.registries.ForgeRegistries.RECIPE_TYPES.getKey(tAny.getType());
@@ -779,28 +587,11 @@ public class GT_API extends Abstract_Mod {
 				}
 				gregapi.util.CR.DATAPACK_REMOVALS_OUT.clear();
 				gregapi.util.CR.DATAPACK_REMOVALS.clear();
-				// Перезаход в одиночке = НОВЫЙ MinecraftServer со свежим (полным) датапаком, а очереди сканов
-				// и DATAPACK_REMOVALS уже осушены первым стартом — накопленный набор ключей переприменяется
-				// ЗДЕСЬ на каждом LevelEvent.Load (идемпотентно; /reload покрыт OnDatapackSyncEvent отдельно).
-				// До этой строки подавление жило только в первом сервере сессии — релог возвращал ваниль
-				// (симптом игрока: «бревно рукой снова даёт 4»; касалось и 21 инструмент-подавления Replace).
+				// Relogging in singleplayer spins up a NEW MinecraftServer with a fresh datapack, but the scan queues
+				// were already drained by the first start; the accumulated key set is reapplied here every load.
 				tRemove.addAll(SUPPRESSED_DATAPACK_RECIPES);
-				// BP-BUG-013 (на main — BUG-095-рецидив/BUG-124): снятие GT6 обязано доставать до ore-ВЕРСИИ
-				// рецепта, а не только до его датапак-оригинала. В 1.7.10 замены Forge (ShapedOreRecipe) и
-				// ванильные рецепты лежали в ОДНОМ CraftingManager, и remout(выход)/remove(сетка) резали их
-				// одним проходом по одному списку (gt6-original CR.java:584 list(), 603-625 remout). Порт разнёс
-				// их по двум спискам — датапак (RecipeManager) и собственный буфер GT6 (CR.BUFFER), — а роль-C
-				// (OreDictionary.initVanillaRecipeReplacements, вызов выше по этому же методу) СТРОИТ ore-версию
-				// ванильного рецепта ПОСЛЕ того, как загрузчики отработали свои снятия: в буфер ложится копия
-				// рецепта, который GT6 только что снял. Симптом игрока: печь крафтилась из голого булыжника, хотя
-				// оригинал даёт её только через OD.craftingFirestarter (Loader_Recipes_Vanilla:59-61,67 против
-				// CR.delate:67). Оба цикла подавления выше до неё не достают ПО ПОСТРОЕНИЮ — они пропускают
-				// GT6CraftingDispatcher, который эту ore-версию и подаёт в верстак.
-				// Суд идёт по ИСТОЧНИКУ, а не по выходу: ore-версия помнит ключ своего датапак-оригинала
-				// (mSourceId, OreDictionary:358,370). Оригинал подавлен -> подавлена и ore-версия; оригинал жив ->
-				// ore-версия остаётся супермножеством живого рецепта, как и задумано ролью-C. Опора — tRemove, куда
-				// уже влит персистентный SUPPRESSED_DATAPACK_RECIPES: сами регистры снятия осушаются выше, и проход
-				// по ним был бы верен только на ПЕРВОЙ загрузке мира (тот же класс ошибки, что чинила строка выше).
+				// GT6's own recipe suppression must also reach a recipe's ore-VERSION, not just its datapack original:
+				// role-C builds that version AFTER loaders already ran their removals, missing it by construction.
 				int tDroppedOre = 0;
 				for (java.util.Iterator<gregapi.recipes.ICraftingRecipeGT> tIt = gregapi.util.CR.BUFFER.iterator(); tIt.hasNext();) {
 					gregapi.recipes.ICraftingRecipeGT tRecipe = tIt.next();
@@ -812,112 +603,36 @@ public class GT_API extends Abstract_Mod {
 				OUT.println("GT_API: ore-версий роли-C снято вслед за подавленным оригиналом (BP-BUG-013): " + tDroppedOre);
 				removeDatapackRecipes(tServer, tRemove);
 			} catch(Throwable e) {e.printStackTrace(ERR);}
-			// Ветка 1.20.1: пересобирать нечего — статического RecipePropertySet, ради которого стоял
-			// finalizeRecipeLoading, в этой версии не существует; shift-click-гейт печи живой
-			// (AbstractFurnaceMenu.canSmelt:145-146 → getRecipeFor → matches). Класс дефекта BUG-054 отсутствует
-			// (разбор — journal шов-работа №1, Б-3).
-			// Задача A1 (было BUG-039, тот же класс тайминга): здесь раньше стояла догоняющая инъекция
-			// GT-пулов addPool'ом в уже загруженные таблицы — LootTableLoadEvent отстреливал и таблица
-			// замораживалась СИНХРОННО, до этой data-init, поэтому addPool падал на КАЖДОМ старте (10
-			// исключений). Канал снят: доставка теперь идёт живым IGlobalLootModifier'ом
-			// (gregapi.loot.GT6ChestLootModifier), который таблицы не касается вовсе — ни этой точки, ни
-			// LootTableLoadEvent-слушателя ему не нужно.
+			// Nothing to rebuild on 1.20.1: the static RecipePropertySet finalizeRecipeLoading served doesn't exist here.
+			// The old catch-up loot-pool injection is gone too; delivery now goes through the live IGlobalLootModifier.
 		} else if (aEvent.getLevel() instanceof net.minecraft.world.level.Level tClientLevel && tClientLevel.isClientSide()) {
-			// BUG-094 (дедикейт: камни/палки/машины прозрачны): у клиента, подключённого к ВЫДЕЛЕННОМУ серверу,
-			// ServerLevel не существует → единственный drain выше НИКОГДА не бежал → вся отложенная item-init
-			// (MTE-регистрации 4297, mDrops, oredict, вкладки…) на клиенте пуста; ни один GT6-пакет синка не мог
-			// создать клиент-BE (getRegistry(id).mRegistry.size()==0, замер стенда gt6remoteprobe: NULL=228/228).
-			// В 1.7.10 эта init жила в FML-фазах, бежавших НА ОБЕИХ сторонах, — клиентское плечо потерялось при
-			// переносе на серверное событие. Одиночка маскирует: интегрированный сервер осушает очередь в той же
-			// JVM ДО загрузки ClientLevel → здесь очередь уже пуста → no-op (идемпотентно по пустоте очереди).
-			// Тайминг тот же, что у серверного плеча: ClientLevel.Load = post-bind (реестры/компоненты привязаны).
-			// Серверные хвосты (роль-C, recipe-скан, propertySets, лут) остаются ТОЛЬКО в серверной ветви — у
-			// удалённого клиента рецепты/луты приходят синком с сервера.
+			// A remote client has no ServerLevel, so the drain above never ran there, leaving deferred item-init
+			// empty on the client. Singleplayer masked it, since the integrated server drains it first.
 			runDeferredItemInit();
 		}
 	}
 
-	/**
-	 * PreInit. Замена {@code @Mod.EventHandler onPreLoad(FMLPreInitializationEvent)}: подписан в
-	 * конструкторе на {@link FMLConstructModEvent} (мод-шина). Строит GT6-шим {@code FMLPreInitializationEvent}
-	 * (носитель фазы, gregapi.api) и передаёт его в {@code Abstract_Mod.onModPreInit(...)} — тело фазы
-	 * (onModPreInit2 и далее) остаётся байт-в-байт как в оригинале.
-	 * F12-timing (boot-подтверждено: мод бутится, регистрация
-	 * контента внутри PreInit работает); формально относительно
-	 * FMLConstructModEvent на всех сборках; сверить при первой реальной регистрации через ITEMS/BLOCKS.
-	 */
-	/**
-	 * Слой AE2: подключение ВСТРОЕННОГО датапака {@code resources/ae2replacegen} — remove-тег, опустошающий
-	 * {@code ae2:has_meteorites} (единственная генерация AE2). Пак подключается ТОЛЬКО при
-	 * {@code CS.AE2_REPLACE_METEORITE_GENERATION} (мастер-ключ {@code ae2/ReplaceMeteoriteGeneration},
-	 * читается в {@link #onModPreInit2} по образцу флагов ic2) — вторая половина того же ключа заводит
-	 * бедрок-жилу метеоритного железа в {@code Loader_Worldgen}: есть метеорит — нет жилы, нет метеорита —
-	 * есть жила. У самого AE2 рубильника генерации нет (в rv3 был — {@code AEFeature.MeteoriteWorldGen};
-	 * у 15.4.10 структура объявлена датапаком безусловно, {@code InitStructures.java:41-54}, а в конфиге про
-	 * метеориты только {@code spawnPressesInMeteorites}) — поэтому рычаг наш.
-	 *
-	 * <p><b>Почему пак собирается РУКАМИ, а не одной строкой.</b> Событие 1.20.1
-	 * ({@code net.minecraftforge.event.AddPackFindersEvent}) умеет ровно одно —
-	 * {@code addRepositorySource(RepositorySource)} ({@code AddPackFindersEvent.java:34}); удобной
-	 * {@code addPackFinders(id, тип, имя, источник, alwaysActive, позиция)} у него нет (она появилась в
-	 * поздних версиях, и на ветке main используется именно она). Поэтому {@code Pack} строится сам:
-	 * {@code Pack.readMetaAndCreate(id, имя, required, поставщик, тип, позиция, источник)}
-	 * ({@code Pack.java:34}), поставщик — {@code PathPackResources(packId, isBuiltin, корень)}
-	 * ({@code PathPackResources.java:51}; корень — папка, СОДЕРЖАЩАЯ data/, её и отдаёт
-	 * {@code IModFile.findResource}). {@code Pack.ResourcesSupplier} в 1.20.1 — один метод
-	 * {@code open(String)} ({@code Pack.java:190-192}).
-	 *
-	 * <p><b>Тайминг и порядок.</b> Событие стреляет при создании {@code PackRepository}, то есть при
-	 * открытии/создании мира либо старте выделенного сервера; наш preInit — {@code FMLConstructModEvent},
-	 * самая ранняя фаза мода, поэтому флаг к моменту события выставлен всегда.
-	 * {@code Pack.Position.TOP} ставит пак ПОСЛЕ датапака самого AE2 — иначе {@code remove} молчал бы,
-	 * снимая ещё не добавленное. {@code required=true} = пак не предмет выбора игрока, им правит ключ конфига.
-	 */
-	/**
-	 * Движко-шов ветки 1.20.1 (не регресс, у main этого шва нет — там {@code BlockStateModelDispatcher}
-	 * устроен иначе, {@code neo-decompiled/.../BlockStateModelDispatcher.java:123}): {@code ModelBakery}
-	 * {@code (forge-1201-decompiled/net/minecraft/client/resources/model/ModelBakery.java:336-343)} в
-	 * {@code finally} безусловно обходит ВСЕ {@code BlockState}-варианты каждого блока и на КАЖДЫЙ, для
-	 * которого {@code blockStateResources} пуст ({@code :289} — {@code getOrDefault(..., List.of())}),
-	 * печатает {@code WARN "missing model for variant"}; тем же приёмом {@code loadModel (:249)} печатает
-	 * {@code WARN "Unable to load model"} на {@code <id>#inventory}, если {@code models/item/<path>.json}
-	 * не нашёлся. У GregTech НЕТ ни одного blockstate/item-model JSON — модель рисуется процедурно и
-	 * впрыскивается ПОСЛЕ выпечки ({@link GT_API_Proxy_Client#onModifyBakingResult}, само содержимое
-	 * этого шва не трогаем — предупреждение печатается РАНЬШЕ инъекции, на этапе {@code ModelManager.
-	 * loadBlockStates/loadBlockModels}, который спрашивает ресурсы через {@code ResourceManager}, то есть
-	 * через ЭТО событие). Лечим шов на ЕГО уровне — отдаём движку заглушку-ресурс, а не глушим лог.
-	 * <p>Заглушка — ссылка на ВАНИЛЬНУЮ пустую модель {@code minecraft:block/air} (переиспользование,
-	 * образец 1:1 — {@code assets/minecraft/blockstates/air.json} client-extra артефакта): движок находит
-	 * модель, WARN не печатается; реальный визуал блока/предмета этим не затронут — он приходит позже,
-	 * тем же {@code ModifyBakingResult}, который безусловно ПЕРЕЗАПИСЫВАЕТ карту моделей для каждого
-	 * GT6-блока/предмета (см. тот метод) — эта заглушка для них никогда не остаётся видимой.
-	 * <p>ПРОЦЕДУРНЫЙ пак (вторая форма центра, рядом с {@link #addBuiltInPack}): 707 блоков / 847
-	 * предметов GT6 нельзя раздать статичными JSON-файлами — их список и есть содержимое реестров
-	 * {@code BuiltInRegistries.BLOCK/ITEM}, заполняемых модом процедурно (ось проекта — генератор, не
-	 * выхлоп). Носитель — {@link GT6ProceduralClientResourcePack}, см. её javadoc.
-	 */
+	/** Replaces @Mod.EventHandler onPreLoad: subscribed in the constructor to FMLConstructModEvent (mod bus).
+	 *  Builds the GT6 shim event and passes it to Abstract_Mod.onModPreInit, whose body stays the original. */
+	/** Mounts a built-in datapack that empties AE2's ae2:has_meteorites tag, gated by the same key that
+	 *  drives the meteoric-iron vein in Loader_Worldgen; AE2 15.4.10 itself has no generation toggle. */
+	/** 1.20.1-specific engine seam: ModelBakery unconditionally warns "missing model" for every block/item
+	 *  lacking a static model JSON, which GregTech never has (its models are procedural, injected after baking). */
 	public void onAddPackFinders(net.minecraftforge.event.AddPackFindersEvent aEvent) {
-		// CLIENT_RESOURCES — отдельная ветка ДО серверного return ниже: событие с этим типом на выделенном
-		// сервере вообще не долетает (PackRepository ресурсов строит только Minecraft.<init>, т.е. клиент),
-		// а с AE2-датапаками (SERVER_DATA, дальше по методу) эта заглушка никак не связана.
+		// CLIENT_RESOURCES is handled before the server-only return below: a dedicated server never receives
+		// this event type at all, and it has nothing to do with the AE2 datapacks handled further down.
 		if (aEvent.getPackType() == net.minecraft.server.packs.PackType.CLIENT_RESOURCES) {addProceduralClientModelPack(aEvent); return;}
 		if (aEvent.getPackType() != net.minecraft.server.packs.PackType.SERVER_DATA) return;
 		if (!MD.AE.mLoaded) return;
-		// ПЕРВЫЙ пак — гашение генерации (мастер-ключ ReplaceMeteoriteGeneration).
+		// First pack: suppresses meteorite generation, gated by the master key ReplaceMeteoriteGeneration.
 		if (AE2_REPLACE_METEORITE_GENERATION) addBuiltInPack(aEvent, "ae2replacegen", "GT6: AE2 generation replaced by GregTech");
-		// ВТОРОЙ пак, свой ключ: перепайка рецептов AE2, у которых МЫ забрали вход. Пока такой один — Network
-		// Tool: погасив оба кварцевых КЛЮЧА (узел DisableAllQuartzToolRecipes), мы убили и его крафт
-		// (tools/network_tool.json просит тег ae2:quartz_wrench), а он ME-механика и обязан жить. Переопределение
-		// подменяет вход на ключ ГРЕГА ингредиентом forge:partial_nbt (PartialNBTIngredient): предмет
-		// gregtech:gt.metatool.01 плюс поле стека Damage = 16 (ToolsGT.WRENCH). Отбор ЧАСТИЧНЫЙ — прочее NBT
-		// инструмента (материал, износ) не сравнивается, поэтому подходит ключ ЛЮБОГО материала, а меч
-		// (Damage 0) не подходит. Пак отдельный, а не файл в первом: ключи независимы — выключив гашение
-		// инструментов, сборщик возвращает и кварцевые ключи, и родной рецепт, а метеориты этим не задеваются.
+		// Second pack, own key: rewires the one AE2 recipe whose input GregTech took away (the ME Network Tool,
+		// whose craft needs a quartz wrench we disabled); kept separate since the two config keys are independent.
 		if (AE2_KILL_QUARTZ_TOOLS) addBuiltInPack(aEvent, "ae2gtrecipes", "GT6: AE2 recipes rewired to GregTech inputs");
 	}
 
-	/** Подключение ОДНОГО встроенного датапака мода. Одна точка на все паки порта: форма сборки {@code Pack}
-	 *  на 1.20.1 нетривиальна (см. javadoc выше), и повторять её на каждый пак — прямая дорога к расхождению. */
+	/** Mounts one built-in mod datapack. One point for every pack in the port, since assembling a Pack
+	 *  on 1.20.1 is non-trivial and repeating that form per pack would only invite drift. */
 	private static void addBuiltInPack(net.minecraftforge.event.AddPackFindersEvent aEvent, String aDir, String aTitle) {
 		aEvent.addRepositorySource(aConsumer -> {
 			try {
@@ -936,13 +651,8 @@ public class GT_API extends Abstract_Mod {
 		});
 	}
 
-	/** Подключение ВТОРОЙ формы того же центра — ПРОЦЕДУРНОГО клиентского пака (см. javadoc {@link
-	 *  #onAddPackFinders} и {@link GT6ProceduralClientResourcePack}). В отличие от {@link #addBuiltInPack}
-	 *  здесь нет каталога на диске ({@code findResource}) — поставщик строит носитель прямо из ID пака;
-	 *  форма сборки {@code Pack} та же (см. javadoc {@link #onAddPackFinders} у AE2-пака выше про
-	 *  {@code Pack.readMetaAndCreate}). {@code Position.BOTTOM} — заглушка обязана быть НИЖЕ любых
-	 *  настоящих ассетов (мода и ресурспаков игрока): она отдаёт ресурс ТОЛЬКО когда реального нет
-	 *  (у GT6 JSON-моделей нет вовсе), но если он появится — обязана уступить, а не перекрыть. */
+	/** Mounts the second form of the same center — the procedural client pack (see javadoc above).
+	 *  Position.BOTTOM keeps the placeholder below any real assets, so a real model always wins. */
 	private static void addProceduralClientModelPack(net.minecraftforge.event.AddPackFindersEvent aEvent) {
 		aEvent.addRepositorySource(aConsumer -> {
 			try {
@@ -960,30 +670,8 @@ public class GT_API extends Abstract_Mod {
 		});
 	}
 
-	/**
-	 * Носитель ПРОЦЕДУРНОГО источника клиентских ресурсов (движко-шов {@link #onAddPackFinders}, ветка
-	 * 1.20.1). Контракт — {@code PackResources} ({@code forge-1201-decompiled/net/minecraft/server/packs/
-	 * PackResources.java}), 7 методов; здесь через {@code AbstractPackResources} переиспользованы
-	 * {@code packId/isBuiltin/getMetadataSection} (тот читает {@code pack.mcmeta} через
-	 * {@link #getRootResource}, второй раз его не парсим).
-	 * <p><b>Лениво.</b> {@code AddPackFindersEvent} стреляет ОЧЕНЬ рано ({@code PackRepository} строится в
-	 * {@code Minecraft.<init>}) — реестры блоков/предметов тогда ещё не обязаны быть полны. Здесь НИЧЕГО
-	 * не читается из реестра в конструкторе: {@link #getResource}/{@link #listResources} обходят
-	 * {@code BuiltInRegistries.BLOCK/ITEM} НА КАЖДЫЙ запрос — тот момент физически позже (первая загрузка
-	 * ресурсов, {@code ModelManager.reload}), реестры к нему заморожены.
-	 * <p><b>Отдаёт только своё.</b> Принадлежность namespace спрашивается у ЦЕНТРА признака —
-	 * {@code CS.ModIDs.isGregNamespace}; там же его спрашивает клиентский инжектор моделей
-	 * ({@code GT_API_Proxy_Client}). Центр общий намеренно: копия признака в двух местах была бы
-	 * дублированием сущности, а ссылка отсюда (общий класс, который грузит и выделенный сервер) на
-	 * клиентский прокси — протечкой клиентского типа в серверный classloading. Путь
-	 * признаётся своим, ТОЛЬКО если под ним в реестре РЕАЛЬНО есть блок/предмет — на любой чужой запрос
-	 * (неизвестный namespace, неизвестный путь, несуществующий блок/предмет) — {@code null}/пусто, как и
-	 * положено {@code PackResources} (см. {@code VanillaPackResources.getResource} — тот же контракт).
-	 * <p>Ресурс — ровно ДВА вида, обе ссылки на ВАНИЛЬНУЮ пустую модель {@code minecraft:block/air}
-	 * (переиспользование, своей модели не заводим): {@code blockstates/<path>.json} — форма 1:1
-	 * {@code assets/minecraft/blockstates/air.json} (пустой селектор {@code ""} покрывает все состояния
-	 * блока разом), {@code models/item/<path>.json} — {@code {"parent":"minecraft:block/air"}}.
-	 */
+	/** Backing store for the procedural client resource source. Nothing reads the registry in the constructor,
+	 *  since the event fires before it's guaranteed full; getResource walks the registry on every call instead. */
 	private static final class GT6ProceduralClientResourcePack extends net.minecraft.server.packs.AbstractPackResources {
 		private static final byte[] PACK_META = "{\"pack\":{\"description\":\"GT6 procedural model placeholders (blockstates/air, models/item parent air)\",\"pack_format\":15}}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
 		private static final byte[] BLOCKSTATE_JSON = "{\"variants\":{\"\":{\"model\":\"minecraft:block/air\"}}}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
@@ -1018,8 +706,7 @@ public class GT_API extends Abstract_Mod {
 		@Override
 		public void listResources(net.minecraft.server.packs.PackType aType, String aNamespace, String aPath, net.minecraft.server.packs.PackResources.ResourceOutput aOutput) {
 			if (aType != net.minecraft.server.packs.PackType.CLIENT_RESOURCES || !ModIDs.isGregNamespace(aNamespace)) return;
-			// Префиксы — те же, что спрашивает ModelBakery: BLOCKSTATE_LISTER="blockstates" (ModelBakery.java:88),
-			// MODEL_LISTER="models" (:89, item-модели лежат под models/item/, что и отдаём).
+			// Prefixes match what ModelBakery itself asks for: "blockstates" and "models" (item models under models/item/).
 			if (aPath.equals("blockstates")) {
 				for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
 					net.minecraft.resources.ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
@@ -1041,11 +728,11 @@ public class GT_API extends Abstract_Mod {
 		}
 
 		@Override
-		public void close() {/* нечего закрывать — нет ни файлов, ни потоков */}
+		public void close() {/* Nothing to close here — no files or streams held. */}
 	}
 
 	public void onPreLoad(FMLConstructModEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, this::onPreLoadPhase);}
-	/** Тело фазы PreInit; запускается центром {@code Abstract_Mod#runPhaseInModLoadOrder} в порядке загрузки модов. */
+	/** Body of the PreInit phase; run by the center Abstract_Mod#runPhaseInModLoadOrder, in mod load order. */
 	private void onPreLoadPhase() {
 		FMLPreInitializationEvent aEvent = new FMLPreInitializationEvent(FMLPaths.CONFIGDIR.get().toFile());
 
@@ -1064,21 +751,15 @@ public class GT_API extends Abstract_Mod {
 		onModPreInit(aEvent);
 	}
 
-	/**
-	 * Init. Замена {@code @Mod.EventHandler onLoad(FMLInitializationEvent)}: подписан в конструкторе на
-	 * {@link FMLCommonSetupEvent} (мод-шина).
-	 */
+	/** Replaces @Mod.EventHandler onLoad: subscribed in the constructor to FMLCommonSetupEvent (mod bus). */
 	public void onLoad(FMLCommonSetupEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, this::onLoadPhase);}
-	/** Тело фазы Init; запускается центром {@code Abstract_Mod#runPhaseInModLoadOrder} в порядке загрузки модов. */
+	/** Body of the Init phase; run by the center Abstract_Mod#runPhaseInModLoadOrder, in mod load order. */
 	private void onLoadPhase() {
-		// F1/F12/F16 boot-timing: ore-target'ы + рецепты создают ItemStack (ST.make(Blocks/Items)) — onLoad(CommonSetup) НЕ
-		// пост-bind (Holder.components привязывает ReloadableServerResources на server-start). Оборачиваем в deferItemInit →
-		// выполнится в onModServerStarting2 (post-bind). НЕ в паритет-данных (ore-targets/recipes ≠ material/prefix scalar).
+		// Ore-targets and recipes create an ItemStack, and onLoad still isn't post-bind (components bind at server start).
+		// Wrapped in deferItemInit, so it runs at onModServerStarting2 (post-bind).
 		deferItemInit(() -> {
-		// vanilla-ore-target'ы. Порядок «registered first» сохранён (первый deferred).
-		// It is VERY important that those are registered first. Otherwise GregTech would output its own Storage Blocks.
-		// F12: REMAP-RULES.md §C/§C-bis блок-флэттен (данные, не поведение) — Blocks.<snake_case> удалены,
-		// заменены реальными UPPER_SNAKE-константами neo; RedSand и "smooth double stone slab" (meta 8) → RED_SAND/SMOOTH_STONE.
+		// REMAP-RULES block-flatten (data, not behavior): old snake_case Blocks fields are gone, replaced by
+		// neo's real UPPER_SNAKE constants (e.g. RedSand -> RED_SAND).
 		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.Stone     , ST.make(Blocks.GRAVEL           , 1, 0), T, F, T);
 		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.SoulSand  , ST.make(Blocks.SOUL_SAND        , 1, 0), T, F, T);
 		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.Sand      , ST.make(Blocks.SAND             , 1, 0), T, F, T);
@@ -1097,14 +778,14 @@ public class GT_API extends Abstract_Mod {
 		OreDictManager.INSTANCE.setTarget_(OP.blockGem  , MT.Coal      , ST.make(Blocks.COAL_BLOCK       , 1, 0), T, F, T);
 		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.Redstone  , ST.make(Blocks.REDSTONE_BLOCK   , 1, 0), T, F, T);
 
-		// F12 boot-timing (ПЕРЕНЕСЕНО из onModPreInit2): рецепт-фиксы создают ItemStack (ST.make) — невозможно в preInit
-		// (Holder.components не привязаны); здесь (после регистрации+привязки) можно. Fixing vanilla Oak Plank Slab Recipe.
+		// Recipe fixes moved from onModPreInit2: they create an ItemStack, impossible in preInit since
+		// Holder.components aren't bound yet; possible here, after registration and binding.
 		CR.remove(ST.make(Blocks.OAK_PLANKS, 1, 0), ST.make(Blocks.SPRUCE_PLANKS, 1, 0), ST.make(Blocks.BIRCH_PLANKS, 1, 0));
 		CR.shaped(ST.make(Blocks.OAK_SLAB, 6, 0), CR.NONE, "WWW", 'W', ST.make(Blocks.OAK_PLANKS, 1, 0));
 		// Preventing a Water Dupe by registering this Recipe early so it won't be overridden
 		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.GLASS_BOTTLE, 1, 0), FL.Water.make(250), NF, ST.make(Items.POTION, 1, 0));
 		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.POTION, 1, 0), ST.make(Items.GLASS_BOTTLE, 1, 0));
-		}); // конец deferItemInit-обёртки ore-targets/recipes (выполнится @onModServerStarting2, post-bind)
+		}); // End of the deferItemInit wrapper for ore-targets/recipes (runs at onModServerStarting2, post-bind).
 
 		for (OreDictMaterial tMaterial : OreDictMaterial.MATERIAL_ARRAY) if (tMaterial != null && !tMaterial.contains(TD.Properties.INVALID_MATERIAL)) {
 			tMaterial.mOreProcessingMultiplier = UT.Code.bindStack(ConfigsGT.OREPROCESSING.get(ConfigCategories.Materials.oreprocessingoutputmultiplier, tMaterial.mNameInternal, 1));
@@ -1117,13 +798,12 @@ public class GT_API extends Abstract_Mod {
 			}
 		}
 		onModInit(new FMLInitializationEvent());
-		// F1/F12/F16 item-model: runDeferredItemInit ПЕРЕНЕСЁН в onModServerStarting2 — onLoad(CommonSetup) НЕ пост-bind
-		// (верифицировано: Holder.components привязывает ReloadableServerResources на server-start, Holder.java:108).
+		// runDeferredItemInit moved to onModServerStarting2: onLoad(CommonSetup) isn't post-bind
+		// (Holder.components only bind at server start).
 	}
 	
-	// PostInit: подписан в конструкторе на FMLLoadCompleteEvent (мод-шина) — родное neo-событие
-	// заменяет старую FML 1.7.10 сложность вокруг loadComplete (комментарий оракула выше снят вместе
-	// с @Mod.EventHandler-диспетчером, который и был источником проблемы).
+	// PostInit: subscribed in the constructor to FMLLoadCompleteEvent (mod bus); neo's native event
+	// replaces the old FML 1.7.10 complexity around loadComplete.
 	public void onPostLoad(FMLLoadCompleteEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModPostInit(new FMLPostInitializationEvent()));}
 
 	@Override public String getModID() {return MD.GAPI.mID;}
@@ -1131,12 +811,10 @@ public class GT_API extends Abstract_Mod {
 	@Override public String getModNameForLog() {return "GT_API";}
 	@Override public Abstract_Proxy getProxy() {return api_proxy;}
 
-	// Серверные фазы — подписаны в конструкторе на MinecraftForge.EVENT_BUS (игровая шина), не на мод-шину.
+	// Server phases are subscribed in the constructor to MinecraftForge.EVENT_BUS (game bus), not the mod bus.
 	public void onServerStarting  (ServerStartingEvent aEvent) {
-		// ЦЕНТР ЛОКАЛИЗАЦИИ (BUG-082), СЕРВЕРНОЕ ПЛЕЧО. В 1.7.10 впрыск имён жил в общем коде
-		// (LanguageRegistry.injectLanguage — обе стороны), поэтому серверные строки тоже были человеческими.
-		// Клиентское плечо висит на загрузке ресурсов (GT_API_Proxy_Client), которой на выделенном сервере нет —
-		// здесь та же надстройка ставится над серверной таблицей. Подробности — LanguageHandler.injectIntoEngine().
+		// Localization center, server arm. In 1.7.10 name injection lived in shared code, so server strings
+		// were human-readable too; the client arm hooks resource loading, which a dedicated server lacks.
 		int tInjected = gregapi.lang.LanguageHandler.injectIntoEngine();
 		if (tInjected > 0) OUT.println("GT6 localization: имён GT6 дописано в таблицу движка (сервер): " + tInjected);
 		onModServerStarting(aEvent);
@@ -1148,8 +826,7 @@ public class GT_API extends Abstract_Mod {
 	@Override
 	@SuppressWarnings({ "resource", "deprecation" })
 	public void onModPreInit2(FMLPreInitializationEvent aEvent) {
-		// neo-сигнатура сверена с fml-decompiled/net/neoforged/fml/InterModComms.java:27
-		// (decisions/F12-registration-lifecycle.md §7 — вопрос закрыт).
+		// neo signature verified against fml-decompiled InterModComms.
 		InterModComms.sendTo(MD.GT.mID, "carbonconfig", "remapGui", () -> MD.GAPI.mID);
 
 		File
@@ -1201,12 +878,8 @@ public class GT_API extends Abstract_Mod {
 			MAT_LOG.println("**********************************************************************");
 			MAT_LOG.println("* This is the complete List of usable GregTech Materials             *");
 			MAT_LOG.println("**********************************************************************");
-		// ⛔ МОЛЧАНИЕ СНЯТО ТОЧЕЧНО. Класс: «инициализация подсистемы мода падает, и никто не узнаёт» —
-		// именно он спрятал на два месяца мёртвый журнал активности игрока (см. ниже). Здесь молчание
-		// прячет невыполненную работу: MAT_LOG остаётся буфером, и списка материалов не будет вовсе.
-		// Пишем существующим центром мода (ERR — тот же, которым мод сообщает обо всех своих сбоях),
-		// своего механизма не заводим. Стиль автора не трогаем: пустые перехваты, за которыми стоит видимое
-		// следствие (createNewFile — файл всё равно создаст PrintStream ниже), оставлены как есть.
+		// A subsystem init failing SILENTLY is the same bug class that hid the player-activity log for a long time.
+		// Reported through the mod's existing error channel (ERR); no new mechanism added.
 		} catch (Throwable e) {ERR.println("GT_API: список материалов (materiallist.log) не открыт — файла не будет"); e.printStackTrace(ERR);}
 		
 		tFile = new File(DirectoriesGT.LOGS, "oredict.log");
@@ -1223,9 +896,8 @@ public class GT_API extends Abstract_Mod {
 		if (ConfigsGT.GREGTECH.get("general", "LoggingPlayerActivity", !CODE_CLIENT)) {
 			tFile = new File(DirectoriesGT.LOGS, "playeractivity_"+(System.currentTimeMillis()/60000)+".log");
 			if (!tFile.exists()) {try {tFile.createNewFile();} catch (Throwable e) {/**/}}
-			// ⛔ НОСИТЕЛЬ, ИЗ-ЗА КОТОРОГО КЛАСС И БЫЛ НАЙДЕН: здесь молча гасло исключение шины
-			// («Cannot register listeners for abstract …»), mPlayerLogger оставался null, и журнал активности
-			// игрока не работал ни одной строкой — при живом конфиге и созданном файле.
+			// The actual carrier that surfaced this bug class: a bus-registration exception was silently swallowed,
+			// mPlayerLogger stayed null, and the activity log never wrote a line, despite a live config.
 			try {mPlayerLogger = new LoggerPlayerActivity(new PrintStream(tFile));} catch (Throwable e) {ERR.println("GT_API: журнал активности игрока не заведён — записей о действиях игроков не будет"); e.printStackTrace(ERR);}
 		}
 		
@@ -1382,14 +1054,8 @@ public class GT_API extends Abstract_Mod {
 		TREE_GROWTH_TIME                        = ConfigsGT.GREGTECH.get("general", "Tree_Growth_Time"                 , 1);
 		ENTITY_CRAMMING                         = ConfigsGT.GREGTECH.get("general", "MaxEqualEntitiesAtOneSpot"        , 3);
 		DRINKS_ALWAYS_DRINKABLE                 = ConfigsGT.GREGTECH.get("general", "drinks_always_drinkable"          , F);
-		// ⚠️ ОТКЛОНЕНИЕ СВЕРХ 1:1, СДЕЛАННОЕ ОСОЗНАННО. Оригинал 1.7.10 держит здесь F
-		// (gregtech6/src/main/java/gregapi/GT_API.java:505, тот же ключ general/Emit_EU_as_RF_from_Blocks), и
-		// ветка держала F, пока AE2 не была подключена. Со слоем AE2 обоснование меняется на противоположное:
-		// генераторы AE2 погашены узлом DisableAllEnergyGeneratorRecipes (Compat_Recipes_AppliedEnergistics),
-		// а принимает энергию она движковой FE-капой; при F мост GT6 -> FE закрыт для всех, кроме белого
-		// списка (EnergyCompat.canConnectElectricity/insertEnergyInto), и сеть AE2 осталась бы БЕЗ ИСТОЧНИКА
-		// ПИТАНИЯ прямо из коробки. Поэтому дефолт поднят до T — тем же решением и по той же причине, что на
-		// ветке main. Сборщик, играющий без AE2 и желающий строгое 1:1, возвращает F одним ключом конфига.
+		// AE2's own generators are suppressed elsewhere, leaving its network powered only through the engine's
+		// FE bridge, closed to non-whitelisted mods by default; raised to true so AE2 has power out of the box.
 		EMIT_EU_AS_RF                           = ConfigsGT.GREGTECH.get("general", "Emit_EU_as_RF_from_Blocks"        , T);
 		NERFED_WOOD                             = ConfigsGT.GREGTECH.get("general", "WoodNeedsSawForCrafting"          , T);
 		FORCE_GRAVEL_NO_FLINT                   = ConfigsGT.GREGTECH.get("general", "GravelWontDropFlint"              , F);
@@ -1459,22 +1125,19 @@ public class GT_API extends Abstract_Mod {
 		ENABLE_ADDING_IC2_CENTRIFUGE_RECIPES    = F;
 		}
 		
-		// Слой AE2, тот же приём, что флаги ic2 выше: ключ читается ТОЛЬКО при живом AE2 (без неё в конфиг
-		// не пишется), без AE2 флаг всегда T — метеоритов нет, жила метеоритного железа нужна (на ней пять
-		// сплавов MT). Потребители флагов: гашение рецептов (Compat_Recipes_AppliedEnergistics), пак-гашение
-		// метеоритов и жила (Loader_Worldgen) — по мере ввода соответствующих шагов слоя.
+		// AE2 layer, same trick as the ic2 flags above: the key is only read when AE2 is loaded, and defaults
+		// to true without AE2.
 		AE2_REPLACE_METEORITE_GENERATION        = !MD.AE.mLoaded || ConfigsGT.GREGTECH.get("ae2", "ReplaceMeteoriteGeneration", T);
 		AE2_KILL_QUARTZ_TOOLS                   = !MD.AE.mLoaded || ConfigsGT.GREGTECH.get("ae2", "DisableAllQuartzToolRecipes", T);
 
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDOUT"             , F)) System.out.close();
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDERR"             , F)) System.err.close();
-		// F12: 1.7.10 Blocks.mob_spawner.setHardness(500)/setResistance(6000000) — runtime-мутация vanilla-блока (neo Properties
-		// immutable). Кэшируем config-флаги; hardness применяется через PlayerEvent.BreakSpeed (GT_API_Proxy.onBlockBreakSpeedEvent,
-		// SPAWNER → speed×0.01 = 5/500), blast-resistance — через ExplosionEvent (GT_API_Proxy, SPAWNER исключается из разрушаемых).
+		// 1.7.10 mutated vanilla's mob-spawner block at runtime; neo's Properties are immutable, so config
+		// flags are cached instead and applied via PlayerEvent.BreakSpeed / ExplosionEvent in GT_API_Proxy.
 		HARDER_MOB_SPAWNERS          = ConfigsGT.GREGTECH.get("general", "hardermobspawners"          , T);
 		BLAST_RESISTANT_MOB_SPAWNERS = ConfigsGT.GREGTECH.get("general", "blastresistantmobspawners"  , T);
 		
-		// ADAPT-005 (нововведение, ADAPTATIONS.md): свет горящих топочных машин; 0 = выкл (строгое 1:1), кламп 0-15.
+		// Light level of burning fueled machines; 0 = off (strict 1:1), clamped 0-15.
 		BURNING_BOX_LIGHT_VALUE             = UT.Code.bind4(ConfigsGT.GREGTECH.get("machines", "burning_box_light_value", 13));
 		FIRE_EXPLOSIONS                     = ConfigsGT.GREGTECH.get("machines", "explode_by_fire"    , T);
 		RAIN_EXPLOSIONS                     = ConfigsGT.GREGTECH.get("machines", "explode_by_rain"    , T);
@@ -1541,7 +1204,7 @@ public class GT_API extends Abstract_Mod {
 		// [        +127] = PacketConfig
 		// [        +126] = PacketPrefix
 		// [        +125] = PacketItemStackChat
-		// [        +124] = PacketOreMap (ветка 1.20.1: у капабилити чанка нет автосинка, который был у neo-attachment)
+		// PacketOreMap: on this branch a chunk capability has no autosync, unlike neo's attachment on branch main.
 		// [+112 to +119] = PacketBlockEvent
 		// [+104 to +111] = PacketBlockError
 		// [+ 72 to + 79] = PacketDeathPoint
@@ -1603,11 +1266,8 @@ public class GT_API extends Abstract_Mod {
 		, new PacketSyncDataByteArrayAndCoverVisuals    ( 0), new PacketSyncDataByteArrayAndCoverVisuals    ( 1), new PacketSyncDataByteArrayAndCoverVisuals    ( 2), new PacketSyncDataByteArrayAndCoverVisuals    ( 3), new PacketSyncDataByteArrayAndCoverVisuals    ( 4), new PacketSyncDataByteArrayAndCoverVisuals    ( 5), new PacketSyncDataByteArrayAndCoverVisuals    ( 6), new PacketSyncDataByteArrayAndCoverVisuals    ( 7)
 		);
 		// Registering the TileEntity used for Meta-Generated Blocks to store the 32000 variations.
-		// F12-entity (СДЕЛАНО ВЫШЕ, здесь звать нечего): оригинал регистрировал класс
-		// (`GameRegistry.registerTileEntity(PrefixBlockTileEntity.class, "gt.MetaBlockTileEntity")`), neo регистрирует
-		// BlockEntityType. Он заведён один на всю GT6-TE-иерархию — MTE_TYPE_HOLDER (:200), а его supplier сам отдаёт
-		// PrefixBlockTileEntity для PrefixBlock-блоков (TileEntityBase01Root.createType:164) и isValid()→true, поэтому
-		// отдельного типа под мета-блоки не нужно: реконструкция из NBT и постановка в мир уже идут через него.
+		// Nothing to call here: the original registered a class; neo registers a BlockEntityType instead,
+		// already set up once for the whole MTE hierarchy (MTE_TYPE_HOLDER above).
 		// Creating and loading the Lang File.
 		if (CODE_CLIENT) {
 			tFile = new File(DirectoriesGT.MINECRAFT, "GregTech.lang");
@@ -1615,15 +1275,8 @@ public class GT_API extends Abstract_Mod {
 			LanguageHandler.sLangFile = new ModConfigSpec(tFile);
 			LanguageHandler.sUseFile = LanguageHandler.sLangFile.get("EnableLangFile", "UseThisFileAsLanguageFile", F).getBoolean(F);
 		}
-		// BUG-106 (вторая утечка, замер живой игры 2026-08-09): очереди icon-load снимаются на ОБЕИХ сторонах, а не только
-		// на сервере. В 1.7.10 их разбирал драйвер фазы загрузки иконок (ItemFluidDisplay.registerIcons -> обход
-		// sBlockIconload при сшивке атласа); в порте этот драйвер МЁРТВ (IIconRegister удалён движком), а построение иконки
-		// сделано ЛЕНИВЫМ (Textures.java:720, TextureSet.java:158, BI.java:176) — очередь больше никто не читает, но её
-		// продолжали НАПОЛНЯТЬ. На клиенте она жила вечно: каждый CustomIcon, созданный уже в игре, вписывал себя в
-		// статику навсегда. Горячий источник — MultiTileEntityMultiBlockPart.readFromNBT2:144 (иконки строятся на КАЖДОМ
-		// чтении NBT части мультиблока, а оно идёт при загрузке чанков и реконструкции блок-сущностей).
-		// Замер: 8 549 954 объекта CustomIcon, класс GT_API удерживал 1 924 485 544 байт = 47,26 % кучи (дамп MAT).
-		// Снятие очереди отключает ВСЕ четыре точки записи разом (они все под гейтом `!= null`) — центр, а не россыпь.
+		// Icon-load queues are cleared on both sides, not just the server: the driver that read them during
+		// atlas stitching is dead (icon building is lazy now), but the queue kept being filled forever.
 		if (sBlockIconload != null) {sBlockIconload.clear(); sBlockIconload = null;}
 		if (sItemIconload  != null) {sItemIconload .clear(); sItemIconload  = null;}
 		// Creating and loading the Unification Config.
@@ -1631,31 +1284,27 @@ public class GT_API extends Abstract_Mod {
 		// Initialising the Re-Registrations.
 		new LoaderOreDictReRegistrations().run();
 		// Register the Falling MetaBlock Entity.
-		// F12-entity (СДЕЛАНО ВЫШЕ, здесь звать нечего): 1.7.10 регистрировал класс сущности прямо в этой точке
-		// (`EntityRegistry.registerModEntity`, оригинал :722), neo требует EntityType в реестре ДО этой фазы —
-		// поэтому регистрация переехала в центральный ENTITIES/METABLOCK_FALLING (:203-214), параметры 1:1.
+		// Nothing to call here: 1.7.10 registered the entity class right at this point; neo needs the EntityType
+		// already in the registry before this phase, so registration moved to the central block above.
 		// Initialise Enchantments.
 		new Enchantment_WerewolfDamage();
 		new Enchantment_EnderDamage();
 		new Enchantment_Radioactivity();
 		new Enchantment_SlimeDamage();
 		// Initialises the Fluid Display Item.
-		// F12-lazy: конструкция предмета отложена в DeferredRegister-supplier (вызов на RegisterEvent — реестр открыт для
-		// intrusive-holder); IL хранит supplier, mStack материализует лениво в рантайме. Было: IL.Display_Fluid.set(new ItemFluidDisplay()).
+		// Item construction deferred into a DeferredRegister supplier, built on RegisterEvent when the registry
+		// is open for the intrusive holder; IL holds the supplier, mStack materializes it lazily at runtime.
 		IL.Display_Fluid.set(GT_API.ITEMS.register("gt.display.fluid", ItemFluidDisplay::new));
 		// Initialises the Integrated Circuit Item.
 		IL.Circuit_Selector.set(GT_API.ITEMS.register("gt.integrated_circuit", ItemIntegratedCircuit::new)); // F12-lazy: construct@RegisterEvent-supplier
 		// Initialises the Empty Slot Marker Item.
 		IL.Empty_Slot.set(GT_API.ITEMS.register("gt.empty_slot", ItemEmptySlot::new)); // F12-lazy: construct@RegisterEvent-supplier
 		// Register the GUI Handler.
-		// F7-gui (GUI работает через GT6MenuProvider/ContainerCommon; старый Forge GUI-handler — документация)
-		// F12 boot-timing: рецепт-фиксы (ST.make = ItemStack) ПЕРЕНЕСЕНЫ в onLoad (FMLCommonSetupEvent) — стеки нельзя
-		// создавать в preInit (Holder.components не привязаны). См. onLoad. (Было: CR.remove/CR.shaped/RM.Canner.addRecipe1 тут.)
+		// Recipe fixes (ST.make = ItemStack) moved to onLoad: stacks can't be created in preInit, since
+		// Holder.components aren't bound yet.
 		
-		// F12: снят FML-хак принудительной перестановки GAPI в начало activeModList через reflection
-		// (LoadController/ModList/ModContainer — внутренние классы FML 1.7.10, аналога в neo нет).
-		// Его функцию ("GAPI грузится первым") теперь честно и декларативно даёт депенденси-граф
-		// движка — @Mod(..., depends = {ModIDs.GAPI_POST}) выше в этом файле
+		// The FML reflection hack that force-moved GAPI to the front of activeModList is gone (no neo equivalent).
+		// Its job is now done declaratively by the engine's own dependency graph, via depends() above.
 		// (decisions/F12-registration-lifecycle.md §3-4).
 
 		for (ICompat tCompat : ICompat.COMPAT_CLASSES) try {tCompat.onPreLoad(aEvent);} catch(Throwable e) {e.printStackTrace(ERR);}
@@ -1675,7 +1324,7 @@ public class GT_API extends Abstract_Mod {
 	}
 	
 	@Override
-	public void onModPostInit2(FMLPostInitializationEvent aEvent) {deferItemInit(() -> onModPostInit2Deferred(aEvent));} // F1/F12/F16: PostInit-data-init (ST.make/static-init) отложен на server-start (post-bind); LoadComplete НЕ пост-bind
+	public void onModPostInit2(FMLPostInitializationEvent aEvent) {deferItemInit(() -> onModPostInit2Deferred(aEvent));} // PostInit data-init (ST.make/static-init) is deferred to server start (post-bind); LoadComplete itself isn't post-bind.
 	private void onModPostInit2Deferred(FMLPostInitializationEvent aEvent) {
 		if (MD.IC2.mLoaded) {
 			PotionsGT.ID_RADIATION    = ic2.api.info.Info.POTION_RADIATION.id;
@@ -1693,12 +1342,8 @@ public class GT_API extends Abstract_Mod {
 			PotionsGT.ID_CONDUCTIVE   = blusunrize.immersiveengineering.common.util.IEPotions.conductive.id;
 			PotionsGT.ID_STICKY       = blusunrize.immersiveengineering.common.util.IEPotions.sticky.id;
 		}
-		// BUG-090: моды-владельцы выше для 26.1.2 не существуют (гейты мертвы) — пять эффектов, которые GT6
-		// реально накладывает, регистрирует сам мод (gregapi/potion/MobEffectsGT, поведение 1:1 с декомпил-
-		// референсами IE/EnviroMine в дереве проекта). Механизм — Грегов же «real IDs are to be set on API
-		// postInit» (CS.java:1690): проставляем id и привязываем Holder в единую карту канала applyPotion(int).
-		// Гейт `< 0` сохраняет приоритет чужого мода, если тот когда-либо оживёт. RADIATION/DEHYDRATION/
-		// HYPOTHERMIA/HEATSTROKE/FROSTBITE остаются отрицательными намеренно — разбор в MobEffectsGT (javadoc).
+		// The mod owners referenced above don't exist for 26.1.2; the five effects GT6 actually applies are
+		// registered by the mod itself (gregapi/potion/MobEffectsGT), matching the IE/EnviroMine reference in behavior.
 		if (PotionsGT.ID_FLAMMABLE  < 0) UT.Entities.bindPotionID(PotionsGT.ID_FLAMMABLE  = gregapi.potion.MobEffectsGT.ID_FLAMMABLE , gregapi.potion.MobEffectsGT.FLAMMABLE.get() );
 		if (PotionsGT.ID_SLIPPERY   < 0) UT.Entities.bindPotionID(PotionsGT.ID_SLIPPERY   = gregapi.potion.MobEffectsGT.ID_SLIPPERY  , gregapi.potion.MobEffectsGT.SLIPPERY.get()  );
 		if (PotionsGT.ID_CONDUCTIVE < 0) UT.Entities.bindPotionID(PotionsGT.ID_CONDUCTIVE = gregapi.potion.MobEffectsGT.ID_CONDUCTIVE, gregapi.potion.MobEffectsGT.CONDUCTIVE.get());
@@ -1713,10 +1358,8 @@ public class GT_API extends Abstract_Mod {
 		OreDictManager.INSTANCE.onPostLoad();
 		
 		ICover tCover = new CoverRedstoneTorch();
-		// F12: block-флэттен (данные) — Blocks.REDSTONE_TORCH/unlit_redstone_torch (1.7.10, два раздельных
-		// блока lit/unlit) слиты в neo в ОДИН Blocks.REDSTONE_TORCH с BlockState-свойством "lit" (нет
-		// отдельной unlit-константы); вторая регистрация становится тем же ключом — безвредный дубль,
-		// не потеря данных (тот же tCover на тот же результирующий блок).
+		// Block-flatten (data): 1.7.10's separate lit/unlit redstone torch blocks are one neo block with a
+		// BlockState "lit" property; the second registration becomes a harmless duplicate key, not lost data.
 		CoverRegistry.put(ST.make(Blocks.REDSTONE_TORCH, 1, 0), tCover);
 		CoverRegistry.put(ST.make(Blocks.REDSTONE_TORCH, 1, 0), tCover);
 		CoverRegistry.put(ST.make(Items.REPEATER, 1, 0), new CoverRedstoneRepeater());
@@ -1765,12 +1408,8 @@ public class GT_API extends Abstract_Mod {
 	
 	@Override
 	public void onModServerStarting2(ServerStartingEvent aEvent) {
-		// F1/F12/F16 item-model: отложенный stack-init предметов (OreDict-данные+рецепты) — ЕДИНАЯ точка исполнения перенесена
-		// на ЗАГРУЗКУ уровня ({@link #onLevelLoadEarlyItemInit}, LevelEvent.Load), т.к. пре-генерация стартовой зоны
-		// (prepareLevels) идёт РАНЬШЕ ServerStartingEvent и потребляет worldgen-реестр (BUG-033). LevelEvent.Load — тоже
-		// пост-bind (createLevels, compositeAccess заморожены), но ДО prepareLevels. К этому моменту очередь уже осушена.
-		// F16-shell: генератор вкладок (MTE-загрузчик) отработал в drain выше по времени → фиксируем полный набор собственных
-		// вкладок в конфиг-кэш; на СЛЕДУЮЩЕМ буте createShellsFromCache поднимет их до заморозки реестра CreativeModeTab.
+		// Deferred stack-init for items: the single execution point moved to level LOAD, since spawn-area
+		// pre-generation runs before ServerStartingEvent and consumes the worldgen registry.
 		gregapi.item.CreativeTabsGT.writeShellCache();
 		for (ICompat tCompat : ICompat.COMPAT_CLASSES) try {tCompat.onServerStarting(aEvent);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
@@ -1789,34 +1428,18 @@ public class GT_API extends Abstract_Mod {
 	@Override
 	public void onModServerStopped2(ServerStoppedEvent aEvent) {
 		for (ICompat tCompat : ICompat.COMPAT_CLASSES) try {tCompat.onServerStopped(aEvent);} catch(Throwable e) {e.printStackTrace(ERR);}
-		// ВОССТАНОВЛЕНИЕ КОНТРАКТА «что мод завёл на время сервера — на время сервера и живёт».
-		// Оригинал 1.7.10 с этим потоком не прощался вовсе (GT_API.java:830 — только запуск; снятия нет нигде
-		// во всём его дереве), и порт унаследовал это 1:1. На целевом движке так нельзя: нормальный выход
-		// выделенного сервера System.exit НЕ зовёт — во всём пакете net.minecraft.server он встречается лишь
-		// в ServerWatchdog (аварийное убийство зависшего), а Main.java прямо оговаривает, что System.exit на
-		// нормальном выходе есть только у GameTestServer (forge-1201-decompiled .../server/Main.java:233-235).
-		// Поэтому вечный цикл дневника (LoggerPlayerActivity, запускается 1:1 в postLoad) держал JVM живой
-		// ПОСЛЕ «stop»: мир сохранён, порты отпущены, а процесс не выходит — владелец дедика получает висящий
-		// перезапуск. Прощаемся здесь, в центре прощания мода, и именно доведением работы до конца: дневник
-		// дописывает запись и закрывает файл сам (см. LoggerPlayerActivity.stop()). Пометить поток служебным
-		// нельзя — движок оборвал бы его на полуслове, потеряв хвост записи.
-		// ⚠ Почему движку 1.7.10 этого не требовалось — по локальному референсу НЕ проверено: его исходников
-		// в reference/ нет. Проверено обратное и достаточное: у целевого движка такого механизма нет.
+		// Restores a contract the original never honored: the diary-writer thread was never stopped in 1.7.10
+		// either, and a normal dedicated-server shutdown never calls System.exit, so it kept the JVM alive.
 		if (mPlayerLogger != null) mPlayerLogger.stop();
 	}
 	
-	// В neo нет числовых ID блоков/предметов, поэтому нет и neo-аналога FMLModIdMappingEvent — метод
-	// не подписан ни на одну шину (не вызывается автоматически, но остаётся 1:1 доступным вручную для
-	// ICompat.onIDChanging(...), если понадобится на этапе рантайм-parity — см. javadoc
+	// neo has no numeric block/item ids, so there's no neo analog of FMLModIdMappingEvent; this method
+	// isn't wired to any bus, kept 1:1 and callable by hand if ever needed.
 	// gregapi.api.FMLModIdMappingEvent).
 	public void onIDChangingEvent(FMLModIdMappingEvent aEvent) {
 		// Fixing missing Blocks caused by DragonAPI. The Issue is more complicated but it should fix some part of it.
-		// F12 impossible-1:1 (foreign DragonAPI-fix; neo не имеет числовых block-ID вовсе): DragonAPI-фикс завязан на числовой Block.blockRegistry
-		// (getObjectById/addObject(int,...)) из Forge 1.7.10 — в NeoForge числовых ID блоков нет вовсе
-		// (grep 3 корней референса: net.minecraft/net.neoforged — ни blockRegistry, ни int-based
-		// addObject/getObjectById не существует), поэтому у этого куска нет и не может быть neo-1:1.
-		// Метод сам по себе не подписан ни на одну шину (см. комментарий выше), это единственная живая
-		// причина — остаток ниже (STACKMAPS-ремап + рассылка ICompat.onIDChanging) сохранён 1:1.
+		// This DragonAPI fix depends on 1.7.10 Forge's numeric Block.blockRegistry; NeoForge has no numeric
+		// block ids at all, so there's no 1:1 form of this piece; the rest below is kept 1:1.
 
 		OUT.println(getModNameForLog() + ": Remapping ItemStackMaps due to ID Map change. Those damn Items should have a consistent Hashcode, but noooo, ofcourse they break Basic Code Conventions! Thanks Forge and Mojang!");
 		

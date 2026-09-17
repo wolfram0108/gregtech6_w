@@ -104,18 +104,8 @@ public class ItemStackMap<K extends ItemStackContainer, V> extends HashMap<ItemS
 		}
 		return containsKey(aStack);
 	}
-	/**
-	 * F4-flatten, джокер семьи. В 1.7.10 ныне расщеплённое семейство было ОДНИМ предметом, и ключ
-	 * «предмет + мета {@code W}» покрывал все его подтипы разом — на это опираются и поиск рецепта
-	 * ({@code Recipe.findRecipeInternal:505} — второй запрос по {@code W}), и данные предметов
-	 * ({@code OreDictManager:723}), и NEI-перенаправления. В neo подтипы стали РАЗНЫМИ предметами,
-	 * поэтому джокер-запись семьи лежит под её главой, а спрашивают её любым членом: красное стекло
-	 * должно найти то, что положено под белым.
-	 *
-	 * <p>Вход в ветку — только промах по точному ключу, и только на картах, где джокеры вообще есть
-	 * ({@code mHasWildcards}), так что горячий путь поиска рецептов не дорожает. Ключ при записи НЕ
-	 * трогаем: 1:1 с оригиналом кладём то, что дал вызыватель.</p>
-	 */
+	/** Family wildcard entry: in 1.7.10 a split family was one item, so a recipe keyed on "item + meta W" matched
+	 *  every subtype; here the wildcard record is filed under the family head and looked up by any member. */
 	@Override
 	public V get(Object aKey) {
 		V rValue = super.get(aKey);
@@ -125,7 +115,7 @@ public class ItemStackMap<K extends ItemStackContainer, V> extends HashMap<ItemS
 		}
 		return rValue;
 	}
-	/** Джокер семьи — см. {@link #get(Object)}: «есть ли запись» обязано отвечать так же, как «дай запись». */
+	/** Wildcard lookup must mirror {@link #get(Object)}: "is there an entry" has to agree with "give me the entry". */
 	@Override
 	public boolean containsKey(Object aKey) {
 		if (super.containsKey(aKey)) return T;

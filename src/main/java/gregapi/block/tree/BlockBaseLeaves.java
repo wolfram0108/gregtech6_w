@@ -76,8 +76,8 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IForgeShe
 		mSaplings = aSaplings;
 		mLogMetas = aLogMetas;
 		mLogs = aLogs;
-		// F12-hardness: 1.7.10 setHardness(0.2F) (runtime мутатор) заменён getBlockHardness ниже (OAK_LEAVES) →
-		// подключён к neo через BlockBase.getDestroyProgress (централизованно, 1:1). Runtime-мутатор не нужен.
+		// 1.7.10's runtime hardness mutator is replaced by the getBlockHardness override below, wired
+		// into neo through BlockBase's centralized getDestroyProgress; no runtime mutator is needed.
 	}
 	
 	@Override public boolean isFireSource(Level aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
@@ -95,14 +95,13 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IForgeShe
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return F;}
 	public boolean isLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
-	// F10: IShearable-зеркало снято — настоящий net.minecraftforge.common.IForgeShearable (сигнатура
-	// isShearable(ItemStack,Level,BlockPos)/onSheared(Player,ItemStack,Level,BlockPos,int):List<ItemStack>,
-	// оба метода default в интерфейсе — override сохраняет 1.7.10-тело как есть).
+	// The IShearable mirror is gone -- this is the real net.minecraftforge.common.IForgeShearable now,
+	// both methods default on the interface, and the 1.7.10 body is kept as-is under the override.
 	@Override public boolean isShearable(ItemStack aItem, Level aWorld, BlockPos aPos) {return T;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeLeaves.mDefaultStackSize);}
-	// 1:1 (:91 оригинала): выбор fancy/fast-варианта иконки по признаку ванильной листвы; семантика isOpaqueCube
-	// = WD.visOpq (WD.opaque=canOcclude тут врал — см. skipRendering ниже). В neo-ванили листва всегда fancy.
+	// Picks the fancy/fast icon variant by checking vanilla leaves' own occlusion flag through
+	// WD.visOpq, since canOcclude itself lies here; neo-vanilla leaves are always fancy anyway.
 	@Override public ResourceLocation getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(WD.visOpq(Blocks.OAK_LEAVES)?8:0)].getIcon(0);}
 	@Override public List<ItemStack> onSheared(Player aPlayer, ItemStack aItem, Level aWorld, BlockPos aPos, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) & 7));}
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : WD.collisionBox(aWorld, aX, aY, aZ, this);}
@@ -114,16 +113,8 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IForgeShe
 		if (!aWorld.isClientSide() && !WD.oxygen(aWorld, aX, aY, aZ)) {aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 201+RNGSUS.nextInt(100)); return;}
 	}
 	
-	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
-	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering). Позиция(aX,aY,aZ) в исходнике
-	// была позицией СОСЕДА (стандартная 1.7.10-семантика shouldSideBeRendered) -> aNeighbor.getBlock() эквивалентен
-	// WD.block(aWorld,aX,aY,aZ) без потерь.
-	// ⛔ БЫЛО WD.opaque (canOcclude) — а canOcclude у всей BlockBase-семьи дефолтно TRUE, поэтому сосед-листва
-	// считался «непрозрачным кубом» и грань скрывалась ВСЕГДА: дерево выглядело полым «стеклом» без внутренних
-	// граней (приёмка 2026-07-30). Семантика 1.7.10 здесь — isOpaqueCube (:106 оригинала), её neo-канон —
-	// isSolidRender = центр WD.visOpq (тот же класс дефекта, что F3-render «грань против слаба», WD:1368-1371).
-	// visOpq(OAK_LEAVES) при noOcclusion ванильной листвы = false всегда — постоянный fancy, 1:1 с neo-ванилью
-	// (динамический fast-режим листвы 1.7.10 в движке отсутствует).
+	// Was wrongly checking canOcclude, which defaults true for the whole BlockBase family, so a neighboring leaf always
+	// counted as opaque and every face was hidden, making trees look hollow; this checks WD.visOpq instead now.
 	@Override
 	public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
 		Block aBlock = aNeighbor.getBlock();
@@ -166,18 +157,14 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IForgeShe
 		return rDrops;
 	}
 	
-	// было ColorizerFoliage.getFoliageColor(temp,rain) (1.7.10, тип удалён) -> FoliageColor.get(double,double)
-	// [neo-decompiled/net/minecraft/world/level/FoliageColor.java:14], идентичная формула/буфер пикселей.
+	// neo's FoliageColor.get replaces the removed ColorizerFoliage, with an identical formula and pixel buffer.
 	public int getBlockColor() {return FoliageColor.get(0.5, 1.0);}
-	// было ColorizerFoliage.getFoliageColorBasic() (константа 4764952, тип удалён) -> FoliageColor.getDefaultColor()
-	// [neo-decompiled/net/minecraft/world/level/FoliageColor.java:6] (=0xFF48B518, младшие 24 бита совпадают: 0x48B518=4764952).
+	// Was ColorizerFoliage.getFoliageColorBasic() (a removed constant type) -> FoliageColor.getDefaultColor(),
+	// whose low 24 bits match the old constant exactly.
 	public int getRenderColor(int p_149741_1_) {return FoliageColor.getDefaultColor();}
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
-		// было aWorld.getBiomeGenForCoords(x,z) (2D, IBlockAccess несла getBiome сама) — BlockGetter самого getBiome
-		// не несёт (LevelReader.getBiome(BlockPos)); рендер вызывает colorMultiplier всегда с реальным Level (тот же
-		// cast-guard приём, что уже принят в BlockRiver.colorMultiplier, BlockRiver.java:114-115), F3-safe дефолт
-		// иначе; биом — через центр WD.biome(Level,x,z) (WD.java:551). Biome.getBiomeFoliageColor(x,y,z) (1.7.10
-		// позиционный) удалён - neo Biome.getFoliageColor() [Biome.java:227] беспозиционный, ближайший 1:1.
+		// BlockGetter itself carries no getBiome, unlike the old IBlockAccess, so this casts to Level the
+		// same way BlockRiver already does, and reads foliage color through neo's positionless Biome.getFoliageColor().
 		if (!(aWorld instanceof Level)) return 0x00ffffff;
 		Level aLevel = (Level)aWorld;
 		int l = 0, i1 = 0, j1 = 0;

@@ -32,7 +32,7 @@ public class MaterialOil extends Material {
 	
 	private MaterialOil() {
 		super(MapColor.blackColor);
-		setLiquid();   // прежде приходило от MaterialLiquid (жидкость, не плотная, застраивается, поршнем не толкается)
+		setLiquid();   // previously inherited from MaterialLiquid: liquid, not solid, replaceable, not piston-pushable
 		setNoPushMobility();
 		setReplaceable();
 	}

@@ -69,9 +69,8 @@ public class MultiTileEntityHDDSwitch extends TileEntityBase08DataSwitch {
 		return null;
 	}
 
-	// F8: внешний тег захвачен ОДИН раз в tNBT (создан, если отсутствовал), вложенная tDriveData
-	// мутируется на месте (вложенная мутация внутри одного и того же дерева тегов работает как раньше),
-	// коммит единый ItemNBT.set в конце — иначе все правки тихо терялись бы (см. ItemNBT.java).
+	// The outer tag is captured once into tNBT (created if absent), and the nested tDriveData is mutated in place.
+	// A single ItemNBT.set commits the whole tree at the end; otherwise the edits would be silently lost (see ItemNBT.java).
 	@Override
 	public boolean setUSBData(byte aSide, int aUSBTier, CompoundTag aData) {
 		ItemStack tDrive = slot(0);

@@ -59,7 +59,7 @@ public class WorldgenRiver extends WorldgenObject {
 		boolean temp = T;
 		for (String tName : aBiomeNames) if (BIOMES_RIVER.contains(tName) && !BIOMES_OCEAN.contains(tName)) {temp = F; break;}
 		if (temp) return F;
-		// F6-Y-scale: старт скана = реальная поверхность воды (getSeaLevel), нижняя граница minY, индекс секции getSectionIndex (эталон WorldgenStoneLayers d6dc0f2d).
+		// Scan start is the real water surface (getSeaLevel), lower bound is minY, section index via getSectionIndex.
 		int tHeight = Math.max(WD.waterLevel(aWorld, mHeight), aWorld.getSeaLevel());
 		final LevelChunkSection[] tStorages = aChunk.getSections();
 		final int tMinY = WD.minY(aWorld);
@@ -75,10 +75,8 @@ public class WorldgenRiver extends WorldgenObject {
 				
 				if (tPlacedNone) {
 					tPlacedNone = F;
-					// F5 surface-B: собственное worldgen-плечо льда СНЯТО (было: верхний слой воды в холодном биоме →
-					// сразу Blocks.ICE). River теперь LiquidBlock → ванильная SnowAndFreezeFeature:34 (шаг
-					// TOP_LAYER_MODIFICATION, ПОСЛЕ этого прохода) замораживает поверхность сама через
-					// Biome.shouldFreeze:161 — источник льда один, ванильный, как в 1.7.10 (корень BUG-066).
+					// River's own ice-generation shoulder is removed: the old top water layer in a cold biome went to Blocks.ICE.
+					// River is now a LiquidBlock, so vanilla's SnowAndFreezeFeature freezes it afterward — one ice source, as in 1.7.10.
 					BlockRiver.PLACEMENT_ALLOWED = T;
 					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.River, 0, 0)) {
 						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
@@ -86,7 +84,7 @@ public class WorldgenRiver extends WorldgenObject {
 						return F;
 					}
 					BlockRiver.PLACEMENT_ALLOWED = F;
-					// Стартовый тик 1:1 onBlockAdded (10+rand(90)) — см. WorldgenSwamp (neo прото-чанк без колбэков).
+					// Starting tick matches the original 1:1 (onBlockAdded); see WorldgenSwamp for why (proto-chunk has no callbacks).
 					aWorld.scheduleTick(new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ), BlocksGT.River, 10+RNGSUS.nextInt(90));
 				} else {
 					tStorage.setBlockState(tX, tY & 15, tZ, BlocksGT.River.defaultBlockState());

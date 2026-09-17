@@ -78,13 +78,12 @@ public class EntityArrow_Material extends EntityProjectile {
 	private boolean inGround = F;
 	private int mTicksAlive = 0;
 	private int ticksInAir = 0;
-	// mKnockback — в общем предке EntityProjectile (F-arrow-enchants ЦЕНТР), там же, где его держал 1.7.10-предок.
+	// mKnockback lives in the shared EntityProjectile ancestor, the same place the 1.7.10 ancestor held it.
 
 	private ItemStack mArrow = null;
 
-	// F12-entity: тип-ctor (EntityType,Level) = фабрика реестра (EntitiesGT.ARROW_MATERIAL, ссылка EntityArrow_Material::new);
-	// public (как vanilla Arrow(EntityType,Level)) — доступна для method-reference из EntitiesGT. Позиционные/скоростные
-	// type-ctor'ы protected — подкласс EntityArrow_Potion передаёт в них свой ARROW_POTION. Convenience-ctor'ы → ARROW_MATERIAL.
+	// The type-ctor is the registry factory and must be public like vanilla's for the method reference to work; the
+	// positional ctors stay protected so the EntityArrow_Potion subclass can route its own type through them instead.
 	public EntityArrow_Material(EntityType<? extends EntityArrow_Material> aType, Level aWorld) {
 		super(aType, aWorld);
 	}
@@ -110,7 +109,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	public EntityArrow_Material(Arrow aArrow, ItemStack aStack) {
 		this(EntitiesGT.ARROW_MATERIAL.get(), aArrow.level());
 		setOwner(aArrow.getOwner());
-		// Ветка 1.20.1: моста ValueOutput/ValueInput нет — форма оригинала 1.7.10 дословно
+		// No ValueOutput/ValueInput bridge on this branch, so the original 1.7.10 form is kept verbatim.
 		// (gt6-original EntityArrow_Material.java:87-88 writeToNBT/readFromNBT).
 		CompoundTag tNBT = UT.NBT.make();
 		aArrow.saveWithoutId(tNBT);
@@ -172,14 +171,8 @@ public class EntityArrow_Material extends EntityProjectile {
 			for (int i = 0; i < tAllPotentiallyHitEntities.size(); ++i) {
 				Entity entity1 = tAllPotentiallyHitEntities.get(i);
 
-				// ⛔ КОНТРАКТ-ШОВ (найден живой стрельбой игрока: стрелы GT6 пролетали СКВОЗЬ мобов).
-				// 1.7.10 спрашивал `entity.canBeCollidedWith()` — «можно ли в него попасть», и у живых это было
-				// `!isDead` (recompSrc/net/minecraft/entity/EntityLivingBase.java:2232-2235).
-				// В neo имя сохранилось, но СМЫСЛ другой: `canBeCollidedWith(Entity)` — про физическое сталкивание
-				// (лодки/шалкеры), дефолт `false` (Entity.java:2305) и у LivingEntity НЕ переопределён — то есть
-				// перебор целей всегда получал false. Прямой эквивалент старого вопроса — `canBeHitByProjectile()`
-				// = `isAlive() && isPickable()` (Entity.java:1916-1918), где у живых `isPickable()` = `!isRemoved()`
-				// (LivingEntity.java:3386-3388), что и есть 1.7.10-шное `!isDead`.
+				// 1.7.10's canBeCollidedWith() meant 'can this be hit' for living entities; neo kept the name but changed the meaning to
+				// physical collision, defaulting to false, so target selection failed until switched to canBeHitByProjectile().
 				if (entity1.canBeHitByProjectile() && (entity1 != tShootingEntity || ticksInAir >= 5)) {
 					AABB axisalignedbb1 = entity1.getBoundingBox().inflate(0.3, 0.3, 0.3);
 					java.util.Optional<Vec3> movingobjectposition1 = axisalignedbb1.clip(vec31, vec3);
@@ -273,7 +266,7 @@ public class EntityArrow_Material extends EntityProjectile {
 								}
 							}
 
-							// F-enchant-crit-visual impossible-1:1: 1.7.10 Player.onEnchantmentCritical(entity) — клиент-визуал крит-энчант-частиц, удалён в neo без прямого аналога. GT6-урон сохранён 1:1, потерян лишь визуал.
+							// 1.7.10's crit-enchant particle visual has no neo analog and is simply gone; GT6's damage logic itself stays 1:1.
 
 							if (!(tHitEntity instanceof EnderMan) || ((EnderMan)tHitEntity).getEffect(MobEffects.WEAKNESS) != null) {
 								if (tFireDamage > 0) tHitEntity.setSecondsOnFire(tFireDamage);
@@ -306,7 +299,8 @@ public class EntityArrow_Material extends EntityProjectile {
 					shakeTime = 7;
 					setCritArrow(false);
 
-					// F-block-entity-collide impossible-1:1: 1.7.10 Block.onEntityCollidedWithBlock(стрела попала в блок) — neo entityInside приватен и требует InsideBlockEffectApplier (авто-система collision); ручной 1:1-вызов недоступен, edge-case спец-блоков реагирующих на попадание стрелы.
+					// 1.7.10's manual block-hit-by-arrow callback has no neo equivalent, since the replacement (entityInside) is private and
+					// part of an automatic system, not directly callable.
 
 					if (!level().isClientSide() && UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT, mArrow) > 2) WD.burn(level(), mHitBlockX, mHitBlockY, mHitBlockZ, T, F);
 
@@ -341,7 +335,8 @@ public class EntityArrow_Material extends EntityProjectile {
 			WD.setMotionY(this, WD.motionY(this) * tFrictionMultiplier);
 			WD.setMotionZ(this, WD.motionZ(this) * tFrictionMultiplier - 0.05F);
 			setPos(getX(), getY(), getZ());
-			// F-entity: 1.7.10 func_145775_I() (doBlockCollisions) — neo делает block-collisions авто в move/tick, ручной вызов не нужен.
+			// 1.7.10's manual doBlockCollisions() call is unneeded, since neo already runs block collisions automatically during
+			// move/tick.
 		}
 	}
 
@@ -414,6 +409,6 @@ public class EntityArrow_Material extends EntityProjectile {
 		return false;
 	}
 
-	// setKnockbackStrength(int) и getBaseDamageGT() — в общем предке EntityProjectile (F-arrow-enchants ЦЕНТР):
-	// в 1.7.10 оба жили на движковом предке EntityArrow, а не в этом классе. Копии здесь сняты как дубль.
+	// setKnockbackStrength/getBaseDamageGT live in the shared EntityProjectile ancestor now, mirroring where 1.7.10's own
+	// engine ancestor held them; local copies here were duplicates.
 }

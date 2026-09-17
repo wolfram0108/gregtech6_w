@@ -150,10 +150,8 @@ public class LoaderItemData implements Runnable {
 		OM.reg("cropAppleRed"                       , ST.make(Items.APPLE, 1, 0));
 		OM.reg("cropMelon"                          , ST.make(Items.MELON_SLICE, 1, 0));
 		OM.reg("cropPumpkin"                        , ST.make(Blocks.PUMPKIN, 1, 0));
-		// Ягоды, которых в 1.7.10 не существовало (sweet_berries — MC 1.14, glow_berries — MC 1.17): тот же класс, что
-		// новые породы дерева (BUG-091). Ключ и приём — Греговы: "cropBerry" уже несёт слушателя (Loader_Recipes_Crops:509
-		// -> RM.crop_fruit -> FL.Juice + консервы + компост), под него же Грег вешал ягоды МОДОВ (там же:331-335,655,819).
-		// Своих сущностей не заводим: регистрации в словаре достаточно, весь фруктовый конвейер подхватывает сам.
+		// Berries that did not exist in 1.7.10 are registered under the same "cropBerry" key modded berries already
+		// used, so the existing fruit pipeline (juice, preserves, compost) picks them up without a new entity.
 		OM.reg("cropBerry"                          , ST.make(Items.SWEET_BERRIES, 1, 0));
 		OM.reg("cropBerry"                          , ST.make(Items.GLOW_BERRIES, 1, 0));
 		OM.reg("cropHops"                           , ST.mkic("hops", 1));
@@ -526,9 +524,8 @@ public class LoaderItemData implements Runnable {
 		OM.reg(OD.bookEnchanted                     , ST.make(Items.ENCHANTED_BOOK, 1, W));
 		OM.reg(OD.craftingFirestarter               , ST.make(Items.FIRE_CHARGE, 1, W));
 		OM.reg(OD.craftingFirestarter               , ST.make(Items.FLINT_AND_STEEL, 1, W));
-		// ADAPT-001: ванильная сухая листва получает GT6-тег трута — ровно тем же приёмом, что строки выше.
-		// Рецепт Fire Starter ссылается на ТЕГ, а не на minecraft:leaf_litter напрямую (правило централизации).
-		// Items.LEAF_LITTER — контент новее 1.20.1 (в 1.7.10 его тоже не было): регистрировать нечего.
+		// Vanilla leaf litter gets GT6's tinder tag, the same way the lines above do; the Fire Starter recipe references the
+		// tag, not the item directly. Items.LEAF_LITTER doesn't exist on this engine version, so there's nothing to add.
 		OM.reg("bucketWater"                        , ST.make(Items.WATER_BUCKET, 1, W));
 		OM.reg("bucketLava"                         , ST.make(Items.LAVA_BUCKET, 1, W));
 		OM.reg("bucketMilk"                         , ST.make(Items.MILK_BUCKET, 1, W));
@@ -585,8 +582,7 @@ public class LoaderItemData implements Runnable {
 		OM.reg(OD.itemMoss                          , ST.make(MD.BTL, "groundStuff", 1, 38));
 		OM.reg(OD.itemMoss                          , ST.make(MD.BoP, "moss", 1, 0));
 		OM.reg(OD.itemMoss                          , ST.make(MD.TF, "tile.TFPlant", 1, 3));
-		// 1.7.10 писал семью ОДНИМ wildcard-стеком (stained_glass:W = 16 цветов); в neo члены перечисляются
-		// поимённо из центра CS.Flattened — тот же приём, что роль-B словаря (OreDictionary.initVanillaEntries).
+		// The flattened family members are listed by name from the central CS.Flattened set, replacing the old wildcard entry.
 		for (net.minecraft.world.level.block.Block tGlass : gregapi.data.CS.Flattened.STAINED_GLASS     ) OM.reg(OD.blockGlass, ST.make(tGlass, 1, 0));
 		OM.reg(OD.blockGlassColorless               , ST.make(Blocks.GLASS, 1, W));
 		OM.reg(OD.blockGlassColorless               , ST.make(MD.CHSL, "glass", 1, W));
@@ -747,7 +743,7 @@ public class LoaderItemData implements Runnable {
 		OM.reg(OD.craftingAnvil                     , ST.make(Blocks.ANVIL, 1, 0));
 		OM.reg(OD.craftingAnvil                     , ST.make(MD.RC, "anvil", 1, 0));
 		OM.reg(OD.craftingHardenedClay              , ST.make(Blocks.TERRACOTTA, 1, W));
-		// 1.7.10 stained_hardened_clay:W = 16 цветов — семья из центра CS.Flattened (см. blockGlass выше)
+		// Same central-family approach as the glass entry above, for the 16 terracotta colors.
 		for (net.minecraft.world.level.block.Block tClay : gregapi.data.CS.Flattened.TERRACOTTA) OM.reg(OD.craftingHardenedClay, ST.make(tClay, 1, 0));
 		OM.reg(OP.treeSapling                       , ST.make(MD.HaC, "pamalmondSapling", 1, W));
 		OM.reg(OP.treeSapling                       , ST.make(MD.HaC, "pamappleSapling", 1, W));
@@ -2492,7 +2488,7 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Items.CLAY_BALL                      , 1, W), MT.Clay               ,  U * 1);
 		OM.data(ST.make(Blocks.CLAY                          , 1, W), MT.Clay               ,  U * 4);
 		OM.data(ST.make(Blocks.TERRACOTTA                 , 1, W), MT.Ceramic            ,  U * 4);
-		// 1.7.10 stained_hardened_clay:W = 16 цветов — семья из центра CS.Flattened
+		// Same central CS.Flattened family as the glass/terracotta entries above.
 		for (net.minecraft.world.level.block.Block tClay : gregapi.data.CS.Flattened.TERRACOTTA) OM.data(ST.make(tClay, 1, 0), MT.Ceramic, U * 4);
 		OM.data(ST.make(Blocks.FLOWER_POT                    , 1, W), MT.Brick              ,  U * 3);
 		OM.data(ST.make(Items.FLOWER_POT                     , 1, W), MT.Brick              ,  U * 3);
@@ -2533,7 +2529,7 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.ANVIL                         , 1, 2), ANY.Fe                ,  U *20);
 		OM.data(ST.make(Blocks.HOPPER                        , 1, W), ANY.Fe                ,  U * 5 , ANY.Wood, U * 4);
 		OM.data(ST.make(Blocks.TRIPWIRE_HOOK                 , 1, W), ANY.Fe                ,  OP.ring.mAmount * 2, ANY.Wood, U);
-		// 1.7.10 stained_glass:W / stained_glass_pane:W = 16 цветов — семьи из центра CS.Flattened
+		// Same central CS.Flattened families as above, for stained glass and stained glass panes.
 		for (net.minecraft.world.level.block.Block tGlass : gregapi.data.CS.Flattened.STAINED_GLASS     ) OM.data(ST.make(tGlass, 1, 0), MT.Glass, U*9);
 		OM.data(ST.make(Blocks.GLASS                         , 1, W), MT.Glass              ,  U*9);
 		for (net.minecraft.world.level.block.Block tPane  : gregapi.data.CS.Flattened.STAINED_GLASS_PANE) OM.data(ST.make(tPane , 1, 0), MT.Glass, U);

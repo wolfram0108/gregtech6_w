@@ -49,36 +49,9 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
-/**
- * F7 центральный переходник — СЕТЬ (ветка бэкпорта 1.20.1).
- *
- * <p><b>Что заменено.</b> Ветка 26.x стояла на payload-системе NeoForge ({@code CustomPacketPayload} +
- * {@code PayloadRegistrar} на {@code RegisterPayloadHandlersEvent} + {@code StreamCodec} над
- * {@code RegistryFriendlyByteBuf}). В 1.20.1 такой системы нет вовсе; канал строится
- * {@code NetworkRegistry.newSimpleChannel(name, версия, clientAccepted, serverAccepted)}
- * ({@code forge-1201-decompiled/net/minecraftforge/network/NetworkRegistry.java:102}), сообщение
- * регистрируется {@code SimpleChannel.registerMessage(index, class, encoder, decoder, consumer)}
- * ({@code simple/SimpleChannel.java:71}), приём идёт через {@code NetworkEvent.Context}
- * ({@code NetworkEvent.java:151-232}), отправка — через {@code PacketDistributor}
- * ({@code PacketDistributor.java:39-87}).
- *
- * <p><b>Центр остался один и вернулся к форме Грегориуса.</b> На канал регистрируется РОВНО ОДИН тип
- * сообщения — байт-конверт {@link GT6Payload}; идентичность пакета внутри несёт первый байт
- * ({@link IPacket#getPacketID()}) и таблица {@code mPacketTypes[256]}. Это дословно схема 1.7.10:
- * там транспорт тоже видел один {@code FMLProxyPacket} с сырым {@code byte[]}, а разбор делал сам мод
- * (оригинал {@code NetworkHandler.encode/decode:80-93}). Схема «именованный {@code Type<>} на каждый
- * пакет», которую пришлось завести в 26.x, здесь не нужна — числовые ID снова работают, и вместе с ними
- * вернулась родная проверка версии протокола (сообщение «Your Version … does not match»), усиленная
- * протокольной строкой самого канала.
- *
- * <p><b>Момент создания канала — конструктор</b>, как в оригинале ({@code NetworkRegistry.INSTANCE.newChannel}
- * там стоит в том же конструкторе). Это допустимо: реестр каналов Forge запирается только в фазе
- * {@code COMPLETE} ({@code ForgeStatesProvider.java:27} — {@code NETLOCK}), а GT6 строит хендлеры на
- * {@code FMLConstructModEvent}; живой образец той же версии — AE2 ({@code AppEngBase.java:204}).
- * Отдельной подписки на событие регистрации (как было в 26.x) больше не существует.
- *
- * @author Gregorius Techneticies
- */
+/** 1.20.1 has no payload-system at all; the channel is built via NetworkRegistry.newSimpleChannel with registerMessage,
+ *  one message type per channel (a byte envelope whose first byte is the packet id) -- 1.7.10's own FMLProxyPacket scheme.
+ *  @author Gregorius Techneticies */
 public final class NetworkHandler implements INetworkHandler {
 	/** Fallback only for a build whose own metadata cannot be read; a fixed string would let any build in. */
 	private static final String NETWORK_VERSION_UNKNOWN = "unknown";
@@ -122,26 +95,23 @@ public final class NetworkHandler implements INetworkHandler {
 			int tID = UT.Code.unsignB(aPacketTypes[i].getPacketID());
 			if (mPacketTypes[tID] == null) mPacketTypes[tID] = aPacketTypes[i]; else throw new IllegalArgumentException("Duplicate Packet ID! " + tID);
 		}
-		// Канал заводится ПРЯМО В КОНСТРУКТОРЕ — как в 1.7.10 (см. javadoc класса: NETLOCK стоит в фазе COMPLETE).
+		// The channel is created directly in the constructor, as in 1.7.10; the registry only locks in a later phase.
 		final String tVersion = networkVersion();
 		mChannel = NetworkRegistry.newSimpleChannel(new ResourceLocation(identifierPart(aModID), "network/" + identifierPart(aChannelName)), () -> tVersion, tVersion::equals, tVersion::equals);
-		// Один тип сообщения на канал, двусторонний (направление не задаём) — форма FMLEmbeddedChannel оригинала.
+		// One message type per channel, bidirectional, matching the original FMLEmbeddedChannel's own form.
 		mChannel.registerMessage(0, GT6Payload.class, GT6Payload::write, GT6Payload::read, this::handlePayload);
 	}
 
 	private void handlePayload(GT6Payload aPayload, Supplier<NetworkEvent.Context> aContextSupplier) {
 		NetworkEvent.Context aContext = aContextSupplier.get();
-		// 1.20.1 требует явной отметки: неотмеченный пакет Forge считает необработанным и пишет в лог
-		// (NetworkEvent.Context.setPacketHandled, NetworkEvent.java:196). В 26.x отметки не было — там её вёл движок.
+		// 1.20.1 requires marking a packet handled explicitly, or Forge logs it unhandled; newer versions tracked that themselves.
 		aContext.setPacketHandled(true);
 		IPacket tPacket = decode(aPayload.data());
 		if (tPacket == null) return;
 		aContext.enqueueWork(() -> {
 			BlockGetter tWorld = getProcessingWorld(aContext);
-			// НАДЁЖНЫЙ МОСТ (репорт игрока: worldgen-MTE невидимы в стартовой области при входе): даже на
-			// ChunkWatchEvent.Sent координатный GT6-пакет может обгонять чанк при логин-очереди (chunk-sender
-			// троттлит бандл, payload-канал — нет) → блока ещё нет → пакет молча терялся → клиент-BE не создавался.
-			// Вместо гонки — буфер: пакет в незагруженный чанк откладывается и доигрывается по тикам (processPending).
+			// A coordinate packet can outrace its chunk during login, since the chunk sender throttles but this payload
+			// channel doesn't; the block isn't there yet, so the packet is buffered and replayed on tick instead.
 			if (tWorld instanceof Level tLevel && tLevel.isClientSide() && tPacket instanceof gregapi.network.packets.PacketCoordinates tPC
 			 && !tLevel.hasChunkAt(new BlockPos(tPC.mX, tPC.mY, tPC.mZ))) {
 				queuePending(tPC, this);
@@ -151,16 +121,15 @@ public final class NetworkHandler implements INetworkHandler {
 		});
 	}
 
-	// ---- Клиентский буфер отложенных координатных пакетов (пакет обогнал чанк) ----
 	private static final class PendingPacket {
-		final gregapi.network.packets.PacketCoordinates mPacket; final NetworkHandler mHandler; int mTTL = 600; // ~30с
+		final gregapi.network.packets.PacketCoordinates mPacket; final NetworkHandler mHandler; int mTTL = 600; // Roughly 30 seconds before this pending packet is given up on.
 		PendingPacket(gregapi.network.packets.PacketCoordinates aPacket, NetworkHandler aHandler) {mPacket = aPacket; mHandler = aHandler;}
 	}
 	private static final java.util.ArrayDeque<PendingPacket> PENDING = new java.util.ArrayDeque<>();
 	private static void queuePending(gregapi.network.packets.PacketCoordinates aPacket, NetworkHandler aHandler) {
 		synchronized (PENDING) {if (PENDING.size() < 8192) PENDING.add(new PendingPacket(aPacket, aHandler));}
 	}
-	/** Доигрывание отложенных пакетов (зовёт клиент-тик GT_API_Proxy_Client); aWorld — текущий клиент-Level. */
+	/** Replays deferred packets; called from the client tick, aWorld is the current client Level. */
 	public static void processPending(Level aWorld) {
 		if (aWorld == null) {synchronized (PENDING) {PENDING.clear();} return;}
 		java.util.List<PendingPacket> tReady = null;
@@ -176,11 +145,8 @@ public final class NetworkHandler implements INetworkHandler {
 		if (tReady != null) for (PendingPacket tP : tReady) try {tP.mPacket.process(aWorld, tP.mHandler);} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
 	}
 
-	/** 1:1 с оригиналом: серверный приёмник отдавал {@code null} ({@code HandlerServer.channelRead0}),
-	 *  клиентский — мир игрока ({@code Minecraft.getMinecraft().thePlayer.worldObj}). Игрок берётся ЧЕРЕЗ ЦЕНТР
-	 *  side-разделения мода ({@code GT_API_Proxy.getThePlayer}: сервер отдаёт null, клиентский прокси —
-	 *  {@code Minecraft.getInstance().player}), а не прямым обращением к клиентскому классу из общего кода —
-	 *  тот же запрет, на котором ловили BUG-084. */
+	/** 1:1 with the original: the server side returns null, the client side returns the player's world, fetched through
+	 *  the mod's own side-split center rather than referencing a client-only class directly from shared code. */
 	private BlockGetter getProcessingWorld(NetworkEvent.Context aContext) {
 		if (aContext.getDirection().getReceptionSide() != LogicalSide.CLIENT) return null;
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
@@ -229,20 +195,8 @@ public final class NetworkHandler implements INetworkHandler {
 		if (aPacket == null) return;
 		ServerLevel tWorld = serverWorld(aWorld);
 		if (tWorld == null) return;
-		// Рассылка ровно тем, кто ЧАНК ВИДИТ — это и есть проверка isPlayerWatchingChunk оригинала.
-		// Спрашиваем ПОЗИЦИЕЙ, а не объектом чанка: chunkMap.getPlayers(ChunkPos, false) — тот же перебор,
-		// которым ходят братья ниже (:262, :249), и ровно та выборка, которую делает внутри себя сам Forge
-		// (PacketDistributor.java:238-243 достаёт из переданного чанка только getLevel() и getPos()).
-		//
-		// ⛔ ПОЧЕМУ НЕ TRACKING_CHUNK, хотя он по смыслу «тот самый». Его тип — PacketDistributor<LevelChunk>,
-		// то есть API требует ОБЪЕКТ чанка, а взять его можно лишь Level.getChunk(x,z) — БЛОКИРУЮЩИМ запросом
-		// (ServerChunkCache.getChunk:135 -> BlockableEventLoop.managedBlock). Во время подготовки области поток
-		// сервера САМ двигает генерацию, и такой запрос запирает его на себе: MTE, рождённая ворлдгеном, на
-		// clearRemoved шлёт синк -> getChunk ждёт готовности чанка -> двигать готовность больше некому.
-		// Ценой был НЕ СОЗДАЮЩИЙСЯ свежий мир (замер: сервер молчал на «Preparing spawn area 97-98 %», дамп
-		// стека — этот самый кадр). Позиция у нас уже есть на входе, объект чанка не нужен никому.
-		// На main такого нет по конструкции API: там PacketDistributor.sendToPlayersTrackingChunk берёт
-		// ChunkPos (gregtech6_w NetworkHandler.java:199) и чанк не грузит вовсе.
+		// Broadcasts to whoever is watching the chunk, asked by position rather than chunk object, because TRACKING_CHUNK's API
+		// demands an actual chunk object -- fetching one mid-worldgen can deadlock the server against its own generation.
 		ChunkPos tChunk = chunk(aX, aZ);
 		GT6Payload tPayload = payload(aPacket);
 		for (ServerPlayer tPlayer : tWorld.getChunkSource().chunkMap.getPlayers(tChunk, false)) mChannel.send(PacketDistributor.PLAYER.with(() -> tPlayer), tPayload);
@@ -270,8 +224,7 @@ public final class NetworkHandler implements INetworkHandler {
 		for (ServerPlayer tPlayer : tWorld.getChunkSource().chunkMap.getPlayers(tChunk, false)) if (aPlayer == null || !aPlayer.equals(tPlayer.getUUID())) mChannel.send(PacketDistributor.PLAYER.with(() -> tPlayer), tPayload);
 	}
 
-	/** 1.7.10 отдавал ОТДЕЛЬНЫЙ {@code FMLEmbeddedChannel} на сторону; в 1.20.1 канал один на обе стороны,
-	 *  поэтому аргумент остаётся ради совместимости сигнатуры и на выбор не влияет. */
+	/** 1.7.10 gave each side its own channel; on 1.20.1 there's just one for both, so this argument no longer changes anything. */
 	@Override
 	public SimpleChannel getChannel(Dist aSide) {
 		return mChannel;
@@ -286,7 +239,7 @@ public final class NetworkHandler implements INetworkHandler {
 	}
 
 	private static ChunkPos chunk(int aX, int aZ) {
-		return new ChunkPos(new BlockPos(aX, 0, aZ)); // 1.20.1: конструктор от BlockPos (ChunkPos.java:32) — форма 1.7.10 getChunkFromBlockCoords
+		return new ChunkPos(new BlockPos(aX, 0, aZ)); // This BlockPos constructor is the 1.20.1 form of 1.7.10's getChunkFromBlockCoords.
 	}
 
 	private static String identifierPart(String aName) {
@@ -299,8 +252,7 @@ public final class NetworkHandler implements INetworkHandler {
 		return rName.length() <= 0 ? "gt6" : rName.toString();
 	}
 
-	/** Байт-конверт GT6: ровно то, чем в 1.7.10 был {@code FMLProxyPacket} — сырой {@code byte[]}, первый байт
-	 *  которого есть {@link IPacket#getPacketID()}. Своей структуры не несёт, разбор делает сам мод ({@link #decode}). */
+	/** Exactly what 1.7.10's FMLProxyPacket was: a raw byte[] whose first byte is the packet id, structure-free by design. */
 	public record GT6Payload(byte[] data) {
 		public static GT6Payload read(FriendlyByteBuf aBuffer) {
 			return new GT6Payload(aBuffer.readByteArray());

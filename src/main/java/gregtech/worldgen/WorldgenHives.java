@@ -145,7 +145,7 @@ public class WorldgenHives extends WorldgenObject {
 				}
 			}
 			
-			for (tY = !aWorld.dimensionType().hasSkyLight() ? 80 : WD.topY(aWorld)-50; tY > 2; tY--) { // F6-Y-scale: no-arg getHeight()=COUNT в MC26 → topY (maxY+1).
+			for (tY = !aWorld.dimensionType().hasSkyLight() ? 80 : WD.topY(aWorld)-50; tY > 2; tY--) { // MC26's no-arg getHeight()=COUNT, not the old getHeight(); replaced with topY (maxY+1).
 				Block tContact = WD.block(aWorld, tX, tY, tZ);
 				if (WD.getMaterial(tContact).isLiquid()) return rResult;
 				if (tContact instanceof BlockStones && WD.meta(aWorld, tX, tY, tZ) != 0) return rResult;
@@ -204,7 +204,7 @@ public class WorldgenHives extends WorldgenObject {
 			aBumbleTag = IItemBumbleBee.Util.getBumbleGenes(WD.envTemp(aWorld, aX, aY, aZ), WD.biome(aWorld, aX, aZ), !!aWorld.dimensionType().hasSkyLight() && WD.precipitationHeight(aWorld, aX, aZ) <= aY + 5, aRandom);
 		} else {
 			// Just pick whichever is the current time of day, because most dimensions don't have passage of daytime.
-			aBumbleTag = IItemBumbleBee.Util.getBumbleGenes(WD.envTemp(aWorld, aX, aY, aZ), WD.biome(aWorld, aX, aZ), !!aWorld.dimensionType().hasSkyLight() && WD.precipitationHeight(aWorld, aX, aZ) <= aY + 5, aWorld.getLevel().isDay(), !aWorld.getLevel().isDay(), aRandom); // isBrightOutside — Level-only; worldgen-приёмник WorldGenLevel -> итоговый ServerLevel через getLevel()
+			aBumbleTag = IItemBumbleBee.Util.getBumbleGenes(WD.envTemp(aWorld, aX, aY, aZ), WD.biome(aWorld, aX, aZ), !!aWorld.dimensionType().hasSkyLight() && WD.precipitationHeight(aWorld, aX, aZ) <= aY + 5, aWorld.getLevel().isDay(), !aWorld.getLevel().isDay(), aRandom); // isBrightOutside is Level-only; the worldgen receiver WorldGenLevel reaches the eventual ServerLevel via getLevel().
 		}
 		return aRegistry.mBlock.placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, (short)32755, UT.NBT.make(NBT_COLOR, aColor, NBT_INV_LIST, UT.NBT.makeInv(((IItemBumbleBee)ItemsGT.BUMBLEBEES).bumbleProductStack(NI, (short)aSpeciesID, UT.Code.units(IItemBumbleBee.Util.getWorkForce(aBumbleTag), 10000, 10, T), 0), IItemBumbleBee.Util.setBumbleTag(ST.make(ItemsGT.BUMBLEBEES, 1, aSpeciesID+1), aBumbleTag), IItemBumbleBee.Util.setBumbleTag(ST.make(ItemsGT.BUMBLEBEES, IItemBumbleBee.Util.getOffspring(aBumbleTag), aSpeciesID), aBumbleTag)), NBT_PAINTED, T), F, T);
 	}

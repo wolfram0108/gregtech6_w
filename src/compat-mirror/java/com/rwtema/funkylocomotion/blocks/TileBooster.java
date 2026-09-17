@@ -37,9 +37,8 @@ package com.rwtema.funkylocomotion.blocks;
 
 import net.minecraft.core.Direction;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — FunkyLocomotion. Было {@code class TileBooster {}} —
- *  сломано той же причиной, что TilePusher (см. его комментарий). receiveEnergy — реально
- *  используется EnergyCompat.java:164. */
+/** Compile-only mirror of the FunkyLocomotion API, kept as an interface for the same reason as
+ *  TilePusher; only receiveEnergy is actually called, from EnergyCompat. */
 public interface TileBooster {
 	int receiveEnergy(Direction aFrom, int aMaxReceive, boolean aSimulate);
 }

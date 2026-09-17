@@ -53,90 +53,43 @@ import net.minecraftforge.registries.DeferredRegister;
 
 import static gregapi.data.CS.*;
 
-/**
- * Центральный носитель GT6-регистраций {@code MobEffect} — ЕДИНСТВЕННОЕ место мода, регистрирующее
- * зелья-эффекты в neo (тот же приём, что {@code gregapi.enchants.EnchantsGT6} для чаров и
- * {@code gregapi.player.EntityFoodTracker#ATTACHMENTS} для attachment-типов).
- *
- * <p>Кому это нужно: в 1.7.10 класс {@code CS.PotionsGT} нёс id зелий ЧУЖИХ модов, заполнявшиеся на
- * postInit ({@code gregtech6/src/.../GT_API.java:773-790}): IC2 (radiation), EnviroMine (5 средовых),
- * Immersive Engineering (flammable/slippery/conductive/sticky). Ни одного из этих модов для 26.1.2 не
- * существует, а функцию эффектов потребляет сам GT6 (еда/напитки {@code MultiItemFood}/{@code
- * Loader_Fluids}, купание в нефтях {@code Loader_Blocks:163-164} → {@code BlockBaseFluid:519,525}).
- * По правилу «функция, не авторство» эффекты регистрируются здесь, поведение — 1:1 с исходниками
- * модов-владельцев (декомпил-референсы в дереве проекта: {@code ImmersiveEngineering-1.7.10/},
- * {@code EnviroMine-1.7.10/}).
- *
- * <p>Регистрируются РОВНО 5 — те, чью функцию GT6 реально накладывает:
- * <ul>
- * <li>{@code flammable}/{@code slippery}/{@code conductive}/{@code sticky} — IE
- *     ({@code IEPotions.java:29-38}, тик-поведение {@code :108-129}, обработчики урона/прыжка —
- *     {@code EventHandler.java:387-408}, продублированы в {@code GT_API_Proxy});</li>
- * <li>{@code insanity} — EnviroMine ({@code EnviroPotion.java:153-287}, каденция 30 тиков —
- *     {@code EM_StatusManager.java:84-88}).</li>
- * </ul>
- * НЕ регистрируются (осознанно, не долг): {@code RADIATION} — у Грега свой фолбэк-дизайн без IC2
- * (wither/poison, {@code UT.java:3118-3122}, {@code EntityFoodTracker:176-197}), он и есть каноническое
- * поведение, а IC2-референса поведения в проекте нет («не найдено — не выдумываем»); {@code DEHYDRATION}
- * — фолбэк hunger ({@code EntityFoodTracker:238-244}) плюс Грег сам кладёт hunger-пару рядом с
- * dehydration-парой в те же напитки ({@code Loader_Fluids.java:387}), а EnviroMine-поведение осушало
- * ЕГО стат гидратации, которого не существует (завязка на GT6-стат {@code mDehydration} создала бы
- * петлю «стат → эффект → стат», отсутствующую в оригинале); {@code HYPOTHERMIA}/{@code HEATSTROKE}/
- * {@code FROSTBITE} — GT6 их никогда не НАКЛАДЫВАЕТ (единственный потребитель — снятие Pill_Cure_All,
- * снятие незарегистрированного эффекта = no-op, 1:1 с «мод не установлен»).
- *
- * <p>Привязка к int-каналу {@code applyPotion(Entity,int,...)}: см. {@code GT_API.onModPostInit2Deferred}
- * — «real IDs are to be set on API postInit» ({@code CS.java:1690}), механизм Грега сохранён, источник
- * id теперь этот реестр. Численные id — дефолты конфигов модов-владельцев (IE {@code Config.getPotionID(24,
- * ...)} → 24-27; EnviroMine {@code EM_Settings.java:71} insanity=31).
- */
+/** Central carrier for GT6's MobEffect registrations, the only place the mod registers potion effects in neo;
+ *  registers exactly the five effects GT6's own behavior actually applies, others deliberately left out. */
 public class MobEffectsGT {
 
 	private static final DeferredRegister<MobEffect> EFFECTS = DeferredRegister.create(Registries.MOB_EFFECT, MD.GAPI.mID);
 
-	/** 1:1 int-id канала 1.7.10 (дефолты конфигов модов-владельцев), уходят в PotionsGT.ID_* на postInit. */
+	/** Same numeric ids as the 1.7.10 channel (the owning mods' config defaults), copied into PotionsGT.ID_* on postInit. */
 	public static final int ID_FLAMMABLE = 24, ID_SLIPPERY = 25, ID_CONDUCTIVE = 26, ID_STICKY = 27, ID_INSANITY = 31;
 
-	/** IE flammable: сам по тику ничего не делает ({@code IEPotions.java:116-129} — performEffect пуст для
-	 *  него), поведение целиком в обработчике урона ({@code EventHandler.java:390-395} → {@code GT_API_Proxy}). */
+	/** IE flammable does nothing on tick by itself; its behavior lives entirely in the damage-event handler. */
 	public static final net.minecraftforge.registries.RegistryObject<MobEffect> FLAMMABLE = EFFECTS.register("flammable",
 		() -> new MobEffectGT6(MobEffectCategory.HARMFUL, 0x8f3f1f));
 
-	/** IE slippery: каждый тик на земле скользит + 1/300 шанс выронить предмет из руки
-	 *  ({@code IEPotions.java:118-128}: tick=0 → isReady всегда T). */
+	/** IE slippery: slides every tick while grounded, plus a 1/300 chance to drop the held item. */
 	public static final net.minecraftforge.registries.RegistryObject<MobEffect> SLIPPERY = EFFECTS.register("slippery",
 		() -> new MobEffectSlippery(MobEffectCategory.HARMFUL, 0x171003));
 
-	/** IE conductive: сам по тику ничего не делает; в 1.7.10 усиливал урон типа "flux" (IE-электричество,
-	 *  {@code EventHandler.java:396-401}) — обработчик продублирован 1:1 в {@code GT_API_Proxy}; в сборке
-	 *  без IE-машин источника "flux"-урона нет, как не было и в 1.7.10 (GT6-электроурон шёл каналом
-	 *  IC2-или-heat, {@code DamageSources.getElectricDamage}). */
+	/** IE conductive does nothing on tick by itself; without IE machines there is no source of its damage type
+	 *  either, same as in 1.7.10 where GT6's own electric damage used a different channel. */
 	public static final net.minecraftforge.registries.RegistryObject<MobEffect> CONDUCTIVE = EFFECTS.register("conductive",
 		() -> new MobEffectGT6(MobEffectCategory.HARMFUL, 0x690000));
 
-	/** IE sticky: атрибут скорости −50 % × (amp+1), op 2 = MULTIPLY_TOTAL ({@code IEPotions.java:38}
-	 *  {@code func_111184_a(movementSpeed, uuid, -0.5D, 2)}; neo масштабирует amount×(amplifier+1) —
-	 *  {@code MobEffect.AttributeTemplate.create}, тот же закон, что 1.7.10). Ослабление прыжка —
-	 *  {@code EventHandler.java:403-408} → {@code GT_API_Proxy}. */
-	/** UUID модификатора атрибута: в 1.20.1 addAttributeModifier принимает СТРОКУ-UUID (MobEffect.java:154),
-	 *  а не ResourceLocation. Значение выведено детерминированно из имени эффекта (nameUUIDFromBytes), чтобы
-	 *  не заводить магическую константу и не разъехаться между запусками/сохранениями. */
+	/** IE sticky: -50% movement speed scaled by amplifier, and weakens jumping through the same event handler. */
+	/** 1.20.1's addAttributeModifier takes a string UUID, not a ResourceLocation; deriving it from the effect's own name
+	 *  avoids a magic constant that could drift between runs or saves. */
 	private static final String STICKY_MODIFIER_UUID = java.util.UUID.nameUUIDFromBytes((MD.GAPI.mID + ":effect.sticky").getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
 
 	public static final net.minecraftforge.registries.RegistryObject<MobEffect> STICKY = EFFECTS.register("sticky",
 		() -> new MobEffectGT6(MobEffectCategory.HARMFUL, 0x9c6800)
 			.addAttributeModifier(Attributes.MOVEMENT_SPEED, STICKY_MODIFIER_UUID, -0.5D, AttributeModifier.Operation.MULTIPLY_TOTAL));
 
-	/** EnviroMine insanity, каденция 30 тиков ({@code EM_StatusManager.java:84-88}): amp≥1 → тошнота 200
-	 *  тиков с шансом 1/(50/(amp+1)); игроку — фантомный жуткий звук в случайной точке ±3 блока с тем же
-	 *  шансом ({@code EnviroPotion.java:153-287}). Ветка amp≥2 (fake-death GUI EnviroMine) не переносится:
-	 *  GUI чужого мода без эквивалента, GT6-потребители кладут максимум amp 1 ({@code Loader_Fluids.java:517,636}). */
+	/** EnviroMine insanity on a 30-tick cadence: nausea plus a chance of a phantom scary sound nearby; the
+	 *  amplifier-2 fake-death GUI branch is not ported since it depends on a foreign mod's own screen. */
 	public static final net.minecraftforge.registries.RegistryObject<MobEffect> INSANITY = EFFECTS.register("insanity",
 		() -> new MobEffectInsanity(MobEffectCategory.HARMFUL, 5578058));
 
-	/** Порядок 1:1 со switch 0-15 {@code EnviroPotion.java:187-269} (имена звуков 1.7.10 → neo-эквиваленты
-	 *  по каталогу {@code SoundEvents}); часть констант neo — голые {@code SoundEvent}, пакет требует
-	 *  {@code Holder} → {@code wrapAsHolder} из живого реестра (не direct — сетевой кодек шлёт id). */
+	/** Sound order matches the original switch 0-15 one-for-one, mapped to the closest neo SoundEvents equivalents. */
 	private static Holder<SoundEvent>[] SOUNDS = null;
 	@SuppressWarnings("unchecked")
 	private static Holder<SoundEvent>[] sounds() {
@@ -161,17 +114,17 @@ public class MobEffectsGT {
 		return SOUNDS;
 	}
 
-	/** База: без тик-поведения (поведение — в обработчиках {@code GT_API_Proxy} или только атрибуты). */
+	/** Base with no tick behavior; behavior lives either in the shared event handler or in attribute modifiers only. */
 	private static class MobEffectGT6 extends MobEffect {
 		private MobEffectGT6(MobEffectCategory aCategory, int aColor) {super(aCategory, aColor);}
 	}
 
 	private static class MobEffectSlippery extends MobEffect {
 		private MobEffectSlippery(MobEffectCategory aCategory, int aColor) {super(aCategory, aColor);}
-		// IEPotion(id,bad,colour,tick=0,halveTick=F,icon): isReady при tickrate 0 отдаёт T каждый тик (IEPotions.java:108-114).
+		// Zero tick rate means this fires every tick, matching the original's tick-rate-0 behavior.
 		@Override public boolean isDurationEffectTick(int aTickCount, int aAmplifier) {return T;}
 		@Override public void applyEffectTick(LivingEntity aEntity, int aAmplifier) {
-			// 1:1 IEPotions.java:118-128: moveFlying(0,1,0.005F) → moveRelative (тот же вектор «вперёд» и коэффициент).
+			// Matches the original's forward-motion nudge and coefficient exactly.
 			if (aEntity.onGround()) aEntity.moveRelative(0.005F, new Vec3(0, 0, 1));
 			if (aEntity.getRandom().nextInt(300) == 0) {
 				ItemStack tHeld = aEntity.getMainHandItem();
@@ -199,11 +152,8 @@ public class MobEffectsGT {
 		}
 	}
 
-	/** Центральная точка подписки — вызывается ОДИН раз из {@code GT_API}-конструктора рядом с
-	 *  {@code EnchantsGT6.register(aModBus)} (тот же мод-бас). Английские имена — под modern-ключами
-	 *  {@code Util.makeDescriptionId("effect", ...)} (единственные, что читает движок через
-	 *  {@code MobEffect.getDisplayName}); тексты 1:1 из lang-файлов модов-владельцев
-	 *  ({@code IE .../en_US.lang}, {@code EnviroMine .../en_US.lang}). */
+	/** Central subscription point, called once from the GT_API constructor; display names use the modern
+	 *  description-id keys the engine actually reads, with text copied from the owning mods' own lang files. */
 	public static void register(IEventBus aModBus) {
 		EFFECTS.register(aModBus);
 		LH.add("effect."+MD.GAPI.mID+".flammable" , "Flammable" );

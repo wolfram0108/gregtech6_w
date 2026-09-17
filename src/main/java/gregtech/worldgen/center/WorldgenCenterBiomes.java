@@ -77,11 +77,11 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 				return T;
 			}
 			if (GENERATE_NEXUS && aMinX == 16 && aMinZ == -48) {
-				WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.PLAINS); /* FORCED-ADAPTATION: биом обнулён прежним проходом (removed/modded в neo) -> PLAINS-дефолт */
+				WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.PLAINS); /* Biome was zeroed by an earlier pass (removed/modded in neo) -> falls back to PLAINS. */
 				return T;
 			}
 			if (GENERATE_TESTING && (aMinX == 32 || aMinX == 48) && (aMinZ == -32 || aMinZ == -48)) {
-				WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.PLAINS); /* FORCED-ADAPTATION: биом обнулён прежним проходом (removed/modded в neo) -> PLAINS-дефолт */
+				WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.PLAINS); /* Biome was zeroed by an earlier pass (removed/modded in neo) -> falls back to PLAINS. */
 				return T;
 			}
 			if (aMinX == -16 || aMinX == 0 || aMinZ == -16 || aMinZ == 0) {
@@ -164,7 +164,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 						WD.placeTree(aWorld, aMinX+12, mHeight+1, aMinZ+12);
 					} else {
 						MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
-						WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.PLAINS); /* FORCED-ADAPTATION: биом обнулён прежним проходом (removed/modded в neo) -> PLAINS-дефолт */
+						WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.PLAINS); /* Biome was zeroed by an earlier pass (removed/modded in neo) -> falls back to PLAINS. */
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.GRASS_BLOCK, 0);

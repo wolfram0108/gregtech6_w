@@ -60,18 +60,16 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 	public final boolean mIsWall, mIsSlab, mIsStair, mIsPrimary;
 	public final BlockMetaType mBlock;
 	public final BlockMetaType[] mSlabs;
-	/** BUG-010-мелочь (реестр отложенного №3): WATERLOGGED должен быть ТОЛЬКО у слэбов, но property добавляется в
-	 *  createBlockStateDefinition, вызываемом из super() ДО инициализации полей (mIsSlab ещё неизвестен). Флаг-контекст
-	 *  выставляется вокруг конструирования слэбов (mSlabs-массив ниже) — единственный путь создания слэбов. */
+	/** WATERLOGGED must apply only to slabs, but the property is added from super() before mIsSlab
+	 *  is even known, so a thread-local flag is set only around slab construction to decide it correctly. */
 	private static final ThreadLocal<boolean[]> SLAB_CTOR_CTX = ThreadLocal.withInitial(() -> new boolean[1]);
 	
 	public BlockMetaType(Class<? extends BlockItem> aItemClass, Material aVanillaMaterial, SoundType aSoundType, String aNameInternal, String aDefaultLocalised, OreDictMaterial aMaterial, float aResistanceMultiplier, float aHardnessMultiplier, int aHarvestLevel, int aCount, IIconContainer[] aIcons) {
 		super(aItemClass == null ? ItemBlockMetaType.class : aItemClass, aNameInternal, aVanillaMaterial, aSoundType, aCount, aIcons);
 		if (aItemClass == null) aItemClass = ItemBlockMetaType.class;
 		onBlockCreation(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons);
-		// F12-hardness: 1.7.10 setHardness/setResistance (runtime мутаторы после super) — neo Properties.strength неизменяема.
-		// Заменены: getBlockHardness (WD.hardness(STONE)*mHardnessMultiplier) → neo через BlockBase.getDestroyProgress;
-		// getExplosionResistance(byte) → neo через BlockBase.getExplosionResistance(BlockState,...). Оба подключены 1:1, значение активно.
+		// neo's Properties.strength is immutable, unlike 1.7.10's post-construction setHardness/
+		// setResistance mutators, so hardness and explosion resistance are wired through BlockBase's overridable hooks instead.
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.BLOCK);
 		mIsWall = F;
 		mIsSlab = F;
@@ -83,7 +81,7 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		mHarvestLevel = aHarvestLevel;
 		mHardnessMultiplier = aHardnessMultiplier;
 		mResistanceMultiplier = aResistanceMultiplier;
-		boolean[] tSlabCtx = SLAB_CTOR_CTX.get(); tSlabCtx[0] = true; // WATERLOGGED — только слэбам (см. SLAB_CTOR_CTX)
+		boolean[] tSlabCtx = SLAB_CTOR_CTX.get(); tSlabCtx[0] = true; // WATERLOGGED only for slabs; see SLAB_CTOR_CTX
 		try {
 			mSlabs = new BlockMetaType[] {
 			  makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_DOWN    , this)
@@ -95,20 +93,16 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 			, null};
 		} finally {tSlabCtx[0] = false;}
 		mSlabs[SIDE_INVALID] = mSlabs[SIDE_DOWN];
-		// F12-followup (block-split): слэбы созданы ВНУТРИ конструктора (makeSlab), а не через call-site registerBlockLazy —
-		// их neo-Block-реестр никто не регистрирует → «intrusive holders were not registered» на freeze. Регистрируем каждый
-		// уникальный слэб ЧЕРЕЗ ЦЕНТР GT_API.registerBlockOnly; ключ = setId слэба (GT:санитизированное имя).
-		// BlockItem слэба уже зарегистрирован его BlockBase-конструктором (registerItemLazy) — потому «Only».
-		// ⛔ Прямой Registry.register здесь стоять не может: реестры этой версии загрузчика — форджевы обёртки,
-		// и запись мимо активного RegisterEvent они запрещают («Can not register to a locked registry»).
+		// Slabs are built inside the constructor (makeSlab), not through a registerBlockLazy call site, so
+		// nothing registers their neo Block; each unique slab is registered through the center GT_API.registerBlockOnly instead.
 		{
 			java.util.Set<Object> tSeenSlabs = new java.util.HashSet<>();
 			for (BlockMetaType tSlab : mSlabs) if (tSlab != null && tSeenSlabs.add(tSlab)) {
 				gregapi.GT_API.registerBlockOnly(tSlab, tSlab.mNameInternal);
 			}
 		}
-		// F12-followup (block-split): конструкция блока идёт на RegisterEvent (реестр разморожен), но ST.hide/ST.make/рецепты
-		// создают ItemStack → компоненты связаны только на server-start. Откладываем эту дата-часть в deferItemInit (1:1 порядок).
+		// Block construction runs during the registry event, but building an ItemStack needs components
+		// that only exist at server start, so this data part is deferred to deferItemInit instead, keeping the original order.
 		gregapi.GT_API.deferItemInit(() -> {
 		ST.hide(mSlabs[SIDE_UP]);
 		ST.hide(mSlabs[SIDE_NORTH]);
@@ -135,7 +129,7 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		super(aItemClass == null ? ItemBlockMetaType.class : aItemClass, aName+".slab."+aSlabType, aVanillaMaterial, aSoundType, aCount, aIcons);
 		if (aItemClass == null) aItemClass = ItemBlockMetaType.class;
 		onSlabCreation(aItemClass, aVanillaMaterial, aSoundType, aName, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons, aSlabType, aBlock);
-		// F12-hardness: см. основной конструктор выше — getBlockHardness/getExplosionResistance подключены к neo (getDestroyProgress), 1:1.
+		// Same hardness/explosion-resistance wiring as the main constructor above.
 		mIsWall = F;
 		mIsSlab = T;
 		mIsStair = F;
@@ -147,7 +141,7 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		mHardnessMultiplier = aHardnessMultiplier;
 		mResistanceMultiplier = aResistanceMultiplier;
 		mSlabs = null;
-		registerDefaultState(defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.FALSE)); // BUG-010: явный дефолт (any() не гарантирует false)
+		registerDefaultState(defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.FALSE)); // explicit default, since any() does not guarantee false
 		setBlockBounds(
 		mSide == SIDE_X_POS ? 0.5F : 0.0F,
 		mSide == SIDE_Y_POS ? 0.5F : 0.0F,
@@ -156,16 +150,12 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		mSide == SIDE_Y_NEG ? 0.5F : 1.0F,
 		mSide == SIDE_Z_NEG ? 0.5F : 1.0F
 		);
-		// F12-followup (block-split): ST.make (ItemStack) — компоненты только на server-start → deferItemInit.
+		// Deferred to server start, since building this ItemStack needs components that don't exist yet.
 		gregapi.GT_API.deferItemInit(() -> {if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));});
 	}
 	
-	// BUG-010 (слэб «иногда полный куб», гоночный): bounds слэба СТАТИЧНЫ (формула конструктора :137-144), но
-	// setBlockBounds(pass)=true у BlockBaseMeta заявлял «bounds выставлены», НИЧЕГО не выставляя, а анти-протечка
-	// рендера (GT6BlockModel:142/164/195 — 1:1 контракт «false → сброс в полный куб» ОБЩЕГО Block-инстанса) сбрасывает
-	// поля после КАЖДОГО мешинга → следующий мешинг рисует слэб кубом (замер gt6slabprobe: те же 6 state'ов в одних
-	// прогонах полублоки, в других — кубы). В 1.7.10 поля Block никто не сбрасывал (статичный конструкторный bounds
-	// жил вечно). Фикс: слэб ПЕРЕВЫСТАВЛЯЕТ свои статичные bounds на каждом рендер-пассе (блок- и item-форма).
+	// The slab's bounds are static, but the render anti-leak logic resets the shared Block instance's
+	// fields after every meshing pass, so the next pass drew a full cube; the fix re-asserts the static bounds on every pass.
 	private void setSlabBounds() {
 		setBlockBounds(
 		mSide == SIDE_X_POS ? 0.5F : 0.0F,
@@ -176,8 +166,8 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		mSide == SIDE_Z_NEG ? 0.5F : 1.0F
 		);
 	}
-	// BUG-010 (живой тест игрока: «коллизия целого блока»): shape-мосты BlockBase (getShape/getCollisionShape) читают
-	// гоночное поле mRenderBounds напрямую → слэбу нужна СТАТИЧНАЯ форма, не зависящая от полей вовсе.
+	// BlockBase's shape bridges read the racy mRenderBounds field directly, so the slab needs its
+	// own shape that doesn't depend on those fields at all.
 	private net.minecraft.world.phys.shapes.VoxelShape mSlabShape = null;
 	private net.minecraft.world.phys.shapes.VoxelShape slabShape() {
 		if (mSlabShape == null) mSlabShape = net.minecraft.world.phys.shapes.Shapes.create(new net.minecraft.world.phys.AABB(
@@ -196,10 +186,8 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		return mIsSlab ? slabShape() : super.getCollisionShape(aState, aWorld, aPos, aContext);
 	}
 
-	// BUG-010 (запрос игрока, согласованное отклонение от 1.7.10: в 1.7.10 waterlogging не существовал): слэбы ведут
-	// себя как современные ванильные — ставятся В воду (вода остаётся, WATERLOGGED), ведро вынимает/заливает
-	// (дефолты SimpleWaterloggedBlock по property), вода тикает через updateShape. Property получают ТОЛЬКО слэбы
-	// (флаг-контекст SLAB_CTOR_CTX — mIsSlab на этом этапе ещё не присвоен); полные блоки — без лишнего property.
+	// Deliberate deviation from 1.7.10, which had no waterlogging: slabs now behave like modern
+	// vanilla ones, holding water via the WATERLOGGED property, which only slabs get, gated by the same flag context.
 	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> aBuilder) {
 		super.createBlockStateDefinition(aBuilder);
 		if (SLAB_CTOR_CTX.get()[0]) aBuilder.add(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
@@ -211,16 +199,16 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		return aState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && aState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)
 			? net.minecraft.world.level.material.Fluids.WATER.getSource(false) : super.getFluidState(aState);
 	}
-	// Ветка 1.20.1: updateShape(state, direction, neighbourState, LevelAccessor, pos, neighbourPos)
-	// (BlockBehaviour.java:140) — ScheduledTickAccess отдельной сущностью не выделен, планирование
-	// тика идёт прямо по LevelAccessor.scheduleTick, как в ванильном SlabBlock этой версии.
+	// 1.20.1: updateShape schedules its tick directly through LevelAccessor, since there's no separate
+	// ScheduledTickAccess type yet, matching vanilla's own SlabBlock on this version.
 	@Override public net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.core.Direction aDir, net.minecraft.world.level.block.state.BlockState aNeighbourState, net.minecraft.world.level.LevelAccessor aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.core.BlockPos aNeighbourPos) {
 		if (aState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && aState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED))
 			aWorld.scheduleTick(aPos, net.minecraft.world.level.material.Fluids.WATER, net.minecraft.world.level.material.Fluids.WATER.getTickDelay(aWorld));
 		return super.updateShape(aState, aDir, aNeighbourState, aWorld, aPos, aNeighbourPos);
 	}
 
-	// Рендер слэба вообще не должен зависеть от гоночных общих полей: bounds статичны → отдаём их напрямую.
+	// Slab rendering must not depend on the racy shared fields at all, since its bounds are static;
+	// they are returned directly instead.
 	private float[] mSlabRenderBounds = null;
 	@Override public float[] getRenderBounds() {
 		if (!mIsSlab) return super.getRenderBounds();
@@ -250,14 +238,8 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		//
 	}
 	
-	// Подключение канала «клик по блоку» (2026-07-30, реестр мёртвых каналов). Ветка 1.20.1: канал ОДИН —
-	// BlockBehaviour.use(BlockState,Level,BlockPos,Player,InteractionHand,BlockHitResult) (BlockBehaviour.java:172),
-	// ровно как 1.7.10 onBlockActivated; расщепления на useItemOn/useWithoutItem и результата SUCCESS_SERVER
-	// в этой версии нет. Мост тот же, что у брата MultiTileEntityBlock:417.
-	// Мост стоит ЗДЕСЬ, а не в корне BlockBase: в оригинале правило живёт у BlockMetaType:142 и
-	// BlockStones:557, в базе его нет; BlockStones наследует этот класс, поэтому один мост покрывает оба.
-	// Без моста тело ниже не звалось никем: половинка GT6 не собиралась в целый блок кликом второй половинки,
-	// и правило BlockStones (:573) тоже молчало.
+	// 1.20.1 has one click channel, BlockBehaviour.use, matching 1.7.10's onBlockActivated exactly (no split
+	// into useItemOn/useWithoutItem); without this bridge two GT6 half-slabs never combined into a whole block on click.
 	@Override public net.minecraft.world.InteractionResult use(net.minecraft.world.level.block.state.BlockState aState, Level aWorld, net.minecraft.core.BlockPos aPos, Player aPlayer, net.minecraft.world.InteractionHand aHand, net.minecraft.world.phys.BlockHitResult aHit) {
 		if (aHand == net.minecraft.world.InteractionHand.MAIN_HAND && bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
 			return net.minecraft.world.InteractionResult.SUCCESS;
@@ -283,45 +265,20 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		return F;
 	}
 	
-	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
-	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering). Позиция(aX,aY,aZ) в исходнике
-	// была позицией СОСЕДА (стандартная 1.7.10-семантика shouldSideBeRendered) -> aNeighbor.getBlock() эквивалентен
-	// WD.block(aWorld,aX,aY,aZ) без потерь, доп. world/pos не требовались.
-	/**
-	 * ЦЕНТР «рисовать ли грань к соседу» — то, чем в 1.7.10 был {@code shouldSideBeRendered(world,x,y,z,side)}.
-	 *
-	 * <p><b>Почему контракт переведён на СОСТОЯНИЯ.</b> neo спрашивает видимость грани через
-	 * {@code BlockBehaviour.skipRendering(BlockState, BlockState, Direction)} — мира и координат там нет.
-	 * Потомки, переопределившие 1.7.10-сигнатуру, остались без вызывателей: их правило просто выпадало.
-	 * Живой случай (найден игроком сверкой с 1.7.10): два блока стекла GT6 рядом рисовали между собой
-	 * стенку, тогда как в оригинале одинаковые стёкла сливаются — правило жило в
-	 * {@code BlockGlassClear.shouldSideBeRendered}, которое движок не звал.
-	 *
-	 * <p>Поэтому вопрос задаётся ЗДЕСЬ, в общем предке семейства, и ровно один раз; потомки переопределяют
-	 * этот метод, а не мёртвую сигнатуру. Возврат — как в 1.7.10: {@code true} = грань рисовать.
-	 *
-	 * <p>Само объявление контракта — в корне иерархии ({@link gregapi.block.BlockBase}); здесь только вызов,
-	 * потому что этот мост переопределяет предковый.
-	 */
+	// neo's skipRendering drops the neighbor's position, which this branch never actually needed,
+	// since the neighbor block itself is enough here.
+	/** neo asks face visibility through a pair of BlockState with no world, orphaning descendants that kept the 1.7.10
+	 *  signature -- adjacent GT6 glass drew a seam between panes that should merge, fixed by asking this once here instead. */
 	@Override
 	public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
 		byte aSide = UT.Code.side(aDir);
-		// сперва — правило семьи (стёкла/дорожка): «не рисовать» у них выражается через контракт выше
+		// checks the family rule (glass, paths) first, expressed through the contract above
 		if (!shouldSideBeRendered(aState, aNeighbor, aSide)) return T;
 		if (aSide == OPOS[mSide]) return F;
 		if (aSide != mSide && SIDES_VALID[mSide]) {
 			Block aBlock = aNeighbor.getBlock();
-			// было aBlock.getRenderBlockPass() (1.7.10 vanilla Block, overridable) - neo Block не несёт эту
-			// override-точку generic-но; BlockMetaType-семейство сама её нигде не переопределяет (грепом по
-			// оригиналу - только этот единственный вызов), т.е. в 1.7.10 всегда резолвился в vanilla-дефолт 0 ->
-			// GT6-own reintroduced константный метод ниже (тот же приём, что BlockBaseFluid/PrefixBlock/
-			// MultiTileEntityBlock уже применяют для этого имени).
-			// ⚠️ ИНВЕРСИЯ (BP-BUG-019). Оригинал (BlockMetaType.java:161) отдавал "pass != 0" из метода, где
-			// T = РИСОВАТЬ: «сосед-половинка той же ориентации — грань рисуем, если он ПРОЗРАЧЕН, и прячем,
-			// если непрозрачен (он её и так закрывает)». Здесь контракт ОБРАТНЫЙ (T = СКРЫТЬ), поэтому
-			// выражение обязано быть "== 0"; соседние две строки метода инвертированы верно, эта была
-			// перенесена буквой. Ветвь до BP-BUG-019 не исполнялась ни разу (у половинок грани вовсе не
-			// доходили до вопроса соседу, GT6QuadBuilder), поэтому расхождение не проявлялось.
+			// getRenderBlockPass never had a real override in 1.7.10, so it always resolved to vanilla's default 0.
+			// The original meant true=draw; here the contract is inverted (true=hide), so the check must be "== 0", not "!= 0".
 			if (aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mSide == mSide) return ((BlockMetaType)aBlock).getRenderBlockPass() == 0;
 		}
 		return super.skipRendering(aState, aNeighbor, aDir);
@@ -331,8 +288,8 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 	@Override public String getHarvestTool(int aMeta) {return TOOL_pickaxe;}
 	@Override public int getHarvestLevel(int aMeta) {return mHarvestLevel;}
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.STONE, aWorld, aX, aY, aZ) * mHardnessMultiplier;}
-	// было Block.getExplosionResistance(Entity) (1.7.10, вызов с null-Entity) -> Block.getExplosionResistance() [Block.java:453],
-	// тот же no-arg-fallback, что уже принят для аналогичного generic-вызова в WD.scan (WD.java:1123).
+	// Calling with a null Entity is replaced by the no-arg overload, the same fallback already used for the equivalent generic
+	// call in WD.scan.
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.STONE.getExplosionResistance() * mResistanceMultiplier;}
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return mBlock == this || mSide == aSide;}
 	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return mBlock == this;}

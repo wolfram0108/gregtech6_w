@@ -32,9 +32,8 @@ import gregapi.fluid.FluidTankGT;
 import gregapi.oredict.OreDictMaterial;
 import gregapi.util.ST;
 import gregapi.util.UT;
-// F-layer-decouple: gregtech.tileentity.tools.MultiTileEntityMold — CONTENT-класс (вне ядра-272/среза, не
-// портирован). MOLD_RECIPES (Map<Integer,OreDictPrefix>) читается рефлексией по имени класса (UT.Reflection.
-// getFieldContent) — приём GT6 для кросс-слойного доступа; ключи — CORE-тип Integer (см. ниже).
+// MultiTileEntityMold is a content-layer class not ported here, so its MOLD_RECIPES map is read by reflection on class
+// name, GT6's own trick for crossing that layer boundary.
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.ListTag;

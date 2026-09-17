@@ -31,31 +31,20 @@ import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.*;
 
-/**
- * F3-render: 1.7.10 immediate-mode GUI/overlay-помощники. Инвентарный рендер предмета в neo — через baked item-модель
- * ({@link gregapi.render.GT6ItemModel}) + {@code GuiGraphics.renderItem} на call-site; {@code renderItemIntoGUI} здесь мёртв
- * (0 вызывателей, суперседирован). {@code mRenderBlocks} — нейтральный held-объект ("передать дальше"). Единственное живое —
- * {@code drawWrenchOverlay} (косметический overlay соединений труб/проводов при наведении с гаечным ключом).
- */
+/** Inventory item rendering now goes through the baked item model plus GuiGraphics.renderItem at the call site,
+ *  leaving renderItemIntoGUI dead; the only still-live piece here is the cosmetic wrench-hover connection overlay. */
 public class RenderHelper {
-	/** F3-render: было {@code RenderBlocks} (тип удалён); нейтральный held-объект, тело не трогается. */
+	/** Was a RenderBlocks reference (type removed); kept as a neutral held object, body untouched. */
 	public static Object mRenderBlocks = null;
 
-	/** F3-render: было immediate-mode RenderItem/GL11; в neo инвентарь-рендер — baked GT6ItemModel + GuiGraphics.renderItem. Мёртв (0 вызывателей). */
+	/** Was immediate-mode RenderItem/GL11; inventory rendering is now the baked GT6ItemModel path, so this is dead. */
 	public static void renderItemIntoGUI(Font aFontRenderer, TextureManager aTextureManager, ItemStack aStack, int aX, int aY, boolean aEffect) {
 		//
 	}
 
-	/** F3-render, ЖИВОЙ wrench-overlay (сетка зон клика инструментом по грани). 1.7.10: сырой GL11 в кадре
-	 *  DrawBlockHighlightEvent — translate в центр блока + CCL {@code Rotation.sideRotations[aSide]} + рисование
-	 *  в локальной плоскости y=-0.5025 (RenderHelper:98-449 оригинала).
-	 *  <p>Ветка 1.20.1: носитель — {@code RenderHighlightEvent.Block} ({@code RenderHighlightEvent.java:107}), и он
-	 *  НЕМЕДЛЕННЫЙ: даёт готовые {@code PoseStack} и {@code MultiBufferSource} прямо в кадре отрисовки выделения —
-	 *  то есть та же семантика, что у 1.7.10 (нарисовал тут же), без отложенного {@code CustomBlockOutlineRenderer}
-	 *  26.x. Линии — канон {@code LevelRenderer.renderShape} ({@code RenderType.lines()}, vertex+color+normal).
-	 *  Базисы граней — 1:1 из байткода CCL Rotation.sideRotations (Matrix4-инициализаторы); геометрия
-	 *  (112 отрезков) — дословная транскрипция glVertex3d-пар оригинала. Дыхание цвета — CLIENT_TIME, как было. */
-	private static final double[][][] WRENCH_SIDE_BASIS = { // [aSide][локальная ось X/Y/Z][мировой вектор x,y,z]
+	/** RenderHighlightEvent.Block is immediate, handing a live PoseStack/MultiBufferSource in the draw frame itself,
+	 *  matching 1.7.10's draw-it-now semantics; the geometry is a literal transcription of the old CCL basis code. */
+	private static final double[][][] WRENCH_SIDE_BASIS = { // [aSide][local axis X/Y/Z][world vector x,y,z].
 		{{ 1, 0, 0}, { 0, 1, 0}, { 0, 0, 1}}, // DOWN: identity
 		{{ 1, 0, 0}, { 0,-1, 0}, { 0, 0,-1}}, // UP: diag(1,-1,-1)
 		{{ 1, 0, 0}, { 0, 0, 1}, { 0,-1, 0}}, // NORTH: world=(lx,-lz,ly)
@@ -71,13 +60,13 @@ public class RenderHelper {
 		try {
 			drawWrenchOverlayNow(aEvent.getMultiBufferSource(), aEvent.getPoseStack(), aEvent.getCamera().getPosition(),
 				tPos.getX(), tPos.getY(), tPos.getZ(), aConnections & 255, aSide);
-		} catch (Throwable e) {/* косметика не смеет ронять кадр */}
+		} catch (Throwable e) {/* cosmetics must not crash the frame */}
 	}
 
 	private static void drawWrenchOverlayNow(net.minecraft.client.renderer.MultiBufferSource aBuffer, com.mojang.blaze3d.vertex.PoseStack aPose,
 			net.minecraft.world.phys.Vec3 tCam, int aX, int aY, int aZ, int aConnections, byte aSide) {
 		final double tCX = aX + 0.5 - tCam.x, tCY = aY + 0.5 - tCam.y, tCZ = aZ + 0.5 - tCam.z;
-		final double[][] tM = WRENCH_SIDE_BASIS[aSide]; final double tLY = -0.5025; // локальная плоскость чуть снаружи грани, как glTranslated(0,-0.5025,0)
+		final double[][] tM = WRENCH_SIDE_BASIS[aSide]; final double tLY = -0.5025; // local plane just outside the face, like the original's glTranslated(0,-0.5025,0)
 		double tColorD = (CLIENT_TIME % 42 < 21 ? 0.25 + ((CLIENT_TIME % 21) / 40.0) : 0.75 - ((CLIENT_TIME % 21) / 40.0));
 		int tGray = (int)(tColorD * 255.0);
 		final int tColor = net.minecraft.util.FastColor.ARGB32.color(127, tGray, tGray, tGray); // glColor4d(t,t,t,0.5)
@@ -90,7 +79,7 @@ public class RenderHelper {
 			tVC.vertex(tPose.pose(), (float)x1, (float)y1, (float)z1).color(tColor).normal(tPose.normal(), tNormal.x(), tNormal.y(), tNormal.z()).endVertex();
 			tVC.vertex(tPose.pose(), (float)x2, (float)y2, (float)z2).color(tColor).normal(tPose.normal(), tNormal.x(), tNormal.y(), tNormal.z()).endVertex();
 		};
-		// ===== дословная транскрипция вершин оригинала (пары glVertex3d → отрезки), локальные (x,z) =====
+		// The following segments are a verbatim transcription of the original's glVertex3d vertex pairs, in local (x,z).
 		tLine.line(0.50, -0.25, -0.50, -0.25);
 		tLine.line(0.50, 0.25, -0.50, 0.25);
 		tLine.line(0.25, -0.50, 0.25, 0.50);

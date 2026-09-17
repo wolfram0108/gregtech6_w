@@ -33,17 +33,9 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidTank;
 
-/**
- * @author Gregorius Techneticies
- *
- * В 1.7.10 отсюда читались {@code Fluid.getLuminosity/getBlock/getStillIcon/getColor} (Forge-API
- * кастомной жидкости, удалён в 26.1.2). Эти ДАННЫЕ уже живут в центре F5 ({@link FluidGT}) —
- * переиспользуем оттуда, НЕ дублируем и НЕ гатим (REMAP-RULES §A/§C4, философия: центр F5 —
- * единственный источник данных жидкости): свечение {@link FluidGT#getLuminosity()} (:153), цвет
- * {@link FluidGT#getRGBa()} (:155), ссылку-иконку {@link FluidGT#mTexture} (:98).
- * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): САМ рендер жидкости (baked-геометрия по высоте потока) —
- * клиентская поздняя фаза (decisions/F3-render.md §2.1-2.2); здесь только держатель данных.
- */
+/** @author Gregorius Techneticies
+ *  Forge's custom-fluid API (getLuminosity/getStillIcon/getColor) is gone; this data now lives in {@link FluidGT},
+ *  reused from there instead of duplicated; the flowing-fluid mesh itself is built elsewhere, this is only a data holder. */
 public class BlockTextureFluid implements ITexture {
 	private final boolean mAllowAlpha;
 	private final int mLuminosity;
@@ -80,9 +72,7 @@ public class BlockTextureFluid implements ITexture {
 	}
 
 	public BlockTextureFluid(FluidStack aFluid, boolean aAllowAlpha) {
-		// Данные жидкости — из ЦЕНТРА F5 (FluidGT), не обнуляем/не дублируем. Оригинал (1.7.10):
-		// mLuminosity = aFluid.getFluid().getLuminosity(aFluid) * 16; иконка/цвет — из блока жидкости
-		// либо Fluid.getStillIcon()/getColor(). Всё это теперь хранит FluidGT (см. class javadoc).
+		// Fluid data (luminosity, icon, color) comes from the central FluidGT registry, not re-derived here per-fluid like 1.7.10.
 		FluidGT tGT = (aFluid == null) ? null : FluidGT.of(aFluid.getFluid());
 		ResourceLocation tIcon;
 		if (aFluid == null) {
@@ -90,22 +80,19 @@ public class BlockTextureFluid implements ITexture {
 			mRGBa = UNCOLOURED;
 			tIcon = null;
 		} else if (tGT == null) {
-			// BUG-049: 1:1-ветка «иконка самой жидкости» ВОССТАНОВЛЕНА через центр FL.stillIcon (ванильные
-			// вода/лава были невидимы во всех ёмкостях — mIcon оставался null). Водный тинт — как у дисплеев
-			// (ItemFluidDisplay.getColorFromItemStack: серый water_still без тинта бесцветен).
+			// Restores the 1:1 'fluid's own icon' branch via the central FL.stillIcon; without it mIcon stayed null and vanilla
+			// water/lava were invisible in every tank. Water tint matches ItemFluidDisplay: an untinted grey water_still is colorless.
 			mLuminosity = aFluid.getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA) ? 15 * 16 : 0;
 			mRGBa = aFluid.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER) ? gregapi.util.UT.Code.getRGBaArray(0xFF3F76E4) : UNCOLOURED;
 			tIcon = FL.stillIcon(aFluid.getFluid());
 		} else {
-			mLuminosity = tGT.getLuminosity() * 16; // *16 — как в оригинале (0..15 → шкала яркости 0..240).
+			mLuminosity = tGT.getLuminosity() * 16; // *16, as in the original (0..15 -> brightness scale 0..240).
 			mRGBa = tGT.getRGBa();
-			// BUG-049: GT6-жидкость БЕЗ своей текстуры — water_still из центра, красится mRGBa. С текстурой — она же.
+			// A GT6 fluid with no texture of its own falls back to the central water_still sprite, tinted by mRGBa.
 			tIcon = FL.stillIcon(aFluid.getFluid());
 		}
-		// BUG-049: клиент-нормализация «текстура заявлена, но спрайта в атласе НЕТ» (seawater и др.: PNG
-		// отсутствует и в ресурсах 1.7.10 — там рисовалась missing-шахматкой; резолвер GT6QuadBuilder такие
-		// квады ПРОПУСКАЕТ → жидкость невидима) → water_still, красится mRGBa. Конструктор бежит только под
-		// CODE_CLIENT (все get()-фабрики гейтованы) — client-класс GT6QuadBuilder сервером не линкуется.
+		// When a declared texture has no atlas sprite (seawater etc., missing even in 1.7.10 resources), the resolver
+		// would skip the quad and hide the fluid entirely; fall back to water_still tinted by mRGBa instead.
 		if (tIcon != null && GT6QuadBuilder.resolveSprite(tIcon) == null) tIcon = new ResourceLocation("minecraft", "block/water_still");
 		mIcon = tIcon;
 		mAllowAlpha = aAllowAlpha;
@@ -116,8 +103,8 @@ public class BlockTextureFluid implements ITexture {
 	}
 
 	public BlockTextureFluid(Fluid aFluid, boolean aAllowAlpha) {
-		// КРИТ (флюид-блоки прозрачные): amount=0 → neo FluidStack трактует как EMPTY → getFluid()=EMPTY →
-		// FluidGT.of(EMPTY)=null → mIcon null → грань не рисовалась. amount текстуре не важен, даём ненулевой.
+		// amount=0 makes neo treat the FluidStack as EMPTY, so FluidGT.of() returns null and the face never draws; the
+		// texture itself doesn't depend on amount, so a nonzero placeholder amount is used here.
 		this(FL.make(aFluid, 1000), aAllowAlpha);
 	}
 
@@ -129,8 +116,8 @@ public class BlockTextureFluid implements ITexture {
 		return mIcon;
 	}
 
-	/** Иконка жидкости для fluid-меша ({@link RendererBlockFluid}): GT6-жидкость несёт ОДНУ текстуру
-	 *  (FL.create → CustomIcon("fluids/имя")) — still==flowing, как Forge Fluid.setIcons(still) 1.7.10. */
+	/** Fluid icon for the fluid mesh ({@link RendererBlockFluid}): a GT6 fluid has one texture, still==flowing,
+	 *  matching Forge's 1.7.10 Fluid.setIcons(still). */
 	public ResourceLocation icon() {return mIcon;}
 
 	@Override

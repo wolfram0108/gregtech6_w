@@ -118,11 +118,10 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 	@Override
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {
 		if (IS_CLAY[WD.meta(aWorld, aX, aY, aZ)]) return F;
-		// ориг. :108 `aPlant instanceof BlockBush` — в 1.7.10 это ВСЕ растения (BlockCrops/BlockFlower/
-		// BlockSapling/BlockMushroom/… все `extends BlockBush`). Neo-эквивалент — VegetationBlock: `BushBlock`
-		// там сузился до одного блока реестра, и грядка GT6 переставала держать саженцы и цветы (замер `M-84`).
+		// 1.7.10's BlockBush covered every plant type; neo's BushBlock narrowed to a single registry block, so
+		// VegetationBlock is the real equivalent, or GT6's crop bed would stop holding saplings and flowers.
 		if (aPlant == Blocks.SUGAR_CANE || aPlant instanceof net.minecraft.world.level.block.BushBlock) return T;
-		// F10: getPlantType — реальная сигнатура net.minecraftforge.common.IPlantable (BlockGetter,BlockPos), не int x,y,z.
+		// getPlantType's real signature takes (BlockGetter,BlockPos), not raw x,y,z coordinates.
 		PlantType tType = aPlant.getPlantType(aWorld, new BlockPos(aX+aSide.getStepX(), aY+aSide.getStepY(), aZ+aSide.getStepZ()));
 		return tType == PlantType.PLAINS || tType == PlantType.WATER || tType == PlantType.DESERT || tType == PlantType.BEACH;
 	}

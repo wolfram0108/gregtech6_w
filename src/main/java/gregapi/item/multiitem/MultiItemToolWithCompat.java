@@ -44,17 +44,8 @@ import thaumcraft.api.IWarpingGear;
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;
 
-/**
- * @author Gregorius Techneticies
- *
- * This is an example on how you can create a Tool ItemStack, in this case a Bismuth Wrench:
- * gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(CS.ToolIDs.WRENCH, 1, MT.Bismuth, MT.Bismuth, null);
- *
- * item-base F10 foreign-gated (compat-mirror пустые интерфейсы — форейн-моды отсутствуют): IWarpingGear/IToolGrafter/IToolCrowbar/
- * IToolWrench/IBoxable/ISpecialElectricItem/IElectricItemManager/IItemElectric сейчас ПУСТЫЕ маркер-
- * интерфейсы (compat-mirror/README.md, "члены добираются компилятором") — методы ниже временно НЕ
- * @Override (нечего переопределять), тела 1:1 сохранены для реальной мод-интеграции позже.
- */
+/** The foreign-mod interfaces below (IWarpingGear, IToolWrench, IItemElectric, etc.) are currently empty
+ *  compat-mirror markers, so their methods stay unannotated with @Override until real mod integration exists. */
 @Optional.InterfaceList(value = {
   @Optional.Interface(iface = "thaumcraft.api.IWarpingGear", modid = ModIDs.TC)
 , @Optional.Interface(iface = "forestry.api.arboriculture.IToolGrafter", modid = ModIDs.FR)
@@ -72,12 +63,8 @@ public class MultiItemToolWithCompat extends MultiItemTool implements IWarpingGe
 	 */
 	public MultiItemToolWithCompat(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		// F16 creative-tab (1:1 наблюдаемого — инструменты БЫЛИ в креативе 1.7.10; исходник им setCreativeTab явно не
-		// задавал, канал шёл vanilla-дефолтом). Воспроизводим наблюдаемое ТЕМ ЖЕ существующим порт-механизмом god-item-
-		// вкладок (CreativeTab ctor → CreativeTabsGT.registerOwnTab/displayItems), что MultiItemRandomTools:60 (Equipment)
-		// и MultiItemTechnological:44 (Technology) — своя вкладка «GregTech: Tools». getSubItems (перечислитель вариантов
-		// инструментов) уже был, но не звался: предмет не попадал ни в ASSIGNMENTS, ни в OWN_TAB_MEMBERS. Иконка вкладки —
-		// pickaxe (мета=tool-id; материал резолвится лениво из displayItems, после addTool в Loader_Tools).
+		// Tools were observably present in the creative inventory in 1.7.10 even though nothing set a creative tab
+		// explicitly there; this reproduces that with the same god-item-tab mechanism other item classes already use.
 		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Tools", this, (short)gregapi.data.CS.ToolsGT.PICKAXE);
 	}
 

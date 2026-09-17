@@ -50,14 +50,14 @@ public class Behavior_Watering_Crops extends AbstractBehaviorDefault {
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
 		if (aWorld.isClientSide() || aPlayer == null || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
-		FluidStack mFluid = ((IFluidContainerItem)aItem).getFluid(aStack); // F5/BUG-045 (1:1): восстановленный IFluidContainerItem (оригинал :46)
+		FluidStack mFluid = ((IFluidContainerItem)aItem).getFluid(aStack); // Restored IFluidContainerItem 1:1 from the original.
 		if (FL.water(mFluid)) {
 			BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, F);
 			try {if (tTileEntity instanceof ICropTile) {
 				int tHydration = ((ICropTile)tTileEntity).getHydrationStorage();
 				int tDrained = Math.min((200-tHydration)/10, mFluid.getAmount());
 				if (tDrained > 0) {
-					((IFluidContainerItem)aItem).drain(aStack, tDrained, T); // F5/BUG-045 (1:1): восстановленный IFluidContainerItem.drain (оригинал :53); FluidUtil-путь был мёртв (capability не регистрируется)
+					((IFluidContainerItem)aItem).drain(aStack, tDrained, T); // Restored IFluidContainerItem.drain 1:1; the FluidUtil path was dead since the capability isn't registered.
 					((ICropTile)tTileEntity).setHydrationStorage(tHydration + tDrained*10);
 					UT.Sounds.send(SFX.MC_LIQUID_WATER, aWorld, aX, aY, aZ);
 				}

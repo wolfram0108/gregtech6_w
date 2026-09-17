@@ -28,7 +28,7 @@ import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.UT;
 import net.minecraft.world.entity.Entity;
-// F-entity-identity: 1.7.10 EntityZombie.isVillager() -> neo отдельный класс ZombieVillager (ZombieVillager.java:59).
+// 1.7.10's EntityZombie.isVillager() became the separate ZombieVillager class in neo.
 import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -56,16 +56,8 @@ public class Behavior_CureZombie extends AbstractBehaviorDefault {
 				UT.Entities.consumeCurrentItem(aPlayer);
 				if (!tZombie.level().isClientSide()) {
 					int tCureTime = RNGSUS.nextInt(mAverageCureTime * 2) + 500;
-					// F-entity-conversion (ADR: движок централизовал запуск конверсии в приватный ZombieVillager.startConverting).
-					// Оригинал GT6 заводил конверсию через NBT-ключ "ConversionTime" (writeToNBT/readFromNBT) + вручную:
-					// datawatcher-флаг 14 + removePotion(weakness) + addPotion(strength, tCureTime, min(diff-1,0)) + setEntityState(16).
-					// neo: тот же ключ "ConversionTime" читается readAdditionalSaveData (ZombieVillager.java:118-121) -> startConverting,
-					// который ЦЕНТРАЛИЗОВАННО делает ВСЁ ручное (флаг DATA_CONVERTING_ID + removeEffect(WEAKNESS) +
-					// addEffect(STRENGTH, time, min(diff.getId()-1,0)) + broadcastEntityEvent(16), строки 200-207) — ручные строки
-					// СНЯТЫ (движок их поглотил, 1:1 по эффекту, включая тот же min(diff-1,0)-амплитудный расчёт).
-					// Ветка 1.20.1: моста ValueOutput/ValueInput нет — save/load сущности снова идут
-					// сырым CompoundTag, ровно как writeToNBT/readFromNBT в 1.7.10
-					// (Entity.saveWithoutId:1598, Entity.load:1687 в forge-1201-decompiled).
+					// neo's ZombieVillager.startConverting now does everything the original did manually (datawatcher flag, potion swap,
+					// entity-state broadcast) itself once it reads the same 'ConversionTime' key, so those manual lines are simply gone.
 					CompoundTag tNBT = UT.NBT.make();
 					tZombie.saveWithoutId(tNBT);
 					tNBT.putInt("ConversionTime", tCureTime);

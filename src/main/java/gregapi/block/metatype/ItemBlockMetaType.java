@@ -50,8 +50,8 @@ public class ItemBlockMetaType extends ItemBlockBase implements IItemUpdatable {
 		if (((BlockMetaType)mPlaceable).mBlock == mPlaceable) return WD.set(aWorld, aX, aY, aZ, getBlock(), aMetaData, 3);
 		byte tSide = UT.Code.getSideWrenching((byte)aSide, aHitX, aHitY, aHitZ);
 		if (tSide == aSide || tSide == OPOS[aSide]) tSide = OPOS[tSide];
-		// BUG-010 (запрос игрока): установка слэба В воду — вода остаётся (WATERLOGGED, как современный ванильный слэб).
-		// Приём — ЦЕНТР WD.waterlog (консолидация BUG-047-ревизии; снимок «была ли вода» — ДО установки).
+		// Placing a slab into water keeps the water, via the shared WD.waterlog center, which snapshots
+		// whether water was there before placement happens.
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		boolean tWater = aWorld.getFluidState(tPos).getType() == net.minecraft.world.level.material.Fluids.WATER;
 		if (!WD.set(aWorld, aX, aY, aZ, ((BlockMetaType)mPlaceable).mBlock.mSlabs[tSide], aMetaData, 3)) return F;

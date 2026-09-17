@@ -57,7 +57,7 @@ public class WorldgenColtan extends WorldgenObject {
 	
 	@Override
 	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
-		// 1.7.10 aWorld.getSeed() — метод есть у самого WorldGenLevel:8; каст к ServerLevel ронял ВСЕ 1512 вызова на WorldGenRegion
+		// 1.7.10's aWorld.getSeed() exists on WorldGenLevel itself; casting to ServerLevel crashed calls on a WorldGenRegion.
 		Random tRandom = new Random(aWorld.getSeed()+5);
 		int tX = (int)(tRandom.nextGaussian()*1500), tZ = (int)(tRandom.nextGaussian()*1500);
 		// Generate Bedrock Vein where the Coltass points to.
@@ -67,7 +67,7 @@ public class WorldgenColtan extends WorldgenObject {
 		
 		// Generate Coltan at the large Area around the Center Point of Coltan Contention.
 		if (tDistance > mRange*mRange) return F;
-		// F6 §4.1 (указание пользователя 2026-08-07): окно и количество — через центр WD, как в WorldgenOresSmall.
+		// Window and amount go through the center WD, same as WorldgenOresSmall.
 		final int tRMinY = WD.remapY(aWorld, mMinY), tRMaxY = WD.remapY(aWorld, mMaxY);
 		final int tAmount = WD.yScaleAmount(aWorld, mMinY, mMaxY, mAmount, aRandom);
 		for (int i = 0, j = Math.max(1, tAmount/2 + aRandom.nextInt(1+tAmount)/2); i < j; i++) {

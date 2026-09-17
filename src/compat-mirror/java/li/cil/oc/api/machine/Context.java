@@ -35,6 +35,6 @@
 
 package li.cil.oc.api.machine;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — OpenComputers. Минимум для компиляции ядра; члены
- *  добираются компилятором. См. compat-mirror/README.md. */
+/** Compile-only mirror of the OpenComputers API: the minimum needed to compile the core, with
+ *  members added as the compiler demands them. */
 public interface Context {}

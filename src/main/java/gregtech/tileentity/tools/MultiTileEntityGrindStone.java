@@ -62,7 +62,7 @@ public class MultiTileEntityGrindStone extends TileEntityBase09FacingSingle impl
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.contains(NBT_STATE)) mStone = aNBT.getByte(NBT_STATE);
-		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* Don't overwrite the default on a null lookup. */
 	}
 	
 	@Override
@@ -178,7 +178,7 @@ public class MultiTileEntityGrindStone extends TileEntityBase09FacingSingle impl
 			}
 			if (SIDES_VERTICAL[aSide] || ALONG_AXIS[mFacing][aSide]) {
 				// TODO SOUND
-				if (mStone != 0) UT.Sounds.forActor(SFX.MC_DIG_SAND, 5, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // звук ДЕЙСТВИЯ
+				if (mStone != 0) UT.Sounds.forActor(SFX.MC_DIG_SAND, 5, 1.0F, aPlayer, getCoords().getX(), getCoords().getY(), getCoords().getZ()); // the sound of the ACTION
 			}
 		}
 		return T;

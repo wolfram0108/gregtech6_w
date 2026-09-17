@@ -30,27 +30,11 @@ import java.util.Collection;
 
 import static gregapi.data.CS.RES_PATH_MODEL;
 
-/**
- * Ветка 1.20.1: восстановлена ФОРМА ОРИГИНАЛА — GT6 рисует СВОЙ плащ собственной геометрией поверх
- * игрока, а не подменяет ванильный. Оригинал ({@code gt6-original PlayerModelRenderer.java:76-111})
- * делал {@code glTranslatef(0,0,0.125)}, считал наклон по интерполированным {@code field_71091_bM..}
- * и звал {@code ModelBiped.renderCloak}. В 1.20.1 доступны ровно те же три составляющие:
- * {@code RenderPlayerEvent.Pre} несёт {@code PoseStack}/{@code MultiBufferSource}/{@code packedLight}
- * ({@code RenderPlayerEvent.java:65,73,83}), поля наклона плаща у игрока публичны
- * ({@code xCloak/yCloak/zCloak} и их {@code O}-версии), а {@code PlayerModel.renderCloak(PoseStack,
- * VertexConsumer,int,int)} публичен ({@code PlayerModel.java:90-92}). Формулы наклона взяты дословно
- * из движкового канона {@code CapeLayer.render} ({@code CapeLayer.java:26-59}) — он и есть тот же
- * расчёт, что стоял в оригинале построчно.
- *
- * <p>Условия оригинала сохранены: невидимость ({@code isInvisible}) и «скрыть плащ»
- * ({@code getHideCape()} → {@code isModelPartShown(PlayerModelPart.CAPE)}). Модель 26.x-ветки (подмена
- * {@code PlayerSkin} в render-state) снята вместе с типами, которых в 1.20.1 нет; вместе с ней ушло и
- * её осознанное отличие «свой плащ игрока побеждает GT6-шный» — теперь, как у Грегориуса, GT6-плащ
- * рисуется поверх.</p>
- */
+/** Draws its own cape geometry over the player rather than replacing vanilla's, restoring the original's form using
+ *  the same three ingredients (pose, tilt, cape draw), with formulas taken from the engine's own cape-render code. */
 public class PlayerModelRenderer {
-	// neo ResourceLocation.assertValidPath запрещает заглавные в path (1.7.10 ResourceLocation их допускал) — имена
-	// плащей-текстур приведены к lowercase (файлы переименованы синхронно). Порядок/логика выбора плаща 1:1.
+	// Uppercase paths are rejected by ResourceLocation validation, unlike 1.7.10.
+	// Cape texture names are lowercased and files renamed to match.
 	private final ResourceLocation[] mResources = new ResourceLocation[] {new ResourceLocation(RES_PATH_MODEL + "braintech.png"), new ResourceLocation(RES_PATH_MODEL + "silver.png"), new ResourceLocation(RES_PATH_MODEL + "mrbrain.png"), new ResourceLocation(RES_PATH_MODEL + "dev.png"), new ResourceLocation(RES_PATH_MODEL + "gold.png"), new ResourceLocation(RES_PATH_MODEL + "crazy.png"), new ResourceLocation(RES_PATH_MODEL + "sus.png")};
 	private final Collection<String> mSupporterListSilver, mSupporterListGold;
 
@@ -81,13 +65,13 @@ public class PlayerModelRenderer {
 		return null;
 	}
 
-	/** Плащ GT6 — своей геометрией поверх игрока, дословно как в оригинале (разбор в javadoc класса). */
+	/** Draws with its own geometry over the player, literally as in the original. */
 	public void receiveRenderSpecialsEvent(RenderPlayerEvent.Pre aEvent) {
 		try {
 			if (!(aEvent.getEntity() instanceof net.minecraft.client.player.AbstractClientPlayer aPlayer)) return;
 			if (aPlayer.isInvisible() || !aPlayer.isModelPartShown(net.minecraft.world.entity.player.PlayerModelPart.CAPE)) return;
 
-			// имя — getScoreboardName(): у Player это имя профиля (приём проекта, EnchantmentEffect_Werewolf:56)
+			// Name comes from getScoreboardName(): for a Player entity, that's the profile name.
 			ResourceLocation tResource = getResource(aPlayer.getScoreboardName());
 			if (tResource == null) tResource = getResource(aPlayer.getUUID().toString());
 			if (tResource == null) return;

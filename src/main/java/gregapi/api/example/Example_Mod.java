@@ -23,15 +23,8 @@
 
 package gregapi.api.example;
 
-// F12 tutorial-example (не функциональный контент): та же жила, что gregapi.GT_API/GT_API_Post
-// (decisions/F12-registration-lifecycle.md) — @cpw.mods.fml.common.Mod.EventHandler/@SidedProxy (пакет
-// cpw.mods.fml не существует на neo-classpath) + onModPreInit2/onModInit2/onModPostInit2 сейчас принимают
-// НЕПРАВИЛЬНЫЕ raw neo-типы (FMLCommonSetupEvent/FMLLoadCompleteEvent) вместо контрактных
-// gregapi.api.FMLPreInitializationEvent/FMLInitializationEvent/FMLPostInitializationEvent
-// (Abstract_Mod:110-114) — сигнатуры не совпадают с abstract-контрактом. Это документационный
-// tutorial-класс для сторонних разработчиков (не влияет на функциональность/паритет самого GT6);
-// конверсия — конструктор+aModBus.addListener (как в GT_API/GT_API_Post) + снятие @SidedProxy на
-// FMLEnvironment.getDist()-ветвление (см. gregapi.GT_API:144) — вне зоны данного чекпоинта.
+// Tutorial example, not functional content: its onModPreInit2/Init2/PostInit2 still take raw neo
+// event types instead of the gregapi.api mirror events, left for a future pass since it does not affect GT6 itself.
 
 /**
  * @author Your Name Here, also might be worth replacing that automatically generated Copyright notice with your LPGL compatible License/Name instead of mine.
@@ -70,8 +63,8 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 	@Override public gregapi.api.Abstract_Proxy getProxy() {return PROXY;}
 	
 	// Do not change these 7 Functions. Just keep them this way.
-	// F-mod-lifecycle: onModPreInit/onModInit/onModPostInit принимают GT6-mirror FML-события (носители фазы, gregapi.api),
-	// а не neo-события — оборачиваем neo-событие в mirror перед вызовом (тот же приём, что GT_API.onPreLoad/onLoad/onPostLoad).
+	// Wraps the neo event in GregTech6's own phase-marker mirror event before calling, the same
+	// technique as GT_API.onPreLoad/onLoad/onPostLoad.
 	@cpw.mods.fml.common.Mod.EventHandler public final void onPreLoad           (net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent    aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onLoad              (net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent       aEvent) {onModInit(new gregapi.api.FMLInitializationEvent());}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onPostLoad          (net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent   aEvent) {onModPostInit(new gregapi.api.FMLPostInitializationEvent());}

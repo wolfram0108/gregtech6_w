@@ -831,10 +831,8 @@ public class LoaderUnificationTargets implements Runnable {
 		OreDictManager.INSTANCE.setTarget(OP.blockSolid     , MT.STONES.SkyStone        , MD.AE, "tile.BlockSkyStone", 1);
 		OreDictManager.INSTANCE.setTarget(OP.dust           , MT.STONES.SkyStone        , MD.AE, "item.ItemMultiMaterial", 45);
 		OreDictManager.INSTANCE.setTarget(OP.gem            , MT.ChargedCertusQuartz    , MD.AE, "item.ItemMultiMaterial", 1);
-		// Э2 (центр адресации gregapi.compat.AE2Names): рудных блоков сертуса в AE2 15.4.10 нет вовсе — источник
-		// кристалла там budding-цепь метеорита. Цель унификации без носителя ставить нечем, и штатная жалоба
-		// setTarget «Item does not exist for Unification Target» здесь была бы ложной тревогой: носителя нет
-		// не по ошибке, а по устройству новой версии. Пропускаем ТИХО — руды сертуса у GT6 свои (Loader_Worldgen).
+		// AE2's certus crystal comes from a meteorite budding chain here, not an ore block, so there's no target to unify with;
+		// the usual missing-target warning would be a false alarm, since GT6 already has its own certus ores.
 		if (AE2Names.has("tile.OreQuartzCharged", 0))
 		OreDictManager.INSTANCE.setTarget(OP.oreVanillastone, MT.ChargedCertusQuartz    , MD.AE, "tile.OreQuartzCharged" , 0);
 		if (AE2Names.has("tile.OreQuartz", 0))

@@ -64,7 +64,7 @@ import net.minecraftforge.fluids.IFluidTank;
 /**
  * @author Gregorius Techneticies
  */
-// ADAPT-005: + IMTE_GetLightValue — горящая горелка светит как ванильная печь (конфиг machines/burning_box_light_value, 0=1:1); Gas наследует
+// Adds IMTE_GetLightValue: a burning burner glows like a vanilla furnace (config burning_box_light_value, 0=original).
 public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle implements IFluidHandler, ITileEntityTapAccessible, ITileEntityEnergy, ITileEntityRunningActively, IMTE_GetCollisionBoundingBoxFromPool, IMTE_OnEntityCollidedWithBlock, gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetLightValue {
 	private static int FLAME_RANGE = 2;
 	
@@ -84,7 +84,7 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 		mBurning = aNBT.getBoolean(NBT_ACTIVE);
 		if (aNBT.contains(NBT_COOLDOWN)) mCooldown = aNBT.getByte(NBT_COOLDOWN);
 		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
-		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* Don't overwrite the default on a null lookup. */
 		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
 		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 		mTank.setCapacity(mRate * 10);
@@ -202,17 +202,17 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 	@Override
 	public void onTickResetChecks(long aTimer, boolean aIsServerSide) {
 		super.onTickResetChecks(aTimer, aIsServerSide);
-		if (oBurning != mBurning) updateLightValue(); // ADAPT-005: пересчёт света при смене горения (сервер)
+		if (oBurning != mBurning) updateLightValue(); // Recalculates light on the server when burning state changes.
 		oBurning = mBurning;
 	}
 
 	@Override
 	public void setVisualData(byte aData) {
 		boolean tBurning = ((aData & 1) != 0);
-		if (tBurning != mBurning) {mBurning = tBurning; updateLightValue();} else mBurning = tBurning; // ADAPT-005: пересчёт света (клиент)
+		if (tBurning != mBurning) {mBurning = tBurning; updateLightValue();} else mBurning = tBurning; // Recalculates light on the client.
 	}
 
-	// ADAPT-005 (нововведение по запросу игрока, ADAPTATIONS.md): в 1.7.10 горящая горелка света НЕ давала; конфиг 0 = 1:1
+	// In 1.7.10 the burning burner gave no light; config default 0 keeps that behavior unless changed.
 	@Override public int getLightValue() {return mBurning ? BURNING_BOX_LIGHT_VALUE : 0;}
 	
 	@Override public byte getVisualData() {return (byte)(mBurning?1:0);}
@@ -240,7 +240,7 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 		return mTank.drain(aMaxDrain, aDoDrain);
 	}
 	
-	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {byte tF = mFacing /* BUG-074: компенсация item-facing перенесена в центр — MultiTileEntityBlockInternal.passRenderingToObject */; return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACING_ROTATIONS[tF][aSide]], mRGBa), BlockTextureDefault.get((mBurning?sOverlaysActive:sOverlays)[FACING_ROTATIONS[tF][aSide]])): null;}
+	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {byte tF = mFacing /* Item-facing compensation now lives in the center, MultiTileEntityBlockInternal.passRenderingToObject. */; return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACING_ROTATIONS[tF][aSide]], mRGBa), BlockTextureDefault.get((mBurning?sOverlaysActive:sOverlays)[FACING_ROTATIONS[tF][aSide]])): null;}
 	
 	@Override public void onEntityCollidedWithBlock(Entity aEntity) {if (mBurning || mCooldown > 0) UT.Entities.applyHeatDamage(aEntity, Math.min(10.0F, mRate / 10.0F));}
 	@Override public AABB getCollisionBoundingBoxFromPool() {return box(0, 0, 0, 1, 0.875, 1);}

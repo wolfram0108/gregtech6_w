@@ -51,7 +51,8 @@ import static gregapi.data.CS.*;
 public class BlockTreeLogA extends BlockBaseLogFlammable implements IBlockToolable {
 	public BlockTreeLogA(String aUnlocalised) {
 		super(null, aUnlocalised, Material.wood, SoundType.WOOD, 4, Textures.BlockIcons.LOGS_A);
-		// F12-followup (block-split): OM.reg(ST.make(...)) — ItemStack → server-start → deferItemInit (весь дата/локал-блок, 1:1).
+		// OM.reg(ST.make(...)) and the localization block below need a valid ItemStack, only available after server start, hence
+		// deferItemInit.
 		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Rubber Log");
 		LH.add(getUnlocalizedName()+ ".4", "Rubber Log");

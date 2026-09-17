@@ -43,7 +43,7 @@ import static gregapi.data.CS.W;
 public class LoaderWoodDictionary implements Runnable {
 	@Override
 	public void run() {
-		// 262 is next! There is no Gaps in this List! (261 занят манграми, BUG-091 ниже)
+		// 262 is next; there is no gap in this list (261 is taken by mangroves, listed below).
 		
 		// Vanilla Trees
 		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.OAK_PLANKS, 1, 0));
@@ -58,9 +58,8 @@ public class LoaderWoodDictionary implements Runnable {
 		new SaplingEntry(ST.make(Blocks.JUNGLE_SAPLING, 4, 0), new WoodEntry(ST.make(Blocks.JUNGLE_LOG, 1, 0), new BeamEntry(ST.make(BlocksGT.Beam1, 1, 3), new PlankEntry(ST.make(Blocks.JUNGLE_PLANKS, 1, 0), ST.make(Blocks.JUNGLE_SLAB, 1, 0), ST.make(Blocks.JUNGLE_STAIRS  , 1, W), MT.WOODS.Jungle , 3))), ST.make(Blocks.JUNGLE_LEAVES, 1, 0));
 		new SaplingEntry(ST.make(Blocks.ACACIA_SAPLING, 1, 0), new WoodEntry(ST.make(Blocks.ACACIA_LOG, 1, 0), new BeamEntry(ST.make(BlocksGT.Beam2, 1, 0), new PlankEntry(ST.make(Blocks.ACACIA_PLANKS, 1, 0), ST.make(Blocks.ACACIA_SLAB, 1, 0), ST.make(Blocks.ACACIA_STAIRS  , 1, W), MT.WOODS.Acacia , 4))), ST.make(Blocks.ACACIA_LEAVES, 1, 0));
 		new SaplingEntry(ST.make(Blocks.DARK_OAK_SAPLING, 4, 0), new WoodEntry(ST.make(Blocks.DARK_OAK_LOG, 1, 0), new BeamEntry(ST.make(BlocksGT.Beam2, 1, 1), new PlankEntry(ST.make(Blocks.DARK_OAK_PLANKS, 1, 0), ST.make(Blocks.DARK_OAK_SLAB, 1, 0), ST.make(Blocks.DARK_OAK_STAIRS, 1, W), MT.WOODS.DarkOak, 5))), ST.make(Blocks.DARK_OAK_LEAVES, 1, 0));
-		// F4-flattening: 1.7.10 Blocks.planks имел meta 0-5 (oak/spruce/birch/jungle/acacia/darkoak) на ОДНОМ блоке;
-		// neo расщепил на отдельные *_PLANKS-блоки (все зарегистрированы выше под meta 0). PLANKS.get(OAK_PLANKS, 1..5)
-		// давал null (такой meta нет) → BeamEntry(beam, null) → NPE, обрывавший LoaderWoodDictionary. Маппим на блоки пород.
+		// The pre-flattening single planks block had per-species meta; the split *_PLANKS blocks are all meta 0,
+		// so looking up other meta values returned null and crashed the loader. Mapped onto the per-species blocks instead.
 		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 0), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 0));
 		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 1), WoodDictionary.PLANKS.get(Blocks.SPRUCE_PLANKS, 0));
 		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 2), WoodDictionary.PLANKS.get(Blocks.BIRCH_PLANKS, 0));
@@ -68,31 +67,24 @@ public class LoaderWoodDictionary implements Runnable {
 		new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 0), WoodDictionary.PLANKS.get(Blocks.ACACIA_PLANKS, 0));
 		new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 1), WoodDictionary.PLANKS.get(Blocks.DARK_OAK_PLANKS, 0));
 
-		// BUG-091 («функция, не авторство»): новые ванильные породы — вишня/бамбук/мангры/багровые. В 1.7.10 их
-		// давали бэкпорт-моды, и Грег вносил их в словарь гейтованными ветками (вишня/бамбук — EtFu, ниже
-		// `MD.EtFu.mLoaded`, метка Грега «TODO CHERRY, BAMBOO AND MANGROVE»; багровые — NeLi/NePl); в neo контент
-		// ванильный, ветки мертвы. Записи ниже — тем же приёмом и с ТЕМИ ЖЕ материалами/plank-id/числами выходов,
-		// что в ветках-прообразах (id закреплён за породой, не за модом; мёртвые ветки этих id не занимают);
-		// балка = stripped-вариант (приём EtFu: beam вишни = cherry_log:2 «stripped»). Мангры прообраза не имеют
-		// (TODO Грега не реализован) — тот же приём, что вишня, материал MT.WOODS.Mangrove (жил в GT6 для BoP),
-		// plank-id 261 (по счётчику «There is no Gaps»). PALE_OAK НЕ внесён: GT-материала породы не существует,
-		// прообраза нет — не выдумываем (кандидат отдельным решением).
+		// New vanilla wood species (cherry, bamboo, mangrove, crimson/warped) are added using the same materials,
+		// plank ids and yield counts as the backport mods that originally supplied this content in 1.7.10.
 		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.CHERRY_PLANKS  , 1, 0));
 		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.BAMBOO_PLANKS  , 1, 0));
 		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.MANGROVE_PLANKS, 1, 0));
 		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.CRIMSON_PLANKS , 1, 0));
 		OreDictionary.registerOre(OD.plankWood.toString(), ST.make(Blocks.WARPED_PLANKS  , 1, 0));
-		// вишня — 1:1 с EtFu-веткой (PlankEntry id 257, MT.WOODS.Sakura; wood-вариант = вторая WoodEntry, как cherry_log:1/:3)
+		// Cherry follows its backport-mod precedent 1:1 (plank id, material, stripped-log beam variant).
 		PlankEntry tCherryPlank = new PlankEntry(ST.make(Blocks.CHERRY_PLANKS, 1, 0), ST.make(Blocks.CHERRY_SLAB, 1, 0), ST.make(Blocks.CHERRY_STAIRS, 1, W), MT.WOODS.Sakura, 257);
 		new SaplingEntry(ST.make(Blocks.CHERRY_SAPLING, 1, 0), new WoodEntry(ST.make(Blocks.CHERRY_LOG, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_CHERRY_LOG, 1, 0), tCherryPlank)), ST.make(Blocks.CHERRY_LEAVES, 1, 0));
 		new WoodEntry(ST.make(Blocks.CHERRY_WOOD, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_CHERRY_WOOD, 1, 0), tCherryPlank));
-		// бамбук — 1:1 с EtFu-веткой (мозаика id 259 у балки, доски id 258 у бревна; выходы/палки MT.Bamboo те же)
+		// Bamboo follows its backport-mod precedent 1:1 (ids, yields, and stick material).
 		new SaplingEntry(ST.make(Items.BAMBOO, 1, 0), new WoodEntry(ST.make(Blocks.BAMBOO_BLOCK, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_BAMBOO_BLOCK, 1, 0), new PlankEntry(ST.make(Blocks.BAMBOO_MOSAIC, 1, 0), ST.make(Blocks.BAMBOO_MOSAIC_SLAB, 1, 0), ST.make(Blocks.BAMBOO_MOSAIC_STAIRS, 1, W), MT.Bamboo, 259, ST.make(Items.BAMBOO, 1, 0), 1, 1, 1), 1, 100, 2, 2, 2, MT.Bamboo, OP.stickLong.mat(MT.Bamboo, 1), 1, 1), new PlankEntry(ST.make(Blocks.BAMBOO_PLANKS, 1, 0), ST.make(Blocks.BAMBOO_SLAB, 1, 0), ST.make(Blocks.BAMBOO_STAIRS, 1, W), MT.Bamboo, 258, ST.make(Items.BAMBOO, 1, 0), 1, 1, 1), 1, 100, 2, 2, 2, NI, MT.Bamboo, null, OP.stickLong.mat(MT.Bamboo, 1), 1, 1), ST.make(Items.BAMBOO, 1, 0));
-		// мангры — приём вишни (прообраза нет: TODO Грега), id 261
+		// Mangrove follows the same approach as cherry, since no backport precedent exists for it.
 		PlankEntry tMangrovePlank = new PlankEntry(ST.make(Blocks.MANGROVE_PLANKS, 1, 0), ST.make(Blocks.MANGROVE_SLAB, 1, 0), ST.make(Blocks.MANGROVE_STAIRS, 1, W), MT.WOODS.Mangrove, 261);
 		new SaplingEntry(ST.make(Blocks.MANGROVE_PROPAGULE, 1, 0), new WoodEntry(ST.make(Blocks.MANGROVE_LOG, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_MANGROVE_LOG, 1, 0), tMangrovePlank)), ST.make(Blocks.MANGROVE_LEAVES, 1, 0));
 		new WoodEntry(ST.make(Blocks.MANGROVE_WOOD, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_MANGROVE_WOOD, 1, 0), tMangrovePlank));
-		// багровые/искажённые — 1:1 с NeLi-веткой (id 235/236, уголь/креозот 1/150 и 1/200, «кора» = гриб, «листва» = варт-блок)
+		// Crimson/warped follow their backport-mod precedent 1:1 (ids, coal/creosote yield ratios, bark/leaf substitutes).
 		PlankEntry tCrimsonPlank = new PlankEntry(ST.make(Blocks.CRIMSON_PLANKS, 1, 0), ST.make(Blocks.CRIMSON_SLAB, 1, 0), ST.make(Blocks.CRIMSON_STAIRS, 1, W), MT.WOODS.Crimson, 235);
 		PlankEntry tWarpedPlank  = new PlankEntry(ST.make(Blocks.WARPED_PLANKS , 1, 0), ST.make(Blocks.WARPED_SLAB , 1, 0), ST.make(Blocks.WARPED_STAIRS , 1, W), MT.WOODS.Warped , 236);
 		new SaplingEntry(ST.make(Blocks.CRIMSON_FUNGUS, 1, 0), new WoodEntry(ST.make(Blocks.CRIMSON_STEM, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_CRIMSON_STEM, 1, 0), tCrimsonPlank, 1, 150), 1, 150, ST.make(Blocks.CRIMSON_FUNGUS, 1, 0), MT.WOODS.Crimson), ST.make(Blocks.NETHER_WART_BLOCK, 1, 0));
@@ -211,8 +203,7 @@ public class LoaderWoodDictionary implements Runnable {
 			new WoodEntry(ST.make(BlocksGT.Log1FireProof, 1, 3), null, new PlankEntry(ST.make(BlocksGT.PlanksFireProof  , 1,15), ST.make(((BlockMetaType)BlocksGT.PlanksFireProof   ).mSlabs[0], 1,15), MT.WOODS.Frozen,   0), 1, 50, 1, 2, 3, OP.dust.mat(MT.Ice, 1)                      , MT.WOODS.Frozen, MT.Ice         , null, 0, 0);
 			
 			// Rubber Tree Beams
-			// F4-flattening (как :57-65): оригинал брал PLANKS.get(Blocks.planks, 3) = jungle (planks meta 3); neo расщепил
-			// planks на *_PLANKS-блоки (все под meta 0). OAK_PLANKS meta 3 нет → PLANKS.get==null → BeamEntry(beam,null) → NPE.
+			// Same flattening fix as the entries above: the original meta index no longer exists on the split planks block.
 			BeamEntry tRubberBeam = new BeamEntry(ST.make(BlocksGT.Beam2, 1, 2), WoodDictionary.PLANKS.get(Blocks.JUNGLE_PLANKS, 0), 1, 300, 2, 4, 5, MT.WoodRubber, OP.stickLong.mat(MT.WoodRubber, 1), 1, 2);
 			new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 2), WoodDictionary.PLANKS.get(Blocks.JUNGLE_PLANKS, 0), 1, 300, 2, 4, 5);
 			
@@ -942,8 +933,7 @@ public class LoaderWoodDictionary implements Runnable {
 			new WoodEntry(ST.make(MD.EtFu, "bark2"         , 1, 0), WoodDictionary.BEAMS.get(BlocksGT.Beam2, 0));
 			new WoodEntry(ST.make(MD.EtFu, "bark2"         , 1, 1), WoodDictionary.BEAMS.get(BlocksGT.Beam2, 1));
 			
-			// F4-flattening (как :57-65): оригинал брал PLANKS.get(Blocks.planks, 0..5) = oak/spruce/birch/jungle/acacia/darkoak;
-			// neo расщепил planks на *_PLANKS (все под meta 0) → OAK_PLANKS meta 1..5 == null → BeamEntry(beam,null) → NPE.
+			// Same flattening fix as above: per-species meta lookups on the old single planks block now return null.
 			new BeamEntry(ST.make(MD.EtFu, "log_stripped"  , 1, 0), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 0));
 			new BeamEntry(ST.make(MD.EtFu, "log_stripped"  , 1, 1), WoodDictionary.PLANKS.get(Blocks.SPRUCE_PLANKS, 0));
 			new BeamEntry(ST.make(MD.EtFu, "log_stripped"  , 1, 2), WoodDictionary.PLANKS.get(Blocks.BIRCH_PLANKS, 0));

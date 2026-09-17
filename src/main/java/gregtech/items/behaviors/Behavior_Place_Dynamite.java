@@ -63,9 +63,8 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 		for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
 			ItemStack tStack = aPlayer.getInventory().getItem(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE-i-1);
 			if (IL.Boomstick.equal(tStack, F, T) || IL.Dynamite.equal(tStack, F, T) || IL.Dynamite_Strong.equal(tStack, F, T)) {
-				// F8: тег захвачен ОДИН раз в tOldTag (для восстановления) и ОДИН раз мутирован в tTempTag
-				// (NBT_MODE=T), затем закоммичен единым ItemNBT.set — иначе setBoolean на свежем get()
-				// потерялся бы до чтения tryPlaceItemIntoWorld (см. ItemNBT.java).
+				// The tag is captured once for restoration and mutated once into a separate copy, committed together as a single
+				// ItemNBT.set, or the mutation would be lost before it's read.
 				CompoundTag tOldTag = ItemNBT.get(tStack);
 				CompoundTag tTempTag = tOldTag != null ? (CompoundTag)tOldTag.copy() : UT.NBT.make();
 				tTempTag.putBoolean(NBT_MODE, T);

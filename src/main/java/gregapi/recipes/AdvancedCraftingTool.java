@@ -70,12 +70,8 @@ public class AdvancedCraftingTool extends ShapelessOreRecipe implements ICraftin
 	@Override
 	public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 		if (aEvent.mMaterial != MT.Empty && mCondition.isTrue(aEvent.mMaterial)) {
-			// F-toolhead-handle-timing: рукоять берётся из IL.Stick (ванильный stick, LoaderItemList) / OP.stick.mat(handleMat)
-			// (stick-префикс). В порту весь stack-init (LoaderItemList + prefix-регистрация) отложен на server-start
-			// (runDeferredItemInit), и в момент срабатывания этого OreDict-листенера sticks ещё НЕ готовы (IL.Stick=null,
-			// OP.stick.mat=null) → рукоять терялась (порт выдавал toolhead-рецепты без рукояти, паритет toolhead=0). Golden
-			// (1.7.10, синхронно) имел sticks готовыми к этому моменту. Fix: отложить генерацию рецепта в конец drain-очереди —
-			// выполнится, когда IL.Stick/OP.stick уже зарегистрированы (тот же приём отложки stack-init, что во всём порту).
+			// The handle item isn't ready when this listener fires, since stack-init is now deferred to server-start;
+			// deferring this recipe's own generation to the end of that queue restores the handle once sticks exist.
 			final OreDictMaterial tMat = aEvent.mMaterial;
 			final ItemStack tHead = ST.copy(aEvent.mStack);
 			gregapi.GT_API.deferItemInit(() -> {

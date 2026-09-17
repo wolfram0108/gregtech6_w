@@ -49,9 +49,7 @@ public class Behavior_Shears extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		// F10: IShearable-зеркало снято — настоящий net.minecraftforge.common.IForgeShearable (сигнатура
-		// isShearable(ItemStack,Level,BlockPos)/onSheared(Player,ItemStack,Level,BlockPos,int):List<ItemStack>,
-		// позиция сущности через BlockPos.containing(entity.position()) — 1:1 канон реального вызывателя
+		// This is the real net.minecraftforge.common.IForgeShearable now, not a compile-only mirror of it.
 		// ShearsItem.interactLivingEntity (forge-1201 decompiled net/minecraft/world/item/ShearsItem.java:56-58).
 		if (aEntity instanceof IForgeShearable) {
 			if (aPlayer.level().isClientSide()) return T;
@@ -61,9 +59,8 @@ public class Behavior_Shears extends AbstractBehaviorDefault {
 				String tClass = UT.Reflection.getLowercaseClass(aEntity);
 				boolean tDropIncrease = ((tFortune > 0) && ("Sheep".equalsIgnoreCase(tClass) || "EntityTFBighorn".equalsIgnoreCase(tClass) || "EntityTaintSheep".equalsIgnoreCase(tClass) || "EntitySheepuff".equalsIgnoreCase(tClass)));
 				for (ItemStack tStack : ((IForgeShearable)aEntity).onSheared(aPlayer, aStack, aPlayer.level(), tPos, tFortune)) {
-					// 1.7.10 `Blocks.wool` — ОДИН блок с метой-цветом, т.е. проверка ловила шерсть ЛЮБОГО цвета.
-					// В neo семья расщеплена на 16 блоков: сравнение с одним из них дало бы бонус только за белую.
-					// Спрашиваем главу семьи через центр CS.Flattened (тот же приём, что в Behavior_Spray_Color_Remover:107).
+					// In 1.7.10 wool was one block with a color meta, so this check matched wool of any color; neo splits it
+					// into 16 blocks, so the family head is looked up through the central helper instead of comparing to one color.
 					if (tDropIncrease && gregapi.data.CS.Flattened.headOf(ST.block(tStack)) == Blocks.WHITE_WOOL) {
 						tStack.setCount(tStack.getCount()+(RNGSUS.nextInt(1+tFortune)));
 						if (tStack.getCount() > 64) tStack.setCount(64);

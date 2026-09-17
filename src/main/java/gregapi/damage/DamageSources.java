@@ -59,9 +59,8 @@ import static gregapi.data.CS.T;
  * @author Gregorius Techneticies
  */
 public class DamageSources {
-	// BUG-004: namespace = gregapi (не gregtech) — датаген-провайдер DatapackBuiltinEntriesProvider выводит
-	// ТОЛЬКО Set.of(MD.GAPI.mID) (GT6WorldgenFeature:189), как и энчанты (data/gregapi/enchantment/). Иначе
-	// damage_type JSON не сгенерировался бы → типы урона не в реестре → краш кодека (см. resolveHolder ниже).
+	// Namespace is gregapi, not gregtech: the datapack provider only emits Set.of(MD.GAPI.mID) for damage
+	// types, so a different namespace would mean the JSON never generates and the registry stays empty.
 	private static final String MODID = gregapi.data.CS.ModIDs.GAPI;
 	private static final float DEFAULT_EXHAUSTION = 0.3F;
 	private static final float ZERO_EXHAUSTION = 0.0F;
@@ -145,12 +144,8 @@ public class DamageSources {
 	}
 
 	static DamageDefinition combatDefinition(String aType) {
-		// BUG-003 (вылет атаки, damage_event): 1.7.10 DamageSourceCombat = new EntityDamageSource(aType, entity) с
-		// ВАНИЛЬНЫМИ msgId "player"/"mob" — neo-эквивалент 1:1: ванильные ключи DamageTypes.PLAYER_ATTACK (msgId
-		// "player", DamageTypes.java:92) / MOB_ATTACK (msgId "mob", :90), ВСЕГДА в реестре. Прежний самодельный ключ
-		// gregapi:combat_<type> в bootstrap не регистрировался -> resolveHolder падал в Holder.direct -> серверный удар
-		// слал ClientboundDamageEventPacket с holder вне реестра -> EncoderException -> дисконнект (краш игрока,
-		// воспроизведён пробой gt6attackprobe). Все вызыватели дерева передают только "player"/"mob".
+		// Uses the vanilla DamageTypes keys (always present in the registry) instead of a homemade key, which
+		// was never registered at bootstrap and crashed the damage-event codec on the first hit.
 		ResourceKey<DamageType> tKey = "mob".equals(aType) ? net.minecraft.world.damagesource.DamageTypes.MOB_ATTACK : net.minecraft.world.damagesource.DamageTypes.PLAYER_ATTACK;
 		return new DamageDefinition(aType, tKey, new DamageType(aType, DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER, DEFAULT_EXHAUSTION, DamageEffects.HURT), Set.of(), null);
 	}
@@ -225,10 +220,8 @@ public class DamageSources {
 		}
 	}
 
-	// BUG-004: GT6-типы урона теперь datapack-реестр DAMAGE_TYPE (bootstrap выше подключён в GT6WorldgenFeature.BUILDER).
-	// Holder БЕРЁМ ИЗ РЕЕСТРА (не самодельный) — иначе сетевой кодек ClientboundDamageEventPacket/container_set_slot не
-	// находит id (IdMap.getIdOrThrow ищет value() по идентичности) → EncoderException/дисконнект. Нет сервера/реестра
-	// (клиент-предсказание урона) — direct holder (в сеть на этом пути не кодируется).
+	// The holder must come from the registry, not be built locally, or the network codec for the damage
+	// event packet cannot find its id; falls back to a direct holder when no server/registry is available.
 	static Holder<DamageType> resolveHolder(ResourceKey<DamageType> aKey, DamageType aFallbackType) {
 		MinecraftServer tServer = ServerLifecycleHooks.getCurrentServer();
 		if (tServer != null) {
@@ -239,9 +232,8 @@ public class DamageSources {
 	}
 
 	public static class GregTechDamageSource extends DamageSource {
-		// 1.7.10 DamageSource нёс теги как per-instance МУТАБЕЛЬНЫЕ флаги; движок в neo читает армор/эффекты/огонь/
-		// инвулу через source.is(tag) (LivingEntity:1928/1939 и др., НЕ type().is) → override is(TagKey) отдаёт этот
-		// локальный набор. Это ТОЧНОЕ 1:1 динамических setDamageBypassesArmor(...) без datapack-тегов у реестрового holder.
+		// The engine now reads armor/effect/fire/invulnerability bypass through source.is(tag), not type().is,
+		// so this override supplies the same per-instance tag set the original dynamic flags represented.
 		private final Set<TagKey<DamageType>> mTags;
 		private final Function<LivingEntity, Component> mDeathMessage;
 		private float mFoodExhaustion;
@@ -273,7 +265,7 @@ public class DamageSources {
 		public Component func_151519_b(LivingEntity aTarget) {return getLocalizedDeathMessage(aTarget);}
 
 		public GregTechDamageSource setDamageBypassesArmor() {
-			mTags.add(DamageTypeTags.BYPASSES_ARMOR); mTags.add(DamageTypeTags.BYPASSES_SHIELD); // add(ARMOR) в 1.7.10-зеркале тянул SHIELD
+			mTags.add(DamageTypeTags.BYPASSES_ARMOR); mTags.add(DamageTypeTags.BYPASSES_SHIELD); // Adding ARMOR here also implicitly includes SHIELD, mirroring how the 1.7.10 constant bundled both.
 			mFoodExhaustion = ZERO_EXHAUSTION;
 			return this;
 		}

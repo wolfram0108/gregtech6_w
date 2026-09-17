@@ -57,8 +57,8 @@ public class MultiTileEntityFluidometer extends MultiTileEntitySensorTE {
 				return rFluid;
 			}
 		}
-		// F5 §6.2: «сколько в клетке» — один вопрос центру (ванильные источники, воды GT6 и кванты нефтей),
-		// вместо ветки «мета 0 = 1000» плюс отдельной ветки IFluidBlock.
+		// "How much is in this cell" is one question to the center (vanilla sources, GT6 waters, and oil quanta),
+		// replacing separate branches for meta-0-is-1000 and IFluidBlock.
 		FluidStack tFluid = FL.drainable(aDelegator.mWorld, new net.minecraft.core.BlockPos(aDelegator.mX, aDelegator.mY, aDelegator.mZ));
 		return tFluid == null ? 0 : tFluid.getAmount();
 	}

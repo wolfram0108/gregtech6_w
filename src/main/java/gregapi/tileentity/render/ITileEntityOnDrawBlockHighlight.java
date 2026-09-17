@@ -26,18 +26,8 @@ package gregapi.tileentity.render;
 import gregapi.tileentity.ITileEntityUnloadable;
 import net.minecraftforge.client.event.RenderHighlightEvent;
 
-/**
- * @author Gregorius Techneticies
- *
- * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 {@code net.minecraftforge.client.event.DrawBlockHighlightEvent}
- * (immediate-mode, поля {@code player}/{@code target}/{@code currentItem}/{@code partialTicks}) удалён
- * целиком в 26.1.2 — событие пересобрано вокруг {@code BlockOutlineRenderState}
- * (`neoforge-decompiled/net/neoforged/neoforge/client/event/RenderHighlightEvent.Block.java:33-145`,
- * `getBlockPos/getBlockState/getHitResult/getCollisionContext`, БЕЗ прямого держателя игрока/предмета
- * в руке/partialTicks). Сигнатура метода вынужденно ретипирована на новый класс события (F, тип-шов);
- * реализации ниже по цепочке — компилируемая заглушка, реальная перерисовка wrench-overlay это
- * decisions/F3-render.md §2.7/BER-путь.
- */
+/** 1.7.10's DrawBlockHighlightEvent, with direct player/held-item/partialTicks fields, is gone entirely in 26.1.2.
+ *  The signature is retyped to the new event, which carries none of that; implementations below are compiling stubs. */
 public interface ITileEntityOnDrawBlockHighlight extends ITileEntityUnloadable {
 	/** Gets called Client Side, when you mouse over this TileEntity. return true to prevent other things from rendering. */
 	public boolean onDrawBlockHighlight(RenderHighlightEvent.Block aEvent);

@@ -37,7 +37,7 @@ import net.minecraft.world.level.block.Block;
  */
 public class MultiTileEntityGeneratorMetal extends MultiTileEntityGeneratorSolid {
 	
-	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {byte tF = mFacing /* BUG-074: компенсация item-facing перенесена в центр — MultiTileEntityBlockInternal.passRenderingToObject */; return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACING_ROTATIONS[tF][aSide]], mRGBa), BlockTextureDefault.get((mBurning?sOverlaysActive:sOverlays)[FACING_ROTATIONS[tF][aSide]])): null;}
+	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {byte tF = mFacing /* Item-facing compensation now lives in the center, MultiTileEntityBlockInternal.passRenderingToObject. */; return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACING_ROTATIONS[tF][aSide]], mRGBa), BlockTextureDefault.get((mBurning?sOverlaysActive:sOverlays)[FACING_ROTATIONS[tF][aSide]])): null;}
 	
 	// Icons
 	public static IIconContainer[] sColoreds = new IIconContainer[] {

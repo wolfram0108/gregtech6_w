@@ -51,13 +51,8 @@ import static gregapi.data.CS.*;
 public abstract class TileEntityBase09FacingSingle extends TileEntityBase08Directional implements IMTE_OnPlaced, IMTE_AddToolTips, IMTE_ItemFacing {
 	public byte mFacing = getDefaultSide();
 
-	/**
-	 * BUG-074/078: приём item-facing централизован — величина живёт в контракте {@code IMTE_ItemFacing}
-	 * (дефолт {@code ITEM_MACHINE_FACING} для семей с раскладкой {@code FACING_ROTATIONS}: машины, бойлеры,
-	 * генераторы, турбины, динамо), подстановку делает {@code MultiTileEntityRegistry.applyItemFacing},
-	 * а ЗДЕСЬ — только доступ к собственному полю грани. Семья с иной формулой переопределяет
-	 * {@code getItemFacing()} — так поступают {@code MultiTileEntityMassStorage} и {@code MultiTileEntityChest}.
-	 */
+	/** Item-facing is centralized in the IMTE_ItemFacing contract, with substitution done by
+	 *  MultiTileEntityRegistry.applyItemFacing; this is only the plain field accessor, overridden by MassStorage/Chest. */
 	@Override public void setItemFacing(byte aFacing) {mFacing = aFacing;}
 
 	@Override
@@ -98,7 +93,7 @@ public abstract class TileEntityBase09FacingSingle extends TileEntityBase08Direc
 	@Override public String getFacingTool() {return TOOL_wrench;}
 	public short getFacing() {return mFacing;}
 	public void setFacing(short aFacing) {setPrimaryFacing(UT.Code.side(aFacing));}
-	public boolean wrenchCanSetFacing(Player aPlayer, int aSide) {return TOOL_wrench.equals(getFacingTool()) && getValidSides()[aSide] && (aPlayer == null || ST.n(aPlayer.getMainHandItem()) == null || !ItemsGT.SPECIAL_CASE_TOOLS.contains(aPlayer.getMainHandItem(), T));} // getHeldItem()->neo getMainHandItem() (LivingEntity:2257); F15-граница: движок EMPTY -> GT6 null (ST.n).
+	public boolean wrenchCanSetFacing(Player aPlayer, int aSide) {return TOOL_wrench.equals(getFacingTool()) && getValidSides()[aSide] && (aPlayer == null || ST.n(aPlayer.getMainHandItem()) == null || !ItemsGT.SPECIAL_CASE_TOOLS.contains(aPlayer.getMainHandItem(), T));} // getHeldItem()->neo getMainHandItem(); the engine/GT6 empty-stack boundary maps EMPTY to null.
 	@Override public boolean isConnectedWrenchingOverlay(ItemStack aStack, byte aSide) {return aSide == mFacing;}
 	
 	public void setPrimaryFacing(byte aFacing) {if (isClientSide() || aFacing == mFacing) return; byte oFacing = mFacing; mFacing = aFacing; updateClientData(); causeBlockUpdate(); onFacingChange(oFacing); checkCoverValidity(); doEnetUpdate(); if (hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(this, F);}

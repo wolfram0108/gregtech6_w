@@ -59,8 +59,8 @@ public class Loader_Worldgen implements Runnable {
 		boolean
 		tInfiniteOil = ConfigsGT.WORLDGEN.get(ConfigCategories.general, "GenerateInfiniteOilSources", T),
 		tInfiniteGas = ConfigsGT.WORLDGEN.get(ConfigCategories.general, "GenerateInfiniteGasSources", T);
-		// ADAPT-004 (нововведение, ADAPTATIONS.md): конфиг-множитель темпа produce родников. Кламп >0 против деления на 0.
-		// Дефолт 1.0 → делитель == amount → produce строго 1:1. Применяется в MultiTileEntityFluidSpring.onTick (живо на все родники).
+		// Config multiplier for spring production rate, clamped above 0 to avoid divide-by-zero.
+		// Default 1.0 keeps the divisor equal to amount, matching original behavior exactly.
 		gregtech.tileentity.misc.MultiTileEntityFluidSpring.PRODUCTION_MULTIPLIER = Math.max(0.0001, ConfigsGT.WORLDGEN.get(ConfigCategories.general, "FluidSourceProductionMultiplier", 1.0));
 
 		new WorldgenStoneLayers("stonelayers", T, GEN_GT, GEN_ENVM_GT, GEN_A97_GT, GEN_CW2_AquaCavern_GT, GEN_CW2_Caveland_GT, GEN_CW2_Cavenia_GT, GEN_CW2_Cavern_GT, GEN_CW2_Caveworld_GT); // MUST BE FIRST
@@ -762,14 +762,8 @@ public class Loader_Worldgen implements Runnable {
 		new WorldgenOresBedrock("ore.bedrock.bauxite"      , T, T,   2000, MT.OREMATS.Bauxite     , BlocksGT.FlowersA, 7, GEN_FLOOR); // TODO Aluminium Flower
 		new WorldgenOresBedrock("ore.bedrock.cassiterite"  , T, T,   2000, MT.OREMATS.Cassiterite , BlocksGT.FlowersA, 7, GEN_FLOOR); // TODO Tin Flower
 		new WorldgenOresBedrock("ore.bedrock.chalcopyrite" , T, T,   2000, MT.OREMATS.Chalcopyrite, BlocksGT.FlowersA, 2, GEN_FLOOR);
-		// Слой AE2: жила СВЕРХ оригинала. В 1.7.10 метеоритное железо поставляли GalactiCraft и HBM
-		// (LoaderUnificationTargets), которых здесь нет; базовый источник — камни WorldgenRocks и лут gt.misc —
-		// остаётся, это промышленный этаж под Bedrock Drill. Вероятность и образец — ancientdebris (строка ниже,
-		// 4000); цветок — железный, тот же, что у гематита.
-		// Мастер-ключ ae2/ReplaceMeteoriteGeneration: есть метеорит — нет жилы, нет метеорита — есть жила.
-		// При F жила НЕ ЗАВОДИТСЯ ВОВСЕ (не «Enabled=F»): свой ключ Enabled персистится в
-		// WorldGenerationNew.cfg при первом же запуске, и связь через дефолт молча отвалилась бы.
-		// Вторая половина ключа — пак ae2replacegen (GT_API.onAddPackFinders). Без AE2 флаг всегда T.
+		// This vein exists on top of the original since the mods that used to supply meteoric iron aren't present here;
+		// a master switch ties its presence to whether meteorite generation is enabled, so exactly one of the two exists.
 		if (AE2_REPLACE_METEORITE_GENERATION)
 		new WorldgenOresBedrock("ore.bedrock.meteoriciron" , T, T,   4000, MT.MeteoricIron        , BlocksGT.FlowersA, 7, GEN_FLOOR);
 		new WorldgenOresBedrock("ore.bedrock.voidquartz"   , T, T,   4000, MT.VoidQuartz                                , GEN_NETHER);

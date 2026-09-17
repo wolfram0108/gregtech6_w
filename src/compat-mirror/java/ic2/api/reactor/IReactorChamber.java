@@ -35,11 +35,8 @@
 
 package ic2.api.reactor;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Сверено javap ic2:IC2Classic:1.2.1.8-dev
- *  (ic2.api.reactor.IReactorChamber). Реально используется — WD.java:1228: getReactor()
- *  (результат приводится к BlockEntity — легальный unchecked-cast интерфейса к
- *  неfinal-классу, IReactor extends BlockEntity не нужен). Метод setRedstoneSignal
- *  реального API не используется (греп 0) — не добавлен. */
+/** Compile-only mirror of the IC2 API: only getReactor is actually called, from WD, which then
+ *  casts the result to BlockEntity without needing IReactor to extend it. */
 public interface IReactorChamber {
 	IReactor getReactor();
 }

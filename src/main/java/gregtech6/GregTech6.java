@@ -29,43 +29,18 @@ import net.minecraftforge.fml.common.Mod;
 
 import org.slf4j.Logger;
 
-/**
- * Точка входа мода с modId {@code "gregtech6"} — совпадает с объявленным в
- * {@code src/main/templates/META-INF/neoforge.mods.toml} ({@code ${mod_id}}) и используется тестом
- * {@code gregtech6.SanityTest} (обращается к {@link #MODID}). Поэтому класс СОХРАНЁН.
- *
- * <p><b>F12/R3.</b> ADR {@code decisions/F12-registration-lifecycle.md:79} предписывает удалить этот
- * временный toolchain-bring-up-скелет, раз реальным neo-{@code @Mod} стал {@code gregapi.GT_API}.
- * Однако полное удаление класса сломало бы mod-точку-входа (declared modId {@code gregtech6} в
- * mods.toml) и компиляцию {@code SanityTest}. Поэтому применён вариант ADR «оставить класс, но убрать
- * из него регистрацию в обход центра»: удалены собственные {@code DeferredRegister.Blocks/Items},
- * тестовые {@code TEST_BLOCK}/{@code TEST_BLOCK_ITEM} и тестовый {@code CreativeModeTab} — это был
- * артефакт проверки сборки, не из архитектуры Грегориуса.</p>
- *
- * <p><b>Централизация (F12).</b> Регистрация контента теперь идёт ТОЛЬКО через центры:
- * {@code gregapi.GT_API} (Item/Block, F12) и {@code gregapi.fluid.FluidGT} (Fluid, F5). Здесь ничего
- * не регистрируется. Привязок к мод-шине здесь больше нет вовсе: сетевой канал (F7) на 1.20.1 строится
- * в конструкторе {@code gregapi.network.NetworkHandler} ({@code NetworkRegistry.newSimpleChannel}),
- * как в оригинале 1.7.10 — событие регистрации payload'ов, под которое стояла подписка в ветке 26.x,
- * в 1.20.1 не существует.</p>
- *
- * <p>Осиротевший ассет {@code block.gregtech6.test_block} в
- * {@code assets/gregtech6/lang/en_us.json} остаётся безвредным (неиспользуемый ключ локализации);
- * ресурсы — вне scope F12-кода.</p>
- */
-// F12 mod-структура (boot работает): временный @Mod-носитель modId gregtech6; удалить, когда
-// GT6_Main станет реальным @Mod(GT) — decisions/F12-registration-lifecycle.md §4. Причина отложенности:
-// neoforge.mods.toml требует живой entrypoint УЖЕ на этапе сборки, а законный владелец modId (мод GT,
-// GT6_Main) переводится на neo-@Mod только в порту контента (контент-824, отложен по §4.1).
+/** This class stays only because its mod id is the declared entry point mods.toml and SanityTest depend on;
+ *  its own item/block registration is stripped so it no longer competes with the central GT_API/FluidGT registries. */
+// Temporary @Mod carrier for modId gregtech6, removed once GT6_Main becomes the real @Mod(GT).
+// neoforge.mods.toml needs a live entrypoint already at build time, before content registration moves there.
 @Mod(GregTech6.MODID)
 public class GregTech6 {
     public static final String MODID = "gregtech6";
 
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    // javafml 1.20.1 конструирует @Mod-класс БЕЗАРГУМЕНТНЫМ конструктором
-    // (FMLModContainer.constructMod → modClass.getDeclaredConstructor()); аргументы IEventBus/ModContainer
-    // появились только в 26.x. Мод-шина, кому она нужна, берётся из FMLJavaModLoadingContext.get().
+    // javafml on 1.20.1 constructs the @Mod class with a no-arg constructor.
+    // The bus/context constructor arguments only exist starting on 26.x.
     public GregTech6() {
         LOGGER.info("[GregTech6] entrypoint loaded — content registration centralised in GT_API (F12) / FluidGT (F5)");
     }

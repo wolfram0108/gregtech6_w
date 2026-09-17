@@ -35,6 +35,5 @@
 
 package thaumcraft.api;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только упомянут (CompatTC.java:
- *  {@code ThaumcraftApiHelper.class.getCanonicalName()}). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only referenced by class name, from CompatTC. */
 public class ThaumcraftApiHelper {}

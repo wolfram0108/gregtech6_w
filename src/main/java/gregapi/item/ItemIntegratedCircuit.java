@@ -54,9 +54,8 @@ public class ItemIntegratedCircuit extends ItemBase {
 		setMaxDamage(0);
 		
 		LH.add(mName + ".configuration", "Configuration: ");
-		// F1/F12/F16 item-model: stack-init (OreDict-данные + рецепты + CoverRegistry — ST.make(this)) вынесен в initDeferred(),
-		// выполняется @пост-freeze (gregapi.GT_API.runDeferredItemInit в setup); конструкция идёт @RegisterEvent, где компоненты
-		// не привязаны и ST.make упал бы "Components not bound yet". Было: инлайн в конструкторе.
+		// Stack-init (OreDict data, recipes, cover registry) is moved into initDeferred, run post-freeze, because
+		// construction happens on RegisterEvent when components are not yet bound and ST.make would fail.
 		gregapi.GT_API.deferItemInit(this::initDeferred);
 	}
 
@@ -100,8 +99,8 @@ public class ItemIntegratedCircuit extends ItemBase {
 	private boolean mIconsRegistered = F;
 
 	@Override
-	// F3-render (ленивый триггер, тот же приём, что ItemBase.getIconFromDamage): registerIcons в neo НЕ вызывается →
-	// mIcons оставался null → предмет не рисовался. Наполняем ЛЕНИВО при первом запросе тем же registerIcons-перебором.
+	// registerIcons is never called in neo, so the icon map stayed null and the item failed to render;
+	// it is now filled lazily on first icon request using the same registerIcons scan.
 	public ResourceLocation getIconFromDamage(int aMeta) {
 		if (!mIconsRegistered) registerIcons(null);
 		return mIcons[aMeta & 255];
@@ -125,13 +124,12 @@ public class ItemIntegratedCircuit extends ItemBase {
 	}
 	
 	@Override
-	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — ResourceLocation строим напрямую из того же пути.
+	// The old icon-registration hook (IIconRegister) is gone; the same path is now used to build a ResourceLocation directly.
 	public void registerIcons(Object aIconRegister) {
 		mIconsRegistered = T;
 		for (int i = 0; i < 25/*TODO mIcons.length*/; i++) mIcons[i] = new ResourceLocation(mModID + ":" + mName + "/" + (byte)(i&255));
-		// F3-render: «useful hack» диспетчеризации sItemIconload (1.7.10: этот предмет был ДРАЙВЕРОМ item-icon-load-фазы всего
-		// мода) МЁРТВ в neo — GT_API.sItemIconload обнуляется на init (GT_API.java:1050); icon-load-фаза заменена ленивым
-		// построением в TextureSet.java:97 / ItemIcons.getIcon. Убран: ленивый вызов на рендере итерировал бы null → NPE.
+		// The 1.7.10 icon-load-phase dispatcher is dead in neo (GT_API.sItemIconload is cleared on init); icon loading
+		// moved to the lazy TextureSet/ItemIcons path, so keeping the old lazy call here would iterate null and crash.
 	}
 	
 	private static String getModeString(int aMetaData) {

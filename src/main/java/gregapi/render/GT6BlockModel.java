@@ -42,62 +42,47 @@ import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraft.core.Direction;
 
-/**
- * F3-render (client): единая динамическая модель ВСЕХ GT6-блоков (аналог одного {@code RendererBlockTextured} у Грегориуса —
- * централизация 1:1). Движок зовёт {@link #getModelData} (чанк-компиляция, {@code ChunkRenderDispatcher:631}) → берём
- * {@link IRenderedBlock} из блока → per pass×side зовём его {@code getTexture(...)} →
- * {@link ITexture}{@code .render<Side>(quadBuilder,...)} → {@link GT6QuadBuilder} аккумулирует quads → результат едет
- * в {@link #getQuads} через {@link ModelData}. GT6 per-side texture-логика переиспользуется без переписывания; заменён
- * лишь механизм отрисовки (immediate→baked).
- *
- * <p><b>Ветка 1.20.1.</b> Канал «модель видит мир» здесь — Forge {@code ModelData}/{@code ModelProperty}
- * ({@code IForgeBakedModel.getModelData(level,pos,state,data)} → {@code getQuads(state,side,rand,data,renderType)}) —
- * ровно тот, что описан планом F3-render.md §2.4 (в 26.x он был удалён, и ветка ходила через
- * {@code DynamicBlockStateModel.collectParts(level,pos,...)}). Порядок вызовов GT6 не изменился — сменился только
- * носитель контекста. Спрайты — из block-атласа в рантайме (динамика материал×префикс). Регистрация — рантайм-инъекция
- * в {@code ModelEvent.ModifyBakingResult} (GT_API_Proxy_Client). См. F3-render.md §2.
- */
+/** One dynamic model for every GT6 block, the same centralization as Greg's own single RendererBlockTextured: the
+ *  engine calls getModelData, which reuses GT6's texture logic and bakes quads instead of drawing them immediately. */
 public class GT6BlockModel implements BakedModel {
-	/** Канал «мир → модель» (F3-render.md §2.4, эталон AE2 {@code CableBusRenderState.PROPERTY}). Один ключ на весь мод. */
+	/** The 'world to model' channel: one key shared by the whole mod, not a per-block copy. */
 	public static final ModelProperty<QuadContext> PROPERTY = new ModelProperty<>();
 
-	/** Готовая геометрия одной позиции, собранная в {@link #getModelData}; {@link #getQuads} её только режет по сторонам. */
+	/** Ready-made geometry for a single position, built once in getModelData; getQuads only slices it by side afterward. */
 	public static final class QuadContext {
 		final GT6QuadBuilder.QuadSet mQuads;
 		QuadContext(GT6QuadBuilder.QuadSet aQuads) {mQuads = aQuads;}
 	}
 
-	/** Блок-владелец (инъекция ModifyBakingResult даёт per-state инстансы): нужен там, где контекста мира НЕТ —
-	 *  breaking-оверлей движка и статический запрос модели (JourneyMap). null = куб-фолбэк. */
+	/** The owning block, needed only where there's no world context (the engine's breaking overlay, a static model query);
+	 *  null falls back to a plain cube. */
 	private final Block mOwner;
-	/** BlockState-владелец: в 1.20.1 {@code getParticleIcon(ModelData)} не получает ни state, ни pos — мету крошки
-	 *  берём отсюда тем же центром {@code IBlockExtendedMetaData}, которым её берёт источник тинта GT6. */
+	/** getParticleIcon(ModelData) is given neither state nor position on this engine version, so the crumb's meta comes
+	 *  from here, through the same center GT6's own tint source already reads it from. */
 	private final BlockState mOwnerState;
-	/** Ленивый кэш безконтекстной формы (чистая функция владельца): breaking-оверлей и JourneyMap зовут её каждый кадр. */
+	/** A lazy cache of the context-free form, a pure function of the owner; the breaking overlay and JourneyMap call it often. */
 	private volatile GT6QuadBuilder.QuadSet mContextFree;
 	private volatile boolean mContextFreeBuilt = false;
 
-	/** Путь ModelEvent.ModifyBakingResult. Ветка 1.20.1: спрайт-фолбэк резолвится ЛЕНИВО — событие приходит на
-	 *  рабочем потоке до готовности {@code ModelManager} (см. его javadoc: «must therefore not be accessed»),
-	 *  а {@code getParticleIcon} зовут уже в рантайме. */
+	/** The particle sprite fallback resolves lazily: this event fires before ModelManager is ready to be read, and
+	 *  getParticleIcon itself is only called later, at actual render time. */
 	public GT6BlockModel() {this(null, null);}
 	public GT6BlockModel(Block aOwner) {this(aOwner, null);}
 	public GT6BlockModel(Block aOwner, BlockState aOwnerState) {mOwner = aOwner; mOwnerState = aOwnerState;}
 
-	/** Фолбэк-спрайт крошки (1:1 прежнего particle всей модели): {@code gregtech:system/error}. sprite-id БЕЗ
-	 *  префикса {@code blocks/} — atlas-source кладёт {@code textures/blocks/**} с {@code prefix:""}. */
+	/** The fallback crumb sprite, 1:1 with the old single-particle model; no blocks/ prefix, since the atlas source adds one. */
 	private static TextureAtlasSprite sErrorParticle;
 	private static TextureAtlasSprite errorParticle() {
 		if (sErrorParticle == null) sErrorParticle = GT6QuadBuilder.resolveSprite(new ResourceLocation("gregtech", "system/error"));
 		return sErrorParticle;
 	}
-	/** Сброс ленивого спрайта при перепечке атласа (зовёт onModifyBakingResult вместе с кэшами item-модели). */
+	/** Resets the lazy sprite whenever the atlas rebakes, alongside the item-model caches. */
 	public static void invalidateParticle() {sErrorParticle = null;}
 
-	// ==================== контракт BakedModel 1.20.1 ====================
+	// The BakedModel contract on this engine version starts here.
 
-	/** Точка, где модель ВИДИТ МИР (чанк-компиляция зовёт её прямо перед тесселяцией: {@code ChunkRenderDispatcher:631}).
-	 *  Здесь и только здесь работает GT6-цепочка getRenderPasses/setBlockBounds/getTexture. */
+	/** Where the model actually sees the world: chunk compilation calls this right before tessellation, and only here
+	 *  does GT6's own render-pass/bounds/texture chain run at all. */
 	@Override
 	public ModelData getModelData(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState, ModelData aModelData) {
 		GT6QuadBuilder.QuadSet tQuads = collect(aLevel, aPos, aState);
@@ -110,41 +95,26 @@ public class GT6BlockModel implements BakedModel {
 		return (tCtx != null ? tCtx.mQuads : contextFree()).getQuads(aSide);
 	}
 
-	/** Ванильная перегрузка без ModelData — сюда приходят потребители вне чанк-пути. */
+	/** The plain vanilla overload with no ModelData; consumers outside the chunk-compile path land here instead. */
 	@Override
 	public List<BakedQuad> getQuads(BlockState aState, Direction aSide, RandomSource aRandom) {
 		return getQuads(aState, aSide, aRandom, ModelData.EMPTY, null);
 	}
 
-	/** ЕДИНАЯ ФОРМУЛА СЛОЯ ОТРИСОВКИ на ВСЕ модели GT6 (BP-BUG-007). 1.7.10-канал {@code getRenderBlockPass()}
-	 *  (0 = alpha-test, 1 = блендинг), см. {@code IBlock}.
-	 *
-	 *  <p><b>Почему центр, а не метод одной модели.</b> Движок 1.20.1 сам слой не выбирает (в отличие от 26.1,
-	 *  где мод об этом не знает вовсе), поэтому канал завела ветка — и у канала ДВА плеча, мировое и предметное.
-	 *  Предметное спрашивает слой не у блочной модели, а у ITEM-модели: {@code RenderTypeHelper
-	 *  .getFallbackItemRenderType:63-68} берёт {@code BlockItem} и зовёт {@code model.getRenderTypes(block
-	 *  .defaultBlockState(), …)} У НЕЁ ЖЕ. Пока эту перегрузку несла только {@link GT6BlockModel}, item-плечо
-	 *  падало в дефолт {@code ItemBlockRenderTypes.getRenderLayers} ({@code IForgeBakedModel:85-88}), где блоков
-	 *  GT6 нет, и стекло в GUI выходило CUTOUT — без блендинга. Формула одна, потребителей три; второй таблицы
-	 *  слоёв не заводим. Блок берётся из состояния (его и передаёт движок), {@code aFallback} — на случай null. */
+	/** 1.7.10's getRenderBlockPass() (0=cutout, 1=blend) channel; this engine version never picks a layer itself, so the
+	 *  mod must, and the item side specifically asks the ITEM model for it -- without this, GUI glass rendered opaque. */
 	public static ChunkRenderTypeSet renderTypesOf(BlockState aState, Block aFallback) {
 		return ChunkRenderTypeSet.of(renderTypeOf(aState == null ? aFallback : aState.getBlock()));
 	}
 
-	/** ТА ЖЕ ФОРМУЛА, ответ одним слоем — четвёртый потребитель центра (BP-BUG-015, поверхность жидкости).
-	 *  Клетку роли {@code OWN_TAGGED_FLUID} движок рисует не моделью, а ЖИДКОСТНЫМ проходом, и слой берёт у
-	 *  СВОЕЙ таблицы {@code ItemBlockRenderTypes.getRenderLayer(FluidState)} — где дефолт {@code solid}
-	 *  ({@code ItemBlockRenderTypes.java:377-379,399-401}), то есть поверхность непрозрачна. Ваниль пишет туда
-	 *  свою воду статически (:315-319); мод обязан записать свою — но НЕ второй таблицей слоёв: величина
-	 *  остаётся 1.7.10-каналом {@code getRenderBlockPass()} того же блока (у обеих жидкостных семей это 1,
-	 *  {@code BlockBaseFluid:473} = оригинал {@code BlockBaseFluid.java:366}). Регистрация — центр
-	 *  {@code GT_API_Proxy_Client.registerFluidRenderLayers}. */
+	/** The fluid-surface layer is a fourth consumer of the same formula: fluids draw through their own engine pass, which
+	 *  reads its own render-layer table, so the mod's fluids register there too, using the same 1.7.10 pass value. */
 	public static RenderType renderTypeOf(Block aBlock) {
 		int tPass = aBlock instanceof gregapi.block.IBlock tI ? tI.getRenderBlockPass() : 0;
 		return tPass > 0 ? RenderType.translucent() : RenderType.cutout();
 	}
 
-	/** Слой отрисовки блока в МИРЕ — тем же центром, что и предметное плечо. */
+	/** The block's render layer in the world, through the same center as the item arm above. */
 	@Override
 	public ChunkRenderTypeSet getRenderTypes(BlockState aState, RandomSource aRandom, ModelData aData) {
 		return renderTypesOf(aState, mOwner);
@@ -158,19 +128,19 @@ public class GT6BlockModel implements BakedModel {
 	@Override public ItemTransforms getTransforms() {return ItemTransforms.NO_TRANSFORMS;}
 	@Override public TextureAtlasSprite getParticleIcon() {return errorParticle();}
 
-	// ==================== GT6-цепочка ====================
+	// GT6's own render chain starts here.
 
-	/** Сборка геометрии позиции. Отдельный метод, потому что в 1.20.1 её зовут ДО {@link #getQuads} (из getModelData). */
+	/** Geometry assembly for one position, split out since on this engine version it runs before getQuads, from getModelData. */
 	private GT6QuadBuilder.QuadSet collect(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState) {
-		// F-bounds-race: вся рендер-цепь — в bounds-контексте (BlockBase.RENDER_BOUNDS_CTX): пассовые setBlockBounds и
-		// анти-протечка пишут потоко-локальную копию, НЕ общие поля Block (см. BlockBase.setBlockBounds).
+		// The whole render chain runs inside a bounds context (BlockBase.RENDER_BOUNDS_CTX): setBlockBounds writes a
+		// thread-local copy per pass, not the shared Block fields, so passes on different threads can't clobber each other.
 		boolean[] tCtx = gregapi.block.BlockBase.RENDER_BOUNDS_CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
 		try {
 			return collectParts0(aLevel, aPos, aState);
 		} finally {tCtx[0] = tPrevCtx;}
 	}
 
-	/** Безконтекстная форма блока (breaking-оверлей движка и статический запрос модели): чистая функция владельца. */
+	/** The context-free block shape for the breaking overlay and static model queries; a pure function of the owner block. */
 	private GT6QuadBuilder.QuadSet contextFree() {
 		if (mContextFreeBuilt) return mContextFree;
 		boolean[] tCtx = gregapi.block.BlockBase.RENDER_BOUNDS_CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
@@ -179,36 +149,23 @@ public class GT6BlockModel implements BakedModel {
 		return mContextFree;
 	}
 
-	/** F3-render ТРЕЩИНЫ (репорт игрока «нет текстуры трещин» + уточнение «в оригинале трещины ложились ПРЯМО
-	 *  на поверхность трубы/камня/верёвки/куста») и статический запрос модели (MODCOMPAT-002).
-	 *  <p>Ветка 1.20.1: контекста мира у {@code getQuads} нет вовсе (движок зовёт breaking-оверлей через
-	 *  {@code LevelRenderer:1315} → {@code BlockRenderDispatcher.renderBreakingTexture} с {@code ModelData.EMPTY},
-	 *  а JourneyMap и прочие читатели моделей вне мира — через ванильную перегрузку), поэтому та же форма строится
-	 *  здесь, по владельцу. Диспатч по mOwner: MTE (обе иерархии) → ПУСТО — форма конкретного MTE без позиции
-	 *  неизвестна (блок и состояние у всех MTE общие), а трещины на его ФАКТИЧЕСКОЙ форме кладёт
-	 *  {@link MultiTileEntityBER} по живой геометрии ломаемого блока (BUG-138: остальной облик MTE идёт мэшем секции,
-	 *  см. {@link #collectParts0}); куст/цветок (IRenderedCross) → крест; остальные (IBlock) → статические bounds
-	 *  (полублок = полбокса); неизвестный владелец → куб. UV трещин пересчитывает {@code SheetedDecalTextureGenerator}
-	 *  по ПОЗИЦИИ — спрайт не важен, важна ГЕОМЕТРИЯ.
-	 *  <p>Первоисточник — ITEM-ФОРМА блока ({@link #buildInventoryQuads}: тот же центр, что 3D-иконка в инвентаре/JEI —
-	 *  настоящие per-pass текстуры С КОЛОРИЗАЦИЕЙ; в 1.7.10 карта видела раскрашенный канал getIcon+colorMultiplier,
-	 *  голая грейскейл-иконка руды теряла цвет — замер #BCBCBC). Фолбэк — куб/крест из иконки канала {@code IBlock.getIcon}
-	 *  (CFOAM — 1:1-дефолт 1.7.10 BlockBase:103/MultiTileEntityBlock:293). */
+	/** There's no world context at all here (the breaking overlay passes ModelData.EMPTY, other readers are outside the
+	 *  world entirely), so the crack shape is built by owner type, using the same geometry as the 3D inventory icon. */
 	private GT6QuadBuilder.QuadSet buildContextFree() {
 		GT6QuadBuilder tCrackQB = new GT6QuadBuilder();
 		if (mOwner instanceof gregapi.block.multitileentity.MultiTileEntityBlock || mOwner instanceof gregapi.block.multitileentity.MultiTileEntityBlockInternal) return tCrackQB.build();
 		if (mOwner != null) {
 			net.minecraft.world.item.Item tOwnerItem = net.minecraft.world.item.Item.byBlock(mOwner);
 			if (tOwnerItem != null && tOwnerItem != net.minecraft.world.item.Items.AIR) {
-				try {buildInventoryQuads(tCrackQB, mOwner, new net.minecraft.world.item.ItemStack(tOwnerItem));} catch (Throwable e) {/* фолбэк ниже */}
+				try {buildInventoryQuads(tCrackQB, mOwner, new net.minecraft.world.item.ItemStack(tOwnerItem));} catch (Throwable e) {/* cube/cross fallback below */}
 			}
 		}
 		if (tCrackQB.isEmpty()) {
 			net.minecraft.resources.ResourceLocation tCrackIcon = null;
 			try {
-				if (mOwner instanceof IRenderedCross tCross) tCrackIcon = tCross.getCrossIcon(null, 0, 0, 0); // контракт aWorld==null + мета в aX (см. buildInventoryQuads)
+				if (mOwner instanceof IRenderedCross tCross) tCrackIcon = tCross.getCrossIcon(null, 0, 0, 0); // aWorld==null contract: meta is passed via aX (see buildInventoryQuads).
 				else if (mOwner instanceof gregapi.block.IBlock tGT6) tCrackIcon = tGT6.getIcon(1, 0);
-			} catch (Throwable e) {/* фолбэк ниже */}
+			} catch (Throwable e) {/* cube/cross fallback below */}
 			if (tCrackIcon == null) tCrackIcon = gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);
 			if (mOwner instanceof IRenderedCross) {
 				tCrackQB.crossFace(tCrackIcon, gregapi.data.CS.UNCOLOURED);
@@ -221,8 +178,8 @@ public class GT6BlockModel implements BakedModel {
 	}
 
 	private GT6QuadBuilder.QuadSet collectParts0(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState) {
-		// F3-render рельсы: BlockBaseRail наследует vanilla BaseRailBlock (НЕ IRenderedBlock) — плоский рельс-quad по мете
-		// (1:1 vanilla renderBlockRail), форма/иконка из меты. Отдельная ветка, минуя box-цепочку IRenderedBlock ниже.
+		// BlockBaseRail extends vanilla BaseRailBlock, not IRenderedBlock, so rails get their own flat quad-by-meta branch
+		// here instead of going through the IRenderedBlock box-chain below.
 		if (aState.getBlock() instanceof gregapi.block.misc.BlockBaseRail tRail) {
 			GT6QuadBuilder tRailQB = new GT6QuadBuilder();
 			RailRenderer.collectRailQuads(tRailQB, aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), tRail);
@@ -233,51 +190,37 @@ public class GT6BlockModel implements BakedModel {
 		int tX = aPos.getX(), tY = aPos.getY(), tZ = aPos.getZ();
 		GT6QuadBuilder tQB = new GT6QuadBuilder();
 
-		// F3-render cross-модель (растения/цветы, IRenderedCross): X-форма из 2 диагональных плоскостей, минуя кубическую цепочку.
+		// Plants/flowers (IRenderedCross) get an X-shaped model from two diagonal planes, bypassing the cubic-face chain entirely.
 		if (tRB instanceof IRenderedCross tCross) {
 			tQB.crossFace(tCross.getCrossIcon(aLevel, tX, tY, tZ), tCross.getCrossRGBa(aLevel, tX, tY, tZ));
 			return tQB.build();
 		}
 
-		// F3-fluid: жидкости-блоки (нефти/газ/гео-вода) — 1:1 порт RendererBlockFluid.renderWorldBlock:
-		// кванта-высота, склоны угловых высот по соседям 3×3 (смыкают уровни без дыр), газ зеркально от потолка.
-		// Вместо box-пути IRenderedBlock (тот оставлен для item-формы).
+		// Fluid blocks (oil/gas/geo-water) get a 1:1 port of RendererBlockFluid's quanta-height rendering with neighbor-
+		// averaged slopes, instead of the IRenderedBlock box path (still used for the item-form icon).
 		if (tBlock instanceof gregapi.block.fluid.BlockBaseFluid tFluid) {
 			RendererBlockFluid.collectFluidQuads(tQB, aLevel, tX, tY, tZ, tFluid);
 			return tQB.build();
 		}
 
-		// BUG-138 носитель №2. Прежде здесь стоял выход «MTE рисует BER, не baked-модель» с обоснованием «регион
-		// чанк-компиляции не отдаёт MTE-BE (getBlockEntity=null 100%)». Обоснование НЕВЕРНО и снято живой пробой
-		// (стенд gt6meshgate, 2026-08-21): регион, собранный движковой фабрикой RenderRegionCache.createRegion —
-		// той самой, что кладёт его в RebuildTask (ChunkRenderDispatcher:455-460) — отдаёт ТОТ ЖЕ живой объект
-		// блок-сущности, что и клиентский Level (RenderChunkRegion.getBlockEntity:51-56 → RenderChunk:24-28
-		// ImmutableMap.copyOf(chunk.getBlockEntities()) — копируется КАРТА, а не сущности). Это тот же путь, которым
-		// движок и так собирает MTE в список рисуемых BE (RebuildTask.compile: region.getBlockEntity → handleBlockEntity),
-		// поэтому «null 100%» противоречило бы работе самого BER.
-		// Значит MTE идут дальше ОБЩЕЙ веткой рендер-объекта — то есть попадают в МЭШ СЕКЦИИ, как в 1.7.10
-		// (MultiTileEntityBlock.getRenderType() → RendererBlockTextured implements ISimpleBlockRenderingHandler,
-		// оригинал :295), а не рисуются заново каждый кадр.
+		// MTEs render through the ordinary section-mesh path, like 1.7.10 did, not a per-frame redraw: the chunk-compile
+		// region hands back the same live block-entity object the client level has, not a null one.
 
-		// 1:1-порт RendererBlockTextured.renderWorldBlock: двойной passRenderingToObject → ветвь блока / ветвь рендер-объекта.
-		// Для MTE рендер-объект — сам живой BE (MultiTileEntityBlock.passRenderingToObject → WD.te(BlockGetter,…):387,
-		// плоское чтение карты BE региона). Нет BE (стаб/руда) → tRenderer==null → ветвь блока, а у MTE-блока
-		// getRenderPasses==0 (MultiTileEntityBlock:794) → пустой набор, как и было.
+		// 1:1 port of the original's double passRenderingToObject dispatch: for an MTE the render object is the live block
+		// entity itself; with no block entity it falls to the block branch, where an MTE block's own pass count is 0.
 		IRenderedBlockObject tRenderer = tRB.passRenderingToObject(aLevel, tX, tY, tZ);
 		if (tRenderer != null) tRenderer = tRenderer.passRenderingToObject(aLevel, tX, tY, tZ);
 
 		if (tRenderer == null) {
-			// 1:1 RenderBlocks.renderBlockLog (диспетчер renderType==PILLAR_RENDER, RenderBlocks:350,4430): PILLAR-блоки
-			// (брёвна/балки/тюки) поворачивают UV граней по оси укладки из меты: X(4)→низ/верх/север/юг, Z(8)→запад/восток.
+			// 1:1 port of RenderBlocks.renderBlockLog: PILLAR blocks (logs/beams/bales) rotate face UVs by the stacking axis.
 			if (tBlock instanceof gregapi.block.BlockBase tBB && tBB.getRenderType() == gregapi.data.CS.PILLAR_RENDER) {
 				int tAxis = gregapi.util.WD.meta(aLevel, tX, tY, tZ) & gregapi.data.CS.PILLAR_BITS;
 				if (tAxis == gregapi.data.CS.PILLAR_X) tQB.setUVRotate(1, 1, 1, 1, 0, 0);
 				else if (tAxis == gregapi.data.CS.PILLAR_Z) tQB.setUVRotate(0, 0, 0, 0, 1, 1);
 			}
 			boolean[] tSides = sides(tBlock, tRB instanceof IRenderedBlockObjectSideCheck ? (IRenderedBlockObjectSideCheck)tRB : null);
-			// КОНТРАКТ setBlockBounds (1:1 renderWorldBlock RendererBlockTextured:121): true → перечитать bounds из блока;
-			// false → ПОЛНЫЙ КУБ (сброс 0..1 в блок). Игнор return читал ПОСЛЕДНИЕ сохранённые bounds ОБЩЕГО Block-инстанса
-			// → мини-бокс камешка протекал в машины/центры кустов на том же блоке (регресс d87e09e4, репорт игрока).
+			// setBlockBounds contract (1:1 with renderWorldBlock): true means re-read bounds from the block, false means a full
+			// cube; ignoring the return value let a pebble's mini-box leak into unrelated blocks sharing the same Block instance.
 			boolean tNeedsToSetBounds = true;
 			for (int i = 0, j = tRB.getRenderPasses(aLevel, tX, tY, tZ, tSides); i < j; i++) {
 				if (!tRB.usesRenderPass(i, aLevel, tX, tY, tZ, tSides)) continue;
@@ -286,28 +229,27 @@ public class GT6BlockModel implements BakedModel {
 				applyBounds(tQB, tBlock);
 				for (byte s = 0; s < 6; s++) face(tQB, tBlock, s, tRB.getTexture(i, s, tSides, aLevel, tX, tY, tZ), tX, tY, tZ);
 			}
-			if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(tBlock, 0, 0, 0, 1, 1, 1); // анти-протечка общего блока (1:1 :132)
-			tQB.clearUVRotate(); // 1:1 renderBlockLog: сброс uvRotate* после renderStandardBlock
+			if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(tBlock, 0, 0, 0, 1, 1, 1); // anti-leak for the shared block (1:1 :132).
+			tQB.clearUVRotate(); // 1:1 renderBlockLog: reset uvRotate* after renderStandardBlock.
 		} else {
-			// BUG-138: та же защита от падения, что несла ветка BER (MultiTileEntityBER.render:210 — «render-логика
-			// конкретного MTE не должна ронять кадр»). Здесь она нужнее: исключение внутри компиляции секции движок
-			// заворачивает в ReportedException и роняет игру (RebuildTask.compile → CrashReport «Tesselating block in world»).
-			try {buildRendererQuads(tQB, tRenderer, tBlock, aLevel, tX, tY, tZ);} catch (Throwable e) {/* один MTE не рушит мэш секции */}
+			// The same crash guard the BER branch already carries: one MTE's render logic mustn't take down anything else, and
+			// here an uncaught exception would crash the whole game, since it happens inside chunk compilation.
+			try {buildRendererQuads(tQB, tRenderer, tBlock, aLevel, tX, tY, tZ);} catch (Throwable e) {/* one MTE must not crash the whole section mesh */}
 		}
 		return tQB.build();
 	}
 
-	/** F3-render: ветвь рендер-объекта (getRenderPasses→setBlockBounds→getTexture→quads). Общий код collectParts (baked) и
-	 *  MultiTileEntityBER (BER, живой BE на main-thread). renderBlock=true → объект сам нарисовал, цикл не нужен. */
+	/** Render-object branch (getRenderPasses -> setBlockBounds -> getTexture -> quads), shared between the baked
+	 *  collectParts path and the live-BE MultiTileEntityBER path; renderBlock=true means the object drew itself already. */
 	public static void buildRendererQuads(GT6QuadBuilder aQB, IRenderedBlockObject aRenderer, Block aBlock, net.minecraft.world.level.BlockGetter aLevel, int aX, int aY, int aZ) {
-		// F-bounds-race: скобки контекста и здесь — метод зовётся и напрямую (MultiTileEntityBER, main thread).
+		// The bounds-context brackets apply here too, since this method is also called directly from MultiTileEntityBER.
 		boolean[] tCtx = gregapi.block.BlockBase.RENDER_BOUNDS_CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
 		try {buildRendererQuads0(aQB, aRenderer, aBlock, aLevel, aX, aY, aZ);} finally {tCtx[0] = tPrevCtx;}
 	}
 	private static void buildRendererQuads0(GT6QuadBuilder aQB, IRenderedBlockObject aRenderer, Block aBlock, net.minecraft.world.level.BlockGetter aLevel, int aX, int aY, int aZ) {
 		if (aRenderer.renderBlock(aBlock, aQB, aLevel, aX, aY, aZ)) return;
 		boolean[] tSides = sides(aBlock, aRenderer instanceof IRenderedBlockObjectSideCheck ? (IRenderedBlockObjectSideCheck)aRenderer : null);
-		// КОНТРАКТ setBlockBounds (1:1 renderWorldBlock, ветвь рендер-объекта :146): false → полный куб, не стухшие bounds.
+		// setBlockBounds contract (render-object branch of renderWorldBlock): false means a full cube, not leftover bounds.
 		boolean tNeedsToSetBounds = true;
 		for (int i = 0, j = aRenderer.getRenderPasses(aBlock, tSides); i < j; i++) {
 			if (!aRenderer.usesRenderPass(i, tSides)) continue;
@@ -316,33 +258,29 @@ public class GT6BlockModel implements BakedModel {
 			applyBounds(aQB, aBlock);
 			for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, aRenderer.getTexture(aBlock, i, s, tSides), aX, aY, aZ);
 		}
-		if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); // анти-протечка общего блока (1:1 :158)
+		if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); // anti-leak for the shared block (1:1 :158).
 	}
 
-	/** F3-render item-форма блока (3D-иконка в инвентаре) — ДОСЛОВНОЕ воспроизведение {@code RendererBlockTextured.renderInventoryBlock}
-	 *  (референс gregtech6): либо TE-ветка через {@code passRenderingToObject(ItemStack)}→canonical-TE (MTE; level=null → дефолт-рендер),
-	 *  либо block-level ветка {@code getRenderPasses(stack)/getTexture(pass,side,stack)} (руды/простые). SIDES_ITEM_RENDER = все грани true.
-	 *  Тот же {@link #face}/{@link GT6QuadBuilder} — один центр рендера, как один RendererBlockTextured у Грегориуса. */
+	/** Verbatim port of RendererBlockTextured.renderInventoryBlock for the item-form 3D icon: either the TE branch via
+	 *  passRenderingToObject(ItemStack) for MTE, or the block-level getRenderPasses/getTexture branch for ores. */
 	public static void buildInventoryQuads(GT6QuadBuilder aQB, Block aBlock, net.minecraft.world.item.ItemStack aStack) {
-		// F-bounds-race: item-форма блока строится на Render thread — тоже в bounds-контексте.
+		// The item-form icon is built on the render thread too, so it also runs inside the bounds context.
 		boolean[] tCtx = gregapi.block.BlockBase.RENDER_BOUNDS_CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
 		try {buildInventoryQuads0(aQB, aBlock, aStack);} finally {tCtx[0] = tPrevCtx;}
 	}
 	private static void buildInventoryQuads0(GT6QuadBuilder aQB, Block aBlock, net.minecraft.world.item.ItemStack aStack) {
 		if (!(aBlock instanceof IRenderedBlock tRB)) return;
-		// F3-render (приёмка 2026-07-30, «цветок в инвентаре без иконки»): item-форма cross-блока — те же две
-		// скрещенные плоскости (1.7.10 renderBlockAsItem case 1 = drawCrossedSquares), а кубические каналы у
-		// IRenderedCross — контрактные null (IRenderedCross:40-45) и давали ПУСТОЙ набор квадов. aWorld==null +
-		// мета стека в aX — контракт getCrossIcon.
+		// Cross-block item icons use the same two crossed planes as 1.7.10's drawCrossedSquares, since IRenderedCross's
+		// cubic channels are contractually null and would otherwise yield an empty quad set.
 		if (tRB instanceof IRenderedCross tCross) {
 			int tMeta = gregapi.util.ST.meta_(aStack);
 			aQB.crossFace(tCross.getCrossIcon(null, tMeta, 0, 0), tCross.getCrossRGBa(null, tMeta, 0, 0));
 			return;
 		}
-		boolean[] tSides = {true, true, true, true, true, true}; // SIDES_ITEM_RENDER (без соседей → все грани)
+		boolean[] tSides = {true, true, true, true, true, true}; // SIDES_ITEM_RENDER (no neighbors, so every face is shown).
 		IRenderedBlockObject tRenderer = tRB.passRenderingToObject(aStack);
 		if (tRenderer != null) tRenderer = tRenderer.passRenderingToObject(aStack);
-		// КОНТРАКТ setBlockBounds (1:1 renderInventoryBlock RendererBlockTextured:67/81): false → полный куб + анти-протечка.
+		// setBlockBounds contract (1:1 with renderInventoryBlock): false means full cube plus the anti-leak reset.
 		boolean tNeedsToSetBounds = true;
 		if (tRenderer != null) {
 			for (int i = 0, j = tRenderer.getRenderPasses(aBlock, tSides); i < j; i++) {
@@ -364,22 +302,21 @@ public class GT6BlockModel implements BakedModel {
 		if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); // 1:1 :92
 	}
 
-	/** tSides: у SideCheck-объекта — renderFullBlockSide; иначе все true (соседнее скрытие делает neo через addCulledFace). */
+	/** tSides: a SideCheck object gets renderFullBlockSide; everyone else gets all-true, since neo's
+	 *  addCulledFace already handles neighbor culling. */
 	private static boolean[] sides(Block aBlock, IRenderedBlockObjectSideCheck aCheck) {
 		boolean[] r = {true, true, true, true, true, true};
 		if (aCheck != null) for (byte s = 0; s < 6; s++) r[s] = aCheck.renderFullBlockSide(aBlock, null, s);
 		return r;
 	}
 
-	/** Перенести текущие render-bounds блока (после setBlockBounds) в quad-builder (было RenderBlocks.setRenderBoundsFromBlock).
-	 *  Чтение — через общий контракт IBlock.getRenderBounds: Block-иерархий GT6 ШЕСТЬ (BlockBase/BlockFluidBaseGT/
-	 *  MultiTileEntityBlock/MultiTileEntityBlockInternal/BlockBaseRail/PrefixBlock, общего предка нет) — instanceof-цепочка
-	 *  по классам теряла MTE (под-боксы пассов схлопывались в полный куб: LIVE-DEFECTS №2/№7). */
+	/** Copies the block's current render bounds (after setBlockBounds) into the quad-builder via the shared
+	 *  IBlock.getRenderBounds contract, since GT6's six Block hierarchies share no common ancestor to branch on by class. */
 	private static void applyBounds(GT6QuadBuilder aQB, Block aBlock) {
 		aQB.setBounds(aBlock instanceof gregapi.block.IBlock tI ? tI.getRenderBounds() : null);
 	}
 
-	/** Один per-side вызов ITexture (диспетчер по стороне) → GT6QuadBuilder аккумулирует грань. */
+	/** One per-side call into ITexture, which accumulates the resulting face into GT6QuadBuilder. */
 	private static void face(GT6QuadBuilder aQB, Block aBlock, byte aSide, ITexture aTex, int aX, int aY, int aZ) {
 		if (aTex == null || !aTex.isValidTexture()) return;
 		switch (aSide) {
@@ -392,17 +329,8 @@ public class GT6BlockModel implements BakedModel {
 		}
 	}
 
-	/** Партиклы разрушения/удара (репорт игрока: ВСЕ GT-блоки крошатся error-текстурой) и MODCOMPAT-002
-	 *  (JourneyMap при пустых квадах падает в particle-канал). Единая модель на весь мод отдавала статичный
-	 *  mParticle=system/error; резолвим 1:1 с 1.7.10 EntityDiggingFX ({@code block.getIcon(0, meta)}): родной канал
-	 *  getIcon у BlockBase-иерархии, текстура жидкости у fluid-блоков (обе жидкостные иерархии — BlockBaseFluid со
-	 *  своей текстурой и BlockWaterlike с ванильной водой — отвечают по тому же КОНТРАКТУ IBlock.getIcon, поэтому
-	 *  ветка одна, а не по иерархиям); MTE/нет иконки → CFOAM (1:1-дефолт 1.7.10 BlockBase.getIcon:103 и
-	 *  MultiTileEntityBlock.getIcon:293 — серая CFoam-крошка, НЕ error-текстура).
-	 *  <p>Ветка 1.20.1: движок спрашивает иконку крошки БЕЗ позиции ({@code TerrainParticle:26} →
-	 *  {@code BlockModelShaper.getParticleIcon(state)} → {@code getParticleIcon(ModelData.EMPTY)}), поэтому мету берём
-	 *  из BlockState владельца — тем же центром {@code IBlockExtendedMetaData}, которым её берёт источник тинта GT6
-	 *  ({@code GT_API_Proxy_Client.GT6BlockTint}), а не своим разбором свойств. */
+	/** Resolves the crumb icon 1:1 with 1.7.10's own particle logic, through the shared IBlock.getIcon contract both fluid
+	 *  hierarchies answer, so there's one branch; meta comes from the owner's BlockState, the tint source's own center. */
 	@Override
 	public TextureAtlasSprite getParticleIcon(ModelData aData) {
 		try {
@@ -415,7 +343,7 @@ public class GT6BlockModel implements BakedModel {
 					if (tSprite != null) return tSprite;
 				}
 			}
-		} catch (Throwable e) {/* партикл не рушит рендер */}
+		} catch (Throwable e) {/* particle sprite must not crash rendering */}
 		return errorParticle();
 	}
 }

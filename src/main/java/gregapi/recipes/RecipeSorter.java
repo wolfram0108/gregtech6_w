@@ -23,18 +23,14 @@
 
 package gregapi.recipes;
 
-/**
- * F11 ПУСТЫШКА-ПЕРЕХОДНИК — замена Forge {@code net.minecraftforge.oredict.RecipeSorter}, которого в neo НЕТ
- * (см. {@code decisions/F11-crafting-recipe.md} §4.3). Его роль — задавать приоритет GT-рецептов в ванильном
- * списке крафта — в модели диспетчера не нужна: порядок GT6-рецептов задаёт сам GT6 при переборе {@code CR.BUFFER}.
- * Держит {@code GT_API} компилируемым 1:1; вызовы {@code register(...)} — no-op.
- */
+/** Stand-in for Forge's RecipeSorter, which neo has no equivalent of; GT6's own recipe order already comes
+ *  from iterating its buffer, so registration calls are no-ops kept only to compile call sites unchanged. */
 public final class RecipeSorter {
 	private RecipeSorter() {}
 
-	/** Категория рецепта Forge-сортировщика; в neo эффекта не имеет, сохранена для дословности вызовов GT6. */
+	/** Forge sorter category; has no effect in neo, kept so GT6 call sites stay unchanged. */
 	public enum Category {UNKNOWN, SHAPELESS, SHAPED}
 
-	/** No-op: в neo нет сортировщика рецептов; порядок задаёт перебор буфера GT6. */
+	/** No-op: neo has no recipe sorter; order comes from iterating GT6's own buffer. */
 	public static void register(String aName, Class<?> aRecipeClass, Category aCategory, String aOrdering) {/* no-op (F11) */}
 }

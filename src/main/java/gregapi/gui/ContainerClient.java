@@ -34,25 +34,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.resources.ResourceLocation;
 
-/**
- * @author Gregorius Techneticies
- *
- * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 {@code GuiContainer} (immediate-mode: {@code drawGuiContainerBackgroundLayer}
- * рисовал фон через {@code mc.renderEngine.bindTexture}+GL11, {@code drawTexturedModalRect} слал квады в
- * {@code Tessellator}, {@code drawScreen} каждый кадр перерисовывал tooltip) заменён {@code AbstractContainerScreen<T>}
- * — в 1.20.1 это immediate-mode-конвейер {@code GuiGraphics}
- * (`forge-1201-decompiled/net/minecraft/client/gui/screens/inventory/AbstractContainerScreen.java:89,160,181,186`:
- * {@code render}→{@code renderBg}/{@code renderLabels}/{@code renderTooltip}), то есть та же схема «слой фона,
- * слой текста, тултип», что и {@code drawGuiContainerXxxLayer}/{@code drawScreen} 1.7.10. Legacy-имена полей/методов
- * ({@code mc}, {@code fontRendererObj}, {@code xSize}/{@code ySize}, {@code drawTexturedModalRect}, {@code allowUserInput})
- * сохранены здесь КАК ОДИН нейтральный compile-only мост (централизация #3, единая точка для всей иерархии
- * {@code ContainerClientDefault/Chest/BasicMachine}) — их построчную адаптацию под подклассы делать не пришлось.
- * F14-gui МОСТ (единый на всю иерархию): движок зовёт {@code renderBg}/{@code renderLabels}/{@code renderTooltip},
- * мост маршрутизирует их в 1.7.10-хуки {@code drawGuiContainerBackgroundLayer}/{@code drawGuiContainerForegroundLayer}
- * (тела подклассов дословные); {@code drawTexturedModalRect}/{@code drawString} рисуют через держатель
- * {@link #mGraphics} (текущий {@code GuiGraphics} кадра — аналог «связанной текстуры + Tessellator» 1.7.10:
- * bindTexture(mBackground) заменён параметром текстуры в каждом blit).
- */
+/** @author Gregorius Techneticies
+ *  1.20.1's AbstractContainerScreen is an immediate-mode pipeline too, with the same background/labels/tooltip layers
+ *  as 1.7.10's draw*Layer methods, so the legacy field/method names are kept as one neutral bridge for the hierarchy. */
 public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 
 	public boolean mCrashed = F;
@@ -63,21 +47,19 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 
 	public ContainerCommon mContainer;
 
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было поле {@code GuiScreen.mc} (переименовано в {@code Screen.minecraft}, см. class javadoc). */
+	/** GuiScreen.mc is now Screen.minecraft; kept under the old name as part of the class-level bridge. */
 	protected final Minecraft mc;
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было поле {@code GuiScreen.fontRendererObj} (переименовано в {@code Screen.font}, см. class javadoc). */
+	/** GuiScreen.fontRendererObj is now Screen.font; kept under the old name as part of the class-level bridge. */
 	protected final Font fontRendererObj;
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): были мутируемые поля {@code GuiContainer.xSize/ySize}; в 26.1.2
-	 *  {@code AbstractContainerScreen.imageWidth/imageHeight} — {@code final} (подклассы GT6 мутируют
-	 *  {@code ySize} ПОСЛЕ {@code super(...)}, см. {@link ContainerClientChest}) — отдельный держатель, см. class javadoc. */
+	/** AbstractContainerScreen.imageWidth/imageHeight are final, but GT6 subclasses mutate xSize/ySize after
+	 *  super(...), so this bridge keeps its own mutable holder instead. */
 	protected int xSize, ySize;
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было поле {@code GuiContainer.allowUserInput} (см. class javadoc). */
 	protected boolean allowUserInput;
 
-	/** Держатель графики кадра: валиден только внутри renderBg/renderLabels (мост, см. class javadoc). */
+	/** Valid only inside renderBg/renderLabels; see the class javadoc for the bridge this backs. */
 	protected GuiGraphics mGraphics = null;
 
-	/** Диаг-счётчики судьи П1 (движок реально нарисовал фон/текст; образец — MultiTileEntityBER.sSubmitCalls). */
+	/** Diagnostic counters proving the engine actually drew the background/text, not just queued it. */
 	public static final java.util.concurrent.atomic.AtomicLong sBlitCalls = new java.util.concurrent.atomic.AtomicLong(), sTextCalls = new java.util.concurrent.atomic.AtomicLong();
 
 	public int getLeft() {return leftPos;}
@@ -86,87 +68,64 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 	public ContainerClient(ContainerCommon aContainer, String aBackgroundPath) {
 		super(aContainer, aContainer.mInventoryPlayer, Component.empty());
 		mContainer = aContainer;
-		// F-namespace lowercase: GT6-пути несут заглавные (machines/Oven.png), neo отвергает не-[a-z0-9/._-]
-		// (IdentifierException) — тот же приём, что TextureSet:122 (ассеты на диске уже lowercase).
+		// GT6 paths use uppercase letters, which neo's Identifier rejects; lowercased here the same way the
+		// texture set already does for on-disk assets.
 		mBackground = new ResourceLocation(aBackgroundPath.toLowerCase(java.util.Locale.ROOT));
-		// Screen.minecraft/font движок заполняет только в init(...) (Screen.java:315-316) — снимок в конструкторе
-		// давал null (NPE drawString при открытии сундука). Берём живой инстанс: на клиенте в момент постройки GUI он есть.
+		// Screen.minecraft/font are filled only in init(...); grabbing them in the constructor gave null and crashed on open.
+		// The live instance already exists by the time the client builds this GUI, so it's fetched fresh here instead.
 		mc = net.minecraft.client.Minecraft.getInstance();
 		fontRendererObj = mc.font;
 		xSize = imageWidth;
 		ySize = imageHeight;
 	}
 
-	// GT6-подклассы мутируют xSize/ySize ПОСЛЕ super(...) (ContainerClientChest), а neo imageWidth/imageHeight — final →
-	// guiLeft/guiTop 1.7.10 (= leftPos/topPos) центрируем по GT6-полям, чтобы слоты и фон сходились.
+	// neo's imageWidth/imageHeight are final while GT6 subclasses mutate xSize/ySize after super(...), so
+	// the screen is centered on the GT6 fields to keep slots and background aligned.
 	@Override protected void init() {
 		super.init();
 		leftPos = (width - xSize) / 2;
 		topPos  = (height - ySize) / 2;
 	}
 
-	/**
-	 * BUG-056 часть Б: открыть список рецептов ЭТОЙ машины — то, что в 1.7.10 давал клик по ПРОГРЕСС-БАРУ.
-	 *
-	 * <p><b>Почему это восстановление функции, а не новая фича.</b> Обработку клика в 1.7.10 делал НЕ GT6,
-	 * а мод NEI — своим оверлеем поверх любого {@code GuiContainer}: игрок жал на стрелку прогресса и
-	 * получал весь список рецептов машины (уточнение игрока 2026-07-28). GT6 лишь отдавал имя категории
-	 * полем {@link #mNEI} ({@code ContainerClientBasicMachine:37}, 1:1 с оригиналом {@code :39}).
-	 * В 26.1.2 роль NEI занял JEI, но клик по прогрессу он не обрабатывает — функция была УТРАЧЕНА.
-	 * Раз эквивалента в новой версии нет, её выполняет сам мод (указание игрока: «функцию нужно выполнить
-	 * или заменить на новую, если она не существует в новой версии»).</p>
-	 *
-	 * <p>Централизация: сама ОТКРЫВАЛКА живёт здесь, в базовом классе всей иерархии GUI, и ведёт в тот же
-	 * центр, что иконка безынтерфейсных машин — {@code GT6_JEI_Plugin.showRecipeCategory(mNEI)}, ключ
-	 * прежний {@code mNameNEI}. Где именно кликать, знает подкласс: у машинного GUI это область
-	 * прогресс-бара ({@link ContainerClientBasicMachine#mouseClicked}).</p>
-	 *
-	 * @return {@code true}, если экран рецептов открыт (клик считается обработанным)
-	 */
+	/** Restores a function 1.7.10 provided through the NEI overlay clicking the progress arrow, which JEI
+	 *  does not replicate; reuses the same recipe-category lookup the icon path already uses. */
 	public boolean openRecipesForThisGUI() {
 		if (!NEI || !gregapi.util.UT.Code.stringValid(mNEI)) return F;
 		return gregapi.jei.GT6_JEI_Plugin.showRecipeCategory(mNEI);
 	}
 
-	// Заглушка null-реконструкции (ContainerCommon.createFromNetwork, mTileEntity==null) = 1.7.10-семантика
-	// «GUI не открылся»: закрываем на первом тике (vanilla containerTick пуст — закрытия по stillValid клиент не делает).
+	// A null tile entity after client reconstruction means the GUI failed to open, matching 1.7.10 behavior;
+	// the screen closes itself on the first tick instead.
 	@Override protected void containerTick() {
 		super.containerTick();
 		if (mContainer != null && mContainer.mTileEntity == null) onClose();
 	}
 
-	// Порядок кадра 1.20.1 — дословно ванильный ContainerScreen.render:25-29 (затемнение, слои, тултип);
-	// в 1.7.10 то же делал GuiContainer.drawScreen.
+	// This is verbatim vanilla ContainerScreen.render's frame order (dim, layers, tooltip); 1.7.10 did the same in drawScreen.
 	@Override public void render(GuiGraphics aGraphics, int aMouseX, int aMouseY, float aPartial) {
 		renderBackground(aGraphics);
 		super.render(aGraphics, aMouseX, aMouseY, aPartial);
 		renderTooltip(aGraphics, aMouseX, aMouseY);
 	}
 
-	// F14-gui мост: renderBg → 1.7.10 background-хук (экранные координаты, как в 1.7.10 — без translate).
+	// renderBg routes to the 1.7.10 background hook, still in screen coordinates with no translate, as 1.7.10 was.
 	@Override protected void renderBg(GuiGraphics aGraphics, float aPartial, int aMouseX, int aMouseY) {
 		mGraphics = aGraphics;
 		try {drawGuiContainerBackgroundLayer(aPartial, aMouseX, aMouseY);} finally {mGraphics = null;}
 	}
 
-	// F14-gui мост: renderLabels → 1.7.10 foreground-хук. БЕЗ super: 1.7.10 GuiContainer лейблов сам не рисовал,
-	// заголовки — дело подкласса; pose уже translate(leftPos, topPos) — локальные координаты, как в 1.7.10.
+	// renderLabels routes to the 1.7.10 foreground hook, without super: 1.7.10's GuiContainer never drew labels itself.
 	@Override protected void renderLabels(GuiGraphics aGraphics, int aMouseX, int aMouseY) {
 		mGraphics = aGraphics;
 		try {drawGuiContainerForegroundLayer(aMouseX, aMouseY);} finally {mGraphics = null;}
 	}
 
-	// 1.7.10 drawScreen поверх стандартных тултипов показывал тултип ПУСТОГО Slot_Base (getTooltip) — сам drawScreen
-	// (цикл кадра) теперь у движка, GT6-довесок переносится в его tooltip-хук.
-	//
-	// BUG-082: УСЛОВИЕ СТОИТ НА СТЕКЕ, как в 1.7.10 (`ContainerClient.drawScreen:81` — `ST.invalid(tSlot.getStack())`),
-	// а не на hasItem(). Роль этого довеска ровно одна и та же, что была: подсказка ПУСТОГО слота. Тултип СОДЕРЖИМОГО
-	// (в т.ч. голо-слотов с дисплеями жидкостей) собирает сам движок в super — его политикой целиком
-	// (AbstractContainerScreen:199-208), после того как Slot_Holo перестал лгать движку про hasItem() (см. Slot_Holo).
+	// Restores the original tooltip for an empty Slot_Base, keyed on the stack itself as before, not on
+	// hasItem(); the engine's own tooltip handling now covers non-empty slots, including fluid displays.
 	@Override protected void renderTooltip(GuiGraphics aGraphics, int aMouseX, int aMouseY) {
 		super.renderTooltip(aGraphics, aMouseX, aMouseY);
 		if (!(hoveredSlot instanceof Slot_Base tSlot)) return;
-		if (gregapi.util.ST.n(hoveredSlot.getItem()) != null) return;   // F15-граница: EMPTY -> null; непустой слот — дело движка
+		if (gregapi.util.ST.n(hoveredSlot.getItem()) != null) return;   // This boundary turns EMPTY into null; a non-empty slot's tooltip remains the engine's own job.
 		java.util.List<String> tTip = tSlot.getTooltip(minecraft.player, minecraft.options.advancedItemTooltips);
 		if (tTip != null && !tTip.isEmpty()) {
 			java.util.List<Component> tComps = new java.util.ArrayList<>();
@@ -189,13 +148,12 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 		drawTexturedModalRect(x, y, 0, 0, xSize, ySize);
 	}
 
-	/** 1.7.10 drawTexturedModalRect: квад из связанной текстуры (у GT6 всегда mBackground, атлас 256×256) → один blit. */
+	/** 1.7.10's bound-texture draw becomes a single blit against GT6's fixed 256x256 atlas. */
 	protected void drawTexturedModalRect(int aX, int aY, int aU, int aV, int aW, int aH) {
 		if (mGraphics != null) {mGraphics.blit(mBackground, aX, aY, aU, aV, aW, aH); sBlitCalls.incrementAndGet();}
 	}
 
-	/** 1.7.10 GuiScreen.drawString(FontRenderer,...): подклассы звали fontRendererObj.drawString — у neo Font рисующих
-	 *  методов нет, мост тот же (без тени; альфа 0 → 0xFF, как FontRenderer 1.7.10). */
+	/** Bridges GuiScreen.drawString to neo's Font, which has no drawing methods of its own. */
 	public void drawString(Font aFont, String aText, int aX, int aY, int aColor) {
 		if (mGraphics != null && aText != null) {mGraphics.drawString(aFont, aText, aX, aY, (aColor & 0xFF000000) == 0 ? aColor | 0xFF000000 : aColor, F); sTextCalls.incrementAndGet();}
 	}

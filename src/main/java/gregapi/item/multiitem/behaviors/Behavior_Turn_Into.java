@@ -41,8 +41,7 @@ public class Behavior_Turn_Into extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean isItemStackUsable(MultiItem aItem, ItemStack aStack) {
-		// F5/BUG-045 (1:1): восстановленный IFluidContainerItem (compat-mirror) — getFluid(ItemStack),
-		// null-семантика пустоты как в оригинале (:40).
+		// Restored IFluidContainerItem compat-mirror branch; null still means empty, matching the original.
 		if (mTurnInto == null || !mTurnInto.exists() || (aStack.getItem() instanceof IFluidContainerItem && ((IFluidContainerItem)aStack.getItem()).getFluid(aStack) != null)) return T;
 		ST.set(aStack, mTurnInto.get(1), F, F);
 		return T;

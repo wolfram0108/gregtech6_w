@@ -56,43 +56,11 @@ import net.minecraftforge.data.event.GatherDataEvent;
 
 import net.minecraftforge.registries.DeferredRegister;
 
-/**
- * F6 центральный переходник — ЕДИНСТВЕННОЕ место мода, которое регистрирует GT6-ворлдген (жилы/слои/малые
- * руды) в neo. `IWorldGenerator`/`GameRegistry.registerWorldGenerator` удалены движком (было императивное
- * "сгенерируй что хочешь в этом чанке"); замена — data-driven связка `Feature`&lt;C&gt; -&gt;
- * `ConfiguredFeature` -&gt; `PlacedFeature` -&gt; `BiomeModifier` (`decisions/F6-worldgen.md` §1,3).
- *
- * <p>По решению `decisions/F6-worldgen.md` §3.1,§4 GT6-алгоритмы жил/слоёв/малых руд НЕ дробятся на
- * ванильные `OreFeature`-подобные примитивы (они не выражают 4-материальную семантику жилы GT6) — вместо
- * этого используется ОДНА диспетчер-{@code Feature}, тело которой 1:1 воспроизводит прежний вызов
- * {@code IWorldGenerator.generate} (был {@code GT_API_Proxy.generate}, `GT_API_Proxy.java:1456` до этого
- * перехода) и передаёт управление уже существующему {@link GT6WorldGenerator#generate(Level,int,int,boolean)}
- * — тому же диспетчеру измерений/весовому выбору жилы, что и раньше (алгоритм не тронут, только точка входа).
- *
- * <p>Референс сигнатур (НЕ выдумано):
- * <ul>
- * <li>{@code Feature<FC>}, {@code place(FeaturePlaceContext)} — {@code neo-decompiled/.../feature/Feature.java:58,183}.</li>
- * <li>{@code FeaturePlaceContext.level()->WorldGenLevel/origin()->BlockPos} — {@code .../feature/FeaturePlaceContext.java:10-51}.</li>
- * <li>{@code ConfiguredFeature}/{@code PlacedFeature} record-и — {@code .../feature/ConfiguredFeature.java:17}, {@code .../placement/PlacedFeature.java:22}.</li>
- * <li>{@code RegistrySetBuilder}+{@code BootstrapContext}+{@code AddFeaturesBiomeModifier}+{@code DatapackBuiltinEntriesProvider} —
- *     дословный паттерн {@code NeoForge/tests/.../oldtest/world/BiomeModifierTest.java:63-160} (локально).</li>
- * <li>{@code WorldGenLevel.getSeed()}/{@code ServerLevelAccessor.getLevel():ServerLevel} —
- *     {@code .../world/level/WorldGenLevel.java:8}, {@code .../world/level/ServerLevelAccessor.java:9}.</li>
- * </ul>
- *
- * <p>F6 functional-adapted (worldgen работает — дампы 100%; place бриджится через context.level().getLevel(), region-обёртка — caveat): {@link #place} бриджится на существующую {@code Level}-типизированную
- * цепочку {@link GT6WorldGenerator}/{@link WorldgenObject} (которая ожидает полноценный мутабельный
- * {@code Level}, как и оригинальный 1.7.10 post-populate хук) через {@code context.level().getLevel()}.
- * В реальном рантайме фичи вызываются с {@code WorldGenRegion} (не всегда полным {@code ServerLevel}) —
- * `.getLevel()` возвращает истинный {@code ServerLevel}, но обход региона-обёртки означает отсутствие
- * гарантий потокобезопасности на границах чанков при параллельной генерации современного движка. Полная
- * миграция всей цепочки на {@code WorldGenLevel} потребовала бы ретайпа сигнатур во ВСЕХ ~50
- * {@code WorldgenObject}-подклассах (gregapi/worldgen + gregtech/worldgen/*) — вне границ этого перехода
- * (см. отчёт по чекпоинту), сюда же относится сохранение прежних значений/алгоритмов внутри них.
- */
+/** GT6's vein/layer/ore algorithms are kept as one dispatcher Feature that reproduces the old generate() call
+ *  1:1, bridging via context.level().getLevel(); a full WorldGenLevel migration would retype ~50 subclasses, out of scope. */
 public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 
-	/** Центральный DeferredRegister — ЕДИНСТВЕННОЕ место, где GT6 регистрирует Feature-типы в neo. */
+	/** The only place in the mod that registers Feature types with neo. */
 	public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(Registries.FEATURE, MD.GAPI.mID);
 
 	public static final net.minecraftforge.registries.RegistryObject<GT6WorldgenFeature> GT6_WORLDGEN =
@@ -109,48 +77,34 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, new ResourceLocation(MD.GAPI.mID, "add_gt6_worldgen_nether"));
 	private static final ResourceKey<BiomeModifier> ADD_GT6_WORLDGEN_END =
 		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, new ResourceLocation(MD.GAPI.mID, "add_gt6_worldgen_end"));
-	// F6 §4.2.2: отключение ванильных руд MC26 (GT6 замещает их своими — bedrock-руды + stone-layer перекрытие REPLACEABLE_BLOCKS).
+	// Disables vanilla MC26 ore generation; GT6 supplies its own veins plus a stone-layer overlay instead.
 	private static final ResourceKey<BiomeModifier> REMOVE_VANILLA_ORES_OVERWORLD =
 		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, new ResourceLocation(MD.GAPI.mID, "remove_vanilla_ores_overworld"));
 	private static final ResourceKey<BiomeModifier> REMOVE_VANILLA_ORES_NETHER =
 		ResourceKey.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, new ResourceLocation(MD.GAPI.mID, "remove_vanilla_ores_nether"));
 
-	/**
-	 * Датаген-набор: CONFIGURED_FEATURE -> PLACED_FEATURE -> BIOME_MODIFIERS, дословно по паттерну
-	 * {@code BiomeModifierTest.java:87-117} (RegistrySetBuilder.add + BootstrapContext.register/lookup).
-	 * F6 functional (маршрутизация по измерению/биому внутри place; биом-теги = входной фильтр): подключены только 3 ВАНИЛЬНЫХ биом-тега ({@link BiomeTags#IS_OVERWORLD}/
-	 * {@code IS_NETHER}/{@code IS_END}, реальные — BiomeTags.java:19-21) — GT6WorldgenFeature#place сам
-	 * маршрутизирует по измерению/биому внутри {@link GT6WorldGenerator#generate}, как и оригинальный
-	 * {@code IWorldGenerator}, вызывавшийся безусловно для каждого чанка каждого измерения; модовые измерения
-	 * (Aether/Twilight/Erebus/...) не имеют здесь собственных биом-тегов без знания их namespace — F10.
-	 */
+	/** Only the three vanilla dimension biome tags are wired here.
+	 *  The dispatcher Feature itself routes by dimension/biome internally, as the old generator always did. */
 	private static final RegistrySetBuilder BUILDER = new RegistrySetBuilder()
 		.add(Registries.CONFIGURED_FEATURE, ctx -> ctx.register(GT6_WORLDGEN_CF,
 			new ConfiguredFeature<>(GT6_WORLDGEN.get(), NoneFeatureConfiguration.INSTANCE)))
 		.add(Registries.PLACED_FEATURE, ctx -> ctx.register(GT6_WORLDGEN_PF,
 			new PlacedFeature(ctx.lookup(Registries.CONFIGURED_FEATURE).getOrThrow(GT6_WORLDGEN_CF),
 				List.of(BiomeFilter.biome()))))
-		// ENCHANT: та же датапак-точка (DatapackBuiltinEntriesProvider ниже) регистрирует 4 GT6-чара —
-		// центр gregapi/enchants/EnchantsGT6.java (стык, подключён интегратором).
-		// BUG-004: DAMAGE_TYPE — та же датапак-точка регистрирует 13 GT6-типов урона (exploded/spike/heat/frost/...).
-		// Раньше DamageSources.bootstrap был написан, но НЕ подключён → типы не в реестре → краш кодека при уроне.
+		// The same datapack registration point also wires GT6's own enchantments and its own damage types.
+		// The damage-type bootstrap existed but was never actually hooked in, crashing on any GT6 damage codec lookup.
 		.add(Registries.DAMAGE_TYPE, gregapi.damage.DamageSources::bootstrap)
 		.add(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ctx -> {
 			HolderSet<PlacedFeature> tPlaced = HolderSet.direct(ctx.lookup(Registries.PLACED_FEATURE).getOrThrow(GT6_WORLDGEN_PF));
-			// ADAPT-009/флора: шаг UNDERGROUND_ORES → TOP_LAYER_MODIFICATION = ВОССТАНОВЛЕНИЕ порядка 1.7.10
-			// (Forge IWorldGenerator вызывался ПОСЛЕ ВСЕЙ ванильной populate-фазы). На UNDERGROUND_ORES GT6-вода
-			// замещала Blocks.WATER ДО ванильной VEGETAL_DECORATION → kelp/seagrass/coral-фичи (все требуют
-			// is(Blocks.WATER): KelpFeature:26, SeagrassFeature:30, CoralFeature:39 референса) не генерились ВООБЩЕ.
-			// Теперь флора садится в ванильную воду, затем GT6 замещает воду ВОКРУГ неё (скан идёт сквозь
-			// не-opaque растения). ⚠️ Синхронно с Java-источником правлены сгенерённые json
-			// (src/generated/resources/data/gregapi/neoforge/biome_modifier/add_gt6_worldgen_*.json) — рантайм читает ИХ.
+			// Restores 1.7.10's original order: GT6's worldgen used to run after all vanilla population, but the port ran too
+			// early and replaced vanilla water before kelp/seagrass/coral could generate in it at all.
 			ctx.register(ADD_GT6_WORLDGEN_OVERWORLD, new AddFeaturesBiomeModifier(
 				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_OVERWORLD), tPlaced, Decoration.TOP_LAYER_MODIFICATION));
 			ctx.register(ADD_GT6_WORLDGEN_NETHER, new AddFeaturesBiomeModifier(
 				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_NETHER), tPlaced, Decoration.TOP_LAYER_MODIFICATION));
 			ctx.register(ADD_GT6_WORLDGEN_END, new AddFeaturesBiomeModifier(
 				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_END), tPlaced, Decoration.TOP_LAYER_MODIFICATION));
-			// F6 §4.2.2: убрать ванильные руды MC26 (allSteps — авторитетная сигнатура javap RemoveFeaturesBiomeModifier). Ключи — OrePlacements (одна фича покрывает stone+deepslate-вариант руды).
+			// Removes vanilla MC26 ore generation; one placed feature covers both the stone and deepslate variant of each ore.
 			var tPF = ctx.lookup(Registries.PLACED_FEATURE);
 			ctx.register(REMOVE_VANILLA_ORES_OVERWORLD, RemoveFeaturesBiomeModifier.allSteps(
 				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_OVERWORLD),
@@ -163,9 +117,8 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 					tPF.getOrThrow(OrePlacements.ORE_LAPIS), tPF.getOrThrow(OrePlacements.ORE_LAPIS_BURIED),
 					tPF.getOrThrow(OrePlacements.ORE_COPPER), tPF.getOrThrow(OrePlacements.ORE_COPPER_LARGE),
 					tPF.getOrThrow(OrePlacements.ORE_EMERALD),
-					// BUG-033 fix #1 (F6 §4.2.1): ванильные STONE-блобы MC26 — granite/diorite/andesite/tuff. GT6 трактует их
-					// как «stone» и замещает своими слоями (они в StoneLayer.REPLACEABLE_BLOCKS), НО vanilla-фичи этих блобов
-					// исполнялись в том же шаге underground_ores и переживали GT6-проход → «отключённые породы» из репорта.
+					// Vanilla stone-blob features (granite/diorite/etc.) ran in the same step GT6 replaces stone in, and survived it,
+					// leaving vanilla rock GT6 never intended.
 					tPF.getOrThrow(OrePlacements.ORE_GRANITE_UPPER), tPF.getOrThrow(OrePlacements.ORE_GRANITE_LOWER),
 					tPF.getOrThrow(OrePlacements.ORE_DIORITE_UPPER), tPF.getOrThrow(OrePlacements.ORE_DIORITE_LOWER),
 					tPF.getOrThrow(OrePlacements.ORE_ANDESITE_UPPER), tPF.getOrThrow(OrePlacements.ORE_ANDESITE_LOWER),
@@ -182,20 +135,8 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		super(NoneFeatureConfiguration.CODEC);
 	}
 
-	/**
-	 * Диспетчер-Feature (`decisions/F6-worldgen.md` §4) — ЧИСТАЯ АРХИТЕКТУРА (2026-07-17).
-	 *
-	 * <p>{@link GT6WorldGenerator} и вся цепочка {@link WorldgenObject}-подклассов переведены с {@code Level} на
-	 * {@code WorldGenLevel}/{@code LevelAccessor} (централизованно через god-класс {@code WD} — как и у Грегориуса,
-	 * в одном месте). Благодаря этому генерация идёт ПРЯМО в стадии FEATURES по {@code context.level()}
-	 * ({@code WorldGenRegion}: доступ к центральному чанку + уже-загруженным соседям, {@code getChunk}/{@code setBlock}
-	 * БЕЗ форс-генерации/{@code CompletableFuture.join}).
-	 *
-	 * <p>⛔ Прежний DEADLOCK снят В КОРНЕ: серверно-тиковый обход ({@code onServerTick}→{@code ServerLevel.getChunk}
-	 * ТЕКУЩЕГО генерируемого чанка → {@code join} → чанк ждёт сам себя → вечное зависание входа в мир) БОЛЬШЕ НЕ
-	 * СУЩЕСТВУЕТ — генерация в законном слоте движка (Feature.place на регионе) реентранси не создаёт. Точка входа 1:1
-	 * с 1.7.10 post-populate: {@code generate(world, blockX, blockZ)}.
-	 */
+	/** The whole WorldgenObject chain now runs on WorldGenLevel/LevelAccessor, generating directly in the FEATURES
+	 *  stage; the old server-tick deadlock (a chunk waiting on itself) can't happen inside the engine's own generation slot. */
 	@Override
 	public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
 		net.minecraft.core.BlockPos tOrigin = context.origin();
@@ -206,84 +147,61 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	private void onGatherData(GatherDataEvent aEvent) {
 		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<DatapackBuiltinEntriesProvider>) aOutput ->
 			new DatapackBuiltinEntriesProvider(aOutput, aEvent.getLookupProvider(), BUILDER, Set.of(MD.GAPI.mID)));
-		// F12-harvest: перенос GT6-данных о добыче (getHarvestTool/getHarvestLevel — те же методы, что в 1.7.10)
-		// в ванильные теги — единственный канал, который в neo слушают и движок, и тултип-моды.
-		// Та же датаген-точка, отдельного события не заводим (gregapi/data/GT6HarvestTags.java).
+		// Carries GT6's harvest-tool/level data into vanilla tags, the one channel both the engine and tooltip mods read.
 		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6HarvestTags>) aOutput ->
 			new gregapi.data.GT6HarvestTags(aOutput, aEvent.getLookupProvider()));
-		// F12-ammo: перенос GT6-данных о боеприпасе (контракт IItemProjectile — тот же, которым предмет
-		// спрашивают при выстреле) в ванильный minecraft:arrows. В neo лук отбирает боеприпас ТОЛЬКО тегом
-		// (ProjectileWeaponItem.java:20) и без него не постит событие выстрела вовсе — gregapi/data/GT6ItemTags.java.
+		// Carries the projectile-ammo contract into vanilla's arrows tag.
+		// The bow checks only that tag and won't even fire the shoot event without it.
 		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6ItemTags>) aOutput ->
 			new gregapi.data.GT6ItemTags(aOutput, aEvent.getLookupProvider()));
-		// F1-b тег-мост, ИСХОДЯЩАЯ сторона (decisions/F4-oredictionary.md §4.4): материал-агностичные группы
-		// GT6 (ingots/dusts/gems/…) в конвенционные теги forge:. Та же датаген-точка, отдельного события не
-		// заводим (gregapi/data/GT6ConventionTags.java, таблица имён — gregapi/oredict/OreDictTags.java).
+		// Bridges material-agnostic GT6 groups (ingots/dusts/gems/...) outward into the conventional forge: tags.
 		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6ConventionTags>) aOutput ->
 			new gregapi.data.GT6ConventionTags(aOutput, aEvent.getLookupProvider()));
 		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6ConventionTags.Blocks>) aOutput ->
 			new gregapi.data.GT6ConventionTags.Blocks(aOutput, aEvent.getLookupProvider()));
 	}
 
-	/** F6: центральная точка подписки, вызывается ОДИН раз из {@code GT_API}-конструктора (тот же мод-бас,
-	 *  на который уже подписаны {@code ITEMS}/{@code BLOCKS} — F12, `GT_API.java`). */
+	/** Central subscription point, called once from the same mod bus that item/block registration already uses. */
 	public static void register(IEventBus aModBus) {
 		FEATURES.register(aModBus);
 		aModBus.addListener(GT6WorldgenFeature::onGatherDataStatic);
 		aModBus.addListener(GT6WorldgenFeature::onRegisterSpawnPlacements);
-		// F6-worldgen: сама ГЕНЕРАЦИЯ руд/слоёв/деревьев теперь в Feature.place (стадия FEATURES, WorldGenLevel) — серверно-тиковый
-		// обход СНЯТ. На game-шине остаётся ТОЛЬКО load-реконструкция MTE-стабов (отдельный механизм, F-tileentity-construction):
-		// ChunkEvent.Load ловит стабы → server-tick заменяет реальными MTE (FULL-чанк, setBlockEntity безопасен вне save-цикла).
+		// Actual ore/layer/tree generation now runs inside Feature.place.
+		// The game bus keeps only the separate MTE-stub reconstruction on chunk load.
 		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkLoad);
 		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkUnload);
 		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkWatch);
 		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(GT6WorldgenFeature::onServerTick);
-		// КРИТ (второй мир виснет): static-очереди worldgen (STUB_QUEUE/CLIENT_STUB_QUEUE/WORLDGEN_MTE/PENDING_SYNC) держат
-		// ChunkReq со ссылкой на LEVEL и BlockEntity ПЕРВОГО мира. При выходе они НЕ очищались → второй мир: drainStubs
-		// обрабатывает stale-ChunkReq с мёртвым level → getChunk на нём виснет → freeze после ~9 чанков. Чистим на остановке
-		// сервера (между мирами singleplayer). BlockRiver-статик тоже сбрасываем (PLACEMENT_ALLOWED — не переносить в новый мир).
+		// Static worldgen queues used to keep a stale first-world level reference, so a second world's drain hung on a
+		// dead getChunk and froze after a few chunks; they're now cleared when the server stops between worlds.
 		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.event.server.ServerStoppingEvent aEvent) -> {
 			STUB_QUEUE.clear();
 			CLIENT_STUB_QUEUE.clear();
 			WORLDGEN_MTE.clear();
 			PENDING_SYNC.clear();
-			gregapi.block.prefixblock.PrefixBlock.clearOreMapSync(); // тот же класс stale-level: карта держит ServerLevel
+			gregapi.block.prefixblock.PrefixBlock.clearOreMapSync(); // Same stale-level issue: this map also holds a ServerLevel reference.
 			gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = false;
 		});
-		// Дедлок перезахода (jstack: Server thread мира-2 в getChunk->join): выгрузка чанков мира-1 идёт ПОСЛЕ
-		// ServerStopping -> реквесты добавляются ПОСЛЕ clear выше и переживают сервер. Вторая очистка — на ПОЛНОЙ
-		// остановке (ServerStopped), плюс фильтр stale-реквестов в drainStubs (не полагаться на тайминг очистки).
+		// World-1 chunk unloading happens after the first cleanup, so requests added afterward can survive the server.
+		// A second clear on full stop, plus a stale-request filter in the drain, don't rely on timing alone.
 		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.event.server.ServerStoppedEvent aEvent) -> {
 			STUB_QUEUE.clear();
 			CLIENT_STUB_QUEUE.clear();
 			WORLDGEN_MTE.clear();
 			PENDING_SYNC.clear();
-			gregapi.block.prefixblock.PrefixBlock.clearOreMapSync(); // тот же класс stale-level: карта держит ServerLevel
+			gregapi.block.prefixblock.PrefixBlock.clearOreMapSync(); // Same stale-level issue: this map also holds a ServerLevel reference.
 		});
 	}
 
-	// R1-живность: GT6-вода (River/Ocean/Swamp) заместила Blocks.WATER своим блоком → vanilla water-спаун молчит, т.к.
-	// правила отбора хардкодят ИДЕНТИЧНОСТЬ блока: getBlockState(...).is(Blocks.WATER). Оригинал GT6 1.7.10 проблемы не
-	// имел (спаун шёл по Material.water; рыб как сущностей там вообще не было — они появились в MC 1.13, из водной
-	// живности был только кальмар). Каноничный neo-мост: SpawnPlacementRegisterEvent c Operation.OR даёт виду ВТОРОЙ
-	// predicate, который проходит там, где ванильный споткнулся о воду мода.
-	// ⛔ OR расширяет правило вида ЦЕЛИКОМ и действует В ТОМ ЧИСЛЕ в ванильной воде — поэтому добавляемый predicate
-	// обязан быть правилом ИМЕННО ЭТОГО вида: дословный перенос его ванильного правила, где подменено ТОЛЬКО сломанное
-	// звено (gt6WaterBlockAt). Общий predicate на всех = чужое правило каждому (светящийся кальмар получал окно
-	// поверхностных рыб и появлялся у поверхности среди бела дня — BP-BUG-030).
-	// Правил у движка ТРИ на все семь видов — столько же здесь, один-в-один и с теми же адресатами:
-	//   WaterAnimal.checkSurfaceWaterAnimalSpawnRules:70-74 → gt6SurfaceWaterAnimalSpawnRules (COD/SALMON/PUFFERFISH/SQUID/DOLPHIN)
-	//   TropicalFish.checkTropicalFishSpawnRules:167-168    → gt6TropicalFishSpawnRules
-	//   GlowSquid.checkGlowSquideSpawnRules:88-89           → gt6GlowSquidSpawnRules
-	// Drowned/Guardian/Axolotl мостить НЕ нужно — их правила целиком на тегах, идентичность блока они не спрашивают
+	// GT6's own water block breaks vanilla's identity-based spawn checks for water mobs, unlike 1.7.10 which tested
+	// Material.water; each affected mob gets its own OR'd predicate mirroring vanilla's rule, not one shared check.
 	// (Drowned.java:95-96, Guardian.java:296-297, Axolotl.java:444-445).
 	public static void onRegisterSpawnPlacements(net.minecraftforge.event.entity.SpawnPlacementRegisterEvent aEvent) {
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.COD          , GT6WorldgenFeature::gt6SurfaceWaterAnimalSpawnRules);
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.SALMON       , GT6WorldgenFeature::gt6SurfaceWaterAnimalSpawnRules);
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.PUFFERFISH   , GT6WorldgenFeature::gt6SurfaceWaterAnimalSpawnRules);
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.SQUID        , GT6WorldgenFeature::gt6SurfaceWaterAnimalSpawnRules);
-		// ADAPT-009/фауна: дельфин (warm/lukewarm-океаны 1.13+, вошли в BIOMES_OCEAN) судится тем же правилом
-		// поверхностных водных, что и рыбы (SpawnPlacements.java:72).
+		// The dolphin, added with warm/lukewarm oceans, is judged by the same surface-water spawn rule as the fish.
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.DOLPHIN      , GT6WorldgenFeature::gt6SurfaceWaterAnimalSpawnRules);
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.TROPICAL_FISH, GT6WorldgenFeature::gt6TropicalFishSpawnRules);
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.GLOW_SQUID   , GT6WorldgenFeature::gt6GlowSquidSpawnRules);
@@ -293,21 +211,15 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		aEvent.register(aType, aRule, net.minecraftforge.event.entity.SpawnPlacementRegisterEvent.Operation.OR);
 	}
 
-	/** ЕДИНСТВЕННОЕ адаптированное звено моста. Движок спрашивает «блок в этой клетке — {@code Blocks.WATER}?»
-	 *  ({@code getBlockState(pos).is(Blocks.WATER)}), а воду океанов/рек/болот GT6 несёт СВОЙ блок
-	 *  ({@code BlockWaterlike extends BlockFluidBaseGT extends LiquidBlock}, жидкость — настоящая {@code Fluids.WATER}:
-	 *  {@code BlockWaterlike.java:91} → {@code BlockFluidBaseGT.java:223}). Спрашиваем то же самое в терминах движка:
-	 *  «полноблочная жидкость, и она — вода». В ВАНИЛЬНОЙ воде ответ дословно совпадает с движковым (единственные
-	 *  {@code LiquidBlock} ванили — {@code Blocks.WATER} и {@code Blocks.LAVA}, {@code Blocks.java:77-78}; клетки
-	 *  waterlogged к {@code LiquidBlock} не относятся — ровно как у движка), в воде GT6 — становится верным. */
+	/** The engine tests for block identity Blocks.WATER; this asks the same question in fluid terms instead (a
+	 *  full-block liquid that is water), which agrees with vanilla and only changes the answer inside GT6's own water. */
 	private static boolean gt6WaterBlockAt(net.minecraft.world.level.LevelAccessor aLevel, net.minecraft.core.BlockPos aPos) {
 		net.minecraft.world.level.block.state.BlockState tState = aLevel.getBlockState(aPos);
 		return tState.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock
 			&& tState.getFluidState().is(net.minecraft.tags.FluidTags.WATER);
 	}
 
-	/** {@code WaterAnimal.checkSurfaceWaterAnimalSpawnRules} ({@code WaterAnimal.java:70-74}) дословно, подменено
-	 *  только звено {@code getBlockState(above).is(Blocks.WATER)}. Правило COD/SALMON/PUFFERFISH/SQUID/DOLPHIN. */
+	/** Vanilla's surface water-animal spawn rule verbatim, with only the block-identity check swapped. */
 	private static <T extends net.minecraft.world.entity.Entity> boolean gt6SurfaceWaterAnimalSpawnRules(net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.level.ServerLevelAccessor aLevel, net.minecraft.world.entity.MobSpawnType aReason, net.minecraft.core.BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 		int tSea = aLevel.getSeaLevel();
 		int tMin = tSea - 13;
@@ -316,8 +228,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 			&& gt6WaterBlockAt(aLevel, aPos.above());
 	}
 
-	/** {@code TropicalFish.checkTropicalFishSpawnRules} ({@code TropicalFish.java:167-168}) дословно: сохранена и
-	 *  ветка «биом с тегом ALLOWS_TROPICAL_FISH_SPAWNS_AT_ANY_HEIGHT — на любой глубине». */
+	/** Vanilla's tropical-fish spawn rule verbatim, keeping the any-depth biome-tag exception. */
 	private static <T extends net.minecraft.world.entity.Entity> boolean gt6TropicalFishSpawnRules(net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.level.ServerLevelAccessor aLevel, net.minecraft.world.entity.MobSpawnType aReason, net.minecraft.core.BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 		return aLevel.getFluidState(aPos.below()).is(net.minecraft.tags.FluidTags.WATER)
 			&& gt6WaterBlockAt(aLevel, aPos.above())
@@ -325,8 +236,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 			 || gt6SurfaceWaterAnimalSpawnRules(aType, aLevel, aReason, aPos, aRandom));
 	}
 
-	/** {@code GlowSquid.checkGlowSquideSpawnRules} ({@code GlowSquid.java:88-89}) дословно: глубина
-	 *  {@code y <= seaLevel-33} и полная темнота остаются — подменена только идентичность блока воды. */
+	/** Vanilla's glow-squid spawn rule verbatim (depth and darkness), with only the water-block identity swapped. */
 	private static <T extends net.minecraft.world.entity.Entity> boolean gt6GlowSquidSpawnRules(net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.level.ServerLevelAccessor aLevel, net.minecraft.world.entity.MobSpawnType aReason, net.minecraft.core.BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
 		return aPos.getY() <= aLevel.getSeaLevel() - 33
 			&& aLevel.getRawBrightness(aPos, 0) == 0
@@ -337,30 +247,21 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		GT6_WORLDGEN.get().onGatherData(aEvent);
 	}
 
-	// F-tileentity-construction (load-реконструкция MTE-стабов): очередь чанков для замены TileEntityLoaderStub реальным MTE.
-	// Стабы приходят на ЛЮБОЙ load чанка с MTE (neo подменяет не-PrefixBlock GT6-MTE общим MTE_TYPE → TileEntityLoaderStub при
-	// чтении NBT). ДВА уровня: серверный (STUB_QUEUE, дренаж server-tick) И КЛИЕНТСКИЙ (CLIENT_STUB_QUEUE, дренаж client-tick).
-	// Без клиентской реконструкции MTE-BE на клиенте остаётся стабом → не IRenderedBlockObject → passRenderingToObject=null →
-	// getRenderPasses=0 → блок НЕ рисуется (прозрачный: камни/палки/флюид-источники/машины). Реконструкция ЕДИНА (reconstructChunkMTEs).
+	// Every chunk load can hand back a TileEntityLoaderStub instead of a real MTE, on both server and client, so each
+	// side drains its own queue on its own tick; without the client one, the block stays invisible there.
 	private record ChunkReq(net.minecraft.world.level.Level level, int blockX, int blockZ) {}
 	private static final java.util.Queue<ChunkReq> STUB_QUEUE = new java.util.concurrent.ConcurrentLinkedQueue<>();
 	public  static final java.util.Queue<ChunkReq> CLIENT_STUB_QUEUE = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
-	// F6-worldgen КРОСС-ЧАНК BE-ПЕРСИСТ: worldgen кладёт MTE и в СОСЕДНИЕ чанки региона (листва деревьев, бедрок-фичи
-	// спрингов). В модели neo Feature.place BE-запись в уже-финализированный сосед-LevelChunk НЕ персистит (центр-чанк
-	// ProtoChunk персистит). Диагностика: srvBE=null постоянно для leaves@surface / rock@Y-64 / спрингов. Решение:
-	// на placeBlock (worldgen) регистрируем (реестр,pos,id,nbt) по ЧАНКУ MTE; когда ЭТОТ чанк сам финализируется
-	// (ChunkEvent.Load), переприкрепляем BE к настоящему LevelChunk — тогда привязка держится и синкается клиенту.
+	// Worldgen can place an MTE in an already-finalized neighbor chunk, where a BE write during Feature.place
+	// doesn't persist; this re-attaches it once that chunk itself finalizes on load.
 	private static final java.util.Map<Long, java.util.Queue<net.minecraft.world.level.block.entity.BlockEntity>> WORLDGEN_MTE = new java.util.concurrent.ConcurrentHashMap<>();
-	// PENDING_SYNC: свеже-записанные worldgen-MTE для НЕМЕДЛЕННОГО синка на server-tick тем, кто УЖЕ трекает чанк. Ловит
-	// кросс-чанк MTE (redstonelight-декор), добавленные в УЖЕ-отправленный игроку чанк (onChunkWatch по нему уже прошёл).
+	// Records worldgen MTEs by their own chunk, so a real LevelChunk finalizing later can re-attach and sync them.
 	private static final java.util.Queue<net.minecraft.world.level.block.entity.BlockEntity> PENDING_SYNC = new java.util.concurrent.ConcurrentLinkedQueue<>();
 	private static long chunkKey(int aCX, int aCZ) {return ((long)aCX << 32) | (aCZ & 0xFFFFFFFFL);}
 
-	/** Вызывается из {@code WD.te} при worldgen-привязке ЛЮБОГО MTE-BE (aWorld не Level — WorldGenRegion). WD.te —
-	 *  единственная центральная точка привязки MTE-BE (placeBlock И прямые пути идут через неё) → captures ВСЁ. Запись
-	 *  по ЧАНКУ нужна, чтобы на {@link #onChunkWatch отправке чанка игроку} синкнуть ему эти worldgen-MTE (сами они не
-	 *  синкаются: getUpdatePacket=null, а GT6-getClientDataPacket зовётся лишь при gameplay) — иначе клиент их не видит. */
+	/** WD.te is the single central point that binds any MTE-BE.
+	 *  Recording here from it captures every worldgen MTE without a second hook. */
 	public static void recordWorldgenMTE(net.minecraft.world.level.block.entity.BlockEntity aTileEntity) {
 		if (aTileEntity == null) return;
 		net.minecraft.core.BlockPos tPos = aTileEntity.getBlockPos();
@@ -368,9 +269,8 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		PENDING_SYNC.add(aTileEntity);
 	}
 
-	/** Немедленный синк свеже-записанных worldgen-MTE (server-tick): если ИХ чанк загружен — переприкрепить-если-потерян +
-	 *  sendClientData всем в радиусе. Для чанка, ещё не отправленного игроку, это no-op (некому в радиусе) — его подхватит
-	 *  onChunkWatch при отправке. Ловит именно кросс-чанк MTE в УЖЕ-отправленном чанке. Обрабатываем один раз (drain), квота. */
+	/** Syncs freshly-recorded worldgen MTEs right away if their chunk is already being watched.
+	 *  Otherwise onChunkWatch picks them up later. */
 	private static void drainPendingSync(net.minecraft.server.MinecraftServer aServer) {
 		net.minecraft.world.level.block.entity.BlockEntity tBE; int tN = 0;
 		while (tN < 256 && (tBE = PENDING_SYNC.poll()) != null) { tN++;
@@ -393,12 +293,11 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	private static void onChunkLoad(net.minecraftforge.event.level.ChunkEvent.Load aEvent) {
 		net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
 		if (aEvent.getLevel() instanceof ServerLevel tLevel) {
-			// ОТКЛАДЫВАЕМ на server-tick — подмена стаба (setBlockEntity) ВО ВРЕМЯ ChunkEvent.Load (идёт и при save/shutdown) давала
-			// реентранси-зависание; server-tick.Post при save не выполняется. Стабы на КАЖДОЙ загрузке не-PrefixBlock MTE → sweep каждый load.
+			// Deferred to server tick: swapping the stub during ChunkEvent.Load itself caused a re-entrant hang.
+			// That same event also fires on save, when a swap would be unsafe.
 			STUB_QUEUE.add(new ChunkReq(tLevel, tPos.getMinBlockX(), tPos.getMinBlockZ()));
 		} else if (aEvent.getLevel() instanceof net.minecraft.world.level.Level tLevel && tLevel.isClientSide()) {
-			// КЛИЕНТ: тот же механизм — стаб→настоящий MTE, но на client-tick (иначе MTE прозрачны). ClientLevel-класс не трогаем
-			// в common-коде (isClientSide-гейт); дренаж — GT_API_Proxy_Client.onClientMTEReconstruct.
+			// Same stub-to-real-MTE mechanism runs on client tick, since the client would otherwise see invisible MTEs.
 			CLIENT_STUB_QUEUE.add(new ChunkReq(tLevel, tPos.getMinBlockX(), tPos.getMinBlockZ()));
 		}
 	}
@@ -409,11 +308,8 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		drainPendingSync(aEvent.getServer());
 	}
 
-	/** КЛИЕНТ-СИНК worldgen-MTE. КОРЕНЬ прозрачности: сервер ИМЕЕТ BE worldgen-MTE (source/rock/redstonelight), но клиент
-	 *  НЕ получает (chunk-пакет не несёт MTE-BE — getUpdatePacket=null; а GT6-синк getClientDataPacket зовётся только при
-	 *  gameplay-размещении/апдейте, не при worldgen). Здесь ловим МОМЕНТ отправки чанка игроку (ChunkWatchEvent.Watch) и
-	 *  синкаем ему все worldgen-MTE этого чанка (+ переприкрепляем, если BE всё же потерялся кросс-чанк). Точный тайминг,
-	 *  без per-tick overhead. См. sweepWorldgenMTE удалён — был пустой (всё skip-hasBE). */
+	/** The chunk packet never carries a worldgen MTE's BE to the client, and GT6's own sync only fires on gameplay
+	 *  changes, not worldgen; this catches the exact moment the chunk is sent to a player and syncs it then. */
 	private static void onChunkWatch(net.minecraftforge.event.level.ChunkWatchEvent.Watch aEvent) {
 		net.minecraft.world.level.ChunkPos tCP = aEvent.getPos();
 		int tCX = tCP.getMinBlockX() >> 4, tCZ = tCP.getMinBlockZ() >> 4;
@@ -428,32 +324,29 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 				net.minecraft.core.BlockPos tPos = tBE.getBlockPos();
 				if (!(tChunk.getBlockState(tPos).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) continue;
 				net.minecraft.world.level.block.entity.BlockEntity tCur = tChunk.getBlockEntity(tPos);
-				if (tCur == null) { tBE.clearRemoved(); tLevel.setBlockEntity(tBE); tCur = tBE; } // BE всё же потерялся кросс-чанк — переприкрепить
-				// СИНК клиенту, получившему чанк: worldgen-MTE не синкаются авто (getUpdatePacket=null) → шлём GT6-пакет данных (PacketSyncDataIDs → клиент создаёт BE).
-				// N5-прозрачность: было только TileEntityBase03TicksAndSync (ТИКУЮЩИЕ) → non-ticking worldgen-MTE (камешки Rock/палки —
-				// TileEntityBase03MultiTileEntities, getUpdateTag=0) клиенту не синкались → прозрачны. Оба корня реализуют общий
-				// ITileEntitySynchronising.sendUpdateToPlayer (Base02Sync:99 и TicksAndSync:101 → sendClientData) — синкаем ЧЕРЕЗ него
-				// целевому игроку, получившему чанк (точнее broadcast). Покрывает обе ветки MTE одним централизованным вызовом.
+				if (tCur == null) { tBE.clearRemoved(); tLevel.setBlockEntity(tBE); tCur = tBE; } // The BE got lost cross-chunk after all, so it's re-attached here.
+				// Worldgen MTEs never auto-sync (getUpdatePacket=null), so a GT6 data packet is sent explicitly here.
+				// Both MTE hierarchies (ticking and non-ticking) share one interface for this, so one call covers both.
 				if (tCur instanceof gregapi.tileentity.ITileEntitySynchronising tSync) tSync.sendUpdateToPlayer(tPlayer);
 			} catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 		}
 	}
 
-	/** Выгрузка чанка → снять его записи (при перезагрузке MTE придёт стабом, его подхватит stub-реконструкция). */
+	/** Unloading a chunk drops its recorded entries; a reload hands back a stub, which the reconstruction path picks up again. */
 	private static void onChunkUnload(net.minecraftforge.event.level.ChunkEvent.Unload aEvent) {
 		if (!(aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel)) return;
 		net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
 		WORLDGEN_MTE.remove(chunkKey(tPos.getMinBlockX() >> 4, tPos.getMinBlockZ() >> 4));
 	}
 
-	/** Клиентский дренаж (вызывается из GT_API_Proxy_Client на ClientTickEvent) — реконструкция MTE-стабов на ClientLevel. */
+	/** Client-side drain, called on the client tick, reconstructing MTE stubs on the ClientLevel. */
 	public static void drainClientStubs() {drainStubs(CLIENT_STUB_QUEUE, 32);}
 
 	private static void drainStubs(java.util.Queue<ChunkReq> aQueue, int aQuota) {
 		ChunkReq tReq; int tM = 0;
 		while (tM < aQuota && (tReq = aQueue.poll()) != null) {
-			// stale-гейт (дедлок перезахода): реквест с level ОСТАНОВЛЕННОГО сервера -> getChunk уходит в вечный
-			// CompletableFuture.join (mainThreadProcessor мёртв, ServerChunkCache.getChunk:147-148). Скип, не дренаж.
+			// A request whose level belongs to an already-stopped server would hang forever in getChunk.
+			// It's skipped instead of drained.
 			if (tReq.level() instanceof net.minecraft.server.level.ServerLevel tSL
 			 && tSL.getServer() != net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer()) continue;
 			try { reconstructChunkMTEs(tReq.level(), tReq.blockX() >> 4, tReq.blockZ() >> 4); tM++; }
@@ -461,29 +354,27 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		}
 	}
 
-	/** F-tileentity-construction (load-реконструкция): пройти BE загруженного чанка, заменить каждый {@link gregapi.tileentity.base.TileEntityLoaderStub}
-	 *  (пустышку, которой neo подменил GT6-MTE при чтении NBT) реальным MTE через реестр. Отложено на server-tick (чанк FULL, setBlockEntity безопасен). */
+	/** Replaces each loader stub in a loaded chunk with its real MTE via the registry.
+	 *  Deferred to server tick, where the chunk is FULL and setBlockEntity is safe. */
 	public static void reconstructChunkMTEs(net.minecraft.world.level.Level aLevel, int aChunkX, int aChunkZ) {
-		// getChunk(cx,cz,FULL,false) — неблокирующий на main-thread (server-tick И client-tick), работает и для ClientLevel
-		// (в отличие от server-only getChunkSource().getChunkNow). null/не-FULL → пропуск (реконструируем при следующем load).
+		// getChunk(...,FULL,false) never blocks the main thread on either tick, unlike the server-only getChunkNow.
+		// A miss just retries on the next load.
 		net.minecraft.world.level.chunk.ChunkAccess tCA = aLevel.getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.ChunkStatus.FULL, false);
 		if (!(tCA instanceof net.minecraft.world.level.chunk.LevelChunk tChunk)) return;
 		java.util.List<net.minecraft.world.level.block.entity.BlockEntity> tStubs = null;
 		for (net.minecraft.world.level.block.entity.BlockEntity tBE : tChunk.getBlockEntities().values())
 			if (tBE instanceof gregapi.tileentity.base.TileEntityLoaderStub) {(tStubs == null ? tStubs = new java.util.ArrayList<>() : tStubs).add(tBE);}
 		if (tStubs != null) for (net.minecraft.world.level.block.entity.BlockEntity tBE : tStubs) reconstructMTE(aLevel, (gregapi.tileentity.base.TileEntityLoaderStub)tBE);
-		// (кросс-чанк BE-персист переприкрепляется server-tick sweep'ом sweepWorldgenMTE — здесь только stub-реконструкция)
+		// Cross-chunk BE re-attachment happens in the server-tick sweep; this only reconstructs the stub.
 	}
 
-	/** Собрать реальный MTE из захваченного стабом NBT (reg/id) и заменить им стаб. pos-канал getNewTileEntityContainer даёт позицию из pos стаба. Level (сервер И клиент). */
+	/** Builds the real MTE from the stub's captured reg/id and swaps it in, using the stub's own position.
+	 *  Works on both server and client. */
 	public static void reconstructMTE(net.minecraft.world.level.Level aLevel, gregapi.tileentity.base.TileEntityLoaderStub aStub) {
 		net.minecraft.nbt.CompoundTag tNBT = aStub.mLoadedNBT;
 		if (tNBT == null) return;
-		// BUG-057-хвост (решение игрока 2026-08-06): самоочистка «шелухи» старых миров. Прежний дефект сохранения
-		// (до фикса TileEntityLoaderStub.saveAdditional) писал на диск только id/x/y/z — личность блока стёрта
-		// НАВСЕГДА. Точный признак: NBT прочитан, но ключей NBT_MTE_REG/NBT_MTE_ID в нём НЕТ ВООБЩЕ (законный стаб
-		// несёт оба ключа даже при значении 0). По философии «не выдумывать состояние» реконструировать нечего —
-		// блок-призрак и стаб снимаются (НЕ выводится дефолтный MTE: пулы вроде aUtilStone неоднозначны).
+		// A past save defect wrote only position, permanently erasing block identity; the tell is that both identity keys
+		// are entirely absent (a legitimate stub always carries them, even as 0), so the ghost is removed, not guessed.
 		if (!tNBT.contains(gregapi.data.CS.NBT_MTE_REG) || !tNBT.contains(gregapi.data.CS.NBT_MTE_ID)) {
 			net.minecraft.core.BlockPos tHuskPos = aStub.getBlockPos();
 			if (aLevel.getBlockState(tHuskPos).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)
@@ -496,11 +387,11 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		short tReg = tNBT.getShort(gregapi.data.CS.NBT_MTE_REG);
 		short tID  = tNBT.getShort(gregapi.data.CS.NBT_MTE_ID );
 		gregapi.block.multitileentity.MultiTileEntityRegistry tRegistry = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry(tReg);
-		// Стаб с потерянным/нулевым reg реконструировать нечем — остаётся как есть (BUG-057).
+		// A stub with a lost or zero registry has nothing to reconstruct from and is left as it is.
 		if (tRegistry == null) return;
 		net.minecraft.core.BlockPos tPos = aStub.getBlockPos();
-		// блок-гейт (корень mismatch-флуда): BE-сирота (блок в позиции не MTE — затёрт/air) НЕ реконструируется,
-		// стаб снимается → мир самоочищается от сирот вместо вечного «Block state mismatch … != air» при каждой загрузке.
+		// An orphaned BE, where the block here is no longer an MTE, is never reconstructed.
+		// Removing the stub lets the world self-clean instead of logging a mismatch warning forever.
 		if (!(aLevel.getBlockState(tPos).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) {
 			aLevel.removeBlockEntity(tPos);
 			long tN = sOrphansCleaned.incrementAndGet();
@@ -509,7 +400,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		}
 		gregapi.block.multitileentity.MultiTileEntityContainer tContainer = tRegistry.getNewTileEntityContainer(aLevel, tPos.getX(), tPos.getY(), tPos.getZ(), tID, tNBT);
 		if (tContainer == null || tContainer.mTileEntity == null) return;
-		aLevel.setBlockEntity(tContainer.mTileEntity); // pos-канал → реальная pos → крепит на своё место, заменяя стаб
+		aLevel.setBlockEntity(tContainer.mTileEntity); // The position channel gives the real position, where this attaches, replacing the stub.
 	}
 	private static final java.util.concurrent.atomic.AtomicLong sOrphansCleaned = new java.util.concurrent.atomic.AtomicLong();
 	private static final java.util.concurrent.atomic.AtomicLong sHusksCleaned = new java.util.concurrent.atomic.AtomicLong();

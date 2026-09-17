@@ -35,6 +35,5 @@
 
 package thaumcraft.api.crafting;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только объявления, используемые GregTech6
- *  (CompatTC.java: instanceof/ResearchPage-конструктор). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only what CompatTC references via instanceof. */
 public interface IArcaneRecipe {}

@@ -1001,47 +1001,8 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		new Loader_Recipes_OreDict();
 	}
 
-	/**
-	 * ADAPT-014 — МЕДНЫЙ ВЕК 26.1.2 ПИТАЕТСЯ ГРЕГСКОЙ МЕДЬЮ.
-	 *
-	 * <p><b>Чего не было в 1.7.10.</b> Меди в ванили 1.7.10 не существовало вовсе (её нет в
-	 * {@code net/minecraft/init/Items.java}). В 26.1.2 это 93 блока: окисление, воск, срез, решётка,
-	 * лампа, сундук, статуя медного голема, плюс инструменты и броня.
-	 *
-	 * <p><b>Приём — авторский.</b> Когда медь приходила к Грегориусу через мод-бэкпорт, он оставлял
-	 * ЧУЖОЙ блок, снимал его ванильный рецепт и выдавал свой из «любой меди»:
-	 * {@code Compat_Recipes_Ganys.java:118} {@code CR.remove(IL.EtFu_Block_Copper.get(1))},
-	 * {@code :121-122} {@code CR.shaped(..., 'X', OP.ingot.dat(ANY.Cu))}. Здесь то же самое,
-	 * применённое к ванили 26.1.2, где эти блоки стали ванильными.
-	 *
-	 * <p><b>Канон сохраняется.</b> Ванильная генерация руд удалена биом-модификатором
-	 * ({@code remove_vanilla_ores_overworld.json}, включая {@code ore_copper}); медь GT6 добывается
-	 * только переработкой минералов с дробным выходом ({@code MT.java:3806} Chalcopyrite {@code 2*U9},
-	 * {@code :3811} Tetrahedrite {@code U4}, {@code :3847} Malachite {@code U6}). Ванильный слиток меди
-	 * в обращение НЕ вводится: цель унификации {@code OP.ingot + MT.Cu} на {@code minecraft:copper_ingot}
-	 * не ставится, а все рецепты, которые его требовали, переведены на {@code ANY.Cu} —
-	 * «любая медь» ({@code ANY.java:125}: {@code MT.Cu} + {@code MT.AnnealedCopper}).
-	 *
-	 * <p><b>Почему рецептами, а не тегом.</b> {@code #minecraft:copper_tool_materials} отбирает по
-	 * {@code Item}, а подтип материала GT6 живёт в компоненте ({@code ST.meta_}: {@code GT_API.SUBTYPE}),
-	 * то есть {@code gt.meta.ingot} — ОДИН предмет на все материалы. Тег сделал бы «медным материалом»
-	 * любой слиток GT6, поэтому шесть рецептов инструментов переписаны поимённо.
-	 *
-	 * <p><b>Что НЕ трогается:</b> 184 из 204 ванильных медных рецептов — внутренняя кухня медного века
-	 * (резчик 64, окисление, воск, срезы). Они работают от {@code copper_block}, который игрок получает
-	 * из грегской меди первым рецептом ниже.
-	 *
-	 * <p>{@code DEF_REM} снимает ванильный рецепт с тем же выходом — включая датапак-плечо
-	 * ({@code CR.remout:665} → {@code CR.DATAPACK_REMOVALS_OUT} → {@code GT_API.removeDatapackRecipes}).
-	 *
-	 * <p><b>Ветка 1.20.1.</b> «Медный век» — контент 26.1.2: в 1.20.1 из перечисленного существуют только
-	 * {@code copper_block}, {@code copper_ingot}, {@code raw_copper}, {@code raw_copper_block},
-	 * {@code lightning_rod}, {@code spyglass}, {@code brush} и породные формы (cut/slab/stairs/окисление).
-	 * Медных решётки, двери, люка, сундука, брони, инструментов, цепи, факела, фонаря и САМОРОДКА нет —
-	 * рецепты под них сняты (того контента не было и в 1.7.10, снятие = возврат к оригиналу, как
-	 * {@code Blocks.BUSH}/{@code SHORT_DRY_GRASS} в волне 4). Остальное — без изменений; паспорт материала
-	 * {@link #copperItemData()} идёт ПО РЕЕСТРУ и отсутствующие формы просто не встречает.
-	 */
+	/** Vanilla copper, nonexistent in 1.7.10, is kept but re-supplied from any GT6 copper ore-dict material, the same
+	 *  trick used for backported mods; recipes are rewritten by name since GT6's subtype is a component, not a tag. */
 	private static void copperAge() {
 		final Object tIngot = ingot.dat(ANY.Cu);
 
@@ -1084,28 +1045,8 @@ public class Loader_Recipes_Vanilla implements Runnable {
 
 	}
 
-	/**
-	 * ADAPT-014, часть II — ПАСПОРТ МАТЕРИАЛА всему медному семейству 26.1.2.
-	 *
-	 * <p><b>Зачем.</b> Тигель и шредер не имеют статических рецептов на чужие предметы: они строят рецепт
-	 * ДИНАМИЧЕСКИ из {@link gregapi.oredict.OreDictItemData} входа ({@code RecipeMapCrucible:119},
-	 * {@code RecipeMapShredder:52} — {@code OM.anydata(aInput)}). Предмет без данных в них не входит вовсе:
-	 * медный сундук, дверь, кирка, лампа были бы неплавким мусором, хотя сделаны из грегской меди.
-	 * Замер до этой правки: с паспортом 2 предмета, без паспорта — 130.
-	 *
-	 * <p><b>Масса выведена из ванильных рецептов, а не назначена на глаз</b> (обход
-	 * {@code data/minecraft/recipe} итеративным замыканием: слиток = U, блок = 9 слитков, лестница = 3/2
-	 * блока и т.д.). Инструменты сосчитаны по числу ячеек материала в паттерне.
-	 *
-	 * <p><b>Окисление и воск массу меди не меняют</b> — это тот же предмет в другом состоянии, поэтому
-	 * префиксы {@code waxed_}/{@code exposed_}/{@code weathered_}/{@code oxidized_} снимаются, и все 8
-	 * состояний каждой формы получают паспорт базовой. Обход идёт по РЕЕСТРУ, а не по списку из головы:
-	 * новый медный блок в будущей версии движка получит паспорт сам, без правки кода — сохраняется
-	 * свойство GT6 порождать содержимое процедурно.
-	 *
-	 * <p>Вторичные материалы указываются там, где они есть в рецепте: дерево у инструментов (палки,
-	 * {@code OP.stick} = U2 каждая) и у сундука, блез и редстоун у лампы. Тогда шредер вернёт и их.
-	 */
+	/** Crucible and shredder build recipes dynamically from ore-dict data, so an item with no passport is simply
+	 *  invisible to them; mass is derived from vanilla recipes, and the registry is walked so new items get a passport too. */
 	private static void copperItemData() {
 		// base form name -> how much copper it holds (U = one ingot)
 		java.util.Map<String, Long> tForms = new java.util.LinkedHashMap<>();

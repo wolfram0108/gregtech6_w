@@ -35,8 +35,8 @@
 
 package ic2.core;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Минимум для компиляции ядра; члены добираются
- *  компилятором. Реальная зависимость — при возврате к интеграции. См. compat-mirror/README.md. */
+/** Compile-only mirror of a third-party API: the minimum needed to compile the core, with
+ *  members added as the compiler demands them; the real dependency returns only if integration resumes. */
 public class AdvRecipe {
-	public Object[] input; // реально читается GregTech (Loader_Recipes_Replace: .input как массив ингредиентов)
+	public Object[] input; // actually read by GregTech6's Loader_Recipes_Replace as an ingredient array
 }

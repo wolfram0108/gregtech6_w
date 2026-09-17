@@ -23,22 +23,10 @@
 
 package gregapi.block;
 
-/**
- * ЯРЛЫК цвета карты в именах, которыми оперирует GT6 (палитра 1.7.10).
- *
- * <p><b>Значения цветов здесь НЕ хранятся.</b> Единственный носитель значения — движок:
- * палитра карты у него своя ({@code net.minecraft.world.level.material.MapColor}), адресуется тем же
- * индексом 0..63 и тем же порядком. Этот класс держит только соответствие «имя GT6 → индекс палитры»,
- * потому что мод адресует цвета именами, которых в движке нет.</p>
- *
- * <p>Прежняя редакция несла собственную таблицу RGB — и она была мёртвым грузом: поле значения не
- * читал никто (греп по дереву = 0), фактический цвет и так брался у движка через {@link #toNeo()}.
- * Снятие таблицы поведение не меняет ни на бит и снимает вопрос о происхождении этих чисел.</p>
- *
- * <p>Мост в движок — {@link #toNeo()}, одно место на весь мод (F9-bridge).</p>
- */
+/** A label for map-color names GT6 uses (the 1.7.10 palette); no color VALUES are stored here at all --
+ *  the engine alone holds the real palette, addressed by the same 0..63 index; this only maps a GT6 name to that index. */
 public final class MapColor {
-	/** Индекс в 64-цветной палитре карты. Совпадает у 1.7.10 и у целевого движка. */
+	/** Index into the engine's 64-color map palette. Matches between 1.7.10 and the target engine. */
 	public final int colorIndex;
 
 	private MapColor(int aIndex) {
@@ -48,15 +36,15 @@ public final class MapColor {
 
 	private static MapColor idx(int aIndex) {return new MapColor(aIndex);}
 
-	/** Цвет палитры по индексу — для кода, который адресует цвет числом, а не именем. */
+	/** Palette color by index, for code that addresses a color by number rather than by name. */
 	public static MapColor byId(int aIndex) {return idx(aIndex);}
 
-	/** F9-bridge: ярлык GT6 → цвет движка. Единственная точка перехода на весь мод. */
+	/** Bridge: GT6 label to engine color. The one conversion point for the whole mod. */
 	public net.minecraft.world.level.material.MapColor toNeo() {
 		return net.minecraft.world.level.material.MapColor.byId(colorIndex);
 	}
 
-	// Имена — те, которыми пользуется код GT6; число справа — индекс палитры.
+	// Names are the ones GT6's own code uses; the number on the right is the palette index.
 	public static final MapColor airColor         = idx( 0);
 	public static final MapColor grassColor       = idx( 1);
 	public static final MapColor sandColor        = idx( 2);

@@ -216,7 +216,7 @@ public interface IToolStats {
 	public void afterBreaking(ItemStack aStack, Player aPlayer);
 	
 	public int getRenderPasses();
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code IIcon getIcon(...)} (тип удалён в 26.1.2) — держатель ссылки на текстуру, тот же F3-канал что {@code gregapi.render.IIconContainer#getIcon(int)}. */
+	/** IIcon is gone in 26.1.2; this was the texture-reference holder, mirrored by IIconContainer#getIcon(int). */
 	public ResourceLocation getIcon(ItemStack aStack, int aRenderPass);
 	public short[] getRGBa(ItemStack aStack, int aRenderPass);
 }

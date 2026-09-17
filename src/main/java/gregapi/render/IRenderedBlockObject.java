@@ -31,12 +31,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 
-/**
- * @author Gregorius Techneticies
- *
- * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): {@code RenderBlocks} удалён в 26.1.2 — параметр заменён
- * нейтральным держателем {@code Object aRenderer} (см. {@link ITexture}).
- */
+/** @author Gregorius Techneticies
+ *  RenderBlocks was removed in 26.1.2; the parameter became a neutral Object aRenderer holder (see {@link ITexture}). */
 public interface IRenderedBlockObject {
 	/** @return the Textures rendered by {@link RendererBlockTextured} */
 	public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered);
@@ -67,7 +63,7 @@ public interface IRenderedBlockObject {
 		public ITexture mErrorTexture = BlockTextureDefault.get("system/error", T);
 		@Override public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return mErrorTexture;}
 		@Override public boolean usesRenderPass(int aRenderPass, boolean[] aShouldSideBeRendered) {return T;}
-		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было WD.setBlockBounds(aBlock, -0.25F,...) — метод удалён (REMAP-RULES §C2), границы отрисовки задаст VoxelShape/модель.
+		// Was WD.setBlockBounds(aBlock,-0.25F,...) in 1.7.10; render bounds now come from the VoxelShape/model instead.
 		@Override public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {return T;}
 		@Override public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {return 1;}
 		@Override public boolean renderItem(Block aBlock, Object aRenderer) {return F;}
@@ -77,7 +73,7 @@ public interface IRenderedBlockObject {
 
 		@Override
 		public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {
-			// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было WD.setBlockBounds(aBlock, -0.25F,...) перед прогоном 6 сторон — метод удалён (REMAP-RULES §C2).
+			// Was another WD.setBlockBounds call before running the six faces; removed for the same reason as above.
 			RendererBlockTextured.renderNegativeYFacing(aWorld, aRenderer, aBlock, aX, aY, aZ, mErrorTexture, F, T, this);
 			RendererBlockTextured.renderPositiveYFacing(aWorld, aRenderer, aBlock, aX, aY, aZ, mErrorTexture, F, T, this);
 			RendererBlockTextured.renderNegativeZFacing(aWorld, aRenderer, aBlock, aX, aY, aZ, mErrorTexture, F, T, this);

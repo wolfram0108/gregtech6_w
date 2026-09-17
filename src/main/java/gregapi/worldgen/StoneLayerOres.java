@@ -88,15 +88,8 @@ public class StoneLayerOres {
 		if (aMinY > aMaxY) {mMinY = aMaxY; mMaxY = aMinY;} else {mMinY = aMinY; mMaxY = aMaxY;}
 	}
 	
-	// F6 §4.1 (decisions/F6-worldgen.md): окно Y руды задано в старом мире [0..255]; в MC26 (-64..319) РАСТЯГИВАЕТСЯ
-	// sea-anchored (WD.remapY, море — якорь). Кэш по (minY,seaLevel) измерения: считается один раз, а не на каждый из
-	// миллионов вызовов check() за чанк.
-	//
-	// ⚠️ ШАНС НЕ МАСШТАБИРУЕТСЯ (изменено 2026-08-07 по указанию пользователя; прежняя редакция делила его на
-	// растяжение). mChance — вероятность руды НА КАЖДЫЙ БЛОК окна, то есть ровно плотность. Деление сохраняло
-	// исходное КОЛИЧЕСТВО руды в растянутой зоне и тем самым роняло плотность вдвое ниже 1.7.10 под морем.
-	// Требование: объём вырос → количество растёт соразмерно, плотность остаётся оригинальной. Значит шанс на блок
-	// берётся как в 1.7.10, без поправок.
+	// The ore Y-window is stretched sea-anchored for MC26's taller world, cached once per (minY,seaLevel) rather
+	// than per check(); the per-block chance must NOT scale down with the window, since it already is density itself.
 	private transient int mRemapKey = Integer.MIN_VALUE, mRemapMinY, mRemapMaxY;
 	private transient long mRemapChance;
 	private void ensureRemap(WorldGenLevel aWorld) {

@@ -30,21 +30,13 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.resources.ResourceLocation;
 
-/**
- * F3-render (entity): 1.7.10 {@code RenderArrow.getEntityTexture(Arrow)} — текстура по инстансу сущности.
- * Ветка 1.20.1: контракт ТОТ ЖЕ — {@code ArrowRenderer<T extends AbstractArrow>.getTextureLocation(T entity)}
- * ({@code ArrowRenderer.java:17}), промежуточного render-state (26.x {@code ArrowRenderState}) здесь нет,
- * то есть форма вернулась к оригинальной 1.7.10 дословно. Конструктор требует
- * {@code EntityRendererProvider.Context} (недоступен в этой legacy-точке регистрации через F10-зеркало
- * {@code RenderingRegistry}, decisions/F3-render.md §2.5/§6) — {@code null}, реальная регистрация
- * переезжает на {@code EntityRenderersEvent.RegisterRenderers}.
- */
+/** The texture-by-instance contract is unchanged; with no intermediate render-state class here, the form is
+ *  literally the 1.7.10 original again; real registration happens later through EntityRenderersEvent instead. */
 public class GT_Renderer_Entity_Arrow extends ArrowRenderer<Arrow> {
 	private final ResourceLocation mTexture;
 
-	// F12-entity/F3-render (ЗАКРЫТО): реальный EntityRendererProvider.Context (не null) — рендерер строится в
-	// EntityRenderersEvent.RegisterRenderers (GT_Client#registerClientRenderers), где Context доступен. 1.7.10
-	// RenderingRegistry.registerEntityRenderingHandler(class, this) удалён — регистрация теперь по EntityType.
+	// Real EntityRendererProvider.Context: the renderer builds in EntityRenderersEvent.RegisterRenderers.
+	// 1.7.10's RenderingRegistry handler is gone; registration is now keyed by EntityType.
 	public GT_Renderer_Entity_Arrow(EntityRendererProvider.Context aContext, String aTextureName) {
 		super(aContext);
 		mTexture = new ResourceLocation(RES_PATH_ENTITY+aTextureName+".png");

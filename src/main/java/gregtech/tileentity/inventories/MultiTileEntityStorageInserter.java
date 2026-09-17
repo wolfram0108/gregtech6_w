@@ -52,7 +52,7 @@ public class MultiTileEntityStorageInserter extends TileEntityBase07Paintable im
 		if (!UT.Entities.isPlayer(aPlayer)) return T;
 		ArrayListNoNulls<MultiTileEntityMassStorage> tList = new ArrayListNoNulls<>();
 		int tX = getOffsetX(aSide), tY = getOffsetY(aSide), tZ = getOffsetZ(aSide);
-		// F15-граница: getSelectedItem() в neo отдаёт EMPTY вместо null 1.7.10 -> все null-гейты руки в этом файле через ST.n
+		// neo's getSelectedItem() returns EMPTY instead of 1.7.10's null, so hand null-gates here go through ST.n.
 		boolean tDirectionsToGo[] = new boolean[] {T,T,T,T}, tOnlyHand = (ST.n(aPlayer.getInventory().getSelected()) != null);
 		for (int i = 0; i <= 6 && checkColumn(aPlayer, tX, --tY, tZ, tList, tOnlyHand); i++) if (i == 6) return T;
 		for (int i = 0; i < 50 && UT.Code.containsBoolean(T, tDirectionsToGo); i++) {
@@ -100,7 +100,8 @@ public class MultiTileEntityStorageInserter extends TileEntityBase07Paintable im
 	}
 	
 	public void tryInsert(Player aPlayer, MultiTileEntityMassStorage aStorage, boolean aOnlyHand) {
-		// F15-граница: чтение null-гейтов через ST.n; запись insertItems (возвращает GT6-null при полной вставке) через ST.nn (setItem(null) на NonNullList кидает NPE)
+		// Reads go through the null-gate ST.n; writes via insertItems (which returns GT6 null on a full insert) go through ST.nn,
+		// since setItem(null) on a NonNullList throws NPE.
 		if (ST.n(aPlayer.getInventory().getSelected()) != null) aPlayer.getInventory().setItem(aPlayer.getInventory().selected, ST.nn(aStorage.insertItems(aPlayer.getInventory().getItem(aPlayer.getInventory().selected), T)));
 		if (!aOnlyHand) for (int i = 9; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
 			if (ST.n(aPlayer.getInventory().getItem(i)) != null && !ST.nonautoinsert(aPlayer.getInventory().getItem(i)) && (aStorage.slotHas(1) || aPlayer.getInventory().getItem(i).getMaxStackSize() > 1)) {

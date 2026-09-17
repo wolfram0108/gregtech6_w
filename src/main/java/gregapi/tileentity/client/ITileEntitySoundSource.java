@@ -28,9 +28,8 @@ import static gregapi.data.CS.*;
 import net.minecraftforge.api.distmarker.Dist;
 import gregapi.random.IHasWorldAndCoords;
 import gregapi.tileentity.ITileEntityUnloadable;
-// F3-client-sound: 1.7.10 client.audio.ISound/ITickableSound удалены -> neo resources.sounds.SoundInstance/
-// TickableSoundInstance (интерфейс геттеров -> модель protected-полей). Наследуем AbstractTickableSoundInstance
-// (AbstractSoundInstance.java:14-27 несёт volume/pitch/x/y/z/looping/delay/attenuation), реализуем только tick().
+// 1.7.10's ISound/ITickableSound getter interfaces are gone; neo models sounds as protected fields on
+// AbstractTickableSoundInstance, so only tick() needs implementing.
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundEvent;
@@ -52,14 +51,14 @@ public interface ITileEntitySoundSource extends ITileEntityUnloadable {
 		public final IHasWorldAndCoords mTileEntity;
 
 		public SoundSourceTileEntity(IHasWorldAndCoords aTileEntity, boolean aRunning, String aSoundName, float aSoundStrength, float aSoundModulation) {
-			// SoundEvent из строки-ресурса (createVariableRangeEvent, SoundEvent.java:35); источник BLOCKS (звук машины-блока).
-			// F-sound (1:1): легаси 1.7.10 SFX → neo sound-id через UT.Sounds.neoSound (карта сверена по SoundEvents.java).
+			// SoundEvent built from a resource string with source BLOCKS; legacy 1.7.10 SFX names map to neo sound ids through the
+			// checked UT.Sounds.neoSound table.
 			super(SoundEvent.createVariableRangeEvent(new ResourceLocation(gregapi.util.UT.Sounds.neoSound(aSoundName))), SoundSource.BLOCKS, RandomSource.create());
 			mTileEntity = aTileEntity;
 			mRunning = aRunning;
 			mSoundStrength = aSoundStrength;
 			mSoundModulation = aSoundModulation;
-			// 1.7.10 getVolume/getPitch/canRepeat/getRepeatDelay/getAttenuationType/getXYZPosF -> установка protected-полей.
+			// 1.7.10's volume/pitch/repeat/attenuation/position getters are now just protected fields set directly.
 			this.volume = aSoundStrength;
 			this.pitch = aSoundModulation;
 			this.looping = aRunning;
@@ -72,8 +71,8 @@ public interface ITileEntitySoundSource extends ITileEntityUnloadable {
 
 		@Override
 		public void tick() {
-			// 1.7.10 геттеры читали изменяемые поля живьём (getVolume/canRepeat/isDonePlaying=!mRunning) -> neo движок
-			// читает protected-поля покадрово: синхронизируем из GT6-полей и глушим звук, когда машина выключилась.
+			// 1.7.10's getters read live mutable fields; neo reads protected fields every frame instead, so they're synced from GT6
+			// state and muted once the machine turns off.
 			this.volume = mSoundStrength;
 			this.pitch = mSoundModulation;
 			this.looping = mRunning;

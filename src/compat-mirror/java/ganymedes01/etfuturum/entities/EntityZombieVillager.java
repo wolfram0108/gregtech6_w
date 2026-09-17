@@ -39,7 +39,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Et Futurum. Минимум для instanceof-проверок GT6. */
+/** Compile-only mirror of the Et Futurum API: the minimum needed for GregTech6's instanceof checks. */
 public abstract class EntityZombieVillager extends LivingEntity {
     protected EntityZombieVillager(EntityType<? extends LivingEntity> aType, Level aLevel) {
         super(aType, aLevel);

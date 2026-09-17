@@ -35,11 +35,7 @@
 
 package net.minecraft.client.renderer;
 
-/**
- * F3-render compile-only shim. 1.7.10 RenderBlocks — immediate-mode (GL11) рендер блоков, удалён в neo
- * (заменён baked-модели + BlockRenderDispatcher). В GT6 фигурирует ТОЛЬКО как тип-параметр в сигнатурах
- * renderItem/renderBlock (методы на нём не вызываются) — пустого типа достаточно для сборки ядра.
- * Реальный рендер отложен на F3-клиент-проход (контролируемая отложенность §10).
- */
+/** Compile-only shim for 1.7.10's immediate-mode RenderBlocks, removed in neo in favor of baked
+ *  models; it appears only as a type parameter here, since its methods are never actually called. */
 public class RenderBlocks {
 }

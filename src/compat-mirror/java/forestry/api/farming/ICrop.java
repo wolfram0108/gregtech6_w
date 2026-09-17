@@ -35,6 +35,6 @@
 
 package forestry.api.farming;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — Forestry. Возвращаемый тип CompatFR.getCropAt
- *  (реализован forestry.farming.logic.CropBlock). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Forestry API: the return type of CompatFR.getCropAt,
+ *  implemented by forestry.farming.logic.CropBlock. */
 public interface ICrop {}

@@ -42,11 +42,8 @@ import net.minecraft.world.phys.Vec3;
  * Blocks can have this marker Interface too, since it is just an empty marker.
  */
 public interface IItemGT {
-	/** F12/F1: 1.7.10 Item.setMaxDamage/setHasSubtypes — runtime-мутаторы, удалены движком (neo: прочность через
-	 *  Properties.durability при регистрации; подтипы через DataComponents = F1). Дефолт-no-op для GT-итемов, где
-	 *  value 0 (=neo-дефолт прочности) и подтипы обсолетны; {@code ItemBase} ПЕРЕОПРЕДЕЛЯЕТ setMaxDamage со хранением
-	 *  поля + override getMaxDamage(ItemStack) (реальная прочность инструментов сохранена). Возврат Object → ItemBase
-	 *  covariant-возврат ItemBase. Маркер реализуется и блоками — для них методы безвредны (не вызываются). */
+	/** 1.7.10's runtime mutators setMaxDamage/setHasSubtypes are gone; this default is a no-op for GT items,
+	 *  since durability now comes from Properties and subtypes from data components; ItemBase overrides it. */
 	default Object setMaxDamage(int aMaxDamage) {return this;}
 	default Object setHasSubtypes(boolean aHasSubtypes) {return this;}
 
@@ -58,9 +55,8 @@ public interface IItemGT {
 	/** Whether this stack answers a block click at all - asked on the client, where the action itself cannot run. */
 	default boolean handlesUseOnFirst(ItemStack aStack) {return false;}
 
-	/** Распаковка neo UseOnContext → 1.7.10-параметры. side = Direction.get3DDataValue() (DOWN0/UP1/NORTH2/SOUTH3/WEST4/
-	 *  EAST5 — 1:1 с ForgeDirection ordinal, тем же индексом уже пользуются OFFX/FORGE_DIR в GT6); hit — относительно
-	 *  кликнутого блока (0..1). Единственное место разбора контекста, переиспользуется всеми корнями. */
+	/** Single place that unpacks a neo UseOnContext back into 1.7.10-style parameters, reused by every root
+	 *  class; side numbering matches the old ForgeDirection ordinal that GT6's own OFFX/FORGE_DIR already use. */
 	static InteractionResult bridgeUseOn(IItemGT aSelf, UseOnContext aCtx) {
 		BlockPos p = aCtx.getClickedPos(); Vec3 h = aCtx.getClickLocation();
 		return aSelf.onItemUse(aCtx.getItemInHand(), aCtx.getPlayer(), aCtx.getLevel(), p.getX(), p.getY(), p.getZ(), aCtx.getClickedFace().get3DDataValue(), (float)(h.x-p.getX()), (float)(h.y-p.getY()), (float)(h.z-p.getZ())) ? InteractionResult.SUCCESS : InteractionResult.PASS;

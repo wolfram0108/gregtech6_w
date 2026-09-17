@@ -83,7 +83,7 @@ public class Loader_Late_Items_And_Blocks implements Runnable {
 			}
 		}
 		
-		// F12-followup (block-split): rockset-вызовы (AETHEL/PR_EXPLORATION/BP) ПЕРЕНЕСЕНЫ в Loader_Ores.run() (preInit) —
-		// registerBlockLazy работает только до RegisterEvent, а этот загрузчик идёт на init-фазе (DR уже закрыт). См. Loader_Ores.
+		// rockset() calls for AETHEL/PR_EXPLORATION/BP moved to Loader_Ores.run() (preInit): registerBlockLazy
+		// needs an open registry, and this loader ran at init, after DeferredRegister had closed.
 	}
 }

@@ -38,9 +38,8 @@ package dan200.computercraft.api.peripheral;
 import dan200.computercraft.api.lua.ILuaContext;
 import dan200.computercraft.api.lua.LuaException;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — ComputerCraft. Полный набор методов, которые
- *  CompatCC.ComputerizablePeripheral реально реализует (не все помечены @Override в оригинале,
- *  но контракт нужен для {@code implements IPeripheral}). См. compat-mirror/README.md. */
+/** Compile-only mirror of the ComputerCraft API: the full set of methods
+ *  CompatCC.ComputerizablePeripheral actually implements. */
 public interface IPeripheral {
 	String getType();
 	String[] getMethodNames();

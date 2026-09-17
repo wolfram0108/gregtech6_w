@@ -35,8 +35,8 @@
 
 package dan200.computercraft.api.lua;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — ComputerCraft. Checked-исключение, объявляется
- *  в throws IPeripheral.callMethod (CompatCC.ComputerizablePeripheral). См. compat-mirror/README.md. */
+/** Compile-only mirror of the ComputerCraft API: a checked exception declared in
+ *  IPeripheral.callMethod's throws clause. */
 public class LuaException extends Exception {
 	public LuaException() {super();}
 	public LuaException(String aMessage) {super(aMessage);}

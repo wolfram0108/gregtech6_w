@@ -91,7 +91,7 @@ public class GT_Tool_Chainsaw_LV extends GT_Tool_Axe {
 	
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch) {
-		// F10: IShearable-зеркало снято — настоящий net.minecraftforge.common.IForgeShearable (сигнатура
+		// The IShearable mirror is gone; this uses the real IForgeShearable interface and its real signature instead.
 		// isShearable(ItemStack,Level,BlockPos)/onSheared(Player,ItemStack,Level,BlockPos,int):List<ItemStack>).
 		if (WD.getMaterial(aBlock) == Material.leaves && aBlock instanceof IForgeShearable) {
 			WD.set(aPlayer.level(), aX, aY, aZ, aBlock, aMetaData, 0);
@@ -100,7 +100,7 @@ public class GT_Tool_Chainsaw_LV extends GT_Tool_Axe {
 				List<ItemStack> tDrops = ((IForgeShearable)aBlock).onSheared(aPlayer, aStack, aPlayer.level(), tPos, aFortune);
 				aDrops.clear();
 				aDrops.addAll(tDrops);
-				/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
+				/* neo: BlockDropsEvent getDrops() always falls; dropChance removed */;
 			}
 			WD.set(aPlayer.level(), aX, aY, aZ, NB, 0, 0);
 			return 0;
@@ -108,7 +108,7 @@ public class GT_Tool_Chainsaw_LV extends GT_Tool_Axe {
 		if ((WD.getMaterial(aBlock) == Material.ice || WD.getMaterial(aBlock) == Material.packedIce) && aDrops.isEmpty()) {
 			aDrops.add(ST.make(aBlock, 1, aMetaData));
 			WD.set(aPlayer.level(), aX, aY, aZ, NB, 0, 3);
-			/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
+			/* neo: BlockDropsEvent getDrops() always falls; dropChance removed */;
 			return 0;
 		}
 		return super.convertBlockDrops(aDrops, aStack, aPlayer, aBlock, aAvailableDurability, aX, aY, aZ, aMetaData, aFortune, aSilkTouch);

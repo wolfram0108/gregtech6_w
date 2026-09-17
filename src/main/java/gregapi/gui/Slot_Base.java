@@ -37,23 +37,9 @@ import java.util.List;
 
 import static gregapi.data.CS.*;
 
-/**
- * @author Gregorius Techneticies
- *
- * F-GUI (шов «GUI/меню», серверный центр): 1.7.10 {@code net.minecraft.inventory.Slot} переименовало
- * почти каждый хук движок neo — символы поменяны 1:1 на новые имена того же смысла (сверено,
- * {@code neo-decompiled/net/minecraft/world/inventory/Slot.java}), логика/порядок не тронуты:
- * {@code getStack()}→{@code getItem()} (Slot.java:48), {@code isItemValid}→{@code mayPlace} (:44),
- * {@code canTakeStack}→{@code mayPickup} (:89), {@code getSlotStackLimit()}→{@code getMaxStackSize()} (:73),
- * {@code putStack}→{@code set} (:64), {@code decrStackSize}→{@code remove} (:85), {@code onSlotChanged}→
- * {@code setChanged} (:69), {@code onPickupFromSlot}→{@code onTake} (:40), {@code getHasStack}→{@code hasItem} (:52),
- * {@code func_111238_b}→{@code isActive} (:93, тот же смысл — булев гейт «можно ли наводить/подсвечивать
- * слот», используется {@code AbstractContainerScreen.java:167,261,316}), {@code onSlotChange(ItemStack,ItemStack)}→
- * {@code onQuickCraft(ItemStack,ItemStack)} (:24-29, та же пара «picked,original»→«picked,count»).
- * {@code isSlotInInventory(IInventory,int)} движок убрал целиком (в {@code Slot.java} такого метода больше
- * нет) — оставлен НЕ-{@code @Override} собственным методом (используется только {@link ContainerCommon#getSlotFromInventory}).
- * {@code IInventory}(1.7.10)→{@code Container} (neo, `Slot.java:12` поле {@code container}).
- */
+/** @author Gregorius Techneticies
+ *  The engine renamed nearly every Slot hook to the same meaning under a new name (getStack->getItem,
+ *  isItemValid->mayPlace, and so on); logic and ordering are untouched, only the symbols changed. */
 public class Slot_Base extends Slot {
 	private String[] mToolTips = ZL_STRING;
 	private String[] mToolTipColors = ZL_STRING;
@@ -81,7 +67,7 @@ public class Slot_Base extends Slot {
 	@Override
 	public ItemStack getItem() {
 		ItemStack rStack = mInventory.getStackInSlotGUI(mIndex);
-		if (rStack == null) return ST.nn(rStack); // F15-мост: neo Slot требует non-null, null (GT6-пусто) → ItemStack.EMPTY, ДО Wildcard-ветки
+		if (rStack == null) return ST.nn(rStack); // neo's Slot requires non-null; null (GT6's empty) becomes ItemStack.EMPTY before the wildcard branch runs.
 		return ST.meta(rStack) != W || ST.isGT(rStack) ? rStack : ST.name(ST.copyMeta(0, rStack), ST.regName(rStack) + ":Wildcard");
 	}
 
@@ -109,16 +95,16 @@ public class Slot_Base extends Slot {
 
 	@Override public boolean mayPlace(ItemStack aStack) {return mCanPut && mInventory.isItemValidForSlotGUI(mIndex, aStack);}
 	@Override public boolean mayPickup(Player aPlayer) {return mInventory.canTakeOutOfSlotGUI(mIndex) && (UT.Entities.isCreative(aPlayer) || (mCanTake && !ST.debug(getItem())));}
-	/** Движок убрал {@code isSlotInInventory} из {@code Slot} целиком — оставлен как собственный (не {@code @Override}) метод, единственный вызыватель {@link ContainerCommon#getSlotFromInventory}. */
+	/** Engine dropped isSlotInInventory from Slot entirely; kept as a plain method, its only caller unchanged. */
 	public boolean isSlotInInventory(Container aInventory, int aIndex) {return aInventory == mInventory && aIndex == mIndex;}
 	@Override public int getMaxStackSize() {return mInventory.getInventoryStackLimitGUI(mIndex);}
-	@Override public void set(ItemStack aStack) {if (ST.size(aStack) > 64) ST.size_(64, aStack); mInventory.setInventorySlotContentsGUI(mIndex, ST.ni(aStack)); setChanged();} // F15-мост: EMPTY-синглтон→null; значимый count==0 (не-синглтон) сохраняется, не схлопывается isEmpty()
-	@Override public ItemStack remove(int aAmount) {return ST.nn(mInventory.decrStackSizeGUI(mIndex, aAmount));} // F15-мост: null→EMPTY (см. getItem())
+	@Override public void set(ItemStack aStack) {if (ST.size(aStack) > 64) ST.size_(64, aStack); mInventory.setInventorySlotContentsGUI(mIndex, ST.ni(aStack)); setChanged();} // The EMPTY singleton maps back to null; a meaningful non-singleton count==0 stack is not collapsed by isEmpty().
+	@Override public ItemStack remove(int aAmount) {return ST.nn(mInventory.decrStackSizeGUI(mIndex, aAmount));} // null maps to EMPTY here, the same boundary {@link #getItem()} uses.
 	@Override public void setChanged() {mInventory.markDirtyGUI();}
 	@Override public boolean isActive() {return T;}
 	@Override public void onQuickCraft(ItemStack aStack, ItemStack aStack2) {if (ST.equal(aStack, aStack2, T)) {int tDifference = aStack2.getCount() - aStack.getCount(); if (tDifference > 0) onQuickCraft(aStack, tDifference);}}
 	@Override protected void onQuickCraft(ItemStack aStack, int aDifference) {/**/}
 	@Override public void onTake(Player aPlayer, ItemStack aStack) {setChanged();}
-	@Override public boolean hasItem() {return mInventory.getStackInSlotGUI(mIndex) != null;} // F15-мост: сырой GT6-null-чек (= оригинал getHasStack()=getStack()!=null); count==0 = ЗАНЯТ, НЕ isEmpty()
+	@Override public boolean hasItem() {return mInventory.getStackInSlotGUI(mIndex) != null;} // Raw GT6 null-check, matching the original getHasStack(); a count==0 stack still counts as occupied.
 	@Override public int getSlotIndex() {return mIndex;}
 }

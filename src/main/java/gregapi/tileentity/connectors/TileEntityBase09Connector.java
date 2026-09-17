@@ -129,10 +129,8 @@ public abstract class TileEntityBase09Connector extends TileEntityBase08Directio
 				checkCoverValidity();
 				doEnetUpdate();
 				if (aNotify) {
-					// 1.7.10: notifyBlocksOfNeighborChange шёл СИНХРОННО до ответного connect — сосед успевал сбросить
-					// маркер «тут пусто» в кэше AdjacentTEBuffer и увидеть нас; neo CollectingNeighborUpdater откладывает
-					// neighborChanged до разворота стека, и ответный connect бьёт в стухший маркер (труба ставит только
-					// свой бит, цепь не собирается). Восстанавливаем синхронный контракт (ITileEntity.java:45) напрямую.
+					// 1.7.10 ran the neighbor notification synchronously before the answering connect, letting the neighbor clear its cache
+					// marker in time; neo defers it until the stack unwinds, so the synchronous contract is restored directly here.
 					if (tDelegator.mTileEntity instanceof ITileEntity) ((ITileEntity)tDelegator.mTileEntity).onAdjacentBlockChange(tDelegator.mX, tDelegator.mY, tDelegator.mZ);
 					((ITileEntityConnector)tDelegator.mTileEntity).connect(tDelegator.mSideOfTileEntity, F);
 				}

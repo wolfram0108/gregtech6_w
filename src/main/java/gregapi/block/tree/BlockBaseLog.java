@@ -55,7 +55,7 @@ public abstract class BlockBaseLog extends BlockBaseTree {
 	public BlockBaseLog(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, Math.min(4, aMaxMeta), aIcons);
 		
-		// To make All-Bark Logs. F12-followup (block-split): RM.chisel/CR.shapeless используют ST.make → server-start → deferItemInit.
+		// Deferred to server start, since building all-bark log recipes here uses ST.make to create an ItemStack.
 		gregapi.GT_API.deferItemInit(() -> {
 		for (byte tMeta = 0; tMeta < maxMeta(); tMeta++) {
 			RM.chisel(aNameInternal+"."+tMeta, ST.make(this, 1, tMeta), ST.make(this, 1, tMeta|12));

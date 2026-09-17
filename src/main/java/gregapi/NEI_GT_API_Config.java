@@ -40,10 +40,8 @@ public class NEI_GT_API_Config implements codechicken.nei.api.IConfigureNEI, Run
 	// @Override
 	public void loadConfig() {
 		NEI = T;
-		/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code ModList.instance().getIndexedModList().get(id).getVersion()}
-		 * (Forge 1.7.10 API, {@code instance()}/{@code getIndexedModList()} удалены) — neo эквивалент
-		 * {@code ModList.get().getModContainerById(id)} (`fml-decompiled/net/neoforged/fml/ModList.java:76,128`)
-		 * → {@code ModContainer.getModInfo().getVersion()} (`ModContainer.java:41`, {@code ArtifactVersion}, не String). */
+		/* Forge 1.7.10's ModList.instance().getIndexedModList() API was removed; the neo equivalent
+		   returns an ArtifactVersion through ModContainer.getModInfo(), not a String. */
 		NEI_NH = ModList.get().getModContainerById("NotEnoughItems").map(c -> c.getModInfo().getVersion().toString()).orElse("").contains("GTNH");
 		if (GAPI_POST.mFinishedPostInit) run(); else GAPI_POST.mAfterPostInit.add(this);
 	}
@@ -51,10 +49,8 @@ public class NEI_GT_API_Config implements codechicken.nei.api.IConfigureNEI, Run
 	@Override
 	public void run() {
 		NEI = T;
-		/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code ModList.instance().getIndexedModList().get(id).getVersion()}
-		 * (Forge 1.7.10 API, {@code instance()}/{@code getIndexedModList()} удалены) — neo эквивалент
-		 * {@code ModList.get().getModContainerById(id)} (`fml-decompiled/net/neoforged/fml/ModList.java:76,128`)
-		 * → {@code ModContainer.getModInfo().getVersion()} (`ModContainer.java:41`, {@code ArtifactVersion}, не String). */
+		/* Forge 1.7.10's ModList.instance().getIndexedModList() API was removed; the neo equivalent
+		   returns an ArtifactVersion through ModContainer.getModInfo(), not a String. */
 		NEI_NH = ModList.get().getModContainerById("NotEnoughItems").map(c -> c.getModInfo().getVersion().toString()).orElse("").contains("GTNH");
 		
 		// Dont mess with NEI-NH, only mess with Vanilla NEI.

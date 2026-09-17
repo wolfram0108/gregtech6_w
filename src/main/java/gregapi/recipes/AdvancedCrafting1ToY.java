@@ -129,9 +129,8 @@ public class AdvancedCrafting1ToY implements ICraftingRecipeGT {
 					}
 				}
 			}
-			// F11 (ADR §7): ветки скана ЧУЖИХ ванильных neo-рецептов (ShapedRecipe/ShapelessRecipe) удалены —
-			// в neo рецепты грузятся датапаком на СТАРТЕ СЕРВЕРА, на mod-init их нет; скан/удаление чужих
-			// рецептов отложено централизованно (F10-compat). Дедуп СВОИХ GT-рецептов (ветки выше) — 1:1.
+			// Scanning foreign vanilla-style recipes at mod-init is removed since neo loads recipes from datapacks only
+			// at server start; that scan/removal is deferred elsewhere, while dedup of GT6's own recipes stays 1:1.
 			
 			if (tCount == 1) {
 				OreDictItemData tData = OM.data(tRecipe.getRecipeOutput());
@@ -148,9 +147,8 @@ public class AdvancedCrafting1ToY implements ICraftingRecipeGT {
 		ItemStack tStack = null;
 		OreDictMaterial rMaterial = null;
 		
-		// Смысл этого рецепта — В МЕСТЕ предмета на сетке (mEmpty = сколько пустых клеток перед ним). В 1.20.1
-		// сетка приходит рецепту целиком, вместе с пустыми клетками (CraftingMenu.java:25,62), — признак цел,
-		// как в 1.7.10, и читается прямо из сетки. Тело ниже — дословно 1.7.10 (AdvancedCrafting1ToY:177-191).
+		// This recipe cares about the item's position in the grid; on 1.20.1 the grid still arrives whole, including empty
+		// cells, so that feature reads straight off it unchanged, and the body below is verbatim 1.7.10.
 		int tInventorySize = aGrid.getContainerSize(), tCounter = 0, tEmpty = 0;
 		if (tInventorySize < 1+mEmpty) return F;
 		for (int i = 0; i < tInventorySize; i++) {

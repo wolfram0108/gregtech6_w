@@ -35,10 +35,8 @@
 
 package blusunrize.immersiveengineering.common.util;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Минимум для компиляции ядра; члены добираются
- *  компилятором. Реальная зависимость — при возврате к интеграции. См. compat-mirror/README.md.
- *  Поля добраны компилятором (gregapi/GT_API.java: {@code IEPotions.flammable/slippery/conductive/
- *  sticky.id}, MD.IE.mLoaded-гейт) — тот же PotionRef-паттерн, что enviromine/EnviroPotion.java. */
+/** Compile-only mirror of Immersive Engineering's API, fields added as the compiler demanded
+ *  them ({@code IEPotions.flammable/slippery/conductive/sticky.id}), same PotionRef pattern as EnviroPotion. */
 public class IEPotions {
 	public static PotionRef flammable;
 	public static PotionRef slippery;

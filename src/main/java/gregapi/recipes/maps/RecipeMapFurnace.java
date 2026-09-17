@@ -35,7 +35,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import gregapi.recipes.FurnaceRecipes; // F11-smelting: GT6-центр вместо удалённого vanilla FurnaceRecipes
+import gregapi.recipes.FurnaceRecipes; // Uses the GT6 smelting registry instead of the removed vanilla FurnaceRecipes.
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 
@@ -88,7 +88,7 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 					if (tBlock == Blocks.COBBLESTONE || tBlock == Blocks.STONE || gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.STONE_BRICKS || tBlock instanceof BlockStones) {
 						// Stone should not give XP, especially not because of the Cobble Generator Upgrades.
 						// GT6 Stone is also not allowed due to easily recycleable Recipes.
-					// 1.7.10 `Blocks.stained_hardened_clay` = любой цвет (мета); в neo 16 блоков — глава семьи через CS.Flattened
+					// 1.7.10 used one terracotta block with a color meta; neo splits it, so the family head is looked up centrally.
 				} else if (tBlock == Blocks.TERRACOTTA || gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.WHITE_TERRACOTTA) {
 						// Hardened Clay is 0.10 XP
 						rXP = FL.XP.make(tOutput.getCount() * 2L);

@@ -41,10 +41,8 @@ import java.util.List;
 import net.minecraft.world.item.ItemStack;
 import codechicken.nei.PositionedStack;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — NEI. Поля/методы, используемые GregTech6
- *  (NEI_RecipeMap extends TemplateRecipeHandler; большинство методов в оригинале не @Override —
- *  маркер-контракт, кроме {@code loadCraftingRecipes(String,Object...)}, реально зовущегося
- *  через {@code super.}). См. compat-mirror/README.md. */
+/** Compile-only mirror of the NEI API that NEI_RecipeMap extends; most methods are a marker
+ *  contract since the real type does not @Override them either, except loadCraftingRecipes, called via super. */
 public class TemplateRecipeHandler {
 	public List<CachedRecipe> arecipes = new ArrayList<>();
 	public List<RecipeTransferRect> transferRects = new ArrayList<>();

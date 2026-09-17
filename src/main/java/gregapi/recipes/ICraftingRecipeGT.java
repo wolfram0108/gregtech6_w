@@ -29,27 +29,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.level.Level;
 
-/**
- * @author Gregorius Techneticies
- *
- * F11 (decisions/F11-crafting-recipe.md): СОБСТВЕННЫЙ крафт-контракт GT6 над {@code CraftingContainer}/{@code Level}.
- * НЕ ванильный {@code Recipe}: экземпляры этого контракта живут в собственном буфере GT6 ({@code CR.BUFFER}) и в
- * ванильный верстак пробрасываются ОДНИМ диспетчером-{@code CustomRecipe}, а не регистрируются в
- * {@code RecipeManager} по-отдельности (рантайм-add удалён движком). Логика {@code matches}/{@code getCraftingResult}
- * — 1:1 из 1.7.10, лишь тип сетки {@code InventoryCrafting}→{@code CraftingContainer} (прямой наследник:
- * {@code getWidth}/{@code getHeight}/{@code getItems}, сетка приходит ЦЕЛИКОМ), {@code World}→{@code Level}.
- */
+/** @author Gregorius Techneticies
+ *  GT6's own crafting contract, not the vanilla Recipe: instances live in GT6's own buffer and reach the bench through
+ *  one dispatcher, since runtime recipe registration is gone; matches/getCraftingResult logic is 1:1 from 1.7.10. */
 public interface ICraftingRecipeGT {
 	/** Used for Recipes as an Error Indicator. */
 	public static final ItemStack ERROR_OUTPUT = ST.make(Items.EGG, 0, 0, "Error: Please Report used Ingredients to GregTech!");
 
-	/** @return true, если раскладка сетки собирает этот рецепт. */
+	/** @return true if this grid layout assembles this recipe. */
 	public boolean matches(CraftingContainer aGrid, Level aWorld);
-	/** @return результат крафта для данной сетки (с GT6-пост-обработкой: NBT/заряд/зачар/динам. материал). */
+	/** @return the crafting result for this grid, with GT6 post-processing (NBT/charge/enchant/dynamic material). */
 	public ItemStack getCraftingResult(CraftingContainer aGrid);
-	/** Число входных слотов рецепта (для сортировки/приоритета в GT6). */
+	/** Number of input slots this recipe uses, for GT6's own sorting/priority. */
 	public int getRecipeSize();
-	/** Номинальный выход рецепта (для отображения/скана). */
+	/** The recipe's nominal output, for display/scanning purposes. */
 	public ItemStack getRecipeOutput();
 
 	/** this is basically just needed so I don't accidentally remove my own Recipes. */

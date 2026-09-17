@@ -43,19 +43,18 @@ import java.util.Map;
 import net.minecraft.world.item.ItemStack;
 import thaumcraft.api.aspects.AspectList;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только объявления, используемые GregTech6
- *  (grep ThaumcraftApi.* по gregapi/*). Реальная зависимость — при возврате к интеграции TC.
- *  Тела намеренно пусты (интеграция не исполняется без реального Thaumcraft). См. compat-mirror/README.md. */
+/** Compile-only mirror of the Thaumcraft API: only what GregTech6 references; bodies stay empty
+ *  since none of this runs without the real mod loaded. */
 public class ThaumcraftApi {
-	/** GT_API.java / CompatTC: objectTags.isEmpty()/containsKey/put — заглушка-карта до интеграции.
-	 *  Ключ — CompatTC.java:379/391 кладёт List(Item,Integer), потому Object, не String. */
+	/** A stub map until real integration; the key is Object rather than String because CompatTC
+	 *  stores a List(Item, Integer) here. */
 	public static Map<Object, Object> objectTags = new HashMap<>();
 
 	/** CompatTC.java: portableHoleBlackList.add(...). */
 	public static List<Object> portableHoleBlackList = new ArrayList<>();
 
-	/** gregtech.asm.transformers.Thaumcraft_AspectLagFix.getCachedItemHash: {@code .get(Arrays.asList(item, meta))}
-	 *  → {@code int[]} группа хешей (та же List(Item,Integer)-ключ конвенция, что {@link #objectTags}). */
+	/** Uses the same List(Item, Integer) key convention as objectTags, read by
+	 *  Thaumcraft_AspectLagFix.getCachedItemHash. */
 	public static Map<Object, int[]> groupedObjectTags = new HashMap<>();
 
 	public static void registerEntityTag(String aEntityName, AspectList aAspects) {}

@@ -61,9 +61,8 @@ public class RecipeMapAutocrafting extends RecipeMap {
 		super(aRecipeList, aUnlocalizedName, aNameLocal, aNameNEI, aProgressBarDirection, aProgressBarAmount, aNEIGUIPath, aInputItemsCount, aOutputItemsCount, aMinimalInputItems, aInputFluidCount, aOutputFluidCount, aMinimalInputFluids, aMinimalInputs, aPower, aNEISpecialValuePre, aNEISpecialValueMultiplier, aNEISpecialValuePost, F, aShowVoltageAmperageInNEI, aNEIAllowed, aConfigAllowed, aNeedsOutputs, aCombinePower, aUseBucketSizeIn, aUseBucketSizeOut);
 	}
 	
-	// F11: тип элементов — свой крафт-контракт ICraftingRecipeGT (замена Forge IRecipe), НЕ gregapi.recipes.Recipe
-	// (машинный рецепт RecipeMap — другая система, F11 её не трогает) и НЕ neo net.minecraft...crafting.Recipe
-	// (импорт последнего конфликтовал по имени с gregapi.recipes.Recipe — убран, здесь не нужен).
+	// The element type here is GT6's own crafting contract (replacing Forge's IRecipe), not the machine-recipe
+	// class of the same short name and not neo's own Recipe type, which conflicted on import.
 	public static final List<ICraftingRecipeGT> ALLOWED_RECIPES = new ArrayListNoNulls<>();
 	public static final List<ICraftingRecipeGT> RECENT_RECIPES = new ArrayListNoNulls<>();
 
@@ -86,8 +85,7 @@ public class RecipeMapAutocrafting extends RecipeMap {
 			}
 		}
 
-		// Сетка строится ЕДИНСТВЕННЫМ центром GT6 — CR.crafting(ItemStack...), форма оригинала
-		// (gt6-original CR.java:577-580: InventoryCrafting 3x3 над контейнером-пустышкой).
+		// The grid is built by GT6's own single center, CR.crafting(...), the same 3x3-dummy-container form as the original.
 		CraftingContainer tCraftInv = CR.crafting(tBlueprint);
 
 		ICraftingRecipeGT tIRecipe = null;

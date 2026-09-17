@@ -37,9 +37,8 @@ package cpw.mods.fml.common;
 
 import com.google.common.eventbus.EventBus;
 
-/** F10 ЗЕРКАЛО (compile-only) — legacy Forge/FML 1.7.10 (пакет cpw.mods.fml не существует
- *  на neo-classpath; coremod ASM-система в neo — иная модель, отдельный шов вне зоны F10).
- *  Только используемое GregTech6 (GT_ASM_Dummy extends DummyModContainer). См. compat-mirror/README.md. */
+/** Compile-only mirror of legacy Forge/FML 1.7.10; the cpw.mods.fml package does not exist on
+ *  the neo classpath, and only what GT_ASM_Dummy needs to extend is mirrored. */
 public abstract class DummyModContainer {
 	private final ModMetadata mMetadata;
 
