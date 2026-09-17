@@ -29,6 +29,8 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+## [6.0.0-1.20.1-alpha.4] — explosives work again
+
 ### Fixed
 
 - **Explosives detonate again**: Boomstick, Dynamite and Strong Dynamite now break the surrounding blocks, drop them and play the explosion when they go off.
@@ -267,6 +269,11 @@ The first published build of the port. Minecraft 26.1.2, NeoForge 26.1.2.77, Jav
   others) are not wired up: the compatibility code is ported, but nothing modern is connected to it.
 - Worlds are not guaranteed to survive updates. Some fixes apply only to newly generated chunks.
 
-[Unreleased]: https://github.com/wolfram0108/gregtech6_w/compare/v6.0.0-alpha.1...HEAD
+[Unreleased]: https://github.com/wolfram0108/gregtech6_w/compare/v6.0.0-1.20.1-alpha.4...1.20.1
+[6.0.0-1.20.1-alpha.4]: https://github.com/wolfram0108/gregtech6_w/releases/tag/v6.0.0-1.20.1-alpha.4
+[6.0.0-1.20.1-alpha.3]: https://github.com/wolfram0108/gregtech6_w/releases/tag/v6.0.0-1.20.1-alpha.3
+[6.0.0-1.20.1-alpha.2]: https://github.com/wolfram0108/gregtech6_w/releases/tag/v6.0.0-1.20.1-alpha.2
+[6.0.0-1.20.1-alpha.1]: https://github.com/wolfram0108/gregtech6_w/releases/tag/v6.0.0-1.20.1-alpha.1
+[6.0.0-alpha.3]: https://github.com/wolfram0108/gregtech6_w/releases/tag/v6.0.0-alpha.3
 [6.0.0-alpha.2]: https://github.com/wolfram0108/gregtech6_w/releases/tag/v6.0.0-alpha.2
 [6.0.0-alpha.1]: https://github.com/wolfram0108/gregtech6_w/releases/tag/v6.0.0-alpha.1
