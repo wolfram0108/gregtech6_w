@@ -103,3 +103,12 @@ unmodified. The build plugins need it; it is kept here so that the build never f
 Maven Central, and it is not part of the mod jar.
 
 Minecraft and NeoForge are not redistributed by this project in any form.
+
+7. Translations
+---------------
+
+assets/gregtech6/lang/ru_ru.json   Russian — written for this port.
+assets/gregtech6/lang/zh_cn.json   Simplified Chinese — contributed by Ancuter
+                                   (https://github.com/Ancuter) in
+                                   https://github.com/wolfram0108/gregtech6_w/issues/4,
+                                   included as submitted.

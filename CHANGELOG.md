@@ -29,7 +29,11 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
-## [6.0.0-1.20.1-alpha.5] — glass bottles no longer crash the game
+## [6.0.0-1.20.1-alpha.5] — glass bottles no longer crash the game, Simplified Chinese
+
+### Added
+
+- **Simplified Chinese translation**: the mod is now available in Simplified Chinese — select 简体中文 in the game's language settings. Translation contributed by [@Ancuter](https://github.com/Ancuter).
 
 ### Fixed
 
