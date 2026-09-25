@@ -57,6 +57,9 @@ public abstract class Abstract_Proxy {
 			// separately (registerClientModels/RegisterEvent handlers). Here — only game-bus @SubscribeEvent.
 			if (net.neoforged.fml.event.IModBusEvent.class.isAssignableFrom(tParameter)) continue;
 			java.util.function.Consumer<net.neoforged.bus.api.Event> tDispatch = aEvent -> {
+				// 1.7.10 posted one interaction event per click; the engine posts it again for OFF_HAND when the main hand
+				// did not consume the click (Minecraft.startUseItem hand loop), and these handlers act on the main hand.
+				if (aEvent instanceof net.neoforged.neoforge.event.entity.player.PlayerInteractEvent tInteract && tInteract.getHand() == net.minecraft.world.InteractionHand.OFF_HAND) return;
 				try {tMethod.invoke(this, aEvent);}
 				catch (ReflectiveOperationException e) {throw new RuntimeException("Abstract_Proxy: event dispatch failure " + tMethod, e);}
 			};
