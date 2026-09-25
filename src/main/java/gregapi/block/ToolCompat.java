@@ -118,6 +118,17 @@ public class ToolCompat {
 		return tAxis == net.minecraft.core.Direction.Axis.X ? PILLAR_X : tAxis == net.minecraft.core.Direction.Axis.Z ? PILLAR_Z : PILLAR_Y;
 	}
 
+	/** Debarks a log into its wood-dictionary beam: a GregTech beam carries the orientation in its meta, while a vanilla
+	 *  stripped block keeps the AXIS of the log it replaces. */
+	private static boolean debarkInto(Level aWorld, int aX, int aY, int aZ, ItemStack aBeam) {
+		Block tBeam = ST.block_(aBeam);
+		if (tBeam instanceof gregapi.block.tree.BlockBaseBeam) return WD.set(aWorld, aX, aY, aZ, tBeam, pillarFromAxis(aWorld, aX, aY, aZ) | (ST.meta_(aBeam) & PILLAR_DATA), 3);
+		BlockState tOld = aWorld.getBlockState(new BlockPos(aX, aY, aZ)), tNew = tBeam.defaultBlockState();
+		if (tOld.hasProperty(net.minecraft.world.level.block.RotatedPillarBlock.AXIS) && tNew.hasProperty(net.minecraft.world.level.block.RotatedPillarBlock.AXIS))
+			tNew = tNew.setValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS, tOld.getValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS));
+		return WD.set(aWorld, aX, aY, aZ, tNew, 3);
+	}
+
 	/** Providing compatibility for vanilla Blocks and certain Mod Interfaces. */
 	public static long onToolClick(Block aBlock, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
@@ -164,16 +175,6 @@ public class ToolCompat {
 					tBark = null;
 				}
 			}
-			// F4-flattening: vanilla logs are one block per species plus AXIS. Species and beam come from the
-			// WoodDictionary centre (LoaderWoodDictionary:51-56), never from a hardcoded map.
-			if (!rReturn && (aBlock == Blocks.OAK_LOG || aBlock == Blocks.SPRUCE_LOG || aBlock == Blocks.BIRCH_LOG
-					|| aBlock == Blocks.JUNGLE_LOG || aBlock == Blocks.ACACIA_LOG || aBlock == Blocks.DARK_OAK_LOG)) {
-				gregapi.wooddict.WoodEntry tWood = gregapi.wooddict.WoodDictionary.WOODS.get(aBlock, 0);
-				if (tWood != null && tWood.mBeamEntry != null && ST.valid(tWood.mBeamEntry.mBeam)) {
-					ItemStack tBeam = tWood.mBeamEntry.mBeam;
-					rReturn = WD.set(aWorld, aX, aY, aZ, ST.block_(tBeam), pillarFromAxis(aWorld, aX, aY, aZ) | (ST.meta_(tBeam) & PILLAR_DATA), 3);
-				}
-			}
 			if (!rReturn && BlocksGT.Beam1 != null) {
 				if (IL.EtFu_Bark_Oak.equal(aBlock)) {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam1, aMeta, 3);
@@ -213,7 +214,15 @@ public class ToolCompat {
 				} else if (IL.TF_Log_Trans.equal(aBlock) && (aMeta & 1) == 1) {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam2, (aMeta&12)|((aMeta & 2) == 0 ? 0 : 1), 3);
 				} else if (OD.logWood.is(ST.make(aBlock, 1, aMeta)) && !OD.beamWood.is(ST.make(aBlock, 1, aMeta))) {
-					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam2, (aMeta&12)|3, 3);
+					// A log the wood dictionary knows debarks into its own beam; only an unknown log gets the generic one.
+					gregapi.wooddict.WoodEntry tWood = gregapi.wooddict.WoodDictionary.WOODS.get(aBlock, aMeta);
+					if (tWood != null && tWood.mBeamEntry != null && ST.valid(tWood.mBeamEntry.mBeam)) {
+						rReturn = debarkInto(aWorld, aX, aY, aZ, tWood.mBeamEntry.mBeam);
+						// 1.7.10 turned a stem into its own stripped variant without bark (the Netherlicious branch above).
+						if (!(ST.block_(tWood.mBeamEntry.mBeam) instanceof gregapi.block.tree.BlockBaseBeam)) tBark = null;
+					} else {
+						rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam2, (aMeta&12)|3, 3);
+					}
 				}
 			}
 			if (rReturn) {

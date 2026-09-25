@@ -66,6 +66,44 @@ public class LoaderWoodDictionary implements Runnable {
 		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 3), WoodDictionary.PLANKS.get(Blocks.JUNGLE_PLANKS, 0));
 		new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 0), WoodDictionary.PLANKS.get(Blocks.ACACIA_PLANKS, 0));
 		new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 1), WoodDictionary.PLANKS.get(Blocks.DARK_OAK_PLANKS, 0));
+		// Bark blocks and stripped logs/wood of these species came from a backport mod in 1.7.10 (Et Futurum); the engine now
+		// owns them, and they keep that mod's roles and entries 1:1: bark debarks into the GregTech beam, stripped saws into planks.
+		OreDictionary.registerOre(OD.logWood.toString(), ST.make(Blocks.OAK_WOOD              , 1, 0));
+		OreDictionary.registerOre(OD.logWood.toString(), ST.make(Blocks.SPRUCE_WOOD           , 1, 0));
+		OreDictionary.registerOre(OD.logWood.toString(), ST.make(Blocks.BIRCH_WOOD            , 1, 0));
+		OreDictionary.registerOre(OD.logWood.toString(), ST.make(Blocks.JUNGLE_WOOD           , 1, 0));
+		OreDictionary.registerOre(OD.logWood.toString(), ST.make(Blocks.ACACIA_WOOD           , 1, 0));
+		OreDictionary.registerOre(OD.logWood.toString(), ST.make(Blocks.DARK_OAK_WOOD         , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_OAK_LOG      , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_SPRUCE_LOG   , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_BIRCH_LOG    , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_JUNGLE_LOG   , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_ACACIA_LOG   , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_DARK_OAK_LOG , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_OAK_WOOD     , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_SPRUCE_WOOD  , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_BIRCH_WOOD   , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_JUNGLE_WOOD  , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_ACACIA_WOOD  , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_DARK_OAK_WOOD, 1, 0));
+		new WoodEntry(ST.make(Blocks.OAK_WOOD              , 1, 0), WoodDictionary.BEAMS.get(BlocksGT.Beam1, 0));
+		new WoodEntry(ST.make(Blocks.SPRUCE_WOOD           , 1, 0), WoodDictionary.BEAMS.get(BlocksGT.Beam1, 1));
+		new WoodEntry(ST.make(Blocks.BIRCH_WOOD            , 1, 0), WoodDictionary.BEAMS.get(BlocksGT.Beam1, 2));
+		new WoodEntry(ST.make(Blocks.JUNGLE_WOOD           , 1, 0), WoodDictionary.BEAMS.get(BlocksGT.Beam1, 3));
+		new WoodEntry(ST.make(Blocks.ACACIA_WOOD           , 1, 0), WoodDictionary.BEAMS.get(BlocksGT.Beam2, 0));
+		new WoodEntry(ST.make(Blocks.DARK_OAK_WOOD         , 1, 0), WoodDictionary.BEAMS.get(BlocksGT.Beam2, 1));
+		new BeamEntry(ST.make(Blocks.STRIPPED_OAK_LOG      , 1, 0), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 0));
+		new BeamEntry(ST.make(Blocks.STRIPPED_SPRUCE_LOG   , 1, 0), WoodDictionary.PLANKS.get(Blocks.SPRUCE_PLANKS, 0));
+		new BeamEntry(ST.make(Blocks.STRIPPED_BIRCH_LOG    , 1, 0), WoodDictionary.PLANKS.get(Blocks.BIRCH_PLANKS, 0));
+		new BeamEntry(ST.make(Blocks.STRIPPED_JUNGLE_LOG   , 1, 0), WoodDictionary.PLANKS.get(Blocks.JUNGLE_PLANKS, 0));
+		new BeamEntry(ST.make(Blocks.STRIPPED_ACACIA_LOG   , 1, 0), WoodDictionary.PLANKS.get(Blocks.ACACIA_PLANKS, 0));
+		new BeamEntry(ST.make(Blocks.STRIPPED_DARK_OAK_LOG , 1, 0), WoodDictionary.PLANKS.get(Blocks.DARK_OAK_PLANKS, 0));
+		new BeamEntry(ST.make(Blocks.STRIPPED_OAK_WOOD     , 1, 0), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 0));
+		new BeamEntry(ST.make(Blocks.STRIPPED_SPRUCE_WOOD  , 1, 0), WoodDictionary.PLANKS.get(Blocks.SPRUCE_PLANKS, 0));
+		new BeamEntry(ST.make(Blocks.STRIPPED_BIRCH_WOOD   , 1, 0), WoodDictionary.PLANKS.get(Blocks.BIRCH_PLANKS, 0));
+		new BeamEntry(ST.make(Blocks.STRIPPED_JUNGLE_WOOD  , 1, 0), WoodDictionary.PLANKS.get(Blocks.JUNGLE_PLANKS, 0));
+		new BeamEntry(ST.make(Blocks.STRIPPED_ACACIA_WOOD  , 1, 0), WoodDictionary.PLANKS.get(Blocks.ACACIA_PLANKS, 0));
+		new BeamEntry(ST.make(Blocks.STRIPPED_DARK_OAK_WOOD, 1, 0), WoodDictionary.PLANKS.get(Blocks.DARK_OAK_PLANKS, 0));
 
 		// New vanilla wood species (cherry, bamboo, mangrove, crimson/warped) are added using the same materials,
 		// plank ids and yield counts as the backport mods that originally supplied this content in 1.7.10.
@@ -91,6 +129,15 @@ public class LoaderWoodDictionary implements Runnable {
 		new SaplingEntry(ST.make(Blocks.WARPED_FUNGUS , 1, 0), new WoodEntry(ST.make(Blocks.WARPED_STEM , 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_WARPED_STEM , 1, 0), tWarpedPlank , 1, 200), 1, 200, ST.make(Blocks.WARPED_FUNGUS , 1, 0), MT.WOODS.Warped ), ST.make(Blocks.WARPED_WART_BLOCK, 1, 0));
 		new WoodEntry(ST.make(Blocks.CRIMSON_HYPHAE, 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_CRIMSON_HYPHAE, 1, 0), tCrimsonPlank, 1, 150), 1, 150, ST.make(Blocks.CRIMSON_FUNGUS, 1, 0), MT.WOODS.Crimson);
 		new WoodEntry(ST.make(Blocks.WARPED_HYPHAE , 1, 0), new BeamEntry(ST.make(Blocks.STRIPPED_WARPED_HYPHAE , 1, 0), tWarpedPlank , 1, 200), 1, 200, ST.make(Blocks.WARPED_FUNGUS , 1, 0), MT.WOODS.Warped );
+		// Stems and hyphae keep the roles of the backport mod (Netherlicious) that supplied them in 1.7.10.
+		OreDictionary.registerOre(OD.logWood.toString(), ST.make(Blocks.CRIMSON_STEM           , 1, 0));
+		OreDictionary.registerOre(OD.logWood.toString(), ST.make(Blocks.WARPED_STEM            , 1, 0));
+		OreDictionary.registerOre(OD.logWood.toString(), ST.make(Blocks.CRIMSON_HYPHAE         , 1, 0));
+		OreDictionary.registerOre(OD.logWood.toString(), ST.make(Blocks.WARPED_HYPHAE          , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_CRIMSON_STEM  , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_WARPED_STEM   , 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_CRIMSON_HYPHAE, 1, 0));
+		OreDictionary.registerOre(OD.beamWood.toString(), ST.make(Blocks.STRIPPED_WARPED_HYPHAE , 1, 0));
 
 		// GregTech Trees
 		if (MD.GT.mLoaded) {
