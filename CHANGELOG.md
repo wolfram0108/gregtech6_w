@@ -29,6 +29,13 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+## [6.0.0-1.20.1-alpha.5] — glass bottles no longer crash the game
+
+### Fixed
+
+- **Glass bottles no longer crash the game**: clicking with an empty glass bottle — on any block, sneaking or not, or into the air — no longer freezes and crashes the client.
+- **One action per click**: a click the main hand leaves unused is no longer handled a second time for the off hand, so river, ocean and swamp water fill exactly one bottle per click.
+
 ## [6.0.0-1.20.1-alpha.4] — explosives work again
 
 ### Fixed
