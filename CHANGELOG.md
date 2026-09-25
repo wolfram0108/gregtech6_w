@@ -39,6 +39,7 @@ that predate this branch describe work done on the shared code base before it wa
 
 - **Glass bottles no longer crash the game**: clicking with an empty glass bottle — on any block, sneaking or not, or into the air — no longer freezes and crashes the client.
 - **One action per click**: a click the main hand leaves unused is no longer handled a second time for the off hand, so river, ocean and swamp water fill exactly one bottle per click.
+- **Stripped logs and wood count as wood again**: stripped logs, stripped wood, wood blocks and nether stems are recognised as logs and beams — they craft into planks, and a GregTech axe debarks them into the matching beam or stripped block.
 
 ## [6.0.0-1.20.1-alpha.4] — explosives work again
 
