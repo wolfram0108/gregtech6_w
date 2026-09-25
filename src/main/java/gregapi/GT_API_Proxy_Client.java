@@ -468,13 +468,10 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		return null;
 	}
 
-	/** F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo callers): was {@code PlayerControllerMP.sendUseItem(player,world,stack)}
- 	 *  with an explicit {@code ItemStack} (the method type was removed). Neo {@code MultiPlayerGameMode.useItem(Player,InteractionHand)}
- 	 *  takes the item from the player's hand, not the explicit {@code aStack} — the semantics of "use EXACTLY this stack"
- 	 *  is unreachable without it (an engine seam), so the main hand is used as the closest equivalent. */
+	// The engine already sends the use-item packet for a canceled RightClickItem (MultiPlayerGameMode.useItem:366-369);
+	// calling gameMode.useItem here re-posts that event from inside its own handler and recurses without end.
 	@Override
 	public boolean sendUseItemPacket(Player aPlayer, Level aWorld, ItemStack aStack) {
-		Minecraft.getInstance().gameMode.useItem(aPlayer, net.minecraft.world.InteractionHand.MAIN_HAND);
 		return T;
 	}
 

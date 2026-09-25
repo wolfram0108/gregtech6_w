@@ -49,6 +49,9 @@ public abstract class Abstract_Proxy {
 			// They register on the mod bus separately (registerClientModels/RegisterEvent handlers). Only game-bus events belong here.
 			if (net.minecraftforge.fml.event.IModBusEvent.class.isAssignableFrom(tParameter)) continue;
 			java.util.function.Consumer<net.minecraftforge.eventbus.api.Event> tDispatch = aEvent -> {
+				// 1.7.10 posted one interaction event per click; the engine posts it again for OFF_HAND when the main hand
+				// did not consume the click (Minecraft.startUseItem hand loop), and these handlers act on the main hand.
+				if (aEvent instanceof net.minecraftforge.event.entity.player.PlayerInteractEvent tInteract && tInteract.getHand() == net.minecraft.world.InteractionHand.OFF_HAND) return;
 				try {tMethod.invoke(this, aEvent);}
 				catch (ReflectiveOperationException e) {throw new RuntimeException("Abstract_Proxy: сбой диспетчеризации события " + tMethod, e);}
 			};
