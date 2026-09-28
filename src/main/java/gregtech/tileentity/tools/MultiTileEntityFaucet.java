@@ -119,7 +119,8 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 			WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.LAVA, 1, 3);
 		}
 		DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(SIDE_BOTTOM);
-		while (tDelegator.mY > 0 && (tDelegator.mTileEntity instanceof MultiTileEntityFaucet || (!(tDelegator.mTileEntity instanceof MultiTileEntityBathingPot || tDelegator.mTileEntity instanceof MultiTileEntityMixingBowl || tDelegator.mTileEntity instanceof ITileEntityMold) && !WD.hasCollide(tDelegator.mWorld, tDelegator.mX, tDelegator.mY, tDelegator.mZ)))) {
+		// The search for a mold goes down to the world floor minY; the 1.7.10 floor 0 cut it off for every faucet below Y=0.
+		while (tDelegator.mY > WD.minY(tDelegator.mWorld) && (tDelegator.mTileEntity instanceof MultiTileEntityFaucet || (!(tDelegator.mTileEntity instanceof MultiTileEntityBathingPot || tDelegator.mTileEntity instanceof MultiTileEntityMixingBowl || tDelegator.mTileEntity instanceof ITileEntityMold) && !WD.hasCollide(tDelegator.mWorld, tDelegator.mX, tDelegator.mY, tDelegator.mZ)))) {
 			tDelegator = WD.te(tDelegator.mWorld, tDelegator.mX, tDelegator.mY-1, tDelegator.mZ, SIDE_TOP, F);
 		}
 		if (tDelegator.mTileEntity instanceof ITileEntityMold) return ((ITileEntityMold)tDelegator.mTileEntity).fillMold(aMaterial, aTemperature, tDelegator.mSideOfTileEntity);

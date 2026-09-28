@@ -1130,7 +1130,7 @@ public class ST {
 		Block aBlock = aTo.getBlock();
 		if (aBlock instanceof BaseRailBlock) {
 			// Do not eject shit onto Rails directly.
-		} else if (WD.getMaterial(aBlock) == gregapi.block.Material.lava /* F9 (1:1): do not eject items onto lava; WD.getMaterial is implemented (the stub tag was removed) */ || aBlock instanceof FireBlock || (invalid(aBlock) && aTo.mY < 1)) {
+		} else if (WD.getMaterial(aBlock) == gregapi.block.Material.lava /* F9 (1:1): do not eject items onto lava; WD.getMaterial is implemented (the stub tag was removed) */ || aBlock instanceof FireBlock || (invalid(aBlock) && aTo.mY <= WD.minY(aTo.mWorld) /* air on the bottom layer is the edge of the void; the world floor is minY, not the 1.7.10 Y<1 */)) {
 			for (int aSlotFrom : aSlotsFrom) {
 				ItemStack aStackFrom = aFrom.mTileEntity.getItem(aSlotFrom);
 				if (aStackFrom != null && aMinMove <= aStackFrom.getCount() && (aFilter == null || aFilter.contains(aStackFrom, T) != aInvertFilter) && canTake(aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) {
