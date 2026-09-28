@@ -635,6 +635,87 @@ public class Recipe {
 			return rList;
 		}
 		
+		/** "Recipes for X" as the 1.7.10 NEI handler asked it (NEI_RecipeMap.loadCraftingRecipes): X and its relatives, then getNEIRecipes.
+		 *  Kept here, viewer-neutral, so every recipe viewer runs the same on-demand lookup instead of a snapshot. */
+		public List<Recipe> getNEIRecipesFor(ItemStack aResult) {
+			ArrayList<Recipe> rRecipes = new ArrayListNoNulls<>();
+			if (ST.invalid(aResult)) return rRecipes;
+			OreDictItemData tPrefixMaterial = OM.association_(aResult);
+
+			ArrayList<ItemStack> tResults = ST.arraylist(aResult, OM.get_(aResult));
+
+			ArrayList<ItemStack>
+			tRedirects = ItemsGT.sNEIRedirects.get(new ItemStackContainer(aResult));
+			if (tRedirects != null) tResults.addAll(tRedirects);
+			tRedirects = ItemsGT.sNEIRedirects.get(new ItemStackContainer(aResult, W));
+			if (tRedirects != null) tResults.addAll(tRedirects);
+
+			if (tPrefixMaterial != null && !tPrefixMaterial.mBlackListed) {
+				if (tPrefixMaterial.mMaterial.mMaterial.mID > 0 && BlocksGT.ore != null && BlocksGT.oreBroken != null && tPrefixMaterial.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED)) {
+					tResults.add(ST.make((net.minecraft.world.level.block.Block)BlocksGT.ore      , 1, tPrefixMaterial.mMaterial.mMaterial.mID));
+					tResults.add(ST.make((net.minecraft.world.level.block.Block)BlocksGT.oreBroken, 1, tPrefixMaterial.mMaterial.mMaterial.mID));
+				}
+				for (gregapi.oredict.OreDictPrefix tPrefix : tPrefixMaterial.mPrefix.mFamiliarPrefixes) {
+					tResults.add(tPrefix.mat(tPrefixMaterial.mMaterial.mMaterial, 1));
+				}
+				if (tPrefixMaterial.mPrefix.containsAny(TD.Prefix.DUST_BASED) && tPrefixMaterial.mMaterial.mMaterial.mTargetPulver.mMaterial == tPrefixMaterial.mMaterial.mMaterial) {
+					tResults.add(OP.crushed               .mat(tPrefixMaterial.mMaterial.mMaterial, 1));
+					tResults.add(OP.crushedTiny           .mat(tPrefixMaterial.mMaterial.mMaterial, 1));
+					tResults.add(OP.crushedPurified       .mat(tPrefixMaterial.mMaterial.mMaterial, 1));
+					tResults.add(OP.crushedPurifiedTiny   .mat(tPrefixMaterial.mMaterial.mMaterial, 1));
+					tResults.add(OP.crushedCentrifuged    .mat(tPrefixMaterial.mMaterial.mMaterial, 1));
+					tResults.add(OP.crushedCentrifugedTiny.mat(tPrefixMaterial.mMaterial.mMaterial, 1));
+				}
+			}
+
+			if (!ItemsGT.NEI_DONT_SHOW_FLUIDS.contains(aResult, T)) {
+				FluidStack tFluid = FL.getFluid(aResult, T);
+				if (tFluid != null) {
+					tResults.add(FL.display(tFluid, F, F));
+					for (gt6mirror.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData tData : gt6mirror.minecraftforge.fluids.FluidContainerRegistry.getRegisteredFluidContainerData()) {
+						if (FL.equal(tData.fluid, tFluid)) tResults.add(ST.copy(tData.filledContainer));
+					}
+				}
+			}
+
+			for (Recipe tRecipe : getNEIRecipes(tResults.toArray(ZL_IS))) if (!rRecipes.contains(tRecipe)) rRecipes.add(tRecipe);
+			return rRecipes;
+		}
+
+		/** "Uses of X" as the 1.7.10 NEI handler asked it (NEI_RecipeMap.loadUsageRecipes): X and its relatives, then getNEIUsages. */
+		public List<Recipe> getNEIUsagesFor(ItemStack aInput) {
+			ArrayList<Recipe> rRecipes = new ArrayListNoNulls<>();
+			if (ST.invalid(aInput)) return rRecipes;
+			OreDictItemData tPrefixMaterial = OM.association_(aInput);
+
+			ArrayList<ItemStack> tInputs = ST.arraylist(aInput, OreDictManager.INSTANCE.getStack_(F, aInput));
+
+			ArrayList<ItemStack>
+			tRedirects = ItemsGT.sNEIRedirects.get(new ItemStackContainer(aInput));
+			if (tRedirects != null) tInputs.addAll(tRedirects);
+			tRedirects = ItemsGT.sNEIRedirects.get(new ItemStackContainer(aInput, W));
+			if (tRedirects != null) tInputs.addAll(tRedirects);
+
+			if (tPrefixMaterial != null) {
+				for (gregapi.oredict.OreDictPrefix tPrefix : tPrefixMaterial.mPrefix.mFamiliarPrefixes) {
+					tInputs.add(tPrefix.mat(tPrefixMaterial.mMaterial.mMaterial, 1));
+				}
+			}
+
+			if (!ItemsGT.NEI_DONT_SHOW_FLUIDS.contains(aInput, T)) {
+				FluidStack tFluid = FL.getFluid(aInput, T);
+				if (tFluid != null) {
+					tInputs.add(FL.display(tFluid, F, F));
+					for (gt6mirror.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData tData : gt6mirror.minecraftforge.fluids.FluidContainerRegistry.getRegisteredFluidContainerData()) {
+						if (FL.equal(tData.fluid, tFluid)) tInputs.add(ST.copy(tData.filledContainer));
+					}
+				}
+			}
+
+			for (Recipe tRecipe : getNEIUsages(tInputs.toArray(ZL_IS))) if (!rRecipes.contains(tRecipe)) rRecipes.add(tRecipe);
+			return rRecipes;
+		}
+
 		public Recipe addToItemMap(Recipe aRecipe) {
 			for (ItemStack aStack : aRecipe.mInputs) if (aStack != null) {
 				ItemStackContainer tStack = new ItemStackContainer(aStack);

@@ -24,14 +24,12 @@
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package mezz.jei.api;
+package mezz.jei.api.recipe.advanced;
 
-public interface IModPlugin {
-	net.minecraft.resources.ResourceLocation getPluginUid();
-	default void registerItemSubtypes(mezz.jei.api.registration.ISubtypeRegistration a0) { throw new UnsupportedOperationException(); }
-	default void registerCategories(mezz.jei.api.registration.IRecipeCategoryRegistration a0) { throw new UnsupportedOperationException(); }
-	default void registerRecipes(mezz.jei.api.registration.IRecipeRegistration a0) { throw new UnsupportedOperationException(); }
-	default void registerRecipeCatalysts(mezz.jei.api.registration.IRecipeCatalystRegistration a0) { throw new UnsupportedOperationException(); }
-	default void registerAdvanced(mezz.jei.api.registration.IAdvancedRegistration a0) { throw new UnsupportedOperationException(); }
-	default void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime a0) { throw new UnsupportedOperationException(); }
+public interface ISimpleRecipeManagerPlugin<T> {
+	boolean isHandledInput(mezz.jei.api.ingredients.ITypedIngredient<?> a0);
+	boolean isHandledOutput(mezz.jei.api.ingredients.ITypedIngredient<?> a0);
+	java.util.List<T> getRecipesForInput(mezz.jei.api.ingredients.ITypedIngredient<?> a0);
+	java.util.List<T> getRecipesForOutput(mezz.jei.api.ingredients.ITypedIngredient<?> a0);
+	java.util.List<T> getAllRecipes();
 }

@@ -677,6 +677,9 @@ public class GT6_Main extends Abstract_Mod {
 
 		// The furnace itself doesn't read this list; it exists only so JEI/NEI can show accepted items, and was empty
 		// before this fix. Counted by the map's size growing, since its indexing hook returns null by design, not by failure.
+		// Once per process like the original (GT_API_Proxy_Client:523-527): this event fires on every world entry and
+		// addFakeRecipe skips collision checks; the vanilla list needs a started server, so the mod's start counter guards it.
+		if (mStartedServerStarted > 1) {OUT.println("[GT6] F11-smelting: ванильных плавок перенесено в реестр GT6: " + tImported + "; витрина печи уже наполнена в этой сессии"); return;}
 		int tBefore = RM.Furnace.mRecipeListSize;
 		for (java.util.Map.Entry<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tEntry
 			: new java.util.ArrayList<>(gregapi.recipes.FurnaceRecipes.smelting().getSmeltingList().entrySet())) {

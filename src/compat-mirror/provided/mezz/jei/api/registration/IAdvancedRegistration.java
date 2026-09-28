@@ -24,14 +24,8 @@
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package mezz.jei.api;
+package mezz.jei.api.registration;
 
-public interface IModPlugin {
-	net.minecraft.resources.ResourceLocation getPluginUid();
-	default void registerItemSubtypes(mezz.jei.api.registration.ISubtypeRegistration a0) { throw new UnsupportedOperationException(); }
-	default void registerCategories(mezz.jei.api.registration.IRecipeCategoryRegistration a0) { throw new UnsupportedOperationException(); }
-	default void registerRecipes(mezz.jei.api.registration.IRecipeRegistration a0) { throw new UnsupportedOperationException(); }
-	default void registerRecipeCatalysts(mezz.jei.api.registration.IRecipeCatalystRegistration a0) { throw new UnsupportedOperationException(); }
-	default void registerAdvanced(mezz.jei.api.registration.IAdvancedRegistration a0) { throw new UnsupportedOperationException(); }
-	default void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime a0) { throw new UnsupportedOperationException(); }
+public interface IAdvancedRegistration {
+	<T> void addTypedRecipeManagerPlugin(mezz.jei.api.recipe.RecipeType<T> a0, mezz.jei.api.recipe.advanced.ISimpleRecipeManagerPlugin<T> a1);
 }

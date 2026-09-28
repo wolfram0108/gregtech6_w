@@ -79,8 +79,6 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		try {tRuntime.getRecipesGui().showTypes(java.util.List.of(tType)); return T;}
 		catch (Throwable e) {ERR.println("JEI: не удалось открыть категорию '" + aNameNEI + "'"); e.printStackTrace(ERR); return F;}
 	}
-	/** RecipeMap to its visible recipes, counted once in registerCategories and reused rather than recomputed. */
-	private final Map<RecipeMap, List<Recipe>> mRecipes = new LinkedHashMap<>();
 	/** CR.list() filtered to ShapedOreRecipe/ShapelessOreRecipe descendants, 1:1 with what NEI used to show, counted once. */
 	private List<ICraftingRecipeGT> mCraftingRecipes = Collections.emptyList();
 
@@ -118,20 +116,20 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	public void registerCategories(IRecipeCategoryRegistration aRegistration) {
 		mTypes.clear();
 		sTypesByName.clear();
-		mRecipes.clear();
 		mCraftingRecipes = Collections.emptyList();
 		IGuiHelper tGuiHelper = aRegistration.getJeiHelpers().getGuiHelper();
 		List<IRecipeCategory<?>> tCategories = new ArrayList<>();
-		// Each recipe map with mNEIAllowed==true gets its own JEI category, but only when it actually has visible recipes.
+		// 1:1 with NEI_GT_API_Config.java:62: every map with mNEIAllowed==true gets its own category. A map's recipes may
+		// exist only on demand, so emptiness is left to JEI, which hides a category without recipes.
 		for (RecipeMap tMap : RecipeMap.RECIPE_MAP_LIST) {
 			if (!tMap.mNEIAllowed) continue;
 			try {
-				List<Recipe> tRecipeList = tMap.getNEIAllRecipes();
-				if (tRecipeList.isEmpty()) continue;
-				RecipeType<Recipe> tType = RecipeType.create(MD.GT.mID, tMap.mNameNEI, Recipe.class);
+				// NEI let several handlers share one id (Furnace and Microwave are both "smelting"); a JEI uid must be unique,
+				// so a map whose NEI id is taken falls back to its own internal name, and the NEI id keeps opening the first map.
+				boolean tTaken = sTypesByName.containsKey(tMap.mNameNEI);
+				RecipeType<Recipe> tType = RecipeType.create(MD.GT.mID, tTaken ? tMap.mNameInternal : tMap.mNameNEI, Recipe.class);
 				mTypes.put(tMap, tType);
-				sTypesByName.put(tMap.mNameNEI, tType); // The same key that used to open NEI in 1.7.10.
-				mRecipes.put(tMap, tRecipeList);
+				if (!tTaken) sTypesByName.put(tMap.mNameNEI, tType); // The same key that used to open NEI in 1.7.10.
 				tCategories.add(new GT6_JEI_RecipeCategory(tMap, tType, tGuiHelper));
 			} catch (Throwable e) {
 				ERR.println("JEI: RecipeMap '" + tMap.mNameInternal + "' failed to register as a category, skipping.");
@@ -180,17 +178,10 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		aRegistration.addRecipeCategories(tCategories.toArray(new IRecipeCategory<?>[0]));
 	}
 
+	/** Issue #5: map recipes are NOT registered as a snapshot. GT6 generates many of them only when asked
+	 *  (IRecipeMapHandler), which a list taken once at world join can never contain; see {@link #registerAdvanced}. */
 	@Override
 	public void registerRecipes(IRecipeRegistration aRegistration) {
-		for (Map.Entry<RecipeMap, RecipeType<Recipe>> tEntry : mTypes.entrySet()) {
-			try {
-				aRegistration.addRecipes(tEntry.getValue(), mRecipes.get(tEntry.getKey()));
-			} catch (Throwable e) {
-				ERR.println("JEI: RecipeMap '" + tEntry.getKey().mNameInternal + "' failed to register its recipes, skipping.");
-				e.printStackTrace(ERR);
-			}
-		}
-
 		if (!mCraftingRecipes.isEmpty()) {
 			try {
 				aRegistration.addRecipes(GT6_JEI_CraftingCategory.TYPE, mCraftingRecipes);
@@ -214,6 +205,52 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		} catch (Throwable e) {
 			ERR.println("JEI: не удалось снять родной FLUID_STACK-пласт (дубль жидкостей останется в панели).");
 			e.printStackTrace(ERR);
+		}
+	}
+
+	/** Issue #5: each map answers JEI per lookup, the way NEI 1.7.10 created a fresh handler per click
+	 *  (TemplateRecipeHandler.getRecipeHandler) — the lookup also runs GT6's on-demand recipe generation. */
+	@Override
+	public void registerAdvanced(mezz.jei.api.registration.IAdvancedRegistration aRegistration) {
+		for (Map.Entry<RecipeMap, RecipeType<Recipe>> tEntry : mTypes.entrySet()) {
+			try {
+				aRegistration.addTypedRecipeManagerPlugin(tEntry.getValue(), new MapLookup(tEntry.getKey()));
+			} catch (Throwable e) {
+				ERR.println("JEI: RecipeMap '" + tEntry.getKey().mNameInternal + "' failed to register its lookup, skipping.");
+				e.printStackTrace(ERR);
+			}
+		}
+	}
+
+	/** One map's lookup. Errors are swallowed like the NEI handler did: JEI permanently disables a plugin that throws,
+	 *  and the integrated server may grow the same map concurrently while the client reads it. */
+	private static final class MapLookup implements mezz.jei.api.recipe.advanced.ISimpleRecipeManagerPlugin<Recipe> {
+		private final RecipeMap mMap;
+		MapLookup(RecipeMap aMap) {mMap = aMap;}
+
+		private static ItemStack stack(mezz.jei.api.ingredients.ITypedIngredient<?> aIngredient) {
+			ItemStack rStack = aIngredient == null ? null : aIngredient.getItemStack().orElse(null);
+			return rStack == null || rStack.isEmpty() ? null : rStack;
+		}
+
+		@Override public boolean isHandledInput (mezz.jei.api.ingredients.ITypedIngredient<?> aInput ) {return stack(aInput ) != null;}
+		@Override public boolean isHandledOutput(mezz.jei.api.ingredients.ITypedIngredient<?> aOutput) {return stack(aOutput) != null;}
+
+		@Override public List<Recipe> getRecipesForInput(mezz.jei.api.ingredients.ITypedIngredient<?> aInput) {
+			ItemStack tStack = stack(aInput);
+			if (tStack == null) return Collections.emptyList();
+			try {return mMap.getNEIUsagesFor(tStack);} catch (Throwable e) {e.printStackTrace(ERR); return Collections.emptyList();}
+		}
+
+		@Override public List<Recipe> getRecipesForOutput(mezz.jei.api.ingredients.ITypedIngredient<?> aOutput) {
+			ItemStack tStack = stack(aOutput);
+			if (tStack == null) return Collections.emptyList();
+			try {return mMap.getNEIRecipesFor(tStack);} catch (Throwable e) {e.printStackTrace(ERR); return Collections.emptyList();}
+		}
+
+		/** The "all recipes" click of NEI_RecipeMap.loadCraftingRecipes(String). */
+		@Override public List<Recipe> getAllRecipes() {
+			try {return mMap.getNEIAllRecipes();} catch (Throwable e) {e.printStackTrace(ERR); return Collections.emptyList();}
 		}
 	}
 
