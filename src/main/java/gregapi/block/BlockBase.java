@@ -352,8 +352,9 @@ public abstract class BlockBase extends Block implements IBlockBase {
 				if (!aWorld.isClientSide()) FallingBlockEntity.fall(aWorld, new BlockPos(aX, aY, aZ), aWorld.getBlockState(new BlockPos(aX, aY, aZ)));
 			} else {
 				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
-				while (FallingBlock.isFree(WD.block(aWorld, aX, aY-1, aZ).defaultBlockState()) && aY > 0) --aY;
-				if (aY > 0) WD.set(aWorld, aX, aY, aZ, this, aMeta, 2);
+				// The fall stops at the world floor minY, not at the 1.7.10 floor 0, or blocks below Y=0 vanish instead of landing.
+				while (FallingBlock.isFree(WD.block(aWorld, aX, aY-1, aZ).defaultBlockState()) && aY > WD.minY(aWorld)) --aY;
+				if (aY > WD.minY(aWorld)) WD.set(aWorld, aX, aY, aZ, this, aMeta, 2);
 			}
 			return T;
 		}

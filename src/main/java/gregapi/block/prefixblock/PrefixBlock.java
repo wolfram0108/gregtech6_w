@@ -1086,8 +1086,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 				short tMetaData = getMetaDataValue(aWorld, aX, aY, aZ);
 				if (tMetaData > 0) {
 					WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
-					while (FallingBlock.isFree(WD.block(aWorld, aX, aY-1, aZ).defaultBlockState()) && aY > 0) --aY;
-					if (aY > 0) placeBlock(aWorld, aX, aY, aZ, SIDE_UP, tMetaData, null, F, T);
+					// Same world-floor bound as BlockBase.checkGravity: minY, not the 1.7.10 floor 0.
+					while (FallingBlock.isFree(WD.block(aWorld, aX, aY-1, aZ).defaultBlockState()) && aY > WD.minY(aWorld)) --aY;
+					if (aY > WD.minY(aWorld)) placeBlock(aWorld, aX, aY, aZ, SIDE_UP, tMetaData, null, F, T);
 				}
 			}
 			return T;
