@@ -697,6 +697,9 @@ public class GT6_Main extends Abstract_Mod {
 		// add(...) ends with a call to addToItemMap, which is overridden as null in RecipeMapNonGTRecipes:47
 		// (1:1 with the original) — the recipe still lands in the list. A null return here means
 		// "not indexed", not "not added".
+		// Once per process like the original (GT_API_Proxy_Client:523-527): this event fires on every world entry and
+		// addFakeRecipe skips collision checks; the vanilla list needs a started server, so the mod's start counter guards it.
+		if (mStartedServerStarted > 1) {OUT.println("[GT6] F11-smelting: vanilla smeltings ported into the GT6 registry: " + tImported + "; furnace showcase already filled this session"); return;}
 		int tBefore = RM.Furnace.mRecipeListSize;
 		for (java.util.Map.Entry<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tEntry
 			: new java.util.ArrayList<>(gregapi.recipes.FurnaceRecipes.smelting().getSmeltingList().entrySet())) {

@@ -535,47 +535,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		if (!CODE_CLIENT) return;
 		if (ST.invalid(aResult)) return;
 		try {
-			OreDictItemData tPrefixMaterial = OM.association_(aResult);
-			
-			ArrayList<ItemStack> tResults = ST.arraylist(aResult, OM.get_(aResult));
-			
-			ArrayList<ItemStack>
-			tRedirects = ItemsGT.sNEIRedirects.get(new ItemStackContainer(aResult));
-			if (tRedirects != null) tResults.addAll(tRedirects);
-			tRedirects = ItemsGT.sNEIRedirects.get(new ItemStackContainer(aResult, W));
-			if (tRedirects != null) tResults.addAll(tRedirects);
-			
-			if (tPrefixMaterial != null && !tPrefixMaterial.mBlackListed) {
-				if (tPrefixMaterial.mMaterial.mMaterial.mID > 0 && BlocksGT.ore != null && BlocksGT.oreBroken != null && tPrefixMaterial.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED)) {
-					tResults.add(ST.make((Block)BlocksGT.ore      , 1, tPrefixMaterial.mMaterial.mMaterial.mID));
-					tResults.add(ST.make((Block)BlocksGT.oreBroken, 1, tPrefixMaterial.mMaterial.mMaterial.mID));
-				}
-				for (OreDictPrefix tPrefix : tPrefixMaterial.mPrefix.mFamiliarPrefixes) {
-					tResults.add(tPrefix.mat(tPrefixMaterial.mMaterial.mMaterial, 1));
-				}
-				if (tPrefixMaterial.mPrefix.containsAny(TD.Prefix.DUST_BASED) && tPrefixMaterial.mMaterial.mMaterial.mTargetPulver.mMaterial == tPrefixMaterial.mMaterial.mMaterial) {
-					tResults.add(OP.crushed               .mat(tPrefixMaterial.mMaterial.mMaterial, 1));
-					tResults.add(OP.crushedTiny           .mat(tPrefixMaterial.mMaterial.mMaterial, 1));
-					tResults.add(OP.crushedPurified       .mat(tPrefixMaterial.mMaterial.mMaterial, 1));
-					tResults.add(OP.crushedPurifiedTiny   .mat(tPrefixMaterial.mMaterial.mMaterial, 1));
-					tResults.add(OP.crushedCentrifuged    .mat(tPrefixMaterial.mMaterial.mMaterial, 1));
-					tResults.add(OP.crushedCentrifugedTiny.mat(tPrefixMaterial.mMaterial.mMaterial, 1));
-				}
-			}
-			
-			if (!ItemsGT.NEI_DONT_SHOW_FLUIDS.contains(aResult, T)) {
-				FluidStack tFluid = FL.getFluid(aResult, T);
-				if (tFluid != null) {
-					tResults.add(FL.display(tFluid, F, F));
-					for (FluidContainerData tData : FluidContainerRegistry.getRegisteredFluidContainerData()) {
-						if (FL.equal(tData.fluid, tFluid)) tResults.add(ST.copy(tData.filledContainer));
-					}
-				}
-			}
-			
-			ArrayList<Recipe> tRecipes = new ArrayListNoNulls<>();
-			for (Recipe tRecipe : mRecipeMap.getNEIRecipes(tResults.toArray(ZL_IS))) if (!tRecipes.contains(tRecipe)) tRecipes.add(tRecipe);
-			for (Recipe tRecipe : tRecipes) arecipes.add(new CachedDefaultRecipe(tRecipe));
+			for (Recipe tRecipe : mRecipeMap.getNEIRecipesFor(aResult)) arecipes.add(new CachedDefaultRecipe(tRecipe));
 			sortRecipes();
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
@@ -587,35 +547,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		if (!CODE_CLIENT) return;
 		if (ST.invalid(aInput)) return;
 		try {
-			OreDictItemData tPrefixMaterial = OM.association_(aInput);
-			
-			ArrayList<ItemStack> tInputs = ST.arraylist(aInput, OreDictManager.INSTANCE.getStack_(F, aInput));
-			
-			ArrayList<ItemStack>
-			tRedirects = ItemsGT.sNEIRedirects.get(new ItemStackContainer(aInput));
-			if (tRedirects != null) tInputs.addAll(tRedirects);
-			tRedirects = ItemsGT.sNEIRedirects.get(new ItemStackContainer(aInput, W));
-			if (tRedirects != null) tInputs.addAll(tRedirects);
-			
-			if (tPrefixMaterial != null) {
-				for (OreDictPrefix tPrefix : tPrefixMaterial.mPrefix.mFamiliarPrefixes) {
-					tInputs.add(tPrefix.mat(tPrefixMaterial.mMaterial.mMaterial, 1));
-				}
-			}
-			
-			if (!ItemsGT.NEI_DONT_SHOW_FLUIDS.contains(aInput, T)) {
-				FluidStack tFluid = FL.getFluid(aInput, T);
-				if (tFluid != null) {
-					tInputs.add(FL.display(tFluid, F, F));
-					for (FluidContainerData tData : FluidContainerRegistry.getRegisteredFluidContainerData()) {
-						if (FL.equal(tData.fluid, tFluid)) tInputs.add(ST.copy(tData.filledContainer));
-					}
-				}
-			}
-			
-			ArrayList<Recipe> tRecipes = new ArrayListNoNulls<>();
-			for (Recipe tRecipe : mRecipeMap.getNEIUsages(tInputs.toArray(ZL_IS))) if (!tRecipes.contains(tRecipe)) tRecipes.add(tRecipe);
-			for (Recipe tRecipe : tRecipes) arecipes.add(new CachedDefaultRecipe(tRecipe));
+			for (Recipe tRecipe : mRecipeMap.getNEIUsagesFor(aInput)) arecipes.add(new CachedDefaultRecipe(tRecipe));
 			sortRecipes();
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
