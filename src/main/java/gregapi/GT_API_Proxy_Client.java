@@ -573,9 +573,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		//
 	}
 
-	/** Client arm of GT6's crafting buffer (center — {@link GT_API#buildClientCraftingBuffer}): a client joined to a dedicated
-	 *  server builds it from the synced recipes, before JEI reads them. The integrated server of singleplayer has already
-	 *  built it in this JVM. */
+	/** A client joined to a dedicated server builds GT6's crafting buffer and furnace showcase here, before JEI reads the
+	 *  recipes; in singleplayer the integrated server has built them. */
 	@SubscribeEvent
 	public void onRecipesUpdated(net.minecraftforge.client.event.RecipesUpdatedEvent aEvent) {
 		if (Minecraft.getInstance().getSingleplayerServer() != null) return;
@@ -583,6 +582,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		// A server without GT6's sync still gets the deferred item-init, from the engine's tags as before.
 		if (!GT_API.sDeferredItemInitDone) GT_API.runDeferredItemInit();
 		GT_API.buildClientCraftingBuffer(aEvent.getRecipeManager().getRecipes(), Minecraft.getInstance().getConnection().registryAccess());
+		gregapi.recipes.FurnaceRecipes.smelting().restoreVanilla(aEvent.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING), Minecraft.getInstance().getConnection().registryAccess());
 	}
 
 	/** Client-side arm of the beacon-payment bridge (center — {@link GT_API_Proxy#wrapBeaconPaymentSlot}): the client builds
@@ -940,11 +940,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		if (aEvent.phase != net.minecraftforge.event.TickEvent.Phase.END) return; // 1.20.1: phase is an event field (1.7.10 form)
 		{
 			if (CLIENT_TIME == 10) {
-				// CLOSED, the body moved to the server side — {@code gregtech.GT6_Main.onModServerStarted2}:
-				// "Fake Furnace Recipe Map" (populating the RM.Furnace showcase) and importing vanilla smelts into the
-				// GT6 registry ({@code FurnaceRecipes.importVanilla}). In 1.7.10 this was done here because the vanilla
-				// smelting list was static and already existed by the client tick; in neo recipes are data-driven and
-				// arrive with the datapack, so the moment is the same (world loaded), but the side is server-side.
+				// The "Fake Furnace Recipe Map" and the vanilla smelting import run in FurnaceRecipes.restoreVanilla instead: the
+				// vanilla smelting list arrives with the datapack, so it is fed from recipes at hand, not at a client tick.
 				//
 				// The second half of the 1.7.10 body — "hiding stuff from NEI" ({@code Item.getSubItems} +
 				// {@code CreativeTabs.tabAllSearch}) — CARRIES NO DEBT: the original (:530-536) hid microblocks

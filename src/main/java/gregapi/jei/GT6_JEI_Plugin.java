@@ -180,20 +180,16 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		aRegistration.addRecipeCategories(tCategories.toArray(new IRecipeCategory<?>[0]));
 	}
 
-	/** Issue #5: map recipes are NOT registered as a snapshot. GT6 generates many of them only when asked
-	 *  (IRecipeMapHandler), which a list taken once at world join can never contain; see {@link #registerAdvanced}.
-	 *  Crafting recipes are not handed over either: JEI indexing every slot of ~65k of them cost ~1.6 s of the frame
-	 *  that starts JEI, so they are answered per lookup too ({@link CraftingLookup}), as NEI 1.7.10 did. */
+	/** Nothing is registered as a list: GT6 generates many recipes only when asked, and NEI 1.7.10 looked them up per
+	 *  click, so maps and crafting answer JEI per lookup instead ({@link #registerAdvanced}). */
 	@Override
 	public void registerRecipes(IRecipeRegistration aRegistration) {
 		mIngredients = aRegistration.getIngredientManager();
 		removeNativeFluidLayer(aRegistration.getIngredientManager());
 	}
 
-	/** JEI registers every source fluid under its own native ingredient type too, doubling up with GT6's own fluid-display
-	 *  items; the old recipe viewer never had that type, so its native fluid layer is removed, 1:1 with the old view.
-	 *  JEI offers no way to keep it from being registered, so it goes at recipe registration, before the panel's list and
-	 *  filter are built (registerRuntime) and can see it. */
+	/** NEI 1.7.10 had no fluid ingredients, only GT6's fluid displays, so JEI's own fluid layer goes; removed before the
+	 *  panel is built, the panel never re-sorts for it. */
 	private static void removeNativeFluidLayer(mezz.jei.api.runtime.IIngredientManager aManager) {
 		try {
 			java.util.Collection<net.minecraftforge.fluids.FluidStack> tFluids = new java.util.ArrayList<>(aManager.getAllIngredients(mezz.jei.api.forge.ForgeTypes.FLUID_STACK));
@@ -210,8 +206,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		sRuntime = aRuntime; // The only door to the recipe screen; see showRecipeCategory.
 	}
 
-	/** Issue #5: each map answers JEI per lookup, the way NEI 1.7.10 created a fresh handler per click
-	 *  (TemplateRecipeHandler.getRecipeHandler) — the lookup also runs GT6's on-demand recipe generation. */
+	/** Each map answers per lookup, as NEI 1.7.10 made a fresh handler per click; the lookup runs GT6's on-demand generation. */
 	@Override
 	public void registerAdvanced(mezz.jei.api.registration.IAdvancedRegistration aRegistration) {
 		for (Map.Entry<RecipeMap, RecipeType<Recipe>> tEntry : mTypes.entrySet()) {
@@ -238,9 +233,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		return rStack == null || rStack.isEmpty() ? null : rStack;
 	}
 
-	/** Crafting-table recipes answered per lookup. Items are keyed by JEI's own recipe uid ({@code getUid(stack,
-	 *  UidContext.Recipe)}), the key JEI indexes list-filled slots with, so a lookup matches exactly what JEI's own index
-	 *  matched; the index is built on the first lookup from the same slot contents the card shows. */
+	/** Crafting recipes answered per lookup, keyed by JEI's own recipe uid so a lookup matches exactly what its index would. */
 	private static final class CraftingLookup implements mezz.jei.api.recipe.advanced.ISimpleRecipeManagerPlugin<ICraftingRecipeGT> {
 		private final List<ICraftingRecipeGT> mRecipes;
 		private final java.util.function.Supplier<mezz.jei.api.runtime.IIngredientManager> mIngredients;
@@ -321,11 +314,8 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		}
 	}
 
-	/** One map's "all recipes", produced lazily. JEI asks every category for it at GUI start only to see whether the
-	 *  category is empty (a findAny over the stream); a recipe the map already holds answers that, and getNEIAllRecipes,
-	 *  which runs the on-demand generation and which NEI 1.7.10 ran only on the explicit "all recipes" click, starts
-	 *  only when the stream is walked past it. A map with nothing yet generates at once, so no category drops out.
-	 *  A full walk yields the same recipes as getNEIAllRecipes, each once (the early one is skipped by identity). */
+	/** JEI streams "all recipes" at start only to see whether a category is empty; a recipe the map already holds answers
+	 *  that, so the on-demand generation (NEI's explicit "all recipes" click) starts only when the stream goes further. */
 	private static final class AllRecipes extends java.util.AbstractList<Recipe> {
 		private final RecipeMap mMap;
 		private List<Recipe> mAll = null;

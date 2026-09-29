@@ -226,25 +226,22 @@ public class GT_API extends Abstract_Mod {
 	/** Every key ever suppressed, so it can be reapplied after /reload (the datapack's recipe map gets recreated). */
 	public static final java.util.Set<net.minecraft.resources.ResourceLocation> SUPPRESSED_DATAPACK_RECIPES = new java.util.HashSet<>();
 
-	/** The suppressed recipes themselves, by id: a client joined to a dedicated server needs them as input for its own
-	 *  crafting buffer (role-C and the replacement scans read the recipes BEFORE suppression), and the engine only syncs
-	 *  what is left. */
+	/** The suppressed recipes by id: role-C reads the recipes BEFORE suppression, and the engine syncs a client only what
+	 *  is left, so a dedicated-server client gets them separately. */
 	public static final java.util.Map<net.minecraft.resources.ResourceLocation, net.minecraft.world.item.crafting.Recipe<?>> SUPPRESSED_DATAPACK_ORIGINALS = new java.util.LinkedHashMap<>();
 
 	public void onDatapackSyncReapplySuppression(net.minecraftforge.event.OnDatapackSyncEvent aEvent) {
 		// Player join doesn't recreate the map; reapplication is only needed on /reload.
 		if (aEvent.getPlayer() == null) removeDatapackRecipes(aEvent.getPlayerList().getServer(), new java.util.HashSet<>(SUPPRESSED_DATAPACK_RECIPES));
-		// On join 1.20.1 sends the recipes before the tags (PlayerList.placeNewPlayer), so everything a client builds from recipes
-		// on arrival -- GT6's dictionary, JEI -- would read empty tags; /reload already sends tags first. The engine's own tag
-		// packet goes out here ahead of both, and its later copy rebinds the same tags, as a /reload does.
+		// On join 1.20.1 sends recipes before tags (PlayerList.placeNewPlayer), so what a client builds from recipes would read
+		// empty tags; the engine's tag packet goes first here, as on /reload, and its later copy rebinds the same tags.
 		if (aEvent.getPlayer() != null) aEvent.getPlayer().connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateTagsPacket(net.minecraft.tags.TagNetworkSerialization.serializeTagsToNetwork(aEvent.getPlayerList().getServer().registries())));
 		// Sent here, before the engine's own recipe packet (PlayerList.placeNewPlayer, reloadResources), so it arrives first.
 		gregapi.network.NetworkHandler.sendClientSync(aEvent.getPlayer() != null ? java.util.List.of(aEvent.getPlayer()) : aEvent.getPlayerList().getPlayers(), new java.util.ArrayList<>(SUPPRESSED_DATAPACK_ORIGINALS.values()));
 	}
 
-	/** F4 role-C and the F11 replacement scans: GT6's crafting buffer built from the datapack's crafting recipes as they were
-	 *  BEFORE suppression. In 1.7.10 this ran in load phases on both sides; here the server runs it at start and a client
-	 *  joined to a dedicated server runs it on receiving the recipes ({@link #buildClientCraftingBuffer}). */
+	/** F4 role-C and the F11 scans over the crafting recipes BEFORE suppression; 1.7.10 ran them at load on both sides, so
+	 *  the server runs this at start and a dedicated-server client on receiving the recipes. */
 	public static void buildCraftingBuffer(Iterable<net.minecraft.world.item.crafting.Recipe<?>> aRecipes, net.minecraft.core.RegistryAccess aRegistries, net.minecraft.server.MinecraftServer aServer) {
 		gregapi.oredict.OreDictionary.initVanillaRecipeReplacements(aRecipes, aRegistries);
 		sCurrentServerForRecipeScan = aServer;
@@ -274,9 +271,8 @@ public class GT_API extends Abstract_Mod {
 	/** Suppressed originals received from a dedicated server; kept until the engine's recipe packet arrives right after them. */
 	public static volatile java.util.List<net.minecraft.world.item.crafting.Recipe<?>> sReceivedSuppressedOriginals = java.util.List.of();
 
-	/** The client arm of {@link #buildCraftingBuffer}, lost when the recipe steps moved to server start: a client joined to a
-	 *  dedicated server builds the same buffer from the synced recipes plus the suppressed originals. In singleplayer the
-	 *  integrated server in this JVM has already built it. */
+	/** The buffer of a client joined to a dedicated server: the synced recipes plus the suppressed originals. In
+	 *  singleplayer the integrated server in this JVM has built it. */
 	public static void buildClientCraftingBuffer(Iterable<net.minecraft.world.item.crafting.Recipe<?>> aSynced, net.minecraft.core.RegistryAccess aRegistries) {
 		java.util.List<net.minecraft.world.item.crafting.Recipe<?>> tOriginals = sReceivedSuppressedOriginals;
 		java.util.List<net.minecraft.world.item.crafting.Recipe<?>> tAll = new java.util.ArrayList<>();
@@ -291,8 +287,10 @@ public class GT_API extends Abstract_Mod {
 	}
 
 	public static void removeDatapackRecipes(net.minecraft.server.MinecraftServer aServer, java.util.Set<net.minecraft.resources.ResourceLocation> aRemove) {
-		if (aServer == null || aRemove == null || aRemove.isEmpty()) return;
+		if (aRemove == null || aRemove.isEmpty()) return;
+		// Kept even without a server: an integrated server started later in this JVM reapplies the set, and the scans that fill it run once.
 		SUPPRESSED_DATAPACK_RECIPES.addAll(aRemove);
+		if (aServer == null) return;
 		try {
 			// 1.20.1: rebuilding the recipe list uses the engine's public API, replaceRecipes(Iterable<Recipe<?>>);
 			// the reflection needed on 26.x isn't needed here.
@@ -653,11 +651,6 @@ public class GT_API extends Abstract_Mod {
 			} catch(Throwable e) {e.printStackTrace(ERR);}
 			// Nothing to rebuild on 1.20.1: the static RecipePropertySet finalizeRecipeLoading served doesn't exist here.
 			// The old catch-up loot-pool injection is gone too; delivery now goes through the live IGlobalLootModifier.
-		} else if (aEvent.getLevel() instanceof net.minecraft.world.level.Level tClientLevel && tClientLevel.isClientSide()) {
-			// A remote client has no ServerLevel, so the drain above never runs there. It does not run here either: the tag bridge
-			// must feed the dictionary before GT6's own items register (OreDictTags.importFromTags), and the tags arrive with the
-			// sync the server sends on join. It runs on that sync instead (onClientSyncArrived); singleplayer is unaffected, its
-			// integrated server has drained the queue already.
 		}
 	}
 

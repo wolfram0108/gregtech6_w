@@ -106,9 +106,8 @@ public final class NetworkHandler implements INetworkHandler {
 		}
 	}
 
-	/** What a client joined to a dedicated server needs, before the engine's recipes arrive, to build the same crafting buffer
-	 *  as the server: the datapack recipes GT6 suppressed (see GT_API.buildClientCraftingBuffer), in the engine's own recipe
-	 *  serialization, as its recipe packet does. The tags come ahead of it in the engine's own tag packet. */
+	/** The datapack recipes GT6 suppressed, sent ahead of the engine's recipes so a dedicated-server client builds the same
+	 *  crafting buffer as the server; encoded as the engine's own recipe packet encodes them. */
 	private static SimpleChannel sClientSyncChannel = null;
 
 	public record ClientSync(java.util.List<net.minecraft.world.item.crafting.Recipe<?>> recipes) {

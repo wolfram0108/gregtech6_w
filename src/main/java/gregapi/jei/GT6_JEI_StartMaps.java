@@ -29,10 +29,8 @@ import gregapi.recipes.Recipe;
 import gregapi.recipes.Recipe.RecipeMap;
 
 /**
- * What JEI's start asks of GT6's recipe maps, kept free of JEI types so it loads without JEI.
- * <p>At its start JEI asks every category whether it is empty; a map answers with the first recipe it already shows, and
- * a map with none has to run its on-demand generation first. {@link #warmEmptyMaps} runs that generation on the
- * integrated server as it starts, so it is done before the client joins and JEI starts on the render thread.</p>
+ * What JEI's start asks of GT6's recipe maps, free of JEI types so it loads without JEI: a map with no recipe ready
+ * has to generate before it can answer, and {@link #warmEmptyMaps} does that off the render thread.
  */
 public final class GT6_JEI_StartMaps {
 	private GT6_JEI_StartMaps() {}

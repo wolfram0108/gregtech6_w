@@ -671,25 +671,9 @@ public class GT6_Main extends Abstract_Mod {
 	}
 	
 	@Override public void onModServerStarted2(net.minecraftforge.event.server.ServerStartedEvent aEvent) {
-		// 1.7.10 did this on world entry, topping up an already-populated vanilla singleton so GT6's furnace could smelt
-		// both ore and food; neo's vanilla recipes are data-driven too, so the same moment (recipes loaded) still applies.
-		int tImported = gregapi.recipes.FurnaceRecipes.smelting().importVanilla(aEvent.getServer());
-
-		// The furnace itself doesn't read this list; it exists only so JEI/NEI can show accepted items, and was empty
-		// before this fix. Counted by the map's size growing, since its indexing hook returns null by design, not by failure.
-		// Once per process like the original (GT_API_Proxy_Client:523-527): this event fires on every world entry and
-		// addFakeRecipe skips collision checks; the vanilla list needs a started server, so the mod's start counter guards it.
-		if (mStartedServerStarted > 1) {OUT.println("[GT6] F11-smelting: ванильных плавок перенесено в реестр GT6: " + tImported + "; витрина печи уже наполнена в этой сессии"); return;}
-		int tBefore = RM.Furnace.mRecipeListSize;
-		for (java.util.Map.Entry<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tEntry
-			: new java.util.ArrayList<>(gregapi.recipes.FurnaceRecipes.smelting().getSmeltingList().entrySet())) {
-			if (ST.invalid(tEntry.getKey())) continue;
-			gregapi.recipes.Recipe tRecipe = RM.Furnace.findRecipe(null, null, F, Long.MAX_VALUE, NI, ZL_FS, ST.array(ST.copy(tEntry.getKey())));
-			if (tRecipe != null) RM.Furnace.addFakeRecipe(F, tRecipe);
-		}
-		int tShown = RM.Furnace.mRecipeListSize - tBefore;
-		OUT.println("[GT6] F11-smelting: ванильных плавок перенесено в реестр GT6: " + tImported
-			+ "; витрина печи (JEI) наполнена: " + tShown + " рецептов");
+		// F11-smelting: 1.7.10 topped up the vanilla smelting singleton at world entry (GT_API_Proxy_Client:525-529); here the
+		// vanilla recipes come with the datapack, so the server's recipes feed the same center a dedicated-server client uses.
+		gregapi.recipes.FurnaceRecipes.smelting().restoreVanilla(aEvent.getServer().getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING), aEvent.getServer().registryAccess());
 	}
 	@Override public void onModServerStopped2(net.minecraftforge.event.server.ServerStoppedEvent aEvent) {/**/}
 
