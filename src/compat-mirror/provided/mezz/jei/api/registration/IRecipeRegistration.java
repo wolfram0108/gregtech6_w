@@ -27,5 +27,6 @@
 package mezz.jei.api.registration;
 
 public interface IRecipeRegistration {
+	mezz.jei.api.runtime.IIngredientManager getIngredientManager();
 	<T> void addRecipes(mezz.jei.api.recipe.types.IRecipeType<T> a0, java.util.List<T> a1);
 }

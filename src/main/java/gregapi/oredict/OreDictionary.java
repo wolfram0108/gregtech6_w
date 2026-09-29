@@ -209,8 +209,10 @@ public class OreDictionary {
 
 	/** Replaces the second half of Forge's own setup: re-registering vanilla recipes as ore-recipes wherever an
 	 *  input matched a replaceable item; the vanilla recipe stays (data-driven), the ore version added as a superset. */
-	public static void initVanillaRecipeReplacements(net.minecraft.server.MinecraftServer aServer) {
-		if (sHasReplacedRecipes || aServer == null) return;
+	/** The recipes are the datapack's crafting recipes BEFORE GT6 suppresses any: the server's own recipe manager, or on a
+	 *  client joined to a dedicated server the synced recipes plus the suppressed originals the server sends along. */
+	public static void initVanillaRecipeReplacements(Iterable<net.minecraft.world.item.crafting.RecipeHolder<?>> aRecipes) {
+		if (sHasReplacedRecipes || aRecipes == null) return;
 		sHasReplacedRecipes = true;
 
 		// Replacement map matches Forge's own list verbatim; split families are listed the same way as above.
@@ -258,7 +260,7 @@ public class OreDictionary {
 		final java.util.Map<String, java.util.Set<net.minecraft.world.item.Item>> tOutputsBySignature = new java.util.HashMap<>();
 
 		int tReplaced = 0;
-		for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : aServer.getRecipeManager().getRecipes()) {
+		for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : aRecipes) {
 			try {
 				if (tHolder.value() instanceof net.minecraft.world.item.crafting.ShapedRecipe tShaped) {
 					ItemStack tOutput = tShaped.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY); // The output is built directly; the input list is never read for this (see the recipe's own construction).

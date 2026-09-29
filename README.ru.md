@@ -16,7 +16,7 @@ Minecraft 1.7.10 — на Minecraft 26.1.2 / NeoForge.**
 | | |
 |---|---|
 | Minecraft | `26.1.2` |
-| NeoForge | `26.1.2.84` |
+| NeoForge | `26.1.2.109` |
 | Java | 25 |
 | Исходник | GregTech 6 `v6.17.06` (Minecraft 1.7.10, Forge 10.13.4) |
 | Лицензия | LGPL-3.0-or-later, унаследована от оригинала |
@@ -54,7 +54,7 @@ Minecraft 1.7.10 — на Minecraft 26.1.2 / NeoForge.**
 
 | Ваш Minecraft | Ветка | Загрузчик | Java | Метки выпусков |
 |---|---|---|---|---|
-| `26.1.2` | [`main`](https://github.com/wolfram0108/gregtech6_w/tree/main) | NeoForge `26.1.2.84` | 25 | `v6.0.0-alpha.N` |
+| `26.1.2` | [`main`](https://github.com/wolfram0108/gregtech6_w/tree/main) | NeoForge `26.1.2.109` | 25 | `v6.0.0-alpha.N` |
 | `1.20.1` | [`1.20.1`](https://github.com/wolfram0108/gregtech6_w/tree/1.20.1) | NeoForge `1.20.1-47.1.106` | 17 | `v6.0.0-1.20.1-alpha.N` |
 
 **Вы смотрите ветку `main`.** Ветка `1.20.1` — бэкпорт: тот же мод и тот же генератор, собранные

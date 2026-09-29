@@ -27,6 +27,7 @@
 package mezz.jei.api.gui.widgets;
 
 public interface ITextWidget extends mezz.jei.api.gui.placement.IPlaceable<mezz.jei.api.gui.widgets.ITextWidget> {
+	mezz.jei.api.gui.widgets.ITextWidget setPosition(int a0, int a1);
 	mezz.jei.api.gui.widgets.ITextWidget setColor(int a0);
 	mezz.jei.api.gui.widgets.ITextWidget setLineSpacing(int a0);
 	mezz.jei.api.gui.widgets.ITextWidget setShadow(boolean a0);

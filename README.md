@@ -17,7 +17,7 @@ Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 | | |
 |---|---|
 | Minecraft | `26.1.2` |
-| NeoForge | `26.1.2.84` |
+| NeoForge | `26.1.2.109` |
 | Java | 25 |
 | Upstream | GregTech 6 `v6.17.06` (Minecraft 1.7.10, Forge 10.13.4) |
 | License | LGPL-3.0-or-later, inherited from upstream |
@@ -55,7 +55,7 @@ One codebase, two branches — pick the one that matches the Minecraft version y
 
 | Your Minecraft | Branch | Loader | Java | Release tags |
 |---|---|---|---|---|
-| `26.1.2` | [`main`](https://github.com/wolfram0108/gregtech6_w/tree/main) | NeoForge `26.1.2.84` | 25 | `v6.0.0-alpha.N` |
+| `26.1.2` | [`main`](https://github.com/wolfram0108/gregtech6_w/tree/main) | NeoForge `26.1.2.109` | 25 | `v6.0.0-alpha.N` |
 | `1.20.1` | [`1.20.1`](https://github.com/wolfram0108/gregtech6_w/tree/1.20.1) | NeoForge `1.20.1-47.1.106` | 17 | `v6.0.0-1.20.1-alpha.N` |
 
 **You are reading the `main` branch.** The `1.20.1` branch is a backport: the same mod and the same

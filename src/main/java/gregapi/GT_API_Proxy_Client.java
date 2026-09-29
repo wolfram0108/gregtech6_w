@@ -346,8 +346,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				short[] tRGBa = tF.getRGBa();
 				int tTint = (tRGBa != null && tRGBa.length >= 3) ? (0xFF000000 | ((tRGBa[0]&0xFF)<<16) | ((tRGBa[1]&0xFF)<<8) | (tRGBa[2]&0xFF)) : 0xFFFFFFFF;
 				net.minecraft.client.renderer.block.FluidModel.Unbaked tModel = new net.minecraft.client.renderer.block.FluidModel.Unbaked(tStill, tFlow, null, net.neoforged.neoforge.client.fluid.FluidTintSources.constant(tTint));
-				net.minecraft.world.level.material.Fluid tSource  = tF.mSourceHolder.value();
-				net.minecraft.world.level.material.Fluid tFlowing = tF.mFlowingHolder.isBound() ? tF.mFlowingHolder.value() : tSource;
+				net.minecraft.world.level.material.Fluid tSource  = tF.getFluid();
+				net.minecraft.world.level.material.Fluid tFlowing = tF.getFlowingFluid();
 				aEvent.register(tModel, tSource, tFlowing);
 				tCount++;
 			} catch (Throwable e) {/* one fluid's failure must not break the rest */}
@@ -532,6 +532,15 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onTextureStitchedPre(TextureAtlasStitchedEvent aEvent) {
 		//
+	}
+
+	/** Client arm of GT6's crafting buffer (center — {@link GT_API#buildClientCraftingBuffer}): a client joined to a dedicated
+	 *  server builds it from the synced recipes, before JEI, which starts on this event at LOWEST. The integrated server of
+	 *  singleplayer has already built it in this JVM. */
+	@SubscribeEvent
+	public void onRecipesReceived(net.neoforged.neoforge.client.event.RecipesReceivedEvent aEvent) {
+		if (Minecraft.getInstance().getSingleplayerServer() != null) return;
+		GT_API.buildClientCraftingBuffer(aEvent.getRecipeMap().values());
 	}
 
 	/** Client-side arm of the beacon-payment bridge (center — {@link GT_API_Proxy#wrapBeaconPaymentSlot}): the client builds

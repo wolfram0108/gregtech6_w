@@ -130,7 +130,7 @@ jobs:
             exit 1
           fi
           {
-            echo "Minecraft 26.1.2 · NeoForge 26.1.2.84 or newer · Java 25."
+            echo "Minecraft 26.1.2 · NeoForge 26.1.2.109 or newer · Java 25."
             echo
             echo "> ⚠️ **Alpha.** Playable, not finished. Worlds are not guaranteed to survive between"
             echo "> builds — see \"Known gaps\" in the README before using a world you care about."

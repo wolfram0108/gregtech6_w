@@ -287,6 +287,11 @@ public class GT_API extends Abstract_Mod {
 			.networkSynchronized(net.minecraft.network.codec.StreamCodec.unit(net.minecraft.util.Unit.INSTANCE))
 			.build());
 
+	/** SUBTYPE and ZEROSIZE resolved once, when their registration binds them ({@link #onRegisterEvent}); null before that.
+	 *  Item-meta and size reads run in every recipe comparison, and a DeferredHolder lookup there cost most of their time. */
+	public static net.minecraft.core.component.DataComponentType<Integer> SUBTYPE_TYPE = null;
+	public static net.minecraft.core.component.DataComponentType<net.minecraft.util.Unit> ZEROSIZE_TYPE = null;
+
 	/** F1/F12/F16 item-model separation: GT6 items built OreDict data+recipes (ST.make = a stack of itself) IN THE CONSTRUCTOR, but
 	 *  neo constructs an item @RegisterEvent (the registry is open for an intrusive holder), while stacks are only possible
 	 *  @post-freeze (Holder.components are bound later). The constructor registers its stack-init here (a Runnable, no stacks), and
@@ -316,9 +321,61 @@ public class GT_API extends Abstract_Mod {
 	/** All keys ever suppressed — for reapplication after /reload (the datapack map is recreated). */
 	public static final java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> SUPPRESSED_DATAPACK_RECIPES = new java.util.HashSet<>();
 
+	/** The suppressed recipes themselves, by key: a client joined to a dedicated server needs them as input for its own
+	 *  crafting buffer (role-C and the replacement scans read the recipes BEFORE suppression), and the engine only syncs
+	 *  what is left. */
+	public static final java.util.Map<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>, net.minecraft.world.item.crafting.RecipeHolder<?>> SUPPRESSED_DATAPACK_ORIGINALS = new java.util.LinkedHashMap<>();
+
 	public void onDatapackSyncReapplySuppression(net.neoforged.neoforge.event.OnDatapackSyncEvent aEvent) {
-		if (aEvent.getPlayer() != null) return; // a player joining — the map wasn't recreated; reapplication is only needed on /reload
-		removeDatapackRecipes(aEvent.getPlayerList().getServer(), new java.util.HashSet<>(SUPPRESSED_DATAPACK_RECIPES));
+		// a player joining — the map wasn't recreated; reapplication is only needed on /reload
+		if (aEvent.getPlayer() == null) removeDatapackRecipes(aEvent.getPlayerList().getServer(), new java.util.HashSet<>(SUPPRESSED_DATAPACK_RECIPES));
+		// The client arm of the crafting buffer needs the crafting recipes whether or not a recipe viewer asks for them.
+		aEvent.sendRecipes(net.minecraft.world.item.crafting.RecipeType.CRAFTING);
+		// Sent here, before the engine's own recipe sync (PlayerList.placeNewPlayer, reloadResources), so it arrives first.
+		gregapi.network.NetworkHandler.SuppressedRecipes tPayload = new gregapi.network.NetworkHandler.SuppressedRecipes(new java.util.ArrayList<>(SUPPRESSED_DATAPACK_ORIGINALS.values()));
+		aEvent.getRelevantPlayers().forEach(tPlayer -> net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(tPlayer, tPayload));
+	}
+
+	/** F4 role-C and the F11 replacement scans: GT6's crafting buffer built from the datapack's crafting recipes as they were
+	 *  BEFORE suppression. In 1.7.10 this ran in load phases on both sides; here the server runs it at start and a client
+	 *  joined to a dedicated server runs it on receiving the recipes ({@link #buildClientCraftingBuffer}). */
+	public static void buildCraftingBuffer(Iterable<net.minecraft.world.item.crafting.RecipeHolder<?>> aRecipes, net.minecraft.server.MinecraftServer aServer) {
+		gregapi.oredict.OreDictionary.initVanillaRecipeReplacements(aRecipes);
+		sCurrentServerForRecipeScan = aServer;
+		try {for (Runnable tScan : DEFERRED_RECIPE_SCAN) try {tScan.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_RECIPE_SCAN.clear();}
+		finally {sCurrentServerForRecipeScan = null;}
+	}
+
+	/** BUG-095: an ore version goes together with its suppressed datapack original — judged by source (mSourceId), not output. */
+	public static void dropOreVersionsOf(java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> aSuppressed) {
+		int tDroppedOre = 0;
+		for (java.util.Iterator<gregapi.recipes.ICraftingRecipeGT> tIt = gregapi.util.CR.BUFFER.iterator(); tIt.hasNext();) {
+			gregapi.recipes.ICraftingRecipeGT tRecipe = tIt.next();
+			net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> tSource = null;
+			if (tRecipe instanceof gregapi.recipes.ShapedOreRecipe tShaped && tShaped.mVanillaReplacement) tSource = tShaped.mSourceId;
+			else if (tRecipe instanceof gregapi.recipes.ShapelessOreRecipe tShapeless && tShapeless.mVanillaReplacement) tSource = tShapeless.mSourceId;
+			if (tSource != null && aSuppressed.contains(tSource)) {tIt.remove(); tDroppedOre++;}
+		}
+		OUT.println("GT_API: role-C ore variants dropped along with the suppressed original (BUG-095): " + tDroppedOre);
+	}
+
+	/** Suppressed originals received from a dedicated server; kept until the engine's recipe sync arrives right after them. */
+	public static volatile java.util.List<net.minecraft.world.item.crafting.RecipeHolder<?>> sReceivedSuppressedOriginals = java.util.List.of();
+
+	/** The client arm of {@link #buildCraftingBuffer}, lost when the recipe steps moved to server start: a client joined to a
+	 *  dedicated server builds the same buffer from the synced recipes plus the suppressed originals. In singleplayer the
+	 *  integrated server in this JVM has already built it. */
+	public static void buildClientCraftingBuffer(Iterable<net.minecraft.world.item.crafting.RecipeHolder<?>> aSynced) {
+		java.util.List<net.minecraft.world.item.crafting.RecipeHolder<?>> tOriginals = sReceivedSuppressedOriginals;
+		java.util.List<net.minecraft.world.item.crafting.RecipeHolder<?>> tAll = new java.util.ArrayList<>();
+		aSynced.forEach(tAll::add);
+		tAll.addAll(tOriginals);
+		int tBefore = gregapi.util.CR.BUFFER.size();
+		buildCraftingBuffer(tAll, null);
+		java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> tSuppressed = new java.util.HashSet<>();
+		for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : tOriginals) tSuppressed.add(tHolder.id());
+		dropOreVersionsOf(tSuppressed);
+		OUT.println("GT_API: client crafting buffer built from " + tAll.size() + " synced recipes incl. " + tOriginals.size() + " suppressed originals: " + tBefore + " -> " + gregapi.util.CR.BUFFER.size());
 	}
 
 	public static void removeDatapackRecipes(net.minecraft.server.MinecraftServer aServer, java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> aRemove) {
@@ -328,7 +385,7 @@ public class GT_API extends Abstract_Mod {
 			net.minecraft.world.item.crafting.RecipeManager tRM = aServer.getRecipeManager();
 			java.util.List<net.minecraft.world.item.crafting.RecipeHolder<?>> tKeep = new java.util.ArrayList<>();
 			int tBefore = 0;
-			for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : tRM.recipeMap().values()) {tBefore++; if (!aRemove.contains(tHolder.id())) tKeep.add(tHolder);}
+			for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : tRM.recipeMap().values()) {tBefore++; if (!aRemove.contains(tHolder.id())) tKeep.add(tHolder); else SUPPRESSED_DATAPACK_ORIGINALS.put(tHolder.id(), tHolder);}
 			java.lang.reflect.Field tField = net.minecraft.world.item.crafting.RecipeManager.class.getDeclaredField("recipes");
 			tField.setAccessible(true);
 			tField.set(tRM, net.minecraft.world.item.crafting.RecipeMap.create(tKeep));
@@ -374,6 +431,8 @@ public class GT_API extends Abstract_Mod {
 	}
 	private static void onRegisterEvent(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
 		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.BLOCK)) runDeferredBlockInit(aEvent);
+		// This listener runs after COMPONENTS' own (added earlier on the same bus), so both holders are bound here.
+		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE)) {SUBTYPE_TYPE = SUBTYPE.get(); ZEROSIZE_TYPE = ZEROSIZE.get();}
 	}
 
 	/**
@@ -751,13 +810,9 @@ public class GT_API extends Abstract_Mod {
 			// F4 role-C: replaces vanilla crafting-bench recipes with ore versions (in 1.7.10 Forge itself did this in
 			// initVanillaEntries, the second half). Right here, because: the RecipeManager is full of the datapack, the
 			// dictionary is full of vanilla (role-B at the start of the drain above) and GT6 stacks (the drain itself). Idempotent.
-			gregapi.oredict.OreDictionary.initVanillaRecipeReplacements(tServer);
-			// F11-recipe-scan: scans of foreign recipes (Loader_Recipes_Replace) — AFTER role-C (their input is
-			// its ore versions, just as in 1.7.10 the input was Forge's replacements) and BEFORE finalizeRecipeLoading below
-			// (suppressed datapack recipes must be reflected in the propertySet/recipe-book display rebuild).
-			sCurrentServerForRecipeScan = tServer;
-			try {for (Runnable tScan : DEFERRED_RECIPE_SCAN) try {tScan.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_RECIPE_SCAN.clear();}
-			finally {sCurrentServerForRecipeScan = null;}
+			// F11-recipe-scan runs inside too: AFTER role-C (its input is the ore versions, as in 1.7.10 it was Forge's
+			// replacements) and BEFORE finalizeRecipeLoading below (suppressed recipes must reach the display rebuild).
+			if (tServer != null) buildCraftingBuffer(tServer.getRecipeManager().getRecipes(), tServer);
 			// BUG-091 tail, the datapack arm of CR.remove (see CR.DATAPACK_REMOVALS): in 1.7.10 remove(...) also deleted
 			// VANILLA recipes from the live CraftingManager (log→4 planks etc.); their neo descendants in the datapack
 			// are suppressed here by the SAME judge as 1.7.10 — matches() against the accumulated grid — via the same
@@ -817,15 +872,7 @@ public class GT_API extends Abstract_Mod {
 				// the ore version remains a superset of the live recipe, exactly as role-C intends. It relies on tRemove, into which
 				// the persistent SUPPRESSED_DATAPACK_RECIPES has already been merged: the suppression registries themselves are drained above, and iterating
 				// over them would only be correct on the FIRST world load (the same error class the line above fixes).
-				int tDroppedOre = 0;
-				for (java.util.Iterator<gregapi.recipes.ICraftingRecipeGT> tIt = gregapi.util.CR.BUFFER.iterator(); tIt.hasNext();) {
-					gregapi.recipes.ICraftingRecipeGT tRecipe = tIt.next();
-					net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> tSource = null;
-					if (tRecipe instanceof gregapi.recipes.ShapedOreRecipe tShaped && tShaped.mVanillaReplacement) tSource = tShaped.mSourceId;
-					else if (tRecipe instanceof gregapi.recipes.ShapelessOreRecipe tShapeless && tShapeless.mVanillaReplacement) tSource = tShapeless.mSourceId;
-					if (tSource != null && tRemove.contains(tSource)) {tIt.remove(); tDroppedOre++;}
-				}
-				OUT.println("GT_API: role-C ore variants dropped along with the suppressed original (BUG-095): " + tDroppedOre);
+				dropOreVersionsOf(tRemove);
 				removeDatapackRecipes(tServer, tRemove);
 			} catch(Throwable e) {e.printStackTrace(ERR);}
 			// BUG-054: rebuilds propertySets AFTER FurnaceRecipes is filled (the drain above) — and after the datapack-recipe

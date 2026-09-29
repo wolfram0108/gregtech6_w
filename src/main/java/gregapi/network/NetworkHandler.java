@@ -114,6 +114,7 @@ public final class NetworkHandler implements INetworkHandler {
 		}
 		PayloadRegistrar tRegistrar = aEvent.registrar(networkVersion());
 		for (NetworkHandler tHandler : tHandlers) tHandler.registerPayload(tRegistrar);
+		tRegistrar.playToClient(SuppressedRecipes.TYPE, SuppressedRecipes.STREAM_CODEC, (aPayload, aContext) -> gregapi.GT_API.sReceivedSuppressedOriginals = aPayload.recipes());
 		// Confirmed at boot: NetworkHandler instances exist in time for this registration.
 	}
 
@@ -161,9 +162,12 @@ public final class NetworkHandler implements INetworkHandler {
 		if (tReady != null) for (PendingPacket tP : tReady) try {tP.mPacket.process(aWorld, tP.mHandler);} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
 	}
 
+	/** 1:1 with the original: the server side returns null, the client side returns the player's world, fetched through
+	 *  the mod's own side-split center; the engine's context throws instead of returning null while no player exists
+	 *  (packets still queued when leaving a world). */
 	private BlockGetter getProcessingWorld(IPayloadContext aContext) {
 		if (aContext.flow() != PacketFlow.CLIENTBOUND) return null;
-		Player tPlayer = aContext.player();
+		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
 		return tPlayer == null ? null : tPlayer.level();
 	}
 
@@ -258,6 +262,15 @@ public final class NetworkHandler implements INetworkHandler {
 			rName.append((tChar >= 'a' && tChar <= 'z') || (tChar >= '0' && tChar <= '9') || tChar == '_' || tChar == '-' || tChar == '.' ? tChar : '_');
 		}
 		return rName.length() <= 0 ? "gt6" : rName.toString();
+	}
+
+	/** The datapack recipes GT6 suppressed, sent to a client so it can build the same crafting buffer as the server
+	 *  (see GT_API.buildClientCraftingBuffer); encoded with the engine's own recipe codec, as the engine syncs recipes. */
+	public record SuppressedRecipes(List<net.minecraft.world.item.crafting.RecipeHolder<?>> recipes) implements CustomPacketPayload {
+		public static final CustomPacketPayload.Type<SuppressedRecipes> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("gregapi", "suppressed_recipes"));
+		public static final StreamCodec<RegistryFriendlyByteBuf, SuppressedRecipes> STREAM_CODEC = net.minecraft.world.item.crafting.RecipeHolder.STREAM_CODEC
+			.apply(net.minecraft.network.codec.ByteBufCodecs.list()).map(SuppressedRecipes::new, SuppressedRecipes::recipes);
+		@Override public CustomPacketPayload.Type<SuppressedRecipes> type() {return TYPE;}
 	}
 
 	public record GT6Payload(CustomPacketPayload.Type<GT6Payload> type, byte[] data) implements CustomPacketPayload {

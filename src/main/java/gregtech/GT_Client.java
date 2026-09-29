@@ -60,6 +60,13 @@ public class GT_Client extends GT_Proxy {
 	public int addArmor(String aPrefix) {return 0;}
 	
 	public GT_Client() {super();}
+
+	/** Runs after GT6_Main.onModServerStarted2 has finished the server-side content, before the client joins. */
+	@Override
+	public void onProxyAfterServerStarted(Abstract_Mod aMod, net.neoforged.neoforge.event.server.ServerStartedEvent aEvent) {
+		super.onProxyAfterServerStarted(aMod, aEvent);
+		gregapi.jei.GT6_JEI_StartMaps.warmEmptyMaps();
+	}
 	
 	/* F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo calls): was {@code FMLPreInitializationEvent} from the old FML —
 	 * the type matches the central F12 adapter {@code gregapi.api.FMLPreInitializationEvent}
