@@ -68,12 +68,12 @@ public final class OreDictManager {
 	public static final OreDictManager INSTANCE = new OreDictManager();
 	
 	/** Those Listeners can also be registered at certain Prefixes in order to only get their Events */
-	private final Set<IOreDictListenerEvent> mGlobalOreDictListeners = new HashSetNoNulls<>();
-	private final Set<OreDictRegistrationContainer> mGlobalRegistrations = new HashSetNoNulls<>();
+	private final Set<IOreDictListenerEvent> mGlobalOreDictListeners = new HashSetNoNulls<>(16, 0.75F, T);
+	private final Set<OreDictRegistrationContainer> mGlobalRegistrations = new HashSetNoNulls<>(16, 0.75F, T);
 	
 	/** These Listeners always get notified if an Item gets a recyclable ItemData Tag attached to it. */
-	private final Set<IOreDictListenerRecyclable> mRecyclableOreDictListeners = new HashSetNoNulls<>();
-	private final Set<OreDictRecyclingContainer> mRecyclableRegistrations = new HashSetNoNulls<>();
+	private final Set<IOreDictListenerRecyclable> mRecyclableOreDictListeners = new HashSetNoNulls<>(16, 0.75F, T);
+	private final Set<OreDictRecyclingContainer> mRecyclableRegistrations = new HashSetNoNulls<>(16, 0.75F, T);
 	
 	/** Put OreDict Strings which should be registered as something else, right here using addReRegistration */
 	private final Map<String, Collection<String>> mReRegistrationMappings = new HashMap<>();
@@ -135,7 +135,7 @@ public final class OreDictManager {
 		if (GAPI.mStartedPostInit) addListenerInternal(aListener); else mBufferedListeners1.add(aListener);
 	}
 	
-	private Set<IOreDictListenerEvent> mBufferedListeners1 = new HashSetNoNulls<>();
+	private Set<IOreDictListenerEvent> mBufferedListeners1 = new HashSetNoNulls<>(16, 0.75F, T);
 	private void addListenerInternal(IOreDictListenerEvent aListener) {
 		if (mGlobalOreDictListeners.add(aListener)) for (OreDictRegistrationContainer tEvent : mGlobalRegistrations) aListener.onOreRegistration(tEvent);
 	}
@@ -148,7 +148,7 @@ public final class OreDictManager {
 		if (GAPI.mStartedPostInit) addListenerInternal(aListener); else mBufferedListeners2.add(aListener);
 	}
 	
-	private Set<IOreDictListenerRecyclable> mBufferedListeners2 = new HashSetNoNulls<>();
+	private Set<IOreDictListenerRecyclable> mBufferedListeners2 = new HashSetNoNulls<>(16, 0.75F, T);
 	private void addListenerInternal(IOreDictListenerRecyclable aListener) {
 		if (mRecyclableOreDictListeners.add(aListener)) for (OreDictRecyclingContainer tEvent : mRecyclableRegistrations) aListener.onRecycleableRegistration(new OreDictRecyclingContainer(tEvent));
 	}

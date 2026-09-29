@@ -55,8 +55,9 @@ public class HashSetNoNulls<E> extends AbstractSet<E> {
 		map = new HashMap<>(initialCapacity);
 	}
 	
-	HashSetNoNulls(int initialCapacity, float loadFactor, boolean dummy) {
-		map = new LinkedHashMap<>(initialCapacity, loadFactor);
+	/** Iterates in insertion order: for sets replayed to late listeners, where the first registrant wins. */
+	public HashSetNoNulls(int initialCapacity, float loadFactor, boolean aOrdered) {
+		map = aOrdered ? new LinkedHashMap<>(initialCapacity, loadFactor) : new HashMap<>(initialCapacity, loadFactor);
 	}
 	
 	@Override
