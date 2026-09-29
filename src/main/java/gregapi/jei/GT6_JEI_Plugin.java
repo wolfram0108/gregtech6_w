@@ -77,7 +77,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		RecipeType<Recipe> tType = sTypesByName.get(aNameNEI);
 		if (tType == null) return F;
 		try {tRuntime.getRecipesGui().showTypes(java.util.List.of(tType)); return T;}
-		catch (Throwable e) {ERR.println("JEI: не удалось открыть категорию '" + aNameNEI + "'"); e.printStackTrace(ERR); return F;}
+		catch (Throwable e) {ERR.println("JEI: could not open category '" + aNameNEI + "'"); e.printStackTrace(ERR); return F;}
 	}
 	/** CR.list() filtered to ShapedOreRecipe/ShapelessOreRecipe descendants, 1:1 with what NEI used to show, counted once. */
 	private List<ICraftingRecipeGT> mCraftingRecipes = Collections.emptyList();
@@ -110,7 +110,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 				if (tWithNBT) tCount++; else tMetaOnly++;
 			} catch (Throwable e) {/**/}
 		}
-		OUT.println("[GT6-JEI] подтипы мета+NBT заявлены для " + tCount + " предметов, только мета — для " + tMetaOnly + " (инструменты).");
+		OUT.println("[GT6-JEI] SUBTYPE+CUSTOM_DATA subtypes declared for " + tCount + " items, SUBTYPE only for " + tMetaOnly + " (tools).");
 	}
 
 
@@ -167,7 +167,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			}
 			sShownAtRegistration = tCraftingList.size();
 			sHiddenAtRegistration = tHidden;
-			OUT.println("[GT6-JEI] крафт-верстак: показываем " + tCraftingList.size() + " рецептов, скрыто как в NEI 1.7.10 (нечем нарисовать ячейку) — " + tHidden);
+			OUT.println("[GT6-JEI] crafting table: showing " + tCraftingList.size() + " recipes, hidden as in NEI 1.7.10 (nothing to draw the cell with) — " + tHidden);
 			if (!tCraftingList.isEmpty()) {
 				mCraftingRecipes = tCraftingList;
 				tCategories.add(new GT6_JEI_CraftingCategory(tGuiHelper));

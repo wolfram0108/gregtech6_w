@@ -76,7 +76,7 @@ public final class GT6SmeltingDispatcher extends SmeltingRecipe {
 		for (ItemStack tKey : FurnaceRecipes.smelting().getSmeltingList().keySet()) if (!tKey.isEmpty()) tItems.add(ST.amount(1, tKey));
 		NonNullList<Ingredient> rList = NonNullList.create();
 		if (tItems.isEmpty()) {
-			ERR.println("[GT6] GT6SmeltingDispatcher: реестр FurnaceRecipes пуст при запросе ингредиент-витрины (до data-init — штатно на первом reload)");
+			ERR.println("[GT6] GT6SmeltingDispatcher: the FurnaceRecipes registry is empty when the ingredient showcase was requested (before data-init — normal on the first reload)");
 			rList.add(Ingredient.of(Items.BARRIER));
 		} else {
 			rList.add(Ingredient.of(tItems.stream()));
@@ -95,7 +95,7 @@ public final class GT6SmeltingDispatcher extends SmeltingRecipe {
 		if (tMine > 0) {
 			tMatch = (tXP == tMine);
 		} else {
-			if (tXP != 0.0F && !KNOWN_XP.contains(tXP) && WARNED_XP.add(tXP)) ERR.println("[GT6] GT6SmeltingDispatcher: класс опыта " + tXP + " не покрыт экземпляром (json) — плавка работает, опыт выдаётся 0");
+			if (tXP != 0.0F && !KNOWN_XP.contains(tXP) && WARNED_XP.add(tXP)) ERR.println("[GT6] GT6SmeltingDispatcher: XP class " + tXP + " is not covered by an instance (json) — smelting still works, XP is given as 0");
 			tMatch = (tXP == 0.0F || !KNOWN_XP.contains(tXP));
 		}
 		// The engine only hands over the input here, so the matched output is remembered for getResultItem to read next.

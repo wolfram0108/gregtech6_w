@@ -190,7 +190,7 @@ public class GT_API extends Abstract_Mod {
 				}
 			}
 		} catch (Throwable e) {/* If empty, no sounds will register — visible in the line below. */}
-		OUT.println("GT6 sounds: объявлено в " + tPath + " и зарегистрировано " + rKeys.size() + " звуков " + rKeys);
+		OUT.println("GT6 sounds: declared in " + tPath + " and registered " + rKeys.size() + " sounds " + rKeys);
 		return rKeys;
 	}
 	private static java.util.List<String> soundKeysFrom(java.io.InputStream aIn) throws java.io.IOException {
@@ -591,7 +591,7 @@ public class GT_API extends Abstract_Mod {
 			net.minecraft.world.level.GameRules tRules = aLevel.getGameRules();
 			if (tRules.getBoolean(net.minecraft.world.level.GameRules.RULE_WATER_SOURCE_CONVERSION) == tWanted) return;
 			tRules.getRule(net.minecraft.world.level.GameRules.RULE_WATER_SOURCE_CONVERSION).set(tWanted, aLevel.getServer());
-			OUT.println("[GT6] бесконечная вода: правило water_source_conversion = " + tWanted + (tWanted ? " (ванильное поведение по настройке)" : " (вода конечна, как в 1.7.10 с GT6)"));
+			OUT.println("[GT6] infinite water: water_source_conversion rule = " + tWanted + (tWanted ? " (vanilla behaviour, per config)" : " (water is finite, as in 1.7.10 with GT6)"));
 		} catch (Throwable e) {e.printStackTrace(ERR);}
 	}
 
@@ -687,9 +687,9 @@ public class GT_API extends Abstract_Mod {
 					, net.minecraft.server.packs.PackType.SERVER_DATA
 					, net.minecraft.server.packs.repository.Pack.Position.TOP
 					, net.minecraft.server.packs.repository.PackSource.BUILT_IN);
-				if (tPack != null) {aConsumer.accept(tPack); OUT.println("GT_API: встроенный датапак " + aDir + " подключён.");}
-				else ERR.println("GT_API: встроенный датапак " + aDir + " НЕ создан — Pack.readMetaAndCreate вернул null (нет pack.mcmeta?).");
-			} catch(Throwable e) {ERR.println("GT_API: встроенный датапак " + aDir + " не подключён:"); e.printStackTrace(ERR);}
+				if (tPack != null) {aConsumer.accept(tPack); OUT.println("GT_API: built-in datapack " + aDir + " mounted.");}
+				else ERR.println("GT_API: built-in datapack " + aDir + " NOT created — Pack.readMetaAndCreate returned null (no pack.mcmeta?).");
+			} catch(Throwable e) {ERR.println("GT_API: built-in datapack " + aDir + " not mounted:"); e.printStackTrace(ERR);}
 		});
 	}
 
@@ -706,9 +706,9 @@ public class GT_API extends Abstract_Mod {
 					, net.minecraft.server.packs.PackType.CLIENT_RESOURCES
 					, net.minecraft.server.packs.repository.Pack.Position.BOTTOM
 					, net.minecraft.server.packs.repository.PackSource.BUILT_IN);
-				if (tPack != null) {aConsumer.accept(tPack); OUT.println("GT_API: процедурный пак заглушек модели подключён.");}
-				else ERR.println("GT_API: процедурный пак заглушек модели НЕ создан — Pack.readMetaAndCreate вернул null.");
-			} catch(Throwable e) {ERR.println("GT_API: процедурный пак заглушек модели не подключён:"); e.printStackTrace(ERR);}
+				if (tPack != null) {aConsumer.accept(tPack); OUT.println("GT_API: procedural stub-model pack mounted.");}
+				else ERR.println("GT_API: procedural stub-model pack NOT created — Pack.readMetaAndCreate returned null.");
+			} catch(Throwable e) {ERR.println("GT_API: procedural stub-model pack not mounted:"); e.printStackTrace(ERR);}
 		});
 	}
 
@@ -858,7 +858,7 @@ public class GT_API extends Abstract_Mod {
 		// Localization center, server arm. In 1.7.10 name injection lived in shared code, so server strings
 		// were human-readable too; the client arm hooks resource loading, which a dedicated server lacks.
 		int tInjected = gregapi.lang.LanguageHandler.injectIntoEngine();
-		if (tInjected > 0) OUT.println("GT6 localization: имён GT6 дописано в таблицу движка (сервер): " + tInjected);
+		if (tInjected > 0) OUT.println("GT6 localization: GT6 names appended to the engine table (server): " + tInjected);
 		onModServerStarting(aEvent);
 	}
 	public void onServerStarted   (ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
@@ -922,7 +922,7 @@ public class GT_API extends Abstract_Mod {
 			MAT_LOG.println("**********************************************************************");
 		// A subsystem init failing SILENTLY is the same bug class that hid the player-activity log for a long time.
 		// Reported through the mod's existing error channel (ERR); no new mechanism added.
-		} catch (Throwable e) {ERR.println("GT_API: список материалов (materiallist.log) не открыт — файла не будет"); e.printStackTrace(ERR);}
+		} catch (Throwable e) {ERR.println("GT_API: material list (materiallist.log) not opened — the file will not appear"); e.printStackTrace(ERR);}
 		
 		tFile = new File(DirectoriesGT.LOGS, "oredict.log");
 		if (!tFile.exists()) {try {tFile.createNewFile();} catch (Throwable e) {/**/}}
@@ -933,14 +933,14 @@ public class GT_API extends Abstract_Mod {
 			ORD.println("* This is the complete Log of the GregTech OreDictionary Handler     *");
 			ORD.println("**********************************************************************");
 			for (String tString : tList) ORD.println(tString);
-		} catch (Throwable e) {ERR.println("GT_API: журнал словаря руд (oredict.log) не открыт — записи словаря потеряны"); e.printStackTrace(ERR);}
+		} catch (Throwable e) {ERR.println("GT_API: ore dictionary log (oredict.log) not opened — dictionary entries are lost"); e.printStackTrace(ERR);}
 		
 		if (ConfigsGT.GREGTECH.get("general", "LoggingPlayerActivity", !CODE_CLIENT)) {
 			tFile = new File(DirectoriesGT.LOGS, "playeractivity_"+(System.currentTimeMillis()/60000)+".log");
 			if (!tFile.exists()) {try {tFile.createNewFile();} catch (Throwable e) {/**/}}
 			// The actual carrier that surfaced this bug class: a bus-registration exception was silently swallowed,
 			// mPlayerLogger stayed null, and the activity log never wrote a line, despite a live config.
-			try {mPlayerLogger = new LoggerPlayerActivity(new PrintStream(tFile));} catch (Throwable e) {ERR.println("GT_API: журнал активности игрока не заведён — записей о действиях игроков не будет"); e.printStackTrace(ERR);}
+			try {mPlayerLogger = new LoggerPlayerActivity(new PrintStream(tFile));} catch (Throwable e) {ERR.println("GT_API: player activity log not created — player actions will not be recorded"); e.printStackTrace(ERR);}
 		}
 		
 		ConfigsGT.CLIENT = new Config(DirectoriesGT.MINECRAFT, "GregTech.cfg");

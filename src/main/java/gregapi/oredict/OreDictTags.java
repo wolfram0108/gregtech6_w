@@ -240,7 +240,7 @@ public class OreDictTags {
 		sImportedTags = tTags;
 		sImportedEntries = tEntries;
 		sSkippedVanilla = tSkippedMC;
-		CS.OUT.println("GT6 F1-b тег-мост (внутрь): конвенционных тегов опознано " + tTags + ", записей подано в словарь " + tEntries
+		CS.OUT.println("GT6 F1-b tag bridge (inbound): convention tags recognized " + tTags + ", entries fed into the dictionary " + tEntries
 			+ ", предметов GT6 пропущено (материал в компоненте, приходят своим каналом) " + tSkippedGT
 			+ ", ванильных пропущено (ведёт роль-B OreDictionary.initVanillaEntries) " + tSkippedMC + "; по группам " + tByGroup);
 		return tEntries;

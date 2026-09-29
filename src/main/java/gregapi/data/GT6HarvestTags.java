@@ -63,7 +63,7 @@ public class GT6HarvestTags extends TagsProvider<Block> {
 			}
 			tTagged++;
 		}
-		CS.OUT.println("GT6 F12-harvest: размечено блоков тегами добычи " + tTagged + ", пропущено: не-ванильный инструмент " + tSkipped + ", уровень выше ванильной шкалы " + tOverScale);
+		CS.OUT.println("GT6 F12-harvest: blocks marked with harvest tags " + tTagged + ", skipped: non-vanilla tool " + tSkipped + ", level above the vanilla scale " + tOverScale);
 		// Diagnostic for that same scale mismatch: counts how many blocks fall above vanilla's three tool
 		// tiers, before relying on the tags at all.
 		java.util.Map<Integer, Integer> tHist = new java.util.TreeMap<>();
@@ -74,8 +74,8 @@ public class GT6HarvestTags extends TagsProvider<Block> {
 			tHist.merge(harvestLevelOf(tBlock), 1, Integer::sum);
 			tTools.merge(String.valueOf(harvestToolOf(tBlock)), 1, Integer::sum);
 		}
-		CS.OUT.println("GT6 F12-harvest DIAG уровни(GT6->кол-во): " + tHist);
-		CS.OUT.println("GT6 F12-harvest DIAG инструменты: " + tTools);
+		CS.OUT.println("GT6 F12-harvest DIAG levels(GT6->count): " + tHist);
+		CS.OUT.println("GT6 F12-harvest DIAG tools: " + tTools);
 	}
 
 	/** A block's tool is its own 1.7.10 method, asked with meta 0, since the tag applies to the whole block. */

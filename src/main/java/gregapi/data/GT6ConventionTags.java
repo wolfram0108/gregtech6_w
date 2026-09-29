@@ -64,7 +64,7 @@ public class GT6ConventionTags extends TagsProvider<Item> {
 			getOrCreateRawBuilder(tTag).addElement(tID);
 			tCounts.merge(tTag.location().toString(), 1, Integer::sum);
 		}
-		CS.OUT.println("[GT6-DATAGEN] F1-b тег-мост наружу, предметы: " + tCounts);
+		CS.OUT.println("[GT6-DATAGEN] F1-b outward tag bridge, items: " + tCounts);
 	}
 
 	/** A prefix comes from the item's own channel (IPrefixItem.getPrefix/PrefixBlock.mPrefix); meta is
@@ -98,7 +98,7 @@ public class GT6ConventionTags extends TagsProvider<Item> {
 				getOrCreateRawBuilder(tTag).addElement(tID);
 				tCounts.merge(tTag.location().toString(), 1, Integer::sum);
 			}
-			CS.OUT.println("[GT6-DATAGEN] F1-b тег-мост наружу, блоки: " + tCounts);
+			CS.OUT.println("[GT6-DATAGEN] F1-b outward tag bridge, blocks: " + tCounts);
 		}
 	}
 }

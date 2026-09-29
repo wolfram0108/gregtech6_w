@@ -238,7 +238,7 @@ public class ST {
 	private static int sZeroCopyWarnings = 0;
 	public static ItemStack copy_(ItemStack aStack) {
 		if (aStack.getCount() <= 0 && aStack != ItemStack.EMPTY) {
-			if (sZeroCopyWarnings < 10) {sZeroCopyWarnings++; ERR.println("[GT6] НАРУШЕНИЕ ИНВАРИАНТА F15-size0: копия физически-нулевого стека (потреблённый стек как шаблон?) — почини вызывателя: ноль с памятью типа пишется через ST.size_ (ZEROSIZE-призрак). Аварийная подушка сработала (" + sZeroCopyWarnings + "/10 предупреждений):"); new Throwable().printStackTrace(ERR);}
+			if (sZeroCopyWarnings < 10) {sZeroCopyWarnings++; ERR.println("[GT6] F15-size0 INVARIANT VIOLATION: copy of a physically-zero stack (a consumed stack used as a template?) — fix the caller: a zero with type memory is written via ST.size_ (ZEROSIZE ghost). Emergency airbag triggered (" + sZeroCopyWarnings + "/10 warnings):"); new Throwable().printStackTrace(ERR);}
 			int tOldCount = aStack.getCount();
 			aStack.setCount(1);
 			ItemStack rStack = aStack.copy();

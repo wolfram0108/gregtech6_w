@@ -1124,6 +1124,6 @@ public class Loader_Recipes_Vanilla implements Runnable {
 			}
 			tSet++;
 		}
-		OUT.println("[GT6-COPPER] паспорт материала выдан: " + tSet + " предметов, пропущено (руда/яйцо): " + tSkip);
+		OUT.println("[GT6-COPPER] material passport issued: " + tSet + " items, skipped (ore/egg): " + tSkip);
 	}
 }

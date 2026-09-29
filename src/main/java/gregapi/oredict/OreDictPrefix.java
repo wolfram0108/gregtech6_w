@@ -69,8 +69,8 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 	
 	private final Set<TagData> mTags = new HashSetNoNulls<>();
 	private final Set<OreDictMaterial> mItemGeneratorBlackList = new HashSetNoNulls<>(), mIgnoredRegistrations = new HashSetNoNulls<>(), mItemGeneratorForced = new HashSetNoNulls<>();
-	private final Set<IOreDictListenerEvent> mListenersOre = new HashSetNoNulls<>();
-	public final Set<IOreDictListenerItem> mListenersItem = new HashSetNoNulls<>();
+	private final Set<IOreDictListenerEvent> mListenersOre = new HashSetNoNulls<>(16, 0.75F, T);
+	public final Set<IOreDictListenerItem> mListenersItem = new HashSetNoNulls<>(16, 0.75F, T);
 	public final String mNameInternal;
 	public OreDictPrefix mTargetRegistration = this;
 	public CreativeModeTab mCreativeTab = null;
@@ -394,7 +394,7 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		return this;
 	}
 	
-	private final Set<IOreDictListenerEvent> mBufferedListeners = new HashSetNoNulls<>();
+	private final Set<IOreDictListenerEvent> mBufferedListeners = new HashSetNoNulls<>(16, 0.75F, T);
 	private void addListenerInternal(IOreDictListenerEvent aListener) {
 		if (mListenersOre.add(aListener)) for (OreDictRegistrationContainer tEvent : mRegistrations) aListener.onOreRegistration(tEvent);
 	}

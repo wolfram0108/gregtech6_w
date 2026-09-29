@@ -150,15 +150,15 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 			net.minecraft.world.level.material.FluidState tFs = tBlock.defaultBlockState().getFluidState();
 			boolean tPromises = tBlock.mEngineRole != EngineRole.NO_ENGINE_FLUID;
 			if (tPromises && !tFs.is(net.minecraft.tags.FluidTags.WATER) && !tFs.is(net.minecraft.tags.FluidTags.LAVA))
-				gregapi.data.CS.ERR.println("[GT6] РАССИНХРОН РОЛИ ЖИДКОСТИ: " + tBlock + " роль=" + tBlock.mEngineRole
-					+ " объявляет движку среду, но её жидкости нет в теге воды/лавы — плавание и утопление в ней МЕРТВЫ."
-					+ " Проверь data/minecraft/tags/fluids/water.json (обе записи: source и flowing; каталог на 1.20.1"
-					+ " именно tags/fluids — TagManager.java:20, в tags/fluid движок не заглянет).");
+				gregapi.data.CS.ERR.println("[GT6] FLUID ROLE MISMATCH: " + tBlock + " role=" + tBlock.mEngineRole
+					+ " declares its own fluid as a medium, yet it is missing from the water/lava tag — swimming in it is DEAD."
+					+ " Check data/minecraft/tags/fluids/water.json (both entries: source and flowing; on 1.20.1 the directory"
+					+ " is tags/fluids — TagManager.java:20, the engine never looks into tags/fluid).");
 			boolean tDrawnAsFluid = !tFs.isEmpty();
 			boolean tDrawnAsModel = tBlock.defaultBlockState().getRenderShape() != net.minecraft.world.level.block.RenderShape.INVISIBLE;
-			if (tDrawnAsFluid == tDrawnAsModel) gregapi.data.CS.ERR.println("[GT6] РАССИНХРОН РОЛИ ЖИДКОСТИ: " + tBlock
-				+ " роль=" + tBlock.mEngineRole + " — клетка будет нарисована "
-				+ (tDrawnAsFluid ? "ДВАЖДЫ (и жидкостью, и моделью)" : "НИ РАЗУ") + " (BP-BUG-003).");
+			if (tDrawnAsFluid == tDrawnAsModel) gregapi.data.CS.ERR.println("[GT6] FLUID ROLE MISMATCH: " + tBlock
+				+ " role=" + tBlock.mEngineRole + " — the cell will be drawn "
+				+ (tDrawnAsFluid ? "TWICE (as a fluid and as a model)" : "NOT AT ALL") + " (BP-BUG-003).");
 		}
 	}
 

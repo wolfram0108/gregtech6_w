@@ -50,8 +50,10 @@ import java.util.ArrayList;
 import static gregapi.data.CS.*;
 
 public class BlockGlassClear extends BlockColored {
+	// No material for BlockColored, as Glow Glass does: its per-colour entries (1 unit a block) beat the wildcard entry
+	// below (9 units, what the mixer spends on a block), and which colours kept them depended on registration order.
 	public BlockGlassClear(String aUnlocalised) {
-		super(ItemBlockMetaType.class, Material.glass, SoundType.GLASS, aUnlocalised, "Glass", MT.Glass, 0.5F, 0.5F, 0, Textures.BlockIcons.GLASSES_CLEAR);
+		super(ItemBlockMetaType.class, Material.glass, SoundType.GLASS, aUnlocalised, "Glass", null, 0.5F, 0.5F, 0, Textures.BlockIcons.GLASSES_CLEAR);
 		gregapi.GT_API.deferItemInit(() -> {
 		OM.data(ST.make(this, 1, W), new OreDictItemData(MT.Glass, U *9));
 		});

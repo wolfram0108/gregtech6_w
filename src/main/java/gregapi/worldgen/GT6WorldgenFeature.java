@@ -381,7 +381,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 				aLevel.setBlock(tHuskPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 			else aLevel.removeBlockEntity(tHuskPos);
 			long tN = sHusksCleaned.incrementAndGet();
-			if (tN <= 20 || tN % 500 == 0) gregapi.data.CS.OUT.println("[GT6-WG] шелуха BUG-057 вычищена @" + tHuskPos.toShortString() + ", всего=" + tN);
+			if (tN <= 20 || tN % 500 == 0) gregapi.data.CS.OUT.println("[GT6-WG] BUG-057 husk cleaned up @" + tHuskPos.toShortString() + ", total=" + tN);
 			return;
 		}
 		short tReg = tNBT.getShort(gregapi.data.CS.NBT_MTE_REG);
@@ -395,7 +395,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		if (!(aLevel.getBlockState(tPos).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) {
 			aLevel.removeBlockEntity(tPos);
 			long tN = sOrphansCleaned.incrementAndGet();
-			if (tN <= 20 || tN % 500 == 0) gregapi.data.CS.OUT.println("[GT6-WG] BE-сирота вычищен @" + tPos.toShortString() + " (блок=" + aLevel.getBlockState(tPos).getBlock() + "), всего=" + tN);
+			if (tN <= 20 || tN % 500 == 0) gregapi.data.CS.OUT.println("[GT6-WG] orphan BE cleaned up @" + tPos.toShortString() + " (block=" + aLevel.getBlockState(tPos).getBlock() + "), total=" + tN);
 			return;
 		}
 		gregapi.block.multitileentity.MultiTileEntityContainer tContainer = tRegistry.getNewTileEntityContainer(aLevel, tPos.getX(), tPos.getY(), tPos.getZ(), tID, tNBT);

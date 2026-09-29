@@ -691,7 +691,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	private static final java.util.concurrent.atomic.AtomicLong sOrphanBlocksSwept = new java.util.concurrent.atomic.AtomicLong();
 	private static void traceOrphanSweep(Level aWorld, int aX, int aY, int aZ) {
 		long tN = sOrphanBlocksSwept.incrementAndGet();
-		if (tN <= 20 || tN % 500 == 0) OUT.println("[GT6-MTEORPHAN] блок-сирота снят (BE доказуемо нет) @" + aX + ", " + aY + ", " + aZ
+		if (tN <= 20 || tN % 500 == 0) OUT.println("[GT6-MTEORPHAN] orphan block removed (BE provably absent) @" + aX + ", " + aY + ", " + aZ
 			+ " чанк=[" + (aX >> 4) + ", " + (aZ >> 4) + "] тик=" + aWorld.getGameTime() + " всего=" + tN);
 	}
 	// 1.7.10's World.notifyBlocksOfNeighborChange called Block.onNeighborBlockChange; neo's

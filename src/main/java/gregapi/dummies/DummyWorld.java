@@ -140,7 +140,7 @@ public class DummyWorld extends Level {
 		try {
 			gregapi.data.CS.DW = new DummyWorld(aRegistryAccess);
 		} catch (Throwable e) {
-			gregapi.data.CS.ERR.println("GT6: dummy-мир не создан — проверка совпадения рецептов пойдёт без мира (" + e + ").");
+			gregapi.data.CS.ERR.println("GT6: dummy world not created — recipe matching will run without a world (" + e + ").");
 			e.printStackTrace(gregapi.data.CS.ERR);
 		}
 	}
