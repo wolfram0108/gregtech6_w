@@ -12,7 +12,7 @@ This document says plainly what works, what could work, and what will not.
 
 | Mod | Verified against | What is integrated |
 |---|---|---|
-| **JEI** | `29.5.0.26` | GT6 registers its own recipe categories and item variants; verified in a live client |
+| **JEI** | `29.43.0.105` | GT6 registers its own recipe categories and item variants; verified in a live client |
 | **Jade** | `26.1.8+neoforge` | GT6 registers its own harvest tools — wrench, crowbar, cutters and the rest — which vanilla tags cannot express, so the "can I mine this" tooltip is correct |
 | **JourneyMap** (and the vanilla map) | `6.0.3+neoforge` | GT6 blocks and fluids resolve to the correct map colour, checked by asking the real mod the same question it asks itself |
 | **Applied Energistics 2** | `26.1.10-beta` | GT6 stays the industrial layer and AE2 keeps the network, storage, autocrafting and spatial storage; AE2 machines that merely repeat a GregTech one lose their own recipes, energy crosses the border both ways, and the GregTech wrench turns and dismantles AE2 blocks |

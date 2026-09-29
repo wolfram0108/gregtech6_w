@@ -681,35 +681,10 @@ public class GT6_Main extends Abstract_Mod {
 	}
 	
 	@Override public void onModServerStarted2(net.neoforged.neoforge.event.server.ServerStartedEvent aEvent) {
-		// F11-smelting, RESTORING THE 1.7.10 STATE OF THE SMELTING LIST.
-		// The original (gregtech6/.../GT_API_Proxy_Client.java:525-529) did this on world entry: the smelting list
-		// there was a VANILLA singleton, i.e. it already held vanilla recipes, and GT6 topped it up with its own —
-		// so GT6's furnace (Oven) smelted both ore and food. In neo vanilla recipes are data-driven and arrive with
-		// the datapack, so the timing is the same (the world is loaded, RecipeManager is filled), but the side is
-		// server: the list is shared by both.
-		int tImported = gregapi.recipes.FurnaceRecipes.smelting().importVanilla(aEvent.getServer());
-
-		// THE SHOWCASE (1:1 with :527-529): the furnace itself does not read the list — RecipeMapFurnace.findRecipe
-		// computes the smelt on the fly, and the list only exists for NEI/JEI, so the player can SEE what to put in
-		// the furnace. The original filled it with fake recipes found by that same findRecipe. Measurement before the
-		// fix: 0 entries = an empty category in JEI.
-		// WARNING: we count the result by the map's size DELTA, not by addFakeRecipe's return value: for this map
-		// add(...) ends with a call to addToItemMap, which is overridden as null in RecipeMapNonGTRecipes:47
-		// (1:1 with the original) — the recipe still lands in the list. A null return here means
-		// "not indexed", not "not added".
-		// Once per process like the original (GT_API_Proxy_Client:523-527): this event fires on every world entry and
-		// addFakeRecipe skips collision checks; the vanilla list needs a started server, so the mod's start counter guards it.
-		if (mStartedServerStarted > 1) {OUT.println("[GT6] F11-smelting: vanilla smeltings ported into the GT6 registry: " + tImported + "; furnace showcase already filled this session"); return;}
-		int tBefore = RM.Furnace.mRecipeListSize;
-		for (java.util.Map.Entry<net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack> tEntry
-			: new java.util.ArrayList<>(gregapi.recipes.FurnaceRecipes.smelting().getSmeltingList().entrySet())) {
-			if (ST.invalid(tEntry.getKey())) continue;
-			gregapi.recipes.Recipe tRecipe = RM.Furnace.findRecipe(null, null, F, Long.MAX_VALUE, NI, ZL_FS, ST.array(ST.copy(tEntry.getKey())));
-			if (tRecipe != null) RM.Furnace.addFakeRecipe(F, tRecipe);
-		}
-		int tShown = RM.Furnace.mRecipeListSize - tBefore;
-		OUT.println("[GT6] F11-smelting: vanilla smeltings ported into the GT6 registry: " + tImported
-			+ "; furnace showcase (JEI) filled: " + tShown + " recipes");
+		// F11-smelting: 1.7.10 topped up the vanilla smelting singleton at world entry (GT_API_Proxy_Client:525-529); here the
+		// vanilla recipes come with the datapack, so the server's recipes feed the same center a dedicated-server client uses.
+		net.minecraft.server.level.ServerLevel tLevel = aEvent.getServer().overworld();
+		if (tLevel != null) gregapi.recipes.FurnaceRecipes.smelting().restoreVanilla(tLevel.recipeAccess().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.SMELTING));
 	}
 	@Override public void onModServerStopped2(net.neoforged.neoforge.event.server.ServerStoppedEvent aEvent) {/**/}
 

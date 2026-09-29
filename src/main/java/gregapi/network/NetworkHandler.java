@@ -162,9 +162,8 @@ public final class NetworkHandler implements INetworkHandler {
 		if (tReady != null) for (PendingPacket tP : tReady) try {tP.mPacket.process(aWorld, tP.mHandler);} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
 	}
 
-	/** 1:1 with the original: the server side returns null, the client side returns the player's world, fetched through
-	 *  the mod's own side-split center; the engine's context throws instead of returning null while no player exists
-	 *  (packets still queued when leaving a world). */
+	/** 1:1 with the original: null on the server, the player's world on the client, through the mod's side-split center;
+	 *  the engine's context throws instead while no player exists (packets still queued when leaving a world). */
 	private BlockGetter getProcessingWorld(IPayloadContext aContext) {
 		if (aContext.flow() != PacketFlow.CLIENTBOUND) return null;
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();

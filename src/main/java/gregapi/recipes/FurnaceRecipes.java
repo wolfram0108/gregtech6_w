@@ -71,18 +71,31 @@ public class FurnaceRecipes {
 		return 0.0F;
 	}
 
+	private boolean mShowcaseFilled = false;
+
+	/** The vanilla half of this list and the furnace showcase, from the smelting recipes at hand: the server's at its start,
+	 *  a dedicated-server client's on receiving them. 1.7.10 filled the showcase on the client, once per process. */
+	public void restoreVanilla(Iterable<? extends net.minecraft.world.item.crafting.RecipeHolder<?>> aSmelting) {
+		int tImported = importVanilla(aSmelting);
+		if (mShowcaseFilled) {OUT.println("[GT6] F11-smelting: vanilla smeltings ported into the GT6 registry: " + tImported + "; furnace showcase already filled this session"); return;}
+		mShowcaseFilled = true;
+		// Counted by the map's size growing: its indexing hook returns null by design (RecipeMapNonGTRecipes), not by failure.
+		int tBefore = gregapi.data.RM.Furnace.mRecipeListSize;
+		for (Map.Entry<ItemStack, ItemStack> tEntry : new java.util.ArrayList<>(mSmeltingList.entrySet())) {
+			if (ST.invalid(tEntry.getKey())) continue;
+			gregapi.recipes.Recipe tRecipe = gregapi.data.RM.Furnace.findRecipe(null, null, F, Long.MAX_VALUE, NI, ZL_FS, ST.array(ST.copy(tEntry.getKey())));
+			if (tRecipe != null) gregapi.data.RM.Furnace.addFakeRecipe(F, tRecipe);
+		}
+		OUT.println("[GT6] F11-smelting: vanilla smeltings ported into the GT6 registry: " + tImported + "; furnace showcase (JEI) filled: " + (gregapi.data.RM.Furnace.mRecipeListSize - tBefore) + " recipes");
+	}
+
 	/** Restores the vanilla half of this list, lost when the class became GT6's own storage instead of vanilla's;
 	 *  by user decision every vanilla recipe is imported, including items that did not exist in 1.7.10. */
-	public int importVanilla(net.minecraft.server.MinecraftServer aServer) {
-		if (aServer == null) return 0;
+	public int importVanilla(Iterable<? extends net.minecraft.world.item.crafting.RecipeHolder<?>> aSmelting) {
 		int rAdded = 0;
 		try {
-			net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
-			if (tLevel == null) return 0;
-			// This registry also holds GT6's own dispatcher entry, which a typed iteration crashed on midway through;
-			// the dispatcher is skipped by name since it's a bridge into this same registry, not a data source.
-			for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder
-				: tLevel.recipeAccess().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.SMELTING)) {
+			// The smelting recipes also hold GT6's own dispatcher entry, a bridge into this same list rather than data.
+			for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : aSmelting) {
 				if (tHolder.value() instanceof GT6SmeltingDispatcher) continue;
 				if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.SmeltingRecipe tRecipe)) continue;
 				for (net.minecraft.core.Holder<net.minecraft.world.item.Item> tItem : tRecipe.input().items().toList()) {
