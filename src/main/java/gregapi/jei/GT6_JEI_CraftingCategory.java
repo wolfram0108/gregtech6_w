@@ -100,8 +100,8 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 			} else if (aRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY t1ToY) {
 				// The product is chosen by the CELL the item sits in, so the card must show that cell.
 				List<ItemStack> tIn = new java.util.ArrayList<>(), tOut = new java.util.ArrayList<>();
-				materialPairs(t1ToY, t1ToY.mInput, t1ToY.mOutput, t1ToY.mOutputCount, m -> t1ToY.hasOutputFor(m), tIn, tOut);
-				if (!tIn.isEmpty() && t1ToY.mEmpty < 9) {
+				familyPairs(t1ToY, tIn, tOut);
+				if (!tIn.isEmpty()) {
 					boolean[] tFilled = new boolean[9];
 					tFilled[t1ToY.mEmpty] = T;
 					family(aBuilder, tFilled, tIn, tOut);
@@ -110,9 +110,9 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 			} else if (aRecipe instanceof gregapi.recipes.AdvancedCraftingXToY tXToY) {
 				// Positions carry no meaning here (the recipe counts items), so fill the first N cells.
 				List<ItemStack> tIn = new java.util.ArrayList<>(), tOut = new java.util.ArrayList<>();
-				materialPairs(tXToY, tXToY.mInput, tXToY.mOutput, tXToY.mOutputCount, m -> tXToY.hasOutputFor(m), tIn, tOut);
+				familyPairs(tXToY, tIn, tOut);
 				int tN = tXToY.mInputCount;
-				if (!tIn.isEmpty() && tN > 0 && tN <= 9) {
+				if (!tIn.isEmpty()) {
 					boolean[] tFilled = new boolean[9];
 					for (int i = 0; i < tN; i++) tFilled[i] = T;
 					family(aBuilder, tFilled, tIn, tOut);
@@ -126,6 +126,16 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 			ERR.println("JEI: GT6 crafting recipe failed to lay out, skipping its slots.");
 			e.printStackTrace(ERR);
 		}
+	}
+
+	/** Every stack a card of this recipe shows, split by role. Built from the same helpers as {@link #setRecipe}, so the
+	 *  on-demand lookup of the plugin finds a recipe exactly when its card shows the focused item. */
+	static void slotStacks(ICraftingRecipeGT aRecipe, List<ItemStack> rInputs, List<ItemStack> rOutputs) {
+		if (familyPairs(aRecipe, rInputs, rOutputs)) return;
+		Object[] tCells = aRecipe instanceof ShapedOreRecipe tShaped ? tShaped.getInput() : aRecipe instanceof ShapelessOreRecipe tShapeless ? tShapeless.getInput().toArray() : null;
+		if (tCells != null) for (List<ItemStack> tCell : cells(tCells)) rInputs.addAll(tCell);
+		ItemStack tOutput = aRecipe.getRecipeOutput();
+		if (ST.valid(tOutput)) rOutputs.add(tOutput);
 	}
 
 	/** BUG-121: layout guard — how many recipes the display failed to lay out this run.
@@ -166,8 +176,8 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 		try {
 			if (aRecipe instanceof ShapedOreRecipe tShaped) return noEmptyChoice(tShaped.getInput());
 			if (aRecipe instanceof ShapelessOreRecipe tShapeless) return noEmptyChoice(tShapeless.getInput().toArray());
-			if (aRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY t1ToY) return t1ToY.mEmpty < 9 && hasPairs(t1ToY, t1ToY.mInput, t1ToY.mOutput, t1ToY.mOutputCount, m -> t1ToY.hasOutputFor(m));
-			if (aRecipe instanceof gregapi.recipes.AdvancedCraftingXToY tXToY) return tXToY.mInputCount > 0 && tXToY.mInputCount <= 9 && hasPairs(tXToY, tXToY.mInput, tXToY.mOutput, tXToY.mOutputCount, m -> tXToY.hasOutputFor(m));
+			List<ItemStack> tIn = new ArrayList<>(), tOut = new ArrayList<>();
+			if (familyPairs(aRecipe, tIn, tOut)) return !tIn.isEmpty();
 		} catch (Throwable e) {
 			// NEI also returned null on a parse exception, i.e. it did not show it either (ShapedRecipeHandler.java:161-164)
 			return F;
@@ -184,12 +194,18 @@ public final class GT6_JEI_CraftingCategory extends AbstractRecipeCategory<ICraf
 		return T;
 	}
 
-	/** Whether there is at least one material giving BOTH an input AND an output (otherwise nothing to show). */
-	private static boolean hasPairs(Object aRecipe, gregapi.oredict.OreDictPrefix aInput, gregapi.oredict.OreDictPrefix aOutput
-	, int aOutputCount, java.util.function.Predicate<gregapi.oredict.OreDictMaterial> aHasOutput) {
-		List<ItemStack> tIn = new ArrayList<>(), tOut = new ArrayList<>();
-		materialPairs(aRecipe, aInput, aOutput, aOutputCount, aHasOutput, tIn, tOut);
-		return !tIn.isEmpty();
+	/** The input/output pairs of a family recipe (1→Y, X→Y), empty when its geometry cannot be laid out on the 3x3 grid.
+	 *  Returns false for any other recipe. The one place the card, the show rule and the plugin's lookup take pairs from. */
+	static boolean familyPairs(ICraftingRecipeGT aRecipe, List<ItemStack> rInputs, List<ItemStack> rOutputs) {
+		if (aRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY t1ToY) {
+			if (t1ToY.mEmpty < 9) materialPairs(t1ToY, t1ToY.mInput, t1ToY.mOutput, t1ToY.mOutputCount, m -> t1ToY.hasOutputFor(m), rInputs, rOutputs);
+			return T;
+		}
+		if (aRecipe instanceof gregapi.recipes.AdvancedCraftingXToY tXToY) {
+			if (tXToY.mInputCount > 0 && tXToY.mInputCount <= 9) materialPairs(tXToY, tXToY.mInput, tXToY.mOutput, tXToY.mOutputCount, m -> tXToY.hasOutputFor(m), rInputs, rOutputs);
+			return T;
+		}
+		return F;
 	}
 
 	/** BUG-099: the recipe is defined on a PREFIX, but the display shows concrete items — we collect "input↔output"

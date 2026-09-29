@@ -100,6 +100,57 @@ public final class NetworkHandler implements INetworkHandler {
 		mChannel = NetworkRegistry.newSimpleChannel(new ResourceLocation(identifierPart(aModID), "network/" + identifierPart(aChannelName)), () -> tVersion, tVersion::equals, tVersion::equals);
 		// One message type per channel, bidirectional, matching the original FMLEmbeddedChannel's own form.
 		mChannel.registerMessage(0, GT6Payload.class, GT6Payload::write, GT6Payload::read, this::handlePayload);
+		if (sClientSyncChannel == null) {
+			sClientSyncChannel = NetworkRegistry.newSimpleChannel(new ResourceLocation("gregapi", "client_sync"), () -> tVersion, tVersion::equals, tVersion::equals);
+			sClientSyncChannel.registerMessage(0, ClientSync.class, ClientSync::write, ClientSync::read, NetworkHandler::handleClientSync);
+		}
+	}
+
+	/** What a client joined to a dedicated server needs, before the engine's recipes and tags arrive, to build the same
+	 *  dictionary and crafting buffer as the server: the item tags the tag bridge reads (the engine sends its tags only after
+	 *  the recipes on 1.20.1) and the datapack recipes GT6 suppressed (see GT_API.buildClientCraftingBuffer). Recipes use the
+	 *  engine's own recipe serialization, as its recipe packet does. */
+	private static SimpleChannel sClientSyncChannel = null;
+
+	public record ClientSync(java.util.Map<ResourceLocation, java.util.List<ResourceLocation>> tags, java.util.List<net.minecraft.world.item.crafting.Recipe<?>> recipes) {
+		public void write(FriendlyByteBuf aBuffer) {
+			aBuffer.writeVarInt(tags.size());
+			for (java.util.Map.Entry<ResourceLocation, java.util.List<ResourceLocation>> tTag : tags.entrySet()) {
+				aBuffer.writeResourceLocation(tTag.getKey());
+				aBuffer.writeVarInt(tTag.getValue().size());
+				for (ResourceLocation tItem : tTag.getValue()) aBuffer.writeResourceLocation(tItem);
+			}
+			aBuffer.writeVarInt(recipes.size());
+			for (net.minecraft.world.item.crafting.Recipe<?> tRecipe : recipes) net.minecraft.network.protocol.game.ClientboundUpdateRecipesPacket.toNetwork(aBuffer, tRecipe);
+		}
+		public static ClientSync read(FriendlyByteBuf aBuffer) {
+			java.util.Map<ResourceLocation, java.util.List<ResourceLocation>> tTags = new java.util.LinkedHashMap<>();
+			for (int i = 0, n = aBuffer.readVarInt(); i < n; i++) {
+				ResourceLocation tID = aBuffer.readResourceLocation();
+				java.util.List<ResourceLocation> tItems = new ArrayList<>();
+				for (int j = 0, m = aBuffer.readVarInt(); j < m; j++) tItems.add(aBuffer.readResourceLocation());
+				tTags.put(tID, tItems);
+			}
+			int tCount = aBuffer.readVarInt();
+			java.util.List<net.minecraft.world.item.crafting.Recipe<?>> tList = new ArrayList<>(tCount);
+			for (int i = 0; i < tCount; i++) tList.add(net.minecraft.network.protocol.game.ClientboundUpdateRecipesPacket.fromNetwork(aBuffer));
+			return new ClientSync(tTags, tList);
+		}
+	}
+
+	private static void handleClientSync(ClientSync aMessage, Supplier<NetworkEvent.Context> aContextSupplier) {
+		NetworkEvent.Context tContext = aContextSupplier.get();
+		tContext.setPacketHandled(true);
+		gregapi.oredict.OreDictTags.sReceivedTags = aMessage.tags();
+		gregapi.GT_API.sReceivedSuppressedOriginals = aMessage.recipes();
+		// Queued on the main thread ahead of the engine's recipe packet that follows, so the dictionary is built before it.
+		tContext.enqueueWork(gregapi.GT_API::onClientSyncArrived);
+	}
+
+	public static void sendClientSync(java.util.List<ServerPlayer> aPlayers, java.util.Map<ResourceLocation, java.util.List<ResourceLocation>> aTags, java.util.List<net.minecraft.world.item.crafting.Recipe<?>> aRecipes) {
+		if (sClientSyncChannel == null) return;
+		ClientSync tMessage = new ClientSync(aTags, aRecipes);
+		for (ServerPlayer tPlayer : aPlayers) sClientSyncChannel.send(PacketDistributor.PLAYER.with(() -> tPlayer), tMessage);
 	}
 
 	private void handlePayload(GT6Payload aPayload, Supplier<NetworkEvent.Context> aContextSupplier) {

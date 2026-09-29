@@ -85,6 +85,10 @@ public class FluidGT {
 	public final net.minecraftforge.registries.RegistryObject<FluidType> mTypeHolder;
 	public final net.minecraftforge.registries.RegistryObject<Source>        mSourceHolder;
 	public final net.minecraftforge.registries.RegistryObject<FlowingFluid>  mFlowingHolder;
+	/** The registered source and flowing fluids, kept when their registry builds them; null before that. Fluid
+	 *  comparisons read them in hot paths, where a RegistryObject lookup per call cost more than the compare. */
+	private Source mSource = null;
+	private FlowingFluid mFlowing = null;
 
 	public FluidGT(String aName, IIconContainer aTexture, short[] aRGBa, long aTemperatureK, boolean aGaseous) {
 		mName = aName.toLowerCase();
@@ -98,8 +102,8 @@ public class FluidGT {
 		// Source and flowing fluids need the registry unfrozen to build their intrusive holder, so they are
 		// built by supplier at RegisterEvent, while FluidType is not intrusive and can be held eagerly.
 		mTypeHolder    = FLUID_TYPES.register(tRegName, () -> mType);
-		mSourceHolder  = FLUIDS.register(tRegName, () -> new Source());
-		mFlowingHolder = FLUIDS.register(tRegName + "_flowing", () -> new Flowing(fluidProperties()));
+		mSourceHolder  = FLUIDS.register(tRegName, () -> mSource = new Source());
+		mFlowingHolder = FLUIDS.register(tRegName + "_flowing", () -> mFlowing = new Flowing(fluidProperties()));
 
 		BY_NAME.put(mName, this);
 		BY_FLUID_CACHE = null;
@@ -125,8 +129,8 @@ public class FluidGT {
 	public String getLocalizedName()   {return LH.get(getUnlocalizedName());}
 
 	/** The source fluid is the nested {@link Source}; it only resolves after RegisterEvent binds the holder. */
-	public Fluid getFluid()        {return mSourceHolder.get();}
-	public Fluid getFlowingFluid() {return mFlowingHolder.isPresent() ? mFlowingHolder.get() : mSourceHolder.get();}
+	public Fluid getFluid()        {return mSource != null ? mSource : mSourceHolder.get();}
+	public Fluid getFlowingFluid() {return mFlowing != null ? mFlowing : getFluid();}
 	public FluidType getFluidType() {return mType;}
 
 	public boolean isGaseous() {return mGaseous;}
@@ -151,8 +155,8 @@ public class FluidGT {
 		if (BY_FLUID_CACHE == null || BY_FLUID_CACHE.size() < BY_NAME.size()) {
 			Map<Fluid, FluidGT> tMap = new IdentityHashMap<>();
 			for (FluidGT tGT : BY_NAME.values()) {
-				if (tGT.mSourceHolder.isPresent())  tMap.put(tGT.mSourceHolder.get(),  tGT);
-				if (tGT.mFlowingHolder.isPresent()) tMap.put(tGT.mFlowingHolder.get(), tGT);
+				if (tGT.mSource  != null) tMap.put(tGT.mSource,  tGT);
+				if (tGT.mFlowing != null) tMap.put(tGT.mFlowing, tGT);
 			}
 			BY_FLUID_CACHE = tMap;
 		}
@@ -224,7 +228,7 @@ public class FluidGT {
 			Block tBlock = gregapi.data.FL.BLOCKS.get(gregapi.data.FL.regName(this));
 			return tBlock == null ? Blocks.AIR.defaultBlockState() : tBlock.defaultBlockState();
 		}
-		@Override public boolean isSame(Fluid aFluid) {return aFluid == this || (mFlowingHolder != null && mFlowingHolder.isPresent() && aFluid == mFlowingHolder.get());}
+		@Override public boolean isSame(Fluid aFluid) {return aFluid == this || (mFlowing != null && aFluid == mFlowing);}
 		@Override public FluidType getFluidType() {return mType;}
 	}
 

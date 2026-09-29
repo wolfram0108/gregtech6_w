@@ -81,6 +81,8 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	}
 	/** CR.list() filtered to ShapedOreRecipe/ShapelessOreRecipe descendants, 1:1 with what NEI used to show, counted once. */
 	private List<ICraftingRecipeGT> mCraftingRecipes = Collections.emptyList();
+	/** JEI's ingredient manager, handed over at recipe registration; the crafting lookup keys items with it. */
+	private volatile mezz.jei.api.runtime.IIngredientManager mIngredients = null;
 
 	@Override
 	public ResourceLocation getPluginUid() {
@@ -179,33 +181,33 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	}
 
 	/** Issue #5: map recipes are NOT registered as a snapshot. GT6 generates many of them only when asked
-	 *  (IRecipeMapHandler), which a list taken once at world join can never contain; see {@link #registerAdvanced}. */
+	 *  (IRecipeMapHandler), which a list taken once at world join can never contain; see {@link #registerAdvanced}.
+	 *  Crafting recipes are not handed over either: JEI indexing every slot of ~65k of them cost ~1.6 s of the frame
+	 *  that starts JEI, so they are answered per lookup too ({@link CraftingLookup}), as NEI 1.7.10 did. */
 	@Override
 	public void registerRecipes(IRecipeRegistration aRegistration) {
-		if (!mCraftingRecipes.isEmpty()) {
-			try {
-				aRegistration.addRecipes(GT6_JEI_CraftingCategory.TYPE, mCraftingRecipes);
-			} catch (Throwable e) {
-				ERR.println("JEI: GT6 crafting-table recipes failed to register, skipping.");
-				e.printStackTrace(ERR);
-			}
-		}
+		mIngredients = aRegistration.getIngredientManager();
+		removeNativeFluidLayer(aRegistration.getIngredientManager());
 	}
 
 	/** JEI registers every source fluid under its own native ingredient type too, doubling up with GT6's own fluid-display
-	 *  items; the old recipe viewer never had that type, so its native fluid layer is removed here, 1:1 with the old view. */
+	 *  items; the old recipe viewer never had that type, so its native fluid layer is removed, 1:1 with the old view.
+	 *  JEI offers no way to keep it from being registered, so it goes at recipe registration, before the panel's list and
+	 *  filter are built (registerRuntime) and can see it. */
+	private static void removeNativeFluidLayer(mezz.jei.api.runtime.IIngredientManager aManager) {
+		try {
+			java.util.Collection<net.minecraftforge.fluids.FluidStack> tFluids = new java.util.ArrayList<>(aManager.getAllIngredients(mezz.jei.api.forge.ForgeTypes.FLUID_STACK));
+			if (!tFluids.isEmpty()) aManager.removeIngredientsAtRuntime(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, tFluids);
+			OUT.println("[GT6-JEI] native FLUID_STACK layer removed before the panel is built: was " + tFluids.size() + ", now " + aManager.getAllIngredients(mezz.jei.api.forge.ForgeTypes.FLUID_STACK).size() + " (fluids are shown by the GT6 display, as in NEI 1.7.10)");
+		} catch (Throwable e) {
+			ERR.println("JEI: could not remove the native FLUID_STACK layer (a fluid duplicate will remain in the panel).");
+			e.printStackTrace(ERR);
+		}
+	}
+
 	@Override
 	public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime aRuntime) {
 		sRuntime = aRuntime; // The only door to the recipe screen; see showRecipeCategory.
-		try {
-			mezz.jei.api.runtime.IIngredientManager tManager = aRuntime.getIngredientManager();
-			java.util.Collection<net.minecraftforge.fluids.FluidStack> tFluids = new java.util.ArrayList<>(tManager.getAllIngredients(mezz.jei.api.forge.ForgeTypes.FLUID_STACK));
-			if (!tFluids.isEmpty()) tManager.removeIngredientsAtRuntime(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, tFluids);
-			OUT.println("[GT6-JEI] родной FLUID_STACK-пласт снят из панели: было " + tFluids.size() + ", осталось " + tManager.getAllIngredients(mezz.jei.api.forge.ForgeTypes.FLUID_STACK).size() + " (жидкости показывает GT6-дисплей, как NEI 1.7.10)");
-		} catch (Throwable e) {
-			ERR.println("JEI: не удалось снять родной FLUID_STACK-пласт (дубль жидкостей останется в панели).");
-			e.printStackTrace(ERR);
-		}
 	}
 
 	/** Issue #5: each map answers JEI per lookup, the way NEI 1.7.10 created a fresh handler per click
@@ -220,6 +222,76 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 				e.printStackTrace(ERR);
 			}
 		}
+		if (!mCraftingRecipes.isEmpty()) {
+			try {
+				aRegistration.addTypedRecipeManagerPlugin(GT6_JEI_CraftingCategory.TYPE, new CraftingLookup(mCraftingRecipes, () -> mIngredients));
+			} catch (Throwable e) {
+				ERR.println("JEI: GT6 crafting-table recipes failed to register their lookup, skipping.");
+				e.printStackTrace(ERR);
+			}
+		}
+	}
+
+	/** The item of a JEI focus, or null for anything else. */
+	private static ItemStack focusStack(mezz.jei.api.ingredients.ITypedIngredient<?> aIngredient) {
+		ItemStack rStack = aIngredient == null ? null : aIngredient.getItemStack().orElse(null);
+		return rStack == null || rStack.isEmpty() ? null : rStack;
+	}
+
+	/** Crafting-table recipes answered per lookup. Items are keyed by JEI's own recipe uid ({@code getUid(stack,
+	 *  UidContext.Recipe)}), the key JEI indexes list-filled slots with, so a lookup matches exactly what JEI's own index
+	 *  matched; the index is built on the first lookup from the same slot contents the card shows. */
+	private static final class CraftingLookup implements mezz.jei.api.recipe.advanced.ISimpleRecipeManagerPlugin<ICraftingRecipeGT> {
+		private final List<ICraftingRecipeGT> mRecipes;
+		private final java.util.function.Supplier<mezz.jei.api.runtime.IIngredientManager> mIngredients;
+		private mezz.jei.api.ingredients.IIngredientHelper<ItemStack> mHelper = null;
+		private Map<Object, List<ICraftingRecipeGT>> mByInput = null, mByOutput = null;
+		CraftingLookup(List<ICraftingRecipeGT> aRecipes, java.util.function.Supplier<mezz.jei.api.runtime.IIngredientManager> aIngredients) {mRecipes = aRecipes; mIngredients = aIngredients;}
+
+		private Object uid(ItemStack aStack) {
+			if (mHelper == null) mHelper = mIngredients.get().getIngredientHelper(aStack);
+			// A copy: JEI's subtype interpreters may write into the stack (1.20.1 painting: getOrCreateTagElement), and these are the recipes' own stacks.
+			return mHelper.getUid(aStack.copy(), mezz.jei.api.ingredients.subtypes.UidContext.Recipe);
+		}
+
+		private synchronized void index() {
+			if (mByOutput != null) return;
+			long tStart = System.nanoTime();
+			Map<Object, List<ICraftingRecipeGT>> tIn = new java.util.HashMap<>(), tOut = new java.util.HashMap<>();
+			List<ItemStack> tInputs = new ArrayList<>(), tOutputs = new ArrayList<>();
+			for (ICraftingRecipeGT tRecipe : mRecipes) {
+				tInputs.clear(); tOutputs.clear();
+				try {GT6_JEI_CraftingCategory.slotStacks(tRecipe, tInputs, tOutputs);} catch (Throwable e) {continue;}
+				put(tIn , tInputs , tRecipe);
+				put(tOut, tOutputs, tRecipe);
+			}
+			mByInput = tIn; mByOutput = tOut;
+			OUT.println("[GT6-JEI] crafting table lookup indexed on first use: " + mRecipes.size() + " recipes, " + tIn.size() + " input keys, " + tOut.size() + " output keys, " + (System.nanoTime() - tStart) / 1000000 + " ms");
+		}
+
+		private void put(Map<Object, List<ICraftingRecipeGT>> aIndex, List<ItemStack> aStacks, ICraftingRecipeGT aRecipe) {
+			java.util.Set<Object> tSeen = new java.util.HashSet<>();
+			for (ItemStack tStack : aStacks) {
+				Object tKey = uid(tStack);
+				if (tSeen.add(tKey)) aIndex.computeIfAbsent(tKey, k -> new ArrayList<>()).add(aRecipe);
+			}
+		}
+
+		private List<ICraftingRecipeGT> find(boolean aInput, mezz.jei.api.ingredients.ITypedIngredient<?> aFocus) {
+			ItemStack tStack = focusStack(aFocus);
+			if (tStack == null) return Collections.emptyList();
+			try {
+				index();
+				List<ICraftingRecipeGT> rList = (aInput ? mByInput : mByOutput).get(uid(tStack));
+				return rList == null ? Collections.emptyList() : rList;
+			} catch (Throwable e) {e.printStackTrace(ERR); return Collections.emptyList();}
+		}
+
+		@Override public boolean isHandledInput (mezz.jei.api.ingredients.ITypedIngredient<?> aInput ) {return focusStack(aInput ) != null;}
+		@Override public boolean isHandledOutput(mezz.jei.api.ingredients.ITypedIngredient<?> aOutput) {return focusStack(aOutput) != null;}
+		@Override public List<ICraftingRecipeGT> getRecipesForInput (mezz.jei.api.ingredients.ITypedIngredient<?> aInput ) {return find(T, aInput );}
+		@Override public List<ICraftingRecipeGT> getRecipesForOutput(mezz.jei.api.ingredients.ITypedIngredient<?> aOutput) {return find(F, aOutput);}
+		@Override public List<ICraftingRecipeGT> getAllRecipes() {return mRecipes;}
 	}
 
 	/** One map's lookup. Errors are swallowed like the NEI handler did: JEI permanently disables a plugin that throws,
@@ -228,29 +300,70 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		private final RecipeMap mMap;
 		MapLookup(RecipeMap aMap) {mMap = aMap;}
 
-		private static ItemStack stack(mezz.jei.api.ingredients.ITypedIngredient<?> aIngredient) {
-			ItemStack rStack = aIngredient == null ? null : aIngredient.getItemStack().orElse(null);
-			return rStack == null || rStack.isEmpty() ? null : rStack;
-		}
-
-		@Override public boolean isHandledInput (mezz.jei.api.ingredients.ITypedIngredient<?> aInput ) {return stack(aInput ) != null;}
-		@Override public boolean isHandledOutput(mezz.jei.api.ingredients.ITypedIngredient<?> aOutput) {return stack(aOutput) != null;}
+		@Override public boolean isHandledInput (mezz.jei.api.ingredients.ITypedIngredient<?> aInput ) {return focusStack(aInput ) != null;}
+		@Override public boolean isHandledOutput(mezz.jei.api.ingredients.ITypedIngredient<?> aOutput) {return focusStack(aOutput) != null;}
 
 		@Override public List<Recipe> getRecipesForInput(mezz.jei.api.ingredients.ITypedIngredient<?> aInput) {
-			ItemStack tStack = stack(aInput);
+			ItemStack tStack = focusStack(aInput);
 			if (tStack == null) return Collections.emptyList();
 			try {return mMap.getNEIUsagesFor(tStack);} catch (Throwable e) {e.printStackTrace(ERR); return Collections.emptyList();}
 		}
 
 		@Override public List<Recipe> getRecipesForOutput(mezz.jei.api.ingredients.ITypedIngredient<?> aOutput) {
-			ItemStack tStack = stack(aOutput);
+			ItemStack tStack = focusStack(aOutput);
 			if (tStack == null) return Collections.emptyList();
 			try {return mMap.getNEIRecipesFor(tStack);} catch (Throwable e) {e.printStackTrace(ERR); return Collections.emptyList();}
 		}
 
-		/** The "all recipes" click of NEI_RecipeMap.loadCraftingRecipes(String). */
+		/** The "all recipes" click of NEI_RecipeMap.loadCraftingRecipes(String), answered as JEI consumes it: see {@link AllRecipes}. */
 		@Override public List<Recipe> getAllRecipes() {
-			try {return mMap.getNEIAllRecipes();} catch (Throwable e) {e.printStackTrace(ERR); return Collections.emptyList();}
+			return new AllRecipes(mMap);
+		}
+	}
+
+	/** One map's "all recipes", produced lazily. JEI asks every category for it at GUI start only to see whether the
+	 *  category is empty (a findAny over the stream); a recipe the map already holds answers that, and getNEIAllRecipes,
+	 *  which runs the on-demand generation and which NEI 1.7.10 ran only on the explicit "all recipes" click, starts
+	 *  only when the stream is walked past it. A map with nothing yet generates at once, so no category drops out.
+	 *  A full walk yields the same recipes as getNEIAllRecipes, each once (the early one is skipped by identity). */
+	private static final class AllRecipes extends java.util.AbstractList<Recipe> {
+		private final RecipeMap mMap;
+		private List<Recipe> mAll = null;
+		AllRecipes(RecipeMap aMap) {mMap = aMap;}
+
+		private List<Recipe> all() {
+			if (mAll == null) try {mAll = mMap.getNEIAllRecipes();} catch (Throwable e) {e.printStackTrace(ERR); mAll = Collections.emptyList();}
+			return mAll;
+		}
+
+
+		// Index and size need the whole list; JEI only streams it (PluginManager.getRecipes: .stream()).
+		@Override public Recipe get(int aIndex) {return all().get(aIndex);}
+		@Override public int size() {return all().size();}
+		// The default Collection spliterator asks size() before the first element, which would run the generation.
+		@Override public java.util.Spliterator<Recipe> spliterator() {return new Walk();}
+		@Override public java.util.Iterator<Recipe> iterator() {return java.util.Spliterators.iterator(spliterator());}
+		@Override public java.util.stream.Stream<Recipe> stream() {return java.util.stream.StreamSupport.stream(spliterator(), false);}
+
+		private final class Walk implements java.util.Spliterator<Recipe> {
+			private Recipe mEarly = null;
+			private int mIndex = -1;
+
+			@Override public boolean tryAdvance(java.util.function.Consumer<? super Recipe> aAction) {
+				if (mIndex < 0) {
+					mIndex = 0;
+					if (mAll == null && (mEarly = GT6_JEI_StartMaps.firstReady(mMap)) != null) {aAction.accept(mEarly); return true;}
+				}
+				List<Recipe> tAll = all();
+				while (mIndex < tAll.size()) {
+					Recipe tRecipe = tAll.get(mIndex++);
+					if (tRecipe != mEarly) {aAction.accept(tRecipe); return true;}
+				}
+				return false;
+			}
+			@Override public java.util.Spliterator<Recipe> trySplit() {return null;}
+			@Override public long estimateSize() {return Long.MAX_VALUE;}
+			@Override public int characteristics() {return ORDERED | NONNULL;}
 		}
 	}
 

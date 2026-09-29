@@ -226,9 +226,64 @@ public class GT_API extends Abstract_Mod {
 	/** Every key ever suppressed, so it can be reapplied after /reload (the datapack's recipe map gets recreated). */
 	public static final java.util.Set<net.minecraft.resources.ResourceLocation> SUPPRESSED_DATAPACK_RECIPES = new java.util.HashSet<>();
 
+	/** The suppressed recipes themselves, by id: a client joined to a dedicated server needs them as input for its own
+	 *  crafting buffer (role-C and the replacement scans read the recipes BEFORE suppression), and the engine only syncs
+	 *  what is left. */
+	public static final java.util.Map<net.minecraft.resources.ResourceLocation, net.minecraft.world.item.crafting.Recipe<?>> SUPPRESSED_DATAPACK_ORIGINALS = new java.util.LinkedHashMap<>();
+
 	public void onDatapackSyncReapplySuppression(net.minecraftforge.event.OnDatapackSyncEvent aEvent) {
-		if (aEvent.getPlayer() != null) return; // Player join doesn't recreate the map; reapplication is only needed on /reload.
-		removeDatapackRecipes(aEvent.getPlayerList().getServer(), new java.util.HashSet<>(SUPPRESSED_DATAPACK_RECIPES));
+		// Player join doesn't recreate the map; reapplication is only needed on /reload.
+		if (aEvent.getPlayer() == null) removeDatapackRecipes(aEvent.getPlayerList().getServer(), new java.util.HashSet<>(SUPPRESSED_DATAPACK_RECIPES));
+		// Sent here, before the engine's own recipe and tag packets (PlayerList.placeNewPlayer, reloadResources), so it arrives first.
+		gregapi.network.NetworkHandler.sendClientSync(aEvent.getPlayer() != null ? java.util.List.of(aEvent.getPlayer()) : aEvent.getPlayerList().getPlayers(), gregapi.oredict.OreDictTags.collectTags(), new java.util.ArrayList<>(SUPPRESSED_DATAPACK_ORIGINALS.values()));
+	}
+
+	/** F4 role-C and the F11 replacement scans: GT6's crafting buffer built from the datapack's crafting recipes as they were
+	 *  BEFORE suppression. In 1.7.10 this ran in load phases on both sides; here the server runs it at start and a client
+	 *  joined to a dedicated server runs it on receiving the recipes ({@link #buildClientCraftingBuffer}). */
+	public static void buildCraftingBuffer(Iterable<net.minecraft.world.item.crafting.Recipe<?>> aRecipes, net.minecraft.core.RegistryAccess aRegistries, net.minecraft.server.MinecraftServer aServer) {
+		gregapi.oredict.OreDictionary.initVanillaRecipeReplacements(aRecipes, aRegistries);
+		sCurrentServerForRecipeScan = aServer;
+		try {for (Runnable tScan : DEFERRED_RECIPE_SCAN) try {tScan.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_RECIPE_SCAN.clear();}
+		finally {sCurrentServerForRecipeScan = null;}
+	}
+
+	/** BP-BUG-013: an ore version goes together with its suppressed datapack original — judged by source (mSourceId), not output. */
+	public static void dropOreVersionsOf(java.util.Set<net.minecraft.resources.ResourceLocation> aSuppressed) {
+		int tDroppedOre = 0;
+		for (java.util.Iterator<gregapi.recipes.ICraftingRecipeGT> tIt = gregapi.util.CR.BUFFER.iterator(); tIt.hasNext();) {
+			gregapi.recipes.ICraftingRecipeGT tRecipe = tIt.next();
+			net.minecraft.resources.ResourceLocation tSource = null;
+			if (tRecipe instanceof gregapi.recipes.ShapedOreRecipe tShaped && tShaped.mVanillaReplacement) tSource = tShaped.mSourceId;
+			else if (tRecipe instanceof gregapi.recipes.ShapelessOreRecipe tShapeless && tShapeless.mVanillaReplacement) tSource = tShapeless.mSourceId;
+			if (tSource != null && aSuppressed.contains(tSource)) {tIt.remove(); tDroppedOre++;}
+		}
+		OUT.println("GT_API: role-C ore variants dropped along with the suppressed original (BP-BUG-013): " + tDroppedOre);
+	}
+
+	/** A client joined to a dedicated server got GT6's sync (the item tags and the suppressed recipes) ahead of the engine's
+	 *  recipes: its deferred item-init runs now, with the tags the bridge needs; in singleplayer the integrated server ran it. */
+	public static void onClientSyncArrived() {
+		if (!sDeferredItemInitDone) runDeferredItemInit();
+	}
+
+	/** Suppressed originals received from a dedicated server; kept until the engine's recipe packet arrives right after them. */
+	public static volatile java.util.List<net.minecraft.world.item.crafting.Recipe<?>> sReceivedSuppressedOriginals = java.util.List.of();
+
+	/** The client arm of {@link #buildCraftingBuffer}, lost when the recipe steps moved to server start: a client joined to a
+	 *  dedicated server builds the same buffer from the synced recipes plus the suppressed originals. In singleplayer the
+	 *  integrated server in this JVM has already built it. */
+	public static void buildClientCraftingBuffer(Iterable<net.minecraft.world.item.crafting.Recipe<?>> aSynced, net.minecraft.core.RegistryAccess aRegistries) {
+		java.util.List<net.minecraft.world.item.crafting.Recipe<?>> tOriginals = sReceivedSuppressedOriginals;
+		java.util.List<net.minecraft.world.item.crafting.Recipe<?>> tAll = new java.util.ArrayList<>();
+		aSynced.forEach(tAll::add);
+		tAll.addAll(tOriginals);
+		int tBefore = gregapi.util.CR.BUFFER.size();
+		buildCraftingBuffer(tAll, aRegistries, null);
+		java.util.Set<net.minecraft.resources.ResourceLocation> tSuppressed = new java.util.HashSet<>();
+		for (net.minecraft.world.item.crafting.Recipe<?> tRecipe : tOriginals) tSuppressed.add(tRecipe.getId());
+		dropOreVersionsOf(tSuppressed);
+		OUT.println("GT_API: client crafting buffer built from " + tAll.size() + " synced recipes incl. " + tOriginals.size() + " suppressed originals: " + tBefore + " -> " + gregapi.util.CR.BUFFER.size());
 	}
 
 	public static void removeDatapackRecipes(net.minecraft.server.MinecraftServer aServer, java.util.Set<net.minecraft.resources.ResourceLocation> aRemove) {
@@ -240,7 +295,7 @@ public class GT_API extends Abstract_Mod {
 			net.minecraft.world.item.crafting.RecipeManager tRM = aServer.getRecipeManager();
 			java.util.List<net.minecraft.world.item.crafting.Recipe<?>> tKeep = new java.util.ArrayList<>();
 			int tBefore = 0;
-			for (net.minecraft.world.item.crafting.Recipe<?> tRecipe : tRM.getRecipes()) {tBefore++; if (!aRemove.contains(tRecipe.getId())) tKeep.add(tRecipe);}
+			for (net.minecraft.world.item.crafting.Recipe<?> tRecipe : tRM.getRecipes()) {tBefore++; if (!aRemove.contains(tRecipe.getId())) tKeep.add(tRecipe); else SUPPRESSED_DATAPACK_ORIGINALS.put(tRecipe.getId(), tRecipe);}
 			tRM.replaceRecipes(tKeep);
 			OUT.println("GT_API: datapack recipes suppressed (F11-recipe-scan): " + (tBefore - tKeep.size()) + " of " + aRemove.size() + " requested.");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
@@ -547,12 +602,9 @@ public class GT_API extends Abstract_Mod {
 			net.minecraft.server.MinecraftServer tServer = tLevel.getServer();
 			// Replaces vanilla crafting-bench recipes with ore-versions, the same thing Forge did in 1.7.10.
 			// Right here: RecipeManager and the dictionary are both already fully populated; idempotent.
-			gregapi.oredict.OreDictionary.initVanillaRecipeReplacements(tServer);
-			// Foreign-recipe scans run after role-C (their input is its ore-versions, as in 1.7.10) and before
-			// finalizeRecipeLoading below, so recipe-book propertySets/displays see the suppression.
-			sCurrentServerForRecipeScan = tServer;
-			try {for (Runnable tScan : DEFERRED_RECIPE_SCAN) try {tScan.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_RECIPE_SCAN.clear();}
-			finally {sCurrentServerForRecipeScan = null;}
+			// Foreign-recipe scans run inside too: after role-C (their input is its ore-versions, as in 1.7.10) and before
+			// the suppression below.
+			if (tServer != null) buildCraftingBuffer(tServer.getRecipeManager().getRecipes(), tServer.registryAccess(), tServer);
 			// Datapack side of CR.remove: 1.7.10's remove(...) also stripped vanilla recipes from the live
 			// CraftingManager; their neo descendants are suppressed here by the same judge, matches() against the grid.
 			if (tServer != null) try {
@@ -592,23 +644,16 @@ public class GT_API extends Abstract_Mod {
 				tRemove.addAll(SUPPRESSED_DATAPACK_RECIPES);
 				// GT6's own recipe suppression must also reach a recipe's ore-VERSION, not just its datapack original:
 				// role-C builds that version AFTER loaders already ran their removals, missing it by construction.
-				int tDroppedOre = 0;
-				for (java.util.Iterator<gregapi.recipes.ICraftingRecipeGT> tIt = gregapi.util.CR.BUFFER.iterator(); tIt.hasNext();) {
-					gregapi.recipes.ICraftingRecipeGT tRecipe = tIt.next();
-					net.minecraft.resources.ResourceLocation tSource = null;
-					if (tRecipe instanceof gregapi.recipes.ShapedOreRecipe tShaped && tShaped.mVanillaReplacement) tSource = tShaped.mSourceId;
-					else if (tRecipe instanceof gregapi.recipes.ShapelessOreRecipe tShapeless && tShapeless.mVanillaReplacement) tSource = tShapeless.mSourceId;
-					if (tSource != null && tRemove.contains(tSource)) {tIt.remove(); tDroppedOre++;}
-				}
-				OUT.println("GT_API: ore-версий роли-C снято вслед за подавленным оригиналом (BP-BUG-013): " + tDroppedOre);
+				dropOreVersionsOf(tRemove);
 				removeDatapackRecipes(tServer, tRemove);
 			} catch(Throwable e) {e.printStackTrace(ERR);}
 			// Nothing to rebuild on 1.20.1: the static RecipePropertySet finalizeRecipeLoading served doesn't exist here.
 			// The old catch-up loot-pool injection is gone too; delivery now goes through the live IGlobalLootModifier.
 		} else if (aEvent.getLevel() instanceof net.minecraft.world.level.Level tClientLevel && tClientLevel.isClientSide()) {
-			// A remote client has no ServerLevel, so the drain above never ran there, leaving deferred item-init
-			// empty on the client. Singleplayer masked it, since the integrated server drains it first.
-			runDeferredItemInit();
+			// A remote client has no ServerLevel, so the drain above never runs there. It does not run here either: on 1.20.1 the
+			// engine's tags come after the recipes, and the tag bridge must feed the dictionary before GT6's own items register
+			// (OreDictTags.importFromTags). It runs on GT6's own sync instead (onClientSyncArrived), which the server sends
+			// ahead of recipes and tags; singleplayer is unaffected, its integrated server has drained the queue already.
 		}
 	}
 

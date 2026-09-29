@@ -209,9 +209,11 @@ public class OreDictionary {
 	private static boolean sHasReplacedRecipes = false;
 
 	/** Replaces the second half of Forge's own setup: re-registering vanilla recipes as ore-recipes wherever an
-	 *  input matched a replaceable item; the vanilla recipe stays (data-driven), the ore version added as a superset. */
-	public static void initVanillaRecipeReplacements(net.minecraft.server.MinecraftServer aServer) {
-		if (sHasReplacedRecipes || aServer == null) return;
+	 *  input matched a replaceable item; the vanilla recipe stays (data-driven), the ore version added as a superset.
+	 *  The recipes are the datapack's crafting recipes BEFORE GT6 suppresses any: the server's own recipe manager, or on a
+	 *  client joined to a dedicated server the synced recipes plus the suppressed originals the server sends along. */
+	public static void initVanillaRecipeReplacements(Iterable<net.minecraft.world.item.crafting.Recipe<?>> aRecipes, net.minecraft.core.RegistryAccess aRegistries) {
+		if (sHasReplacedRecipes || aRecipes == null || aRegistries == null) return;
 		sHasReplacedRecipes = true;
 
 		// Replacement map matches Forge's own list verbatim; split families are listed the same way as above.
@@ -260,10 +262,10 @@ public class OreDictionary {
 
 		int tReplaced = 0;
 		// On 1.20.1 there's no recipe+id wrapper; getRecipes() returns the recipes themselves, each already carrying its own id.
-		for (net.minecraft.world.item.crafting.Recipe<?> tAny : aServer.getRecipeManager().getRecipes()) {
+		for (net.minecraft.world.item.crafting.Recipe<?> tAny : aRecipes) {
 			try {
 				if (tAny instanceof net.minecraft.world.item.crafting.ShapedRecipe tShaped) {
-					ItemStack tOutput = tShaped.getResultItem(aServer.registryAccess()); // The nominal output, equivalent to 1.7.10's getRecipeOutput.
+					ItemStack tOutput = tShaped.getResultItem(aRegistries); // The nominal output, equivalent to 1.7.10's getRecipeOutput.
 					if (ST.invalid(tOutput) || tExclusions.contains(tOutput.getItem())) continue;
 					// Pattern width/height come through the Forge IShapedRecipe channel, since those fields are package-private on the class.
 					int tWidth = tShaped.getRecipeWidth(), tHeight = tShaped.getRecipeHeight();
@@ -293,7 +295,7 @@ public class OreDictionary {
 					tBySignature.computeIfAbsent(tSignature.toString(), k -> new java.util.ArrayList<>()).add(tRecipe);
 					tOutputsBySignature.computeIfAbsent(tSignature.toString(), k -> new java.util.HashSet<>()).add(tOutput.getItem());
 				} else if (tAny instanceof net.minecraft.world.item.crafting.ShapelessRecipe tShapeless) {
-					ItemStack tOutput = tShapeless.getResultItem(aServer.registryAccess());
+					ItemStack tOutput = tShapeless.getResultItem(aRegistries);
 					if (ST.invalid(tOutput) || tExclusions.contains(tOutput.getItem())) continue;
 					// On 1.20.1 there's no PlacementInfo wrapper; the recipe itself returns its own ingredient list.
 					StringBuilder tRawSignature = new StringBuilder();

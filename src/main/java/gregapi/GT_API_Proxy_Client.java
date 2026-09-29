@@ -573,6 +573,18 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		//
 	}
 
+	/** Client arm of GT6's crafting buffer (center — {@link GT_API#buildClientCraftingBuffer}): a client joined to a dedicated
+	 *  server builds it from the synced recipes, before JEI reads them. The integrated server of singleplayer has already
+	 *  built it in this JVM. */
+	@SubscribeEvent
+	public void onRecipesUpdated(net.minecraftforge.client.event.RecipesUpdatedEvent aEvent) {
+		if (Minecraft.getInstance().getSingleplayerServer() != null) return;
+		if (Minecraft.getInstance().getConnection() == null) return;
+		// A server without GT6's sync still gets the deferred item-init, from the engine's tags as before.
+		if (!GT_API.sDeferredItemInitDone) GT_API.runDeferredItemInit();
+		GT_API.buildClientCraftingBuffer(aEvent.getRecipeManager().getRecipes(), Minecraft.getInstance().getConnection().registryAccess());
+	}
+
 	/** Client-side arm of the beacon-payment bridge (center — {@link GT_API_Proxy#wrapBeaconPaymentSlot}): the client builds
  	 *  its OWN {@code BeaconMenu} instance from the network packet, the server-side slot swap does not reach it — without
  	 *  this arm the client's click prediction would reject a stack that the server accepts. */

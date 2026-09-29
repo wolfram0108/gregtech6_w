@@ -24,10 +24,8 @@
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package mezz.jei.api.runtime;
+package mezz.jei.api.ingredients;
 
-public interface IIngredientManager {
-	<V> mezz.jei.api.ingredients.IIngredientHelper<V> getIngredientHelper(V a0);
-	<V> java.util.Collection<V> getAllIngredients(mezz.jei.api.ingredients.IIngredientType<V> a0);
-	<V> void removeIngredientsAtRuntime(mezz.jei.api.ingredients.IIngredientType<V> a0, java.util.Collection<V> a1);
+public interface IIngredientHelper<V> {
+	Object getUid(V a0, mezz.jei.api.ingredients.subtypes.UidContext a1);
 }
