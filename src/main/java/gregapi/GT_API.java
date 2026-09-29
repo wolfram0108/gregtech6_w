@@ -234,8 +234,12 @@ public class GT_API extends Abstract_Mod {
 	public void onDatapackSyncReapplySuppression(net.minecraftforge.event.OnDatapackSyncEvent aEvent) {
 		// Player join doesn't recreate the map; reapplication is only needed on /reload.
 		if (aEvent.getPlayer() == null) removeDatapackRecipes(aEvent.getPlayerList().getServer(), new java.util.HashSet<>(SUPPRESSED_DATAPACK_RECIPES));
-		// Sent here, before the engine's own recipe and tag packets (PlayerList.placeNewPlayer, reloadResources), so it arrives first.
-		gregapi.network.NetworkHandler.sendClientSync(aEvent.getPlayer() != null ? java.util.List.of(aEvent.getPlayer()) : aEvent.getPlayerList().getPlayers(), gregapi.oredict.OreDictTags.collectTags(), new java.util.ArrayList<>(SUPPRESSED_DATAPACK_ORIGINALS.values()));
+		// On join 1.20.1 sends the recipes before the tags (PlayerList.placeNewPlayer), so everything a client builds from recipes
+		// on arrival -- GT6's dictionary, JEI -- would read empty tags; /reload already sends tags first. The engine's own tag
+		// packet goes out here ahead of both, and its later copy rebinds the same tags, as a /reload does.
+		if (aEvent.getPlayer() != null) aEvent.getPlayer().connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateTagsPacket(net.minecraft.tags.TagNetworkSerialization.serializeTagsToNetwork(aEvent.getPlayerList().getServer().registries())));
+		// Sent here, before the engine's own recipe packet (PlayerList.placeNewPlayer, reloadResources), so it arrives first.
+		gregapi.network.NetworkHandler.sendClientSync(aEvent.getPlayer() != null ? java.util.List.of(aEvent.getPlayer()) : aEvent.getPlayerList().getPlayers(), new java.util.ArrayList<>(SUPPRESSED_DATAPACK_ORIGINALS.values()));
 	}
 
 	/** F4 role-C and the F11 replacement scans: GT6's crafting buffer built from the datapack's crafting recipes as they were
@@ -261,8 +265,8 @@ public class GT_API extends Abstract_Mod {
 		OUT.println("GT_API: role-C ore variants dropped along with the suppressed original (BP-BUG-013): " + tDroppedOre);
 	}
 
-	/** A client joined to a dedicated server got GT6's sync (the item tags and the suppressed recipes) ahead of the engine's
-	 *  recipes: its deferred item-init runs now, with the tags the bridge needs; in singleplayer the integrated server ran it. */
+	/** A client joined to a dedicated server got the engine's tags and then GT6's sync ahead of the engine's recipes: its
+	 *  deferred item-init runs now, with the tags the bridge needs bound; in singleplayer the integrated server ran it. */
 	public static void onClientSyncArrived() {
 		if (!sDeferredItemInitDone) runDeferredItemInit();
 	}
@@ -650,10 +654,10 @@ public class GT_API extends Abstract_Mod {
 			// Nothing to rebuild on 1.20.1: the static RecipePropertySet finalizeRecipeLoading served doesn't exist here.
 			// The old catch-up loot-pool injection is gone too; delivery now goes through the live IGlobalLootModifier.
 		} else if (aEvent.getLevel() instanceof net.minecraft.world.level.Level tClientLevel && tClientLevel.isClientSide()) {
-			// A remote client has no ServerLevel, so the drain above never runs there. It does not run here either: on 1.20.1 the
-			// engine's tags come after the recipes, and the tag bridge must feed the dictionary before GT6's own items register
-			// (OreDictTags.importFromTags). It runs on GT6's own sync instead (onClientSyncArrived), which the server sends
-			// ahead of recipes and tags; singleplayer is unaffected, its integrated server has drained the queue already.
+			// A remote client has no ServerLevel, so the drain above never runs there. It does not run here either: the tag bridge
+			// must feed the dictionary before GT6's own items register (OreDictTags.importFromTags), and the tags arrive with the
+			// sync the server sends on join. It runs on that sync instead (onClientSyncArrived); singleplayer is unaffected, its
+			// integrated server has drained the queue already.
 		}
 	}
 

@@ -209,40 +209,21 @@ public class OreDictTags {
 
 	/** Runs at the very start of deferred item-init, before GT6's own items register, because unification keeps the FIRST
 	 *  registrant as its target -- a foreign item must win that race, exactly as early-loading mods did back in 1.7.10. */
-	/** The item tags as the server sees them: convention tag id -> item ids. On 1.20.1 a client joined to a dedicated server
-	 *  gets the engine's tags only after the recipes, too late for this bridge, so the server sends this map along first. */
-	public static volatile Map<ResourceLocation, java.util.List<ResourceLocation>> sReceivedTags = null;
-
-	/** Convention tags this bridge reads, with their items, from the engine's own tags. */
-	public static Map<ResourceLocation, java.util.List<ResourceLocation>> collectTags() {
-		Map<ResourceLocation, java.util.List<ResourceLocation>> rTags = new java.util.LinkedHashMap<>();
-		try {
-			for (Pair<TagKey<Item>, HolderSet.Named<Item>> tPair : BuiltInRegistries.ITEM.getTags().toList()) {
-				ResourceLocation tID = tPair.getFirst().location();
-				if (oreName(tID) == null) continue;
-				java.util.List<ResourceLocation> tItems = new java.util.ArrayList<>();
-				for (Holder<Item> tHolder : tPair.getSecond()) {ResourceLocation tKey = BuiltInRegistries.ITEM.getKey(tHolder.value()); if (tKey != null) tItems.add(tKey);}
-				rTags.put(tID, tItems);
-			}
-		} catch(Throwable e) {e.printStackTrace(CS.ERR);}
-		return rTags;
-	}
-
 	public static int importFromTags() {
 		build();
 		int tTags = 0, tEntries = 0, tSkippedGT = 0, tSkippedMC = 0;
 		Map<String, Integer> tByGroup = new TreeMap<>();
-		Map<ResourceLocation, java.util.List<ResourceLocation>> tSource = sReceivedTags != null ? sReceivedTags : collectTags();
 		try {
-			for (Map.Entry<ResourceLocation, java.util.List<ResourceLocation>> tPair : tSource.entrySet()) {
-				ResourceLocation tID = tPair.getKey();
+			for (Pair<TagKey<Item>, HolderSet.Named<Item>> tPair : BuiltInRegistries.ITEM.getTags().toList()) {
+				ResourceLocation tID = tPair.getFirst().location();
+				HolderSet.Named<Item> tTag = tPair.getSecond();
 				String tOreName = oreName(tID);
 				if (tOreName == null) continue;
 				tTags++;
 				String tGroup = tID.getPath().indexOf('/') > 0 ? tID.getPath().substring(0, tID.getPath().indexOf('/')) : tID.getPath();
-				for (ResourceLocation tItemID : tPair.getValue()) {
+				for (Holder<Item> tHolder : tTag) {
 					try {
-						Item tItem = BuiltInRegistries.ITEM.get(tItemID);
+						Item tItem = tHolder.value();
 						if (tItem == null || tItem == Items.AIR) continue;
 						if (ST.isGT(tItem)) {tSkippedGT++; continue;}
 						// Vanilla content isn't this bridge's territory; it's handled by the dictionary's other role instead.
