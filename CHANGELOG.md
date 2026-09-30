@@ -28,6 +28,20 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 
 ## [Unreleased]
 
+## [6.0.0-alpha.10] — JEI shows every machine recipe, machines keep their output
+
+### Fixed
+
+- **Machines no longer void their output below Y=1** ([#6](https://github.com/wolfram0108/gregtech6_w/issues/6)): crushers, shredders and other machines drop their output down to the real bottom of the world instead of destroying it on superflat worlds.
+- **JEI shows every recipe of GT6 machines** ([#5](https://github.com/wolfram0108/gregtech6_w/issues/5)): recipes are looked up when asked, as NEI did, so fluid recipes and uses — distilled water and the like — appear in full.
+- **JEI starts about twice as fast**, and leaving a world no longer logs network errors.
+- **Clients on a dedicated server see all crafting and furnace recipes in JEI**, the same as in singleplayer.
+- **Glass melts into the same amount in every colour**: every coloured glass block gives 1296 L of molten glass and every slab 648 L, on every launch.
+
+### Changed
+
+- **Requires NeoForge 26.1.2.109 or newer**; built and tested against JEI 29.43.0.105.
+
 ## [6.0.0-alpha.9] — glass bottles no longer crash the game, Simplified Chinese
 
 ### Added
