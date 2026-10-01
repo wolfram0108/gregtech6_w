@@ -98,7 +98,7 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 @SuppressWarnings("deprecation")
-public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlockDebugable, IBlockErrorable, IBlockOnWalkOver, IBlockSyncDataAndCoversAndIDs, IRenderedBlock, EntityBlock, IBlockToolable, IBlockRetrievable, IBlockMaterial, gregapi.block.IBlockBreakBlock {
+public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlockDebugable, IBlockErrorable, IBlockOnWalkOver, IBlockSyncDataAndCoversAndIDs, IRenderedBlock, EntityBlock, IBlockToolable, IBlockRetrievable, IBlockMaterial {
 	private static final Map<String, MultiTileEntityBlock> MULTITILEENTITYBLOCKMAP = new HashMap<>();
 	
 	private final int mHarvestLevelOffset, mHarvestLevelMinimum, mHarvestLevelMaximum;
@@ -227,23 +227,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		gregapi.GT_API.deferItemInit(() -> ST.hide(this));
 	}
 	
-	/** 1.7.10 Block.breakBlock, called from TileEntityBase01Root.preRemoveSideEffects; the engine removes the BE itself
-	 *  afterwards, so removeTileEntity and its IMTE_BreakBlock veto are gone (no implementation returns true). */
-	@Override public final void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMetaData) {
-		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
-		// was aTileEntity.shouldRefresh(...) (1.7.10 TileEntity.shouldRefresh, REMOVED entirely from neo BlockEntity,
-		// not found in any of the 3 roots) - GT6 implements it itself on TileEntityBase01Root (no longer a vanilla
-		// override, just a regular method), so we route through a cast; a non-GT6 TE (shouldn't happen for MTE)
-		// is treated as "refresh=true" (default of TileEntityBase01Root.mShouldRefresh), so as not to lose the trigger.
-		boolean tShouldRefresh = !(aTileEntity instanceof gregapi.tileentity.base.TileEntityBase01Root) || ((gregapi.tileentity.base.TileEntityBase01Root)aTileEntity).shouldRefresh(this, aBlock, aMetaData, aMetaData, aWorld, aX, aY, aZ);
-		if (aTileEntity == null || !tShouldRefresh) return;
-		if (aTileEntity instanceof IMTE_BreakBlock && ((IMTE_BreakBlock)aTileEntity).breakBlock()) return;
-		if (aTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData && ((IMTE_HasMultiBlockMachineRelevantData)aTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, (byte)aMetaData, T);
-	}
-
 	// Runs after the engine removed the BE (LevelChunk.setBlockState:315 then :318-322); only the leftover-BE sweep lives
-	// here, the 1.7.10 breakBlock body needs the TE and runs earlier, from TileEntityBase01Root.preRemoveSideEffects.
+	// here; the removal logic needs the BE and runs earlier, in TileEntityBase01Root.preRemoveSideEffects.
 	@Override protected void affectNeighborsAfterRemoval(BlockState aState, ServerLevel aWorld, BlockPos aPos, boolean aMovedByPiston) {
 		sweepBlockEntityRemains(aWorld, aPos);
 		super.affectNeighborsAfterRemoval(aState, aWorld, aPos, aMovedByPiston);

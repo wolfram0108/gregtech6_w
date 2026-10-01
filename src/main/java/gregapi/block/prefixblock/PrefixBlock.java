@@ -91,7 +91,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockSyncData, IRenderedBlock, IBlockToolable, IPrefixBlock, gregapi.block.IBlockBreakBlock {
+public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockSyncData, IRenderedBlock, IBlockToolable, IPrefixBlock {
 	public Drops mDrops;
 	public boolean mRegisterToOreDict = T, mHidden = F;
 	
@@ -515,12 +515,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN);
 	}
 
-	// Any removal (explosion, machine, WD.set) remembers the BlockEntity for the drops, as 1.7.10 did; the engine removes it right after.
-	@Override public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int par6) {
-		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		if (tTileEntity != null) LAST_BROKEN_TILEENTITY.set(tTileEntity);
-	}
-	// BUG-020 (ore drop): breakBlock above runs inside the removal, after the loot stage of a player break has to know the material →
+	// BUG-020 (ore drop): the loot stage of a player break runs after the BE is gone and has to know the material →
 	// Drops.getDrops (:67 WD.te) at the loot stage (the BE is already removed by the engine) could not find the material. Bridge using the same approach as
 	// MultiTileEntityBlock.onDestroyedByPlayer:433 — LAST_BROKEN is set BEFORE the block is removed, end-of-tick cleans it up (Proxy:911).
 	@Override public boolean onDestroyedByPlayer(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, ItemStack aToolStack, boolean aWillHarvest, net.minecraft.world.level.material.FluidState aFluid) {

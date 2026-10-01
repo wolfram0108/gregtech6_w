@@ -564,12 +564,17 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		return mShouldRefresh || aOldBlock != aNewBlock;
 	}
 
-	/** The engine's point of 1.7.10 Block.breakBlock while the BE still stands (LevelChunk.setBlockState), one bridge for every
-	 *  MTE branch; no super, so vanilla Containers.dropContents stays away from GT6 inventories, whose drop GT6 owns. */
+	/** The engine calls this on removal while the BE still stands (1.7.10 Block.breakBlock): the drops read it as the last
+	 *  broken one, a GT6 BE runs its own breakBlock. No super: vanilla Containers.dropContents must not drop GT6 inventories. */
 	@Override public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {
-		if (level != null && aState.getBlock() instanceof gregapi.block.IBlockBreakBlock tBlock) {
-			try {tBlock.breakBlock(level, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), WD.meta(aState));} catch (Throwable e) {e.printStackTrace(ERR);} // must not break block removal
-		}
+		if (level == null) return;
+		LAST_BROKEN_TILEENTITY.set(this);
+		byte tMeta = (byte)WD.meta(aState);
+		try { // an exception here must not break the engine's block removal
+			if (!shouldRefresh(aState.getBlock(), aState.getBlock(), tMeta, tMeta, level, aPos.getX(), aPos.getY(), aPos.getZ())) return;
+			if (this instanceof IMultiTileEntity.IMTE_BreakBlock tBreak && tBreak.breakBlock()) return;
+			if (this instanceof IMultiTileEntity.IMTE_HasMultiBlockMachineRelevantData tData && tData.hasMultiBlockMachineRelevantData()) gregapi.tileentity.ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(level, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), tMeta, T);
+		} catch (Throwable e) {e.printStackTrace(ERR);}
 	}
 
 	/** Simple Function to prevent Block Updates from happening multiple times within the same Tick. */

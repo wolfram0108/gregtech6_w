@@ -51,6 +51,11 @@ public abstract class BlockBaseMachineUpdate extends BlockBaseMeta {
 	}
 	
 	@Override public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ)                           {if (ITileEntityMachineBlockUpdateable.Util.isMachineBlock(this, WD.meta(aWorld, aX, aY, aZ))) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, UT.Code.bind4(WD.meta(aWorld, aX, aY, aZ)), F);}
-	@Override public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMetaData) {if (ITileEntityMachineBlockUpdateable.Util.isMachineBlock(this, aMetaData                          )) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, UT.Code.bind4(aMetaData), T);}
+	// A removed machine block makes the multiblock machines around it re-read their configuration (1.7.10 breakBlock).
+	@Override protected void affectNeighborsAfterRemoval(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aWorld, net.minecraft.core.BlockPos aPos, boolean aMovedByPiston) {
+		int tMeta = WD.meta(aState);
+		if (ITileEntityMachineBlockUpdateable.Util.isMachineBlock(this, tMeta)) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aPos, this, UT.Code.bind4(tMeta), T);
+		super.affectNeighborsAfterRemoval(aState, aWorld, aPos, aMovedByPiston);
+	}
 	public int getMobilityFlag() {return 2;}
 }

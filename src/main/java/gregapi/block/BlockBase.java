@@ -223,16 +223,6 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// isBlockNormalCube, which diverges on GT6's full-collision non-normal-render blocks like glass; this bridges the flags.
 	@Override protected float getShadeBrightness(BlockState aState, BlockGetter aWorld, BlockPos aPos) {return gregapi.data.CS.shadeBrightness(isBlockNormalCube());}
 
-	/** 1.7.10 Block.breakBlock(World,x,y,z,Block,meta); empty like the vanilla default for a block without a TE. */
-	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {/**/}
-
-	// The engine's point of 1.7.10 breakBlock for a block without a BE: the removed state arrives as the argument, so the
-	// meta is read from that snapshot. One bridge for the whole family; subclasses override breakBlock only.
-	@Override protected void affectNeighborsAfterRemoval(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, boolean aMovedByPiston) {
-		breakBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), WD.meta(aState));
-		super.affectNeighborsAfterRemoval(aState, aWorld, aPos, aMovedByPiston);
-	}
-
 	/** 1.7.10's flag for shading neighbors, ported body-for-body; renderAsNormalBlock() stays virtual
 	 *  so subclass overrides (glass, leaves, paths, slabs) are honored exactly as in the original. */
 	public boolean isBlockNormalCube() {return mMaterial.blocksMovement() && renderAsNormalBlock();}
