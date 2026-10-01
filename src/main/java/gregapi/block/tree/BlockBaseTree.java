@@ -53,14 +53,7 @@ public abstract class BlockBaseTree extends BlockBaseMeta {
 	public abstract int getLeavesRangeYPos(byte aMeta);
 	public abstract int getLeavesRangeYNeg(byte aMeta);
 	
-	// Wires the "block removed, notify neighbors" channel (1.7.10's breakBlock -> neo's
-	// affectNeighborsAfterRemoval); without it a felled trunk never started leaf decay, leaving leaves hanging in midair.
-	@Override public void onRemove(net.minecraft.world.level.block.state.BlockState aState, Level aLevel, BlockPos aPos, net.minecraft.world.level.block.state.BlockState aNewState, boolean aMovedByPiston) {
-		if (!aState.is(aNewState.getBlock())) breakBlock(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), getExtendedMetaData(aState));
-		super.onRemove(aState, aLevel, aPos, aNewState, aMovedByPiston);
-	}
-
-	// @Override
+	@Override
 	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {
 		int tRangeSide = getLeavesRangeSide((byte)aMeta)+1, tRangeYNeg = getLeavesRangeYNeg((byte)aMeta)+1, tRangeYPos = getLeavesRangeYPos((byte)aMeta)+1;
 		// isAreaLoaded takes only a symmetric radius, so the max of the three original ranges is used as a safe
