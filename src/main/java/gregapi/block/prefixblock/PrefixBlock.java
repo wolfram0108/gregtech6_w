@@ -497,6 +497,24 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return aTileEntity == null || aTileEntity.triggerEvent(aID, aParam);
 	}
 	
+	// ⚠️ CHANNEL IS REDUNDANT — in 1.7.10 getDamageValue answered "which subtype does this block's item have" and was called from
+	// getPickBlock/createStackedBlock. In neo this role is carried entirely by getCloneItemStack (below, line 494):
+	// it returns a ready stack with meta via getItemStackFromBlock. Kept as a comparison point with the original.
+	// @Override
+	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {
+		return getMetaDataValue(aWorld, aX, aY, aZ);
+	}
+	
+	// F13: 1.7.10 Block.getPickBlock was removed — neo middle-click goes via IBlockExtension.getCloneItemStack; the neo hook below
+	// delegates to the GT6 getPickBlock (getItemStackFromBlock), restoring the behavior 1:1. The GT6 method is kept.
+	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, boolean aIncludeData, Player aPlayer) {
+		ItemStack r = getItemStackFromBlock(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), SIDE_UNKNOWN);
+		return ST.valid(r) ? r : super.getCloneItemStack(aLevel, aPos, aState, aIncludeData, aPlayer);
+	}
+	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
+		return getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN);
+	}
+
 	// Any removal (explosion, machine, WD.set) remembers the BlockEntity for the drops, as 1.7.10 did; the engine removes it right after.
 	@Override public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int par6) {
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);

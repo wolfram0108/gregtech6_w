@@ -1,5 +1,9 @@
 /**
- * Copyright (c) 2019 Gregorius Techneticies
+ * Copyright (c) 2026 wolfram0108
+ *
+ * Written in 2026 for the GregTech 6 NeoForge port
+ * (https://github.com/wolfram0108/gregtech6_w). Not part of the original GregTech 6
+ * by Gregorius Techneticies; distributed under the same licence as the work it extends.
  *
  * This file is part of GregTech.
  *
@@ -15,10 +19,6 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
- *
- * Modified in 2026 for the GregTech 6 NeoForge port
- * (https://github.com/wolfram0108/gregtech6_w): ported from Minecraft 1.7.10 / Forge
- * to Minecraft 26.1.2 / NeoForge.
  */
 
 package gregapi.block;
