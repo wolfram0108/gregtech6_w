@@ -699,13 +699,16 @@ public class WD {
 	 *  true for partial occluders (slabs, stairs) AND for every GT6 cross block (Properties lack noOcclusion),
 	 *  so WD.set stripped grass under saplings on placement (original WD.java:482 passed isOpaqueCube). */
 	public static boolean opaque(Block aBlock) {return aBlock.defaultBlockState().isSolidRender(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO);}
-	/** F-harvest-event (decisions/): 1.7.10 {@code ForgeEventFactory.fireBlockHarvesting} fired HarvestDropsEvent —
-	 *  external mods edited the drop list and chance, the method returned the chance. neo: the drop model = engine-fired
-	 *  {@code BlockDropsEvent} on spawning through the loot system, there is NO DIRECT EventHooks equivalent (checked against
-	 *  neoforge/event/EventHooks.java). GT6 spawns the drop MANUALLY ({@code WD.dropBlockAsItem}), bypassing loot; no-op:
-	 *  return {@code aDropChance} as-is, GT6 drop preserved 1:1. F-harvest-event impossible-1:1: a hook for
-	 *  external-mod drop modification does not exist in neo for the manual-drop path; GT6 drop 1:1. */
-	public static float fireBlockHarvesting(java.util.List<ItemStack> aDrops, Level aWorld, Block aBlock, int aX, int aY, int aZ, int aMeta, int aFortune, float aDropChance, boolean aSilkTouch, Player aPlayer) {return aDropChance;}
+	/** 1.7.10 fired HarvestDropsEvent here; this branch has no such event, so drops spawned by hand (MTE) go to the same
+	 *  center the loot paths call, GT_API_Proxy.processBlockDrops, which edits the list in place (callers pass an ArrayList). */
+	public static float fireBlockHarvesting(java.util.List<ItemStack> aDrops, Level aWorld, Block aBlock, int aX, int aY, int aZ, int aMeta, int aFortune, float aDropChance, boolean aSilkTouch, Player aPlayer) {
+		if (aDrops == null || aWorld == null || aWorld.isClientSide()) return aDropChance;
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(tPos);
+		if (tState.getBlock() != aBlock) tState = aBlock.defaultBlockState(); // the player path removes the block before it drops
+		gregapi.GT_API_Proxy.processBlockDrops(aDrops, aWorld, tPos, tState, aPlayer);
+		return aDropChance;
+	}
 	/** F-render: 1.7.10 Block-normal-cube = isOpaque && renderAsNormalBlock && !canProvidePower — EXACTLY a "redstone
 	 *  conductor" (a full opaque block, not a signal source). neo BlockState.isRedstoneConductor(BlockGetter,
 	 *  BlockPos) (BlockBehaviour.java:616) — the canonical successor (§8). */
