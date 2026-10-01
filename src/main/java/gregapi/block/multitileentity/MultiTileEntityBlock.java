@@ -211,13 +211,13 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	/** The engine's removal hook (1.7.10 Block.breakBlock): the BE still stands here, so the drops read it as the last broken one
 	 *  and a GT6 BE runs its own breakBlock; super.onRemove then removes it, unless the BE vetoed that. */
 	@Override public void onRemove(BlockState aState, Level aWorld, BlockPos aPos, BlockState aNewState, boolean aMovedByPiston) {
-		int aX = aPos.getX(), aY = aPos.getY(), aZ = aPos.getZ(), aMetaData = blockMetaDataAt(aWorld, aX, aY, aZ);
-		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		if (aTileEntity != null) {
-			LAST_BROKEN_TILEENTITY.set(aTileEntity);
-			if (!(aTileEntity instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot) || tRoot.shouldRefresh(this, aState.getBlock(), aMetaData, aMetaData, aWorld, aX, aY, aZ)) {
-				if (aTileEntity instanceof IMTE_BreakBlock && ((IMTE_BreakBlock)aTileEntity).breakBlock()) return;
-				if (aTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData && ((IMTE_HasMultiBlockMachineRelevantData)aTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, (byte)aMetaData, T);
+		int tX = aPos.getX(), tY = aPos.getY(), tZ = aPos.getZ(), tMeta = blockMetaDataAt(aWorld, tX, tY, tZ);
+		BlockEntity tTileEntity = WD.te(aWorld, tX, tY, tZ, T);
+		if (tTileEntity != null) {
+			LAST_BROKEN_TILEENTITY.set(tTileEntity);
+			if (!(tTileEntity instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot) || tRoot.shouldRefresh(this, aState.getBlock(), tMeta, tMeta, aWorld, tX, tY, tZ)) {
+				if (tTileEntity instanceof IMTE_BreakBlock && ((IMTE_BreakBlock)tTileEntity).breakBlock()) return;
+				if (tTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData && ((IMTE_HasMultiBlockMachineRelevantData)tTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, tX, tY, tZ, this, (byte)tMeta, T);
 			}
 		}
 		super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston);
