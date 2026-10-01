@@ -208,31 +208,20 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		gregapi.GT_API.deferItemInit(() -> ST.hide(this));
 	}
 	
-	// @Override
-	/** true means the BlockEntity must NOT be removed (the IMTE_BreakBlock veto fired); every other outcome
-	 *  is false, and the caller must let the engine remove it via super.onRemove (see there). */
-	public final boolean breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMetaData) {
-		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
-		// Was aTileEntity.shouldRefresh(...) (removed from neo's BlockEntity entirely); GT6 implements it itself
-		// on TileEntityBase01Root as an ordinary method now, routed through a cast; a non-GT6 TE defaults to refresh=true.
-		boolean tShouldRefresh = !(aTileEntity instanceof gregapi.tileentity.base.TileEntityBase01Root) || ((gregapi.tileentity.base.TileEntityBase01Root)aTileEntity).shouldRefresh(this, aBlock, aMetaData, aMetaData, aWorld, aX, aY, aZ);
-		// Early exits here don't mean "leave the BE": the only "leave it" case is the interface veto below;
-		// everything else lets the engine remove it via the caller's super.onRemove, matching 1.7.10's own safety net.
-		if (aTileEntity == null || !tShouldRefresh) return F;
-		if (aTileEntity instanceof IMTE_BreakBlock && ((IMTE_BreakBlock)aTileEntity).breakBlock()) return T; // contract: return true to prevent the TileEntity from being removed
-		if (aTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData && ((IMTE_HasMultiBlockMachineRelevantData)aTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, (byte)aMetaData, T);
-		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ)); // Was aWorld.removeTileEntity(x,y,z) (1.7.10 World); neo is Level.removeBlockEntity(BlockPos).
-		return F;
-	}
-
-	/** This body had no caller at all: the engine's own removal hook (BlockBehaviour.onRemove) never called
-	 *  it, so drop-on-break for MTE containers and multiblock update notification were both silently dead. */
-	/** Regression fix: the first bridge called only breakBlock, not super, taking over the engine's own
-	 *  unconditional duty to remove the BlockEntity, leaving a ghost BE on early exits; super now runs after, unless vetoed. */
+	/** The engine's removal hook (1.7.10 Block.breakBlock): the BE still stands here, so the drops read it as the last broken one
+	 *  and a GT6 BE runs its own breakBlock; super.onRemove then removes it, unless the BE vetoed that. */
 	@Override public void onRemove(BlockState aState, Level aWorld, BlockPos aPos, BlockState aNewState, boolean aMovedByPiston) {
-		boolean tKeepBlockEntity = breakBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), blockMetaDataAt(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));
-		if (!tKeepBlockEntity) {super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston); sweepBlockEntityRemains(aWorld, aPos, aNewState);}
+		int aX = aPos.getX(), aY = aPos.getY(), aZ = aPos.getZ(), aMetaData = blockMetaDataAt(aWorld, aX, aY, aZ);
+		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
+		if (aTileEntity != null) {
+			LAST_BROKEN_TILEENTITY.set(aTileEntity);
+			if (!(aTileEntity instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot) || tRoot.shouldRefresh(this, aState.getBlock(), aMetaData, aMetaData, aWorld, aX, aY, aZ)) {
+				if (aTileEntity instanceof IMTE_BreakBlock && ((IMTE_BreakBlock)aTileEntity).breakBlock()) return;
+				if (aTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData && ((IMTE_HasMultiBlockMachineRelevantData)aTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, (byte)aMetaData, T);
+			}
+		}
+		super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston);
+		sweepBlockEntityRemains(aWorld, aPos, aNewState);
 	}
 
 	/** super.onRemove's own removal misses a BlockEntity in two legitimate chunk states: one where the entry

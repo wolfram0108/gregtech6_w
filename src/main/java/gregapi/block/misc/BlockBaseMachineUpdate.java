@@ -51,6 +51,6 @@ public abstract class BlockBaseMachineUpdate extends BlockBaseMeta {
 	}
 	
 	@Override public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ)                           {if (ITileEntityMachineBlockUpdateable.Util.isMachineBlock(this, WD.meta(aWorld, aX, aY, aZ))) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, UT.Code.bind4(WD.meta(aWorld, aX, aY, aZ)), F);}
-	@Override public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMetaData) {if (ITileEntityMachineBlockUpdateable.Util.isMachineBlock(this, aMetaData                          )) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, UT.Code.bind4(aMetaData), T);}
+	@Override public void onRemove(net.minecraft.world.level.block.state.BlockState aState, Level aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aNewState, boolean aMovedByPiston) {if (!aState.is(aNewState.getBlock())) {int aX = aPos.getX(), aY = aPos.getY(), aZ = aPos.getZ(), aMetaData = WD.meta(aState);if (ITileEntityMachineBlockUpdateable.Util.isMachineBlock(this, aMetaData                          )) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, UT.Code.bind4(aMetaData), T);} super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston);}
 	public int getMobilityFlag() {return 2;}
 }

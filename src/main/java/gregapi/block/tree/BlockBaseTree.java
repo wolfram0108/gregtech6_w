@@ -53,19 +53,23 @@ public abstract class BlockBaseTree extends BlockBaseMeta {
 	public abstract int getLeavesRangeYPos(byte aMeta);
 	public abstract int getLeavesRangeYNeg(byte aMeta);
 	
-	@Override
-	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {
-		int tRangeSide = getLeavesRangeSide((byte)aMeta)+1, tRangeYNeg = getLeavesRangeYNeg((byte)aMeta)+1, tRangeYPos = getLeavesRangeYPos((byte)aMeta)+1;
-		// isAreaLoaded takes only a symmetric radius, so the max of the three original ranges is used as a safe
-		// superset that never loads less area than the asymmetric check it replaces.
-		if (!aWorld.isClientSide() && aWorld.isAreaLoaded(new BlockPos(aX, aY, aZ), Math.max(tRangeSide, Math.max(tRangeYNeg, tRangeYPos)))) {
-			tRangeSide--; tRangeYNeg--; tRangeYPos--;
-			for (int i = -tRangeSide; i <= tRangeSide; ++i) for (int j = -tRangeYNeg; j <= tRangeYPos; ++j) for (int k = -tRangeSide; k <= tRangeSide; ++k) {
-				Block tBlock = WD.block(aWorld, aX + i, aY + j, aZ + k);
-				// beginLeavesDecay is gone as a generic Block hook in neo; GT6 logic lives only on BlockBaseLeaves,
-				// so it is routed there by instanceof while vanilla leaves keep their own tick-based decay.
-				if (WD.leaves(tBlock, aWorld, aX + i, aY + j, aZ + k) && tBlock instanceof BlockBaseLeaves) ((BlockBaseLeaves)tBlock).beginLeavesDecay(aWorld, aX + i, aY + j, aZ + k);
+	// A removed log starts the decay of the GT6 leaves around it (1.7.10 breakBlock).
+	@Override public void onRemove(net.minecraft.world.level.block.state.BlockState aState, Level aWorld, BlockPos aPos, net.minecraft.world.level.block.state.BlockState aNewState, boolean aMovedByPiston) {
+		if (!aState.is(aNewState.getBlock())) {
+			int aX = aPos.getX(), aY = aPos.getY(), aZ = aPos.getZ(), aMeta = WD.meta(aState);
+			int tRangeSide = getLeavesRangeSide((byte)aMeta)+1, tRangeYNeg = getLeavesRangeYNeg((byte)aMeta)+1, tRangeYPos = getLeavesRangeYPos((byte)aMeta)+1;
+			// isAreaLoaded takes only a symmetric radius, so the max of the three original ranges is used as a safe
+			// superset that never loads less area than the asymmetric check it replaces.
+			if (!aWorld.isClientSide() && aWorld.isAreaLoaded(new BlockPos(aX, aY, aZ), Math.max(tRangeSide, Math.max(tRangeYNeg, tRangeYPos)))) {
+				tRangeSide--; tRangeYNeg--; tRangeYPos--;
+				for (int i = -tRangeSide; i <= tRangeSide; ++i) for (int j = -tRangeYNeg; j <= tRangeYPos; ++j) for (int k = -tRangeSide; k <= tRangeSide; ++k) {
+					Block tBlock = WD.block(aWorld, aX + i, aY + j, aZ + k);
+					// beginLeavesDecay is gone as a generic Block hook in neo; GT6 logic lives only on BlockBaseLeaves,
+					// so it is routed there by instanceof while vanilla leaves keep their own tick-based decay.
+					if (WD.leaves(tBlock, aWorld, aX + i, aY + j, aZ + k) && tBlock instanceof BlockBaseLeaves) ((BlockBaseLeaves)tBlock).beginLeavesDecay(aWorld, aX + i, aY + j, aZ + k);
+				}
 			}
 		}
+		super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston);
 	}
 }
