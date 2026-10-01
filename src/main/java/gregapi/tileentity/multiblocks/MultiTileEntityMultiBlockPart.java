@@ -207,7 +207,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 			mTarget = null;
 			if (WD.exists(level, mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())) {
 				BlockEntity tTarget = WD.te(level, mTargetPos, T);
-				if (tTarget instanceof ITileEntityMultiBlockController && ((ITileEntityMultiBlockController)tTarget).isInsideStructure(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ())) {
+				if (tTarget instanceof ITileEntityMultiBlockController && !((ITileEntityMultiBlockController)tTarget).isDead() && ((ITileEntityMultiBlockController)tTarget).isInsideStructure(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ())) {
 					mTarget = (ITileEntityMultiBlockController)tTarget;
 				} else {
 					mTargetPos = null;
