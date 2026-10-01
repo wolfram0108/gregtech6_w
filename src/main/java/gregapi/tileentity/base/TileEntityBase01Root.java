@@ -563,7 +563,15 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public boolean shouldRefresh(Block aOldBlock, Block aNewBlock, int aOldMeta, int aNewMeta, Level aWorld, int aX, int aY, int aZ) {
 		return mShouldRefresh || aOldBlock != aNewBlock;
 	}
-	
+
+	/** The engine's point of 1.7.10 Block.breakBlock while the BE still stands (LevelChunk.setBlockState), one bridge for every
+	 *  MTE branch; no super, so vanilla Containers.dropContents stays away from GT6 inventories, whose drop GT6 owns. */
+	@Override public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {
+		if (level != null && aState.getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock tBlock) {
+			try {tBlock.breakBlock(level, aPos.getX(), aPos.getY(), aPos.getZ(), tBlock, WD.meta(aState));} catch (Throwable e) {e.printStackTrace(ERR);} // must not break block removal
+		}
+	}
+
 	/** Simple Function to prevent Block Updates from happening multiple times within the same Tick. */
 	public final void causeBlockUpdate() {
 		if (mIsTicking) mDoesBlockUpdate = T; else doBlockUpdate();

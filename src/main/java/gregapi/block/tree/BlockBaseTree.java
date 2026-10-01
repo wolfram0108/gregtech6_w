@@ -53,13 +53,7 @@ public abstract class BlockBaseTree extends BlockBaseMeta {
 	public abstract int getLeavesRangeYPos(byte aMeta);
 	public abstract int getLeavesRangeYNeg(byte aMeta);
 	
-	// Bridges 1.7.10 breakBlock(World,x,y,z,Block,meta) to affectNeighborsAfterRemoval so a felled trunk
-	// still triggers leaf decay around it; subtype comes from the shared meta<->BlockState center.
-	@Override protected void affectNeighborsAfterRemoval(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aLevel, BlockPos aPos, boolean aMovedByPiston) {
-		breakBlock(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), getExtendedMetaData(aState));
-	}
-
-	// @Override
+	@Override
 	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {
 		int tRangeSide = getLeavesRangeSide((byte)aMeta)+1, tRangeYNeg = getLeavesRangeYNeg((byte)aMeta)+1, tRangeYPos = getLeavesRangeYPos((byte)aMeta)+1;
 		// isAreaLoaded takes only a symmetric radius, so the max of the three original ranges is used as a safe

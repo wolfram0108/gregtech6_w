@@ -97,6 +97,11 @@ public class BlockRailRoad extends BlockBaseRail {
 	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {
 		// NO-OP
 	}
+
+	// The original's empty breakBlock replaced BlockRailBase's neighbour updates; the engine's point of that hook is this one.
+	@Override protected void affectNeighborsAfterRemoval(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aWorld, net.minecraft.core.BlockPos aPos, boolean aMovedByPiston) {
+		breakBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aState.getBlock(), gregapi.util.WD.meta(aState));
+	}
 	
 	@Override
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {

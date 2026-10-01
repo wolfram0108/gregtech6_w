@@ -378,9 +378,6 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	// virtual dispatch means a subclass overriding the old names automatically gets the neo behavior too.
 	@Override public int getContainerSize() {return getSizeInventory();}
 	@Override public ItemStack getItem(int aSlot) {return getStackInSlot(aSlot);}
-	/** Same trick as TileEntityBase05Inventories: vanilla's dropContents would NPE on GT6's null slots and double-drop, so
-	 *  drop ownership stays with GT6's own breakBlock. */
-	@Override public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {/* drop belongs to GT6 breakBlock */}
 	@Override public void setItem(int aSlot, ItemStack aStack) {setInventorySlotContents(aSlot, aStack);}
 	@Override public ItemStack removeItem(int aSlot, int aDecrement) {return decrStackSize(aSlot, aDecrement);}
 	@Override public ItemStack removeItemNoUpdate(int aSlot) {return getStackInSlotOnClosing(aSlot);}

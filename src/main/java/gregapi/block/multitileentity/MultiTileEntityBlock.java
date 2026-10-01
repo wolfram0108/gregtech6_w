@@ -227,23 +227,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		gregapi.GT_API.deferItemInit(() -> ST.hide(this));
 	}
 	
-	// @Override
-	// TAKEN APART (wave 2A consolidation, orchestrator decision). This 6-arg method is the 1.7.10 signature
-	// Block.breakBlock(World,x,y,z,Block,meta); the engine no longer calls it (the "// @Override" comment above is
-	// not an annotation, plain text). No caller exists: grep "\.breakBlock\(aWorld\|\.breakBlock\(tWorld\|\.breakBlock\(level"
-	// over the whole tree - 0 matches (every real `.breakBlock(...)` call in the tree is the 0-arg form,
-	// either via `super.breakBlock()` or a line inside this very method's body below).
-	// The line below carries the IMTE_BreakBlock veto: "return true to prevent the TileEntity from being removed"
-	// (contract declared by the original, gregtech6/.../IMultiTileEntity.java:84). Analysis of both trees:
-	// the 1.7.10 original - 18 implementations (`grep -rn "public boolean breakBlock()" src/main/java/` = 18),
-	// NOT A SINGLE ONE returns `T`; the only `return T` line in the whole tree sits in
-	// example/MultiTileEntityChest.java inside a COMMENTED-OUT method. The port - 15 implementations,
-	// NOT A SINGLE ONE returns `T` (same formula, same result).
-	// Conclusion: the channel is REDUNDANT, not broken. The veto never fired even in the original — it's an
-	// author's design provision left unused; the port's behavior is identical to the original without any bridge. The
-	// bridge is NOT wired (wiring it would change behavior on zero blocks) and the method is NOT deleted (that would
-	// erase the author's contract, which the port reproduces rather than reinterprets). Wire it if an
-	// implementation of IMTE_BreakBlock.breakBlock() returning T appears.
+	/** 1.7.10 Block.breakBlock, called from TileEntityBase01Root.preRemoveSideEffects; the engine removes the BE itself
+	 *  afterwards, so removeTileEntity and its IMTE_BreakBlock veto are gone (no implementation returns true). */
 	public final void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMetaData) {
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
@@ -255,17 +240,10 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		if (aTileEntity == null || !tShouldRefresh) return;
 		if (aTileEntity instanceof IMTE_BreakBlock && ((IMTE_BreakBlock)aTileEntity).breakBlock()) return;
 		if (aTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData && ((IMTE_HasMultiBlockMachineRelevantData)aTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, (byte)aMetaData, T);
-		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ)); // was aWorld.removeTileEntity(x,y,z) (1.7.10 World), neo Level.removeBlockEntity(BlockPos) [Level.java:688]
 	}
 
-	// Wiring the "block removed — touch neighbors" channel (the same approach PrefixBlock.affectNeighborsAfterRemoval and
-	// BlockBaseTree.affectNeighborsAfterRemoval already apply for this name): 1.7.10 breakBlock(World,x,y,z,Block,meta)
-	// -> neo BlockBehaviour.affectNeighborsAfterRemoval(BlockState,ServerLevel,BlockPos,boolean) [BlockBehaviour.java:170],
-	// the engine calls it as the last line of LevelChunk.setBlockState (LevelChunk.java:318-322), right after the regular
-	// removeBlockEntity (:315). Only the leftover-BE sweep below hangs here - the GT6-specific content of the channel
-	// (6-arg breakBlock/IMTE_BreakBlock veto) is deliberately NOT wired here: it has a separate, already-occupied channel
-	// (TileEntityBase05Inventories.preRemoveSideEffects -> 0-arg breakBlock()), and the decision on the 6-arg method is
-	// outside the scope of this fix.
+	// Runs after the engine removed the BE (LevelChunk.setBlockState:315 then :318-322); only the leftover-BE sweep lives
+	// here, the 1.7.10 breakBlock body needs the TE and runs earlier, from TileEntityBase01Root.preRemoveSideEffects.
 	@Override protected void affectNeighborsAfterRemoval(BlockState aState, ServerLevel aWorld, BlockPos aPos, boolean aMovedByPiston) {
 		sweepBlockEntityRemains(aWorld, aPos);
 		super.affectNeighborsAfterRemoval(aState, aWorld, aPos, aMovedByPiston);
