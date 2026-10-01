@@ -295,11 +295,11 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	protected int getAmountOf(ItemStack aStack) {
 		int tAmount = 0;
 		for (int i : SLOTS_CRAFTING) if (ST.equalTools(aStack, slot(i), F)) {
-			tAmount+=slot(i).getCount();
+			tAmount+=ST.count(slot(i));
 			if (tAmount >= SLOTS_CRAFTING.length) return tAmount;
 		}
 		for (int i : SLOTS_CONSUMPTION) if (ST.equalTools(aStack, slot(i), F)) {
-			tAmount+=slot(i).getCount();
+			tAmount+=ST.count(slot(i));
 			if (tAmount >= SLOTS_CRAFTING.length) return tAmount;
 		}
 		for (byte tSide : ALL_SIDES_VALID) {
@@ -408,13 +408,13 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 			}
 			
 			// First take from the Slot that actually indicates the Item.
-			if (tNeeds) if (ST.equalTools(tRecipeStacks[j], slot(SLOTS_CRAFTING[j]), F) && slot(SLOTS_CRAFTING[j]).getCount() > 1 && consumeSlot(SLOTS_CRAFTING[j])) continue;
+			if (tNeeds) if (ST.equalTools(tRecipeStacks[j], slot(SLOTS_CRAFTING[j]), F) && ST.count(slot(SLOTS_CRAFTING[j])) > 1 && consumeSlot(SLOTS_CRAFTING[j])) continue;
 			// Then take from the Grid but always leave one in each Slot.
-			if (tNeeds) for (int i : SLOTS_CRAFTING   ) if (ST.equalTools(tRecipeStacks[j], slot(i), F) && slot(i).getCount() > 1 && consumeSlot(i)) {tNeeds = F; break;}
+			if (tNeeds) for (int i : SLOTS_CRAFTING   ) if (ST.equalTools(tRecipeStacks[j], slot(i), F) && ST.count(slot(i)) > 1 && consumeSlot(i)) {tNeeds = F; break;}
 			// Then draw from the ready Slots, that way you do not have to refill them all the time, after crafting things you already have the Stuff ready for.
-			if (tNeeds) for (int i : SLOTS_CONSUMPTION) if (ST.equalTools(tRecipeStacks[j], slot(i), F) && slot(i).getCount() > 0 && consumeSlot(i)) {tNeeds = F; break;}
+			if (tNeeds) for (int i : SLOTS_CONSUMPTION) if (ST.equalTools(tRecipeStacks[j], slot(i), F) && ST.count(slot(i)) > 0 && consumeSlot(i)) {tNeeds = F; break;}
 			// And then pull from the Crafting Slots if needed, and mark the Grid as changed.
-			if (tNeeds) for (int i : SLOTS_CRAFTING   ) if (ST.equalTools(tRecipeStacks[j], slot(i), F) && slot(i).getCount() > 0 && consumeSlot(i)) {tNeeds = F; mUpdatedGrid = T; break;}
+			if (tNeeds) for (int i : SLOTS_CRAFTING   ) if (ST.equalTools(tRecipeStacks[j], slot(i), F) && ST.count(slot(i)) > 0 && consumeSlot(i)) {tNeeds = F; mUpdatedGrid = T; break;}
 		}
 		
 		if (aHoldStack == null) aHoldStack = ST.copy(slot(31)); else aHoldStack.setCount(aHoldStack.getCount()+(slot(31).getCount()));
@@ -471,7 +471,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 			removeItem(aSlot, 1);
 			return T;
 		}
-		if (slot(aSlot).getCount() == 1) {
+		if (ST.count(slot(aSlot)) == 1) {
 			slot(aSlot, tContainer);
 			return T;
 		} 

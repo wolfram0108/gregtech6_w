@@ -16568,6 +16568,7 @@
  "gt.tt.disable_checker_in_the_clientsid.86e06b01": "отключить проверку можно в клиентском gregtech.cfg",
  "gt.tt.disable_message_in_the_clientsid.c035e749": "отключить сообщение можно в клиентском gregtech.cfg",
  "gt.tt.disable_warning_in_the_clientsid.f9b44ed0": "отключить предупреждение можно в клиентском gregtech.cfg",
+ "gt.tt.does_not_get_consumed_in_the_pro.71c11576": "Не расходуется в процессе",
  "gt.tt.does_very_low_damage_to_anything.b982d7d2": "Наносит очень малый урон всему остальному!",
  "gt.tt.doesn_t_care_whether_to_bee_in_o.cae6e04c": "Не важно, быть пчеле внутри или снаружи",
  "gt.tt.doesn_t_do_fluid_blocks_use_drai.ac7c4f83": "Не работает с блоками жидкости! Используйте для этого дренаж!",

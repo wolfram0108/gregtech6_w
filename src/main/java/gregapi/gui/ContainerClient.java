@@ -118,7 +118,24 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 	@Override protected void renderLabels(GuiGraphics aGraphics, int aMouseX, int aMouseY) {
 		mGraphics = aGraphics;
 		try {drawGuiContainerForegroundLayer(aMouseX, aMouseY);} finally {mGraphics = null;}
+		markGhosts(aGraphics);
 	}
+
+	/** A size-0 stack (a layout copy, a remembered type) is no item: it shows "0" under the recipe book's ghost veil, so it
+	 *  can't be mistaken for a real one. renderSlot is private here, renderLabels runs right after the slots (same frame). */
+	private void markGhosts(GuiGraphics aGraphics) {
+		aGraphics.pose().pushPose();
+		aGraphics.pose().translate(0, 0, 300); // above the slot items and their decorations
+		for (Slot tSlot : menu.slots) {
+			net.minecraft.world.item.ItemStack tStack = tSlot.getItem();
+			if (!(gregapi.util.ST.size(tStack) == 0 && tStack.getCount() > 0)) continue;
+			aGraphics.drawString(font, "0", tSlot.x + 17 - font.width("0"), tSlot.y + 9, 0xFFFFFF, true);
+			aGraphics.fill(net.minecraft.client.renderer.RenderType.guiGhostRecipeOverlay(), tSlot.x, tSlot.y, tSlot.x + 16, tSlot.y + 16, GHOST_VEIL);
+		}
+		aGraphics.pose().popPose();
+	}
+	/** The veil colour of the recipe book's ghost recipe (GhostRecipe:68). */
+	private static final int GHOST_VEIL = 0x30FFFFFF;
 
 	// Restores the original tooltip for an empty Slot_Base, keyed on the stack itself as before, not on
 	// hasItem(); the engine's own tooltip handling now covers non-empty slots, including fluid displays.
