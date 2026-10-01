@@ -238,16 +238,18 @@ public class ST {
 	// F-size0-catalyst: logical size. A GT6 size-0 stack (catalyst) is stored in neo as count=1 + the GT_API.ZEROSIZE marker
 	// (neo cannot hold count<=0 without turning into AIR/EMPTY). size() returns 0 for marked stacks -> recipe-matching/consume/dump
 	// see the logical 0. Matches the old behavior of size(AIR catalyst)=0 -> existing callers are unaffected.
-	public static byte      size (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null || aStack.getCount() < 0 ? 0 : (gregapi.GT_API.ZEROSIZE_TYPE != null && aStack.has(gregapi.GT_API.ZEROSIZE_TYPE) ? 0 : UT.Code.bindByte(aStack.getCount()));}
+	/** The size-0 marker itself (count=1 + ZEROSIZE): the one test for "this stack is a size-0 ghost". */
+	public static boolean zerosize(ItemStack aStack) {return aStack != null && gregapi.GT_API.ZEROSIZE_TYPE != null && aStack.has(gregapi.GT_API.ZEROSIZE_TYPE);}
+	public static byte      size (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null || aStack.getCount() < 0 ? 0 : (zerosize(aStack) ? 0 : UT.Code.bindByte(aStack.getCount()));}
 	/** F15-size0 (BUG-015 v2): the LOGICAL count as int, without ST.size's byte clamp — the 1.7.10 stackSize field
 	 *  reader for large stacks (mass storage holds thousands). A ZEROSIZE ghost ("type remembered, 0 units") reads as 0. */
-	public static int count(ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || aStack.getCount() < 0 ? 0 : (gregapi.GT_API.ZEROSIZE_TYPE != null && aStack.has(gregapi.GT_API.ZEROSIZE_TYPE) ? 0 : aStack.getCount());}
+	public static int count(ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || aStack.getCount() < 0 ? 0 : (zerosize(aStack) ? 0 : aStack.getCount());}
 	public static ItemStack size (long aSize, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : size_(aSize, aStack);}
 	// aSize<=0 = GT6 catalyst: keep count=1 (otherwise neo -> EMPTY/AIR, identity lost) + the ZEROSIZE marker; the logical
 	// size is read via ST.size(). aSize>=1 -> a normal setCount + drop the marker (if the stack is being reused).
 	public static ItemStack size_(long aSize, ItemStack aStack) {
 		if (aSize <= 0) {aStack.setCount(1); if (gregapi.GT_API.ZEROSIZE_TYPE != null) aStack.set(gregapi.GT_API.ZEROSIZE_TYPE, net.minecraft.util.Unit.INSTANCE);}
-		else {aStack.setCount((int)aSize); if (gregapi.GT_API.ZEROSIZE_TYPE != null && aStack.has(gregapi.GT_API.ZEROSIZE_TYPE)) aStack.remove(gregapi.GT_API.ZEROSIZE_TYPE);}
+		else {aStack.setCount((int)aSize); if (zerosize(aStack)) aStack.remove(gregapi.GT_API.ZEROSIZE_TYPE);}
 		return aStack;
 	}
 	

@@ -115,9 +115,9 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 	}
 
 	/** A size-0 stack (a layout copy, a remembered type) is no item: it shows "0" under the recipe book's ghost veil,
-	 *  so it can't be mistaken for a real one. The engine's per-slot hook here; the 1.20.1 branch has it closed. */
+	 *  so it can't be mistaken for a real one. Drawn through the engine's per-slot hook. */
 	@Override protected void renderSlotContents(GuiGraphicsExtractor aGraphics, net.minecraft.world.item.ItemStack aStack, Slot aSlot, @org.jspecify.annotations.Nullable String aCount) {
-		boolean tGhost = gregapi.util.ST.size(aStack) == 0 && aStack.getCount() > 0;
+		boolean tGhost = gregapi.util.ST.zerosize(aStack);
 		super.renderSlotContents(aGraphics, aStack, aSlot, tGhost ? "0" : aCount);
 		if (tGhost) aGraphics.fill(aSlot.x, aSlot.y, aSlot.x + 16, aSlot.y + 16, GHOST_VEIL);
 	}

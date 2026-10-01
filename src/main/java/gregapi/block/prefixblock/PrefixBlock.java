@@ -91,7 +91,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockSyncData, IRenderedBlock, IBlockToolable, IPrefixBlock {
+public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockSyncData, IRenderedBlock, IBlockToolable, IPrefixBlock, gregapi.block.IBlockBreakBlock {
 	public Drops mDrops;
 	public boolean mRegisterToOreDict = T, mHidden = F;
 	
@@ -497,34 +497,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return aTileEntity == null || aTileEntity.triggerEvent(aID, aParam);
 	}
 	
-	// ⚠️ CHANNEL IS REDUNDANT — in 1.7.10 getDamageValue answered "which subtype does this block's item have" and was called from
-	// getPickBlock/createStackedBlock. In neo this role is carried entirely by getCloneItemStack (below, line 494):
-	// it returns a ready stack with meta via getItemStackFromBlock. Kept as a comparison point with the original.
-	// @Override
-	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {
-		return getMetaDataValue(aWorld, aX, aY, aZ);
-	}
-	
-	// F13: 1.7.10 Block.getPickBlock was removed — neo middle-click goes via IBlockExtension.getCloneItemStack; the neo hook below
-	// delegates to the GT6 getPickBlock (getItemStackFromBlock), restoring the behavior 1:1. The GT6 method is kept.
-	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, boolean aIncludeData, Player aPlayer) {
-		ItemStack r = getItemStackFromBlock(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), SIDE_UNKNOWN);
-		return ST.valid(r) ? r : super.getCloneItemStack(aLevel, aPos, aState, aIncludeData, aPlayer);
-	}
-	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
-		return getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN);
-	}
-
-	// ⚠️ CHANNEL IS REDUNDANT — analyzed during BUG-020 (analysis below, lines 508-510): the role "remember the
-	// BlockEntity being removed before it's removed" is carried by the onDestroyedByPlayer bridge (line 511), set up with the same approach
-	// as MultiTileEntityBlock.onDestroyedByPlayer:433. Kept as a comparison point with the original.
-	// @Override
-	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int par6) {
+	// Any removal (explosion, machine, WD.set) remembers the BlockEntity for the drops, as 1.7.10 did; the engine removes it right after.
+	@Override public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int par6) {
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity != null) LAST_BROKEN_TILEENTITY.set(tTileEntity);
-		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ)); // was aWorld.removeTileEntity(x,y,z) (1.7.10 World), neo Level.removeBlockEntity(BlockPos) [Level.java:688]
 	}
-	// BUG-020 (ore drop): breakBlock above is a dead 1.7.10 hook (nobody calls it) → LAST_BROKEN_TILEENTITY was never set →
+	// BUG-020 (ore drop): breakBlock above runs inside the removal, after the loot stage of a player break has to know the material →
 	// Drops.getDrops (:67 WD.te) at the loot stage (the BE is already removed by the engine) could not find the material. Bridge using the same approach as
 	// MultiTileEntityBlock.onDestroyedByPlayer:433 — LAST_BROKEN is set BEFORE the block is removed, end-of-tick cleans it up (Proxy:911).
 	@Override public boolean onDestroyedByPlayer(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, ItemStack aToolStack, boolean aWillHarvest, net.minecraft.world.level.material.FluidState aFluid) {
