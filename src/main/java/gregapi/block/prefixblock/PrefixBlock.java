@@ -496,11 +496,28 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return aTileEntity == null || aTileEntity.triggerEvent(aID, aParam);
 	}
 	
-	// Any removal (explosion, machine, WD.set) remembers the BlockEntity for the drops, as 1.7.10 did; onRemove below calls it.
+	// ⚠️ CHANNEL IS REDUNDANT — in 1.7.10 getDamageValue answered "which subtype does this block's item have" and was called from
+	// getPickBlock/createStackedBlock. In neo this role is carried entirely by getCloneItemStack (below, line 494):
+	// it returns a ready stack with meta via getItemStackFromBlock. Kept as a comparison point with the original.
+	// @Override
+	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {
+		return getMetaDataValue(aWorld, aX, aY, aZ);
+	}
+	
+	// F13: 1.7.10 Block.getPickBlock was removed — neo middle-click goes via IBlockExtension.getCloneItemStack; the neo hook below
+	// delegates to the GT6 getPickBlock (getItemStackFromBlock), restoring the behavior 1:1. The GT6 method is kept.
+	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.block.state.BlockState aState, HitResult aTarget, net.minecraft.world.level.BlockGetter aLevel, net.minecraft.core.BlockPos aPos, Player aPlayer) {
+		ItemStack r = getItemStackFromBlock(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), SIDE_UNKNOWN);
+		return ST.valid(r) ? r : super.getCloneItemStack(aState, aTarget, aLevel, aPos, aPlayer);
+	}
+	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
+		return getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN);
+	}
+
+	// Any removal (explosion, machine, WD.set) remembers the BlockEntity for the drops, as 1.7.10 did; onRemove below calls it, super.onRemove removes the BlockEntity.
 	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int par6) {
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity != null) LAST_BROKEN_TILEENTITY.set(tTileEntity);
-		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ));
 	}
 	// BUG-020 (ore drop): breakBlock above runs inside the removal, after the loot stage of a player break has to know the material →
 	// Drops.getDrops (:67 WD.te) at the loot stage (the BE is already removed by the engine) could not find the material. Bridge using the same approach as
@@ -653,8 +670,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// Fix #1: clean up the map when the block is removed by any path (player/explosion/piston-impossible/WD.set) — otherwise
 	// entries would pile up under other blocks. Drops are unaffected: by that point the material is already in the LAST_BROKEN carrier.
 	@Override public void onRemove(BlockState aState, Level aWorld, BlockPos aPos, BlockState aNewState, boolean aMovedByPiston) {
-		if (!aState.is(aNewState.getBlock())) breakBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), this, WD.meta(aState));
-		if (!aState.is(aNewState.getBlock())) setOreMeta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), (short)0);
+		if (!aState.is(aNewState.getBlock())) {breakBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), this, WD.meta(aState)); setOreMeta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), (short)0);}
 		super.onRemove(aState, aWorld, aPos, aNewState, aMovedByPiston);
 	}
 
