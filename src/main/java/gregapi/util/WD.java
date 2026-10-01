@@ -607,13 +607,23 @@ public class WD {
 	 *  true for partial occluders (slabs, stairs) AND for every GT6 cross block (Properties lack noOcclusion),
 	 *  so WD.set stripped grass under saplings on placement (original WD.java:482 passed isOpaqueCube). */
 	public static boolean opaque(Block aBlock) {return aBlock.defaultBlockState().isSolidRender();}
-	/** F-harvest-event (decisions/): 1.7.10 {@code ForgeEventFactory.fireBlockHarvesting} fired HarvestDropsEvent —
-	 *  external mods edited the drop list and chance, the method returned the chance. neo: the drop model = engine-fired
-	 *  {@code BlockDropsEvent} on spawning through the loot system, there is NO DIRECT EventHooks equivalent (checked against
-	 *  neoforge/event/EventHooks.java). GT6 spawns the drop MANUALLY ({@code WD.dropBlockAsItem}), bypassing loot; no-op:
-	 *  return {@code aDropChance} as-is, GT6 drop preserved 1:1. F-harvest-event impossible-1:1: a hook for
-	 *  external-mod drop modification does not exist in neo for the manual-drop path; GT6 drop 1:1. */
-	public static float fireBlockHarvesting(java.util.List<ItemStack> aDrops, Level aWorld, Block aBlock, int aX, int aY, int aZ, int aMeta, int aFortune, float aDropChance, boolean aSilkTouch, Player aPlayer) {return aDropChance;}
+	/** 1.7.10 fired HarvestDropsEvent here, where GT6's harvest logic (auto-collect, smelting) listens; neo fires its successor
+	 *  BlockDropsEvent only on the loot path, so drops spawned by hand (MTE) post it here. Cancelled = no drops. */
+	public static float fireBlockHarvesting(java.util.List<ItemStack> aDrops, Level aWorld, Block aBlock, int aX, int aY, int aZ, int aMeta, int aFortune, float aDropChance, boolean aSilkTouch, Player aPlayer) {
+		if (aDrops == null || !(aWorld instanceof net.minecraft.server.level.ServerLevel tLevel)) return aDropChance;
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		BlockState tState = tLevel.getBlockState(tPos);
+		if (tState.getBlock() != aBlock) tState = aBlock.defaultBlockState(); // the player path removes the block before it drops
+		BlockEntity tBE = gregapi.data.CS.LAST_BROKEN_TILEENTITY.get();
+		if (tBE != null && !tPos.equals(tBE.getBlockPos())) tBE = null;
+		java.util.List<net.minecraft.world.entity.item.ItemEntity> tEntities = new java.util.ArrayList<>();
+		for (ItemStack tStack : aDrops) if (ST.valid(tStack)) tEntities.add(new net.minecraft.world.entity.item.ItemEntity(tLevel, aX+0.5, aY+0.5, aZ+0.5, tStack));
+		net.neoforged.neoforge.event.level.BlockDropsEvent tEvent = new net.neoforged.neoforge.event.level.BlockDropsEvent(tLevel, tPos, tState, tBE, tEntities, aPlayer, aPlayer == null ? ItemStack.EMPTY : aPlayer.getMainHandItem());
+		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(tEvent);
+		aDrops.clear();
+		if (!tEvent.isCanceled()) for (net.minecraft.world.entity.item.ItemEntity tEntity : tEvent.getDrops()) if (ST.valid(tEntity.getItem())) aDrops.add(tEntity.getItem());
+		return aDropChance;
+	}
 	/** F-render: 1.7.10 Block-normal-cube = isOpaque && renderAsNormalBlock && !canProvidePower — EXACTLY a "redstone
 	 *  conductor" (a full opaque block, not a signal source). neo BlockState.isRedstoneConductor(BlockGetter,
 	 *  BlockPos) (BlockBehaviour.java:616) — the canonical successor (§8). */
