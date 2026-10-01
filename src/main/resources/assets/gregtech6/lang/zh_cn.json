@@ -16558,6 +16558,7 @@
   "gt.tt.disable_checker_in_the_clientsid.86e06b01": "可在客户端gregtech.cfg中禁用检查",
   "gt.tt.disable_message_in_the_clientsid.c035e749": "可在客户端gregtech.cfg中禁用消息",
   "gt.tt.disable_warning_in_the_clientsid.f9b44ed0": "可在客户端gregtech.cfg中禁用警告",
+  "gt.tt.does_not_get_consumed_in_the_pro.71c11576": "在加工过程中不会被消耗",
   "gt.tt.does_very_low_damage_to_anything.b982d7d2": "对其他一切造成极低伤害！",
   "gt.tt.doesn_t_care_whether_to_bee_in_o.cae6e04c": "不关心蜜蜂在内部还是外部",
   "gt.tt.doesn_t_do_fluid_blocks_use_drai.ac7c4f83": "不处理流体方块！请改用排水口！",

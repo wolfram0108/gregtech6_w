@@ -128,7 +128,7 @@ public class RecipeMapAutocrafting extends RecipeMap {
 			}
 		}
 		
-		for (ItemStack tInput : tInputs) if (OM.is_("gt:autocrafterinfinite", tInput)) tInput.setCount(0);
+		for (ItemStack tInput : tInputs) if (OM.is_("gt:autocrafterinfinite", tInput)) ST.size_(0, tInput); // a size-0 catalyst stays a ghost; setCount(0) would turn it into EMPTY
 		
 		return new Recipe(T, F, T, tInputs.toArray(ZL_IS), tOutputs.toArray(ZL_IS), null, null, null, null, 1024, 16, 0);
 	}

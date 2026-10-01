@@ -98,7 +98,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	@Override public final ItemStack slot(int aIndex) {return mInventory[aIndex];}
 	@Override public final ItemStack slotTake(int aIndex) {ItemStack rStack = mInventory[aIndex]; mInventory[aIndex] = null; return rStack;}
 	@Override public final boolean slotTrash(int aIndex) {return GarbageGT.trash(slotTake(aIndex)) > 0;}
-	@Override public final boolean slotNull(int aIndex) {if (mInventory[aIndex] != null && mInventory[aIndex].getCount() <= 0) return slotKill(aIndex); return F;}
+	@Override public final boolean slotNull(int aIndex) {if (mInventory[aIndex] != null && ST.count(mInventory[aIndex]) <= 0) return slotKill(aIndex); return F;}
 	@Override public final boolean slotKill(int aIndex) {mInventory[aIndex] = null; return T;}
 	@Override public final boolean slotHas(int aIndex) {return mInventory[aIndex] != null;}
 	@Override public final boolean invempty() {for (int i = 0; i < mInventory.length; i++) if (mInventory[i] != null) return F; return T;}
@@ -128,13 +128,6 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 		return allowZeroStacks(aSlot) && ST.count(tStack) <= 0 ? ItemStack.EMPTY : tStack;
 	}
 
-	/** neo's preRemoveSideEffects now drops a Container's contents itself via Containers.dropContents, unlike 1.7.10
-	 *  where only the mod did; GT6's null slots would crash that dropper and double-drop besides, so drop stays owned by GT6. */
-	/** Player report: breaking a machine dropped the block but not its contents, on both sides at once. Vanilla's
-	 *  dropContents is suppressed deliberately above, and GT6's own drop path lost its caller when that engine hook vanished. */
-	@Override public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {
-		try {breakBlock();} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);} // content drop must not break block removal
-	}
 	public String getInventoryName() {String rName = getCustomName(); if (UT.Code.stringValid(rName)) return rName; MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID()); return tRegistry==null?getClass().getName():tRegistry.getLocal(getMultiTileEntityID());}
 	@Override public int getContainerSize() {return mInventory==null?0:mInventory.length;}
 	@Override public void setItem(int aSlot, ItemStack aStack) {updateInventory(); mInventory[aSlot] = OM.get(aStack);}

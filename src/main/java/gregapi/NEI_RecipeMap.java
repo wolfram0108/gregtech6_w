@@ -601,7 +601,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			}
 			for (PositionedStack tStack : tRecipe.mInputs) if (aStack == tStack.item) {
 				if (!gregapi.data.IL.Display_Fluid.equal(tStack.item, T, T)) {
-					if (tStack.item.getCount() == 0) currenttip.add(1, LH.Chat.BLINKING_CYAN + "Does not get consumed in the process");
+					if (ST.size(tStack.item) == 0) currenttip.add(1, LH.Chat.BLINKING_CYAN + "Does not get consumed in the process");
 				}
 				break;
 			}

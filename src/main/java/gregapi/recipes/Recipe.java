@@ -806,7 +806,7 @@ public class Recipe {
 	}
 	
 	public boolean blockINblockOUT() {
-		return mInputs.length == 1 && mOutputs.length == 1 && mFluidInputs.length == 0 && mFluidOutputs.length == 0 && ST.block(mInputs[0]) != NB && ST.block(mOutputs[0]) != NB && mInputs[0].getCount() == 1 && mOutputs[0].getCount() == 1;
+		return mInputs.length == 1 && mOutputs.length == 1 && mFluidInputs.length == 0 && mFluidOutputs.length == 0 && ST.block(mInputs[0]) != NB && ST.block(mOutputs[0]) != NB && ST.count(mInputs[0]) == 1 && mOutputs[0].getCount() == 1;
 	}
 	
 	public long getAbsoluteTotalPower() {
@@ -993,7 +993,7 @@ public class Recipe {
 		int l = UT.Code.bindInt(aDuration / 16);
 		
 		for (int i = 0; i < aChances     .length; i++) if (aChances[i] <=  0) aChances[i] = 10000;
-		for (int i = 0; i < aInputs      .length; i++) if (aInputs [i] != null) {aInputs [i] = ST.copy_     (aInputs [i]); if (aInputs [i].getCount() != 0) l = Math.min(aInputs [i].getCount(), l);}
+		for (int i = 0; i < aInputs      .length; i++) if (aInputs [i] != null) {aInputs [i] = ST.copy_     (aInputs [i]); if (ST.count(aInputs [i]) != 0) l = Math.min(ST.count(aInputs [i]), l);}
 		for (int i = 0; i < aOutputs     .length; i++) if (aOutputs[i] != null) {aOutputs[i] = ST.validMeta_(aOutputs[i]); if (aOutputs[i].getCount() != 0) l = Math.min(aOutputs[i].getCount(), l);}
 		for (int i = 0; i < aFluidInputs .length; i++) {aFluidInputs [i] = aFluidInputs [i].copy(); if (aFluidInputs [i].getAmount() != 0) l = Math.min(aFluidInputs [i].getAmount(), l);}
 		for (int i = 0; i < aFluidOutputs.length; i++) {aFluidOutputs[i] = aFluidOutputs[i].copy(); if (aFluidOutputs[i].getAmount() != 0) l = Math.min(aFluidOutputs[i].getAmount(), l);}
@@ -1016,12 +1016,12 @@ public class Recipe {
 			
 			for (; l > 1; l--) {
 				boolean temp = T;
-				for (int j = 0; temp && j < aInputs      .length; j++) if (aInputs [j] != null && aInputs [j].getCount() % l != 0) temp = F;
+				for (int j = 0; temp && j < aInputs      .length; j++) if (aInputs [j] != null && ST.count(aInputs [j]) % l != 0) temp = F;
 				for (int j = 0; temp && j < aOutputs     .length; j++) if (aOutputs[j] != null && aOutputs[j].getCount() % l != 0) temp = F;
 				for (int j = 0; temp && j < aFluidInputs .length; j++) if (aFluidInputs [j].getAmount() % l != 0) temp = F;
 				for (int j = 0; temp && j < aFluidOutputs.length; j++) if (aFluidOutputs[j].getAmount() % l != 0) temp = F;
 				if (temp) {
-					for (int j = 0; j < aInputs      .length; j++) if (aInputs [j] != null) aInputs [j].setCount(aInputs [j].getCount()/(l));
+					for (int j = 0; j < aInputs      .length; j++) if (aInputs [j] != null) ST.size_(ST.count(aInputs [j])/l, aInputs [j]); // logical size: a size-0 catalyst stays a ghost
 					for (int j = 0; j < aOutputs     .length; j++) if (aOutputs[j] != null) aOutputs[j].setCount(aOutputs[j].getCount()/(l));
 					for (int j = 0; j < aFluidInputs .length; j++) aFluidInputs [j].setAmount(aFluidInputs [j].getAmount() / l); // FluidStack.getAmount() isn't an lvalue; divide and write back with setAmount instead.
 					for (int j = 0; j < aFluidOutputs.length; j++) aFluidOutputs[j].setAmount(aFluidOutputs[j].getAmount() / l);

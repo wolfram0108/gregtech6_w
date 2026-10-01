@@ -114,6 +114,16 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 		try {drawGuiContainerForegroundLayer(aMouseX, aMouseY);} finally {mGraphics = null;}
 	}
 
+	/** A size-0 stack (a layout copy, a remembered type) is no item: it shows "0" under the recipe book's ghost veil,
+	 *  so it can't be mistaken for a real one. The engine's per-slot hook here; the 1.20.1 branch has it closed. */
+	@Override protected void renderSlotContents(GuiGraphicsExtractor aGraphics, net.minecraft.world.item.ItemStack aStack, Slot aSlot, @org.jspecify.annotations.Nullable String aCount) {
+		boolean tGhost = gregapi.util.ST.size(aStack) == 0 && aStack.getCount() > 0;
+		super.renderSlotContents(aGraphics, aStack, aSlot, tGhost ? "0" : aCount);
+		if (tGhost) aGraphics.fill(aSlot.x, aSlot.y, aSlot.x + 16, aSlot.y + 16, GHOST_VEIL);
+	}
+	/** The veil colour of the recipe book's ghost slots (GhostSlots:58). */
+	private static final int GHOST_VEIL = 0x30FFFFFF;
+
 	// Restores the original tooltip for an empty Slot_Base, keyed on the stack itself as before, not on
 	// hasItem(); the engine's own tooltip handling now covers non-empty slots, including fluid displays.
 	@Override protected void extractTooltip(GuiGraphicsExtractor aGraphics, int aMouseX, int aMouseY) {

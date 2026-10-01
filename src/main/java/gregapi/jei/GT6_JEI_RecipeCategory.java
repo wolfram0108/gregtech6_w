@@ -206,7 +206,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 
 			// gregapi/NEI_RecipeMap.java:280-281.
 			if (aRecipe.mSpecialItems instanceof ItemStack && ST.valid((ItemStack)aRecipe.mSpecialItems)) {
-				aBuilder.addInputSlot(80, 43).addItemStack((ItemStack)aRecipe.mSpecialItems);
+				input(aBuilder, 80, 43, (ItemStack)aRecipe.mSpecialItems);
 			}
 			if (!mMap.mRecipeMachineList.isEmpty()) {
 				aBuilder.addInputSlot(152, 83).addItemStacks(mMap.mRecipeMachineList);
@@ -354,8 +354,19 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 	/** gregapi/NEI_RecipeMap.java:177 and analogs: adds an input item slot if it exists, and returns the next index. */
 	private static int in(IRecipeLayoutBuilder aBuilder, Recipe aRecipe, int aIndex, int aX, int aY) {
 		ItemStack tStack = aRecipe.getRepresentativeInput(aIndex);
-		if (tStack != null) aBuilder.addInputSlot(aX, aY).addItemStack(tStack);
+		if (tStack != null) input(aBuilder, aX, aY, tStack);
 		return aIndex + 1;
+	}
+
+	/** The stack a recipe slot hands to the outside (cheat mode, bookmarks): a real item, without the size-0 marker, which
+	 *  in a player's hands made a machine wipe the tag as an empty stack after the first craft. */
+	public static ItemStack shown(ItemStack aStack) {return ST.size(aStack) == 0 && aStack.getCount() > 0 ? ST.amount(aStack.getCount(), aStack) : aStack;}
+
+	/** The input half of NEI_RecipeMap.handleItemTooltip (:669-673): a size-0 input is not consumed, and says so. */
+	private static void input(IRecipeLayoutBuilder aBuilder, int aX, int aY, ItemStack aStack) {
+		IRecipeSlotBuilder tSlot = aBuilder.addInputSlot(aX, aY).addItemStack(shown(aStack));
+		if (ST.size(aStack) == 0 && !gregapi.data.IL.Display_Fluid.equal(aStack, T, T))
+			tSlot.addRichTooltipCallback((aSlotView, aTooltip) -> aTooltip.add(Component.literal(LH.Chat.BLINKING_CYAN + LH.tt("Does not get consumed in the process"))));
 	}
 
 	/** gregapi/NEI_RecipeMap.java:289 and analogs: adds an output item slot with a chance (like {@code handleItemTooltip}, gregapi/NEI_RecipeMap.java:664-684), returns the next index. */
