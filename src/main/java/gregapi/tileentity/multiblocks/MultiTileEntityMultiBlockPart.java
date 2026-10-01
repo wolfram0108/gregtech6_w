@@ -194,11 +194,17 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 			DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 			if (tDelegator.mTileEntity instanceof MultiTileEntityMultiBlockPart) {
 				ITileEntityMultiBlockController tController = ((MultiTileEntityMultiBlockPart)tDelegator.mTileEntity).getTarget(F);
-				if (tController != null) tController.onStructureChange();;
+				if (tController != null) structureChanged(tController);
 			} else if (tDelegator.mTileEntity instanceof ITileEntityMultiBlockController) {
-				((ITileEntityMultiBlockController)tDelegator.mTileEntity).onStructureChange();
+				structureChanged((ITileEntityMultiBlockController)tDelegator.mTileEntity);
 			}
 		}
+	}
+	
+	/** A placed part joins at once: the controller re-checks now instead of at its next idle re-check, so the part's own magnifying glass answers right away. */
+	private void structureChanged(ITileEntityMultiBlockController aController) {
+		aController.onStructureChange();
+		if (isServerSide()) aController.checkStructure(F);
 	}
 	
 	public ITileEntityMultiBlockController getTarget(boolean aCheckValidity) {
