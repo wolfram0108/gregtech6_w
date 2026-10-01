@@ -357,9 +357,8 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 		return aIndex + 1;
 	}
 
-	/** The stack a recipe slot hands to the outside (cheat mode, bookmarks): a real item, without the size-0 marker, which
-	 *  in a player's hands made a machine wipe the tag as an empty stack after the first craft. */
-	public static ItemStack shown(ItemStack aStack) {return ST.size(aStack) == 0 && aStack.getCount() > 0 ? ST.amount(aStack.getCount(), aStack) : aStack;}
+	/** The stack a recipe slot hands to the outside (cheat mode, bookmarks) is a real item: a size-0 marker in a player's hands reads as an empty stack to every machine. */
+	public static ItemStack shown(ItemStack aStack) {return ST.zerosize(aStack) ? ST.amount(aStack.getCount(), aStack) : aStack;}
 
 	/** The input half of NEI_RecipeMap.handleItemTooltip (:669-673): a size-0 input is not consumed, and says so. */
 	private static void input(IRecipeLayoutBuilder aBuilder, int aX, int aY, ItemStack aStack) {

@@ -128,7 +128,7 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 		aGraphics.pose().translate(0, 0, 300); // above the slot items and their decorations
 		for (Slot tSlot : menu.slots) {
 			net.minecraft.world.item.ItemStack tStack = tSlot.getItem();
-			if (!(gregapi.util.ST.size(tStack) == 0 && tStack.getCount() > 0)) continue;
+			if (!gregapi.util.ST.zerosize(tStack)) continue;
 			aGraphics.drawString(font, "0", tSlot.x + 17 - font.width("0"), tSlot.y + 9, 0xFFFFFF, true);
 			aGraphics.fill(net.minecraft.client.renderer.RenderType.guiGhostRecipeOverlay(), tSlot.x, tSlot.y, tSlot.x + 16, tSlot.y + 16, GHOST_VEIL);
 		}

@@ -1104,7 +1104,6 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					int tCount = 64, tEmptySlots = 36, tCraponite = 0;
 					for (int i = 0; i < 36; i++) {
 						if (ST.valid(tStack = aPlayer.getInventory().getItem(i))) {
-							if (ST.size(tStack) == 0 && tStack.getCount() > 0) ST.size_(tStack.getCount(), tStack); // a size-0 marker leaked from a recipe view; held by a player it is a real item
 							tEmptySlots--;
 							if (tBetweenlands) {
 								if (tStack.getItem() == Items.POTION) {
