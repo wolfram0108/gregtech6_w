@@ -29,6 +29,18 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+## [6.0.0-1.20.1-alpha.7] — multiblocks, auto-collect and catalysts behave as in 1.7.10
+
+### Fixed
+
+- **Multiblocks come apart as soon as a casing is broken** ([#7](https://github.com/wolfram0108/gregtech6_w/issues/7)): the machine stops at once instead of after rejoining the world, and a casing put back joins the structure immediately.
+- **Auto-collecting tools pick up GT6 machines and blocks** ([#8](https://github.com/wolfram0108/gregtech6_w/issues/8)): barrels, bricks, walls and sensors go straight into the inventory.
+- **Selector tags, USB sticks, extruder shapes and other catalysts are no longer used up** ([#9](https://github.com/wolfram0108/gregtech6_w/issues/9)): JEI marks them "Does not get consumed in the process", and a tag taken from a JEI recipe stays in the machine.
+- **Greg's crafting table treats its layout copies as a pattern, not as material**: no extra crafts from too few ingredients.
+- **Items of size 0 in slots show a "0"** under a faded overlay, so they can't be mistaken for real ones.
+
+Thanks to [@Kitaec1055](https://github.com/Kitaec1055) for the thorough alpha testing and detailed reports.
+
 ## [6.0.0-1.20.1-alpha.6] — JEI shows every machine recipe, machines keep their output
 
 ### Fixed
