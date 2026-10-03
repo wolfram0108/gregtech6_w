@@ -128,7 +128,7 @@ public final class NetworkHandler implements INetworkHandler {
 		tContext.setPacketHandled(true);
 		gregapi.GT_API.sReceivedSuppressedOriginals = aMessage.recipes();
 		// Queued on the main thread after the engine's tag packet and ahead of its recipe packet, so the dictionary is built between.
-		tContext.enqueueWork(gregapi.GT_API::onClientSyncArrived);
+		tContext.enqueueWork(() -> gregapi.GT_API.onClientSyncArrived(gregapi.GT_API.api_proxy.getClientRegistries()));
 	}
 
 	public static void sendClientSync(java.util.List<ServerPlayer> aPlayers, java.util.List<net.minecraft.world.item.crafting.Recipe<?>> aRecipes) {

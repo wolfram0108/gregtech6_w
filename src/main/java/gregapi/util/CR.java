@@ -61,6 +61,7 @@ public class CR {
 	, ShapelessRecipe.class.getName()
 	, ShapelessOreRecipe.class.getName()
 	, AdvancedCraftingShapeless.class.getName()
+	, VanillaRecipe.class.getName()
 	, "ic2.core.AdvRecipe"
 	, "ic2.core.AdvShapelessRecipe"
 	, "appeng.recipes.game.ShapedRecipe"
@@ -434,7 +435,7 @@ public class CR {
 			tThereWasARecipe = remout(aResult, !aRemoveAllOthersWithSameOutputIfTheyHaveSameNBT, aRemoveAllOtherShapedsWithSameOutput, aRemoveAllOtherNativeRecipes, aDeleteOnlyIfNoDyeInvolved) || tThereWasARecipe;
 		
 		if (aOnlyAddIfThereIsAnyRecipeOutputtingThis && !tThereWasARecipe) {
-			List<ICraftingRecipeGT> tList = list();
+			List<ICraftingRecipeGT> tList = live();
 			for (int i = 0; i < tList.size(); i++) {
 				ICraftingRecipeGT tRecipe = tList.get(i);
 				if (CLASSES_SPECIAL.contains(tRecipe.getClass().getName())) continue;
@@ -580,13 +581,13 @@ public class CR {
 	public static ItemStack get(boolean aUncopiedStack, ItemStack... aRecipe) {
 		if (!ST.hasValid(aRecipe)) return null;
 		CraftingContainer aCrafting = crafting(aRecipe);
-		List<ICraftingRecipeGT> tList = list();
+		List<ICraftingRecipeGT> tList = live();
 		for (int i = 0; i < tList.size(); i++) try {if (tList.get(i).matches(aCrafting, CS.DW)) return aUncopiedStack ? ST.valisize(tList.get(i).getRecipeOutput()) : ST.copy(ST.valisize(tList.get(i).getCraftingResult(aCrafting)));} catch(Throwable e) {e.printStackTrace(ERR);}
 		return null;
 	}
 	
 	/** Gives you a list of the Outputs from a Crafting Recipe. If you have multiple Mods, which add Bronze Armor for example */
-	public static List<ItemStack> outputs(ItemStack... aRecipe) {return outputs(list(), F, aRecipe);}
+	public static List<ItemStack> outputs(ItemStack... aRecipe) {return outputs(live(), F, aRecipe);}
 	/** Gives you a list of the Outputs from a Crafting Recipe. If you have multiple Mods, which add Bronze Armor for example */
 	public static List<ItemStack> outputs(List<ICraftingRecipeGT> aList, boolean aDeleteFromList, ItemStack... aRecipe) {
 		if (aList == null || !ST.hasValid(aRecipe)) return Collections.emptyList();
@@ -617,6 +618,58 @@ public class CR {
 	public static List<ICraftingRecipeGT> list() {return BUFFER;}
 
 	// ==========================================================================================================
+	// 1.7.10's list() was the live CraftingManager, vanilla recipes included; the loaders' readers (remove, remout, has,
+	// get, outputs, ONLY_IF_HAS_OTHER_RECIPES) judged both. Vanilla now lives in the datapack, so for the loader window
+	// its crafting recipes are read from the engine's own vanilla pack, which a server and a remote client carry alike.
+	// ==========================================================================================================
+	private static List<ICraftingRecipeGT> VANILLA_VIEW = null;
+
+	/** Opens the vanilla half of the live list for the loader window; null registries leave it closed. */
+	public static void openVanillaView(net.minecraft.core.RegistryAccess aRegistries) {
+		VANILLA_VIEW = null;
+		if (aRegistries == null) return;
+		TreeMap<String, ICraftingRecipeGT> tRecipes = new TreeMap<>(); // the pack lists files in no fixed order
+		try (net.minecraft.server.packs.VanillaPackResources tPack = net.minecraft.server.packs.repository.ServerPacksSource.createVanillaPackSource()) {
+			tPack.listResources(net.minecraft.server.packs.PackType.SERVER_DATA, "minecraft", "recipes", (aFile, aStream) -> {
+				try (java.io.Reader tReader = new java.io.InputStreamReader(aStream.get(), java.nio.charset.StandardCharsets.UTF_8)) {
+					net.minecraft.world.item.crafting.Recipe<?> tRecipe = net.minecraft.world.item.crafting.RecipeManager.fromJson(aFile, com.google.gson.JsonParser.parseReader(tReader).getAsJsonObject());
+					if (tRecipe instanceof ShapedRecipe || tRecipe instanceof ShapelessRecipe) tRecipes.put(aFile.toString(), new VanillaRecipe((net.minecraft.world.item.crafting.CraftingRecipe)tRecipe, aRegistries));
+				} catch(Throwable e) {/* not a workbench recipe of the base pack */}
+			});
+		} catch(Throwable e) {e.printStackTrace(ERR);}
+		VANILLA_VIEW = new ArrayList<>(tRecipes.values());
+		OUT.println("CR: vanilla crafting view opened with " + VANILLA_VIEW.size() + " recipes.");
+	}
+
+	public static void closeVanillaView() {VANILLA_VIEW = null;}
+
+	/** The live list of 1.7.10: vanilla first, as registered there, then GT6's buffer; removal reaches either half. */
+	private static List<ICraftingRecipeGT> live() {
+		final List<ICraftingRecipeGT> tVanilla = VANILLA_VIEW;
+		if (tVanilla == null) return BUFFER;
+		return new AbstractList<>() {
+			@Override public ICraftingRecipeGT get(int aIndex) {return aIndex < tVanilla.size() ? tVanilla.get(aIndex) : BUFFER.get(aIndex - tVanilla.size());}
+			@Override public ICraftingRecipeGT remove(int aIndex) {return aIndex < tVanilla.size() ? tVanilla.remove(aIndex) : BUFFER.remove(aIndex - tVanilla.size());}
+			@Override public int size() {return tVanilla.size() + BUFFER.size();}
+		};
+	}
+
+	/** A vanilla workbench recipe as the live list holds it; 1.7.10 counted ShapedRecipes/ShapelessRecipes as native. */
+	public static final class VanillaRecipe implements ICraftingRecipeGT {
+		public final net.minecraft.world.item.crafting.CraftingRecipe mRecipe;
+		public final boolean mShapeless;
+		private final net.minecraft.core.RegistryAccess mRegistries;
+		private final ItemStack mOutput;
+		VanillaRecipe(net.minecraft.world.item.crafting.CraftingRecipe aRecipe, net.minecraft.core.RegistryAccess aRegistries) {mRecipe = aRecipe; mShapeless = aRecipe instanceof ShapelessRecipe; mRegistries = aRegistries; mOutput = aRecipe.getResultItem(aRegistries);}
+		@Override public boolean matches(CraftingContainer aGrid, Level aWorld) {return mRecipe.matches(aGrid, aWorld);}
+		@Override public ItemStack getCraftingResult(CraftingContainer aGrid) {return mRecipe.assemble(aGrid, mRegistries);}
+		@Override public int getRecipeSize() {return mRecipe.getIngredients().size();}
+		@Override public ItemStack getRecipeOutput() {return mOutput;}
+		@Override public boolean isRemovableByGT() {return T;}
+		@Override public boolean isAutocraftableByGT() {return T;}
+	}
+
+	// ==========================================================================================================
 	// On the 26.1.2 branch the engine trims the crafting grid to its occupied bounding box before matching, losing
 	// positional recipe cues; 1.20.1 passes the full 3x3 grid unchanged, so no capture mixin is needed here.
 
@@ -628,7 +681,7 @@ public class CR {
 	 */
 	public static boolean has(ItemStack aOutput) {
 		if (ST.invalid(aOutput)) return F;
-		List<ICraftingRecipeGT> tList = list();
+		List<ICraftingRecipeGT> tList = live();
 		for (int i = 0; i < tList.size(); i++) if (ST.equal(OM.get(tList.get(i).getRecipeOutput()), aOutput, T)) return T;
 		return F;
 	}
@@ -642,12 +695,12 @@ public class CR {
 		if (ST.invalid(aOutput)) return F;
 		DATAPACK_REMOVALS_OUT.add(ST.copy(aOutput)); // datapack arm: in 1.7.10 this same call also cut vanilla recipes
 		boolean rReturn = F;
-		List<ICraftingRecipeGT> tList = list();
+		List<ICraftingRecipeGT> tList = live();
 		aOutput = OM.get_(aOutput);
 		for (int i = 0; i < tList.size(); i++) {
 			ICraftingRecipeGT tRecipe = tList.get(i);
 			if (tRecipe instanceof ICraftingRecipeGT && !((ICraftingRecipeGT)tRecipe).isRemovableByGT()) continue;
-			if (aNotRemoveShapelessRecipes && tRecipe instanceof ShapelessOreRecipe) continue; // Branch for a foreign neo ShapelessRecipe deferred (buffer holds only GT6 recipes).
+			if (aNotRemoveShapelessRecipes && (tRecipe instanceof ShapelessOreRecipe || tRecipe instanceof VanillaRecipe tVanilla && tVanilla.mShapeless)) continue;
 			if (aOnlyRemoveNativeHandlers) {
 				if (!CLASSES_NATIVE.contains(tRecipe.getClass().getName())) continue;
 			} else {
@@ -734,7 +787,7 @@ public class CR {
 		DATAPACK_REMOVALS.add(aRecipe.clone());
 		ItemStack rReturn = null, tReturn = null;
 		CraftingContainer aCrafting = crafting(aRecipe);
-		List<ICraftingRecipeGT> tList = list();
+		List<ICraftingRecipeGT> tList = live();
 		for (int i = 0; i < tList.size(); i++) {try {for (; i < tList.size(); i++) {
 			if ((!(tList.get(i) instanceof ICraftingRecipeGT) || ((ICraftingRecipeGT)tList.get(i)).isRemovableByGT()) && tList.get(i).matches(aCrafting, CS.DW)) {
 				tReturn = tList.get(i).getCraftingResult(aCrafting);

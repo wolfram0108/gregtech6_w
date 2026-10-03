@@ -289,6 +289,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		return null;
 	}
 
+	/** The remote client's registries, for work it does before the world exists (same side-split as getThePlayer); server = null. */
+	public net.minecraft.core.RegistryAccess getClientRegistries() {
+		return null;
+	}
+
 	/** S6: the client-only {@code Minecraft.getInstance().isSingleplayer()} cannot be called from common code (the
 	 *  {@code Minecraft} class does not exist on dedicated). Center of side-splitting (same trick as {@link #getThePlayer()}): server = F. */
 	public boolean isSingleplayer() {

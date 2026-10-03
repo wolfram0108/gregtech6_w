@@ -264,8 +264,8 @@ public class GT_API extends Abstract_Mod {
 
 	/** A client joined to a dedicated server got the engine's tags and then GT6's sync ahead of the engine's recipes: its
 	 *  deferred item-init runs now, with the tags the bridge needs bound; in singleplayer the integrated server ran it. */
-	public static void onClientSyncArrived() {
-		if (!sDeferredItemInitDone) runDeferredItemInit();
+	public static void onClientSyncArrived(net.minecraft.core.RegistryAccess aRegistries) {
+		if (!sDeferredItemInitDone) runDeferredItemInit(aRegistries);
 	}
 
 	/** Suppressed originals received from a dedicated server; kept until the engine's recipe packet arrives right after them. */
@@ -304,7 +304,7 @@ public class GT_API extends Abstract_Mod {
 	}
 	// The drain loop: a callback can add a new deferItemInit itself (nested deferral, e.g. block -> slab).
 	// Processed FIFO without ConcurrentModification, draining anything added mid-run too.
-	public static void runDeferredItemInit() {
+	public static void runDeferredItemInit(net.minecraft.core.RegistryAccess aRegistries) {
 		sDeferredItemInitRunning = true;
 		// Vanilla dictionary entries that Forge itself seeded before any mod loaded in 1.7.10; called first here,
 		// since GT6's own stack-based content below needs to see an already-populated vanilla dictionary.
@@ -312,8 +312,10 @@ public class GT_API extends Abstract_Mod {
 		// Incoming tag bridge: in 1.7.10 foreign mods called OreDictionary.registerOre themselves; here the common
 		// language is forge: tags, read by the bridge and fed into the same dictionary entry point.
 		try {gregapi.oredict.OreDictTags.importFromTags();} catch(Throwable e) {e.printStackTrace(ERR);}
+		// The loaders in this queue judge vanilla recipes as 1.7.10 did (CR.remove/remout/has/get); an empty queue needs no view.
+		if (!DEFERRED_ITEM_INIT.isEmpty()) gregapi.util.CR.openVanillaView(aRegistries);
 		try {while (!DEFERRED_ITEM_INIT.isEmpty()) {Runnable tInit = DEFERRED_ITEM_INIT.remove(0); try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);}}}
-		finally {sDeferredItemInitRunning = false; sDeferredItemInitDone = true;}
+		finally {sDeferredItemInitRunning = false; sDeferredItemInitDone = true; gregapi.util.CR.closeVanillaView();}
 	}
 
 	/** Some GT6 subsystems build the neo Block outside any DeferredRegister supplier and outside preInit,
@@ -598,7 +600,7 @@ public class GT_API extends Abstract_Mod {
 	public void onLevelLoadEarlyItemInit(net.minecraftforge.event.level.LevelEvent.Load aEvent) {
 		if (aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel && tLevel.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
 			applyWaterSourceConversionRule(tLevel);
-			runDeferredItemInit();
+			runDeferredItemInit(tLevel.registryAccess());
 			// The vanilla furnace's shift-click gate is built by the engine before this data-init runs, while
 			// FurnaceRecipes is still empty; rebuilding the propertySet afterward fixes it, idempotently.
 			net.minecraft.server.MinecraftServer tServer = tLevel.getServer();
