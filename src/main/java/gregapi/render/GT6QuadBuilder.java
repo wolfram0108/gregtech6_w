@@ -102,12 +102,16 @@ public final class GT6QuadBuilder {
 	}
 
 	/** GT6 side-byte to neo Direction mapping: 0=DOWN, 1=UP, 2=NORTH, 3=SOUTH, 4=WEST, 5=EAST. */
-	public void putFace(byte aSide, ResourceLocation aIcon, short[] aRGBa) {
+	public void putFace(byte aSide, ResourceLocation aIcon, short[] aRGBa) {putFace(aSide, aIcon, aRGBa, 0, true);}
+
+	/** aEmission is the face's own block light (1.7.10 drew such faces at a fixed lightmap value), aAO=false takes
+	 *  the face out of ambient occlusion as 1.7.10's aEnableAO did. */
+	public void putFace(byte aSide, ResourceLocation aIcon, short[] aRGBa, int aEmission, boolean aAO) {
 		if (aIcon == null || aSide < 0 || aSide > 5) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
 		if (tSprite == null) return;
 		Direction tDir = Direction.from3DDataValue(aSide);
-		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa);
+		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa, aEmission, aAO);
 		if (tQuad == null) return;
 		// A face on the cell-boundary plane is cull-aware (engine asks the neighbor); a face inside the cell
 		// (slab top, pipe side) is always visible.
@@ -218,7 +222,7 @@ public final class GT6QuadBuilder {
 	static final int[] EMIT_ORDER = {1, 0, 3, 2};
 
 	/** Face from the current bounds with UV clipped to them and tint from RGBa, following AE2's QuartzGlassModel pattern. */
-	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa) {
+	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa, int aEmission, boolean aAO) {
 		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
 		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
 		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
@@ -233,7 +237,7 @@ public final class GT6QuadBuilder {
 		tBuilder.setDirection(aDir);
 		tBuilder.setTintIndex(-1);   // Tint is already baked into the vertices; leaving tintIndex at its default would make the engine multiply it in again.
 		tBuilder.setShade(true);     // Block faces shade by direction here, 1:1 with 1.7.10's own per-face brightness multipliers.
-		tBuilder.setHasAmbientOcclusion(true);
+		tBuilder.setHasAmbientOcclusion(aAO);
 		// The engine derives a face's normal from vertex winding and places AO brightness by vertex NUMBER, treating that
 		// number as canonical; this permutation keeps the fixed winding while landing each vertex on its correct AO slot.
 		for (int idx = 0; idx < 4; idx++) {
@@ -246,7 +250,10 @@ public final class GT6QuadBuilder {
 			tBuilder.uv(aSprite.getU(c[i][3]), aSprite.getV(c[i][4]));
 			tBuilder.endVertex();
 		}
-		return tBuilder.getQuad();
+		BakedQuad rQuad = tBuilder.getQuad();
+		// The engine takes the brighter of the world light and the quad's own baked lightmap (applyBakedLighting).
+		if (aEmission > 0) net.minecraftforge.client.model.QuadTransformers.settingEmissivity(aEmission).processInPlace(rQuad);
+		return rQuad;
 	}
 
 	/** Fluid quad with arbitrary vertices for sloped surfaces, always unculled since visibility is decided by

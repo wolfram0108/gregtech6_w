@@ -320,12 +320,12 @@ public class GT6BlockModel implements BakedModel {
 	private static void face(GT6QuadBuilder aQB, Block aBlock, byte aSide, ITexture aTex, int aX, int aY, int aZ) {
 		if (aTex == null || !aTex.isValidTexture()) return;
 		switch (aSide) {
-		case 0: aTex.renderYNeg(aQB, aBlock, aX, aY, aZ, 240, false); break;
-		case 1: aTex.renderYPos(aQB, aBlock, aX, aY, aZ, 240, false); break;
-		case 2: aTex.renderZNeg(aQB, aBlock, aX, aY, aZ, 240, false); break;
-		case 3: aTex.renderZPos(aQB, aBlock, aX, aY, aZ, 240, false); break;
-		case 4: aTex.renderXNeg(aQB, aBlock, aX, aY, aZ, 240, false); break;
-		case 5: aTex.renderXPos(aQB, aBlock, aX, aY, aZ, 240, false); break;
+		case 0: aTex.renderYNeg(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
+		case 1: aTex.renderYPos(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
+		case 2: aTex.renderZNeg(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
+		case 3: aTex.renderZPos(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
+		case 4: aTex.renderXNeg(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
+		case 5: aTex.renderXPos(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
 		}
 	}
 
