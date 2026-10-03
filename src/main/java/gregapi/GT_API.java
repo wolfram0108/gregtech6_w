@@ -641,6 +641,10 @@ public class GT_API extends Abstract_Mod {
 						if (tType != null && gregapi.util.CR.DATAPACK_REMOVALS_TYPE.contains(tType.toString())) tRemove.add(tAny.getId());
 					}
 				}
+				// The fourth arm of the same class, by key (CR.DATAPACK_REMOVALS_KEY): whatever a reader removed from CR.live()'s
+				// vanilla half, as 1.7.10's scans removed the recipe they saw from the CraftingManager.
+				tRemove.addAll(gregapi.util.CR.DATAPACK_REMOVALS_KEY);
+				gregapi.util.CR.DATAPACK_REMOVALS_KEY.clear();
 				gregapi.util.CR.DATAPACK_REMOVALS_OUT.clear();
 				gregapi.util.CR.DATAPACK_REMOVALS.clear();
 				// Relogging in singleplayer spins up a NEW MinecraftServer with a fresh datapack, but the scan queues

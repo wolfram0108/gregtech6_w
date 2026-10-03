@@ -61,13 +61,45 @@ public class AdvancedCrafting1ToY implements ICraftingRecipeGT {
 		mOutputCount = aOutputCount;
 		mInput.mShapelessManagersSingle.add(this);
 		
-		List<ICraftingRecipeGT> tRecipeList = CR.list();
+		List<ICraftingRecipeGT> tRecipeList = CR.live();
 		try {for (int i = 0; i < tRecipeList.size(); i++) {
 			ICraftingRecipeGT tRecipe = tRecipeList.get(i);
 			if (tRecipe == null) {tRecipeList.remove(i--); continue;}
 			int tCount = 0;
 			
-			if (tRecipeList.get(i) instanceof ICraftingRecipeGT) {
+			// A vanilla recipe sits in the live list as an ICraftingRecipeGT, so it is told apart before GT6's own; its two
+			// branches are 1.7.10's ShapedRecipes/ShapelessRecipes ones over the same recipeItems layout.
+			if (tRecipe instanceof CR.VanillaRecipe tVanilla && !tVanilla.mShapeless) {
+				ItemStack[] tInputs = tVanilla.getInput();
+				
+				if (tInputs != null) for (ItemStack tObject : tInputs) if (tObject != null) {
+					if (++tCount > 1) {
+						tCount = 0;
+						break;
+					}
+					OreDictItemData tData = OM.data(tObject);
+					if (tData == null || tData.mPrefix != mInput || tData.mMaterial == null || !mCondition.isTrue(tData.mMaterial.mMaterial)) {
+						tCount = 0;
+						break;
+					}
+				}
+			} else if (tRecipe instanceof CR.VanillaRecipe tVanilla) {
+				List tInputs = java.util.Arrays.asList(tVanilla.getInput());
+				
+				if (tInputs != null && tInputs.size() == 1) for (Object tObject : tInputs) if (tObject != null) {
+					tCount++;
+					if (tObject instanceof ItemStack) {
+						OreDictItemData tData = OM.data((ItemStack)tObject);
+						if (tData == null || tData.mPrefix != mInput || tData.mMaterial == null || !mCondition.isTrue(tData.mMaterial.mMaterial)) {
+							tCount = 0;
+							break;
+						}
+					} else {
+						tCount = 0;
+						break;
+					}
+				}
+			} else if (tRecipeList.get(i) instanceof ICraftingRecipeGT) {
 				// NOTHING
 			} else if (tRecipe instanceof ShapedOreRecipe) {
 				Object[] tInputs = ((ShapedOreRecipe)tRecipe).getInput();
@@ -129,8 +161,6 @@ public class AdvancedCrafting1ToY implements ICraftingRecipeGT {
 					}
 				}
 			}
-			// Scanning foreign vanilla-style recipes at mod-init is removed since neo loads recipes from datapacks only
-			// at server start; that scan/removal is deferred elsewhere, while dedup of GT6's own recipes stays 1:1.
 			
 			if (tCount == 1) {
 				OreDictItemData tData = OM.data(tRecipe.getRecipeOutput());
