@@ -295,7 +295,7 @@ public class GT_API extends Abstract_Mod {
 	/** F1/F12/F16 item-model separation: GT6 items built OreDict data+recipes (ST.make = a stack of itself) IN THE CONSTRUCTOR, but
 	 *  neo constructs an item @RegisterEvent (the registry is open for an intrusive holder), while stacks are only possible
 	 *  @post-freeze (Holder.components are bound later). The constructor registers its stack-init here (a Runnable, no stacks), and
-	 *  {@link #runDeferredItemInit()} runs them in setup (post-bind). See decisions/F12-registration-lifecycle.md. */
+	 *  {@link #runDeferredItemInit} runs them in setup (post-bind). See decisions/F12-registration-lifecycle.md. */
 	public static final List<Runnable> DEFERRED_ITEM_INIT = new ArrayListNoNulls<>();
 	public static void deferItemInit(Runnable aInit) {if (aInit != null) DEFERRED_ITEM_INIT.add(aInit);}
 	/** F12-followup (oredict-timing): the execution window for the deferred stack-init on server-start. In 1.7.10 GT6's whole content
@@ -393,7 +393,7 @@ public class GT_API extends Abstract_Mod {
 	}
 	// drain-loop: a callback may add a new deferItemInit (a nested deferral, e.g. block→slab) — handled FIFO
 	// without ConcurrentModification; the list is drained fully, including entries added during execution.
-	public static void runDeferredItemInit() {
+	public static void runDeferredItemInit(net.minecraft.core.HolderLookup.Provider aRegistries) {
 		sDeferredItemInitRunning = true;
 		// F4 role-B: vanilla ore-dictionary entries that Forge itself set up BEFORE mods in 1.7.10
 		// (OreDictionary.initVanillaEntries — see there for evidence and porting boundaries). Called at the very
@@ -407,8 +407,10 @@ public class GT_API extends Abstract_Mod {
 		// unification target — so a foreign item must arrive before GT6's own stacks (the queue below), exactly as
 		// mods that loaded before GT6 used to arrive first.
 		try {gregapi.oredict.OreDictTags.importFromTags();} catch(Throwable e) {e.printStackTrace(ERR);}
+		// The loaders in this queue judge vanilla recipes as 1.7.10 did (CR.remove/remout/has/get); an empty queue needs no view.
+		if (!DEFERRED_ITEM_INIT.isEmpty()) gregapi.util.CR.openVanillaView(aRegistries);
 		try {while (!DEFERRED_ITEM_INIT.isEmpty()) {Runnable tInit = DEFERRED_ITEM_INIT.remove(0); try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);}}}
-		finally {sDeferredItemInitRunning = false;}
+		finally {sDeferredItemInitRunning = false; gregapi.util.CR.closeVanillaView();}
 	}
 
 	/** F12-followup (block-split, MTE): some GT6 subsystems (MultiTileEntityRegistry/MultiTileEntityBlock) BUILD a
@@ -797,7 +799,7 @@ public class GT_API extends Abstract_Mod {
 	public void onLevelLoadEarlyItemInit(net.neoforged.neoforge.event.level.LevelEvent.Load aEvent) {
 		if (aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel && tLevel.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
 			applyWaterSourceConversionRule(tLevel);
-			runDeferredItemInit();
+			runDeferredItemInit(tLevel.registryAccess());
 			// BUG-054: the vanilla furnace's shift-click gate (RecipePropertySet.FURNACE_INPUT → AbstractFurnaceMenu.canSmelt:142)
 			// is built by the engine on loadLevel BEFORE this data-init (FurnaceRecipes is still empty → GT6SmeltingDispatcher.input()
 			// returns the BARRIER placeholder) → the vanilla furnace doesn't recognize GT6 smeltables, shift doesn't put them into the input slot.
@@ -892,7 +894,7 @@ public class GT_API extends Abstract_Mod {
 			// The timing is the same as the server arm: ClientLevel.Load = post-bind (registries/components bound).
 			// The server-only tails (role-C, recipe-scan, propertySets, loot) stay ONLY in the server branch — a
 			// remote client gets recipes/loot synced from the server.
-			runDeferredItemInit();
+			runDeferredItemInit(tClientLevel.registryAccess());
 		}
 	}
 
