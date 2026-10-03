@@ -585,9 +585,10 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		if (Minecraft.getInstance().getSingleplayerServer() != null) return;
 		if (Minecraft.getInstance().getConnection() == null) return;
 		// A server without GT6's sync still gets the deferred item-init, from the engine's tags as before.
-		if (!GT_API.sDeferredItemInitDone) GT_API.runDeferredItemInit(Minecraft.getInstance().getConnection().registryAccess());
-		GT_API.buildClientCraftingBuffer(aEvent.getRecipeManager().getRecipes(), Minecraft.getInstance().getConnection().registryAccess());
-		gregapi.recipes.FurnaceRecipes.smelting().restoreVanilla(aEvent.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING), Minecraft.getInstance().getConnection().registryAccess());
+		net.minecraft.core.RegistryAccess tRegistries = getClientRegistries();
+		if (!GT_API.sDeferredItemInitDone) GT_API.runDeferredItemInit(tRegistries);
+		GT_API.buildClientCraftingBuffer(aEvent.getRecipeManager().getRecipes(), tRegistries);
+		gregapi.recipes.FurnaceRecipes.smelting().restoreVanilla(aEvent.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING), tRegistries);
 	}
 
 	/** Client-side arm of the beacon-payment bridge (center — {@link GT_API_Proxy#wrapBeaconPaymentSlot}): the client builds

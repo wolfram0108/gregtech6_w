@@ -299,6 +299,7 @@ public class GT_API extends Abstract_Mod {
 			int tBefore = 0;
 			for (net.minecraft.world.item.crafting.Recipe<?> tRecipe : tRM.getRecipes()) {tBefore++; if (!aRemove.contains(tRecipe.getId())) tKeep.add(tRecipe); else SUPPRESSED_DATAPACK_ORIGINALS.put(tRecipe.getId(), tRecipe);}
 			tRM.replaceRecipes(tKeep);
+			gregapi.util.CR.runningChanged();
 			OUT.println("GT_API: datapack recipes suppressed (F11-recipe-scan): " + (tBefore - tKeep.size()) + " of " + aRemove.size() + " requested.");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
