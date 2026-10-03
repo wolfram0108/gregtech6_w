@@ -610,19 +610,20 @@ public class CR {
 	// get, outputs, ONLY_IF_HAS_OTHER_RECIPES) judged both. Vanilla now lives in the datapack, so for the loader window
 	// its crafting recipes are read from the engine's own vanilla pack, which a server and a remote client carry alike.
 	// ==========================================================================================================
-	private static List<ICraftingRecipeGT> VANILLA_VIEW = null;
+	private static List<VanillaRecipe> VANILLA_VIEW = null;
 
 	/** Opens the vanilla half of the live list for the loader window; null registries leave it closed. */
 	public static void openVanillaView(net.minecraft.core.HolderLookup.Provider aRegistries) {
 		VANILLA_VIEW = null;
 		if (aRegistries == null) return;
-		TreeMap<String, ICraftingRecipeGT> tRecipes = new TreeMap<>(); // the pack lists files in no fixed order
+		TreeMap<String, VanillaRecipe> tRecipes = new TreeMap<>(); // the pack lists files in no fixed order
+		net.minecraft.resources.FileToIdConverter tLister = net.minecraft.resources.FileToIdConverter.registry(net.minecraft.core.registries.Registries.RECIPE);
 		com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> tOps = aRegistries.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
 		try (net.minecraft.server.packs.VanillaPackResources tPack = net.minecraft.server.packs.repository.ServerPacksSource.createVanillaPackSource()) {
 			tPack.listResources(net.minecraft.server.packs.PackType.SERVER_DATA, "minecraft", "recipe", (aFile, aStream) -> {
 				try (java.io.Reader tReader = new java.io.InputStreamReader(aStream.get(), java.nio.charset.StandardCharsets.UTF_8)) {
 					net.minecraft.world.item.crafting.Recipe<?> tRecipe = net.minecraft.world.item.crafting.Recipe.CODEC.parse(tOps, com.google.gson.JsonParser.parseReader(tReader)).getOrThrow();
-					if (tRecipe instanceof ShapedRecipe || tRecipe instanceof ShapelessRecipe) tRecipes.put(aFile.toString(), new VanillaRecipe((net.minecraft.world.item.crafting.CraftingRecipe)tRecipe));
+					if (tRecipe instanceof ShapedRecipe || tRecipe instanceof ShapelessRecipe) tRecipes.put(aFile.toString(), new VanillaRecipe(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, tLister.fileToId(aFile)), (net.minecraft.world.item.crafting.CraftingRecipe)tRecipe));
 				} catch(Throwable e) {/* not a workbench recipe of the base pack */}
 			});
 		} catch(Throwable e) {e.printStackTrace(ERR);}
@@ -632,23 +633,41 @@ public class CR {
 
 	public static void closeVanillaView() {VANILLA_VIEW = null;}
 
-	/** The live list of 1.7.10: vanilla first, as registered there, then GT6's buffer; removal reaches either half. */
-	private static List<ICraftingRecipeGT> live() {
-		final List<ICraftingRecipeGT> tVanilla = VANILLA_VIEW;
+	/** The live list of 1.7.10 for the loaders' scans: vanilla first, as registered there, then GT6's buffer; removal reaches
+	 *  either half, and removing a vanilla recipe removes it from the game, as removing it from the CraftingManager did. */
+	public static List<ICraftingRecipeGT> live() {
+		final List<VanillaRecipe> tVanilla = VANILLA_VIEW;
 		if (tVanilla == null) return BUFFER;
 		return new AbstractList<>() {
 			@Override public ICraftingRecipeGT get(int aIndex) {return aIndex < tVanilla.size() ? tVanilla.get(aIndex) : BUFFER.get(aIndex - tVanilla.size());}
-			@Override public ICraftingRecipeGT remove(int aIndex) {return aIndex < tVanilla.size() ? tVanilla.remove(aIndex) : BUFFER.remove(aIndex - tVanilla.size());}
+			@Override public ICraftingRecipeGT remove(int aIndex) {
+				if (aIndex >= tVanilla.size()) return BUFFER.remove(aIndex - tVanilla.size());
+				VanillaRecipe rRecipe = tVanilla.remove(aIndex);
+				DATAPACK_REMOVALS_KEY.add(rRecipe.mId);
+				return rRecipe;
+			}
 			@Override public int size() {return tVanilla.size() + BUFFER.size();}
 		};
 	}
 
 	/** A vanilla workbench recipe as the live list holds it; 1.7.10 counted ShapedRecipes/ShapelessRecipes as native. */
 	public static final class VanillaRecipe implements ICraftingRecipeGT {
+		public final net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> mId;
 		public final net.minecraft.world.item.crafting.CraftingRecipe mRecipe;
 		public final boolean mShapeless;
 		private final ItemStack mOutput;
-		VanillaRecipe(net.minecraft.world.item.crafting.CraftingRecipe aRecipe) {mRecipe = aRecipe; mShapeless = aRecipe instanceof ShapelessRecipe; mOutput = aRecipe.assemble(CraftingInput.EMPTY);}
+		VanillaRecipe(net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> aId, net.minecraft.world.item.crafting.CraftingRecipe aRecipe) {mId = aId; mRecipe = aRecipe; mShapeless = aRecipe instanceof ShapelessRecipe; mOutput = aRecipe.assemble(CraftingInput.EMPTY);}
+		/** The recipe's cells as 1.7.10's ShapedRecipes/ShapelessRecipes.recipeItems held them: a shaped one keeps its own
+		 *  width x height pattern with null for an empty cell, a cell's first item stands for the ingredient, and a block's
+		 *  own item carries the wildcard meta 1.7.10's CraftingManager gave a Block argument (the oracle's "iron_block:32767");
+		 *  an item placing another block (redstone wire, tripwire) was an Item there and keeps meta 0. */
+		public ItemStack[] getInput() {
+			List<Optional<net.minecraft.world.item.crafting.Ingredient>> tCells = mRecipe instanceof ShapedRecipe tShaped ? tShaped.pattern.ingredients() : mRecipe.placementInfo().ingredients().stream().map(Optional::of).toList();
+			ItemStack[] rInput = new ItemStack[tCells.size()];
+			for (int i = 0; i < rInput.length; i++) rInput[i] = tCells.get(i).flatMap(aIngredient -> aIngredient.items().findFirst()).map(aItem -> isOwnBlockItem(aItem.value()) ? ST.make(aItem.value(), 1, W) : new ItemStack(aItem)).orElse(null);
+			return rInput;
+		}
+		private static boolean isOwnBlockItem(Item aItem) {return aItem instanceof net.minecraft.world.item.BlockItem tBlockItem && net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlockItem.getBlock()).equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aItem));}
 		@Override public boolean matches(CraftingInput aGrid, Level aWorld) {return mRecipe.matches(aGrid, aWorld);}
 		@Override public ItemStack getCraftingResult(CraftingInput aGrid) {return mRecipe.assemble(aGrid);}
 		@Override public int getRecipeSize() {return mRecipe.placementInfo().ingredients().size();}
@@ -769,6 +788,10 @@ public class CR {
 	/** Second arm of the same class as {@link #DATAPACK_REMOVALS}, judging by output instead of grid; it silently
 	 *  lost all vanilla removals the same way once vanilla moved to the datapack, and drains through the same center. */
 	public static final List<ItemStack> DATAPACK_REMOVALS_OUT = new ArrayListNoNulls<>();
+
+	/** Fourth arm of the same class, by key: a vanilla recipe removed from {@link #live()} by any reader is suppressed by its
+	 *  own id, so a scan that removes the recipe it saw (not a grid or an output) takes it out of the game as 1.7.10 did. */
+	public static final java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> DATAPACK_REMOVALS_KEY = new java.util.HashSet<>();
 
 	/** Third arm of the same class: the first two only judge a workbench's grid or output, but a foreign machine's recipes
 	 *  need suppressing by their own type instead. */
