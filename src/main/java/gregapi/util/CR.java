@@ -537,8 +537,8 @@ public class CR {
 		
 		if (aAllowCache && sLastRecipe != null && sLastRecipe.matches(aCrafting, aWorld)) return sLastRecipe.getCraftingResult(aCrafting);
 		
-		List<ICraftingRecipeGT> tList = running();
-		for (int i = 0; i < tList.size(); i++) if (tList.get(i).matches(aCrafting, aWorld)) return (sLastRecipe = tList.get(i)).getCraftingResult(aCrafting);
+		ICraftingRecipeGT tRecipe = matching(aCrafting, aWorld);
+		if (tRecipe != null) return (sLastRecipe = tRecipe).getCraftingResult(aCrafting);
 
 		int tIndex = 0;
 		ItemStack tStack1 = null, tStack2 = null;
@@ -649,6 +649,14 @@ public class CR {
 		return tVanilla == null ? BUFFER : joined(tVanilla);
 	}
 
+	/** The one answer every crafting path gives a grid, the workbench included: the first match in {@link #running()}. Vanilla
+	 *  comes first as Forge's RecipeSorter put it in 1.7.10 wherever the two halves share a grid with different outputs. */
+	public static ICraftingRecipeGT matching(CraftingContainer aGrid, Level aWorld) {
+		List<ICraftingRecipeGT> tList = running();
+		for (int i = 0, j = tList.size(); i < j; i++) {ICraftingRecipeGT tRecipe = tList.get(i); if (tRecipe != null && tRecipe.matches(aGrid, aWorld)) return tRecipe;}
+		return null;
+	}
+
 	/** The live list while the game runs: the running server's workbench recipes, suppressed ones already gone, then GT6's. */
 	public static List<ICraftingRecipeGT> running() {
 		net.minecraft.server.MinecraftServer tServer = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
@@ -666,8 +674,11 @@ public class CR {
 	private static volatile List<VanillaRecipe> sRunning = Collections.emptyList();
 	private static volatile Object sRunningManager = null;
 	private static volatile int sRunningAt = -1, sRunningGeneration = 0;
-	/** GT_API calls this whenever it rebuilds the running server's recipes, so {@link #running()} rereads them. */
-	public static void runningChanged() {sRunningGeneration++;}
+	private static final List<Runnable> RUNNING_FOLLOWERS = new java.util.concurrent.CopyOnWriteArrayList<>();
+	/** A copy of the running list (the autocrafter's) drops itself here whenever the list changes. */
+	public static void onRunningChanged(Runnable aFollower) {RUNNING_FOLLOWERS.add(aFollower);}
+	/** GT_API signals a new, reloaded or stopped server's recipes; the running list and every copy of it follow. */
+	public static void runningChanged() {sRunningGeneration++; sLastRecipe = null; for (Runnable tFollower : RUNNING_FOLLOWERS) tFollower.run();}
 
 	/** Vanilla half then GT6's buffer as one list; a vanilla recipe removed from the view's half leaves the game. */
 	private static List<ICraftingRecipeGT> joined(final List<VanillaRecipe> tVanilla) {
@@ -683,8 +694,8 @@ public class CR {
 		};
 	}
 
-	/** 1.7.10's metadata for a vanilla cell: a block's own item was a Block argument, the wildcard in a shaped recipe and 0 in
-	 *  a shapeless one (CraftingManager:218, :274); a one-ingredient shapeless recipe was a shaped "#" there. */
+	/** A vanilla cell's metadata fitted to the oracle: a block's own item is the wildcard in a shaped or one-ingredient recipe
+	 *  (a Block argument, CraftingManager:218), else 0 (:274); cells 1.7.10 gave an explicit metadata are the exceptions it lists. */
 	public static long vanillaCellMeta(Item aItem, net.minecraft.world.item.crafting.CraftingRecipe aRecipe) {
 		boolean tShaped = aRecipe instanceof ShapedRecipe || aRecipe.getIngredients().size() == 1;
 		return tShaped && aItem instanceof net.minecraft.world.item.BlockItem tBlockItem && net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlockItem.getBlock()).equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aItem)) ? W : 0;

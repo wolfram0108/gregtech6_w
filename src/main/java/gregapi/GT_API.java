@@ -287,11 +287,10 @@ public class GT_API extends Abstract_Mod {
 	}
 
 	public static void removeDatapackRecipes(net.minecraft.server.MinecraftServer aServer, java.util.Set<net.minecraft.resources.ResourceLocation> aRemove) {
-		if (aRemove == null || aRemove.isEmpty()) return;
 		// Kept even without a server: an integrated server started later in this JVM reapplies the set, and the scans that fill it run once.
-		SUPPRESSED_DATAPACK_RECIPES.addAll(aRemove);
+		if (aRemove != null) SUPPRESSED_DATAPACK_RECIPES.addAll(aRemove);
 		if (aServer == null) return;
-		try {
+		if (aRemove != null && !aRemove.isEmpty()) try {
 			// 1.20.1: rebuilding the recipe list uses the engine's public API, replaceRecipes(Iterable<Recipe<?>>);
 			// the reflection needed on 26.x isn't needed here.
 			net.minecraft.world.item.crafting.RecipeManager tRM = aServer.getRecipeManager();
@@ -299,9 +298,10 @@ public class GT_API extends Abstract_Mod {
 			int tBefore = 0;
 			for (net.minecraft.world.item.crafting.Recipe<?> tRecipe : tRM.getRecipes()) {tBefore++; if (!aRemove.contains(tRecipe.getId())) tKeep.add(tRecipe); else SUPPRESSED_DATAPACK_ORIGINALS.put(tRecipe.getId(), tRecipe);}
 			tRM.replaceRecipes(tKeep);
-			gregapi.util.CR.runningChanged();
 			OUT.println("GT_API: datapack recipes suppressed (F11-recipe-scan): " + (tBefore - tKeep.size()) + " of " + aRemove.size() + " requested.");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
+		// Every call with a server is a start, a reload or a scan window: the running list and its copies follow.
+		gregapi.util.CR.runningChanged();
 	}
 	// The drain loop: a callback can add a new deferItemInit itself (nested deferral, e.g. block -> slab).
 	// Processed FIFO without ConcurrentModification, draining anything added mid-run too.
@@ -1479,6 +1479,7 @@ public class GT_API extends Abstract_Mod {
 	@Override
 	public void onModServerStopped2(ServerStoppedEvent aEvent) {
 		for (ICompat tCompat : ICompat.COMPAT_CLASSES) try {tCompat.onServerStopped(aEvent);} catch(Throwable e) {e.printStackTrace(ERR);}
+		gregapi.util.CR.runningChanged(); // the stopped server's recipes leave every copy of the running list
 		// Restores a contract the original never honored: the diary-writer thread was never stopped in 1.7.10
 		// either, and a normal dedicated-server shutdown never calls System.exit, so it kept the JVM alive.
 		if (mPlayerLogger != null) mPlayerLogger.stop();

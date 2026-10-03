@@ -70,26 +70,20 @@ public final class GT6CraftingDispatcher extends CustomRecipe {
 
 	@Override
 	public boolean matches(CraftingContainer aGrid, Level aLevel) {
-		List<ICraftingRecipeGT> tList = CR.list();
-		for (int i = 0, j = tList.size(); i < j; i++) {
-			ICraftingRecipeGT tRecipe = tList.get(i);
-			if (tRecipe != null && tRecipe.matches(aGrid, aLevel)) return T;
-		}
-		return F;
+		// The workbench answers as every other path (CR.matching); where that is a live vanilla recipe the dispatcher
+		// stands aside, so the engine's own recipe answers whatever its place in the engine's map.
+		ICraftingRecipeGT tRecipe = CR.matching(aGrid, aLevel);
+		return tRecipe != null && !(tRecipe instanceof CR.VanillaRecipe);
 	}
 
 	@Override
 	public ItemStack assemble(CraftingContainer aGrid, RegistryAccess aRegistries) {
 		// assemble is never given a Level, and no ICraftingRecipeGT.matches dereferences one (they only read the grid),
 		// so the dummy world stands in here, the same as elsewhere in this file.
-		List<ICraftingRecipeGT> tList = CR.list();
-		for (int i = 0, j = tList.size(); i < j; i++) {
-			ICraftingRecipeGT tRecipe = tList.get(i);
-			// The enchant registry is static on this engine version and the bug class this used to guard against doesn't exist
-			// anymore, so the method is now an identity -- kept only to preserve the call site.
-			if (tRecipe != null && tRecipe.matches(aGrid, CS.DW)) return gregapi.util.UT.NBT.refreshEnchantments(tRecipe.getCraftingResult(aGrid));
-		}
-		return ItemStack.EMPTY;
+		ICraftingRecipeGT tRecipe = CR.matching(aGrid, CS.DW);
+		// The enchant registry is static on this engine version and the bug class this used to guard against doesn't exist
+		// anymore, so the method is now an identity -- kept only to preserve the call site.
+		return tRecipe == null || tRecipe instanceof CR.VanillaRecipe ? ItemStack.EMPTY : gregapi.util.UT.NBT.refreshEnchantments(tRecipe.getCraftingResult(aGrid));
 	}
 
 	/** The buffer carries recipes of any grid size; filtering by size is each recipe's own job inside matches. */
