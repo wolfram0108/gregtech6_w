@@ -69,28 +69,22 @@ public final class GT6CraftingDispatcher extends CustomRecipe {
 		SERIALIZERS.register(aModBus);
 	}
 
+	// The workbench answers as every other path (CR.matching); where that is a live vanilla recipe the dispatcher stands
+	// aside, so the engine's own recipe answers wherever its id sorts against this one.
 	@Override
 	public boolean matches(CraftingInput aGrid, Level aLevel) {
-		List<ICraftingRecipeGT> tList = CR.list();
-		for (int i = 0, j = tList.size(); i < j; i++) {
-			ICraftingRecipeGT tRecipe = tList.get(i);
-			if (tRecipe != null && tRecipe.matches(aGrid, aLevel)) return T;
-		}
-		return F;
+		ICraftingRecipeGT tRecipe = CR.matching(aGrid, aLevel);
+		return tRecipe != null && !(tRecipe instanceof CR.VanillaRecipe);
 	}
 
 	@Override
 	public ItemStack assemble(CraftingInput aGrid) {
 		// Recipe.assemble doesn't receive a Level, and no ported recipe actually reads it, so the shared dummy
-		// world stands in for null while re-scanning the buffer for the matching recipe.
-		List<ICraftingRecipeGT> tList = CR.list();
-		for (int i = 0, j = tList.size(); i < j; i++) {
-			ICraftingRecipeGT tRecipe = tList.get(i);
-			// A statically-enchanted recipe result's enchantment holders go stale after a world restart, breaking the
-			// network codec by identity; refreshing them against the current server's registry fixes every GT6 crafting result.
-			if (tRecipe != null && tRecipe.matches(aGrid, CS.DW)) return gregapi.util.UT.NBT.refreshEnchantments(tRecipe.getCraftingResult(aGrid));
-		}
-		return ItemStack.EMPTY;
+		// world stands in for null while finding the grid's answer.
+		ICraftingRecipeGT tRecipe = CR.matching(aGrid, CS.DW);
+		// A statically-enchanted recipe result's enchantment holders go stale after a world restart, breaking the
+		// network codec by identity; refreshing them against the current server's registry fixes every GT6 crafting result.
+		return tRecipe == null || tRecipe instanceof CR.VanillaRecipe ? ItemStack.EMPTY : gregapi.util.UT.NBT.refreshEnchantments(tRecipe.getCraftingResult(aGrid));
 	}
 
 	// 1.7.10 checked container-item leftovers on the item itself; neo checks per-recipe and knows nothing about

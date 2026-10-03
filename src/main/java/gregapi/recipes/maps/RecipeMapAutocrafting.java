@@ -65,6 +65,8 @@ public class RecipeMapAutocrafting extends RecipeMap {
 	// class of the same short name and not neo's own Recipe type, which conflicted on import.
 	public static final List<ICraftingRecipeGT> ALLOWED_RECIPES = new ArrayListNoNulls<>();
 	public static final List<ICraftingRecipeGT> RECENT_RECIPES = new ArrayListNoNulls<>();
+	// Both hold the running server's recipes, so they follow it; 1.7.10's one CraftingManager never changed under them.
+	static {CR.onRunningChanged(() -> {ALLOWED_RECIPES.clear(); RECENT_RECIPES.clear();});}
 
 	@Override
 	public Recipe findRecipe(IHasWorldAndCoords aTileEntity, Recipe aRecipe, boolean aNotUnificated, long aSize, ItemStack aSpecialSlot, FluidStack[] aFluids, ItemStack... aInputs) {

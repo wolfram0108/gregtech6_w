@@ -376,11 +376,10 @@ public class GT_API extends Abstract_Mod {
 	}
 
 	public static void removeDatapackRecipes(net.minecraft.server.MinecraftServer aServer, java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> aRemove) {
-		if (aRemove == null || aRemove.isEmpty()) return;
 		// Kept even without a server: an integrated server started later in this JVM reapplies the set, and the scans that fill it run once.
-		SUPPRESSED_DATAPACK_RECIPES.addAll(aRemove);
+		if (aRemove != null) SUPPRESSED_DATAPACK_RECIPES.addAll(aRemove);
 		if (aServer == null) return;
-		try {
+		if (aRemove != null && !aRemove.isEmpty()) try {
 			net.minecraft.world.item.crafting.RecipeManager tRM = aServer.getRecipeManager();
 			java.util.List<net.minecraft.world.item.crafting.RecipeHolder<?>> tKeep = new java.util.ArrayList<>();
 			int tBefore = 0;
@@ -388,9 +387,10 @@ public class GT_API extends Abstract_Mod {
 			java.lang.reflect.Field tField = net.minecraft.world.item.crafting.RecipeManager.class.getDeclaredField("recipes");
 			tField.setAccessible(true);
 			tField.set(tRM, net.minecraft.world.item.crafting.RecipeMap.create(tKeep));
-			gregapi.util.CR.runningChanged();
 			OUT.println("GT_API: datapack recipes suppressed (F11-recipe-scan): " + (tBefore - tKeep.size()) + " of " + aRemove.size() + " requested.");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
+		// Every call with a server is a start, a reload or a scan window: the running list and its copies follow.
+		gregapi.util.CR.runningChanged();
 	}
 	// drain-loop: a callback may add a new deferItemInit (a nested deferral, e.g. block→slab) — handled FIFO
 	// without ConcurrentModification; the list is drained fully, including entries added during execution.
@@ -1651,6 +1651,7 @@ public class GT_API extends Abstract_Mod {
 	@Override
 	public void onModServerStopped2(ServerStoppedEvent aEvent) {
 		for (ICompat tCompat : ICompat.COMPAT_CLASSES) try {tCompat.onServerStopped(aEvent);} catch(Throwable e) {e.printStackTrace(ERR);}
+		gregapi.util.CR.runningChanged(); // the stopped server's recipes leave every copy of the running list
 		// RESTORING THE CONTRACT "what the mod started for the server's lifetime lives for the server's lifetime".
 		// The 1.7.10 original never said goodbye to this thread at all (GT_API.java:830 — only starts it; there's no
 		// shutdown anywhere in its whole tree), and the port inherited that 1:1. On the target engine this doesn't work:
