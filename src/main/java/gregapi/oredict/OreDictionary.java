@@ -215,6 +215,13 @@ public class OreDictionary {
 	public static void initVanillaRecipeReplacements(Iterable<net.minecraft.world.item.crafting.Recipe<?>> aRecipes, net.minecraft.core.RegistryAccess aRegistries) {
 		if (sHasReplacedRecipes || aRecipes == null || aRegistries == null) return;
 		sHasReplacedRecipes = true;
+		gregapi.util.CR.BUFFER.addAll(vanillaRecipeReplacements(aRecipes, aRegistries, "CR.BUFFER"));
+	}
+
+	/** Forge's conversion itself: the ore version of every recipe it would have replaced, in order. The live list's vanilla
+	 *  half holds the same versions (CR.openVanillaView), since 1.7.10's CraftingManager held them in place of the originals. */
+	public static java.util.List<gregapi.recipes.ICraftingRecipeGT> vanillaRecipeReplacements(Iterable<net.minecraft.world.item.crafting.Recipe<?>> aRecipes, net.minecraft.core.RegistryAccess aRegistries, String aFor) {
+		java.util.List<gregapi.recipes.ICraftingRecipeGT> rReplacements = new java.util.ArrayList<>();
 
 		// Replacement map matches Forge's own list verbatim; split families are listed the same way as above.
 		final Map<net.minecraft.world.item.Item, String> tReplacements = new java.util.HashMap<>();
@@ -289,7 +296,7 @@ public class OreDictionary {
 						tRows[y] = tRow.toString();
 					}
 					tArgs.add(0, tRows);
-					gregapi.recipes.ShapedOreRecipe tRecipe = new gregapi.recipes.ShapedOreRecipe(tOutput, tArgs.toArray());
+					gregapi.recipes.ShapedOreRecipe tRecipe = new gregapi.recipes.ShapedOreRecipe(tOutput, tArgs.toArray()).setMirrored(true); // Forge's conversion keeps ShapedOreRecipe's default, mirrored
 					tRecipe.mVanillaReplacement = true; // Marks this as a Forge-style vanilla replacement for the recipe-replacement scan to pick up.
 					tRecipe.mSourceId = tAny.getId();
 					tBySignature.computeIfAbsent(tSignature.toString(), k -> new java.util.ArrayList<>()).add(tRecipe);
@@ -319,9 +326,10 @@ public class OreDictionary {
 		int tCollided = 0;
 		for (Map.Entry<String, java.util.List<gregapi.recipes.ICraftingRecipeGT>> tEntry : tBySignature.entrySet()) {
 			if (tOutputsBySignature.get(tEntry.getKey()).size() > 1) {tCollided += tEntry.getValue().size(); continue;}
-			for (gregapi.recipes.ICraftingRecipeGT tRecipe : tEntry.getValue()) {gregapi.util.CR.BUFFER.add(tRecipe); tReplaced++;}
+			for (gregapi.recipes.ICraftingRecipeGT tRecipe : tEntry.getValue()) {rReplacements.add(tRecipe); tReplaced++;}
 		}
-		gregapi.data.CS.OUT.println("GT_API: Vanilla recipe replacements (F4 role-C): " + tReplaced + " ore-versions added to CR.BUFFER, " + tCollided + " skipped as ambiguous (output family collision).");
+		gregapi.data.CS.OUT.println("GT_API: Vanilla recipe replacements (F4 role-C): " + tReplaced + " ore-versions for " + aFor + ", " + tCollided + " skipped as ambiguous (output family collision).");
+		return rReplacements;
 	}
 
 	/** Builds the cells for an ore recipe from the vanilla recipe's ingredients: the replaced item becomes the
