@@ -78,7 +78,7 @@ public class RecipeMapAutocrafting extends RecipeMap {
 		for (ItemStack tPlan : tBlueprint) if (tPlan != null && tPlan.getItem() instanceof IItemGTHandTool) return null;
 
 		if (ALLOWED_RECIPES.isEmpty()) {
-			for (Object tCraftingRecipe : CR.list()) if (tCraftingRecipe instanceof ICraftingRecipeGT) {
+			for (Object tCraftingRecipe : CR.running()) if (tCraftingRecipe instanceof ICraftingRecipeGT) {
 				if (!(tCraftingRecipe instanceof ICraftingRecipeGT) || ((ICraftingRecipeGT)tCraftingRecipe).isAutocraftableByGT()) {
 					ALLOWED_RECIPES.add((ICraftingRecipeGT)tCraftingRecipe);
 				}

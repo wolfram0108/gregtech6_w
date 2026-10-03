@@ -388,6 +388,7 @@ public class GT_API extends Abstract_Mod {
 			java.lang.reflect.Field tField = net.minecraft.world.item.crafting.RecipeManager.class.getDeclaredField("recipes");
 			tField.setAccessible(true);
 			tField.set(tRM, net.minecraft.world.item.crafting.RecipeMap.create(tKeep));
+			gregapi.util.CR.runningChanged();
 			OUT.println("GT_API: datapack recipes suppressed (F11-recipe-scan): " + (tBefore - tKeep.size()) + " of " + aRemove.size() + " requested.");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 	}

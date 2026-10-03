@@ -537,16 +537,8 @@ public class CR {
 		
 		if (aAllowCache && sLastRecipe != null && sLastRecipe.matches(aCrafting, aWorld)) return sLastRecipe.getCraftingResult(aCrafting);
 		
-		List<ICraftingRecipeGT> tList = list();
+		List<ICraftingRecipeGT> tList = running();
 		for (int i = 0; i < tList.size(); i++) if (tList.get(i).matches(aCrafting, aWorld)) return (sLastRecipe = tList.get(i)).getCraftingResult(aCrafting);
-
-		// 1.7.10's list() was the global CraftingManager, so GT6's table also crafted vanilla recipes; since vanilla
-		// now lives in the datapack RecipeManager instead of BUFFER, it's consulted here too, in the same central lookup.
-		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
-			java.util.Optional<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> tVanilla =
-				tSL.getServer().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, aCrafting, tSL);
-			if (tVanilla.isPresent()) return tVanilla.get().value().assemble(aCrafting);
-		}
 
 		int tIndex = 0;
 		ItemStack tStack1 = null, tStack2 = null;
@@ -605,11 +597,8 @@ public class CR {
 	 *  empty at mod-init; the dispatcher reads this instead. */
 	public static List<ICraftingRecipeGT> list() {return BUFFER;}
 
-	// ==========================================================================================================
-	// 1.7.10's list() was the live CraftingManager, vanilla recipes included; the loaders' readers (remove, remout, has,
-	// get, outputs, ONLY_IF_HAS_OTHER_RECIPES) judged both. Vanilla now lives in the datapack, so for the loader window
-	// its crafting recipes are read from the engine's own vanilla pack, which a server and a remote client carry alike.
-	// ==========================================================================================================
+	// 1.7.10's list() was the live CraftingManager with vanilla in it; for the loader window vanilla's workbench recipes
+	// come from the engine's own vanilla pack, which a server and a remote client carry alike.
 	private static List<VanillaRecipe> VANILLA_VIEW = null;
 
 	/** Every recipe the view held: the vanilla workbench recipes the view judges, so the datapack arms leave them alone. */
@@ -620,6 +609,7 @@ public class CR {
 		VANILLA_VIEW = null;
 		if (aRegistries == null) return;
 		TreeMap<String, VanillaRecipe> tRecipes = new TreeMap<>(); // the pack lists files in no fixed order
+		int[] tFailed = {0};
 		net.minecraft.resources.FileToIdConverter tLister = net.minecraft.resources.FileToIdConverter.registry(net.minecraft.core.registries.Registries.RECIPE);
 		com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> tOps = aRegistries.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
 		try (net.minecraft.server.packs.VanillaPackResources tPack = net.minecraft.server.packs.repository.ServerPacksSource.createVanillaPackSource()) {
@@ -627,7 +617,7 @@ public class CR {
 				try (java.io.Reader tReader = new java.io.InputStreamReader(aStream.get(), java.nio.charset.StandardCharsets.UTF_8)) {
 					net.minecraft.world.item.crafting.Recipe<?> tRecipe = net.minecraft.world.item.crafting.Recipe.CODEC.parse(tOps, com.google.gson.JsonParser.parseReader(tReader)).getOrThrow();
 					if (tRecipe instanceof ShapedRecipe || tRecipe instanceof ShapelessRecipe) tRecipes.put(aFile.toString(), new VanillaRecipe(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, tLister.fileToId(aFile)), (net.minecraft.world.item.crafting.CraftingRecipe)tRecipe));
-				} catch(Throwable e) {/* not a workbench recipe of the base pack */}
+				} catch(Throwable e) {tFailed[0]++; ERR.println("CR: vanilla recipe " + aFile + " could not be read: " + e);}
 			});
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		// Forge had already replaced part of vanilla with ore recipes before any mod ran, so the live list holds those versions.
@@ -639,16 +629,39 @@ public class CR {
 		}
 		for (VanillaRecipe tRecipe : tRecipes.values()) {tRecipe.mForge = tForge.get(tRecipe.mId); VANILLA_VIEW_IDS.add(tRecipe.mId);}
 		VANILLA_VIEW = new ArrayList<>(tRecipes.values());
-		OUT.println("CR: vanilla crafting view opened with " + VANILLA_VIEW.size() + " recipes, " + tForge.size() + " of them as Forge's ore versions.");
+		OUT.println("CR: vanilla crafting view opened with " + VANILLA_VIEW.size() + " recipes, " + tForge.size() + " of them as Forge's ore versions, " + tFailed[0] + " unreadable.");
 	}
 
 	public static void closeVanillaView() {VANILLA_VIEW = null;}
 
-	/** The live list of 1.7.10 for the loaders' scans: vanilla first, as registered there, then GT6's buffer; removal reaches
-	 *  either half, and removing a vanilla recipe removes it from the game, as removing it from the CraftingManager did. */
+	/** The live list of 1.7.10 for the loaders' scans, vanilla first as registered there; see {@link #running()} after them. */
 	public static List<ICraftingRecipeGT> live() {
 		final List<VanillaRecipe> tVanilla = VANILLA_VIEW;
-		if (tVanilla == null) return BUFFER;
+		return tVanilla == null ? BUFFER : joined(tVanilla);
+	}
+
+	/** The live list while the game runs: the running server's workbench recipes, suppressed ones already gone, then GT6's. */
+	public static List<ICraftingRecipeGT> running() {
+		net.minecraft.server.MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+		if (tServer == null) return BUFFER;
+		net.minecraft.world.item.crafting.RecipeManager tManager = tServer.getRecipeManager();
+		if (tManager != sRunningManager || sRunningAt != sRunningGeneration) {
+			List<VanillaRecipe> tRecipes = new ArrayList<>();
+			for (net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> tHolder : tManager.recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
+				if (!(tHolder.value() instanceof gregapi.recipes.GT6CraftingDispatcher)) tRecipes.add(new VanillaRecipe(tHolder.id(), tHolder.value()));
+			}
+			sRunning = Collections.unmodifiableList(tRecipes); sRunningManager = tManager; sRunningAt = sRunningGeneration;
+		}
+		return joined(sRunning);
+	}
+	private static volatile List<VanillaRecipe> sRunning = Collections.emptyList();
+	private static volatile Object sRunningManager = null;
+	private static volatile int sRunningAt = -1, sRunningGeneration = 0;
+	/** GT_API calls this whenever it rebuilds the running server's recipes, so {@link #running()} rereads them. */
+	public static void runningChanged() {sRunningGeneration++;}
+
+	/** Vanilla half then GT6's buffer as one list; a vanilla recipe removed from the view's half leaves the game. */
+	private static List<ICraftingRecipeGT> joined(final List<VanillaRecipe> tVanilla) {
 		return new AbstractList<>() {
 			@Override public ICraftingRecipeGT get(int aIndex) {return aIndex < tVanilla.size() ? tVanilla.get(aIndex) : BUFFER.get(aIndex - tVanilla.size());}
 			@Override public ICraftingRecipeGT remove(int aIndex) {
@@ -661,52 +674,58 @@ public class CR {
 		};
 	}
 
-	/** The metadata 1.7.10's CraftingManager gave a vanilla recipe cell: a Block argument the wildcard, an Item argument 0.
-	 *  A block's own item stands for the Block (the oracle's "iron_block:32767"); an item placing another block (redstone
-	 *  wire, tripwire) was an Item there. A wildcard cell takes any metadata, any other only its own. */
-	public static long vanillaCellMeta(Item aItem) {return aItem instanceof net.minecraft.world.item.BlockItem tBlockItem && net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlockItem.getBlock()).equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aItem)) ? W : 0;}
+	/** 1.7.10's metadata for a vanilla cell: a block's own item was a Block argument, the wildcard in a shaped recipe and 0 in
+	 *  a shapeless one (CraftingManager:218, :274); a one-ingredient shapeless recipe was a shaped "#" there. */
+	public static long vanillaCellMeta(Item aItem, net.minecraft.world.item.crafting.CraftingRecipe aRecipe) {
+		boolean tShaped = aRecipe instanceof ShapedRecipe || aRecipe.placementInfo().ingredients().size() == 1;
+		return tShaped && aItem instanceof net.minecraft.world.item.BlockItem tBlockItem && net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlockItem.getBlock()).equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aItem)) ? W : 0;
+	}
 
 	/** A vanilla workbench recipe as the live list holds it; 1.7.10 counted ShapedRecipes/ShapelessRecipes as native. */
 	public static final class VanillaRecipe implements ICraftingRecipeGT {
 		public final net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> mId;
 		public final net.minecraft.world.item.crafting.CraftingRecipe mRecipe;
 		public final boolean mShapeless;
-		/** Forge's ore version of this recipe, when Forge would have replaced it (OreDictionary.vanillaRecipeReplacements). */
+		/** Forge's ore version of this recipe where Forge replaced it (OreDictionary.vanillaRecipeReplacements). */
 		public ICraftingRecipeGT mForge;
 		private final ItemStack mOutput;
-		VanillaRecipe(net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> aId, net.minecraft.world.item.crafting.CraftingRecipe aRecipe) {mId = aId; mRecipe = aRecipe; mShapeless = aRecipe instanceof ShapelessRecipe; mOutput = aRecipe.assemble(CraftingInput.EMPTY);}
-		/** The recipe's cells as 1.7.10's recipeItems held them: a shaped one keeps its own width x height pattern with null
-		 *  for an empty cell; a cell is its first item at {@link #vanillaCellMeta}, or, in Forge's version, the first ore. */
+		VanillaRecipe(net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> aId, net.minecraft.world.item.crafting.CraftingRecipe aRecipe) {mId = aId; mRecipe = aRecipe; mShapeless = aRecipe instanceof ShapelessRecipe; mOutput = output(aRecipe);}
+		/** A special recipe reads its grid in assemble and has no fixed output to name. */
+		private static ItemStack output(net.minecraft.world.item.crafting.CraftingRecipe aRecipe) {try {return aRecipe.assemble(CraftingInput.EMPTY);} catch(Throwable e) {return ItemStack.EMPTY;}}
+		/** Forge's version's cells: null, an ItemStack, or the live ore list Forge put in place of a replaced item. */
+		public List<Object> forgeCells() {return mForge instanceof ShapedOreRecipe tShaped ? Arrays.asList(tShaped.getInput()) : ((ShapelessOreRecipe)mForge).getInput();}
+		/** The cells as 1.7.10's recipeItems held them: width x height with null for empty, each the first item at
+		 *  {@link #vanillaCellMeta}, or the first ore where Forge replaced the item. */
 		public ItemStack[] getInput() {
 			if (mForge != null) {
-				List<Object> tCells = mForge instanceof ShapedOreRecipe tShaped ? Arrays.asList(tShaped.getInput()) : ((ShapelessOreRecipe)mForge).getInput();
+				List<Object> tCells = forgeCells();
 				ItemStack[] rInput = new ItemStack[tCells.size()];
 				for (int i = 0; i < rInput.length; i++) {
 					Object tCell = tCells.get(i);
 					if (tCell instanceof List<?> tOres) rInput[i] = tOres.isEmpty() || !(tOres.get(0) instanceof ItemStack tFirst) ? null : tFirst;
-					else if (tCell instanceof ItemStack tStack) rInput[i] = ST.make(tStack.getItem(), 1, vanillaCellMeta(tStack.getItem()));
+					else if (tCell instanceof ItemStack tStack) rInput[i] = ST.make(tStack.getItem(), 1, vanillaCellMeta(tStack.getItem(), mRecipe));
 				}
 				return rInput;
 			}
 			List<Optional<net.minecraft.world.item.crafting.Ingredient>> tCells = mRecipe instanceof ShapedRecipe tShaped ? tShaped.pattern.ingredients() : mRecipe.placementInfo().ingredients().stream().map(Optional::of).toList();
 			ItemStack[] rInput = new ItemStack[tCells.size()];
-			for (int i = 0; i < rInput.length; i++) rInput[i] = tCells.get(i).flatMap(aIngredient -> aIngredient.items().findFirst()).map(aItem -> ST.make(aItem.value(), 1, vanillaCellMeta(aItem.value()))).orElse(null);
+			for (int i = 0; i < rInput.length; i++) rInput[i] = tCells.get(i).flatMap(aIngredient -> aIngredient.items().findFirst()).map(aItem -> ST.make(aItem.value(), 1, vanillaCellMeta(aItem.value(), mRecipe))).orElse(null);
 			return rInput;
 		}
-		/** 1.7.10's match: Forge's version where it replaced the recipe, else the vanilla recipe; either way a stack's metadata
-		 *  counts only where the target cell had the wildcard (ShapedRecipes.checkMatch, OreDictionary.itemMatches), so a GT6
-		 *  grid of wildcard paper does not take vanilla's book. */
+		/** A stack's metadata counts only where the target cell had the wildcard or the same value (ShapedRecipes:97,
+		 *  OreDictionary.itemMatches), so a GT6 grid of wildcard paper does not take vanilla's book. */
 		@Override public boolean matches(CraftingInput aGrid, Level aWorld) {
 			for (int i = 0; i < aGrid.size(); i++) {ItemStack tStack = aGrid.getItem(i); if (!tStack.isEmpty() && ST.meta_(tStack) != 0 && !takesMeta(tStack.getItem(), ST.meta_(tStack))) return F;}
 			return mForge != null ? mForge.matches(aGrid, aWorld) : mRecipe.matches(aGrid, aWorld);
 		}
-		/** Whether this recipe's cell for aItem takes aMeta: the wildcard or the same metadata, judged on the ore entries
-		 *  where Forge replaced the cell, else on {@link #vanillaCellMeta}. */
+		/** The ore entries decide where Forge replaced the cell, {@link #vanillaCellMeta} elsewhere; a foreign item came in
+		 *  through a tag, which like Forge's ore lists takes every metadata. */
 		private boolean takesMeta(Item aItem, long aMeta) {
-			if (mForge != null) for (Object tCell : mForge instanceof ShapedOreRecipe tShaped ? Arrays.asList(tShaped.getInput()) : ((ShapelessOreRecipe)mForge).getInput()) {
+			if (!"minecraft".equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aItem).getNamespace())) return T;
+			if (mForge != null) for (Object tCell : forgeCells()) {
 				if (tCell instanceof List<?> tOres) for (Object tOre : tOres) if (tOre instanceof ItemStack tStack && tStack.getItem() == aItem && (ST.meta_(tStack) == W || ST.meta_(tStack) == aMeta)) return T;
 			}
-			long tMeta = vanillaCellMeta(aItem);
+			long tMeta = vanillaCellMeta(aItem, mRecipe);
 			return tMeta == W || tMeta == aMeta;
 		}
 
@@ -771,8 +790,9 @@ public class CR {
 			}
 			if (!ST.equal(OM.get(tRecipe.getRecipeOutput()), aOutput, aIgnoreNBT)) continue;
 			if (aDontRemoveDyeingRecipes) {
-				if (tRecipe instanceof ShapedOreRecipe   ) {boolean temp = F; for (Object tObject : ((ShapedOreRecipe   )tRecipe).getInput()) if (OREDICT_DYE_LISTS.contains(tObject)) {temp = T; break;} if (temp) continue;}
-				if (tRecipe instanceof ShapelessOreRecipe) {boolean temp = F; for (Object tObject : ((ShapelessOreRecipe)tRecipe).getInput()) if (OREDICT_DYE_LISTS.contains(tObject)) {temp = T; break;} if (temp) continue;}
+				ICraftingRecipeGT tJudged = tRecipe instanceof VanillaRecipe tVanilla && tVanilla.mForge != null ? tVanilla.mForge : tRecipe; // 1.7.10 judged Forge's version
+				if (tJudged instanceof ShapedOreRecipe   ) {boolean temp = F; for (Object tObject : ((ShapedOreRecipe   )tJudged).getInput()) if (OREDICT_DYE_LISTS.contains(tObject)) {temp = T; break;} if (temp) continue;}
+				if (tJudged instanceof ShapelessOreRecipe) {boolean temp = F; for (Object tObject : ((ShapelessOreRecipe)tJudged).getInput()) if (OREDICT_DYE_LISTS.contains(tObject)) {temp = T; break;} if (temp) continue;}
 			}
 			tList.remove(i--);
 			rReturn = T;
@@ -830,8 +850,8 @@ public class CR {
 	 *  lost all vanilla removals the same way once vanilla moved to the datapack, and drains through the same center. */
 	public static final List<ItemStack> DATAPACK_REMOVALS_OUT = new ArrayListNoNulls<>();
 
-	/** Fourth arm of the same class, by key: a vanilla recipe removed from {@link #live()} by any reader is suppressed by its
-	 *  own id, so a scan that removes the recipe it saw (not a grid or an output) takes it out of the game as 1.7.10 did. */
+	/** Fourth arm, by key: a vanilla recipe any reader removes from {@link #live()} leaves the game, as 1.7.10's scans took
+	 *  the recipe they saw out of the CraftingManager. */
 	public static final java.util.Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> DATAPACK_REMOVALS_KEY = new java.util.HashSet<>();
 
 	/** Third arm of the same class: the first two only judge a workbench's grid or output, but a foreign machine's recipes
