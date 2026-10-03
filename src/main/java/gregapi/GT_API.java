@@ -826,6 +826,7 @@ public class GT_API extends Abstract_Mod {
 					for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : tServer.getRecipeManager().recipeMap().values()) {
 						if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
 						if (tHolder.value() instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
+						if (gregapi.util.CR.VANILLA_VIEW_IDS.contains(tHolder.id())) continue; // judged by the live list itself (fourth arm), with 1.7.10's metadata rule
 						try {if (tCraft.matches(tInput, tServer.overworld())) tRemove.add(tHolder.id());} catch(Throwable e) {/*a foreign recipe threw in matches — not our call*/}
 					}
 				}
@@ -836,6 +837,7 @@ public class GT_API extends Abstract_Mod {
 					for (net.minecraft.world.item.crafting.RecipeHolder<?> tHolder : tServer.getRecipeManager().recipeMap().values()) {
 						if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
 						if (tHolder.value() instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
+						if (gregapi.util.CR.VANILLA_VIEW_IDS.contains(tHolder.id())) continue; // judged by the live list itself (fourth arm), with remout's own filters
 						try {
 							net.minecraft.world.item.ItemStack tResult = tCraft.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY);
 							if (gregapi.util.ST.valid(tResult) && gregapi.util.ST.equal(tResult, tOut, T)) tRemove.add(tHolder.id());

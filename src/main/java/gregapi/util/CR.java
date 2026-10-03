@@ -612,6 +612,9 @@ public class CR {
 	// ==========================================================================================================
 	private static List<VanillaRecipe> VANILLA_VIEW = null;
 
+	/** Every recipe the view held: the vanilla workbench recipes the view judges, so the datapack arms leave them alone. */
+	public static final Set<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>> VANILLA_VIEW_IDS = new HashSet<>();
+
 	/** Opens the vanilla half of the live list for the loader window; null registries leave it closed. */
 	public static void openVanillaView(net.minecraft.core.HolderLookup.Provider aRegistries) {
 		VANILLA_VIEW = null;
@@ -627,8 +630,16 @@ public class CR {
 				} catch(Throwable e) {/* not a workbench recipe of the base pack */}
 			});
 		} catch(Throwable e) {e.printStackTrace(ERR);}
+		// Forge had already replaced part of vanilla with ore recipes before any mod ran, so the live list holds those versions.
+		List<net.minecraft.world.item.crafting.RecipeHolder<?>> tHolders = new ArrayList<>();
+		for (VanillaRecipe tRecipe : tRecipes.values()) tHolders.add(new net.minecraft.world.item.crafting.RecipeHolder<>(tRecipe.mId, tRecipe.mRecipe));
+		Map<net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>>, ICraftingRecipeGT> tForge = new HashMap<>();
+		for (ICraftingRecipeGT tOre : gregapi.oredict.OreDictionary.vanillaRecipeReplacements(tHolders, "the live list")) {
+			if (tOre instanceof ShapedOreRecipe tShaped) tForge.put(tShaped.mSourceId, tOre); else if (tOre instanceof ShapelessOreRecipe tShapeless) tForge.put(tShapeless.mSourceId, tOre);
+		}
+		for (VanillaRecipe tRecipe : tRecipes.values()) {tRecipe.mForge = tForge.get(tRecipe.mId); VANILLA_VIEW_IDS.add(tRecipe.mId);}
 		VANILLA_VIEW = new ArrayList<>(tRecipes.values());
-		OUT.println("CR: vanilla crafting view opened with " + VANILLA_VIEW.size() + " recipes.");
+		OUT.println("CR: vanilla crafting view opened with " + VANILLA_VIEW.size() + " recipes, " + tForge.size() + " of them as Forge's ore versions.");
 	}
 
 	public static void closeVanillaView() {VANILLA_VIEW = null;}
@@ -650,25 +661,55 @@ public class CR {
 		};
 	}
 
+	/** The metadata 1.7.10's CraftingManager gave a vanilla recipe cell: a Block argument the wildcard, an Item argument 0.
+	 *  A block's own item stands for the Block (the oracle's "iron_block:32767"); an item placing another block (redstone
+	 *  wire, tripwire) was an Item there. A wildcard cell takes any metadata, any other only its own. */
+	public static long vanillaCellMeta(Item aItem) {return aItem instanceof net.minecraft.world.item.BlockItem tBlockItem && net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlockItem.getBlock()).equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aItem)) ? W : 0;}
+
 	/** A vanilla workbench recipe as the live list holds it; 1.7.10 counted ShapedRecipes/ShapelessRecipes as native. */
 	public static final class VanillaRecipe implements ICraftingRecipeGT {
 		public final net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> mId;
 		public final net.minecraft.world.item.crafting.CraftingRecipe mRecipe;
 		public final boolean mShapeless;
+		/** Forge's ore version of this recipe, when Forge would have replaced it (OreDictionary.vanillaRecipeReplacements). */
+		public ICraftingRecipeGT mForge;
 		private final ItemStack mOutput;
 		VanillaRecipe(net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> aId, net.minecraft.world.item.crafting.CraftingRecipe aRecipe) {mId = aId; mRecipe = aRecipe; mShapeless = aRecipe instanceof ShapelessRecipe; mOutput = aRecipe.assemble(CraftingInput.EMPTY);}
-		/** The recipe's cells as 1.7.10's ShapedRecipes/ShapelessRecipes.recipeItems held them: a shaped one keeps its own
-		 *  width x height pattern with null for an empty cell, a cell's first item stands for the ingredient, and a block's
-		 *  own item carries the wildcard meta 1.7.10's CraftingManager gave a Block argument (the oracle's "iron_block:32767");
-		 *  an item placing another block (redstone wire, tripwire) was an Item there and keeps meta 0. */
+		/** The recipe's cells as 1.7.10's recipeItems held them: a shaped one keeps its own width x height pattern with null
+		 *  for an empty cell; a cell is its first item at {@link #vanillaCellMeta}, or, in Forge's version, the first ore. */
 		public ItemStack[] getInput() {
+			if (mForge != null) {
+				List<Object> tCells = mForge instanceof ShapedOreRecipe tShaped ? Arrays.asList(tShaped.getInput()) : ((ShapelessOreRecipe)mForge).getInput();
+				ItemStack[] rInput = new ItemStack[tCells.size()];
+				for (int i = 0; i < rInput.length; i++) {
+					Object tCell = tCells.get(i);
+					if (tCell instanceof List<?> tOres) rInput[i] = tOres.isEmpty() || !(tOres.get(0) instanceof ItemStack tFirst) ? null : tFirst;
+					else if (tCell instanceof ItemStack tStack) rInput[i] = ST.make(tStack.getItem(), 1, vanillaCellMeta(tStack.getItem()));
+				}
+				return rInput;
+			}
 			List<Optional<net.minecraft.world.item.crafting.Ingredient>> tCells = mRecipe instanceof ShapedRecipe tShaped ? tShaped.pattern.ingredients() : mRecipe.placementInfo().ingredients().stream().map(Optional::of).toList();
 			ItemStack[] rInput = new ItemStack[tCells.size()];
-			for (int i = 0; i < rInput.length; i++) rInput[i] = tCells.get(i).flatMap(aIngredient -> aIngredient.items().findFirst()).map(aItem -> isOwnBlockItem(aItem.value()) ? ST.make(aItem.value(), 1, W) : new ItemStack(aItem)).orElse(null);
+			for (int i = 0; i < rInput.length; i++) rInput[i] = tCells.get(i).flatMap(aIngredient -> aIngredient.items().findFirst()).map(aItem -> ST.make(aItem.value(), 1, vanillaCellMeta(aItem.value()))).orElse(null);
 			return rInput;
 		}
-		private static boolean isOwnBlockItem(Item aItem) {return aItem instanceof net.minecraft.world.item.BlockItem tBlockItem && net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlockItem.getBlock()).equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aItem));}
-		@Override public boolean matches(CraftingInput aGrid, Level aWorld) {return mRecipe.matches(aGrid, aWorld);}
+		/** 1.7.10's match: Forge's version where it replaced the recipe, else the vanilla recipe; either way a stack's metadata
+		 *  counts only where the target cell had the wildcard (ShapedRecipes.checkMatch, OreDictionary.itemMatches), so a GT6
+		 *  grid of wildcard paper does not take vanilla's book. */
+		@Override public boolean matches(CraftingInput aGrid, Level aWorld) {
+			for (int i = 0; i < aGrid.size(); i++) {ItemStack tStack = aGrid.getItem(i); if (!tStack.isEmpty() && ST.meta_(tStack) != 0 && !takesMeta(tStack.getItem(), ST.meta_(tStack))) return F;}
+			return mForge != null ? mForge.matches(aGrid, aWorld) : mRecipe.matches(aGrid, aWorld);
+		}
+		/** Whether this recipe's cell for aItem takes aMeta: the wildcard or the same metadata, judged on the ore entries
+		 *  where Forge replaced the cell, else on {@link #vanillaCellMeta}. */
+		private boolean takesMeta(Item aItem, long aMeta) {
+			if (mForge != null) for (Object tCell : mForge instanceof ShapedOreRecipe tShaped ? Arrays.asList(tShaped.getInput()) : ((ShapelessOreRecipe)mForge).getInput()) {
+				if (tCell instanceof List<?> tOres) for (Object tOre : tOres) if (tOre instanceof ItemStack tStack && tStack.getItem() == aItem && (ST.meta_(tStack) == W || ST.meta_(tStack) == aMeta)) return T;
+			}
+			long tMeta = vanillaCellMeta(aItem);
+			return tMeta == W || tMeta == aMeta;
+		}
+
 		@Override public ItemStack getCraftingResult(CraftingInput aGrid) {return mRecipe.assemble(aGrid);}
 		@Override public int getRecipeSize() {return mRecipe.placementInfo().ingredients().size();}
 		@Override public ItemStack getRecipeOutput() {return mOutput;}

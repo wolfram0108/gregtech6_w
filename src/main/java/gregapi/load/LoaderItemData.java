@@ -144,6 +144,11 @@ public class LoaderItemData implements Runnable {
 		OM.reg(DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue ], ST.make(MD.EtFu, "dye", 1, 1));
 		OM.reg(DYE_OREDICTS_MIXABLE[DYE_INDEX_Brown], ST.make(MD.EtFu, "dye", 1, 2));
 		OM.reg(DYE_OREDICTS_MIXABLE[DYE_INDEX_Black], ST.make(MD.EtFu, "dye", 1, 3));
+		// 26.1.2 made Et Futurum's four pure dyes vanilla; the author's registration above, applied to them.
+		OM.reg(DYE_OREDICTS_MIXABLE[DYE_INDEX_White], ST.make(Items.WHITE_DYE, 1, 0));
+		OM.reg(DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue ], ST.make(Items.BLUE_DYE , 1, 0));
+		OM.reg(DYE_OREDICTS_MIXABLE[DYE_INDEX_Brown], ST.make(Items.BROWN_DYE, 1, 0));
+		OM.reg(DYE_OREDICTS_MIXABLE[DYE_INDEX_Black], ST.make(Items.BLACK_DYE, 1, 0));
 		OM.reg("foodCookie"                         , ST.make(Items.COOKIE, 1, 0));
 		OM.reg("foodCookie"                         , ST.make(MD.BOTA, "manaCookie", 1, 0));
 		OM.reg("foodCookie"                         , ST.make(MD.TF, "item.mazeWafer", 1, 0));
