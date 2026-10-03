@@ -80,12 +80,16 @@ public final class GT6QuadBuilder {
 	}
 
 	/** GT6 side-byte to neo Direction mapping: 0=DOWN, 1=UP, 2=NORTH, 3=SOUTH, 4=WEST, 5=EAST. */
-	public void putFace(byte aSide, Identifier aIcon, short[] aRGBa) {
+	public void putFace(byte aSide, Identifier aIcon, short[] aRGBa) {putFace(aSide, aIcon, aRGBa, 0, true);}
+
+	/** aEmission is the face's own block light (1.7.10 drew such faces at a fixed lightmap value), aAO=false takes
+	 *  the face out of ambient occlusion as 1.7.10's aEnableAO did. */
+	public void putFace(byte aSide, Identifier aIcon, short[] aRGBa, int aEmission, boolean aAO) {
 		if (aIcon == null || aSide < 0 || aSide > 5) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
 		if (tSprite == null) return;
 		Direction tDir = Direction.from3DDataValue(aSide);
-		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa);
+		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa, aEmission, aAO);
 		if (tQuad == null) return;
 		// A face on the cell-boundary plane is cull-aware (engine asks the neighbor); a face inside the cell
 		// (slab top, pipe side) is always visible.
@@ -180,7 +184,7 @@ public final class GT6QuadBuilder {
 	static final int[] EMIT_ORDER = {1, 0, 3, 2};
 
 	/** Face from the current bounds with UV clipped to them and tint from RGBa, following AE2's QuartzGlassModel pattern. */
-	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa) {
+	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa, int aEmission, boolean aAO) {
 		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
 		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
 		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
@@ -193,6 +197,8 @@ public final class GT6QuadBuilder {
 		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
 		tBuilder.setSprite(new Material.Baked(aSprite, false));
 		tBuilder.setDirection(aDir);
+		if (aEmission > 0) tBuilder.setLightEmission(aEmission);
+		if (!aAO) tBuilder.setAmbientOcclusion(false);
 		// EMIT_ORDER is a cyclic shift of the plain reverse, so the outward winding that back-face culling
 		// needs is kept while the vertex numbering becomes the canonical one.
 		for (int idx = 0; idx < 4; idx++) {

@@ -47,6 +47,13 @@ public interface ITexture {
 	public static class Util {
 		public static boolean OPTIFINE_LOADED = F, GT_ALPHA_BLENDING = F, MC_ALPHA_BLENDING = F, IS_RENDERING_ALPHA = F;
 
+		/** Stands in for 1.7.10's per-face world brightness, which the engine now applies by itself, so only a texture's
+		 *  own brightness (glow, fluid luminosity) still reaches the quad. */
+		public static final int WORLD_BRIGHTNESS = 0;
+
+		/** 1.7.10 packed a face's lightmap value as sky<<20|block<<4; the engine can only raise a quad's block light. */
+		public static int emission(int aBrightness) {return (aBrightness >> 4) & 15;}
+
 		/** Was GL11 alpha-blending setup; unneeded in the baked path since neo manages blending via RenderType. No-op. */
 		public static void startRendering(Object aRenderer, Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 			//
@@ -59,7 +66,7 @@ public interface ITexture {
 
 		//=============================================================================================================
 		// Replaces the old prepare+do+applyAmbientOcclusion Tessellator/GL11 sequence with a per-side quad
-		// built via GT6QuadBuilder; AO and brightness now come from neo at render time.
+		// built via GT6QuadBuilder; the face's own brightness and its AO switch travel with the quad.
 		//=============================================================================================================
 
 		public static boolean renderSide(byte aSide, Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
@@ -79,32 +86,32 @@ public interface ITexture {
 		// from (side, icon, tint), reusing GT6's existing per-side texture logic unchanged.
 		/** Side = 5 (X_POS/EAST). */
 		public static boolean renderXPos(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_X_POS, aIcon, aRGBa);
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_X_POS, aIcon, aRGBa, emission(aBrightness), aEnableAO);
 			return aIcon != null;
 		}
 		/** Side = 4 (X_NEG/WEST). */
 		public static boolean renderXNeg(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_X_NEG, aIcon, aRGBa);
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_X_NEG, aIcon, aRGBa, emission(aBrightness), aEnableAO);
 			return aIcon != null;
 		}
 		/** Side = 1 (Y_POS/UP). */
 		public static boolean renderYPos(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Y_POS, aIcon, aRGBa);
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Y_POS, aIcon, aRGBa, emission(aBrightness), aEnableAO);
 			return aIcon != null;
 		}
 		/** Side = 0 (Y_NEG/DOWN). */
 		public static boolean renderYNeg(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Y_NEG, aIcon, aRGBa);
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Y_NEG, aIcon, aRGBa, emission(aBrightness), aEnableAO);
 			return aIcon != null;
 		}
 		/** Side = 3 (Z_POS/SOUTH). */
 		public static boolean renderZPos(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Z_POS, aIcon, aRGBa);
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Z_POS, aIcon, aRGBa, emission(aBrightness), aEnableAO);
 			return aIcon != null;
 		}
 		/** Side = 2 (Z_NEG/NORTH). */
 		public static boolean renderZNeg(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Z_NEG, aIcon, aRGBa);
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Z_NEG, aIcon, aRGBa, emission(aBrightness), aEnableAO);
 			return aIcon != null;
 		}
 	}

@@ -46,7 +46,7 @@ public class RendererBlockTextured {
 	public static boolean renderNegativeYFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
-		aIcon.renderYNeg(aRenderer, aBlock, aX, aY, aZ, 240, !aFullBlock);
+		aIcon.renderYNeg(aRenderer, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, !aFullBlock);
 		return T;
 	}
 
@@ -54,7 +54,7 @@ public class RendererBlockTextured {
 	public static boolean renderPositiveYFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
-		aIcon.renderYPos(aRenderer, aBlock, aX, aY, aZ, 240, !aFullBlock);
+		aIcon.renderYPos(aRenderer, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, !aFullBlock);
 		return T;
 	}
 
@@ -62,7 +62,7 @@ public class RendererBlockTextured {
 	public static boolean renderNegativeZFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
-		aIcon.renderZNeg(aRenderer, aBlock, aX, aY, aZ, 240, !aFullBlock);
+		aIcon.renderZNeg(aRenderer, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, !aFullBlock);
 		return T;
 	}
 
@@ -70,7 +70,7 @@ public class RendererBlockTextured {
 	public static boolean renderPositiveZFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
-		aIcon.renderZPos(aRenderer, aBlock, aX, aY, aZ, 240, !aFullBlock);
+		aIcon.renderZPos(aRenderer, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, !aFullBlock);
 		return T;
 	}
 
@@ -78,7 +78,7 @@ public class RendererBlockTextured {
 	public static boolean renderNegativeXFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
-		aIcon.renderXNeg(aRenderer, aBlock, aX, aY, aZ, 240, !aFullBlock);
+		aIcon.renderXNeg(aRenderer, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, !aFullBlock);
 		return T;
 	}
 
@@ -86,7 +86,7 @@ public class RendererBlockTextured {
 	public static boolean renderPositiveXFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
-		aIcon.renderXPos(aRenderer, aBlock, aX, aY, aZ, 240, !aFullBlock);
+		aIcon.renderXPos(aRenderer, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, !aFullBlock);
 		return T;
 	}
 }
