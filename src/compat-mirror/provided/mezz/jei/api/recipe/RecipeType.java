@@ -28,4 +28,5 @@ package mezz.jei.api.recipe;
 
 public final class RecipeType<T> implements mezz.jei.api.recipe.types.IRecipeType<T> {
 	public static <T> mezz.jei.api.recipe.RecipeType<T> create(java.lang.String a0, java.lang.String a1, java.lang.Class<? extends T> a2) { throw new UnsupportedOperationException(); }
+	public net.minecraft.resources.Identifier getUid() { throw new UnsupportedOperationException(); }
 }

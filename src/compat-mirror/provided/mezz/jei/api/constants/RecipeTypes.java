@@ -24,10 +24,8 @@
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package mezz.jei.api.runtime;
+package mezz.jei.api.constants;
 
-public interface IJeiRuntime {
-	mezz.jei.api.runtime.IRecipesGui getRecipesGui();
-	mezz.jei.api.runtime.IIngredientManager getIngredientManager();
-	mezz.jei.api.recipe.IRecipeManager getRecipeManager();
+public final class RecipeTypes {
+	public static final mezz.jei.api.recipe.types.IRecipeHolderType<net.minecraft.world.item.crafting.SmeltingRecipe> SMELTING = null;
 }

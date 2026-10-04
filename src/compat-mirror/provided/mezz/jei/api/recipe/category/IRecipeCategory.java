@@ -30,4 +30,6 @@ public interface IRecipeCategory<T> {
 	void setRecipe(mezz.jei.api.gui.builder.IRecipeLayoutBuilder a0, T a1, mezz.jei.api.recipe.IFocusGroup a2);
 	default void createRecipeExtras(mezz.jei.api.gui.widgets.IRecipeExtrasBuilder a0, T a1, mezz.jei.api.recipe.IFocusGroup a2) { throw new UnsupportedOperationException(); }
 	default void draw(T a0, mezz.jei.api.gui.ingredient.IRecipeSlotsView a1, net.minecraft.client.gui.GuiGraphicsExtractor a2, double a3, double a4) { throw new UnsupportedOperationException(); }
+	mezz.jei.api.recipe.types.IRecipeType<T> getRecipeType();
+	default net.minecraft.resources.Identifier getIdentifier(T a0) { throw new UnsupportedOperationException(); }
 }
