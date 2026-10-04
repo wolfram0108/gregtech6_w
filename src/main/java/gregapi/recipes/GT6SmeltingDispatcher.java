@@ -40,7 +40,6 @@ import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.Level;
 
 import static gregapi.data.CS.ERR;
-import static gregapi.data.CS.F;
 
 /** @author Gregorius Techneticies
  *  The only entry point for GT6's procedural smelts into the vanilla furnace: several dispatcher instances exist, one
@@ -70,37 +69,38 @@ public final class GT6SmeltingDispatcher extends SmeltingRecipe {
 		if (aExperience > 0) KNOWN_XP.add(aExperience);
 	}
 
-	/** Built fresh from GT6's registry keys on every request, since callers (recipe book, JEI) are rare. */
+	/** This instance's share of GT6's registry as exact stacks, built fresh on every request, since callers (recipe book,
+	 *  JEI) are rare. An empty share yields no ingredient, so both the recipe book and JEI leave the instance out. */
 	@Override public NonNullList<Ingredient> getIngredients() {
-		java.util.LinkedHashSet<ItemStack> tItems = new java.util.LinkedHashSet<>();
-		for (ItemStack tKey : FurnaceRecipes.smelting().getSmeltingList().keySet()) if (!tKey.isEmpty()) tItems.add(ST.amount(1, tKey));
-		NonNullList<Ingredient> rList = NonNullList.create();
-		if (tItems.isEmpty()) {
-			ERR.println("[GT6] GT6SmeltingDispatcher: the FurnaceRecipes registry is empty when the ingredient showcase was requested (before data-init — normal on the first reload)");
-			rList.add(Ingredient.of(Items.BARRIER));
-		} else {
-			rList.add(Ingredient.of(tItems.stream()));
+		java.util.List<ItemStack> tStacks = new java.util.ArrayList<>();
+		for (ItemStack tKey : FurnaceRecipes.smelting().getSmeltingList().keySet()) {
+			ItemStack tStack = ST.amount(1, tKey);
+			if (ST.valid(tStack) && resultIfMine(tStack) != null) tStacks.add(tStack);
 		}
+		NonNullList<Ingredient> rList = NonNullList.create();
+		if (!tStacks.isEmpty()) rList.add(Ingredient.of(tStacks.stream()));
+		else if (FurnaceRecipes.smelting().getSmeltingList().isEmpty()) ERR.println("[GT6] GT6SmeltingDispatcher: the FurnaceRecipes registry is empty when the ingredient showcase was requested (before data-init — normal on the first reload)");
 		return rList;
 	}
 
-	@Override public boolean matches(Container aContainer, Level aLevel) {
-		ItemStack tResult = FurnaceRecipes.smelting().getSmeltingResult(aContainer.getItem(0));
-		if (!ST.valid(tResult)) {MATCHED_RESULT.remove(); return F;}
-		// The experience class follows 1.7.10's own rule (the result item's hook overrides the map); each instance takes
-		// only its own class, and the zero-xp default absorbs anything no json covers.
+	/** The registry's result for the input when THIS instance smelts it, else null: the one rule behind matches() and the
+	 *  showcase, so a stack is shown by exactly the instance that takes it. XP class by the 1.7.10 rule (the result hook
+	 *  overrides the map); the zero-xp default takes zero plus every class no json covers (exotic -> 0 + one warning). */
+	private ItemStack resultIfMine(ItemStack aInput) {
+		ItemStack tResult = FurnaceRecipes.smelting().getSmeltingResult(aInput);
+		if (!ST.valid(tResult)) return null;
 		float tXP = FurnaceRecipes.smelting().func_151398_b(tResult);
 		float tMine = getExperience();
-		boolean tMatch;
-		if (tMine > 0) {
-			tMatch = (tXP == tMine);
-		} else {
-			if (tXP != 0.0F && !KNOWN_XP.contains(tXP) && WARNED_XP.add(tXP)) ERR.println("[GT6] GT6SmeltingDispatcher: XP class " + tXP + " is not covered by an instance (json) — smelting still works, XP is given as 0");
-			tMatch = (tXP == 0.0F || !KNOWN_XP.contains(tXP));
-		}
+		if (tMine > 0) return tXP == tMine ? tResult : null;
+		if (tXP != 0.0F && !KNOWN_XP.contains(tXP) && WARNED_XP.add(tXP)) ERR.println("[GT6] GT6SmeltingDispatcher: XP class " + tXP + " is not covered by an instance (json) — smelting still works, XP is given as 0");
+		return tXP == 0.0F || !KNOWN_XP.contains(tXP) ? tResult : null;
+	}
+
+	@Override public boolean matches(Container aContainer, Level aLevel) {
+		ItemStack tResult = resultIfMine(aContainer.getItem(0));
 		// The engine only hands over the input here, so the matched output is remembered for getResultItem to read next.
-		if (tMatch) MATCHED_RESULT.set(tResult); else MATCHED_RESULT.remove();
-		return tMatch;
+		if (tResult != null) MATCHED_RESULT.set(tResult); else MATCHED_RESULT.remove();
+		return tResult != null;
 	}
 
 	/** The live output, for the one consumer on this engine version that reads a result with no container at all;
