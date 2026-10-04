@@ -192,17 +192,24 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		super.createBlockStateDefinition(aBuilder);
 		if (SLAB_CTOR_CTX.get()[0]) aBuilder.add(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
 	}
+	// The interface defaults read WATERLOGGED unconditionally, but full meta blocks lack it; every contract method asks the
+	// one rule (WD.waterloggable) and, without the property, does what 1.7.10 did: a bucket takes nothing, no water goes in.
 	@Override public boolean canPlaceLiquid(net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.material.Fluid aFluid) {
-		return mIsSlab && net.minecraft.world.level.block.SimpleWaterloggedBlock.super.canPlaceLiquid(aWorld, aPos, aState, aFluid);
+		return WD.waterloggable(aState) && net.minecraft.world.level.block.SimpleWaterloggedBlock.super.canPlaceLiquid(aWorld, aPos, aState, aFluid);
+	}
+	@Override public boolean placeLiquid(net.minecraft.world.level.LevelAccessor aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.material.FluidState aFluid) {
+		return WD.waterloggable(aState) && net.minecraft.world.level.block.SimpleWaterloggedBlock.super.placeLiquid(aWorld, aPos, aState, aFluid);
+	}
+	@Override public ItemStack pickupBlock(net.minecraft.world.level.LevelAccessor aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {
+		return WD.waterloggable(aState) ? net.minecraft.world.level.block.SimpleWaterloggedBlock.super.pickupBlock(aWorld, aPos, aState) : ItemStack.EMPTY;
 	}
 	@Override public net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState aState) {
-		return aState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && aState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)
-			? net.minecraft.world.level.material.Fluids.WATER.getSource(false) : super.getFluidState(aState);
+		return WD.waterlogged(aState) ? net.minecraft.world.level.material.Fluids.WATER.getSource(false) : super.getFluidState(aState);
 	}
 	// 1.20.1: updateShape schedules its tick directly through LevelAccessor, since there's no separate
 	// ScheduledTickAccess type yet, matching vanilla's own SlabBlock on this version.
 	@Override public net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.core.Direction aDir, net.minecraft.world.level.block.state.BlockState aNeighbourState, net.minecraft.world.level.LevelAccessor aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.core.BlockPos aNeighbourPos) {
-		if (aState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && aState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED))
+		if (WD.waterlogged(aState))
 			aWorld.scheduleTick(aPos, net.minecraft.world.level.material.Fluids.WATER, net.minecraft.world.level.material.Fluids.WATER.getTickDelay(aWorld));
 		return super.updateShape(aState, aDir, aNeighbourState, aWorld, aPos, aNeighbourPos);
 	}
