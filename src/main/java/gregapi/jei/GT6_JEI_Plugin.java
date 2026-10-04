@@ -226,7 +226,9 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			// A dispatcher card is any card carrying a dispatcher's recipe id: the vanilla tab's and a mod's wrapper of it (Jumbo Furnace).
 			java.util.Set<Object> tIds = new java.util.HashSet<>();
 			// The game's own list: JEI leaves out a dispatcher whose share is empty, a mod's wrapper may still carry it.
-			net.minecraft.client.multiplayer.ClientLevel tLevel = net.minecraft.client.Minecraft.getInstance().level;
+			// The client world through the side-split center, so this class names no client-only type.
+			net.minecraft.world.entity.player.Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
+			net.minecraft.world.level.Level tLevel = tPlayer == null ? null : tPlayer.level();
 			if (tLevel != null) for (net.minecraft.world.item.crafting.SmeltingRecipe r : tLevel.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING))
 				if (r instanceof gregapi.recipes.GT6SmeltingDispatcher) tIds.add(r.getId());
 			long tStart = System.nanoTime();
