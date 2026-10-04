@@ -201,8 +201,41 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		}
 	}
 
+	/** JEI's own uid prefix for its tag-information categories (mezz.jei.library.plugins.jei.JeiInternalPlugin). */
+	private static final String JEI_TAG_RECIPES = "tag_recipes/";
+
+	/** The one place JEI's own showcase is cut back to NEI 1.7.10's: JEI adds these itself, so its live runtime is the earliest
+	 *  point a mod reaches them; hidden in memory only, the player's config is untouched. */
+	private static void hideNativeArtifacts(mezz.jei.api.recipe.IRecipeManager aManager) {
+		try {
+			// NEI 1.7.10 had no tag handler (codechicken RecipeInfo.java:93-104).
+			int tHidden = 0;
+			for (IRecipeCategory<?> tCategory : aManager.createRecipeCategoryLookup().includeHidden().get().toList()) {
+				if (!tCategory.getRecipeType().getUid().getPath().startsWith(JEI_TAG_RECIPES)) continue;
+				aManager.hideRecipeCategory(tCategory.getRecipeType());
+				tHidden++;
+			}
+			OUT.println("[GT6-JEI] tag-information categories hidden (NEI 1.7.10 had no tag handler): " + tHidden);
+		} catch (Throwable e) {
+			ERR.println("JEI: could not hide the tag-information categories (they stay in the recipe lookups).");
+			e.printStackTrace(ERR);
+		}
+		try {
+			// NEI showed each smelting pair once with its real output (FurnaceRecipeHandler.java:96-119), as the gregtech:smelting tab
+			// does; a dispatcher card (an input list over a placeholder output) is an adaptation artifact 1.7.10 never showed.
+			var tDispatchers = aManager.createRecipeLookup(mezz.jei.api.constants.RecipeTypes.SMELTING).includeHidden().get()
+				.filter(r -> r instanceof gregapi.recipes.GT6SmeltingDispatcher).toList();
+			aManager.hideRecipes(mezz.jei.api.constants.RecipeTypes.SMELTING, tDispatchers);
+			OUT.println("[GT6-JEI] GT6 smelting dispatcher cards hidden from the vanilla smelting tab (the gregtech:smelting tab shows the pairs): " + tDispatchers.size());
+		} catch (Throwable e) {
+			ERR.println("JEI: could not hide the GT6 smelting dispatcher cards (they stay in the vanilla smelting tab).");
+			e.printStackTrace(ERR);
+		}
+	}
+
 	@Override
 	public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime aRuntime) {
+		hideNativeArtifacts(aRuntime.getRecipeManager());
 		sRuntime = aRuntime; // The only door to the recipe screen; see showRecipeCategory.
 	}
 
