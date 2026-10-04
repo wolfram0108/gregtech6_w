@@ -28,4 +28,5 @@ package mezz.jei.api.recipe.category;
 
 public abstract class AbstractRecipeCategory<T> implements mezz.jei.api.recipe.category.IRecipeCategory<T> {
 	public AbstractRecipeCategory(mezz.jei.api.recipe.RecipeType<T> a0, net.minecraft.network.chat.Component a1, mezz.jei.api.gui.drawable.IDrawable a2, int a3, int a4) { throw new UnsupportedOperationException(); }
+	public final mezz.jei.api.recipe.RecipeType<T> getRecipeType() { throw new UnsupportedOperationException(); }
 }

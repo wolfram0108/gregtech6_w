@@ -24,10 +24,11 @@
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package mezz.jei.api.runtime;
+package mezz.jei.api.recipe;
 
-public interface IJeiRuntime {
-	mezz.jei.api.runtime.IRecipesGui getRecipesGui();
-	mezz.jei.api.runtime.IIngredientManager getIngredientManager();
-	mezz.jei.api.recipe.IRecipeManager getRecipeManager();
+public interface IRecipeManager {
+	<R> mezz.jei.api.recipe.IRecipeLookup<R> createRecipeLookup(mezz.jei.api.recipe.RecipeType<R> a0);
+	mezz.jei.api.recipe.IRecipeCategoriesLookup createRecipeCategoryLookup();
+	<T> void hideRecipes(mezz.jei.api.recipe.RecipeType<T> a0, java.util.Collection<T> a1);
+	void hideRecipeCategory(mezz.jei.api.recipe.RecipeType<?> a0);
 }
