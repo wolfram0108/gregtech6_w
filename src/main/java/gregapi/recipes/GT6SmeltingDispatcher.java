@@ -38,6 +38,9 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
+import net.minecraft.world.item.crafting.display.FurnaceRecipeDisplay;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
+import net.minecraft.world.item.crafting.display.SlotDisplay;
 import net.minecraft.world.level.Level;
 
 import static gregapi.data.CS.ERR;
@@ -54,12 +57,11 @@ import static gregapi.data.CS.F;
  * {@code matches}/{@code assemble} — the furnace ({@code AbstractFurnaceBlockEntity.serverTick:170} via
  * {@code quickCheck.getRecipeFor}) finds and executes GT6 smeltings normally.
  *
- * <p>The ingredient showcase is built in the constructor from the GT6 registry's keys (by the time recipes load,
- * data-init has already run; the client-side copy of the recipe builds it from the client registry — GT6 fills
- * both sides): its only consumers are {@code RecipePropertySet.FURNACE_INPUT}
- * (the furnace menu's shift-click gate, {@code AbstractFurnaceMenu.canSmelt:141} — a static SET of items,
- * assembled by {@code Ingredient::items} on reload) and the recipe book's display. The actual smelting is judged
- * only by {@code matches} (an exact {@code ST.equal} with wildcard, as in 1.7.10).</p>
+ * <p>Both showcases are this instance's share of the GT6 registry ({@link #showcase}), read on request: {@link #input} feeds
+ * {@code RecipePropertySet.FURNACE_INPUT} (the furnace menu's shift-click gate, {@code AbstractFurnaceMenu.canSmelt:141} —
+ * a static SET of items, assembled by {@code Ingredient::items} on reload), {@link #display} feeds the recipe viewer and
+ * the recipe book with the exact stacks. The actual smelting is judged only by {@code matches} (an exact
+ * {@code ST.equal} with wildcard, as in 1.7.10).</p>
  *
  * <p>Furnace XP in neo is a recipe field ({@code experience()}), not an input function. Decision (b'), 2026-07-30:
  * there are several dispatchers — ONE INSTANCE PER XP CLASS (the {@code xp} field in json), an instance's
@@ -118,25 +120,54 @@ public final class GT6SmeltingDispatcher extends net.minecraft.world.item.crafti
 	 *  runs before data-init -> the gate stays blind until the next recipe rebuild; manually placing into the furnace
 	 *  and the actual smelting (via {@code matches}'s live lookup) always work. */
 	@Override public Ingredient input() {
-		java.util.LinkedHashSet<Item> tItems = new java.util.LinkedHashSet<>();
-		for (ItemStack tKey : FurnaceRecipes.smelting().getSmeltingList().keySet()) if (!tKey.isEmpty()) tItems.add(tKey.getItem());
-		if (tItems.isEmpty()) {
-			ERR.println("[GT6] GT6SmeltingDispatcher: the FurnaceRecipes registry is empty when the ingredient showcase was requested (before data-init — normal on the first reload)");
+		java.util.List<ItemStack> tStacks = showcase();
+		if (tStacks.isEmpty()) {
+			if (FurnaceRecipes.smelting().getSmeltingList().isEmpty()) ERR.println("[GT6] GT6SmeltingDispatcher: the FurnaceRecipes registry is empty when the ingredient showcase was requested (before data-init — normal on the first reload)");
+			// An engine ingredient can't be empty; the barrier is never smelted, so the placeholder admits nothing real.
 			return Ingredient.of(Items.BARRIER);
 		}
+		// The gate the engine builds from this is a set of items (RecipePropertySet), so it can only take the items.
+		java.util.LinkedHashSet<Item> tItems = new java.util.LinkedHashSet<>();
+		for (ItemStack tStack : tStacks) tItems.add(tStack.getItem());
 		return Ingredient.of(tItems.stream());
 	}
 
-	@Override public boolean matches(SingleRecipeInput aInput, Level aLevel) {
-		ItemStack tResult = FurnaceRecipes.smelting().getSmeltingResult(aInput.item());
-		if (!ST.valid(tResult)) return F;
-		// the entry's XP class — by the 1.7.10 rule (the result hook overrides the map); each instance only takes
-		// ITS OWN class, the default (xp=0) takes zero plus everything not covered by a json (exotic -> 0 + one warning)
+	/** The registry's result for the input when THIS instance smelts it, else null: the one rule behind matches() and the
+	 *  showcase, so a stack is shown by exactly the instance that takes it. XP class by the 1.7.10 rule (the result hook
+	 *  overrides the map); the default (xp=0) takes zero plus every class no json covers (exotic -> 0 + one warning). */
+	private ItemStack resultIfMine(ItemStack aInput) {
+		ItemStack tResult = FurnaceRecipes.smelting().getSmeltingResult(aInput);
+		if (!ST.valid(tResult)) return null;
 		float tXP = FurnaceRecipes.smelting().func_151398_b(tResult);
 		float tMine = experience();
-		if (tMine > 0) return tXP == tMine;
+		if (tMine > 0) return tXP == tMine ? tResult : null;
 		if (tXP != 0.0F && !KNOWN_XP.contains(tXP) && WARNED_XP.add(tXP)) ERR.println("[GT6] GT6SmeltingDispatcher: XP class " + tXP + " is not covered by an instance (json) — smelting still works, XP is given as 0");
-		return tXP == 0.0F || !KNOWN_XP.contains(tXP);
+		return tXP == 0.0F || !KNOWN_XP.contains(tXP) ? tResult : null;
+	}
+
+	/** This instance's share of the registry as exact stacks, meta and components kept: the one walk both showcases read. */
+	private java.util.List<ItemStack> showcase() {
+		java.util.List<ItemStack> rStacks = new java.util.ArrayList<>();
+		for (ItemStack tKey : FurnaceRecipes.smelting().getSmeltingList().keySet()) {
+			ItemStack tStack = ST.amount(1, tKey);
+			if (ST.valid(tStack) && resultIfMine(tStack) != null) rStacks.add(tStack);
+		}
+		return rStacks;
+	}
+
+	/** The engine derives the viewer's slot from input(), which only holds items, and so would list every meta of an item;
+	 *  the exact stacks keep the slot to what this instance smelts, as the 1.20.1 branch's getIngredients does. */
+	@Override public java.util.List<RecipeDisplay> display() {
+		java.util.List<ItemStack> tStacks = showcase();
+		java.util.List<SlotDisplay> tSlots = new java.util.ArrayList<>(tStacks.size());
+		for (ItemStack tStack : tStacks) tSlots.add(new SlotDisplay.ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(tStack)));
+		SlotDisplay tInput = tSlots.isEmpty() ? SlotDisplay.Empty.INSTANCE : new SlotDisplay.Composite(tSlots);
+		return java.util.List.of(new FurnaceRecipeDisplay(tInput, SlotDisplay.AnyFuel.INSTANCE,
+			new SlotDisplay.ItemStackSlotDisplay(result()), new SlotDisplay.ItemSlotDisplay(furnaceIcon()), cookingTime(), experience()));
+	}
+
+	@Override public boolean matches(SingleRecipeInput aInput, Level aLevel) {
+		return resultIfMine(aInput.item()) != null;
 	}
 
 	@Override public ItemStack assemble(SingleRecipeInput aInput) {
