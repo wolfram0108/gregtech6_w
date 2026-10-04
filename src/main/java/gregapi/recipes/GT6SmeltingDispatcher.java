@@ -73,9 +73,10 @@ public final class GT6SmeltingDispatcher extends SmeltingRecipe {
 	 *  JEI) are rare. An empty share yields no ingredient, so both the recipe book and JEI leave the instance out. */
 	@Override public NonNullList<Ingredient> getIngredients() {
 		java.util.List<ItemStack> tStacks = new java.util.ArrayList<>();
+		FurnaceRecipes.Answers tWalk = FurnaceRecipes.smelting().snapshot();
 		for (ItemStack tKey : FurnaceRecipes.smelting().getSmeltingList().keySet()) {
 			ItemStack tStack = ST.amount(1, tKey);
-			if (ST.valid(tStack) && resultIfMine(tStack) != null) tStacks.add(tStack);
+			if (ST.valid(tStack) && resultIfMine(tStack, tWalk) != null) tStacks.add(tStack);
 		}
 		NonNullList<Ingredient> rList = NonNullList.create();
 		if (!tStacks.isEmpty()) rList.add(Ingredient.of(tStacks.stream()));
@@ -86,10 +87,10 @@ public final class GT6SmeltingDispatcher extends SmeltingRecipe {
 	/** The registry's result for the input when THIS instance smelts it, else null: the one rule behind matches() and the
 	 *  showcase, so a stack is shown by exactly the instance that takes it. XP class by the 1.7.10 rule (the result hook
 	 *  overrides the map); the zero-xp default takes zero plus every class no json covers (exotic -> 0 + one warning). */
-	private ItemStack resultIfMine(ItemStack aInput) {
-		ItemStack tResult = FurnaceRecipes.smelting().getSmeltingResult(aInput);
+	private ItemStack resultIfMine(ItemStack aInput, FurnaceRecipes.Answers aAnswers) {
+		ItemStack tResult = aAnswers.result(aInput);
 		if (!ST.valid(tResult)) return null;
-		float tXP = FurnaceRecipes.smelting().func_151398_b(tResult);
+		float tXP = aAnswers.xp(tResult);
 		float tMine = getExperience();
 		if (tMine > 0) return tXP == tMine ? tResult : null;
 		if (tXP != 0.0F && !KNOWN_XP.contains(tXP) && WARNED_XP.add(tXP)) ERR.println("[GT6] GT6SmeltingDispatcher: XP class " + tXP + " is not covered by an instance (json) — smelting still works, XP is given as 0");
@@ -97,7 +98,7 @@ public final class GT6SmeltingDispatcher extends SmeltingRecipe {
 	}
 
 	@Override public boolean matches(Container aContainer, Level aLevel) {
-		ItemStack tResult = resultIfMine(aContainer.getItem(0));
+		ItemStack tResult = resultIfMine(aContainer.getItem(0), FurnaceRecipes.smelting().live());
 		// The engine only hands over the input here, so the matched output is remembered for getResultItem to read next.
 		if (tResult != null) MATCHED_RESULT.set(tResult); else MATCHED_RESULT.remove();
 		return tResult != null;

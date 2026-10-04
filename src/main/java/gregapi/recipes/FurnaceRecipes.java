@@ -28,6 +28,7 @@ import static gregapi.data.CS.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import gregapi.data.CS;
 import gregapi.util.ST;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -45,8 +46,26 @@ public class FurnaceRecipes {
 
 	/** 1.7.10's getSmeltingResult: first output whose input matches, wildcard-aware, same as GT6's own iteration. */
 	public ItemStack getSmeltingResult(ItemStack aInput) {
+		return resultOf(aInput, mSmeltingList.entrySet());
+	}
+
+	/** The live map's answers: what the furnace asks one input at a time. */
+	public Answers live() {return mLive;}
+	private final Answers mLive = new Answers() {
+		@Override public ItemStack result(ItemStack aInput) {return getSmeltingResult(aInput);}
+		@Override public float xp(ItemStack aOutput) {return func_151398_b(aOutput);}
+	};
+
+	/** The registry's answers, from the live map (this object) or from one walk's snapshot of it ({@link #snapshot}). */
+	public interface Answers {
+		ItemStack result(ItemStack aInput);
+		float xp(ItemStack aOutput);
+	}
+
+	/** The one result rule: the first entry, in the map's own order, whose input the stack matches. */
+	private static ItemStack resultOf(ItemStack aInput, Iterable<Map.Entry<ItemStack, ItemStack>> aEntries) {
 		if (ST.invalid(aInput)) return NI;
-		for (Map.Entry<ItemStack, ItemStack> tEntry : mSmeltingList.entrySet()) if (ST.equal(aInput, tEntry.getKey(), T)) return tEntry.getValue();
+		for (Map.Entry<ItemStack, ItemStack> tEntry : aEntries) if (ST.equal(aInput, tEntry.getKey(), T)) return tEntry.getValue();
 		return NI;
 	}
 
@@ -63,13 +82,42 @@ public class FurnaceRecipes {
 	/** Matches the original rule: the result item's own hook is asked first and its non-(-1) answer overrides
 	 *  the map; a type that doesn't implement the hook gets the vanilla default of -1 (ask the map), else 0. */
 	public float func_151398_b(ItemStack aOutput) {
+		return xpOf(aOutput, mExperienceList.entrySet());
+	}
+
+	/** The one experience rule over the given entries of the experience map, in its own order. */
+	private static float xpOf(ItemStack aOutput, Iterable<Map.Entry<ItemStack, Float>> aEntries) {
 		if (ST.invalid(aOutput)) return 0.0F;
 		if (aOutput.getItem() instanceof gregapi.item.IItemSmeltingExperience tItem) {
 			float tXP = tItem.getSmeltingExperience(aOutput);
 			if (tXP != -1) return tXP;
 		}
-		for (Map.Entry<ItemStack, Float> tEntry : mExperienceList.entrySet()) if (ST.equal(aOutput, tEntry.getKey(), T)) return tEntry.getValue();
+		for (Map.Entry<ItemStack, Float> tEntry : aEntries) if (ST.equal(aOutput, tEntry.getKey(), T)) return tEntry.getValue();
 		return 0.0F;
+	}
+
+	/** The registry's answers for a walk over many stacks, the same as the live map gives: ST.equal only matches stacks of
+	 *  one item or of one flattened family, so each lookup reads only its item's part, kept in the map's own order. Built
+	 *  per walk and read only while the registry is not changed; a whole-registry pass stays linear. */
+	public Answers snapshot() {
+		java.util.Map<net.minecraft.world.item.Item, java.util.List<Map.Entry<ItemStack, ItemStack>>> tResults = part(mSmeltingList);
+		java.util.Map<net.minecraft.world.item.Item, java.util.List<Map.Entry<ItemStack, Float>>> tXP = part(mExperienceList);
+		return new Answers() {
+			@Override public ItemStack result(ItemStack aInput) {return ST.invalid(aInput) ? NI : resultOf(aInput, tResults.getOrDefault(partOf(aInput), java.util.List.of()));}
+			@Override public float xp(ItemStack aOutput) {return ST.invalid(aOutput) ? 0.0F : xpOf(aOutput, tXP.getOrDefault(partOf(aOutput), java.util.List.of()));}
+		};
+	}
+
+	/** The part a stack can match in: its flattened family's head, or its own item. */
+	private static net.minecraft.world.item.Item partOf(ItemStack aStack) {
+		net.minecraft.world.item.Item tHead = CS.Flattened.headItemOf(aStack.getItem());
+		return tHead != null ? tHead : aStack.getItem();
+	}
+
+	private static <V> java.util.Map<net.minecraft.world.item.Item, java.util.List<Map.Entry<ItemStack, V>>> part(Map<ItemStack, V> aMap) {
+		java.util.Map<net.minecraft.world.item.Item, java.util.List<Map.Entry<ItemStack, V>>> rParts = new HashMap<>();
+		for (Map.Entry<ItemStack, V> tEntry : aMap.entrySet()) if (ST.valid(tEntry.getKey())) rParts.computeIfAbsent(partOf(tEntry.getKey()), k -> new java.util.ArrayList<>()).add(tEntry);
+		return rParts;
 	}
 
 	private boolean mShowcaseFilled = false;
