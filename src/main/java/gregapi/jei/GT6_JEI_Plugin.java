@@ -223,13 +223,34 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		try {
 			// NEI showed each smelting pair once with its real output (FurnaceRecipeHandler.java:96-119), as the gregtech:smelting tab
 			// does; a dispatcher card (an input list over a placeholder output) is an adaptation artifact 1.7.10 never showed.
-			var tDispatchers = aManager.createRecipeLookup(mezz.jei.api.constants.RecipeTypes.SMELTING).includeHidden().get()
-				.filter(r -> r instanceof gregapi.recipes.GT6SmeltingDispatcher).toList();
-			aManager.hideRecipes(mezz.jei.api.constants.RecipeTypes.SMELTING, tDispatchers);
-			OUT.println("[GT6-JEI] GT6 smelting dispatcher cards hidden from the vanilla smelting tab (the gregtech:smelting tab shows the pairs): " + tDispatchers.size());
+			// A dispatcher card is any card carrying a dispatcher's recipe id: the vanilla tab's and a mod's wrapper of it (Jumbo Furnace).
+			java.util.Set<Object> tIds = new java.util.HashSet<>();
+			// The game's own list: JEI leaves out a dispatcher whose share is empty, a mod's wrapper may still carry it.
+			net.minecraft.client.multiplayer.ClientLevel tLevel = net.minecraft.client.Minecraft.getInstance().level;
+			if (tLevel != null) for (net.minecraft.world.item.crafting.SmeltingRecipe r : tLevel.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING))
+				if (r instanceof gregapi.recipes.GT6SmeltingDispatcher) tIds.add(r.getId());
+			long tStart = System.nanoTime();
+			int tHidden = 0;
+			// GT6's own tabs never hold a vanilla recipe, and listing them all would run their on-demand generation.
+			for (IRecipeCategory<?> tCategory : aManager.createRecipeCategoryLookup().includeHidden().get().toList())
+				if (!MD.GT.mID.equals(tCategory.getRecipeType().getUid().getNamespace())) tHidden += hideById(aManager, tCategory, tIds);
+			OUT.println("[GT6-JEI] GT6 smelting dispatcher cards hidden (the gregtech:smelting tab shows the pairs): " + tHidden + " cards of " + tIds.size() + " dispatchers, " + (System.nanoTime() - tStart) / 1000000 + " ms");
 		} catch (Throwable e) {
-			ERR.println("JEI: could not hide the GT6 smelting dispatcher cards (they stay in the vanilla smelting tab).");
+			ERR.println("JEI: could not hide the GT6 smelting dispatcher cards (they stay in the smelting tabs).");
 			e.printStackTrace(ERR);
+		}
+	}
+
+	/** Hides the category's cards whose recipe id is one of aIds; a category that fails to list stays as it is. */
+	private static <T> int hideById(mezz.jei.api.recipe.IRecipeManager aManager, IRecipeCategory<T> aCategory, java.util.Set<Object> aIds) {
+		try {
+			java.util.List<T> tHit = aManager.createRecipeLookup(aCategory.getRecipeType()).includeHidden().get().filter(r -> aIds.contains(aCategory.getRegistryName(r))).toList();
+			if (!tHit.isEmpty()) aManager.hideRecipes(aCategory.getRecipeType(), tHit);
+			return tHit.size();
+		} catch (Throwable e) {
+			ERR.println("JEI: category " + aCategory.getRecipeType().getUid() + " could not be checked for GT6 smelting dispatcher cards.");
+			e.printStackTrace(ERR);
+			return 0;
 		}
 	}
 
