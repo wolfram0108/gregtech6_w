@@ -135,10 +135,10 @@ public final class GT6SmeltingDispatcher extends net.minecraft.world.item.crafti
 	/** The registry's result for the input when THIS instance smelts it, else null: the one rule behind matches() and the
 	 *  showcase, so a stack is shown by exactly the instance that takes it. XP class by the 1.7.10 rule (the result hook
 	 *  overrides the map); the default (xp=0) takes zero plus every class no json covers (exotic -> 0 + one warning). */
-	private ItemStack resultIfMine(ItemStack aInput) {
-		ItemStack tResult = FurnaceRecipes.smelting().getSmeltingResult(aInput);
+	private ItemStack resultIfMine(ItemStack aInput, FurnaceRecipes.Answers aAnswers) {
+		ItemStack tResult = aAnswers.result(aInput);
 		if (!ST.valid(tResult)) return null;
-		float tXP = FurnaceRecipes.smelting().func_151398_b(tResult);
+		float tXP = aAnswers.xp(tResult);
 		float tMine = experience();
 		if (tMine > 0) return tXP == tMine ? tResult : null;
 		if (tXP != 0.0F && !KNOWN_XP.contains(tXP) && WARNED_XP.add(tXP)) ERR.println("[GT6] GT6SmeltingDispatcher: XP class " + tXP + " is not covered by an instance (json) — smelting still works, XP is given as 0");
@@ -148,9 +148,10 @@ public final class GT6SmeltingDispatcher extends net.minecraft.world.item.crafti
 	/** This instance's share of the registry as exact stacks, meta and components kept: the one walk both showcases read. */
 	private java.util.List<ItemStack> showcase() {
 		java.util.List<ItemStack> rStacks = new java.util.ArrayList<>();
+		FurnaceRecipes.Answers tWalk = FurnaceRecipes.smelting().snapshot();
 		for (ItemStack tKey : FurnaceRecipes.smelting().getSmeltingList().keySet()) {
 			ItemStack tStack = ST.amount(1, tKey);
-			if (ST.valid(tStack) && resultIfMine(tStack) != null) rStacks.add(tStack);
+			if (ST.valid(tStack) && resultIfMine(tStack, tWalk) != null) rStacks.add(tStack);
 		}
 		return rStacks;
 	}
@@ -167,7 +168,7 @@ public final class GT6SmeltingDispatcher extends net.minecraft.world.item.crafti
 	}
 
 	@Override public boolean matches(SingleRecipeInput aInput, Level aLevel) {
-		return resultIfMine(aInput.item()) != null;
+		return resultIfMine(aInput.item(), FurnaceRecipes.smelting().live()) != null;
 	}
 
 	@Override public ItemStack assemble(SingleRecipeInput aInput) {
