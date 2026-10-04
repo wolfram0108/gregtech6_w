@@ -28,6 +28,21 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 
 ## [Unreleased]
 
+## [6.0.0-alpha.12] — vanilla recipes, buckets and JEI behave as in 1.7.10
+
+### Fixed
+
+- **The hopper can be crafted again, and with it the Dust Funnel** ([#11](https://github.com/wolfram0108/gregtech6_w/issues/11)): the cauldron, both weighted pressure plates, the iron door and the clock are back too, with GT6's recipes as in 1.7.10.
+- **An empty bucket no longer crashes the game on GT6 blocks** ([#13](https://github.com/wolfram0108/gregtech6_w/issues/13)): stone, concrete, asphalt, glass and planks give nothing, as in 1.7.10, and a dispenser with an empty bucket no longer crashes a server.
+- **Glowing textures glow in the dark again**: a powered red alloy wire, sensor digits and displays.
+- **Ingots, nuggets and storage blocks convert only through GT6's crafting**, as in 1.7.10, without duplicate vanilla recipes.
+- **The book is crafted with its vanilla recipe again.**
+- **Dyes mix through GT6's recipes as in 1.7.10**, including the white, blue, brown and black dyes of newer versions.
+- **The crafting table gives the same result as 1.7.10 where a vanilla and a GT6 recipe share a layout**, and the autocrafter sees vanilla recipes.
+- **JEI shows each GT6 smelting recipe once, with its real result**, and no longer shows tag tabs that 1.7.10 never had; the furnace recipe book no longer lists GT6 placeholder entries.
+
+Thanks to [@touhumk9](https://github.com/touhumk9) and [@Kitaec1055](https://github.com/Kitaec1055) for the reports.
+
 ## [6.0.0-alpha.11] — multiblocks, auto-collect and catalysts behave as in 1.7.10
 
 ### Fixed
