@@ -177,6 +177,12 @@ public final class GT6SmeltingDispatcher extends net.minecraft.world.item.crafti
 		return ST.valid(tResult) ? ST.copy(tResult) : ItemStack.EMPTY;
 	}
 
+	/** 1.7.10 had no recipe book, and a dispatcher stands for a whole registry, not one recipe: as a special recipe the book
+	 *  never learns it (ServerRecipeBook.addRecipes), while the furnace still records it for XP (setRecipeUsed). */
+	@Override public boolean isSpecial() {
+		return true;
+	}
+
 	@Override protected Item furnaceIcon() {
 		return Items.FURNACE;
 	}
