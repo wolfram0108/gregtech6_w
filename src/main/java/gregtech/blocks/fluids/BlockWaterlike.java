@@ -164,9 +164,7 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	public boolean flowTo(Level aWorld, int aX, int aY, int aZ, int aMeta) {
 		net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(aX, aY, aZ);
 		net.minecraft.world.level.block.state.BlockState tSt = aWorld.getBlockState(tP);
-		if (tSt.getBlock() instanceof net.minecraft.world.level.block.SimpleWaterloggedBlock
-		 && tSt.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)
-		 && !tSt.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)) {
+		if (WD.waterloggable(tSt) && !WD.waterlogged(tSt)) {
 			return aWorld.setBlock(tP, tSt.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.TRUE), 3);
 		}
 		if (displaceIfPossible(aWorld, aX, aY, aZ)) { WD.set(aWorld, aX, aY, aZ, this, aMeta, WATER_UPDATE_FLAGS | 1); return true; }

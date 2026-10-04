@@ -1525,8 +1525,18 @@ public class WD {
 	public static boolean waterlog(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockState tState = state(aWorld, tPos);
-		if (!tState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)) return F;
+		if (!waterloggable(tState)) return F;
 		return aWorld.setBlock(tPos, tState.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.TRUE), 3);
+	}
+
+	/** THE waterlogging rule for the whole mod: a state holds water only if its block declares the engine contract and the
+	 *  state carries WATERLOGGED. GT6 meta blocks declare the contract for all, but only their slabs carry it (BUG-010). */
+	public static boolean waterloggable(BlockState aState) {
+		return aState.getBlock() instanceof net.minecraft.world.level.block.SimpleWaterloggedBlock && aState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
+	}
+	/** Waterlogged right now, read only through the rule above. */
+	public static boolean waterlogged(BlockState aState) {
+		return waterloggable(aState) && aState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
 	}
 
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
