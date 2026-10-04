@@ -69,8 +69,8 @@ public final class GT6SmeltingDispatcher extends SmeltingRecipe {
 		if (aExperience > 0) KNOWN_XP.add(aExperience);
 	}
 
-	/** This instance's share of GT6's registry as exact stacks, built fresh on every request, since callers (recipe book,
-	 *  JEI) are rare. An empty share yields no ingredient, so both the recipe book and JEI leave the instance out. */
+	/** This instance's share of GT6's registry as exact stacks, built fresh on every request, since callers (wrappers of
+	 *  furnace recipes) are rare. An empty share yields no ingredient; the book and JEI leave a special recipe out anyway. */
 	@Override public NonNullList<Ingredient> getIngredients() {
 		java.util.List<ItemStack> tStacks = new java.util.ArrayList<>();
 		FurnaceRecipes.Answers tWalk = FurnaceRecipes.smelting().snapshot();
@@ -95,6 +95,12 @@ public final class GT6SmeltingDispatcher extends SmeltingRecipe {
 		if (tMine > 0) return tXP == tMine ? tResult : null;
 		if (tXP != 0.0F && !KNOWN_XP.contains(tXP) && WARNED_XP.add(tXP)) ERR.println("[GT6] GT6SmeltingDispatcher: XP class " + tXP + " is not covered by an instance (json) — smelting still works, XP is given as 0");
 		return tXP == 0.0F || !KNOWN_XP.contains(tXP) ? tResult : null;
+	}
+
+	/** 1.7.10 had no recipe book, and a dispatcher stands for a whole registry, not one recipe: as a special recipe the book
+	 *  never learns or lists it (ServerRecipeBook.addRecipes, ClientRecipeBook), while the furnace still records it for XP. */
+	@Override public boolean isSpecial() {
+		return true;
 	}
 
 	@Override public boolean matches(Container aContainer, Level aLevel) {
