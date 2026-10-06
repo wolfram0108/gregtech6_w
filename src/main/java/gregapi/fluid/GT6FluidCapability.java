@@ -163,28 +163,37 @@ public final class GT6FluidCapability {
 	// The other way round: another mod's fluid storage as GT6 code meets it next to a GT6 block.
 	// ==============================================================================================
 
+	/** Storages found per position and side on another mod's block entity, each kept until Forge invalidates that capability
+	 *  (removed, unloaded, reconfigured), then dropped: one map lookup on the hot path and nothing held past its block. "No
+	 *  storage" is not kept: Forge answers it without allocating, so a side that opens later is seen. Server thread only. */
+	private static final java.util.Map<net.minecraft.world.level.Level, it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Object[]>> FOREIGN = new java.util.WeakHashMap<>();
+
 	/** Another mod's fluid storage on a block entity's side, through Forge's capability. 1.7.10's foreign tanks were IFluidHandler
 	 *  block entities too, so a block without a block entity stays out, at no cost. */
 	public static IFluidHandler foreign(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
 		if (aTileEntity.isRemoved()) return null;
-		return aTileEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, gregapi.data.CS.FORGE_DIR[aSide]).orElse(null);
+		net.minecraft.world.level.Level tLevel = aTileEntity.getLevel();
+		net.minecraft.core.Direction tDirection = gregapi.data.CS.FORGE_DIR[aSide];
+		if (!(tLevel instanceof net.minecraft.server.level.ServerLevel tServer) || !tServer.getServer().isSameThread()) return aTileEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, tDirection).orElse(null);
+		long tPos = aTileEntity.getBlockPos().asLong();
+		int tSide = gregapi.data.CS.SIDES_VALID[aSide] ? aSide : 6;
+		it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Object[]> tMap = FOREIGN.computeIfAbsent(tLevel, k -> new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>());
+		Object[] tSides = tMap.get(tPos);
+		// a slot holds {block entity, storage}: the same block entity answers from it, another one asks again
+		if (tSides != null && tSides[tSide] instanceof Object[] tEntry && tEntry[0] == aTileEntity) return (IFluidHandler)tEntry[1];
+		net.minecraftforge.common.util.LazyOptional<IFluidHandler> tLazy = aTileEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, tDirection);
+		IFluidHandler rTank = tLazy.orElse(null);
+		if (rTank == null) return null;
+		if (tSides == null) tMap.put(tPos, tSides = new Object[7]);
+		Object[] tOwner = tSides, tEntry = {aTileEntity, rTank};
+		tSides[tSide] = tEntry;
+		tLazy.addListener(aGone -> drop(tMap, tPos, tOwner, tSide, tEntry));
+		return rTank;
 	}
 
-	/** The same answer for one side of a GT6 tile entity, kept while the neighbour is the same block entity and its capability was
-	 *  not invalidated, so a GT6 pipe or machine at another mod's tank asks Forge once, not every tick. */
-	public static final class ForeignTankCache {
-		private net.minecraft.world.level.block.entity.BlockEntity mTileEntity;
-		private net.minecraftforge.common.util.LazyOptional<IFluidHandler> mLazy;
-		private IFluidHandler mTank;
-
-		public IFluidHandler get(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
-			// An absent capability is kept as well (empty, never invalidated): it is asked again only for another block entity.
-			if (aTileEntity != mTileEntity || mLazy == null || (mTank != null && !mLazy.isPresent()) || aTileEntity.isRemoved()) {
-				mTileEntity = aTileEntity;
-				mLazy = aTileEntity.isRemoved() ? net.minecraftforge.common.util.LazyOptional.empty() : aTileEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, gregapi.data.CS.FORGE_DIR[aSide]);
-				mTank = mLazy.orElse(null);
-			}
-			return mTank;
-		}
+	private static void drop(it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Object[]> aMap, long aPos, Object[] aSides, int aSide, Object[] aEntry) {
+		if (aSides[aSide] == aEntry) aSides[aSide] = null;
+		for (Object tEntry : aSides) if (tEntry != null) return;
+		if (aMap.get(aPos) == aSides) aMap.remove(aPos);
 	}
 }
