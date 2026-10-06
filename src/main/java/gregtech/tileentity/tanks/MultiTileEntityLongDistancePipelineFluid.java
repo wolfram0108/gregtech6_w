@@ -203,8 +203,9 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	
 	@Override
 	public int fill(Direction aSide, FluidStack aFluid, boolean aDoFill) {
-		DelegatorTileEntity<IFluidHandler> tTileEntity;
-		if (FL.temperature(aFluid) <= mTemperature && (tTileEntity = getRelayedTank(SIDE_UNKNOWN)) != null) {
+		// the target first, as the original's checkTarget() first: it scans the pipes, the only place mTemperature is set after a load
+		DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(SIDE_UNKNOWN);
+		if (tTileEntity != null && FL.temperature(aFluid) <= mTemperature) {
 			if (tTileEntity.mTileEntity != null) return UT.Code.bindInt(FL.fill(tTileEntity, aFluid, aDoFill));
 		}
 		return 0;
@@ -219,8 +220,8 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	}
 	@Override
 	public boolean canFill(Direction aSide, Fluid aFluid) {
-		DelegatorTileEntity<IFluidHandler> tTileEntity;
-		if (FL.temperature(aFluid) <= mTemperature && (tTileEntity = getRelayedTank(SIDE_UNKNOWN)) != null) {
+		DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(SIDE_UNKNOWN);
+		if (tTileEntity != null && FL.temperature(aFluid) <= mTemperature) {
 			if (tTileEntity.mTileEntity != null) return FL.canFill(tTileEntity, aFluid);
 		}
 		return F;
