@@ -35,6 +35,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
@@ -238,20 +239,64 @@ public class GT6FluidCapability {
 		}
 		/** The same adapter object while the storage stays the same, so a delegator holding it can tell it still exists. */
 		private IFluidHandler get() {
-			ResourceHandler<FluidResource> tCap = mCache.getCapability();
-			if (tCap != mLast) {mLast = tCap; mTank = tCap == null ? null : IFluidHandler.of(tCap);}
+			ResourceHandler<FluidResource> tCap;
+			try {tCap = mCache.getCapability();} catch (Throwable e) {return null;}
+			if (tCap != mLast) {mLast = tCap; mTank = tCap == null ? null : new ForeignTank(tCap);}
 			return mTank;
 		}
 	}
 
-	/** Another mod's fluid storage on a block entity's side, as GT6 code sees one (an IFluidHandler, through NeoForge's own
-	 *  adapter). 1.7.10's foreign tanks were IFluidHandler block entities too, so a block without one stays out, at no cost. */
+	/** Another mod's fluid storage as GT6 code calls it: NeoForge's IFluidHandler adapter under the two rules EnergyCompat.insertFE
+	 *  keeps for a foreign FE storage. A move nests in a transaction already open on the thread, where a second root would throw
+	 *  (a foreign pipe filling a GT6 Extender that passes it on), and a storage that fails reads as moving nothing, instead of
+	 *  throwing into a GT6 tick or a player's click. */
+	private static final class ForeignTank implements IFluidHandler {
+		private final ResourceHandler<FluidResource> mHandler;
+		private ForeignTank(ResourceHandler<FluidResource> aHandler) {mHandler = aHandler;}
+
+		@Override public int getTanks() {try {return mHandler.size();} catch (Throwable e) {return 0;}}
+		@Override public FluidStack getFluidInTank(int aTank) {try {return net.neoforged.neoforge.transfer.fluid.FluidUtil.getStack(mHandler, aTank);} catch (Throwable e) {return FluidStack.EMPTY;}}
+		@Override public int getTankCapacity(int aTank) {try {return mHandler.getCapacityAsInt(aTank, FluidResource.EMPTY);} catch (Throwable e) {return 0;}}
+		@Override public boolean isFluidValid(int aTank, FluidStack aFluid) {try {return mHandler.isValid(aTank, FluidResource.of(aFluid));} catch (Throwable e) {return false;}}
+		@Override public int fill(FluidStack aFluid, FluidAction aAction) {
+			if (aFluid == null || aFluid.isEmpty()) return 0;
+			try (Transaction tTx = Transaction.open(Transaction.getCurrentOpenedTransaction())) {
+				int rFilled = mHandler.insert(FluidResource.of(aFluid), aFluid.getAmount(), tTx);
+				if (aAction.execute()) tTx.commit();
+				return rFilled;
+			} catch (Throwable e) {return 0;}
+		}
+		@Override public FluidStack drain(FluidStack aFluid, FluidAction aAction) {
+			if (aFluid == null || aFluid.isEmpty()) return FluidStack.EMPTY;
+			try (Transaction tTx = Transaction.open(Transaction.getCurrentOpenedTransaction())) {
+				int rDrained = mHandler.extract(FluidResource.of(aFluid), aFluid.getAmount(), tTx);
+				if (aAction.execute()) tTx.commit();
+				return rDrained <= 0 ? FluidStack.EMPTY : aFluid.copyWithAmount(rDrained);
+			} catch (Throwable e) {return FluidStack.EMPTY;}
+		}
+		@Override public FluidStack drain(int aAmount, FluidAction aAction) {
+			if (aAmount <= 0) return FluidStack.EMPTY;
+			try (Transaction tTx = Transaction.open(Transaction.getCurrentOpenedTransaction())) {
+				var tDrained = net.neoforged.neoforge.transfer.ResourceHandlerUtil.extractFirst(mHandler, aResource -> true, aAmount, tTx);
+				if (aAction.execute()) tTx.commit();
+				return tDrained == null ? FluidStack.EMPTY : tDrained.resource().toStack(tDrained.amount());
+			} catch (Throwable e) {return FluidStack.EMPTY;}
+		}
+		/** Adapters of one storage are one tank, so a delegator holding one can tell its storage still exists. */
+		@Override public boolean equals(Object aOther) {return aOther instanceof ForeignTank tOther && tOther.mHandler == mHandler;}
+		@Override public int hashCode() {return System.identityHashCode(mHandler);}
+	}
+
+	/** Another mod's fluid storage on a block entity's side, as GT6 code sees one (an IFluidHandler, through ForeignTank).
+	 *  1.7.10's foreign tanks were IFluidHandler block entities too, so a block without one stays out, at no cost. */
 	public static IFluidHandler foreign(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
 		net.minecraft.world.level.Level tLevel = aTileEntity.getLevel();
 		if (tLevel == null || aTileEntity.isRemoved()) return null;
 		if (!(tLevel instanceof net.minecraft.server.level.ServerLevel tServer) || !tServer.getServer().isSameThread()) {
-			ResourceHandler<FluidResource> tCap = tLevel.getCapability(Capabilities.Fluid.BLOCK, aTileEntity.getBlockPos(), aTileEntity.getBlockState(), aTileEntity, gregapi.data.CS.FORGE_DIR[aSide]);
-			return tCap == null ? null : IFluidHandler.of(tCap);
+			try {
+				ResourceHandler<FluidResource> tCap = tLevel.getCapability(Capabilities.Fluid.BLOCK, aTileEntity.getBlockPos(), aTileEntity.getBlockState(), aTileEntity, gregapi.data.CS.FORGE_DIR[aSide]);
+				return tCap == null ? null : new ForeignTank(tCap);
+			} catch (Throwable e) {return null;}
 		}
 		long tPos = aTileEntity.getBlockPos().asLong();
 		int tSide = gregapi.data.CS.SIDES_VALID[aSide] ? aSide : 6;
