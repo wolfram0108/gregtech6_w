@@ -329,8 +329,21 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override public DelegatorTileEntity<IFluidHandler      > getAdjacentTank           (byte aSide) {return getAdjacentTank(aSide, T, F);}
 	@Override public DelegatorTileEntity<Container         > getAdjacentInventory      (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity instanceof Container      ?(Container        )tDelegator.mTileEntity:null, tDelegator);}
 	@Override public DelegatorTileEntity<WorldlyContainer    > getAdjacentSidedInventory (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity instanceof WorldlyContainer ?(WorldlyContainer   )tDelegator.mTileEntity:null, tDelegator);}
-	@Override public DelegatorTileEntity<IFluidHandler      > getAdjacentTank           (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity instanceof IFluidHandler   ?(IFluidHandler     )tDelegator.mTileEntity:null, tDelegator);}
+	@Override public DelegatorTileEntity<IFluidHandler      > getAdjacentTank           (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity == null ? null : tDelegator.mTileEntity instanceof IFluidHandler ? (IFluidHandler)tDelegator.mTileEntity : tank(aSide, tDelegator), tDelegator);}
 	
+	/** Caches of another mod's fluid storage next to this tile entity, made only for a side that met one. */
+	private gregapi.fluid.GT6FluidCapability.ForeignTankCache[] mForeignTanks;
+	/** The storage a neighbour delegator points at: a GT6 block as it is, another mod's block entity on the direct neighbour
+	 *  through a per-side cache, anything else through FL.tank. */
+	public final IFluidHandler tank(byte aSide, DelegatorTileEntity<?> aDelegator) {
+		if (aDelegator.mTileEntity instanceof IFluidHandler tTank) return tTank;
+		if (!(aDelegator.mTileEntity instanceof BlockEntity tForeign)) return null;
+		if (!SIDES_VALID[aSide] || !(level instanceof net.minecraft.server.level.ServerLevel tServer) || aDelegator.mX != getOffsetX(aSide) || aDelegator.mY != getOffsetY(aSide) || aDelegator.mZ != getOffsetZ(aSide)) return FL.tank(aDelegator);
+		if (mForeignTanks == null) mForeignTanks = new gregapi.fluid.GT6FluidCapability.ForeignTankCache[6];
+		if (mForeignTanks[aSide] == null) mForeignTanks[aSide] = new gregapi.fluid.GT6FluidCapability.ForeignTankCache(tServer, tForeign.getBlockPos(), aDelegator.mSideOfTileEntity, () -> !isRemoved());
+		return mForeignTanks[aSide].get();
+	}
+
 	@Override
 	public DelegatorTileEntity<BlockEntity> getAdjacentTileEntity(byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {
 		BlockEntity tTileEntity = getTileEntityAtSideAndDistance(aSide, 1);

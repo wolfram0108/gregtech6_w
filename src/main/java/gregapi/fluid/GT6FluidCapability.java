@@ -31,6 +31,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
@@ -216,6 +217,36 @@ public class GT6FluidCapability {
 			for (FluidStack tMove : tMoves) try {
 				if (tMove.getAmount() > 0) mTileEntity.fill(mSide, tMove, true); else {FluidStack tDrain = tMove.copy(); tDrain.setAmount(-tMove.getAmount()); mTileEntity.drain(mSide, tDrain, true);}
 			} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
+		}
+	}
+
+	// ==============================================================================================
+	// The other way round: another mod's fluid storage as GT6 code meets it next to a GT6 block.
+	// ==============================================================================================
+
+	/** Another mod's fluid storage on a block entity's side, as GT6 code sees one (an IFluidHandler, through NeoForge's own
+	 *  adapter). 1.7.10's foreign tanks were IFluidHandler block entities too, so a block without one stays out, at no cost. */
+	public static IFluidHandler foreign(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
+		net.minecraft.world.level.Level tLevel = aTileEntity.getLevel();
+		if (tLevel == null || aTileEntity.isRemoved()) return null;
+		ResourceHandler<FluidResource> tCap = tLevel.getCapability(Capabilities.Fluid.BLOCK, aTileEntity.getBlockPos(), aTileEntity.getBlockState(), aTileEntity, gregapi.data.CS.FORGE_DIR[aSide]);
+		return tCap == null ? null : IFluidHandler.of(tCap);
+	}
+
+	/** The same answer for one side of a GT6 tile entity, kept until the engine reports the neighbour changed (BlockCapabilityCache
+	 *  follows Level.invalidateCapabilities), so a GT6 pipe or machine at another mod's tank asks the engine once, not every tick. */
+	public static final class ForeignTankCache {
+		private final net.neoforged.neoforge.capabilities.BlockCapabilityCache<ResourceHandler<FluidResource>, Direction> mCache;
+		private ResourceHandler<FluidResource> mLast;
+		private IFluidHandler mTank;
+
+		public ForeignTankCache(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aPos, byte aSide, java.util.function.BooleanSupplier aValid) {
+			mCache = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(Capabilities.Fluid.BLOCK, aLevel, aPos, gregapi.data.CS.FORGE_DIR[aSide], aValid, () -> {});
+		}
+		public IFluidHandler get() {
+			ResourceHandler<FluidResource> tCap = mCache.getCapability();
+			if (tCap != mLast) {mLast = tCap; mTank = tCap == null ? null : IFluidHandler.of(tCap);}
+			return mTank;
 		}
 	}
 }
