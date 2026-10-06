@@ -71,19 +71,19 @@ public class CompatBC extends CompatBase implements ICompatBC {
 		buildcraft.api.fuels.IFuel tRate = null;
 		for (buildcraft.api.fuels.IFuel tRecipe : aLevel.getRecipeManager().getAllRecipesFor(buildcraft.api.fuels.IFuel.TYPE)) if (tRecipe.getFluid() != null && tRecipe.getFluid().isFluidEqual(tFuel)) {tRate = tRecipe; break;}
 		if (tRate == null) tRate = tManager.getFuel(aLevel, tLight);
-		if (tRate == null) return;
-		if (sFuel == null) sFuel = tManager.addUnregisteredFuel(new FuelGT(tFuel));
-		sFuel.mPower = tRate.getPowerPerCycle(); sFuel.mTime = tRate.getTotalBurningTime();
+		// a data pack without the light fuel takes GT6 Fuel out too: an entry of no fluid matches nothing
+		if (tRate == null) {if (sFuel != null) sFuel.mFluid = net.minecraftforge.fluids.FluidStack.EMPTY; return;}
+		if (sFuel == null) sFuel = tManager.addUnregisteredFuel(new FuelGT());
+		sFuel.mPower = tRate.getPowerPerCycle(); sFuel.mTime = tRate.getTotalBurningTime(); sFuel.mFluid = tFuel;
 	}
 	private static FuelGT sFuel;
 
 	/** GT6 Fuel in BuildCraft's registry, added once a game: BuildCraft 7.99 cannot take a fuel back, so its rate is what changes. */
 	private static final class FuelGT implements buildcraft.api.fuels.IFuel {
 		private final net.minecraft.resources.ResourceLocation mId = new net.minecraft.resources.ResourceLocation(gregapi.data.MD.GAPI.mID, "fuel");
-		private final net.minecraftforge.fluids.FluidStack mFluid;
+		private volatile net.minecraftforge.fluids.FluidStack mFluid = net.minecraftforge.fluids.FluidStack.EMPTY;
 		private volatile long mPower;
 		private volatile int mTime;
-		private FuelGT(net.minecraftforge.fluids.FluidStack aFluid) {mFluid = aFluid;}
 		@Override public net.minecraftforge.fluids.FluidStack getFluid() {return mFluid;}
 		@Override public long getPowerPerCycle() {return mPower;}
 		@Override public int getTotalBurningTime() {return mTime;}
