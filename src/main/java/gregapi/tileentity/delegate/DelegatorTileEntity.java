@@ -97,7 +97,12 @@ public final class DelegatorTileEntity<T> extends WorldAndCoords {
 	public boolean equalSideWorldAndCoords(DelegatorTileEntity<?> aOther) {return aOther.mWorld == mWorld && equalSideAndCoords(aOther);}
 	public boolean equalSideTileEntityAndCoords(DelegatorTileEntity<?> aOther) {return aOther.mTileEntity == mTileEntity && equalSideAndCoords(aOther);}
 	
-	public boolean exists() {return mTileEntity instanceof ITileEntityUnloadable ? !((ITileEntityUnloadable)mTileEntity).isDead() : mTileEntity != null && !((BlockEntity)mTileEntity).isRemoved() && mWorld != null && WD.exists(mWorld, mX, mY, mZ);}
+	public boolean exists() {
+		if (mTileEntity instanceof ITileEntityUnloadable) return !((ITileEntityUnloadable)mTileEntity).isDead();
+		if (mTileEntity instanceof BlockEntity) return !((BlockEntity)mTileEntity).isRemoved() && mWorld != null && WD.exists(mWorld, mX, mY, mZ);
+		// another mod's storage found through its capability: it exists while its block still hands out this same storage
+		return mTileEntity != null && mWorld != null && WD.exists(mWorld, mX, mY, mZ) && gregapi.data.FL.tank(WD.te(mWorld, mX, mY, mZ, mSideOfTileEntity, F)) == mTileEntity;
+	}
 	
 	@Override public Level getWorld() {return mWorld;}
 	@Override public int getX() {return mX;}

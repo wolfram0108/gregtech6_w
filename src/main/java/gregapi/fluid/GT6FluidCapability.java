@@ -224,29 +224,51 @@ public class GT6FluidCapability {
 	// The other way round: another mod's fluid storage as GT6 code meets it next to a GT6 block.
 	// ==============================================================================================
 
+	/** Answers per position and side for another mod's block entity, each kept until the engine reports that block's capabilities
+	 *  changed (replaced, removed, unloaded, reconfigured), then dropped: one map lookup on the hot path, nothing held past its
+	 *  block, no stale answer. Server thread only; any other thread asks the engine directly. */
+	private static final java.util.Map<net.minecraft.world.level.Level, it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Foreign[]>> FOREIGN = new java.util.WeakHashMap<>();
+
+	private static final class Foreign {
+		private final net.neoforged.neoforge.capabilities.BlockCapabilityCache<ResourceHandler<FluidResource>, Direction> mCache;
+		private ResourceHandler<FluidResource> mLast;
+		private IFluidHandler mTank;
+		private Foreign(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aPos, byte aSide, Runnable aDrop) {
+			mCache = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(Capabilities.Fluid.BLOCK, aLevel, aPos, gregapi.data.CS.FORGE_DIR[aSide], () -> true, aDrop);
+		}
+		/** The same adapter object while the storage stays the same, so a delegator holding it can tell it still exists. */
+		private IFluidHandler get() {
+			ResourceHandler<FluidResource> tCap = mCache.getCapability();
+			if (tCap != mLast) {mLast = tCap; mTank = tCap == null ? null : IFluidHandler.of(tCap);}
+			return mTank;
+		}
+	}
+
 	/** Another mod's fluid storage on a block entity's side, as GT6 code sees one (an IFluidHandler, through NeoForge's own
 	 *  adapter). 1.7.10's foreign tanks were IFluidHandler block entities too, so a block without one stays out, at no cost. */
 	public static IFluidHandler foreign(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
 		net.minecraft.world.level.Level tLevel = aTileEntity.getLevel();
 		if (tLevel == null || aTileEntity.isRemoved()) return null;
-		ResourceHandler<FluidResource> tCap = tLevel.getCapability(Capabilities.Fluid.BLOCK, aTileEntity.getBlockPos(), aTileEntity.getBlockState(), aTileEntity, gregapi.data.CS.FORGE_DIR[aSide]);
-		return tCap == null ? null : IFluidHandler.of(tCap);
+		if (!(tLevel instanceof net.minecraft.server.level.ServerLevel tServer) || !tServer.getServer().isSameThread()) {
+			ResourceHandler<FluidResource> tCap = tLevel.getCapability(Capabilities.Fluid.BLOCK, aTileEntity.getBlockPos(), aTileEntity.getBlockState(), aTileEntity, gregapi.data.CS.FORGE_DIR[aSide]);
+			return tCap == null ? null : IFluidHandler.of(tCap);
+		}
+		long tPos = aTileEntity.getBlockPos().asLong();
+		int tSide = gregapi.data.CS.SIDES_VALID[aSide] ? aSide : 6;
+		it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Foreign[]> tMap = FOREIGN.computeIfAbsent(tLevel, k -> new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>());
+		Foreign[] tSides = tMap.get(tPos);
+		if (tSides == null) tMap.put(tPos, tSides = new Foreign[7]);
+		Foreign tEntry = tSides[tSide];
+		if (tEntry == null) {
+			Foreign[] tOwner = tSides;
+			tSides[tSide] = tEntry = new Foreign(tServer, aTileEntity.getBlockPos(), aSide, () -> drop(tMap, tPos, tOwner, tSide));
+		}
+		return tEntry.get();
 	}
 
-	/** The same answer for one side of a GT6 tile entity, kept until the engine reports the neighbour changed (BlockCapabilityCache
-	 *  follows Level.invalidateCapabilities), so a GT6 pipe or machine at another mod's tank asks the engine once, not every tick. */
-	public static final class ForeignTankCache {
-		private final net.neoforged.neoforge.capabilities.BlockCapabilityCache<ResourceHandler<FluidResource>, Direction> mCache;
-		private ResourceHandler<FluidResource> mLast;
-		private IFluidHandler mTank;
-
-		public ForeignTankCache(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aPos, byte aSide, java.util.function.BooleanSupplier aValid) {
-			mCache = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(Capabilities.Fluid.BLOCK, aLevel, aPos, gregapi.data.CS.FORGE_DIR[aSide], aValid, () -> {});
-		}
-		public IFluidHandler get() {
-			ResourceHandler<FluidResource> tCap = mCache.getCapability();
-			if (tCap != mLast) {mLast = tCap; mTank = tCap == null ? null : IFluidHandler.of(tCap);}
-			return mTank;
-		}
+	private static void drop(it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Foreign[]> aMap, long aPos, Foreign[] aSides, int aSide) {
+		aSides[aSide] = null;
+		for (Foreign tEntry : aSides) if (tEntry != null) return;
+		if (aMap.get(aPos) == aSides) aMap.remove(aPos);
 	}
 }
