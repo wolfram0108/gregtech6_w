@@ -35,8 +35,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.EnumPlantType;
-import net.minecraftforge.common.IPlantable;
+import gt6mirror.net.minecraftforge.common.EnumPlantType;
+import gt6mirror.net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 
 import java.util.List;

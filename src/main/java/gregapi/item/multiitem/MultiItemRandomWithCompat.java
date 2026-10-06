@@ -25,9 +25,9 @@ package gregapi.item.multiitem;
 
 import gregapi.api.Optional;
 import gregapi.item.multiitem.food.IFoodStat;
-import ic2.api.item.IElectricItemManager;
-import ic2.api.item.ISpecialElectricItem;
-import micdoodle8.mods.galacticraft.api.item.IItemElectric;
+import gt6mirror.ic2.api.item.IElectricItemManager;
+import gt6mirror.ic2.api.item.ISpecialElectricItem;
+import gt6mirror.micdoodle8.mods.galacticraft.api.item.IItemElectric;
 import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.ModIDs;
@@ -45,7 +45,7 @@ import static gregapi.data.CS.ModIDs;
 , @Optional.Interface(iface = "ic2.api.item.IElectricItemManager", modid = ModIDs.IC2)
 , @Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.item.IItemElectric", modid = ModIDs.GC)
 })
-public abstract class MultiItemRandomWithCompat extends MultiItemRandom implements Runnable, squeek.applecore.api.food.IEdible, ic2.api.item.IBoxable, ic2.api.item.IItemReactorPlanStorage, ISpecialElectricItem, IElectricItemManager, IItemElectric {
+public abstract class MultiItemRandomWithCompat extends MultiItemRandom implements Runnable, gt6mirror.squeek.applecore.api.food.IEdible, gt6mirror.ic2.api.item.IBoxable, gt6mirror.ic2.api.item.IItemReactorPlanStorage, ISpecialElectricItem, IElectricItemManager, IItemElectric {
 	/**
 	 * Creates the Item using these Parameters.
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
@@ -55,11 +55,11 @@ public abstract class MultiItemRandomWithCompat extends MultiItemRandom implemen
 	}
 	
 	@Override @Optional.Method(modid = ModIDs.APC)
-	public squeek.applecore.api.food.FoodValues getFoodValues(ItemStack aStack) {
+	public gt6mirror.squeek.applecore.api.food.FoodValues getFoodValues(ItemStack aStack) {
 		IFoodStat tStat = mFoodStats.get((short)getDamage(aStack));
 		if (tStat == null) return null;
 		int tFoodLevel = tStat.getFoodLevel(this, aStack, null);
-		return tFoodLevel > 0 ? new squeek.applecore.api.food.FoodValues(tFoodLevel, tStat.getSaturation(this, aStack, null)) : null;
+		return tFoodLevel > 0 ? new gt6mirror.squeek.applecore.api.food.FoodValues(tFoodLevel, tStat.getSaturation(this, aStack, null)) : null;
 	}
 	
 	@Optional.Method(modid = ModIDs.IC2)

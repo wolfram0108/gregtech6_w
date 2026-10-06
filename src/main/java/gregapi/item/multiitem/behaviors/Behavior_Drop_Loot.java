@@ -32,7 +32,7 @@ import gregapi.util.UT;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.ChestGenHooks;
+import gt6mirror.net.minecraftforge.common.ChestGenHooks;
 
 import java.util.List;
 

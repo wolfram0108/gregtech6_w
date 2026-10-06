@@ -24,7 +24,7 @@
 package gregtech.items.tools.early;
 
 import gregapi.util.WD;
-import biomesoplenty.common.blocks.BlockBOPLilypad;
+import gt6mirror.biomesoplenty.common.blocks.BlockBOPLilypad;
 import gregapi.block.misc.BlockBaseLilyPad;
 import gregapi.data.IL;
 import gregapi.data.MD;
@@ -42,8 +42,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
-import twilightforest.block.BlockTFHugeLilyPad;
-import twilightforest.block.BlockTFHugeWaterLily;
+import gt6mirror.twilightforest.block.BlockTFHugeLilyPad;
+import gt6mirror.twilightforest.block.BlockTFHugeWaterLily;
 
 import java.util.List;
 

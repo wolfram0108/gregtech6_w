@@ -53,10 +53,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.biome.Biome;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidBlock;
+import gt6mirror.net.minecraftforge.fluids.IFluidBlock;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import openblocks.common.LiquidXpUtils;
-import openmods.utils.EnchantmentUtils;
+import gt6mirror.openblocks.common.LiquidXpUtils;
+import gt6mirror.openmods.utils.EnchantmentUtils;
 
 import java.util.List;
 

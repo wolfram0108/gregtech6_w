@@ -40,8 +40,8 @@ import gregtech.asm.GT_ASM;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.launchwrapper.IClassTransformer;
-import thaumcraft.api.ThaumcraftApi;
-import thaumcraft.api.aspects.AspectList;
+import gt6mirror.thaumcraft.api.ThaumcraftApi;
+import gt6mirror.thaumcraft.api.aspects.AspectList;
 
 /**
  * @author OvermindDL1

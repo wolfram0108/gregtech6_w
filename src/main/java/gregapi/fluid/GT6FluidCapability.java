@@ -94,10 +94,10 @@ public class GT6FluidCapability {
 		// to JEI and other mods. One adapter bridges the GT6 channel; items enumerated by the same rule.
 		List<net.minecraft.world.item.Item> tItems = new ArrayList<>();
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM)
-			if (tItem instanceof net.minecraftforge.fluids.IFluidContainerItem) tItems.add(tItem);
+			if (tItem instanceof gt6mirror.net.minecraftforge.fluids.IFluidContainerItem) tItems.add(tItem);
 		if (!tItems.isEmpty()) {
 			aEvent.registerItem(Capabilities.Fluid.ITEM,
-				(aStack, aAccess) -> aStack.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem ? new GT6ItemFluidHandler(aAccess) : null,
+				(aStack, aAccess) -> aStack.getItem() instanceof gt6mirror.net.minecraftforge.fluids.IFluidContainerItem ? new GT6ItemFluidHandler(aAccess) : null,
 				tItems.toArray(new net.minecraft.world.level.ItemLike[0]));
 			gregapi.data.CS.OUT.println("GT6 F5-capability: item fluid channel registered for " + tItems.size() + " items (Capabilities.Fluid.ITEM).");
 		}
@@ -111,7 +111,7 @@ public class GT6FluidCapability {
 
 		private static net.neoforged.neoforge.fluids.FluidStack fluidOf(net.neoforged.neoforge.transfer.item.ItemResource aResource) {
 			net.minecraft.world.item.ItemStack tStack = aResource.toStack(1);
-			return tStack.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem tItem ? tItem.getFluid(tStack) : null;
+			return tStack.getItem() instanceof gt6mirror.net.minecraftforge.fluids.IFluidContainerItem tItem ? tItem.getFluid(tStack) : null;
 		}
 
 		@Override protected FluidResource getResourceFrom(net.neoforged.neoforge.transfer.item.ItemResource aResource, int aIndex) {
@@ -126,12 +126,12 @@ public class GT6FluidCapability {
 
 		@Override protected int getCapacity(int aIndex, FluidResource aResource) {
 			net.minecraft.world.item.ItemStack tStack = itemAccess.getResource().toStack(1);
-			return tStack.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem tItem ? tItem.getCapacity(tStack) : 0;
+			return tStack.getItem() instanceof gt6mirror.net.minecraftforge.fluids.IFluidContainerItem tItem ? tItem.getCapacity(tStack) : 0;
 		}
 
 		@Override protected net.neoforged.neoforge.transfer.item.ItemResource update(net.neoforged.neoforge.transfer.item.ItemResource aResource, int aIndex, FluidResource aNewResource, int aNewAmount) {
 			net.minecraft.world.item.ItemStack tStack = aResource.toStack(1);
-			if (!(tStack.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem tItem)) return null;
+			if (!(tStack.getItem() instanceof gt6mirror.net.minecraftforge.fluids.IFluidContainerItem tItem)) return null;
 			tItem.drain(tStack, Integer.MAX_VALUE, true);
 			if (aNewAmount > 0 && tItem.fill(tStack, aNewResource.toStack(aNewAmount), true) != aNewAmount) return null;
 			return net.neoforged.neoforge.transfer.item.ItemResource.of(tStack);

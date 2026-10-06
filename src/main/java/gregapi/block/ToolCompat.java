@@ -43,7 +43,7 @@ import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.DispenserBlock;
 
 import net.neoforged.fml.Logging;
-import forestry.apiculture.tiles.TileCandle;
+import gt6mirror.forestry.apiculture.tiles.TileCandle;
 import gregapi.data.*;
 import gregapi.item.multiitem.MultiItemTool;
 import gregapi.lang.LanguageHandler;
@@ -53,9 +53,9 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import ic2.api.crops.ICropTile;
-import ic2.api.tile.IWrenchable;
-import micdoodle8.mods.galacticraft.core.blocks.BlockAdvanced;
+import gt6mirror.ic2.api.crops.ICropTile;
+import gt6mirror.ic2.api.tile.IWrenchable;
+import gt6mirror.micdoodle8.mods.galacticraft.core.blocks.BlockAdvanced;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -70,7 +70,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.fluids.IFluidBlock;
+import gt6mirror.net.minecraftforge.fluids.IFluidBlock;
 
 import java.util.List;
 import java.util.Random;
@@ -86,21 +86,22 @@ public class ToolCompat {
 	public static boolean GC_BLOCKADVANCED = F, IC_WRENCHABLE = F, IC_CROPTILE = F, AE_BASEBLOCKENTITY = F;
 
 	public static void checkAvailabilities() {
-		try {
+		// gt6mirror types always load, so each class probe runs only when the mod list holds the owner of that API.
+		if (MD.GC.mLoaded) try {
 			BlockAdvanced.class.getCanonicalName();
 			GC_BLOCKADVANCED = T;
 		} catch(Throwable e) {/**/}
-		try {
+		if (MD.IC2.mLoaded) try {
 			IWrenchable.class.getCanonicalName();
 			IC_WRENCHABLE = T;
 		} catch(Throwable e) {/**/}
-		try {
+		if (MD.IC2.mLoaded) try {
 			ICropTile.class.getCanonicalName();
 			IC_CROPTILE = T;
 		} catch(Throwable e) {/**/}
 		try {
-			// AE2 blocks are served by the GregTech wrench (see the arm in onToolClick). AE2 is a compileOnly
-			// dependency (build.gradle:307), so its presence is detected by the class, as with the three flags above.
+			// AE2 blocks are served by the GregTech wrench (see the arm in onToolClick). AE2 compiles against a
+			// stand-in that never ships, so here the class itself proves the real mod is present.
 			appeng.blockentity.AEBaseBlockEntity.class.getCanonicalName();
 			AE_BASEBLOCKENTITY = T;
 		} catch(Throwable e) {/**/}

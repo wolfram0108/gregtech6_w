@@ -32,7 +32,7 @@ import gregapi.recipes.maps.RecipeMapCrucible;
 import gregapi.render.BlockTextureCopied;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import mods.railcraft.common.carts.EntityTunnelBore;
+import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import gregapi.block.Material;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.Level;

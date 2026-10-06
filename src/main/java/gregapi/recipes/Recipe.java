@@ -672,7 +672,7 @@ public class Recipe {
 				FluidStack tFluid = FL.getFluid(aResult, T);
 				if (tFluid != null) {
 					tResults.add(FL.display(tFluid, F, F));
-					for (net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData tData : net.minecraftforge.fluids.FluidContainerRegistry.getRegisteredFluidContainerData()) {
+					for (gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData tData : gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.getRegisteredFluidContainerData()) {
 						if (FL.equal(tData.fluid, tFluid)) tResults.add(ST.copy(tData.filledContainer));
 					}
 				}
@@ -706,7 +706,7 @@ public class Recipe {
 				FluidStack tFluid = FL.getFluid(aInput, T);
 				if (tFluid != null) {
 					tInputs.add(FL.display(tFluid, F, F));
-					for (net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData tData : net.minecraftforge.fluids.FluidContainerRegistry.getRegisteredFluidContainerData()) {
+					for (gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData tData : gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.getRegisteredFluidContainerData()) {
 						if (FL.equal(tData.fluid, tFluid)) tInputs.add(ST.copy(tData.filledContainer));
 					}
 				}
@@ -729,8 +729,8 @@ public class Recipe {
 		// The original recipe-browser hook called NEI directly, whose classes only exist as a compat mirror now;
 		// the call always failed silently, making the "show recipes" icon dead. JEI now fills that role instead.
 		public boolean openNEI   (                  ) {try {return gregapi.GT_API.api_proxy != null && gregapi.GT_API.api_proxy.openRecipeGui(mNameNEI);} catch(Throwable e) {/**/} return F;}
-		public boolean guiRecipes(Object... aOutputs) {try {codechicken.nei.recipe.GuiCraftingRecipe.openRecipeGui(mNameNEI, aOutputs); return T;} catch(Throwable e) {/**/} return F;}
-		public boolean guiUsesNEI(Object... aInputs ) {try {codechicken.nei.recipe.GuiUsageRecipe   .openRecipeGui(mNameNEI, aInputs ); return T;} catch(Throwable e) {/**/} return F;}
+		public boolean guiRecipes(Object... aOutputs) {try {gt6mirror.codechicken.nei.recipe.GuiCraftingRecipe.openRecipeGui(mNameNEI, aOutputs); return T;} catch(Throwable e) {/**/} return F;}
+		public boolean guiUsesNEI(Object... aInputs ) {try {gt6mirror.codechicken.nei.recipe.GuiUsageRecipe   .openRecipeGui(mNameNEI, aInputs ); return T;} catch(Throwable e) {/**/} return F;}
 		
 		/** Old position for the Recipe Maps, please refer to gregapi.data.RM and gregapi.data.FM in the future. */
 		@Deprecated public static RecipeMap sMaceratorRecipes = new RecipeMap(), sFurnaceRecipes = RM.Furnace, sMicrowaveRecipes = RM.Microwave, sFurnaceFuel = FM.Furnace, sByProductList = RM.ByProductList, sCrucibleSmelting = RM.CrucibleSmelting,

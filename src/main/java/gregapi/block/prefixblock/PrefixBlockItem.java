@@ -49,8 +49,8 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Level;
-import vazkii.botania.api.item.IFlowerPlaceable;
-import vazkii.botania.api.subtile.SubTileEntity;
+import gt6mirror.vazkii.botania.api.item.IFlowerPlaceable;
+import gt6mirror.vazkii.botania.api.subtile.SubTileEntity;
 
 import java.util.List;
 

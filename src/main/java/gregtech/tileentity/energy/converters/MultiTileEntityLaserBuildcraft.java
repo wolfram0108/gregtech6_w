@@ -27,7 +27,7 @@ import static gregapi.data.CS.*;
 
 import java.util.List;
 
-import buildcraft.api.power.ILaserTarget;
+import gt6mirror.buildcraft.api.power.ILaserTarget;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetCollisionBoundingBoxFromPool;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetSelectedBoundingBoxFromPool;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_SetBlockBoundsBasedOnState;

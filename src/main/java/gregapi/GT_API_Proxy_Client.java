@@ -1027,7 +1027,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			// AE2 arm (ToolCompat:404): Greg's wrench also serves AE2 blocks — the placement targeting grid must
 			// draw for them too, under the same condition as the arm itself. Live acceptance 2026-08-14: rotation
 			// worked, but the grid was missing — the hint lagged behind the mechanic.
-			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable) || (ToolCompat.AE_BASEBLOCKENTITY && aTileEntity instanceof appeng.blockentity.AEBaseBlockEntity)) && ST.valid(tPlayer.getMainHandItem()) && ToolsGT.contains(TOOL_wrench, tPlayer.getMainHandItem())) {
+			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof gt6mirror.ic2.api.tile.IWrenchable) || (ToolCompat.AE_BASEBLOCKENTITY && aTileEntity instanceof appeng.blockentity.AEBaseBlockEntity)) && ST.valid(tPlayer.getMainHandItem()) && ToolsGT.contains(TOOL_wrench, tPlayer.getMainHandItem())) {
 				RenderHelper.drawWrenchOverlay(aEvent, (byte)0, tSide);
 				return;
 			}

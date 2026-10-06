@@ -47,45 +47,47 @@ public class EnergyCompat {
 	/** Gets Called once during postInit to see which Interfaces are there and Classloaded. */
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	public static void checkAvailabilities() {
-		try {
-			com.rwtema.funkylocomotion.blocks.TilePusher                 .class.getCanonicalName();
-			com.rwtema.funkylocomotion.blocks.TileBooster                .class.getCanonicalName();
+		// A gt6mirror type ships inside GT6 and always loads, so a class probe alone would report every mod present;
+		// each probe therefore runs only when the mod list holds the owner of that API.
+		if (MD.FUNK.mLoaded) try {
+			gt6mirror.com.rwtema.funkylocomotion.blocks.TilePusher                 .class.getCanonicalName();
+			gt6mirror.com.rwtema.funkylocomotion.blocks.TileBooster                .class.getCanonicalName();
 			FL_ENERGY = T;
 		} catch(Throwable e) {/**/}
-		try {
-			cr0s.warpdrive.block.TileEntityAbstractEnergy                .class.getCanonicalName();
+		if (MD.WARPDRIVE.mLoaded) try {
+			gt6mirror.cr0s.warpdrive.block.TileEntityAbstractEnergy                .class.getCanonicalName();
 			WD_ENERGY = T;
 		} catch(Throwable e) {/**/}
-		try {
-			cofh.api.energy.IEnergyHandler                               .class.getCanonicalName();
-			cofh.api.energy.IEnergyConnection                            .class.getCanonicalName();
+		if (MD.COFH_API_ENERGY.mLoaded) try {
+			gt6mirror.cofh.api.energy.IEnergyHandler                               .class.getCanonicalName();
+			gt6mirror.cofh.api.energy.IEnergyConnection                            .class.getCanonicalName();
 			RF_ENERGY = T;
 			// Some Mods do not include this File, due to badly referencing old RF-API stuff, so this gets a separate Boolean now.
-			cofh.api.energy.IEnergyReceiver                              .class.getCanonicalName();
+			gt6mirror.cofh.api.energy.IEnergyReceiver                              .class.getCanonicalName();
 			RF_ENERGY_NEW = T;
 		} catch(Throwable e) {/**/}
-		try {
-			ic2.api.energy.tile.IEnergyTile                              .class.getCanonicalName();
-			ic2.api.energy.tile.IEnergySink                              .class.getCanonicalName();
-			ic2.api.energy.tile.IEnergySource                            .class.getCanonicalName();
-			ic2.api.energy.tile.IEnergyConductor                         .class.getCanonicalName();
+		if (MD.IC2.mLoaded) try {
+			gt6mirror.ic2.api.energy.tile.IEnergyTile                              .class.getCanonicalName();
+			gt6mirror.ic2.api.energy.tile.IEnergySink                              .class.getCanonicalName();
+			gt6mirror.ic2.api.energy.tile.IEnergySource                            .class.getCanonicalName();
+			gt6mirror.ic2.api.energy.tile.IEnergyConductor                         .class.getCanonicalName();
 			IC_ENERGY = T;
 		} catch(Throwable e) {/**/}
-		try {
-			com.builtbroken.mc.api.energy.IEnergyBufferProvider          .class.getCanonicalName();
-			com.builtbroken.mc.api.energy.IEnergyBuffer                  .class.getCanonicalName();
+		if (MD.VOLTZ.mLoaded) try {
+			gt6mirror.com.builtbroken.mc.api.energy.IEnergyBufferProvider          .class.getCanonicalName();
+			gt6mirror.com.builtbroken.mc.api.energy.IEnergyBuffer                  .class.getCanonicalName();
 			BB_ENERGY = T;
 		} catch(Throwable e) {/**/}
-		try {
-			micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC      .class.getCanonicalName();
-			micdoodle8.mods.galacticraft.api.power.EnergySource          .class.getCanonicalName();
-			micdoodle8.mods.galacticraft.api.transmission.tile.IConnector.class.getCanonicalName();
-			micdoodle8.mods.galacticraft.api.transmission.NetworkType    .class.getCanonicalName();
-			micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler .class.getCanonicalName();
+		if (MD.GC.mLoaded) try {
+			gt6mirror.micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC      .class.getCanonicalName();
+			gt6mirror.micdoodle8.mods.galacticraft.api.power.EnergySource          .class.getCanonicalName();
+			gt6mirror.micdoodle8.mods.galacticraft.api.transmission.tile.IConnector.class.getCanonicalName();
+			gt6mirror.micdoodle8.mods.galacticraft.api.transmission.NetworkType    .class.getCanonicalName();
+			gt6mirror.micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler .class.getCanonicalName();
 			GC_ENERGY = T;
 		} catch(Throwable e) {/**/}
-		try {
-			buildcraft.api.power.ILaserTarget                            .class.getCanonicalName();
+		if (MD.BC.mLoaded) try {
+			gt6mirror.buildcraft.api.power.ILaserTarget                            .class.getCanonicalName();
 			BC_LASER = T;
 		} catch(Throwable e) {/**/}
 		try {
@@ -133,22 +135,22 @@ public class EnergyCompat {
 		
 		// Branch removed for the same reason as the field above: its carrier class no longer exists.
 
-		if (FL_ENERGY && (aTarget instanceof com.rwtema.funkylocomotion.blocks.TilePusher || aTarget instanceof com.rwtema.funkylocomotion.blocks.TileBooster)) return T;
+		if (FL_ENERGY && (aTarget instanceof gt6mirror.com.rwtema.funkylocomotion.blocks.TilePusher || aTarget instanceof gt6mirror.com.rwtema.funkylocomotion.blocks.TileBooster)) return T;
 		
-		if (WD_ENERGY &&  aTarget instanceof cr0s.warpdrive.block.TileEntityAbstractEnergy) return ((cr0s.warpdrive.block.TileEntityAbstractEnergy)aTarget).energy_canInput(FORGE_DIR[aSide]);
+		if (WD_ENERGY &&  aTarget instanceof gt6mirror.cr0s.warpdrive.block.TileEntityAbstractEnergy) return ((gt6mirror.cr0s.warpdrive.block.TileEntityAbstractEnergy)aTarget).energy_canInput(FORGE_DIR[aSide]);
 		
-		if (GC_ENERGY &&  aTarget instanceof micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC && (!(aTarget instanceof micdoodle8.mods.galacticraft.api.transmission.tile.IConnector) || ((micdoodle8.mods.galacticraft.api.transmission.tile.IConnector)aTarget).canConnect(FORGE_DIR[aSide], micdoodle8.mods.galacticraft.api.transmission.NetworkType.POWER))) return T;
+		if (GC_ENERGY &&  aTarget instanceof gt6mirror.micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC && (!(aTarget instanceof gt6mirror.micdoodle8.mods.galacticraft.api.transmission.tile.IConnector) || ((gt6mirror.micdoodle8.mods.galacticraft.api.transmission.tile.IConnector)aTarget).canConnect(FORGE_DIR[aSide], gt6mirror.micdoodle8.mods.galacticraft.api.transmission.NetworkType.POWER))) return T;
 		
-		if (BB_ENERGY &&  aTarget instanceof com.builtbroken.mc.api.energy.IEnergyBufferProvider && ((com.builtbroken.mc.api.energy.IEnergyBufferProvider)aTarget).getEnergyBuffer(FORGE_DIR[aSide]) != null) return T;
+		if (BB_ENERGY &&  aTarget instanceof gt6mirror.com.builtbroken.mc.api.energy.IEnergyBufferProvider && ((gt6mirror.com.builtbroken.mc.api.energy.IEnergyBufferProvider)aTarget).getEnergyBuffer(FORGE_DIR[aSide]) != null) return T;
 		
 		if (IC_ENERGY) {
-			BlockEntity tConnected = (aTarget instanceof ic2.api.energy.tile.IEnergyTile || ic2.api.energy.EnergyNet.instance == null ? aTarget : ic2.api.energy.EnergyNet.instance.getTileEntity(aTarget.getLevel(), aTarget.getBlockPos().getX(), aTarget.getBlockPos().getY(), aTarget.getBlockPos().getZ()));
-			if (tConnected instanceof ic2.api.energy.tile.IEnergySink   && (aThis == null || ((ic2.api.energy.tile.IEnergySink  )tConnected).acceptsEnergyFrom(aThis, FORGE_DIR[aSide]))) return T;
-			if (tConnected instanceof ic2.api.energy.tile.IEnergySource && (aThis == null || ((ic2.api.energy.tile.IEnergySource)tConnected).emitsEnergyTo    (aThis, FORGE_DIR[aSide]))) return T;
+			BlockEntity tConnected = (aTarget instanceof gt6mirror.ic2.api.energy.tile.IEnergyTile || gt6mirror.ic2.api.energy.EnergyNet.instance == null ? aTarget : gt6mirror.ic2.api.energy.EnergyNet.instance.getTileEntity(aTarget.getLevel(), aTarget.getBlockPos().getX(), aTarget.getBlockPos().getY(), aTarget.getBlockPos().getZ()));
+			if (tConnected instanceof gt6mirror.ic2.api.energy.tile.IEnergySink   && (aThis == null || ((gt6mirror.ic2.api.energy.tile.IEnergySink  )tConnected).acceptsEnergyFrom(aThis, FORGE_DIR[aSide]))) return T;
+			if (tConnected instanceof gt6mirror.ic2.api.energy.tile.IEnergySource && (aThis == null || ((gt6mirror.ic2.api.energy.tile.IEnergySource)tConnected).emitsEnergyTo    (aThis, FORGE_DIR[aSide]))) return T;
 		}
 		
 		// IMPORTANT: Ignore the Fact that IEnergyConnection is SUPPOSEDLY part of IEnergyHandler. There is versions of the RF API in circulation, where this is NOT the case!!!
-		if (RF_ENERGY && (EMIT_EU_AS_RF || isElectricRFReceiver(aTarget)) && (aTarget instanceof cofh.api.energy.IEnergyHandler || (RF_ENERGY_NEW && aTarget instanceof cofh.api.energy.IEnergyReceiver))) return !(aTarget instanceof cofh.api.energy.IEnergyConnection) || ((cofh.api.energy.IEnergyConnection)aTarget).canConnectEnergy(FORGE_DIR[aSide]);
+		if (RF_ENERGY && (EMIT_EU_AS_RF || isElectricRFReceiver(aTarget)) && (aTarget instanceof gt6mirror.cofh.api.energy.IEnergyHandler || (RF_ENERGY_NEW && aTarget instanceof gt6mirror.cofh.api.energy.IEnergyReceiver))) return !(aTarget instanceof gt6mirror.cofh.api.energy.IEnergyConnection) || ((gt6mirror.cofh.api.energy.IEnergyConnection)aTarget).canConnectEnergy(FORGE_DIR[aSide]);
 
 		// The RF-arm's carrier API doesn't exist in 26.1, so RF_ENERGY is always false; its meaning moves to the
 		// engine's own Capabilities.Energy.BLOCK, which AE2's Energy Acceptor and every other FE receiver already implement.
@@ -222,33 +224,33 @@ public class EnergyCompat {
 
 			// Funky Locomotion includes the OLD RF-API that it does not even use, while also using NEWER parts of the RF API that it does not include... This sort of utter Bullshit makes RF-Mods incompatible with each other...
 			if (FL_ENERGY) {
-				if (aReceiver instanceof com.rwtema.funkylocomotion.blocks.TilePusher ) return checkOverCharge(aSize, aReceiver) ? aAmount : UT.Code.divup(((com.rwtema.funkylocomotion.blocks.TilePusher )aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * aSize * RF_PER_EU * 10), F), aSize * RF_PER_EU * 10);
-				if (aReceiver instanceof com.rwtema.funkylocomotion.blocks.TileBooster) return checkOverCharge(aSize, aReceiver) ? aAmount : UT.Code.divup(((com.rwtema.funkylocomotion.blocks.TileBooster)aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * aSize * RF_PER_EU * 10), F), aSize * RF_PER_EU * 10);
+				if (aReceiver instanceof gt6mirror.com.rwtema.funkylocomotion.blocks.TilePusher ) return checkOverCharge(aSize, aReceiver) ? aAmount : UT.Code.divup(((gt6mirror.com.rwtema.funkylocomotion.blocks.TilePusher )aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * aSize * RF_PER_EU * 10), F), aSize * RF_PER_EU * 10);
+				if (aReceiver instanceof gt6mirror.com.rwtema.funkylocomotion.blocks.TileBooster) return checkOverCharge(aSize, aReceiver) ? aAmount : UT.Code.divup(((gt6mirror.com.rwtema.funkylocomotion.blocks.TileBooster)aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * aSize * RF_PER_EU * 10), F), aSize * RF_PER_EU * 10);
 			}
 			
 			// WarpDrive does not include ANY of the APIs it uses inside its Jar, which is a good thing, but it does force me to do this special case...
 			if (WD_ENERGY) {
-				if (aReceiver instanceof cr0s.warpdrive.block.TileEntityAbstractEnergy) {
-					if (((cr0s.warpdrive.block.TileEntityAbstractEnergy)aReceiver).energy_getEnergyStored() >= ((cr0s.warpdrive.block.TileEntityAbstractEnergy)aReceiver).energy_getMaxStorage()) return 0;
+				if (aReceiver instanceof gt6mirror.cr0s.warpdrive.block.TileEntityAbstractEnergy) {
+					if (((gt6mirror.cr0s.warpdrive.block.TileEntityAbstractEnergy)aReceiver).energy_getEnergyStored() >= ((gt6mirror.cr0s.warpdrive.block.TileEntityAbstractEnergy)aReceiver).energy_getMaxStorage()) return 0;
 					if (checkOverCharge(aSize, aReceiver)) return aAmount;
 					// I love how this does not have any sanity checks, and not even a boolean to check if it worked XD
-					((cr0s.warpdrive.block.TileEntityAbstractEnergy)aReceiver).energy_consume(-aSize);
+					((gt6mirror.cr0s.warpdrive.block.TileEntityAbstractEnergy)aReceiver).energy_consume(-aSize);
 					return 1;
 				}
 			}
 			
 			// GalactiCraft and its Addons
 			if (GC_ENERGY && COMPAT_GC != null) {
-				if (aReceiver instanceof micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC && !(RF_ENERGY && isElectricRFReceiver(aReceiver))) {
-					if (!(aReceiver instanceof micdoodle8.mods.galacticraft.api.transmission.tile.IConnector) || ((micdoodle8.mods.galacticraft.api.transmission.tile.IConnector)aReceiver).canConnect(FORGE_DIR[aSide], micdoodle8.mods.galacticraft.api.transmission.NetworkType.POWER)) {
+				if (aReceiver instanceof gt6mirror.micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC && !(RF_ENERGY && isElectricRFReceiver(aReceiver))) {
+					if (!(aReceiver instanceof gt6mirror.micdoodle8.mods.galacticraft.api.transmission.tile.IConnector) || ((gt6mirror.micdoodle8.mods.galacticraft.api.transmission.tile.IConnector)aReceiver).canConnect(FORGE_DIR[aSide], gt6mirror.micdoodle8.mods.galacticraft.api.transmission.NetworkType.POWER)) {
 						if (checkOverCharge(aSize, aReceiver)) return aAmount;
-						float tSizeToReceive = aSize * micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler.IC2_RATIO, tStored = ((micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC)aReceiver).getEnergyStoredGC((micdoodle8.mods.galacticraft.api.power.EnergySource)COMPAT_GC.dir(aSide));
-						if (tSizeToReceive >= tStored || tSizeToReceive <= ((micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC)aReceiver).getMaxEnergyStoredGC((micdoodle8.mods.galacticraft.api.power.EnergySource)COMPAT_GC.dir(aSide)) - tStored) {
-							float tReceived = ((micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC)aReceiver).receiveEnergyGC((micdoodle8.mods.galacticraft.api.power.EnergySource)COMPAT_GC.dir(aSide), tSizeToReceive, F);
+						float tSizeToReceive = aSize * gt6mirror.micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler.IC2_RATIO, tStored = ((gt6mirror.micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC)aReceiver).getEnergyStoredGC((gt6mirror.micdoodle8.mods.galacticraft.api.power.EnergySource)COMPAT_GC.dir(aSide));
+						if (tSizeToReceive >= tStored || tSizeToReceive <= ((gt6mirror.micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC)aReceiver).getMaxEnergyStoredGC((gt6mirror.micdoodle8.mods.galacticraft.api.power.EnergySource)COMPAT_GC.dir(aSide)) - tStored) {
+							float tReceived = ((gt6mirror.micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC)aReceiver).receiveEnergyGC((gt6mirror.micdoodle8.mods.galacticraft.api.power.EnergySource)COMPAT_GC.dir(aSide), tSizeToReceive, F);
 							if (tReceived > 0) {
 								tSizeToReceive -= tReceived;
 								while (tSizeToReceive > 0) {
-									tReceived = ((micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC)aReceiver).receiveEnergyGC((micdoodle8.mods.galacticraft.api.power.EnergySource)COMPAT_GC.dir(aSide), tSizeToReceive, F);
+									tReceived = ((gt6mirror.micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC)aReceiver).receiveEnergyGC((gt6mirror.micdoodle8.mods.galacticraft.api.power.EnergySource)COMPAT_GC.dir(aSide), tSizeToReceive, F);
 									if (tReceived < 1) break;
 									tSizeToReceive -= tReceived;
 								}
@@ -261,19 +263,19 @@ public class EnergyCompat {
 			}
 			
 			// Voltz Stuff
-			if (BB_ENERGY && aReceiver instanceof com.builtbroken.mc.api.energy.IEnergyBufferProvider) {
-				Object tEnergyBuffer = ((com.builtbroken.mc.api.energy.IEnergyBufferProvider)aReceiver).getEnergyBuffer(FORGE_DIR[aSide]);
+			if (BB_ENERGY && aReceiver instanceof gt6mirror.com.builtbroken.mc.api.energy.IEnergyBufferProvider) {
+				Object tEnergyBuffer = ((gt6mirror.com.builtbroken.mc.api.energy.IEnergyBufferProvider)aReceiver).getEnergyBuffer(FORGE_DIR[aSide]);
 				if (tEnergyBuffer != null) {
 					//noinspection CastCanBeRemovedNarrowingVariableType
-					return checkOverCharge(aSize, aReceiver) ? aAmount : UT.Code.divup(((com.builtbroken.mc.api.energy.IEnergyBuffer)tEnergyBuffer).addEnergyToStorage(UT.Code.bind31(aSize * aAmount) * J_PER_EU, T), aSize * J_PER_EU);
+					return checkOverCharge(aSize, aReceiver) ? aAmount : UT.Code.divup(((gt6mirror.com.builtbroken.mc.api.energy.IEnergyBuffer)tEnergyBuffer).addEnergyToStorage(UT.Code.bind31(aSize * aAmount) * J_PER_EU, T), aSize * J_PER_EU);
 				}
 			}
 			
 			// Electricity alike RF Receivers that are whitelisted for my Power System.
 			if (RF_ENERGY && (EMIT_EU_AS_RF || isElectricRFReceiver(aReceiver))) {
-				if (!(aReceiver instanceof cofh.api.energy.IEnergyConnection) || ((cofh.api.energy.IEnergyConnection)aReceiver).canConnectEnergy(FORGE_DIR[aSide])) {
-					if (RF_ENERGY_NEW && aReceiver instanceof cofh.api.energy.IEnergyReceiver) return checkOverCharge(aSize, aReceiver) ? aAmount : UT.Code.divup(((cofh.api.energy.IEnergyReceiver)aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * aSize * RF_PER_EU), F), aSize * RF_PER_EU);
-					if (                 aReceiver instanceof cofh.api.energy.IEnergyHandler ) return checkOverCharge(aSize, aReceiver) ? aAmount : UT.Code.divup(((cofh.api.energy.IEnergyHandler )aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * aSize * RF_PER_EU), F), aSize * RF_PER_EU);
+				if (!(aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyConnection) || ((gt6mirror.cofh.api.energy.IEnergyConnection)aReceiver).canConnectEnergy(FORGE_DIR[aSide])) {
+					if (RF_ENERGY_NEW && aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyReceiver) return checkOverCharge(aSize, aReceiver) ? aAmount : UT.Code.divup(((gt6mirror.cofh.api.energy.IEnergyReceiver)aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * aSize * RF_PER_EU), F), aSize * RF_PER_EU);
+					if (                 aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyHandler ) return checkOverCharge(aSize, aReceiver) ? aAmount : UT.Code.divup(((gt6mirror.cofh.api.energy.IEnergyHandler )aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * aSize * RF_PER_EU), F), aSize * RF_PER_EU);
 				}
 				return 0;
 			}
@@ -285,12 +287,12 @@ public class EnergyCompat {
 			
 			// IC2 Power at last, because special cases should always override the very "compatible" IC2 Stuff.
 			if (IC_ENERGY) {
-				BlockEntity tReceiver = (aReceiver instanceof ic2.api.energy.tile.IEnergyTile || ic2.api.energy.EnergyNet.instance == null ? aReceiver : ic2.api.energy.EnergyNet.instance.getTileEntity(aReceiver.getLevel(), aReceiver.getBlockPos().getX(), aReceiver.getBlockPos().getY(), aReceiver.getBlockPos().getZ()));
-				if (tReceiver instanceof ic2.api.energy.tile.IEnergySink && ((ic2.api.energy.tile.IEnergySink)tReceiver).acceptsEnergyFrom(aEmitter instanceof BlockEntity ? (BlockEntity)aEmitter : null, FORGE_DIR[aSide])) {
+				BlockEntity tReceiver = (aReceiver instanceof gt6mirror.ic2.api.energy.tile.IEnergyTile || gt6mirror.ic2.api.energy.EnergyNet.instance == null ? aReceiver : gt6mirror.ic2.api.energy.EnergyNet.instance.getTileEntity(aReceiver.getLevel(), aReceiver.getBlockPos().getX(), aReceiver.getBlockPos().getY(), aReceiver.getBlockPos().getZ()));
+				if (tReceiver instanceof gt6mirror.ic2.api.energy.tile.IEnergySink && ((gt6mirror.ic2.api.energy.tile.IEnergySink)tReceiver).acceptsEnergyFrom(aEmitter instanceof BlockEntity ? (BlockEntity)aEmitter : null, FORGE_DIR[aSide])) {
 					long rUsedAmount = 0;
-					while (aAmount > rUsedAmount && ((ic2.api.energy.tile.IEnergySink)tReceiver).getDemandedEnergy() >= (rUsedAmount <= 0 && aSize <= VMAX[0] ? 4 : aSize) && ((ic2.api.energy.tile.IEnergySink)tReceiver).injectEnergy(FORGE_DIR[aSide], aSize, aSize) < aSize) rUsedAmount++;
+					while (aAmount > rUsedAmount && ((gt6mirror.ic2.api.energy.tile.IEnergySink)tReceiver).getDemandedEnergy() >= (rUsedAmount <= 0 && aSize <= VMAX[0] ? 4 : aSize) && ((gt6mirror.ic2.api.energy.tile.IEnergySink)tReceiver).injectEnergy(FORGE_DIR[aSide], aSize, aSize) < aSize) rUsedAmount++;
 					if (rUsedAmount > 0) {
-						int tTier = ((ic2.api.energy.tile.IEnergySink)tReceiver).getSinkTier();
+						int tTier = ((gt6mirror.ic2.api.energy.tile.IEnergySink)tReceiver).getSinkTier();
 						if (tTier >= 0 && tTier < VMAX.length-1 && aSize > VMAX[tTier]) {
 							Level tWorld = tReceiver.getLevel();
 							WD.set(tWorld, tReceiver.getBlockPos().getX(), tReceiver.getBlockPos().getY(), tReceiver.getBlockPos().getZ(), NB, 0, 3);
@@ -316,9 +318,9 @@ public class EnergyCompat {
 			if (aEnergyType == TD.Energy.RF) tSizeToReceive = aSize;
 			
 			if (tSizeToReceive > 0) {
-				if (!(aReceiver instanceof cofh.api.energy.IEnergyConnection) || ((cofh.api.energy.IEnergyConnection)aReceiver).canConnectEnergy(FORGE_DIR[aSide])) {
-					if (RF_ENERGY_NEW && aReceiver instanceof cofh.api.energy.IEnergyReceiver) return UT.Code.divup(((cofh.api.energy.IEnergyReceiver)aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * tSizeToReceive), F), tSizeToReceive);
-					if (                 aReceiver instanceof cofh.api.energy.IEnergyHandler ) return UT.Code.divup(((cofh.api.energy.IEnergyHandler )aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * tSizeToReceive), F), tSizeToReceive);
+				if (!(aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyConnection) || ((gt6mirror.cofh.api.energy.IEnergyConnection)aReceiver).canConnectEnergy(FORGE_DIR[aSide])) {
+					if (RF_ENERGY_NEW && aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyReceiver) return UT.Code.divup(((gt6mirror.cofh.api.energy.IEnergyReceiver)aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * tSizeToReceive), F), tSizeToReceive);
+					if (                 aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyHandler ) return UT.Code.divup(((gt6mirror.cofh.api.energy.IEnergyHandler )aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * tSizeToReceive), F), tSizeToReceive);
 				}
 			}
 		}

@@ -33,13 +33,13 @@ import gregapi.item.multiitem.behaviors.IBehavior;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import ic2.api.crops.ICropTile;
+import gt6mirror.ic2.api.crops.ICropTile;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.net.minecraftforge.fluids.IFluidContainerItem;
 
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;

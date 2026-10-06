@@ -25,12 +25,12 @@ package gregapi.compat.forestry;
 import gregapi.util.WD;
 
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
-import forestry.api.farming.Farmables;
-import forestry.api.farming.ICrop;
-import forestry.api.farming.IFarmable;
-import forestry.api.storage.BackpackManager;
-import forestry.core.utils.vect.Vect;
-import forestry.farming.logic.CropBlock;
+import gt6mirror.forestry.api.farming.Farmables;
+import gt6mirror.forestry.api.farming.ICrop;
+import gt6mirror.forestry.api.farming.IFarmable;
+import gt6mirror.forestry.api.storage.BackpackManager;
+import gt6mirror.forestry.core.utils.vect.Vect;
+import gt6mirror.forestry.farming.logic.CropBlock;
 import gregapi.block.ItemBlockBase;
 import gregapi.block.tree.BlockBaseSapling;
 import gregapi.code.ItemStackContainer;

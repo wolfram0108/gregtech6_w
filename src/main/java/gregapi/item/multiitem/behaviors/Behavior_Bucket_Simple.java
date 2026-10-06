@@ -34,7 +34,7 @@ import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import iguanaman.hungeroverhaul.config.IguanaConfig;
+import gt6mirror.iguanaman.hungeroverhaul.config.IguanaConfig;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CauldronBlock;
 import net.minecraft.world.level.block.DispenserBlock;
@@ -53,7 +53,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidBlock;
+import gt6mirror.net.minecraftforge.fluids.IFluidBlock;
 
 public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	public static final IBehavior<MultiItem> INSTANCE = new Behavior_Bucket_Simple(NI);

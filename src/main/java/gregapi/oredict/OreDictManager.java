@@ -47,10 +47,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.common.NeoForge;
 // The Forge fluid-container-registry types are gone from the engine and compiled here only as a compat
 // mirror; auto-registration stays a no-op by design, so this loop compiles but its registry is always empty.
-import net.minecraftforge.fluids.FluidContainerRegistry;
-import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
-import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerRegisterEvent;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry;
+import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
+import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerRegisterEvent;
+import gt6mirror.net.minecraftforge.fluids.IFluidContainerItem;
 import gregapi.oredict.OreDictionary;
 import gregapi.oredict.OreDictionary.OreRegisterEvent;
 

@@ -23,10 +23,10 @@
 
 package gregapi.data;
 
-import com.cricketcraft.chisel.api.carving.CarvingUtils;
+import gt6mirror.com.cricketcraft.chisel.api.carving.CarvingUtils;
 import net.neoforged.fml.InterModComms;
-import ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
-import ganymedes01.etfuturum.recipes.SmokerRecipes;
+import gt6mirror.ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
+import gt6mirror.ganymedes01.etfuturum.recipes.SmokerRecipes;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.IItemContainer;
 import gregapi.config.ConfigCategories;
@@ -46,7 +46,7 @@ import net.minecraft.world.item.ItemStack;
 import gregapi.recipes.FurnaceRecipes; // Recreates 1.7.10's vanilla FurnaceRecipes since neo removed the mutable smelting-list API.
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.fluids.FluidStack;
-import team.chisel.carving.Carving;
+import gt6mirror.team.chisel.carving.Carving;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -988,9 +988,9 @@ public class RM {
 		if (ST.ingredable(aInput)) {
 			if (ENABLE_ADDING_IC2_MACERATOR_RECIPES) {
 				if (ConfigsGT.RECIPES.get(ConfigCategories.Machines.maceration, aInput, T)) {
-					UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.macerator, aInput, null, aOutput1);
+					UT.addSimpleIC2MachineRecipe(gt6mirror.ic2.api.recipe.Recipes.macerator, aInput, null, aOutput1);
 				} else {
-					UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.macerator.getRecipes(), null);
+					UT.removeSimpleIC2MachineRecipe(aInput, gt6mirror.ic2.api.recipe.Recipes.macerator.getRecipes(), null);
 				}
 			}
 			
@@ -1005,7 +1005,7 @@ public class RM {
 				if (!OP.log.contains(aInput) && ConfigsGT.RECIPES.get(ConfigCategories.Machines.rockcrushing, aInput, ST.block(aInput) != NB)) {
 					try {
 						if (ST.block(aInput) != Blocks.OBSIDIAN && ST.block(aInput) != Blocks.GRAVEL) {
-							mods.railcraft.api.crafting.IRockCrusherRecipe tRecipe = mods.railcraft.api.crafting.RailcraftCraftingManager.rockCrusher.createNewRecipe(ST.amount(1, aInput), ST.meta_(aInput) != W, F);
+							gt6mirror.mods.railcraft.api.crafting.IRockCrusherRecipe tRecipe = gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.rockCrusher.createNewRecipe(ST.amount(1, aInput), ST.meta_(aInput) != W, F);
 							tRecipe.addOutput(ST.copy(aOutput1), 1.0F/aInput.getCount());
 							if (aOutput2 != null) tRecipe.addOutput(ST.copy(aOutput2), (0.01F*(aChance2<=0?10:aChance2))/aInput.getCount());
 							if (aOutput3 != null) tRecipe.addOutput(ST.copy(aOutput3), (0.01F*(aChance3<=0?10:aChance3))/aInput.getCount());
@@ -1026,48 +1026,48 @@ public class RM {
 		if (!ENABLE_ADDING_IC2_MACERATOR_RECIPES || ST.invalid(aInput) || ST.invalid(aOutput)) return F;
 		aOutput = ST.validMeta(OM.get_(aOutput));
 		if (!ConfigsGT.RECIPES.get(ConfigCategories.Machines.extractor, aInput, T)) {
-			UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.macerator.getRecipes(), null);
+			UT.removeSimpleIC2MachineRecipe(aInput, gt6mirror.ic2.api.recipe.Recipes.macerator.getRecipes(), null);
 			return F;
 		}
-		UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.macerator, aInput, null, aOutput);
+		UT.addSimpleIC2MachineRecipe(gt6mirror.ic2.api.recipe.Recipes.macerator, aInput, null, aOutput);
 		return T;
 	}
 	public static boolean ic2_extractor(ItemStack aInput, ItemStack aOutput) {
 		if (!ENABLE_ADDING_IC2_EXTRACTOR_RECIPES || ST.invalid(aInput) || ST.invalid(aOutput)) return F;
 		aOutput = ST.validMeta(OM.get_(aOutput));
 		if (!ConfigsGT.RECIPES.get(ConfigCategories.Machines.extractor, aInput, T)) {
-			UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.extractor.getRecipes(), null);
+			UT.removeSimpleIC2MachineRecipe(aInput, gt6mirror.ic2.api.recipe.Recipes.extractor.getRecipes(), null);
 			return F;
 		}
-		UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.extractor, aInput, null, aOutput);
+		UT.addSimpleIC2MachineRecipe(gt6mirror.ic2.api.recipe.Recipes.extractor, aInput, null, aOutput);
 		return T;
 	}
 	public static boolean ic2_compressor(ItemStack aInput, ItemStack aOutput) {
 		if (!ENABLE_ADDING_IC2_COMPRESSOR_RECIPES || ST.invalid(aInput) || ST.invalid(aOutput)) return F;
 		aOutput = ST.validMeta(OM.get_(aOutput));
 		if (!ConfigsGT.RECIPES.get(ConfigCategories.Machines.compression, aInput, T)) {
-			UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.compressor.getRecipes(), null);
+			UT.removeSimpleIC2MachineRecipe(aInput, gt6mirror.ic2.api.recipe.Recipes.compressor.getRecipes(), null);
 			return F;
 		}
-		UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.compressor, aInput, null, aOutput);
+		UT.addSimpleIC2MachineRecipe(gt6mirror.ic2.api.recipe.Recipes.compressor, aInput, null, aOutput);
 		return T;
 	}
 	public static boolean ic2_orewasher(ItemStack aInput, long aWaterAmount, Object... aOutput) {
 		if (!ENABLE_ADDING_IC2_OREWASHER_RECIPES || ST.invalid(aInput) || aOutput == null || aOutput.length <= 0 || aOutput[0] == null) return F;
 		if (!ConfigsGT.RECIPES.get(ConfigCategories.Machines.orewashing, aInput, T)) {
-			UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.oreWashing.getRecipes(), null);
+			UT.removeSimpleIC2MachineRecipe(aInput, gt6mirror.ic2.api.recipe.Recipes.oreWashing.getRecipes(), null);
 			return F;
 		}
-		UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.oreWashing, aInput, UT.NBT.makeLong("amount", aWaterAmount), aOutput);
+		UT.addSimpleIC2MachineRecipe(gt6mirror.ic2.api.recipe.Recipes.oreWashing, aInput, UT.NBT.makeLong("amount", aWaterAmount), aOutput);
 		return T;
 	}
 	public static boolean ic2_centrifuge(ItemStack aInput, long aHeat, Object... aOutput) {
 		if (!ENABLE_ADDING_IC2_CENTRIFUGE_RECIPES || ST.invalid(aInput) || aOutput == null || aOutput.length <= 0 || aOutput[0] == null) return F;
 		if (!ConfigsGT.RECIPES.get(ConfigCategories.Machines.thermalcentrifuge, aInput, T)) {
-			UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.centrifuge.getRecipes(), null);
+			UT.removeSimpleIC2MachineRecipe(aInput, gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), null);
 			return F;
 		}
-		UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.centrifuge, aInput, UT.NBT.makeLong("minHeat", aHeat), aOutput);
+		UT.addSimpleIC2MachineRecipe(gt6mirror.ic2.api.recipe.Recipes.centrifuge, aInput, UT.NBT.makeLong("minHeat", aHeat), aOutput);
 		return T;
 	}
 	

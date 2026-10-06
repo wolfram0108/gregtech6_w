@@ -38,12 +38,12 @@ import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import ic2.api.crops.Crops;
+import gt6mirror.ic2.api.crops.Crops;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.WeightedRandomChestContent;
-import net.minecraftforge.common.ChestGenHooks;
+import gt6mirror.net.minecraftforge.common.WeightedRandomChestContent;
+import gt6mirror.net.minecraftforge.common.ChestGenHooks;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;
@@ -94,11 +94,11 @@ public class Compat_Recipes_IndustrialCraft extends CompatMods {
 		CR.shaped(ST.mkic("ironFence", 6), CR.DEF | CR.DEL_OTHER_SHAPED_RECIPES, "XXX", "XXX", " w ", 'X', OP.stick.dat(ANY.Fe));
 		
 		try {
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.compressor.getRecipes(), IL.Cell_Air.get(1));
-			UT.removeSimpleIC2MachineRecipe(ST.make(Items.SNOWBALL   , 1, W), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.SNOW      , 1, W), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.ICE       , 1, W), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.PACKED_ICE, 1, W), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.compressor.getRecipes(), IL.Cell_Air.get(1));
+			UT.removeSimpleIC2MachineRecipe(ST.make(Items.SNOWBALL   , 1, W), gt6mirror.ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.SNOW      , 1, W), gt6mirror.ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.ICE       , 1, W), gt6mirror.ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.PACKED_ICE, 1, W), gt6mirror.ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		}
@@ -116,7 +116,7 @@ public class Compat_Recipes_IndustrialCraft extends CompatMods {
 		if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.harderrecipes, "ic2_" + (tName = "solarPanel"), T)) {CR.shaped(ST.mkic(tName, 1), CR.DEF | CR.DEL_OTHER_SHAPED_RECIPES, "wGd", "WSW", "CMC", 'M', IL.IC2_Machine, 'C', OD_CIRCUITS[1], 'W', OP.cableGt01.dat(ANY.Cu), 'S', OP.plateGem.dat(ANY.Si), 'G', OP.plateGem.dat(MT.Glass));}
 		
 		try {
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.compressor.getRecipes(), ST.make(MD.IC2, "item.itemPartDCP", 1, 0));
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.compressor.getRecipes(), ST.make(MD.IC2, "item.itemPartDCP", 1, 0));
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		}
@@ -230,43 +230,43 @@ public class Compat_Recipes_IndustrialCraft extends CompatMods {
 		for (WeightedRandomChestContent tContent : ChestGenHooks.getInfo(ChestGenHooks.MINESHAFT_CORRIDOR      ).getItems(RNGSUS)) if (IL.IC2_Iridium_Shard.equal(tContent.theItemId, F, T)) ST.set(tContent.theItemId, IL.IC2_Scrapbox.get(1), F, T); else if (IL.IC2_Iridium_Ore.equal(tContent.theItemId, F, T)) ST.set(tContent.theItemId, IL.IC2_Iridium_Shard.get(1), F, T);
 		
 		try {
-			UT.removeSimpleIC2MachineRecipe(ST.make(Items.GUNPOWDER, 1, 0), ic2.api.recipe.Recipes.extractor.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), IL.Cell_Empty.get(1));
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), IL.IC2_Fuel_Rod_Empty.get(1));
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), IL.IC2_Food_Can_Empty.get(1));
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), IL.IC2_ShaftIron.get(1));
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), IL.IC2_ShaftSteel.get(1));
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), ST.mkic("ironFence", 1));
-			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.W, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Au, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Fe, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Cu, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Pb, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Sn, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Steel, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Bronze, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Au, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Fe, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Cu, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Pb, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Sn, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Steel, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Bronze, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.WHITE_WOOL, 1, W), ic2.api.recipe.Recipes.extractor.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(IL.IC2_Energium_Dust.get(1), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(IL.IC2_Fuel_Rod_Empty.get(1), ic2.api.recipe.Recipes.macerator.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedUraniumSimple", 1), ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedUraniumDual", 1)  , ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedUraniumQuad", 1)  , ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedMOXSimple", 1)    , ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedMOXDual", 1)      , ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedMOXQuad", 1)      , ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.mkic("RTGPellets", 1)                  , ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.centrifuge.getRecipes(), ST.mkic("Uran238", 1));
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.centrifuge.getRecipes(), ST.mkic("Uran235", 1));
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.centrifuge.getRecipes(), ST.mkic("smallUran235", 1));
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.centrifuge.getRecipes(), ST.mkic("smallPlutonium", 1));
-			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.centrifuge.getRecipes(), ST.mkic("Plutonium", 1));
+			UT.removeSimpleIC2MachineRecipe(ST.make(Items.GUNPOWDER, 1, 0), gt6mirror.ic2.api.recipe.Recipes.extractor.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), IL.Cell_Empty.get(1));
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), IL.IC2_Fuel_Rod_Empty.get(1));
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), IL.IC2_Food_Can_Empty.get(1));
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), IL.IC2_ShaftIron.get(1));
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), IL.IC2_ShaftSteel.get(1));
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), ST.mkic("ironFence", 1));
+			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.W, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Au, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Fe, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Cu, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Pb, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Sn, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Steel, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.ingot.mat(MT.Bronze, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Au, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Fe, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Cu, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Pb, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Sn, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Steel, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Bronze, 1), gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.WHITE_WOOL, 1, W), gt6mirror.ic2.api.recipe.Recipes.extractor.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(IL.IC2_Energium_Dust.get(1), gt6mirror.ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(IL.IC2_Fuel_Rod_Empty.get(1), gt6mirror.ic2.api.recipe.Recipes.macerator.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedUraniumSimple", 1), gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedUraniumDual", 1)  , gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedUraniumQuad", 1)  , gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedMOXSimple", 1)    , gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedMOXDual", 1)      , gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedMOXQuad", 1)      , gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.mkic("RTGPellets", 1)                  , gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), ST.mkic("Uran238", 1));
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), ST.mkic("Uran235", 1));
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), ST.mkic("smallUran235", 1));
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), ST.mkic("smallPlutonium", 1));
+			UT.removeSimpleIC2MachineRecipe(NI, gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes(), ST.mkic("Plutonium", 1));
 			
 			Object tCrop;
 			UT.Reflection.getField(tCrop = Crops.instance.getCropList()[13], "mDrop").set(tCrop, OP.plantGtBlossom.mat(MT.Fe, 1));

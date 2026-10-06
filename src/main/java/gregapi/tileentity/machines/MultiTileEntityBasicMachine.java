@@ -28,7 +28,7 @@ import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import gregapi.fluid.FluidTankInfo;
 
-import buildcraft.api.tiles.IHasWork;
+import gt6mirror.buildcraft.api.tiles.IHasWork;
 import gregapi.api.Optional;
 import gregapi.GT_API;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
@@ -64,7 +64,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraftforge.fluids.*;
+import gt6mirror.net.minecraftforge.fluids.*;
 
 import java.util.Collection;
 import java.util.List;

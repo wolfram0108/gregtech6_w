@@ -64,7 +64,7 @@ import gregapi.tileentity.inventories.ITileEntityBookShelf;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import mekanism.api.MekanismAPI;
+import gt6mirror.mekanism.api.MekanismAPI;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import gregapi.block.MapColor;
@@ -86,7 +86,7 @@ import net.minecraft.util.*;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.IPlantable;
+import gt6mirror.net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 import net.neoforged.neoforge.event.EventHooks;
 

@@ -25,7 +25,7 @@ package gregapi.compat.galacticraft;
 
 import gregapi.api.Optional;
 import gregapi.data.CS.ModIDs;
-import micdoodle8.mods.galacticraft.api.block.IPartialSealableBlock;
+import gt6mirror.micdoodle8.mods.galacticraft.api.block.IPartialSealableBlock;
 
 /**
  * @author Gregorius Techneticies

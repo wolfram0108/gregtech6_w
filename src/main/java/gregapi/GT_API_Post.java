@@ -54,8 +54,8 @@ import gregapi.util.UT;
 import gregapi.wooddict.*;
 import gregapi.worldgen.StoneLayer;
 import net.minecraft.world.item.enchantment.Enchantment;
-import twilightforest.TFTreasure;
-import twilightforest.TFTreasureTable;
+import gt6mirror.twilightforest.TFTreasure;
+import gt6mirror.twilightforest.TFTreasureTable;
 
 import static gregapi.data.CS.*;
 
@@ -696,11 +696,11 @@ public class GT_API_Post extends Abstract_Mod {
 	@Override
 	public void onModPostInit2(FMLPostInitializationEvent aEvent) {gregapi.GT_API.deferItemInit(() -> onModPostInit2Deferred(aEvent));} // PostInit data-init is deferred to server start too, for the same registry-binding reason
 	private void onModPostInit2Deferred(FMLPostInitializationEvent aEvent) {
-		if (DISABLE_ALL_IC2_COMPRESSOR_RECIPES  ) ic2.api.recipe.Recipes.compressor.getRecipes().clear();
-		if (DISABLE_ALL_IC2_EXTRACTOR_RECIPES   ) ic2.api.recipe.Recipes.extractor .getRecipes().clear();
-		if (DISABLE_ALL_IC2_MACERATOR_RECIPES   ) ic2.api.recipe.Recipes.macerator .getRecipes().clear();
-		if (DISABLE_ALL_IC2_OREWASHER_RECIPES   ) ic2.api.recipe.Recipes.oreWashing.getRecipes().clear();
-		if (DISABLE_ALL_IC2_CENTRIFUGE_RECIPES  ) ic2.api.recipe.Recipes.centrifuge.getRecipes().clear();
+		if (DISABLE_ALL_IC2_COMPRESSOR_RECIPES  ) gt6mirror.ic2.api.recipe.Recipes.compressor.getRecipes().clear();
+		if (DISABLE_ALL_IC2_EXTRACTOR_RECIPES   ) gt6mirror.ic2.api.recipe.Recipes.extractor .getRecipes().clear();
+		if (DISABLE_ALL_IC2_MACERATOR_RECIPES   ) gt6mirror.ic2.api.recipe.Recipes.macerator .getRecipes().clear();
+		if (DISABLE_ALL_IC2_OREWASHER_RECIPES   ) gt6mirror.ic2.api.recipe.Recipes.oreWashing.getRecipes().clear();
+		if (DISABLE_ALL_IC2_CENTRIFUGE_RECIPES  ) gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes().clear();
 		
 		// Clearing the AE Grindstone Recipe List.
 		// This clear-call is gone because AE2 26.1 removed the Grindstone along with the registry it used to clear.
@@ -870,11 +870,11 @@ public class GT_API_Post extends Abstract_Mod {
 	
 	@Override
 	public void onModServerStarting2(ServerStartingEvent aEvent) {
-		if (DISABLE_ALL_IC2_COMPRESSOR_RECIPES) ic2.api.recipe.Recipes.compressor.getRecipes().clear();
-		if (DISABLE_ALL_IC2_EXTRACTOR_RECIPES ) ic2.api.recipe.Recipes.extractor .getRecipes().clear();
-		if (DISABLE_ALL_IC2_MACERATOR_RECIPES ) ic2.api.recipe.Recipes.macerator .getRecipes().clear();
-		if (DISABLE_ALL_IC2_OREWASHER_RECIPES ) ic2.api.recipe.Recipes.oreWashing.getRecipes().clear();
-		if (DISABLE_ALL_IC2_CENTRIFUGE_RECIPES) ic2.api.recipe.Recipes.centrifuge.getRecipes().clear();
+		if (DISABLE_ALL_IC2_COMPRESSOR_RECIPES) gt6mirror.ic2.api.recipe.Recipes.compressor.getRecipes().clear();
+		if (DISABLE_ALL_IC2_EXTRACTOR_RECIPES ) gt6mirror.ic2.api.recipe.Recipes.extractor .getRecipes().clear();
+		if (DISABLE_ALL_IC2_MACERATOR_RECIPES ) gt6mirror.ic2.api.recipe.Recipes.macerator .getRecipes().clear();
+		if (DISABLE_ALL_IC2_OREWASHER_RECIPES ) gt6mirror.ic2.api.recipe.Recipes.oreWashing.getRecipes().clear();
+		if (DISABLE_ALL_IC2_CENTRIFUGE_RECIPES) gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes().clear();
 	}
 
 	@Override public void onModServerStarted2(ServerStartedEvent aEvent) {/**/}

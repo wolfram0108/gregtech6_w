@@ -29,7 +29,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.SoundType;
 
 import static gregapi.data.CS.*;
-import static net.minecraftforge.common.EnumPlantType.*;
+import static gt6mirror.net.minecraftforge.common.EnumPlantType.*;
 
 import java.util.List;
 import java.util.Random;
@@ -47,7 +47,7 @@ import gregapi.render.RendererBlockTextured;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import mods.railcraft.common.carts.EntityTunnelBore;
+import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
 import net.minecraft.world.item.CreativeModeTab;
@@ -62,8 +62,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.EnumPlantType;
-import net.minecraftforge.common.IPlantable;
+import gt6mirror.net.minecraftforge.common.EnumPlantType;
+import gt6mirror.net.minecraftforge.common.IPlantable;
 
 public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRenderedBlock {
 	public BlockBaseLilyPad(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {

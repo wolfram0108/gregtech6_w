@@ -46,9 +46,9 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.fluids.FluidContainerRegistry;
-import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry;
+import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
+import gt6mirror.net.minecraftforge.fluids.IFluidContainerItem;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -869,7 +869,7 @@ public enum FL {
 			return gregapi.util.WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) == 0 ? Water.make(1000) : null;
 		}
 		// GT6 fluids answer through their own channel: classic gates on canDrain, finite reports quanta from its meta.
-		if (tBlock instanceof net.minecraftforge.fluids.IFluidBlock tFluidBlock) {
+		if (tBlock instanceof gt6mirror.net.minecraftforge.fluids.IFluidBlock tFluidBlock) {
 			if (!tFluidBlock.canDrain(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())) return null;
 			FluidStack rFluid = tFluidBlock.drain(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), F);
 			return rFluid == null || rFluid.getAmount() <= 0 ? null : rFluid;
@@ -893,7 +893,7 @@ public enum FL {
 		FluidStack rFluid = drainable(aWorld, aPos);
 		if (rFluid == null) return null;
 		net.minecraft.world.level.block.Block tBlock = aWorld.getBlockState(aPos).getBlock();
-		if (tBlock instanceof net.minecraftforge.fluids.IFluidBlock tFluidBlock) {
+		if (tBlock instanceof gt6mirror.net.minecraftforge.fluids.IFluidBlock tFluidBlock) {
 			// GT6 fluids remove themselves via their own drain(..., true); the finite variant also recalculates neighbors.
 			tFluidBlock.drain(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		} else {

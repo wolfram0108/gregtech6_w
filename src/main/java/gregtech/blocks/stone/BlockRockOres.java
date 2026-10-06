@@ -35,7 +35,7 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.WD;
 import gregapi.worldgen.StoneLayer;
-import mods.railcraft.common.carts.EntityTunnelBore;
+import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import gregapi.block.Material;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;

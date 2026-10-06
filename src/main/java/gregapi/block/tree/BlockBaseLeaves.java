@@ -36,7 +36,7 @@ import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock;
+import gt6mirror.micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
 import net.minecraft.world.item.CreativeModeTab;
@@ -49,7 +49,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.FoliageColor;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.IShearable;
+import gt6mirror.net.minecraftforge.common.IShearable;
 import net.minecraft.core.Direction;
 
 import java.util.ArrayList;

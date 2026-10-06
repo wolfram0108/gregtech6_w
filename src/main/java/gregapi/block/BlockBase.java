@@ -51,7 +51,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.IPlantable;
+import gt6mirror.net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 
 import java.util.List;

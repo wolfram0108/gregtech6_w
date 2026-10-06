@@ -39,7 +39,7 @@ import gregapi.render.ITexture;
 import gregapi.tileentity.base.TileEntityBase07Paintable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.IPlantable;
+import gt6mirror.net.minecraftforge.common.IPlantable;
 
 /**
  * @author Gregorius Techneticies

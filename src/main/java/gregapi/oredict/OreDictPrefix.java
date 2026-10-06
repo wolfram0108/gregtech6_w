@@ -43,7 +43,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import thaumcraft.api.aspects.IEssentiaContainerItem;
+import gt6mirror.thaumcraft.api.aspects.IEssentiaContainerItem;
 
 import java.util.*;
 

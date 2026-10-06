@@ -25,13 +25,13 @@ package gregapi.compat.opencomputers;
 
 import gregapi.computer.IComputerizable;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
-import li.cil.oc.api.Network;
-import li.cil.oc.api.driver.NamedBlock;
-import li.cil.oc.api.machine.Arguments;
-import li.cil.oc.api.machine.Context;
-import li.cil.oc.api.network.ManagedPeripheral;
-import li.cil.oc.api.network.Visibility;
-import li.cil.oc.api.prefab.ManagedEnvironment;
+import gt6mirror.li.cil.oc.api.Network;
+import gt6mirror.li.cil.oc.api.driver.NamedBlock;
+import gt6mirror.li.cil.oc.api.machine.Arguments;
+import gt6mirror.li.cil.oc.api.machine.Context;
+import gt6mirror.li.cil.oc.api.network.ManagedPeripheral;
+import gt6mirror.li.cil.oc.api.network.Visibility;
+import gt6mirror.li.cil.oc.api.prefab.ManagedEnvironment;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.nio.charset.StandardCharsets;

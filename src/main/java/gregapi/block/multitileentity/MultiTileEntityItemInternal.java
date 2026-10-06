@@ -47,10 +47,10 @@ import gregapi.util.OM;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore;
-import ic2.api.item.IElectricItemManager;
-import ic2.api.item.ISpecialElectricItem;
-import micdoodle8.mods.galacticraft.api.item.IItemElectric;
-import micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler;
+import gt6mirror.ic2.api.item.IElectricItemManager;
+import gt6mirror.ic2.api.item.ISpecialElectricItem;
+import gt6mirror.micdoodle8.mods.galacticraft.api.item.IItemElectric;
+import gt6mirror.micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.item.CreativeModeTab;
@@ -72,9 +72,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidContainerItem;
-import vazkii.botania.api.item.IFlowerPlaceable;
-import vazkii.botania.api.subtile.SubTileEntity;
+import gt6mirror.net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.vazkii.botania.api.item.IFlowerPlaceable;
+import gt6mirror.vazkii.botania.api.subtile.SubTileEntity;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -96,7 +96,7 @@ import static gregapi.data.CS.*;
 // (net/minecraftforge/fluids/IFluidContainerItem.java) — the implements list is 1:1 with the original again
 // (:88), the getFluid/getCapacity/fill/drain delegates below are brought back to life (per-stack state is carried by the stack's NBT:
 // TileEntityBase08FluidContainer.fill/drain write writeItemNBT back into the stack themselves).
-public class MultiTileEntityItemInternal extends BlockItem implements squeek.applecore.api.food.IEdible, IItemReactorRod, IItemUpdatable, IItemColorableRGB, IOreDictItemDataOverrideItem, IItemGT, IItemNoGTOverride, IFluidContainerItem, ISpecialElectricItem, IElectricItemManager, IItemEnergy, IItemElectric, IItemRottable, IFlowerPlaceable {
+public class MultiTileEntityItemInternal extends BlockItem implements gt6mirror.squeek.applecore.api.food.IEdible, IItemReactorRod, IItemUpdatable, IItemColorableRGB, IOreDictItemDataOverrideItem, IItemGT, IItemNoGTOverride, IFluidContainerItem, ISpecialElectricItem, IElectricItemManager, IItemEnergy, IItemElectric, IItemRottable, IFlowerPlaceable {
 	public final MultiTileEntityBlockInternal mBlock;
 
 	public MultiTileEntityItemInternal(Block aBlock) {
@@ -525,7 +525,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	
 	@Override
 	@Optional.Method(modid = ModIDs.APC)
-	public squeek.applecore.api.food.FoodValues getFoodValues(ItemStack aStack) {
+	public gt6mirror.squeek.applecore.api.food.FoodValues getFoodValues(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IMTE_GetFoodValues) return ((IMTE_GetFoodValues)tTileEntityContainer.mTileEntity).getFoodValues(this, aStack);
 		return null;

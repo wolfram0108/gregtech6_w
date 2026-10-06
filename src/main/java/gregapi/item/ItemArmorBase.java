@@ -25,7 +25,7 @@ package gregapi.item;
 
 import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;
-import forestry.api.apiculture.IArmorApiarist;
+import gt6mirror.forestry.api.apiculture.IArmorApiarist;
 import gregapi.data.CS.*;
 import gregapi.data.LH;
 import gregapi.lang.LanguageHandler;
@@ -34,7 +34,7 @@ import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import ic2.api.item.IMetalArmor;
+import gt6mirror.ic2.api.item.IMetalArmor;
 import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.Position;

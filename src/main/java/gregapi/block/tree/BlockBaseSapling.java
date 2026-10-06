@@ -41,8 +41,8 @@ import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock;
-import mods.railcraft.common.carts.EntityTunnelBore;
+import gt6mirror.micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock;
+import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 
 import gregapi.block.Material;
 import net.minecraft.world.item.CreativeModeTab;
@@ -54,14 +54,14 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.EnumPlantType;
-import net.minecraftforge.common.IPlantable;
+import gt6mirror.net.minecraftforge.common.EnumPlantType;
+import gt6mirror.net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 
 import java.util.Random;
 
 import static gregapi.data.CS.*;
-import static net.minecraftforge.common.EnumPlantType.Plains;
+import static gt6mirror.net.minecraftforge.common.EnumPlantType.Plains;
 
 /**
  * @author Gregorius Techneticies

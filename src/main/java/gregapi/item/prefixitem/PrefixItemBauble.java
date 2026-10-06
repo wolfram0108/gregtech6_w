@@ -23,7 +23,7 @@
 
 package gregapi.item.prefixitem;
 
-import baubles.api.IBauble;
+import gt6mirror.baubles.api.IBauble;
 import gregapi.api.Optional;
 import gregapi.code.ModData;
 import gregapi.data.CS.ModIDs;
@@ -35,7 +35,7 @@ import gregapi.util.UT;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import thaumcraft.api.IWarpingGear;
+import gt6mirror.thaumcraft.api.IWarpingGear;
 
 import static gregapi.data.CS.T;
 

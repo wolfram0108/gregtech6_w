@@ -23,11 +23,11 @@
 
 package gregtech.loaders.c;
 
-import blusunrize.immersiveengineering.api.crafting.ArcFurnaceRecipe;
-import blusunrize.immersiveengineering.api.crafting.CrusherRecipe;
-import forestry.api.recipes.ICentrifugeRecipe;
-import forestry.api.recipes.ISqueezerRecipe;
-import forestry.api.recipes.RecipeManagers;
+import gt6mirror.blusunrize.immersiveengineering.api.crafting.ArcFurnaceRecipe;
+import gt6mirror.blusunrize.immersiveengineering.api.crafting.CrusherRecipe;
+import gt6mirror.forestry.api.recipes.ICentrifugeRecipe;
+import gt6mirror.forestry.api.recipes.ISqueezerRecipe;
+import gt6mirror.forestry.api.recipes.RecipeManagers;
 import gregapi.data.*;
 import gregapi.oredict.OreDictMaterial;
 import gregapi.util.OM;
@@ -35,7 +35,7 @@ import gregapi.util.ST;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
+import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 
 import java.util.Map;
 

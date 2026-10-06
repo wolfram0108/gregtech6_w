@@ -165,13 +165,13 @@ public class Loader_Recipes_Replace implements Runnable {
 				if (tObject instanceof ItemStack) {
 					if (IL.Stick.equal(tObject, T, T)) {tRod = ANY.Wood; continue;}
 					tData = OM.anyassociation((ItemStack)tObject);
-				} else if (MD.IC2.mLoaded && tObject instanceof ic2.api.recipe.RecipeInputItemStack) {
-					if (IL.Stick.equal(((ic2.api.recipe.RecipeInputItemStack)tObject).input, T, T)) {tRod = ANY.Wood; continue;}
-					tData = OM.anyassociation(((ic2.api.recipe.RecipeInputItemStack)tObject).input);
-				} else if (MD.IC2.mLoaded && tObject instanceof ic2.api.recipe.RecipeInputOreDict) {
-					if (OD.stickWood   .toString().equals(((ic2.api.recipe.RecipeInputOreDict)tObject).input)) {tRod = ANY.Wood; continue;}
-					if (OD.stickAnyWood.toString().equals(((ic2.api.recipe.RecipeInputOreDict)tObject).input)) {tRod = ANY.Wood; continue;}
-					tData = OM.data(((ic2.api.recipe.RecipeInputOreDict)tObject).input);
+				} else if (MD.IC2.mLoaded && tObject instanceof gt6mirror.ic2.api.recipe.RecipeInputItemStack) {
+					if (IL.Stick.equal(((gt6mirror.ic2.api.recipe.RecipeInputItemStack)tObject).input, T, T)) {tRod = ANY.Wood; continue;}
+					tData = OM.anyassociation(((gt6mirror.ic2.api.recipe.RecipeInputItemStack)tObject).input);
+				} else if (MD.IC2.mLoaded && tObject instanceof gt6mirror.ic2.api.recipe.RecipeInputOreDict) {
+					if (OD.stickWood   .toString().equals(((gt6mirror.ic2.api.recipe.RecipeInputOreDict)tObject).input)) {tRod = ANY.Wood; continue;}
+					if (OD.stickAnyWood.toString().equals(((gt6mirror.ic2.api.recipe.RecipeInputOreDict)tObject).input)) {tRod = ANY.Wood; continue;}
+					tData = OM.data(((gt6mirror.ic2.api.recipe.RecipeInputOreDict)tObject).input);
 				} else if (tObject instanceof List) {
 					if (tStickList == tObject) {tRod = ANY.Wood; continue;}
 					switch(((List)tObject).size()) {

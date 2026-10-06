@@ -23,9 +23,9 @@
 
 package gregapi.compat.warpdrive;
 
-import cr0s.warpdrive.api.IBlockTransformer;
-import cr0s.warpdrive.api.ITransformation;
-import cr0s.warpdrive.config.WarpDriveConfig;
+import gt6mirror.cr0s.warpdrive.api.IBlockTransformer;
+import gt6mirror.cr0s.warpdrive.api.ITransformation;
+import gt6mirror.cr0s.warpdrive.config.WarpDriveConfig;
 import gregapi.block.multitileentity.example.MultiTileEntityChest;
 import gregapi.compat.CompatBase;
 import gregapi.cover.CoverData;

@@ -38,7 +38,7 @@ import gregapi.item.multiitem.energy.EnergyStatDebug;
 import gregapi.lang.LanguageHandler;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler;
+import gt6mirror.micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler;
 import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;

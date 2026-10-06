@@ -25,12 +25,12 @@ package gregapi.compat.computercraft;
 
 import static gregapi.data.CS.*;
 
-import dan200.computercraft.api.ComputerCraftAPI;
-import dan200.computercraft.api.lua.ILuaContext;
-import dan200.computercraft.api.lua.LuaException;
-import dan200.computercraft.api.peripheral.IComputerAccess;
-import dan200.computercraft.api.peripheral.IPeripheral;
-import dan200.computercraft.api.peripheral.IPeripheralProvider;
+import gt6mirror.dan200.computercraft.api.ComputerCraftAPI;
+import gt6mirror.dan200.computercraft.api.lua.ILuaContext;
+import gt6mirror.dan200.computercraft.api.lua.LuaException;
+import gt6mirror.dan200.computercraft.api.peripheral.IComputerAccess;
+import gt6mirror.dan200.computercraft.api.peripheral.IPeripheral;
+import gt6mirror.dan200.computercraft.api.peripheral.IPeripheralProvider;
 import gregapi.compat.CompatBase;
 import gregapi.computer.IComputerizable;
 import gregapi.computer.ICoverComputerizable;

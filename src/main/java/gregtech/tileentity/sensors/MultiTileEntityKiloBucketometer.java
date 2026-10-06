@@ -34,7 +34,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.fluids.FluidStack;
 import gregapi.fluid.FluidTankInfo;
-import net.minecraftforge.fluids.IFluidBlock;
+import gt6mirror.net.minecraftforge.fluids.IFluidBlock;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import static gregapi.data.CS.*;

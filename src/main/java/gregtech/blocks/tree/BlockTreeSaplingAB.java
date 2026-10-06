@@ -39,7 +39,7 @@ import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.IPlantable;
+import gt6mirror.net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 
 import java.util.Random;

@@ -30,9 +30,9 @@ import gregapi.data.TD;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.energy.EnergyCompat;
 import gregapi.tileentity.energy.ITileEntityEnergy;
-import ic2.api.energy.EnergyNet;
-import ic2.api.energy.tile.IEnergySource;
-import ic2.api.energy.tile.IEnergyTile;
+import gt6mirror.ic2.api.energy.EnergyNet;
+import gt6mirror.ic2.api.energy.tile.IEnergySource;
+import gt6mirror.ic2.api.energy.tile.IEnergyTile;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**

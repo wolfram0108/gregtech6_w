@@ -82,7 +82,7 @@ import static gregapi.data.CS.*;
  * The interface is restored HERE, in the common ancestor, exactly where Forge carried it: all eight branches come
  * back to life at once, not a single caller needs a fix.
  */
-public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.LiquidBlock implements IBlock, gregapi.block.IBlockExtendedMetaData, gregapi.render.IRenderedBlock, net.minecraftforge.fluids.IFluidBlock {
+public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.LiquidBlock implements IBlock, gregapi.block.IBlockExtendedMetaData, gregapi.render.IRenderedBlock, gt6mirror.net.minecraftforge.fluids.IFluidBlock {
 	/** Was Forge {@code BlockFluidBase.displacements} + the static {@code defaultDisplacements}
 	 *  (wooden_door/iron_door/standing_sign/wall_sign/reeds -> false). F5 data default (doors/signs/reeds are not displaced by fluid — a block set, not a stub):
 	 *  1.7.10 knew ONE block per door/sign; neo split it into a block per wood type (no 1:1 mapping without

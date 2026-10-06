@@ -52,7 +52,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.IPlantable;
+import gt6mirror.net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 
 import java.io.File;
@@ -343,7 +343,7 @@ public interface IMultiTileEntity extends ITileEntitySpecificPlacementBehavior {
 	
 	public static interface IMTE_GetFoodValues extends IMultiTileEntity {
 		@Optional.Method(modid = ModIDs.APC)
-		public squeek.applecore.api.food.FoodValues getFoodValues(MultiTileEntityItemInternal aItem, ItemStack aStack);
+		public gt6mirror.squeek.applecore.api.food.FoodValues getFoodValues(MultiTileEntityItemInternal aItem, ItemStack aStack);
 	}
 	
 	public static interface IMTE_OnServerStart extends IMultiTileEntity {

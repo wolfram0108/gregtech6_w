@@ -23,7 +23,7 @@
 
 package gregapi;
 
-import cofh.lib.util.ComparableItem;
+import gt6mirror.cofh.lib.util.ComparableItem;
 // net.neoforged.fml.Logging (was imported, .severe(String) was called) — not a logger, a container of log4j Marker constants
 // (checked, fml-decompiled/net/neoforged/fml/Logging.java) — .severe(...) does not exist there; replaced with the already
 // centralized ERR.println(...) (gregapi.data.CS), used nearby with the same text.
@@ -38,11 +38,11 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
-import ganymedes01.etfuturum.entities.EntityHusk;
-import ganymedes01.etfuturum.entities.EntityStray;
-import ganymedes01.etfuturum.entities.EntityZombieVillager;
-import ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
-import ganymedes01.etfuturum.recipes.SmokerRecipes;
+import gt6mirror.ganymedes01.etfuturum.entities.EntityHusk;
+import gt6mirror.ganymedes01.etfuturum.entities.EntityStray;
+import gt6mirror.ganymedes01.etfuturum.entities.EntityZombieVillager;
+import gt6mirror.ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
+import gt6mirror.ganymedes01.etfuturum.recipes.SmokerRecipes;
 import gregapi.api.Abstract_Mod;
 import gregapi.api.Abstract_Proxy;
 import gregapi.block.*;
@@ -163,11 +163,11 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ChunkWatchEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.net.minecraftforge.fluids.IFluidContainerItem;
 import gregapi.recipes.ShapedOreRecipe;
 import gregapi.recipes.ShapelessOreRecipe;
-import thaumcraft.common.entities.monster.EntityBrainyZombie;
-import twilightforest.entity.boss.EntityTFMinoshroom;
+import gt6mirror.thaumcraft.common.entities.monster.EntityBrainyZombie;
+import gt6mirror.twilightforest.entity.boss.EntityTFMinoshroom;
 
 import java.io.File;
 import java.util.*;
@@ -434,23 +434,23 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					HashSetNoNulls<ItemStack> tStacks = new HashSetNoNulls<>(10000);
 					
 					if (MD.IC2.mLoaded) try {
-					for (ic2.api.recipe.RecipeOutput tRecipe : ic2.api.recipe.Recipes.cannerBottle        .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
-					for (ic2.api.recipe.RecipeOutput tRecipe : ic2.api.recipe.Recipes.centrifuge          .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
-					for (ic2.api.recipe.RecipeOutput tRecipe : ic2.api.recipe.Recipes.compressor          .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
-					for (ic2.api.recipe.RecipeOutput tRecipe : ic2.api.recipe.Recipes.extractor           .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
-					for (ic2.api.recipe.RecipeOutput tRecipe : ic2.api.recipe.Recipes.macerator           .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
-					for (ic2.api.recipe.RecipeOutput tRecipe : ic2.api.recipe.Recipes.metalformerCutting  .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
-					for (ic2.api.recipe.RecipeOutput tRecipe : ic2.api.recipe.Recipes.metalformerExtruding.getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
-					for (ic2.api.recipe.RecipeOutput tRecipe : ic2.api.recipe.Recipes.metalformerRolling  .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
-					for (ic2.api.recipe.RecipeOutput tRecipe : ic2.api.recipe.Recipes.matterAmplifier     .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
-					for (ic2.api.recipe.RecipeOutput tRecipe : ic2.api.recipe.Recipes.oreWashing          .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
+					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.cannerBottle        .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
+					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.centrifuge          .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
+					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.compressor          .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
+					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.extractor           .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
+					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.macerator           .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
+					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.metalformerCutting  .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
+					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.metalformerExtruding.getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
+					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.metalformerRolling  .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
+					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.matterAmplifier     .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
+					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.oreWashing          .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
 					} catch(Throwable e) {e.printStackTrace(ERR);}
 					
 					if (MD.RC.mLoaded) {
-					try {for (Object  tRecipe : mods.railcraft.api.crafting.RailcraftCraftingManager.blastFurnace  .getRecipes   ()) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
-					try {for (Object  tRecipe : mods.railcraft.api.crafting.RailcraftCraftingManager.cokeOven      .getRecipes   ()) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
-					try {for (Object  tRecipe : mods.railcraft.api.crafting.RailcraftCraftingManager.rockCrusher   .getRecipes   ()) for (Map.Entry<ItemStack, Float> tEntry : (List<Map.Entry<ItemStack, Float>>)UT.Reflection.getFieldContent(tRecipe, "outputs")) tStacks.add(tEntry.getKey());} catch(Throwable e) {e.printStackTrace(ERR);}
-					try {for (net.minecraft.world.item.crafting.Recipe tRecipe : mods.railcraft.api.crafting.RailcraftCraftingManager.rollingMachine.getRecipeList()) if (tRecipe != null) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
+					try {for (Object  tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.blastFurnace  .getRecipes   ()) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
+					try {for (Object  tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.cokeOven      .getRecipes   ()) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
+					try {for (Object  tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.rockCrusher   .getRecipes   ()) for (Map.Entry<ItemStack, Float> tEntry : (List<Map.Entry<ItemStack, Float>>)UT.Reflection.getFieldContent(tRecipe, "outputs")) tStacks.add(tEntry.getKey());} catch(Throwable e) {e.printStackTrace(ERR);}
+					try {for (net.minecraft.world.item.crafting.Recipe tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.rollingMachine.getRecipeList()) if (tRecipe != null) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
 					}
 					
 					if (MD.TE.mLoaded && ALWAYS_FALSE) {
@@ -1947,11 +1947,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent (checked, PlayerEvent.java).
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onLoginEvent(PlayerEvent.PlayerLoggedInEvent aEvent) {
-		if (DISABLE_ALL_IC2_COMPRESSOR_RECIPES) ic2.api.recipe.Recipes.compressor.getRecipes().clear();
-		if (DISABLE_ALL_IC2_EXTRACTOR_RECIPES ) ic2.api.recipe.Recipes.extractor .getRecipes().clear();
-		if (DISABLE_ALL_IC2_MACERATOR_RECIPES ) ic2.api.recipe.Recipes.macerator .getRecipes().clear();
-		if (DISABLE_ALL_IC2_OREWASHER_RECIPES ) ic2.api.recipe.Recipes.oreWashing.getRecipes().clear();
-		if (DISABLE_ALL_IC2_CENTRIFUGE_RECIPES) ic2.api.recipe.Recipes.centrifuge.getRecipes().clear();
+		if (DISABLE_ALL_IC2_COMPRESSOR_RECIPES) gt6mirror.ic2.api.recipe.Recipes.compressor.getRecipes().clear();
+		if (DISABLE_ALL_IC2_EXTRACTOR_RECIPES ) gt6mirror.ic2.api.recipe.Recipes.extractor .getRecipes().clear();
+		if (DISABLE_ALL_IC2_MACERATOR_RECIPES ) gt6mirror.ic2.api.recipe.Recipes.macerator .getRecipes().clear();
+		if (DISABLE_ALL_IC2_OREWASHER_RECIPES ) gt6mirror.ic2.api.recipe.Recipes.oreWashing.getRecipes().clear();
+		if (DISABLE_ALL_IC2_CENTRIFUGE_RECIPES) gt6mirror.ic2.api.recipe.Recipes.centrifuge.getRecipes().clear();
 
 		if (aEvent.getEntity().level().isClientSide()) return;
 		if (aEvent.getEntity() instanceof ServerPlayer) mNewPlayers.add((ServerPlayer)aEvent.getEntity());

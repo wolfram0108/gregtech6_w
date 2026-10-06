@@ -24,8 +24,8 @@
 package gregapi.compat.buildcraft;
 import gregapi.util.WD;
 
-import buildcraft.api.core.BuildCraftAPI;
-import buildcraft.core.properties.WorldPropertyIsWood;
+import gt6mirror.buildcraft.api.core.BuildCraftAPI;
+import gt6mirror.buildcraft.core.properties.WorldPropertyIsWood;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import gregapi.code.TagData;
