@@ -59,7 +59,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import gregapi.fluid.FluidTankInfo;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
-public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09FacingSingle implements IFluidHandler, ITileEntityCanDelegate, IMTE_HasMultiBlockMachineRelevantData, ITileEntityMachineBlockUpdateable, ITileEntitySwitchableOnOff {
+public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09FacingSingle implements gregapi.tileentity.delegate.IFluidRelay, IFluidHandler, ITileEntityCanDelegate, IMTE_HasMultiBlockMachineRelevantData, ITileEntityMachineBlockUpdateable, ITileEntitySwitchableOnOff {
 	protected boolean mStopped = F;
 	protected long mTemperature = 0;
 	protected MultiTileEntityLongDistancePipelineFluid mTarget = null, mSender = null;
@@ -199,10 +199,12 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	@Override public boolean canDrop(int aInventorySlot) {return F;}
 	@Override public boolean isExtender(byte aSide) {return F;}
 	
+	@Override public DelegatorTileEntity<IFluidHandler> getRelayedTank(byte aSide) {return checkTarget() ? mTarget.getAdjacentTank(OPOS[mTarget.mFacing]) : null;}
+	
 	@Override
 	public int fill(Direction aSide, FluidStack aFluid, boolean aDoFill) {
-		if (checkTarget() && FL.temperature(aFluid) <= mTemperature) {
-			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[mTarget.mFacing]);
+		DelegatorTileEntity<IFluidHandler> tTileEntity;
+		if (FL.temperature(aFluid) <= mTemperature && (tTileEntity = getRelayedTank(SIDE_UNKNOWN)) != null) {
 			if (tTileEntity.mTileEntity != null) return UT.Code.bindInt(FL.fill(tTileEntity, aFluid, aDoFill));
 		}
 		return 0;
@@ -217,8 +219,8 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	}
 	@Override
 	public boolean canFill(Direction aSide, Fluid aFluid) {
-		if (checkTarget() && FL.temperature(aFluid) <= mTemperature) {
-			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[mTarget.mFacing]);
+		DelegatorTileEntity<IFluidHandler> tTileEntity;
+		if (FL.temperature(aFluid) <= mTemperature && (tTileEntity = getRelayedTank(SIDE_UNKNOWN)) != null) {
 			if (tTileEntity.mTileEntity != null) return FL.canFill(tTileEntity, aFluid);
 		}
 		return F;
@@ -229,8 +231,8 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	}
 	@Override
 	public FluidTankInfo[] getTankInfo(Direction aSide) {
-		if (checkTarget()) {
-			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[mTarget.mFacing]);
+		DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(SIDE_UNKNOWN);
+		if (tTileEntity != null) {
 			// 1:1 with the original :227-233 (called getTankInfo(getForgeSideOfTileEntity())); the side is carried by the FL:944 center.
 			if (tTileEntity.mTileEntity != null) return FL.getTankInfo(tTileEntity.mTileEntity, tTileEntity.mSideOfTileEntity);
 		}

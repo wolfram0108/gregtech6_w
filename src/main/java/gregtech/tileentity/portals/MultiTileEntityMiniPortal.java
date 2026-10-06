@@ -62,7 +62,7 @@ import static gregapi.data.CS.*;
  * 
  * An example implementation of a Miniature Nether Portal with my MultiTileEntity System.
  */
-public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTileEntities implements ITileEntitySurface, ITileEntityDelegating, IFluidHandler, WorldlyContainer, IMTE_OnServerStart, IMTE_OnServerStop, IMTE_OnServerLoad, IMTE_OnToolClick, IMTE_IsProvidingWeakPower, IMTE_GetComparatorInputOverride, IMTE_GetExplosionResistance, IMTE_GetBlockHardness, IMTE_GetLightOpacity, IMTE_AddToolTips, IMTE_SyncDataByte {
+public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTileEntities implements gregapi.tileentity.delegate.IFluidRelay, ITileEntitySurface, ITileEntityDelegating, IFluidHandler, WorldlyContainer, IMTE_OnServerStart, IMTE_OnServerStop, IMTE_OnServerLoad, IMTE_OnToolClick, IMTE_IsProvidingWeakPower, IMTE_GetComparatorInputOverride, IMTE_GetExplosionResistance, IMTE_GetBlockHardness, IMTE_GetLightOpacity, IMTE_AddToolTips, IMTE_SyncDataByte {
 	protected boolean mActive = F;
 	
 	public MultiTileEntityMiniPortal mTarget = null;
@@ -464,10 +464,12 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 
 	// Relay Tanks (neo IFluidHandler.fill/drain(FluidStack/int, FluidAction) — side removed; we override the base fill/drain(Direction,...), body forwards to the neo target)
 
+	@Override public DelegatorTileEntity<IFluidHandler> getRelayedTank(byte aSide) {return mTarget == null ? null : mTarget.getAdjacentTank(OPOS[aSide]);}
+	
 	@Override
 	public int fill(Direction from, FluidStack resource, boolean doFill) {
 		if (mTarget != null) {
-			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(UT.Code.side(from));
 			if (tTileEntity.mTileEntity != null) return UT.Code.bindInt(FL.fill(tTileEntity, resource, doFill));
 		}
 		return 0;
@@ -475,7 +477,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	@Override
 	public FluidStack drain(Direction from, FluidStack resource, boolean doDrain) {
 		if (mTarget != null) {
-			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(UT.Code.side(from));
 			if (tTileEntity.mTileEntity != null) return FL.drain(tTileEntity, resource, doDrain);
 		}
 		return null;
@@ -483,7 +485,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	@Override
 	public FluidStack drain(Direction from, int maxDrain, boolean doDrain) {
 		if (mTarget != null) {
-			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(UT.Code.side(from));
 			if (tTileEntity.mTileEntity != null) return FL.drain(tTileEntity, maxDrain, doDrain);
 		}
 		return null;
@@ -492,7 +494,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	@Override
 	public boolean canFill(Direction from, Fluid fluid) {
 		if (mTarget != null) {
-			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(UT.Code.side(from));
 			if (tTileEntity.mTileEntity != null) return FL.canFill(tTileEntity, fluid);
 		}
 		return F;
@@ -500,7 +502,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	@Override
 	public boolean canDrain(Direction from, Fluid fluid) {
 		if (mTarget != null) {
-			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(UT.Code.side(from));
 			if (tTileEntity.mTileEntity != null) return FL.canDrain(tTileEntity, fluid);
 		}
 		return F;
@@ -511,7 +513,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	@Override
 	public FluidTankInfo[] getTankInfo(Direction from) {
 		if (mTarget != null) {
-			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(UT.Code.side(from));
 			if (tTileEntity.mTileEntity != null) return FL.getTankInfo(tTileEntity.mTileEntity, tTileEntity.mSideOfTileEntity);
 		}
 		return ZL_FLUIDTANKINFO;

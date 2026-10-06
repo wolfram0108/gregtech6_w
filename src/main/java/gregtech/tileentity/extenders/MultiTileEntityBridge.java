@@ -63,7 +63,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public class MultiTileEntityBridge extends TileEntityBase07Paintable implements ITileEntityDelegating, ITileEntityAdjacentInventoryUpdatable, IFluidHandler, IMTE_GetComparatorInputOverride, IMTE_AddToolTips {
+public class MultiTileEntityBridge extends TileEntityBase07Paintable implements gregapi.tileentity.delegate.IFluidRelay, ITileEntityDelegating, ITileEntityAdjacentInventoryUpdatable, IFluidHandler, IMTE_GetComparatorInputOverride, IMTE_AddToolTips {
 	public byte mModes = 0;
 	
 	protected IIconContainer[] mTextures = L6_IICONCONTAINER;
@@ -256,12 +256,14 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 	
 	// Relay Tanks
 	
+	@Override public DelegatorTileEntity<IFluidHandler> getRelayedTank(byte aSide) {return getAdjacentTank(getExtenderTargetSide(aSide), F, T);}
+	
 	@Override
 	public int fill(Direction aDirection, FluidStack aFluid, boolean doFill) {
 		if ((mModes & EXTENDER_TANK) != 0) {
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidFill(aSide, mCovers, aSide, aFluid)) return 0;
-			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(aSide);
 			if (tTileEntity.mTileEntity != null) return UT.Code.bindInt(FL.fill(tTileEntity, aFluid, doFill));
 		}
 		return 0;
@@ -271,7 +273,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 		if ((mModes & EXTENDER_TANK) != 0) {
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, aFluid)) return null;
-			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(aSide);
 			if (tTileEntity.mTileEntity != null) return FL.drain(tTileEntity, aFluid, doDrain);
 		}
 		return null;
@@ -281,7 +283,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 		if ((mModes & EXTENDER_TANK) != 0) {
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, null)) return null;
-			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(aSide);
 			if (tTileEntity.mTileEntity != null) return FL.drain(tTileEntity, maxDrain, doDrain);
 		}
 		return null;
@@ -291,7 +293,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 		if ((mModes & EXTENDER_TANK) != 0) {
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidFill(aSide, mCovers, aSide, FL.make(aFluid, 1))) return F;
-			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(aSide);
 			if (tTileEntity.mTileEntity != null) return FL.canFill(tTileEntity, aFluid);
 		}
 		return F;
@@ -301,7 +303,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 		if ((mModes & EXTENDER_TANK) != 0) {
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, FL.make(aFluid, 1))) return F;
-			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(aSide);
 			if (tTileEntity.mTileEntity != null) return FL.canDrain(tTileEntity, aFluid);
 		}
 		return F;
@@ -309,7 +311,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 	@Override
 	public FluidTankInfo[] getTankInfo(Direction aDirection) {
 		if ((mModes & EXTENDER_TANK) != 0) {
-			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(UT.Code.side(aDirection)), F, T);
+			DelegatorTileEntity<IFluidHandler> tTileEntity = getRelayedTank(UT.Code.side(aDirection));
 			// Matches the original 1:1 (getTankInfo(getForgeSideOfTileEntity())); the side is carried by the FL seam center.
 			if (tTileEntity.mTileEntity != null) return FL.getTankInfo(tTileEntity.mTileEntity, tTileEntity.mSideOfTileEntity);
 		}
