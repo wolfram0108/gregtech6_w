@@ -26,7 +26,16 @@
 
 package buildcraft.api.fuels;
 
-public interface IFuel {
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraftforge.fluids.FluidStack;
+
+public interface IFuel extends Recipe<Container> {
+	public static final ResourceLocation TYPE_ID = null;
+	public static final RecipeType<IFuel> TYPE = null;
+	FluidStack getFluid();
 	int getTotalBurningTime();
 	long getPowerPerCycle();
 }

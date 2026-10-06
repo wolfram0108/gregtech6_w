@@ -59,15 +59,43 @@ public class CompatBC extends CompatBase implements ICompatBC {
 		TriggerBC_Energy_Capacity_NotFull.class.getCanonicalName();
 		TriggerBC_Energy_Capacity_Full.class.getCanonicalName();
 		if (CODE_CLIENT) Client.register();
+		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(net.minecraftforge.eventbus.api.EventPriority.LOW, false, net.minecraftforge.event.OnDatapackSyncEvent.class, aEvent -> registerFuel(aEvent.getPlayerList().getServer().overworld()));
 	}
 
-	/** 1.7.10's «fuel» was one fluid of BuildCraft and GT6; BuildCraft 7.99 calls its successor fuel_light, so GT6 Fuel burns at
-	 *  its rate, read from BuildCraft's recipes wherever they are loaded: at server start, and when a client receives them. */
-	static void registerFuel(Level aLevel) {
-		net.minecraftforge.fluids.FluidStack tLight = gregapi.data.FL.make(gregapi.compat.BuildCraftNames.FUEL, 1), tFuel = gregapi.data.FL.Fuel.make(1);
+	/** 1.7.10's «fuel» was one fluid of BuildCraft and GT6; BuildCraft 7.99 calls its successor fuel_light, so GT6 Fuel burns at its
+	 *  rate, or at a datapack's own GT6 Fuel recipe, set again whenever recipes load (server start, /reload, a client receiving them). */
+	static synchronized void registerFuel(Level aLevel) {
 		buildcraft.api.fuels.IFuelManager tManager = buildcraft.api.fuels.BuildcraftFuelRegistry.fuel;
-		buildcraft.api.fuels.IFuel tRate = aLevel == null || tLight == null || tFuel == null || tManager == null ? null : tManager.getFuel(aLevel, tLight);
-		if (tRate != null && tManager.getFuel(aLevel, tFuel) == null) tManager.addUnregisteredFuel(new net.minecraft.resources.ResourceLocation(gregapi.data.MD.GAPI.mID, "fuel"), tFuel, tRate.getPowerPerCycle(), tRate.getTotalBurningTime());
+		net.minecraftforge.fluids.FluidStack tLight = gregapi.data.FL.make(gregapi.compat.BuildCraftNames.FUEL, 1), tFuel = gregapi.data.FL.Fuel.make(1);
+		if (aLevel == null || tManager == null || tLight == null || tFuel == null) return;
+		buildcraft.api.fuels.IFuel tRate = null;
+		for (buildcraft.api.fuels.IFuel tRecipe : aLevel.getRecipeManager().getAllRecipesFor(buildcraft.api.fuels.IFuel.TYPE)) if (tRecipe.getFluid() != null && tRecipe.getFluid().isFluidEqual(tFuel)) {tRate = tRecipe; break;}
+		if (tRate == null) tRate = tManager.getFuel(aLevel, tLight);
+		if (tRate == null) return;
+		if (sFuel == null) sFuel = tManager.addUnregisteredFuel(new FuelGT(tFuel));
+		sFuel.mPower = tRate.getPowerPerCycle(); sFuel.mTime = tRate.getTotalBurningTime();
+	}
+	private static FuelGT sFuel;
+
+	/** GT6 Fuel in BuildCraft's registry, added once a game: BuildCraft 7.99 cannot take a fuel back, so its rate is what changes. */
+	private static final class FuelGT implements buildcraft.api.fuels.IFuel {
+		private final net.minecraft.resources.ResourceLocation mId = new net.minecraft.resources.ResourceLocation(gregapi.data.MD.GAPI.mID, "fuel");
+		private final net.minecraftforge.fluids.FluidStack mFluid;
+		private volatile long mPower;
+		private volatile int mTime;
+		private FuelGT(net.minecraftforge.fluids.FluidStack aFluid) {mFluid = aFluid;}
+		@Override public net.minecraftforge.fluids.FluidStack getFluid() {return mFluid;}
+		@Override public long getPowerPerCycle() {return mPower;}
+		@Override public int getTotalBurningTime() {return mTime;}
+		@Override public net.minecraft.resources.ResourceLocation getId() {return mId;}
+		@Override public net.minecraft.world.item.crafting.RecipeSerializer<?> getSerializer() {return net.minecraft.core.registries.BuiltInRegistries.RECIPE_SERIALIZER.get(buildcraft.api.fuels.IFuel.TYPE_ID);}
+		// BuildCraft's own defaults for these are in its SRG names, so the class answers them itself, as its Fuel does
+		@Override public net.minecraft.world.item.crafting.RecipeType<?> getType() {return buildcraft.api.fuels.IFuel.TYPE;}
+		@Override public boolean matches(net.minecraft.world.Container aContainer, Level aLevel) {return false;}
+		@Override public net.minecraft.world.item.ItemStack assemble(net.minecraft.world.Container aContainer, net.minecraft.core.RegistryAccess aAccess) {return net.minecraft.world.item.ItemStack.EMPTY;}
+		@Override public boolean canCraftInDimensions(int aWidth, int aHeight) {return true;}
+		@Override public net.minecraft.world.item.ItemStack getResultItem(net.minecraft.core.RegistryAccess aAccess) {return net.minecraft.world.item.ItemStack.EMPTY;}
+		@Override public boolean isSpecial() {return true;}
 	}
 
 	/** Client types stay in here, so the class loads on a dedicated server. */

@@ -31,6 +31,6 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidStack;
 
 public interface IFuelManager {
-	IFuel addUnregisteredFuel(ResourceLocation id, FluidStack fluid, long powerPerCycle, int totalBurningTime);
+	<F extends IFuel> F addUnregisteredFuel(F fuel);
 	IFuel getFuel(Level world, FluidStack fluid);
 }
