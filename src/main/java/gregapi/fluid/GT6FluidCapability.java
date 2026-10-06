@@ -159,12 +159,10 @@ public class GT6FluidCapability {
 	}
 
 	/** A side of a GT6 tile entity as 1.7.10's IFluidHandler showed it, and as the 1.20.1 branch's SidedTankView does: read
-	 *  through getTankInfo, filled and drained only through the TE's own canFill/fill/drain. Moves wait for the root commit. */
-	private static final class SidedTankView extends SnapshotJournal<List<FluidStack>> implements ResourceHandler<FluidResource> {
+	 *  through getTankInfo, filled and drained only through the TE's own canFill/fill/drain, at the root commit (PendingMoves). */
+	private static final class SidedTankView implements ResourceHandler<FluidResource> {
 		private final gregapi.tileentity.base.TileEntityBase01Root mTileEntity;
 		private final Direction mSide;
-		/** Moves of the open transactions: a positive amount fills, a negative one drains. */
-		private List<FluidStack> mPending = new ArrayList<>();
 
 		SidedTankView(gregapi.tileentity.base.TileEntityBase01Root aTileEntity, Direction aSide) {mTileEntity = aTileEntity; mSide = aSide;}
 
@@ -173,13 +171,7 @@ public class GT6FluidCapability {
 		}
 		private FluidStack stack(int aIndex) {
 			gregapi.fluid.FluidTankInfo[] tInfo = info();
-			return aIndex >= 0 && aIndex < tInfo.length && tInfo[aIndex] != null && tInfo[aIndex].fluid != null ? tInfo[aIndex].fluid : FluidStack.EMPTY;
-		}
-		/** What this transaction already moves of the fluid in one direction, so a second request is sized on top of it. */
-		private int pending(FluidResource aResource, boolean aFill) {
-			int r = 0;
-			for (FluidStack tMove : mPending) if ((tMove.getAmount() > 0) == aFill && aResource.matches(tMove)) r += Math.abs(tMove.getAmount());
-			return r;
+			return aIndex >= 0 && aIndex < tInfo.length && tInfo[aIndex] != null ? PendingMoves.get().seen(mTileEntity, tInfo, aIndex) : FluidStack.EMPTY;
 		}
 
 		@Override public int size() {return Math.max(1, info().length);}
@@ -193,30 +185,81 @@ public class GT6FluidCapability {
 
 		@Override public int insert(int aIndex, FluidResource aResource, int aAmount, TransactionContext aTx) {
 			if (aResource == null || aResource.isEmpty() || aAmount <= 0) return 0;
-			int tBefore = pending(aResource, true), rTaken;
+			PendingMoves tMoves = PendingMoves.get();
+			Object tOwner = PendingMoves.owner(mTileEntity);
+			if (tMoves.fillsOther(tOwner, aResource)) return 0;
+			int tBefore = tMoves.pending(tOwner, aResource, true), rTaken;
 			try {rTaken = Math.min(aAmount, mTileEntity.fill(mSide, aResource.toStack(tBefore + aAmount), false) - tBefore);} catch (Throwable e) {return 0;}
 			if (rTaken <= 0) return 0;
-			updateSnapshots(aTx);
-			mPending.add(aResource.toStack(rTaken));
+			tMoves.add(aTx, new Move(tOwner, mTileEntity, mSide, aResource.toStack(rTaken), true));
 			return rTaken;
 		}
 		@Override public int extract(int aIndex, FluidResource aResource, int aAmount, TransactionContext aTx) {
 			if (aResource == null || aResource.isEmpty() || aAmount <= 0) return 0;
-			int tBefore = pending(aResource, false), rTaken;
+			PendingMoves tMoves = PendingMoves.get();
+			Object tOwner = PendingMoves.owner(mTileEntity);
+			int tBefore = tMoves.pending(tOwner, aResource, false), rTaken;
 			try {FluidStack tDrained = mTileEntity.drain(mSide, aResource.toStack(tBefore + aAmount), false); rTaken = Math.min(aAmount, (tDrained == null ? 0 : tDrained.getAmount()) - tBefore);} catch (Throwable e) {return 0;}
 			if (rTaken <= 0) return 0;
-			updateSnapshots(aTx);
-			FluidStack tMove = aResource.toStack(rTaken); tMove.setAmount(-rTaken);
-			mPending.add(tMove);
+			tMoves.add(aTx, new Move(tOwner, mTileEntity, mSide, aResource.toStack(rTaken), false));
 			return rTaken;
 		}
+	}
 
-		@Override protected List<FluidStack> createSnapshot() {return new ArrayList<>(mPending);}
-		@Override protected void revertToSnapshot(List<FluidStack> aSnapshot) {mPending = aSnapshot;}
-		@Override protected void onRootCommit(List<FluidStack> aOriginal) {
-			List<FluidStack> tMoves = mPending; mPending = new ArrayList<>();
-			for (FluidStack tMove : tMoves) try {
-				if (tMove.getAmount() > 0) mTileEntity.fill(mSide, tMove, true); else {FluidStack tDrain = tMove.copy(); tDrain.setAmount(-tMove.getAmount()); mTileEntity.drain(mSide, tDrain, true);}
+	/** A fill or drain promised to another mod's open transaction, and the storage it lands in. */
+	private record Move(Object aOwner, gregapi.tileentity.base.TileEntityBase01Root aTileEntity, Direction aSide, FluidStack aFluid, boolean aFill) {}
+
+	/** Moves of another mod's open transactions through GT6 blocks, one list per thread for every side and block, so a move is sized
+	 *  on top of those already promised into the same storage; applied at the root commit, as 1.7.10's direct calls were. */
+	private static final class PendingMoves extends SnapshotJournal<List<Move>> {
+		private static final ThreadLocal<PendingMoves> THREAD = ThreadLocal.withInitial(PendingMoves::new);
+		/** Where an Extender, Bridge, portal or pipeline relays depends on its mode and target, so moves through any of them are sized together. */
+		private static final Object RELAYS = new Object();
+		private List<Move> mMoves = new ArrayList<>();
+
+		static PendingMoves get() {return THREAD.get();}
+		/** The storage a move into a block lands in: a multiblock part's controller, the shared relay owner, else the block itself. */
+		static Object owner(gregapi.tileentity.base.TileEntityBase01Root aTileEntity) {
+			if (aTileEntity instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tPart) {Object rController = tPart.getTarget(false); return rController == null ? aTileEntity : rController;}
+			return aTileEntity instanceof gregapi.tileentity.delegate.ITileEntityCanDelegate ? RELAYS : aTileEntity;
+		}
+		int pending(Object aOwner, FluidResource aResource, boolean aFill) {
+			int r = 0;
+			for (Move tMove : mMoves) if (tMove.aOwner() == aOwner && tMove.aFill() == aFill && aResource.matches(tMove.aFluid())) r += tMove.aFluid().getAmount();
+			return r;
+		}
+		/** A GT6 tank holds one fluid, so a second fluid promised into the same storage waits for the next transaction. */
+		boolean fillsOther(Object aOwner, FluidResource aResource) {
+			for (Move tMove : mMoves) if (tMove.aOwner() == aOwner && tMove.aFill() && !aResource.matches(tMove.aFluid())) return true;
+			return false;
+		}
+		void add(TransactionContext aTx, Move aMove) {updateSnapshots(aTx); mMoves.add(aMove);}
+		/** A slot as the open transaction leaves it: what is promised in or out of its storage is counted in. */
+		FluidStack seen(gregapi.tileentity.base.TileEntityBase01Root aTileEntity, gregapi.fluid.FluidTankInfo[] aInfo, int aIndex) {
+			FluidStack tFluid = aInfo[aIndex].fluid == null ? FluidStack.EMPTY : aInfo[aIndex].fluid;
+			if (mMoves.isEmpty()) return tFluid;
+			Object tOwner = owner(aTileEntity);
+			if (!tFluid.isEmpty()) {
+				FluidResource tResource = FluidResource.of(tFluid);
+				long tAmount = (long)tFluid.getAmount() + pending(tOwner, tResource, true) - pending(tOwner, tResource, false);
+				return tFluid.copyWithAmount((int)Math.max(0, Math.min(aInfo[aIndex].capacity, tAmount)));
+			}
+			// a fluid promised into an empty storage shows in its first empty slot
+			for (int i = 0; i < aIndex; i++) if (aInfo[i] == null || aInfo[i].fluid == null || aInfo[i].fluid.isEmpty()) return tFluid;
+			for (Move tMove : mMoves) if (tMove.aOwner() == tOwner && tMove.aFill()) return tMove.aFluid().copyWithAmount(Math.min(aInfo[aIndex].capacity, pending(tOwner, FluidResource.of(tMove.aFluid()), true)));
+			return tFluid;
+		}
+
+		@Override protected List<Move> createSnapshot() {return new ArrayList<>(mMoves);}
+		@Override protected void revertToSnapshot(List<Move> aSnapshot) {mMoves = aSnapshot;}
+		@Override protected void onRootCommit(List<Move> aOriginal) {
+			List<Move> tMoves = mMoves; mMoves = new ArrayList<>();
+			for (Move tMove : tMoves) try {
+				int tMoved;
+				if (tMove.aFill()) tMoved = tMove.aTileEntity().fill(tMove.aSide(), tMove.aFluid(), true);
+				else {FluidStack tDrained = tMove.aTileEntity().drain(tMove.aSide(), tMove.aFluid(), true); tMoved = tDrained == null ? 0 : tDrained.getAmount();}
+				// the other mod has already moved what was promised: a shortfall is reported, never lost or made in silence
+				if (tMoved != tMove.aFluid().getAmount()) gregapi.data.CS.ERR.println("[GT6] a foreign transaction was promised " + tMove.aFluid().getAmount() + " L of " + gregapi.data.FL.regName(tMove.aFluid().getFluid()) + (tMove.aFill() ? " into " : " out of ") + tMove.aTileEntity().getBlockPos() + ", moved " + tMoved);
 			} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
 		}
 	}
