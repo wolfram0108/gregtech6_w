@@ -171,7 +171,10 @@ public class GT6FluidCapability {
 		}
 		private FluidStack stack(int aIndex) {
 			gregapi.fluid.FluidTankInfo[] tInfo = info();
-			return aIndex >= 0 && aIndex < tInfo.length && tInfo[aIndex] != null ? PendingMoves.get().seen(mTileEntity, tInfo, aIndex) : FluidStack.EMPTY;
+			if (aIndex < 0 || aIndex >= tInfo.length || tInfo[aIndex] == null) return FluidStack.EMPTY;
+			PendingMoves tMoves = PendingMoves.get();
+			// the storage behind a relay is only looked up while something is promised
+			return tMoves.mMoves.isEmpty() ? tInfo[aIndex].fluid == null ? FluidStack.EMPTY : tInfo[aIndex].fluid : tMoves.seen(PendingMoves.owner(mTileEntity, gregapi.util.UT.Code.side(mSide)), tInfo, aIndex);
 		}
 
 		@Override public int size() {return Math.max(1, info().length);}
@@ -186,7 +189,7 @@ public class GT6FluidCapability {
 		@Override public int insert(int aIndex, FluidResource aResource, int aAmount, TransactionContext aTx) {
 			if (aResource == null || aResource.isEmpty() || aAmount <= 0) return 0;
 			PendingMoves tMoves = PendingMoves.get();
-			Object tOwner = PendingMoves.owner(mTileEntity);
+			Object tOwner = PendingMoves.owner(mTileEntity, gregapi.util.UT.Code.side(mSide));
 			if (tMoves.fillsOther(tOwner, aResource)) return 0;
 			int tBefore = tMoves.pending(tOwner, aResource, true), rTaken;
 			try {rTaken = Math.min(aAmount, mTileEntity.fill(mSide, aResource.toStack(tBefore + aAmount), false) - tBefore);} catch (Throwable e) {return 0;}
@@ -197,7 +200,7 @@ public class GT6FluidCapability {
 		@Override public int extract(int aIndex, FluidResource aResource, int aAmount, TransactionContext aTx) {
 			if (aResource == null || aResource.isEmpty() || aAmount <= 0) return 0;
 			PendingMoves tMoves = PendingMoves.get();
-			Object tOwner = PendingMoves.owner(mTileEntity);
+			Object tOwner = PendingMoves.owner(mTileEntity, gregapi.util.UT.Code.side(mSide));
 			int tBefore = tMoves.pending(tOwner, aResource, false), rTaken;
 			try {FluidStack tDrained = mTileEntity.drain(mSide, aResource.toStack(tBefore + aAmount), false); rTaken = Math.min(aAmount, (tDrained == null ? 0 : tDrained.getAmount()) - tBefore);} catch (Throwable e) {return 0;}
 			if (rTaken <= 0) return 0;
@@ -213,48 +216,45 @@ public class GT6FluidCapability {
 	 *  on top of those already promised into the same storage; applied at the root commit, as 1.7.10's direct calls were. */
 	private static final class PendingMoves extends SnapshotJournal<List<Move>> {
 		private static final ThreadLocal<PendingMoves> THREAD = ThreadLocal.withInitial(PendingMoves::new);
-		/** Where an Extender, Bridge, portal or pipeline relays depends on its mode and target, so moves through any of them are sized together. */
-		private static final Object RELAYS = new Object();
 		private List<Move> mMoves = new ArrayList<>();
 
 		static PendingMoves get() {return THREAD.get();}
-		/** The storage a move into a block lands in: a multiblock part's controller, the shared relay owner, else the block itself. */
-		static Object owner(gregapi.tileentity.base.TileEntityBase01Root aTileEntity) {
-			if (aTileEntity instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tPart) {Object rController = tPart.getTarget(false); return rController == null ? aTileEntity : rController;}
-			return aTileEntity instanceof gregapi.tileentity.delegate.ITileEntityCanDelegate ? RELAYS : aTileEntity;
+		/** The storage a move into a block's side lands in: past every relay to its target, a multiblock part's controller, else the block. */
+		static Object owner(gregapi.tileentity.base.TileEntityBase01Root aTileEntity, byte aSide) {
+			Object rOwner = aTileEntity;
+			for (int i = 0; i < 16 && rOwner instanceof gregapi.tileentity.delegate.IFluidRelay tRelay; i++) {
+				gregapi.tileentity.delegate.DelegatorTileEntity<?> tTarget = tRelay.getRelayedTank(aSide);
+				if (tTarget == null || tTarget.mTileEntity == null) break;
+				// another mod's storage is keyed by its block, whichever side or adapter reached it
+				Object tBlock = tTarget.mTileEntity instanceof gregapi.tileentity.base.TileEntityBase01Root || tTarget.mWorld == null ? null : tTarget.mWorld.getBlockEntity(new net.minecraft.core.BlockPos(tTarget.mX, tTarget.mY, tTarget.mZ));
+				rOwner = tBlock != null ? tBlock : tTarget.mTileEntity;
+				aSide = tTarget.mSideOfTileEntity;
+			}
+			if (rOwner instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tPart) {Object rController = tPart.getTarget(false); if (rController != null) return rController;}
+			return rOwner;
 		}
-		/** Whether a move may land in the same storage: a relay may reach any, so moves through relays count against every storage. */
-		private static boolean shared(Move aMove, Object aOwner) {return aMove.aOwner() == aOwner || aMove.aOwner() == RELAYS || aOwner == RELAYS;}
 		int pending(Object aOwner, FluidResource aResource, boolean aFill) {
 			int r = 0;
-			for (Move tMove : mMoves) if (shared(tMove, aOwner) && tMove.aFill() == aFill && aResource.matches(tMove.aFluid())) r += tMove.aFluid().getAmount();
+			for (Move tMove : mMoves) if (tMove.aOwner() == aOwner && tMove.aFill() == aFill && aResource.matches(tMove.aFluid())) r += tMove.aFluid().getAmount();
 			return r;
 		}
 		/** The block picks which of its tanks takes a fluid, so a second fluid promised into the same storage waits for the next transaction. */
 		boolean fillsOther(Object aOwner, FluidResource aResource) {
-			for (Move tMove : mMoves) if (shared(tMove, aOwner) && tMove.aFill() && !aResource.matches(tMove.aFluid())) return true;
+			for (Move tMove : mMoves) if (tMove.aOwner() == aOwner && tMove.aFill() && !aResource.matches(tMove.aFluid())) return true;
 			return false;
-		}
-		/** What is promised into or out of exactly this storage, as a read shows it (through a relay, only that relay's own moves). */
-		private int promised(gregapi.tileentity.base.TileEntityBase01Root aTileEntity, Object aOwner, FluidResource aResource, boolean aFill) {
-			int r = 0;
-			for (Move tMove : mMoves) if (tMove.aOwner() == aOwner && (aOwner != RELAYS || tMove.aTileEntity() == aTileEntity) && tMove.aFill() == aFill && aResource.matches(tMove.aFluid())) r += tMove.aFluid().getAmount();
-			return r;
 		}
 		void add(TransactionContext aTx, Move aMove) {updateSnapshots(aTx); mMoves.add(aMove);}
 		/** A slot as the open transaction leaves it: what is promised in or out of its storage is counted in. */
-		FluidStack seen(gregapi.tileentity.base.TileEntityBase01Root aTileEntity, gregapi.fluid.FluidTankInfo[] aInfo, int aIndex) {
+		FluidStack seen(Object aOwner, gregapi.fluid.FluidTankInfo[] aInfo, int aIndex) {
 			FluidStack tFluid = aInfo[aIndex].fluid == null ? FluidStack.EMPTY : aInfo[aIndex].fluid;
-			if (mMoves.isEmpty()) return tFluid;
-			Object tOwner = owner(aTileEntity);
 			if (!tFluid.isEmpty()) {
 				FluidResource tResource = FluidResource.of(tFluid);
-				long tAmount = (long)tFluid.getAmount() + promised(aTileEntity, tOwner, tResource, true) - promised(aTileEntity, tOwner, tResource, false);
+				long tAmount = (long)tFluid.getAmount() + pending(aOwner, tResource, true) - pending(aOwner, tResource, false);
 				return tFluid.copyWithAmount((int)Math.max(0, Math.min(aInfo[aIndex].capacity, tAmount)));
 			}
 			// a fluid promised in that no slot holds yet shows in the first empty slot
 			for (int i = 0; i < aIndex; i++) if (aInfo[i] == null || aInfo[i].fluid == null || aInfo[i].fluid.isEmpty()) return tFluid;
-			for (Move tMove : mMoves) if (tMove.aFill() && tMove.aOwner() == tOwner && (tOwner != RELAYS || tMove.aTileEntity() == aTileEntity) && !holds(aInfo, tMove.aFluid())) return tMove.aFluid().copyWithAmount(Math.min(aInfo[aIndex].capacity, promised(aTileEntity, tOwner, FluidResource.of(tMove.aFluid()), true)));
+			for (Move tMove : mMoves) if (tMove.aFill() && tMove.aOwner() == aOwner && !holds(aInfo, tMove.aFluid())) return tMove.aFluid().copyWithAmount(Math.min(aInfo[aIndex].capacity, pending(aOwner, FluidResource.of(tMove.aFluid()), true)));
 			return tFluid;
 		}
 
@@ -345,6 +345,8 @@ public class GT6FluidCapability {
 	public static IFluidHandler foreign(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
 		net.minecraft.world.level.Level tLevel = aTileEntity.getLevel();
 		if (tLevel == null || aTileEntity.isRemoved()) return null;
+		// 1.7.10 asked a tank block entity itself: one that still is an IFluidHandler is asked so, behind the same guard
+		if (aTileEntity instanceof IFluidHandler tSelf) return new ForeignLegacyTank(tSelf);
 		if (!(tLevel instanceof net.minecraft.server.level.ServerLevel tServer) || !tServer.getServer().isSameThread()) {
 			try {
 				ResourceHandler<FluidResource> tCap = tLevel.getCapability(Capabilities.Fluid.BLOCK, aTileEntity.getBlockPos(), aTileEntity.getBlockState(), aTileEntity, gregapi.data.CS.FORGE_DIR[aSide]);
@@ -362,6 +364,23 @@ public class GT6FluidCapability {
 			tSides[tSide] = tEntry = new Foreign(tServer, aTileEntity.getBlockPos(), aSide, () -> drop(tMap, tPos, tOwner, tSide));
 		}
 		return tEntry.get();
+	}
+
+	/** Another mod's block entity that is a legacy IFluidHandler itself, under the same rule as ForeignTank: a failure moves nothing. */
+	private static final class ForeignLegacyTank implements IFluidHandler {
+		private final IFluidHandler mTank;
+		private ForeignLegacyTank(IFluidHandler aTank) {mTank = aTank;}
+
+		@Override public int getTanks() {try {return mTank.getTanks();} catch (Throwable e) {return 0;}}
+		@Override public FluidStack getFluidInTank(int aTank) {try {FluidStack r = mTank.getFluidInTank(aTank); return r == null ? FluidStack.EMPTY : r;} catch (Throwable e) {return FluidStack.EMPTY;}}
+		@Override public int getTankCapacity(int aTank) {try {return mTank.getTankCapacity(aTank);} catch (Throwable e) {return 0;}}
+		@Override public boolean isFluidValid(int aTank, FluidStack aFluid) {try {return mTank.isFluidValid(aTank, aFluid);} catch (Throwable e) {return false;}}
+		@Override public int fill(FluidStack aFluid, FluidAction aAction) {try {return mTank.fill(aFluid, aAction);} catch (Throwable e) {return 0;}}
+		@Override public FluidStack drain(FluidStack aFluid, FluidAction aAction) {try {FluidStack r = mTank.drain(aFluid, aAction); return r == null ? FluidStack.EMPTY : r;} catch (Throwable e) {return FluidStack.EMPTY;}}
+		@Override public FluidStack drain(int aAmount, FluidAction aAction) {try {FluidStack r = mTank.drain(aAmount, aAction); return r == null ? FluidStack.EMPTY : r;} catch (Throwable e) {return FluidStack.EMPTY;}}
+		/** Adapters of one storage are one tank, so a delegator holding one can tell its storage still exists. */
+		@Override public boolean equals(Object aOther) {return aOther instanceof ForeignLegacyTank tOther && tOther.mTank == mTank;}
+		@Override public int hashCode() {return System.identityHashCode(mTank);}
 	}
 
 	private static void drop(it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Foreign[]> aMap, long aPos, Foreign[] aSides, int aSide) {
