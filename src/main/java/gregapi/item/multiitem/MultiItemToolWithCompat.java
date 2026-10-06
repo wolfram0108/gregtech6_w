@@ -23,7 +23,6 @@
 
 package gregapi.item.multiitem;
 
-import gt6mirror.buildcraft.api.tools.IToolWrench;
 import gregapi.api.Optional;
 import gt6mirror.forestry.api.arboriculture.IToolGrafter;
 import gregapi.data.CS.ModIDs;
@@ -44,8 +43,9 @@ import gt6mirror.thaumcraft.api.IWarpingGear;
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;
 
-/** The foreign-mod interfaces below (IWarpingGear, IToolWrench, IItemElectric, etc.) are currently empty
- *  compat-mirror markers, so their methods stay unannotated with @Override until real mod integration exists. */
+/** The foreign-mod interfaces below (IWarpingGear, IItemElectric, etc.) are currently empty compat-mirror markers, so their
+ *  methods stay unannotated with @Override until real mod integration exists. BuildCraft's IToolWrench is real: the tool is
+ *  built from gregapi.compat.buildcraft.MultiItemToolWithCompatBC when BuildCraft is present (see Loader_Tools). */
 @Optional.InterfaceList(value = {
   @Optional.Interface(iface = "thaumcraft.api.IWarpingGear", modid = ModIDs.TC)
 , @Optional.Interface(iface = "forestry.api.arboriculture.IToolGrafter", modid = ModIDs.FR)
@@ -56,7 +56,7 @@ import static gregapi.data.CS.T;
 , @Optional.Interface(iface = "ic2.api.item.IElectricItemManager", modid = ModIDs.IC2)
 , @Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.item.IItemElectric", modid = ModIDs.GC)
 })
-public class MultiItemToolWithCompat extends MultiItemTool implements IWarpingGear, IToolGrafter, IToolCrowbar, IToolWrench, IBoxable, ISpecialElectricItem, IElectricItemManager, IItemElectric {
+public class MultiItemToolWithCompat extends MultiItemTool implements IWarpingGear, IToolGrafter, IToolCrowbar, IBoxable, ISpecialElectricItem, IElectricItemManager, IItemElectric {
 	/**
 	 * Creates the Item using these Parameters.
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!

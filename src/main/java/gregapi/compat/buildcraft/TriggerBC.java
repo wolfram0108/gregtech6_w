@@ -23,18 +23,18 @@
 
 package gregapi.compat.buildcraft;
 
-import static gregapi.data.CS.*;
-
 import java.util.Collection;
 
-import gt6mirror.buildcraft.api.statements.IStatement;
-import gt6mirror.buildcraft.api.statements.IStatementContainer;
-import gt6mirror.buildcraft.api.statements.IStatementParameter;
-import gt6mirror.buildcraft.api.statements.ITriggerExternal;
-import gt6mirror.buildcraft.api.statements.ITriggerInternal;
-import gt6mirror.buildcraft.api.statements.ITriggerProvider;
-import gt6mirror.buildcraft.api.statements.StatementManager;
-import gregapi.code.ArrayListNoNulls;
+import buildcraft.api.core.render.ISprite;
+import buildcraft.api.statements.IStatement;
+import buildcraft.api.statements.IStatementContainer;
+import buildcraft.api.statements.IStatementParameter;
+import buildcraft.api.statements.ITriggerExternal;
+import buildcraft.api.statements.ITriggerInternal;
+import buildcraft.api.statements.ITriggerInternalSided;
+import buildcraft.api.statements.ITriggerProvider;
+import buildcraft.api.statements.StatementManager;
+import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import gregapi.data.LH;
 import gregapi.lang.LanguageHandler;
 import gregapi.util.UT;
@@ -43,32 +43,35 @@ import net.minecraft.core.Direction;
 
 public abstract class TriggerBC implements ITriggerExternal, ITriggerProvider {
 	public final String mModID, mName;
-	// IIcon no longer exists in neo, and this BuildCraft trigger is unreachable anyway since BC is not ported.
-	public Object mIcon;
+	/** BuildCraft 7.99 fills a sprite holder only when the block atlas is stitched (SpriteHolderRegistry:187-193), so the
+	 *  holder is taken with the trigger, the way 1.7.10 registered the icon; the client-only class is touched on clients only. */
+	private final ISprite mSprite;
 	
 	public TriggerBC(String aModID, String aName, String aDesciption) {
 		mModID = aModID;
 		mName = aName;
 		LH.add("bc.trigger."+mModID+"."+mName, aDesciption);
+		mSprite = gregapi.data.CS.CODE_CLIENT ? SpriteHolderRegistry.getHolder(gregapi.render.GT6QuadBuilder.atlasId(new net.minecraft.resources.ResourceLocation(mModID, "triggers/" + mName), gregapi.render.GT6QuadBuilder.ATLAS_ITEMS).toString()) : null;
 
 		StatementManager.registerStatement(this);
 		StatementManager.registerTriggerProvider(this);
 	}
 	
 	
-	public String getUniqueTag() {return mModID + ":" + mName;}
-	public Object getIcon() {return mIcon;}
-	// Object avoids referencing IIconRegister, whose mirror type was stripped from the runtime jar and would
-	// break reflection; this trigger is unreachable anyway since BuildCraft itself is not ported.
-	public void registerIcons(Object aIconRegister) {/**/}
-	public int maxParameters() {return 0;}
-	public int minParameters() {return 0;}
-	public String getDescription() {return LanguageHandler.translate("bc.trigger."+mModID+"."+mName);}
-	public IStatementParameter createParameter(int aIndex) {return null;}
-	public IStatement rotateLeft() {return null;}
-	public boolean isTriggerActive(BlockEntity aTarget, Direction aSide, IStatementContainer aSource, IStatementParameter[] aParameters) {return isApplicable(aTarget, UT.Code.side(aSide)) ? isActive(aTarget, UT.Code.side(aSide), aSource, aParameters) : false;}
-	public Collection<ITriggerInternal> getInternalTriggers(IStatementContainer container) {return null;}
-	public Collection<ITriggerExternal> getExternalTriggers(Direction aSide, BlockEntity aTarget) {return isApplicable(aTarget, UT.Code.side(aSide)) ? new ArrayListNoNulls<ITriggerExternal>(F, this) : null;}
+	@Override public String getUniqueTag() {return mModID + ":" + mName;}
+	@Override public ISprite getSprite() {return mSprite;}
+	@Override public int maxParameters() {return 0;}
+	@Override public int minParameters() {return 0;}
+	// BuildCraft 7.99 shows the description as a Component and keys its guide pages by getDescriptionKey.
+	@Override public net.minecraft.network.chat.Component getDescription() {return net.minecraft.network.chat.Component.literal(LanguageHandler.translate(getDescriptionKey()));}
+	@Override public String getDescriptionKey() {return "bc.trigger."+mModID+"."+mName;}
+	@Override public IStatementParameter createParameter(int aIndex) {return null;}
+	@Override public IStatement rotateLeft() {return null;}
+	@Override public IStatement[] getPossible() {return new IStatement[] {this};}
+	@Override public boolean isTriggerActive(BlockEntity aTarget, Direction aSide, IStatementContainer aSource, IStatementParameter[] aParameters) {return isApplicable(aTarget, UT.Code.side(aSide)) ? isActive(aTarget, UT.Code.side(aSide), aSource, aParameters) : false;}
+	@Override public void addInternalTriggers(Collection<ITriggerInternal> aTriggers, IStatementContainer aContainer) {/**/}
+	@Override public void addInternalSidedTriggers(Collection<ITriggerInternalSided> aTriggers, IStatementContainer aContainer, Direction aSide) {/**/}
+	@Override public void addExternalTriggers(Collection<ITriggerExternal> aTriggers, Direction aSide, BlockEntity aTarget) {if (isApplicable(aTarget, UT.Code.side(aSide))) aTriggers.add(this);}
 	
 	public abstract boolean isActive(BlockEntity aTarget, byte aSideOfTileEntity, IStatementContainer aSource, IStatementParameter[] aParameters);
 	public abstract boolean isApplicable(BlockEntity aTarget, byte aSideOfTileEntity);

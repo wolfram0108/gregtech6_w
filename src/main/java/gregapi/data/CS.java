@@ -2393,13 +2393,14 @@ public class CS {
 		, LycM_Demon        = "demonmobs"
 		, LycM_Shadow       = "shadowmobs"
 		
-		, BC                = "BuildCraft|Core"
-		, BC_SILICON        = "BuildCraft|Silicon"
-		, BC_TRANSPORT      = "BuildCraft|Transport"
-		, BC_FACTORY        = "BuildCraft|Factory"
-		, BC_ENERGY         = "BuildCraft|Energy"
-		, BC_BUILDERS       = "BuildCraft|Builders"
-		, BC_ROBOTICS       = "BuildCraft|Robotics"
+		// BuildCraft on 1.20.1 is BuildCraft: Community Edition 7.99: each sub-mod keeps its own mod id (META-INF/mods.toml).
+		, BC                = "buildcraftcore"
+		, BC_SILICON        = "buildcraftsilicon"
+		, BC_TRANSPORT      = "buildcrafttransport"
+		, BC_FACTORY        = "buildcraftfactory"
+		, BC_ENERGY         = "buildcraftenergy"
+		, BC_BUILDERS       = "buildcraftbuilders"
+		, BC_ROBOTICS       = "buildcraftrobotics"
 		
 		, RP                = "Redpower"
 		, BP                = "bluepower"

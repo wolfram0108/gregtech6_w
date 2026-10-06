@@ -87,7 +87,7 @@ public class EnergyCompat {
 			GC_ENERGY = T;
 		} catch(Throwable e) {/**/}
 		if (MD.BC.mLoaded) try {
-			gt6mirror.buildcraft.api.power.ILaserTarget                            .class.getCanonicalName();
+			buildcraft.api.mj.ILaserTarget                                         .class.getCanonicalName();
 			BC_LASER = T;
 		} catch(Throwable e) {/**/}
 	}
@@ -273,7 +273,7 @@ public class EnergyCompat {
 			return 0;
 		}
 		
-		if (RF_ENERGY && aSize > 0) {
+		if (aSize > 0) {
 			long tSizeToReceive = 0;
 			// GT KineticUnits auto-convert to RF, but only in the Push Phase, so when they are postive!
 			if (aEnergyType == TD.Energy.KU) tSizeToReceive = aSize * RF_PER_EU; else
@@ -283,10 +283,15 @@ public class EnergyCompat {
 			if (aEnergyType == TD.Energy.RF) tSizeToReceive = aSize;
 			
 			if (tSizeToReceive > 0) {
-				if (!(aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyConnection) || ((gt6mirror.cofh.api.energy.IEnergyConnection)aReceiver).canConnectEnergy(FORGE_DIR[aSide])) {
+				if (RF_ENERGY && (!(aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyConnection) || ((gt6mirror.cofh.api.energy.IEnergyConnection)aReceiver).canConnectEnergy(FORGE_DIR[aSide]))) {
 					if (RF_ENERGY_NEW && aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyReceiver) return UT.Code.divup(((gt6mirror.cofh.api.energy.IEnergyReceiver)aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * tSizeToReceive), F), tSizeToReceive);
 					if (                 aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyHandler ) return UT.Code.divup(((gt6mirror.cofh.api.energy.IEnergyHandler )aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * tSizeToReceive), F), tSizeToReceive);
 				}
+				// The RF receivers of 1.7.10 are reached today through the engine's ForgeCapabilities.ENERGY, and BuildCraft's
+				// MJ machines through its own capability, at BuildCraft's MJ per RF.
+				net.minecraftforge.energy.IEnergyStorage tFE = feHandler(aReceiver, aSide);
+				if (tFE != null) return UT.Code.divup(tFE.receiveEnergy(UT.Code.bind31(aAmount * tSizeToReceive), F), tSizeToReceive);
+				if (COMPAT_BC != null) {long tRF = COMPAT_BC.insertRF(aReceiver, aSide, aAmount * tSizeToReceive); if (tRF >= 0) return UT.Code.divup(tRF, tSizeToReceive);}
 			}
 		}
 		return 0;

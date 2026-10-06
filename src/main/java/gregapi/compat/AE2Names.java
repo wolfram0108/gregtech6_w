@@ -23,17 +23,10 @@
 
 package gregapi.compat;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import gregapi.code.ModData;
 import gregapi.data.MD;
-import gregapi.util.ST;
 
 import static gregapi.data.CS.*;
 
@@ -42,20 +35,13 @@ import static gregapi.data.CS.*;
 public final class AE2Names {
 	private AE2Names() {}
 
-	/** Carrier exists: "name rv2" or "name rv2#meta" -> path id in the ae2 namespace. */
-	private static final Map<String, String> MAPPED = new LinkedHashMap<>();
-	/** No carrier: "name rv2" or "name rv2#meta" -> the reason, printed by the caller/stand. */
-	private static final Map<String, String> GONE = new LinkedHashMap<>();
-	/** Names whose 1.7.10 meta was a SUBTYPE: look up by "name#meta" first, and don't set meta on the
-	 *  match found. */
-	private static final Set<String> SPLIT = new LinkedHashSet<>();
+	/** AE2's table in the foreign item name centre; the machinery itself lives in {@link ForeignNames}. */
+	public static final ForeignNames TABLE = new ForeignNames(MD.AE);
 
-	private static void map (String aName,             String aPath  ) {MAPPED.put(aName, aPath);}
-	private static void map (String aName, long aMeta, String aPath  ) {SPLIT.add(aName); MAPPED.put(key(aName, aMeta), aPath);}
-	private static void gone(String aName,             String aReason) {GONE .put(aName, aReason);}
-	private static void gone(String aName, long aMeta, String aReason) {SPLIT.add(aName); GONE .put(key(aName, aMeta), aReason);}
-
-	private static String key(String aName, long aMeta) {return aName + "#" + aMeta;}
+	private static void map (String aName,             String aPath  ) {TABLE.map (aName,        aPath  );}
+	private static void map (String aName, long aMeta, String aPath  ) {TABLE.map (aName, aMeta, aPath  );}
+	private static void gone(String aName,             String aReason) {TABLE.gone(aName,        aReason);}
+	private static void gone(String aName, long aMeta, String aReason) {TABLE.gone(aName, aMeta, aReason);}
 
 	// ================================================================================================
 	// One line per reason a mapping is missing, so wording doesn't drift between causes.
@@ -209,39 +195,14 @@ public final class AE2Names {
 		map("item.ItemMultiMaterial", 45, "sky_dust");
 	}
 
-	/** Whether this center knows this (mod, name) pair -- i.e. whether the ST.make funnel should defer to it. */
-	public static boolean owns(ModData aMod, String aName) {
-		if (aMod == null || aName == null || !MD.AE.mID.equals(aMod.mID)) return F;
-		return SPLIT.contains(aName) || MAPPED.containsKey(aName) || GONE.containsKey(aName);
-	}
-
+	/** Whether AE2's table knows this (mod, name) pair. */
+	public static boolean owns(ModData aMod, String aName) {return aMod != null && MD.AE.mID.equals(aMod.mID) && TABLE.owns(aName);}
 	/** 15.4.10 id path for an (rv2 name, meta) pair; null means no carrier or the name isn't ours. */
-	public static String path(String aName, long aMeta) {
-		if (aName == null) return null;
-		return SPLIT.contains(aName) ? MAPPED.get(key(aName, aMeta)) : MAPPED.get(aName);
-	}
-
+	public static String path(String aName, long aMeta) {return TABLE.path(aName, aMeta);}
 	/** Whether the pair has a 15.4.10 carrier at all; callers use this to decide whether to register their own entry. */
-	public static boolean has(String aName, long aMeta) {
-		return path(aName, aMeta) != null;
-	}
-
+	public static boolean has(String aName, long aMeta) {return TABLE.has(aName, aMeta);}
 	/** The REASON a carrier is missing; null means either a carrier exists or the name isn't ours. */
-	public static String reason(String aName, long aMeta) {
-		if (aName == null || path(aName, aMeta) != null) return null;
-		if (!SPLIT.contains(aName)) return GONE.get(aName);
-		String rReason = GONE.get(key(aName, aMeta));
-		return rReason != null ? rReason : "мета " + aMeta + " у «" + aName + "» центру неизвестна (GT6 её не зовёт)";
-	}
-
-	/** Sole way to get an AE2 stack from a 1.7.10 name; called only from the ST.make funnel, itself
-	 *  reaching the registry only through ST.findItem. Split names' subtype is already in the item, so meta isn't set on them. */
-	public static ItemStack make(String aName, long aSize, long aMeta) {
-		if (!MD.AE.mLoaded || !GAPI_POST.mStartedPreInit) return null;
-		String tPath = path(aName, aMeta);
-		if (tPath == null) return null;
-		Item tItem = ST.findItem(MD.AE.mID, tPath);
-		if (tItem == null) return null;
-		return ST.make_(tItem, aSize, SPLIT.contains(aName) && aMeta != W ? 0 : aMeta);
-	}
+	public static String reason(String aName, long aMeta) {return TABLE.reason(aName, aMeta);}
+	/** An AE2 stack from a 1.7.10 name, through the same centre the ST.make funnel uses. */
+	public static ItemStack make(String aName, long aSize, long aMeta) {return TABLE.make(MD.AE, aName, aSize, aMeta);}
 }

@@ -27,7 +27,8 @@ import static gregapi.data.CS.*;
 
 import java.util.List;
 
-import gt6mirror.buildcraft.api.power.ILaserTarget;
+import buildcraft.api.mj.ILaserTarget;
+import buildcraft.api.mj.MjAPI;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetCollisionBoundingBoxFromPool;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetSelectedBoundingBoxFromPool;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_SetBlockBoundsBasedOnState;
@@ -66,14 +67,15 @@ public class MultiTileEntityLaserBuildcraft extends TileEntityBase10EnergyConver
 			
 			DelegatorTileEntity<BlockEntity> tLaser = getAdjacentTileEntity(mFacing, F, F);
 			
-			mActivity.mActive = (tOutput >= mConverter.mEnergyOUT.mMin && tLaser.mTileEntity instanceof ILaserTarget && ((ILaserTarget)tLaser.mTileEntity).requiresLaserEnergy());
+			mActivity.mActive = (tOutput >= mConverter.mEnergyOUT.mMin && tLaser.mTileEntity instanceof ILaserTarget && ((ILaserTarget)tLaser.mTileEntity).getRequiredLaserPower() > 0);
 			
 			if (mActivity.mActive) {
 				if (tOutput > mConverter.mEnergyOUT.mMax && mConverter.mLimitConsumption) tOutput = mConverter.mEnergyOUT.mMax;
 				if (tOutput > mConverter.mEnergyOUT.mMax) {
 					overload(mStorage.mEnergy, mConverter.mEnergyOUT.mType);
 				} else {
-					((ILaserTarget)tLaser.mTileEntity).receiveLaserEnergy(UT.Code.bindInt(tOutput));
+					// 7.1.23 lasers carried RF; BuildCraft 7.99 targets take microjoules, at the rate BuildCraft itself is configured with.
+					((ILaserTarget)tLaser.mTileEntity).receiveLaserPower(tOutput * MjAPI.getRfConversion().mjPerRf);
 				}
 				mStorage.mEnergy = Math.max(0, mStorage.mEnergy-mConverter.mEnergyIN.mMax);
 				mConverter.mEmitsEnergy = T;

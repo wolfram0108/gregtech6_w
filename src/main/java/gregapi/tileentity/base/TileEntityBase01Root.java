@@ -793,7 +793,9 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 
 	// getCapability(Capability,Direction) on the BlockEntity replaces per-subclass interface declarations; the bridge
 	// lives once at the hierarchy root, and side stays alive (bound to the handler) instead of collapsing to SIDE_ANY.
-	private final net.minecraftforge.common.util.LazyOptional<?>[] mFluidCaps = new net.minecraftforge.common.util.LazyOptional<?>[7], mItemCaps = new net.minecraftforge.common.util.LazyOptional<?>[7];
+	private final net.minecraftforge.common.util.LazyOptional<?>[] mFluidCaps = new net.minecraftforge.common.util.LazyOptional<?>[7], mItemCaps = new net.minecraftforge.common.util.LazyOptional<?>[7], mEnergyCaps = new net.minecraftforge.common.util.LazyOptional<?>[7];
+	/** Capabilities a foreign mod defines and its compat class answers (BuildCraft's MJ receiver and work state), cached the same way. */
+	private java.util.Map<net.minecraftforge.common.capabilities.Capability<?>, net.minecraftforge.common.util.LazyOptional<?>[]> mCompatCaps = null;
 	/** Mirrors CapabilityProvider's private valid flag: once caps are invalidated, none are handed out.
 	 *  clearRemoved() is what revives them again. */
 	private boolean mCapsValid = T;
@@ -809,6 +811,17 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 			if (aCapability == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) {
 				if (!gregapi.tileentity.GT6ItemCapability.hasInventory(this)) return net.minecraftforge.common.util.LazyOptional.empty();
 				return cachedCap(mItemCaps, aSide, () -> gregapi.tileentity.GT6ItemCapability.handlerOf(this, aSide));
+			}
+			if (aCapability == net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY) {
+				if (gregapi.tileentity.energy.GT6EnergyCapability.flux(this, aSide) == null) return net.minecraftforge.common.util.LazyOptional.empty();
+				return cachedCap(mEnergyCaps, aSide, () -> gregapi.tileentity.energy.GT6EnergyCapability.handlerOf(this, aSide));
+			}
+			if (COMPAT_BC != null) {
+				net.minecraftforge.common.util.NonNullSupplier<Object> tFactory = COMPAT_BC.capability(this, aCapability, aSide);
+				if (tFactory != null) {
+					if (mCompatCaps == null) mCompatCaps = new java.util.IdentityHashMap<>();
+					return cachedCap(mCompatCaps.computeIfAbsent(aCapability, k -> new net.minecraftforge.common.util.LazyOptional<?>[7]), aSide, tFactory);
+				}
 			}
 		}
 		return super.getCapability(aCapability, aSide);
@@ -832,6 +845,8 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		mCapsValid = F;
 		invalidateCapArray(mFluidCaps);
 		invalidateCapArray(mItemCaps);
+		invalidateCapArray(mEnergyCaps);
+		if (mCompatCaps != null) for (net.minecraftforge.common.util.LazyOptional<?>[] tCache : mCompatCaps.values()) invalidateCapArray(tCache);
 	}
 
 	private static void invalidateCapArray(net.minecraftforge.common.util.LazyOptional<?>[] aCache) {

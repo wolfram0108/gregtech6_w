@@ -328,7 +328,7 @@ def localMods = gradle.localMods
 if (!gradle.platformCopy) gradle.ext.localModsRepository.call(repositories)
 // Each entry is [name, version]; the jar in the folder is <name>-<version>.jar.
 def devRunMods = [
-    // JEI is the visual-acceptance viewer; Jade, JourneyMap, AE2 and More Red are what the compat stands query.
+    // JEI is the visual-acceptance viewer; Jade, JourneyMap, AE2, More Red and BuildCraft are what the compat stands query.
     ["jei-${jei_minecraft_version}-forge", jei_version],
     ['jade', jade_version],
     ['journeymap', journeymap_version],
@@ -338,6 +338,7 @@ def devRunMods = [
     // More Red embeds these two, but the dev runtime doesn't unpack embedded jars.
     ["useitemonblockevent-${minecraft_version}", useitemonblockevent_version],
     ["jumbofurnace-${minecraft_version}", jumbofurnace_version],
+    ['buildcraft', buildcraft_version],
 ].collect { n, v -> [notation: "localmods:${n}:${v}", jar: new File(localMods, "${n}-${v}.jar")] }
 def probeCompileMods = devRunMods*.jar
 

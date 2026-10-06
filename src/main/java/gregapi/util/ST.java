@@ -90,7 +90,8 @@ public class ST {
 			TE_PIPES = T;
 		} catch(Throwable e) {/**/}
 		if (MD.BC.mLoaded) try {
-			gt6mirror.buildcraft.api.transport.IInjectable.class.getCanonicalName();
+			buildcraft.api.transport.IInjectable.class.getCanonicalName();
+			buildcraft.api.transport.pipe.PipeApi.class.getCanonicalName();
 			BC_PIPES = T;
 		} catch(Throwable e) {/**/}
 		if (MD.TF.mLoaded) try {
@@ -426,7 +427,10 @@ public class ST {
 
 	public static Item findItem(String aModID, String aName) {
 		if (aModID == null || aName == null) return null;
-		ResourceLocation tID = new ResourceLocation(aModID, aName);
+		// A 1.7.10 item name may hold characters a modern id forbids ("item.ItemMultiMaterial", uppercase); tryBuild answers
+		// null instead of throwing, so an unknown name yields null as GameRegistry.findItem did and no loader dies on it.
+		ResourceLocation tID = ResourceLocation.tryBuild(aModID, aName);
+		if (tID == null) return null;
 		return BuiltInRegistries.ITEM.containsKey(tID) ? BuiltInRegistries.ITEM.get(tID) : null;
 	}
 	/** Single point for building a sized stack from (modId,name); returns null for an unregistered item, as the original did. */
@@ -627,7 +631,7 @@ public class ST {
 	public static ItemStack mkic(String aItem                , long aSize, long aMeta, Object    aReplacement           ) {return get(meta(mkic(aItem, aSize), aMeta), aReplacement);}
 	// The sole point where a 1.7.10 foreign-mod item name becomes a stack; every addressing path funnels here.
 	// AE2 renamed its items entirely on 1.20.1, so its pairs resolve through a dedicated table; others stay verbatim.
-	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {if (gregapi.compat.AE2Names.owns(aModID, aItem)) return gregapi.compat.AE2Names.make(aItem, aSize, aMeta); return     meta(make(aModID, aItem, aSize), aMeta);}
+	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {gregapi.compat.ForeignNames tTable = gregapi.compat.ForeignNames.table(aModID, aItem); if (tTable != null) return tTable.make(aModID, aItem, aSize, aMeta); return     meta(make(aModID, aItem, aSize), aMeta);}
 	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta, Object    aReplacement           ) {return get(meta(make(aModID, aItem, aSize), aMeta), aReplacement);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta                                   ) {return make(item(aItemID), aSize, aMeta);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta              , CompoundTag aNBT) {return make(item(aItemID), aSize, aMeta, aNBT);}
@@ -910,7 +914,7 @@ public class ST {
 	public static boolean canConnect(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator) {
 		if (aDelegator.mTileEntity == null) return F;
 		if (TE_PIPES && aDelegator.mTileEntity instanceof gt6mirror.cofh.api.transport.IItemDuct) return T;
-		if (BC_PIPES && aDelegator.mTileEntity instanceof gt6mirror.buildcraft.api.transport.IInjectable) return ((gt6mirror.buildcraft.api.transport.IInjectable)aDelegator.mTileEntity).canInjectItems(aDelegator.getForgeSideOfTileEntity());
+		if (BC_PIPES && gregapi.compat.buildcraft.CompatBC.isInjectable(aDelegator.mTileEntity, aDelegator.getForgeSideOfTileEntity())) return gregapi.compat.buildcraft.CompatBC.canInject(aDelegator.mTileEntity, aDelegator.getForgeSideOfTileEntity());
 		if (aDelegator.mTileEntity instanceof ITileEntityCanDelegate && ((ITileEntityCanDelegate)aDelegator.mTileEntity).isExtender(aDelegator.mSideOfTileEntity)) return T;
 		if (aDelegator.mTileEntity instanceof Container && ((Container)aDelegator.mTileEntity).getContainerSize() > 0) return T;
 		return F;
@@ -975,15 +979,15 @@ public class ST {
 				}
 				return 0;
 			}
-			if (BC_PIPES && aTo.mTileEntity instanceof gt6mirror.buildcraft.api.transport.IInjectable) {
+			if (BC_PIPES && gregapi.compat.buildcraft.CompatBC.isInjectable(aTo.mTileEntity, aTo.getForgeSideOfTileEntity())) {
 				for (int aSlotFrom : aSlotsFrom) {
 					ItemStack aStackFrom = aFrom.mTileEntity.getItem(aSlotFrom);
 					if (aStackFrom != null && aMinMove <= aStackFrom.getCount() && (aFilter == null || aFilter.contains(aStackFrom, T) != aInvertFilter) && canTake(aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) {
 						// Actually Moving the Stack
 						ItemStack tStackMoved = amount(Math.min(aStackFrom.getCount(), aMaxMove), aStackFrom);
-						int rMoved = ((gt6mirror.buildcraft.api.transport.IInjectable)aTo.mTileEntity).injectItem(copy(tStackMoved), F, aTo.getForgeSideOfTileEntity(), null);
+						int rMoved = gregapi.compat.buildcraft.CompatBC.inject(aTo.mTileEntity, copy(tStackMoved), F, aTo.getForgeSideOfTileEntity());
 						if (rMoved >= aMinMove) {
-							rMoved = (((gt6mirror.buildcraft.api.transport.IInjectable)aTo.mTileEntity).injectItem(amount(rMoved, tStackMoved), T, aTo.getForgeSideOfTileEntity(), null));
+							rMoved = gregapi.compat.buildcraft.CompatBC.inject(aTo.mTileEntity, amount(rMoved, tStackMoved), T, aTo.getForgeSideOfTileEntity());
 							aFrom.mTileEntity.removeItem(aSlotFrom, rMoved);
 							aFrom.mTileEntity.setChanged();
 							WD.mark(aFrom);
