@@ -168,6 +168,27 @@ public final class GT6FluidCapability {
 	 *  entity's own provider about as cheaply (gt6fluidperf), and a kept answer could outlive its block, since a mod need not
 	 *  invalidate its own LazyOptional (BuildCraft 7.99 makes a fresh one per call and never does). */
 	public static IFluidHandler foreign(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
-		return aTileEntity.isRemoved() ? null : aTileEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, gregapi.data.CS.FORGE_DIR[aSide]).orElse(null);
+		if (aTileEntity.isRemoved()) return null;
+		IFluidHandler tTank;
+		try {tTank = aTileEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, gregapi.data.CS.FORGE_DIR[aSide]).orElse(null);} catch (Throwable e) {return null;}
+		return tTank == null ? null : new ForeignTank(tTank);
+	}
+
+	/** Another mod's fluid storage as GT6 code calls it, under the rule EnergyCompat keeps for a foreign energy storage: one that
+	 *  fails reads as moving nothing, instead of throwing into a GT6 tick or a player's click. */
+	private static final class ForeignTank implements IFluidHandler {
+		private final IFluidHandler mTank;
+		private ForeignTank(IFluidHandler aTank) {mTank = aTank;}
+
+		@Override public int getTanks() {try {return mTank.getTanks();} catch (Throwable e) {return 0;}}
+		@Override public FluidStack getFluidInTank(int aTank) {try {FluidStack r = mTank.getFluidInTank(aTank); return r == null ? FluidStack.EMPTY : r;} catch (Throwable e) {return FluidStack.EMPTY;}}
+		@Override public int getTankCapacity(int aTank) {try {return mTank.getTankCapacity(aTank);} catch (Throwable e) {return 0;}}
+		@Override public boolean isFluidValid(int aTank, FluidStack aFluid) {try {return mTank.isFluidValid(aTank, aFluid);} catch (Throwable e) {return false;}}
+		@Override public int fill(FluidStack aFluid, FluidAction aAction) {try {return mTank.fill(aFluid, aAction);} catch (Throwable e) {return 0;}}
+		@Override public FluidStack drain(FluidStack aFluid, FluidAction aAction) {try {FluidStack r = mTank.drain(aFluid, aAction); return r == null ? FluidStack.EMPTY : r;} catch (Throwable e) {return FluidStack.EMPTY;}}
+		@Override public FluidStack drain(int aAmount, FluidAction aAction) {try {FluidStack r = mTank.drain(aAmount, aAction); return r == null ? FluidStack.EMPTY : r;} catch (Throwable e) {return FluidStack.EMPTY;}}
+		/** Adapters of one storage are one tank, so a delegator holding one can tell its storage still exists. */
+		@Override public boolean equals(Object aOther) {return aOther instanceof ForeignTank tOther && tOther.mTank == mTank;}
+		@Override public int hashCode() {return System.identityHashCode(mTank);}
 	}
 }

@@ -101,7 +101,7 @@ public final class DelegatorTileEntity<T> extends WorldAndCoords {
 		if (mTileEntity instanceof ITileEntityUnloadable) return !((ITileEntityUnloadable)mTileEntity).isDead();
 		if (mTileEntity instanceof BlockEntity) return !((BlockEntity)mTileEntity).isRemoved() && mWorld != null && WD.exists(mWorld, mX, mY, mZ);
 		// another mod's storage found through its capability: it exists while its block still hands out this same storage
-		return mTileEntity != null && mWorld != null && WD.exists(mWorld, mX, mY, mZ) && gregapi.data.FL.tank(WD.te(mWorld, mX, mY, mZ, mSideOfTileEntity, F)) == mTileEntity;
+		return mTileEntity != null && mWorld != null && WD.exists(mWorld, mX, mY, mZ) && mTileEntity.equals(gregapi.data.FL.tank(WD.te(mWorld, mX, mY, mZ, mSideOfTileEntity, F)));
 	}
 	
 	@Override public Level getWorld() {return mWorld;}
