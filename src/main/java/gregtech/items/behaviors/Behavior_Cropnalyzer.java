@@ -77,32 +77,32 @@ public class Behavior_Cropnalyzer extends AbstractBehaviorDefault {
 		
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
-		if (tTileEntity instanceof ic2.api.crops.ICropTile) {
+		if (tTileEntity instanceof gt6mirror.ic2.api.crops.ICropTile) {
 			rList.add("--- X: " + aX + " Y: " + aY + " Z: " + aZ + " ---");
-			if (((ic2.api.crops.ICropTile)tTileEntity).getScanLevel() < 4) {
+			if (((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getScanLevel() < 4) {
 				rEUAmount = V[6];
-				((ic2.api.crops.ICropTile)tTileEntity).setScanLevel((byte)4);
+				((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).setScanLevel((byte)4);
 			} else {
 				rEUAmount = V[3];
 			}
-			rList.add("Type -- Name: " + LH.get(((ic2.api.crops.ICropTile)tTileEntity).getCrop().displayName())
-					+ "   Growth: " + ((ic2.api.crops.ICropTile)tTileEntity).getGrowth()
-					+ "   Gain: " + ((ic2.api.crops.ICropTile)tTileEntity).getGain()
-					+ "   Resistance: " + ((ic2.api.crops.ICropTile)tTileEntity).getResistance()
+			rList.add("Type -- Name: " + LH.get(((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getCrop().displayName())
+					+ "   Growth: " + ((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getGrowth()
+					+ "   Gain: " + ((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getGain()
+					+ "   Resistance: " + ((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getResistance()
 					);
-			rList.add("Plant -- Fertilizer: " + ((ic2.api.crops.ICropTile)tTileEntity).getNutrientStorage()
-					+ "   Water: " + ((ic2.api.crops.ICropTile)tTileEntity).getHydrationStorage()
-					+ "   Weed-Ex: " + ((ic2.api.crops.ICropTile)tTileEntity).getWeedExStorage()
+			rList.add("Plant -- Fertilizer: " + ((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getNutrientStorage()
+					+ "   Water: " + ((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getHydrationStorage()
+					+ "   Weed-Ex: " + ((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getWeedExStorage()
 			//      + "   Scan-Level: " + ((ic2.api.crops.ICropTile)tTileEntity).getScanLevel()
 					);
-			rList.add("Environment -- Nutrients: " + ((ic2.api.crops.ICropTile)tTileEntity).getNutrients()
-					+ "   Humidity: " + ((ic2.api.crops.ICropTile)tTileEntity).getHumidity()
-					+ "   Air-Quality: " + ((ic2.api.crops.ICropTile)tTileEntity).getAirQuality()
+			rList.add("Environment -- Nutrients: " + ((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getNutrients()
+					+ "   Humidity: " + ((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getHumidity()
+					+ "   Air-Quality: " + ((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getAirQuality()
 					);
 			String tString = "";
-			for (String tAttribute : ((ic2.api.crops.ICropTile)tTileEntity).getCrop().attributes()) tString += ", " + tAttribute;
+			for (String tAttribute : ((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getCrop().attributes()) tString += ", " + tAttribute;
 			rList.add("Attributes:" + tString.replaceFirst(",", ""));
-			rList.add("Discovered by: " + ((ic2.api.crops.ICropTile)tTileEntity).getCrop().discoveredBy());
+			rList.add("Discovered by: " + ((gt6mirror.ic2.api.crops.ICropTile)tTileEntity).getCrop().discoveredBy());
 			
 		}
 		aList.addAll(rList);

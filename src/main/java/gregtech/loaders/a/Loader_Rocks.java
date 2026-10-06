@@ -28,7 +28,7 @@ import gregapi.GT_API;
 import net.minecraft.world.level.block.SoundType;
 import static gregapi.data.CS.*;
 
-import com.cricketcraft.chisel.api.carving.CarvingUtils;
+import gt6mirror.com.cricketcraft.chisel.api.carving.CarvingUtils;
 
 import gregapi.block.behaviors.Drops;
 import gregapi.block.behaviors.Drops_SmallOre;
@@ -51,7 +51,7 @@ import gregapi.util.ST;
 import gregtech.blocks.stone.BlockStonesGT;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
-import team.chisel.carving.Carving;
+import gt6mirror.team.chisel.carving.Carving;
 
 public class Loader_Rocks implements Runnable {
 	@Override

@@ -31,13 +31,13 @@ import gregapi.code.ItemNBT;
 import gregapi.compat.galacticraft.IBlockSealable;
 import gregapi.data.IL;
 import gregapi.util.UT;
-import micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock;
+import gt6mirror.micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock;
 import gregapi.block.Material;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.core.Direction;
-import openblocks.api.IPaintableBlock;
-import vazkii.botania.api.mana.IManaTrigger;
+import gt6mirror.openblocks.api.IPaintableBlock;
+import gt6mirror.vazkii.botania.api.mana.IManaTrigger;
 
 import static gregapi.data.CS.*;
 
@@ -62,5 +62,5 @@ public class MultiTileEntityBlockWithCompat extends MultiTileEntityBlock impleme
 	public final boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMultiTileEntity.IMTE_IsSealable && ((IMultiTileEntity.IMTE_IsSealable)aTileEntity).isSealable((byte)(UT.Code.side(aDirection) ^ 1));}
 	public final void onOxygenAdded  (Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMultiTileEntity.IMTE_OnOxygenAdded) ((IMultiTileEntity.IMTE_OnOxygenAdded)aTileEntity).onOxygenAdded  ();}
 	public final void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMultiTileEntity.IMTE_OnOxygenRemoved) ((IMultiTileEntity.IMTE_OnOxygenRemoved)aTileEntity).onOxygenRemoved();}
-	@Optional.Method(modid = ModIDs.BOTA) public final void onBurstCollision(vazkii.botania.api.internal.IManaBurst aMana, Level aWorld, int aX, int aY, int aZ) {if (aWorld.isClientSide()) return; if (aMana.isFake() || !IL.BOTA_Paintslinger.equal(aMana.getSourceLens(), F, T) || !ItemNBT.has(aMana.getSourceLens()) || !ItemNBT.get(aMana.getSourceLens()).contains("color") || ItemNBT.get(aMana.getSourceLens()).getInt("color") == -1) return; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMultiTileEntity.IMTE_OnPainting) ((IMultiTileEntity.IMTE_OnPainting)aTileEntity).onPainting(SIDE_UNKNOWN, (aMana.getColor() & 0x00ffffff));}
+	@Optional.Method(modid = ModIDs.BOTA) public final void onBurstCollision(gt6mirror.vazkii.botania.api.internal.IManaBurst aMana, Level aWorld, int aX, int aY, int aZ) {if (aWorld.isClientSide()) return; if (aMana.isFake() || !IL.BOTA_Paintslinger.equal(aMana.getSourceLens(), F, T) || !ItemNBT.has(aMana.getSourceLens()) || !ItemNBT.get(aMana.getSourceLens()).contains("color") || ItemNBT.get(aMana.getSourceLens()).getInt("color") == -1) return; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMultiTileEntity.IMTE_OnPainting) ((IMultiTileEntity.IMTE_OnPainting)aTileEntity).onPainting(SIDE_UNKNOWN, (aMana.getColor() & 0x00ffffff));}
 }

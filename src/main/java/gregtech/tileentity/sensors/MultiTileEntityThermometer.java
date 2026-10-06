@@ -33,8 +33,8 @@ import gregapi.tileentity.data.ITileEntityTemperature;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.machines.MultiTileEntitySensorTE;
 import gregapi.util.WD;
-import ic2.api.reactor.IReactor;
-import ic2.api.reactor.IReactorChamber;
+import gt6mirror.ic2.api.reactor.IReactor;
+import gt6mirror.ic2.api.reactor.IReactorChamber;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**

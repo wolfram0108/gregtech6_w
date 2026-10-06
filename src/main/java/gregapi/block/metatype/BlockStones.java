@@ -41,7 +41,7 @@ import gregapi.oredict.event.IOreDictListenerEvent;
 import gregapi.render.BlockTextureCopied;
 import gregapi.render.IIconContainer;
 import gregapi.util.*;
-import mods.railcraft.common.carts.EntityTunnelBore;
+import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.state.BlockState;

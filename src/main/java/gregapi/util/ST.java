@@ -44,7 +44,7 @@ import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.delegate.ITileEntityCanDelegate;
 import gregapi.wooddict.WoodDictionary;
 import gregtech.worldgen.TwilightTreasureReplacer;
-import ic2.api.item.IC2Items;
+import gt6mirror.ic2.api.item.IC2Items;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
@@ -69,8 +69,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
-import twilightforest.TFAchievementPage;
+import gt6mirror.net.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.twilightforest.TFAchievementPage;
 
 import java.util.*;
 
@@ -84,16 +84,17 @@ public class ST {
 	
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	public static void checkAvailabilities() {
-		try {
-			cofh.api.transport.IItemDuct.class.getCanonicalName();
+		// gt6mirror types always load, so each class probe runs only when the mod list holds the owner of that API.
+		if (MD.COFH_API.mLoaded) try {
+			gt6mirror.cofh.api.transport.IItemDuct.class.getCanonicalName();
 			TE_PIPES = T;
 		} catch(Throwable e) {/**/}
-		try {
-			buildcraft.api.transport.IInjectable.class.getCanonicalName();
+		if (MD.BC.mLoaded) try {
+			gt6mirror.buildcraft.api.transport.IInjectable.class.getCanonicalName();
 			BC_PIPES = T;
 		} catch(Throwable e) {/**/}
-		try {
-			twilightforest.TFTreasure.class.getCanonicalName();
+		if (MD.TF.mLoaded) try {
+			gt6mirror.twilightforest.TFTreasure.class.getCanonicalName();
 			TF_TREASURE = T;
 		} catch(Throwable e) {/**/}
 	}
@@ -908,8 +909,8 @@ public class ST {
 	
 	public static boolean canConnect(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator) {
 		if (aDelegator.mTileEntity == null) return F;
-		if (TE_PIPES && aDelegator.mTileEntity instanceof cofh.api.transport.IItemDuct) return T;
-		if (BC_PIPES && aDelegator.mTileEntity instanceof buildcraft.api.transport.IInjectable) return ((buildcraft.api.transport.IInjectable)aDelegator.mTileEntity).canInjectItems(aDelegator.getForgeSideOfTileEntity());
+		if (TE_PIPES && aDelegator.mTileEntity instanceof gt6mirror.cofh.api.transport.IItemDuct) return T;
+		if (BC_PIPES && aDelegator.mTileEntity instanceof gt6mirror.buildcraft.api.transport.IInjectable) return ((gt6mirror.buildcraft.api.transport.IInjectable)aDelegator.mTileEntity).canInjectItems(aDelegator.getForgeSideOfTileEntity());
 		if (aDelegator.mTileEntity instanceof ITileEntityCanDelegate && ((ITileEntityCanDelegate)aDelegator.mTileEntity).isExtender(aDelegator.mSideOfTileEntity)) return T;
 		if (aDelegator.mTileEntity instanceof Container && ((Container)aDelegator.mTileEntity).getContainerSize() > 0) return T;
 		return F;
@@ -955,13 +956,13 @@ public class ST {
 	
 	public static int put(DelegatorTileEntity<Container> aFrom, int[] aSlotsFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, ItemStackSet<ItemStackContainer> aFilter, boolean aIgnoreSideFrom, boolean aInvertFilter, boolean aEjectItems, int aMaxMove, int aMinMove) {
 		if (aTo.mTileEntity != null) {
-			if (TE_PIPES && aTo.mTileEntity instanceof cofh.api.transport.IItemDuct) {
+			if (TE_PIPES && aTo.mTileEntity instanceof gt6mirror.cofh.api.transport.IItemDuct) {
 				for (int aSlotFrom : aSlotsFrom) {
 					ItemStack aStackFrom = aFrom.mTileEntity.getItem(aSlotFrom);
 					if (aStackFrom != null && aMinMove <= aStackFrom.getCount() && (aFilter == null || aFilter.contains(aStackFrom, T) != aInvertFilter) && canTake(aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) {
 						// Actually Moving the Stack
 						ItemStack tStackMoved = amount(Math.min(aStackFrom.getCount(), aMaxMove), aStackFrom);
-						ItemStack rStackMoved = ((cofh.api.transport.IItemDuct)aTo.mTileEntity).insertItem(aTo.getForgeSideOfTileEntity(), copy(tStackMoved));
+						ItemStack rStackMoved = ((gt6mirror.cofh.api.transport.IItemDuct)aTo.mTileEntity).insertItem(aTo.getForgeSideOfTileEntity(), copy(tStackMoved));
 						int rMoved = (tStackMoved.getCount() - (rStackMoved == null ? 0 : rStackMoved.getCount()));
 						if (rMoved > 0) {
 							aFrom.mTileEntity.removeItem(aSlotFrom, rMoved);
@@ -974,15 +975,15 @@ public class ST {
 				}
 				return 0;
 			}
-			if (BC_PIPES && aTo.mTileEntity instanceof buildcraft.api.transport.IInjectable) {
+			if (BC_PIPES && aTo.mTileEntity instanceof gt6mirror.buildcraft.api.transport.IInjectable) {
 				for (int aSlotFrom : aSlotsFrom) {
 					ItemStack aStackFrom = aFrom.mTileEntity.getItem(aSlotFrom);
 					if (aStackFrom != null && aMinMove <= aStackFrom.getCount() && (aFilter == null || aFilter.contains(aStackFrom, T) != aInvertFilter) && canTake(aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) {
 						// Actually Moving the Stack
 						ItemStack tStackMoved = amount(Math.min(aStackFrom.getCount(), aMaxMove), aStackFrom);
-						int rMoved = ((buildcraft.api.transport.IInjectable)aTo.mTileEntity).injectItem(copy(tStackMoved), F, aTo.getForgeSideOfTileEntity(), null);
+						int rMoved = ((gt6mirror.buildcraft.api.transport.IInjectable)aTo.mTileEntity).injectItem(copy(tStackMoved), F, aTo.getForgeSideOfTileEntity(), null);
 						if (rMoved >= aMinMove) {
-							rMoved = (((buildcraft.api.transport.IInjectable)aTo.mTileEntity).injectItem(amount(rMoved, tStackMoved), T, aTo.getForgeSideOfTileEntity(), null));
+							rMoved = (((gt6mirror.buildcraft.api.transport.IInjectable)aTo.mTileEntity).injectItem(amount(rMoved, tStackMoved), T, aTo.getForgeSideOfTileEntity(), null));
 							aFrom.mTileEntity.removeItem(aSlotFrom, rMoved);
 							aFrom.mTileEntity.setChanged();
 							WD.mark(aFrom);
@@ -1292,7 +1293,7 @@ public class ST {
 	}
 	public static void hide(ItemStack aStack) {
 		if (aStack != null && !aStack.isEmpty()) HIDDEN_ITEMS.add(aStack);
-		if (aStack != null) try {codechicken.nei.api.API.hideItem(aStack);} catch(Throwable e) {/**/}
+		if (aStack != null) try {gt6mirror.codechicken.nei.api.API.hideItem(aStack);} catch(Throwable e) {/**/}
 	}
 	
 	// The original's direct setMaxStackSize calls are restored verbatim.
@@ -1325,7 +1326,7 @@ public class ST {
 		net.minecraft.world.level.storage.loot.BuiltInLootTables.DESERT_PYRAMID, net.minecraft.world.level.storage.loot.BuiltInLootTables.JUNGLE_TEMPLE,
 		net.minecraft.world.level.storage.loot.BuiltInLootTables.JUNGLE_TEMPLE_DISPENSER, net.minecraft.world.level.storage.loot.BuiltInLootTables.SPAWN_BONUS_CHEST);
 	public static ItemStack generateOneVanillaLoot() {
-		return gt6mirror.minecraftforge.common.ChestGenHooks.getOneItem(UT.Code.select("dungeonChest", LOOT_TABLES_VANILLA), RNGSUS);
+		return gt6mirror.net.minecraftforge.common.ChestGenHooks.getOneItem(UT.Code.select("dungeonChest", LOOT_TABLES_VANILLA), RNGSUS);
 	}
 
 	public static boolean generateLoot(Random aRandom, String aLoot, Container aInv) {
@@ -1337,7 +1338,7 @@ public class ST {
 				TwilightTreasureReplacer.generate((net.minecraft.world.Container)aInv, aLoot);
 			} else if (!LOOT_TABLES_VANILLA.contains(aLoot)) {
 				// GT6's own loot categories live entirely in the ChestGenHooks shim buffer, filled by Loader_Loot, matching the original.
-				gt6mirror.minecraftforge.common.WeightedRandomChestContent.generateChestContents(aRandom, gt6mirror.minecraftforge.common.ChestGenHooks.getItems(aLoot, aRandom), aInv, gt6mirror.minecraftforge.common.ChestGenHooks.getCount(aLoot, aRandom));
+				gt6mirror.net.minecraftforge.common.WeightedRandomChestContent.generateChestContents(aRandom, gt6mirror.net.minecraftforge.common.ChestGenHooks.getItems(aLoot, aRandom), aInv, gt6mirror.net.minecraftforge.common.ChestGenHooks.getCount(aLoot, aRandom));
 			} else {
 				// Vanilla table names map to the vanilla key list for a weighted pull.
 				// GT6's own additions are already injected into that table by the shim.
@@ -1354,7 +1355,7 @@ public class ST {
 						// 1.7.10's loot count came from a category counter that rolled exactly that many random slots, never overflowing.
 						// The table's own fill logic requested far more and overflowed containers, so the counter is restored instead.
 						java.util.List<ItemStack> tPool = tTable.getRandomItems(tParams);
-						for (int tRoll = 0, tCount = gt6mirror.minecraftforge.common.ChestGenHooks.getCount(aLoot, aRandom); tRoll < tCount && !tPool.isEmpty(); tRoll++) {
+						for (int tRoll = 0, tCount = gt6mirror.net.minecraftforge.common.ChestGenHooks.getCount(aLoot, aRandom); tRoll < tCount && !tPool.isEmpty(); tRoll++) {
 							ItemStack tPicked = tPool.get(aRandom.nextInt(tPool.size()));
 							if (invalid(tPicked)) continue;
 							aInv.setItem(aRandom.nextInt(aInv.getContainerSize()), tPicked.copy());

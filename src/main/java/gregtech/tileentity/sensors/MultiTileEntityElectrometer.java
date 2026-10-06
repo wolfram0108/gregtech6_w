@@ -33,14 +33,14 @@ import gregapi.tileentity.connectors.MultiTileEntityWireElectric;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.energy.EnergyCompat;
 import gregapi.tileentity.machines.MultiTileEntitySensorTE;
-import ic2.api.energy.EnergyNet;
-import ic2.api.energy.NodeStats;
-import ic2.api.energy.tile.IEnergyAcceptor;
-import ic2.api.energy.tile.IEnergyConductor;
-import ic2.api.energy.tile.IEnergyEmitter;
-import ic2.api.energy.tile.IEnergySink;
-import ic2.api.energy.tile.IEnergySource;
-import ic2.api.energy.tile.IEnergyTile;
+import gt6mirror.ic2.api.energy.EnergyNet;
+import gt6mirror.ic2.api.energy.NodeStats;
+import gt6mirror.ic2.api.energy.tile.IEnergyAcceptor;
+import gt6mirror.ic2.api.energy.tile.IEnergyConductor;
+import gt6mirror.ic2.api.energy.tile.IEnergyEmitter;
+import gt6mirror.ic2.api.energy.tile.IEnergySink;
+import gt6mirror.ic2.api.energy.tile.IEnergySource;
+import gt6mirror.ic2.api.energy.tile.IEnergyTile;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**

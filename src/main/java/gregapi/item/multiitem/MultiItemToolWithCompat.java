@@ -23,23 +23,23 @@
 
 package gregapi.item.multiitem;
 
-import buildcraft.api.tools.IToolWrench;
+import gt6mirror.buildcraft.api.tools.IToolWrench;
 import gregapi.api.Optional;
-import forestry.api.arboriculture.IToolGrafter;
+import gt6mirror.forestry.api.arboriculture.IToolGrafter;
 import gregapi.data.CS.ModIDs;
 import gregapi.data.TD;
 import gregapi.item.multiitem.tools.IToolStats;
 import gregapi.util.UT;
-import ic2.api.item.IBoxable;
-import ic2.api.item.IElectricItemManager;
-import ic2.api.item.ISpecialElectricItem;
-import micdoodle8.mods.galacticraft.api.item.IItemElectric;
-import mods.railcraft.api.core.items.IToolCrowbar;
+import gt6mirror.ic2.api.item.IBoxable;
+import gt6mirror.ic2.api.item.IElectricItemManager;
+import gt6mirror.ic2.api.item.ISpecialElectricItem;
+import gt6mirror.micdoodle8.mods.galacticraft.api.item.IItemElectric;
+import gt6mirror.mods.railcraft.api.core.items.IToolCrowbar;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import thaumcraft.api.IWarpingGear;
+import gt6mirror.thaumcraft.api.IWarpingGear;
 
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;

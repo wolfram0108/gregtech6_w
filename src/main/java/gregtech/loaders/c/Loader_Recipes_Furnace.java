@@ -24,8 +24,8 @@
 package gregtech.loaders.c;
 
 import gregapi.recipes.FurnaceRecipes;
-import ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
-import ganymedes01.etfuturum.recipes.SmokerRecipes;
+import gt6mirror.ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
+import gt6mirror.ganymedes01.etfuturum.recipes.SmokerRecipes;
 import gregapi.data.*;
 import gregapi.oredict.OreDictItemData;
 import gregapi.oredict.OreDictMaterial;

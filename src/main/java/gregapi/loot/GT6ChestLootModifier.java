@@ -53,9 +53,9 @@ public class GT6ChestLootModifier extends LootModifier {
 	protected ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> aLoot, LootContext aContext) {
 		ResourceLocation tTableId = aContext.getQueriedLootTableId();
 		if (tTableId == null) return aLoot;
-		String tCategory = gt6mirror.minecraftforge.common.ChestGenHooks.categoryForTable(tTableId);
+		String tCategory = gt6mirror.net.minecraftforge.common.ChestGenHooks.categoryForTable(tTableId);
 		if (tCategory == null) return aLoot;
-		LootPool tPool = gt6mirror.minecraftforge.common.ChestGenHooks.buildPool(tCategory);
+		LootPool tPool = gt6mirror.net.minecraftforge.common.ChestGenHooks.buildPool(tCategory);
 		if (tPool == null) return aLoot;
 		tPool.addRandomItems(LootTable.createStackSplitter(aContext.getLevel(), aLoot::add), aContext);
 		return aLoot;

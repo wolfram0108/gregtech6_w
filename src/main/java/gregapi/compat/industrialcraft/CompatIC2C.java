@@ -28,8 +28,8 @@ import static gregapi.data.CS.*;
 import gregapi.compat.CompatBase;
 import gregapi.data.MD;
 import gregapi.util.ST;
-import ic2.api.info.IC2Classic;
-import ic2.api.item.IWrenchHandler;
+import gt6mirror.ic2.api.info.IC2Classic;
+import gt6mirror.ic2.api.item.IWrenchHandler;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 

@@ -110,8 +110,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.AxeItem;
 import gregapi.config.ModConfigSpec;
 import gregapi.recipes.RecipeSorter;
-import team.chisel.carving.Carving;
-import thaumcraft.api.ThaumcraftApi;
+import gt6mirror.team.chisel.carving.Carving;
+import gt6mirror.thaumcraft.api.ThaumcraftApi;
 
 import java.io.File;
 import java.io.PrintStream;
@@ -1215,16 +1215,18 @@ public class GT_API extends Abstract_Mod {
 		HARDNESS_MULTIPLIER_ROCK = CONFIG_HARDNESS_MULTIPLIER_ROCK;
 		HARDNESS_MULTIPLIER_ORES = CONFIG_HARDNESS_MULTIPLIER_ORES;
 		
-		if (ConfigsGT.GREGTECH.get("compat", "IC2Classic"          , T)) ICompat.COMPAT_CLASSES.add(                   (ICompat          )UT.Reflection.callConstructor("gregapi.compat.industrialcraft.CompatIC2C"      , 0, null, D2));
-		if (ConfigsGT.GREGTECH.get("compat", "IC2EnergyItems"      , T)) ICompat.COMPAT_CLASSES.add(COMPAT_EU_ITEM   = (ICompatIC2EUItem )UT.Reflection.callConstructor("gregapi.compat.industrialcraft.CompatIC2EUItem" , 0, null, D2));
-		if (ConfigsGT.GREGTECH.get("compat", "IndustrialCraft2"    , T)) ICompat.COMPAT_CLASSES.add(COMPAT_IC2       = (ICompatIC2       )UT.Reflection.callConstructor("gregapi.compat.industrialcraft.CompatIC2"       , 0, null, D2));
-		if (ConfigsGT.GREGTECH.get("compat", "ThaumCraft"          , T)) ICompat.COMPAT_CLASSES.add(COMPAT_TC        = (ICompatTC        )UT.Reflection.callConstructor("gregapi.compat.thaumcraft.CompatTC"             , 0, null, D2));
-		if (ConfigsGT.GREGTECH.get("compat", "BuildCraft"          , T)) ICompat.COMPAT_CLASSES.add(COMPAT_BC        = (ICompatBC        )UT.Reflection.callConstructor("gregapi.compat.buildcraft.CompatBC"             , 0, null, D2));
-		if (ConfigsGT.GREGTECH.get("compat", "ComputerCraft"       , T)) ICompat.COMPAT_CLASSES.add(COMPAT_CC        = (ICompatCC        )UT.Reflection.callConstructor("gregapi.compat.computercraft.CompatCC"          , 0, null, D2));
-		if (ConfigsGT.GREGTECH.get("compat", "OpenComputers"       , T)) ICompat.COMPAT_CLASSES.add(COMPAT_OC        = (ICompatOC        )UT.Reflection.callConstructor("gregapi.compat.opencomputers.CompatOC"          , 0, null, D2));
-		if (ConfigsGT.GREGTECH.get("compat", "Forestry"            , T)) ICompat.COMPAT_CLASSES.add(COMPAT_FR        = (ICompatFR        )UT.Reflection.callConstructor("gregapi.compat.forestry.CompatFR"               , 0, null, D2));
-		if (ConfigsGT.GREGTECH.get("compat", "GalactiCraft"        , T)) ICompat.COMPAT_CLASSES.add(COMPAT_GC        = (ICompatGC        )UT.Reflection.callConstructor("gregapi.compat.galacticraft.CompatGC"           , 0, null, D2));
-		if (ConfigsGT.GREGTECH.get("compat", "WarpDrive"           , T)) ICompat.COMPAT_CLASSES.add(COMPAT_WD        = (ICompatWD        )UT.Reflection.callConstructor("gregapi.compat.warpdrive.CompatWD"              , 0, null, D2));
+		// Each compat class reaches its mod through a gt6mirror API that always loads, so construction alone no longer
+		// fails without the mod as it did in 1.7.10; the mod list decides instead.
+		if (ConfigsGT.GREGTECH.get("compat", "IC2Classic"          , T) && MD.IC2C.mLoaded) ICompat.COMPAT_CLASSES.add(                   (ICompat          )UT.Reflection.callConstructor("gregapi.compat.industrialcraft.CompatIC2C"      , 0, null, D2));
+		if (ConfigsGT.GREGTECH.get("compat", "IC2EnergyItems"      , T) && MD.IC2.mLoaded) ICompat.COMPAT_CLASSES.add(COMPAT_EU_ITEM   = (ICompatIC2EUItem )UT.Reflection.callConstructor("gregapi.compat.industrialcraft.CompatIC2EUItem" , 0, null, D2));
+		if (ConfigsGT.GREGTECH.get("compat", "IndustrialCraft2"    , T) && MD.IC2.mLoaded) ICompat.COMPAT_CLASSES.add(COMPAT_IC2       = (ICompatIC2       )UT.Reflection.callConstructor("gregapi.compat.industrialcraft.CompatIC2"       , 0, null, D2));
+		if (ConfigsGT.GREGTECH.get("compat", "ThaumCraft"          , T) && MD.TC.mLoaded) ICompat.COMPAT_CLASSES.add(COMPAT_TC        = (ICompatTC        )UT.Reflection.callConstructor("gregapi.compat.thaumcraft.CompatTC"             , 0, null, D2));
+		if (ConfigsGT.GREGTECH.get("compat", "BuildCraft"          , T) && MD.BC.mLoaded) ICompat.COMPAT_CLASSES.add(COMPAT_BC        = (ICompatBC        )UT.Reflection.callConstructor("gregapi.compat.buildcraft.CompatBC"             , 0, null, D2));
+		if (ConfigsGT.GREGTECH.get("compat", "ComputerCraft"       , T) && MD.CC.mLoaded) ICompat.COMPAT_CLASSES.add(COMPAT_CC        = (ICompatCC        )UT.Reflection.callConstructor("gregapi.compat.computercraft.CompatCC"          , 0, null, D2));
+		if (ConfigsGT.GREGTECH.get("compat", "OpenComputers"       , T) && MD.OC.mLoaded) ICompat.COMPAT_CLASSES.add(COMPAT_OC        = (ICompatOC        )UT.Reflection.callConstructor("gregapi.compat.opencomputers.CompatOC"          , 0, null, D2));
+		if (ConfigsGT.GREGTECH.get("compat", "Forestry"            , T) && MD.FR.mLoaded) ICompat.COMPAT_CLASSES.add(COMPAT_FR        = (ICompatFR        )UT.Reflection.callConstructor("gregapi.compat.forestry.CompatFR"               , 0, null, D2));
+		if (ConfigsGT.GREGTECH.get("compat", "GalactiCraft"        , T) && MD.GC.mLoaded) ICompat.COMPAT_CLASSES.add(COMPAT_GC        = (ICompatGC        )UT.Reflection.callConstructor("gregapi.compat.galacticraft.CompatGC"           , 0, null, D2));
+		if (ConfigsGT.GREGTECH.get("compat", "WarpDrive"           , T) && MD.WARPDRIVE.mLoaded) ICompat.COMPAT_CLASSES.add(COMPAT_WD        = (ICompatWD        )UT.Reflection.callConstructor("gregapi.compat.warpdrive.CompatWD"              , 0, null, D2));
 		
 		if (MD.TC.mLoaded) try {ThaumcraftApi.objectTags.isEmpty();} catch(NoSuchFieldError e) {throw new RuntimeException("Please uninstall ThaumicFixer, GregTech-6 itself by now fixes the Thaumometer Lag Issue in a far better and less 'Thaumcraft-Addons breaking' way than Thaumic Fixer.");}
 		
@@ -1378,20 +1380,20 @@ public class GT_API extends Abstract_Mod {
 	public void onModPostInit2(FMLPostInitializationEvent aEvent) {deferItemInit(() -> onModPostInit2Deferred(aEvent));} // PostInit data-init (ST.make/static-init) is deferred to server start (post-bind); LoadComplete itself isn't post-bind.
 	private void onModPostInit2Deferred(FMLPostInitializationEvent aEvent) {
 		if (MD.IC2.mLoaded) {
-			PotionsGT.ID_RADIATION    = ic2.api.info.Info.POTION_RADIATION.id;
+			PotionsGT.ID_RADIATION    = gt6mirror.ic2.api.info.Info.POTION_RADIATION.id;
 		}
 		if (MD.ENVM.mLoaded) {
-			PotionsGT.ID_DEHYDRATION  = enviromine.EnviroPotion.dehydration.id;
-			PotionsGT.ID_FROSTBITE    = enviromine.EnviroPotion.frostbite.id;
-			PotionsGT.ID_HEATSTROKE   = enviromine.EnviroPotion.heatstroke.id;
-			PotionsGT.ID_HYPOTHERMIA  = enviromine.EnviroPotion.hypothermia.id;
-			PotionsGT.ID_INSANITY     = enviromine.EnviroPotion.insanity.id;
+			PotionsGT.ID_DEHYDRATION  = gt6mirror.enviromine.EnviroPotion.dehydration.id;
+			PotionsGT.ID_FROSTBITE    = gt6mirror.enviromine.EnviroPotion.frostbite.id;
+			PotionsGT.ID_HEATSTROKE   = gt6mirror.enviromine.EnviroPotion.heatstroke.id;
+			PotionsGT.ID_HYPOTHERMIA  = gt6mirror.enviromine.EnviroPotion.hypothermia.id;
+			PotionsGT.ID_INSANITY     = gt6mirror.enviromine.EnviroPotion.insanity.id;
 		}
 		if (MD.IE.mLoaded) {
-			PotionsGT.ID_FLAMMABLE    = blusunrize.immersiveengineering.common.util.IEPotions.flammable.id;
-			PotionsGT.ID_SLIPPERY     = blusunrize.immersiveengineering.common.util.IEPotions.slippery.id;
-			PotionsGT.ID_CONDUCTIVE   = blusunrize.immersiveengineering.common.util.IEPotions.conductive.id;
-			PotionsGT.ID_STICKY       = blusunrize.immersiveengineering.common.util.IEPotions.sticky.id;
+			PotionsGT.ID_FLAMMABLE    = gt6mirror.blusunrize.immersiveengineering.common.util.IEPotions.flammable.id;
+			PotionsGT.ID_SLIPPERY     = gt6mirror.blusunrize.immersiveengineering.common.util.IEPotions.slippery.id;
+			PotionsGT.ID_CONDUCTIVE   = gt6mirror.blusunrize.immersiveengineering.common.util.IEPotions.conductive.id;
+			PotionsGT.ID_STICKY       = gt6mirror.blusunrize.immersiveengineering.common.util.IEPotions.sticky.id;
 		}
 		// The mod owners referenced above don't exist for 26.1.2; the five effects GT6 actually applies are
 		// registered by the mod itself (gregapi/potion/MobEffectsGT), matching the IE/EnviroMine reference in behavior.

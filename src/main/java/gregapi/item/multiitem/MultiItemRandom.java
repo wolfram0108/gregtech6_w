@@ -24,8 +24,8 @@
 package gregapi.item.multiitem;
 
 import net.minecraftforge.api.distmarker.Dist;
-import enviromine.handlers.EM_StatusManager;
-import enviromine.trackers.EnviroDataTracker;
+import gt6mirror.enviromine.handlers.EM_StatusManager;
+import gt6mirror.enviromine.trackers.EnviroDataTracker;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.IItemContainer;
 import gregapi.code.ItemNBT;
@@ -55,7 +55,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
-import gt6mirror.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
+import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.Arrays;

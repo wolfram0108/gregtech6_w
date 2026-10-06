@@ -23,8 +23,8 @@
 
 package gregtech.tileentity.food;
 
-import enviromine.handlers.EM_StatusManager;
-import enviromine.trackers.EnviroDataTracker;
+import gt6mirror.enviromine.handlers.EM_StatusManager;
+import gt6mirror.enviromine.trackers.EnviroDataTracker;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityItemInternal;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
@@ -52,7 +52,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.Level;
-import squeek.applecore.api.food.FoodValues;
+import gt6mirror.squeek.applecore.api.food.FoodValues;
 
 import java.util.List;
 
@@ -300,7 +300,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	
 	@Override
 	public FoodValues getFoodValues(MultiTileEntityItemInternal aItem, ItemStack aStack) {
-		return new squeek.applecore.api.food.FoodValues(getTotalFood(), getTotalSaturation());
+		return new gt6mirror.squeek.applecore.api.food.FoodValues(getTotalFood(), getTotalSaturation());
 	}
 	
 	@Override

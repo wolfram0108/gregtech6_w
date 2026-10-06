@@ -110,14 +110,14 @@ public final class GT6FluidCapability {
 		net.minecraftforge.common.MinecraftForge.EVENT_BUS.addGenericListener(net.minecraft.world.item.ItemStack.class,
 			(net.minecraftforge.event.AttachCapabilitiesEvent<net.minecraft.world.item.ItemStack> aEvent) -> {
 				net.minecraft.world.item.ItemStack tStack = aEvent.getObject();
-				if (tStack.getItem() instanceof gt6mirror.minecraftforge.fluids.IFluidContainerItem tItem)
+				if (tStack.getItem() instanceof gt6mirror.net.minecraftforge.fluids.IFluidContainerItem tItem)
 					aEvent.addCapability(ITEM_CAP_ID, new ItemProvider(tStack, tItem));
 			});
 	}
 
 	private static final class ItemProvider implements net.minecraftforge.common.capabilities.ICapabilityProvider {
 		private final net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandlerItem> mHandler;
-		ItemProvider(net.minecraft.world.item.ItemStack aStack, gt6mirror.minecraftforge.fluids.IFluidContainerItem aItem) {
+		ItemProvider(net.minecraft.world.item.ItemStack aStack, gt6mirror.net.minecraftforge.fluids.IFluidContainerItem aItem) {
 			mHandler = net.minecraftforge.common.util.LazyOptional.of(() -> new GT6ItemFluidHandler(aStack, aItem));
 		}
 		@Override public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> aCapability, Direction aSide) {
@@ -129,8 +129,8 @@ public final class GT6FluidCapability {
 	 *  (getFluid/getCapacity/fill/drain over the stack's NBT), 1.7.10 null becomes 1.20.1 EMPTY. */
 	private static final class GT6ItemFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandlerItem {
 		private final net.minecraft.world.item.ItemStack mStack;
-		private final gt6mirror.minecraftforge.fluids.IFluidContainerItem mItem;
-		GT6ItemFluidHandler(net.minecraft.world.item.ItemStack aStack, gt6mirror.minecraftforge.fluids.IFluidContainerItem aItem) {mStack = aStack; mItem = aItem;}
+		private final gt6mirror.net.minecraftforge.fluids.IFluidContainerItem mItem;
+		GT6ItemFluidHandler(net.minecraft.world.item.ItemStack aStack, gt6mirror.net.minecraftforge.fluids.IFluidContainerItem aItem) {mStack = aStack; mItem = aItem;}
 		@Override public net.minecraft.world.item.ItemStack getContainer() {return mStack;}
 		@Override public int getTanks() {return 1;}
 		@Override public FluidStack getFluidInTank(int aTank) {

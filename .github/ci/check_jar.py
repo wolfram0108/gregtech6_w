@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
-"""Гейт чистоты production-jar. Два независимых критерия — jar обязан ПРОЙТИ ОБА.
+"""Production-jar purity gate. Two independent criteria; the jar must PASS BOTH.
 
-1. ЗАГРУЖАЕТСЯ ЛИ. compat-mirror (F10) компилирует crutch-классы в пакеты `net.minecraft.*`
-   и `cpw.*` — ими в рантайме ВЛАДЕЮТ реальные модули (minecraft / FML). Когда они попадали
-   в jar, модульный загрузчик отказывался грузить мод (package-split ResolutionException).
-   Исключение стоит в build.gradle (`tasks.named('jar') { exclude … }`), но регресс уже
-   случался один раз из-за порядка задач — поэтому проверяем механикой, а не доверием.
+1. DOES IT LOAD NEXT TO OTHER MODS. The mod loader turns every jar into a module and derives the module's
+   packages from its .class entries; two modules holding one package make module resolution fail and the
+   game does not start. GT6 compiles compile-only mirrors of foreign APIs (compat-mirror), so the jar may
+   hold classes only under the roots GT6 owns: gregapi, gregtech, gregtech6 and gt6mirror (the mirrors,
+   moved out of the foreign namespaces they imitate). Any other class root is a package some real mod or
+   the engine can own, and is refused here before it reaches a player.
 
-   Прочие зеркала (appeng/ic2/buildcraft/…) НЕ запрещены: ими никакой модуль не владеет,
-   а рантайм GT6 их shim'ы может звать. Их снятие — работа F10, не этого гейта.
+2. IS IT ACCEPTED BY DISTRIBUTION SITES. The original GT6 keeps the artist's personal tooling
+   (copy_into_*.bat, copythings.bat, overwrite_all.bat) next to the textures; one executable extension
+   inside the archive is enough for CurseForge/Modrinth to reject the whole release. Cut in build.gradle
+   (`sourceSets.main.resources { exclude ... }`); guarded here for the same class.
 
-2. ПРИНИМАЕТСЯ ЛИ ПЛОЩАДКОЙ РАЗДАЧИ. Прежде гейт знал только критерий 1 и был зелёным на
-   jar, который CurseForge/Modrinth отклоняют ЦЕЛИКОМ: оригинал GT6 хранит рядом с текстурами
-   личную оснастку художника (copy_into_*.bat, copythings.bat, overwrite_all.bat — 12 файлов),
-   и она уезжала в поставку вместе с ассетами. Мод их не читает, но одного исполняемого
-   расширения внутри архива достаточно, чтобы весь релиз стал непубликуемым. Отсекается в
-   build.gradle (`sourceSets.main.resources { exclude … }`); здесь — сторож на тот же класс.
-
-Выход: 0 — jar чист по обоим критериям; 1 — найдены запрещённые записи или jar не найден.
+Exit: 0 - the jar is clean by both criteria; 1 - forbidden entries found or no jar matched.
 """
 from __future__ import annotations
 
@@ -29,7 +25,8 @@ import zipfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _ci import summary  # noqa: E402 -- single shared sink for all gate output
 
-FORBIDDEN_PREFIXES = ("net/minecraft/", "cpw/")
+# Class roots GT6 owns; a class anywhere else adds a package another module may also hold.
+OWNED_CLASS_ROOTS = ("gregapi/", "gregtech/", "gregtech6/", "gt6mirror/")
 
 # Extensions that make mod-hosting platforms reject the whole archive outright.
 # CurseForge/Modrinth blacklist: executables and shell or batch scripts for any platform.
@@ -54,7 +51,7 @@ def main() -> int:
     for jar in jars:
         with zipfile.ZipFile(jar) as zf:
             names = zf.namelist()
-        split = [n for n in names if n.startswith(FORBIDDEN_PREFIXES)]
+        split = [n for n in names if n.endswith(".class") and not n.startswith(OWNED_CLASS_ROOTS)]
         exe = [n for n in names if n.lower().endswith(FORBIDDEN_SUFFIXES)]
         bad = split + exe
         size_mb = os.path.getsize(jar) / (1024 * 1024)
@@ -63,9 +60,9 @@ def main() -> int:
         if bad:
             failed = True
         for entries, why in (
-            (split, "These packages are owned by the `minecraft` / FML modules at runtime. "
-                    "Shipping them causes a package-split resolution failure when the mod loads. "
-                    "See the `jar` task exclusions in `build.gradle`."),
+            (split, "Classes outside the roots GT6 owns put foreign packages into the GT6 module; the engine "
+                    "or any mod holding the same package then fails module resolution and the game does not start. "
+                    "Mirrors of foreign APIs belong under `gt6mirror/`."),
             (exe, "Executable/script extensions are blacklisted by mod distribution platforms, "
                   "which reject the whole archive — the jar cannot be published at all. "
                   "See the resource exclusions in `build.gradle`."),

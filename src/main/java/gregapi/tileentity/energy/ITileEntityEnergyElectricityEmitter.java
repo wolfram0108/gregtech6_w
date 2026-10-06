@@ -25,7 +25,7 @@ package gregapi.tileentity.energy;
 
 import gregapi.api.Optional;
 import gregapi.data.CS.ModIDs;
-import ic2.api.energy.tile.IEnergySource;
+import gt6mirror.ic2.api.energy.tile.IEnergySource;
 
 
 /**

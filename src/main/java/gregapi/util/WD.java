@@ -62,8 +62,8 @@ import gregapi.tileentity.energy.ITileEntityEnergyDataCapacitor;
 import gregapi.tileentity.machines.*;
 import gregapi.util.UT.Code;
 import gregtech.blocks.fluids.BlockWaterlike;
-import micdoodle8.mods.galacticraft.api.block.IPartialSealableBlock;
-import micdoodle8.mods.galacticraft.core.util.OxygenUtil;
+import gt6mirror.micdoodle8.mods.galacticraft.api.block.IPartialSealableBlock;
+import gt6mirror.micdoodle8.mods.galacticraft.core.util.OxygenUtil;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.FireBlock;
@@ -113,7 +113,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fluids.*;
-import thaumcraft.api.nodes.INode;
+import gt6mirror.thaumcraft.api.nodes.INode;
 
 import java.util.*;
 
@@ -2572,36 +2572,36 @@ public class WD {
 			}} catch(Throwable e) {e.printStackTrace(ERR);}
 			
 			if (!(aTileEntity instanceof ITileEntity)) {
-				try {if (aTileEntity instanceof ic2.api.reactor.IReactorChamber) {
+				try {if (aTileEntity instanceof gt6mirror.ic2.api.reactor.IReactorChamber) {
 					rEUAmount+=V[4];
-					aTileEntity = (BlockEntity)(((ic2.api.reactor.IReactorChamber)aTileEntity).getReactor());
+					aTileEntity = (BlockEntity)(((gt6mirror.ic2.api.reactor.IReactorChamber)aTileEntity).getReactor());
 				}} catch(NoClassDefFoundError e) {/* ignore */} catch(Throwable e) {e.printStackTrace(ERR);}
-				try {if (aTileEntity instanceof ic2.api.reactor.IReactor) {
+				try {if (aTileEntity instanceof gt6mirror.ic2.api.reactor.IReactor) {
 					rEUAmount+=V[4];
-					rList.add( "Heat: " + ((ic2.api.reactor.IReactor)aTileEntity).getHeat() + "/" + ((ic2.api.reactor.IReactor)aTileEntity).getMaxHeat()
-							+ "  HEM: " + ((ic2.api.reactor.IReactor)aTileEntity).getHeatEffectModifier() + "  Base IC2-EU Output: " + ((ic2.api.reactor.IReactor)aTileEntity).getReactorEUEnergyOutput());
+					rList.add( "Heat: " + ((gt6mirror.ic2.api.reactor.IReactor)aTileEntity).getHeat() + "/" + ((gt6mirror.ic2.api.reactor.IReactor)aTileEntity).getMaxHeat()
+							+ "  HEM: " + ((gt6mirror.ic2.api.reactor.IReactor)aTileEntity).getHeatEffectModifier() + "  Base IC2-EU Output: " + ((gt6mirror.ic2.api.reactor.IReactor)aTileEntity).getReactorEUEnergyOutput());
 				}} catch(NoClassDefFoundError e) {/* ignore */} catch(Throwable e) {e.printStackTrace(ERR);}
-				try {if (aTileEntity instanceof ic2.api.tile.IWrenchable) {
+				try {if (aTileEntity instanceof gt6mirror.ic2.api.tile.IWrenchable) {
 					rEUAmount+=V[3];
-					rList.add("Facing: " + ((ic2.api.tile.IWrenchable)aTileEntity).getFacing() + " / IC2 Wrench Drop Chance: " + (((ic2.api.tile.IWrenchable)aTileEntity).wrenchCanRemove(aPlayer)?(((ic2.api.tile.IWrenchable)aTileEntity).getWrenchDropRate()*100):0) + "%");
+					rList.add("Facing: " + ((gt6mirror.ic2.api.tile.IWrenchable)aTileEntity).getFacing() + " / IC2 Wrench Drop Chance: " + (((gt6mirror.ic2.api.tile.IWrenchable)aTileEntity).wrenchCanRemove(aPlayer)?(((gt6mirror.ic2.api.tile.IWrenchable)aTileEntity).getWrenchDropRate()*100):0) + "%");
 				}} catch(NoClassDefFoundError e) {/* ignore */} catch(Throwable e) {e.printStackTrace(ERR);}
-				try {if (aTileEntity instanceof ic2.api.energy.tile.IEnergySink) {
+				try {if (aTileEntity instanceof gt6mirror.ic2.api.energy.tile.IEnergySink) {
 					rEUAmount+=V[3];
-					rList.add("Demanded Energy: " + ((ic2.api.energy.tile.IEnergySink)aTileEntity).getDemandedEnergy() + " IC2-EU");
-					rList.add("Max Safe Input: " + V[((ic2.api.energy.tile.IEnergySink)aTileEntity).getSinkTier()] + " IC2-EU/t");
+					rList.add("Demanded Energy: " + ((gt6mirror.ic2.api.energy.tile.IEnergySink)aTileEntity).getDemandedEnergy() + " IC2-EU");
+					rList.add("Max Safe Input: " + V[((gt6mirror.ic2.api.energy.tile.IEnergySink)aTileEntity).getSinkTier()] + " IC2-EU/t");
 				}} catch(NoClassDefFoundError e) {/* ignore */} catch(Throwable e) {e.printStackTrace(ERR);}
-				try {if (aTileEntity instanceof ic2.api.energy.tile.IEnergySource) {
+				try {if (aTileEntity instanceof gt6mirror.ic2.api.energy.tile.IEnergySource) {
 					rEUAmount+=V[3];
-					rList.add("Max Energy Output: " + V[((ic2.api.energy.tile.IEnergySource)aTileEntity).getSourceTier()] + " IC2-EU/t");
+					rList.add("Max Energy Output: " + V[((gt6mirror.ic2.api.energy.tile.IEnergySource)aTileEntity).getSourceTier()] + " IC2-EU/t");
 				}} catch(NoClassDefFoundError e) {/* ignore */} catch(Throwable e) {e.printStackTrace(ERR);}
-				try {if (aTileEntity instanceof ic2.api.energy.tile.IEnergyConductor) {
+				try {if (aTileEntity instanceof gt6mirror.ic2.api.energy.tile.IEnergyConductor) {
 					rEUAmount+=V[3];
-					rList.add("Conduction Loss: " + ((ic2.api.energy.tile.IEnergyConductor)aTileEntity).getConductionLoss() + " IC2-EU/m");
+					rList.add("Conduction Loss: " + ((gt6mirror.ic2.api.energy.tile.IEnergyConductor)aTileEntity).getConductionLoss() + " IC2-EU/m");
 				}} catch(NoClassDefFoundError e) {/* ignore */} catch(Throwable e) {e.printStackTrace(ERR);}
-				try {if (aTileEntity instanceof ic2.api.tile.IEnergyStorage) {
+				try {if (aTileEntity instanceof gt6mirror.ic2.api.tile.IEnergyStorage) {
 					rEUAmount+=V[3];
-					rList.add("Contained Energy: " + ((ic2.api.tile.IEnergyStorage)aTileEntity).getStored() + " of " + ((ic2.api.tile.IEnergyStorage)aTileEntity).getCapacity() + " IC2-EU");
-					rList.add(((ic2.api.tile.IEnergyStorage)aTileEntity).isTeleporterCompatible(FORGE_DIR[aSide])?"Teleporter Compatible":"Not Teleporter Compatible");
+					rList.add("Contained Energy: " + ((gt6mirror.ic2.api.tile.IEnergyStorage)aTileEntity).getStored() + " of " + ((gt6mirror.ic2.api.tile.IEnergyStorage)aTileEntity).getCapacity() + " IC2-EU");
+					rList.add(((gt6mirror.ic2.api.tile.IEnergyStorage)aTileEntity).isTeleporterCompatible(FORGE_DIR[aSide])?"Teleporter Compatible":"Not Teleporter Compatible");
 				}} catch(NoClassDefFoundError e) {/* ignore */} catch(Throwable e) {e.printStackTrace(ERR);}
 			}
 		}

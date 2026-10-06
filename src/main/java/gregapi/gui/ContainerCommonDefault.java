@@ -31,7 +31,7 @@ import net.minecraft.world.entity.player.Inventory;
 /**
  * @author Gregorius Techneticies
  */
-@invtweaks.api.container.ChestContainer
+@gt6mirror.invtweaks.api.container.ChestContainer
 public class ContainerCommonDefault extends ContainerCommon {
 	public ContainerCommonDefault(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID, int aOffset, int aSlotCount) {
 		super(aInventoryPlayer, aTileEntity, aGUIID, aOffset, aSlotCount);

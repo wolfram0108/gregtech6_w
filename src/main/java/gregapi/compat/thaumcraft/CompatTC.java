@@ -45,19 +45,19 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.resources.ResourceLocation;
-import thaumcraft.api.ThaumcraftApi;
-import thaumcraft.api.ThaumcraftApiHelper;
-import thaumcraft.api.aspects.Aspect;
-import thaumcraft.api.aspects.AspectList;
-import thaumcraft.api.crafting.CrucibleRecipe;
-import thaumcraft.api.crafting.IArcaneRecipe;
-import thaumcraft.api.crafting.InfusionEnchantmentRecipe;
-import thaumcraft.api.crafting.InfusionRecipe;
-import thaumcraft.api.internal.WeightedRandomLoot;
-import thaumcraft.api.research.*;
-import thaumcraft.common.Thaumcraft;
-import thaumcraft.common.items.equipment.ItemElementalAxe;
-import thaumcraft.common.lib.research.ScanManager;
+import gt6mirror.thaumcraft.api.ThaumcraftApi;
+import gt6mirror.thaumcraft.api.ThaumcraftApiHelper;
+import gt6mirror.thaumcraft.api.aspects.Aspect;
+import gt6mirror.thaumcraft.api.aspects.AspectList;
+import gt6mirror.thaumcraft.api.crafting.CrucibleRecipe;
+import gt6mirror.thaumcraft.api.crafting.IArcaneRecipe;
+import gt6mirror.thaumcraft.api.crafting.InfusionEnchantmentRecipe;
+import gt6mirror.thaumcraft.api.crafting.InfusionRecipe;
+import gt6mirror.thaumcraft.api.internal.WeightedRandomLoot;
+import gt6mirror.thaumcraft.api.research.*;
+import gt6mirror.thaumcraft.common.Thaumcraft;
+import gt6mirror.thaumcraft.common.items.equipment.ItemElementalAxe;
+import gt6mirror.thaumcraft.common.lib.research.ScanManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,7 +87,7 @@ public class CompatTC extends CompatBase implements ICompatTC {
 		ResearchCategoryList             .class.getCanonicalName();
 		ResearchItem                     .class.getCanonicalName();
 		ResearchPage                     .class.getCanonicalName();
-		thaumcraft.common.lib.utils.Utils.class.getCanonicalName();
+		gt6mirror.thaumcraft.common.lib.utils.Utils.class.getCanonicalName();
 		
 		TC.AER              .mAspect = Aspect.AIR;
 		TC.ALIENIS          .mAspect = Aspect.ELDRITCH;
@@ -260,7 +260,7 @@ public class CompatTC extends CompatBase implements ICompatTC {
 		ST.fixBookStacks();
 		ItemStack[] rStacks = ST.array(8+RNGSUS.nextInt(5));
 		for (int i = 0; i < rStacks.length; i++) {
-			rStacks[i] = thaumcraft.common.lib.utils.Utils.generateLoot(UT.Code.bind2(aMeta), RNGSUS);
+			rStacks[i] = gt6mirror.thaumcraft.common.lib.utils.Utils.generateLoot(UT.Code.bind2(aMeta), RNGSUS);
 			ST.fixBookStacks();
 		}
 		return rStacks;

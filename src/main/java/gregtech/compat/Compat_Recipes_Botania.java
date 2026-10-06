@@ -33,7 +33,7 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import vazkii.botania.api.BotaniaAPI;
+import gt6mirror.vazkii.botania.api.BotaniaAPI;
 
 import static gregapi.data.CS.*;
 import static gregapi.util.CR.DEF_REV;

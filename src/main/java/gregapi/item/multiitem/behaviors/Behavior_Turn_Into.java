@@ -30,7 +30,7 @@ import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.ST;
 import net.minecraft.world.item.ItemStack;
-import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.net.minecraftforge.fluids.IFluidContainerItem;
 
 public class Behavior_Turn_Into extends AbstractBehaviorDefault {
 	public final IItemContainer mTurnInto;

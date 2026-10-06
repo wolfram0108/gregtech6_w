@@ -23,10 +23,10 @@
 
 package gregtech.items.behaviors;
 
-import forestry.api.lepidopterology.EnumFlutterType;
-import forestry.api.lepidopterology.IButterfly;
-import forestry.api.lepidopterology.IButterflyRoot;
-import forestry.api.lepidopterology.IEntityButterfly;
+import gt6mirror.forestry.api.lepidopterology.EnumFlutterType;
+import gt6mirror.forestry.api.lepidopterology.IButterfly;
+import gt6mirror.forestry.api.lepidopterology.IButterflyRoot;
+import gt6mirror.forestry.api.lepidopterology.IEntityButterfly;
 import gregapi.data.LH;
 import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.MultiItemTool;

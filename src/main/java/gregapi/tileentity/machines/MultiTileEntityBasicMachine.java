@@ -28,7 +28,7 @@ import net.minecraftforge.fluids.IFluidTank;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import gregapi.fluid.FluidTankInfo;
 
-import buildcraft.api.tiles.IHasWork;
+import gt6mirror.buildcraft.api.tiles.IHasWork;
 import gregapi.api.Optional;
 import gregapi.GT_API;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;

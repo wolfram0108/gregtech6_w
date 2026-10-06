@@ -31,10 +31,10 @@ import gregapi.util.UT;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
-import thaumcraft.common.container.ContainerArcaneWorkbench;
-import thaumcraft.common.items.wands.ItemWandCasting;
-import thaumcraft.common.lib.crafting.ThaumcraftCraftingManager;
-import thaumcraft.common.tiles.TileArcaneWorkbench;
+import gt6mirror.thaumcraft.common.container.ContainerArcaneWorkbench;
+import gt6mirror.thaumcraft.common.items.wands.ItemWandCasting;
+import gt6mirror.thaumcraft.common.lib.crafting.ThaumcraftCraftingManager;
+import gt6mirror.thaumcraft.common.tiles.TileArcaneWorkbench;
 
 @Deprecated
 /** Was a bad Idea that does not work well. It works but the GUI loses persistence and Item dupes may randomly happen. */

@@ -34,7 +34,7 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
-import twilightforest.item.TFItems;
+import gt6mirror.twilightforest.item.TFItems;
 
 import static gregapi.data.CS.*;
 import static gregapi.util.CR.DEF;

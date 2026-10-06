@@ -23,8 +23,8 @@
 
 package gregapi.recipes.maps;
 
-import forestry.api.genetics.AlleleManager;
-import forestry.api.genetics.IIndividual;
+import gt6mirror.forestry.api.genetics.AlleleManager;
+import gt6mirror.forestry.api.genetics.IIndividual;
 import gregapi.data.IL;
 import gregapi.random.IHasWorldAndCoords;
 import gregapi.recipes.Recipe;

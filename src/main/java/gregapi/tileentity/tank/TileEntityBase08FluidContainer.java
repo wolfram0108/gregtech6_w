@@ -26,8 +26,8 @@ package gregapi.tileentity.tank;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.BlockHitResult;
 
-import enviromine.handlers.EM_StatusManager;
-import enviromine.trackers.EnviroDataTracker;
+import gt6mirror.enviromine.handlers.EM_StatusManager;
+import gt6mirror.enviromine.trackers.EnviroDataTracker;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityItemInternal;
 import gregapi.code.ItemNBT;
@@ -43,7 +43,7 @@ import gregapi.tileentity.base.TileEntityBase07Paintable;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import ic2.api.crops.ICropTile;
+import gt6mirror.ic2.api.crops.ICropTile;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CauldronBlock;
 import net.minecraft.world.entity.Entity;
@@ -60,10 +60,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidBlock;
-import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.net.minecraftforge.fluids.IFluidContainerItem;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import squeek.applecore.api.food.FoodValues;
-import thaumcraft.common.tiles.TileCrucible;
+import gt6mirror.squeek.applecore.api.food.FoodValues;
+import gt6mirror.thaumcraft.common.tiles.TileCrucible;
 
 import java.util.List;
 
@@ -411,7 +411,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	
 	public FoodValues getFoodValues(MultiTileEntityItemInternal aItem, ItemStack aStack) {
 		int tFoodLevel = FoodStatFluid.INSTANCE.getFoodLevel(aStack.getItem(), aStack, null);
-		return tFoodLevel > 0 && isDrinkable() ? new squeek.applecore.api.food.FoodValues(tFoodLevel, FoodStatFluid.INSTANCE.getSaturation(aStack.getItem(), aStack, null)) : null;
+		return tFoodLevel > 0 && isDrinkable() ? new gt6mirror.squeek.applecore.api.food.FoodValues(tFoodLevel, FoodStatFluid.INSTANCE.getSaturation(aStack.getItem(), aStack, null)) : null;
 	}
 	
 	@Override

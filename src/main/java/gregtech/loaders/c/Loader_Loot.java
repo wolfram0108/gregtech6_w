@@ -35,9 +35,9 @@ import gregtech.worldgen.TwilightTreasureReplacer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import gt6mirror.minecraftforge.common.ChestGenHooks;
-import gt6mirror.minecraftforge.common.WeightedRandomChestContent;
-import twilightforest.TFTreasure;
+import gt6mirror.net.minecraftforge.common.ChestGenHooks;
+import gt6mirror.net.minecraftforge.common.WeightedRandomChestContent;
+import gt6mirror.twilightforest.TFTreasure;
 
 import static gregapi.data.CS.*;
 import static gregapi.data.TD.Properties.RANDOM_SMALL_GEM_ORE;

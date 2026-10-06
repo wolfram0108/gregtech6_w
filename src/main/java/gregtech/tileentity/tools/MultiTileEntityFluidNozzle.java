@@ -45,8 +45,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.fluids.FluidStack;
-import openblocks.common.LiquidXpUtils;
-import openmods.utils.EnchantmentUtils;
+import gt6mirror.openblocks.common.LiquidXpUtils;
+import gt6mirror.openmods.utils.EnchantmentUtils;
 
 import java.util.List;
 

@@ -23,7 +23,7 @@
 
 package gregapi.item.prefixitem;
 
-import baubles.api.BaubleType;
+import gt6mirror.baubles.api.BaubleType;
 import gregapi.api.Optional;
 import gregapi.code.ModData;
 import gregapi.data.CS.ModIDs;

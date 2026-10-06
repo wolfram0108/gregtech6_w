@@ -64,7 +64,7 @@ import gregapi.tileentity.inventories.ITileEntityBookShelf;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import mekanism.api.MekanismAPI;
+import gt6mirror.mekanism.api.MekanismAPI;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import gregapi.block.MapColor;

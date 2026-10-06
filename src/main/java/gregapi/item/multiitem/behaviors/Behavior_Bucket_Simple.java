@@ -34,7 +34,7 @@ import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import iguanaman.hungeroverhaul.config.IguanaConfig;
+import gt6mirror.iguanaman.hungeroverhaul.config.IguanaConfig;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CauldronBlock;
 import net.minecraft.world.level.block.DispenserBlock;

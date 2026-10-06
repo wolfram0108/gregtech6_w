@@ -55,8 +55,8 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidBlock;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import openblocks.common.LiquidXpUtils;
-import openmods.utils.EnchantmentUtils;
+import gt6mirror.openblocks.common.LiquidXpUtils;
+import gt6mirror.openmods.utils.EnchantmentUtils;
 
 import java.util.List;
 

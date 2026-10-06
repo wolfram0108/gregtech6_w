@@ -23,7 +23,7 @@
 
 package gregapi;
 
-import codechicken.nei.recipe.GuiUsageRecipe;
+import gt6mirror.codechicken.nei.recipe.GuiUsageRecipe;
 import net.minecraftforge.fml.ModList;
 import gregapi.data.MD;
 import gregapi.recipes.Recipe.RecipeMap;
@@ -36,7 +36,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public class NEI_GT_API_Config implements codechicken.nei.api.IConfigureNEI, Runnable {
+public class NEI_GT_API_Config implements gt6mirror.codechicken.nei.api.IConfigureNEI, Runnable {
 	// @Override
 	public void loadConfig() {
 		NEI = T;
@@ -70,8 +70,8 @@ public class NEI_GT_API_Config implements codechicken.nei.api.IConfigureNEI, Run
 		for (RecipeMap tMap : RecipeMap.RECIPE_MAP_LIST) if (tMap.mNEIAllowed) new NEI_RecipeMap(tMap).init();
 		
 		if (CODE_CLIENT) {
-			codechicken.nei.api.API.registerGuiOverlay(MultiTileEntityGUIClientAdvancedCraftingTable.class, "crafting", 55, 22);
-			codechicken.nei.api.API.registerGuiOverlayHandler(MultiTileEntityGUIClientAdvancedCraftingTable.class, new codechicken.nei.recipe.DefaultOverlayHandler(55, 22), "crafting");
+			gt6mirror.codechicken.nei.api.API.registerGuiOverlay(MultiTileEntityGUIClientAdvancedCraftingTable.class, "crafting", 55, 22);
+			gt6mirror.codechicken.nei.api.API.registerGuiOverlayHandler(MultiTileEntityGUIClientAdvancedCraftingTable.class, new gt6mirror.codechicken.nei.recipe.DefaultOverlayHandler(55, 22), "crafting");
 		}
 	}
 	

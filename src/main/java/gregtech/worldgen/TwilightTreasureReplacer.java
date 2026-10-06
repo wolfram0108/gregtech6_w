@@ -35,9 +35,9 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import gt6mirror.minecraftforge.common.ChestGenHooks;
-import twilightforest.TFTreasure;
-import twilightforest.TFTreasureTable;
+import gt6mirror.net.minecraftforge.common.ChestGenHooks;
+import gt6mirror.twilightforest.TFTreasure;
+import gt6mirror.twilightforest.TFTreasureTable;
 
 import java.util.HashMap;
 import java.util.Random;

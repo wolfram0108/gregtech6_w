@@ -23,14 +23,14 @@
 
 package gregapi;
 
-import codechicken.lib.gui.GuiDraw;
-import codechicken.nei.ItemList;
-import codechicken.nei.PositionedStack;
-import codechicken.nei.api.API;
-import codechicken.nei.guihook.GuiContainerManager;
-import codechicken.nei.guihook.IContainerInputHandler;
-import codechicken.nei.guihook.IContainerTooltipHandler;
-import codechicken.nei.recipe.*;
+import gt6mirror.codechicken.lib.gui.GuiDraw;
+import gt6mirror.codechicken.nei.ItemList;
+import gt6mirror.codechicken.nei.PositionedStack;
+import gt6mirror.codechicken.nei.api.API;
+import gt6mirror.codechicken.nei.guihook.GuiContainerManager;
+import gt6mirror.codechicken.nei.guihook.IContainerInputHandler;
+import gt6mirror.codechicken.nei.guihook.IContainerTooltipHandler;
+import gt6mirror.codechicken.nei.recipe.*;
 import net.minecraftforge.fml.InterModComms;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.ItemNBT;

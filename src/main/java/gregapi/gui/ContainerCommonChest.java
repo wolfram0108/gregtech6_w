@@ -29,7 +29,7 @@ import net.minecraft.world.entity.player.Inventory;
 /**
  * @author Gregorius Techneticies
  */
-@invtweaks.api.container.ChestContainer(isLargeChest = true)
+@gt6mirror.invtweaks.api.container.ChestContainer(isLargeChest = true)
 public class ContainerCommonChest extends ContainerCommon {
 	public ContainerCommonChest(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID) {
 		super(aInventoryPlayer, aTileEntity, aGUIID);

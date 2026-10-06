@@ -33,7 +33,7 @@ import gregapi.block.BlockBaseMeta;
 import gregapi.data.MD;
 import gregapi.render.IIconContainer;
 import gregapi.util.ST;
-import mods.railcraft.common.carts.EntityTunnelBore;
+import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
 import net.minecraft.world.item.BlockItem;

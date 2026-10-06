@@ -32,7 +32,7 @@ import gregapi.render.BlockTextureCopied;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.WD;
-import mods.railcraft.common.carts.EntityTunnelBore;
+import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.BushBlock;
 import gregapi.block.Material;
 import net.minecraft.world.entity.LivingEntity;

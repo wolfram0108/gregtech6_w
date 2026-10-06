@@ -47,10 +47,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.MinecraftForge;
 // The whole Forge fluid-container-registry package is gone from the engine, so its types are compile-mirrored here since
 // net.minecraftforge isn't on the classpath at all; auto-registration stays a deliberate no-op rather than a new API.
-import gt6mirror.minecraftforge.fluids.FluidContainerRegistry;
-import gt6mirror.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
-import gt6mirror.minecraftforge.fluids.FluidContainerRegistry.FluidContainerRegisterEvent;
-import gt6mirror.minecraftforge.fluids.IFluidContainerItem;
+import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry;
+import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
+import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerRegisterEvent;
+import gt6mirror.net.minecraftforge.fluids.IFluidContainerItem;
 import gregapi.oredict.OreDictionary;
 import gregapi.oredict.OreDictionary.OreRegisterEvent;
 

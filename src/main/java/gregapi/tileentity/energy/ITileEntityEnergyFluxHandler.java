@@ -23,7 +23,7 @@
 
 package gregapi.tileentity.energy;
 
-import cofh.api.energy.IEnergyHandler;
+import gt6mirror.cofh.api.energy.IEnergyHandler;
 import gregapi.api.Optional;
 import gregapi.data.CS.ModIDs;
 

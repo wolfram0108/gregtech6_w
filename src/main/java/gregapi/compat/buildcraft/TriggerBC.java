@@ -27,13 +27,13 @@ import static gregapi.data.CS.*;
 
 import java.util.Collection;
 
-import buildcraft.api.statements.IStatement;
-import buildcraft.api.statements.IStatementContainer;
-import buildcraft.api.statements.IStatementParameter;
-import buildcraft.api.statements.ITriggerExternal;
-import buildcraft.api.statements.ITriggerInternal;
-import buildcraft.api.statements.ITriggerProvider;
-import buildcraft.api.statements.StatementManager;
+import gt6mirror.buildcraft.api.statements.IStatement;
+import gt6mirror.buildcraft.api.statements.IStatementContainer;
+import gt6mirror.buildcraft.api.statements.IStatementParameter;
+import gt6mirror.buildcraft.api.statements.ITriggerExternal;
+import gt6mirror.buildcraft.api.statements.ITriggerInternal;
+import gt6mirror.buildcraft.api.statements.ITriggerProvider;
+import gt6mirror.buildcraft.api.statements.StatementManager;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.LH;
 import gregapi.lang.LanguageHandler;

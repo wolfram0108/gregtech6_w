@@ -28,13 +28,13 @@ import static gregapi.data.CS.*;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import gregapi.compat.CompatBase;
 import gregapi.worldgen.GT6WorldGenerator;
-import micdoodle8.mods.galacticraft.api.event.wgen.GCCoreEventPopulate;
-import micdoodle8.mods.galacticraft.api.power.EnergySource;
-import micdoodle8.mods.galacticraft.api.power.EnergySource.EnergySourceAdjacent;
-import micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC;
-import micdoodle8.mods.galacticraft.api.transmission.NetworkType;
-import micdoodle8.mods.galacticraft.api.transmission.tile.IConnector;
-import micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler;
+import gt6mirror.micdoodle8.mods.galacticraft.api.event.wgen.GCCoreEventPopulate;
+import gt6mirror.micdoodle8.mods.galacticraft.api.power.EnergySource;
+import gt6mirror.micdoodle8.mods.galacticraft.api.power.EnergySource.EnergySourceAdjacent;
+import gt6mirror.micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC;
+import gt6mirror.micdoodle8.mods.galacticraft.api.transmission.NetworkType;
+import gt6mirror.micdoodle8.mods.galacticraft.api.transmission.tile.IConnector;
+import gt6mirror.micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler;
 import net.minecraftforge.common.MinecraftForge;
 
 public class CompatGC extends CompatBase implements ICompatGC {

@@ -23,8 +23,8 @@
 
 package gregapi.compat.buildcraft;
 
-import buildcraft.api.statements.IStatementContainer;
-import buildcraft.api.statements.IStatementParameter;
+import gt6mirror.buildcraft.api.statements.IStatementContainer;
+import gt6mirror.buildcraft.api.statements.IStatementParameter;
 import gregapi.code.TagData;
 import gregapi.data.MD;
 import gregapi.tileentity.energy.ITileEntityEnergyDataCapacitor;

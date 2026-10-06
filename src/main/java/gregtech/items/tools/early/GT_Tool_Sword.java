@@ -37,7 +37,7 @@ import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
-import gt6mirror.minecraftforge.common.AchievementList;
+import gt6mirror.net.minecraftforge.common.AchievementList;
 import net.minecraftforge.event.level.BlockEvent;
 
 import java.util.List;

@@ -43,7 +43,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import gt6mirror.minecraftforge.common.AchievementList;
+import gt6mirror.net.minecraftforge.common.AchievementList;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.core.BlockPos;
@@ -74,11 +74,11 @@ public class GT_Tool_Chainsaw_LV extends GT_Tool_Axe {
 	public DamageSource getDamageSource(LivingEntity aPlayer, Entity aEntity) {
 		if (MD.IC2.mLoaded && aPlayer instanceof Player && aEntity instanceof Creeper) try {
 		ST.achieve(aPlayer, AchievementList.acquireIron);
-		ic2.core.IC2.achievements.issueAchievement((Player)aPlayer, "buildCable");
-		ic2.core.IC2.achievements.issueAchievement((Player)aPlayer, "buildGenerator");
-		ic2.core.IC2.achievements.issueAchievement((Player)aPlayer, "buildBatBox");
-		ic2.core.IC2.achievements.issueAchievement((Player)aPlayer, "buildChainsaw");
-		ic2.core.IC2.achievements.issueAchievement((Player)aPlayer, "killCreeperChainsaw");
+		gt6mirror.ic2.core.IC2.achievements.issueAchievement((Player)aPlayer, "buildCable");
+		gt6mirror.ic2.core.IC2.achievements.issueAchievement((Player)aPlayer, "buildGenerator");
+		gt6mirror.ic2.core.IC2.achievements.issueAchievement((Player)aPlayer, "buildBatBox");
+		gt6mirror.ic2.core.IC2.achievements.issueAchievement((Player)aPlayer, "buildChainsaw");
+		gt6mirror.ic2.core.IC2.achievements.issueAchievement((Player)aPlayer, "killCreeperChainsaw");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		return super.getDamageSource(aPlayer, aEntity);
 	}
@@ -136,10 +136,10 @@ public class GT_Tool_Chainsaw_LV extends GT_Tool_Axe {
 		ST.achieve(aPlayer, AchievementList.buildPickaxe);
 		ST.achieve(aPlayer, AchievementList.buildFurnace);
 		ST.achieve(aPlayer, AchievementList.acquireIron);
-		ic2.core.IC2.achievements.issueAchievement(aPlayer, "buildCable");
-		ic2.core.IC2.achievements.issueAchievement(aPlayer, "buildGenerator");
-		ic2.core.IC2.achievements.issueAchievement(aPlayer, "buildBatBox");
-		ic2.core.IC2.achievements.issueAchievement(aPlayer, "buildChainsaw");
+		gt6mirror.ic2.core.IC2.achievements.issueAchievement(aPlayer, "buildCable");
+		gt6mirror.ic2.core.IC2.achievements.issueAchievement(aPlayer, "buildGenerator");
+		gt6mirror.ic2.core.IC2.achievements.issueAchievement(aPlayer, "buildBatBox");
+		gt6mirror.ic2.core.IC2.achievements.issueAchievement(aPlayer, "buildChainsaw");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
 	

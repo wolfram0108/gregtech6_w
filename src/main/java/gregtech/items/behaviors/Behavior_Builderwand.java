@@ -41,7 +41,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
-import thaumcraft.api.nodes.INode;
+import gt6mirror.thaumcraft.api.nodes.INode;
 
 import static gregapi.data.CS.*;
 

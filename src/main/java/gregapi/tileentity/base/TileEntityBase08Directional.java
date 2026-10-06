@@ -40,7 +40,7 @@ import net.minecraft.world.item.ItemStack;
 @Optional.InterfaceList(value = {
 	@Optional.Interface(iface = "ic2.api.tile.IWrenchable", modid = ModIDs.IC2)
 })
-public abstract class TileEntityBase08Directional extends TileEntityBase07Paintable implements ic2.api.tile.IWrenchable {
+public abstract class TileEntityBase08Directional extends TileEntityBase07Paintable implements gt6mirror.ic2.api.tile.IWrenchable {
 	@Override
 	public IPacket getClientDataPacket(boolean aSendAll) {
 		return aSendAll ? getClientDataPacketByteArray(aSendAll, (byte)UT.Code.getR(mRGBa), (byte)UT.Code.getG(mRGBa), (byte)UT.Code.getB(mRGBa), getVisualData(), getDirectionData()) : getClientDataPacketByte(aSendAll, getVisualData());
