@@ -27,6 +27,8 @@ import gregapi.util.WD;
 import buildcraft.api.blocks.ICustomRotationHandler;
 import buildcraft.api.core.BuildCraftAPI;
 import buildcraft.api.core.IWorldProperty;
+import buildcraft.api.fuels.BuildcraftFuelRegistry;
+import buildcraft.api.fuels.IFuel;
 import buildcraft.api.mj.IMjConnector;
 import buildcraft.api.mj.IMjReceiver;
 import buildcraft.api.mj.MjAPI;
@@ -39,7 +41,9 @@ import net.minecraft.world.item.ItemStack;
 import gregapi.api.FMLPostInitializationEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import gregapi.code.TagData;
+import gregapi.compat.BuildCraftNames;
 import gregapi.compat.CompatBase;
+import gregapi.data.FL;
 import gregapi.data.OP;
 import gregapi.data.TD;
 import gregapi.util.ST;
@@ -51,6 +55,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.fluids.FluidStack;
 import gregapi.tileentity.base.TileEntityBase01Root;
 import gregapi.tileentity.energy.GT6EnergyCapability;
 
@@ -80,6 +85,10 @@ public class CompatBC extends CompatBase implements ICompatBC {
 	@Override
 	public void onServerStarting(ServerStartingEvent aEvent) {
 		BuildCraftAPI.registerWorldProperty("wood", new WorldPropertyIsLog());
+		// 1.7.10's «fuel» was one fluid of BuildCraft and GT6; BuildCraft 26.1 calls its successor fuel_light, so GT6 Fuel burns at its rate.
+		FluidStack tLight = FL.make(BuildCraftNames.FUEL, 1);
+		IFuel tFuel = tLight == null || BuildcraftFuelRegistry.fuel == null ? null : BuildcraftFuelRegistry.fuel.getFuel(tLight);
+		if (tFuel != null && BuildcraftFuelRegistry.fuel.getFuel(FL.Fuel.make(1)) == null) BuildcraftFuelRegistry.fuel.addFuel(FL.Fuel.fluid(), tFuel.getPowerPerCycle(), tFuel.getTotalBurningTime());
 	}
 	
 	@Override

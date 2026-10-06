@@ -41,6 +41,8 @@ public final class BuildCraftNames {
 	public static final ForeignNames TABLE = new ForeignNames(MD.BC);
 	/** Whether the pair has a carrier in the BuildCraft of this branch; callers skip their entry when not. */
 	public static boolean has(String aName, long aMeta) {return TABLE.has(aName, aMeta);}
+	/** BuildCraft's crude oil and light fuel as fluids: 26.1 registers heat tier 0 under the bare base name (BCEnergyFluids:212). */
+	public static final String OIL = MD.BC_ENERGY.mID + ":oil", FUEL = MD.BC_ENERGY.mID + ":fuel_light";
 
 	private static final String
 	  NO_CHIPSET = "BuildCraft 26.1 registers five chipsets only (BCSiliconItems: redstone, iron, gold, diamond, quartz); 7.1.23 ItemRedstoneChipset.Chipset also had PULSATING(4), COMP(6) and EMERALD(7)"
@@ -109,6 +111,8 @@ public final class BuildCraftNames {
 		// Factory and builders: 7.1.23 «tankBlock», «autoWorkbenchBlock», «blueprintItem», «templateItem»;
 		// 26.1 tank («Tank»), autoworkbench_item («Auto Workbench»), blueprint_clean / template_clean (the blank ones).
 		TABLE.map("tankBlock"         , "tank");
+		// 7.1.23 «refineryBlock» turned oil into fuel (BuildCraftFactory:163); in 26.1 the distiller does (BCFactoryBlocks:56).
+		TABLE.map("refineryBlock"     , "distiller");
 		TABLE.map("autoWorkbenchBlock", "autoworkbench_item");
 		TABLE.map("blueprintItem"     , "blueprint_clean");
 		TABLE.map("templateItem"      , "template_clean");

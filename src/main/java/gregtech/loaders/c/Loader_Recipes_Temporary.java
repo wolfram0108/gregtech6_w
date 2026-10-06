@@ -23,6 +23,7 @@
 
 package gregtech.loaders.c;
 
+import gregapi.compat.BuildCraftNames;
 import gregapi.data.*;
 import gregapi.oredict.OreDictItemData;
 import gregapi.oredict.OreDictMaterial;
@@ -724,6 +725,7 @@ public class Loader_Recipes_Temporary implements Runnable {
 		RM.generify   (FL.Oil_Heavy               .make( 3), FL.Oil_Normal.make(1));
 		RM.generify   (FL.Oil_Heavy2              .make( 3), FL.Oil_Normal.make(1));
 		RM.generify   (FL.Oil_ExtraHeavy          .make( 2), FL.Oil_Normal.make(1));
+		RM.generify   (FL.make(BuildCraftNames.OIL, 1)   , FL.Oil_Normal.make(1)); // 1.7.10 shared this very «oil» with BuildCraft
 		
 		for (String tFluid : FluidsGT.JUICE) if (FL.exists(tFluid)) RM.generify(FL.make(tFluid, 1), FL.Juice.make(1));
 		
