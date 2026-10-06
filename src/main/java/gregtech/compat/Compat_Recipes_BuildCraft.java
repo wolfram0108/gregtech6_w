@@ -88,6 +88,9 @@ public class Compat_Recipes_BuildCraft extends CompatMods {
 			RM.Press            .addRecipe2(T, 16,   64, IL.Circuit_Plate_Signalum.get(1), ST.make(MD.BC_SILICON, "redstoneChipset", 4, 7), IL.Circuit_Board_BC_Emerald.get(1));
 		}
 		
+		// 1.7.10 packs switched BuildCraft's refinery off in its objects.cfg; GT6 now drops the crafting of its successors itself.
+		if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "buildcraft-refinery", T)) CR.delate(MD.BC_FACTORY, "refineryBlock", "heat_exchange");
+		
 		if (MD.BC_TRANSPORT.mLoaded) {
 			ItemsGT.VOIDING_ITEMS.add(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemsvoid", 0);
 			if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "buildcraft-void-pipe-items", T)) {

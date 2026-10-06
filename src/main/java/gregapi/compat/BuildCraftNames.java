@@ -38,6 +38,8 @@ public final class BuildCraftNames {
 	public static final ForeignNames TABLE = new ForeignNames(MD.BC, MD.BC_SILICON, MD.BC_TRANSPORT, MD.BC_FACTORY, MD.BC_ENERGY, MD.BC_BUILDERS, MD.BC_ROBOTICS);
 	/** Whether the pair has a carrier in the BuildCraft of this branch; callers skip their entry when not. */
 	public static boolean has(String aName, long aMeta) {return TABLE.has(aName, aMeta);}
+	/** BuildCraft's crude oil as a fluid: 7.99 registers every heat tier with a «_heat_N» suffix (BCEnergyFluids.defineFluids). */
+	public static final String OIL = MD.BC_ENERGY.mID + ":oil_heat_0";
 
 	private static final String
 	  NO_CHIPSET = "BuildCraft 7.99 registers five chipsets only (BCSiliconItems:46-50: redstone, iron, gold, quartz, diamond); 7.1.23 ItemRedstoneChipset.Chipset also had PULSATING(4), COMP(6) and EMERALD(7)"
@@ -101,6 +103,8 @@ public final class BuildCraftNames {
 		// 7.99 tank, autoworkbench_item, snapshot_blueprint/_template (blank until written); boards are one item per program,
 		// the blank one board_robot_empty (RedstoneBoardRobotEmptyNBT:49).
 		TABLE.map("tankBlock"         , "buildcraftfactory:tank");
+		// 7.1.23 «refineryBlock» turned oil into fuel (BuildCraftFactory:163); in 7.99 the distiller does (BCFactoryBlocks:71).
+		TABLE.map("refineryBlock"     , "buildcraftfactory:distiller");
 		TABLE.map("autoWorkbenchBlock", "buildcraftfactory:autoworkbench_item");
 		TABLE.map("blueprintItem"     , "buildcraftbuilders:snapshot_blueprint");
 		TABLE.map("templateItem"      , "buildcraftbuilders:snapshot_template");
