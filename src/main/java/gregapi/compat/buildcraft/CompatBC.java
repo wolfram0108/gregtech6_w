@@ -70,6 +70,7 @@ public class CompatBC extends CompatBase implements ICompatBC {
 		TriggerBC_Energy_Capacity_Full.class.getCanonicalName();
 		IWorldProperty.class.getCanonicalName();
 		BuildCraftAPI.class.getCanonicalName();
+		if (CODE_CLIENT) Client.register();
 	}
 	
 	@Override
@@ -82,13 +83,23 @@ public class CompatBC extends CompatBase implements ICompatBC {
 		}
 	}
 	
-	@Override
-	public void onServerStarting(ServerStartingEvent aEvent) {
-		BuildCraftAPI.registerWorldProperty("wood", new WorldPropertyIsLog());
-		// 1.7.10's «fuel» was one fluid of BuildCraft and GT6; BuildCraft 26.1 calls its successor fuel_light, so GT6 Fuel burns at its rate.
+	/** 1.7.10's «fuel» was one fluid of BuildCraft and GT6; BuildCraft 26.1 calls its successor fuel_light, so GT6 Fuel burns at its rate,
+	 *  joining BuildCraft's registry wherever BuildCraft fills it: at server start, and at a multiplayer client's login. */
+	static void registerFuel() {
 		FluidStack tLight = FL.make(BuildCraftNames.FUEL, 1);
 		IFuel tFuel = tLight == null || BuildcraftFuelRegistry.fuel == null ? null : BuildcraftFuelRegistry.fuel.getFuel(tLight);
 		if (tFuel != null && BuildcraftFuelRegistry.fuel.getFuel(FL.Fuel.make(1)) == null) BuildcraftFuelRegistry.fuel.addFuel(FL.Fuel.fluid(), tFuel.getPowerPerCycle(), tFuel.getTotalBurningTime());
+	}
+
+	/** Client types stay in here, so the class loads on a dedicated server; LOW runs after BuildCraft's own login listener (BCEnergyClient). */
+	private static final class Client {
+		static void register() {net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOW, net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn.class, aEvent -> registerFuel());}
+	}
+
+	@Override
+	public void onServerStarting(ServerStartingEvent aEvent) {
+		BuildCraftAPI.registerWorldProperty("wood", new WorldPropertyIsLog());
+		registerFuel();
 	}
 	
 	@Override

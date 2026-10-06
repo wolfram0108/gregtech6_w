@@ -89,7 +89,7 @@ public class Compat_Recipes_BuildCraft extends CompatMods {
 		}
 		
 		// 1.7.10 packs switched BuildCraft's refinery off in its objects.cfg; GT6 now drops the crafting of its successors itself.
-		if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "buildcraft-refinery", T)) CR.delate(MD.BC_FACTORY, "refineryBlock", "heat_exchange");
+		if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "buildcraft-refinery", T)) CR.delate(MD.BC_FACTORY, "refineryBlock", BuildCraftNames.HEAT_EXCHANGER);
 		
 		if (MD.BC_TRANSPORT.mLoaded) {
 			ItemsGT.VOIDING_ITEMS.add(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemsvoid", 0);

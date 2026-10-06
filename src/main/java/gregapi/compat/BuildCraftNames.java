@@ -43,6 +43,8 @@ public final class BuildCraftNames {
 	public static boolean has(String aName, long aMeta) {return TABLE.has(aName, aMeta);}
 	/** BuildCraft's crude oil and light fuel as fluids: 26.1 registers heat tier 0 under the bare base name (BCEnergyFluids:212). */
 	public static final String OIL = MD.BC_ENERGY.mID + ":oil", FUEL = MD.BC_ENERGY.mID + ":fuel_light";
+	/** The heat exchanger, which the refinery chain needs and which has no 7.1.23 name to map from. */
+	public static final String HEAT_EXCHANGER = "heat_exchange";
 
 	private static final String
 	  NO_CHIPSET = "BuildCraft 26.1 registers five chipsets only (BCSiliconItems: redstone, iron, gold, diamond, quartz); 7.1.23 ItemRedstoneChipset.Chipset also had PULSATING(4), COMP(6) and EMERALD(7)"
