@@ -87,7 +87,7 @@ public class EnergyCompat {
 			GC_ENERGY = T;
 		} catch(Throwable e) {/**/}
 		if (MD.BC.mLoaded) try {
-			gt6mirror.buildcraft.api.power.ILaserTarget                            .class.getCanonicalName();
+			buildcraft.api.mj.ILaserTarget                                         .class.getCanonicalName();
 			BC_LASER = T;
 		} catch(Throwable e) {/**/}
 		try {
@@ -159,6 +159,16 @@ public class EnergyCompat {
 		return F;
 	}
 
+	/** FE into a foreign receiver, in its own transaction committed only once something was really accepted; the one
+	 *  place every GT6 energy type that reaches an FE receiver goes through. Returns the RF accepted. */
+	public static long insertFE(net.neoforged.neoforge.transfer.energy.EnergyHandler aFE, long aRF) {
+		try (net.neoforged.neoforge.transfer.transaction.Transaction tTx = net.neoforged.neoforge.transfer.transaction.Transaction.open(net.neoforged.neoforge.transfer.transaction.Transaction.getCurrentOpenedTransaction())) {
+			int tAccepted = aFE.insert(UT.Code.bind31(aRF), tTx);
+			if (tAccepted > 0) tTx.commit();
+			return tAccepted;
+		} catch(Throwable e) {return 0;}
+	}
+	
 	/** Neighbor's FE receiver capability on a given side, the one place in the mod that asks it, for both the connection
 	 *  predicate and energy insertion. */
 	public static net.neoforged.neoforge.transfer.energy.EnergyHandler feHandler(BlockEntity aReceiver, byte aSide) {
@@ -212,13 +222,7 @@ public class EnergyCompat {
 				net.neoforged.neoforge.transfer.energy.EnergyHandler tFE = feHandler(aReceiver, aSide);
 				if (tFE != null) {
 					if (checkOverCharge(aSize, aReceiver)) return aAmount;
-					long tWanted = aAmount * aSize * RF_PER_EU;
-					try (net.neoforged.neoforge.transfer.transaction.Transaction tTx = net.neoforged.neoforge.transfer.transaction.Transaction.open(net.neoforged.neoforge.transfer.transaction.Transaction.getCurrentOpenedTransaction())) {
-						int tAccepted = tFE.insert(UT.Code.bind31(tWanted), tTx);
-						// aEmitter here can be anyone; the transaction commits only once something was actually accepted for real.
-						if (tAccepted > 0) tTx.commit();
-						return UT.Code.divup(tAccepted, aSize * RF_PER_EU);
-					} catch(Throwable e) {return 0;}
+					return UT.Code.divup(insertFE(tFE, aAmount * aSize * RF_PER_EU), aSize * RF_PER_EU);
 				}
 			}
 
@@ -308,7 +312,7 @@ public class EnergyCompat {
 			return 0;
 		}
 		
-		if (RF_ENERGY && aSize > 0) {
+		if (aSize > 0) {
 			long tSizeToReceive = 0;
 			// GT KineticUnits auto-convert to RF, but only in the Push Phase, so when they are postive!
 			if (aEnergyType == TD.Energy.KU) tSizeToReceive = aSize * RF_PER_EU; else
@@ -318,10 +322,15 @@ public class EnergyCompat {
 			if (aEnergyType == TD.Energy.RF) tSizeToReceive = aSize;
 			
 			if (tSizeToReceive > 0) {
-				if (!(aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyConnection) || ((gt6mirror.cofh.api.energy.IEnergyConnection)aReceiver).canConnectEnergy(FORGE_DIR[aSide])) {
+				if (RF_ENERGY && (!(aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyConnection) || ((gt6mirror.cofh.api.energy.IEnergyConnection)aReceiver).canConnectEnergy(FORGE_DIR[aSide]))) {
 					if (RF_ENERGY_NEW && aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyReceiver) return UT.Code.divup(((gt6mirror.cofh.api.energy.IEnergyReceiver)aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * tSizeToReceive), F), tSizeToReceive);
 					if (                 aReceiver instanceof gt6mirror.cofh.api.energy.IEnergyHandler ) return UT.Code.divup(((gt6mirror.cofh.api.energy.IEnergyHandler )aReceiver).receiveEnergy(FORGE_DIR[aSide], UT.Code.bind31(aAmount * tSizeToReceive), F), tSizeToReceive);
 				}
+				// The RF receivers of 1.7.10 are reached today through the engine's Capabilities.Energy.BLOCK, and BuildCraft's
+				// MJ machines through its own capability, at BuildCraft's MJ per RF.
+				net.neoforged.neoforge.transfer.energy.EnergyHandler tFE = feHandler(aReceiver, aSide);
+				if (tFE != null) return UT.Code.divup(insertFE(tFE, aAmount * tSizeToReceive), tSizeToReceive);
+				if (COMPAT_BC != null) {long tRF = COMPAT_BC.insertRF(aReceiver, aSide, aAmount * tSizeToReceive); if (tRF >= 0) return UT.Code.divup(tRF, tSizeToReceive);}
 			}
 		}
 		return 0;

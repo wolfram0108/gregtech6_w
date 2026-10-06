@@ -23,7 +23,7 @@
 
 package gregapi.compat.opencomputers;
 
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import gregapi.api.FMLInitializationEvent;
 import gregapi.compat.CompatBase;
 import gregapi.computer.IComputerizable;
 import gregapi.computer.ICoverComputerizable;
@@ -46,8 +46,8 @@ import static gregapi.data.CS.SIDES_VALID;
 public class CompatOC extends CompatBase implements ICompatOC, SidedBlock {
 	public CompatOC() {/**/}
 	
-	// @Override
-	public void onLoad(FMLCommonSetupEvent event) {
+	@Override
+	public void onLoad(FMLInitializationEvent event) {
 		Driver.add(this);
 	}
 	

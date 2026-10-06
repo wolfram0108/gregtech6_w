@@ -24,7 +24,7 @@
 package gregapi.compat.forestry;
 import gregapi.util.WD;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gt6mirror.forestry.api.farming.Farmables;
 import gt6mirror.forestry.api.farming.ICrop;
 import gt6mirror.forestry.api.farming.IFarmable;
@@ -49,8 +49,8 @@ import static gregapi.data.CS.*;
 public class CompatFR extends CompatBase implements ICompatFR, IFarmable {
 	public ItemStackSet<ItemStackContainer> mWindfalls = ST.hashset();
 	
-	// @Override
-	public void onPostLoad(FMLLoadCompleteEvent aEvent) {
+	@Override
+	public void onPostLoad(FMLPostInitializationEvent aEvent) {
 		Farmables.farmables.get("farmArboreal").add(this);
 	}
 	

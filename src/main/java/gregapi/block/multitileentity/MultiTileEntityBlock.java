@@ -101,6 +101,14 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlockDebugable, IBlockErrorable, IBlockOnWalkOver, IBlockSyncDataAndCoversAndIDs, IRenderedBlock, EntityBlock, IBlockToolable, IBlockRetrievable, IBlockMaterial {
 	private static final Map<String, MultiTileEntityBlock> MULTITILEENTITYBLOCKMAP = new HashMap<>();
 	
+	/** Every registered block whose BlockEntity is a GT6 root, of both MTE block kinds: the list each capability
+	 *  channel registers on, since the engine binds block capabilities per block and not per BlockEntity type. */
+	public static Block[] allInRegistry() {
+		List<Block> rBlocks = new ArrayList<>();
+		for (Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) if (tBlock instanceof MultiTileEntityBlock || tBlock instanceof MultiTileEntityBlockInternal) rBlocks.add(tBlock);
+		return rBlocks.toArray(new Block[0]);
+	}
+	
 	private final int mHarvestLevelOffset, mHarvestLevelMinimum, mHarvestLevelMaximum;
 	private final String mNameInternal, mTool;
 	private final boolean mOpaque, mNormalCube;

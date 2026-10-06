@@ -92,7 +92,8 @@ public class ST {
 			TE_PIPES = T;
 		} catch(Throwable e) {/**/}
 		if (MD.BC.mLoaded) try {
-			gt6mirror.buildcraft.api.transport.IInjectable.class.getCanonicalName();
+			buildcraft.api.transport.IInjectable.class.getCanonicalName();
+			buildcraft.api.transport.pipe.IPipeHolder.class.getCanonicalName();
 			BC_PIPES = T;
 		} catch(Throwable e) {/**/}
 		if (MD.TF.mLoaded) try {
@@ -754,13 +755,11 @@ public class ST {
 	public static ItemStack mkic(String aItem                , long aSize, long aMeta                                   ) {return     meta(mkic(aItem, aSize), aMeta);}
 	public static ItemStack mkic(String aItem                , long aSize            , ItemStack aReplacement           ) {return get(     mkic(aItem, aSize)        , aReplacement);}
 	public static ItemStack mkic(String aItem                , long aSize, long aMeta, Object    aReplacement           ) {return get(meta(mkic(aItem, aSize), aMeta), aReplacement);}
-	// AE2 mission stage 2 (compat layer): the SINGLE point where a 1.7.10 item name turns into a stack —
-	// ALL foreign-mod addressing paths converge here (the ST.block/ST.item ModData variants, OM.data,
-	// OreDictManager.setTarget, ItemStackMap.put, ItemStackSet.add). AE2 26.1 renamed its items entirely
-	// (the rv2 meta subtypes became separate ids), so the "name+meta" pair is resolved by the
-	// gregapi.compat.AE2Names center table; it only knows AE2 names — for every other mod the path is unchanged, verbatim.
-	// Same technique and same spot as the vanilla meta expansion (CS.Flattened in ST.make_ a few lines below).
-	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {if (gregapi.compat.AE2Names.owns(aModID, aItem)) return gregapi.compat.AE2Names.make(aItem, aSize, aMeta); return     meta(make(aModID, aItem, aSize), aMeta);}
+	// The SINGLE point where a foreign 1.7.10 item name turns into a stack — ALL foreign-mod addressing paths converge
+	// here (the ST.block/ST.item ModData variants, OM.data, OreDictManager.setTarget, ItemStackMap.put, ItemStackSet.add).
+	// Mods that renamed their items since 1.7.10 (AE2, BuildCraft) answer through their table in gregapi.compat.ForeignNames;
+	// for every other mod the path is unchanged, verbatim. Same spot as the vanilla meta expansion (CS.Flattened in ST.make_).
+	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {gregapi.compat.ForeignNames tTable = gregapi.compat.ForeignNames.table(aModID, aItem); if (tTable != null) return tTable.make(aModID, aItem, aSize, aMeta); return     meta(make(aModID, aItem, aSize), aMeta);}
 	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta, Object    aReplacement           ) {return get(meta(make(aModID, aItem, aSize), aMeta), aReplacement);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta                                   ) {return make(item(aItemID), aSize, aMeta);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta              , CompoundTag aNBT) {return make(item(aItemID), aSize, aMeta, aNBT);}
@@ -1044,7 +1043,7 @@ public class ST {
 	public static boolean canConnect(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator) {
 		if (aDelegator.mTileEntity == null) return F;
 		if (TE_PIPES && aDelegator.mTileEntity instanceof gt6mirror.cofh.api.transport.IItemDuct) return T;
-		if (BC_PIPES && aDelegator.mTileEntity instanceof gt6mirror.buildcraft.api.transport.IInjectable) return ((gt6mirror.buildcraft.api.transport.IInjectable)aDelegator.mTileEntity).canInjectItems(aDelegator.getForgeSideOfTileEntity());
+		if (BC_PIPES && gregapi.compat.buildcraft.CompatBC.isInjectable(aDelegator.mTileEntity, aDelegator.getForgeSideOfTileEntity())) return gregapi.compat.buildcraft.CompatBC.canInject(aDelegator.mTileEntity, aDelegator.getForgeSideOfTileEntity());
 		if (aDelegator.mTileEntity instanceof ITileEntityCanDelegate && ((ITileEntityCanDelegate)aDelegator.mTileEntity).isExtender(aDelegator.mSideOfTileEntity)) return T;
 		if (aDelegator.mTileEntity instanceof Container && ((Container)aDelegator.mTileEntity).getContainerSize() > 0) return T;
 		return F;
@@ -1109,15 +1108,15 @@ public class ST {
 				}
 				return 0;
 			}
-			if (BC_PIPES && aTo.mTileEntity instanceof gt6mirror.buildcraft.api.transport.IInjectable) {
+			if (BC_PIPES && gregapi.compat.buildcraft.CompatBC.isInjectable(aTo.mTileEntity, aTo.getForgeSideOfTileEntity())) {
 				for (int aSlotFrom : aSlotsFrom) {
 					ItemStack aStackFrom = aFrom.mTileEntity.getItem(aSlotFrom);
 					if (aStackFrom != null && aMinMove <= aStackFrom.getCount() && (aFilter == null || aFilter.contains(aStackFrom, T) != aInvertFilter) && canTake(aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) {
 						// Actually Moving the Stack
 						ItemStack tStackMoved = amount(Math.min(aStackFrom.getCount(), aMaxMove), aStackFrom);
-						int rMoved = ((gt6mirror.buildcraft.api.transport.IInjectable)aTo.mTileEntity).injectItem(copy(tStackMoved), F, aTo.getForgeSideOfTileEntity(), null);
+						int rMoved = gregapi.compat.buildcraft.CompatBC.inject(aTo.mTileEntity, copy(tStackMoved), F, aTo.getForgeSideOfTileEntity());
 						if (rMoved >= aMinMove) {
-							rMoved = (((gt6mirror.buildcraft.api.transport.IInjectable)aTo.mTileEntity).injectItem(amount(rMoved, tStackMoved), T, aTo.getForgeSideOfTileEntity(), null));
+							rMoved = gregapi.compat.buildcraft.CompatBC.inject(aTo.mTileEntity, amount(rMoved, tStackMoved), T, aTo.getForgeSideOfTileEntity());
 							aFrom.mTileEntity.removeItem(aSlotFrom, rMoved);
 							aFrom.mTileEntity.setChanged();
 							WD.mark(aFrom);

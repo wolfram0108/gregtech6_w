@@ -1460,6 +1460,8 @@ public class WD {
 		if (aWorld == null) return F;
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockState tState = state(aWorld, tPos);
+		// A BuildCraft block rotates itself the way its 1.7.10 rotateBlock did (an engine turns to its next receiver).
+		if (COMPAT_BC != null && aWorld instanceof Level && COMPAT_BC.rotateBlock((Level)aWorld, tPos, tState, aAxis)) return T;
 		BlockState tRotated = tState.rotate(net.minecraft.world.level.block.Rotation.CLOCKWISE_90);
 		return tRotated != tState && aWorld.setBlock(tPos, tRotated, 3);
 	}

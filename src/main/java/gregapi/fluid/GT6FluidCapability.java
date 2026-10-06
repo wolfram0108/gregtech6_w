@@ -78,17 +78,14 @@ public class GT6FluidCapability {
 	 * {@code null}. So we enumerate the blocks themselves: everything whose BlockEntity is a GT6 root.
 	 */
 	private static void onRegisterCapabilities(RegisterCapabilitiesEvent aEvent) {
-		List<net.minecraft.world.level.block.Block> tBlocks = new ArrayList<>();
-		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
-			if (tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock || tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlockInternal) tBlocks.add(tBlock);
-		}
-		if (tBlocks.isEmpty()) {
+		net.minecraft.world.level.block.Block[] tBlocks = gregapi.block.multitileentity.MultiTileEntityBlock.allInRegistry();
+		if (tBlocks.length == 0) {
 			// Can't silently skip this: a silent skip means "no tanks exposed" with zero trace in the log.
 			gregapi.data.CS.ERR.println("GT6 F5-capability: 0 MTE blocks in the registry — the fluid channel was NOT registered!");
 			return;
 		}
-		aEvent.registerBlock(Capabilities.Fluid.BLOCK, GT6FluidCapability::handlerAt, tBlocks.toArray(new net.minecraft.world.level.block.Block[0]));
-		gregapi.data.CS.OUT.println("GT6 F5-capability: fluid channel registered for " + tBlocks.size() + " MTE blocks (Capabilities.Fluid.BLOCK).");
+		aEvent.registerBlock(Capabilities.Fluid.BLOCK, GT6FluidCapability::handlerAt, tBlocks);
+		gregapi.data.CS.OUT.println("GT6 F5-capability: fluid channel registered for " + tBlocks.length + " MTE blocks (Capabilities.Fluid.BLOCK).");
 		// Second half of the same class: 1.7.10 ITEM-side interface IFluidContainerItem is alive 1:1 on the
 		// items (BUG-045) but was never registered as Capabilities.Fluid.ITEM — container items looked empty
 		// to JEI and other mods. One adapter bridges the GT6 channel; items enumerated by the same rule.

@@ -23,7 +23,7 @@
 
 package gregapi.compat.industrialcraft;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import gregapi.code.ItemStackContainer;
@@ -66,8 +66,8 @@ public class CompatIC2 extends CompatBase implements ICompatIC2 {
 		NeoForge.EVENT_BUS.register(this);
 	}
 	
-	// @Override
-	public void onPostLoad(FMLLoadCompleteEvent aEvent) {
+	@Override
+	public void onPostLoad(FMLPostInitializationEvent aEvent) {
 		for (Object tOre : BlocksGT.stoneToSmallOres .values()) valuable((Block)tOre, 2);
 		for (Object tOre : BlocksGT.stoneToNormalOres.values()) valuable((Block)tOre, 3);
 		for (Object tOre : BlocksGT.stoneToBrokenOres.values()) valuable((Block)tOre, 3);

@@ -20,8 +20,20 @@
 package gregapi.compat.buildcraft;
 
 import gregapi.compat.ICompat;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
 
 public interface ICompatBC extends ICompat {
-	//
+	/** Rotates a block that declares BuildCraft's rotation contract, as 1.7.10 Block.rotateBlock did for BuildCraft blocks. */
+	public boolean rotateBlock(Level aWorld, BlockPos aPos, BlockState aState, Direction aSide);
+	/** Exposes GT6's RF blocks as BuildCraft MJ receivers, on the block list and selection of GT6EnergyCapability. */
+	public void registerCapabilities(RegisterCapabilitiesEvent aEvent, Block[] aBlocks);
+	/** RF into a BuildCraft MJ receiver at BuildCraft's MJ per RF; the RF it took, or -1 when the block takes no MJ. */
+	public long insertRF(BlockEntity aReceiver, byte aSide, long aRF);
 }

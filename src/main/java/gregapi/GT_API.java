@@ -667,6 +667,9 @@ public class GT_API extends Abstract_Mod {
 		// Container/WorldlyContainer on the TEs are ported 1:1 — here they are only exposed outward via the
 		// engine's standard wrappers (gregapi/tileentity/GT6ItemCapability.java).
 		gregapi.tileentity.GT6ItemCapability.register(aModBus);
+		// The same loss class for RF: 1.7.10's RF blocks declared CoFH's IEnergyHandler; in neo only a registered
+		// Capabilities.Energy.BLOCK is visible from the outside (gregapi/tileentity/energy/GT6EnergyCapability.java).
+		gregapi.tileentity.energy.GT6EnergyCapability.register(aModBus);
 		// F-attachment: the central DeferredRegister for Entity attachment types (EntityFoodTracker) — the same
 		// mod bus, a single subscription point (gregapi/player/EntityFoodTracker.java; replaces 1.7.10's
 		// IExtendedEntityProperties, no other file duplicates this registration).

@@ -23,9 +23,6 @@
 
 package gregapi.tileentity;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.minecraft.core.Direction;
 import net.minecraft.world.Container;
 import net.minecraft.world.WorldlyContainer;
@@ -71,17 +68,14 @@ public class GT6ItemCapability {
 	}
 
 	private static void onRegisterCapabilities(RegisterCapabilitiesEvent aEvent) {
-		List<net.minecraft.world.level.block.Block> tBlocks = new ArrayList<>();
-		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
-			if (tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock || tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlockInternal) tBlocks.add(tBlock);
-		}
-		if (tBlocks.isEmpty()) {
+		net.minecraft.world.level.block.Block[] tBlocks = gregapi.block.multitileentity.MultiTileEntityBlock.allInRegistry();
+		if (tBlocks.length == 0) {
 			// A silent skip is not acceptable: it amounts to "no inventories from outside" with no trace in the log.
 			gregapi.data.CS.ERR.println("GT6 item-capability: 0 MTE blocks in the registry — the inventory channel was NOT registered!");
 			return;
 		}
-		aEvent.registerBlock(Capabilities.Item.BLOCK, GT6ItemCapability::handlerAt, tBlocks.toArray(new net.minecraft.world.level.block.Block[0]));
-		gregapi.data.CS.OUT.println("GT6 item-capability: inventory channel registered for " + tBlocks.size() + " MTE blocks (Capabilities.Item.BLOCK).");
+		aEvent.registerBlock(Capabilities.Item.BLOCK, GT6ItemCapability::handlerAt, tBlocks);
+		gregapi.data.CS.OUT.println("GT6 item-capability: inventory channel registered for " + tBlocks.length + " MTE blocks (Capabilities.Item.BLOCK).");
 	}
 
 	/** The engine passes the BlockEntity itself (may be null if it does not exist yet). */

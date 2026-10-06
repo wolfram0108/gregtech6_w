@@ -42,6 +42,7 @@ import gregapi.oredict.event.IOreDictListenerEvent;
 import gregapi.recipes.AdvancedCraftingTool;
 import gregapi.util.CR;
 import gregapi.util.ST;
+import gregapi.util.UT;
 import gregtech.items.tools.crafting.GT_Tool_BendingCylinder;
 import gregtech.items.tools.crafting.GT_Tool_BendingCylinderSmall;
 import gregtech.items.tools.crafting.GT_Tool_File;
@@ -116,7 +117,11 @@ public class Loader_Tools implements Runnable {
 		
 		// MultiItem is built via a supplier at RegisterEvent: Item's ctor needs an unfrozen registry.
 		// addTool/NEI/recipes below use sMetaTool and build stacks, so they run in deferItemInit.
-		GT_API.registerItemLazy(MD.GT.mID, "gt.metatool.01", () -> ToolsGT.sMetaTool = new MultiItemToolWithCompat(MD.GT.mID, "gt.metatool.01"));
+		// With BuildCraft present the tool is built from its compat class, which declares BuildCraft's wrench interface.
+		GT_API.registerItemLazy(MD.GT.mID, "gt.metatool.01", () -> {
+			MultiItemToolWithCompat tTool = MD.BC.mLoaded ? (MultiItemToolWithCompat)UT.Reflection.callConstructor("gregapi.compat.buildcraft.MultiItemToolWithCompatBC", 0, null, T, MD.GT.mID, "gt.metatool.01") : null;
+			return ToolsGT.sMetaTool = (tTool != null ? tTool : new MultiItemToolWithCompat(MD.GT.mID, "gt.metatool.01"));
+		});
 		gregapi.GT_API.deferItemInit(() -> {
 
 		ToolsGT.add(ToolsGT.sMetaTool.addTool(ToolsGT.SWORD                     , "Sword"                           , ""                                                    , new GT_Tool_Sword()                                            .setMaterialAmount(toolHeadSword                     .mAmount), OreDictToolNames.sword, OreDictToolNames.blade                                                                                           , TC.stack(TC.INSTRUMENTUM  , 2), TC.stack(TC.TELUM         , 4)                                                                ), TOOL_sword);

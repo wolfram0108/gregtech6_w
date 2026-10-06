@@ -2395,13 +2395,14 @@ public class CS {
 		, LycM_Demon        = "demonmobs"
 		, LycM_Shadow       = "shadowmobs"
 		
-		, BC                = "BuildCraft|Core"
-		, BC_SILICON        = "BuildCraft|Silicon"
-		, BC_TRANSPORT      = "BuildCraft|Transport"
-		, BC_FACTORY        = "BuildCraft|Factory"
-		, BC_ENERGY         = "BuildCraft|Energy"
-		, BC_BUILDERS       = "BuildCraft|Builders"
-		, BC_ROBOTICS       = "BuildCraft|Robotics"
+		// BuildCraft on 26.1 is BuildCraft (Unofficial): its sub-mods live under one mod id, so every part answers to it.
+		, BC                = "buildcraftunofficial"
+		, BC_SILICON        = "buildcraftunofficial"
+		, BC_TRANSPORT      = "buildcraftunofficial"
+		, BC_FACTORY        = "buildcraftunofficial"
+		, BC_ENERGY         = "buildcraftunofficial"
+		, BC_BUILDERS       = "buildcraftunofficial"
+		, BC_ROBOTICS       = "buildcraftunofficial"
 		
 		, RP                = "Redpower"
 		, BP                = "bluepower"
