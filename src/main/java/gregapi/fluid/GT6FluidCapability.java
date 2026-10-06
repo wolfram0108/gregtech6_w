@@ -225,9 +225,8 @@ public class GT6FluidCapability {
 	// The other way round: another mod's fluid storage as GT6 code meets it next to a GT6 block.
 	// ==============================================================================================
 
-	/** Answers per position and side for another mod's block entity, each kept until the engine reports that block's capabilities
-	 *  changed (replaced, removed, unloaded, reconfigured), then dropped: one map lookup on the hot path, nothing held past its
-	 *  block, no stale answer. Server thread only; any other thread asks the engine directly. */
+	/** Kept per position and side until the engine invalidates that block's capability: one map lookup per call, nothing held past
+	 *  its block, never stale. Server thread only. */
 	private static final java.util.Map<net.minecraft.world.level.Level, it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Foreign[]>> FOREIGN = new java.util.WeakHashMap<>();
 
 	private static final class Foreign {
@@ -246,10 +245,8 @@ public class GT6FluidCapability {
 		}
 	}
 
-	/** Another mod's fluid storage as GT6 code calls it: NeoForge's IFluidHandler adapter under the two rules EnergyCompat.insertFE
-	 *  keeps for a foreign FE storage. A move nests in a transaction already open on the thread, where a second root would throw
-	 *  (a foreign pipe filling a GT6 Extender that passes it on), and a storage that fails reads as moving nothing, instead of
-	 *  throwing into a GT6 tick or a player's click. */
+	/** NeoForge's IFluidHandler adapter under EnergyCompat.insertFE's rules: nest in an open transaction (a second root throws when a
+	 *  GT6 Extender passes a foreign move on), and a failing foreign storage moves nothing instead of erroring a GT6 tick. */
 	private static final class ForeignTank implements IFluidHandler {
 		private final ResourceHandler<FluidResource> mHandler;
 		private ForeignTank(ResourceHandler<FluidResource> aHandler) {mHandler = aHandler;}
