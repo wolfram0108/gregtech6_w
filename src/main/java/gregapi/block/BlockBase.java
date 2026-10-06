@@ -65,26 +65,16 @@ import static gregapi.data.CS.*;
  */
 public abstract class BlockBase extends Block implements IBlockBase {
 	public final String mNameInternal;
-	/** The last bounds set; 1.7.10 mutated Block.mBoundingBox directly.
-	 *  Real render use is deferred to a later client-side pass. */
-	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
-	/** 1.7.10 was single-threaded, so mutating shared Block fields during render was safe.
-	 *  neo meshes chunks on several threads sharing one Block, which raced on that field; fixed with a thread-local copy. */
+	/** Render context flag: inside a render pass setBlockBounds writes only this thread's copy (RenderBounds), never the shared bounds. */
 	public static final ThreadLocal<boolean[]> RENDER_BOUNDS_CTX = ThreadLocal.withInitial(() -> new boolean[1]);
-	private final ThreadLocal<float[]> mRenderBoundsTL = ThreadLocal.withInitial(() -> mRenderBounds.clone());
-	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
-		float[] tBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
-		mRenderBoundsTL.set(tBounds);
-		if (!RENDER_BOUNDS_CTX.get()[0]) mRenderBounds = tBounds;
-	}
-	/** Current render bounds for GT6BlockModel; reads the thread-local copy so each render thread
-	 *  sees only its own pass's values, not another thread's. */
-	public float[] getRenderBounds() {return mRenderBoundsTL.get();}
+	protected final RenderBounds mRenderBounds = new RenderBounds();
+	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);}
+	public float[] getRenderBounds() {return mRenderBounds.render();}
 	// The 1.7.10 collision surface (addCollisionBoxesToList/getCollisionBoundingBoxFromPool) is gone from the engine,
 	// so its defaults live here at the root and the subclass override chain keeps working as in the original.
 	/** A 1:1 port of vanilla's default getCollisionBoundingBoxFromPool, using the static bounds plus position. */
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
-		float[] tB = mRenderBounds;
+		float[] tB = mRenderBounds.shared();
 		return new AABB(aX+tB[0], aY+tB[1], aZ+tB[2], aX+tB[3], aY+tB[4], aZ+tB[5]);
 	}
 	/** A 1:1 port of vanilla's default addCollisionBoxesToList. */
@@ -114,7 +104,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 			for (AABB tBox : tList) if (tBox != null) rShape = net.minecraft.world.phys.shapes.Shapes.or(rShape, net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ())));
 			return rShape;
 		}
-		float[] tB = mRenderBounds;
+		float[] tB = mRenderBounds.shared();
 		return tB[0] <= 0 && tB[1] <= 0 && tB[2] <= 0 && tB[3] >= 1 && tB[4] >= 1 && tB[5] >= 1 ? super.getCollisionShape(aState, aWorld, aPos, aContext) : net.minecraft.world.phys.shapes.Shapes.create(new AABB(tB[0], tB[1], tB[2], tB[3], tB[4], tB[5]));
 	}
 	// Outline bridge in the 1.7.10 collisionRayTrace order: state bounds first, static bounds second; an empty
@@ -125,7 +115,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		net.minecraft.world.phys.shapes.VoxelShape tFromState = shapeFromState(aState, F);
 		if (tFromState != null) return tFromState.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.block() : tFromState;
 		try { setBlockBoundsBasedOnState(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()); } catch (Throwable e) {/* foreign BlockGetter or a race; fall through to the static bounds below */}
-		float[] tB = mRenderBounds;
+		float[] tB = mRenderBounds.shared();
 		if (tB[0] <= 0 && tB[1] <= 0 && tB[2] <= 0 && tB[3] >= 1 && tB[4] >= 1 && tB[5] >= 1) return super.getShape(aState, aWorld, aPos, aContext);
 		net.minecraft.world.phys.shapes.VoxelShape rShape = net.minecraft.world.phys.shapes.Shapes.create(new AABB(tB[0], tB[1], tB[2], tB[3], tB[4], tB[5]));
 		return rShape.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.block() : rShape;

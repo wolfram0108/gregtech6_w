@@ -84,11 +84,11 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public Material getMaterial() {return mMaterial;}
 	/** BlockBaseRail doesn't inherit BlockBase, but the IBlock contract still requires setBlockBounds,
 	 *  so the same technique is reused locally here instead of sharing BlockBase's implementation. */
-	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
+	protected final gregapi.block.RenderBounds mRenderBounds = new gregapi.block.RenderBounds();
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
-		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
+		mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
 	}
-	@Override public float[] getRenderBounds() {return mRenderBounds;}
+	@Override public float[] getRenderBounds() {return mRenderBounds.render();}
 
 	// GT6's rail code goes entirely through WD.meta/WD.set, but neo stores rail shape and power in BlockState properties
 	// instead; SHAPE's order matches 1.7.10's meta exactly, and the wider property covers every variant from the start.

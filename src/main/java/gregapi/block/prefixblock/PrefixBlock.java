@@ -104,11 +104,11 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	/** F-bounds (same approach as BlockBase.java/MultiTileEntityBlock.java): the last-set bounds (via
 	 *  setBlockBoundsBasedOnState -> setBlockBounds), neo bounds are immutable -> store them ourselves separately from mMinX..mMaxZ
 	 *  (those are final, intrinsic material geometry), render usage is deferred to the F3 client pass. */
-	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
+	protected final gregapi.block.RenderBounds mRenderBounds = new gregapi.block.RenderBounds();
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
-		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
+		mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
 	}
-	@Override public float[] getRenderBounds() {return mRenderBounds;}
+	@Override public float[] getRenderBounds() {return mRenderBounds.render();}
 	public final int mHarvestLevelOffset, mHarvestLevelMinimum, mHarvestLevelMaximum;
 	public final ITexture mTexture;
 	public final String mNameInternal, mTool, mModIDOwner;

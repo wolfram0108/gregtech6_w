@@ -59,13 +59,13 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 
 	/** Same center as BlockBase#setBlockBounds, shared by both fluid blocks (was Forge's Block.setBlockBounds
 	 *  inside the BlockFluidBase constructor). */
-	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
+	protected final gregapi.block.RenderBounds mRenderBounds = new gregapi.block.RenderBounds();
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
-		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
+		mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
 	}
 	/** Same contract as BlockBase#getRenderBounds -- read by GT6BlockModel.applyBounds; without it the fluid's
 	 *  quanta height was lost and it drew as a full cube. */
-	public float[] getRenderBounds() {return mRenderBounds;}
+	public float[] getRenderBounds() {return mRenderBounds.render();}
 
 	/** Was BlockFluidBase(Fluid,Material), which read density/tickRate/etc. straight off Forge's own Fluid object;
 	 *  neo's Fluid carries none of that (split into FluidType); this 2-arg overload keeps Forge's own defaults instead. */
