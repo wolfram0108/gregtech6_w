@@ -277,7 +277,7 @@ if (gradle.platformCopy) {
 // Foreign mods are never fetched: they sit beside the repository, and a bare clone builds and runs GregTech alone.
 def localMods = file('../stands/_mods')
 def devRunMods = [
-    // JEI is the visual-acceptance viewer; Jade, JourneyMap, AE2 and More Red are what the compat stands query.
+    // JEI is the visual-acceptance viewer; Jade, JourneyMap, AE2, More Red and BuildCraft are what the compat stands query.
     "jei-${jei_minecraft_version}-neoforge-${jei_version}.jar",
     "jade-${jade_version}.jar",
     "journeymap-${journeymap_version}.jar",
@@ -285,6 +285,8 @@ def devRunMods = [
     "guideme-${guideme_version}.jar",
     // Built from reference/mods/MoreRed-src (no 26.1.2 release exists); it carries Ex Machina inside.
     "morered-${morered_version}.jar",
+    // BuildCraft (Unofficial) owns the buildcraft.api packages GT6 integrates with.
+    "BCunofficial-${buildcraft_version}.jar",
 ]
 // Sodium lights quads by vertex index, so only under it does a vertex-order defect show; render acceptance only.
 if (project.hasProperty('gt6probes')) devRunMods << 'sodium-neoforge-0.9.1-mc26.1.2.jar'
