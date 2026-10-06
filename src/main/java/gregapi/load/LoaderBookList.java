@@ -135,7 +135,7 @@ public class LoaderBookList implements Runnable {
 			BooksGT.BOOK_REGISTER  .put(MD.BC_BUILDERS, "blueprintItem"               ,   W, (byte) 28);
 			BooksGT.BOOK_REGISTER  .put(MD.BC_BUILDERS, "templateItem"                ,   W, (byte) 28);
 		}
-		if (MD.BC_ROBOTICS.mLoaded) {
+		if (MD.BC_ROBOTICS.mLoaded && gregapi.compat.BuildCraftNames.has("redstone_board", W)) {
 			BooksGT.BOOK_REGISTER  .put(MD.BC_ROBOTICS, "redstone_board"              ,   W, (byte) 26);
 		}
 		if (MD.BOTA.mLoaded) {

@@ -157,9 +157,6 @@ public final class GT6QuadBuilder {
 	/** Sprite resolve from the block atlas, the default used by putFace/resolveBlockFaceIcon for block faces. */
 	public static TextureAtlasSprite resolveSprite(ResourceLocation aIcon) {return resolveSprite(aIcon, ATLAS_BLOCKS);}
 
-	/** The id an icon has in the block atlas: item icons sit there under the items/ prefix (assets/minecraft/atlases/blocks.json). */
-	public static ResourceLocation atlasId(ResourceLocation aIcon, int aAtlasBucket) {return aAtlasBucket == ATLAS_ITEMS ? aIcon.withPrefix("items/") : aIcon;}
-
 	/** Resolves a sprite from the given bucket: GT6's dynamic textures split between a block path and an item path,
 	 *  and a material item specifically needs its item-version icon, or it renders as a missing-texture purple. */
 	public static TextureAtlasSprite resolveSprite(ResourceLocation aIcon, int aAtlasBucket) {
@@ -167,7 +164,7 @@ public final class GT6QuadBuilder {
 		try {
 			TextureAtlas tAtlas = Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
 			if (tAtlas == null) return null;
-			TextureAtlasSprite tSprite = tAtlas.getSprite(atlasId(aIcon, aAtlasBucket));
+			TextureAtlasSprite tSprite = tAtlas.getSprite(aAtlasBucket == ATLAS_ITEMS ? aIcon.withPrefix("items/") : aIcon);
 			// getSprite returns the engine's own missing-texture sprite (not null) when absent; converting that to null here
 			// lets a fallback or a skipped face take over, instead of drawing a purple quad.
 			return tSprite == null || MissingTextureAtlasSprite.getLocation().equals(tSprite.contents().name()) ? null : tSprite;

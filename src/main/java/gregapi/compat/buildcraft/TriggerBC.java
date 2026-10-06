@@ -34,7 +34,6 @@ import buildcraft.api.statements.ITriggerInternal;
 import buildcraft.api.statements.ITriggerInternalSided;
 import buildcraft.api.statements.ITriggerProvider;
 import buildcraft.api.statements.StatementManager;
-import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import gregapi.data.LH;
 import gregapi.lang.LanguageHandler;
 import gregapi.util.UT;
@@ -43,15 +42,14 @@ import net.minecraft.core.Direction;
 
 public abstract class TriggerBC implements ITriggerExternal, ITriggerProvider {
 	public final String mModID, mName;
-	/** BuildCraft 7.99 fills a sprite holder only when the block atlas is stitched (SpriteHolderRegistry:187-193), so the
-	 *  holder is taken with the trigger, the way 1.7.10 registered the icon; the client-only class is touched on clients only. */
+	/** The 1.7.10 icon "modid:triggers/name"; made on clients only, since it reads the client's texture atlas. */
 	private final ISprite mSprite;
 	
 	public TriggerBC(String aModID, String aName, String aDesciption) {
 		mModID = aModID;
 		mName = aName;
 		LH.add("bc.trigger."+mModID+"."+mName, aDesciption);
-		mSprite = gregapi.data.CS.CODE_CLIENT ? SpriteHolderRegistry.getHolder(gregapi.render.GT6QuadBuilder.atlasId(new net.minecraft.resources.ResourceLocation(mModID, "triggers/" + mName), gregapi.render.GT6QuadBuilder.ATLAS_ITEMS).toString()) : null;
+		mSprite = gregapi.data.CS.CODE_CLIENT ? new TriggerIconBC(new net.minecraft.resources.ResourceLocation(mModID, "triggers/" + mName)) : null;
 
 		StatementManager.registerStatement(this);
 		StatementManager.registerTriggerProvider(this);

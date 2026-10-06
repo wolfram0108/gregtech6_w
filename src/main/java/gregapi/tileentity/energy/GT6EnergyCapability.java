@@ -30,12 +30,8 @@ import net.minecraftforge.energy.IEnergyStorage;
 
 import static gregapi.data.CS.*;
 
-/**
- * The RF channel of GT6 as other mods see it today. In 1.7.10 the RF blocks of GT6 declared CoFH's IEnergyHandler
- * (ITileEntityEnergyFluxHandler) and TileEntityBase01Root answered receiveEnergy/extractEnergy for all of them; Forge 1.20.1
- * has no such interface, only ForgeCapabilities.ENERGY, so TileEntityBase01Root.getCapability hands those same blocks out
- * there, answered by the same root methods. BuildCraft's MJ joins on the same selection through ICompatBC.capability.
- */
+/** GT6's RF blocks as other mods see them today: CoFH's IEnergyHandler of 1.7.10 is gone, so TileEntityBase01Root hands
+ *  them out as ForgeCapabilities.ENERGY, answered by the same root methods; BuildCraft MJ joins via ICompatBC. */
 public class GT6EnergyCapability {
 	private GT6EnergyCapability() {}
 

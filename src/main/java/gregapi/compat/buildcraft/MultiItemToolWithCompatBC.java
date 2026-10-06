@@ -25,36 +25,11 @@ package gregapi.compat.buildcraft;
 
 import buildcraft.api.tools.IToolWrench;
 import gregapi.item.multiitem.MultiItemToolWithCompat;
-import gregapi.item.multiitem.tools.IToolStats;
-import gregapi.util.UT;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.HitResult;
 
-import static gregapi.data.CS.*;
-
-/**
- * The GT6 tool item as BuildCraft sees it: BuildCraft 7.99 recognises a wrench by instanceof IToolWrench on the item,
- * and the interface may only be declared when BuildCraft is installed, so Loader_Tools builds the tool from this class
- * by name when it is. The answers are the 1.7.10 ones (MultiItemToolWithCompat:78-89), asked for the stack BuildCraft
- * hands over instead of the player's current item.
- */
+/** BuildCraft knows a wrench by instanceof IToolWrench, which may be declared only with BuildCraft installed, so
+ *  Loader_Tools builds the tool from this class by name then; the answers are inherited from MultiItemToolWithCompat. */
 public class MultiItemToolWithCompatBC extends MultiItemToolWithCompat implements IToolWrench {
 	public MultiItemToolWithCompatBC(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-	}
-	
-	@Override
-	public boolean canWrench(Player aPlayer, InteractionHand aHand, ItemStack aStack, HitResult aRayTrace) {
-		if (!isItemStackUsable(aStack)) return F;
-		IToolStats tStats = getToolStats(aStack);
-		return tStats != null && tStats.isWrench();
-	}
-	
-	@Override
-	public void wrenchUsed(Player aPlayer, InteractionHand aHand, ItemStack aStack, HitResult aRayTrace) {
-		IToolStats tStats = getToolStats(aStack);
-		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, 100, aPlayer, T);
 	}
 }

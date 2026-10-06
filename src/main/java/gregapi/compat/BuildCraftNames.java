@@ -30,20 +30,14 @@ import net.minecraft.world.item.ItemStack;
 
 import gregapi.data.MD;
 
-/**
- * BuildCraft's table in the foreign item name centre ({@link ForeignNames}): BuildCraft 7.1.23 item names, the ones
- * GT6 1.7.10 addresses, onto the ids BuildCraft: Community Edition 7.99.25 registers. Its sub-mods keep their own mod
- * ids and namespaces (buildcraftcore, buildcraftsilicon, …), so the table answers for every {@code MD.BC*} and each
- * path names its namespace.
- *
- * <p>Left side: {@code reference/mods/BuildCraft-7.1.23-1.7.10} (registry names and meta enums). Right side:
- * {@code reference/mods/BuildCraft-CE-7.99.25-1.20.1} — the registering class, its registry tag
- * ({@code registerTag(...).reg(...)}) and the item model shipped in the jar.
- */
+/** BuildCraft's table in ForeignNames: 7.1.23 item names (reference/mods/BuildCraft-7.1.23-1.7.10) onto the ids of
+ *  BuildCraft: Community Edition 7.99.25, whose sub-mods keep their own namespaces, so each path names its own. */
 public final class BuildCraftNames {
 	private BuildCraftNames() {}
 
 	public static final ForeignNames TABLE = new ForeignNames(MD.BC, MD.BC_SILICON, MD.BC_TRANSPORT, MD.BC_FACTORY, MD.BC_ENERGY, MD.BC_BUILDERS, MD.BC_ROBOTICS);
+	/** Whether the pair has a carrier in the BuildCraft of this branch; callers skip their entry when not. */
+	public static boolean has(String aName, long aMeta) {return TABLE.has(aName, aMeta);}
 
 	private static final String
 	  NO_CHIPSET = "BuildCraft 7.99 registers five chipsets only (BCSiliconItems:46-50: redstone, iron, gold, quartz, diamond); 7.1.23 ItemRedstoneChipset.Chipset also had PULSATING(4), COMP(6) and EMERALD(7)"
@@ -66,9 +60,8 @@ public final class BuildCraftNames {
 		TABLE.map("mapLocation"    , "buildcraftcore:map_location");
 		TABLE.map("list"           , "buildcraftcore:list");
 
-		// Chipsets: 7.1.23 ItemRedstoneChipset meta = Chipset enum order RED, IRON, GOLD, DIAMOND, PULSATING, QUARTZ,
-		// COMP, EMERALD (ItemRedstoneChipset.java:30-39); 7.99 has one item per chipset. W («any chipset») takes the
-		// redstone one, the base every other chipset is pressed from in GT6's own recipes.
+		// 7.1.23 chipset meta = enum RED, IRON, GOLD, DIAMOND, PULSATING, QUARTZ, COMP, EMERALD (ItemRedstoneChipset:30-39);
+		// 7.99 has one item per chipset. W takes the redstone one, which every other chipset is pressed from in GT6.
 		TABLE.map ("redstoneChipset", 0, "buildcraftsilicon:chipset_redstone");
 		TABLE.map ("redstoneChipset", 1, "buildcraftsilicon:chipset_iron");
 		TABLE.map ("redstoneChipset", 2, "buildcraftsilicon:chipset_gold");
@@ -79,9 +72,8 @@ public final class BuildCraftNames {
 		TABLE.gone("redstoneChipset", 7, NO_CHIPSET);
 		TABLE.map ("redstoneChipset", gregapi.data.CS.W, "buildcraftsilicon:chipset_redstone");
 
-		// Transport: 7.1.23 «pipeWaterproof», «pipePlug», «gateCopier», the void pipes; 7.99 BCTransportItems:88 waterproof,
-		// :145 plug_blocker, BCSiliconItems:54 gate_copier, and every pipe registered colourless plus 16 painted
-		// («_colorless» / «_<dye>», ItemPipeHolder:76-78).
+		// 7.1.23 «pipeWaterproof», «pipePlug», «gateCopier», void pipes; 7.99 waterproof, plug_blocker, gate_copier, and every
+		// pipe registered colourless plus 16 painted («_colorless» / «_<dye>», ItemPipeHolder:76-78).
 		TABLE.map("pipeWaterproof"                       , "buildcrafttransport:waterproof");
 		TABLE.map("pipePlug"                             , "buildcrafttransport:plug_blocker");
 		TABLE.map("gateCopier"                           , "buildcraftsilicon:gate_copier");
@@ -106,10 +98,8 @@ public final class BuildCraftNames {
 		TABLE.map("item.buildcraftPipe.pipeitemscobblestone"    , gregapi.data.CS.W, "buildcrafttransport:pipe_items_cobblestone_colorless");
 		TABLE.map("item.buildcraftPipe.pipestructurecobblestone", gregapi.data.CS.W, "buildcrafttransport:pipe_structure_cobblestone_colorless");
 
-		// Factory, builders, robotics: 7.1.23 «tankBlock», «autoWorkbenchBlock», «blueprintItem», «templateItem»,
-		// «redstone_board»; 7.99 BCFactory tank / autoworkbench_item, BCBuildersItems:24-25 snapshot_blueprint /
-		// snapshot_template (blank until written), and BCRoboticsItems:39-42 one item per board program, the blank
-		// one being board_robot_empty (RedstoneBoardRobotEmptyNBT:49).
+		// 7.99 tank, autoworkbench_item, snapshot_blueprint/_template (blank until written); boards are one item per program,
+		// the blank one board_robot_empty (RedstoneBoardRobotEmptyNBT:49).
 		TABLE.map("tankBlock"         , "buildcraftfactory:tank");
 		TABLE.map("autoWorkbenchBlock", "buildcraftfactory:autoworkbench_item");
 		TABLE.map("blueprintItem"     , "buildcraftbuilders:snapshot_blueprint");

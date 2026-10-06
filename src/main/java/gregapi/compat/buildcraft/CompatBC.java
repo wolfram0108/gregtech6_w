@@ -50,10 +50,8 @@ import net.minecraftforge.common.util.NonNullSupplier;
 
 import static gregapi.data.CS.*;
 
-/**
- * BuildCraft: Community Edition 7.99. Its API dropped the world properties GT6 1.7.10 answered "wood" through
- * (BuildCraftAPI:30-39 commented out; robots read #minecraft:logs), so that part has nothing to join here.
- */
+/** BuildCraft: Community Edition 7.99 dropped the world properties GT6 1.7.10 answered "wood" through (BuildCraftAPI:30-39;
+ *  its robots read #minecraft:logs), so that part has nothing to join here. */
 public class CompatBC extends CompatBase implements ICompatBC {
 	public CompatBC() {
 		TriggerBC_Energy_Capacity_Empty.class.getCanonicalName();
