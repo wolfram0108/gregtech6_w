@@ -197,13 +197,13 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 
 	/** F-bounds: see {@link gregapi.block.BlockBase#setBlockBounds} — the same center-approach, shared by BOTH
 	 *  fluid blocks (was Forge {@code Block.setBlockBounds} inside the {@code BlockFluidBase} constructor). */
-	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
+	protected final gregapi.block.RenderBounds mRenderBounds = new gregapi.block.RenderBounds();
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
-		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
+		mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
 	}
 	/** The same contract as {@link gregapi.block.BlockBase#getRenderBounds()} — read by GT6BlockModel.applyBounds
 	 *  (without this the fluid's quanta-height was lost and the block rendered as a full cube). */
-	public float[] getRenderBounds() {return mRenderBounds;}
+	public float[] getRenderBounds() {return mRenderBounds.render();}
 
 	/** F16/F9 engine force: was {@code BlockFluidBase(Fluid,Material)}, which read density/temperature/
 	 *  maxScaledLight/tickRate/densityDir FROM the Forge {@code Fluid} object ITSELF (data-holder fields) — neo's

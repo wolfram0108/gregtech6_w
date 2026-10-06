@@ -63,11 +63,11 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 
 	/** Same bounds-storage technique as BlockBase and MultiTileEntityBlock, since neo's bounds are immutable and render use is
 	 *  deferred to a later pass. */
-	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
+	protected final gregapi.block.RenderBounds mRenderBounds = new gregapi.block.RenderBounds();
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
-		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
+		mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
 	}
-	@Override public float[] getRenderBounds() {return mRenderBounds;}
+	@Override public float[] getRenderBounds() {return mRenderBounds.render();}
 
 	/** Own material field instead of the removed vanilla Block.blockMaterial, the same technique
 	 *  already used by BlockBaseRail and BlockBaseFlower, carrying the same anvil material passed to mapColorOf above. */

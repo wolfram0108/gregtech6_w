@@ -117,11 +117,11 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 
 	/** F-bounds (the same approach as BlockBase.java): last set bounds (1.7.10 mutated Block.mBoundingBox);
 	 *  neo bounds are immutable -> stored ourselves, render usage deferred to the F3 client pass. IBlock-mandatory method. */
-	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
+	protected final gregapi.block.RenderBounds mRenderBounds = new gregapi.block.RenderBounds();
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
-		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
+		mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
 	}
-	@Override public float[] getRenderBounds() {return mRenderBounds;}
+	@Override public float[] getRenderBounds() {return mRenderBounds.render();}
 
 	/** F9 follow-up: gregapi Material is stored by the MTE block (the same pattern as BlockBase); neo removed the vanilla Block.getMaterial()/blockMaterial. */
 	protected final Material mMaterial;

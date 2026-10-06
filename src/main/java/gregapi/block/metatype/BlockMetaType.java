@@ -166,7 +166,7 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		mSide == SIDE_Z_NEG ? 0.5F : 1.0F
 		);
 	}
-	// BlockBase's shape bridges read the racy mRenderBounds field directly, so the slab needs its
+	// BlockBase's shape bridges read the shared bounds that any setBlockBounds outside rendering moves, so the slab needs its
 	// own shape that doesn't depend on those fields at all.
 	private net.minecraft.world.phys.shapes.VoxelShape mSlabShape = null;
 	private net.minecraft.world.phys.shapes.VoxelShape slabShape() {
