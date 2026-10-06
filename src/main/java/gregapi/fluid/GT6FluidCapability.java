@@ -31,9 +31,10 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.IFluidTank;
-import net.neoforged.neoforge.transfer.CombinedResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.transaction.RootCommitJournal;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
  * MODCOMPAT-001 P2 — RESTORES THE STANDARD FLUID CHANNEL FOR BLOCKS (F5-capability).
@@ -51,14 +52,14 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
  *
  * <p><b>Why this is one spot, not five classes to patch.</b> The whole GT6 TE hierarchy lives under ONE
  * {@code BlockEntityType} — {@code TileEntityBase01Root.MTE_TYPE} (a shared placeholder type, F-tileentity-
- * construction). So registration is exactly one call too, and which tanks to expose is decided by the TE
- * itself through its side-aware {@code getFluidTanks(side)} — the same code as the internal transfer path.
+ * construction). So registration is exactly one call too: the TE shows a side's tanks through its side-aware
+ * {@code getFluidTanks(side)} and picks the one to fill or drain as its own {@code fill}/{@code drain} do.
  * Cover overrides ({@code TileEntityBase06Covers:375}) are honored automatically as a result.
  *
  * <p><b>Transactionality is off-the-shelf, not homegrown.</b> Every {@link FluidTankGT} already knows how to
  * hand out a correct {@code ResourceHandler<FluidResource>} ({@link FluidTankGT#asResourceHandler}) with
- * neo's snapshot/rollback semantics; several of a side's tanks are glued together with the stock
- * {@link CombinedResourceHandler}. There is no custom transactional logic here — only tank selection.
+ * neo's snapshot/rollback semantics; {@link SidedTankView} only routes a request to the tank the TE picks
+ * (an input tank for a fluid a recipe takes, never an output) and tells the TE once the root transaction commits.
  */
 public class GT6FluidCapability {
 	private GT6FluidCapability() {}
@@ -153,9 +154,44 @@ public class GT6FluidCapability {
 			tTanks = aTileEntity.getFluidTanksForCapability(aSide);
 		} catch (Throwable e) {return null;} // a specific TE's logic must not crash a foreign mod that just asked for the capability
 		if (tTanks == null || tTanks.length <= 0) return null;
-		List<ResourceHandler<FluidResource>> rHandlers = new ArrayList<>(tTanks.length);
-		for (IFluidTank tTank : tTanks) if (tTank instanceof FluidTankGT tGT) rHandlers.add(tGT.asResourceHandler());
-		if (rHandlers.isEmpty()) return null;
-		return rHandlers.size() == 1 ? rHandlers.get(0) : new CombinedResourceHandler<>(rHandlers);
+		List<FluidTankGT> rTanks = new ArrayList<>(tTanks.length);
+		for (IFluidTank tTank : tTanks) if (tTank instanceof FluidTankGT tGT) rTanks.add(tGT);
+		return rTanks.isEmpty() ? null : new SidedTankView(aTileEntity, aSide, rTanks.toArray(new FluidTankGT[0]));
+	}
+
+	/** A side's tanks as 1.7.10's IFluidHandler showed them: every tank readable, but a fluid goes only into the tank the TE's
+	 *  own fill picks and out of the one its drain picks; the same view as the 1.20.1 branch. */
+	private static final class SidedTankView implements ResourceHandler<FluidResource> {
+		private final gregapi.tileentity.base.TileEntityBase01Root mTileEntity;
+		private final Direction mSide;
+		private final FluidTankGT[] mTanks;
+		private final RootCommitJournal mChanged;
+
+		SidedTankView(gregapi.tileentity.base.TileEntityBase01Root aTileEntity, Direction aSide, FluidTankGT[] aTanks) {
+			mTileEntity = aTileEntity; mSide = aSide; mTanks = aTanks; mChanged = new RootCommitJournal(aTileEntity::updateTanks);
+		}
+
+		@Override public int size() {return mTanks.length;}
+		@Override public FluidResource getResource(int aIndex) {return mTanks[aIndex].asResourceHandler().getResource(0);}
+		@Override public long getAmountAsLong(int aIndex) {return mTanks[aIndex].asResourceHandler().getAmountAsLong(0);}
+		@Override public long getCapacityAsLong(int aIndex, FluidResource aResource) {return mTanks[aIndex].asResourceHandler().getCapacityAsLong(0, aResource);}
+		@Override public boolean isValid(int aIndex, FluidResource aResource) {return aResource != null && !aResource.isEmpty() && fillable(aResource.toStack(1)) == mTanks[aIndex];}
+
+		@Override public int insert(int aIndex, FluidResource aResource, int aAmount, TransactionContext aTx) {
+			if (aResource == null || aResource.isEmpty() || aAmount <= 0 || fillable(aResource.toStack(aAmount)) != mTanks[aIndex]) return 0;
+			int rDone = mTanks[aIndex].asResourceHandler().insert(0, aResource, aAmount, aTx);
+			if (rDone > 0) mChanged.updateSnapshots(aTx);
+			return rDone;
+		}
+		@Override public int extract(int aIndex, FluidResource aResource, int aAmount, TransactionContext aTx) {
+			if (aResource == null || aResource.isEmpty() || aAmount <= 0 || drainable(aResource.toStack(aAmount)) != mTanks[aIndex]) return 0;
+			int rDone = mTanks[aIndex].asResourceHandler().extract(0, aResource, aAmount, aTx);
+			if (rDone > 0) mChanged.updateSnapshots(aTx);
+			return rDone;
+		}
+
+		// A specific TE's logic must not crash a foreign mod that just moves a fluid.
+		private IFluidTank fillable (net.neoforged.neoforge.fluids.FluidStack aFluid) {try {return mTileEntity.getFluidTankFillableForCapability (mSide, aFluid);} catch (Throwable e) {return null;}}
+		private IFluidTank drainable(net.neoforged.neoforge.fluids.FluidStack aFluid) {try {return mTileEntity.getFluidTankDrainableForCapability(mSide, aFluid);} catch (Throwable e) {return null;}}
 	}
 }
