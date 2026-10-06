@@ -106,7 +106,7 @@ public class GT6ItemCapability {
 	 * calls side 6 {@code SIDE_ANY} and answers for it itself ({@code MultiTileEntityBasicMachine.updateAccessibleSlots}
 	 * fills {@code ACCESSIBLE[6]}, the default masks {@code 127} include the {@code SBIT_A=64} bit — {@code CS.java:646}).
 	 * neo's {@code null} IS that side: {@code FORGE_DIR[6] = null} ({@code CS.java:687}), {@code UT.Code.side(null)=6}.
-	 * The neighboring FLUID channel is already built this way — {@code TileEntityBase01Root.getFluidTanksForCapability:766}.
+	 * The neighboring FLUID channel is already built this way — {@code GT6FluidCapability.handlerOf} reads {@code getTankInfo(null)}.
 	 * The item channel was the one left out of this pair: the same task was solved in the mod by two different means.
 	 *
 	 * <p><b>What is here, and what is not.</b> Here there is ONLY the slot selection — taken from the mod itself

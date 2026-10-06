@@ -741,10 +741,6 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	protected IFluidTank getFluidTankDrainable(byte aSide, FluidStack aFluidToDrain) {return null;}
 	protected IFluidTank[] getFluidTanks(byte aSide) {return ZL_FT;}
 
-	/** Public entry point for capability registration, separate from the protected getFluidTanks(byte) that
-	 *  subclasses (including the cover override) can change, so the capability sees the same tanks the logic does. */
-	public final IFluidTank[] getFluidTanksForCapability(Direction aDirection) {return getFluidTanks(UT.Code.side(aDirection));}
-
 	public int fill(Direction aDirection, FluidStack aFluid, boolean aDoFill) {
 		if (aFluid == null || aFluid.getAmount() <= 0) return 0;
 		IFluidTank tTank = getFluidTankFillable(UT.Code.side(aDirection), aFluid);
