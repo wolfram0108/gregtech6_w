@@ -33,19 +33,14 @@ import net.minecraft.world.item.ItemStack;
 
 import gregapi.data.MD;
 
-/**
- * BuildCraft's table in the foreign item name centre ({@link ForeignNames}): BuildCraft 7.1.23 item names, the ones
- * GT6 1.7.10 addresses, onto the ids BuildCraft (Unofficial) 2026.2.0 registers. All BuildCraft sub-mods share one
- * mod id there, so one table answers for {@code MD.BC} and every {@code MD.BC_*}.
- *
- * <p>Left side: {@code reference/mods/BuildCraft-7.1.23-1.7.10} (registry names and meta enums). Right side:
- * {@code reference/mods/BuildCraft-Unofficial-2026.2.0-br2} — the registering class and the item model shipped in the
- * jar ({@code assets/buildcraftunofficial/items/<id>.json}); human-readable names from {@code lang/en_us.json}.
- */
+/** BuildCraft's table in ForeignNames: 7.1.23 item names (reference/mods/BuildCraft-7.1.23-1.7.10) onto the ids of
+ *  BuildCraft (Unofficial) 2026.2.0 (reference/mods/BuildCraft-Unofficial-2026.2.0-br2), whose sub-mods share one mod id. */
 public final class BuildCraftNames {
 	private BuildCraftNames() {}
 
 	public static final ForeignNames TABLE = new ForeignNames(MD.BC);
+	/** Whether the pair has a carrier in the BuildCraft of this branch; callers skip their entry when not. */
+	public static boolean has(String aName, long aMeta) {return TABLE.has(aName, aMeta);}
 
 	private static final String
 	  NO_CHIPSET = "BuildCraft 26.1 registers five chipsets only (BCSiliconItems: redstone, iron, gold, diamond, quartz); 7.1.23 ItemRedstoneChipset.Chipset also had PULSATING(4), COMP(6) and EMERALD(7)"
@@ -62,9 +57,8 @@ public final class BuildCraftNames {
 	}
 
 	static {
-		// Gears and core items: 7.1.23 BuildCraftCore registers «woodenGearItem» … «diamondGearItem», «wrenchItem»,
-		// «mapLocation», «list»; 26.1 BCCoreItems registers gear_wood … gear_diamond («Wood Gear» … «Diamond Gear»),
-		// wrench («Wrench»), map_location («Map Location»), list («List»).
+		// 7.1.23 BuildCraftCore «woodenGearItem» … «diamondGearItem», «wrenchItem», «mapLocation», «list»;
+		// 26.1 BCCoreItems gear_wood … gear_diamond, wrench, map_location, list.
 		TABLE.map("woodenGearItem" , "gear_wood");
 		TABLE.map("stoneGearItem"  , "gear_stone");
 		TABLE.map("ironGearItem"   , "gear_iron");
@@ -74,9 +68,8 @@ public final class BuildCraftNames {
 		TABLE.map("mapLocation"    , "map_location");
 		TABLE.map("list"           , "list");
 
-		// Chipsets: 7.1.23 ItemRedstoneChipset meta = Chipset enum order RED, IRON, GOLD, DIAMOND, PULSATING, QUARTZ,
-		// COMP, EMERALD (ItemRedstoneChipset.java:30-39); 26.1 has one item per chipset. W («any chipset») takes the
-		// redstone one, the base every other chipset is pressed from in GT6's own recipes.
+		// 7.1.23 chipset meta = enum RED, IRON, GOLD, DIAMOND, PULSATING, QUARTZ, COMP, EMERALD (ItemRedstoneChipset:30-39);
+		// 26.1 has one item per chipset. W takes the redstone one, which every other chipset is pressed from in GT6.
 		TABLE.map ("redstoneChipset", 0, "chipset_redstone");
 		TABLE.map ("redstoneChipset", 1, "chipset_iron");
 		TABLE.map ("redstoneChipset", 2, "chipset_gold");
@@ -102,9 +95,8 @@ public final class BuildCraftNames {
 		TABLE.map("pipeWire", 2, "wire_green");
 		TABLE.map("pipeWire", 3, "wire_yellow");
 
-		// Cobblestone transport and structure pipes: in 7.1.23 meta 0 is unpainted and meta 1..16 is the pipe painted
-		// in wool colour (meta - 1) (ItemPipe.java:158 with ColorUtils WOOL_TO_NAME); 26.1 pipe_cobble_item
-		// («Cobblestone Transport Pipe») and pipe_structure («Cobblestone Structure Pipe») carry the paint in a component.
+		// 7.1.23 meta 0 is the unpainted pipe, 1..16 painted in wool colour meta-1 (ItemPipe:158); 26.1 pipe_cobble_item
+		// and pipe_structure carry the paint in a component.
 		TABLE.map("item.buildcraftPipe.pipeitemscobblestone"    , 0, "pipe_cobble_item");
 		TABLE.map("item.buildcraftPipe.pipestructurecobblestone", 0, "pipe_structure");
 		for (int i = 0; i < 16; i++) {

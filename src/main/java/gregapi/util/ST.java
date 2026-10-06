@@ -755,10 +755,8 @@ public class ST {
 	public static ItemStack mkic(String aItem                , long aSize, long aMeta                                   ) {return     meta(mkic(aItem, aSize), aMeta);}
 	public static ItemStack mkic(String aItem                , long aSize            , ItemStack aReplacement           ) {return get(     mkic(aItem, aSize)        , aReplacement);}
 	public static ItemStack mkic(String aItem                , long aSize, long aMeta, Object    aReplacement           ) {return get(meta(mkic(aItem, aSize), aMeta), aReplacement);}
-	// The SINGLE point where a foreign 1.7.10 item name turns into a stack — ALL foreign-mod addressing paths converge
-	// here (the ST.block/ST.item ModData variants, OM.data, OreDictManager.setTarget, ItemStackMap.put, ItemStackSet.add).
-	// Mods that renamed their items since 1.7.10 (AE2, BuildCraft) answer through their table in gregapi.compat.ForeignNames;
-	// for every other mod the path is unchanged, verbatim. Same spot as the vanilla meta expansion (CS.Flattened in ST.make_).
+	// The single point where a foreign 1.7.10 item name becomes a stack; mods that renamed their items since (AE2, BuildCraft)
+	// answer through their table in gregapi.compat.ForeignNames, every other name keeps the plain path.
 	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {gregapi.compat.ForeignNames tTable = gregapi.compat.ForeignNames.table(aModID, aItem); if (tTable != null) return tTable.make(aModID, aItem, aSize, aMeta); return     meta(make(aModID, aItem, aSize), aMeta);}
 	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta, Object    aReplacement           ) {return get(meta(make(aModID, aItem, aSize), aMeta), aReplacement);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta                                   ) {return make(item(aItemID), aSize, aMeta);}

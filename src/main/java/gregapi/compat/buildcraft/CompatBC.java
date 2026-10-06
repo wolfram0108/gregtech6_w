@@ -91,8 +91,13 @@ public class CompatBC extends CompatBase implements ICompatBC {
 	// carries MJ instead, so the same blocks meet it in MJ at the rate BuildCraft itself converts MJ and RF with.
 	@Override
 	public void registerCapabilities(RegisterCapabilitiesEvent aEvent, Block[] aBlocks) {
-		aEvent.registerBlock(MjAPI.CAP_RECEIVER, (aLevel, aPos, aState, aBlockEntity, aSide) -> {TileEntityBase01Root tRoot = GT6EnergyCapability.flux(aBlockEntity, aSide); return tRoot == null ? null : new FluxMjReceiver(tRoot, aSide);}, aBlocks);
-		aEvent.registerBlock(MjAPI.CAP_CONNECTOR, (aLevel, aPos, aState, aBlockEntity, aSide) -> {TileEntityBase01Root tRoot = GT6EnergyCapability.flux(aBlockEntity, aSide); return tRoot == null ? null : new FluxMjReceiver(tRoot, aSide);}, aBlocks);
+		aEvent.registerBlock(MjAPI.CAP_RECEIVER , CompatBC::mjAt, aBlocks);
+		aEvent.registerBlock(MjAPI.CAP_CONNECTOR, CompatBC::mjAt, aBlocks);
+	}
+	
+	private static FluxMjReceiver mjAt(Level aLevel, BlockPos aPos, BlockState aState, BlockEntity aBlockEntity, Direction aSide) {
+		TileEntityBase01Root tRoot = GT6EnergyCapability.flux(aBlockEntity, aSide);
+		return tRoot == null ? null : new FluxMjReceiver(tRoot, aSide);
 	}
 	
 	@Override

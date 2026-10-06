@@ -28,7 +28,6 @@ import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import gregapi.fluid.FluidTankInfo;
 
-import gregapi.api.Optional;
 import gregapi.GT_API;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.code.TagData;
@@ -93,9 +92,6 @@ import static gregapi.data.CS.*;
  * NBT_INV_SIDE_AUTO_OUTPUT         = SIDE_BOTTOM
  * NBT_ENERGY_ACCEPTED_SIDES        = SIDE_BITS[SIDE_LEFT]|SIDE_BITS[SIDE_RIGHT]
  */
-@Optional.InterfaceList(value = {
-	@Optional.Interface(iface = "buildcraft.api.tiles.IHasWork", modid = ModIDs.BC)
-})
 // BuildCraft 26.1 reads IHasWork by instanceof on this very class, and no interface can join a class only when the mod is
 // present, so its gates see no work state here; hasWork() keeps the 1.7.10 rule for GT6 itself.
 public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle implements ITileEntityFunnelAccessible, ITileEntityTapAccessible, ITileEntitySwitchableOnOff, ITileEntityRunningSuccessfully, ITileEntityAdjacentInventoryUpdatable, ITileEntityEnergy, ITileEntityProgress, ITileEntityGibbl, IFluidHandler {

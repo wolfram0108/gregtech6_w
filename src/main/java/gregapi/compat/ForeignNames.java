@@ -37,19 +37,8 @@ import gregapi.util.ST;
 
 import static gregapi.data.CS.*;
 
-/**
- * FOREIGN ITEM NAME CENTRE — the one mechanism that turns a foreign mod's 1.7.10 item name (+ meta) into the id that
- * mod registers today. GT6 addresses foreign items by their 1.7.10 names everywhere, and every such address converges
- * into the single funnel {@code ST.make(ModData, String, long, long)}; that funnel asks this centre and nothing else.
- *
- * <p>One table per foreign mod (its data lives in the mod's own class, e.g. {@link AE2Names}, {@link BuildCraftNames});
- * the machinery — three verdicts, split metas, namespaces — lives only here. A pair gets one of three answers:
- * a carrier id ({@link #path}), the reason no carrier exists ({@link #reason}; the caller skips its registration
- * instead of feeding null into a recipe), or "not our name" ({@link #table} = null, the funnel takes the plain path).
- *
- * <p>Paths are written in the table's home namespace (the first mod given) unless they carry their own
- * {@code namespace:path}, for mods that register sub-mods under several namespaces.
- */
+/** The one place a foreign mod's 1.7.10 item name (+ meta) becomes the id that mod registers today; the ST.make
+ *  funnel asks only here. Each mod keeps its table in its own class (AE2Names, BuildCraftNames); a path may name its namespace. */
 public final class ForeignNames {
 	private final String[] mModIDs;
 	private final Map<String, String> mMapped = new LinkedHashMap<>();
@@ -114,11 +103,8 @@ public final class ForeignNames {
 		return rReason != null ? rReason : "meta " + aMeta + " of «" + aName + "» is unknown to the centre (GT6 never asks for it)";
 	}
 
-	/**
-	 * The ONLY way to get a stack of a foreign item from its 1.7.10 name; it hits the registry only through
-	 * {@code ST.findItem}. For split names the subtype is the item ITSELF, so meta is not stamped on it ({@code W},
-	 * meaning «any», survives); for other names meta passes through unchanged, exactly as the plain path does.
-	 */
+	/** A foreign stack from its 1.7.10 name, through ST.findItem only; a split name's subtype is the item itself, so its
+	 *  meta is not stamped (W, "any", survives), other names keep their meta as the plain path does. */
 	public ItemStack make(ModData aMod, String aName, long aSize, long aMeta) {
 		if (aMod == null || !aMod.mLoaded || !GAPI_POST.mStartedPreInit) return null;
 		String tPath = path(aName, aMeta);

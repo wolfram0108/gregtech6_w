@@ -23,6 +23,7 @@
 
 package gregtech.compat;
 
+import gregapi.compat.BuildCraftNames;
 import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
@@ -65,20 +66,25 @@ public class Compat_Recipes_BuildCraft extends CompatMods {
 			RM.Press            .addRecipe2(T, 64,  512, OP.plate.mat(MT.Au, 1)                             , ST.make(MD.BC_SILICON, "redstoneChipset", 1, 0), ST.make(MD.BC_SILICON, "redstoneChipset", 1, 2));
 			for (OreDictMaterial tMat : ANY.Diamond.mToThis)
 			RM.Press            .addRecipe2(T,128,  512, OP.plateGem.mat(tMat, 1)                           , ST.make(MD.BC_SILICON, "redstoneChipset", 1, 0), ST.make(MD.BC_SILICON, "redstoneChipset", 1, 3));
+			if (BuildCraftNames.has("redstoneChipset", 4))
 			RM.Press            .addRecipe2(T, 64,  512, OP.plateGem.mat(MT.EnderPearl, 1)                  , ST.make(MD.BC_SILICON, "redstoneChipset", 1, 0), ST.make(MD.BC_SILICON, "redstoneChipset", 2, 4));
 			for (OreDictMaterial tMat : ANY.SiO2.mToThis) {ItemStack tQuartzPlate = OP.plateGem.mat(tMat, 1); if (ST.valid(tQuartzPlate))
 			RM.Press            .addRecipe2(T, 64,  768, tQuartzPlate                                       , ST.make(MD.BC_SILICON, "redstoneChipset", 1, 0), ST.make(MD.BC_SILICON, "redstoneChipset", 1, 5));}
+			if (BuildCraftNames.has("redstoneChipset", 6))
 			RM.Press            .addRecipe2(T, 64,  768, ST.make(Items.COMPARATOR, 1, W)                    , ST.make(MD.BC_SILICON, "redstoneChipset", 1, 0), ST.make(MD.BC_SILICON, "redstoneChipset", 1, 6));
-			for (OreDictMaterial tMat : ANY.Emerald.mToThis)
+			if (BuildCraftNames.has("redstoneChipset", 7)) for (OreDictMaterial tMat : ANY.Emerald.mToThis)
 			RM.Press            .addRecipe2(T, 64,  512, OP.plateGem.mat(tMat, 1)                           , ST.make(MD.BC_SILICON, "redstoneChipset", 1, 0), ST.make(MD.BC_SILICON, "redstoneChipset", 1, 7));
 			
 			RM.Press            .addRecipe2(T, 16,   64, IL.Circuit_Plate_Signalum.get(1), ST.make(MD.BC_SILICON, "redstoneChipset", 4, 0), IL.Circuit_Board_BC_Redstone.get(1));
 			RM.Press            .addRecipe2(T, 16,   64, IL.Circuit_Plate_Signalum.get(1), ST.make(MD.BC_SILICON, "redstoneChipset", 4, 1), IL.Circuit_Board_BC_Iron.get(1));
 			RM.Press            .addRecipe2(T, 16,   64, IL.Circuit_Plate_Signalum.get(1), ST.make(MD.BC_SILICON, "redstoneChipset", 4, 2), IL.Circuit_Board_BC_Gold.get(1));
 			RM.Press            .addRecipe2(T, 16,   64, IL.Circuit_Plate_Signalum.get(1), ST.make(MD.BC_SILICON, "redstoneChipset", 4, 3), IL.Circuit_Board_BC_Diamond.get(1));
+			if (BuildCraftNames.has("redstoneChipset", 4))
 			RM.Press            .addRecipe2(T, 16,   64, IL.Circuit_Plate_Signalum.get(1), ST.make(MD.BC_SILICON, "redstoneChipset", 8, 4), IL.Circuit_Board_BC_Ender.get(1));
 			RM.Press            .addRecipe2(T, 16,   64, IL.Circuit_Plate_Signalum.get(1), ST.make(MD.BC_SILICON, "redstoneChipset", 4, 5), IL.Circuit_Board_BC_Quartz.get(1));
+			if (BuildCraftNames.has("redstoneChipset", 6))
 			RM.Press            .addRecipe2(T, 16,   64, IL.Circuit_Plate_Signalum.get(1), ST.make(MD.BC_SILICON, "redstoneChipset", 4, 6), IL.Circuit_Board_BC_Comparator.get(1));
+			if (BuildCraftNames.has("redstoneChipset", 7))
 			RM.Press            .addRecipe2(T, 16,   64, IL.Circuit_Plate_Signalum.get(1), ST.make(MD.BC_SILICON, "redstoneChipset", 4, 7), IL.Circuit_Board_BC_Emerald.get(1));
 		}
 		

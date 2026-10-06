@@ -36,13 +36,8 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import static gregapi.data.CS.*;
 
-/**
- * The RF channel of GT6 as other mods see it today. In 1.7.10 the RF blocks of GT6 declared CoFH's IEnergyHandler
- * (ITileEntityEnergyFluxHandler) and TileEntityBase01Root answered receiveEnergy/extractEnergy for all of them; neo has
- * no such interface, only the engine's registered Capabilities.Energy.BLOCK, so those same blocks are exposed there and
- * answered by the same root methods. Mods with their own power channel join through their compat class
- * ({@code ICompatBC.registerCapabilities} for BuildCraft MJ), on the same block list and the same selection.
- */
+/** GT6's RF blocks as other mods see them today: CoFH's IEnergyHandler of 1.7.10 is gone, so Capabilities.Energy.BLOCK
+ *  carries them, answered by the same root methods; a mod with its own channel joins via its compat (ICompatBC). */
 public class GT6EnergyCapability {
 	private GT6EnergyCapability() {}
 
@@ -70,10 +65,8 @@ public class GT6EnergyCapability {
 		try {return tRoot.canConnectEnergy(aSide) ? tRoot : null;} catch (Throwable e) {return null;}
 	}
 
-	/**
-	 * FE in and out of one GT6 RF block. GT6 moves energy at once, the engine in transactions: what a transaction
-	 * accepts is held as pending and handed to receiveEnergy/extractEnergy on the root commit, nothing on a revert.
-	 */
+	/** FE in and out of one GT6 RF block: what a transaction accepts is held as pending and handed to the root on its
+	 *  root commit, nothing on a revert, since GT6 moves energy at once. */
 	private static final class FluxHandler implements EnergyHandler {
 		private final TileEntityBase01Root mRoot;
 		private final Direction mSide;

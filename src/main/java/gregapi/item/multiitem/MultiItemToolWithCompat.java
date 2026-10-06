@@ -43,14 +43,12 @@ import gt6mirror.thaumcraft.api.IWarpingGear;
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;
 
-/** The foreign-mod interfaces below (IWarpingGear, IItemElectric, etc.) are currently empty compat-mirror markers, so their
- *  methods stay unannotated with @Override until real mod integration exists. BuildCraft's IToolWrench is real: the tool is
- *  built from gregapi.compat.buildcraft.MultiItemToolWithCompatBC when BuildCraft is present (see Loader_Tools). */
+/** The foreign interfaces below are compile-only compat-mirror markers, so their methods carry no @Override.
+ *  With BuildCraft present the tool is built from gregapi.compat.buildcraft.MultiItemToolWithCompatBC (Loader_Tools). */
 @Optional.InterfaceList(value = {
   @Optional.Interface(iface = "thaumcraft.api.IWarpingGear", modid = ModIDs.TC)
 , @Optional.Interface(iface = "forestry.api.arboriculture.IToolGrafter", modid = ModIDs.FR)
 , @Optional.Interface(iface = "mods.railcraft.api.core.items.IToolCrowbar", modid = ModIDs.RC)
-, @Optional.Interface(iface = "buildcraft.api.tools.IToolWrench", modid = ModIDs.BC)
 , @Optional.Interface(iface = "ic2.api.item.IBoxable", modid = ModIDs.IC2)
 , @Optional.Interface(iface = "ic2.api.item.ISpecialElectricItem", modid = ModIDs.IC2)
 , @Optional.Interface(iface = "ic2.api.item.IElectricItemManager", modid = ModIDs.IC2)
@@ -77,15 +75,14 @@ public class MultiItemToolWithCompat extends MultiItemTool implements IWarpingGe
 		return tStats != null && tStats.isGrafter() ? Math.min(100.0F, (1+UT.Code.bind4(getHarvestLevel(aStack, ""))) * 20.0F) : 0.0F;
 	}
 
-	public boolean canWrench(Player aPlayer, int aX, int aY, int aZ) {
-		ItemStack aStack = aPlayer.getMainHandItem();
+	// BuildCraft's IToolWrench signatures: MultiItemToolWithCompatBC declares the interface and inherits these.
+	public boolean canWrench(Player aPlayer, net.minecraft.world.InteractionHand aHand, ItemStack aStack, net.minecraft.world.phys.HitResult aRayTrace) {
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isWrench();
 	}
 
-	public void wrenchUsed(Player aPlayer, int aX, int aY, int aZ) {
-		ItemStack aStack = aPlayer.getMainHandItem();
+	public void wrenchUsed(Player aPlayer, net.minecraft.world.InteractionHand aHand, ItemStack aStack, net.minecraft.world.phys.HitResult aRayTrace) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, 100, aPlayer, T);
 	}
