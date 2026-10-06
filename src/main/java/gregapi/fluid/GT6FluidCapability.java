@@ -30,10 +30,10 @@ import net.minecraft.core.Direction;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
-import net.neoforged.neoforge.transfer.transaction.RootCommitJournal;
+import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
@@ -52,14 +52,14 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  *
  * <p><b>Why this is one spot, not five classes to patch.</b> The whole GT6 TE hierarchy lives under ONE
  * {@code BlockEntityType} — {@code TileEntityBase01Root.MTE_TYPE} (a shared placeholder type, F-tileentity-
- * construction). So registration is exactly one call too: the TE shows a side's tanks through its side-aware
- * {@code getFluidTanks(side)} and picks the one to fill or drain as its own {@code fill}/{@code drain} do.
+ * construction). So registration is exactly one call too: the TE answers through its side-aware {@code getTankInfo},
+ * {@code canFill}, {@code fill} and {@code drain}, which multiblock walls, pipes and extenders override.
  * Cover overrides ({@code TileEntityBase06Covers:375}) are honored automatically as a result.
  *
- * <p><b>Transactionality is off-the-shelf, not homegrown.</b> Every {@link FluidTankGT} already knows how to
- * hand out a correct {@code ResourceHandler<FluidResource>} ({@link FluidTankGT#asResourceHandler}) with
- * neo's snapshot/rollback semantics; {@link SidedTankView} only routes a request to the tank the TE picks
- * (an input tank for a fluid a recipe takes, never an output) and tells the TE once the root transaction commits.
+ * <p><b>Transactionality.</b> Every {@link FluidTankGT} hands out a {@code ResourceHandler<FluidResource>}
+ * ({@link FluidTankGT#asResourceHandler}) with
+ * neo's snapshot/rollback semantics, but a TE's own fill/drain is not transactional: {@link SidedTankView} sizes a move
+ * with a simulated fill/drain and applies it once the root transaction commits, so an aborted one changes nothing.
  */
 public class GT6FluidCapability {
 	private GT6FluidCapability() {}
@@ -149,49 +149,73 @@ public class GT6FluidCapability {
 	 */
 	private static ResourceHandler<FluidResource> handlerOf(gregapi.tileentity.base.TileEntityBase01Root aTileEntity, Direction aSide) {
 		if (aTileEntity == null) return null;
-		IFluidTank[] tTanks;
 		try {
-			tTanks = aTileEntity.getFluidTanksForCapability(aSide);
+			gregapi.fluid.FluidTankInfo[] tInfo = aTileEntity.getTankInfo(aSide);
+			if (tInfo == null || tInfo.length <= 0) return null;
 		} catch (Throwable e) {return null;} // a specific TE's logic must not crash a foreign mod that just asked for the capability
-		if (tTanks == null || tTanks.length <= 0) return null;
-		List<FluidTankGT> rTanks = new ArrayList<>(tTanks.length);
-		for (IFluidTank tTank : tTanks) if (tTank instanceof FluidTankGT tGT) rTanks.add(tGT);
-		return rTanks.isEmpty() ? null : new SidedTankView(aTileEntity, aSide, rTanks.toArray(new FluidTankGT[0]));
+		return new SidedTankView(aTileEntity, aSide);
 	}
 
-	/** A side's tanks as 1.7.10's IFluidHandler showed them: every tank readable, but a fluid goes only into the tank the TE's
-	 *  own fill picks and out of the one its drain picks; the same view as the 1.20.1 branch. */
-	private static final class SidedTankView implements ResourceHandler<FluidResource> {
+	/** A side of a GT6 tile entity as 1.7.10's IFluidHandler showed it, and as the 1.20.1 branch's SidedTankView does: read
+	 *  through getTankInfo, filled and drained only through the TE's own canFill/fill/drain. Moves wait for the root commit. */
+	private static final class SidedTankView extends SnapshotJournal<List<FluidStack>> implements ResourceHandler<FluidResource> {
 		private final gregapi.tileentity.base.TileEntityBase01Root mTileEntity;
 		private final Direction mSide;
-		private final FluidTankGT[] mTanks;
-		private final RootCommitJournal mChanged;
+		/** Moves of the open transactions: a positive amount fills, a negative one drains. */
+		private List<FluidStack> mPending = new ArrayList<>();
 
-		SidedTankView(gregapi.tileentity.base.TileEntityBase01Root aTileEntity, Direction aSide, FluidTankGT[] aTanks) {
-			mTileEntity = aTileEntity; mSide = aSide; mTanks = aTanks; mChanged = new RootCommitJournal(aTileEntity::updateTanks);
+		SidedTankView(gregapi.tileentity.base.TileEntityBase01Root aTileEntity, Direction aSide) {mTileEntity = aTileEntity; mSide = aSide;}
+
+		private gregapi.fluid.FluidTankInfo[] info() {
+			try {gregapi.fluid.FluidTankInfo[] rInfo = mTileEntity.getTankInfo(mSide); return rInfo == null ? gregapi.data.CS.ZL_FLUIDTANKINFO : rInfo;} catch (Throwable e) {return gregapi.data.CS.ZL_FLUIDTANKINFO;}
+		}
+		private FluidStack stack(int aIndex) {
+			gregapi.fluid.FluidTankInfo[] tInfo = info();
+			return aIndex >= 0 && aIndex < tInfo.length && tInfo[aIndex] != null && tInfo[aIndex].fluid != null ? tInfo[aIndex].fluid : FluidStack.EMPTY;
+		}
+		/** What this transaction already moves of the fluid in one direction, so a second request is sized on top of it. */
+		private int pending(FluidResource aResource, boolean aFill) {
+			int r = 0;
+			for (FluidStack tMove : mPending) if ((tMove.getAmount() > 0) == aFill && aResource.matches(tMove)) r += Math.abs(tMove.getAmount());
+			return r;
 		}
 
-		@Override public int size() {return mTanks.length;}
-		@Override public FluidResource getResource(int aIndex) {return mTanks[aIndex].asResourceHandler().getResource(0);}
-		@Override public long getAmountAsLong(int aIndex) {return mTanks[aIndex].asResourceHandler().getAmountAsLong(0);}
-		@Override public long getCapacityAsLong(int aIndex, FluidResource aResource) {return mTanks[aIndex].asResourceHandler().getCapacityAsLong(0, aResource);}
-		@Override public boolean isValid(int aIndex, FluidResource aResource) {return aResource != null && !aResource.isEmpty() && fillable(aResource.toStack(1)) == mTanks[aIndex];}
+		@Override public int size() {return Math.max(1, info().length);}
+		@Override public FluidResource getResource(int aIndex) {return FluidResource.of(stack(aIndex));}
+		@Override public long getAmountAsLong(int aIndex) {return stack(aIndex).getAmount();}
+		@Override public long getCapacityAsLong(int aIndex, FluidResource aResource) {gregapi.fluid.FluidTankInfo[] tInfo = info(); return aIndex >= 0 && aIndex < tInfo.length && tInfo[aIndex] != null ? tInfo[aIndex].capacity : 0;}
+		@Override public boolean isValid(int aIndex, FluidResource aResource) {
+			if (aResource == null || aResource.isEmpty()) return false;
+			try {return mTileEntity.canFill(mSide, aResource.getFluid());} catch (Throwable e) {return false;}
+		}
 
 		@Override public int insert(int aIndex, FluidResource aResource, int aAmount, TransactionContext aTx) {
-			if (aResource == null || aResource.isEmpty() || aAmount <= 0 || fillable(aResource.toStack(aAmount)) != mTanks[aIndex]) return 0;
-			int rDone = mTanks[aIndex].asResourceHandler().insert(0, aResource, aAmount, aTx);
-			if (rDone > 0) mChanged.updateSnapshots(aTx);
-			return rDone;
+			if (aResource == null || aResource.isEmpty() || aAmount <= 0) return 0;
+			int tBefore = pending(aResource, true), rTaken;
+			try {rTaken = Math.min(aAmount, mTileEntity.fill(mSide, aResource.toStack(tBefore + aAmount), false) - tBefore);} catch (Throwable e) {return 0;}
+			if (rTaken <= 0) return 0;
+			updateSnapshots(aTx);
+			mPending.add(aResource.toStack(rTaken));
+			return rTaken;
 		}
 		@Override public int extract(int aIndex, FluidResource aResource, int aAmount, TransactionContext aTx) {
-			if (aResource == null || aResource.isEmpty() || aAmount <= 0 || drainable(aResource.toStack(aAmount)) != mTanks[aIndex]) return 0;
-			int rDone = mTanks[aIndex].asResourceHandler().extract(0, aResource, aAmount, aTx);
-			if (rDone > 0) mChanged.updateSnapshots(aTx);
-			return rDone;
+			if (aResource == null || aResource.isEmpty() || aAmount <= 0) return 0;
+			int tBefore = pending(aResource, false), rTaken;
+			try {FluidStack tDrained = mTileEntity.drain(mSide, aResource.toStack(tBefore + aAmount), false); rTaken = Math.min(aAmount, (tDrained == null ? 0 : tDrained.getAmount()) - tBefore);} catch (Throwable e) {return 0;}
+			if (rTaken <= 0) return 0;
+			updateSnapshots(aTx);
+			FluidStack tMove = aResource.toStack(rTaken); tMove.setAmount(-rTaken);
+			mPending.add(tMove);
+			return rTaken;
 		}
 
-		// A specific TE's logic must not crash a foreign mod that just moves a fluid.
-		private IFluidTank fillable (net.neoforged.neoforge.fluids.FluidStack aFluid) {try {return mTileEntity.getFluidTankFillableForCapability (mSide, aFluid);} catch (Throwable e) {return null;}}
-		private IFluidTank drainable(net.neoforged.neoforge.fluids.FluidStack aFluid) {try {return mTileEntity.getFluidTankDrainableForCapability(mSide, aFluid);} catch (Throwable e) {return null;}}
+		@Override protected List<FluidStack> createSnapshot() {return new ArrayList<>(mPending);}
+		@Override protected void revertToSnapshot(List<FluidStack> aSnapshot) {mPending = aSnapshot;}
+		@Override protected void onRootCommit(List<FluidStack> aOriginal) {
+			List<FluidStack> tMoves = mPending; mPending = new ArrayList<>();
+			for (FluidStack tMove : tMoves) try {
+				if (tMove.getAmount() > 0) mTileEntity.fill(mSide, tMove, true); else {FluidStack tDrain = tMove.copy(); tDrain.setAmount(-tMove.getAmount()); mTileEntity.drain(mSide, tDrain, true);}
+			} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
+		}
 	}
 }
