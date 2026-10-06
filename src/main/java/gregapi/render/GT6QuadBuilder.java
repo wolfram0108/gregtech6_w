@@ -104,9 +104,12 @@ public final class GT6QuadBuilder {
 	/** GT6 side-byte to neo Direction mapping: 0=DOWN, 1=UP, 2=NORTH, 3=SOUTH, 4=WEST, 5=EAST. */
 	public void putFace(byte aSide, ResourceLocation aIcon, short[] aRGBa) {putFace(aSide, aIcon, aRGBa, false, 0, true);}
 
-	/** Vertex alpha as 1.7.10 wrote it: the color's own alpha only where the texture allowed it (aAllowAlpha), opaque
-	 *  otherwise; an allowed zero still reads as opaque, since GT6 colors are often RGB-ints with an empty alpha byte. */
-	static int alpha(short[] aRGBa, boolean aAllowAlpha) {return aAllowAlpha && aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? (aRGBa[3] & 0xFF) : 255;}
+	/** Vertex color {r, g, b, a}: alpha only where the texture allows it, as on 1.7.10's flat path (its AO path was always opaque);
+	 *  an allowed zero still reads as opaque, since GT6 colors are often RGB-ints with an empty alpha byte. */
+	static int[] rgba(short[] aRGBa, boolean aAllowAlpha) {
+		boolean tRGB = aRGBa != null && aRGBa.length >= 3;
+		return new int[] {tRGB ? aRGBa[0] & 0xFF : 255, tRGB ? aRGBa[1] & 0xFF : 255, tRGB ? aRGBa[2] & 0xFF : 255, aAllowAlpha && aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? aRGBa[3] & 0xFF : 255};
+	}
 
 	/** aAllowAlpha lets the color's alpha reach the vertex as 1.7.10's flag of that name did; aEmission is the face's own
 	 *  block light (1.7.10 drew such faces at a fixed lightmap value), aAO=false takes the face out of ambient occlusion. */
@@ -227,10 +230,7 @@ public final class GT6QuadBuilder {
 
 	/** Face from the current bounds with UV clipped to them and tint from RGBa, following AE2's QuartzGlassModel pattern. */
 	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa, boolean aAllowAlpha, int aEmission, boolean aAO) {
-		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
-		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
-		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
-		int a = alpha(aRGBa, aAllowAlpha);
+		int[] tColor = rgba(aRGBa, aAllowAlpha);
 		float[][] c = corners(aDir, mBounds);
 		if (mUVRotate[aDir.get3DDataValue()] == 1) rotateUV1(aDir, c, mBounds);
 		org.joml.Vector3f n = aDir.step();
@@ -245,7 +245,7 @@ public final class GT6QuadBuilder {
 		for (int idx = 0; idx < 4; idx++) {
 			final int i = EMIT_ORDER[idx];
 			tBuilder.vertex(c[i][0], c[i][1], c[i][2]);
-			tBuilder.color(r, g, b, a);
+			tBuilder.color(tColor[0], tColor[1], tColor[2], tColor[3]);
 			tBuilder.normal(n.x(), n.y(), n.z());
 			// corners hands out UV in the 0..16 block-texture convention; 1.20.1's own getU/getV already divide by 16
 			// themselves, so dividing again here (needed on a branch that expected 0..1 input) squeezed a face into a single texel.
@@ -341,10 +341,7 @@ public final class GT6QuadBuilder {
 
 	/** One quad from 4 corners {x,y,z,u,v} (u,v in 0..16) plus tint; aReverse flips the winding order. */
 	private BakedQuad vertexQuad(float[][] aCorners, TextureAtlasSprite aSprite, short[] aRGBa, Direction aDir, boolean aReverse) {
-		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
-		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
-		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
-		int a = alpha(aRGBa, false); // RendererBlockFluid drew with setColorOpaque_F
+		int[] tColor = rgba(aRGBa, false); // RendererBlockFluid drew with setColorOpaque_F
 		org.joml.Vector3f n = aDir.step();
 		QuadBakingVertexConsumer.Buffered tBuilder = new QuadBakingVertexConsumer.Buffered();
 		tBuilder.setSprite(aSprite);
@@ -358,7 +355,7 @@ public final class GT6QuadBuilder {
 		for (int idx = 0; idx < 4; idx++) {
 			int i = tOrder[idx];
 			tBuilder.vertex(aCorners[i][0], aCorners[i][1], aCorners[i][2]);
-			tBuilder.color(r, g, b, a);
+			tBuilder.color(tColor[0], tColor[1], tColor[2], tColor[3]);
 			tBuilder.normal(n.x(), n.y(), n.z());
 			tBuilder.uv(aSprite.getU(aCorners[i][3]), aSprite.getV(aCorners[i][4])); // getU/getV expect UV in the 0..16 pixel range on 1.20.1, matching the note above.
 			tBuilder.endVertex();
@@ -384,10 +381,7 @@ public final class GT6QuadBuilder {
 	}
 	/** One quad of an arbitrary plane with full UV and tint; aReverse gives it reverse winding for the back side. */
 	private BakedQuad planeQuad(float[][] aCorners, TextureAtlasSprite aSprite, short[] aRGBa, boolean aReverse) {
-		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
-		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
-		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
-		int a = alpha(aRGBa, false); // vanilla crossed squares drew with setColorOpaque_F
+		int[] tColor = rgba(aRGBa, false); // vanilla crossed squares drew with setColorOpaque_F
 		float[][] tUV = {{0,16},{16,16},{16,0},{0,0}}; // bottom-left, bottom-right, top-right, top-left
 		float nx = aCorners[1][2]-aCorners[0][2], nz = -(aCorners[1][0]-aCorners[0][0]); // plane normal in XZ (for lighting; cull is disabled)
 		float nlen = (float)Math.sqrt(nx*nx+nz*nz); if (nlen > 0) {nx/=nlen; nz/=nlen;}
@@ -403,7 +397,7 @@ public final class GT6QuadBuilder {
 		for (int idx = 0; idx < 4; idx++) {
 			int i = tOrder[idx];
 			tBuilder.vertex(aCorners[i][0], aCorners[i][1], aCorners[i][2]);
-			tBuilder.color(r, g, b, a);
+			tBuilder.color(tColor[0], tColor[1], tColor[2], tColor[3]);
 			tBuilder.normal(nx, 0, nz);
 			tBuilder.uv(aSprite.getU(tUV[i][0]), aSprite.getV(tUV[i][1])); // getU/getV expect UV in the 0..16 pixel range on 1.20.1, matching the note above.
 			tBuilder.endVertex();

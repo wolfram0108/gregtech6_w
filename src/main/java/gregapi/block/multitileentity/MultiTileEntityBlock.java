@@ -106,8 +106,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	
 	public MapColor mMapColor = null;
 
-	/** Same trick as BlockBase: stores the last-set bounds itself, since neo bounds are immutable;
-	 *  render use is deferred to a later client pass. Required by the IBlock contract. */
+	/** IBlock bounds live in the RenderBounds center, since neo's bounds are immutable and 1.7.10 mutated the Block itself. */
 	protected final gregapi.block.RenderBounds mRenderBounds = new gregapi.block.RenderBounds();
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);

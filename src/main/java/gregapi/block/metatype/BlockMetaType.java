@@ -214,8 +214,7 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		return super.updateShape(aState, aDir, aNeighbourState, aWorld, aPos, aNeighbourPos);
 	}
 
-	// Slab rendering must not depend on the racy shared fields at all, since its bounds are static;
-	// they are returned directly instead.
+	// Slab bounds are static, so they are returned directly instead of through RenderBounds.
 	private float[] mSlabRenderBounds = null;
 	@Override public float[] getRenderBounds() {
 		if (!mIsSlab) return super.getRenderBounds();

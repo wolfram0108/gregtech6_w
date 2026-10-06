@@ -82,8 +82,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	 *  mMaterial/getMaterial() instead of a new shared abstraction. */
 	protected final Material mMaterial = Material.circuits;
 	public Material getMaterial() {return mMaterial;}
-	/** BlockBaseRail doesn't inherit BlockBase, but the IBlock contract still requires setBlockBounds,
-	 *  so the same technique is reused locally here instead of sharing BlockBase's implementation. */
+	/** IBlock bounds live in the RenderBounds center, since neo's bounds are immutable and 1.7.10 mutated the Block itself. */
 	protected final gregapi.block.RenderBounds mRenderBounds = new gregapi.block.RenderBounds();
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
