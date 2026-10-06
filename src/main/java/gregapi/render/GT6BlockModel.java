@@ -64,9 +64,9 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 
 	@Override
 	public void collectParts(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState, RandomSource aRandom, List<BlockStateModelPart> aParts) {
-		// The whole render chain runs inside a bounds context (BlockBase.RENDER_BOUNDS_CTX): setBlockBounds writes a
+		// The whole render chain runs inside a bounds context (RenderBounds.CTX): setBlockBounds writes a
 		// thread-local copy per pass, not the shared Block fields, so passes on different threads can't clobber each other.
-		boolean[] tCtx = gregapi.block.BlockBase.RENDER_BOUNDS_CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
+		boolean[] tCtx = gregapi.block.RenderBounds.CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
 		try {
 			collectParts0(aLevel, aPos, aState, aRandom, aParts);
 		} finally {tCtx[0] = tPrevCtx;}
@@ -170,7 +170,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 	 *  collectParts path and the live-BE MultiTileEntityBER path; renderBlock=true means the object drew itself already. */
 	public static void buildRendererQuads(GT6QuadBuilder aQB, IRenderedBlockObject aRenderer, Block aBlock, net.minecraft.world.level.BlockGetter aLevel, int aX, int aY, int aZ) {
 		// The bounds-context brackets apply here too, since this method is also called directly from MultiTileEntityBER.
-		boolean[] tCtx = gregapi.block.BlockBase.RENDER_BOUNDS_CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
+		boolean[] tCtx = gregapi.block.RenderBounds.CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
 		try {buildRendererQuads0(aQB, aRenderer, aBlock, aLevel, aX, aY, aZ);} finally {tCtx[0] = tPrevCtx;}
 	}
 	private static void buildRendererQuads0(GT6QuadBuilder aQB, IRenderedBlockObject aRenderer, Block aBlock, net.minecraft.world.level.BlockGetter aLevel, int aX, int aY, int aZ) {
@@ -192,7 +192,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 	 *  passRenderingToObject(ItemStack) for MTE, or the block-level getRenderPasses/getTexture branch for ores. */
 	public static void buildInventoryQuads(GT6QuadBuilder aQB, Block aBlock, net.minecraft.world.item.ItemStack aStack) {
 		// The item-form icon is built on the render thread too, so it also runs inside the bounds context.
-		boolean[] tCtx = gregapi.block.BlockBase.RENDER_BOUNDS_CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
+		boolean[] tCtx = gregapi.block.RenderBounds.CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
 		try {buildInventoryQuads0(aQB, aBlock, aStack);} finally {tCtx[0] = tPrevCtx;}
 	}
 	private static void buildInventoryQuads0(GT6QuadBuilder aQB, Block aBlock, net.minecraft.world.item.ItemStack aStack) {

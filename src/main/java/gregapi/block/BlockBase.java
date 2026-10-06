@@ -65,8 +65,6 @@ import static gregapi.data.CS.*;
  */
 public abstract class BlockBase extends Block implements IBlockBase {
 	public final String mNameInternal;
-	/** Render context flag: inside a render pass setBlockBounds writes only this thread's copy (RenderBounds), never the shared bounds. */
-	public static final ThreadLocal<boolean[]> RENDER_BOUNDS_CTX = ThreadLocal.withInitial(() -> new boolean[1]);
 	protected final RenderBounds mRenderBounds = new RenderBounds();
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);}
 	public float[] getRenderBounds() {return mRenderBounds.render();}

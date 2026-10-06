@@ -102,9 +102,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	 *  block rules; here it is needed for the "normal cube" trait ({@link #isBlockNormalCube}). */
 	protected final Material mMaterial;
 	public Material getMaterial() {return mMaterial;}
-	/** F-bounds (same approach as BlockBase.java/MultiTileEntityBlock.java): the last-set bounds (via
-	 *  setBlockBoundsBasedOnState -> setBlockBounds), neo bounds are immutable -> store them ourselves separately from mMinX..mMaxZ
-	 *  (those are final, intrinsic material geometry), render usage is deferred to the F3 client pass. */
+	/** IBlock bounds live in the RenderBounds center (neo's bounds are immutable), apart from mMinX..mMaxZ, the final material geometry. */
 	protected final gregapi.block.RenderBounds mRenderBounds = new gregapi.block.RenderBounds();
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);

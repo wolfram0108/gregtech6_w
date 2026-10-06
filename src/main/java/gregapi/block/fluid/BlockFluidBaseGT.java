@@ -195,8 +195,7 @@ public abstract class BlockFluidBaseGT extends net.minecraft.world.level.block.L
 		}
 	}
 
-	/** F-bounds: see {@link gregapi.block.BlockBase#setBlockBounds} — the same center-approach, shared by BOTH
-	 *  fluid blocks (was Forge {@code Block.setBlockBounds} inside the {@code BlockFluidBase} constructor). */
+	/** IBlock bounds live in the RenderBounds center, since neo's bounds are immutable and 1.7.10 mutated the Block itself. */
 	protected final gregapi.block.RenderBounds mRenderBounds = new gregapi.block.RenderBounds();
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds.set(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
