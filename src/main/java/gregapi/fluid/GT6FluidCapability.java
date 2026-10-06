@@ -223,15 +223,23 @@ public class GT6FluidCapability {
 			if (aTileEntity instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tPart) {Object rController = tPart.getTarget(false); return rController == null ? aTileEntity : rController;}
 			return aTileEntity instanceof gregapi.tileentity.delegate.ITileEntityCanDelegate ? RELAYS : aTileEntity;
 		}
+		/** Whether a move may land in the same storage: a relay may reach any, so moves through relays count against every storage. */
+		private static boolean shared(Move aMove, Object aOwner) {return aMove.aOwner() == aOwner || aMove.aOwner() == RELAYS || aOwner == RELAYS;}
 		int pending(Object aOwner, FluidResource aResource, boolean aFill) {
 			int r = 0;
-			for (Move tMove : mMoves) if (tMove.aOwner() == aOwner && tMove.aFill() == aFill && aResource.matches(tMove.aFluid())) r += tMove.aFluid().getAmount();
+			for (Move tMove : mMoves) if (shared(tMove, aOwner) && tMove.aFill() == aFill && aResource.matches(tMove.aFluid())) r += tMove.aFluid().getAmount();
 			return r;
 		}
-		/** A GT6 tank holds one fluid, so a second fluid promised into the same storage waits for the next transaction. */
+		/** The block picks which of its tanks takes a fluid, so a second fluid promised into the same storage waits for the next transaction. */
 		boolean fillsOther(Object aOwner, FluidResource aResource) {
-			for (Move tMove : mMoves) if (tMove.aOwner() == aOwner && tMove.aFill() && !aResource.matches(tMove.aFluid())) return true;
+			for (Move tMove : mMoves) if (shared(tMove, aOwner) && tMove.aFill() && !aResource.matches(tMove.aFluid())) return true;
 			return false;
+		}
+		/** What is promised into or out of exactly this storage, as a read shows it (through a relay, only that relay's own moves). */
+		private int promised(gregapi.tileentity.base.TileEntityBase01Root aTileEntity, Object aOwner, FluidResource aResource, boolean aFill) {
+			int r = 0;
+			for (Move tMove : mMoves) if (tMove.aOwner() == aOwner && (aOwner != RELAYS || tMove.aTileEntity() == aTileEntity) && tMove.aFill() == aFill && aResource.matches(tMove.aFluid())) r += tMove.aFluid().getAmount();
+			return r;
 		}
 		void add(TransactionContext aTx, Move aMove) {updateSnapshots(aTx); mMoves.add(aMove);}
 		/** A slot as the open transaction leaves it: what is promised in or out of its storage is counted in. */
@@ -241,13 +249,18 @@ public class GT6FluidCapability {
 			Object tOwner = owner(aTileEntity);
 			if (!tFluid.isEmpty()) {
 				FluidResource tResource = FluidResource.of(tFluid);
-				long tAmount = (long)tFluid.getAmount() + pending(tOwner, tResource, true) - pending(tOwner, tResource, false);
+				long tAmount = (long)tFluid.getAmount() + promised(aTileEntity, tOwner, tResource, true) - promised(aTileEntity, tOwner, tResource, false);
 				return tFluid.copyWithAmount((int)Math.max(0, Math.min(aInfo[aIndex].capacity, tAmount)));
 			}
-			// a fluid promised into an empty storage shows in its first empty slot
+			// a fluid promised in that no slot holds yet shows in the first empty slot
 			for (int i = 0; i < aIndex; i++) if (aInfo[i] == null || aInfo[i].fluid == null || aInfo[i].fluid.isEmpty()) return tFluid;
-			for (Move tMove : mMoves) if (tMove.aOwner() == tOwner && tMove.aFill()) return tMove.aFluid().copyWithAmount(Math.min(aInfo[aIndex].capacity, pending(tOwner, FluidResource.of(tMove.aFluid()), true)));
+			for (Move tMove : mMoves) if (tMove.aFill() && tMove.aOwner() == tOwner && (tOwner != RELAYS || tMove.aTileEntity() == aTileEntity) && !holds(aInfo, tMove.aFluid())) return tMove.aFluid().copyWithAmount(Math.min(aInfo[aIndex].capacity, promised(aTileEntity, tOwner, FluidResource.of(tMove.aFluid()), true)));
 			return tFluid;
+		}
+
+		private static boolean holds(gregapi.fluid.FluidTankInfo[] aInfo, FluidStack aFluid) {
+			for (gregapi.fluid.FluidTankInfo tInfo : aInfo) if (tInfo != null && tInfo.fluid != null && !tInfo.fluid.isEmpty() && FluidStack.isSameFluidSameComponents(tInfo.fluid, aFluid)) return true;
+			return false;
 		}
 
 		@Override protected List<Move> createSnapshot() {return new ArrayList<>(mMoves);}
