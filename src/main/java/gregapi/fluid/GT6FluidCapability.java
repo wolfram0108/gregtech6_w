@@ -168,7 +168,9 @@ public final class GT6FluidCapability {
 	public static IFluidHandler foreign(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
 		if (aTileEntity.isRemoved()) return null;
 		IFluidHandler tTank;
-		try {tTank = aTileEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, gregapi.data.CS.FORGE_DIR[aSide]).orElse(null);} catch (Throwable e) {return null;}
+		// 1.7.10 asked a tank block entity itself: one that still is an IFluidHandler is asked so, behind the same guard
+		if (aTileEntity instanceof IFluidHandler tSelf) tTank = tSelf;
+		else try {tTank = aTileEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, gregapi.data.CS.FORGE_DIR[aSide]).orElse(null);} catch (Throwable e) {return null;}
 		return tTank == null ? null : new ForeignTank(tTank);
 	}
 

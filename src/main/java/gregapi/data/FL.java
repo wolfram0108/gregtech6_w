@@ -932,21 +932,24 @@ public enum FL {
 	private static long fillSided(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {
 		return aFluidHandler instanceof gregapi.tileentity.base.TileEntityBase01Root tGT ? tGT.fill(FORGE_DIR[aSide], aFluid, aDoFill) : aFluidHandler.fill(aFluid, aDoFill ? FluidAction.EXECUTE : FluidAction.SIMULATE);
 	}
+	/** A storage GT6 calls as it is: its own, or one already guarded; another mod's block entity, an IFluidHandler itself or not,
+	 *  is reached through GT6FluidCapability.foreign, so what it throws stays there. */
+	public static boolean own(Object aTank) {return aTank instanceof IFluidHandler && (aTank instanceof gregapi.tileentity.base.TileEntityBase01Root || !(aTank instanceof net.minecraft.world.level.block.entity.BlockEntity));}
 	/** The fluid storage a delegator points at: a GT6 or other IFluidHandler as it is, another mod's block entity through the
 	 *  engine's capability on that side (GT6FluidCapability.foreign); null where there is none. */
 	public static IFluidHandler tank(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator) {
 		if (aDelegator == null) return null;
-		if (aDelegator.mTileEntity instanceof IFluidHandler tTank) return tTank;
+		if (own(aDelegator.mTileEntity)) return (IFluidHandler)aDelegator.mTileEntity;
 		return aDelegator.mTileEntity instanceof net.minecraft.world.level.block.entity.BlockEntity tForeign ? gregapi.fluid.GT6FluidCapability.foreign(tForeign, aDelegator.mSideOfTileEntity) : null;
 	}
 	/** The same for a block entity seen from one of its sides. */
 	public static IFluidHandler tank(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
-		return aTileEntity instanceof IFluidHandler tTank ? tTank : aTileEntity == null ? null : gregapi.fluid.GT6FluidCapability.foreign(aTileEntity, aSide);
+		return own(aTileEntity) ? (IFluidHandler)aTileEntity : aTileEntity == null ? null : gregapi.fluid.GT6FluidCapability.foreign(aTileEntity, aSide);
 	}
 	/** The delegator pointed at its storage (itself when it already points at one), or null where there is none. */
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static DelegatorTileEntity<IFluidHandler> tanked(DelegatorTileEntity aDelegator) {
-		if (aDelegator == null || aDelegator.mTileEntity instanceof IFluidHandler) return aDelegator;
+		if (aDelegator == null || own(aDelegator.mTileEntity)) return aDelegator;
 		IFluidHandler tTank = tank(aDelegator);
 		return tTank == null ? null : new DelegatorTileEntity<>(tTank, aDelegator);
 	}

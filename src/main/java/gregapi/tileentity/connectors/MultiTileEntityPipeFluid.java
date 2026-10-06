@@ -270,7 +270,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 			if (tTileEntity != null) {
 				if (tTileEntity.mTileEntity instanceof MultiTileEntityPipeFluid) {
 					tAdjacentPipes[tSide] = new DelegatorTileEntity<>((MultiTileEntityPipeFluid)tTileEntity.mTileEntity, tTileEntity);
-				} else if (tTileEntity.mTileEntity instanceof IFluidHandler) {
+				} else if (FL.own(tTileEntity.mTileEntity)) {
 					tAdjacentTanks[tSide] = new DelegatorTileEntity<>((IFluidHandler)tTileEntity.mTileEntity, tTileEntity);
 				} else {
 					IFluidHandler tTank = tTileEntity.mTileEntity == null ? null : FL.tank(tTileEntity);
