@@ -39,7 +39,7 @@ public final class BuildCraftNames {
 	/** Whether the pair has a carrier in the BuildCraft of this branch; callers skip their entry when not. */
 	public static boolean has(String aName, long aMeta) {return TABLE.has(aName, aMeta);}
 	/** BuildCraft's crude oil as a fluid: 7.99 registers every heat tier with a «_heat_N» suffix (BCEnergyFluids.defineFluids). */
-	public static final String OIL = MD.BC_ENERGY.mID + ":oil_heat_0";
+	public static final String OIL = MD.BC_ENERGY.mID + ":oil_heat_0", FUEL = MD.BC_ENERGY.mID + ":fuel_light_heat_0";
 	/** The heat exchanger, which the refinery chain needs and which has no 7.1.23 name to map from. */
 	public static final String HEAT_EXCHANGER = "heat_exchange";
 

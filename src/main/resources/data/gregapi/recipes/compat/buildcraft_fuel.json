@@ -1,8 +1,0 @@
-{
-  "conditions": [{"type": "forge:mod_loaded", "modid": "buildcraftenergy"}],
-  "type": "buildcraftenergy:fuel",
-  "dirty": false,
-  "fluid": {"amount": 1, "fluid": "gregapi:fuel"},
-  "powerPerCycle": 6000000,
-  "totalBurningTime": 15000
-}

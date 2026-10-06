@@ -58,6 +58,26 @@ public class CompatBC extends CompatBase implements ICompatBC {
 		TriggerBC_Energy_Capacity_Partial.class.getCanonicalName();
 		TriggerBC_Energy_Capacity_NotFull.class.getCanonicalName();
 		TriggerBC_Energy_Capacity_Full.class.getCanonicalName();
+		if (CODE_CLIENT) Client.register();
+	}
+
+	/** 1.7.10's «fuel» was one fluid of BuildCraft and GT6; BuildCraft 7.99 calls its successor fuel_light, so GT6 Fuel burns at
+	 *  its rate, read from BuildCraft's recipes wherever they are loaded: at server start, and when a client receives them. */
+	static void registerFuel(Level aLevel) {
+		net.minecraftforge.fluids.FluidStack tLight = gregapi.data.FL.make(gregapi.compat.BuildCraftNames.FUEL, 1), tFuel = gregapi.data.FL.Fuel.make(1);
+		buildcraft.api.fuels.IFuelManager tManager = buildcraft.api.fuels.BuildcraftFuelRegistry.fuel;
+		buildcraft.api.fuels.IFuel tRate = aLevel == null || tLight == null || tFuel == null || tManager == null ? null : tManager.getFuel(aLevel, tLight);
+		if (tRate != null && tManager.getFuel(aLevel, tFuel) == null) tManager.addUnregisteredFuel(new net.minecraft.resources.ResourceLocation(gregapi.data.MD.GAPI.mID, "fuel"), tFuel, tRate.getPowerPerCycle(), tRate.getTotalBurningTime());
+	}
+
+	/** Client types stay in here, so the class loads on a dedicated server. */
+	private static final class Client {
+		static void register() {net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(net.minecraftforge.eventbus.api.EventPriority.LOW, false, net.minecraftforge.client.event.RecipesUpdatedEvent.class, aEvent -> registerFuel(net.minecraft.client.Minecraft.getInstance().level));}
+	}
+
+	@Override
+	public void onServerStarting(net.minecraftforge.event.server.ServerStartingEvent aEvent) {
+		registerFuel(aEvent.getServer().overworld());
 	}
 
 	@Override
