@@ -154,8 +154,7 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		gregapi.GT_API.deferItemInit(() -> {if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));});
 	}
 	
-	// The slab's bounds are static, but the render anti-leak logic resets the shared Block instance's
-	// fields after every meshing pass, so the next pass drew a full cube; the fix re-asserts the static bounds on every pass.
+	// The model resets the bounds after every meshing pass, so a slab sets its static bounds again on every pass.
 	private void setSlabBounds() {
 		setBlockBounds(
 		mSide == SIDE_X_POS ? 0.5F : 0.0F,
