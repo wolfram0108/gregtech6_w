@@ -40,6 +40,8 @@ public final class BuildCraftNames {
 	public static boolean has(String aName, long aMeta) {return TABLE.has(aName, aMeta);}
 	/** BuildCraft's crude oil as a fluid: 7.99 registers every heat tier with a «_heat_N» suffix (BCEnergyFluids.defineFluids). */
 	public static final String OIL = MD.BC_ENERGY.mID + ":oil_heat_0";
+	/** The heat exchanger, which the refinery chain needs and which has no 7.1.23 name to map from. */
+	public static final String HEAT_EXCHANGER = "heat_exchange";
 
 	private static final String
 	  NO_CHIPSET = "BuildCraft 7.99 registers five chipsets only (BCSiliconItems:46-50: redstone, iron, gold, quartz, diamond); 7.1.23 ItemRedstoneChipset.Chipset also had PULSATING(4), COMP(6) and EMERALD(7)"
