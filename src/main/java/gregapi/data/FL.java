@@ -932,14 +932,32 @@ public enum FL {
 	private static long fillSided(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {
 		return aFluidHandler instanceof gregapi.tileentity.base.TileEntityBase01Root tGT ? tGT.fill(FORGE_DIR[aSide], aFluid, aDoFill) : aFluidHandler.fill(aFluid, aDoFill ? FluidAction.EXECUTE : FluidAction.SIMULATE);
 	}
-	public static long fill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler && aFluid != null ? fill_(aDelegator, aFluid, aDoFill) : 0;}
+	/** The fluid storage a delegator points at: a GT6 or other IFluidHandler as it is, another mod's block entity through the
+	 *  engine's capability on that side (GT6FluidCapability.foreign); null where there is none. */
+	public static IFluidHandler tank(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator) {
+		if (aDelegator == null) return null;
+		if (aDelegator.mTileEntity instanceof IFluidHandler tTank) return tTank;
+		return aDelegator.mTileEntity instanceof net.minecraft.world.level.block.entity.BlockEntity tForeign ? gregapi.fluid.GT6FluidCapability.foreign(tForeign, aDelegator.mSideOfTileEntity) : null;
+	}
+	/** The same for a block entity seen from one of its sides. */
+	public static IFluidHandler tank(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
+		return aTileEntity instanceof IFluidHandler tTank ? tTank : aTileEntity == null ? null : gregapi.fluid.GT6FluidCapability.foreign(aTileEntity, aSide);
+	}
+	/** The delegator pointed at its storage (itself when it already points at one), or null where there is none. */
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public static DelegatorTileEntity<IFluidHandler> tanked(DelegatorTileEntity aDelegator) {
+		if (aDelegator == null || aDelegator.mTileEntity instanceof IFluidHandler) return aDelegator;
+		IFluidHandler tTank = tank(aDelegator);
+		return tTank == null ? null : new DelegatorTileEntity<>(tTank, aDelegator);
+	}
+	public static long fill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {DelegatorTileEntity<IFluidHandler> tTank = aFluid == null ? null : tanked(aDelegator); return tTank != null ? fill_(tTank, aFluid, aDoFill) : 0;}
 	public static long fill_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return fill_((IFluidHandler)aDelegator.mTileEntity, aDelegator.mSideOfTileEntity, aFluid, aDoFill);}
 	public static long fill (IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null ? fill_(aFluidHandler, aSide, aFluid, aDoFill) : 0;}
 	public static long fill_(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return fillSided(aFluidHandler, aSide, aFluid, aDoFill);}
 	public static long fill (IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null ? fill_(aFluidHandler, aSides, aFluid, aDoFill) : 0;}
 	public static long fill_(IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {for (byte tSide : aSides) {long rFilled = fillSided(aFluidHandler, tSide, aFluid, aDoFill); if (rFilled > 0) return rFilled;} return 0;}
 
-	public static boolean fillAll (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler && aFluid != null && fillAll_(aDelegator, aFluid, aDoFill);}
+	public static boolean fillAll (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {DelegatorTileEntity<IFluidHandler> tTank = aFluid == null ? null : tanked(aDelegator); return tTank != null && fillAll_(tTank, aFluid, aDoFill);}
 	public static boolean fillAll_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return fillAll_((IFluidHandler)aDelegator.mTileEntity, aDelegator.mSideOfTileEntity, aFluid, aDoFill);}
 	public static boolean fillAll (IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null && fillAll_(aFluidHandler, aSide, aFluid, aDoFill);}
 	public static boolean fillAll_(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return fillSided(aFluidHandler, aSide, aFluid, F) == aFluid.getAmount() && (!aDoFill || fillSided(aFluidHandler, aSide, aFluid, T) > 0);}
@@ -964,14 +982,14 @@ public enum FL {
 		if (aFluidHandler instanceof gregapi.tileentity.base.TileEntityBase01Root tGT) return tGT.canFill(FORGE_DIR[aSide], aFluid);
 		return aFluidHandler.fill(new FluidStack(aFluid, Integer.MAX_VALUE), FluidAction.SIMULATE) > 0;
 	}
-	public static boolean canFill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, Fluid aFluid) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler tHandler && canFill(tHandler, aDelegator.mSideOfTileEntity, aFluid);}
+	public static boolean canFill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, Fluid aFluid) {IFluidHandler tHandler = tank(aDelegator); return tHandler != null && canFill(tHandler, aDelegator.mSideOfTileEntity, aFluid);}
 	public static boolean canDrain(IFluidHandler aFluidHandler, byte aSide, Fluid aFluid) {
 		if (aFluidHandler == null || aFluid == null) return F;
 		if (aFluidHandler instanceof gregapi.tileentity.base.TileEntityBase01Root tGT) return tGT.canDrain(FORGE_DIR[aSide], aFluid);
 		FluidStack tDrained = aFluidHandler.drain(new FluidStack(aFluid, Integer.MAX_VALUE), FluidAction.SIMULATE);
 		return tDrained != null && !tDrained.isEmpty();
 	}
-	public static boolean canDrain (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, Fluid aFluid) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler tHandler && canDrain(tHandler, aDelegator.mSideOfTileEntity, aFluid);}
+	public static boolean canDrain (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, Fluid aFluid) {IFluidHandler tHandler = tank(aDelegator); return tHandler != null && canDrain(tHandler, aDelegator.mSideOfTileEntity, aFluid);}
 
 	// Mirrors the fill-side routing for drain: GT6 tile entities keep their side-aware drain, everything else
 	// takes the sideless neo call; an EMPTY result is treated the same as the old null.
@@ -983,26 +1001,26 @@ public enum FL {
 	}
 	// Public side-carrying drain entry point: the original direct call to the tile entity carried its side
 	// implicitly, but the neo equivalent drops it, so relays must go through this center to keep it.
-	public static FluidStack drain (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoDrain) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler tHandler && aFluid != null ? drainSided(tHandler, aDelegator.mSideOfTileEntity, aFluid, aDoDrain) : null;}
-	public static FluidStack drain (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, int aMaxDrain, boolean aDoDrain) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler tHandler ? drainSided(tHandler, aDelegator.mSideOfTileEntity, aMaxDrain, aDoDrain) : null;}
+	public static FluidStack drain (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoDrain) {IFluidHandler tHandler = aFluid == null ? null : tank(aDelegator); return tHandler != null ? drainSided(tHandler, aDelegator.mSideOfTileEntity, aFluid, aDoDrain) : null;}
+	public static FluidStack drain (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, int aMaxDrain, boolean aDoDrain) {IFluidHandler tHandler = tank(aDelegator); return tHandler != null ? drainSided(tHandler, aDelegator.mSideOfTileEntity, aMaxDrain, aDoDrain) : null;}
 	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move (aFrom, aTo, Long.MAX_VALUE);}
 	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move_(aFrom, aTo, Long.MAX_VALUE);}
-	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return aFrom != null && aFrom.mTileEntity instanceof IFluidHandler && aTo != null && aTo.mTileEntity instanceof IFluidHandler ? move_(aFrom, aTo, aMaxMoved) : 0;}
+	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {DelegatorTileEntity<IFluidHandler> tFrom = tanked(aFrom), tTo = tFrom == null ? null : tanked(aTo); return tTo != null ? move_(tFrom, tTo, aMaxMoved) : 0;}
 	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {if (aMaxMoved <= 0) return 0; FluidStack tDrained = drainSided((IFluidHandler)aFrom.mTileEntity, aFrom.mSideOfTileEntity, Code.bindInt(aMaxMoved), F); if (tDrained == null || tDrained.getAmount() <= 0) return 0; tDrained.setAmount(Code.bindInt(fill_(aTo, tDrained.copy(), T))); if (tDrained.getAmount() <= 0) return 0; drainSided((IFluidHandler)aFrom.mTileEntity, aFrom.mSideOfTileEntity, tDrained, T); return tDrained.getAmount();}
-	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, FluidStack aMoved) {return aFrom != null && aFrom.mTileEntity instanceof IFluidHandler && aTo != null && aTo.mTileEntity instanceof IFluidHandler ? move_(aFrom, aTo, aMoved) : 0;}
+	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, FluidStack aMoved) {DelegatorTileEntity<IFluidHandler> tFrom = tanked(aFrom), tTo = tFrom == null ? null : tanked(aTo); return tTo != null ? move_(tFrom, tTo, aMoved) : 0;}
 	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, FluidStack aMoved) {if (aMoved == null || aMoved.getAmount() <= 0) return 0; FluidStack tDrained = drainSided((IFluidHandler)aFrom.mTileEntity, aFrom.mSideOfTileEntity, aMoved, F); if (tDrained == null || tDrained.getAmount() <= 0) return 0; tDrained.setAmount(Code.bindInt(fill_(aTo, tDrained.copy(), T))); if (tDrained.getAmount() <= 0) return 0; drainSided((IFluidHandler)aFrom.mTileEntity, aFrom.mSideOfTileEntity, tDrained, T); return tDrained.getAmount();}
 
 	public static long move (IFluidTank aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move (aFrom, aTo, Long.MAX_VALUE);}
 	public static long move_(IFluidTank aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move_(aFrom, aTo, Long.MAX_VALUE);}
-	public static long move (IFluidTank aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return aFrom != null && aTo != null && aTo.mTileEntity instanceof IFluidHandler ? move_(aFrom, aTo, aMaxMoved) : 0;}
+	public static long move (IFluidTank aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {DelegatorTileEntity<IFluidHandler> tTo = aFrom == null ? null : tanked(aTo); return tTo != null ? move_(aFrom, tTo, aMaxMoved) : 0;}
 	public static long move_(IFluidTank aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {if (aMaxMoved <= 0) return 0; FluidStack tDrained = aFrom.drain(Code.bindInt(aMaxMoved), FluidAction.SIMULATE); if (tDrained == null || tDrained.getAmount() <= 0) return 0; tDrained.setAmount(Code.bindInt(fill_(aTo, tDrained.copy(), T))); if (tDrained.getAmount() <= 0) return 0; aFrom.drain(tDrained.getAmount(), FluidAction.EXECUTE); return tDrained.getAmount();}
 	public static long move (IFluidTank[] aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move (aFrom, aTo, Long.MAX_VALUE);}
 	public static long move_(IFluidTank[] aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move_(aFrom, aTo, Long.MAX_VALUE);}
-	public static long move (IFluidTank[] aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return aFrom != null && aTo != null && aTo.mTileEntity instanceof IFluidHandler ? move_(aFrom, aTo, aMaxMoved) : 0;}
+	public static long move (IFluidTank[] aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {DelegatorTileEntity<IFluidHandler> tTo = aFrom == null ? null : tanked(aTo); return tTo != null ? move_(aFrom, tTo, aMaxMoved) : 0;}
 	public static long move_(IFluidTank[] aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {if (aMaxMoved <= 0) return 0; long rAmount = 0; for (IFluidTank tFrom : aFrom) if (tFrom != null) rAmount += move_(tFrom, aTo, aMaxMoved-rAmount); return rAmount;}
 	public static long move (@SuppressWarnings("rawtypes") Iterable aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move (aFrom, aTo, Long.MAX_VALUE);}
 	public static long move_(@SuppressWarnings("rawtypes") Iterable aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move_(aFrom, aTo, Long.MAX_VALUE);}
-	public static long move (@SuppressWarnings("rawtypes") Iterable aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return aFrom != null && aTo != null && aTo.mTileEntity instanceof IFluidHandler ? move_(aFrom, aTo, aMaxMoved) : 0;}
+	public static long move (@SuppressWarnings("rawtypes") Iterable aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {DelegatorTileEntity<IFluidHandler> tTo = aFrom == null ? null : tanked(aTo); return tTo != null ? move_(aFrom, tTo, aMaxMoved) : 0;}
 	public static long move_(@SuppressWarnings("rawtypes") Iterable aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {if (aMaxMoved <= 0) return 0; long rAmount = 0; for (Object tFrom : aFrom) if (tFrom instanceof IFluidTank) rAmount += move_((IFluidTank)tFrom, aTo, aMaxMoved-rAmount); return rAmount;}
 
 

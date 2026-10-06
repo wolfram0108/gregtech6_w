@@ -158,4 +158,33 @@ public final class GT6FluidCapability {
 			try {FluidStack rDrained = mItem.drain(mStack, aMaxDrain, aAction.execute()); return rDrained == null ? FluidStack.EMPTY : rDrained;} catch (Throwable e) {return FluidStack.EMPTY;}
 		}
 	}
+
+	// ==============================================================================================
+	// The other way round: another mod's fluid storage as GT6 code meets it next to a GT6 block.
+	// ==============================================================================================
+
+	/** Another mod's fluid storage on a block entity's side, through Forge's capability. 1.7.10's foreign tanks were IFluidHandler
+	 *  block entities too, so a block without a block entity stays out, at no cost. */
+	public static IFluidHandler foreign(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
+		if (aTileEntity.isRemoved()) return null;
+		return aTileEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, gregapi.data.CS.FORGE_DIR[aSide]).orElse(null);
+	}
+
+	/** The same answer for one side of a GT6 tile entity, kept while the neighbour is the same block entity and its capability was
+	 *  not invalidated, so a GT6 pipe or machine at another mod's tank asks Forge once, not every tick. */
+	public static final class ForeignTankCache {
+		private net.minecraft.world.level.block.entity.BlockEntity mTileEntity;
+		private net.minecraftforge.common.util.LazyOptional<IFluidHandler> mLazy;
+		private IFluidHandler mTank;
+
+		public IFluidHandler get(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
+			// An absent capability is kept as well (empty, never invalidated): it is asked again only for another block entity.
+			if (aTileEntity != mTileEntity || mLazy == null || (mTank != null && !mLazy.isPresent()) || aTileEntity.isRemoved()) {
+				mTileEntity = aTileEntity;
+				mLazy = aTileEntity.isRemoved() ? net.minecraftforge.common.util.LazyOptional.empty() : aTileEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, gregapi.data.CS.FORGE_DIR[aSide]);
+				mTank = mLazy.orElse(null);
+			}
+			return mTank;
+		}
+	}
 }

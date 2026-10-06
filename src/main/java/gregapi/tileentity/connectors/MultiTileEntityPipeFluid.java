@@ -273,7 +273,8 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 				} else if (tTileEntity.mTileEntity instanceof IFluidHandler) {
 					tAdjacentTanks[tSide] = new DelegatorTileEntity<>((IFluidHandler)tTileEntity.mTileEntity, tTileEntity);
 				} else {
-					tAdjacentOther[tSide] = tTileEntity;
+					IFluidHandler tTank = tTileEntity.mTileEntity == null ? null : tank(tSide, tTileEntity);
+					if (tTank != null) tAdjacentTanks[tSide] = new DelegatorTileEntity<>(tTank, tTileEntity); else tAdjacentOther[tSide] = tTileEntity;
 				}
 			}
 		}
@@ -503,7 +504,8 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 	
 	@Override
 	public boolean canConnect(byte aSide, DelegatorTileEntity<BlockEntity> aDelegator) {
-		if (aDelegator.mTileEntity instanceof IFluidHandler) {
+		IFluidHandler tTank = tank(aSide, aDelegator);
+		if (tTank != null) {
 			// Extenders should always be connectable.
 			if (aDelegator.mTileEntity instanceof ITileEntityCanDelegate) return T;
 			// Make sure at least one Tank exists at this Side to connect to.
@@ -513,7 +515,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 			// this call is exactly that unported consumer. UT.Code.exists(0, array) only checked
 			// array.length>0 (the presence of AT LEAST one tank) — the same question is honestly answered by getTanks()>0
 			// (IFluidHandler.java:60), without building a fake FluidTankInfo[] just for its length.
-			if (((IFluidHandler)aDelegator.mTileEntity).getTanks() > 0) return T;
+			if (tTank.getTanks() > 0) return T;
 			// Okay, nothing to do here.
 			return F;
 		}

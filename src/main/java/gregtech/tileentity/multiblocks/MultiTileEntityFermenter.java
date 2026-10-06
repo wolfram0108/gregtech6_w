@@ -162,7 +162,7 @@ public class MultiTileEntityFermenter extends TileEntityBase10MultiBlockMachine 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public DelegatorTileEntity<IFluidHandler> getFluidOutputTarget(byte aSide, Fluid aOutput) {
 		DelegatorTileEntity tDelegator = WD.te(level, getOffsetX(OPOS[mFacing], 5), getBlockPos().getY(), getOffsetZ(OPOS[mFacing], 5), OPOS[mFacing], F);
-		return tDelegator.mTileEntity instanceof IFluidHandler ? tDelegator : null;
+		return gregapi.data.FL.tanked(tDelegator);
 	}
 	
 	@Override

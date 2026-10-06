@@ -214,7 +214,7 @@ public class MultiTileEntityLargeBoiler extends TileEntityBase10MultiBlockBase i
 					int tTargets = 0;
 					
 					@SuppressWarnings("unchecked")
-					DelegatorTileEntity<BlockEntity>[] tDelegators = new DelegatorTileEntity[] {
+					DelegatorTileEntity[] tDelegators = new DelegatorTileEntity[] {
 					  WD.te(level, getOffsetXN(mFacing, 1)  , getBlockPos().getY()+3, getOffsetZN(mFacing, 1)  , SIDE_Y_NEG, F)
 					, WD.te(level, getOffsetXN(mFacing, 1)-2, getBlockPos().getY()+1, getOffsetZN(mFacing, 1)  , SIDE_X_POS, F)
 					, WD.te(level, getOffsetXN(mFacing, 1)+2, getBlockPos().getY()+1, getOffsetZN(mFacing, 1)  , SIDE_X_NEG, F)
@@ -224,7 +224,7 @@ public class MultiTileEntityLargeBoiler extends TileEntityBase10MultiBlockBase i
 					
 					long[] tTargetAmounts = new long[tDelegators.length];
 					
-					for (int i = 0; i < tDelegators.length; i++) if (tDelegators[i].mTileEntity instanceof IFluidHandler && (tTargetAmounts[i] = FL.fill_(tDelegators[i], tDrainableSteam, F)) > 0) tTargets++; else tDelegators[i] = null;
+					for (int i = 0; i < tDelegators.length; i++) if ((tDelegators[i] = FL.tanked(tDelegators[i])) != null && (tTargetAmounts[i] = FL.fill_(tDelegators[i], tDrainableSteam, F)) > 0) tTargets++; else tDelegators[i] = null;
 					
 					if (tTargets == 1) {
 						for (int i = 0; i < tDelegators.length; i++) if (tDelegators[i] != null) {

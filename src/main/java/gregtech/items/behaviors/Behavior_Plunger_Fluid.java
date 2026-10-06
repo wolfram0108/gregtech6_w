@@ -53,10 +53,11 @@ public class Behavior_Plunger_Fluid extends AbstractBehaviorDefault {
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
 		if (aWorld.isClientSide()) return F;
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		if (aTileEntity instanceof IFluidHandler) {
-			for (Direction tDirection : Direction.values()) if (!((IFluidHandler)aTileEntity).drain(1000, IFluidHandler.FluidAction.SIMULATE).isEmpty()) { // neo IFluidHandler.drain(int,FluidAction) is side-agnostic; a non-null FluidStack means isEmpty instead.
+		IFluidHandler tTank = gregapi.data.FL.tank(aTileEntity, aSide);
+		if (tTank != null) {
+			for (Direction tDirection : Direction.values()) if (!tTank.drain(1000, IFluidHandler.FluidAction.SIMULATE).isEmpty()) { // neo IFluidHandler.drain(int,FluidAction) is side-agnostic; a non-null FluidStack means isEmpty instead.
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
-					((IFluidHandler)aTileEntity).drain(1000, IFluidHandler.FluidAction.EXECUTE);
+					tTank.drain(1000, IFluidHandler.FluidAction.EXECUTE);
 					UT.Sounds.send(SFX.IC_TRAMPOLINE, 1.0F, -1, aTileEntity);
 					return T;
 				}

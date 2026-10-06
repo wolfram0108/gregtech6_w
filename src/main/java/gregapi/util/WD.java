@@ -2560,14 +2560,14 @@ public class WD {
 			}} catch(Throwable e) {e.printStackTrace(ERR);}
 			
 			
-			try {if (aTileEntity instanceof IFluidHandler) {
+			try {IFluidHandler tFluidHandler = FL.tank(aTileEntity, aSide); if (tFluidHandler != null) {
 				rEUAmount+=V[3];
 				// F5: 1.7.10 IFluidHandler.getTankInfo(ForgeDirection) was removed from neo — the side to a GT6 TE is carried by
 				// the seam CENTER FL.getTankInfo(handler, side) (FL.java:944), the same one all other
 				// callers use (sensors, BasicMachine:705). A manual sideless walk of getTanks/getFluidInTank here
 				// was BOTH a duplicate of the center AND a loss of the side (the scan showed tanks of "any side" instead of the visible one).
 				// F15: an empty tank -> null for FL.name (1:1 with the original's fluid==null->"").
-				gregapi.fluid.FluidTankInfo[] tTanks = FL.getTankInfo((IFluidHandler)aTileEntity, aSide);
+				gregapi.fluid.FluidTankInfo[] tTanks = FL.getTankInfo(tFluidHandler, aSide);
 				if (tTanks != null) for (byte i = 0; i < tTanks.length; i++) {
 					rList.add("Tank " + i + ": " + (tTanks[i].fluid==null||tTanks[i].fluid.isEmpty()?0:tTanks[i].fluid.getAmount()) + " / " + tTanks[i].capacity + " " + FL.name(tTanks[i].fluid==null||tTanks[i].fluid.isEmpty()?null:tTanks[i].fluid, T));
 				}
