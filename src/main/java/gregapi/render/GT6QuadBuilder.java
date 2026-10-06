@@ -80,16 +80,20 @@ public final class GT6QuadBuilder {
 	}
 
 	/** GT6 side-byte to neo Direction mapping: 0=DOWN, 1=UP, 2=NORTH, 3=SOUTH, 4=WEST, 5=EAST. */
-	public void putFace(byte aSide, Identifier aIcon, short[] aRGBa) {putFace(aSide, aIcon, aRGBa, 0, true);}
+	public void putFace(byte aSide, Identifier aIcon, short[] aRGBa) {putFace(aSide, aIcon, aRGBa, false, 0, true);}
 
-	/** aEmission is the face's own block light (1.7.10 drew such faces at a fixed lightmap value), aAO=false takes
-	 *  the face out of ambient occlusion as 1.7.10's aEnableAO did. */
-	public void putFace(byte aSide, Identifier aIcon, short[] aRGBa, int aEmission, boolean aAO) {
+	/** Vertex alpha as 1.7.10 wrote it: the color's own alpha only where the texture allowed it (aAllowAlpha), opaque
+	 *  otherwise; an allowed zero still reads as opaque, since GT6 colors are often RGB-ints with an empty alpha byte. */
+	static int alpha(short[] aRGBa, boolean aAllowAlpha) {return aAllowAlpha && aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? (aRGBa[3] & 0xFF) : 255;}
+
+	/** aAllowAlpha lets the color's alpha reach the vertex as 1.7.10's flag of that name did; aEmission is the face's own
+	 *  block light (1.7.10 drew such faces at a fixed lightmap value), aAO=false takes the face out of ambient occlusion. */
+	public void putFace(byte aSide, Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, int aEmission, boolean aAO) {
 		if (aIcon == null || aSide < 0 || aSide > 5) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
 		if (tSprite == null) return;
 		Direction tDir = Direction.from3DDataValue(aSide);
-		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa, aEmission, aAO);
+		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa, aAllowAlpha, aEmission, aAO);
 		if (tQuad == null) return;
 		// A face on the cell-boundary plane is cull-aware (engine asks the neighbor); a face inside the cell
 		// (slab top, pipe side) is always visible.
@@ -184,13 +188,11 @@ public final class GT6QuadBuilder {
 	static final int[] EMIT_ORDER = {1, 0, 3, 2};
 
 	/** Face from the current bounds with UV clipped to them and tint from RGBa, following AE2's QuartzGlassModel pattern. */
-	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa, int aEmission, boolean aAO) {
+	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa, boolean aAllowAlpha, int aEmission, boolean aAO) {
 		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
 		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
 		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
-		// 1.7.10's tint had no alpha channel, but GT6 colors are often RGB-int with a zero alpha byte, which neo reads
-		// as fully transparent; zero is remapped to 255 to match the original opaque tint.
-		int a = aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? (aRGBa[3] & 0xFF) : 255;
+		int a = alpha(aRGBa, aAllowAlpha);
 		float[][] c = corners(aDir, mBounds);
 		if (mUVRotate[aDir.get3DDataValue()] == 1) rotateUV1(aDir, c, mBounds);
 		net.minecraft.world.phys.Vec3 n = aDir.getUnitVec3();
@@ -300,7 +302,7 @@ public final class GT6QuadBuilder {
 		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
 		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
 		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
-		int a = aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? (aRGBa[3] & 0xFF) : 255;
+		int a = alpha(aRGBa, false); // RendererBlockFluid drew with setColorOpaque_F
 		net.minecraft.world.phys.Vec3 n = aDir.getUnitVec3();
 		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
 		tBuilder.setSprite(new Material.Baked(aSprite, false));
@@ -339,9 +341,7 @@ public final class GT6QuadBuilder {
 		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
 		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
 		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
-		// 1.7.10's tint had no alpha channel, but GT6 colors are often RGB-int with a zero alpha byte, which neo reads
-		// as fully transparent; zero is remapped to 255 to match the original opaque tint.
-		int a = aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? (aRGBa[3] & 0xFF) : 255;
+		int a = alpha(aRGBa, false); // vanilla crossed squares drew with setColorOpaque_F
 		float[][] tUV = {{0,16},{16,16},{16,0},{0,0}}; // bottom-left, bottom-right, top-right, top-left
 		float nx = aCorners[1][2]-aCorners[0][2], nz = -(aCorners[1][0]-aCorners[0][0]); // plane normal in XZ (for lighting; cull is disabled)
 		float nlen = (float)Math.sqrt(nx*nx+nz*nz); if (nlen > 0) {nx/=nlen; nz/=nlen;}
