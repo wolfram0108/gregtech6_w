@@ -273,7 +273,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 				} else if (tTileEntity.mTileEntity instanceof IFluidHandler) {
 					tAdjacentTanks[tSide] = new DelegatorTileEntity<>((IFluidHandler)tTileEntity.mTileEntity, tTileEntity);
 				} else {
-					IFluidHandler tTank = tTileEntity.mTileEntity == null ? null : tank(tSide, tTileEntity);
+					IFluidHandler tTank = tTileEntity.mTileEntity == null ? null : FL.tank(tTileEntity);
 					if (tTank != null) tAdjacentTanks[tSide] = new DelegatorTileEntity<>(tTank, tTileEntity); else tAdjacentOther[tSide] = tTileEntity;
 				}
 			}
@@ -504,7 +504,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 	
 	@Override
 	public boolean canConnect(byte aSide, DelegatorTileEntity<BlockEntity> aDelegator) {
-		IFluidHandler tTank = tank(aSide, aDelegator);
+		IFluidHandler tTank = FL.tank(aDelegator);
 		if (tTank != null) {
 			// Extenders should always be connectable.
 			if (aDelegator.mTileEntity instanceof ITileEntityCanDelegate) return T;
