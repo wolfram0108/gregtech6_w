@@ -163,10 +163,8 @@ public final class GT6FluidCapability {
 	// The other way round: another mod's fluid storage as GT6 code meets it next to a GT6 block.
 	// ==============================================================================================
 
-	/** Another mod's fluid storage on a block entity's side, through Forge's capability. 1.7.10's foreign tanks were IFluidHandler
-	 *  block entities too, so a block without a block entity stays out, at no cost. Not cached: Forge answers from the block
-	 *  entity's own provider about as cheaply (gt6fluidperf), and a kept answer could outlive its block, since a mod need not
-	 *  invalidate its own LazyOptional (BuildCraft 7.99 makes a fresh one per call and never does). */
+	/** Not cached: Forge answers about as cheaply (gt6fluidperf), and a kept answer could outlive its block, since a mod need not
+	 *  invalidate its own LazyOptional (BuildCraft 7.99 never does). */
 	public static IFluidHandler foreign(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
 		if (aTileEntity.isRemoved()) return null;
 		IFluidHandler tTank;
@@ -174,8 +172,7 @@ public final class GT6FluidCapability {
 		return tTank == null ? null : new ForeignTank(tTank);
 	}
 
-	/** Another mod's fluid storage as GT6 code calls it, under the rule EnergyCompat keeps for a foreign energy storage: one that
-	 *  fails reads as moving nothing, instead of throwing into a GT6 tick or a player's click. */
+	/** EnergyCompat's rule for a foreign storage: one that fails moves nothing instead of erroring a GT6 tick. */
 	private static final class ForeignTank implements IFluidHandler {
 		private final IFluidHandler mTank;
 		private ForeignTank(IFluidHandler aTank) {mTank = aTank;}
