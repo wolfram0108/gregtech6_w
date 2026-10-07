@@ -29,6 +29,21 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+## [6.0.0-1.20.1-alpha.9] — BuildCraft, other mods' fluid tanks and world generation
+
+### Added
+
+- **GregTech 6 works with BuildCraft: Community Edition** ([#14](https://github.com/wolfram0108/gregtech6_w/issues/14)): GT6 machines take the BuildCraft wrench, gates and triggers, connect to its pipes, engines and lasers.
+- **BuildCraft oil is processed by GT6, and GT6 Fuel burns in BuildCraft engines**; the BuildCraft refinery recipe is off by default, as in 1.7.10.
+
+### Fixed
+
+- **GregTech 6 and BuildCraft: Community Edition load together** ([#14](https://github.com/wolfram0108/gregtech6_w/issues/14)).
+- **World generation no longer stalls or floods the log with "setBlock in a far chunk"** ([#15](https://github.com/wolfram0108/gregtech6_w/issues/15)).
+- **GT6 pipes, machines and sensors fill, drain and read other mods' fluid tanks again**, and a faulty foreign tank no longer breaks them.
+
+Thanks to [@mixiaobaozi](https://github.com/mixiaobaozi) for the reports.
+
 ## [6.0.0-1.20.1-alpha.8] — vanilla recipes, buckets and JEI behave as in 1.7.10
 
 ### Fixed
