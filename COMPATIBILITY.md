@@ -17,6 +17,7 @@ This document says plainly what works, what could work, and what will not.
 | **JourneyMap** (and the vanilla map) | `6.0.3+neoforge` | GT6 blocks and fluids resolve to the correct map colour, checked by asking the real mod the same question it asks itself |
 | **Applied Energistics 2** | `26.1.10-beta` | GT6 stays the industrial layer and AE2 keeps the network, storage, autocrafting and spatial storage; AE2 machines that merely repeat a GregTech one lose their own recipes, energy crosses the border both ways, and the GregTech wrench turns and dismantles AE2 blocks |
 | **BuildCraft** | `2026.2.0-br2` | GT6 machines take BuildCraft's wrench, gates and triggers and connect to its pipes, engines and lasers; BuildCraft oil goes through GT6's processing and GT6 Fuel burns in BuildCraft engines |
+| **More Red** | `26.1.2.3` | Its redstone logic joins GT6's progression: the parts it keeps are built from GT6 components, its red alloy is GT6's Red Alloy, its signal networks see the redstone GT6 blocks emit, and its windcatchers drive GT6 axles; its machines, pipes and tools give way to GT6's own |
 
 ## What the original integrated with
 

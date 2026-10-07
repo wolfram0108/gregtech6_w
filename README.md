@@ -290,7 +290,7 @@ redistributed — so you assemble your own from files you have downloaded once:
 
 Client and server deliberately use separate game directories, so both can run at once.
 
-To run with JEI, Jade, Applied Energistics 2, JourneyMap or More Red, place their jars in
+To run with JEI, Jade, Applied Energistics 2, JourneyMap, More Red or BuildCraft, place their jars in
 `../stands/_mods` under the file names that `build.gradle` lists; the runs pick up whichever are present.
 
 There is one opt-in build flag, `-Pgt6probes`, which attaches the in-engine verification stands.
@@ -305,7 +305,10 @@ the flag, `runClient`/`runServer` can run automated in-game checks.
 | **JEI** | supported — GT6's recipe categories and item variants are browsable |
 | **Jade** | supported — GT6 registers its own tools (wrench, crowbar, cutters…), which vanilla tags cannot express, so harvest tooltips are correct |
 | **Applied Energistics 2** | supported — GT6 stays the industrial layer while AE2 keeps the network, storage, autocrafting and spatial storage; AE2 machines that merely repeat a GregTech one lose their own recipes, energy crosses the border both ways, and the GregTech wrench turns and dismantles AE2 blocks |
+| **BuildCraft** | supported — GT6 machines take BuildCraft's wrench, gates and triggers and connect to its pipes, engines and lasers; BuildCraft oil goes through GT6's processing and GT6 Fuel burns in BuildCraft engines |
+| **More Red** | supported — its redstone logic joins GT6's progression: the parts it keeps are built from GT6 components, its red alloy is GT6's Red Alloy, its signal networks see the redstone GT6 blocks emit, and its windcatchers drive GT6 axles; its machines, pipes and tools give way to GT6's own |
 | **JourneyMap** and the vanilla map | supported — GT6 blocks and fluids render correctly on both |
+| Other mods' fluid tanks | supported — GT6 pipes, machines and sensors fill, drain and read the fluid storage of any mod that offers the standard fluid capability, and a faulty one cannot break them |
 | 1.7.10-era industrial mods | the original integrated with 211 of them; what survives and what does not is listed in [COMPATIBILITY.md](COMPATIBILITY.md) |
 
 ## Reporting problems
@@ -341,8 +344,8 @@ CC BY-NC 4.0 (`LICENSE.logos`). **No GregTech logo file is part of this distribu
 licence text ships only so the terms travel with the work if one is ever added.
 
 [NOTICE](NOTICE) states the provenance of every component that ships: which assets came from
-upstream unchanged, which were made here, and why the jar contains classes in package names owned by
-other mods (they are stand-ins written from scratch, not those projects' code).
+upstream unchanged, which were made here, and why the jar carries other mods' interfaces under
+`gt6mirror` (they are stand-ins written from scratch, not those projects' code).
 
 * **Gregorius Techneticies** — author of GregTech 6. This project moves his work to a new engine;
   the design, the balance and the ideas are his.

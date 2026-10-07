@@ -60,22 +60,24 @@ a logo ever be added.
 4. Compile-time stand-ins for third-party mod APIs
 --------------------------------------------------
 
-The jar contains 239 classes in 27 top-level package names owned by other projects: ic2,
-thaumcraft, forestry, codechicken, buildcraft, cofh, micdoodle8 and others.
+The jar contains 225 classes under the package gt6mirror that mirror 26 top-level package names
+owned by other projects: ic2, thaumcraft, forestry, codechicken, cofh, micdoodle8 and others
+(gt6mirror/ic2/api/... stands for ic2.api...).
 
 These are NOT those projects' code. Every one of them was written from scratch for this port
 and declares only what GregTech 6 itself implements or calls — typically an empty interface.
 Nothing was copied or decompiled from the projects in question. Each such file carries a
 notice saying exactly this; the design is documented in src/compat-mirror/README.md.
 
-They keep the original package names because GregTech 6 implements those interfaces verbatim,
-and this port does not rewrite the code Gregorius Techneticies wrote. They cannot simply be
-dropped from the build: 66 classes of the mod extend or implement them, and the JVM needs the
-type present to load the implementing class. They disappear one by one as real integration
-with each mod becomes possible.
+They keep the original names, under the gt6mirror prefix, because GregTech 6 implements those
+interfaces verbatim, and this port does not rewrite the code Gregorius Techneticies wrote; the
+prefix keeps them out of the packages the real mods own, so GregTech 6 loads beside those mods.
+They cannot simply be dropped from the build: 38 classes of the mod name one of them as their
+superclass or an interface, and the JVM needs the type present to load the implementing class.
+They disappear one by one as real integration with each mod becomes possible.
 
 The source tree also holds stand-ins under src/compat-mirror/provided, for mods that exist as real
-jars at runtime (JEI, Jade, Applied Energistics 2 and Ex Machina, the library inside More Red). Each one
+jars at runtime (JEI, Jade, Applied Energistics 2, BuildCraft and Ex Machina, the library inside More Red). Each one
 declares only the public signatures GregTech 6 calls or implements, as those mods publish them,
 and contains no implementation code. They only let the port compile without downloading those
 mods; they are not in this jar, because at runtime the real mod owns those packages.
