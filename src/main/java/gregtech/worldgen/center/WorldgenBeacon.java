@@ -63,7 +63,8 @@ public class WorldgenBeacon extends WorldgenObject {
 	
 	@Override
 	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
-		if ((aMinX != -16 && aMinX != 0) || (aMinZ == -16 && aMinZ == 0)) return F;
+		// the original's (aMinZ == -16 && aMinZ == 0) never held, so every chunk of both columns rebuilt it from afar, which a generation region refuses
+		if ((aMinX != -16 && aMinX != 0) || (aMinZ != -16 && aMinZ != 0)) return F;
 		if (!GENERATE_STREETS) {
 			for (int i = -5; i < 5; i++) for (int j = -5; j < 5; j++) WD.set(aWorld, i, mHeight+1, j, Blocks.IRON_BLOCK, 0, 0);
 			for (int i = -4; i < 4; i++) for (int j = -4; j < 4; j++) WD.set(aWorld, i, mHeight+2, j, Blocks.IRON_BLOCK, 0, 0);

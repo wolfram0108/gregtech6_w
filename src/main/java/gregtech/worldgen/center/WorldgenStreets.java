@@ -380,7 +380,7 @@ public class WorldgenStreets extends WorldgenObject {
 				}
 				aBiomeNames = new HashSetNoNulls<>(aBiomeNames);
 				for (int i = aMinZ; i <= aMaxZ; i++) for (int j = (aMinZ < 0 ? 0 : -16), k = (aMinZ < 0 ? 16 : 0); j < k; j++) {
-					net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> tBiome = aWorld.getBiome(new net.minecraft.core.BlockPos(j, aWorld.getSeaLevel(), i));
+					net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> tBiome = gregapi.util.WD.biomeHolder(aWorld, j, aWorld.getSeaLevel(), i);
 					if (tBiome != null) aBiomeNames.add(gregapi.code.BiomeNameSet.biomeKeyName(tBiome));
 				}
 				for (String tName : aBiomeNames) if (BIOMES_INFINITE_WATER.contains(tName)) {
@@ -407,7 +407,7 @@ public class WorldgenStreets extends WorldgenObject {
 				}
 				aBiomeNames = new HashSetNoNulls<>(aBiomeNames);
 				for (int i = aMinX; i <= aMaxX; i++) for (int j = (aMinZ < 0 ? 0 : -16), k = (aMinZ < 0 ? 16 : 0); j < k; j++) {
-					net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> tBiome = aWorld.getBiome(new net.minecraft.core.BlockPos(i, aWorld.getSeaLevel(), j));
+					net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> tBiome = gregapi.util.WD.biomeHolder(aWorld, i, aWorld.getSeaLevel(), j);
 					if (tBiome != null) aBiomeNames.add(gregapi.code.BiomeNameSet.biomeKeyName(tBiome));
 				}
 				for (String tName : aBiomeNames) if (BIOMES_INFINITE_WATER.contains(tName)) {
