@@ -476,14 +476,14 @@ public class WD {
 		}
 		return reachable(aView, aPos.getX(), aPos.getZ()) ? aView.getBlockState(aPos) : NB.defaultBlockState();
 	}
-	/** A world generation region holds only its own window of chunks and throws for any other (in 26.1 building a crash report,
-	 *  hardware queries included, every time), so GT6 reads a chunk outside it as unloaded, as it reads one of a live Level. */
+	/** A world generation region holds only its own window of chunks and throws for a block or block entity of any other (in 26.1
+	 *  building a crash report, hardware queries included, every time), so GT6 reads such a chunk as unloaded, as state() a live Level's. */
 	public static boolean reachable(BlockGetter aWorld, int aX, int aZ) {
 		return !(aWorld instanceof net.minecraft.server.level.WorldGenRegion tRegion) || tRegion.hasChunk(aX >> 4, aZ >> 4);
 	}
 	/** F-world: 1.7.10 World sky-visibility(x,y,z) -> neo canSeeSky(BlockPos) (BlockAndLightGetter.java:17). */
 	public static boolean canSeeSky(LevelAccessor aWorld, int aX, int aY, int aZ) {
-		return aWorld != null && reachable(aWorld, aX, aZ) && aWorld.canSeeSky(new BlockPos(aX, aY, aZ));
+		return aWorld != null && aWorld.canSeeSky(new BlockPos(aX, aY, aZ));
 	}
 	/** F-world/F-hardness: 1.7.10 WD.hardness(Block, world,x,y,z) = Block.getBlockHardness (a Forge per-position hook).
 	 *  GT6 hierarchies (IBlock contract: BlockBase per-meta / PrefixBlock per-material / MTE per-TE mHardness) — dispatch
@@ -1241,13 +1241,24 @@ public class WD {
 	/** used to be World.getBiomeGenForCoords(x,z) (2D, BiomeGenBase) -> Level.getBiome(BlockPos).value() (LevelReader:42, Holder.value()); the 2D form takes Y=getSeaLevel() (LevelReader:66) as the surface column. */
 	public static Biome biome(LevelAccessor aWorld, int aX, int aZ) {return aWorld == null ? null : biomeHolder(aWorld, aX, aWorld.getSeaLevel(), aZ).value();}
 	public static Biome biome(LevelAccessor aWorld, int aX, int aY, int aZ) {return aWorld == null ? null : biomeHolder(aWorld, aX, aY, aZ).value();}
-	/** The biome at a position: a generation region answers only its window, and beyond it the generator's biome source does,
-	 *  from noise and with no chunk, as 1.7.10's WorldChunkManager answered any coordinates. */
+	/** The biome at a position: the region's own zoomed answer, each cell from a chunk that has its biomes, else from the generator's
+	 *  biome source by noise, which is what that chunk's biomes will be (the region refuses biomes past the chunks next to its own). */
 	public static net.minecraft.core.Holder<Biome> biomeHolder(LevelAccessor aWorld, int aX, int aY, int aZ) {
-		if (reachable(aWorld, aX, aZ)) return aWorld.getBiome(new BlockPos(aX, aY, aZ));
-		net.minecraft.server.level.ServerChunkCache tSource = ((net.minecraft.server.level.WorldGenRegion)aWorld).getLevel().getChunkSource();
-		return tSource.getGenerator().getBiomeSource().getNoiseBiome(net.minecraft.core.QuartPos.fromBlock(aX), net.minecraft.core.QuartPos.fromBlock(aY), net.minecraft.core.QuartPos.fromBlock(aZ), tSource.randomState().sampler());
+		if (!(aWorld instanceof net.minecraft.server.level.WorldGenRegion tRegion)) return aWorld.getBiome(new BlockPos(aX, aY, aZ));
+		return tRegion.getBiomeManager().withDifferentSource((aQX, aQY, aQZ) -> {
+			ChunkAccess tChunk = tRegion.hasChunk(aQX >> 2, aQZ >> 2) ? tRegion.getChunk(aQX >> 2, aQZ >> 2) : null;
+			return tChunk != null && tChunk.getPersistedStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.BIOMES) ? tChunk.getNoiseBiome(aQX, aQY, aQZ) : tRegion.getUncachedNoiseBiome(aQX, aQY, aQZ);
+		}).getBiome(new BlockPos(aX, aY, aZ));
 	}
+	/** A world generation region takes writes only within its step's radius of the chunk it generates and refuses (logging) any
+	 *  other; GT6's 1.7.10 generators wrote anywhere, several chunks the same blocks, so the chunks in reach write their share. */
+	public static boolean writable(LevelAccessor aWorld, BlockPos aPos) {
+		if (!(aWorld instanceof net.minecraft.server.level.WorldGenRegion tRegion)) return true;
+		int tRadius = net.minecraft.world.level.chunk.status.ChunkPyramid.GENERATION_PYRAMID.getStepTo(net.minecraft.world.level.chunk.status.ChunkStatus.FEATURES).blockStateWriteRadius();
+		net.minecraft.world.level.ChunkPos tCenter = tRegion.getCenter();
+		return Math.abs(tCenter.x() - (aPos.getX() >> 4)) <= tRadius && Math.abs(tCenter.z() - (aPos.getZ() >> 4)) <= tRadius;
+	}
+
 	/** used to be Biome.rainfall (a field, removed) -> Biome.getModifiedClimateSettings().downfall() (Biome.java:367 record ClimateSettings.downfall, :458 getModifiedClimateSettings). */
 	public static float rainfall(Biome aBiome) {return aBiome == null ? 0 : aBiome.getModifiedClimateSettings().downfall();}
 	/** used to be World.getLightBrightness(x,y,z) (float 0..1) -> LevelLightEngine.getRawBrightness(pos,0)/15 (LevelLightEngine.java:146, Level.getLightEngine() :375). */
@@ -1634,6 +1645,7 @@ public class WD {
 	 *  ({@code StructurePiece.placeBlock:192-195}). Redstone is not healed by this (a wire won't recompute power without a neighbor
 	 *  update) — it is finished off by the first-chunk-load dispatcher ({@code GT_API_Proxy.RECHUNK_REDSTONE}). */
 	private static boolean setWG(LevelAccessor aWorld, BlockPos aPos, BlockState aState, int aFlags) {
+		if (!writable(aWorld, aPos)) return false;
 		boolean rSet = aWorld.setBlock(aPos, aState, aFlags);
 		if (rSet && !(aWorld instanceof Level)) {
 			net.minecraft.world.level.material.FluidState tFluid = aWorld.getFluidState(aPos);
@@ -2106,8 +2118,8 @@ public class WD {
 	// used to be aWorld.getBiomeGenForCoords(x,z) — LevelReader.getBiome(BlockPos) (LevelReader.java:42); the F6 center
 	// BiomeNameSet.contains(Holder<Biome>) resolves identity itself (unwrapKey().identifier()), the raw
 	// .value().biomeName (a dead 1.7.10 field) is no longer needed — gregapi/code/BiomeNameSet.java.
-	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ              ) {int tLevel = waterLevel(aWorld); return                                                                                       UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));}
-	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {int tLevel = waterLevel(aWorld); return waterstream(aBlock) || ((aBlock == Blocks.WATER || aBlock == Blocks.WATER) && UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ))));}
+	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ              ) {int tLevel = waterLevel(aWorld); return                                                                                       UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(biomeHolder(aWorld, aX, aY, aZ));}
+	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {int tLevel = waterLevel(aWorld); return waterstream(aBlock) || ((aBlock == Blocks.WATER || aBlock == Blocks.WATER) && UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(biomeHolder(aWorld, aX, aY, aZ)));}
 	
 	public static boolean hasCollide(LevelAccessor aWorld, int aX, int aY, int aZ) {return hasCollide(aWorld, aX, aY, aZ, state(aWorld, new BlockPos(aX, aY, aZ)).getBlock());} // used to be aWorld.getBlock(x,y,z)
 	// used to be aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null — BlockState.getCollisionShape(level,pos).isEmpty()
