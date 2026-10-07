@@ -283,7 +283,7 @@ def devRunMods = [
     "journeymap-${journeymap_version}.jar",
     "ae2-${ae2_version}.jar",
     "guideme-${guideme_version}.jar",
-    // Built from reference/mods/MoreRed-src (no 26.1.2 release exists); it carries Ex Machina inside.
+    // Built from reference/mods/MoreRed-src, the source of the 26.1.2.3 release; it carries Ex Machina inside.
     "morered-${morered_version}.jar",
     // BuildCraft (Unofficial) owns the buildcraft.api packages GT6 integrates with.
     "BCunofficial-${buildcraft_version}.jar",
