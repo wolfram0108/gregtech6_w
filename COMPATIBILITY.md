@@ -17,6 +17,7 @@ This document says plainly what works, what could work, and what will not.
 | **Applied Energistics 2** | `15.4.10` | GT6 stays the industrial layer and AE2 keeps the network, storage, autocrafting and spatial storage; AE2 machines that merely repeat a GregTech one lose their own recipes, energy crosses the border both ways, and the GregTech wrench turns and dismantles AE2 blocks |
 | **JourneyMap** (and the vanilla map) | `1.20.1-6.0.2+forge` | GT6 blocks, ores, machines and fluids resolve to the correct map colour, checked by asking the real mod the same question it asks itself; oil and gas declare no engine fluid on this branch, so the vanilla map reads their block colour directly — both paths verified |
 | **BuildCraft: Community Edition** | `7.99.25` | GT6 machines take BuildCraft's wrench, gates and triggers and connect to its pipes, engines and lasers; BuildCraft oil goes through GT6's processing and GT6 Fuel burns in BuildCraft engines |
+| **More Red** | `4.0.0.4` | Its redstone logic joins GT6's progression: the parts it keeps are built from GT6 components, its red alloy is GT6's Red Alloy, and its wires bond to GT6 wires and machines; its soldering recipes give way to GT6's crafting |
 
 
 ## Lighting of GregTech blocks on this version
