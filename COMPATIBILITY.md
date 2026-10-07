@@ -16,6 +16,7 @@ This document says plainly what works, what could work, and what will not.
 | **Jade** | `26.1.8+neoforge` | GT6 registers its own harvest tools — wrench, crowbar, cutters and the rest — which vanilla tags cannot express, so the "can I mine this" tooltip is correct |
 | **JourneyMap** (and the vanilla map) | `6.0.3+neoforge` | GT6 blocks and fluids resolve to the correct map colour, checked by asking the real mod the same question it asks itself |
 | **Applied Energistics 2** | `26.1.10-beta` | GT6 stays the industrial layer and AE2 keeps the network, storage, autocrafting and spatial storage; AE2 machines that merely repeat a GregTech one lose their own recipes, energy crosses the border both ways, and the GregTech wrench turns and dismantles AE2 blocks |
+| **BuildCraft** | `2026.2.0-br2` | GT6 machines take BuildCraft's wrench, gates and triggers and connect to its pipes, engines and lasers; BuildCraft oil goes through GT6's processing and GT6 Fuel burns in BuildCraft engines |
 
 ## What the original integrated with
 
@@ -99,7 +100,7 @@ was GregTech 6 itself, and cross-mod work is a separate undertaking that has not
 | Flaxbeard's Steam Power | 51 | ◻ not assessed |  |
 | Mekanism | 49 | ⏳ modern version exists | not wired up |
 | Magic Bees | 44 | ◻ not assessed |  |
-| BuildCraft Silicon | 41 | ◻ not assessed |  |
+| BuildCraft Silicon | 41 | ✅ integrated | see **Working today** |
 | ElectriCraft | 40 | ◻ not assessed |  |
 | Exotic Birbs | 40 | ◻ not assessed |  |
 | Ganys Surface | 39 | ◻ not assessed |  |
@@ -116,8 +117,8 @@ was GregTech 6 itself, and cross-mod work is a separate undertaking that has not
 | Tinkers Construct | 29 | ◻ not assessed |  |
 | Mystcraft | 28 | ◻ not assessed |  |
 | Salty Mod | 28 | ◻ not assessed |  |
-| BuildCraft | 25 | ◻ not assessed |  |
-| BuildCraft Transport | 25 | ◻ not assessed |  |
+| BuildCraft | 25 | ✅ integrated | see **Working today** |
+| BuildCraft Transport | 25 | ✅ integrated | see **Working today** |
 | Big Reactors | 23 | ◻ not assessed |  |
 | Hardcore Ender Expansion | 23 | ◻ not assessed |  |
 | Project Red | 23 | ◻ not assessed |  |
@@ -194,7 +195,7 @@ was GregTech 6 itself, and cross-mod work is a separate undertaking that has not
 | Technomancy | 3 | ◻ not assessed |  |
 | Ztones | 3 | ◻ not assessed |  |
 | Binnie Patcher | 2 | ◻ not assessed |  |
-| BuildCraft Factory | 2 | ◻ not assessed |  |
+| BuildCraft Factory | 2 | ✅ integrated | see **Working today** |
 | Custom Ore Generation | 2 | ◻ not assessed |  |
 | Growthcraft Apples | 2 | ◻ not assessed |  |
 | Growthcraft Rice | 2 | ◻ not assessed |  |
@@ -220,7 +221,7 @@ was GregTech 6 itself, and cross-mod work is a separate undertaking that has not
 | Warp Drive | 1 | ◻ not assessed |  |
 | Alternate Terrain Generation | 0 | ◻ not assessed |  |
 | Baubles | 0 | ◻ not assessed |  |
-| BuildCraft Energy | 0 | ◻ not assessed |  |
+| BuildCraft Energy | 0 | ✅ integrated | see **Working today** |
 | CoFH-API | 0 | ◻ not assessed |  |
 | CoFH-API Energy | 0 | ◻ not assessed |  |
 | Lycanites Mobs (Forest) | 0 | ◻ not assessed |  |
