@@ -354,6 +354,7 @@ public class WD {
 	 *  read (BlockGetter doesn't load chunks — it's already a read-view, aLoadUnloadedChunks has nothing to load). */
 	public static BlockEntity te(BlockGetter aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {
 		if (aWorld instanceof Level) return te((Level)aWorld, aX, aY, aZ, aLoadUnloadedChunks);
+		if (!reachable(aWorld, aX, aZ)) return null;
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockEntity rTileEntity = aWorld.getBlockEntity(tPos);
 		if (rTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)rTileEntity).isDead()) return null;
@@ -389,7 +390,7 @@ public class WD {
 			if (tChunk instanceof net.minecraft.world.level.chunk.ImposterProtoChunk tIPC) tChunk = tIPC.getWrapped();
 			return tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC.getBlockEntities().get(new BlockPos(aX, aY, aZ)) : null;
 		}
-		return aWorld == null ? null : aWorld.getBlockEntity(new BlockPos(aX, aY, aZ));
+		return aWorld == null || !reachable(aWorld, aX, aZ) ? null : aWorld.getBlockEntity(new BlockPos(aX, aY, aZ));
 	}
 	/** F-world: 1.7.10 World.blockExists(x,y,z) = "chunk holding this block is loaded". The port centralized calls as
 	 *  WD.exists, but the method was never defined. NO-LOAD (edit #2): the previous hasChunkAt went through
@@ -473,11 +474,16 @@ public class WD {
 			net.minecraft.world.level.chunk.LevelChunk tChunk = chunkNow(tL, aPos.getX() >> 4, aPos.getZ() >> 4);
 			return tChunk == null ? NB.defaultBlockState() : tChunk.getBlockState(aPos);
 		}
-		return aView.getBlockState(aPos);
+		return reachable(aView, aPos.getX(), aPos.getZ()) ? aView.getBlockState(aPos) : NB.defaultBlockState();
+	}
+	/** A world generation region holds only its own window of chunks and throws for any other (in 26.1 building a crash report,
+	 *  hardware queries included, every time), so GT6 reads a chunk outside it as unloaded, as it reads one of a live Level. */
+	public static boolean reachable(BlockGetter aWorld, int aX, int aZ) {
+		return !(aWorld instanceof net.minecraft.server.level.WorldGenRegion tRegion) || tRegion.hasChunk(aX >> 4, aZ >> 4);
 	}
 	/** F-world: 1.7.10 World sky-visibility(x,y,z) -> neo canSeeSky(BlockPos) (BlockAndLightGetter.java:17). */
 	public static boolean canSeeSky(LevelAccessor aWorld, int aX, int aY, int aZ) {
-		return aWorld != null && aWorld.canSeeSky(new BlockPos(aX, aY, aZ));
+		return aWorld != null && reachable(aWorld, aX, aZ) && aWorld.canSeeSky(new BlockPos(aX, aY, aZ));
 	}
 	/** F-world/F-hardness: 1.7.10 WD.hardness(Block, world,x,y,z) = Block.getBlockHardness (a Forge per-position hook).
 	 *  GT6 hierarchies (IBlock contract: BlockBase per-meta / PrefixBlock per-material / MTE per-TE mHardness) — dispatch
@@ -1219,7 +1225,7 @@ public class WD {
 	public static long envTemp(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		// used to be aWorld.getBiomeGenForCoords(x,z) (2D) — neo: LevelReader.getBiome(BlockPos) (LevelReader.java:42),
 		// returns Holder<Biome>; .value() (Holder.java:17) unwraps it to Biome (the envTemp(Biome,...) signature does not change).
-		return envTemp(aWorld.getBiome(new BlockPos(aX, aY, aZ)).value(), aX, aY, aZ);
+		return envTemp(biomeHolder(aWorld, aX, aY, aZ).value(), aX, aY, aZ);
 	}
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
 	public static long envTemp(Biome aBiome, int aX, int aY, int aZ) {
@@ -1233,8 +1239,15 @@ public class WD {
 	}
 	// F6 center for biome/climate/light/precipitation (used to be World.getBiomeGenForCoords/getLightBrightness/getPrecipitationHeight + Biome.rainfall/temperature fields — removed):
 	/** used to be World.getBiomeGenForCoords(x,z) (2D, BiomeGenBase) -> Level.getBiome(BlockPos).value() (LevelReader:42, Holder.value()); the 2D form takes Y=getSeaLevel() (LevelReader:66) as the surface column. */
-	public static Biome biome(LevelAccessor aWorld, int aX, int aZ) {return aWorld == null ? null : aWorld.getBiome(new BlockPos(aX, aWorld.getSeaLevel(), aZ)).value();}
-	public static Biome biome(LevelAccessor aWorld, int aX, int aY, int aZ) {return aWorld == null ? null : aWorld.getBiome(new BlockPos(aX, aY, aZ)).value();}
+	public static Biome biome(LevelAccessor aWorld, int aX, int aZ) {return aWorld == null ? null : biomeHolder(aWorld, aX, aWorld.getSeaLevel(), aZ).value();}
+	public static Biome biome(LevelAccessor aWorld, int aX, int aY, int aZ) {return aWorld == null ? null : biomeHolder(aWorld, aX, aY, aZ).value();}
+	/** The biome at a position: a generation region answers only its window, and beyond it the generator's biome source does,
+	 *  from noise and with no chunk, as 1.7.10's WorldChunkManager answered any coordinates. */
+	public static net.minecraft.core.Holder<Biome> biomeHolder(LevelAccessor aWorld, int aX, int aY, int aZ) {
+		if (reachable(aWorld, aX, aZ)) return aWorld.getBiome(new BlockPos(aX, aY, aZ));
+		net.minecraft.server.level.ServerChunkCache tSource = ((net.minecraft.server.level.WorldGenRegion)aWorld).getLevel().getChunkSource();
+		return tSource.getGenerator().getBiomeSource().getNoiseBiome(net.minecraft.core.QuartPos.fromBlock(aX), net.minecraft.core.QuartPos.fromBlock(aY), net.minecraft.core.QuartPos.fromBlock(aZ), tSource.randomState().sampler());
+	}
 	/** used to be Biome.rainfall (a field, removed) -> Biome.getModifiedClimateSettings().downfall() (Biome.java:367 record ClimateSettings.downfall, :458 getModifiedClimateSettings). */
 	public static float rainfall(Biome aBiome) {return aBiome == null ? 0 : aBiome.getModifiedClimateSettings().downfall();}
 	/** used to be World.getLightBrightness(x,y,z) (float 0..1) -> LevelLightEngine.getRawBrightness(pos,0)/15 (LevelLightEngine.java:146, Level.getLightEngine() :375). */
