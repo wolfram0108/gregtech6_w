@@ -1251,7 +1251,8 @@ public class WD {
 		}).getBiome(new BlockPos(aX, aY, aZ));
 	}
 	/** A world generation region takes writes only within its step's radius of the chunk it generates and refuses (logging) any
-	 *  other; GT6's 1.7.10 generators wrote anywhere, several chunks the same blocks, so the chunks in reach write their share. */
+	 *  other; GT6 generates only in the FEATURES step (GT6WorldgenFeature), whose radius the engine's pyramid gives, and its 1.7.10
+	 *  generators wrote anywhere, several chunks the same blocks, so the chunks in reach write their share. */
 	public static boolean writable(LevelAccessor aWorld, BlockPos aPos) {
 		if (!(aWorld instanceof net.minecraft.server.level.WorldGenRegion tRegion)) return true;
 		int tRadius = net.minecraft.world.level.chunk.status.ChunkPyramid.GENERATION_PYRAMID.getStepTo(net.minecraft.world.level.chunk.status.ChunkStatus.FEATURES).blockStateWriteRadius();
@@ -1487,7 +1488,7 @@ public class WD {
 		// A BuildCraft block rotates itself the way its 1.7.10 rotateBlock did (an engine turns to its next receiver).
 		if (COMPAT_BC != null && aWorld instanceof Level && COMPAT_BC.rotateBlock((Level)aWorld, tPos, tState, aAxis)) return T;
 		BlockState tRotated = tState.rotate(net.minecraft.world.level.block.Rotation.CLOCKWISE_90);
-		return tRotated != tState && aWorld.setBlock(tPos, tRotated, 3);
+		return tRotated != tState && writable(aWorld, tPos) && aWorld.setBlock(tPos, tRotated, 3);
 	}
 
 	// F-hook-removed → CENTER (principle 4: the capability exists under another name). 1.7.10 Forge World.canPlaceEntityOnSide
@@ -1551,7 +1552,7 @@ public class WD {
 	public static boolean waterlog(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockState tState = state(aWorld, tPos);
-		if (!waterloggable(tState)) return F;
+		if (!waterloggable(tState) || !writable(aWorld, tPos)) return F;
 		return aWorld.setBlock(tPos, tState.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.TRUE), 3);
 	}
 
@@ -2138,6 +2139,7 @@ public class WD {
 	public static boolean fire(LevelAccessor aWorld, BlockPos aCoords, boolean aCheckFlammability) {return fire(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aCheckFlammability);}
 	public static boolean fire(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aCheckFlammability) {
 		BlockPos tFirePos = new BlockPos(aX, aY, aZ);
+		if (!writable(aWorld, tFirePos)) return F;
 		Block tBlock = state(aWorld, tFirePos).getBlock(); // used to be aWorld.getBlock(x,y,z)
 		if (WD.getMaterial(tBlock) == Material.lava || WD.getMaterial(tBlock) == Material.fire) return F;
 		// used to be tBlock.getCollisionBoundingBoxFromPool(world,x,y,z)==null — BlockState.getCollisionShape(level,pos).isEmpty() (BlockBehaviour.java:674)
