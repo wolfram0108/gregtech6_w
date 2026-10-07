@@ -5,6 +5,8 @@
   "_comment_dist": "Реестр носителей клиентских типов (.github/ci/check_dist.py). dist_client — классы, живущие ТОЛЬКО на клиенте: клиентские типы им положены. dist_latent — общие классы, у которых клиентское имя лежит под ленивым разрешением; список обязан УБЫВАТЬ, пополнять его можно только осознанно, в том же коммите, с причиной. Снимок 2026-08-19 (BP-BUG-022).",
   "dist_client": {
     "gregapi/GT_API_Proxy_Client": "клиентское плечо центра side-разделения (приём BUG-084)",
+    "gregapi/compat/buildcraft/CompatBC$Client": "клиентская регистрация топлива BuildCraft (RecipesUpdatedEvent) — вызывается только под CODE_CLIENT",
+    "gregapi/compat/buildcraft/TriggerIconBC": "иконка триггера BuildCraft из атласа — создаётся только под CODE_CLIENT (TriggerBC)",
     "gregapi/gui/ContainerClient": "экраны контейнеров — живут только на клиенте (MenuScreens.register)",
     "gregapi/jei/GT6_JEI_RecipeCategory": "категория JEI — рисуется только на клиенте",
     "gregapi/mixin/": "миксины в клиентские классы движка",
