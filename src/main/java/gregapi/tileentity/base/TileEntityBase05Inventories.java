@@ -90,6 +90,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	@Override
 	public void onTickResetChecks(long aTimer, boolean aIsServerSide) {
 		super.onTickResetChecks(aTimer, aIsServerSide);
+		if (aIsServerSide && mInventoryChanged) setChanged();
 		mInventoryChanged = F;
 	}
 	

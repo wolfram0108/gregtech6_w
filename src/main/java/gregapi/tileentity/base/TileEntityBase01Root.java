@@ -266,8 +266,8 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 
 	/** return the internal Name of this TileEntity to be registered. DO NOT START YOUR NAME WITH "gt."!!! */
 	public abstract String getTileEntityName();
-	
-	@Override public void setChanged() {/* Oh no, I won't let this do anything anymore! It's only useful for Comparators and that didn't work properly anyways! */}
+	// F8: restores chunk unsaved marking on inventory/state change (was stubbed in 1.7.10).
+	@Override public void setChanged() {super.setChanged();}
 	@Override public Level getWorld() {return level;}
 	@Override public int getX() {return getBlockPos().getX();}
 	@Override public int getY() {return getBlockPos().getY();}
