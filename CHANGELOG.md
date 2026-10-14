@@ -29,6 +29,15 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+## [6.0.0-1.20.1-alpha.10] — crafting tables and furnace smelting parity
+
+### Fixed
+
+- **Ore blocks and raw ores can no longer be directly smelted in vanilla furnaces or blast furnaces** ([#19](https://github.com/wolfram0108/gregtech6_w/issues/19)), matching original GregTech 6 1.7.10 behaviour.
+- **The Advanced Crafting Table retains items in its 3x3 crafting grid across world reloads and player reconnects** ([#18](https://github.com/wolfram0108/gregtech6_w/issues/18)).
+
+Thanks to [@LixFen](https://github.com/LixFen) and [@TheMrColdGamer](https://github.com/TheMrColdGamer) for the reports.
+
 ## [6.0.0-1.20.1-alpha.9] — BuildCraft, other mods' fluid tanks and world generation
 
 ### Added
