@@ -86,3 +86,7 @@ scratchpad/
 /.claude/
 /.mcp.json
 /.ignore
+/AGENTS.md
+/.agents/
+/.codex/
+
