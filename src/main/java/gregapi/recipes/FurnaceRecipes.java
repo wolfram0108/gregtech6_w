@@ -154,6 +154,15 @@ public class FurnaceRecipes {
 					if (ST.valid(getSmeltingResult(tIn))) continue;
 					ItemStack tOut = tRecipe.assemble(new net.minecraft.world.SimpleContainer(tIn), aRegistries);
 					if (ST.invalid(tOut)) continue;
+					// 1:1 with Loader_Recipes_Furnace.java:103-112: never import ore block smelting into GT6 furnace.
+					gregapi.oredict.OreDictItemData tData1 = gregapi.util.OM.anydata(tIn), tData2 = gregapi.util.OM.anydata(tOut);
+					if (tData1 != null && tData1.nonemptyData() && tData2 != null && tData2.nonemptyData()) {
+						if (tData1.mPrefix == gregapi.data.OP.ore || tData1.mPrefix == gregapi.data.OP.oreDeepslate
+							|| tData1.mPrefix == gregapi.data.OP.oreNetherrack || tData1.mPrefix == gregapi.data.OP.oreEndstone
+							|| tData1.mPrefix == gregapi.data.OP.oreBlackgranite || tData1.mPrefix == gregapi.data.OP.oreRedgranite
+							|| tData1.mPrefix == gregapi.data.OP.oreMarble || tData1.mPrefix == gregapi.data.OP.oreBasalt) continue;
+						if (tData1.mPrefix == gregapi.data.OP.oreRaw && (tData1.mMaterial == null || !tData1.mMaterial.mMaterial.contains(gregapi.data.TD.Processing.FURNACE))) continue;
+					}
 					func_151394_a(tIn, ST.copy(tOut), tRecipe.getExperience());
 					rAdded++;
 				}
