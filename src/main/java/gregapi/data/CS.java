@@ -934,6 +934,20 @@ public class CS {
 	/** Light level for burning machines: the 1.7.10 original gave off none, so 0 reproduces that exactly, while
 	 *  13 defaults to a vanilla furnace's glow; new burning machines should hook into this same field. */
 	public static int BURNING_BOX_LIGHT_VALUE = 13;
+	/** Configurable energy converter efficiencies (1.0 = 100% 1:1 original GT6 parity). */
+	public static double EFFICIENCY_ELECTRIC_MOTORS = 1.0, EFFICIENCY_ELECTRIC_HEATERS = 1.0, EFFICIENCY_ELECTRIC_ENGINES = 1.0, EFFICIENCY_ELECTRIC_MAGNETS = 1.0, EFFICIENCY_ELECTRIC_DYNAMOS = 1.0, EFFICIENCY_LARGE_DYNAMOS = 1.0, EFFICIENCY_FLUX_CONVERTERS = 1.0, EFFICIENCY_STEAM_TURBINES = 1.0;
+	public static boolean CAP_CONVERTER_EFFICIENCY_AT_100_PERCENT = true;
+	/** Configurable machine recipe duration and energy consumption multipliers. */
+	public static double RECIPE_DURATION_MULTIPLIER = 1.0, RECIPE_ENERGY_MULTIPLIER = 1.0;
+	/** Calculates the output of an energy converter with configurable efficiency multiplier and optional 100% cap. */
+	public static long calcConverterOutput(long aBaseInput, long aBaseOutput, double aMultiplier, long aMaxOutput100Percent) {
+		if (aMultiplier <= 0) return aBaseOutput;
+		long rOutput = Math.round(aBaseOutput * aMultiplier);
+		if (CAP_CONVERTER_EFFICIENCY_AT_100_PERCENT && aMaxOutput100Percent > 0 && rOutput > aMaxOutput100Percent) {
+			rOutput = aMaxOutput100Percent;
+		}
+		return Math.max(1, rOutput);
+	}
 	/** Those are the values derived directly by the Configuration File. DO NOT USE THEM, USE THE VALUES ABOVE INSTEAD!!! */
 	public static double CONFIG_HARDNESS_MULTIPLIER_SAND = 1.0, CONFIG_HARDNESS_MULTIPLIER_ROCK = 1.0, CONFIG_HARDNESS_MULTIPLIER_ORES = 1.0;
 	/** Tree Growth Time Multiplier. */

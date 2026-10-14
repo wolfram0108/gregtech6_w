@@ -1234,6 +1234,19 @@ public class GT_API extends Abstract_Mod {
 		WATER_BREAKING                      = ConfigsGT.GREGTECH.get("machines", "break_by_water"     , T);
 		THUNDER_BREAKING                    = ConfigsGT.GREGTECH.get("machines", "break_by_thunder"   , T);
 		OVERCHARGE_BREAKING                 = ConfigsGT.GREGTECH.get("machines", "break_by_overload"  , F);
+
+		EFFICIENCY_ELECTRIC_MOTORS          = ConfigsGT.GREGTECH.get("machines", "efficiency_electric_motors"  , 1.0);
+		EFFICIENCY_ELECTRIC_HEATERS         = ConfigsGT.GREGTECH.get("machines", "efficiency_electric_heaters" , 1.0);
+		EFFICIENCY_ELECTRIC_ENGINES         = ConfigsGT.GREGTECH.get("machines", "efficiency_electric_engines" , 1.0);
+		EFFICIENCY_ELECTRIC_MAGNETS         = ConfigsGT.GREGTECH.get("machines", "efficiency_electric_magnets" , 1.0);
+		EFFICIENCY_ELECTRIC_DYNAMOS         = ConfigsGT.GREGTECH.get("machines", "efficiency_electric_dynamos" , 1.0);
+		EFFICIENCY_LARGE_DYNAMOS            = ConfigsGT.GREGTECH.get("machines", "efficiency_large_dynamos"    , 1.0);
+		EFFICIENCY_FLUX_CONVERTERS          = ConfigsGT.GREGTECH.get("machines", "efficiency_flux_converters"  , 1.0);
+		EFFICIENCY_STEAM_TURBINES           = ConfigsGT.GREGTECH.get("machines", "efficiency_steam_turbines"   , 1.0);
+		CAP_CONVERTER_EFFICIENCY_AT_100_PERCENT = ConfigsGT.GREGTECH.get("machines", "cap_converter_efficiency_at_100_percent", T);
+
+		RECIPE_DURATION_MULTIPLIER          = ConfigsGT.GREGTECH.get("recipes", "recipe_duration_multiplier"   , 1.0);
+		RECIPE_ENERGY_MULTIPLIER            = ConfigsGT.GREGTECH.get("recipes", "recipe_energy_multiplier"     , 1.0);
 		
 		if (FIRE_EXPLOSIONS      ) FIRE_BREAKING       = T;
 		if (RAIN_EXPLOSIONS      ) RAIN_BREAKING       = T;

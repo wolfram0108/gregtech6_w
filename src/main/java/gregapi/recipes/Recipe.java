@@ -87,6 +87,7 @@ public class Recipe {
 		public final int mInputItemsCount, mOutputItemsCount, mInputFluidCount, mOutputFluidCount, mMinimalInputItems, mMinimalInputFluids, mMinimalInputs;
 		public final long mNEISpecialValueMultiplier, mPower;
 		public final boolean mNEIAllowed, mShowVoltageAmperageInNEI, mNeedsOutputs, mCombinePower, mUseBucketSizeIn, mUseBucketSizeOut;
+		public final boolean mFuelMap;
 		public boolean mLogErrors = T;
 		/** Used to determine Input Tank Size. Contains the size of the largest FluidStack Input, but is almost always at least 1000. */
 		public int mMaxFluidInputSize  = 1000;
@@ -116,6 +117,7 @@ public class Recipe {
 			mCombinePower = aCombinePower;
 			mUseBucketSizeIn = aUseBucketSizeIn;
 			mUseBucketSizeOut = aUseBucketSizeOut;
+			mFuelMap = aFuelMap;
 			mRecipeList = (aRecipeList == null ? new HashSetNoNulls<Recipe>() : aRecipeList);
 			mNameInternal = aNameInternal;
 			mNameLocal = aNameLocal;
@@ -367,6 +369,16 @@ public class Recipe {
 				if (UT.Code.stringValid(tConfigName)) {
 					aRecipe.mDuration = mConfigFile.get(mNameLocalUnderscored, tConfigName, aRecipe.mEnabled?aRecipe.mDuration:0);
 					aRecipe.mEnabled = (aRecipe.mDuration > 0);
+				}
+			}
+
+			// Configurable duration and energy consumption multipliers for machine recipes.
+			if (!mFuelMap) {
+				if (RECIPE_DURATION_MULTIPLIER > 0 && RECIPE_DURATION_MULTIPLIER != 1.0) {
+					aRecipe.mDuration = Math.max(1, Math.round(aRecipe.mDuration * RECIPE_DURATION_MULTIPLIER));
+				}
+				if (RECIPE_ENERGY_MULTIPLIER > 0 && RECIPE_ENERGY_MULTIPLIER != 1.0 && aRecipe.mEUt > 0) {
+					aRecipe.mEUt = Math.max(1, Math.round(aRecipe.mEUt * RECIPE_ENERGY_MULTIPLIER));
 				}
 			}
 			
