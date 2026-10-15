@@ -654,7 +654,15 @@ public class WD {
 		// requiresCorrectToolForDrops; caught by the gt6seamprobe judge)
 		if (aBlock instanceof gregapi.block.IBlock tBlock) return tBlock.getHarvestTool(aMeta);
 		VanillaPassport tPassport = vanillaPassport(aBlock);
-		return tPassport != null && tPassport.mTool() != null ? tPassport.mTool() : "";
+		if (tPassport != null) return tPassport.mTool() != null ? tPassport.mTool() : "";
+		// Query modern mineable tags for non-passport blocks (1.14+ content and mods).
+		net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
+		if (tState.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_AXE)) return TOOL_axe;
+		if (tState.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE)) return TOOL_pickaxe;
+		if (tState.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_SHOVEL)) return TOOL_shovel;
+		if (tState.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_HOE)) return TOOL_hoe;
+		if (tState.is(net.minecraft.tags.BlockTags.SWORD_EFFICIENT)) return TOOL_sword;
+		return "";
 	}
 	/**
 	 * BUG-071 SINGLE center for drop-eligibility — one for the whole mod. Verbatim port of Forge 1.7.10
@@ -1160,6 +1168,10 @@ public class WD {
 		if (tState.is(net.minecraft.tags.BlockTags.SAPLINGS) || tState.is(net.minecraft.tags.BlockTags.SMALL_FLOWERS) || tState.is(net.minecraft.tags.BlockTags.FLOWERS) || tState.is(net.minecraft.tags.BlockTags.CROPS)
 		 || aBlock == Blocks.SUGAR_CANE || aBlock == Blocks.SUNFLOWER || aBlock == Blocks.LILAC || aBlock == Blocks.ROSE_BUSH || aBlock == Blocks.PEONY
 		 || aBlock == Blocks.TALL_GRASS || aBlock == Blocks.LARGE_FERN || aBlock == Blocks.LILY_PAD) return gregapi.block.Material.plants;
+		// Derive fallback material from modern tool tags for non-passport blocks.
+		if (tState.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_AXE))    return gregapi.block.Material.wood;
+		if (tState.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_SHOVEL)) return gregapi.block.Material.ground;
+		if (tState.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_HOE))    return gregapi.block.Material.plants;
 		return gregapi.block.Material.rock;
 	}
 
