@@ -673,7 +673,7 @@ public class GT6_Main extends Abstract_Mod {
 	@Override public void onModServerStarted2(net.minecraftforge.event.server.ServerStartedEvent aEvent) {
 		// F11-smelting: 1.7.10 topped up the vanilla smelting singleton at world entry (GT_API_Proxy_Client:525-529); here the
 		// vanilla recipes come with the datapack, so the server's recipes feed the same center a dedicated-server client uses.
-		gregapi.recipes.FurnaceRecipes.smelting().restoreVanilla(aEvent.getServer().getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING), aEvent.getServer().registryAccess());
+		gregapi.recipes.FurnaceRecipes.smelting().restoreVanilla(aEvent.getServer().getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING), aEvent.getServer().overworld());
 	}
 	@Override public void onModServerStopped2(net.minecraftforge.event.server.ServerStoppedEvent aEvent) {/**/}
 

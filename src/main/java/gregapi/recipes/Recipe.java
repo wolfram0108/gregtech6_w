@@ -401,6 +401,16 @@ public class Recipe {
 			return addToItemMap(aRecipe);
 		}
 		
+		/** Evict from all indices and map cache; matching main contract. */
+		public boolean remove(Recipe aRecipe) {
+			if (aRecipe == null || !mRecipeList.remove(aRecipe)) return F;
+			if (oRecipe == aRecipe) oRecipe = null;
+			mRecipeListSize--;
+			for (FluidStack aFluid : aRecipe.mFluidInputs) if (aFluid != null) {Collection<Recipe> tList = mRecipeFluidMap.get(FL.regName(aFluid.getFluid())); if (tList != null) tList.remove(aRecipe);}
+			for (ItemStack aStack : aRecipe.mInputs) if (aStack != null) {Collection<Recipe> tList = mRecipeItemMap.get(new ItemStackContainer(aStack)); if (tList != null) tList.remove(aRecipe);}
+			return T;
+		}
+
 		public void reInit() {
 			mRecipeItemMap.clear();
 			for (Recipe tRecipe : mRecipeList) {

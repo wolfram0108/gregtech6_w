@@ -56,12 +56,16 @@ public final class GT6CraftingDispatcher extends CustomRecipe {
 
 	static {
 		SERIALIZERS.register("gt6_crafting_dispatcher", () -> SERIALIZER);
+		SERIALIZERS.register("gt6_smoking_dispatcher", () -> GT6SmokingDispatcher.SERIALIZER);
+		SERIALIZERS.register("gt6_blasting_dispatcher", () -> GT6BlastingDispatcher.SERIALIZER);
 		SERIALIZERS.register("gt6_smelting_dispatcher", () -> GT6SmeltingDispatcher.SERIALIZER); // The furnace shares this same central registry point.
 	}
 
 	/** The subscription point on the mod bus, called from the central GT_API constructor. */
 	public static void register(IEventBus aModBus) {
 		SERIALIZERS.register(aModBus);
+		aModBus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent aEvent) -> aEvent.enqueueWork(() ->
+			net.minecraftforge.common.crafting.CraftingHelper.register(new net.minecraft.resources.ResourceLocation(MD.GAPI.mID, "cooking_runtime_keys"), FurnaceRecipes.RUNTIME_INGREDIENT_SERIALIZER)));
 	}
 
 	public GT6CraftingDispatcher(ResourceLocation aID, CraftingBookCategory aCategory) {

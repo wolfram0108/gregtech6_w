@@ -606,8 +606,8 @@ public final class OreDictManager {
 	public ItemStack setStack_(boolean aUseBlackList, ItemStack aStack) {
 		ItemStack tStack = getStack_(aUseBlackList, aStack);
 		if (tStack == null || ST.equal(aStack, tStack)) return aStack;
-		// Swapping an item type in place is impossible since neo's ItemStack.item is final (centralized in ST.set);
-		// the meta of the oredict-canonical stack is kept since the item itself cannot be changed.
+		// 1:1 with original: mutate item type while preserving reference, amount, and stack data.
+		ST.setItem(aStack, ST.item_(tStack));
 		return ST.meta_(aStack, ST.meta_(tStack));
 	}
 	

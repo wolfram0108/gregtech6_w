@@ -543,6 +543,8 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.smash(ST.make(Blocks.CRACKED_STONE_BRICKS, 1, 0), ST.make(Blocks.COBBLESTONE, 1, 0));
 		RM.smash(ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0), ST.make(Blocks.COBBLESTONE, 1, 0));
 		RM.smash(ST.make(Blocks.STONE, 1, 0), ST.make(Blocks.COBBLESTONE, 1, 0));
+		
+
 		RM.smash(IL.Module_Stone_Generator.get(           0), ST.make(Blocks.COBBLESTONE, 1, 0));
 		RM.smash(IL.Module_Basalt_Generator.get(          0), IL.NeLi_Basalt.get(1, IL.NePl_Basalt.get(1, ST.make(BlocksGT.Basalt, 1, BlockStones.COBBL))));
 		RM.smash(IL.Module_Blackstone_Generator.get(      0), IL.NeLi_Blackstone.get(1, IL.NePl_Blackstone.get(1, ST.make(BlocksGT.Basalt, 1, BlockStones.COBBL))));
@@ -1001,9 +1003,9 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		new Loader_Recipes_OreDict();
 	}
 
-	/** Vanilla copper, nonexistent in 1.7.10, is kept but re-supplied from any GT6 copper ore-dict material, the same
-	 *  trick used for backported mods; recipes are rewritten by name since GT6's subtype is a component, not a tag. */
+	/** Original EFR copper and modern items; metal inputs retain ANY.Cu. */
 	private static void copperAge() {
+		gregtech.compat.Compat_Recipes_Ganys.addCopperRecipes();
 		final Object tIngot = ingot.dat(ANY.Cu);
 
 		// Entry to the copper age: nine GT ingots craft the vanilla copper block.
@@ -1017,49 +1019,18 @@ public class Loader_Recipes_Vanilla implements Runnable {
 
 
 
-		// Vanilla copper ingot and its byproducts are never crafted directly: no recipe yields them.
-		// (Ore/raw smelting is out of scope here — a datapack smelting recipe, see ADAPT-014 "Not done".)
-		CR.delate(ST.make(Items.COPPER_INGOT     , 1, 0));
-		CR.delate(ST.make(Items.RAW_COPPER_BLOCK , 1, 0));
-
-		// MATERIAL LEAK: vanilla copper reachable outside these recipes despite the craft ban above —
-		// drowned/copper_golem loot, armor/tool smelting (datapack; GT_API.java:659,668 covers only
-		// CraftingRecipe) and raw ore blocks all yield vanilla items, sinking already-mined GT copper.
-		//
-		// Fix: register these items under our material name like any foreign item (cf.
-		// OreDictionary.java:196-199); CR.java:401-411 matches recipe ingredients by OreDict name.
-		//
-		// setTarget_ (OreDictManager.java:471) only fills an empty target slot, but phase order is not
-		// guaranteed — hijacking it would redirect ALL GT copper to the vanilla ingot. So the GT stack
-		// is read BEFORE registration and restored as target AFTER, with aOverwrite=true.
-		// Verified by stand gt6copperprobe §6.
-		// ORDER MATTERS: assign material data BEFORE registering names — addItemData_ (OreDictManager:667)
-		// won't overwrite an existing association, and name registration creates one. Reversed order left
-		// raw_copper associated but data-less (measured: 130 items affected).
 		copperItemData();
-
-		ItemStack tGTIngot  = ingot .mat(MT.Cu, 1);
-		gregapi.oredict.OreDictManager.INSTANCE.registerOre(ingot , MT.Cu, ST.make(Items.COPPER_INGOT , 1, 0));
-		gregapi.oredict.OreDictManager.INSTANCE.registerOre(oreRaw, MT.Cu, ST.make(Items.RAW_COPPER   , 1, 0));
-		if (ST.valid(tGTIngot )) gregapi.oredict.OreDictManager.INSTANCE.setTarget(ingot , MT.Cu, tGTIngot , T, T);
 
 	}
 
-	/** Crucible and shredder build recipes dynamically from ore-dict data, so an item with no passport is simply
-	 *  invisible to them; mass is derived from vanilla recipes, and the registry is walked so new items get a passport too. */
+	/** Material passports for modern vanilla items; classic forms get original composition via IL. */
 	private static void copperItemData() {
 		// base form name -> how much copper it holds (U = one ingot)
 		java.util.Map<String, Long> tForms = new java.util.LinkedHashMap<>();
-		tForms.put("copper"              , U*9  ); // oxidized block variants are named exposed_copper etc.
-		tForms.put("copper_block"        , U*9  );
-		tForms.put("raw_copper_block"    , U*9  );
-		tForms.put("cut_copper"          , U*9  );
-		tForms.put("chiseled_copper"     , U*9  );
+		tForms.put("chiseled_copper"     , U*4  );
 		tForms.put("copper_grate"        , U*9  );
 		tForms.put("copper_golem_statue" , U*9  ); // no recipe (structure/creative only); same look as a copper block
-		tForms.put("cut_copper_stairs"   , U*27/2);
 		tForms.put("copper_bulb"         , U*27/4);
-		tForms.put("cut_copper_slab"     , U*9/2);
 		tForms.put("copper_chest"        , U*8  );
 		tForms.put("copper_chestplate"   , U*8  );
 		tForms.put("copper_leggings"     , U*7  );
@@ -1074,13 +1045,10 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		tForms.put("copper_hoe"          , U*2  );
 		tForms.put("copper_sword"        , U*2  );
 		tForms.put("copper_chain"        , U*11/9);
-		tForms.put("copper_ingot"        , U    );
 		tForms.put("copper_shovel"       , U    );
 		tForms.put("copper_spear"        , U    );
-		tForms.put("raw_copper"          , U    );
 		tForms.put("copper_lantern"      , U*11/12);
 		tForms.put("copper_bars"         , U*3/8);
-		tForms.put("copper_nugget"       , U/9  );
 		tForms.put("copper_torch"        , U/36 );
 		// form's secondary material (stick/plank wood), U2 = half a unit per stick
 		java.util.Map<String, Long> tWood = new java.util.LinkedHashMap<>();
@@ -1092,12 +1060,6 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		tWood.put("copper_spear"   , U    );
 		tWood.put("copper_torch"   , U2/4 ); // one stick per 4 torches
 		tWood.put("copper_chest"   , U*8  ); // vanilla chest — 8 planks
-
-		// Ore forms are described by PREFIX, not mass: oreVanillastone/oreDeepslate/oreRaw carry
-		// setOreStats(2*U) (OP.java:63,67,137) and follow the ore path, not "melt into two ingots".
-		OM.data(ST.make(Items.COPPER_ORE          , 1, 0), oreVanillastone.dat(MT.Cu));
-		OM.data(ST.make(Items.DEEPSLATE_COPPER_ORE, 1, 0), oreDeepslate   .dat(MT.Cu));
-		OM.data(ST.make(Items.RAW_COPPER          , 1, 0), oreRaw         .dat(MT.Cu));
 
 		int tSet = 0, tSkip = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {

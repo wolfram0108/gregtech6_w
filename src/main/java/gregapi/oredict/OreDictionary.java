@@ -84,8 +84,7 @@ public class OreDictionary {
 
 	private static boolean sHasInit = false;
 
-	/** Restores the startup set of vanilla dictionary entries Forge itself seeded before mods loaded (the new engine has
-	 *  none); newer vanilla content is added under the same rule, using only Greg's existing names, never invented ones. */
+	/** Vanilla forms registered before mod items under existing GT6 material names. */
 	public static void initVanillaEntries() {
 		if (sHasInit) return;
 		sHasInit = true;
@@ -98,6 +97,16 @@ public class OreDictionary {
 		registerOre("stickWood", ST.make(net.minecraft.world.item.Items.STICK, 1, 0));
 		for (net.minecraft.world.level.block.Block tSap : new net.minecraft.world.level.block.Block[]{Blocks.OAK_SAPLING, Blocks.SPRUCE_SAPLING, Blocks.BIRCH_SAPLING, Blocks.JUNGLE_SAPLING, Blocks.ACACIA_SAPLING, Blocks.DARK_OAK_SAPLING}) registerOre("treeSapling", ST.make(tSap, 1, 0));
 		for (net.minecraft.world.level.block.Block tLeaf : new net.minecraft.world.level.block.Block[]{Blocks.OAK_LEAVES, Blocks.SPRUCE_LEAVES, Blocks.BIRCH_LEAVES, Blocks.JUNGLE_LEAVES, Blocks.ACACIA_LEAVES, Blocks.DARK_OAK_LEAVES}) registerOre("treeLeaves", ST.make(tLeaf, 1, 0));
+
+		// Declare ore prefixes before dictionary names: material associations follow first-wins.
+		gregapi.util.OM.data(ST.make(Blocks.COPPER_ORE, 1, 0), gregapi.data.OP.oreVanillastone.dat(gregapi.data.MT.Cu));
+		gregapi.util.OM.data(ST.make(Blocks.DEEPSLATE_COPPER_ORE, 1, 0), gregapi.data.OP.oreDeepslate.dat(gregapi.data.MT.Cu));
+		registerOre("oreCopper", ST.make(Blocks.COPPER_ORE, 1, 0));
+		registerOre("oreCopper", ST.make(Blocks.DEEPSLATE_COPPER_ORE, 1, 0));
+		registerOre("blockCopper", ST.make(Blocks.COPPER_BLOCK, 1, 0));
+		registerOre("blockRawCopper", ST.make(Blocks.RAW_COPPER_BLOCK, 1, 0));
+		registerOre("ingotCopper", ST.make(net.minecraft.world.item.Items.COPPER_INGOT, 1, 0));
+		registerOre("oreRawCopper", ST.make(net.minecraft.world.item.Items.RAW_COPPER, 1, 0));
 
 		// Ores and storage blocks (1.7.10's quartz_ore was the Nether variety).
 		registerOre("oreGold"      , ST.make(Blocks.GOLD_ORE        , 1, 0));

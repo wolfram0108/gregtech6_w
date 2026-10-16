@@ -24,8 +24,6 @@
 package gregtech.loaders.c;
 
 import gregapi.recipes.FurnaceRecipes;
-import gt6mirror.ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
-import gt6mirror.ganymedes01.etfuturum.recipes.SmokerRecipes;
 import gregapi.data.*;
 import gregapi.oredict.OreDictItemData;
 import gregapi.oredict.OreDictMaterial;
@@ -49,11 +47,7 @@ public class Loader_Recipes_Furnace implements Runnable {
 	@Override
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void run() {
-		Map<ItemStack, ItemStack>[] tMaps = new Map[] {FurnaceRecipes.smelting().getSmeltingList(), null, null};
-		if (MD.EtFu.mLoaded) try {
-			tMaps[1] = ((Map)UT.Reflection.getFieldContent(SmokerRecipes      .smelting(), "smeltingList", T, D1));
-			tMaps[2] = ((Map)UT.Reflection.getFieldContent(BlastFurnaceRecipes.smelting(), "smeltingList", T, D1));
-		} catch(Throwable e) {/**/}
+		Map<ItemStack, ItemStack>[] tMaps = new Map[] {FurnaceRecipes.smelting().getSmeltingList(), FurnaceRecipes.smoking().getSmeltingList(), FurnaceRecipes.blasting().getSmeltingList()};
 		boolean tFurnace = T;
 		for (Map<ItemStack, ItemStack> tMap : tMaps) if (tMap != null) {
 			Iterator<Entry<ItemStack, ItemStack>> tIterator = tMap.entrySet().iterator();
@@ -109,28 +103,22 @@ public class Loader_Recipes_Furnace implements Runnable {
 					if (tData1 != null && tData1.nonemptyData()) {
 						// Just outright remove all Furnace Recipes, that both Input and Output valid OreDicted Stuff at the same time, we add the proper ones below anyways.
 						tIterator.remove();
-						if (MD.EtFu.mLoaded) try {
-							SmokerRecipes      .smelting().smeltingBlacklist.add(tEntry.getKey());
-							BlastFurnaceRecipes.smelting().smeltingBlacklist.add(tEntry.getKey());
-						} catch(Throwable e) {/**/}
+						FurnaceRecipes.smoking().blacklist(tEntry.getKey());
+						FurnaceRecipes.blasting().blacklist(tEntry.getKey());
 						continue;
 					}
 					if (MD.HBM.owns(tReg1, "powder") || MD.HBM.owns(tReg1, "tile.ore")) {
 						// Older Versions of NTM require this Part.
 						tIterator.remove();
-						if (MD.EtFu.mLoaded) try {
-							SmokerRecipes      .smelting().smeltingBlacklist.add(tEntry.getKey());
-							BlastFurnaceRecipes.smelting().smeltingBlacklist.add(tEntry.getKey());
-						} catch(Throwable e) {/**/}
+						FurnaceRecipes.smoking().blacklist(tEntry.getKey());
+						FurnaceRecipes.blasting().blacklist(tEntry.getKey());
 						continue;
 					}
 					if (tData2.mMaterial.mMaterial.contains(TD.Processing.NEVER_FURNACE)) {
 						// Unsmelt things that really do not belong in Furnace Recipes.
 						tEntry.setValue(OP.scrapGt.mat(tData2.mMaterial, (tData2.mMaterial.mAmount * tEntry.getValue().getCount()) / OP.scrapGt.mAmount));
-						if (MD.EtFu.mLoaded) try {
-							SmokerRecipes      .smelting().smeltingBlacklist.add(tEntry.getKey());
-							BlastFurnaceRecipes.smelting().smeltingBlacklist.add(tEntry.getKey());
-						} catch(Throwable e) {/**/}
+						FurnaceRecipes.smoking().blacklist(tEntry.getKey());
+						FurnaceRecipes.blasting().blacklist(tEntry.getKey());
 						continue;
 					}
 				}

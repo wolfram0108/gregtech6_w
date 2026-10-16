@@ -41,6 +41,7 @@ import static gregapi.data.CS.*;
  *  funnel asks only here. Each mod keeps its table in its own class (AE2Names, BuildCraftNames); a path may name its namespace. */
 public final class ForeignNames {
 	private final String[] mModIDs;
+	private ModData mCarrier;
 	private final Map<String, String> mMapped = new LinkedHashMap<>();
 	private final Map<String, String> mGone = new LinkedHashMap<>();
 	/** Names whose 1.7.10 meta was a SUBTYPE: looked up by «name#meta», and the found item gets no meta stamped. */
@@ -54,8 +55,11 @@ public final class ForeignNames {
 		for (int i = 0; i < aMods.length; i++) mModIDs[i] = aMods[i].mID;
 	}
 
+	/** Explicit carrier for modern items without falsely marking original mod as loaded. */
+	public ForeignNames carrier(ModData aCarrier) {mCarrier = aCarrier; return this;}
+
 	/** Every table the funnel knows. A new foreign mod joins by adding its table here. */
-	private static ForeignNames[] all() {return new ForeignNames[] {AE2Names.TABLE, BuildCraftNames.TABLE};}
+	private static ForeignNames[] all() {return new ForeignNames[] {AE2Names.TABLE, BuildCraftNames.TABLE, EFRNames.TABLE};}
 	// Built on first use: each table is a static field that itself constructs a ForeignNames, so an eager list
 	// here would read those fields while their classes are still initialising.
 	private static ForeignNames[] sAll = null;
@@ -106,7 +110,7 @@ public final class ForeignNames {
 	/** A foreign stack from its 1.7.10 name, through ST.findItem only; a split name's subtype is the item itself, so its
 	 *  meta is not stamped (W, "any", survives), other names keep their meta as the plain path does. */
 	public ItemStack make(ModData aMod, String aName, long aSize, long aMeta) {
-		if (aMod == null || !aMod.mLoaded || !GAPI_POST.mStartedPreInit) return null;
+		if (aMod == null || !(mCarrier == null ? aMod : mCarrier).mLoaded || !GAPI_POST.mStartedPreInit) return null;
 		String tPath = path(aName, aMeta);
 		if (tPath == null) return null;
 		int tColon = tPath.indexOf(':');

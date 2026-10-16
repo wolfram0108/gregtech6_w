@@ -605,6 +605,8 @@ public class ST {
 	}
 	public static ItemStack make_(Block aBlock, long aSize, long aMeta) {Block tFlat = CS.Flattened.block(aBlock, aMeta); if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize)); ItemStack rStack = new ItemStack(aBlock, UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
 	public static ItemStack make(ModData aModID, String aItem, long aSize) {
+		gregapi.compat.ForeignNames tTable = gregapi.compat.ForeignNames.table(aModID, aItem);
+		if (tTable != null) return tTable.make(aModID, aItem, aSize, 0);
 		if (!aModID.mLoaded || UT.Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null;
 		ItemStack
 		rStack = findItemStack(aModID.mID, aItem, (int)aSize);
@@ -632,7 +634,7 @@ public class ST {
 	// The sole point where a 1.7.10 foreign-mod item name becomes a stack; every addressing path funnels here.
 	// AE2 renamed its items entirely on 1.20.1, so its pairs resolve through a dedicated table; others stay verbatim.
 	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {gregapi.compat.ForeignNames tTable = gregapi.compat.ForeignNames.table(aModID, aItem); if (tTable != null) return tTable.make(aModID, aItem, aSize, aMeta); return     meta(make(aModID, aItem, aSize), aMeta);}
-	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta, Object    aReplacement           ) {return get(meta(make(aModID, aItem, aSize), aMeta), aReplacement);}
+	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta, Object    aReplacement           ) {return get(make(aModID, aItem, aSize, aMeta), aReplacement);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta                                   ) {return make(item(aItemID), aSize, aMeta);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta              , CompoundTag aNBT) {return make(item(aItemID), aSize, aMeta, aNBT);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta, String aName                     ) {return make(item(aItemID), aSize, aMeta, aName);}

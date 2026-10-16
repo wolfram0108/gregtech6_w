@@ -203,9 +203,9 @@ public class Loader_Ores implements Runnable {
 		rockset(MD.CHSL, "marble"                                 , 0, "chisel.marble"          , OP.oreMarble              , MT.STONES.Marble);
 		rockset(MD.CHSL, "limestone"                              , 0, "chisel.limestone"       , OP.oreLimestone           , MT.STONES.Limestone);
 		
-		rockset(MD.EtFu, "stone"                                  , 1, "etfu.granite"           , OP.oreVanillagranite      , MT.STONES.Granite);
-		rockset(MD.EtFu, "stone"                                  , 3, "etfu.diorite"           , OP.oreDiorite             , MT.STONES.Diorite);
-		rockset(MD.EtFu, "stone"                                  , 5, "etfu.andesite"          , OP.oreAndesite            , MT.STONES.Andesite);
+		rockset(MD.MC, Blocks.GRANITE, 0, "etfu.granite", OP.oreVanillagranite, MT.STONES.Granite, 1, 1, 0, F, F, T);
+		rockset(MD.MC, Blocks.DIORITE, 0, "etfu.diorite", OP.oreDiorite, MT.STONES.Diorite, 1, 1, 0, F, F, T);
+		rockset(MD.MC, Blocks.ANDESITE, 0, "etfu.andesite", OP.oreAndesite, MT.STONES.Andesite, 1, 1, 0, F, F, T);
 		rockset(MD.EtFu, "deepslate", 0, 0, "cobbled_deepslate"   , 0, "etfu.deepslate"         , OP.oreDeepslate           , MT.STONES.Deepslate);
 		
 		rockset(MD.BoP, "rocks"                                   , 0, "bop.limestone"          , OP.oreLimestone           , MT.STONES.Limestone);
@@ -382,7 +382,7 @@ public class Loader_Ores implements Runnable {
 		BlocksGT.stoneToBrokenOres.put(new ItemStackContainer(IL.CHSL_Andesite.get(1)), BlocksGT.ores_broken[7]);
 		BlocksGT.stoneToSmallOres .put(new ItemStackContainer(IL.CHSL_Andesite.get(1)), BlocksGT.ores_small [7]);
 		}
-		if (MD.EtFu.mLoaded) {
+		if (IL.EtFu_Granite.exists() && IL.EtFu_Diorite.exists() && IL.EtFu_Andesite.exists()) {
 		BlocksGT.stoneToNormalOres.put(new ItemStackContainer(IL.EtFu_Granite .get(1)), BlocksGT.ores_normal[5]);
 		BlocksGT.stoneToBrokenOres.put(new ItemStackContainer(IL.EtFu_Granite .get(1)), BlocksGT.ores_broken[5]);
 		BlocksGT.stoneToSmallOres .put(new ItemStackContainer(IL.EtFu_Granite .get(1)), BlocksGT.ores_small [5]);

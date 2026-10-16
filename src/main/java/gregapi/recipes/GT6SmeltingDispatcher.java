@@ -20,112 +20,43 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package gregapi.recipes;
 
-import com.google.gson.JsonObject;
 import gregapi.util.ST;
-import net.minecraft.core.NonNullList;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
-import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.CookingBookCategory;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraft.world.item.crafting.SmeltingRecipe;
+import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
 
-import static gregapi.data.CS.ERR;
-
-/** @author Gregorius Techneticies
- *  The only entry point for GT6's procedural smelts into the vanilla furnace: several dispatcher instances exist, one
- *  per XP class, since XP is a recipe field here, not a function of input, and each only matches entries of its own class. */
+/** Typed engine dispatcher; recipe data, experience and showcase belong to FurnaceRecipes. */
 public final class GT6SmeltingDispatcher extends SmeltingRecipe {
-	/** The serializer reads only the json field xp (this instance's experience class); vanilla's ingredient/result json
-	 *  format doesn't apply, since both input and output here are dynamic. */
 	public static final RecipeSerializer<GT6SmeltingDispatcher> SERIALIZER = new RecipeSerializer<>() {
-		@Override public GT6SmeltingDispatcher fromJson(ResourceLocation aID, JsonObject aJSON) {return new GT6SmeltingDispatcher(aID, GsonHelper.getAsFloat(aJSON, "xp", 0.0F));}
-		@Override public GT6SmeltingDispatcher fromNetwork(ResourceLocation aID, FriendlyByteBuf aBuf) {return new GT6SmeltingDispatcher(aID, aBuf.readFloat());}
-		@Override public void toNetwork(FriendlyByteBuf aBuf, GT6SmeltingDispatcher aRecipe) {aBuf.writeFloat(aRecipe.getExperience());}
+		@Override public GT6SmeltingDispatcher fromJson(net.minecraft.resources.ResourceLocation aID, com.google.gson.JsonObject aJSON) {return new GT6SmeltingDispatcher(aID, net.minecraft.util.GsonHelper.getAsFloat(aJSON, "xp", 0));}
+		@Override public GT6SmeltingDispatcher fromNetwork(net.minecraft.resources.ResourceLocation aID, net.minecraft.network.FriendlyByteBuf aBuf) {return new GT6SmeltingDispatcher(aID, aBuf.readFloat());}
+		@Override public void toNetwork(net.minecraft.network.FriendlyByteBuf aBuf, GT6SmeltingDispatcher aRecipe) {aBuf.writeFloat(aRecipe.getExperience());}
 	};
-
-	/** Experience classes already covered by their own dispatcher instance; anything uncovered falls to the zero-xp default. */
-	private static final java.util.Set<Float> KNOWN_XP = java.util.concurrent.ConcurrentHashMap.newKeySet();
-	/** One warning per unfamiliar value, not a flood of them. */
-	private static final java.util.Set<Float> WARNED_XP = java.util.concurrent.ConcurrentHashMap.newKeySet();
-
-	/** A lut function reads the smelting result with no container at all, so the input matches() saw a moment earlier
-	 *  is remembered here for it; the furnace itself skips this path, since it calls assemble with a real container. */
-	private static final ThreadLocal<ItemStack> MATCHED_RESULT = new ThreadLocal<>();
-
-	public GT6SmeltingDispatcher(ResourceLocation aID, float aExperience) {
-		// cookingTime 200 matches 1.7.10's own fixed furnace time; the ingredient/result fields here are display-only
-		// placeholders, since real input/output are judged by matches/assemble against GT6's still-empty registry.
-		super(aID, "", CookingBookCategory.MISC, Ingredient.of(Items.BARRIER), new ItemStack(Items.FURNACE), aExperience, 200);
-		if (aExperience > 0) KNOWN_XP.add(aExperience);
+	private final FurnaceRecipes.Dispatch mDispatch;
+	private final ThreadLocal<ItemStack> mMatchedResult = new ThreadLocal<>();
+	public GT6SmeltingDispatcher(net.minecraft.resources.ResourceLocation aID, float aXP) {
+		super(aID, "", CookingBookCategory.MISC, Ingredient.of(Items.BARRIER), new ItemStack(Items.FURNACE), aXP, 200);
+		mDispatch = FurnaceRecipes.smelting().new Dispatch(aXP);
 	}
-
-	/** This instance's share of GT6's registry as exact stacks, built fresh on every request, since callers (wrappers of
-	 *  furnace recipes) are rare. An empty share yields no ingredient; the book and JEI leave a special recipe out anyway. */
-	@Override public NonNullList<Ingredient> getIngredients() {
-		java.util.List<ItemStack> tStacks = new java.util.ArrayList<>();
-		FurnaceRecipes.Answers tWalk = FurnaceRecipes.smelting().snapshot();
-		for (ItemStack tKey : FurnaceRecipes.smelting().getSmeltingList().keySet()) {
-			ItemStack tStack = ST.amount(1, tKey);
-			if (ST.valid(tStack) && resultIfMine(tStack, tWalk) != null) tStacks.add(tStack);
-		}
-		NonNullList<Ingredient> rList = NonNullList.create();
-		if (!tStacks.isEmpty()) rList.add(Ingredient.of(tStacks.stream()));
-		else if (FurnaceRecipes.smelting().getSmeltingList().isEmpty()) ERR.println("[GT6] GT6SmeltingDispatcher: the FurnaceRecipes registry is empty when the ingredient showcase was requested (before data-init — normal on the first reload)");
-		return rList;
+	@Override public boolean matches(net.minecraft.world.Container aInput, Level aLevel) {
+		ItemStack tResult = mDispatch.assemble(aInput.getItem(0));
+		if (ST.valid(tResult)) mMatchedResult.set(tResult); else mMatchedResult.remove();
+		return ST.valid(tResult);
 	}
-
-	/** The registry's result for the input when THIS instance smelts it, else null: the one rule behind matches() and the
-	 *  showcase, so a stack is shown by exactly the instance that takes it. XP class by the 1.7.10 rule (the result hook
-	 *  overrides the map); the zero-xp default takes zero plus every class no json covers (exotic -> 0 + one warning). */
-	private ItemStack resultIfMine(ItemStack aInput, FurnaceRecipes.Answers aAnswers) {
-		ItemStack tResult = aAnswers.result(aInput);
-		if (!ST.valid(tResult)) return null;
-		float tXP = aAnswers.xp(tResult);
-		float tMine = getExperience();
-		if (tMine > 0) return tXP == tMine ? tResult : null;
-		if (tXP != 0.0F && !KNOWN_XP.contains(tXP) && WARNED_XP.add(tXP)) ERR.println("[GT6] GT6SmeltingDispatcher: XP class " + tXP + " is not covered by an instance (json) — smelting still works, XP is given as 0");
-		return tXP == 0.0F || !KNOWN_XP.contains(tXP) ? tResult : null;
-	}
-
-	/** 1.7.10 had no recipe book, and a dispatcher stands for a whole registry, not one recipe: as a special recipe the book
-	 *  never learns or lists it (ServerRecipeBook.addRecipes, ClientRecipeBook), while the furnace still records it for XP. */
-	@Override public boolean isSpecial() {
-		return true;
-	}
-
-	@Override public boolean matches(Container aContainer, Level aLevel) {
-		ItemStack tResult = resultIfMine(aContainer.getItem(0), FurnaceRecipes.smelting().live());
-		// The engine only hands over the input here, so the matched output is remembered for getResultItem to read next.
-		if (tResult != null) MATCHED_RESULT.set(tResult); else MATCHED_RESULT.remove();
-		return tResult != null;
-	}
-
-	/** The live output, for the one consumer on this engine version that reads a result with no container at all;
-	 *  with no live match on this thread it falls back to the parent's placeholder, as before. */
-	@Override public ItemStack getResultItem(RegistryAccess aRegistries) {
-		ItemStack tResult = MATCHED_RESULT.get();
+	@Override public ItemStack assemble(net.minecraft.world.Container aInput, net.minecraft.core.RegistryAccess aRegistries) {return mDispatch.assemble(aInput.getItem(0));}
+	@Override public ItemStack getResultItem(net.minecraft.core.RegistryAccess aRegistries) {
+		ItemStack tResult = mMatchedResult.get();
 		return ST.valid(tResult) ? ST.copy(tResult) : super.getResultItem(aRegistries);
 	}
-
-	@Override public ItemStack assemble(Container aContainer, RegistryAccess aRegistries) {
-		// The registry holds a live result stack; only a copy ever leaves it, since the furnace mutates its result in place.
-		ItemStack tResult = FurnaceRecipes.smelting().getSmeltingResult(aContainer.getItem(0));
-		return ST.valid(tResult) ? ST.copy(tResult) : ItemStack.EMPTY;
+	@Override public boolean isSpecial() {return true;}
+	@Override public net.minecraft.core.NonNullList<Ingredient> getIngredients() {
+		net.minecraft.core.NonNullList<Ingredient> rInputs = net.minecraft.core.NonNullList.create();
+		java.util.List<ItemStack> tInputs = mDispatch.showcase();
+		if (!tInputs.isEmpty()) rInputs.add(Ingredient.of(tInputs.stream()));
+		return rInputs;
 	}
-
-	// Not overridden: the SmeltingRecipe parent already returns the same furnace icon, duplicating it would be pointless.
-
-	@Override public RecipeSerializer<?> getSerializer() {
-		return SERIALIZER;
-	}
+	@Override public RecipeSerializer<?> getSerializer() {return SERIALIZER;}
 }

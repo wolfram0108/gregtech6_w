@@ -25,8 +25,6 @@ package gregapi.data;
 
 import gt6mirror.com.cricketcraft.chisel.api.carving.CarvingUtils;
 import net.minecraftforge.fml.InterModComms;
-import gt6mirror.ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
-import gt6mirror.ganymedes01.etfuturum.recipes.SmokerRecipes;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.IItemContainer;
 import gregapi.config.ConfigCategories;
@@ -810,130 +808,46 @@ public class RM {
 		return add_smelting(aInput, aOutput, aEXP, aRemoveOthers, F, F);
 	}
 	public static boolean add_smelting(ItemStack aInput, ItemStack aOutput, float aEXP, boolean aRemoveOthers, boolean aSmoker, boolean aBlast) {
-		if (ST.invalid(aInput) || ST.invalid(aOutput)) return F;
-		if (aRemoveOthers) rem_smelting(aInput);
-		aOutput = OM.get_(aOutput);
-		if (!ST.ingredable(aInput) || ST.equal_(aInput, aOutput, F) || !ConfigsGT.RECIPES.get(ConfigCategories.Machines.smelting, aInput, T)) return F;
-		FurnaceRecipes.smelting().func_151394_a(aInput, ST.copy_(aOutput), aEXP);
-		if (MD.EtFu.mLoaded) try {
-			if ( aSmoker) SmokerRecipes      .smelting().addRecipe(aInput, ST.copy_(aOutput), aEXP);
-			if ( aBlast ) BlastFurnaceRecipes.smelting().addRecipe(aInput, ST.copy_(aOutput), aEXP);
-			if (!aSmoker) SmokerRecipes      .smelting().smeltingBlacklist.add(aInput);
-			if (!aBlast ) BlastFurnaceRecipes.smelting().smeltingBlacklist.add(aInput);
-		} catch(Throwable e) {
-			ERR.println("If you did not update Et Futurum Requiem, maybe you should.");
-			e.printStackTrace(ERR);
-		}
-		return T;
+		FurnaceRecipes.beginChange();
+		try {
+			if (ST.invalid(aInput) || ST.invalid(aOutput)) return F;
+			if (aRemoveOthers) rem_smelting(aInput);
+			aOutput = OM.get_(aOutput);
+			if (!ST.ingredable(aInput) || ST.equal_(aInput, aOutput, F) || !ConfigsGT.RECIPES.get(ConfigCategories.Machines.smelting, aInput, T)) return F;
+			FurnaceRecipes.smelting().func_151394_a(aInput, ST.copy_(aOutput), aEXP);
+			if (aSmoker) FurnaceRecipes.smoking().func_151394_a(aInput, ST.copy_(aOutput), aEXP);
+			else FurnaceRecipes.smoking().blacklist(aInput);
+			if (aBlast) FurnaceRecipes.blasting().func_151394_a(aInput, ST.copy_(aOutput), aEXP);
+			else FurnaceRecipes.blasting().blacklist(aInput);
+			return T;
+
+		} finally {FurnaceRecipes.endChange();}
 	}
 	
-	@SuppressWarnings({"rawtypes", "unchecked"})
 	public static boolean rem_smelting(ItemStack aInput) {
-		if (ST.invalid(aInput)) return F;
-		ItemStack tPyrotheum = OP.dust.mat(MT.Pyrotheum, 1);
-		if (ST.valid(tPyrotheum)) CR.remove(aInput, tPyrotheum);
-		boolean rReturn = F;
-		Iterator<Entry<ItemStack, ItemStack>> tIterator = FurnaceRecipes.smelting().getSmeltingList().entrySet().iterator();
-		while (tIterator.hasNext()) if (ST.equal(aInput, tIterator.next().getKey(), T)) {
-			tIterator.remove();
-			rReturn = T;
-		}
-		if (MD.EtFu.mLoaded) {
-			boolean tSuccess = F;
-			
-			try {
-				SmokerRecipes      .smelting().removeRecipe(aInput);
-				BlastFurnaceRecipes.smelting().removeRecipe(aInput);
-				tSuccess = T;
-			} catch(Throwable e) {
-				ERR.println("If you did not update Et Futurum Requiem, maybe you should.");
-				e.printStackTrace(ERR);
-			}
-			
-			if (!tSuccess) try {
-				Map
-				tMap = ((Map)UT.Reflection.getFieldContent(SmokerRecipes.smelting(), "smeltingList", T, D1));
-				if (tMap != null) {
-					tIterator = tMap.entrySet().iterator();
-					while (tIterator.hasNext()) if (ST.equal(aInput, tIterator.next().getKey(), T)) {
-						tIterator.remove();
-						rReturn = T;
-					}
-					tSuccess = T;
-				}
-				tMap = ((Map)UT.Reflection.getFieldContent(BlastFurnaceRecipes.smelting(), "smeltingList", T, D1));
-				if (tMap != null) {
-					tIterator = tMap.entrySet().iterator();
-					while (tIterator.hasNext()) if (ST.equal(aInput, tIterator.next().getKey(), T)) {
-						tIterator.remove();
-						rReturn = T;
-					}
-					tSuccess = T;
-				}
-			} catch(Throwable e) {
-				ERR.println("If you did not update Et Futurum Requiem, maybe you should.");
-				e.printStackTrace(ERR);
-			}
-		}
-		return rReturn;
+		FurnaceRecipes.beginChange();
+		try {
+			if (ST.invalid(aInput)) return F;
+			ItemStack tPyrotheum = OP.dust.mat(MT.Pyrotheum, 1);
+			if (ST.valid(tPyrotheum)) CR.remove(aInput, tPyrotheum);
+			boolean rRemoved = FurnaceRecipes.smelting().remove(aInput);
+			rRemoved |= FurnaceRecipes.smoking().remove(aInput);
+			rRemoved |= FurnaceRecipes.blasting().remove(aInput);
+			return rRemoved;
+
+		} finally {FurnaceRecipes.endChange();}
 	}
-	
-	@SuppressWarnings({"rawtypes", "unchecked"})
+
 	public static boolean rem_smelting(ItemStack aInput, ItemStack aOutput) {
-		if (ST.invalid(aInput) || ST.invalid(aOutput)) return F;
-		boolean rReturn = F;
-		Iterator<Entry<ItemStack, ItemStack>> tIterator = FurnaceRecipes.smelting().getSmeltingList().entrySet().iterator();
-		while (tIterator.hasNext()) {
-			Entry<ItemStack, ItemStack> tEntry = tIterator.next();
-			if (ST.equal(aInput, tEntry.getKey(), T) && ST.equal(aOutput, tEntry.getValue(), T)) {
-				tIterator.remove();
-				rReturn = T;
-			}
-		}
-		if (MD.EtFu.mLoaded) {
-			boolean tSuccess = F;
-			
-			try {
-				if (ST.equal(aOutput, SmokerRecipes      .smelting().getSmeltingResult(aInput), T)) SmokerRecipes      .smelting().removeRecipe(aInput);
-				if (ST.equal(aOutput, BlastFurnaceRecipes.smelting().getSmeltingResult(aInput), T)) BlastFurnaceRecipes.smelting().removeRecipe(aInput);
-				tSuccess = T;
-			} catch(Throwable e) {
-				ERR.println("If you did not update Et Futurum Requiem, maybe you should.");
-				e.printStackTrace(ERR);
-			}
-			
-			if (!tSuccess) try {
-				Map
-				tMap = ((Map)UT.Reflection.getFieldContent(SmokerRecipes.smelting(), "smeltingList", T, D1));
-				if (tMap != null) {
-					tIterator = tMap.entrySet().iterator();
-					while (tIterator.hasNext()) {
-						Entry<ItemStack, ItemStack> tEntry = tIterator.next();
-						if (ST.equal(aInput, tEntry.getKey(), T) && ST.equal(aOutput, tEntry.getValue(), T)) {
-							tIterator.remove();
-							rReturn = T;
-						}
-					}
-					tSuccess = T;
-				}
-				tMap = ((Map)UT.Reflection.getFieldContent(BlastFurnaceRecipes.smelting(), "smeltingList", T, D1));
-				if (tMap != null) {
-					tIterator = tMap.entrySet().iterator();
-					while (tIterator.hasNext()) {
-						Entry<ItemStack, ItemStack> tEntry = tIterator.next();
-						if (ST.equal(aInput, tEntry.getKey(), T) && ST.equal(aOutput, tEntry.getValue(), T)) {
-							tIterator.remove();
-							rReturn = T;
-						}
-					}
-					tSuccess = T;
-				}
-			} catch(Throwable e) {
-				ERR.println("If you did not update Et Futurum Requiem, maybe you should.");
-				e.printStackTrace(ERR);
-			}
-		}
-		return rReturn;
+		FurnaceRecipes.beginChange();
+		try {
+			if (ST.invalid(aInput) || ST.invalid(aOutput)) return F;
+			boolean rRemoved = FurnaceRecipes.smelting().remove(aInput, aOutput);
+			rRemoved |= FurnaceRecipes.smoking().remove(aInput, aOutput);
+			rRemoved |= FurnaceRecipes.blasting().remove(aInput, aOutput);
+			return rRemoved;
+
+		} finally {FurnaceRecipes.endChange();}
 	}
 	
 	public static boolean chisel(String aName, ItemStack... aStacks) {

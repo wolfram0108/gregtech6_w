@@ -38,8 +38,6 @@ import net.minecraftforge.event.TickEvent.LevelTickEvent;
 import gt6mirror.ganymedes01.etfuturum.entities.EntityHusk;
 import gt6mirror.ganymedes01.etfuturum.entities.EntityStray;
 import gt6mirror.ganymedes01.etfuturum.entities.EntityZombieVillager;
-import gt6mirror.ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
-import gt6mirror.ganymedes01.etfuturum.recipes.SmokerRecipes;
 import gregapi.api.Abstract_Mod;
 import gregapi.api.Abstract_Proxy;
 import gregapi.block.*;
@@ -513,25 +511,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					// 	e.printStackTrace(ERR);
 					// }
 
-					// EVENTS impossible-1:1 (neo model): 1.7.10 mutated a flat Map<ItemStack,ItemStack> of smelting recipes to unify outputs.
-					// neo's RecipeManager is typed (RecipeType.SMELTING, RecipeHolder<SmeltingRecipe>) and recipes are IMMUTABLE —
-					// the output of an existing recipe cannot be mutated at runtime (enumerable via getAllRecipesFor, not changeable).
-					// Unifying smelting outputs in neo means replacing the recipe/datagen, not mutation — out of scope here. Correctly disabled.
-					// for (Object tStack : RecipeManager.smelting().getSmeltingList().values()) tStacks.add((ItemStack)tStack);
-					
-					if (MD.EtFu.mLoaded) {
-						boolean tSuccess = F;
-						
-						if (!tSuccess) try {
-							Map
-							tMap = ((Map)UT.Reflection.getFieldContent(SmokerRecipes.smelting(), "smeltingList", T, D1));
-							if (tMap != null) {for (Object tStack : tMap.values()) tSuccess |= tStacks.add((ItemStack)tStack);}
-							tMap = ((Map)UT.Reflection.getFieldContent(BlastFurnaceRecipes.smelting(), "smeltingList", T, D1));
-							if (tMap != null) {for (Object tStack : tMap.values()) tSuccess |= tStacks.add((ItemStack)tStack);}
-						} catch(Throwable e) {if (D1) e.printStackTrace(ERR);}
-						
-						if (!tSuccess) ERR.println("Et Futurum Requiem needs to be updated!");
-					}
+					// All furnace outputs follow shared runtime contract and checked without reflecting external API.
+					for (gregapi.recipes.FurnaceRecipes tChannel : new gregapi.recipes.FurnaceRecipes[]{gregapi.recipes.FurnaceRecipes.smelting(), gregapi.recipes.FurnaceRecipes.smoking(), gregapi.recipes.FurnaceRecipes.blasting()})
+						for (ItemStack tStack : tChannel.getSmeltingList().values()) tStacks.add(tStack);
 					
 					for (ICraftingRecipeGT tRecipe : CR.list()) if (tRecipe != null) tStacks.add(tRecipe.getRecipeOutput());
 					

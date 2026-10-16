@@ -588,7 +588,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		net.minecraft.core.RegistryAccess tRegistries = getClientRegistries();
 		if (!GT_API.sDeferredItemInitDone) GT_API.runDeferredItemInit(tRegistries);
 		GT_API.buildClientCraftingBuffer(aEvent.getRecipeManager().getRecipes(), tRegistries);
-		gregapi.recipes.FurnaceRecipes.smelting().restoreVanilla(aEvent.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING), tRegistries);
+		gregapi.recipes.FurnaceRecipes.smelting().restoreVanilla(aEvent.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.SMELTING), Minecraft.getInstance().level);
 	}
 
 	/** Client-side arm of the beacon-payment bridge (center — {@link GT_API_Proxy#wrapBeaconPaymentSlot}): the client builds

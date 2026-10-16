@@ -41,9 +41,11 @@ public class ItemStackMap<K extends ItemStackContainer, V> extends HashMap<ItemS
 	
 	private boolean mHasWildcards = F;
 	
-	public ItemStackMap() {
+	public ItemStackMap() {this(T);}
+	/** Reader snapshot does not participate in global map rebuilds. */
+	public ItemStackMap(boolean aRegister) {
 		super();
-		GT_API.STACKMAPS.add(this);
+		if (aRegister) GT_API.STACKMAPS.add(this);
 	}
 	@Override
 	public boolean equals(Object o) {
