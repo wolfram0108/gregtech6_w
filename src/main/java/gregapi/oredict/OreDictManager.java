@@ -243,6 +243,7 @@ public final class OreDictManager {
 	 */
 	public boolean setAutomaticItemData(Object aOreDictName, OreDictItemData aData) {
 		addKnownName(aOreDictName);
+		if (aData != null) aData.mAutomatic = T;
 		mStringToItemDataMappings.put(aOreDictName.toString(), aData);
 		for (ItemStack tStack : getOres(aOreDictName.toString(), F)) {
 			addItemData_(tStack, OreDictItemData.copy(aData));
@@ -647,11 +648,13 @@ public final class OreDictManager {
 	
 	public boolean addItemData (ItemStack aStack, OreDictItemData aData) {
 		if (ST.invalid(aStack)) return F;
-		if (getItemData_(aStack) == null) return setItemData_(aStack, aData);
+		OreDictItemData tExisting = getItemData_(aStack);
+		if (tExisting == null || tExisting.mAutomatic) return setItemData_(aStack, aData);
 		return F;
 	}
 	public boolean addItemData_(ItemStack aStack, OreDictItemData aData) {
-		if (getItemData_(aStack) == null && aData != null) return setItemData_(aStack, aData);
+		OreDictItemData tExisting = getItemData_(aStack);
+		if ((tExisting == null || tExisting.mAutomatic) && aData != null) return setItemData_(aStack, aData);
 		return F;
 	}
 	
@@ -661,7 +664,7 @@ public final class OreDictManager {
 	}
 	public boolean setItemData_(ItemStack aStack, OreDictItemData aData) {
 		OreDictItemData tData = getAssociation_(aStack, F);
-		if (tData != null && tData.mMaterial.mMaterial != MT.Wood && tData.mMaterial.mMaterial != ANY.Wood) return F;
+		if (tData != null && !tData.mAutomatic && tData.mMaterial.mMaterial != MT.Wood && tData.mMaterial.mMaterial != ANY.Wood) return F;
 		if (aStack.getCount() > 1) {
 			if (aData.mMaterial != null) aData.mMaterial.mAmount /= aStack.getCount();
 			for (OreDictMaterialStack tMaterial : aData.mByProducts) tMaterial.mAmount /= aStack.getCount();

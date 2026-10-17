@@ -22,6 +22,7 @@ package gregapi.load;
 import gregapi.data.*;
 import gregapi.oredict.OreDictItemData;
 import gregapi.oredict.OreDictManager;
+import gregapi.util.OM;
 
 import static gregapi.data.CS.*;
 
@@ -1487,9 +1488,9 @@ public class LoaderOreDictReRegistrations implements Runnable {
 		OreDictManager.INSTANCE.setAutomaticItemData(OD.plankWeedwood, new OreDictItemData(MT.Weedwood, U));
 		OreDictManager.INSTANCE.setAutomaticItemData(OD.plankSkyroot, new OreDictItemData(MT.Skyroot, U));
 		OreDictManager.INSTANCE.setAutomaticItemData(OD.craftingChest, new OreDictItemData(ANY.Wood, U * 4));
-		OreDictManager.INSTANCE.setAutomaticItemData(OD.craftingPiston, new OreDictItemData(MT.Stone, U * 4, ANY.Wood, U * 3));
+		OreDictManager.INSTANCE.setAutomaticItemData(OD.craftingPiston, new OreDictItemData(OM.stack(MT.Stone, U * 4), OM.stack(ANY.Wood, U * 3), OM.stack(ANY.Fe, U), OM.stack(MT.Redstone, U)));
 		OreDictManager.INSTANCE.setAutomaticItemData(OD.craftingFurnace, new OreDictItemData(MT.Stone, U * 8));
-		OreDictManager.INSTANCE.setAutomaticItemData(OD.craftingAnvil, new OreDictItemData(MT.Fe, U * 10));
+		OreDictManager.INSTANCE.setAutomaticItemData(OD.craftingAnvil, new OreDictItemData(MT.Fe, U * 31));
 		OreDictManager.INSTANCE.setAutomaticItemData(OD.craftingRedstoneTorch, new OreDictItemData(MT.Redstone, U, ANY.Wood, U2));
 		OreDictManager.INSTANCE.setAutomaticItemData(OD.craftingHardenedClay, new OreDictItemData(MT.Ceramic, U*1));
 		OreDictManager.INSTANCE.setAutomaticItemData(OD.itemRedstone, new OreDictItemData(MT.Redstone, U));

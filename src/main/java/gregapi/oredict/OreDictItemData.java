@@ -40,6 +40,7 @@ public class OreDictItemData {
 	public boolean mBlocked = F;
 	public boolean mUseVanillaDamage = F;
 	public boolean mFurnaceFuel = T;
+	public boolean mAutomatic = F;
 	public ItemStack mUnificationTarget = null;
 	
 	/** The OreDictPrefix if there is one assigned to this. */
@@ -182,6 +183,7 @@ public class OreDictItemData {
 		rData.mUseVanillaDamage = mUseVanillaDamage;
 		rData.mBlackListed = mBlackListed;
 		rData.mBlocked = mBlocked;
+		rData.mAutomatic = mAutomatic;
 		return rData;
 	}
 	
@@ -189,6 +191,7 @@ public class OreDictItemData {
 	
 	public OreDictItemData setUseVanillaDamage() {mUseVanillaDamage = T; return this;}
 	public OreDictItemData setNotFurnaceFuel() {mFurnaceFuel = F; return this;}
+	public OreDictItemData setAutomatic() {mAutomatic = T; return this;}
 	
 	@Override public String toString() {return mOreDictName;}
 	

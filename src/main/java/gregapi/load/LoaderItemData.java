@@ -2498,16 +2498,13 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.FLOWER_POT                    , 1, W), MT.Brick              ,  U * 3);
 		OM.data(ST.make(Items.FLOWER_POT                     , 1, W), MT.Brick              ,  U * 3);
 		OM.data(ST.make(Blocks.BRICKS                   , 1, W), MT.Brick              ,  U * 4);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 4), MT.Brick              ,  U * 4);
 		OM.data(ST.make(Blocks.BRICK_STAIRS                  , 1, W), MT.Brick              ,  U * 3);
 		OM.data(ST.make(Blocks.BRICK_SLAB, 1, 0), MT.Brick              ,  U * 2);
 		OM.data(ST.make(Blocks.NETHER_BRICKS                  , 1, W), MT.NetherBrick        ,  U * 4);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 6), MT.NetherBrick        ,  U * 4);
 		OM.data(ST.make(Blocks.NETHER_BRICK_STAIRS           , 1, W), MT.NetherBrick        ,  U * 3);
 		OM.data(ST.make(Blocks.NETHER_BRICK_SLAB, 1, 0), MT.NetherBrick        ,  U * 2);
 		OM.data(ST.make(Blocks.NETHER_BRICK_FENCE            , 1, W), MT.NetherBrick        ,  U * 3);
 		OM.data(ST.make(Blocks.QUARTZ_BLOCK, 1, W), MT.NetherQuartz       ,  U * 4);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 7), MT.NetherQuartz       ,  U * 4);
 		OM.data(ST.make(Blocks.QUARTZ_STAIRS                 , 1, W), MT.NetherQuartz       ,  U * 6);
 		OM.data(ST.make(Blocks.QUARTZ_SLAB, 1, 0), MT.NetherQuartz       ,  U * 2);
 		OM.data(ST.make(Items.FIREWORK_STAR                , 1, W), MT.Gunpowder          ,  U * 1);
@@ -2529,9 +2526,21 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.IRON_BARS                     , 1, W), ANY.Fe                ,  3* U8);
 		OM.data(ST.make(Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE , 1, W), MT.Au                 ,  U * 2);
 		OM.data(ST.make(Blocks.HEAVY_WEIGHTED_PRESSURE_PLATE , 1, W), ANY.Fe                ,  U * 2);
-		OM.data(ST.make(Blocks.ANVIL                         , 1, 0), ANY.Fe                ,  U *30);
-		OM.data(ST.make(Blocks.ANVIL                         , 1, 1), ANY.Fe                ,  U *25);
-		OM.data(ST.make(Blocks.ANVIL                         , 1, 2), ANY.Fe                ,  U *20);
+		OM.data(ST.make(Blocks.ANVIL                         , 1, 0), ANY.Fe                ,  U *31);
+		OM.data(ST.make(Blocks.CHIPPED_ANVIL                 , 1, 0), ANY.Fe                ,  U *25);
+		OM.data(ST.make(Blocks.DAMAGED_ANVIL                 , 1, 0), ANY.Fe                ,  U *20);
+		OM.data(ST.make(Blocks.IRON_TRAPDOOR                 , 1, W), ANY.Fe                ,  U * 4);
+		OM.data(ST.make(Blocks.CHAIN                         , 1, W), ANY.Fe                ,  U + 2 * U9);
+		OM.data(ST.make(Blocks.LANTERN                       , 1, W), ANY.Fe                ,  8 * U9, ANY.Wood, U4);
+		OM.data(ST.make(Blocks.SOUL_LANTERN                  , 1, W), ANY.Fe                ,  8 * U9, ANY.Wood, U4);
+		OM.data(ST.make(Blocks.STONECUTTER                   , 1, W), ANY.Fe                ,  U, MT.Stone, U * 3);
+		OM.data(ST.make(Blocks.BLAST_FURNACE                 , 1, W), ANY.Fe                ,  U * 5, MT.Stone, U * 11);
+		OM.data(ST.make(Items.CHEST_MINECART                 , 1, 0), ANY.Fe                ,  U * 5, ANY.Wood, U * 8);
+		OM.data(ST.make(Items.FURNACE_MINECART               , 1, 0), ANY.Fe                ,  U * 5, MT.Stone, U * 8);
+		OM.data(ST.make(Items.TNT_MINECART                   , 1, 0), ANY.Fe                ,  U * 5, MT.Gunpowder, U * 5, MT.Sand, U * 4);
+		OM.data(ST.make(Items.HOPPER_MINECART                , 1, 0), ANY.Fe                ,  U * 10, ANY.Wood, U * 4);
+		OM.dat2(ST.make(Items.SHIELD                         , 1, 0), ANY.Fe                ,  U, ANY.Wood, U * 6);
+		OM.dat2(ST.make(Items.CROSSBOW                       , 1, 0), ANY.Fe                ,  U + U8, ANY.Wood, U * 2);
 		OM.data(ST.make(Blocks.HOPPER                        , 1, W), ANY.Fe                ,  U * 5 , ANY.Wood, U * 4);
 		OM.data(ST.make(Blocks.TRIPWIRE_HOOK                 , 1, W), ANY.Fe                ,  OP.ring.mAmount * 2, ANY.Wood, U);
 		// Same central CS.Flattened families as above, for stained glass and stained glass panes.
@@ -2553,26 +2562,12 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.COBBLESTONE_STAIRS                  , 1, W), ANY.Stone             ,  U4*27);
 		OM.data(ST.make(Blocks.STONE_BRICK_STAIRS            , 1, W), ANY.Stone             ,  U4*27);
 		OM.data(ST.make(Blocks.COBBLESTONE_WALL              , 1, W), ANY.Stone             ,  U * 9);
-		OM.data(ST.make(Blocks.STONE_SLAB, 1, 0), ANY.Stone             ,  U2* 9);
-		OM.data(ST.make(Blocks.STONE_SLAB                    , 1, 8), ANY.Stone             ,  U2* 9);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 0), ANY.Stone             ,  U * 9);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 8), ANY.Stone             ,  U * 9);
-		OM.data(ST.make(Blocks.SANDSTONE_SLAB, 1, 0), MT.Sand               ,  U2* 9);
-		OM.data(ST.make(Blocks.STONE_SLAB                    , 1, 9), MT.Sand               ,  U2* 9);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 1), MT.Sand               ,  U * 9);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 9), MT.Sand               ,  U * 9);
-		OM.data(ST.make(Blocks.PETRIFIED_OAK_SLAB, 1, 0), MT.PetrifiedWood      ,  U2);
-		OM.data(ST.make(Blocks.STONE_SLAB                    , 1,10), MT.PetrifiedWood      ,  U2);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 2), MT.PetrifiedWood      ,  U * 1);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1,10), MT.PetrifiedWood      ,  U * 1);
-		OM.data(ST.make(Blocks.COBBLESTONE_SLAB, 1, 0), ANY.Stone             ,  U2* 9);
-		OM.data(ST.make(Blocks.STONE_SLAB                    , 1,11), ANY.Stone             ,  U2* 9);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 3), ANY.Stone             ,  U * 9);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1,11), ANY.Stone             ,  U * 9);
-		OM.data(ST.make(Blocks.STONE_BRICK_SLAB, 1, 0), ANY.Stone             ,  U2* 9);
-		OM.data(ST.make(Blocks.STONE_SLAB                    , 1,13), ANY.Stone             ,  U2* 9);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 5), ANY.Stone             ,  U * 9);
-		OM.data(ST.make(Blocks.STONE_SLAB             , 1,13), ANY.Stone             ,  U * 9);
+		OM.data(ST.make(Blocks.STONE_SLAB                    , 1, 0), ANY.Stone             ,  U2* 9);
+		OM.data(ST.make(Blocks.SMOOTH_STONE_SLAB             , 1, 0), ANY.Stone             ,  U2* 9);
+		OM.data(ST.make(Blocks.SANDSTONE_SLAB                , 1, 0), MT.Sand               ,  U2* 9);
+		OM.data(ST.make(Blocks.PETRIFIED_OAK_SLAB            , 1, 0), MT.PetrifiedWood      ,  U2);
+		OM.data(ST.make(Blocks.COBBLESTONE_SLAB              , 1, 0), ANY.Stone             ,  U2* 9);
+		OM.data(ST.make(Blocks.STONE_BRICK_SLAB              , 1, 0), ANY.Stone             ,  U2* 9);
 		OM.data(ST.make(Blocks.STONE, 1, W), ANY.Stone             ,  U * 9);
 		OM.data(ST.make(Blocks.FURNACE                       , 1, W), ANY.Stone             ,  U * 8);
 		OM.data(ST.make(Blocks.FURNACE                   , 1, W), ANY.Stone             ,  U * 8);
@@ -2602,8 +2597,8 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.NOTE_BLOCK                     , 1, W), ANY.Wood              ,  U * 8, MT.Redstone, U);
 		OM.data(ST.make(Blocks.JUKEBOX                       , 1, W), ANY.Wood              ,  U * 8, ANY.Diamond, U);
 		OM.data(ST.make(Blocks.CRAFTING_TABLE                , 1, W), ANY.Wood              ,  U * 4);
-		OM.data(ST.make(Blocks.PISTON                        , 1, W), ANY.Stone             ,  U * 4, ANY.Wood, U * 3);
-		OM.data(ST.make(Blocks.STICKY_PISTON                 , 1, W), ANY.Stone             ,  U * 4, ANY.Wood, U * 3);
+		OM.data(ST.make(Blocks.PISTON                        , 1, W), ANY.Stone             ,  U * 4, ANY.Wood, U * 3, ANY.Fe, U, MT.Redstone, U);
+		OM.data(ST.make(Blocks.STICKY_PISTON                 , 1, W), ANY.Stone             ,  U * 4, ANY.Wood, U * 3, ANY.Fe, U, MT.Redstone, U);
 		OM.data(ST.make(Blocks.DISPENSER                     , 1, W), ANY.Stone             ,  U * 7, MT.Redstone, U);
 		OM.data(ST.make(Blocks.DROPPER                       , 1, W), ANY.Stone             ,  U * 7, MT.Redstone, U);
 		OM.data(ST.make(Items.PORKCHOP                       , 1, W), MT.MeatRaw            ,  U * 2, MT.Bone, U9);
@@ -2682,5 +2677,7 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Items.COD                           , 1,64), MT.FishRaw            ,  U * 1, MT.Bone, U3, MT.FishOil, U2, MT.Zn, U72);
 		}
 		OM.data(ST.make(Items.COD, 1, W), MT.FishRaw            ,  U * 2, MT.Bone, U9, MT.FishOil, U * 1);
+		// Register passports for modern Minecraft items and blocks.
+		LoaderModernItemData.run();
 	}
 }

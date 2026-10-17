@@ -757,6 +757,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Loom         .addRecipe2(T, 64,  128, ST.make(Items.LEATHER, 6, W), (tMat2==MT.Enori?plateGem:plate).mat(tMat2     , 8), ST.make(Items.IRON_HORSE_ARMOR, 1, 0));
 		RM.Loom         .addRecipe2(T, 64,  128, ST.make(Items.LEATHER, 6, W), plate                           .mat(MT.Au     , 8), ST.make(Items.GOLDEN_HORSE_ARMOR, 1, 0));
 		RM.Loom         .addRecipe2(T, 64,  128, ST.make(Items.LEATHER, 6, W), plateGem                        .mat(MT.Diamond, 8), ST.make(Items.DIAMOND_HORSE_ARMOR, 1, 0));
+		RM.Loom         .addRecipe1(T, 64,  128, ST.make(Items.LEATHER, 7, W), ST.make(Items.LEATHER_HORSE_ARMOR, 1, 0));
 		for (OreDictMaterial tMat2 : ANY.Steel.mToThis)
 		RM.Loom         .addRecipeX(T, 64,  128, ST.array(ST.make(Items.LEATHER, 6, W), ring.mat(tMat2, 2), stick.mat(tMat2, 3)), ST.make(Items.SADDLE, 1, 0));
 		
@@ -1019,73 +1020,5 @@ public class Loader_Recipes_Vanilla implements Runnable {
 
 
 
-		copperItemData();
-
-	}
-
-	/** Material passports for modern vanilla items; classic forms get original composition via IL. */
-	private static void copperItemData() {
-		// base form name -> how much copper it holds (U = one ingot)
-		java.util.Map<String, Long> tForms = new java.util.LinkedHashMap<>();
-		tForms.put("chiseled_copper"     , U*4  );
-		tForms.put("copper_grate"        , U*9  );
-		tForms.put("copper_golem_statue" , U*9  ); // no recipe (structure/creative only); same look as a copper block
-		tForms.put("copper_bulb"         , U*27/4);
-		tForms.put("copper_chest"        , U*8  );
-		tForms.put("copper_chestplate"   , U*8  );
-		tForms.put("copper_leggings"     , U*7  );
-		tForms.put("copper_horse_armor"  , U*6  );
-		tForms.put("copper_nautilus_armor",U*6  );
-		tForms.put("copper_helmet"       , U*5  );
-		tForms.put("copper_boots"        , U*4  );
-		tForms.put("copper_trapdoor"     , U*4  );
-		tForms.put("copper_axe"          , U*3  );
-		tForms.put("copper_pickaxe"      , U*3  );
-		tForms.put("copper_door"         , U*2  );
-		tForms.put("copper_hoe"          , U*2  );
-		tForms.put("copper_sword"        , U*2  );
-		tForms.put("copper_chain"        , U*11/9);
-		tForms.put("copper_shovel"       , U    );
-		tForms.put("copper_spear"        , U    );
-		tForms.put("copper_lantern"      , U*11/12);
-		tForms.put("copper_bars"         , U*3/8);
-		tForms.put("copper_torch"        , U/36 );
-		// form's secondary material (stick/plank wood), U2 = half a unit per stick
-		java.util.Map<String, Long> tWood = new java.util.LinkedHashMap<>();
-		tWood.put("copper_axe"     , U    ); // 2 sticks
-		tWood.put("copper_pickaxe" , U    );
-		tWood.put("copper_hoe"     , U    );
-		tWood.put("copper_shovel"  , U    );
-		tWood.put("copper_sword"   , U2   ); // 1 stick
-		tWood.put("copper_spear"   , U    );
-		tWood.put("copper_torch"   , U2/4 ); // one stick per 4 torches
-		tWood.put("copper_chest"   , U*8  ); // vanilla chest — 8 planks
-
-		int tSet = 0, tSkip = 0;
-		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
-			net.minecraft.resources.ResourceLocation tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
-			if (tID == null || !"minecraft".equals(tID.getNamespace()) || !tID.getPath().contains("copper")) continue;
-			String tBase = tID.getPath();
-			for (boolean tChanged = T; tChanged; ) {
-				tChanged = F;
-				for (String tPrefix : new String[] {"waxed_", "exposed_", "weathered_", "oxidized_"})
-					if (tBase.startsWith(tPrefix)) {tBase = tBase.substring(tPrefix.length()); tChanged = T;}
-			}
-			Long tAmount = tForms.get(tBase);
-			// ore (its own prefix, set separately) and the spawn egg carry no material data
-			if (tAmount == null) {tSkip++; continue;}
-			ItemStack tStack = ST.make(tItem, 1, 0);
-			if (ST.invalid(tStack)) {tSkip++; continue;}
-			Long tWoodAmount = tWood.get(tBase);
-			if (tBase.equals("copper_bulb")) {
-				OM.data(tStack, MT.Cu, tAmount, MT.Blaze, U, MT.Redstone, U);
-			} else if (tWoodAmount != null) {
-				OM.data(tStack, MT.Cu, tAmount, ANY.Wood, tWoodAmount);
-			} else {
-				OM.data(tStack, MT.Cu, tAmount);
-			}
-			tSet++;
-		}
-		OUT.println("[GT6-COPPER] material passport issued: " + tSet + " items, skipped (ore/egg): " + tSkip);
 	}
 }
