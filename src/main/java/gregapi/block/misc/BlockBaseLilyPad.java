@@ -31,7 +31,6 @@ import net.minecraft.world.level.block.SoundType;
 import static gregapi.data.CS.*;
 import static net.minecraftforge.common.PlantType.*;
 
-import java.util.List;
 import java.util.Random;
 
 import gregapi.block.BlockBaseMeta;
@@ -59,6 +58,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -81,9 +81,13 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	@Override public int getHarvestLevel(int aMeta) {return 0;}
-	// Inline-ports vanilla's own default body instead of calling a removed super method, the same technique already used in
-	// MultiTileEntityBlock.
-	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {if (!(aEntity instanceof Boat)) {AABB tBox = getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ); if (tBox != null && aAABB.intersects(tBox)) aList.add(tBox);}}
+	// neo calls entityInside instead of the old onEntityCollidedWithBlock; the boat rule is the 26.1.2 vanilla format
+	// (LilyPadBlock.entityInside) — ADAPT-028, ported back to the 1.20.1 entityInside channel. The 1.7.10 boat collision
+	// exclusion is gone by the same owner decision: the lily now collides with boats like with any entity, and the base
+	// addCollisionBoxesToList default applies.
+	@Override public void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity) {
+		if (aWorld instanceof ServerLevel && aEntity instanceof Boat) aWorld.destroyBlock(aPos, T, aEntity);
+	}
 	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return aY >= WD.minY(aWorld) && aY < WD.topY(aWorld) && WD.getMaterial(WD.block(aWorld, aX, aY - 1, aZ)) == Material.water && WD.meta(aWorld, aX, aY - 1, aZ) == 0;} // world bounds now come from the shared Y-scale center, not the old fixed [0, 256) range
 	// 1.7.10 canPlaceBlockAt override (original :73 = isReplaceable(target) && canBlockStay) is expressed by the
 	// engine channel: target replaceability is clause (2) of WD.canPlaceEntityOnSide, support is canSurvive below —
@@ -131,7 +135,11 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 		return aStack;
 	}
 	
-	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+0.015625F, aZ+1);}
+	// Collision footprint is the vanilla 26.1.2 lily-pad shape exactly (14x14, height 1.5/16) by owner decision
+	// (ADAPT-028): a boat pressed against the pad overlaps the cell by 1/16, and that overlap is what lets the vanilla
+	// boat brake on a lily and then break it — a full 16x16 box walls the boat off at the cell edge and nothing ever
+	// breaks. The selection outline above stays full-size (GT6 shape canon).
+	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX+0.0625F, aY, aZ+0.0625F, aX+0.9375F, aY+0.09375F, aZ+0.9375F);}
 	public AABB getSelectedBoundingBoxFromPool (Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+0.015625F, aZ+1);}
 	public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {setBlockBounds(0, 0, 0, 1, 0.015625F, 1);}
 	
