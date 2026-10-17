@@ -176,6 +176,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// 1.7.10 decided "does this need a tool" by MATERIAL (isToolNotRequired), not by the harvest-tool
 		// string; the old gate wrongly required a tool for everything, including ropes that should break by hand.
 		if (aTool != null && !aTool.isEmpty() && aVanillaMaterial != null && !aVanillaMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();
+		// Neo spawn channel: keep the 1.7.10 MTE rule TE-driven (only IMTE_CanCreatureSpawn), plus the vanilla light guard.
+		p = p.isValidSpawn((state, level, pos, type) -> state.getLightEmission(level, pos) < 14 && state.getBlock() instanceof MultiTileEntityBlock mb && mb.canCreatureSpawn(type.getCategory(), level, pos.getX(), pos.getY(), pos.getZ()));
 		return p;
 	}
 	protected MultiTileEntityBlock(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {

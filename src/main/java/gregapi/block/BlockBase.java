@@ -137,6 +137,8 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).lightLevel(BlockBase::lightOf);
 		if (aMaterial != null && !aMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();
 		p = mapColorOf(p, aMaterial);
+		// Neo spawn channel: bridge the ported 1.7.10 canCreatureSpawn into isValidSpawn, plus the vanilla light guard.
+		p = p.isValidSpawn((state, level, pos, type) -> state.getLightEmission(level, pos) < 14 && state.getBlock() instanceof BlockBase b && b.canCreatureSpawn(type.getCategory(), level, pos.getX(), pos.getY(), pos.getZ()));
 		return p;
 	}
 

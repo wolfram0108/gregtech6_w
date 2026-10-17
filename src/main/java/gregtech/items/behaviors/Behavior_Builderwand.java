@@ -26,6 +26,7 @@ package gregtech.items.behaviors;
 import net.minecraft.core.BlockPos;
 
 import gregapi.block.IBlockExtendedMetaData;
+import gregapi.block.IPrefixBlock;
 import gregapi.block.metatype.BlockMetaType;
 import gregapi.data.MD;
 import gregapi.item.multiitem.MultiItem;
@@ -86,7 +87,8 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 		
 		
 		Block aBlock = WD.block(aWorld, aX, aY, aZ, T);
-		if (ST.invalid(aBlock) || (aBlock instanceof IBlockExtendedMetaData == (aTileEntity == null))) return F;
+		// In the port IBlockExtendedMetaData is the meta channel itself (BlockState property or chunk map), not the original's "has a TileEntity" — so refuse only a BlockEntity block without that channel (MTE, vanilla chest).
+		if (ST.invalid(aBlock) || (aTileEntity != null && !(aBlock instanceof IBlockExtendedMetaData))) return F;
 		short aMeta = (aBlock instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)aBlock).getExtendedMetaData(aWorld, aX, aY, aZ) : WD.meta(aWorld, aX, aY, aZ, T));
 		
 		int tDist = (MultiItemTool.getPrimaryMaterial(aStack).mToolQuality+1);
@@ -95,7 +97,8 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 		for (int tX = (SIDES_AXIS_X[aSide]?0:-tDist); tX <= (SIDES_AXIS_X[aSide]?0:tDist); tX++)
 		for (int tY = (SIDES_AXIS_Y[aSide]?0:-tDist); tY <= (SIDES_AXIS_Y[aSide]?0:tDist); tY++)
 		for (int tZ = (SIDES_AXIS_Z[aSide]?0:-tDist); tZ <= (SIDES_AXIS_Z[aSide]?0:tDist); tZ++)
-		if (aBlock == WD.block(aWorld, aX+tX, aY+tY, aZ+tZ, T) && (aBlock instanceof IBlockExtendedMetaData || aMeta == WD.meta(aWorld, aX+tX, aY+tY, aZ+tZ, T))) {
+		// The original exempted IBlockExtendedMetaData == prefix blocks from the neighbour meta check; keep the same set via IPrefixBlock so stones/slabs compare meta again.
+		if (aBlock == WD.block(aWorld, aX+tX, aY+tY, aZ+tZ, T) && (aBlock instanceof IPrefixBlock || aMeta == WD.meta(aWorld, aX+tX, aY+tY, aZ+tZ, T))) {
 			// Doublechecking Wand Permissions at that location.
 			if (!(aPlayer).mayUseItemAt(new BlockPos(aX+tX, aY+tY, aZ+tZ), FORGE_DIR[aSide], aStack)) continue;
 			if (!(aPlayer).mayUseItemAt(new BlockPos(aX+tX+OFFX[aSide], aY+tY+OFFY[aSide], aZ+tZ+OFFZ[aSide]), FORGE_DIR[aSide], aStack)) continue;

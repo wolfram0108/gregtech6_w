@@ -199,6 +199,8 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		if (aTool != null && !aTool.isEmpty() && aVanillaMaterial != null && !aVanillaMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();
 		// MODCOMPAT-002: map color — the same 1.7.10 default "from the material", see BlockBase.mapColorOf.
 		p = gregapi.block.BlockBase.mapColorOf(p, aVanillaMaterial);
+		// Neo spawn channel: bridge the ported 1.7.10 canCreatureSpawn into isValidSpawn, plus the vanilla light guard.
+		p = p.isValidSpawn((state, level, pos, type) -> state.getLightEmission(level, pos) < 14 && state.getBlock() instanceof PrefixBlock pb && !pb.mSpawnProof);
 		return p;
 	}
 	public PrefixBlock(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterialStack aHullMaterial, Class<? extends PrefixBlockItem> aItemClass, Drops aDrops, ITexture aTexture, Material aVanillaMaterial, SoundType aSoundType, String aTool, float aBaseHardness, float aBaseResistance, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ, boolean aGravity, boolean aBeaconBase, boolean aEnderDragonProof, boolean aWitherProof, boolean aOpaque, boolean aNormalCube, boolean aPlacementChecksTemperature, boolean aPlacementChecksAntimatter, boolean aCanBurn, boolean aCanExplode, boolean aRenderOverlayInWorld, boolean aCanGlow, boolean aCanLight, boolean aSpawnProof, OreDictMaterial... aMaterialList) {
