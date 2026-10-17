@@ -643,11 +643,13 @@ public class WD {
 		return rTier;
 	}
 
-	/** F-tool CENTER (continued): for vanilla blocks the 1.7.10 tool class is DATA-DEFINED, not derived —
-	 *  no neo tag is equivalent to it ({@code MINEABLE_WITH_*} is broader: it covers doors, fences, barrels, foliage, and
-	 *  a {@code hoe} class did not exist for 1.7.10 vanilla at all). Taken from the passport; outside the table — {@code ""}, which for
-	 *  the harvest rule is equivalent to the 1.7.10 default {@code null} ("ask the vanilla rule", {@code ForgeHooks:104}),
-	 *  since all consumers compare the class via {@code equalsIgnoreCase} and an empty string matches nothing. */
+	/** F-tool CENTER (continued): for 1.7.10 vanilla blocks the tool class is DATA-DEFINED, not derived — no neo tag is
+	 *  equivalent to it ({@code MINEABLE_WITH_*} is broader: it covers doors, fences, barrels, foliage, and a {@code hoe}
+	 *  class did not exist for 1.7.10 vanilla at all), so the passport stays the exact source. Blocks that did not exist
+	 *  in 1.7.10 (1.14+ content and mods) have no passport and are answered by the modern mineable tags instead — an
+	 *  approximation by design (Issue #21). No tag covered — {@code ""}, which for the harvest rule is equivalent to the
+	 *  1.7.10 default {@code null} ("ask the vanilla rule", {@code ForgeHooks:104}), since all consumers compare the class
+	 *  via {@code equalsIgnoreCase} and an empty string matches nothing. */
 	public static String harvestTool(Block aBlock, int aMeta) {
 		// dispatch by the IBlock CONTRACT (see harvestLevel above: instanceof BlockBase was blind to MTE/Prefix/Rail —
 		// the key did not "see" the machine as its own block → canHarvestBlock=false → the machine was NOT harvestable at all after
