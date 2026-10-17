@@ -98,13 +98,27 @@ public class GT6HarvestTags extends TagsProvider<Block> {
 		return 0;
 	}
 
+	/** The single tool<->tag table: datagen walks it forward (GT6 block -> vanilla tag), the runtime center
+	 *  WD.harvestTool walks it backward (modern block -> GT6 tool class). Order is the harvest precedence. */
+	private static final String[] PAIR_TOOLS = {CS.TOOL_axe, CS.TOOL_pickaxe, CS.TOOL_shovel, CS.TOOL_hoe, CS.TOOL_sword};
+	@SuppressWarnings("unchecked")
+	private static final TagKey<Block>[] PAIR_TAGS = new TagKey[]{BlockTags.MINEABLE_WITH_AXE, BlockTags.MINEABLE_WITH_PICKAXE, BlockTags.MINEABLE_WITH_SHOVEL, BlockTags.MINEABLE_WITH_HOE, BlockTags.SWORD_EFFICIENT};
+	/** Forward pairs are only those a 1.7.10 vanilla block could carry; tagging GT6 blocks as hoe/sword would
+	 *  invent a rule. Those pairs stay in the table for the reverse direction only. */
+	private static final int FORWARD_PAIRS = 3;
+
 	/** Vanilla "mined with this tool" tag for a GT6 tool name, or null if vanilla has none; public
 	 *  because the acceptance-display judge reads the same mapping to check whether this mechanism tagged a block. */
 	public static TagKey<Block> mineableTag(String aTool) {
 		if (aTool == null) return null;
-		if (aTool.equals(CS.TOOL_pickaxe)) return BlockTags.MINEABLE_WITH_PICKAXE;
-		if (aTool.equals(CS.TOOL_axe    )) return BlockTags.MINEABLE_WITH_AXE;
-		if (aTool.equals(CS.TOOL_shovel )) return BlockTags.MINEABLE_WITH_SHOVEL;
+		for (int i = 0; i < FORWARD_PAIRS; i++) if (aTool.equals(PAIR_TOOLS[i])) return PAIR_TAGS[i];
+		return null;
+	}
+
+	/** Reverse of the same table: the GT6 tool class a modern mineable tag stands for, or null. */
+	public static String mineableTool(net.minecraft.world.level.block.state.BlockState aState) {
+		if (aState == null) return null;
+		for (int i = 0; i < PAIR_TOOLS.length; i++) if (aState.is(PAIR_TAGS[i])) return PAIR_TOOLS[i];
 		return null;
 	}
 }
