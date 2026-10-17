@@ -56,11 +56,11 @@ import java.util.List;
 import static gregapi.data.CS.*;
 
 /** @author Gregorius Techneticies
- *  Enchantments are data-driven now; a Holder<Enchantment> needs a live RegistryAccess that a static field doesn't have,
- *  so these static Enchantment instances degrade to an empty array instead. */
+ *  The 1.20.1 enchantment statics (MOB_LOOTING/BLOCK_FORTUNE) are plain Enchantment objects,
+ *  exactly the 1.7.10 shape expected by UT.NBT.addEnchantment and MultiItemTool.isItemStackUsable on this branch. */
 public abstract class ToolStats implements IToolStats {
-	public static final Enchantment[] FORTUNE_ENCHANTMENT = new Enchantment[0];
-	public static final net.minecraft.world.item.enchantment.Enchantment[] LOOTING_ENCHANTMENT = new net.minecraft.world.item.enchantment.Enchantment[0];
+	public static final Enchantment[] FORTUNE_ENCHANTMENT = new Enchantment[] {net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE};
+	public static final Enchantment[] LOOTING_ENCHANTMENT = new Enchantment[] {net.minecraft.world.item.enchantment.Enchantments.MOB_LOOTING};
 
 	@Override public int getToolDamagePerBlockBreak()                                       {return 100;}
 	@Override public int getToolDamagePerDropConversion()                                   {return 100;}

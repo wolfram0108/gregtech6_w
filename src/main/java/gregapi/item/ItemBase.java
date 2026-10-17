@@ -174,6 +174,9 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	// lazily on first request using the same "modid:name" path.
 	public ResourceLocation getIconFromDamage(int aMeta) {if (mIcon == null) registerIcons(null); return mIcon;}
 	public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {isItemStackUsable(aStack);}
+	// 1.20.1 kept the 1.7.10 channel shape: Item.onCraftedBy(ItemStack,Level,Player) is Item.onCreated(ItemStack,World,EntityPlayer).
+	// Without the bridge in the base, crafting never ran isItemStackUsable (tool enchants, NBT refresh) for GT6 items.
+	@Override public void onCraftedBy(ItemStack aStack, Level aWorld, Player aPlayer) {onCreated(aStack, aWorld, aPlayer);}
 	public ItemStack getContainerItem(ItemStack aStack) {return null;}
 	public boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}

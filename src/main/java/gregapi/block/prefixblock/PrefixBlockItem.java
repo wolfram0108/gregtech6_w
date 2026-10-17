@@ -214,6 +214,9 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	public ItemStack getContainerItem(ItemStack aStack) {return null;}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {updateItemStack(aStack);}
+	// 1.20.1 kept the 1.7.10 channel shape: Item.onCraftedBy(ItemStack,Level,Player) is Item.onCreated(ItemStack,World,EntityPlayer) —
+	// the same bridge as ItemBase; without it crafting never ran updateItemStack of this prefix block item.
+	@Override public void onCraftedBy(ItemStack aStack, Level aWorld, Player aPlayer) {onCreated(aStack, aWorld, aPlayer);}
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public int getItemEnchantability() {return 0;}
