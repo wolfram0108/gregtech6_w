@@ -28,6 +28,10 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 
 ## [Unreleased]
 
+### Fixed
+
+- **JEI recipe categories show the machine's localized name instead of the English literal.** The tab title is built from the `RecipeMap` translation key (`gt.recipe.*`) and resolved when it is drawn, so it follows the selected language and still updates after a language switch.
+
 ## [6.0.0-alpha.14] — crafting tables, furnace smelting parity and archery crash fix
 
 ### Added

@@ -70,7 +70,11 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 	private final IDrawable mBackNEI, mBackGui;
 
 	public GT6_JEI_RecipeCategory(RecipeMap aMap, RecipeType<Recipe> aType, IGuiHelper aGuiHelper) {
-		super(aType, Component.literal(aMap.mNameLocal), icon(aMap, aGuiHelper), WIDTH, HEIGHT);
+		// The tab title MUST be translated at RENDER time, not frozen at registration: mNameInternal is the key
+		// RecipeMap registers via LH.add (ru_ru.json: "gt.recipe.boxinator" -> "Упаковщик"), while mNameLocal is the
+		// English literal that 1.7.10 only used as the language-table default. Component.literal showed that
+		// literal in every language; the fallback keeps English correct if the key ever misses the table.
+		super(aType, Component.translatableWithFallback(aMap.mNameInternal, aMap.mNameLocal), icon(aMap, aGuiHelper), WIDTH, HEIGHT);
 		mMap = aMap;
 		IDrawable tNEI = null, tGui = null;
 		try {
