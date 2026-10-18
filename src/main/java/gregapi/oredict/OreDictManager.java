@@ -631,9 +631,15 @@ public final class OreDictManager {
 	public ItemStack setStack_(boolean aUseBlackList, ItemStack aStack) {
 		ItemStack tStack = getStack_(aUseBlackList, aStack);
 		if (tStack == null || ST.equal(aStack, tStack)) return aStack;
-		// Swapping an item type in place is impossible since neo's ItemStack.item is final (centralized in ST.set);
-		// the meta of the oredict-canonical stack is kept since the item itself cannot be changed.
-		return ST.meta_(aStack, ST.meta_(tStack));
+		// 1:1 with 1.7.10 (gt6-original/OreDictManager.java:597-601): ItemStack.setItem(targetItem), then the target's
+		// meta; count and NBT stay on the stack the player holds. neo's ItemStack.item is final, so the swap goes
+		// through the ST.setItem reflection center — the same in-place item swap ST.set uses.
+		// The meta is adopted ONLY after the Item really is the target's: writing it without the swap relabels the
+		// stack in the TARGET's meta space, and meta 0 of every GT6 prefix item is MT.Empty ("Empty Plate").
+		net.minecraft.world.item.Item tTargetItem = ST.item_(tStack);
+		ST.setItem(aStack, tTargetItem);
+		if (ST.item_(aStack) == tTargetItem) ST.meta_(aStack, ST.meta_(tStack));
+		return aStack;
 	}
 	
 	public ItemStack getStack(boolean aUseBlackList, ItemStack aStack) {
