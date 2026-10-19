@@ -50,9 +50,9 @@ import static gregapi.oredict.OreDictMaterialCondition.typemin;
  * List of all OreDict Prefixes. The Short Name is for ease of overview and stands for "OrePrefix".
  */
 public class OP {
-	private static OreDictPrefix create(String aName, String aCategory, String aPreMaterial, String aPostMaterial) {return OreDictPrefix.createPrefix(aName).setCategoryName(aCategory).setLocalPrefixName(aCategory).setLocalItemName(aPreMaterial, aPostMaterial);}
-	private static OreDictPrefix create(String aName, String aCategory) {return OreDictPrefix.createPrefix(aName).setCategoryName(aCategory).setLocalPrefixName(aCategory);}
-	private static OreDictPrefix unused(String aName) {return OreDictPrefix.createPrefix(aName).add(PREFIX_UNUSED);}
+	protected static OreDictPrefix create(String aName, String aCategory, String aPreMaterial, String aPostMaterial) {return OreDictPrefix.createPrefix(aName).setCategoryName(aCategory).setLocalPrefixName(aCategory).setLocalItemName(aPreMaterial, aPostMaterial);}
+	protected static OreDictPrefix create(String aName, String aCategory) {return OreDictPrefix.createPrefix(aName).setCategoryName(aCategory).setLocalPrefixName(aCategory);}
+	protected static OreDictPrefix unused(String aName) {return OreDictPrefix.createPrefix(aName).add(PREFIX_UNUSED);}
 	
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static final OreDictPrefix

@@ -39,6 +39,40 @@ sourceSets.main.java.srcDir('src/compat-mirror/java')
 // Those jars own the packages at runtime, so the set builds apart and never enters the mod's output or jar.
 sourceSets { provided { java.srcDir('src/compat-mirror/provided') } }
 
+// GT6U addon: a second mod in its own source set and jar, compiled against GregTech 6 and never the other way round.
+// Runs and tests load it only with -Pgt6u; without the flag every run is pure GregTech 6.
+def withGt6u = project.hasProperty('gt6u')
+sourceSets {
+    gt6u {
+        // src/gt6u/java and src/gt6u/resources by Gradle's convention for a source set named gt6u.
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    gt6uCompileOnly.extendsFrom compileOnly
+    gt6uImplementation.extendsFrom implementation
+    // Gradle 9 hands the source-set variant configurations to the main set only, while the legacy reobfuscation pass
+    // reads them by name off whatever source set it is given (ObfuscationExtension.reobfuscate). The addon's two are
+    // spelled out with the shape the java plugin gives main's, so the call finds them instead of failing on the name.
+    gt6uApiElements {
+        canBeConsumed = true
+        canBeResolved = false
+    }
+    gt6uRuntimeElements {
+        canBeConsumed = true
+        canBeResolved = false
+    }
+}
+// Declaring the two by hand is not enough: the publishing component only knows the variants the java plugin registered
+// itself, and the reobfuscation call registers its own remapped variant against the same component. Both are therefore
+// registered here as well, with no artifact of their own (the addon is its own mod and its own jar, not a published
+// variant of GregTech 6), so the graph resolves and `publish` behaves exactly as before.
+components.java {
+    addVariantsFromConfiguration(configurations.gt6uApiElements) { }
+    addVariantsFromConfiguration(configurations.gt6uRuntimeElements) { }
+}
+
 // The -PcoreOnly mode is gone with the mass-compilation phase it served: it narrowed the build to two file lists.
 
 // -PparityFull is gone: a second way to say "diff against the original" that only added confusion.
@@ -284,11 +318,18 @@ legacyForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
         }
+        if (withGt6u) {
+            gt6u {
+                sourceSet(sourceSets.gt6u)
+            }
+        }
     }
 
     // The legacyForge extension has no unitTest{} block; removed since this run's goal is core compilation.
 }
 legacyForge.addModdingDependenciesTo(sourceSets.provided)
+// The addon's source set is handed Minecraft and Forge the same way, and only when it is part of the build at all.
+if (withGt6u) legacyForge.addModdingDependenciesTo(sourceSets.gt6u)
 
 // Local mode: NeoFormRuntime takes the game from the platform copy beside the repository instead of asking Mojang.
 // Its manifests under minecraft/resolved point every address at a file of that copy.
@@ -427,19 +468,20 @@ test {
 
 // This block of code expands all declared replace properties in the specified resource targets.
 // A missing property will result in an error. Properties are expanded using ${} Groovy notation.
+// One map for both jars: the addon carries the same version as the GregTech it is built against.
+var modMetadataProperties = [
+        minecraft_version      : minecraft_version,
+        minecraft_version_range: minecraft_version_range,
+        forge_version          : forge_version,
+        neoforge_version_range : neoforge_version_range,
+        mod_id                 : mod_id,
+        mod_name               : mod_name,
+        mod_license            : mod_license,
+        mod_version            : mod_version,
+]
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
-    var replaceProperties = [
-            minecraft_version      : minecraft_version,
-            minecraft_version_range: minecraft_version_range,
-            forge_version          : forge_version,
-            neoforge_version_range : neoforge_version_range,
-            mod_id                 : mod_id,
-            mod_name               : mod_name,
-            mod_license            : mod_license,
-            mod_version            : mod_version,
-    ]
-    inputs.properties replaceProperties
-    expand replaceProperties
+    inputs.properties modMetadataProperties
+    expand modMetadataProperties
     from "src/main/templates"
     into "build/generated/sources/modMetadata"
 }
@@ -448,6 +490,32 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 legacyForge.ideSyncTask generateModMetadata
+
+// The GT6U addon's metadata and jar, with the same version as GregTech 6: the addon takes exactly the GregTech it was built with.
+// Forge 1.20.1 reads the template as META-INF/mods.toml (neoforge.mods.toml is the 26.x name), so the addon's template follows that.
+var generateGt6uMetadata = tasks.register("generateGt6uMetadata", ProcessResources) {
+    inputs.properties modMetadataProperties
+    expand modMetadataProperties
+    from "src/gt6u/templates"
+    into "build/generated/sources/gt6uMetadata"
+}
+sourceSets.gt6u.resources.srcDir generateGt6uMetadata
+// The addon's jar, built only with -Pgt6u: GregTech 6's build/libs, its jar check and its release stay as they were.
+// The plugin sends the jar handed to reobfuscate() to build/devlibs (the same intermediate directory the main jar uses),
+// so the shipped addon jar is the remapped one below, in its own build/libs-gt6u.
+var gt6uJar = tasks.register('gt6uJar', Jar) {
+    archiveBaseName = 'gt6u'
+    archiveVersion = mod_version
+    from sourceSets.gt6u.output
+}
+// A second production jar needs the same SRG pass as the main one, so the addon costs one more call of the same plugin shape.
+// reobfuscate() names the task after the jar it remaps -> reobfGt6uJar; it also redirects the named jar it is handed to
+// build/devlibs (the plugin's dev-jar directory for the main jar), so only the remapped output is re-pointed here:
+// build/libs-gt6u holds the production addon jar, exactly like build/libs holds GregTech 6's.
+var reobfGt6uJar = obfuscation.reobfuscate(gt6uJar, sourceSets.gt6u)
+reobfGt6uJar.configure { destinationDirectory.set(layout.buildDirectory.dir('libs-gt6u')) }
+// gt6uJar is finalized by reobfGt6uJar (the plugin wires that itself), so asking for the jar does produce the production one.
+if (withGt6u) tasks.named('assemble') { dependsOn gt6uJar }
 
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {

@@ -64,7 +64,7 @@ import static gregapi.data.CS.FluidsGT.*;
  *  Data oracle (the enum itself is untouched) plus 1:1 utilities over the real neo Fluid/FluidStack types;
  *  the Forge-only FluidContainerRegistry bucket/canister bookkeeping is rebuilt here on top of neo. */
 @SuppressWarnings("unchecked")
-public enum FL {
+public enum FL implements gregapi.fluid.IFluidName {
 	  Error                     ("error"                                                    , HIDDEN)
 	  
 	, UUM                       ("ic2uumatter"                                              , LIQUID, ENCHANTED_EFFECT)
@@ -585,7 +585,7 @@ public enum FL {
 	FL(String aName, Collection<String>... aFluidSets) {
 		mName = aName;
 		mAllNames = new String[] {aName};
-		for (Collection<String> aFluidSet : aFluidSets) {aFluidSet.add(mName);}
+		gregapi.fluid.IFluidName.addTo(mName, aFluidSets);
 	}
 	FL(String aName, String aOldName, Collection<String>... aFluidSets) {
 		mName = aName;
@@ -611,38 +611,13 @@ public enum FL {
 
 
 
-	/** Returns the real registry position (stable once registered); the numbering itself is not semantically
-	 *  meaningful, unlike the old global fluid id. */
-	public int id() {Fluid tFluid = fluid(); return tFluid == null ? -1 : BuiltInRegistries.FLUID.getId(tFluid);}
-	public Fluid fluid() {return fluid_(mName);}
-	public boolean exists() {return fluid() != null;}
-	public ItemStack display() {return display(make(0), F, F);}
-	public ItemStack display(long aAmount) {return display(make(aAmount), aAmount, F, F);}
+	@Override public String fluidName() {return mName;}
+	@Override public String[] allNames() {return mAllNames;}
 	
-	public FluidStack make (long aAmount) {return make (mName, aAmount);}
-	public FluidStack make_(long aAmount) {return make_(mName, aAmount);}
-	public FluidStack make (long aAmount, String aReplacement) {return make (mName, aAmount, aReplacement);}
-	public FluidStack make_(long aAmount, String aReplacement) {return make_(mName, aAmount, aReplacement);}
 	public FluidStack make (long aAmount, FL aReplacement) {return make (mName, aAmount, aReplacement.mName);}
 	public FluidStack make_(long aAmount, FL aReplacement) {return make_(mName, aAmount, aReplacement.mName);}
-	public FluidStack make (long aAmount, String aReplacement, long aReplacementAmount) {return make (mName, aAmount, aReplacement, aReplacementAmount);}
-	public FluidStack make_(long aAmount, String aReplacement, long aReplacementAmount) {return make_(mName, aAmount, aReplacement, aReplacementAmount);}
 	public FluidStack make (long aAmount, FL aReplacement, long aReplacementAmount) {return make (mName, aAmount, aReplacement.mName, aReplacementAmount);}
 	public FluidStack make_(long aAmount, FL aReplacement, long aReplacementAmount) {return make_(mName, aAmount, aReplacement.mName, aReplacementAmount);}
-	
-	public boolean is(IFluidTank aTank) {return is(aTank.getFluid());}
-	public boolean is(FluidStack aFluid) {return aFluid != null && is(aFluid.getFluid());}
-	public boolean is(Fluid aFluid) {return aFluid != null && is(FluidGT.nameOf(aFluid));}
-	public boolean is(String aFluidName) {return mName.equalsIgnoreCase(aFluidName);}
-	public boolean is(Collection<String> aFluidSet) {return aFluidSet.contains(mName);}
-	
-	public ItemStack fill(ItemStack aStack) {return fill(make(Integer.MAX_VALUE), aStack, F, T, T, F);}
-	
-	public List<FluidStack> list(long aAmount) {
-		List<FluidStack> rList = new ArrayListNoNulls<>();
-		for (String tName : mAllNames) rList.add(make(tName, aAmount));
-		return rList;
-	}
 	
 	
 	

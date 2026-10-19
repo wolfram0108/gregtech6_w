@@ -40,6 +40,18 @@ import net.minecraftforge.fluids.FluidStack;
 import static gregapi.data.CS.*;
 
 public class Loader_Fluids implements Runnable {
+	/** The fluids of the materials' own forms: an addon that adds fluids of GT6 materials after this loader calls it again, so
+	 *  the materials' own forms are the ones linked to them. */
+	public static void createMaterialFluids() {
+		for (OreDictMaterial tMaterial : MT.ALL_MATERIALS_REGISTERED_HERE) {
+			if (tMaterial.contains(TD.ItemGenerator.LIQUID)) FL.createLiquid(tMaterial);
+			if (tMaterial.contains(TD.ItemGenerator.MOLTEN)) FL.createMolten(tMaterial);
+			if (tMaterial.contains(TD.ItemGenerator.GASES )) FL.createGas   (tMaterial);
+			if (tMaterial.contains(TD.ItemGenerator.VAPORS)) FL.createVapour(tMaterial);
+			if (tMaterial.contains(TD.ItemGenerator.PLASMA)) FL.createPlasma(tMaterial);
+		}
+	}
+	
 	@Override
 	public void run() {
 		FL.create("HeliumPlasma"             , "Helium Plasma"       , MT.He                 , 3,   1000, 10000).setLuminosity(15);
@@ -62,7 +74,7 @@ public class Loader_Fluids implements Runnable {
 			MT.Ice.mGas = MT.H2O.mGas;
 			gregapi.fluid.FluidGT tSteam = gregapi.fluid.FluidGT.of(MT.H2O.mGas.getFluid());
 			if (tSteam != null) tSteam.setTemperature((int)(C+100)).setGaseous(T);
-			MT.Steam.gas(FL.Steam.make(160000));
+			if (!gregapi.api.GT6Definitions.drops(gregapi.api.GT6Definitions.STEAM_GAS)) MT.Steam.gas(FL.Steam.make(160000));
 		});
 		
 		//-----
@@ -87,6 +99,7 @@ public class Loader_Fluids implements Runnable {
 		FL.create("NitroFuel"                , "Nitro Fuel"          , MT.NitroFuel          , 1);
 		FL.create("oil"                      , "Oil"                 , MT.Oil                , 1);
 		FL.create("fuel"                     , "Fuel Oil"            , MT.Fuel               , 1);
+		if (!gregapi.api.GT6Definitions.drops(gregapi.api.GT6Definitions.FLUID_KEROSENE))
 		FL.create("kerosene"                 , "Kerosene"            , MT.Kerosine           , 1);
 		FL.create("kerosine"                 , "Kerosine"            , MT.Kerosine           , 1);
 		FL.create("diesel"                   , "Diesel"              , MT.Diesel             , 1);
@@ -687,13 +700,8 @@ public class Loader_Fluids implements Runnable {
 		});
 		
 		
-		for (OreDictMaterial tMaterial : MT.ALL_MATERIALS_REGISTERED_HERE) {
-			if (tMaterial.contains(TD.ItemGenerator.LIQUID)) FL.createLiquid(tMaterial);
-			if (tMaterial.contains(TD.ItemGenerator.MOLTEN)) FL.createMolten(tMaterial);
-			if (tMaterial.contains(TD.ItemGenerator.GASES )) FL.createGas   (tMaterial);
-			if (tMaterial.contains(TD.ItemGenerator.VAPORS)) FL.createVapour(tMaterial);
-			if (tMaterial.contains(TD.ItemGenerator.PLASMA)) FL.createPlasma(tMaterial);
-		}
+		createMaterialFluids();
+		
 		
 		
 		// FL.X.fluid() resolves a source-Fluid bound only at server start, so the density config here is deferred to the same

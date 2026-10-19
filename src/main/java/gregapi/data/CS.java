@@ -2197,7 +2197,14 @@ public class CS {
 	public static class ModIDs {
 		/** Lives here rather than on the client proxy so both the client render path and the common datagen code
 		 *  can ask it without either duplicating the check or leaking a client-only type into the dedicated server. */
-		public static boolean isGregNamespace(String aNS) {return GT.equals(aNS) || GAPI.equals(aNS);}
+		public static boolean isGregNamespace(String aNS) {return GAPI.equals(aNS) || isContentNamespace(aNS);}
+		/** GregTech and the addons built on the GT API: their blocks and items are GT6 content, as addons' were in 1.7.10. The two API mods are not. */
+		public static boolean isContentNamespace(String aNS) {
+			if (GT.equals(aNS)) return true;
+			if (GAPI.equals(aNS) || GAPI_POST.equals(aNS)) return false;
+			for (gregapi.api.Abstract_Mod tMod : gregapi.api.Abstract_Mod.MODS_USING_GT_API) if (tMod.getModID().equals(aNS)) return true;
+			return false;
+		}
 		/** MOD ID Strings */
 		@SuppressWarnings("hiding")
 		public static final String

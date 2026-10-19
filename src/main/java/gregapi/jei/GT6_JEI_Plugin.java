@@ -97,8 +97,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null) continue;
-			String tNs = tKey.getNamespace();
-			if (!tNs.equals(ModIDs.GT) && !tNs.equals("gregtech") && !tNs.equals("gregapi")) continue;
+			if (!ModIDs.isGregNamespace(tKey.getNamespace())) continue;
 			try {
 				// The identity rule isn't this class's to make: it asks the central ST, keeping no copy of the rule here.
 				final boolean tWithNBT = gregapi.util.ST.identityIncludesNBT(tItem);

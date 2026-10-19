@@ -54,6 +54,26 @@ public class LanguageHandler {
 	private static final HashMap<String, String> BUFFERMAP = new HashMap<>(), BACKUPMAP = new HashMap<>();
 	private static boolean mWritingEnabled = F;
 
+	/** Keys whose GT6 English an addon on the GT API rewrote: a translation of GT6's text no longer says what the key now says, and the
+	 *  addon (GT6U) showed its English in every language; a rewrite by GT6 itself marks nothing. */
+	private static final java.util.Set<String> REWRITTEN = java.util.concurrent.ConcurrentHashMap.newKeySet();
+	/** The English of a rewritten key, in either form (key or key.name); null for any other key. */
+	private static String rewrittenEnglish(String aKey) {
+		if (REWRITTEN.isEmpty()) return null;
+		if (REWRITTEN.contains(aKey)) return BACKUPMAP.get(aKey);
+		if (aKey.endsWith(".name") && REWRITTEN.contains(aKey = aKey.substring(0, aKey.length() - 5))) return BACKUPMAP.get(aKey);
+		return null;
+	}
+	/** A new English for aKey: an addon replacing an English already there marks the key for good, so no later default can flip it back. */
+	private static void english(String aKey, String aEnglish) {
+		String tOld = BACKUPMAP.get(aKey);
+		if (tOld != null && aEnglish != null && !tOld.equals(aEnglish)) {
+			String tAsker = gregapi.GT_API.asker();
+			if (tAsker != null && !ModIDs.GT.equals(tAsker) && ModIDs.isContentNamespace(tAsker)) REWRITTEN.add(aKey);
+		}
+		BACKUPMAP.put(aKey, aEnglish);
+	}
+
 	/** Our overlay over the engine table ({@link #injectIntoEngine()}); rebuilt on every resource load. */
 	private static GT6Language mEngineOverlay = null;
 
@@ -130,6 +150,14 @@ public class LanguageHandler {
 		/** @return how many key forms were added (the engine did not know them). */
 		int own(String aKey, String aEnglish) {
 			int rAdded = 0;
+			// A rewritten key is ours over the engine's and takes its latest English: the engine's translation says GT6's old text.
+			String tRewritten = rewrittenEnglish(aKey);
+			if (tRewritten != null) {
+				if (!tRewritten.equals(mOwn.put(aKey, tRewritten))) rAdded++;
+				if (!tRewritten.equals(mOwn.put(aKey + ".name", tRewritten))) rAdded++;
+				if (rAdded > 0) mMerged = null;
+				return rAdded;
+			}
 			if (!mDelegate.has(aKey           ) && mOwn.putIfAbsent(aKey           , aEnglish) == null) rAdded++;
 			if (!mDelegate.has(aKey + ".name" ) && mOwn.putIfAbsent(aKey + ".name" , aEnglish) == null) rAdded++;
 			if (rAdded > 0) mMerged = null; // Content changed: the merged map is rebuilt on the next request.
@@ -137,6 +165,7 @@ public class LanguageHandler {
 		}
 
 		@Override public String getOrDefault(String aKey, String aDefault) {
+			if (rewrittenEnglish(aKey) != null) {String rOwn = mOwn.get(aKey); if (rOwn != null) return rOwn;}
 			if (mDelegate.has(aKey)) return mDelegate.getOrDefault(aKey, aDefault);
 			String rOwn = mOwn.get(aKey);
 			return rOwn == null ? aDefault : rOwn;
@@ -155,6 +184,7 @@ public class LanguageHandler {
 			if (rMerged == null) {
 				java.util.Map<String, String> tData = new HashMap<>(mOwn);
 				tData.putAll(mDelegate.getLanguageData()); // The engine wins: its values override ours.
+				for (java.util.Map.Entry<String, String> tEntry : mOwn.entrySet()) if (rewrittenEnglish(tEntry.getKey()) != null) tData.put(tEntry.getKey(), tEntry.getValue()); // but not over a rewritten key
 				mMerged = rMerged = java.util.Collections.unmodifiableMap(tData);
 			}
 			return rMerged;
@@ -169,7 +199,7 @@ public class LanguageHandler {
 	}
 	
 	public static synchronized void set(String aKey, String aEnglish) {
-		BACKUPMAP.put(aKey, aEnglish);
+		english(aKey, aEnglish);
 		// 1:1 with the original (LanguageHandler.java:59-64): the string also goes into the ENGINE table via
 		// injectIntoEngine(). BACKUPMAP stays the source of truth for translate()/LH.get.
 		injectKey(aKey, aEnglish);
@@ -180,7 +210,7 @@ public class LanguageHandler {
 		aKey = aKey.trim();
 		if (aKey.length() <= 0) return;
 		boolean tSave = F;
-		BACKUPMAP.put(aKey, aEnglish);
+		english(aKey, aEnglish);
 		injectKey(aKey, aEnglish); // 1:1 with the original (LanguageHandler.java:84-95): also into the engine table
 		if (sLangFile == null) {
 			BUFFERMAP.put(aKey, aEnglish);
@@ -248,6 +278,9 @@ public class LanguageHandler {
 		aKey = aKey.trim();
 		if (aKey.length() < 2) return "";
 		String
+		// A rewritten key answers with its English before any translation, as the addon showed it.
+		rTranslation = rewrittenEnglish(aKey);
+		if (UT.Code.stringValid(rTranslation)) return rTranslation;
 		// 1.7.10 had TWO separate engine calls here: FML LanguageRegistry.getStringLocalization
 		// (its own overlay) and vanilla StatCollector.translateToLocal (the file-based lang registry) — on 1.7.10 these
 		// were two different subsystems scanning .lang files. On neo/vanilla they are merged into ONE system
@@ -262,6 +295,8 @@ public class LanguageHandler {
 
 		aKey = (aKey.endsWith(".name") ? aKey.substring(0, aKey.length() - 5) : aKey + ".name");
 
+		rTranslation = rewrittenEnglish(aKey);
+		if (UT.Code.stringValid(rTranslation)) return rTranslation;
 		rTranslation = Component.translatable(aKey).getString();
 		if (UT.Code.stringValid(rTranslation) && !aKey.equals(rTranslation)) return rTranslation;
 		rTranslation = BACKUPMAP.get(aKey);

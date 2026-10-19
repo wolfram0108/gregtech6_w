@@ -1,0 +1,55 @@
+# GT6U addon metadata for Forge 1.20.1. Same file name as the port's own metadata; 26.x's neoforge.mods.toml is not read here.
+# Both loader fields are mandatory on Forge 1.20.1, unlike 26.x which defaulted them.
+modLoader="javafml" #mandatory
+loaderVersion="[47,)" #mandatory
+
+license="${mod_license}"
+
+# A URL to refer people to when problems occur with this mod
+issueTrackerURL="https://github.com/wolfram0108/gregtech6_w/issues"
+
+[[mods]] #mandatory
+
+# The modid of the mod
+modId="gt6u" #mandatory
+
+# The version number of the mod
+version="${mod_version}" #mandatory
+
+# A display name for the mod
+displayName="GT6U Addon" #mandatory
+
+# A URL for the "homepage" for this mod, displayed in the mod UI
+displayURL="https://github.com/wolfram0108/gregtech6_w"
+
+authors="GT6U-Team (GregTech6-Unofficial), GregTech 6 NeoForge port"
+
+description='''
+Content of GregTech6-Unofficial by the GT6U-Team as an addon of GregTech 6: its own machines and materials,
+and the changes it makes to GregTech 6 machines. Without this addon GregTech 6 stays as Gregorius made it.
+'''
+
+# The addon is built on the internals of the GT API, so it takes exactly the GregTech 6 it was built with.
+# As GT6 addons in 1.7.10: after the API, before GregTech itself, whose PreInit generates items and fluids from the
+# materials the addon defines; the addon's work after GregTech's phases runs in the onModFinal* hooks.
+[[dependencies.gt6u]]
+    modId="gregapi_post"
+    mandatory=true # mandatory is the Forge 1.20.1 spelling; type="required" is a later neo spelling.
+    versionRange="[${mod_version}]"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.gt6u]]
+    modId="gregtech"
+    mandatory=true
+    versionRange="[${mod_version}]"
+    ordering="BEFORE"
+    side="BOTH"
+
+# Forge 1.20.1 declares its own dependency under the "forge" id (branch main's 26.x template names it "neoforge").
+[[dependencies.gt6u]]
+    modId="forge"
+    mandatory=true
+    versionRange="${neoforge_version_range}"
+    ordering="NONE"
+    side="BOTH"

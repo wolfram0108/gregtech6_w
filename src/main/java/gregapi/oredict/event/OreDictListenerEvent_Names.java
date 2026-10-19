@@ -54,7 +54,20 @@ public abstract class OreDictListenerEvent_Names implements IOreDictListenerEven
 		List<IOreDictListenerEvent> tList = NAME_EVENTS.get(aOreDictName);
 		if (tList == null) NAME_EVENTS.put((String)aOreDictName, tList = new ArrayListNoNulls<>());
 		if (!tList.add(aListener)) throw new UnknownError("Unknown Error: " + aOreDictName + "  -  " + aListener.toString());
+		gregapi.recipes.RecipeCapture.take((String)aOreDictName, aListener);
 		return T;
+	}
+
+	/** The listeners of one OreDict name. */
+	public List<IOreDictListenerEvent> listeners(String aOreDictName) {
+		List<IOreDictListenerEvent> tList = NAME_EVENTS.get(aOreDictName);
+		return tList == null ? java.util.Collections.emptyList() : java.util.Collections.unmodifiableList(tList);
+	}
+
+	/** Takes a listener of one OreDict name out, so that it hears no more registrations. */
+	public boolean removeListener(String aOreDictName, IOreDictListenerEvent aListener) {
+		List<IOreDictListenerEvent> tList = NAME_EVENTS.get(aOreDictName);
+		return tList != null && tList.remove(aListener);
 	}
 	public boolean addListener(Object aOreDictName1, Object aOreDictName2, IOreDictListenerEvent aListener) {
 		return addListener(aOreDictName1, aListener) && addListener(aOreDictName2, aListener);

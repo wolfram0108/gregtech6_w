@@ -1,0 +1,49 @@
+GT6U Addon for GregTech 6 on NeoForge — provenance of everything in this distribution
+=====================================================================================
+
+This is a derivative work: the content of GregTech6-Unofficial (GT6U) by the GT6U-Team, a fork
+of GregTech 6 for Minecraft 1.7.10 / Forge, carried over as an addon of the GregTech 6 port to
+Minecraft 26.1.2 / NeoForge. It needs that port, of the same version, to run.
+
+    Upstream project   GregTech6-Unofficial, https://github.com/GregTech6-Unofficial/GregTech6-Unofficial
+    Upstream author    GT6U-Team
+    Based on           GregTech 6 by Gregorius Techneticies
+    This addon         https://github.com/wolfram0108/gregtech6_w, by wolfram0108
+
+It is NOT an official GT6U or GregTech release and is not affiliated with, endorsed by, or
+supported by the GT6U-Team, Gregorius Techneticies or the GregTech 6 team. Please report
+problems with this addon to its own issue tracker, never to the upstream projects.
+
+
+1. Program code
+---------------
+
+Licensed under the GNU Lesser General Public License, version 3 or later (LICENSE), inherited
+from upstream.
+
+    Copyright (c) 2020 GT6U-Team                     — GregTech6-Unofficial
+    Copyright (c) Gregorius Techneticies              — the GregTech 6 code GT6U is built on
+    Copyright (c) 2026 wolfram0108                    — changes made for this addon
+
+Every source file states which it is. Files carried over from GT6U keep the notice they were
+published with, plus a notice that they were modified in 2026 for this addon; GT6U files
+published without a notice say so and refer to LICENSE. Files written for this addon say so
+explicitly.
+
+Complete corresponding source for every released binary is the repository this file comes
+from, at the tag matching the version in the jar.
+
+
+2. Assets — textures
+--------------------
+
+Dedicated to the public domain under CC0 1.0 (LICENSE.assets), as released upstream: the
+textures GT6U added and its versions of GregTech 6 textures, byte-for-byte as published in
+GT6U (at lowercase paths, because the modern engine requires lowercase resource names).
+
+
+3. Not carried over
+-------------------
+
+GT6U's TerraFirmaCraft 1.7.10 integration (that mod does not exist for this Minecraft version)
+and its achievements (the port has none) are not part of this addon.

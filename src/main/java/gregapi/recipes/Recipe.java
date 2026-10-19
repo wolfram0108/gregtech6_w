@@ -286,11 +286,19 @@ public class Recipe {
 		public Recipe addRecipe2(boolean aOptimize, boolean aCheckForCollisions, boolean aFakeRecipe, boolean aHidden, boolean aLogErrors, long aEUt, long aDuration, long[] aChances, ItemStack aInput1, ItemStack aInput2, FluidStack[] aFluidInputs, FluidStack[]  aFluidOutputs, ItemStack... aOutputs) {return addRecipe(new Recipe(aOptimize, T, T, ST.array(aInput1, aInput2), aOutputs         , NI, aChances            , aFluidInputs         , aFluidOutputs         , aDuration, aEUt, 0), aCheckForCollisions, aFakeRecipe, aHidden, aLogErrors);}
 		public Recipe addRecipeX(boolean aOptimize, boolean aCheckForCollisions, boolean aFakeRecipe, boolean aHidden, boolean aLogErrors, long aEUt, long aDuration, long[] aChances, ItemStack[] aInputs                 , FluidStack[] aFluidInputs, FluidStack[]  aFluidOutputs, ItemStack... aOutputs) {return addRecipe(new Recipe(aOptimize, T, T, aInputs                   , aOutputs         , NI, aChances            , aFluidInputs         , aFluidOutputs         , aDuration, aEUt, 0), aCheckForCollisions, aFakeRecipe, aHidden, aLogErrors);}
 		
+		/** Takes out the Recipes with the same Inputs and Outputs as the given one; how many went. */
+		public int removeSame(Recipe aTemplate) {
+			int rRemoved = 0;
+			for (Recipe tRecipe : new ArrayList<>(mRecipeList)) if (tRecipe.sameAs(aTemplate) && remove(tRecipe)) rRemoved++;
+			return rRemoved;
+		}
+
 		public Recipe addRecipe(Recipe aRecipe, boolean aCheckForCollisions, boolean aFakeRecipe, boolean aHidden, boolean aLogErrors) {
 			if (aRecipe == null) return null;
+			if (RecipeCapture.take(this, aRecipe)) return aRecipe;
 			aRecipe.mHidden = aHidden;
 			aRecipe.mFakeRecipe = aFakeRecipe;
-			if (aCheckForCollisions && findRecipeInternal(null, null, F, F, Long.MAX_VALUE, null, aRecipe.mFluidInputs, aRecipe.mInputs) != null) return null;
+			if (aCheckForCollisions) for (Recipe tOld; (tOld = findRecipeInternal(null, null, F, F, Long.MAX_VALUE, null, aRecipe.mFluidInputs, aRecipe.mInputs)) != null; ) if (!RecipeCapture.yields(this, tOld)) return null;
 			return add(aRecipe, aLogErrors && mLogErrors);
 		}
 		
@@ -322,6 +330,7 @@ public class Recipe {
 		}
 		
 		public synchronized Recipe add(Recipe aRecipe, boolean aLogErrors, boolean aAddConfig) {
+			if (RecipeCapture.take(this, aRecipe)) return aRecipe;
 			if (!aRecipe.mFakeRecipe) {
 				boolean tErrored = F, tFailed = F;
 				if (aRecipe.mInputs.length + aRecipe.mFluidInputs.length <= 0) {
@@ -422,7 +431,18 @@ public class Recipe {
 		}
 		
 		public boolean add(IRecipeMapHandler aRecipeMapHandler) {
+			if (RecipeCapture.take(this, aRecipeMapHandler)) return T;
 			return mRecipeMapHandlers.add(aRecipeMapHandler) && aRecipeMapHandler.onAddedToMap(this);
+		}
+
+		/** Takes out the Recipe Handlers that make the same Recipes as the given one; how many went. */
+		public int removeSameHandler(IRecipeMapHandler aTemplate) {
+			int rRemoved = 0;
+			for (IRecipeMapHandler tHandler : new ArrayList<>(mRecipeMapHandlers)) {
+				boolean tSame = tHandler.getClass() == aTemplate.getClass() && (tHandler instanceof gregapi.recipes.handlers.RecipeMapHandlerPrefix ? ((gregapi.recipes.handlers.RecipeMapHandlerPrefix)tHandler).sameAs((gregapi.recipes.handlers.RecipeMapHandlerPrefix)aTemplate) : tHandler.equals(aTemplate));
+				if (tSame && mRecipeMapHandlers.remove(tHandler)) rRemoved++;
+			}
+			return rRemoved;
 		}
 		
 		public Slot_Base getSpecialSlot(ITileEntityInventoryGUI aInventory, int aIndex, int aX, int aY) {
@@ -769,6 +789,22 @@ public class Recipe {
 	
 	public static void reInit() {for (RecipeMap tMapEntry : RecipeMap.RECIPE_MAPS.values()) tMapEntry.reInit();}
 	
+	/** Same Inputs, Outputs, Chances and Energy, which is how a restated Recipe is recognised; Duration is left out, configs change it. */
+	public boolean sameAs(Recipe aOther) {
+		if (aOther == null || mEUt != aOther.mEUt || !Arrays.equals(mChances, aOther.mChances)) return F;
+		return sameStacks(mInputs, aOther.mInputs) && sameStacks(mOutputs, aOther.mOutputs) && sameFluids(mFluidInputs, aOther.mFluidInputs) && sameFluids(mFluidOutputs, aOther.mFluidOutputs);
+	}
+	private static boolean sameStacks(ItemStack[] aA, ItemStack[] aB) {
+		if (aA.length != aB.length) return F;
+		for (int i = 0; i < aA.length; i++) if (aA[i] == null ? aB[i] != null : aB[i] == null || !ST.equal(aA[i], aB[i]) || aA[i].getCount() != aB[i].getCount()) return F;
+		return T;
+	}
+	private static boolean sameFluids(FluidStack[] aA, FluidStack[] aB) {
+		if (aA.length != aB.length) return F;
+		for (int i = 0; i < aA.length; i++) if (aA[i] == null ? aB[i] != null : aB[i] == null || !FL.equal(aA[i], aB[i]) || aA[i].getAmount() != aB[i].getAmount()) return F;
+		return T;
+	}
+
 	/** If you want to change the Output, feel free to modify or even replace the whole ItemStack Array, for Inputs, please add a new Recipe, because of the HashMaps. */
 	public ItemStack[] mInputs, mOutputs;
 	/** If you want to change the Output, feel free to modify or even replace the whole ItemStack Array, for Inputs, please add a new Recipe, because of the HashMaps. */

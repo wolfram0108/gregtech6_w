@@ -169,11 +169,11 @@ public class BI {
 	public static IIconContainer BAROMETER = new Icon("overlays/barometer/base"), BAROMETER_SCALE[] = new IIconContainer[32];
 	static {for (int i = 0; i < BAROMETER_SCALE.length; i++) BAROMETER_SCALE[i] = new Icon("overlays/barometer/"+(i<10?"0":"")+i);}
 	
-	private static class Icon implements IIconContainer, Runnable {
+	public static class Icon implements IIconContainer, Runnable {
 		private ResourceLocation mIcon;
 		private String mIconName;
 
-		protected Icon(String aIconName) {mIconName = aIconName; if (GT_API.sBlockIconload != null) GT_API.sBlockIconload.add(this);}
+		public Icon(String aIconName) {mIconName = aIconName; if (GT_API.sBlockIconload != null) GT_API.sBlockIconload.add(this);}
 
 		// The icon-load pass never runs in neo, so lazy construction on first read is needed here like every
 		// other icon class already does; this was the one icon class missing it.

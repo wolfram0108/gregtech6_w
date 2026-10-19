@@ -51,7 +51,7 @@ public class GT6ItemTags extends TagsProvider<Item> {
 		for (Item tItem : BuiltInRegistries.ITEM) {
 			if (!(tItem instanceof IItemProjectile tProjectile)) continue;
 			net.minecraft.resources.ResourceLocation tID = BuiltInRegistries.ITEM.getKey(tItem);
-			if (tID == null || !(tID.getNamespace().equals(CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
+			if (tID == null || !CS.ModIDs.isContentNamespace(tID.getNamespace())) continue;
 			if (!isArrow(tProjectile, tID)) continue;
 			getOrCreateRawBuilder(ItemTags.ARROWS).addElement(tID);
 			tArrows++;

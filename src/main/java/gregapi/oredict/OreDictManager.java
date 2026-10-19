@@ -35,7 +35,9 @@ import gregapi.oredict.event.IOreDictListenerEvent;
 import gregapi.oredict.event.IOreDictListenerEvent.OreDictRegistrationContainer;
 import gregapi.oredict.event.IOreDictListenerRecyclable;
 import gregapi.oredict.event.IOreDictListenerRecyclable.OreDictRecyclingContainer;
+import gregapi.recipes.ICraftingRecipeGT;
 import gregapi.recipes.Recipe;
+import gregapi.recipes.RecipeCapture;
 import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
@@ -137,7 +139,30 @@ public final class OreDictManager {
 	
 	private Set<IOreDictListenerEvent> mBufferedListeners1 = new HashSetNoNulls<>(16, 0.75F, T);
 	private void addListenerInternal(IOreDictListenerEvent aListener) {
+		// A restated listener (RecipeCapture) replays what it would have made and does not stay to make more.
+		if (gregapi.recipes.RecipeCapture.open()) {for (OreDictRegistrationContainer tEvent : mGlobalRegistrations) aListener.onOreRegistration(tEvent); return;}
 		if (mGlobalOreDictListeners.add(aListener)) for (OreDictRegistrationContainer tEvent : mGlobalRegistrations) aListener.onOreRegistration(tEvent);
+	}
+	
+	/** Takes out of GT6's Names listeners the listener that makes the same Recipes as aRestated on what is registered under
+	 *  aOreDictNames (the names aRestated listens to), from each of these names; how many names it left. -1 when nothing is
+	 *  registered under any of them yet: a listener that makes nothing cannot be told apart, and stays. */
+	public int removeSameListeners(Collection<String> aOreDictNames, IOreDictListenerEvent aRestated) {
+		List<OreDictRegistrationContainer> tRegistrations = new ArrayList<>();
+		for (OreDictRegistrationContainer tEvent : mGlobalRegistrations) if (aOreDictNames.contains(tEvent.mOreDictName)) tRegistrations.add(tEvent);
+		gregapi.recipes.RecipeCapture.Captured tWanted = gregapi.recipes.RecipeCapture.capture(() -> {for (OreDictRegistrationContainer tEvent : tRegistrations) aRestated.onOreRegistration(tEvent);});
+		if (tWanted.isEmpty()) return -1;
+		int rRemoved = 0;
+		for (IOreDictListenerEvent tGlobal : new ArrayList<>(mGlobalOreDictListeners)) if (tGlobal instanceof gregapi.oredict.event.OreDictListenerEvent_Names tNames) {
+			Set<IOreDictListenerEvent> tCandidates = Collections.newSetFromMap(new IdentityHashMap<>());
+			for (String tName : aOreDictNames) tCandidates.addAll(tNames.listeners(tName));
+			for (IOreDictListenerEvent tListener : tCandidates) {
+				// a candidate hears what is registered under the names it listens to
+				gregapi.recipes.RecipeCapture.Captured tMade = gregapi.recipes.RecipeCapture.capture(() -> {for (OreDictRegistrationContainer tEvent : tRegistrations) if (tNames.listeners(tEvent.mOreDictName).contains(tListener)) tListener.onOreRegistration(tEvent);});
+				if (tWanted.sameRecipes(tMade)) for (String tName : aOreDictNames) if (tNames.removeListener(tName, tListener)) rRemoved++;
+			}
+		}
+		return rRemoved;
 	}
 	
 	/**
@@ -683,6 +708,25 @@ public final class OreDictManager {
 			OreDictRecyclingContainer tRegistration = new OreDictRecyclingContainer(aStack, aData);
 			for (IOreDictListenerRecyclable tListener : mRecyclableOreDictListeners) tListener.onRecycleableRegistration(tRegistration);
 			mRecyclableRegistrations.add(tRegistration);
+		}
+		return T;
+	}
+	
+	/** Takes aData off aStack again, with the recycling recipes its listeners made of it: how a replaced machine entry hands
+	 *  the data its own recipe derived over to its replacement's recipe. False, changing nothing, when aStack holds other data. */
+	public boolean removeItemData_(ItemStack aStack, OreDictItemData aData) {
+		ItemStackContainer tKey = new ItemStackContainer(aStack);
+		if (aData == null || sItemStack2DataMap.get(tKey) != aData) return F;
+		sItemStack2DataMap.remove(tKey);
+		for (OreDictRecyclingContainer tRegistration : new ArrayList<>(mRecyclableRegistrations)) {
+			if (tRegistration.mItemData != aData || !ST.equal(tRegistration.mStack, aStack, T)) continue;
+			mRecyclableRegistrations.remove(tRegistration);
+			// What each listener made of the registration, made again under the capture and taken out of its maps.
+			for (IOreDictListenerRecyclable tListener : mRecyclableOreDictListeners) {
+				RecipeCapture.Captured tMade = RecipeCapture.capture(() -> tListener.onRecycleableRegistration(new OreDictRecyclingContainer(tRegistration.mStack, aData)));
+				for (Map.Entry<Recipe.RecipeMap, Recipe> tRecipe : tMade.mMachine) tRecipe.getKey().removeSame(tRecipe.getValue());
+				for (ICraftingRecipeGT tRecipe : tMade.mCrafting) CR.removeSame(tRecipe);
+			}
 		}
 		return T;
 	}

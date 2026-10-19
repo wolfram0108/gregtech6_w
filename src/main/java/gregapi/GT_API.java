@@ -206,7 +206,7 @@ public class GT_API extends Abstract_Mod {
 	/** GT6 items used to build OreDict data and recipes (ST.make) right in the constructor, but neo constructs
 	 *  the item at RegisterEvent while stacks can only be built post-freeze (Holder.components bind later). */
 	public static final List<Runnable> DEFERRED_ITEM_INIT = new ArrayListNoNulls<>();
-	public static void deferItemInit(Runnable aInit) {if (aInit != null) DEFERRED_ITEM_INIT.add(aInit);}
+	public static void deferItemInit(Runnable aInit) {if (aInit != null) DEFERRED_ITEM_INIT.add(later(aInit, F));}
 	/** Window where the deferred stack-init runs at server start: in 1.7.10 the whole pipeline ran at Init/PreInit;
 	 *  neo only binds Holder.components at server start, so the pipeline physically moved here. */
 	public static boolean sDeferredItemInitRunning = false;
@@ -439,7 +439,49 @@ public class GT_API extends Abstract_Mod {
 	/** Some GT6 subsystems build the neo Block outside any DeferredRegister supplier and outside preInit,
 	 *  so they can't be expressed as a single registerBlockLazy; wrapped in deferBlockInit(Runnable) instead. */
 	public static final List<Runnable> DEFERRED_BLOCK_INIT = new ArrayListNoNulls<>();
-	public static void deferBlockInit(Runnable aInit) {if (aInit != null) DEFERRED_BLOCK_INIT.add(aInit);}
+	/** A block belongs to the mod that asked for it, as 1.7.10 FML prefixed it with the active container (GameData.addPrefix).
+	 *  The job runs later, on RegisterEvent, under another active mod, so the asking mod travels with the job. */
+	public static void deferBlockInit(Runnable aInit) {if (aInit != null) DEFERRED_BLOCK_INIT.add(later(aInit, T));}
+	/** A job queued now and run later as the mod asking now: its asker always; a block job also that mod's namespace, under which
+	 *  what it names is registered. GT's own mods leave the namespace to GT: every GT6 block is registered as {@code gregtech}. */
+	private static Runnable later(Runnable aJob, boolean aOwnsBlocks) {
+		String tAsker = asker();
+		String tBlocks = aOwnsBlocks && !isGTMod(tAsker) && !ModIDs.MC.equals(tAsker) ? tAsker : null;
+		return () -> as(tAsker, aOwnsBlocks, tBlocks, () -> {aJob.run(); return null;});
+	}
+	/** GT's own three mods; their code builds GT6 content, which is named {@code gregtech} whatever the phase's owner. */
+	private static boolean isGTMod(String aModID) {
+		return aModID == null || ModIDs.GT.equals(aModID) || ModIDs.GAPI.equals(aModID) || ModIDs.GAPI_POST.equals(aModID);
+	}
+	/** The mod whose code runs now: set by a queued job, by Abstract_Mod around each mod's phase and by a build for an owner; FML's
+	 *  active container is not it in 1.20.1 (one event carries the phases of every mod), so the answer is the thread's. */
+	private static final ThreadLocal<String> ASKER = new ThreadLocal<>();
+	public static String asker() {String rAsker = ASKER.get(); return rAsker != null ? rAsker : activeNamespace();}
+	/** The mod FML loads right now. Outside a mod's loading call Forge answers with the minecraft container, never null
+	 *  (ModLoadingContext.getActiveContainer falls back to the "minecraft" mod), so a caller must know that answer itself. */
+	private static String activeNamespace() {
+		net.minecraftforge.fml.ModContainer tContainer = net.minecraftforge.fml.ModLoadingContext.get().getActiveContainer();
+		return tContainer == null ? null : tContainer.getModId();
+	}
+	/** Runs aCall as the code of aModID. */
+	public static void asMod(String aModID, Runnable aCall) {as(aModID, F, null, () -> {aCall.run(); return null;});}
+	/** Runs aCall as the code of aModID and returns what it made. */
+	public static <R> R asMod(String aModID, java.util.function.Supplier<R> aCall) {return as(aModID, F, null, aCall);}
+	private static String sBlockOwner = null;
+	/** Namespace of the block, item or creative tab being built and registered right now; GT's own when nobody asked for it. */
+	public static String owner() {return sBlockOwner == null ? ModIDs.GT : sBlockOwner;}
+	/** Builds something for aOwner outside its registration: what it names gets aOwner's namespace and what it writes is aOwner's text,
+	 *  as if aOwner were asking now. */
+	public static <R> R asOwner(String aOwner, java.util.function.Supplier<R> aBuild) {return as(aOwner, T, aOwner, aBuild);}
+	/** Builds something for aModIDOwner when that is an addon: GT's own mods build GT6 content, which stays named gregtech. */
+	private static <R> R asRegistrant(String aModIDOwner, java.util.function.Supplier<R> aBuild) {
+		return isGTMod(aModIDOwner) ? aBuild.get() : asOwner(aModIDOwner, aBuild);
+	}
+	/** The one place code runs as a mod: the asker of its texts and, for a build, the namespace of what it names; both come back after. */
+	private static <R> R as(String aAsker, boolean aSetsBlocks, String aBlocks, java.util.function.Supplier<R> aCall) {
+		String tOuterAsker = ASKER.get(), tOuterBlocks = sBlockOwner; ASKER.set(aAsker); if (aSetsBlocks) sBlockOwner = aBlocks;
+		try {return aCall.get();} finally {ASKER.set(tOuterAsker); sBlockOwner = tOuterBlocks;}
+	}
 	/** Active RegisterEvent<Block> during the DEFERRED_BLOCK_INIT drain; when non-null, registerBlock registers
 	 *  the block directly into this event's registry, since this phase's DeferredRegister may already be done. */
 	public static net.minecraftforge.registries.RegisterEvent sBlockRegisterEvent = null;
@@ -466,7 +508,7 @@ public class GT_API extends Abstract_Mod {
 		if (aBlock == null || aRegistryName == null) return;
 		if (sBlockRegisterEvent == null) {deferBlockInit(() -> registerBlockOnly(aBlock, aRegistryName)); return;}
 		sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK
-			, new net.minecraft.resources.ResourceLocation(ModIDs.GT, sanitizeRegName(aRegistryName)), () -> aBlock);
+			, new net.minecraft.resources.ResourceLocation(owner(), sanitizeRegName(aRegistryName)), () -> aBlock);
 	}
 
 	/** Mod bus saved from the constructor, so lazily created sub-namespaces can subscribe to RegisterEvent later. */
@@ -501,7 +543,7 @@ public class GT_API extends Abstract_Mod {
 	/** Lazy registration: the supplier constructs the item at RegisterEvent (registry unfrozen), not eagerly
 	 *  in preInit (registry frozen); same trick as fluid-split's source-supplier. */
 	public static net.minecraftforge.registries.RegistryObject<Item> registerItemLazy(String aModIDOwner, String aRegistryName, java.util.function.Supplier<? extends Item> aSupplier) {
-		return itemsFor(aModIDOwner).register(sanitizeRegName(aRegistryName), aSupplier);
+		return itemsFor(aModIDOwner).register(sanitizeRegName(aRegistryName), () -> asRegistrant(aModIDOwner, aSupplier));
 	}
 
 	private static final Map<String, DeferredRegister<net.minecraft.world.level.block.Block>> BLOCKS_BY_NS = new HashMap<>();
@@ -515,7 +557,7 @@ public class GT_API extends Abstract_Mod {
 	/** Lazy block registration: the supplier constructs the block at RegisterEvent, when createIntrusiveHolder
 	 *  and setId are valid; its BlockItem registers itself via registerItemLazy, same form as item/fluid split. */
 	public static void registerBlockLazy(String aModIDOwner, String aRegistryName, java.util.function.Supplier<? extends Block> aBlockSupplier) {
-		blocksFor(aModIDOwner).register(sanitizeRegName(aRegistryName), aBlockSupplier);
+		blocksFor(aModIDOwner).register(sanitizeRegName(aRegistryName), () -> asRegistrant(aModIDOwner, aBlockSupplier));
 	}
 
 	/** neo's ResourceLocation path only allows [a-z0-9/._-], but GT6 item names contain uppercase.
@@ -541,12 +583,12 @@ public class GT_API extends Abstract_Mod {
 		if (sBlockRegisterEvent != null) {
 			// Called from deferBlockInit during RegisterEvent<Block>: the block is already built, registered directly
 			// into the event's own registry; its BlockItem goes into the ITEMS DeferredRegister, resolved later.
-			sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK, new net.minecraft.resources.ResourceLocation(ModIDs.GT, sanitizeRegName(aRegistryName)), () -> aBlock);
-			itemsFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
+			sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK, new net.minecraft.resources.ResourceLocation(owner(), sanitizeRegName(aRegistryName)), () -> aBlock);
+			itemsFor(owner()).register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
 			return null;
 		}
-		net.minecraftforge.registries.RegistryObject<Block> rBlock = blocksFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> aBlock);
-		itemsFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
+		net.minecraftforge.registries.RegistryObject<Block> rBlock = blocksFor(owner()).register(sanitizeRegName(aRegistryName), () -> aBlock);
+		itemsFor(owner()).register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
 		return rBlock;
 	}
 

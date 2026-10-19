@@ -23,6 +23,7 @@
 
 package gregapi.tileentity.multiblocks;
 
+import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.random.IHasWorldAndCoords;
 import gregapi.tileentity.ITileEntityUnloadable;
 import gregapi.util.ST;
@@ -53,6 +54,10 @@ public interface ITileEntityMultiBlockController extends ITileEntityUnloadable, 
 			// WD.te keeps a just-broken part visible (LAST_BROKEN_TILEENTITY) for its drops; a removed part is not standing in the structure.
 			if (tTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)tTileEntity).isDead()) tTileEntity = null;
 			if (tTileEntity == aController) return T;
+			// A controller names its parts by id in its own registry; across an addon's registry and the one it extends, the part
+			// is of the registry holding that id. A registry linked with no other answers itself, so GT6 alone is unchanged.
+			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(aRegistryID);
+			if (tRegistry != null) aRegistryID = tRegistry.holder(aRegistryMeta).currentID();
 			
 			if ((aInventory != null || aPlayer != null) && (aClickedAt == null || (Math.abs(aX-aClickedAt.getX()) < 2 && Math.abs(aY-aClickedAt.getY()) < 2 && Math.abs(aZ-aClickedAt.getZ()) < 2))) {
 				ItemStack aStack = ST.make(aRegistryID, 1, aRegistryMeta);

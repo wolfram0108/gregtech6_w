@@ -988,13 +988,19 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	public void doInputItems() {
 		if (mDisabledItemInput) return;
 		byte tAutoInput = FACING_TO_SIDE[mFacing][mItemAutoInput];
-		if (SIDES_VALID[tAutoInput]) ST.moveAll(getItemInputTarget(tAutoInput), delegator(tAutoInput));
+		if (!SIDES_VALID[tAutoInput]) return;
+		// A machine that names no target for its side has nothing there: an addon's machine written for GT6 before 6.17,
+		// whose base never moved items unasked (canOutput now does), answers null; GT6's own never reach here with null.
+		DelegatorTileEntity<Container> tFrom = getItemInputTarget(tAutoInput);
+		if (tFrom != null) ST.moveAll(tFrom, delegator(tAutoInput));
 	}
 	
 	public void doOutputItems() {
 		if (mDisabledItemOutput) return;
 		byte tAutoOutput = FACING_TO_SIDE[mFacing][mItemAutoOutput];
-		if (SIDES_VALID[tAutoOutput]) ST.moveAll(delegator(tAutoOutput), getItemOutputTarget(tAutoOutput));
+		if (!SIDES_VALID[tAutoOutput]) return;
+		DelegatorTileEntity<BlockEntity> tTo = getItemOutputTarget(tAutoOutput);
+		if (tTo != null) ST.moveAll(delegator(tAutoOutput), tTo);
 	}
 	
 	public void doOutputFluids() {

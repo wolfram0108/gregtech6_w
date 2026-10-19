@@ -53,6 +53,8 @@ public class StoneLayer {
 	public final OreDictMaterial mMaterial, mMaterialSurface;
 	public final ItemStackContainer mStack;
 	public final List<StoneLayerOres> mOres;
+	/** Every ore the layer was given, also those the worldgen config switched off: what tells a layer apart. */
+	public final List<StoneLayerOres> mOresDeclared = new ArrayListNoNulls<>(8);
 	public IBlockPlacable mOre, mOreSmall, mOreBroken;
 	public boolean mNoDeep = F;
 	
@@ -129,7 +131,16 @@ public class StoneLayer {
 		mOreBroken       = BlocksGT.stoneToBrokenOres.get(mStack);
 		mOreSmall        = BlocksGT.stoneToSmallOres .get(mStack);
 		mOres            = new ArrayListNoNulls<>(8);
-		for (StoneLayerOres tOre : aOreChances) if (tOre != null && tOre.mMaterial != MT.Empty && ConfigsGT.WORLDGEN.get("stonelayers."+mMaterial.mNameInternal, tOre.mMaterial.mNameInternal, T)) mOres.add(tOre);
+		addOres(aOreChances);
+	}
+	
+	/** Ores of this layer, each switchable in the worldgen config under the layer's material; an addon adds to a GT6 layer here. */
+	public StoneLayer addOres(StoneLayerOres... aOreChances) {
+		for (StoneLayerOres tOre : aOreChances) if (tOre != null && tOre.mMaterial != MT.Empty) {
+			mOresDeclared.add(tOre);
+			if (ConfigsGT.WORLDGEN.get("stonelayers."+mMaterial.mNameInternal, tOre.mMaterial.mNameInternal, T)) mOres.add(tOre);
+		}
+		return this;
 	}
 	
 	public StoneLayer setNoDeep() {mNoDeep = T; return this;}

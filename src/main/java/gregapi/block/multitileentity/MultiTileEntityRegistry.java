@@ -29,6 +29,9 @@ import gregapi.code.HashSetNoNulls;
 import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.item.CreativeTab;
+import gregapi.oredict.OreDictItemData;
+import gregapi.oredict.OreDictManager;
+import gregapi.recipes.ICraftingRecipeGT;
 import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.render.RendererBlockTextured;
 import gregapi.util.CR;
@@ -43,6 +46,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +92,19 @@ public class MultiTileEntityRegistry {
 	public List<MultiTileEntityClassContainer> mRegistrations = new ArrayListNoNulls<>();
 	
 	public final String mNameInternal;
+	/** The mod this registry was built for: its creative tabs, built later, take that mod's namespace. */
+	public final String mOwner;
 	public final MultiTileEntityBlockInternal mBlock;
+	/** The registry this one answers from for ids it does not hold: an addon's machines name the parts of the registry they
+	 *  extend by their ids, as they did while they sat in it. GT6's own registries have none. */
+	private String mFallback = null;
+	/** What each entry's own crafting recipe made when it was added: the recipes it put into CR's list and the item data they
+	 *  derived. An override replacing that recipe takes back exactly these, as an edit of the add() line would never have made them. */
+	private final Map<Short, Made> mMade = new HashMap<>();
+	private static final class Made {
+		final List<ICraftingRecipeGT> mCrafting; final OreDictItemData mData;
+		Made(List<ICraftingRecipeGT> aCrafting, OreDictItemData aData) {mCrafting = aCrafting; mData = aData;}
+	}
 	
 	private static final MultiTileEntityBlockInternal regblock(String aNameInternal, MultiTileEntityBlockInternal aBlock, Class<? extends BlockItem> aItemClass) {
 		ST.register(aBlock, aNameInternal, aItemClass);
@@ -110,6 +126,7 @@ public class MultiTileEntityRegistry {
 		if (!GAPI.mStartedPreInit) throw new IllegalStateException("The MultiTileEntity Registry must be initialised at the Preload Phase and not before, because it relies on an ItemBlock being created!");
 		if (GAPI.mStartedInit) throw new IllegalStateException("The MultiTileEntity Registry must be initialised at the Preload Phase and not later, because it relies on an ItemBlock being created!");
 		mNameInternal = aNameInternal;
+		mOwner = gregapi.GT_API.owner();
 		mBlock = aBlock;
 		mBlock.mMultiTileEntityRegistry = this;
 		NAMED_REGISTRIES.put(mNameInternal, this);
@@ -215,7 +232,60 @@ public class MultiTileEntityRegistry {
 		mRegistry.put(aClassContainer.mID, aClassContainer);
 		mLastRegisteredID = aClassContainer.mID;
 		mRegistrations.add(aClassContainer);
-		if (!mCreativeTabs.containsKey(aClassContainer.mCreativeTabID)) mCreativeTabs.put(aClassContainer.mCreativeTabID, new CreativeTab(mNameInternal+"."+aClassContainer.mCreativeTabID, aCategoricalName, Item.byBlock(mBlock), aClassContainer.mCreativeTabID));
+		onRegistered(aCategoricalName, aClassContainer);
+		if (aRecipe != null && aRecipe.length > 1) {
+			if (aRecipe[0] instanceof Object[]) aRecipe = (Object[])aRecipe[0];
+			if (aRecipe.length > 2) shaped(aClassContainer.mID, aRecipe);
+		}
+		addToRecipeMachineLists(aClassContainer);
+		return getItem(aClassContainer.mID);
+	}
+	
+	/** An entry's own crafting recipe, remembered with what it made: the recipes CR's list gained and the item data they derived
+	 *  where the item had none. */
+	private void shaped(short aID, Object[] aRecipe) {
+		ItemStack tItem = getItem(aID);
+		// the record serves an addon's override only: without addons on the GT API the seam keeps nothing
+		if (gregapi.api.GT6Definitions.ADDONS.isEmpty()) {CR.shaped(tItem, CR.DEF_REV_NCC, aRecipe); return;}
+		OreDictItemData tDataBefore = OreDictManager.INSTANCE.getItemData(tItem);
+		List<ICraftingRecipeGT> tList = CR.list();
+		int tBefore = tList.size();
+		CR.shaped(tItem, CR.DEF_REV_NCC, aRecipe);
+		OreDictItemData tData = OreDictManager.INSTANCE.getItemData(tItem);
+		mMade.put(aID, new Made(new ArrayList<>(tList.subList(Math.min(tBefore, tList.size()), tList.size())), tDataBefore == null ? tData : null));
+	}
+
+	/** Replaces an entry under the same id keeping every index consistent: how an addon changes a GT6 machine; GT6 never calls it.
+	 *  Placed machines fill parameters they did not save from the current entry on load (TileEntityBase04MultiTileEntities), as for any changed registration; entries with a per-id registration hook are refused, their effects cannot be taken back. */
+	public ItemStack override(String aLocalised, String aCategoricalName, MultiTileEntityClassContainer aClassContainer, Object... aRecipe) {
+		MultiTileEntityClassContainer tOld = aClassContainer == null ? null : mRegistry.get(aClassContainer.mID);
+		if (tOld == null || aClassContainer.mClass == null || tOld.mCanonicalTileEntity instanceof IMTE_OnRegistration || tOld.mCanonicalTileEntity instanceof IMTE_OnRegistrationClient) {
+			ERR.println("MTE REGISTRY ERROR: override needs an occupied MetaData, a Class, and an entry without a per-id registration hook: " + mNameInternal + "." + (aClassContainer == null ? "null" : aClassContainer.mID));
+			return null;
+		}
+		if (UT.Code.stringValid(aLocalised)) LH.add(mNameInternal+"."+aClassContainer.mID, aLocalised);
+		mRegistry.put(aClassContainer.mID, aClassContainer);
+		mRegistrations.set(mRegistrations.indexOf(tOld), aClassContainer);
+		onRegistered(aCategoricalName, aClassContainer);
+		replaceInRecipeMachineLists(tOld, aClassContainer);
+		// A replacement recipe takes the place of what the entry's own recipe made, its crafting recipes and the item data they
+		// derived, as an edit of that add() line would; recipes of the item from anywhere else stay.
+		if (aRecipe != null && aRecipe.length > 1) {
+			if (aRecipe[0] instanceof Object[]) aRecipe = (Object[])aRecipe[0];
+			if (aRecipe.length > 2) {
+				Made tMade = mMade.remove(aClassContainer.mID);
+				if (tMade != null) {
+					for (ICraftingRecipeGT tRecipe : tMade.mCrafting) CR.removeSame(tRecipe);
+					if (tMade.mData != null) OreDictManager.INSTANCE.removeItemData_(getItem(aClassContainer.mID), tMade.mData);
+				}
+				shaped(aClassContainer.mID, aRecipe);
+			}
+		}
+		return getItem(aClassContainer.mID);
+	}
+
+	private void onRegistered(String aCategoricalName, MultiTileEntityClassContainer aClassContainer) {
+		if (!mCreativeTabs.containsKey(aClassContainer.mCreativeTabID)) mCreativeTabs.put(aClassContainer.mCreativeTabID, gregapi.GT_API.asOwner(mOwner, () -> new CreativeTab(mNameInternal+"."+aClassContainer.mCreativeTabID, aCategoricalName, Item.byBlock(mBlock), aClassContainer.mCreativeTabID)));
 		// A client-only render-registration hook whose old API no longer exists used to throw and abort the whole loader,
 		// registering only one MTE of hundreds; failures here are now logged and skipped, but server-side ones still are not.
 		if (sRegisteredTileEntityClassNames.add(aClassContainer.mCanonicalTileEntity.getClass().getName()) && sRegisteredTileEntities.add(aClassContainer.mCanonicalTileEntity.getClass())) {
@@ -232,17 +302,33 @@ public class MultiTileEntityRegistry {
 		if (CODE_CLIENT && aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationClient) {
 			try {((IMTE_OnRegistrationClient)aClassContainer.mCanonicalTileEntity).onRegistrationClient(this, aClassContainer.mID);} catch (Throwable e) {e.printStackTrace(ERR);}
 		}
-		if (aRecipe != null && aRecipe.length > 1) {
-			if (aRecipe[0] instanceof Object[]) aRecipe = (Object[])aRecipe[0];
-			if (aRecipe.length > 2) CR.shaped(getItem(aClassContainer.mID), CR.DEF_REV_NCC, aRecipe);
+	}
+
+	// The recipe map an entry names under NBT_RECIPEMAP or NBT_FUELMAP; none when the entry names none (an empty name is not a map).
+	private static RecipeMap recipeMapOf(MultiTileEntityClassContainer aClassContainer, String aKey) {
+		String tRecipeMapName = aClassContainer.mParameters.getString(aKey);
+		return UT.Code.stringValid(tRecipeMapName) ? RecipeMap.RECIPE_MAPS.get(tRecipeMapName) : null;
+	}
+	
+	// A simple special case to make it easier to add a Machine to Recipe Lists without having to worry about anything.
+	private void addToRecipeMachineLists(MultiTileEntityClassContainer aClassContainer) {
+		for (String tKey : new String[] {NBT_RECIPEMAP, NBT_FUELMAP}) {
+			RecipeMap tMap = recipeMapOf(aClassContainer, tKey);
+			if (tMap != null) tMap.mRecipeMachineList.add(getItem(aClassContainer.mID));
 		}
-		// A simple special case to make it easier to add a Machine to Recipe Lists without having to worry about anything.
-		String
-		tRecipeMapName = aClassContainer.mParameters.getString(NBT_RECIPEMAP);
-		if (UT.Code.stringValid(tRecipeMapName)) {RecipeMap tMap = RecipeMap.RECIPE_MAPS.get(tRecipeMapName); if (tMap != null) tMap.mRecipeMachineList.add(getItem(aClassContainer.mID));}
-		tRecipeMapName = aClassContainer.mParameters.getString(NBT_FUELMAP);
-		if (UT.Code.stringValid(tRecipeMapName)) {RecipeMap tMap = RecipeMap.RECIPE_MAPS.get(tRecipeMapName); if (tMap != null) tMap.mRecipeMachineList.add(getItem(aClassContainer.mID));}
-		return getItem(aClassContainer.mID);
+	}
+
+	// A machine that stays with the same map keeps its place in the list, so the order a recipe viewer shows does not change.
+	private void replaceInRecipeMachineLists(MultiTileEntityClassContainer aOld, MultiTileEntityClassContainer aNew) {
+		Item tItem = Item.byBlock(mBlock);
+		for (String tKey : new String[] {NBT_RECIPEMAP, NBT_FUELMAP}) {
+			RecipeMap tOldMap = recipeMapOf(aOld, tKey), tNewMap = recipeMapOf(aNew, tKey);
+			int tIndex = -1;
+			if (tOldMap != null) for (int i = 0; i < tOldMap.mRecipeMachineList.size(); i++) {ItemStack tStack = tOldMap.mRecipeMachineList.get(i); if (tStack != null && tStack.getItem() == tItem && ST.meta_(tStack) == aOld.mID) {tIndex = i; break;}}
+			if (tOldMap != null && tOldMap == tNewMap && tIndex >= 0) {tOldMap.mRecipeMachineList.set(tIndex, getItem(aNew.mID)); continue;}
+			if (tIndex >= 0) tOldMap.mRecipeMachineList.remove(tIndex);
+			if (tNewMap != null) tNewMap.mRecipeMachineList.add(getItem(aNew.mID));
+		}
 	}
 	
 	public short mLastRegisteredID = W;
@@ -253,7 +339,31 @@ public class MultiTileEntityRegistry {
 	public ItemStack getItem(int aID, CompoundTag aNBT) {return getItem(aID, 1, aNBT);}
 	public ItemStack getItem(int aID, long aAmount) {return getItem(aID, aAmount, null);}
 	
+	/** Names the registry this one answers from for ids it does not hold; resolved by name on use, as it may be built later. */
+	public MultiTileEntityRegistry setFallback(String aRegistryName) {mFallback = aRegistryName; return this;}
+	
+	/** The registry holding aID among those linked by fallbacks, both ways, as GT6U's one registry held every id; else this one. */
+	public MultiTileEntityRegistry holder(int aID) {
+		if (mRegistry.containsKey((short)aID)) return this;
+		MultiTileEntityRegistry tBase = fallback();
+		for (int i = 0; i < NAMED_REGISTRIES.size() && tBase != null && tBase != this; i++, tBase = tBase.fallback()) if (tBase.mRegistry.containsKey((short)aID)) return tBase;
+		for (MultiTileEntityRegistry tExtension : NAMED_REGISTRIES.values()) if (tExtension != this && tExtension.mRegistry.containsKey((short)aID) && tExtension.fallsBackTo(this)) return tExtension;
+		return this;
+	}
+	
+	/** Whether aBase is in this one's fallback chain; the walk is bounded by the number of registries, so a ring of fallbacks ends. */
+	private boolean fallsBackTo(MultiTileEntityRegistry aBase) {
+		MultiTileEntityRegistry tBase = fallback();
+		for (int i = 0; i < NAMED_REGISTRIES.size() && tBase != null; i++, tBase = tBase.fallback()) if (tBase == aBase) return T;
+		return F;
+	}
+	
+	private MultiTileEntityRegistry fallback() {return mFallback == null ? null : NAMED_REGISTRIES.get(mFallback);}
+	
 	public ItemStack getItem(int aID, long aAmount, CompoundTag aNBT) {
+		// An id this registry does not hold would make a stack of no machine; its holder makes the real one.
+		MultiTileEntityRegistry tHolder = holder(aID);
+		if (tHolder != this) return tHolder.getItem(aID, aAmount, aNBT);
 		ItemStack rStack = ST.make(mBlock, (int)aAmount, aID);
 		if (aNBT == null) aNBT = UT.NBT.make();
 		if (aNBT.isEmpty()) {
@@ -264,7 +374,8 @@ public class MultiTileEntityRegistry {
 		return rStack;
 	}
 	
-	public String getLocal(int aID) {return LH.get(mNameInternal+"."+aID);}
+	// A name is asked of the registry holding the id, as a stack is (getItem).
+	public String getLocal(int aID) {return LH.get(holder(aID).mNameInternal+"."+aID);}
 	
 	public MultiTileEntityClassContainer getClassContainer(int aID) {return mRegistry.get((short)aID);}
 	public MultiTileEntityClassContainer getClassContainer(ItemStack aStack) {return mRegistry.get(ST.meta_(aStack));}
@@ -287,6 +398,9 @@ public class MultiTileEntityRegistry {
 	
 	public MultiTileEntityContainer getNewTileEntityContainer(int aID, CompoundTag aNBT) {return getNewTileEntityContainer(null, 0, 0, 0, aID, aNBT);}
 	public MultiTileEntityContainer getNewTileEntityContainer(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, int aID, CompoundTag aNBT) {
+		// A machine of an id this registry does not hold is made by the registry holding it, so a block placing it places the real one.
+		MultiTileEntityRegistry tHolder = holder(aID);
+		if (tHolder != this) return tHolder.getNewTileEntityContainer(aWorld, aX, aY, aZ, aID, aNBT);
 		MultiTileEntityClassContainer tClass = mRegistry.get((short)aID);
 		if (tClass == null || tClass.mBlock == null) return null;
 		// Real placement coordinates pass through the shared PENDING_WORLD_POS channel before construction, since a tile

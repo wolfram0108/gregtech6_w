@@ -450,7 +450,7 @@ public class CR {
 		
 		if (tThereWasARecipe || !aOnlyAddIfThereIsAnyRecipeOutputtingThis) {
 			// neo has no runtime recipe registration, so this goes into GT6's persistent buffer for the dispatcher to read instead.
-			BUFFER.add(new AdvancedCraftingShaped(ST.copy_(aResult), aDismantleable, aRemovable, aKeepNBT, !aNotAutoCraftable, aEnchantmentsAdded, aEnchantmentLevelsAdded, aRecipe).setMirrored(aMirrored));
+			buffer(new AdvancedCraftingShaped(ST.copy_(aResult), aDismantleable, aRemovable, aKeepNBT, !aNotAutoCraftable, aEnchantmentsAdded, aEnchantmentLevelsAdded, aRecipe).setMirrored(aMirrored));
 		}
 		return T;
 	}
@@ -519,7 +519,7 @@ public class CR {
 		ST.update(aResult);
 		
 		// neo has no runtime recipe registration, so this goes into GT6's persistent buffer for the dispatcher to read instead.
-		BUFFER.add(new AdvancedCraftingShapeless(ST.copy(aResult), aDismantleable, aRemovable, aKeepNBT, !aNotAutoCraftable, aEnchantmentsAdded, aEnchantmentLevelsAdded, aRecipe));
+		buffer(new AdvancedCraftingShapeless(ST.copy(aResult), aDismantleable, aRemovable, aKeepNBT, !aNotAutoCraftable, aEnchantmentsAdded, aEnchantmentLevelsAdded, aRecipe));
 		return T;
 	}
 	
@@ -606,6 +606,26 @@ public class CR {
 	/** GT6's own persistent crafting buffer, since neo's RecipeManager only fills from the datapack at server start and is
 	 *  empty at mod-init; the dispatcher reads this instead. */
 	public static List<ICraftingRecipeGT> list() {return BUFFER;}
+	
+	private static void buffer(ICraftingRecipeGT aRecipe) {if (!gregapi.recipes.RecipeCapture.take(aRecipe)) BUFFER.add(aRecipe);}
+	
+	/** Takes out the crafting Recipes of the same kind, output and grid as the given one; how many went. */
+	public static int removeSame(ICraftingRecipeGT aTemplate) {
+		int rRemoved = 0;
+		for (ICraftingRecipeGT tRecipe : new ArrayList<>(BUFFER)) if (sameRecipe(tRecipe, aTemplate) && BUFFER.remove(tRecipe)) rRemoved++;
+		return rRemoved;
+	}
+	public static boolean sameRecipe(ICraftingRecipeGT aA, ICraftingRecipeGT aB) {
+		if (aA.getClass() != aB.getClass() || !ST.equal(aA.getRecipeOutput(), aB.getRecipeOutput(), F) || aA.getRecipeOutput().getCount() != aB.getRecipeOutput().getCount()) return F;
+		Object[] tA = aA instanceof ShapedOreRecipe ? ((ShapedOreRecipe)aA).getInput() : aA instanceof ShapelessOreRecipe ? ((ShapelessOreRecipe)aA).getInput().toArray() : null;
+		Object[] tB = aB instanceof ShapedOreRecipe ? ((ShapedOreRecipe)aB).getInput() : aB instanceof ShapelessOreRecipe ? ((ShapelessOreRecipe)aB).getInput().toArray() : null;
+		if (tA == null || tB == null || tA.length != tB.length) return tA == tB;
+		for (int i = 0; i < tA.length; i++) {
+			if (tA[i] instanceof ItemStack && tB[i] instanceof ItemStack) {if (!ST.equal((ItemStack)tA[i], (ItemStack)tB[i], T)) return F; continue;}
+			if (!java.util.Objects.equals(tA[i], tB[i])) return F;
+		}
+		return T;
+	}
 
 	// 1.7.10's list() was the live CraftingManager with vanilla in it; for the loader window vanilla's workbench recipes
 	// come from the engine's own vanilla pack, which a server and a remote client carry alike.

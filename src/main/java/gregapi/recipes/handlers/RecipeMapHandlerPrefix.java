@@ -186,6 +186,17 @@ public class RecipeMapHandlerPrefix extends RecipeMapHandler {
 		return this;
 	}
 	
+	/** Makes the same Recipes: same inputs and outputs per unit, energy and time. The condition is left out, it is built anew each time. */
+	public boolean sameAs(RecipeMapHandlerPrefix aOther) {
+		return aOther != null && java.util.Arrays.equals(mInputPrefixes, aOther.mInputPrefixes) && java.util.Arrays.equals(mOutputPrefixes, aOther.mOutputPrefixes)
+			&& java.util.Arrays.equals(mInputAmounts, aOther.mInputAmounts) && java.util.Arrays.equals(mOutputAmounts, aOther.mOutputAmounts)
+			&& (mAdditionalInput   == null ? aOther.mAdditionalInput   == null : ST.equal(mAdditionalInput  , aOther.mAdditionalInput  ))
+			&& (mAdditionalOutput  == null ? aOther.mAdditionalOutput  == null : ST.equal(mAdditionalOutput , aOther.mAdditionalOutput ))
+			&& (mFluidInputPerUnit  == null ? aOther.mFluidInputPerUnit  == null : FL.equal(mFluidInputPerUnit , aOther.mFluidInputPerUnit ))
+			&& (mFluidOutputPerUnit == null ? aOther.mFluidOutputPerUnit == null : FL.equal(mFluidOutputPerUnit, aOther.mFluidOutputPerUnit))
+			&& mUnitsInputted == aOther.mUnitsInputted && mUnitsOutputted == aOther.mUnitsOutputted && mEUt == aOther.mEUt && mDuration == aOther.mDuration && mMultiplier == aOther.mMultiplier;
+	}
+	
 	@Override
 	public boolean isDone() {
 		return mAlreadyAddedAllRecipes;

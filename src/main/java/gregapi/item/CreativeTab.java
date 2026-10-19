@@ -31,7 +31,7 @@ import net.minecraft.world.item.Item;
  * @author Gregorius Techneticies
  */
 public class CreativeTab extends CreativeModeTab {
-	public final String mName;
+	public final String mName, mOwner;
 	public final Item mItem;
 	public final short mMetaData;
 
@@ -39,8 +39,10 @@ public class CreativeTab extends CreativeModeTab {
 		// 1.7.10's CreativeTabs(String) constructor becomes a neo CreativeModeTab built through CreativeTabsGT's
 		// builder; the literal title is used because GT6 localization does not reach vanilla lang at this point.
 		super(CreativeTabsGT.builderFor(aName, aLocal, aItem, aMetaData & 0xFFFF));
-		LH.add("itemGroup." + aName, aLocal);
+		// A shell raised from the tab cache has no item and names nothing: its tab, once made, adds the name.
+		if (aItem != null) LH.add("itemGroup." + aName, aLocal);
 		mName = aName;
+		mOwner = gregapi.GT_API.owner();
 		mItem = aItem;
 		mMetaData = aMetaData;
 		CreativeTabsGT.registerOwnTab(this);
