@@ -28,6 +28,7 @@ import gregapi.data.MT;
 import gregapi.data.TC;
 import gregapi.oredict.OreDictItemData;
 import gregapi.oredict.OreDictMaterial;
+import gregapi.util.OM;
 
 import static gregapi.data.CS.*;
 import static gregapi.data.TD.Atomic.*;
@@ -108,7 +109,15 @@ public class MT_GT6U extends MT {
 		MT.Al2O3.setRGBa(248, 248, 255, 255);
 		MT.OREMATS.Chromite.mByProducts.clear();
 		MT.OREMATS.Chromite.ores(MT.MnO2, MT.Cr, MT.Mg, MT.OREMATS.Bromargyrite);
-		MT.OREMATS.Chromite.setSmelting(null, 0);
+		// GT6U dropped GT6's setSmelting(Cr, 2*U9): present in v6.14.17 MT.java:3316 and 6.17.08 MT.java:3750, absent in
+		// GT6U MT.java:3111. That leaves the default 1:1 self target and drops the PROCESSING.MELTING the call put; the
+		// Blacklisted Smelter marker, carried by both bases, is what keeps Chromite out of the Smelter, not an empty target.
+		// The state is restored directly, not re-set: setSmelting(null, U) would add a second reverse link to Chromite's own
+		// mTargetedSmelting (the one its construction made is out of reach for OreDictMaterial.java:812-814, mHashID being
+		// assigned after the sets, OreDictMaterial.java:218,338), while GT6U carries exactly the construction's one link.
+		MT.OREMATS.Chromite.mTargetSmelting = OM.stack(MT.OREMATS.Chromite, U);
+		MT.Cr.mTargetedSmelting.remove(MT.OREMATS.Chromite);
+		MT.OREMATS.Chromite.remove(MELTING);
 		MT.Nb.ores(MT.OREMATS.Tantalite, MT.TiO2);
 		// GT6U lists Phosphorus' by-products a second time (GT6U MT.java:2442, :2446).
 		MT.Phosphorus.ores(MT.Phosphorite, MT.Apatite, MT.FluoriteYellow, MT.PO4);

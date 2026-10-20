@@ -25,6 +25,7 @@ package gt6u;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +52,11 @@ public class GT6U_Recipes {
 		for (Map.Entry<RecipeMap, Recipe> tEntry : tCaptured.mMachine) if (tEntry.getKey().removeSame(tEntry.getValue()) <= 0) {tMissing++; ERR.println("GT6U take back, not found in " + aSource + ": " + tEntry.getKey().mNameInternal + " " + describe(tEntry.getValue()));}
 		for (ICraftingRecipeGT tRecipe : tCaptured.mCrafting) if (CR.removeSame(tRecipe) <= 0) {tMissing++; ERR.println("GT6U take back, not found in " + aSource + ": crafting " + tRecipe.getClass().getSimpleName() + " -> " + ST.configNames(tRecipe.getRecipeOutput()));}
 		for (Map.Entry<RecipeMap, IRecipeMapHandler> tEntry : tCaptured.mHandlers) if (tEntry.getKey().removeSameHandler(tEntry.getValue()) <= 0) {tMissing++; ERR.println("GT6U take back, not found in " + aSource + ": handler " + tEntry.getKey().mNameInternal + " " + tEntry.getValue().getClass().getSimpleName());}
+		// One pass per Map that lost something: its tank sizes only rise on add, so they are rebuilt from what is left.
+		LinkedHashSet<RecipeMap> tChanged = new LinkedHashSet<>();
+		for (Map.Entry<RecipeMap, Recipe> tEntry : tCaptured.mMachine) tChanged.add(tEntry.getKey());
+		for (Map.Entry<RecipeMap, IRecipeMapHandler> tEntry : tCaptured.mHandlers) tChanged.add(tEntry.getKey());
+		for (RecipeMap tMap : tChanged) tMap.recalculateFluidSizes();
 		// A dropped OreDict listener goes whole, from every name it listens to, or later registrations would make its Recipes again.
 		Map<IOreDictListenerEvent, List<String>> tListeners = new LinkedHashMap<>();
 		for (Map.Entry<String, IOreDictListenerEvent> tEntry : tCaptured.mListeners) tListeners.computeIfAbsent(tEntry.getValue(), k -> new ArrayList<>()).add(tEntry.getKey());
@@ -66,7 +72,14 @@ public class GT6U_Recipes {
 	 *  gives way, as in GT6U. null after the statement ends it and lists what gave way in GT6's log. */
 	public static void first(Runnable aLaterGT6) {
 		RecipeCapture.first(aLaterGT6);
-		if (aLaterGT6 == null) for (Map.Entry<RecipeMap, Recipe> tEntry : RecipeCapture.gaveWay()) ERR.println("GT6U first, gave way: " + tEntry.getKey().mNameInternal + " " + describe(tEntry.getValue()));
+		if (aLaterGT6 != null) return;
+		// A Recipe that gave way is a removal like a take back: rebuild the tank sizes of its Map once, from what is left.
+		LinkedHashSet<RecipeMap> tChanged = new LinkedHashSet<>();
+		for (Map.Entry<RecipeMap, Recipe> tEntry : RecipeCapture.gaveWay()) {
+			ERR.println("GT6U first, gave way: " + tEntry.getKey().mNameInternal + " " + describe(tEntry.getValue()));
+			tChanged.add(tEntry.getKey());
+		}
+		for (RecipeMap tMap : tChanged) tMap.recalculateFluidSizes();
 	}
 
 	private static String describe(Recipe aRecipe) {

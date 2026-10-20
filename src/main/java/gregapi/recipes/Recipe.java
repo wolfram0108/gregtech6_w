@@ -93,6 +93,11 @@ public class Recipe {
 		public int mMaxFluidInputSize  = 1000;
 		/** Used to determine Output Tank Size. Contains the size of the largest FluidStack Output, but is almost always at least 1000. */
 		public int mMaxFluidOutputSize = 1000;
+		/** The part of the two sizes above that the Map needs regardless of its Recipes: its own construction. Restored
+		 *  by {@link #recalculateFluidSizes()}, which a take back of Recipes calls once, after the batch. */
+		private int mMaxFluidInputBase  = 1000, mMaxFluidOutputBase = 1000;
+		/** Set by a removal; tells {@link #recalculateFluidSizes()} that the derived sizes are out of date. */
+		private boolean mFluidSizesStale = F;
 		/** The Config File corresponding to this Recipe Handler. Will be initialised by GT_API. */
 		public Config mConfigFile = null;
 		
@@ -286,19 +291,50 @@ public class Recipe {
 		public Recipe addRecipe2(boolean aOptimize, boolean aCheckForCollisions, boolean aFakeRecipe, boolean aHidden, boolean aLogErrors, long aEUt, long aDuration, long[] aChances, ItemStack aInput1, ItemStack aInput2, FluidStack[] aFluidInputs, FluidStack[]  aFluidOutputs, ItemStack... aOutputs) {return addRecipe(new Recipe(aOptimize, T, T, ST.array(aInput1, aInput2), aOutputs         , NI, aChances            , aFluidInputs         , aFluidOutputs         , aDuration, aEUt, 0), aCheckForCollisions, aFakeRecipe, aHidden, aLogErrors);}
 		public Recipe addRecipeX(boolean aOptimize, boolean aCheckForCollisions, boolean aFakeRecipe, boolean aHidden, boolean aLogErrors, long aEUt, long aDuration, long[] aChances, ItemStack[] aInputs                 , FluidStack[] aFluidInputs, FluidStack[]  aFluidOutputs, ItemStack... aOutputs) {return addRecipe(new Recipe(aOptimize, T, T, aInputs                   , aOutputs         , NI, aChances            , aFluidInputs         , aFluidOutputs         , aDuration, aEUt, 0), aCheckForCollisions, aFakeRecipe, aHidden, aLogErrors);}
 		
-		/** Takes out the Recipes with the same Inputs and Outputs as the given one; how many went. */
+		/** Takes out the Recipes with the same Inputs and Outputs as the given one; how many went. The derived tank
+		 *  sizes are lowered by {@link #recalculateFluidSizes()} once after the batch, not per removed Recipe. */
 		public int removeSame(Recipe aTemplate) {
 			int rRemoved = 0;
 			for (Recipe tRecipe : new ArrayList<>(mRecipeList)) if (tRecipe.sameAs(aTemplate) && remove(tRecipe)) rRemoved++;
 			return rRemoved;
 		}
 
+		/** Whether two Recipes take the very same ItemStacks, which is what makes the second one the first one twice. Recipes
+		 *  of different items that GT6 merges by unification (a coloured glass block into plain glass) are not the same. */
+		private static boolean sameInputs(ItemStack[] aOld, ItemStack[] aNew) {
+			if (aOld.length != aNew.length) return F;
+			for (int i = 0; i < aOld.length; i++) if (!ST.equal(aOld[i], aNew[i], T)) return F;
+			return T;
+		}
+		
+		/** The whole Recipe but its duration, NBT aside: what a repeated registration of one entry makes. */
+		private static boolean sameRecipe(Recipe aOld, Recipe aNew) {
+			if (!sameInputs(aOld.mInputs, aNew.mInputs) || !sameInputs(aOld.mOutputs, aNew.mOutputs)) return F;
+			if (aOld.mFluidInputs.length != aNew.mFluidInputs.length || aOld.mFluidOutputs.length != aNew.mFluidOutputs.length) return F;
+			for (int i = 0; i < aOld.mFluidInputs.length; i++) if (aOld.mFluidInputs[i] == null ? aNew.mFluidInputs[i] != null : aNew.mFluidInputs[i] == null || !FL.equal(aOld.mFluidInputs[i], aNew.mFluidInputs[i]) || aOld.mFluidInputs[i].getAmount() != aNew.mFluidInputs[i].getAmount()) return F;
+			for (int i = 0; i < aOld.mFluidOutputs.length; i++) if (aOld.mFluidOutputs[i] == null ? aNew.mFluidOutputs[i] != null : aNew.mFluidOutputs[i] == null || !FL.equal(aOld.mFluidOutputs[i], aNew.mFluidOutputs[i]) || aOld.mFluidOutputs[i].getAmount() != aNew.mFluidOutputs[i].getAmount()) return F;
+			return T;
+		}
+		
 		public Recipe addRecipe(Recipe aRecipe, boolean aCheckForCollisions, boolean aFakeRecipe, boolean aHidden, boolean aLogErrors) {
 			if (aRecipe == null) return null;
 			if (RecipeCapture.take(this, aRecipe)) return aRecipe;
 			aRecipe.mHidden = aHidden;
 			aRecipe.mFakeRecipe = aFakeRecipe;
-			if (aCheckForCollisions) for (Recipe tOld; (tOld = findRecipeInternal(null, null, F, F, Long.MAX_VALUE, null, aRecipe.mFluidInputs, aRecipe.mInputs)) != null; ) if (!RecipeCapture.yields(this, tOld)) return null;
+			if (aCheckForCollisions) for (Recipe tOld; (tOld = findRecipeInternal(null, null, F, F, Long.MAX_VALUE, null, aRecipe.mFluidInputs, aRecipe.mInputs)) != null; ) {
+				if (RecipeCapture.yields(this, tOld)) continue;
+				// A Recipe that only unifies with the old input (the stained glass block into plain glass and the gem block
+				// of its material) is a Recipe of a different item, not the same one twice: GT6U's map holds both. Only the
+				// same input stacks are a collision.
+				if (sameInputs(tOld.mInputs, aRecipe.mInputs)) return null;
+				// The map key of an entry's stack can differ in NBT from a repeated registration of the same entry, which
+				// findRecipeInternal then misses; the bucket still holds it.
+				for (ItemStack tStack : aRecipe.mInputs) if (ST.valid(tStack)) {
+					Collection<Recipe> tBucket = mRecipeItemMap.get(tStack);
+					if (tBucket != null) for (Recipe tSame : tBucket) if (sameRecipe(tSame, aRecipe)) return null;
+				}
+				break;
+			}
 			return add(aRecipe, aLogErrors && mLogErrors);
 		}
 		
@@ -410,14 +446,42 @@ public class Recipe {
 			return addToItemMap(aRecipe);
 		}
 		
-		/** Evict from all indices and map cache; matching main contract. */
+		/** Evict from all indices and map cache; matching main contract. The tank sizes derived from the Recipes stay
+		 *  as they are until {@link #recalculateFluidSizes()} runs, so a batch costs one pass, not one per Recipe. */
 		public boolean remove(Recipe aRecipe) {
 			if (aRecipe == null || !mRecipeList.remove(aRecipe)) return F;
 			if (oRecipe == aRecipe) oRecipe = null;
 			mRecipeListSize--;
+			mFluidSizesStale = T;
 			for (FluidStack aFluid : aRecipe.mFluidInputs) if (aFluid != null) {Collection<Recipe> tList = mRecipeFluidMap.get(FL.regName(aFluid.getFluid())); if (tList != null) tList.remove(aRecipe);}
 			for (ItemStack aStack : aRecipe.mInputs) if (aStack != null) {Collection<Recipe> tList = mRecipeItemMap.get(new ItemStackContainer(aStack)); if (tList != null) tList.remove(aRecipe);}
 			return T;
+		}
+		
+		/** The tank size this Map needs regardless of its Recipes, usually because of the way it is constructed. */
+		public void setBaseFluidInputSize(int aSize) {mMaxFluidInputBase = aSize; if (mMaxFluidInputSize < aSize) mMaxFluidInputSize = aSize;}
+		/** The tank size this Map needs regardless of its Recipes, usually because of the way it is constructed. */
+		public void setBaseFluidOutputSize(int aSize) {mMaxFluidOutputBase = aSize; if (mMaxFluidOutputSize < aSize) mMaxFluidOutputSize = aSize;}
+		
+		/** Rebuilds the fluid tank sizes from what the Map holds now: the base its construction needs, the Recipes left
+		 *  in mRecipeList and the sizing of the Recipe Handlers still on it. Adding a Recipe only raises these sizes, so a
+		 *  take back has to run this once after its batch; a Map that lost nothing is left untouched. */
+		public synchronized void recalculateFluidSizes() {
+			if (!mFluidSizesStale) return;
+			mMaxFluidInputSize  = mMaxFluidInputBase;
+			mMaxFluidOutputSize = mMaxFluidOutputBase;
+			mMinInputTankSizes.clear();
+			for (Recipe tRecipe : mRecipeList) {
+				for (FluidStack aFluid : tRecipe.mFluidInputs) if (aFluid != null) {
+					if (mMaxFluidInputSize < aFluid.getAmount()) mMaxFluidInputSize = aFluid.getAmount();
+					String aFluidName = FL.regName(aFluid.getFluid());
+					Long tSize = mMinInputTankSizes.get(aFluidName);
+					if (tSize == null || tSize < aFluid.getAmount()) mMinInputTankSizes.put(aFluidName, (long)aFluid.getAmount());
+				}
+				for (FluidStack aFluid : tRecipe.mFluidOutputs) if (aFluid != null && mMaxFluidOutputSize < aFluid.getAmount()) mMaxFluidOutputSize = aFluid.getAmount();
+			}
+			for (IRecipeMapHandler tHandler : mRecipeMapHandlers) tHandler.onAddedToMap(this);
+			mFluidSizesStale = F;
 		}
 
 		public void reInit() {
@@ -435,13 +499,15 @@ public class Recipe {
 			return mRecipeMapHandlers.add(aRecipeMapHandler) && aRecipeMapHandler.onAddedToMap(this);
 		}
 
-		/** Takes out the Recipe Handlers that make the same Recipes as the given one; how many went. */
+		/** Takes out the Recipe Handlers that make the same Recipes as the given one; how many went. Their fluid
+		 *  sizing is part of {@link #recalculateFluidSizes()}, so the caller runs that once after the batch. */
 		public int removeSameHandler(IRecipeMapHandler aTemplate) {
 			int rRemoved = 0;
 			for (IRecipeMapHandler tHandler : new ArrayList<>(mRecipeMapHandlers)) {
 				boolean tSame = tHandler.getClass() == aTemplate.getClass() && (tHandler instanceof gregapi.recipes.handlers.RecipeMapHandlerPrefix ? ((gregapi.recipes.handlers.RecipeMapHandlerPrefix)tHandler).sameAs((gregapi.recipes.handlers.RecipeMapHandlerPrefix)aTemplate) : tHandler.equals(aTemplate));
 				if (tSame && mRecipeMapHandlers.remove(tHandler)) rRemoved++;
 			}
+			if (rRemoved > 0) mFluidSizesStale = T;
 			return rRemoved;
 		}
 		

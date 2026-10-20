@@ -50,6 +50,7 @@ import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry;
 import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 import gt6mirror.net.minecraftforge.fluids.IFluidContainerItem;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.IFluidTank;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
@@ -1303,7 +1304,11 @@ public enum FL implements gregapi.fluid.IFluidName {
 		if (rFluid == null) {
 			rFluid = new FluidGT(aName, aTexture, aRGBa == null ? UNCOLOURED : aRGBa, aTemperatureK, aState == 2 || aState == 3);
 		} else {
-			rFluid.setTemperature(aTemperatureK).setGaseous(aState == 2 || aState == 3);
+			// Only a fluid still on the engine's default temperature (or with none) gets reconfigured, as in 6.17.08
+			// FL.java:1113 and v6.14.17 FL.java:1083: a repeat registration must not overwrite a temperature set earlier.
+			// An unconfigured FluidType's temperature is the neo counterpart of 1.7.10's new Fluid("test").getTemperature().
+			if (rFluid.getTemperature() == new FluidType(FluidType.Properties.create()).getTemperature() || rFluid.getTemperature() <= 0) rFluid.setTemperature(aTemperatureK);
+			rFluid.setGaseous(aState == 2 || aState == 3);
 		}
 		LH.add(rFluid.getUnlocalizedName(), aLocalized);
 

@@ -36,6 +36,7 @@ import gregapi.data.MD;
 import gregapi.data.MT;
 import gregapi.data.TD;
 import gregapi.data.AM;
+import gregapi.fluid.FluidGT;
 import gregapi.item.multiitem.food.FoodStatDrink;
 import gregapi.old.Textures;
 import gregapi.oredict.OreDictMaterial;
@@ -62,8 +63,13 @@ public class Loader_Fluids {
 	
 	/** GT6U's additions to Loader_Fluids.run (GT6U gregtech/loaders/a/Loader_Fluids.java). */
 	static void run_run() {
-		FL.create("HeliumPlasma" , "Helium Plasma" , MT.He , 3, 1000, 4000).setLuminosity(15);
-		FL.create("NitrogenPlasma" , "Nitrogen Plasma" , MT.N , 3, 1000, 4000).setLuminosity(15);
+		// GT6 6.17 makes these two before this loader, with 10000 (gregtech/loaders/a/Loader_Fluids.java:57-58); GT6U's edit
+		// lowered that very line to 4000 (GT6U Loader_Fluids.java:48-49). A second FL.create cannot carry that over: a fluid
+		// keeps the temperature it was first given (6.17.08 FL.java:1113), so GT6U's value is set on the fluid GT6 made, in the
+		// holder FL.create itself looks up (FL.java:1303); its Fluid object only resolves at RegisterEvent, after this loader.
+		FluidGT tHeliumPlasma = FluidGT.BY_NAME.get("heliumplasma"), tNitrogenPlasma = FluidGT.BY_NAME.get("nitrogenplasma");
+		if (tHeliumPlasma   != null) tHeliumPlasma  .setTemperature(4000);
+		if (tNitrogenPlasma != null) tNitrogenPlasma.setTemperature(4000);
 		FL.create("OxygenPlasma" , "Oxygen Plasma" , MT.O , 3, 1000, 4000).setLuminosity(15);
 		FL.create("IronPlasma" , "Iron Plasma" , MT.Fe , 3, 1000, 4000).setLuminosity(15);
 		FL.create("ProtonPlasma", "Proton Plasma", MT.p, 3, 1000, 4000).setLuminosity(15);

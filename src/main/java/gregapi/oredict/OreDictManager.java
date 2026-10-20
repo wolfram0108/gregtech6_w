@@ -724,7 +724,7 @@ public final class OreDictManager {
 			// What each listener made of the registration, made again under the capture and taken out of its maps.
 			for (IOreDictListenerRecyclable tListener : mRecyclableOreDictListeners) {
 				RecipeCapture.Captured tMade = RecipeCapture.capture(() -> tListener.onRecycleableRegistration(new OreDictRecyclingContainer(tRegistration.mStack, aData)));
-				for (Map.Entry<Recipe.RecipeMap, Recipe> tRecipe : tMade.mMachine) tRecipe.getKey().removeSame(tRecipe.getValue());
+				for (Map.Entry<Recipe.RecipeMap, Recipe> tRecipe : tMade.mMachine) if (tRecipe.getKey().removeSame(tRecipe.getValue()) > 0) tRecipe.getKey().recalculateFluidSizes();
 				for (ICraftingRecipeGT tRecipe : tMade.mCrafting) CR.removeSame(tRecipe);
 			}
 		}
@@ -776,6 +776,13 @@ public final class OreDictManager {
 	}
 	public boolean addAssociation_(OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack) {
 		if (ST.meta_(aStack) == W) for (byte i = 0; i < 16; i++) setItemData_(ST.copyAmountAndMeta(1, i, aStack), new OreDictItemData(aPrefix, aMaterial));
+		// An MTE entry's own crafting recipe derives a prefixless mass for the entry before this explicit prefix mass arrives
+		// (CR.shaped keeps what the shape is made of). The prefix mass is the entry's: 6.14.17 has a GT6U pipe's item data
+		// under its prefix, not under the shape. So the derived data and the Recipes it made give way first, as an edit of
+		// the entry would, or the explicit Recipe would collide with the shape's.
+		if (aStack.getItem() instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal) for (OreDictRecyclingContainer tReg : new ArrayList<>(mRecyclableRegistrations)) {
+			if (tReg.mItemData != null && tReg.mItemData.mPrefix == null && ST.meta_(tReg.mStack) == ST.meta_(aStack) && ST.item_(tReg.mStack) == ST.item_(aStack)) removeItemData_(tReg.mStack, tReg.mItemData);
+		}
 		return setItemData_(aStack, new OreDictItemData(aPrefix, aMaterial));
 	}
 	
