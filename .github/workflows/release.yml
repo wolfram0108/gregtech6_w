@@ -54,6 +54,9 @@ jobs:
           set -euo pipefail
           TAG="${{ github.event.inputs.tag || github.ref_name }}"
           MOD_VERSION="$(sed -n 's/^mod_version=//p' gradle.properties | tr -d '\r')"
+          GT6U_VERSION="$(sed -n 's/^gt6u_version=//p' gradle.properties | tr -d '\r')"
+          test -n "$GT6U_VERSION"
+          echo "gt6u_version=$GT6U_VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG"           >> "$GITHUB_OUTPUT"
           echo "version=$MOD_VERSION" >> "$GITHUB_OUTPUT"
           if [ "$TAG" != "v$MOD_VERSION" ]; then
@@ -139,6 +142,7 @@ jobs:
       - name: Build release notes from CHANGELOG
         run: |
           VERSION='${{ steps.version.outputs.version }}'
+          GT6U_VERSION='${{ steps.version.outputs.gt6u_version }}'
           awk -v v="## [$VERSION]" '
             index($0, v) == 1 {found = 1; next}
             found && /^## \[/ {exit}
@@ -168,7 +172,7 @@ jobs:
             echo
             echo '```'
             echo "gh attestation verify gregtech6-$VERSION.jar --repo ${{ github.repository }}"
-            echo "gh attestation verify gt6u-$VERSION.jar --repo ${{ github.repository }}"
+            echo "gh attestation verify gt6u-$GT6U_VERSION.jar --repo ${{ github.repository }}"
             echo '```'
             echo
             echo "confirms GitHub itself witnessed this exact file being built by this repository's"

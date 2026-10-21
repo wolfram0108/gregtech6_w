@@ -14,7 +14,7 @@ issueTrackerURL="https://github.com/wolfram0108/gregtech6_w/issues"
 modId="gt6u" #mandatory
 
 # The version number of the mod
-version="${mod_version}" #mandatory
+version="${gt6u_version}" #mandatory
 
 # A display name for the mod
 displayName="GT6U Addon" #mandatory

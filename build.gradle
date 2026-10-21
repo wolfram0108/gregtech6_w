@@ -472,7 +472,6 @@ test {
 
 // This block of code expands all declared replace properties in the specified resource targets.
 // A missing property will result in an error. Properties are expanded using ${} Groovy notation.
-// One map for both jars: the addon carries the same version as the GregTech it is built against.
 var modMetadataProperties = [
         minecraft_version      : minecraft_version,
         minecraft_version_range: minecraft_version_range,
@@ -495,11 +494,12 @@ sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 legacyForge.ideSyncTask generateModMetadata
 
-// The GT6U addon's metadata and jar, with the same version as GregTech 6: the addon takes exactly the GregTech it was built with.
+// The addon versions independently; its dependency still names the exact GregTech build.
 // Forge 1.20.1 reads the template as META-INF/mods.toml (neoforge.mods.toml is the 26.x name), so the addon's template follows that.
+def gt6uMetadataProperties = modMetadataProperties + [gt6u_version: gt6u_version]
 var generateGt6uMetadata = tasks.register("generateGt6uMetadata", ProcessResources) {
-    inputs.properties modMetadataProperties
-    expand modMetadataProperties
+    inputs.properties gt6uMetadataProperties
+    expand gt6uMetadataProperties
     from "src/gt6u/templates"
     into "build/generated/sources/gt6uMetadata"
 }
@@ -509,7 +509,7 @@ sourceSets.gt6u.resources.srcDir generateGt6uMetadata
 // so the shipped addon jar is the remapped one below, in its own build/libs-gt6u.
 var gt6uJar = tasks.register('gt6uJar', Jar) {
     archiveBaseName = 'gt6u'
-    archiveVersion = mod_version
+    archiveVersion = gt6u_version
     from sourceSets.gt6u.output
 }
 // A second production jar needs the same SRG pass as the main one, so the addon costs one more call of the same plugin shape.

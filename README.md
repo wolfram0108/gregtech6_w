@@ -261,8 +261,8 @@ Gradle JVM heap, set to 6 GB in `gradle.properties`) — and it takes a while. L
 ```
 
 The optional GT6U addon is built from this repository as a second mod: `build/libs-gt6u/gt6u-<version>.jar`.
-Install it alongside the matching GregTech 6 jar; the two jars must have the same version. Without the addon,
-GregTech 6 runs on its own.
+The addon has its own version: `6.0.0-1.20.1-alpha.1` requires GregTech 6 `6.0.0-1.20.1-alpha.12`.
+Install both jars for the same Minecraft version. Without the addon, GregTech 6 runs on its own.
 
 The build downloads only the platform: Gradle, NeoForge, Minecraft and their libraries. It never
 fetches other mods or a JDK. Integrations with other mods compile against the declarations in

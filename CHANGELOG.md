@@ -33,7 +33,7 @@ that predate this branch describe work done on the shared code base before it wa
 
 ### Added
 
-- Optional GT6U addon, built as a separate `gt6u` jar; GregTech 6 remains usable without it.
+- Optional GT6U addon `6.0.0-1.20.1-alpha.1`, built as a separate `gt6u` jar; GregTech 6 remains usable without it.
 - GT flowers can be planted in flower pots and retain their variants.
 - BuildCraft Energy recipes for the RF Engine and MJ Dynamo work when enabled in the mod configuration.
 

@@ -3,7 +3,7 @@ GT6U Addon for GregTech 6 on NeoForge — provenance of everything in this distr
 
 This is a derivative work: the content of GregTech6-Unofficial (GT6U) by the GT6U-Team, a fork
 of GregTech 6 for Minecraft 1.7.10 / Forge, carried over as an addon of the GregTech 6 port to
-Minecraft 1.20.1 / NeoForge. It needs that port, of the same version, to run.
+Minecraft 1.20.1 / NeoForge. It needs the exact GregTech 6 build declared in its mod metadata to run.
 
     Upstream project   GregTech6-Unofficial, https://github.com/GregTech6-Unofficial/GregTech6-Unofficial
     Upstream author    GT6U-Team
