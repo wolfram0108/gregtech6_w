@@ -97,7 +97,11 @@ def stripCompatMirror = tasks.register('stripCompatMirror') {
         println("[strip] снято ${removed} crutch-.class из рантайм-модуля")
     }
 }
-stripCompatMirror.configure { mustRunAfter tasks.named('classes') }
+stripCompatMirror.configure {
+    mustRunAfter tasks.named('classes')
+    // Every source set still needs the compile-only mirrors while javac is running.
+    mustRunAfter tasks.withType(JavaCompile)
+}
 ['runClient', 'runData', 'runServer', 'runGameTestServer'].each { rn ->
     tasks.matching { it.name == rn }.configureEach { dependsOn stripCompatMirror }
 }
