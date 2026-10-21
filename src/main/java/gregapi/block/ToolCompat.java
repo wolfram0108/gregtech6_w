@@ -128,6 +128,18 @@ public class ToolCompat {
 		return WD.set(aWorld, aX, aY, aZ, tNew, 3);
 	}
 
+	/** The engine owns unwaxing and its veto; prediction never applies the simulated state. */
+	public static BlockState waxOffState(net.minecraft.world.item.context.UseOnContext aContext, boolean aSimulate) {
+		Player tPlayer = aContext.getPlayer();
+		BlockPos tPos = aContext.getClickedPos();
+		ItemStack tStack = aContext.getItemInHand();
+		if (tPlayer == null || !tStack.canPerformAction(net.minecraftforge.common.ToolActions.AXE_WAX_OFF)
+		 || !aContext.getLevel().mayInteract(tPlayer, tPos) || !tPlayer.mayUseItemAt(tPos, aContext.getClickedFace(), tStack)) return null;
+		BlockState tState = aContext.getLevel().getBlockState(tPos);
+		BlockState tModified = tState.getToolModifiedState(aContext, net.minecraftforge.common.ToolActions.AXE_WAX_OFF, aSimulate);
+		return tModified == tState ? null : tModified;
+	}
+
 	/** Providing compatibility for vanilla Blocks and certain Mod Interfaces. */
 	public static long onToolClick(Block aBlock, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
@@ -149,6 +161,22 @@ public class ToolCompat {
 			}
 		}
 		
+		if (!aWorld.isClientSide() && aTool.equals(TOOL_axe) && aEntityPlayer != null && aSide >= 0 && aSide < 6) {
+			net.minecraft.world.InteractionHand tHand = aEntityPlayer.getItemInHand(net.minecraft.world.InteractionHand.OFF_HAND) == aStack ? net.minecraft.world.InteractionHand.OFF_HAND
+				: aEntityPlayer.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND) == aStack ? net.minecraft.world.InteractionHand.MAIN_HAND : null;
+			if (tHand != null) {
+				BlockPos tPos = new BlockPos(aX, aY, aZ);
+				var tContext = new net.minecraft.world.item.context.UseOnContext(aWorld, aEntityPlayer, tHand, aStack,
+					new BlockHitResult(new Vec3(aX + aHitX, aY + aHitY, aZ + aHitZ), FORGE_DIR[aSide], tPos, F));
+				BlockState tModified = waxOffState(tContext, F);
+				if (tModified != null && WD.set(aWorld, aX, aY, aZ, tModified, 11)) {
+					aWorld.levelEvent(null, 3004, tPos, 0);
+					aWorld.gameEvent(net.minecraft.world.level.gameevent.GameEvent.BLOCK_CHANGE, tPos, net.minecraft.world.level.gameevent.GameEvent.Context.of(aEntityPlayer, tModified));
+					return 500;
+				}
+			}
+		}
+
 		if (aWorld.isClientSide()) return 0;
 		
 		boolean aCanCollect = (ST.item(aStack) instanceof MultiItemTool && ((MultiItemTool)ST.item_(aStack)).canCollectDropsDirectly(aStack));

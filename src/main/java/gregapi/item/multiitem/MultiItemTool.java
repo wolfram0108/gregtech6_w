@@ -496,6 +496,26 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	
 	// F9-tool bridge (principle 4): getDigSpeed/canHarvestBlock/getHarvestLevel/onBlockDestroyed are GT6-internal
 	// domain logic wired to real engine mining via the WD.harvestLevel/WD.hardness centers. getDestroySpeed/isCorrectToolForDrops have no position (F13: BlockState carries no numeric meta) so they use meta 0, same as GT6-canHarvestBlock:518 (matches original:487-488); mineBlock has a position, so onBlockDestroyed gets the real meta via WD.meta(world,pos).
+	@Override
+	public boolean canPerformAction(ItemStack aStack, net.minecraftforge.common.ToolAction aAbility) {
+		if (aAbility != net.minecraftforge.common.ToolActions.AXE_WAX_OFF) return super.canPerformAction(aStack, aAbility);
+		if (aStack == null) return F;
+		ItemStack tStack = aStack;
+		// The registered axe behavior covers inherited and combined tools without subtype tables.
+		var tBehaviors = mItemBehaviors.get(ST.meta_(tStack));
+		if (tBehaviors != null) for (var tBehavior : tBehaviors)
+			if (tBehavior instanceof gregapi.item.multiitem.behaviors.Behavior_Tool tTool && TOOL_axe.equals(tTool.mToolName)) return T;
+		return F;
+	}
+
+	@Override
+	public net.minecraft.world.InteractionResult onItemUseFirst(ItemStack aStack, net.minecraft.world.item.context.UseOnContext aContext) {
+		// Predict only wax removal; Behavior_Tool remains the server's sole wear and sound owner.
+		if (aContext.getLevel().isClientSide() && isItemStackUsable(aStack)
+		 && gregapi.block.ToolCompat.waxOffState(aContext, T) != null) return net.minecraft.world.InteractionResult.SUCCESS;
+		return super.onItemUseFirst(aStack, aContext);
+	}
+
 	/**
 	 * ⛔ {@link #getDigSpeed} GOES HERE — AND THIS IS 1:1, VERIFIED BY A PAIRED MEASUREMENT (2026-08-06).
 	 *
