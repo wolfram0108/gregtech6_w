@@ -252,8 +252,13 @@ graph TD
 ```bash
 ./gradlew build       # компиляция, jar, тесты
 ./gradlew assemble    # только артефакт -> build/libs/gregtech6-<версия>.jar
+./gradlew assemble -Pgt6u # GT6 и отдельный необязательный jar аддона GT6U
 ./gradlew compileJava # только компиляция
 ```
+
+Необязательный аддон GT6U собирается из этого репозитория отдельным модом:
+`build/libs-gt6u/gt6u-<версия>.jar`. Установите его вместе с jar GregTech 6 той же версии.
+Без аддона GregTech 6 работает самостоятельно.
 
 Сборка скачивает только платформу: Gradle, NeoForge, Minecraft и их библиотеки. Чужие моды и JDK она
 не скачивает никогда. Интеграции с другими модами компилируются против объявлений в
@@ -281,6 +286,7 @@ graph TD
 ```bash
 ./gradlew runClient   # клиент разработки
 ./gradlew runServer   # выделенный сервер (свой каталог: ./runserver)
+./gradlew runClient -Pgt6u # запуск с необязательным аддоном GT6U
 ./gradlew runData     # перегенерация генерируемых файлов данных
 ```
 

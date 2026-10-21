@@ -1,0 +1,11 @@
+{
+  "pack.gregapi.ae2_generation.title": "GT6: AE2 generation replaced by GregTech",
+  "pack.gregapi.ae2_recipes.title": "GT6: AE2 recipes rewired to GregTech inputs",
+  "pack.gregapi.buildcraft_recipes.title": "GT6: BuildCraft optional-output recipes",
+  "pack.gregapi.model_placeholders.title": "GT6: procedural block/item model placeholders",
+  "pack.gregapi.model_placeholders.description": "GT6 procedural model placeholders (blockstates/air, models/item parent air)",
+  "pack.gregapi.ae2_recipes.description": "GregTech 6 rewires AE2 recipes whose inputs it removed. Controlled by GregTech.cfg: ae2 / DisableAllQuartzToolRecipes.",
+  "pack.gregapi.ae2_generation.description": "GregTech 6 replaces AE2 world generation (meteorites) with its own industrial paths. Controlled by GregTech.cfg: ae2 / ReplaceMeteoriteGeneration.",
+  "pack.gregapi.buildcraft_recipes.description": "GregTech 6 conditions BuildCraft recipes on their optional output items.",
+  "pack.gregapi.resources.description": "GregTech 6 resources"
+}

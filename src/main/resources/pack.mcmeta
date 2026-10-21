@@ -1,6 +1,6 @@
 {
   "pack": {
-    "description": "GregTech 6 resources",
+    "description": {"translate": "pack.gregapi.resources.description"},
     "pack_format": 15
   }
 }

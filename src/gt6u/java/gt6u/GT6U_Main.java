@@ -38,15 +38,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -68,29 +63,9 @@ public class GT6U_Main extends Abstract_Mod {
 	public GT6U_Main() {
 		IEventBus aModBus = FMLJavaModLoadingContext.get().getModEventBus();
 
-		// Subscribes lifecycle phases directly to the mod bus instead of the old @Mod.EventHandler
-		// annotation dispatcher, the same technique as gregapi.GT_API_Post.
-		aModBus.addListener(this::onPreLoad);
-		aModBus.addListener(this::onLoad);
-		aModBus.addListener(this::onPostLoad);
+		subscribePhases(aModBus);
 		aModBus.addListener(this::onAddPackFinders);
-
-		// Server phases are on the game bus, not the mod bus, as in gregapi.GT_API_Post.
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
 	}
-
-	// PreInit, Init and PostInit are the mod-bus events below; a mod's phases run in Forge's mod load order, not
-	// in the parallel order the stage events dispatch in (Abstract_Mod.runPhaseInModLoadOrder).
-	public void onPreLoad(FMLConstructModEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModPreInit(new FMLPreInitializationEvent(FMLPaths.CONFIGDIR.get().toFile())));}
-	public void onLoad(FMLCommonSetupEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModInit(new FMLInitializationEvent()));}
-	public void onPostLoad(FMLLoadCompleteEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModPostInit(new FMLPostInitializationEvent()));}
-	public void onServerStarting(ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
-	public void onServerStarted (ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
-	public void onServerStopping(ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
-	public void onServerStopped (ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
 
 	/** GT6U's versions of GT6's own textures sit in a built-in pack above GT6's resources: as mod resources they would rank below
 	 *  GregTech's, which loads after the addon. Position.TOP puts the pack last in the list, where it wins (as GT_API.onAddPackFinders).
@@ -102,7 +77,7 @@ public class GT6U_Main extends Abstract_Mod {
 				java.nio.file.Path tRoot = ModList.get().getModFileById(MOD_ID).getFile().findResource("gt6u_overrides");
 				Pack tPack = Pack.readMetaAndCreate(
 					  MOD_ID + ":gt6u_overrides"
-					, Component.literal("GT6U Addon: GT6U's GregTech textures")
+					, Component.translatable("pack.gt6u.overrides")
 					, T
 					, aPackId -> new net.minecraftforge.resource.PathPackResources(aPackId, T, tRoot)
 					, PackType.CLIENT_RESOURCES

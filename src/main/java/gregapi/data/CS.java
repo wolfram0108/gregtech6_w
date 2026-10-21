@@ -1782,9 +1782,17 @@ public class CS {
 		public static final Block[] POT_FLOWER_TILES = {Blocks.CACTUS, Blocks.BROWN_MUSHROOM, Blocks.RED_MUSHROOM, Blocks.DANDELION, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY};
 		public static final byte [] POT_FLOWER_METAS = {0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8};
 
+		private static final Map<Block, gregapi.block.misc.BlockPottedFlower> POTTED_FLOWERS = new IdentityHashMap<>();
+
+		public static void registerPotted(gregapi.block.misc.BlockBaseFlower aPlant, gregapi.block.misc.BlockPottedFlower aPotted) {
+			POTTED_FLOWERS.put(aPlant, aPotted);
+		}
+
 		/** The only place that maps a 1.7.10 (block, meta) pair to its potted-flower equivalent, since neo replaced
 		 *  the flower-pot block entity with a separate POTTED_* block per plant; ordering follows the vanilla source. */
 		public static Block potted(Block aPlant, long aMeta) {
+			gregapi.block.misc.BlockPottedFlower tPotted = POTTED_FLOWERS.get(aPlant);
+			if (tPotted != null) return aMeta >= 0 && aMeta < ((IBlockBase)aPlant).maxMeta() ? tPotted : null;
 			if (aPlant == Blocks.CACTUS        ) return Blocks.POTTED_CACTUS;
 			if (aPlant == Blocks.BROWN_MUSHROOM) return Blocks.POTTED_BROWN_MUSHROOM;
 			if (aPlant == Blocks.RED_MUSHROOM  ) return Blocks.POTTED_RED_MUSHROOM;
@@ -1803,6 +1811,27 @@ public class CS {
 			return null;
 		}
 		
+		// The native pot lookup has no subtype channel; construct the complete state before writing it.
+		public static net.minecraft.world.level.block.state.BlockState pottedState(Block aPlant, long aMeta) {
+			Block tPotted = potted(aPlant, aMeta);
+			if (tPotted == null) return null;
+			return tPotted instanceof gregapi.block.IBlockExtendedMetaData tMeta
+				? tMeta.getStateForExtendedMetaData(tPotted.defaultBlockState(), (short)aMeta) : tPotted.defaultBlockState();
+		}
+
+		// Drops and interaction outputs read the same snapshot, including after the world cell became air.
+		public static ItemStack pottedContent(net.minecraft.world.level.block.state.BlockState aState) {
+			if (!(aState.getBlock() instanceof net.minecraft.world.level.block.FlowerPotBlock tPotted)) return ItemStack.EMPTY;
+			Block tPlant = tPotted.getContent();
+			if (tPlant == Blocks.AIR) return ItemStack.EMPTY;
+			int tMeta = 0;
+			if (POTTED_FLOWERS.get(tPlant) == tPotted) {
+				tMeta = gregapi.util.WD.meta(aState);
+				if (tMeta < 0 || tMeta >= ((IBlockBase)tPlant).maxMeta()) return ItemStack.EMPTY;
+			}
+			return ST.make(tPlant, 1, tMeta);
+		}
+
 		public static final Block[] FLOWER_TILES = {Blocks.DANDELION, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY};
 		public static final byte [] FLOWER_METAS = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8};
 		

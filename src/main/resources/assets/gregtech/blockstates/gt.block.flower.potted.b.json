@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "meta=0": {
+      "model": "gregtech:block/gt.block.flower.potted.b.0"
+    },
+    "meta=1": {
+      "model": "gregtech:block/gt.block.flower.potted.b.1"
+    },
+    "meta=2": {
+      "model": "gregtech:block/gt.block.flower.potted.b.2"
+    },
+    "meta=3": {
+      "model": "gregtech:block/gt.block.flower.potted.b.3"
+    },
+    "meta=4": {
+      "model": "gregtech:block/gt.block.flower.potted.b.4"
+    },
+    "meta=5": {
+      "model": "gregtech:block/gt.block.flower.potted.b.5"
+    },
+    "meta=6": {
+      "model": "gregtech:block/gt.block.flower.potted.b.6"
+    },
+    "meta=7": {
+      "model": "gregtech:block/gt.block.flower.potted.b.7"
+    },
+    "meta=8": {
+      "model": "gregtech:block/gt.block.flower.potted.b.0"
+    },
+    "meta=9": {
+      "model": "gregtech:block/gt.block.flower.potted.b.0"
+    },
+    "meta=10": {
+      "model": "gregtech:block/gt.block.flower.potted.b.0"
+    },
+    "meta=11": {
+      "model": "gregtech:block/gt.block.flower.potted.b.0"
+    },
+    "meta=12": {
+      "model": "gregtech:block/gt.block.flower.potted.b.0"
+    },
+    "meta=13": {
+      "model": "gregtech:block/gt.block.flower.potted.b.0"
+    },
+    "meta=14": {
+      "model": "gregtech:block/gt.block.flower.potted.b.0"
+    },
+    "meta=15": {
+      "model": "gregtech:block/gt.block.flower.potted.b.0"
+    }
+  }
+}

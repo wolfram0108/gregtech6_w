@@ -26,12 +26,8 @@ package gregtech;
 import gregapi.util.WD;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.FMLPreInitializationEvent;
 import gregapi.api.FMLInitializationEvent;
 import gregapi.api.FMLPostInitializationEvent;
@@ -109,14 +105,7 @@ public class GT6_Main extends Abstract_Mod {
 		// Central EntityType registration for the mod's arrows, plus client renderers wired through EntityRenderersEvent.
 		gregtech.entities.EntitiesGT.register(aModBus);
 		gt_proxy.registerClientRenderers(aModBus);
-		// Replaces the old annotation-driven phase dispatch with explicit bus subscriptions, matching the pattern used elsewhere.
-		aModBus.addListener(this::onPreLoad);
-		aModBus.addListener(this::onLoad);
-		aModBus.addListener(this::onPostLoad);
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
+		subscribePhases(aModBus);
 	}
 	
 	@Override
@@ -682,13 +671,4 @@ public class GT6_Main extends Abstract_Mod {
 	@Override public String getModNameForLog() {return "GT_Mod";}
 	@Override public Abstract_Proxy getProxy() {return gt_proxy;}
 
-	// Subscribed in the constructor instead of via @Mod.EventHandler.
-	// PreInit/Init/PostInit map to the three matching neo lifecycle events.
-	public void onPreLoad         (FMLConstructModEvent aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get().toFile())));}
-	public void onLoad            (FMLCommonSetupEvent  aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModInit(new gregapi.api.FMLInitializationEvent()));}
-	public void onPostLoad        (FMLLoadCompleteEvent aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModPostInit(new gregapi.api.FMLPostInitializationEvent()));}
-	public void onServerStarting  (net.minecraftforge.event.server.ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
-	public void onServerStarted   (net.minecraftforge.event.server.ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
-	public void onServerStopping  (net.minecraftforge.event.server.ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
-	public void onServerStopped   (net.minecraftforge.event.server.ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
 }

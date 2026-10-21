@@ -100,8 +100,7 @@ public class MultiTileEntityFluidWell extends TileEntityBase04MultiTileEntities 
 		if (aIsServerSide) {
 			if (rng(mFluid.getAmount()) == 0) {
 				// The fluid's block as MultiTileEntityFluidSpring finds it: GT6's own block first, else the engine's.
-				Block tBlock = FL.BLOCKS.get(FL.regName(mFluid.getFluid())), tAbove = getBlockAtSide(SIDE_UP);
-				if (ST.invalid(tBlock)) tBlock = mFluid.getFluid().defaultFluidState().createLegacyBlock().getBlock();
+				Block tBlock = FL.block(mFluid.getFluid()), tAbove = getBlockAtSide(SIDE_UP);
 				if (WD.liquid_finite(tBlock)) {
 					if (tAbove == tBlock) {
 						WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, UT.Code.bind4(getMetaDataAtSide(SIDE_UP)+8), 3);

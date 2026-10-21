@@ -25,8 +25,9 @@ import zipfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _ci import summary  # noqa: E402 -- single shared sink for all gate output
 
-# Class roots GT6 owns; a class anywhere else adds a package another module may also hold.
-OWNED_CLASS_ROOTS = ("gregapi/", "gregtech/", "gregtech6/", "gt6mirror/")
+# Class roots owned by the selected mod jar; jars must not bundle the other mod's classes.
+GT6_CLASS_ROOTS = ("gregapi/", "gregtech/", "gregtech6/", "gt6mirror/")
+GT6U_CLASS_ROOTS = ("gt6u/",)
 
 # Extensions that make mod-hosting platforms reject the whole archive outright.
 # CurseForge/Modrinth blacklist: executables and shell or batch scripts for any platform.
@@ -38,6 +39,8 @@ FORBIDDEN_SUFFIXES = (
 
 def main() -> int:
     pattern = sys.argv[1] if len(sys.argv) > 1 else "build/libs/*.jar"
+    addon = "--addon" in sys.argv[2:]
+    owned_roots = GT6U_CLASS_ROOTS if addon else GT6_CLASS_ROOTS
     jars = [j for j in sorted(glob.glob(pattern)) if not j.endswith(("-sources.jar", "-javadoc.jar"))]
     if not jars:
         summary(f"### ❌ Jar purity\n\nNo jar matched `{pattern}`.")
@@ -51,14 +54,20 @@ def main() -> int:
     for jar in jars:
         with zipfile.ZipFile(jar) as zf:
             names = zf.namelist()
-        split = [n for n in names if n.endswith(".class") and not n.startswith(OWNED_CLASS_ROOTS)]
+        split = [n for n in names if n.endswith(".class") and not n.startswith(owned_roots)]
         exe = [n for n in names if n.lower().endswith(FORBIDDEN_SUFFIXES)]
+        missing_addon_metadata = addon and "META-INF/mods.toml" not in names
+        missing_addon_classes = addon and not any(n.startswith("gt6u/") and n.endswith(".class") for n in names)
         bad = split + exe
+        if missing_addon_metadata or missing_addon_classes:
+            bad.append("<missing GT6U metadata or classes>")
         size_mb = os.path.getsize(jar) / (1024 * 1024)
         mark = "0 ✅" if not bad else f"{len(bad)} ❌"
         summary(f"| `{os.path.basename(jar)}` | {size_mb:.1f} MB | {len(names)} | {mark} |")
         if bad:
             failed = True
+        if missing_addon_metadata or missing_addon_classes:
+            summary(f"`{os.path.basename(jar)}` is missing GT6U metadata or GT6U classes.")
         for entries, why in (
             (split, "Classes outside the roots GT6 owns put foreign packages into the GT6 module; the engine "
                     "or any mod holding the same package then fails module resolution and the game does not start. "

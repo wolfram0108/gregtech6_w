@@ -63,10 +63,8 @@ public class Loader_Fluids {
 	
 	/** GT6U's additions to Loader_Fluids.run (GT6U gregtech/loaders/a/Loader_Fluids.java). */
 	static void run_run() {
-		// GT6 6.17 makes these two before this loader, with 10000 (gregtech/loaders/a/Loader_Fluids.java:57-58); GT6U's edit
-		// lowered that very line to 4000 (GT6U Loader_Fluids.java:48-49). A second FL.create cannot carry that over: a fluid
-		// keeps the temperature it was first given (6.17.08 FL.java:1113), so GT6U's value is set on the fluid GT6 made, in the
-		// holder FL.create itself looks up (FL.java:1303); its Fluid object only resolves at RegisterEvent, after this loader.
+		// These plasmas already exist in GT6; configure their holders before fluid registration.
+		// Recreating them would retain GT6's original temperatures.
 		FluidGT tHeliumPlasma = FluidGT.BY_NAME.get("heliumplasma"), tNitrogenPlasma = FluidGT.BY_NAME.get("nitrogenplasma");
 		if (tHeliumPlasma   != null) tHeliumPlasma  .setTemperature(4000);
 		if (tNitrogenPlasma != null) tNitrogenPlasma.setTemperature(4000);

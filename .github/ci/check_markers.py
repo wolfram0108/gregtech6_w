@@ -7,8 +7,8 @@ SILENT-STUB — заглушка, которая МОЛЧА роняет дан�
 Правило проекта: отложенность держится видимой и УБЫВАЮЩЕЙ. Порог — `.github/ci/baseline.json`.
 Счётчик ниже порога — гейт зелёный и предлагает опустить порог (порог не правится автоматически).
 
-Считается только `src/main/java` — единственный код продукта в репозитории. Оснастка проверки
-(стенды, машинерия сверки) живёт вне репозитория и под счёт не попадает вовсе.
+Считаются `src/main/java` и `src/gt6u/java` — исходники обоих распространяемых модулей.
+Оснастка проверки (стенды, машинерия сверки) живёт вне репозитория и под счёт не попадает.
 
 Выход: 0 — счётчики в пределах порога; 1 — превышение или битый baseline.
 """
@@ -23,27 +23,30 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _ci import summary  # noqa: E402 -- single shared sink for all gate output
 
 MARKERS = ("PORT-TODO", "SILENT-STUB")
-SCAN_ROOT = pathlib.Path("src/main/java")
+SCAN_ROOTS = (pathlib.Path("src/main/java"), pathlib.Path("src/gt6u/java"))
 BASELINE = pathlib.Path(".github/ci/baseline.json")
 
 
 def count_markers() -> dict[str, list[str]]:
     hits: dict[str, list[str]] = {m: [] for m in MARKERS}
-    for path in SCAN_ROOT.rglob("*.java"):
-        try:
-            text = path.read_text(encoding="utf-8", errors="replace")
-        except OSError:
+    for root in SCAN_ROOTS:
+        if not root.is_dir():
             continue
-        for lineno, line in enumerate(text.splitlines(), 1):
-            for marker in MARKERS:
-                if marker in line:
-                    hits[marker].append(f"{path.as_posix()}:{lineno}: {line.strip()[:160]}")
+        for path in root.rglob("*.java"):
+            try:
+                text = path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            for lineno, line in enumerate(text.splitlines(), 1):
+                for marker in MARKERS:
+                    if marker in line:
+                        hits[marker].append(f"{path.as_posix()}:{lineno}: {line.strip()[:160]}")
     return hits
 
 
 def main() -> int:
-    if not SCAN_ROOT.is_dir():
-        summary(f"### ❌ Deferral counters\n\n`{SCAN_ROOT}` not found — wrong working directory?")
+    if not SCAN_ROOTS[0].is_dir():
+        summary(f"### ❌ Deferral counters\n\n`{SCAN_ROOTS[0]}` not found — wrong working directory?")
         return 1
     try:
         limits = json.loads(BASELINE.read_text(encoding="utf-8"))
@@ -54,7 +57,7 @@ def main() -> int:
     hits = count_markers()
     failed = False
 
-    summary("### Deferral counters (`src/main/java`)\n")
+    summary("### Deferral counters (`src/main/java` and `src/gt6u/java`)\n")
     summary("| marker | found | allowed | verdict |")
     summary("|---|---:|---:|---|")
     for marker in MARKERS:

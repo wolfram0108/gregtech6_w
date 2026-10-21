@@ -148,7 +148,7 @@ public class ChestGenHooks {
 	/** Refreshes the stack here because enchantment templates are created against the first world's
 	 *  registry; opening a GUI with a stale Holder from another world crashes, and this is the one choke point for issuance. */
 	public static ItemStack[] generateStacks(Random aRandom, ItemStack aSource, int aMin, int aMax) {
-		int tCount = aMin + (aMax > aMin ? aRandom.nextInt(aMax - aMin + 1) : 0);
+		int tCount = aMin + aRandom.nextInt(aMax - aMin + 1);
 		ItemStack[] rStacks;
 		if (aSource == null || aSource.isEmpty()) {
 			rStacks = new ItemStack[0];

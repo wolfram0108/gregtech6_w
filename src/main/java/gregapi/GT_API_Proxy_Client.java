@@ -410,7 +410,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		int tCount = 0;
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
 			// GT6BlockModel — both IRenderedBlock and BlockBaseRail (rails: their own rail branch, a flat quad by meta).
-			if (!(tBlock instanceof gregapi.render.IRenderedBlock) && !(tBlock instanceof gregapi.block.misc.BlockBaseRail)) continue;
+			if (!GT_API.hasProceduralBlockModel(tBlock)) continue;
 			// per-BlockState instance: the model must know its owner where the engine gives no world context
 			// (the breaking overlay, a static model request), and the meta — for the crack sprite (getParticleIcon without pos).
 			for (net.minecraft.world.level.block.state.BlockState tState : tBlock.getStateDefinition().getPossibleStates()) {
@@ -423,11 +423,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		gregapi.render.GT6ItemModel tItemModel = new gregapi.render.GT6ItemModel();
 		int tItemCount = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			if (!GT_API.hasProceduralItemModel(tItem)) continue;
 			net.minecraft.resources.ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
-			if (tKey == null || !gregapi.data.CS.ModIDs.isGregNamespace(tKey.getNamespace())) continue;
-			// inject the block item if its block is IRenderedBlock OR a rail (BlockBaseRail: GT6ItemModel draws it a flat
-			// straight icon); other block items are left with the default block model.
-			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && !(tBI.getBlock() instanceof gregapi.render.IRenderedBlock) && !(tBI.getBlock() instanceof gregapi.block.misc.BlockBaseRail)) continue;
 			tMap.put(new net.minecraft.client.resources.model.ModelResourceLocation(tKey, "inventory"), tItemModel); tItemCount++;
 		}
 		// Hygiene ("Missing model for variant"): GT6 blocks with RenderShape.INVISIBLE (fluid blocks river/ocean/swamp — the block
@@ -441,7 +438,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			if (tBKey == null || !gregapi.data.CS.ModIDs.isGregNamespace(tBKey.getNamespace())) continue;
 			for (net.minecraft.world.level.block.state.BlockState tState : tBlock.getStateDefinition().getPossibleStates()) {
 				net.minecraft.client.resources.model.ModelResourceLocation tStateKey = net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(tState);
-				if (tMap.containsKey(tStateKey) || tState.getRenderShape() != net.minecraft.world.level.block.RenderShape.INVISIBLE) continue;
+				if (tMap.containsKey(tStateKey) || !GT_API.hasInvisibleBlockModel(tState)) continue;
 				tMap.put(tStateKey, tEmptyModel); tEmptyCount++;
 			}
 		}

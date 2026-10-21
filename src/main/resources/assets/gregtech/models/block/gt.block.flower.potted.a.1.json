@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/flower_pot_cross",
+  "textures": {
+    "plant": "gregtech:iconsets/flower_crosby_buckwheat"
+  },
+  "render_type": "minecraft:cutout"
+}

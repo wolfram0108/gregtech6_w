@@ -215,7 +215,11 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
 	}
 	
-	@Override public boolean onItemUseFirst(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return F;}
+	@Override public boolean onItemUseFirst(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
+		// Vanilla consumes pot clicks before Item.useOn, so this entry must reach the same placement body first.
+		return WD.block(aWorld, aX, aY, aZ) instanceof net.minecraft.world.level.block.FlowerPotBlock
+			&& onItemUse(aItem, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);
+	}
 	
 	@Override
 	public boolean onItemUse(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
@@ -224,9 +228,15 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
-		// Potting a GT6 flower is a no-op, a deliberate degradation: neo represents a filled pot as its own separate block per
-		// plant, and registering that many custom potted blocks for a decorative feature was judged disproportionate.
-		if (tBlock == Blocks.FLOWER_POT) return F;
+		if (tBlock instanceof net.minecraft.world.level.block.FlowerPotBlock) {
+			if (tBlock == Blocks.FLOWER_POT) {
+				BlockState tPotted = BlocksGT.pottedState(this, ST.meta(aStack));
+				if (tPotted == null) return F;
+				if (!WD.set(aWorld, aX, aY, aZ, tPotted, 2)) return F;
+				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
+			}
+			return T;
+		}
 
 		if (tBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;

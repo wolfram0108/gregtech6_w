@@ -1224,6 +1224,7 @@ public class LoaderUnificationTargets implements Runnable {
 		OreDictManager.INSTANCE.setTarget(OP.nugget         , MT.Fe                     , MD.EtFu, "nugget_iron", 0);
 		OreDictManager.INSTANCE.setTarget(OP.ingot          , MT.Cu                     , MD.EtFu, "copper_ingot", 0);
 		OreDictManager.INSTANCE.setTarget(OP.blockIngot     , MT.Cu                     , MD.EtFu, "copper_block", 0);
+		OreDictManager.INSTANCE.setTarget(OP.blockSolid     , MT.Cu                     , ST.make(Blocks.COPPER_BLOCK, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.ingot          , MT.Netherite              , MD.EtFu, "netherite_ingot", 0);
 		OreDictManager.INSTANCE.setTarget(OP.blockIngot     , MT.Netherite              , MD.EtFu, "netherite_block", 0);
 		OreDictManager.INSTANCE.setTarget(OP.ingot          , MT.AncientDebris          , MD.EtFu, "netherite_scrap", 0);

@@ -256,8 +256,13 @@ Gradle JVM heap, set to 6 GB in `gradle.properties`) — and it takes a while. L
 ```bash
 ./gradlew build       # compile, jar, tests
 ./gradlew assemble    # just the jar -> build/libs/gregtech6-<version>.jar
+./gradlew assemble -Pgt6u # GT6 and the separate optional GT6U addon jar
 ./gradlew compileJava # just compile
 ```
+
+The optional GT6U addon is built from this repository as a second mod: `build/libs-gt6u/gt6u-<version>.jar`.
+Install it alongside the matching GregTech 6 jar; the two jars must have the same version. Without the addon,
+GregTech 6 runs on its own.
 
 The build downloads only the platform: Gradle, NeoForge, Minecraft and their libraries. It never
 fetches other mods or a JDK. Integrations with other mods compile against the declarations in
@@ -285,6 +290,7 @@ redistributed — so you assemble your own from files you have downloaded once:
 ```bash
 ./gradlew runClient   # development client
 ./gradlew runServer   # dedicated server (own directory: ./runserver)
+./gradlew runClient -Pgt6u # run with the optional GT6U addon
 ./gradlew runData     # regenerate generated data files
 ```
 

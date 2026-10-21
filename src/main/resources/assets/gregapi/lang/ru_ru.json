@@ -1,0 +1,11 @@
+{
+  "pack.gregapi.ae2_generation.title": "GT6: генерация AE2 заменена генерацией GregTech",
+  "pack.gregapi.ae2_recipes.title": "GT6: рецепты AE2 переведены на компоненты GregTech",
+  "pack.gregapi.buildcraft_recipes.title": "GT6: рецепты необязательных предметов BuildCraft",
+  "pack.gregapi.model_placeholders.title": "GT6: заглушки процедурных моделей блоков и предметов",
+  "pack.gregapi.model_placeholders.description": "Заглушки процедурных моделей GT6 (blockstates/air, родитель models/item — air)",
+  "pack.gregapi.ae2_recipes.description": "GregTech 6 меняет рецепты AE2, исходные компоненты которых были удалены. Настройка GregTech.cfg: ae2 / DisableAllQuartzToolRecipes.",
+  "pack.gregapi.ae2_generation.description": "GregTech 6 заменяет генерацию мира AE2 (метеориты) собственной промышленной прогрессией. Настройка GregTech.cfg: ae2 / ReplaceMeteoriteGeneration.",
+  "pack.gregapi.buildcraft_recipes.description": "GregTech 6 включает рецепты BuildCraft при наличии соответствующих необязательных предметов.",
+  "pack.gregapi.resources.description": "Ресурсы GregTech 6"
+}

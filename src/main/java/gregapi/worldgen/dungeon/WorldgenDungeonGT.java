@@ -441,10 +441,8 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	
 	public static boolean setFlowerPot(WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {
 		int tIndex = aRandom.nextInt(BlocksGT.POT_FLOWER_TILES.length);
-		// A filled flower pot is a POTTED_* block via the central BlocksGT.potted, not a BE method; the old mirror-class path
-		// used to crash class loading during dungeon generation.
-		Block tPotted = BlocksGT.potted(BlocksGT.POT_FLOWER_TILES[tIndex], BlocksGT.POT_FLOWER_METAS[tIndex]);
-		WD.set(aWorld, aX, aY, aZ, tPotted == null ? Blocks.FLOWER_POT : tPotted, 0, 2);
+		net.minecraft.world.level.block.state.BlockState tPotted = BlocksGT.pottedState(BlocksGT.POT_FLOWER_TILES[tIndex], BlocksGT.POT_FLOWER_METAS[tIndex]);
+		WD.set(aWorld, aX, aY, aZ, tPotted == null ? Blocks.FLOWER_POT.defaultBlockState() : tPotted, 2);
 		return T;
 	}
 	

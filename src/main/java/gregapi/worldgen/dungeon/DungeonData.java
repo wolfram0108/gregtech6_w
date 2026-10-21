@@ -358,10 +358,17 @@ public class DungeonData {
 	
 	public boolean pot(int aX, int aY, int aZ) {
 		int tIndex = next(BlocksGT.POT_FLOWER_TILES.length);
-		// A filled flower pot is a POTTED_* block in neo, not a BE, chosen via the central BlocksGT.potted; the
-		// original's GT6-specific flower species narrow to a vanilla plant of the same roll, since dedicating models was too much.
-		Block tPotted = BlocksGT.potted(BlocksGT.POT_FLOWER_TILES[tIndex], BlocksGT.POT_FLOWER_METAS[tIndex]);
-		set(aX, aY, aZ, tPotted == null ? Blocks.FLOWER_POT : tPotted, 0, 2);
+		net.minecraft.world.level.block.state.BlockState tPotted;
+		if (next1in2()) {
+			tPotted = BlocksGT.pottedState(BlocksGT.POT_FLOWER_TILES[tIndex], BlocksGT.POT_FLOWER_METAS[tIndex]);
+		} else {
+			if (next1in2()) {
+				tPotted = BlocksGT.pottedState((Block)BlocksGT.FlowersA, next(BlocksGT.FlowersA.maxMeta()));
+			} else {
+				tPotted = BlocksGT.pottedState((Block)BlocksGT.FlowersB, next(BlocksGT.FlowersB.maxMeta()));
+			}
+		}
+		set(aX, aY, aZ, tPotted == null ? Blocks.FLOWER_POT.defaultBlockState() : tPotted, 2);
 		return T;
 	}
 	public boolean pot(int aX, int aY, int aZ, Block aBlock, int aMeta) {

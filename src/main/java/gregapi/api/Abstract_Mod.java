@@ -32,7 +32,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import gregapi.api.FMLInitializationEvent;
 import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.FMLPreInitializationEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.event.lifecycle.ParallelDispatchEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -139,6 +145,25 @@ public abstract class Abstract_Mod {
 	
 	@Override public String toString() {return getModID();}
 	
+	/** Subscribes every GT-API mod to Forge through the same ordered lifecycle bridge. */
+	public final void subscribePhases(IEventBus aModBus) {
+		aModBus.addListener(this::onPreLoad);
+		aModBus.addListener(this::onLoad);
+		aModBus.addListener(this::onPostLoad);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
+		MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
+	}
+
+	public void onPreLoad       (FMLConstructModEvent aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModPreInit(new FMLPreInitializationEvent(FMLPaths.CONFIGDIR.get().toFile())));}
+	public void onLoad          (FMLCommonSetupEvent  aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModInit(new FMLInitializationEvent()));}
+	public void onPostLoad      (FMLLoadCompleteEvent aEvent) {runPhaseInModLoadOrder(aEvent, this, () -> onModPostInit(new FMLPostInitializationEvent()));}
+	public void onServerStarting(ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
+	public void onServerStarted (ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
+	public void onServerStopping(ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
+	public void onServerStopped (ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
+
 	public void loadRunnables(String aName, List<Runnable> aList) {
 		if (aList.isEmpty()) return;
 		UT.LoadingBar.start(aName, aList.size());

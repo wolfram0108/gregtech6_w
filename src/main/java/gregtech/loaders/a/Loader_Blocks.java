@@ -128,6 +128,8 @@ public class Loader_Blocks implements Runnable {
 		
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.flower.a", () -> {BlockFlowersA b = new BlockFlowersA("gt.block.flower.a"); BlocksGT.FlowersA = b; return b;});
 		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.flower.b", () -> {BlockFlowersB b = new BlockFlowersB("gt.block.flower.b"); BlocksGT.FlowersB = b; return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.flower.potted.a", () -> new gregapi.block.misc.BlockPottedFlower("gt.block.flower.potted.a", (gregapi.block.misc.BlockBaseFlower)BlocksGT.FlowersA));
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GT, "gt.block.flower.potted.b", () -> new gregapi.block.misc.BlockPottedFlower("gt.block.flower.potted.b", (gregapi.block.misc.BlockBaseFlower)BlocksGT.FlowersB));
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make((Block)BlocksGT.FlowersA, 1, W), F, TC.stack(TC.HERBA, 2));
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make((Block)BlocksGT.FlowersB, 1, W), F, TC.stack(TC.HERBA, 2));
 		

@@ -28,7 +28,6 @@ import net.minecraftforge.fml.InterModComms;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
@@ -721,21 +720,10 @@ public class GT_API extends Abstract_Mod {
 		// No separate stack-size-override carrier here anymore: with the branch's Access Transformer,
 		// ST.setMaxStackSize mutates the item field directly again, as in 1.7.10.
 
-		// Replaces the @Mod.EventHandler dispatcher: each phase subscribes to the mod bus directly, keeping
-		// GT6's original three-phase (Pre/Init/Post) contract over neo's own lifecycle events.
-		// PreInit -> FMLConstructModEvent; Init -> FMLCommonSetupEvent; PostInit -> FMLLoadCompleteEvent
-		// (decisions/F12-registration-lifecycle.md §4).
-		aModBus.addListener(this::onPreLoad);
-		aModBus.addListener(this::onLoad);
-		aModBus.addListener(this::onPostLoad);
+		subscribePhases(aModBus);
 		// AE2 layer: the conditional built-in datapack ae2replacegen (meteorite-generation suppression), on the mod bus.
 		aModBus.addListener(this::onAddPackFinders);
 
-		// GT6's server phases (Abstract_Mod is already on neo's native events) subscribe on the game bus, not the mod bus.
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStopping);
-		MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
 		// Root cause note: deferred item-init must finish before spawn-area pre-generation runs (see below).
 		MinecraftForge.EVENT_BUS.addListener(this::onLevelLoadEarlyItemInit);
 		// Reload boundary: /reload recreates the datapack's RecipeMap, so Replace's suppression is reapplied
@@ -790,12 +778,13 @@ public class GT_API extends Abstract_Mod {
 		// this event type at all, and it has nothing to do with the AE2 datapacks handled further down.
 		if (aEvent.getPackType() == net.minecraft.server.packs.PackType.CLIENT_RESOURCES) {addProceduralClientModelPack(aEvent); return;}
 		if (aEvent.getPackType() != net.minecraft.server.packs.PackType.SERVER_DATA) return;
+		if (MD.BC_ENERGY.mLoaded) addBuiltInPack(aEvent, "bcoptionalrecipes", "pack.gregapi.buildcraft_recipes.title");
 		if (!MD.AE.mLoaded) return;
 		// First pack: suppresses meteorite generation, gated by the master key ReplaceMeteoriteGeneration.
-		if (AE2_REPLACE_METEORITE_GENERATION) addBuiltInPack(aEvent, "ae2replacegen", "GT6: AE2 generation replaced by GregTech");
+		if (AE2_REPLACE_METEORITE_GENERATION) addBuiltInPack(aEvent, "ae2replacegen", "pack.gregapi.ae2_generation.title");
 		// Second pack, own key: rewires the one AE2 recipe whose input GregTech took away (the ME Network Tool,
 		// whose craft needs a quartz wrench we disabled); kept separate since the two config keys are independent.
-		if (AE2_KILL_QUARTZ_TOOLS) addBuiltInPack(aEvent, "ae2gtrecipes", "GT6: AE2 recipes rewired to GregTech inputs");
+		if (AE2_KILL_QUARTZ_TOOLS) addBuiltInPack(aEvent, "ae2gtrecipes", "pack.gregapi.ae2_recipes.title");
 	}
 
 	/** Mounts one built-in mod datapack. One point for every pack in the port, since assembling a Pack
@@ -806,7 +795,7 @@ public class GT_API extends Abstract_Mod {
 				java.nio.file.Path tRoot = net.minecraftforge.fml.ModList.get().getModFileById(ModIDs.GAPI).getFile().findResource(aDir);
 				net.minecraft.server.packs.repository.Pack tPack = net.minecraft.server.packs.repository.Pack.readMetaAndCreate(
 					  ModIDs.GAPI + ":" + aDir
-					, net.minecraft.network.chat.Component.literal(aTitle)
+					, net.minecraft.network.chat.Component.translatable(aTitle)
 					, T
 					, aPackId -> new net.minecraftforge.resource.PathPackResources(aPackId, T, tRoot)
 					, net.minecraft.server.packs.PackType.SERVER_DATA
@@ -819,13 +808,13 @@ public class GT_API extends Abstract_Mod {
 	}
 
 	/** Mounts the second form of the same center — the procedural client pack (see javadoc above).
-	 *  Position.BOTTOM keeps the placeholder below any real assets, so a real model always wins. */
+	 *  Only procedurally replaced or invisible models receive placeholders, regardless of pack order. */
 	private static void addProceduralClientModelPack(net.minecraftforge.event.AddPackFindersEvent aEvent) {
 		aEvent.addRepositorySource(aConsumer -> {
 			try {
 				net.minecraft.server.packs.repository.Pack tPack = net.minecraft.server.packs.repository.Pack.readMetaAndCreate(
 					  ModIDs.GAPI + ":modelplaceholder"
-					, net.minecraft.network.chat.Component.literal("GT6: procedural block/item model placeholders")
+					, net.minecraft.network.chat.Component.translatable("pack.gregapi.model_placeholders.title")
 					, T
 					, aPackId -> new GT6ProceduralClientResourcePack(aPackId)
 					, net.minecraft.server.packs.PackType.CLIENT_RESOURCES
@@ -837,10 +826,29 @@ public class GT_API extends Abstract_Mod {
 		});
 	}
 
+	// Placeholder resources must have the same owners as the models injected after baking.
+	static boolean hasProceduralBlockModel(Block aBlock) {
+		return aBlock instanceof gregapi.render.IRenderedBlock || aBlock instanceof gregapi.block.misc.BlockBaseRail;
+	}
+
+	static boolean hasProceduralItemModel(Item aItem) {
+		net.minecraft.resources.ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aItem);
+		return tKey != null && ModIDs.isGregNamespace(tKey.getNamespace())
+			&& (!(aItem instanceof BlockItem tItem) || hasProceduralBlockModel(tItem.getBlock()));
+	}
+
+	static boolean hasInvisibleBlockModel(net.minecraft.world.level.block.state.BlockState aState) {
+		return aState.getRenderShape() == net.minecraft.world.level.block.RenderShape.INVISIBLE;
+	}
+
+	private static boolean needsBlockstatePlaceholder(Block aBlock) {
+		return hasProceduralBlockModel(aBlock) || aBlock.getStateDefinition().getPossibleStates().stream().allMatch(GT_API::hasInvisibleBlockModel);
+	}
+
 	/** Backing store for the procedural client resource source. Nothing reads the registry in the constructor,
 	 *  since the event fires before it's guaranteed full; getResource walks the registry on every call instead. */
 	private static final class GT6ProceduralClientResourcePack extends net.minecraft.server.packs.AbstractPackResources {
-		private static final byte[] PACK_META = "{\"pack\":{\"description\":\"GT6 procedural model placeholders (blockstates/air, models/item parent air)\",\"pack_format\":15}}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+		private static final byte[] PACK_META = "{\"pack\":{\"description\":{\"translate\":\"pack.gregapi.model_placeholders.description\"},\"pack_format\":15}}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
 		private static final byte[] BLOCKSTATE_JSON = "{\"variants\":{\"\":{\"model\":\"minecraft:block/air\"}}}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
 		private static final byte[] ITEM_MODEL_JSON = "{\"parent\":\"minecraft:block/air\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
 		private static final String BLOCKSTATES_DIR = "blockstates/", ITEM_MODELS_DIR = "models/item/", JSON_EXT = ".json";
@@ -859,12 +867,14 @@ public class GT_API extends Abstract_Mod {
 			String tPath = aLoc.getPath();
 			if (tPath.startsWith(BLOCKSTATES_DIR) && tPath.endsWith(JSON_EXT)) {
 				String tKey = tPath.substring(BLOCKSTATES_DIR.length(), tPath.length() - JSON_EXT.length());
-				if (net.minecraft.core.registries.BuiltInRegistries.BLOCK.containsKey(new net.minecraft.resources.ResourceLocation(aLoc.getNamespace(), tKey))) return () -> new java.io.ByteArrayInputStream(BLOCKSTATE_JSON);
+				net.minecraft.resources.ResourceLocation tId = new net.minecraft.resources.ResourceLocation(aLoc.getNamespace(), tKey);
+				if (net.minecraft.core.registries.BuiltInRegistries.BLOCK.containsKey(tId) && needsBlockstatePlaceholder(net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(tId))) return () -> new java.io.ByteArrayInputStream(BLOCKSTATE_JSON);
 				return null;
 			}
 			if (tPath.startsWith(ITEM_MODELS_DIR) && tPath.endsWith(JSON_EXT)) {
 				String tKey = tPath.substring(ITEM_MODELS_DIR.length(), tPath.length() - JSON_EXT.length());
-				if (net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(new net.minecraft.resources.ResourceLocation(aLoc.getNamespace(), tKey))) return () -> new java.io.ByteArrayInputStream(ITEM_MODEL_JSON);
+				net.minecraft.resources.ResourceLocation tId = new net.minecraft.resources.ResourceLocation(aLoc.getNamespace(), tKey);
+				if (net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(tId) && hasProceduralItemModel(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(tId))) return () -> new java.io.ByteArrayInputStream(ITEM_MODEL_JSON);
 				return null;
 			}
 			return null;
@@ -877,13 +887,13 @@ public class GT_API extends Abstract_Mod {
 			if (aPath.equals("blockstates")) {
 				for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
 					net.minecraft.resources.ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
-					if (tKey == null || !tKey.getNamespace().equals(aNamespace)) continue;
+					if (tKey == null || !tKey.getNamespace().equals(aNamespace) || !needsBlockstatePlaceholder(tBlock)) continue;
 					aOutput.accept(new net.minecraft.resources.ResourceLocation(aNamespace, BLOCKSTATES_DIR + tKey.getPath() + JSON_EXT), () -> new java.io.ByteArrayInputStream(BLOCKSTATE_JSON));
 				}
 			} else if (aPath.equals("models")) {
 				for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 					net.minecraft.resources.ResourceLocation tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
-					if (tKey == null || !tKey.getNamespace().equals(aNamespace)) continue;
+					if (tKey == null || !tKey.getNamespace().equals(aNamespace) || !hasProceduralItemModel(tItem)) continue;
 					aOutput.accept(new net.minecraft.resources.ResourceLocation(aNamespace, ITEM_MODELS_DIR + tKey.getPath() + JSON_EXT), () -> new java.io.ByteArrayInputStream(ITEM_MODEL_JSON));
 				}
 			}
@@ -898,7 +908,7 @@ public class GT_API extends Abstract_Mod {
 		public void close() {/* Nothing to close here — no files or streams held. */}
 	}
 
-	public void onPreLoad(FMLConstructModEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, this::onPreLoadPhase);}
+	@Override public void onPreLoad(FMLConstructModEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, this::onPreLoadPhase);}
 	/** Body of the PreInit phase; run by the center Abstract_Mod#runPhaseInModLoadOrder, in mod load order. */
 	private void onPreLoadPhase() {
 		FMLPreInitializationEvent aEvent = new FMLPreInitializationEvent(FMLPaths.CONFIGDIR.get().toFile());
@@ -919,7 +929,7 @@ public class GT_API extends Abstract_Mod {
 	}
 
 	/** Replaces @Mod.EventHandler onLoad: subscribed in the constructor to FMLCommonSetupEvent (mod bus). */
-	public void onLoad(FMLCommonSetupEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, this::onLoadPhase);}
+	@Override public void onLoad(FMLCommonSetupEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, this::onLoadPhase);}
 	/** Body of the Init phase; run by the center Abstract_Mod#runPhaseInModLoadOrder, in mod load order. */
 	private void onLoadPhase() {
 		// Ore-targets and recipes create an ItemStack, and onLoad still isn't post-bind (components bind at server start).
@@ -969,26 +979,19 @@ public class GT_API extends Abstract_Mod {
 		// (Holder.components only bind at server start).
 	}
 	
-	// PostInit: subscribed in the constructor to FMLLoadCompleteEvent (mod bus); neo's native event
-	// replaces the old FML 1.7.10 complexity around loadComplete.
-	public void onPostLoad(FMLLoadCompleteEvent aModEvent) {runPhaseInModLoadOrder(aModEvent, this, () -> onModPostInit(new FMLPostInitializationEvent()));}
-
 	@Override public String getModID() {return MD.GAPI.mID;}
 	@Override public String getModName() {return MD.GAPI.mName;}
 	@Override public String getModNameForLog() {return "GT_API";}
 	@Override public Abstract_Proxy getProxy() {return api_proxy;}
 
 	// Server phases are subscribed in the constructor to MinecraftForge.EVENT_BUS (game bus), not the mod bus.
-	public void onServerStarting  (ServerStartingEvent aEvent) {
+	@Override public void onServerStarting  (ServerStartingEvent aEvent) {
 		// Localization center, server arm. In 1.7.10 name injection lived in shared code, so server strings
 		// were human-readable too; the client arm hooks resource loading, which a dedicated server lacks.
 		int tInjected = gregapi.lang.LanguageHandler.injectIntoEngine();
 		if (tInjected > 0) OUT.println("GT6 localization: GT6 names appended to the engine table (server): " + tInjected);
 		onModServerStarting(aEvent);
 	}
-	public void onServerStarted   (ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
-	public void onServerStopping  (ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
-	public void onServerStopped   (ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
 
 	@Override
 	@SuppressWarnings({ "resource", "deprecation" })

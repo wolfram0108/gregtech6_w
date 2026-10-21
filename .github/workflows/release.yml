@@ -84,10 +84,13 @@ jobs:
           echo "run=$RUN"  >> "$GITHUB_OUTPUT"
 
       - name: Assemble
-        run: ./gradlew assemble --no-daemon --stacktrace
+        run: ./gradlew assemble -Pgt6u --no-daemon --stacktrace
 
-      - name: Guard — jar purity
+      - name: Guard — GT6 jar purity
         run: python3 .github/ci/check_jar.py 'build/libs/*.jar'
+
+      - name: Guard — GT6U addon jar purity
+        run: python3 .github/ci/check_jar.py 'build/libs-gt6u/*.jar' --addon
 
       # The published jar must equal the one CI built from the same commit, byte for byte.
       - name: Guard — same bytes as the CI build of this commit
@@ -95,29 +98,41 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh run download "${{ steps.ci.outputs.run }}" --repo "$GITHUB_REPOSITORY" -n "gregtech6-jar-${{ steps.ci.outputs.sha }}" -D ci-jar
-          OURS="$(sha256sum build/libs/*.jar | cut -d' ' -f1)"
-          THEIRS="$(sha256sum ci-jar/*.jar | cut -d' ' -f1)"
-          if [ "$OURS" != "$THEIRS" ]; then
-            echo "::error::Release jar $OURS differs from the CI jar $THEIRS of the same commit: the build is not reproducible."
-            exit 1
-          fi
-          echo "reproducible: $OURS"
+          gh run download "${{ steps.ci.outputs.run }}" --repo "$GITHUB_REPOSITORY" -n "gregtech6-jar-${{ steps.ci.outputs.sha }}" -D ci-jar-main
+          gh run download "${{ steps.ci.outputs.run }}" --repo "$GITHUB_REPOSITORY" -n "gt6u-jar-${{ steps.ci.outputs.sha }}" -D ci-jar-gt6u
+          for f in build/libs/*.jar build/libs-gt6u/*.jar; do
+            name="$(basename "$f")"
+            if [[ "$f" == build/libs-gt6u/* ]]; then ci="ci-jar-gt6u/$name"; else ci="ci-jar-main/$name"; fi
+            if [ ! -f "$ci" ]; then echo "::error::CI artifact is missing $name"; exit 1; fi
+            ours="$(sha256sum "$f" | cut -d' ' -f1)"
+            theirs="$(sha256sum "$ci" | cut -d' ' -f1)"
+            if [ "$ours" != "$theirs" ]; then
+              echo "::error::$name differs from the CI artifact of the same commit."
+              exit 1
+            fi
+            echo "reproducible $name: $ours"
+          done
 
       # The checksum sits next to the jar so anyone downloading it can confirm the file arrived intact
       # and is the exact one this run produced.
       - name: Checksums
         run: |
-          cd build/libs
-          for f in *.jar; do sha256sum "$f" > "$f.sha256"; done
-          cat *.sha256
+          for dir in build/libs build/libs-gt6u; do
+            for f in "$dir"/*.jar; do sha256sum "$f" > "$f.sha256"; done
+          done
+          cat build/libs/*.sha256 build/libs-gt6u/*.sha256
 
       # Checksums only prove the file was not corrupted; this step has GitHub cryptographically attest
       # that this exact file was built by this exact workflow run, so verification needs no trust in the author.
-      - name: Attest build provenance
+      - name: Attest GT6 build provenance
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: 'build/libs/*.jar'
+
+      - name: Attest GT6U addon build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'build/libs-gt6u/*.jar'
 
       # The release body describes what changed, pulled from CHANGELOG.md as the single source of
       # truth; a version with no changelog entry blocks the release outright.
@@ -153,6 +168,7 @@ jobs:
             echo
             echo '```'
             echo "gh attestation verify gregtech6-$VERSION.jar --repo ${{ github.repository }}"
+            echo "gh attestation verify gt6u-$VERSION.jar --repo ${{ github.repository }}"
             echo '```'
             echo
             echo "confirms GitHub itself witnessed this exact file being built by this repository's"
@@ -160,7 +176,7 @@ jobs:
             echo "can check the claim yourself — build the tag and compare:"
             echo
             echo '```'
-            echo "./gradlew assemble && sha256sum build/libs/*.jar"
+            echo "./gradlew assemble -Pgt6u && sha256sum build/libs/*.jar build/libs-gt6u/*.jar"
             echo '```'
             echo
             echo "The result must equal the published \`.sha256\` byte for byte."
@@ -184,3 +200,5 @@ jobs:
           files: |
             build/libs/*.jar
             build/libs/*.sha256
+            build/libs-gt6u/*.jar
+            build/libs-gt6u/*.sha256

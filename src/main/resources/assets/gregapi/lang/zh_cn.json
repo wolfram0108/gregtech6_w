@@ -1,0 +1,11 @@
+{
+  "pack.gregapi.ae2_generation.title": "GT6：用 GregTech 替代 AE2 世界生成",
+  "pack.gregapi.ae2_recipes.title": "GT6：AE2 配方改用 GregTech 原料",
+  "pack.gregapi.buildcraft_recipes.title": "GT6：BuildCraft 可选物品配方",
+  "pack.gregapi.model_placeholders.title": "GT6：程序生成的方块及物品模型占位符",
+  "pack.gregapi.model_placeholders.description": "GT6 程序模型占位符（blockstates/air，models/item 的父模型为 air）",
+  "pack.gregapi.ae2_recipes.description": "GregTech 6 调整原料已被其移除的 AE2 配方。由 GregTech.cfg 的 ae2 / DisableAllQuartzToolRecipes 控制。",
+  "pack.gregapi.ae2_generation.description": "GregTech 6 用自身工业发展路线替代 AE2 世界生成（陨石）。由 GregTech.cfg 的 ae2 / ReplaceMeteoriteGeneration 控制。",
+  "pack.gregapi.buildcraft_recipes.description": "GregTech 6 根据可选产物是否存在来启用 BuildCraft 配方。",
+  "pack.gregapi.resources.description": "GregTech 6 资源"
+}

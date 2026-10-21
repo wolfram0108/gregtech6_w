@@ -29,6 +29,16 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+### Added
+
+- **Optional GT6U addon**: the repository builds it as a separate `gt6u` mod jar. GregTech 6 remains usable without the addon.
+
+### Fixed
+
+- Material stacks keep their full quantities through unification and storage saves.
+- GregTech axes can remove wax from modern vanilla blocks.
+- AE2's four-unit decorative storage blocks are no longer treated as nine-unit GregTech material blocks.
+
 ## [6.0.0-1.20.1-alpha.11] — modern blocks mining, copper unification, mob spawning and cleaver enchantments
 
 ### Added

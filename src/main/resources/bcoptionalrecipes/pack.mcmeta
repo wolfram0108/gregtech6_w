@@ -1,0 +1,6 @@
+{
+  "pack": {
+    "description": {"translate": "pack.gregapi.buildcraft_recipes.description"},
+    "pack_format": 15
+  }
+}

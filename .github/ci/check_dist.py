@@ -6,10 +6,11 @@
 (`RuntimeDistCleaner`: «Attempted to load class … for invalid dist DEDICATED_SERVER»). Дефект не виден
 ни в одиночной игре, ни в компиляции — только на дедикейте, поэтому нужен машинный сторож.
 
-ЧТО СУДИТ. Констант-пул СКОМПИЛИРОВАННЫХ классов продукта (`build/classes/java/main`): имена из
-CONSTANT_Class и дескрипторы из CONSTANT_NameAndType — то есть ровно те имена, которые JVM разрешает
-при линковке и при обращении к члену. Классы, у которых нет исходника в `src/main/java` (оснастка
-проверки, подключаемая под `-Pgt6probes`), не судятся: у них своя сторона и свои правила.
+ЧТО СУДИТ. Констант-пул СКОМПИЛИРОВАННЫХ классов продукта из `build/classes/java/main` и
+`build/classes/java/gt6u`: имена из CONSTANT_Class и дескрипторы из CONSTANT_NameAndType — то есть
+ровно те имена, которые JVM разрешает при линковке и при обращении к члену. Классы, у которых нет
+исходника в `src/main/java` или `src/gt6u/java` (оснастка проверки, подключаемая под `-Pgt6probes`),
+не судятся: у них своя сторона и свои правила.
 
 ЧЕГО НЕ СУДИТ. (1) Дескрипторы объявлений, которые никто не вызывает (абстрактные методы, поля) — их
 JVM не разрешает сама по себе. (2) Разницу «имя разрешается при линковке» и «лениво, при исполнении»:
@@ -38,8 +39,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _ci import summary  # noqa: E402 -- single shared sink for all gate output
 
 PREFIXES = ("net/minecraft/client/", "com/mojang/blaze3d/", "snownee/jade/overlay/", "snownee/jade/impl/")
-CLASSES_ROOT = pathlib.Path("build/classes/java/main")
-SRC_ROOT = pathlib.Path("src/main/java")
+CLASSES_ROOTS = (pathlib.Path("build/classes/java/main"), pathlib.Path("build/classes/java/gt6u"))
+SRC_ROOTS = (pathlib.Path("src/main/java"), pathlib.Path("src/gt6u/java"))
 BASELINE = pathlib.Path(".github/ci/baseline.json")
 
 
@@ -91,8 +92,9 @@ def listed(name: str, table: dict) -> str | None:
 
 
 def main() -> int:
-    if not CLASSES_ROOT.is_dir():
-        summary(f"### ❌ Dist purity\n\n`{CLASSES_ROOT}` not found — compile the product first.")
+    roots = [(classes, source) for classes, source in zip(CLASSES_ROOTS, SRC_ROOTS) if classes.is_dir()]
+    if not roots:
+        summary(f"### ❌ Dist purity\n\nNo compiled product class roots found: {CLASSES_ROOTS}.")
         return 2
     try:
         base = json.loads(BASELINE.read_text(encoding="utf-8"))
@@ -102,9 +104,9 @@ def main() -> int:
     client_ok = base.get("dist_client", {})
     latent_ok = base.get("dist_latent", {})
 
-    files = sorted(CLASSES_ROOT.rglob("*.class"))
+    files = sorted(path for classes, _ in roots for path in classes.rglob("*.class"))
     if not files:
-        summary(f"### ❌ Dist purity\n\nNo class files under `{CLASSES_ROOT}` — nothing to judge.")
+        summary(f"### ❌ Dist purity\n\nNo class files under {[str(classes) for classes, _ in roots]} — nothing to judge.")
         return 2
 
     carriers, foreign = [], 0
@@ -113,7 +115,7 @@ def main() -> int:
         if parsed is None:
             continue
         name, names, descs = parsed
-        if not (SRC_ROOT / (name.split("$")[0] + ".java")).exists():
+        if not any((source / (name.split("$")[0] + ".java")).exists() for _, source in roots):
             foreign += 1                 # this class belongs to the test harness, not the shipped product
             continue
         found = hits(names) + hits(descs)

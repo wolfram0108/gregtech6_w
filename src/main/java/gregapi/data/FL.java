@@ -625,6 +625,12 @@ public enum FL implements gregapi.fluid.IFluidName {
 	public static ArrayListNoNulls<FluidStack> arraylist(FluidStack... aFluids) {return new ArrayListNoNulls<>(F, aFluids);}
 	public static FluidStack[] array(FluidStack... aFluids) {return aFluids;}
 	
+	/** GT6 fluids need their registered block because the engine's default state may be empty. */
+	public static Block block(Fluid aFluid) {
+		Block rBlock = BLOCKS.get(regName(aFluid));
+		return ST.invalid(rBlock) ? aFluid.defaultFluidState().createLegacyBlock().getBlock() : rBlock;
+	}
+
 	public static String regName (IFluidTank aTank) {return aTank == null ? null : regName_(aTank);}
 	public static String regName_(IFluidTank aTank) {return regName(aTank.getFluid());}
 	public static String regName (FluidStack aFluid) {return aFluid == null ? null : regName_(aFluid);}

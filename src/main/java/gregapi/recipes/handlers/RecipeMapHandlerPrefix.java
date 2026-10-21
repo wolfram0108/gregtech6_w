@@ -135,18 +135,25 @@ public class RecipeMapHandlerPrefix extends RecipeMapHandler {
 		mOutputPulverizedRemains = (aOutputPulverizedRemains && mUnitsInputted-mUnitsOutputted >= OP.dustDiv72.mAmount);
 	}
 	
+	private static boolean matchesPrefix(ItemStack aStack, OreDictItemData aData, OreDictPrefix[] aPrefixes) {
+		if (UT.Code.contains(aData.mPrefix, aPrefixes)) return T;
+		// Canonical targets can retain the primary data of another equal-mass prefix.
+		for (OreDictPrefix tPrefix : aPrefixes) if (aData.mMaterial.mAmount == tPrefix.mAmount && ST.equal(aStack, tPrefix.mat(aData.mMaterial.mMaterial, 1), T)) return T;
+		return F;
+	}
+
 	@Override
 	public boolean addRecipesUsing(RecipeMap aMap, boolean aNEI, ItemStack aStack, OreDictItemData aData) {
 		if (isDone()) return F;
 		if (ST.equal(aStack, mAdditionalInput)) return aNEI && mAllowToGenerateAllRecipesAtOnce && addAllRecipesInternal(aMap);
-		return aData != null && aData.validData() && UT.Code.contains(aData.mPrefix, mInputPrefixes) && addRecipeForMaterial(aMap, aData.mMaterial.mMaterial);
+		return aData != null && aData.validData() && matchesPrefix(aStack, aData, mInputPrefixes) && addRecipeForMaterial(aMap, aData.mMaterial.mMaterial);
 	}
 	
 	@Override
 	public boolean addRecipesProducing(RecipeMap aMap, boolean aNEI, ItemStack aStack, OreDictItemData aData) {
 		if (isDone()) return F;
 		if (ST.equal(aStack, mAdditionalOutput)) return aNEI && mAllowToGenerateAllRecipesAtOnce && addAllRecipesInternal(aMap);
-		return aData != null && aData.validData() && (UT.Code.contains(aData.mPrefix, mOutputPrefixes) || (mOutputPulverizedRemains && aData.mPrefix == OP.dust)) && addRecipeForMaterial(aMap, aData.mMaterial.mMaterial);
+		return aData != null && aData.validData() && (matchesPrefix(aStack, aData, mOutputPrefixes) || (mOutputPulverizedRemains && aData.mPrefix == OP.dust)) && addRecipeForMaterial(aMap, aData.mMaterial.mMaterial);
 	}
 	
 	@Override

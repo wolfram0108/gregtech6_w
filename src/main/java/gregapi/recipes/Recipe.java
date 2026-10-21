@@ -318,9 +318,9 @@ public class Recipe {
 		
 		public Recipe addRecipe(Recipe aRecipe, boolean aCheckForCollisions, boolean aFakeRecipe, boolean aHidden, boolean aLogErrors) {
 			if (aRecipe == null) return null;
-			if (RecipeCapture.take(this, aRecipe)) return aRecipe;
 			aRecipe.mHidden = aHidden;
 			aRecipe.mFakeRecipe = aFakeRecipe;
+			if (RecipeCapture.open()) return add(aRecipe, aLogErrors && mLogErrors);
 			if (aCheckForCollisions) for (Recipe tOld; (tOld = findRecipeInternal(null, null, F, F, Long.MAX_VALUE, null, aRecipe.mFluidInputs, aRecipe.mInputs)) != null; ) {
 				if (RecipeCapture.yields(this, tOld)) continue;
 				// A Recipe that only unifies with the old input (the stained glass block into plain glass and the gem block
@@ -365,8 +365,34 @@ public class Recipe {
 			return add(aRecipe, aLogErrors, !aRecipe.mFakeRecipe && aRecipe.mCanBeBuffered);
 		}
 		
+		private void configure(Recipe aRecipe, boolean aAddConfig) {
+			if (aAddConfig && mConfigFile != null) {
+				String tConfigName = "";
+				if (aRecipe.mInputs.length > 0) tConfigName += ST.configNames(aRecipe.mInputs);
+				if (aRecipe.mFluidInputs.length > 0) tConfigName += FL.configNames(aRecipe.mFluidInputs);
+				if (UT.Code.stringValid(tConfigName)) {
+					aRecipe.mDuration = mConfigFile.get(mNameLocalUnderscored, tConfigName, aRecipe.mEnabled?aRecipe.mDuration:0);
+					aRecipe.mEnabled = (aRecipe.mDuration > 0);
+				}
+			}
+
+			// Configurable duration and energy consumption multipliers for machine recipes.
+			if (!mFuelMap) {
+				if (RECIPE_DURATION_MULTIPLIER > 0 && RECIPE_DURATION_MULTIPLIER != 1.0) {
+					aRecipe.mDuration = Math.max(1, Math.round(aRecipe.mDuration * RECIPE_DURATION_MULTIPLIER));
+				}
+				if (RECIPE_ENERGY_MULTIPLIER > 0 && RECIPE_ENERGY_MULTIPLIER != 1.0 && aRecipe.mEUt > 0) {
+					aRecipe.mEUt = Math.max(1, Math.round(aRecipe.mEUt * RECIPE_ENERGY_MULTIPLIER));
+				}
+			}
+		}
+
 		public synchronized Recipe add(Recipe aRecipe, boolean aLogErrors, boolean aAddConfig) {
-			if (RecipeCapture.take(this, aRecipe)) return aRecipe;
+			if (RecipeCapture.open()) {
+				configure(aRecipe, aAddConfig);
+				RecipeCapture.take(this, aRecipe);
+				return aRecipe;
+			}
 			if (!aRecipe.mFakeRecipe) {
 				boolean tErrored = F, tFailed = F;
 				if (aRecipe.mInputs.length + aRecipe.mFluidInputs.length <= 0) {
@@ -407,25 +433,7 @@ public class Recipe {
 				return null;
 			}
 			
-			if (aAddConfig && mConfigFile != null) {
-				String tConfigName = "";
-				if (aRecipe.mInputs.length > 0) tConfigName += ST.configNames(aRecipe.mInputs);
-				if (aRecipe.mFluidInputs.length > 0) tConfigName += FL.configNames(aRecipe.mFluidInputs);
-				if (UT.Code.stringValid(tConfigName)) {
-					aRecipe.mDuration = mConfigFile.get(mNameLocalUnderscored, tConfigName, aRecipe.mEnabled?aRecipe.mDuration:0);
-					aRecipe.mEnabled = (aRecipe.mDuration > 0);
-				}
-			}
-
-			// Configurable duration and energy consumption multipliers for machine recipes.
-			if (!mFuelMap) {
-				if (RECIPE_DURATION_MULTIPLIER > 0 && RECIPE_DURATION_MULTIPLIER != 1.0) {
-					aRecipe.mDuration = Math.max(1, Math.round(aRecipe.mDuration * RECIPE_DURATION_MULTIPLIER));
-				}
-				if (RECIPE_ENERGY_MULTIPLIER > 0 && RECIPE_ENERGY_MULTIPLIER != 1.0 && aRecipe.mEUt > 0) {
-					aRecipe.mEUt = Math.max(1, Math.round(aRecipe.mEUt * RECIPE_ENERGY_MULTIPLIER));
-				}
-			}
+			configure(aRecipe, aAddConfig);
 			
 			if (!aRecipe.mEnabled || !mRecipeList.add(aRecipe)) return null;
 			

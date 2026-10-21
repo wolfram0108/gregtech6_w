@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/flower_pot_cross",
+  "textures": {
+    "plant": "gregtech:iconsets/flower_thompsons_locoweed"
+  },
+  "render_type": "minecraft:cutout"
+}
