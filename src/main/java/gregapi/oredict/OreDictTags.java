@@ -228,6 +228,8 @@ public class OreDictTags {
 						if (ST.isGT(tItem)) {tSkippedGT++; continue;}
 						// Vanilla content isn't this bridge's territory; it's handled by the dictionary's other role instead.
 						if (MD.MC.owns(tItem)) {tSkippedMC++; continue;}
+						// AE2 decorative storage carries four units, not the nine implied by legacy storage prefixes.
+						if ("storage_blocks".equals(tGroup) && MD.AE.owns(tItem)) continue;
 						ItemStack tStack = ST.make(tItem, 1, 0);
 						if (ST.invalid(tStack)) continue;
 						OreDictionary.registerOre(tOreName, tStack);
