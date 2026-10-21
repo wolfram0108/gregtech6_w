@@ -39,11 +39,11 @@ that predate this branch describe work done on the shared code base before it wa
 
 ### Fixed
 
+- **Vanilla copper blocks are the unified output of casting, extrusion and other GT processing**, and retain their material value in recipes and machines.
 - **GT material stacks retain their full quantities** through unification and storage ([#30](https://github.com/wolfram0108/gregtech6_w/issues/30)).
 - Dungeon chest loot preserves the original random sequence and generated contents.
 - **GT axes can remove wax from modern vanilla blocks** ([#31](https://github.com/wolfram0108/gregtech6_w/issues/31)).
 - **AE2 Certus Quartz Blocks are no longer treated as nine-unit GT material blocks** by the GT Disassembler ([#34](https://github.com/wolfram0108/gregtech6_w/issues/34)).
-- **Mobs no longer get stuck rotating on GT pebbles or GT-placed vanilla sticks** ([#35](https://github.com/wolfram0108/gregtech6_w/issues/35)).
 - Fluid transfers between supported containers preserve their expected amounts.
 
 Thanks to [@Insecedeath](https://github.com/Insecedeath) for the reports.
