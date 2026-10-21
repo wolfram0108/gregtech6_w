@@ -29,37 +29,22 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
-## [6.0.0-1.20.1-alpha.12] — GT6U addon, restored flower pots, chest loot and compatibility fixes
+## [6.0.0-1.20.1-alpha.12] — GT6U addon, restored flower pots and compatibility fixes
 
 ### Added
 
-- **Configurable machine and recipe efficiencies** ([#20](https://github.com/wolfram0108/gregtech6_w/issues/20)): energy efficiency of electric motors, heaters, dynamos, turbines and energy converters, as well as recipe duration and EU/t multipliers, can now be adjusted in `gregtech.cfg` (`machines` and `recipes` sections). Note: adjusting efficiency values may result in energy loops / perpetual motion setups, so configure at your own discretion.
-- **Native Et Futurum 1.8+ content integration** ([#22](https://github.com/wolfram0108/gregtech6_w/issues/22)):
-  - Vanilla granite, andesite, and diorite now replace GT6 stone variants in world generation, and have been brought into complete crafting and processing parity with GT6 (rock breaker and hammer produce GT cobblestone and gravel; crushing and shredding preserves 100% of their chemical mineral composition without loss).
-  - Vanilla copper ingots (`minecraft:copper_ingot`) are now unified as the canonical copper ingot target, matching vanilla iron and gold behaviour.
-  - Added native dispatchers for vanilla Blast Furnace (2x speed for ores and metals) and Smoker (2x speed for food).
-- **Boats break GT Glow Lotus on collision** (ADAPT-028), matching modern vanilla lily pad behaviour.
-
-- **Optional GT6U addon**: the repository builds it as a separate `gt6u` mod jar. GregTech 6 remains usable without the addon.
-- GT6 flowers can be planted in flower pots and retain their variants.
-- BuildCraft Energy's RF Engine and MJ Dynamo recipes work when enabled in the mod configuration.
+- Optional GT6U addon, built as a separate `gt6u` jar; GregTech 6 remains usable without it.
+- GT flowers can be planted in flower pots and retain their variants.
+- BuildCraft Energy RF Engine and MJ Dynamo recipes work when enabled in the mod configuration.
 
 ### Fixed
 
-- **GT tools can mine newer vanilla blocks and modded blocks** ([#21](https://github.com/wolfram0108/gregtech6_w/issues/21)): axes, pickaxes, shovels and hoes now properly respect vanilla `mineable/*` tags on blocks without explicit legacy passports (barrels, smithing tables, campfires, composters, mud, beehives, etc.).
-- **Vanilla anvil iron content corrected to 31 units** ([#23](https://github.com/wolfram0108/gregtech6_w/issues/23)) (chipped: 25 units, damaged: 20 units); copper horse armor balance adjusted to 8 copper ingots and 6 leather. Explicit item passports now properly override estimated ore dictionary values.
-- **Hostile mobs no longer spawn on GT stone slabs, stairs and spawn-proof partial blocks** ([#24](https://github.com/wolfram0108/gregtech6_w/issues/24)).
-- **GT Steel Construction Wand works on GT stone, cobblestone, slabs and ore blocks** ([#24](https://github.com/wolfram0108/gregtech6_w/issues/24)).
-- **GT Cleaver crafts with its native Looting enchantments** ([#25](https://github.com/wolfram0108/gregtech6_w/issues/25)): restored built-in tool enchantments (Looting II on steel, scaling with material tier) and connected the crafting update channel across all tools.
-
-- Material stacks keep their full quantities through unification and storage saves.
+- Material stack quantities persist through unification and storage saves.
 - Dungeon chest loot preserves the original random sequence and generated contents.
 - GregTech axes can remove wax from modern vanilla blocks.
-- AE2's four-unit decorative storage blocks are no longer treated as nine-unit GregTech material blocks.
+- AE2 decorative storage blocks with four material units are no longer treated as nine-unit GregTech material blocks.
 - Mobs can path across GregTech stone pebbles and vanilla sticks placed by GregTech.
 - Fluid transfers between supported containers preserve their expected amounts.
-
-Thanks to [@gangzhengzhiwei](https://github.com/gangzhengzhiwei), [@Insecedeath](https://github.com/Insecedeath), and [@LixFen](https://github.com/LixFen) for the reports and suggestions.
 
 ## [6.0.0-1.20.1-alpha.10] — crafting tables and furnace smelting parity
 
