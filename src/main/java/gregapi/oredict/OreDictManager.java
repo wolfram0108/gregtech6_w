@@ -648,7 +648,7 @@ public final class OreDictManager {
 		if (tAssociation.mUnificationTarget == null) tAssociation.mUnificationTarget = sName2StackMap.get(tAssociation.toString());
 		// Uses the logical size (ST.size), not the raw count, so a size-0 catalyst stack (its count=1 plus a marker)
 		// keeps that marker through unification instead of losing it to a plain getCount() of 1.
-		if (ST.invalid(rStack = ST.amount(ST.size(aStack), tAssociation.mUnificationTarget))) return ST.copy(aStack);
+		if (ST.invalid(rStack = ST.amount(ST.count(aStack), tAssociation.mUnificationTarget))) return ST.copy(aStack);
 		ItemNBT.set(rStack, ItemNBT.get(aStack)); // Bridges through the central ItemNBT helper instead of a direct tag copy.
 		return rStack;
 	}
