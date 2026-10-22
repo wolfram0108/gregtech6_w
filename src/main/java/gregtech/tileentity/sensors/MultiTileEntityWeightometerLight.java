@@ -48,17 +48,18 @@ public class MultiTileEntityWeightometerLight extends MultiTileEntitySensorTE {
 	
 	@Override
 	public long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator) {
+		Container tInv;
 		double rWeightKG = 0;
 		if (aDelegator.mTileEntity instanceof ITileEntityWeight) {
 			rWeightKG = ((ITileEntityWeight)aDelegator.mTileEntity).getWeightValue(aDelegator.mSideOfTileEntity);
-		} else if (aDelegator.mTileEntity instanceof Container) {
-			if (aDelegator.mTileEntity instanceof WorldlyContainer) {
-				for (int i : ((WorldlyContainer)aDelegator.mTileEntity).getSlotsForFace(FORGE_DIR[aDelegator.mSideOfTileEntity])) {
-					rWeightKG += OM.weight(((Container)aDelegator.mTileEntity).getItem(i));
+		} else if ((tInv = gregapi.util.ST.inventory(aDelegator)) != null) {
+			if (tInv instanceof WorldlyContainer) {
+				for (int i : ((WorldlyContainer)tInv).getSlotsForFace(FORGE_DIR[aDelegator.mSideOfTileEntity])) {
+					rWeightKG += OM.weight(tInv.getItem(i));
 					if (rWeightKG >= MAX_WEIGHT) break;
 				}
-			} else for (int i = 0, j = ((Container)aDelegator.mTileEntity).getContainerSize(); i < j; i++) {
-				rWeightKG += OM.weight(((Container)aDelegator.mTileEntity).getItem(i));
+			} else for (int i = 0, j = tInv.getContainerSize(); i < j; i++) {
+				rWeightKG += OM.weight(tInv.getItem(i));
 				if (rWeightKG >= MAX_WEIGHT) break;
 			}
 		}

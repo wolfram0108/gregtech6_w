@@ -281,25 +281,8 @@ public class GT6FluidCapability {
 	// The other way round: another mod's fluid storage as GT6 code meets it next to a GT6 block.
 	// ==============================================================================================
 
-	/** Kept per position and side until the engine invalidates that block's capability: one map lookup per call, nothing held past
-	 *  its block, never stale. Server thread only. */
-	private static final java.util.Map<net.minecraft.world.level.Level, it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Foreign[]>> FOREIGN = new java.util.WeakHashMap<>();
-
-	private static final class Foreign {
-		private final net.neoforged.neoforge.capabilities.BlockCapabilityCache<ResourceHandler<FluidResource>, Direction> mCache;
-		private ResourceHandler<FluidResource> mLast;
-		private IFluidHandler mTank;
-		private Foreign(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aPos, byte aSide, Runnable aDrop) {
-			mCache = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(Capabilities.Fluid.BLOCK, aLevel, aPos, gregapi.data.CS.FORGE_DIR[aSide], () -> true, aDrop);
-		}
-		/** The same adapter object while the storage stays the same, so a delegator holding it can tell it still exists. */
-		private IFluidHandler get() {
-			ResourceHandler<FluidResource> tCap;
-			try {tCap = mCache.getCapability();} catch (Throwable e) {return null;}
-			if (tCap != mLast) {mLast = tCap; mTank = tCap == null ? null : new ForeignTank(tCap);}
-			return mTank;
-		}
-	}
+	/** Cache of another mod's fluid storages per position and side, shared with the item channel (GT6ForeignCapabilityCache). */
+	private static final gregapi.tileentity.GT6ForeignCapabilityCache<ResourceHandler<FluidResource>, IFluidHandler> FOREIGN = new gregapi.tileentity.GT6ForeignCapabilityCache<>(Capabilities.Fluid.BLOCK, ForeignTank::new);
 
 	/** NeoForge's IFluidHandler adapter under EnergyCompat.insertFE's rules: nest in an open transaction (a second root throws when a
 	 *  GT6 Extender passes a foreign move on), and a failing foreign storage moves nothing instead of erroring a GT6 tick. */
@@ -343,27 +326,10 @@ public class GT6FluidCapability {
 	/** Another mod's fluid storage on a block entity's side, as GT6 code sees one (an IFluidHandler, through ForeignTank).
 	 *  1.7.10's foreign tanks were IFluidHandler block entities too, so a block without one stays out, at no cost. */
 	public static IFluidHandler foreign(net.minecraft.world.level.block.entity.BlockEntity aTileEntity, byte aSide) {
-		net.minecraft.world.level.Level tLevel = aTileEntity.getLevel();
-		if (tLevel == null || aTileEntity.isRemoved()) return null;
+		if (aTileEntity.getLevel() == null || aTileEntity.isRemoved()) return null;
 		// 1.7.10 asked a tank block entity itself: one that still is an IFluidHandler is asked so, behind the same guard
 		if (aTileEntity instanceof IFluidHandler tSelf) return new ForeignLegacyTank(tSelf);
-		if (!(tLevel instanceof net.minecraft.server.level.ServerLevel tServer) || !tServer.getServer().isSameThread()) {
-			try {
-				ResourceHandler<FluidResource> tCap = tLevel.getCapability(Capabilities.Fluid.BLOCK, aTileEntity.getBlockPos(), aTileEntity.getBlockState(), aTileEntity, gregapi.data.CS.FORGE_DIR[aSide]);
-				return tCap == null ? null : new ForeignTank(tCap);
-			} catch (Throwable e) {return null;}
-		}
-		long tPos = aTileEntity.getBlockPos().asLong();
-		int tSide = gregapi.data.CS.SIDES_VALID[aSide] ? aSide : 6;
-		it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Foreign[]> tMap = FOREIGN.computeIfAbsent(tLevel, k -> new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>());
-		Foreign[] tSides = tMap.get(tPos);
-		if (tSides == null) tMap.put(tPos, tSides = new Foreign[7]);
-		Foreign tEntry = tSides[tSide];
-		if (tEntry == null) {
-			Foreign[] tOwner = tSides;
-			tSides[tSide] = tEntry = new Foreign(tServer, aTileEntity.getBlockPos(), aSide, () -> drop(tMap, tPos, tOwner, tSide));
-		}
-		return tEntry.get();
+		return FOREIGN.get(aTileEntity, aSide);
 	}
 
 	/** Another mod's block entity that is a legacy IFluidHandler itself, under the same rule as ForeignTank: a failure moves nothing. */
@@ -381,11 +347,5 @@ public class GT6FluidCapability {
 		/** Adapters of one storage are one tank, so a delegator holding one can tell its storage still exists. */
 		@Override public boolean equals(Object aOther) {return aOther instanceof ForeignLegacyTank tOther && tOther.mTank == mTank;}
 		@Override public int hashCode() {return System.identityHashCode(mTank);}
-	}
-
-	private static void drop(it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Foreign[]> aMap, long aPos, Foreign[] aSides, int aSide) {
-		aSides[aSide] = null;
-		for (Foreign tEntry : aSides) if (tEntry != null) return;
-		if (aMap.get(aPos) == aSides) aMap.remove(aPos);
 	}
 }

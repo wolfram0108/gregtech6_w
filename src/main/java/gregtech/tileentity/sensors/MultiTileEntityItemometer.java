@@ -45,21 +45,22 @@ public class MultiTileEntityItemometer extends MultiTileEntitySensorTE {
 	
 	@Override
 	public long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator) {
-		if (aDelegator.mTileEntity instanceof Container) {
+		Container tInv;
+		if ((tInv = gregapi.util.ST.inventory(aDelegator)) != null) {
 			long rAmount = 0;
-			if (aDelegator.mTileEntity instanceof WorldlyContainer) {
-				int[] tSlots = ((WorldlyContainer)aDelegator.mTileEntity).getSlotsForFace(FORGE_DIR[aDelegator.mSideOfTileEntity]);
-				if (tSlots == null || tSlots.length <= 0) try {tSlots = ((WorldlyContainer)aDelegator.mTileEntity).getSlotsForFace(FORGE_DIR[SIDE_ANY]);} catch(Throwable e) {tSlots = null;}
+			if (tInv instanceof WorldlyContainer) {
+				int[] tSlots = ((WorldlyContainer)tInv).getSlotsForFace(FORGE_DIR[aDelegator.mSideOfTileEntity]);
+				if (tSlots == null || tSlots.length <= 0) try {tSlots = ((WorldlyContainer)tInv).getSlotsForFace(FORGE_DIR[SIDE_ANY]);} catch(Throwable e) {tSlots = null;}
 				if (tSlots != null && tSlots.length >  0) {
 					for (int i : tSlots) {
-						ItemStack tStack = ((Container)aDelegator.mTileEntity).getItem(i);
+						ItemStack tStack = tInv.getItem(i);
 						if (tStack != null && !IL.Display_Fluid.equal(tStack, T, T)) rAmount += tStack.getCount();
 					}
 					return rAmount;
 				}
 			}
-			for (int i = 0, j = ((Container)aDelegator.mTileEntity).getContainerSize(); i < j; i++) {
-				ItemStack tStack = ((Container)aDelegator.mTileEntity).getItem(i);
+			for (int i = 0, j = tInv.getContainerSize(); i < j; i++) {
+				ItemStack tStack = tInv.getItem(i);
 				if (tStack != null && !IL.Display_Fluid.equal(tStack, T, T)) rAmount += tStack.getCount();
 			}
 			return rAmount;
@@ -69,9 +70,10 @@ public class MultiTileEntityItemometer extends MultiTileEntitySensorTE {
 	
 	@Override
 	public long getCurrentMax(DelegatorTileEntity<BlockEntity> aDelegator) {
-		if (aDelegator.mTileEntity instanceof Container) {
-			if (aDelegator.mTileEntity instanceof WorldlyContainer) return (long)((WorldlyContainer)aDelegator.mTileEntity).getSlotsForFace(FORGE_DIR[aDelegator.mSideOfTileEntity]).length * ((Container)aDelegator.mTileEntity).getMaxStackSize();
-			return (long)((Container)aDelegator.mTileEntity).getContainerSize() * ((Container)aDelegator.mTileEntity).getMaxStackSize();
+		Container tInv;
+		if ((tInv = gregapi.util.ST.inventory(aDelegator)) != null) {
+			if (tInv instanceof WorldlyContainer) return (long)((WorldlyContainer)tInv).getSlotsForFace(FORGE_DIR[aDelegator.mSideOfTileEntity]).length * tInv.getMaxStackSize();
+			return (long)tInv.getContainerSize() * tInv.getMaxStackSize();
 		}
 		return 0;
 	}

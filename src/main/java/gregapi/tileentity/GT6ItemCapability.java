@@ -26,6 +26,9 @@ package gregapi.tileentity;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Container;
 import net.minecraft.world.WorldlyContainer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
@@ -33,6 +36,7 @@ import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.VanillaContainerWrapper;
 import net.neoforged.neoforge.transfer.item.WorldlyContainerWrapper;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
  * RESTORING THE STANDARD INVENTORY CHANNEL (the same loss class fluids had —
@@ -158,5 +162,101 @@ public class GT6ItemCapability {
 			for (int i = 0, j = size(); i < j && rExtracted < aAmount; i++) rExtracted += extract(i, aResource, aAmount - rExtracted, aTransaction);
 			return rExtracted;
 		}
+	}
+
+	// ==============================================================================================
+	// The other way round: another mod's item storage as GT6 code meets it next to a GT6 block.
+	// ==============================================================================================
+
+	/** Cache of another mod's item storages per position and side, the same rules as for fluids (GT6ForeignCapabilityCache). */
+	private static final GT6ForeignCapabilityCache<ResourceHandler<ItemResource>, ForeignContainer> FOREIGN = new GT6ForeignCapabilityCache<>(Capabilities.Item.BLOCK, ForeignContainer::new);
+
+	/**
+	 * Another mod's item storage on a block entity's side, as GT6 code sees one: a WorldlyContainer, through ForeignContainer.
+	 * 1.7.10's foreign storages were IInventory block entities, so every mod's chest was reached by GT6's hoppers, pipes and machines
+	 * without a line of mod-specific code; the engine's storages need not be a Container, only to answer the item capability. A block that
+	 * is a Container itself needs no adapter, and one without storage stays out, at no cost.
+	 */
+	public static ForeignContainer foreign(BlockEntity aTileEntity, byte aSide) {
+		if (aTileEntity instanceof Container) return null;
+		ForeignContainer rForeign = FOREIGN.get(aTileEntity, aSide);
+		return rForeign != null && rForeign.getContainerSize() > 0 ? rForeign : null;
+	}
+
+	/**
+	 * The engine's item handler of another mod's block as the Container GT6's transfer code is written against. Stacks it hands out are
+	 * snapshots (a foreign storage never lets its own be changed in place), every change goes through the handler in a transaction nested
+	 * in the open one if there is one, the rules of what can go where stay the storage's own, and a storage that fails moves nothing
+	 * instead of erroring a GT6 tick.
+	 */
+	public static final class ForeignContainer implements WorldlyContainer {
+		private final ResourceHandler<ItemResource> mHandler;
+		private ForeignContainer(ResourceHandler<ItemResource> aHandler) {mHandler = aHandler;}
+
+		@Override public int getContainerSize() {try {return mHandler.size();} catch (Throwable e) {return 0;}}
+		@Override public boolean isEmpty() {for (int i = 0, j = getContainerSize(); i < j; i++) if (!getItem(i).isEmpty()) return false; return true;}
+		@Override public ItemStack getItem(int aSlot) {
+			try {
+				ItemResource tResource = mHandler.getResource(aSlot);
+				int tAmount = mHandler.getAmountAsInt(aSlot);
+				return tResource.isEmpty() || tAmount <= 0 ? ItemStack.EMPTY : tResource.toStack(tAmount);
+			} catch (Throwable e) {return ItemStack.EMPTY;}
+		}
+		@Override public ItemStack removeItem(int aSlot, int aCount) {
+			if (aCount <= 0) return ItemStack.EMPTY;
+			try {
+				ItemResource tResource = mHandler.getResource(aSlot);
+				if (tResource.isEmpty()) return ItemStack.EMPTY;
+				try (Transaction tTx = Transaction.open(Transaction.getCurrentOpenedTransaction())) {
+					int tTaken = mHandler.extract(aSlot, tResource, aCount, tTx);
+					if (tTaken <= 0) return ItemStack.EMPTY;
+					tTx.commit();
+					return tResource.toStack(tTaken);
+				}
+			} catch (Throwable e) {return ItemStack.EMPTY;}
+		}
+		@Override public ItemStack removeItemNoUpdate(int aSlot) {
+			try {return removeItem(aSlot, Math.max(1, mHandler.getAmountAsInt(aSlot)));} catch (Throwable e) {return ItemStack.EMPTY;}
+		}
+		/** Puts a stack into one slot and reports how much of it the storage took; the rest stays with the caller. */
+		public int put(int aSlot, ItemStack aStack) {
+			if (aStack == null || aStack.isEmpty()) return 0;
+			try (Transaction tTx = Transaction.open(Transaction.getCurrentOpenedTransaction())) {
+				int rPut = mHandler.insert(aSlot, ItemResource.of(aStack), aStack.getCount(), tTx);
+				if (rPut <= 0) return 0;
+				tTx.commit();
+				return rPut;
+			} catch (Throwable e) {return 0;}
+		}
+		/** Only an empty slot takes a stack set into it, and what the storage refuses is reported, never dropped in silence. */
+		@Override public void setItem(int aSlot, ItemStack aStack) {
+			if (aStack == null || aStack.isEmpty()) {removeItemNoUpdate(aSlot); return;}
+			int tPut = put(aSlot, aStack);
+			if (tPut < aStack.getCount()) gregapi.data.CS.ERR.println("[GT6] a foreign item storage refused " + (aStack.getCount() - tPut) + " of " + aStack.getCount() + " items set into slot " + aSlot);
+		}
+		@Override public void setChanged() {/* the foreign storage marks its own changes */}
+		@Override public boolean stillValid(Player aPlayer) {return false;}
+		/** Never clears a storage that is not GT6's. */
+		@Override public void clearContent() {}
+		@Override public boolean canPlaceItem(int aSlot, ItemStack aStack) {
+			try (Transaction tTx = Transaction.open(Transaction.getCurrentOpenedTransaction())) {
+				ItemResource tResource = ItemResource.of(aStack);
+				// the question is asked of the storage itself: simulated, never committed
+				return mHandler.isValid(aSlot, tResource) && mHandler.insert(aSlot, tResource, 1, tTx) > 0;
+			} catch (Throwable e) {return false;}
+		}
+
+		@Override public int[] getSlotsForFace(Direction aSide) {return java.util.stream.IntStream.range(0, getContainerSize()).toArray();}
+		@Override public boolean canPlaceItemThroughFace(int aSlot, ItemStack aStack, Direction aSide) {return canPlaceItem(aSlot, aStack);}
+		@Override public boolean canTakeItemThroughFace(int aSlot, ItemStack aStack, Direction aSide) {
+			try (Transaction tTx = Transaction.open(Transaction.getCurrentOpenedTransaction())) {
+				ItemResource tResource = mHandler.getResource(aSlot);
+				return !tResource.isEmpty() && mHandler.extract(aSlot, tResource, 1, tTx) > 0;
+			} catch (Throwable e) {return false;}
+		}
+
+		/** Adapters of one storage are one container, so a delegator holding one can tell its storage still exists. */
+		@Override public boolean equals(Object aOther) {return aOther instanceof ForeignContainer tOther && tOther.mHandler == mHandler;}
+		@Override public int hashCode() {return System.identityHashCode(mHandler);}
 	}
 }

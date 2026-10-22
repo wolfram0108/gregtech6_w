@@ -838,9 +838,11 @@ public class ST {
 	public static int move(DelegatorTileEntity aFrom, DelegatorTileEntity aTo) {return move(aFrom, aTo, null, F, F, F, T, 64, 1, 64, 1);}
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static int move(DelegatorTileEntity aFrom, DelegatorTileEntity aTo, ItemStackSet<ItemStackContainer> aFilter, boolean aIgnoreSideFrom, boolean aIgnoreSideTo, boolean aInvertFilter, boolean aEjectItems, int aMaxSize, int aMinSize, int aMaxMove, int aMinMove) {
+		aFrom = inventoried(aFrom);
 		if (!(aFrom.mTileEntity instanceof Container)) return 0;
 		aFrom = getPotentialDoubleChest(aFrom);
 		int[] aSlotsFrom = (!aIgnoreSideFrom && aFrom.mTileEntity instanceof WorldlyContainer ? ((WorldlyContainer)aFrom.mTileEntity).getSlotsForFace(FORGE_DIR[aFrom.mSideOfTileEntity]) : UT.Code.getAscendingArray(((Container)aFrom.mTileEntity).getContainerSize()));
+		aTo = inventoried(aTo);
 		if (!(aTo.mTileEntity instanceof Container)) return put(aFrom, aSlotsFrom, aTo, aFilter, aIgnoreSideFrom, aInvertFilter, aEjectItems, aMaxMove, aMinMove);
 		aTo = getPotentialDoubleChest(aTo);
 		int[] aSlotsTo   = (!aIgnoreSideTo   && aTo  .mTileEntity instanceof WorldlyContainer ? ((WorldlyContainer)aTo  .mTileEntity).getSlotsForFace(FORGE_DIR[aTo  .mSideOfTileEntity]) : UT.Code.getAscendingArray(((Container)aTo  .mTileEntity).getContainerSize()));
@@ -864,9 +866,11 @@ public class ST {
 	public static int moveAll(DelegatorTileEntity aFrom, DelegatorTileEntity aTo) {return moveAll(aFrom, aTo, null, F, F, F, T, 64, 1, 64, 1);}
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static int moveAll(DelegatorTileEntity aFrom, DelegatorTileEntity aTo, ItemStackSet<ItemStackContainer> aFilter, boolean aIgnoreSideFrom, boolean aIgnoreSideTo, boolean aInvertFilter, boolean aEjectItems, int aMaxSize, int aMinSize, int aMaxMove, int aMinMove) {
+		aFrom = inventoried(aFrom);
 		if (!(aFrom.mTileEntity instanceof Container)) return 0;
 		aFrom = getPotentialDoubleChest(aFrom);
 		int[] aSlotsFrom = (!aIgnoreSideFrom && aFrom.mTileEntity instanceof WorldlyContainer ? ((WorldlyContainer)aFrom.mTileEntity).getSlotsForFace(FORGE_DIR[aFrom.mSideOfTileEntity]) : UT.Code.getAscendingArray(((Container)aFrom.mTileEntity).getContainerSize()));
+		aTo = inventoried(aTo);
 		if (!(aTo.mTileEntity instanceof Container)) return put(aFrom, aSlotsFrom, aTo, aFilter, aIgnoreSideFrom, aInvertFilter, aEjectItems, aMaxMove, aMinMove);
 		aTo = getPotentialDoubleChest(aTo);
 		int[] aSlotsTo   = (!aIgnoreSideTo   && aTo  .mTileEntity instanceof WorldlyContainer ? ((WorldlyContainer)aTo  .mTileEntity).getSlotsForFace(FORGE_DIR[aTo  .mSideOfTileEntity]) : UT.Code.getAscendingArray(((Container)aTo  .mTileEntity).getContainerSize()));
@@ -895,9 +899,11 @@ public class ST {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static int moveFrom(DelegatorTileEntity aFrom, DelegatorTileEntity aTo, int aSlotFrom, ItemStackSet<ItemStackContainer> aFilter, boolean aIgnoreSideFrom, boolean aIgnoreSideTo, boolean aInvertFilter, boolean aEjectItems, int aMaxSize, int aMinSize, int aMaxMove, int aMinMove) {
 		if (aSlotFrom < 0) return 0;
+		aFrom = inventoried(aFrom);
 		if (!(aFrom.mTileEntity instanceof Container)) return 0;
 		aFrom = getPotentialDoubleChest(aFrom);
 		if (aSlotFrom >= ((Container)aFrom.mTileEntity).getContainerSize()) return 0;
+		aTo = inventoried(aTo);
 		if (!(aTo.mTileEntity instanceof Container)) return put(aFrom, new int[] {aSlotFrom}, aTo, aFilter, aIgnoreSideFrom, aInvertFilter, aEjectItems, aMaxMove, aMinMove);
 		aTo = getPotentialDoubleChest(aTo);
 		int[] aSlotsTo   = (!aIgnoreSideTo   && aTo  .mTileEntity instanceof WorldlyContainer ? ((WorldlyContainer)aTo  .mTileEntity).getSlotsForFace(FORGE_DIR[aTo  .mSideOfTileEntity]) : UT.Code.getAscendingArray(((Container)aTo  .mTileEntity).getContainerSize()));
@@ -919,9 +925,11 @@ public class ST {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static int moveTo(DelegatorTileEntity aFrom, DelegatorTileEntity aTo, int aSlotTo, ItemStackSet<ItemStackContainer> aFilter, boolean aIgnoreSideFrom, boolean aIgnoreSideTo, boolean aInvertFilter, boolean aEjectItems, int aMaxSize, int aMinSize, int aMaxMove, int aMinMove) {
 		if (aSlotTo < 0) return 0;
+		aFrom = inventoried(aFrom);
 		if (!(aFrom.mTileEntity instanceof Container)) return 0;
 		aFrom = getPotentialDoubleChest(aFrom);
 		int[] aSlotsFrom = (!aIgnoreSideFrom && aFrom.mTileEntity instanceof WorldlyContainer ? ((WorldlyContainer)aFrom.mTileEntity).getSlotsForFace(FORGE_DIR[aFrom.mSideOfTileEntity]) : UT.Code.getAscendingArray(((Container)aFrom.mTileEntity).getContainerSize()));
+		aTo = inventoried(aTo);
 		if (!(aTo.mTileEntity instanceof Container)) return put(aFrom, aSlotsFrom, aTo, aFilter, aIgnoreSideFrom, aInvertFilter, aEjectItems, aMaxMove, aMinMove);
 		aTo = getPotentialDoubleChest(aTo);
 		if (aSlotTo >= ((Container)aTo.mTileEntity).getContainerSize()) return 0;
@@ -943,9 +951,11 @@ public class ST {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static int move(DelegatorTileEntity aFrom, DelegatorTileEntity aTo, int aSlotFrom, int aSlotTo, ItemStackSet<ItemStackContainer> aFilter, boolean aIgnoreSideFrom, boolean aIgnoreSideTo, boolean aInvertFilter, boolean aEjectItems, int aMaxSize, int aMinSize, int aMaxMove, int aMinMove) {
 		if (aSlotFrom < 0 || aSlotTo < 0) return 0;
+		aFrom = inventoried(aFrom);
 		if (aFrom.mTileEntity instanceof Container) {
 			aFrom = getPotentialDoubleChest(aFrom);
 			if (aSlotFrom >= ((Container)aFrom.mTileEntity).getContainerSize()) return 0;
+			aTo = inventoried(aTo);
 			if (aTo.mTileEntity instanceof Container) {
 				aTo = getPotentialDoubleChest(aTo);
 				if (aSlotTo >= ((Container)aTo.mTileEntity).getContainerSize()) return 0;
@@ -1007,7 +1017,12 @@ public class ST {
 		if (tStack == null || tStack.getCount() <= 0) return 0;
 		aCount = Math.min(aCount, tStack.getCount());
 		// F15-size0 (BUG-011): see move_(Container,...) above — the copy comes from tStack, not from the zeroed-out aStackFrom.
-		if (aStackTo == null) aTo.setItem(aSlotTo, amount(aCount, tStack)); else aStackTo.setCount(aStackTo.getCount()+(aCount));
+		if (aTo instanceof gregapi.tileentity.GT6ItemCapability.ForeignContainer tForeign) {
+			// another mod's storage hands out snapshots, so adding to aStackTo would be lost: the stack is inserted there, and what it refused goes back
+			int tPut = tForeign.put(aSlotTo, amount(aCount, tStack));
+			if (tPut < aCount) giveBack(aFrom, aSlotFrom, amount(aCount - tPut, tStack));
+			aCount = tPut;
+		} else if (aStackTo == null) aTo.setItem(aSlotTo, amount(aCount, tStack)); else aStackTo.setCount(aStackTo.getCount()+(aCount));
 		aFrom.setChanged();
 		aTo  .setChanged();
 		WD.mark(aFrom);
@@ -1039,12 +1054,40 @@ public class ST {
 		return aPotentialChest;
 	}
 	
+	/** The item storage a delegator points at: a GT6 or vanilla Container as it is, another mod's block entity through the engine's item
+	 *  capability on that side (GT6ItemCapability.foreign, the sibling of FL.tank); null where there is none. 1.7.10 asked the block entity
+	 *  itself, which was an IInventory for every mod. Pipes that have their own injection path (CoFH, BuildCraft) stay on it. */
+	@SuppressWarnings("rawtypes")
+	public static Container inventory(DelegatorTileEntity aDelegator) {
+		if (aDelegator == null || aDelegator.mTileEntity == null) return null;
+		if (aDelegator.mTileEntity instanceof Container tContainer) return tContainer;
+		if (!(aDelegator.mTileEntity instanceof BlockEntity tTileEntity)) return null;
+		if (TE_PIPES && tTileEntity instanceof gt6mirror.cofh.api.transport.IItemDuct) return null;
+		if (BC_PIPES && gregapi.compat.buildcraft.CompatBC.isInjectable(tTileEntity, aDelegator.getForgeSideOfTileEntity())) return null;
+		return gregapi.tileentity.GT6ItemCapability.foreign(tTileEntity, aDelegator.mSideOfTileEntity);
+	}
+	/** The delegator pointed at its item storage (itself when it already points at one or has none), the sibling of FL.tanked. */
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public static DelegatorTileEntity inventoried(DelegatorTileEntity aDelegator) {
+		if (aDelegator == null || aDelegator.mTileEntity instanceof Container) return aDelegator;
+		Container tInventory = inventory(aDelegator);
+		return tInventory == null ? aDelegator : new DelegatorTileEntity<>(tInventory, aDelegator);
+	}
+	/** What a move took out of a slot but the target refused goes back into that slot. */
+	private static void giveBack(Container aInv, int aSlot, ItemStack aStack) {
+		ItemStack tNow = n(aInv.getItem(aSlot));
+		if (tNow == null || tNow.isEmpty()) aInv.setItem(aSlot, aStack);
+		else if (aInv instanceof gregapi.tileentity.GT6ItemCapability.ForeignContainer tForeign) tForeign.put(aSlot, aStack);
+		else tNow.setCount(tNow.getCount() + aStack.getCount());
+	}
+	
 	public static boolean canConnect(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator) {
 		if (aDelegator.mTileEntity == null) return F;
 		if (TE_PIPES && aDelegator.mTileEntity instanceof gt6mirror.cofh.api.transport.IItemDuct) return T;
 		if (BC_PIPES && gregapi.compat.buildcraft.CompatBC.isInjectable(aDelegator.mTileEntity, aDelegator.getForgeSideOfTileEntity())) return gregapi.compat.buildcraft.CompatBC.canInject(aDelegator.mTileEntity, aDelegator.getForgeSideOfTileEntity());
 		if (aDelegator.mTileEntity instanceof ITileEntityCanDelegate && ((ITileEntityCanDelegate)aDelegator.mTileEntity).isExtender(aDelegator.mSideOfTileEntity)) return T;
-		if (aDelegator.mTileEntity instanceof Container && ((Container)aDelegator.mTileEntity).getContainerSize() > 0) return T;
+		Container tInventory = inventory(aDelegator);
+		if (tInventory != null && tInventory.getContainerSize() > 0) return T;
 		return F;
 	}
 	
