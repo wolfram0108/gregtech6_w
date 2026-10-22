@@ -43,6 +43,7 @@ Minecraft 1.7.10 — to Minecraft 26.1.2 / NeoForge.**
 - [Current state](#current-state)
 - [Building](#building)
 - [Running](#running)
+- [Verifying a download](#verifying-a-download)
 - [Mod compatibility](#mod-compatibility)
 - [Reporting problems](#reporting-problems)
 - [License and credits](#license-and-credits)
@@ -303,6 +304,23 @@ There is one opt-in build flag, `-Pgt6probes`, which attaches the in-engine veri
 Those live **outside this repository**, in the developer's working environment (`../stands`); the
 repository contains none of them, so they cannot end up in a player's jar. Given that directory and
 the flag, `runClient`/`runServer` can run automated in-game checks.
+
+## Verifying a download
+
+Each release jar is published with a `.sha256` file and a GitHub build-provenance attestation. Two independent checks:
+
+```bash
+gh attestation verify gregtech6-<version>.jar --repo wolfram0108/gregtech6_w
+gh attestation verify gt6u-<addon-version>.jar --repo wolfram0108/gregtech6_w
+```
+
+The attestation confirms that GitHub itself witnessed the exact file being built from the tagged commit by this repository's release workflow. The build is reproducible, so the claim can also be checked by building the tag:
+
+```bash
+./gradlew assemble -Pgt6u && sha256sum build/libs/*.jar build/libs-gt6u/*.jar
+```
+
+The result must equal the published `.sha256` files byte for byte.
 
 ## Mod compatibility
 
