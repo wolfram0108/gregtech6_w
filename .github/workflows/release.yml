@@ -137,12 +137,15 @@ jobs:
         with:
           subject-path: 'build/libs-gt6u/*.jar'
 
+      # The release body is the changelog section itself, so the section must follow the template.
+      - name: Guard — changelog follows the template
+        run: python3 .github/ci/check_changelog.py
+
       # The release body describes what changed, pulled from CHANGELOG.md as the single source of
       # truth; a version with no changelog entry blocks the release outright.
       - name: Build release notes from CHANGELOG
         run: |
           VERSION='${{ steps.version.outputs.version }}'
-          GT6U_VERSION='${{ steps.version.outputs.gt6u_version }}'
           awk -v v="## [$VERSION]" '
             index($0, v) == 1 {found = 1; next}
             found && /^## \[/ {exit}
@@ -155,41 +158,7 @@ jobs:
           {
             echo "Minecraft 1.20.1 · NeoForge 47.1.106 or newer · Java 17."
             echo
-            echo "> ⚠️ **Alpha.** Playable, not finished. Worlds are not guaranteed to survive between"
-            echo "> builds — see \"Known gaps\" in the README before using a world you care about."
-            echo
-            cat changelog-section.md
-            echo
-            echo "---"
-            echo
-            echo "<details><summary>Verifying this download, and how to report a defect</summary>"
-            echo
-            echo "An unofficial port of Gregorius Techneticies' GregTech 6, under LGPL-3.0-or-later."
-            echo "Not affiliated with or endorsed by the upstream author — report problems here, not there."
-            echo "Where every part of this jar comes from is set out in \`NOTICE\`, inside the jar."
-            echo
-            echo "Two independent checks, neither requiring you to trust me:"
-            echo
-            echo '```'
-            echo "gh attestation verify gregtech6-$VERSION.jar --repo ${{ github.repository }}"
-            echo "gh attestation verify gt6u-$GT6U_VERSION.jar --repo ${{ github.repository }}"
-            echo '```'
-            echo
-            echo "confirms GitHub itself witnessed this exact file being built by this repository's"
-            echo "release workflow from the tagged commit. And because the build is reproducible, you"
-            echo "can check the claim yourself — build the tag and compare:"
-            echo
-            echo '```'
-            echo "./gradlew assemble -Pgt6u && sha256sum build/libs/*.jar build/libs-gt6u/*.jar"
-            echo '```'
-            echo
-            echo "The result must equal the published \`.sha256\` byte for byte."
-            echo
-            echo "Report a defect with: what you did, what the 1.7.10 original does instead,"
-            echo "single-player or dedicated server, fresh or old world, plus \`logs/latest.log\`"
-            echo "and \`gregtech.log\`."
-            echo
-            echo "</details>"
+            sed '/./,$!d' changelog-section.md
           } > release-notes.md
 
       - name: Publish GitHub Release

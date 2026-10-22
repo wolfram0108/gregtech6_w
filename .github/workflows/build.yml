@@ -58,6 +58,9 @@ jobs:
       - name: Guard — dist purity (no client types in server-loaded classes)
         run: python3 .github/ci/check_dist.py
 
+      - name: Guard — changelog follows the template
+        run: python3 .github/ci/check_changelog.py
+
       - name: Upload jar
         uses: actions/upload-artifact@v4
         with:
