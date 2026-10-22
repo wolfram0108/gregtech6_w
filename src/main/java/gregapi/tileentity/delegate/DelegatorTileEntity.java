@@ -100,7 +100,9 @@ public final class DelegatorTileEntity<T> extends WorldAndCoords {
 	public boolean exists() {
 		if (mTileEntity instanceof ITileEntityUnloadable) return !((ITileEntityUnloadable)mTileEntity).isDead();
 		if (mTileEntity instanceof BlockEntity) return !((BlockEntity)mTileEntity).isRemoved() && mWorld != null && WD.exists(mWorld, mX, mY, mZ);
-		// another mod's storage found through its capability: it exists while its block still hands out this same storage
+		// another mod's item storage found through its capability: it exists while its block still hands out this same storage
+		if (mTileEntity instanceof gregapi.tileentity.GT6ItemCapability.ForeignContainer) return mWorld != null && WD.exists(mWorld, mX, mY, mZ) && mTileEntity.equals(gregapi.util.ST.inventory(WD.te(mWorld, mX, mY, mZ, mSideOfTileEntity, F)));
+		// another mod's fluid storage found through its capability: it exists while its block still hands out this same storage
 		return mTileEntity != null && mWorld != null && WD.exists(mWorld, mX, mY, mZ) && mTileEntity.equals(gregapi.data.FL.tank(WD.te(mWorld, mX, mY, mZ, mSideOfTileEntity, F)));
 	}
 	
