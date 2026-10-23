@@ -283,6 +283,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onContainerOpen(net.neoforged.neoforge.event.entity.player.PlayerContainerEvent.Open aEvent) {
 		wrapBeaconPaymentSlot(aEvent.getContainer());
+		if (!aEvent.getEntity().level().isClientSide()) gregapi.code.ItemNBT.migrateMenu(aEvent.getContainer()); // logic lives in the data's own center (ItemNBT)
 	}
 
 	public int addArmor(String aPrefix) {
@@ -1310,6 +1311,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		if (aEvent.getLevel() == null || aEvent.getLevel().isClientSide() || !(aEvent.getChunk() instanceof LevelChunk tChunk)) return;
 		gregapi.block.prefixblock.PrefixBlock.migrateChunkOres(tChunk); // logic lives in the data's own center (PrefixBlock)
 		gregtech.blocks.BlockDiggable.migrateChunkMud(tChunk); // ADAPT-015: same trick — logic lives with the mud data
+		gregapi.code.ItemNBT.migrateChunk(tChunk); // item data of stacks stored in the chunk's containers
 	}
 
 	// PlayerDestroyItemEvent.original/.entityPlayer (1.7.10) — private fields in neo, getOriginal()/getEntity() (checked,
@@ -1870,6 +1872,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// Level.getEntities(Entity,AABB,Predicate) + an isInstance check by class (checked, EntityGetter.java).
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onEntitySpawningEvent(EntityJoinLevelEvent aEvent) {
+		gregapi.code.ItemNBT.migrateEntity(aEvent.getEntity()); // item data of what the entity holds; server only, players are visited at login
 		if (aEvent.getEntity() instanceof ItemEntity && !aEvent.getEntity().level().isClientSide()) {
 			ItemStack aStack = ST.update(OM.get(((ItemEntity)aEvent.getEntity()).getItem()), aEvent.getEntity());
 			if (ST.valid(aStack) && aStack.getCount() > 0) {
@@ -1937,6 +1940,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 		if (aEvent.getEntity().level().isClientSide()) return;
 		if (aEvent.getEntity() instanceof ServerPlayer) mNewPlayers.add((ServerPlayer)aEvent.getEntity());
+		gregapi.code.ItemNBT.migratePlayer(aEvent.getEntity()); // item data of the inventory, equipment and ender chest
 	}
 	
 	// F6: the old IWorldGenerator.generate(Random,int,int,Level,IChunkProvider,IChunkProvider) and the

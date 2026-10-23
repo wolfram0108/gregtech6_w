@@ -29,8 +29,14 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import gregapi.GT_API;
+import gregapi.data.CS;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.ByteArrayTag;
 import net.minecraft.nbt.ByteTag;
 import net.minecraft.nbt.CompoundTag;
@@ -42,13 +48,28 @@ import net.minecraft.nbt.NumericTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.decoration.ItemFrame;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 /** @author Gregorius Techneticies
  *  Central ItemStack<->NBT bridge: the stack-level tag lives in the GT6 component {@link GT_API#DATA} (the old mutable tag is now an
  *  immutable component value), so code that mutates a tag from {@link #get(ItemStack)} must write it back via {@link #set} or lose it.
- *  Stacks that still hold their data in the vanilla DataComponents.CUSTOM_DATA are read from there and moved on first {@link #get}. */
+ *  Stacks that still hold their data in the vanilla DataComponents.CUSTOM_DATA are read from there and moved on first {@link #get} ({@link #migrate} and
+ *  its walkers do it ahead of time). Only GT6 items are moved or written there: the custom_data of any other item is read and written in place, never moved. */
 public final class ItemNBT {
 	private ItemNBT() {/**/}
 
@@ -123,24 +144,34 @@ public final class ItemNBT {
 		return aTag;
 	}
 
+	/** Whether the item is GT6 content (GT6 and its addons): only such items keep their data in {@link GT_API#DATA}; the custom_data of any other item is somebody else's. */
+	private static boolean owned(ItemStack aStack) {
+		var tKey = BuiltInRegistries.ITEM.getKey(aStack.getItem());
+		return tKey != null && CS.ModIDs.isGregNamespace(tKey.getNamespace());
+	}
+
 	public static CompoundTag get(ItemStack aStack) {
 		if (aStack == null || aStack.isEmpty()) return null;
 		CustomData tData = aStack.get(GT_API.DATA_TYPE);
 		if (tData != null && !tData.isEmpty()) return tData.copyTag();
 		CustomData tOld = aStack.get(DataComponents.CUSTOM_DATA);
 		if (tOld == null || tOld.isEmpty()) return null;
-		aStack.set(GT_API.DATA_TYPE, tOld);
-		aStack.remove(DataComponents.CUSTOM_DATA);
+		if (owned(aStack)) {
+			aStack.set(GT_API.DATA_TYPE, tOld);
+			aStack.remove(DataComponents.CUSTOM_DATA);
+		}
 		return tOld.copyTag();
 	}
 
 	public static void set(ItemStack aStack, CompoundTag aNBT) {
 		if (aStack == null || aStack.isEmpty()) return;
-		aStack.remove(DataComponents.CUSTOM_DATA);
+		boolean tOwned = owned(aStack);
+		DataComponentType<CustomData> tType = tOwned ? GT_API.DATA_TYPE : DataComponents.CUSTOM_DATA;
+		if (tOwned) aStack.remove(DataComponents.CUSTOM_DATA);
 		if (aNBT == null || aNBT.isEmpty()) {
-			aStack.remove(GT_API.DATA_TYPE);
+			aStack.remove(tType);
 		} else {
-			aStack.set(GT_API.DATA_TYPE, CustomData.of(aNBT));
+			aStack.set(tType, CustomData.of(aNBT));
 		}
 	}
 
@@ -150,5 +181,79 @@ public final class ItemNBT {
 		if (tData != null && !tData.isEmpty()) return true;
 		CustomData tOld = aStack.get(DataComponents.CUSTOM_DATA);
 		return tOld != null && !tOld.isEmpty();
+	}
+
+	/** Moves the data of a GT6 stack from the old place to {@link GT_API#DATA} (the touch of {@link #get}), and the same inside the vanilla containers it holds
+	 *  (shulker boxes, bundles). GT6's own stored stacks (NBT_INV_LIST) are restored through ST.load/{@link #set} and need no visit. Returns whether anything moved. */
+	public static boolean migrate(ItemStack aStack) {
+		if (aStack == null || aStack.isEmpty()) return false;
+		boolean tHadOld = aStack.get(DataComponents.CUSTOM_DATA) != null;
+		if (tHadOld) get(aStack);
+		boolean rMoved = tHadOld && aStack.get(DataComponents.CUSTOM_DATA) == null;
+		ItemContainerContents tContents = aStack.get(DataComponents.CONTAINER);
+		if (tContents != null && tContents != ItemContainerContents.EMPTY) {
+			List<ItemStack> tItems = new ArrayList<>(tContents.getSlots());
+			boolean tChanged = false;
+			for (int i = 0; i < tContents.getSlots(); i++) {
+				ItemStack tItem = tContents.getStackInSlot(i);
+				tChanged |= migrate(tItem);
+				tItems.add(tItem);
+			}
+			if (tChanged) {aStack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(tItems)); rMoved = true;}
+		}
+		BundleContents tBundle = aStack.get(DataComponents.BUNDLE_CONTENTS);
+		if (tBundle != null && !tBundle.isEmpty()) {
+			List<ItemStackTemplate> tTemplates = new ArrayList<>(tBundle.size());
+			boolean tChanged = false;
+			for (ItemStackTemplate tTemplate : tBundle.items()) {
+				ItemStack tItem = tTemplate.components().isEmpty() ? ItemStack.EMPTY : tTemplate.create();
+				if (migrate(tItem)) {tTemplates.add(ItemStackTemplate.fromNonEmptyStack(tItem)); tChanged = true;} else tTemplates.add(tTemplate);
+			}
+			if (tChanged) {aStack.set(DataComponents.BUNDLE_CONTENTS, new BundleContents(tTemplates)); rMoved = true;}
+		}
+		return rMoved;
+	}
+
+	/** The stacks of a container (live ones, so the move is in place); the container is told when something moved. */
+	public static boolean migrateContainer(Container aContainer) {
+		boolean rMoved = false;
+		for (int i = 0; i < aContainer.getContainerSize(); i++) rMoved |= migrate(aContainer.getItem(i));
+		if (rMoved) aContainer.setChanged();
+		return rMoved;
+	}
+
+	/** Inventory with equipment, and the ender chest. */
+	public static boolean migratePlayer(Player aPlayer) {
+		return migrateContainer(aPlayer.getInventory()) | migrateContainer(aPlayer.getEnderChestInventory());
+	}
+
+	/** Every slot of an opened menu (the container and the player's inventory in it). */
+	public static boolean migrateMenu(AbstractContainerMenu aMenu) {
+		boolean rMoved = false;
+		for (Slot tSlot : aMenu.slots) if (migrate(tSlot.getItem())) {tSlot.setChanged(); rMoved = true;}
+		return rMoved;
+	}
+
+	/** The block entities of a loaded chunk that are containers. Other mods' storage behind capabilities is not reached: they hand out immutable resources. */
+	public static boolean migrateChunk(LevelChunk aChunk) {
+		boolean rMoved = false;
+		for (BlockEntity tBlockEntity : new ArrayList<>(aChunk.getBlockEntities().values())) {
+			if (tBlockEntity instanceof Container tContainer && migrateContainer(tContainer)) {tBlockEntity.setChanged(); rMoved = true;}
+		}
+		return rMoved;
+	}
+
+	/** What an entity holds: a dropped item, a framed item, its container (minecart with chest), its equipment. Players are visited by {@link #migratePlayer}. */
+	public static boolean migrateEntity(Entity aEntity) {
+		if (aEntity == null || aEntity instanceof Player || aEntity.level().isClientSide()) return false;
+		boolean rMoved = false;
+		if (aEntity instanceof ItemEntity tItemEntity) {
+			ItemStack tItem = tItemEntity.getItem().copy();
+			if (migrate(tItem)) {tItemEntity.setItem(tItem); rMoved = true;}
+		}
+		if (aEntity instanceof ItemFrame tFrame) rMoved |= migrate(tFrame.getItem());
+		if (aEntity instanceof Container tContainer) rMoved |= migrateContainer(tContainer);
+		if (aEntity instanceof LivingEntity tLiving) for (EquipmentSlot tSlot : EquipmentSlot.VALUES) rMoved |= migrate(tLiving.getItemBySlot(tSlot));
+		return rMoved;
 	}
 }
