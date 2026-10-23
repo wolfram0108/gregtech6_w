@@ -196,10 +196,19 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public ItemStack createStackedBlock(int aMeta) {return ST.make(this, 1, damageDropped(aMeta));}
 
 	// neo drives everything shown about a block (tooltip, icon, middle-click) through getCloneItemStack,
-	// whose default ignores metadata; this wires it to the already-ported subtype-aware body, once at the hierarchy root.
+	// whose default ignores metadata; this wires it to the 1.7.10 pick-block route below, once at the hierarchy root.
 	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, net.minecraft.core.BlockPos aPos, BlockState aState, boolean aIncludeData, Player aPlayer) {
-		ItemStack rStack = createStackedBlock(WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()));
+		ItemStack rStack = aLevel instanceof Level tLevel ? getPickBlock(null, tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), aPlayer) : createStackedBlock(WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()));
 		return rStack == null || rStack.isEmpty() ? super.getCloneItemStack(aLevel, aPos, aState, aIncludeData, aPlayer) : rStack;
+	}
+
+	/** 1.7.10 Block.getPickBlock: the item comes from getItem, the subtype from getDamageValue of that item's block, so a slab placed
+	 *  in any orientation gives the one standard slab item. createStackedBlock stays the silk-touch stack, which 1.7.10 kept apart. */
+	public ItemStack getPickBlock(net.minecraft.world.phys.HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
+		Item tItem = getItem(aWorld, aX, aY, aZ);
+		if (tItem == null) return null;
+		Block tBlock = tItem instanceof BlockItem tBlockItem ? tBlockItem.getBlock() : this;
+		return ST.make(tItem, 1, tBlock instanceof BlockBase tBase ? tBase.getDamageValue(aWorld, aX, aY, aZ) : getDamageValue(aWorld, aX, aY, aZ));
 	}
 
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
