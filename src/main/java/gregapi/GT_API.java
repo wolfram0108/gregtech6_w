@@ -286,10 +286,19 @@ public class GT_API extends Abstract_Mod {
 			.networkSynchronized(net.minecraft.network.codec.StreamCodec.unit(net.minecraft.util.Unit.INSTANCE))
 			.build());
 
-	/** SUBTYPE and ZEROSIZE resolved once, when their registration binds them ({@link #onRegisterEvent}); null before that.
+	/** GT6 item data (the 1.7.10 stack tag), read and written only through {@link gregapi.code.ItemNBT}. Its own component instead of the vanilla
+	 *  custom_data, because the codec there is vanilla's and writes the narrow Byte/Short numbers that other mods' JSON readers and packers reject. */
+	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<net.minecraft.world.item.component.CustomData>> DATA =
+		COMPONENTS.register("data", () -> net.minecraft.core.component.DataComponentType.<net.minecraft.world.item.component.CustomData>builder()
+			.persistent(gregapi.code.ItemNBT.CODEC)
+			.networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.COMPOUND_TAG.map(net.minecraft.world.item.component.CustomData::of, net.minecraft.world.item.component.CustomData::copyTag))
+			.build());
+
+	/** SUBTYPE, ZEROSIZE and DATA resolved once, when their registration binds them ({@link #onRegisterEvent}); null before that.
 	 *  Item-meta and size reads run in every recipe comparison, and a DeferredHolder lookup there cost most of their time. */
 	public static net.minecraft.core.component.DataComponentType<Integer> SUBTYPE_TYPE = null;
 	public static net.minecraft.core.component.DataComponentType<net.minecraft.util.Unit> ZEROSIZE_TYPE = null;
+	public static net.minecraft.core.component.DataComponentType<net.minecraft.world.item.component.CustomData> DATA_TYPE = null;
 
 	/** F1/F12/F16 item-model separation: GT6 items built OreDict data+recipes (ST.make = a stack of itself) IN THE CONSTRUCTOR, but
 	 *  neo constructs an item @RegisterEvent (the registry is open for an intrusive holder), while stacks are only possible
@@ -581,7 +590,7 @@ public class GT_API extends Abstract_Mod {
 		gregapi.api.Abstract_Mod.finishPreInits();
 		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.BLOCK)) runDeferredBlockInit(aEvent);
 		// This listener runs after COMPONENTS' own (added earlier on the same bus), so both holders are bound here.
-		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE)) {SUBTYPE_TYPE = SUBTYPE.get(); ZEROSIZE_TYPE = ZEROSIZE.get();}
+		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE)) {SUBTYPE_TYPE = SUBTYPE.get(); ZEROSIZE_TYPE = ZEROSIZE.get(); DATA_TYPE = DATA.get();}
 	}
 
 	/**

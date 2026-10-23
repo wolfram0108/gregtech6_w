@@ -122,15 +122,15 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null) continue;
 			if (!ModIDs.isGregNamespace(tKey.getNamespace())) continue;
-			// SUBTYPE (1.7.10 meta) + CUSTOM_DATA (F8 ItemNBT center: coins/batteries/chests differ by NBT material,
+			// SUBTYPE (1.7.10 meta) + DATA (F8 ItemNBT center: coins/batteries/chests differ by NBT material,
 			// not meta — 1.7.10 NEI told them apart by NBT; without declaring it — "389 duplicate items" for Coins)
 			try {
 				// the identity rule isn't ours: we ask the ST center (BUG-079), the showcase keeps no copy of its own
-				if (gregapi.util.ST.identityIncludesNBT(tItem)) {aRegistration.registerFromDataComponentTypes(tItem, tSubtype, net.minecraft.core.component.DataComponents.CUSTOM_DATA); tCount++;}
+				if (gregapi.util.ST.identityIncludesNBT(tItem)) {aRegistration.registerFromDataComponentTypes(tItem, tSubtype, gregapi.GT_API.DATA_TYPE); tCount++;}
 				else {aRegistration.registerFromDataComponentTypes(tItem, tSubtype); tMetaOnly++;}
 			} catch (Throwable e) {/**/}
 		}
-		OUT.println("[GT6-JEI] SUBTYPE+CUSTOM_DATA subtypes declared for " + tCount + " items, SUBTYPE only for " + tMetaOnly + " (tools).");
+		OUT.println("[GT6-JEI] SUBTYPE+DATA subtypes declared for " + tCount + " items, SUBTYPE only for " + tMetaOnly + " (tools).");
 	}
 
 
