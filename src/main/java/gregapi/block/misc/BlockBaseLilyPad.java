@@ -68,7 +68,7 @@ import net.minecraftforge.common.IPlantable;
 
 public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRenderedBlock {
 	public BlockBaseLilyPad(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
-		super(ItemBlockBase.class, aNameInternal, Material.plants, SoundType.GRASS, aMaxMeta, aIcons);
+		super(ItemBlockBase.class, aNameInternal, Material.plants, SoundType.GRASS, aMaxMeta, aIcons, bakedHardness(0));
 		setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.015625F, 1.0F);
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
 		// Deferred to server start, since RM.chisel and COMPAT_FR both build an ItemStack here.

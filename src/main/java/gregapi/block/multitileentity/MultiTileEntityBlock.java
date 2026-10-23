@@ -172,7 +172,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		if (!aOpaque) p = p.noOcclusion();
 		// 1.7.10 asked block hardness positionally and GT6 answered from the TE, defaulting to 1.0F when absent;
 		// neo's default (0) made every GT6 machine look instantly breakable, which is also why Jade stayed silent about its tool.
-		p = p.destroyTime(1.0F);
+		p = p.destroyTime(gregapi.block.BlockBase.BAKED_HARDNESS);
 		// 1.7.10 decided "does this need a tool" by MATERIAL (isToolNotRequired), not by the harvest-tool
 		// string; the old gate wrongly required a tool for everything, including ropes that should break by hand.
 		if (aTool != null && !aTool.isEmpty() && aVanillaMaterial != null && !aVanillaMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();

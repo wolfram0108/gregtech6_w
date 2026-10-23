@@ -60,7 +60,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		// dynamicShape() is mandatory, or neo caches an empty-world collision shape and every per-tile shape bridge below
 		// is ignored; map color is also restored explicitly here, since neo's own default shows no color at all.
 		// Neo spawn channel: the second MTE hierarchy mirrors MultiTileEntityBlock's TE-driven rule, plus the vanilla light guard.
-		super(gregapi.block.BlockBase.mapColorOf(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().isValidSpawn((state, level, pos, type) -> state.getLightEmission(level, pos) < 14 && state.getBlock() instanceof MultiTileEntityBlockInternal && WD.te(level, pos.getX(), pos.getY(), pos.getZ(), T) instanceof IMTE_CanCreatureSpawn t && t.canCreatureSpawn(type.getCategory())), gregapi.block.Material.anvil));
+		super(gregapi.block.BlockBase.mapColorOf(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().destroyTime(gregapi.block.BlockBase.BAKED_HARDNESS).dynamicShape().isValidSpawn((state, level, pos, type) -> state.getLightEmission(level, pos) < 14 && state.getBlock() instanceof MultiTileEntityBlockInternal && WD.te(level, pos.getX(), pos.getY(), pos.getZ(), T) instanceof IMTE_CanCreatureSpawn t && t.canCreatureSpawn(type.getCategory())), gregapi.block.Material.anvil));
 	}
 
 	/** IBlock bounds live in the RenderBounds center, since neo's bounds are immutable and 1.7.10 mutated the Block itself. */

@@ -51,7 +51,10 @@ public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi
 	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> aBuilder) {super.createBlockStateDefinition(aBuilder); aBuilder.add(META);}
 
 	public BlockBaseMeta(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
-		super(aItemClass, aNameInternal, aMaterial, aSoundType);
+		this(aItemClass, aNameInternal, aMaterial, aSoundType, aMaxMeta, aIcons, BAKED_HARDNESS);
+	}
+	public BlockBaseMeta(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons, float aBakedHardness) {
+		super(aItemClass, aNameInternal, aMaterial, aSoundType, aBakedHardness);
 		mMaxMeta = (byte)UT.Code.bind(1, 16, aMaxMeta);
 		mIcons = aIcons;
 		registerDefaultState(getStateDefinition().any().setValue(META, 0)); // placed after super() because createBlockStateDefinition has already run inside the Block constructor
