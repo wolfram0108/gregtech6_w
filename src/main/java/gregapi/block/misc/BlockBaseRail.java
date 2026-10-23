@@ -132,7 +132,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public BlockBaseRail(Class<? extends ItemBlockBase> aItemClass, String aNameInternal, String aLocalName, boolean aPowerRail, boolean aDetectorRail, float aSpeed, float aExplosionResistance, int aHarvestLevel, IIconContainer aIconPrimary, IIconContainer aIconSecondary) {
 		// Uses the same Properties.of() default BlockBase already relies on, plus noCollision() to match both vanilla rails and
 		// 1.7.10's own null collision box; without it, the ported rail collided with carts and players as a solid plate.
-		super(aPowerRail || aDetectorRail, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollision().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.GT_API.owner(), gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		super(aPowerRail || aDetectorRail, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().destroyTime(gregapi.block.BlockBase.BAKED_HARDNESS).noCollision().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.GT_API.owner(), gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 		mNameInternal = aNameInternal;
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.TRANSPORT);
 		// Only the BlockItem is registered here, through a supplier; the block itself registers lazily elsewhere.

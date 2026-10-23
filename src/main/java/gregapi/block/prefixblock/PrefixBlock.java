@@ -187,12 +187,13 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	 * @param aRenderOverlayInWorld if the Icon Overlay is to be rendered InWorld. Used for Crates and Ores.
 	 */
 	// F13/F16/F16: Properties at ctor — sound(step sound) + noOcclusion for non-opaque (otherwise renders solid + blocks light). setId is mandatory.
-	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aModIDOwner, String aNameInternal, SoundType aSoundType, boolean aOpaque, String aTool, Material aVanillaMaterial) {
+	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aModIDOwner, String aNameInternal, SoundType aSoundType, boolean aOpaque, String aTool, Material aVanillaMaterial, float aBaseHardness) {
 		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal))))
 			// Fix #1 (BUG-106): previously piston immovability relied on the fact "the block has a BE" (the engine does not
 			// push blocks with a block entity); with the material moved into the chunk map there is no entity — declare the ban
 			// explicitly, behavior 1:1 with before (and with 1.7.10, where TE blocks were unpushable).
 			.pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK);
+		p = p.destroyTime(gregapi.block.BlockBase.bakedHardness(aBaseHardness));
 		if (!aOpaque) p = p.noOcclusion();
 		// F-harvest-tool (1:1 GT6, mirrors MultiTileEntityBlock.mkProps): the gate "is a tool required for the drop" is decided by the
 		// MATERIAL (1.7.10 EntityPlayer.canHarvestBlock → Material.isToolNotRequired), not the tool string: ores on
@@ -208,7 +209,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		// F12-followup (block-split): setId in Properties (neo Block.<init> requires an ID). F16: sound(aSoundType) (step sound).
 		// F13/F16: opaque/lightOpacity — 1.7.10 runtime fields removed; neo occlusion/light comes from Properties → non-opaque blocks
 		// get .noOcclusion() at ctor (otherwise they render solid + block light). aOpaque — ctor param. mkProps below.
-		super(mkProps(aModIDOwner, aNameInternal, aSoundType, aOpaque, aTool, aVanillaMaterial));
+		super(mkProps(aModIDOwner, aNameInternal, aSoundType, aOpaque, aTool, aVanillaMaterial, aBaseHardness));
 		mPrefix = aPrefix;
 		mMaterial = aVanillaMaterial;
 		mNameInternal = aNameInternal;

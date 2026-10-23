@@ -65,7 +65,7 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 	private static final ThreadLocal<boolean[]> SLAB_CTOR_CTX = ThreadLocal.withInitial(() -> new boolean[1]);
 	
 	public BlockMetaType(Class<? extends BlockItem> aItemClass, Material aVanillaMaterial, SoundType aSoundType, String aNameInternal, String aDefaultLocalised, OreDictMaterial aMaterial, float aResistanceMultiplier, float aHardnessMultiplier, int aHarvestLevel, int aCount, IIconContainer[] aIcons) {
-		super(aItemClass == null ? ItemBlockMetaType.class : aItemClass, aNameInternal, aVanillaMaterial, aSoundType, aCount, aIcons);
+		super(aItemClass == null ? ItemBlockMetaType.class : aItemClass, aNameInternal, aVanillaMaterial, aSoundType, aCount, aIcons, bakedHardness(aHardnessMultiplier));
 		if (aItemClass == null) aItemClass = ItemBlockMetaType.class;
 		onBlockCreation(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons);
 		// neo's Properties.strength is immutable, unlike 1.7.10's post-construction setHardness/
@@ -126,7 +126,7 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 	}
 	
 	protected BlockMetaType(Class<? extends BlockItem> aItemClass, Material aVanillaMaterial, SoundType aSoundType, String aName, String aDefaultLocalised, OreDictMaterial aMaterial, float aResistanceMultiplier, float aHardnessMultiplier, int aHarvestLevel, int aCount, IIconContainer[] aIcons, byte aSlabType, BlockMetaType aBlock) {
-		super(aItemClass == null ? ItemBlockMetaType.class : aItemClass, aName+".slab."+aSlabType, aVanillaMaterial, aSoundType, aCount, aIcons);
+		super(aItemClass == null ? ItemBlockMetaType.class : aItemClass, aName+".slab."+aSlabType, aVanillaMaterial, aSoundType, aCount, aIcons, bakedHardness(aHardnessMultiplier));
 		if (aItemClass == null) aItemClass = ItemBlockMetaType.class;
 		onSlabCreation(aItemClass, aVanillaMaterial, aSoundType, aName, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons, aSlabType, aBlock);
 		// Same hardness/explosion-resistance wiring as the main constructor above.

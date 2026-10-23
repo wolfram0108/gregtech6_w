@@ -191,7 +191,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// (Jade 26.1-neoforge sources, SimpleToolHandler:45-47). We set the SAME default GT6 value (1.0F);
 		// the exact per-TE hardness still lives in getDestroyProgress below and doesn't depend on this field —
 		// it computes progress itself (WD.destroyProgress from TE hardness) and doesn't call super.
-		p = p.destroyTime(1.0F);
+		p = p.destroyTime(gregapi.block.BlockBase.BAKED_HARDNESS);
 		// F-harvest-tool (1:1 GT6, FIXED per a player report "ropes/anvils should break by hand"):
 		// in 1.7.10 the gate "does harvesting need a tool" was decided by the MATERIAL (EntityPlayer.canHarvestBlock →
 		// Material.isToolNotRequired), NOT the getHarvestTool string — that only set the EFFECTIVE tool.

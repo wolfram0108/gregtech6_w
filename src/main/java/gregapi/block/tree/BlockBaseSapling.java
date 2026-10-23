@@ -73,7 +73,7 @@ import static gt6mirror.net.minecraftforge.common.EnumPlantType.Plains;
 // type 1 was the only signal telling the renderer to draw crossed squares; same contract as BlockBaseFlower.
 public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantable, BonemealableBlock, IOxygenReliantBlock, gregapi.render.IRenderedCross {
 	public BlockBaseSapling(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
-		super(aItemClass, aNameInternal, aMaterial, aSoundType, Math.min(8, aMaxMeta), aIcons);
+		super(aItemClass, aNameInternal, aMaterial, aSoundType, Math.min(8, aMaxMeta), aIcons, bakedHardness(0));
 		setBlockBounds(0.1F, 0.0F, 0.1F, 0.9F, 0.8F, 0.9F);
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
 		// setTickRandomly's old runtime-mutator call is replaced by overriding isRandomlyTicking below,

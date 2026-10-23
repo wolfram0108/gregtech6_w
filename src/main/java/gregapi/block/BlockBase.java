@@ -133,8 +133,16 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public Material getMaterial() {return mMaterial;}
 	// Whether a tool is required for the drop is decided by the material, as in 1.7.10 canHarvestBlock:
 	// rock needs a pickaxe, wood/cloth/dirt drop by hand; without the gate the whole family dropped by hand.
-	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aNameInternal, Material aMaterial, SoundType aSoundType) {
+	/** The destroy time baked into every GT6 block's Properties. The engine wears a tool only when the baked time of the block is not zero
+	 *  (Item.mineBlock), where 1.7.10's ItemTool asked the positional getBlockHardness, so the baked time must agree in sign with the
+	 *  hardness GT6 answers: 1.0F is GT6's default hardness, zero where GT6's is zero, -1 where it is unbreakable. The exact hardness stays in
+	 *  getBlockHardness and getDestroyProgress, which do not read this field. */
+	public static final float BAKED_HARDNESS = 1.0F;
+	public static float bakedHardness(float aGT6Hardness) {return aGT6Hardness < 0 ? -1.0F : aGT6Hardness == 0 ? 0.0F : BAKED_HARDNESS;}
+
+	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aNameInternal, Material aMaterial, SoundType aSoundType, float aBakedHardness) {
 		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).lightLevel(BlockBase::lightOf).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.GT_API.owner(), gregapi.GT_API.sanitizeRegName(aNameInternal))));
+		p = p.destroyTime(aBakedHardness);
 		if (aMaterial != null && !aMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();
 		p = mapColorOf(p, aMaterial);
 		// Neo spawn channel: bridge the ported 1.7.10 canCreatureSpawn into isValidSpawn, plus the vanilla light guard.
@@ -150,9 +158,12 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		return tColor == null ? aProps : aProps.mapColor(tColor.toNeo());
 	}
 	public BlockBase(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType) {
+		this(aItemClass, aNameInternal, aMaterial, aSoundType, BAKED_HARDNESS);
+	}
+	public BlockBase(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, float aBakedHardness) {
 		// The engine block is immutable: sound, light and id go into Properties before super; per-meta hardness
 		// and map color vary, so they stay dynamic overrides, and the name comes from the registry (ST.register).
-		super(mkProps(aNameInternal, aMaterial, aSoundType));
+		super(mkProps(aNameInternal, aMaterial, aSoundType, aBakedHardness));
 		mMaterial = aMaterial;
 		mNameInternal = aNameInternal;
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.BLOCK); // matches 1.7.10's setCreativeTab(tabBlock); last write wins, so a subclass can override it

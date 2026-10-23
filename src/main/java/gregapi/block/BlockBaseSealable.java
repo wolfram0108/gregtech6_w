@@ -40,6 +40,9 @@ public abstract class BlockBaseSealable extends BlockBase implements IBlockSeala
 	public BlockBaseSealable(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType);
 	}
+	public BlockBaseSealable(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, float aBakedHardness) {
+		super(aItemClass, aNameInternal, aMaterial, aSoundType, aBakedHardness);
+	}
 	
 	public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return isSealable(WD.meta(aWorld, aX, aY, aZ), (byte)(UT.Code.side(aDirection) ^ 1));}
 }
