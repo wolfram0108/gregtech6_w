@@ -32,7 +32,6 @@ import gregapi.recipes.maps.RecipeMapCrucible;
 import gregapi.render.BlockTextureCopied;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import gregapi.block.Material;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.Level;
@@ -61,7 +60,6 @@ public class BlockSands extends BlockBaseMeta {
 			((RecipeMapCrucible)RM.CrucibleSmelting).getRecipeFor(ST.make(this, 1, i));
 		}
 
-		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W)));
 		});
 	}

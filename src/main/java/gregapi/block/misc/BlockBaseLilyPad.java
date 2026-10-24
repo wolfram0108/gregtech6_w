@@ -35,7 +35,6 @@ import java.util.Random;
 
 import gregapi.block.BlockBaseMeta;
 import gregapi.block.ItemBlockBase;
-import gregapi.data.MD;
 import gregapi.data.RM;
 import gregapi.render.BlockTextureDefault;
 import gregapi.render.IIconContainer;
@@ -46,7 +45,6 @@ import gregapi.render.RendererBlockTextured;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
 import net.minecraft.world.item.CreativeModeTab;
@@ -74,7 +72,6 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 		// Deferred to server start, since RM.chisel and COMPAT_FR both build an ItemStack here.
 		gregapi.GT_API.deferItemInit(() -> {
 		RM.chisel(aNameInternal, ST.make(this, 1, W));
-		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W)));
 		});
 	}

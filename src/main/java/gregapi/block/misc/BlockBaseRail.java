@@ -387,11 +387,11 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList(); // explosion-drop gating goes through the shared center
 		java.util.List<ItemStack> rDrops = new java.util.ArrayList<>();
 		rDrops.add(ST.make(this, 1, 0));
-		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
-		if (tOrigin == null) return rDrops;
+		net.minecraft.core.BlockPos tPos = WD.lootBlockPos(aParams, aState);
+		if (tPos == null) return rDrops;
 		// 1.20.1: GT6's own blocks have no loot tables, so the global GT6BlockDropsModifier can't see them --
 		// drop handling is called from the same center directly instead, one rule for both paths.
-		gregapi.GT_API_Proxy.processBlockDrops(rDrops, aParams.getLevel(), net.minecraft.core.BlockPos.containing(tOrigin), aState, aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY));
+		gregapi.GT_API_Proxy.processBlockDrops(rDrops, aParams.getLevel(), tPos, aState, aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY));
 		return rDrops;
 	}
 	
