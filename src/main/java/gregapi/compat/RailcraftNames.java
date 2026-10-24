@@ -39,7 +39,6 @@ public final class RailcraftNames {
 	, NO_CREOSOTE_WOOD = "Railcraft Reborn has no creosote-soaked wood block (1.7.10 cube meta 8): creosote is only a fluid there"
 	, NO_SHUNTING_WIRE = "Railcraft Reborn has no shunting wire (1.7.10 machine.delta meta 0)"
 	, NO_ADMIN_ANCHOR = "Railcraft Reborn has no admin anchor (1.7.10 machine.alpha meta 4)"
-	, NO_SMOKER = "Railcraft Reborn has no smoker (1.7.10 machine.alpha meta 5)"
 	, NO_TRADE_STATION = "Railcraft Reborn has no trade station (1.7.10 machine.alpha meta 6)"
 	, NO_STEAM_TRAP = "Railcraft Reborn has no steam trap, manual or automatic (1.7.10 machine.alpha metas 9 and 10)"
 	, NO_PASSIVE_ANCHOR = "Railcraft Reborn has no passive anchor (1.7.10 machine.alpha meta 13)"
@@ -48,7 +47,6 @@ public final class RailcraftNames {
 	, NO_METALS_CHEST = "Railcraft Reborn has no metals chest (1.7.10 machine.beta meta 12)"
 	, NO_ELECTRIC_FEEDER = "Railcraft Reborn has no electric feeder (1.7.10 machine.epsilon meta 0)"
 	, NO_ENGRAVING_BENCH = "Railcraft Reborn has no engraving bench (1.7.10 machine.epsilon meta 5)"
-	, NO_UNPAINTED_POST = "Railcraft Reborn posts are always one of 16 colours: there is no unpainted metal post (1.7.10 post meta 2)"
 	, NO_POST_PLATFORM = "Railcraft Reborn has no platform item: a platform is a state of a post under a rail (1.7.10 post meta 6 and post.metal.platform)"
 	, NO_MAGIC_CROWBAR = "Railcraft Reborn crowbars are iron, steel, diamond and seasons only; the Thaumcraft crowbars (tool.crowbar.magic and .void) have no counterpart"
 	, NO_NOTEPAD = "Railcraft Reborn has no notepad"
@@ -80,7 +78,8 @@ public final class RailcraftNames {
 		// LoaderItemList
 		TABLE.gone("machine.delta", 0, NO_SHUNTING_WIRE);
 		TABLE.map("frame", "railcraft:frame");
-		TABLE.gone("post", 2, NO_UNPAINTED_POST);
+		// Reborn posts are always coloured; the post its rolling machine makes from iron is the black one, which stands for the unpainted post of 1.7.10.
+		TABLE.map("post", 2, "railcraft:black_post");
 		TABLE.gone("post", 6, NO_POST_PLATFORM);
 		TABLE.gone("cube", 1, NO_CONCRETE);
 		TABLE.map("cube", 4, "railcraft:crushed_obsidian");
@@ -156,7 +155,7 @@ public final class RailcraftNames {
 		TABLE.map("machine.alpha", 2, "railcraft:personal_world_spike");
 		TABLE.map("machine.alpha", 3, "railcraft:steam_oven");
 		TABLE.gone("machine.alpha", 4, NO_ADMIN_ANCHOR);
-		TABLE.gone("machine.alpha", 5, NO_SMOKER);
+		TABLE.map("machine.alpha", 5, "railcraft:chimney");
 		TABLE.gone("machine.alpha", 6, NO_TRADE_STATION);
 		TABLE.map("machine.alpha", 8, "railcraft:manual_rolling_machine");
 		TABLE.gone("machine.alpha", 9, NO_STEAM_TRAP);
@@ -190,5 +189,31 @@ public final class RailcraftNames {
 		TABLE.map("routing.ticket.gold", "railcraft:golden_ticket");
 		TABLE.gone("emblem", NO_EMBLEM);
 		TABLE.map("tool.signal.label", "railcraft:signal_label");
+	}
+
+	/** The colour of a Reborn strengthened glass or post, as the 1.7.10 colour id (0 black … 15 white); -1 for anything else. */
+	public static int colour(net.minecraft.world.item.ItemStack aStack) {
+		if (aStack == null || aStack.isEmpty() || !MD.RC.mLoaded) return -1;
+		net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem());
+		if (!MD.RC.mID.equals(tID.getNamespace())) return -1;
+		String tPath = tID.getPath();
+		String tName = tPath.endsWith("_post") ? tPath.substring(0, tPath.length() - 5) : tPath.endsWith("_strengthened_glass") ? tPath.substring(0, tPath.length() - 19) : null;
+		for (int i = 0; tName != null && i < COLORS.length; i++) if (COLORS[i].equals(tName)) return i;
+		return -1;
+	}
+
+	/** The same kind of item in another colour (a post stays a post, a glass a glass), or null. */
+	public static net.minecraft.world.item.ItemStack recoloured(net.minecraft.world.item.ItemStack aStack, int aColour) {
+		if (colour(aStack) < 0 || aColour < 0 || aColour >= COLORS.length) return null;
+		String tPath = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem()).getPath();
+		String tKind = tPath.endsWith("_post") ? "_post" : "_strengthened_glass";
+		net.minecraft.world.item.Item tItem = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.fromNamespaceAndPath(MD.RC.mID, COLORS[aColour] + tKind));
+		return tItem == null || tItem == net.minecraft.world.item.Items.AIR ? null : new net.minecraft.world.item.ItemStack(tItem);
+	}
+
+	/** The colour chlorine bleaches to: the glass is white, the post is the black one the rolling machine makes. */
+	public static int bleached(net.minecraft.world.item.ItemStack aStack) {
+		net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem());
+		return tID.getPath().endsWith("_post") ? 0 : 15;
 	}
 }
