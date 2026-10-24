@@ -283,7 +283,8 @@ public class Loader_Worldgen implements Runnable {
 		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.Chalk, ST.block(MD.EB, "enhancedbiomes.tile.stoneEB"), 6, ST.block(MD.EB, "enhancedbiomes.tile.stoneCobbleEB"), 6));
 		
 		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, ST.block(MD.CHSL, "marble")));
-		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, ST.block(MD.RC, "cube"), 7));
+		// Legacy Railcraft stays dead: the name table answers "cube" with the coke block, which is not 1.7.10 quarried stone (meta 7).
+		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, MD.RC.mLoaded ? ST.block(MD.RC, "cube") : NB, 7));
 		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, ST.block(MD.PR_EXPLORATION, "projectred.exploration.stone")));
 		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, ST.block(MD.BP, "marble")));
 		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, ST.block(MD.EB, "enhancedbiomes.tile.stoneEB"), 7, ST.block(MD.EB, "enhancedbiomes.tile.stoneCobbleEB"), 7));
