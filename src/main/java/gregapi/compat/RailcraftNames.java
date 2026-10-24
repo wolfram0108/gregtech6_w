@@ -25,12 +25,11 @@ package gregapi.compat;
 
 import gregapi.data.MD;
 
-/** Railcraft's table in ForeignNames: 1.7.10 item names onto Railcraft Reborn 1.4.6 ids (reference/mods/Railcraft-Reborn).
- *  The carrier is the real mod id; MD.RC keeps the legacy id and stays unloaded, so the ~150 legacy-API uses of it stay dead. */
+/** Railcraft's table in ForeignNames: 1.7.10 item names onto Railcraft Reborn 1.4.6 ids (reference/mods/Railcraft-Reborn). */
 public final class RailcraftNames {
 	private RailcraftNames() {}
 
-	public static final ForeignNames TABLE = new ForeignNames(MD.RC).carrier(MD.RC_REBORN);
+	public static final ForeignNames TABLE = new ForeignNames(MD.RC);
 
 	private static final String
 	  NO_DARK_ORE = "Railcraft Reborn has no abyssal diamond, emerald or lapis ore (1.7.10 ore metas 2, 3 and 4)"

@@ -2223,9 +2223,8 @@ public class UT {
 		}
 		
 		
-		// Railcraft Reborn keeps its enchantments in the datapack registry: a key per id, read by the ResourceKey overload below. MD.RC (legacy id) stays unloaded,
-		// so the gate keeps these paths shut until the Railcraft id is switched; the namespace then moves from RC_REBORN to RC with it.
-		private static ResourceKey<Enchantment> railcraftEnchantment(String aName) {return ResourceKey.create(Registries.ENCHANTMENT, Identifier.fromNamespaceAndPath(ModIDs.RC_REBORN, aName));}
+		// Railcraft Reborn keeps its enchantments in the datapack registry: a key per id, read by the ResourceKey overload below.
+		private static ResourceKey<Enchantment> railcraftEnchantment(String aName) {return ResourceKey.create(Registries.ENCHANTMENT, Identifier.fromNamespaceAndPath(ModIDs.RC, aName));}
 		public static int getEnchantmentLevelDestruction   (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("destruction"), aStack) : 0;}
 		public static int getEnchantmentLevelWrecking      (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("wrecking")   , aStack) : 0;}
 		public static int getEnchantmentLevelImplosion     (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("implosion")  , aStack) : 0;}
