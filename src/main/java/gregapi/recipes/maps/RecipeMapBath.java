@@ -203,7 +203,7 @@ public class RecipeMapBath extends RecipeMap {
 	@Override
 	public boolean containsInput(ItemStack aStack, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {
 		PlankEntry aEntry = WoodDictionary.PLANKS_ANY.get(aStack);
-		return (aEntry != null && ANY.WoodUntreated.mToThis.contains(aEntry.mMaterialPlank)) || (aStack != null && (ST.armor(aStack) || (aStack.getItem() instanceof IItemColorableRGB && (((IItemColorableRGB)aStack.getItem()).canRecolorItem(aStack) || ((IItemColorableRGB)aStack.getItem()).canDecolorItem(aStack))))) || (ST.food(aStack) > 0 && FL.getFluid(aStack, T) == null) || super.containsInput(aStack, aTileEntity, aSpecialSlot);
+		return (aEntry != null && ANY.WoodUntreated.mToThis.contains(aEntry.mMaterialPlank)) || gregapi.compat.RailcraftNames.colour(aStack) >= 0 || (aStack != null && (ST.armor(aStack) || (aStack.getItem() instanceof IItemColorableRGB && (((IItemColorableRGB)aStack.getItem()).canRecolorItem(aStack) || ((IItemColorableRGB)aStack.getItem()).canDecolorItem(aStack))))) || (ST.food(aStack) > 0 && FL.getFluid(aStack, T) == null) || super.containsInput(aStack, aTileEntity, aSpecialSlot);
 	}
 	@Override public boolean containsInput(FluidStack aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aFluid != null && aFluid.getFluid() != null && (super.containsInput(aFluid, aTileEntity, aSpecialSlot) || FluidsGT.BATH.contains(FL.regName(aFluid.getFluid())));}
 	@Override public boolean containsInput(Fluid aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aFluid != null && (super.containsInput(aFluid, aTileEntity, aSpecialSlot) || FluidsGT.BATH.contains(FL.regName(aFluid)));}

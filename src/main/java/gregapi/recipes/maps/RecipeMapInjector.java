@@ -34,6 +34,7 @@ import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.util.ST;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
 
 import static gregapi.data.CS.*;
 
@@ -63,5 +64,25 @@ public class RecipeMapInjector extends RecipeMap {
 			return null;
 		}
 		return null;
+	}
+
+	/** A machine lets an item in only when its map lists it as an input, and a worn firestone is never listed: its recharge is found for any wear above. */
+	@Override
+	public boolean containsInput(ItemStack aStack, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {
+		return super.containsInput(aStack, aTileEntity, aSpecialSlot) || wornFirestone(aStack);
+	}
+
+	/** The same for the fluids that recharge a firestone; the check of a stack of fluid asks this one. */
+	@Override
+	public boolean containsInput(Fluid aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {
+		return super.containsInput(aFluid, aTileEntity, aSpecialSlot) || chargesFirestone(aFluid);
+	}
+
+	private static boolean wornFirestone(ItemStack aStack) {
+		return MD.RC.mLoaded && ST.valid(aStack) && aStack.getDamageValue() > 0 && (IL.RC_Firestone_Refined.equal(aStack, T, T) || IL.RC_Firestone_Cracked.equal(aStack, T, T));
+	}
+
+	private static boolean chargesFirestone(Fluid aFluid) {
+		return MD.RC.mLoaded && aFluid != null && (FL.Lava.is(aFluid) || FL.Coolant_IC2_Hot.is(aFluid) || (FL.Lava_Volcanic.exists() && FL.Lava_Volcanic.is(aFluid)));
 	}
 }
