@@ -1313,6 +1313,23 @@ public class ST {
 		return T;
 	}
 	
+	/**
+	 * The component remainder of a stack, asked as a machine asks it: the remainder of another mod's item may wear the item only for the player who crafts
+	 * (Railcraft Reborn's firestones hurt the stack in getCraftingRemainder only when CommonHooks.getCraftingPlayer() is a ServerPlayer), and a machine has
+	 * none, so the engine's own fake player stands in for the duration of the question and the item wears as getContainerItem made it wear in 1.7.10.
+	 */
+	private static net.minecraft.world.item.ItemStackTemplate remainderOf(ItemStack aStack) {
+		Item tItem = item_(aStack);
+		net.minecraft.server.MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+		if (net.neoforged.neoforge.common.CommonHooks.getCraftingPlayer() != null || tServer == null || !tServer.isSameThread()) return tItem.getCraftingRemainder(aStack);
+		net.neoforged.neoforge.common.CommonHooks.setCraftingPlayer(net.neoforged.neoforge.common.util.FakePlayerFactory.getMinecraft(tServer.overworld()));
+		try {
+			return tItem.getCraftingRemainder(aStack);
+		} finally {
+			net.neoforged.neoforge.common.CommonHooks.setCraftingPlayer(null);
+		}
+	}
+
 	public static ItemStack container(ItemStack aStack, boolean aCheckIFluidContainerItems) {
 		if (invalid(aStack)) return NI;
 		// Decrease Durability by 1 for these Items.
@@ -1325,7 +1342,8 @@ public class ST {
 		// the component one (vanilla bucket etc.) follows, matching the original's 1:1 order.
 		ItemStack tGTContainer = gtContainerItem(aStack); // all GT roots at once (see gtContainerItem)
 		if (tGTContainer != null) return copy(tGTContainer);
-		if (item_(aStack).getCraftingRemainder(aStack) != null) return copy(item_(aStack).getCraftingRemainder(aStack).create());
+		net.minecraft.world.item.ItemStackTemplate tRemainder = remainderOf(aStack);
+		if (tRemainder != null) return copy(tRemainder.create());
 		// These are all special Cases, in which it is intended to have only GT Blocks outputting those Container Items.
 		if (IL.Cell_Empty.exists()) {
 			if (IL.Cell_Empty.equal(aStack, F, T)) return NI;
