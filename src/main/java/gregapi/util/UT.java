@@ -73,7 +73,6 @@ import gt6mirror.ic2.api.recipe.IMachineRecipeManager;
 import gt6mirror.ic2.api.recipe.IMachineRecipeManagerExt;
 import gt6mirror.ic2.api.recipe.IRecipeInput;
 import gt6mirror.ic2.api.recipe.RecipeOutput;
-import gt6mirror.mods.railcraft.common.items.enchantment.RailcraftEnchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -2224,12 +2223,12 @@ public class UT {
 		}
 		
 		
-		// F10 seam: RailcraftEnchantments.destruction/wrecking/implosion — the compat-mirror interface
-		// (mods/railcraft/.../RailcraftEnchantments.java) is currently an empty stub with no members (foreign zone,
-		// not F8) — the symbol will appear when the owner of the F10 mirror adds the fields. The call is left 1:1.
-		public static int getEnchantmentLevelDestruction   (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.destruction, aStack) : 0;}
-		public static int getEnchantmentLevelWrecking      (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.wrecking   , aStack) : 0;}
-		public static int getEnchantmentLevelImplosion     (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.implosion  , aStack) : 0;}
+		// Railcraft Reborn keeps its enchantments in the datapack registry: a key per id, read by the ResourceKey overload below. MD.RC (legacy id) stays unloaded,
+		// so the gate keeps these paths shut until the Railcraft id is switched; the namespace then moves from RC_REBORN to RC with it.
+		private static ResourceKey<Enchantment> railcraftEnchantment(String aName) {return ResourceKey.create(Registries.ENCHANTMENT, Identifier.fromNamespaceAndPath(ModIDs.RC_REBORN, aName));}
+		public static int getEnchantmentLevelDestruction   (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("destruction"), aStack) : 0;}
+		public static int getEnchantmentLevelWrecking      (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("wrecking")   , aStack) : 0;}
+		public static int getEnchantmentLevelImplosion     (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("implosion")  , aStack) : 0;}
 		// Central null-safe reader for item enchantments.
 		public static ItemEnchantments getEnchantments(ItemStack aStack) {
 			if (ST.invalid(aStack)) return ItemEnchantments.EMPTY;
