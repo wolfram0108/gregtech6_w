@@ -446,12 +446,6 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.oreWashing          .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
 					} catch(Throwable e) {e.printStackTrace(ERR);}
 					
-					if (MD.RC.mLoaded) {
-					try {for (Object  tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.blastFurnace  .getRecipes   ()) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
-					try {for (Object  tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.cokeOven      .getRecipes   ()) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
-					try {for (Object  tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.rockCrusher   .getRecipes   ()) for (Map.Entry<ItemStack, Float> tEntry : (List<Map.Entry<ItemStack, Float>>)UT.Reflection.getFieldContent(tRecipe, "outputs")) tStacks.add(tEntry.getKey());} catch(Throwable e) {e.printStackTrace(ERR);}
-					try {for (net.minecraft.world.item.crafting.Recipe tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.rollingMachine.getRecipeList()) if (tRecipe != null) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
-					}
 					
 					if (MD.TE.mLoaded && ALWAYS_FALSE) {
 						List<Map> tMaps = new ArrayListNoNulls<>();

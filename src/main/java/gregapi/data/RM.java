@@ -919,16 +919,6 @@ public class RM {
 						te_sawmill(32000, ST.copy(aInput), ST.copy(aOutput1), ST.copy(aOutput2), aChance2<=0?10:aChance2);
 				}
 			} else {
-				if (!OP.log.contains(aInput) && ConfigsGT.RECIPES.get(ConfigCategories.Machines.rockcrushing, aInput, ST.block(aInput) != NB)) {
-					try {
-						if (ST.block(aInput) != Blocks.OBSIDIAN && ST.block(aInput) != Blocks.GRAVEL) {
-							gt6mirror.mods.railcraft.api.crafting.IRockCrusherRecipe tRecipe = gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.rockCrusher.createNewRecipe(ST.amount(1, aInput), ST.meta_(aInput) != W, F);
-							tRecipe.addOutput(ST.copy(aOutput1), 1.0F/aInput.getCount());
-							if (aOutput2 != null) tRecipe.addOutput(ST.copy(aOutput2), (0.01F*(aChance2<=0?10:aChance2))/aInput.getCount());
-							if (aOutput3 != null) tRecipe.addOutput(ST.copy(aOutput3), (0.01F*(aChance3<=0?10:aChance3))/aInput.getCount());
-						}
-					} catch(Throwable e) {/*Do nothing*/}
-				}
 				if (ConfigsGT.RECIPES.get(ConfigCategories.Machines.pulverization, aInput, T)) {
 					if (aOutput2 == null)
 						te_pulverizer(32000, ST.copy(aInput), ST.copy(aOutput1));
