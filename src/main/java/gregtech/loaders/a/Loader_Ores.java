@@ -217,8 +217,11 @@ public class Loader_Ores implements Runnable {
 		rockset(MD.HBM, "tile.stone_gneiss"                       , 0, "hbm.gneiss"             , OP.oreGneiss              , MT.STONES.Gneiss);
 		rockset(MD.HBM, "tile.basalt_smooth"                      , 0, "hbm.basalt"             , OP.oreBasalt              , MT.STONES.Basalt);
 		
-		rockset(MD.RC, "cube"                                     , 6, "rc.abyssal"             , OP.oreBasalt              , MT.STONES.Basalt);
-		rockset(MD.RC, "cube"                                     , 7, "rc.quarried"            , OP.oreMarble              , MT.STONES.Marble);
+		// Railcraft Reborn keeps its stones as blocks of their own (1.7.10: cube metas 6 and 7) and registers them after this phase: while they cannot be named,
+		// the rows stay the hidden stubs they are without the mod (MD.UNKNOWN is never loaded), instead of the loaded-but-missing branch of rockset.
+		Block tRCAbyssal = ST.block(ST.make(MD.RC, "cube", 1, 6)), tRCQuarried = ST.block(ST.make(MD.RC, "cube", 1, 7));
+		rockset(tRCAbyssal  == NB ? MD.UNKNOWN : MD.RC, tRCAbyssal , 0, "rc.abyssal" , OP.oreBasalt, MT.STONES.Basalt, 1, 1, 0, F, F, T);
+		rockset(tRCQuarried == NB ? MD.UNKNOWN : MD.RC, tRCQuarried, 0, "rc.quarried", OP.oreMarble, MT.STONES.Marble, 1, 1, 0, F, F, T);
 		
 		rockset(MD.SC2, "BlockSlate"     , 0, 0, "BlockSlate"     , 3, "sc2.blueslate"          , OP.oreSlate               , MT.STONES.Slate);
 		rockset(MD.SC2, "BlockSlate"     , 1, 1, "BlockSlate"     , 4, "sc2.redslate"           , OP.oreSlate               , MT.STONES.Slate);

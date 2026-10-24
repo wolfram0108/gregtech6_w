@@ -1132,8 +1132,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 								if (tData.mMaterial.mMaterial == MT.Craponite) {
 									tCraponite++;
 								}
-								// Railcraft Reborn lights its own firestones, and MD.RC (legacy id) is unloaded, so its owns() cannot exclude them.
-								if (tData.mMaterial.mMaterial == MT.Firestone && tData.validPrefix() && !MD.RC.owns(tStack) && !MD.RC_REBORN.owns(tStack)) for (int j = (int)UT.Code.divup(tData.mMaterial.mAmount * tStack.getCount(), U); j > 0; j--) {
+								if (tData.mMaterial.mMaterial == MT.Firestone && tData.validPrefix() && !MD.RC.owns(tStack)) for (int j = (int)UT.Code.divup(tData.mMaterial.mAmount * tStack.getCount(), U); j > 0; j--) {
 									WD.fire(aPlayer.level(), UT.Code.roundDown(aPlayer.getX())-5+RNGSUS.nextInt(11), UT.Code.roundDown(aPlayer.getY())-5+RNGSUS.nextInt(11), UT.Code.roundDown(aPlayer.getZ())-5+RNGSUS.nextInt(11), RNGSUS.nextInt(8) != 0);
 								}
 							}

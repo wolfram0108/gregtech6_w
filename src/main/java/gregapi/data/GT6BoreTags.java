@@ -62,9 +62,9 @@ import gregtech.blocks.stone.BlockVanillaOresA;
  * Leaving the block out would instead take the plain stones from the bore, which is the bigger loss.
  */
 public class GT6BoreTags extends TagsProvider<Block> {
-	/** Reborn's tag (RailcraftTags.Blocks.TUNNEL_BORE_MINEABLE_BLOCKS); the namespace is the carrier id of the Railcraft table. */
+	/** Reborn's tag (RailcraftTags.Blocks.TUNNEL_BORE_MINEABLE_BLOCKS), in the namespace of Railcraft's mod id. */
 	public static final net.minecraft.tags.TagKey<Block> TUNNEL_BORE_MINEABLE_BLOCKS =
-		net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BLOCK, new ResourceLocation(CS.ModIDs.RC_REBORN, "tunnel_bore_mineable_blocks"));
+		net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BLOCK, new ResourceLocation(CS.ModIDs.RC, "tunnel_bore_mineable_blocks"));
 
 	/** The 13 classes whose constructors called addMineableBlock in the original. */
 	private static final Class<?>[] BORE_CLASSES = {

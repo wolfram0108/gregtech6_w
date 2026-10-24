@@ -77,7 +77,6 @@ public class MD {
 	, SOULFOREST        = new ModData(ModIDs.SOULFOREST         , "Soul Forest")
 	
 	, RC                = new ModData(ModIDs.RC                 , "Railcraft")
-	, RC_REBORN         = new ModData(ModIDs.RC_REBORN          , "Railcraft Reborn")
 	
 	, IE                = new ModData(ModIDs.IE                 , "Immersive Engineering")
 	

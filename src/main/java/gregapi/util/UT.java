@@ -2221,8 +2221,7 @@ public class UT {
 		
 		
 		// Railcraft Reborn 1.20.1 registers its enchantments as objects of the engine registry under its mod id: ask the registry by id, so no Reborn class is needed.
-		// MD.RC (legacy id) stays unloaded, so the gate keeps these paths shut until the Railcraft id is switched; the namespace then moves from RC_REBORN to RC with it.
-		private static Enchantment railcraftEnchantment(String aName) {return net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(ModIDs.RC_REBORN, aName));}
+		private static Enchantment railcraftEnchantment(String aName) {return net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(ModIDs.RC, aName));}
 		public static int getEnchantmentLevelDestruction   (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("destruction"), aStack) : 0;}
 		public static int getEnchantmentLevelWrecking      (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("wrecking")   , aStack) : 0;}
 		public static int getEnchantmentLevelImplosion     (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("implosion")  , aStack) : 0;}
