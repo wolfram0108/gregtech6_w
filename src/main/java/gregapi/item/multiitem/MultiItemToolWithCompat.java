@@ -33,7 +33,8 @@ import gt6mirror.ic2.api.item.IBoxable;
 import gt6mirror.ic2.api.item.IElectricItemManager;
 import gt6mirror.ic2.api.item.ISpecialElectricItem;
 import gt6mirror.micdoodle8.mods.galacticraft.api.item.IItemElectric;
-import gt6mirror.mods.railcraft.api.core.items.IToolCrowbar;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -44,17 +45,16 @@ import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;
 
 /** The foreign interfaces below are compile-only compat-mirror markers, so their methods carry no @Override.
- *  With BuildCraft present the tool is built from gregapi.compat.buildcraft.MultiItemToolWithCompatBC (Loader_Tools). */
+ *  With BuildCraft or Railcraft present the tool is built from a subclass that declares their interface (Loader_Tools). */
 @Optional.InterfaceList(value = {
   @Optional.Interface(iface = "thaumcraft.api.IWarpingGear", modid = ModIDs.TC)
 , @Optional.Interface(iface = "forestry.api.arboriculture.IToolGrafter", modid = ModIDs.FR)
-, @Optional.Interface(iface = "mods.railcraft.api.core.items.IToolCrowbar", modid = ModIDs.RC)
 , @Optional.Interface(iface = "ic2.api.item.IBoxable", modid = ModIDs.IC2)
 , @Optional.Interface(iface = "ic2.api.item.ISpecialElectricItem", modid = ModIDs.IC2)
 , @Optional.Interface(iface = "ic2.api.item.IElectricItemManager", modid = ModIDs.IC2)
 , @Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.item.IItemElectric", modid = ModIDs.GC)
 })
-public class MultiItemToolWithCompat extends MultiItemTool implements IWarpingGear, IToolGrafter, IToolCrowbar, IBoxable, ISpecialElectricItem, IElectricItemManager, IItemElectric {
+public class MultiItemToolWithCompat extends MultiItemTool implements IWarpingGear, IToolGrafter, IBoxable, ISpecialElectricItem, IElectricItemManager, IItemElectric {
 	/**
 	 * Creates the Item using these Parameters.
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
@@ -87,35 +87,36 @@ public class MultiItemToolWithCompat extends MultiItemTool implements IWarpingGe
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, 100, aPlayer, T);
 	}
 
-	public boolean canWhack(Player aPlayer, ItemStack aStack, int aX, int aY, int aZ) {
+	// Railcraft Reborn's Crowbar signatures: MultiItemToolWithCompatRC declares the interface and inherits these.
+	public boolean canWhack(Player aPlayer, InteractionHand aHand, ItemStack aStack, BlockPos aPos) {
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isCrowbar();
 	}
 
-	public void onWhack(Player aPlayer, ItemStack aStack, int aX, int aY, int aZ) {
+	public void onWhack(Player aPlayer, InteractionHand aHand, ItemStack aStack, BlockPos aPos) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, 100, aPlayer, T);
 	}
 
-	public boolean canLink(Player aPlayer, ItemStack aStack, AbstractMinecart cart) {
+	public boolean canLink(Player aPlayer, InteractionHand aHand, ItemStack aStack, AbstractMinecart cart) {
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isCrowbar();
 	}
 
-	public void onLink(Player aPlayer, ItemStack aStack, AbstractMinecart cart) {
+	public void onLink(Player aPlayer, InteractionHand aHand, ItemStack aStack, AbstractMinecart cart) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, tStats.getToolDamagePerEntityAttack(), aPlayer, T);
 	}
 
-	public boolean canBoost(Player aPlayer, ItemStack aStack, AbstractMinecart cart) {
+	public boolean canBoost(Player aPlayer, InteractionHand aHand, ItemStack aStack, AbstractMinecart cart) {
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isCrowbar();
 	}
 
-	public void onBoost(Player aPlayer, ItemStack aStack, AbstractMinecart cart) {
+	public void onBoost(Player aPlayer, InteractionHand aHand, ItemStack aStack, AbstractMinecart cart) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, tStats.getToolDamagePerEntityAttack(), aPlayer, T);
 	}
