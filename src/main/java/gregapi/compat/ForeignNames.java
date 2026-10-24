@@ -96,6 +96,16 @@ public final class ForeignNames {
 		return mSplit.contains(aName) ? mMapped.get(key(aName, aMeta)) : mMapped.get(aName);
 	}
 
+	/** The block of a «1.7.10 name + meta» pair from the block registry, which is filled before the item registry: a rock a later phase needs while the blocks are being built. NB when there is none. */
+	public net.minecraft.world.level.block.Block block(String aName, long aMeta) {
+		String tPath = path(aName, aMeta);
+		if (tPath == null) return NB;
+		int tColon = tPath.indexOf(':');
+		net.minecraft.resources.ResourceLocation tID = tColon < 0 ? new net.minecraft.resources.ResourceLocation(mModIDs[0], tPath) : new net.minecraft.resources.ResourceLocation(tPath);
+		net.minecraft.world.level.block.Block tBlock = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(tID);
+		return tBlock == null || tBlock == net.minecraft.world.level.block.Blocks.AIR ? NB : tBlock;
+	}
+
 	/** Whether the pair has a carrier today. The caller uses this to decide whether to register its entry. */
 	public boolean has(String aName, long aMeta) {return path(aName, aMeta) != null;}
 
