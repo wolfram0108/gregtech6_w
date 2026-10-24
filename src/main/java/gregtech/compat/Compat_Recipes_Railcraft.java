@@ -36,7 +36,6 @@ import gregapi.oredict.event.OreDictListenerEvent_Names;
 import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
@@ -168,25 +167,7 @@ public class Compat_Recipes_Railcraft extends CompatMods {
 		}
 		
 		
-		for (OreDictPrefix tPrefix : OreDictPrefix.VALUES) if (tPrefix.contains(TD.Prefix.ORE)) tPrefix.addListener(new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			if (ST.isGT(aEvent.mStack)) return;
-			Block tBlock = ST.block(aEvent.mStack);
-			if (tBlock != NB) try {
-				short tMeta = ST.meta(aEvent.mStack);
-				EntityTunnelBore.addMineableBlock(tBlock, tMeta >= 16 ? -1 : tMeta);
-			} catch(Throwable e) {e.printStackTrace(ERR);}
-		}});
-		
-		
 		new OreDictListenerEvent_Names() {@Override public void addAllListeners() {
-		addListener(new Object[] {OP.stone, OP.cobblestone, OP.treeSapling, OP.treeLeaves, OP.tree, OP.log, OP.plank, OP.beam}, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			if (ST.isGT(aEvent.mStack)) return;
-			Block tBlock = ST.block(aEvent.mStack);
-			if (tBlock != NB) try {
-				short tMeta = ST.meta(aEvent.mStack);
-				EntityTunnelBore.addMineableBlock(tBlock, tMeta >= 16 ? -1 : tMeta);
-			} catch(Throwable e) {e.printStackTrace(ERR);}
-		}});
 		addListener(OD.itemClay, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.Mixer.addRecipe2(T, 16, 16, aEvent.mStack, OM.dust(MT.Bone, U*3), ST.make(MD.RC, "part.bleached.clay", 1, 0));
 		}});

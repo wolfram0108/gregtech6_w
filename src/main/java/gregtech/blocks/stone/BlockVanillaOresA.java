@@ -26,7 +26,6 @@ package gregtech.blocks.stone;
 import net.minecraft.world.level.block.SoundType;
 import gregapi.block.BlockBaseMeta;
 import gregapi.data.LH;
-import gregapi.data.MD;
 import gregapi.data.MT;
 import gregapi.data.OP;
 import gregapi.old.Textures;
@@ -34,7 +33,6 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.WD;
-import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import gregapi.block.Material;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
@@ -95,7 +93,6 @@ public class BlockVanillaOresA extends BlockBaseMeta {
 		COMPAT_IC2.valuable(this, 15, 1);
 		}
 		
-		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("miner", ST.make(this, 1, W)));
 		});
 	}

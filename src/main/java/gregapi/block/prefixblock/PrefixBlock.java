@@ -53,7 +53,6 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gt6mirror.mekanism.api.MekanismAPI;
-import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.EntityBlock;
@@ -271,7 +270,6 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 			if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 		}
 		
-		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (MD.Mek.mLoaded) try {MekanismAPI.addBoxBlacklist(this, W);} catch(Throwable e) {e.printStackTrace(ERR);}
 		
 		if (mOpaque) VISUALLY_OPAQUE_BLOCKS.add(this);
