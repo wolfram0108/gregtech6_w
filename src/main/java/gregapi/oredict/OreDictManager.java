@@ -519,7 +519,7 @@ public final class OreDictManager {
 	}
 	
 	public boolean isBlacklisted(ItemStack aStack) {
-		return sNoUnificationSet.contains(aStack, T);
+		return sNoUnificationSet.contains(aStack, T) || ModData.noUnification(aStack);
 	}
 	
 	public boolean addTarget(OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack) {
@@ -561,7 +561,8 @@ public final class OreDictManager {
 		ItemNBT.set(aStack = ST.amount(1, aStack), null); // Bridges through the central ItemNBT helper instead of a direct tag-compound clear.
 		if (!aAlreadyRegistered) registerOre_(aPrefix.mNameInternal + aMaterial.mNameInternal, aStack);
 		addAssociation_(aPrefix, aMaterial, aStack);
-		if ((aIgnoreBlacklist || !isBlacklisted(aStack)) && (aOverwrite || ST.invalid(sName2StackMap.get(aPrefix.mNameInternal + aMaterial.mNameInternal)))) sName2StackMap.put(aPrefix.mNameInternal + aMaterial.mNameInternal, aStack);
+		// An object of a mod that unification must not touch is never the target of a replacement, whatever the caller says about the blacklist; it is still registered under the name and associated above.
+		if (!ModData.noUnification(aStack) && (aIgnoreBlacklist || !isBlacklisted(aStack)) && (aOverwrite || ST.invalid(sName2StackMap.get(aPrefix.mNameInternal + aMaterial.mNameInternal)))) sName2StackMap.put(aPrefix.mNameInternal + aMaterial.mNameInternal, aStack);
 		isAddingOre--;
 		return T;
 	}
