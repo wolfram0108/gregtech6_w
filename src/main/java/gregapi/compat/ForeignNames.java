@@ -59,7 +59,7 @@ public final class ForeignNames {
 	public ForeignNames carrier(ModData aCarrier) {mCarrier = aCarrier; return this;}
 
 	/** Every table the funnel knows. A new foreign mod joins by adding its table here. */
-	private static ForeignNames[] all() {return new ForeignNames[] {AE2Names.TABLE, BuildCraftNames.TABLE, EFRNames.TABLE};}
+	private static ForeignNames[] all() {return new ForeignNames[] {AE2Names.TABLE, BuildCraftNames.TABLE, EFRNames.TABLE, RailcraftNames.TABLE};}
 	// Built on first use: each table is a static field that itself constructs a ForeignNames, so an eager list
 	// here would read those fields while their classes are still initialising.
 	private static ForeignNames[] sAll = null;

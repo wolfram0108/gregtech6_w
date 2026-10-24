@@ -2282,6 +2282,7 @@ public class CS {
 		, SOULFOREST        = "soulforest"
 		
 		, RC                = "Railcraft"
+		, RC_REBORN         = "railcraft"
 		
 		, IE                = "ImmersiveEngineering"
 		
