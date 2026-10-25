@@ -294,7 +294,8 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		tFireDamage = 4 * (UT.NBT.getEnchantmentLevel(Enchantments.FLAME, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aBullet)),
 		tKnockback  =     (UT.NBT.getEnchantmentLevel(Enchantments.PUNCH, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.KNOCKBACK , aBullet));
 		
-		if (tImplosion  > 0 && UT.Entities.isExplosiveCreature(aTarget)) tMagicDamage += 1.5F*tImplosion;
+		// Reborn's implosion already adds its damage against Creepers through the engine's enchantment damage (UT.Enchantments.getDamageBonusVsCreature), like the melee and arrow paths: no double dipping.
+		if (tImplosion  > 0 && UT.Entities.isExplosiveCreature(aTarget) && !(aTarget instanceof Creeper)) tMagicDamage += 1.5F*tImplosion;
 		if (tFireDamage > 0) aTarget.igniteForSeconds(tFireDamage);
 		
 		Player tPlayer = aPlayer;
