@@ -117,8 +117,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	}
 	
 	private final int mHarvestLevelOffset, mHarvestLevelMinimum, mHarvestLevelMaximum;
-	private final String mNameInternal, mTool;
-	private final boolean mOpaque, mNormalCube;
+	private final String mNameInternal, mTool, mModID;
+	private final boolean mOpaque, mNormalCube, mUnbreakable;
 	
 	public MapColor mMapColor = null;
 
@@ -134,10 +134,14 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public Material getMaterial() {return mMaterial;}
 
 	public static String getName(String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
+		return getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube, F);
+	}
+	/** aUnbreakable: the twin of a group for the blocks whose TileEntity answers a negative hardness (see getOrCreateUnbreakable). */
+	public static String getName(String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube, boolean aUnbreakable) {
 		// F9/sound: was aSoundType.soundName (1.7.10 String sound category) in the MTE registration key. neo SoundType has no
 		// name — reproducing 1.7.10 soundName 1:1 (values verified FACTUALLY against the golden dump: iron/machine(METAL)→"stone",
 		// rock(STONE)→"stone", cloth/redstonelight(WOOL)→"cloth", leaves/tnt(GRASS)→"grass", wood(WOOD)→"wood").
-		return "gt.block.multitileentity." + aNameOfVanillaMaterialField + "." + soundName(aSoundType) + "." + aTool + "." + aHarvestLevelOffset + "." + aHarvestLevelMinimum + "." + aHarvestLevelMaximum + "." + aOpaque + "." + aNormalCube;
+		return "gt.block.multitileentity." + aNameOfVanillaMaterialField + "." + soundName(aSoundType) + "." + aTool + "." + aHarvestLevelOffset + "." + aHarvestLevelMinimum + "." + aHarvestLevelMaximum + "." + aOpaque + "." + aNormalCube + (aUnbreakable ? ".unbreakable" : "");
 	}
 
 	/** 1.7.10 SoundType.soundName equivalent for the MTE registration key (verified against the golden dump). Other SoundTypes
@@ -164,7 +168,15 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	 */
 	public static MultiTileEntityBlock getOrCreate(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
 		MultiTileEntityBlock rBlock = MULTITILEENTITYBLOCKMAP.get(aModID + ":" + getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool = aTool.toLowerCase(), aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube));
-		return rBlock == null ? MultiTileEntityBlockWithCompat.create(aModID, aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube) : rBlock;
+		return rBlock == null ? MultiTileEntityBlockWithCompat.create(aModID, aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube, F) : rBlock;
+	}
+
+	/** The twin of a group for the blocks whose TileEntity answers a negative hardness (1.7.10 asked it per position and every caller saw -1). The engine reads the
+	 *  destroy speed and the explosion resistance of a block from the block alone, so such a block stands in a group of its own that has them the way bedrock has them
+	 *  (the player's breaking and the explosion still ask the TileEntity). Same parameters as the group it twins; it must be created during the same loading as the group. */
+	public static MultiTileEntityBlock getOrCreateUnbreakable(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
+		MultiTileEntityBlock rBlock = MULTITILEENTITYBLOCKMAP.get(aModID + ":" + getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool = aTool.toLowerCase(), aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube, T));
+		return rBlock == null ? MultiTileEntityBlockWithCompat.create(aModID, aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube, T) : rBlock;
 	}
 	
 	/**
@@ -179,7 +191,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	 * @param aNormalCube if this Block is a normal Cube (for Redstone Stuff).
 	 */
 	// F16/F13: Properties at ctor — sound (step sound) + noOcclusion for non-opaque (otherwise render is solid + light is blocked). setId is mandatory.
-	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(SoundType aSoundType, String aRegName, boolean aOpaque, String aTool, Material aVanillaMaterial) {
+	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(SoundType aSoundType, String aRegName, boolean aOpaque, String aTool, Material aVanillaMaterial, boolean aUnbreakable) {
 		// F-shape: dynamicShape() is MANDATORY — otherwise neo caches getCollisionShape (builds it once with EmptyBlockGetter/
 		// BlockPos.ZERO, BlockBehaviour:916) → the per-BE shape (getCollisionShape bridge below, MTE-Rock/pipes) is ignored,
 		// snow/collision/isFaceSturdy come from the static cache = full cube. dynamicShape → cache isn't built → the bridge lives.
@@ -198,7 +210,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// (Jade 26.1-neoforge sources, SimpleToolHandler:45-47). We set the SAME default GT6 value (1.0F);
 		// the exact per-TE hardness still lives in getDestroyProgress below and doesn't depend on this field —
 		// it computes progress itself (WD.destroyProgress from TE hardness) and doesn't call super.
-		p = p.destroyTime(gregapi.block.BlockBase.BAKED_HARDNESS);
+		p = aUnbreakable ? p.strength(-1.0F, 3600000.0F) : p.destroyTime(gregapi.block.BlockBase.BAKED_HARDNESS); // bedrock's own destroy time and explosion resistance for the twin
 		// F-harvest-tool (1:1 GT6, FIXED per a player report "ropes/anvils should break by hand"):
 		// in 1.7.10 the gate "does harvesting need a tool" was decided by the MATERIAL (EntityPlayer.canHarvestBlock →
 		// Material.isToolNotRequired), NOT the getHarvestTool string — that only set the EFFECTIVE tool.
@@ -213,15 +225,20 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		return p;
 	}
 	protected MultiTileEntityBlock(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
+		this(aModID, aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube, F);
+	}
+	protected MultiTileEntityBlock(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube, boolean aUnbreakable) {
 		// F12 follow-up (block-split, MTE): setId in Properties (neo Block requires an id); namespace = GT_API.owner(), the mod
 		// that queued the block (gregtech for GT6's own, golden = gregtech:), matching ST.register→registerBlock below. The name is computed with the same getName(...) as mNameInternal (line below) → the key matches.
 		// Construction happens on RegisterEvent via GT_API.deferBlockInit (call site getOrCreate/Loader_Others).
 		// F16: sound(aSoundType) (step sound). F13/F16: non-opaque → .noOcclusion() (otherwise render is solid + light is blocked). mkProps below.
-		super(mkProps(aSoundType, getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube), aOpaque, aTool, aVanillaMaterial));
+		super(mkProps(aSoundType, getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube, aUnbreakable), aOpaque, aTool, aVanillaMaterial, aUnbreakable));
 		mMaterial = aVanillaMaterial;
+		mModID = aModID;
+		mUnbreakable = aUnbreakable;
 		if (GAPI.mStartedInit) throw new IllegalStateException("Blocks can only be initialised within preInit!");
 		
-		mNameInternal = getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube);
+		mNameInternal = getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube, aUnbreakable);
 		ST.register(this, mNameInternal, BlockItem.class);
 		
 		MULTITILEENTITYBLOCKMAP.put(aModID + ":" + mNameInternal, this);
@@ -458,7 +475,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_UpdateTick) ((IMTE_UpdateTick)aTileEntity).updateTick(aRandom);}
 	public final void onBlockDestroyedByPlayer(Level aWorld, int aX, int aY, int aZ, int aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockDestroyedByPlayer) ((IMTE_OnBlockDestroyedByPlayer)aTileEntity).onBlockDestroyedByPlayer(aRandom);}
 	// was onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167]
-	@Override protected final void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {if (aOldState.getBlock() == this) return; BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnBlockAdded) ((IMTE_OnBlockAdded)aTileEntity).onBlockAdded();}
+	@Override protected final void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {if (aOldState.getBlock() == this || sSwapping) return; BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnBlockAdded) ((IMTE_OnBlockAdded)aTileEntity).onBlockAdded();}
 	// was super.dropXpOnBlockBreak(...) (1.7.10 Block, REMOVED entirely from neo). Default inline port 1:1 instead of the
 	// super call (Block.java:843-854 recompSrc): the EntityXPOrb spawn loop -> neo ExperienceOrb.award(ServerLevel,Vec3,int)
 	// (ExperienceOrb.java:190, the same split algorithm inside award/awardWithDirection).
@@ -696,33 +713,55 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final int lightDampeningOf(BlockEntity aTileEntity) {return lightDampening(lightOpacityOf(aTileEntity));}
 	@Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> aBuilder) {aBuilder.add(LIGHT_DAMPENING);}
 	@Override protected int getLightDampening(BlockState aState) {return aState.getValue(LIGHT_DAMPENING);}
-	private static final java.util.concurrent.ConcurrentLinkedQueue<BlockEntity> LIGHT_SYNC = new java.util.concurrent.ConcurrentLinkedQueue<>();
-	private static final int LIGHT_SYNC_PER_TICK = 500;
-	/** A TileEntity that comes to life (placed, or of a loaded chunk: a save written before the state carried the light holds the default in every block of the family)
-	 *  and differs from its answer waits for the server tick, since a chunk is still being assembled while its block entities announce themselves. */
-	public static void queueLightSync(BlockEntity aTileEntity) {
+	public final boolean isUnbreakable() {return mUnbreakable;}
+	/** The twin of this group for the blocks whose TileEntity answers a negative hardness, or null when the group has none (it exists only if the loader asked for it). */
+	private MultiTileEntityBlock unbreakableTwin() {return mUnbreakable ? null : MULTITILEENTITYBLOCKMAP.get(mModID + ":" + mNameInternal + ".unbreakable");}
+	/** The block of the family this TileEntity belongs in: the twin when it answers a negative hardness and the group has one, else this block. */
+	private MultiTileEntityBlock homeOf(BlockEntity aTileEntity) {
+		if (mUnbreakable || !(aTileEntity instanceof IMTE_GetBlockHardness) || ((IMTE_GetBlockHardness)aTileEntity).getBlockHardness() >= 0) return this;
+		MultiTileEntityBlock tTwin = unbreakableTwin();
+		return tTwin == null ? this : tTwin;
+	}
+	/** The state this TileEntity belongs in: its home block, with the light of its answer. */
+	public final BlockState stateFor(BlockEntity aTileEntity) {MultiTileEntityBlock tHome = homeOf(aTileEntity); return tHome.defaultBlockState().setValue(LIGHT_DAMPENING, tHome.lightDampeningOf(aTileEntity));}
+
+	private static final java.util.concurrent.ConcurrentLinkedQueue<BlockEntity> STATE_SYNC = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	private static final int STATE_SYNC_PER_TICK = 500;
+	/** True only while a block entity is carried from a block of the family to another: the engine keeps the block entity of a block that changes to another of the family only then. */
+	private static boolean sSwapping = F;
+	/** A TileEntity that comes to life (placed, or of a loaded chunk: a save written before the state carried the light holds the default in every block of the family, and a spring
+	 *  of a save stands in the group that has no negative hardness) and whose block is not the state it belongs in waits for the server tick, since a chunk is still being assembled
+	 *  while its block entities announce themselves. */
+	public static void queueSync(BlockEntity aTileEntity) {
 		if (aTileEntity instanceof gregapi.tileentity.base.TileEntityLoaderStub) return; // a stub awaits its class and does not know its answer yet
 		BlockState tState = aTileEntity.getBlockState();
-		if (tState.getBlock() instanceof MultiTileEntityBlock tBlock && tState.getValue(LIGHT_DAMPENING) != tBlock.lightDampeningOf(aTileEntity)) LIGHT_SYNC.add(aTileEntity);
+		if (tState.getBlock() instanceof MultiTileEntityBlock tBlock && tState != tBlock.stateFor(aTileEntity)) STATE_SYNC.add(aTileEntity);
 	}
-	/** Once per server tick: a bounded number of the queued ones are brought to their answer, so that a base of thousands does not stall a tick. */
-	public static void syncLightQueued() {
-		for (int n = 0; n < LIGHT_SYNC_PER_TICK; n++) {
-			BlockEntity tTileEntity = LIGHT_SYNC.poll();
+	/** Once per server tick: a bounded number of the queued ones are brought to their state, so that a base of thousands does not stall a tick. */
+	public static void syncQueued() {
+		for (int n = 0; n < STATE_SYNC_PER_TICK; n++) {
+			BlockEntity tTileEntity = STATE_SYNC.poll();
 			if (tTileEntity == null) return;
 			Level tWorld = tTileEntity.getLevel();
 			if (tTileEntity.isRemoved() || tWorld == null || tWorld.isClientSide() || !tWorld.hasChunkAt(tTileEntity.getBlockPos())) continue;
-			if (tWorld.getBlockState(tTileEntity.getBlockPos()).getBlock() instanceof MultiTileEntityBlock tBlock) tBlock.syncLight(tWorld, tTileEntity.getBlockPos(), tTileEntity);
+			if (tWorld.getBlockState(tTileEntity.getBlockPos()).getBlock() instanceof MultiTileEntityBlock tBlock) tBlock.syncState(tWorld, tTileEntity.getBlockPos(), tTileEntity);
 		}
 	}
-	/** Brings the state of the standing block to its TileEntity's answer. Clients are told; neighbours are not, and the TileEntity stays (same block, onPlace skips it). */
-	public final void syncLight(LevelAccessor aWorld, BlockPos aPos, BlockEntity aTileEntity) {
+	/** Brings the standing block to the state its TileEntity belongs in: the light of its answer, and its home block when that is another of the family (the TileEntity goes along).
+	 *  Clients are told; neighbours are not, and the TileEntity stays (the state change of one block, or the swap, is made known to onPlace and the engine). */
+	public final void syncState(LevelAccessor aWorld, BlockPos aPos, BlockEntity aTileEntity) {
 		if (aTileEntity instanceof gregapi.tileentity.base.TileEntityLoaderStub) return;
 		BlockState tState = aWorld.getBlockState(aPos);
-		if (tState.getBlock() != this) return;
-		int tWanted = lightDampeningOf(aTileEntity);
-		if (tState.getValue(LIGHT_DAMPENING) != tWanted) aWorld.setBlock(aPos, tState.setValue(LIGHT_DAMPENING, tWanted), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+		if (!(tState.getBlock() instanceof MultiTileEntityBlock)) return;
+		BlockState tWanted = ((MultiTileEntityBlock)tState.getBlock()).stateFor(aTileEntity);
+		if (tState == tWanted) return;
+		boolean tSwap = tWanted.getBlock() != tState.getBlock();
+		if (tSwap) sSwapping = T;
+		try {aWorld.setBlock(aPos, tWanted, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);} finally {sSwapping = F;}
+		// the client rebuilt its block entity with the block: it gets the look of the one that stayed
+		if (tSwap && aTileEntity instanceof gregapi.tileentity.base.TileEntityBase03TicksAndSync tTicking) tTicking.updateClientData();
 	}
+	@Override protected boolean shouldChangedStateKeepBlockEntity(BlockState aOldState) {return sSwapping && aOldState.getBlock() instanceof MultiTileEntityBlock;}
 	public final boolean isOpaqueCube() {return mOpaque;}
 	public final boolean func_149730_j() {return mOpaque;}
 	public final boolean renderAsNormalBlock() {return mOpaque || mNormalCube;}

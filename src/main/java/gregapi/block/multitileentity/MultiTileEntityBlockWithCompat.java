@@ -52,10 +52,16 @@ import static gregapi.data.CS.*;
 @SuppressWarnings("deprecation")
 public class MultiTileEntityBlockWithCompat extends MultiTileEntityBlock implements IBlockSealable, IOxygenReliantBlock, IPaintableBlock, IManaTrigger {
 	protected static MultiTileEntityBlock create(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
-		return new MultiTileEntityBlockWithCompat(aModID, aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube);
+		return create(aModID, aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube, F);
+	}
+	protected static MultiTileEntityBlock create(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube, boolean aUnbreakable) {
+		return new MultiTileEntityBlockWithCompat(aModID, aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube, aUnbreakable);
 	}
 	protected MultiTileEntityBlockWithCompat(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
-		super(aModID, aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube);
+		this(aModID, aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube, F);
+	}
+	protected MultiTileEntityBlockWithCompat(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube, boolean aUnbreakable) {
+		super(aModID, aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube, aUnbreakable);
 	}
 	
 	public final boolean recolourBlockRGB(Level aWorld, int aX, int aY, int aZ, Direction aDirection, int aRGB) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMultiTileEntity.IMTE_OnPainting && ((IMultiTileEntity.IMTE_OnPainting)aTileEntity).onPainting(UT.Code.side(aDirection), aRGB);}

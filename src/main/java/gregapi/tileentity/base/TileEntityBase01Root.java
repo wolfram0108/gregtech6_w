@@ -486,7 +486,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	/** The engine announces a block entity once it is part of a ticking chunk, whether it ticks itself or not; its block state may still hold the light of before the state carried it. */
 	@Override public void onLoad() {
 		super.onLoad();
-		if (level != null && !level.isClientSide()) gregapi.block.multitileentity.MultiTileEntityBlock.queueLightSync(this);
+		if (level != null && !level.isClientSide()) gregapi.block.multitileentity.MultiTileEntityBlock.queueSync(this);
 	}
 
 	// @Override
