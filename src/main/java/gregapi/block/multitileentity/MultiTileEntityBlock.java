@@ -32,6 +32,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelReader;
@@ -100,7 +103,11 @@ import static gregapi.data.CS.*;
 @SuppressWarnings("deprecation")
 public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlockDebugable, IBlockErrorable, IBlockOnWalkOver, IBlockSyncDataAndCoversAndIDs, IRenderedBlock, EntityBlock, IBlockToolable, IBlockRetrievable, IBlockMaterial {
 	private static final Map<String, MultiTileEntityBlock> MULTITILEENTITYBLOCKMAP = new HashMap<>();
-	
+
+	/** The light this block absorbs at its position, in the engine's units. The engine reads it from the state alone (filled once when the state is assembled),
+	 *  while 1.7.10 asked the TileEntity at the position; the TileEntity's answer therefore rides in the state, written by syncLight. */
+	public static final IntegerProperty LIGHT_DAMPENING = IntegerProperty.create("light_dampening", 0, 15);
+
 	/** Every registered block whose BlockEntity is a GT6 root, of both MTE block kinds: the list each capability
 	 *  channel registers on, since the engine binds block capabilities per block and not per BlockEntity type. */
 	public static Block[] allInRegistry() {
@@ -222,7 +229,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// F16: setStepSound IS WIRED — the sound is set in mkProps above (.sound(aSoundType) at ctor). Not a stub.
 		mOpaque = aOpaque;
 		mNormalCube = aNormalCube;
-		
+		registerDefaultState(defaultBlockState().setValue(LIGHT_DAMPENING, lightDampeningOf(null)));
+
 		mTool = aTool.toLowerCase();
 		mHarvestLevelOffset = aHarvestLevelOffset;
 		mHarvestLevelMinimum = Math.max(0, aHarvestLevelMinimum);
@@ -450,7 +458,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_UpdateTick) ((IMTE_UpdateTick)aTileEntity).updateTick(aRandom);}
 	public final void onBlockDestroyedByPlayer(Level aWorld, int aX, int aY, int aZ, int aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockDestroyedByPlayer) ((IMTE_OnBlockDestroyedByPlayer)aTileEntity).onBlockDestroyedByPlayer(aRandom);}
 	// was onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167]
-	@Override protected final void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnBlockAdded) ((IMTE_OnBlockAdded)aTileEntity).onBlockAdded();}
+	@Override protected final void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {if (aOldState.getBlock() == this) return; BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnBlockAdded) ((IMTE_OnBlockAdded)aTileEntity).onBlockAdded();}
 	// was super.dropXpOnBlockBreak(...) (1.7.10 Block, REMOVED entirely from neo). Default inline port 1:1 instead of the
 	// super call (Block.java:843-854 recompSrc): the EntityXPOrb spawn loop -> neo ExperienceOrb.award(ServerLevel,Vec3,int)
 	// (ExperienceOrb.java:190, the same split algorithm inside award/awardWithDirection).
@@ -681,7 +689,20 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// logic, not a 1:1 unpack+dispatch, so it's NOT implemented here (out of scope for this task, left to the orchestrator/ADR).
 	public final boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsSideSolid?((IMTE_IsSideSolid)aTileEntity).isSideSolid(UT.Code.side(aSide)):mOpaque;}
 	public final boolean isBeaconBase(BlockGetter aWorld, int aX, int aY, int aZ, int aBeaconX, int aBeaconY, int aBeaconZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsBeaconBase && ((IMTE_IsBeaconBase)aTileEntity).isBeaconBase(aBeaconX, aBeaconY, aBeaconZ);}
-	public final int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetLightOpacity?((IMTE_GetLightOpacity)aTileEntity).getLightOpacity():mOpaque?LIGHT_OPACITY_MAX:LIGHT_OPACITY_NONE;}
+	public final int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {return lightOpacityOf(WD.te(aWorld, aX, aY, aZ, T));}
+	/** The 1.7.10 answer: the TileEntity's getLightOpacity, or the block's own default (original MultiTileEntityBlock:266). */
+	private int lightOpacityOf(BlockEntity aTileEntity) {return aTileEntity instanceof IMTE_GetLightOpacity?((IMTE_GetLightOpacity)aTileEntity).getLightOpacity():mOpaque?LIGHT_OPACITY_MAX:LIGHT_OPACITY_NONE;}
+	/** The same answer in the engine's units, the value the state carries. */
+	public final int lightDampeningOf(BlockEntity aTileEntity) {return lightDampening(lightOpacityOf(aTileEntity));}
+	@Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> aBuilder) {aBuilder.add(LIGHT_DAMPENING);}
+	@Override protected int getLightDampening(BlockState aState) {return aState.getValue(LIGHT_DAMPENING);}
+	/** Brings the state of the standing block to its TileEntity's answer. Clients are told; neighbours are not, and the TileEntity stays (same block, onPlace skips it). */
+	public final void syncLight(LevelAccessor aWorld, BlockPos aPos, BlockEntity aTileEntity) {
+		BlockState tState = aWorld.getBlockState(aPos);
+		if (tState.getBlock() != this) return;
+		int tWanted = lightDampeningOf(aTileEntity);
+		if (tState.getValue(LIGHT_DAMPENING) != tWanted) aWorld.setBlock(aPos, tState.setValue(LIGHT_DAMPENING, tWanted), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+	}
 	public final boolean isOpaqueCube() {return mOpaque;}
 	public final boolean func_149730_j() {return mOpaque;}
 	public final boolean renderAsNormalBlock() {return mOpaque || mNormalCube;}
