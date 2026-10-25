@@ -561,6 +561,7 @@
     "gregtech:gt.meta.ore.small.bp.marble",
     "gregtech:gt.block.multitileentity.iron.stone.pickaxe.0.0.15.false.false",
     "gregtech:gt.block.multitileentity.rock.stone.pickaxe.0.0.15.false.false",
+    "gregtech:gt.block.multitileentity.rock.stone.pickaxe.0.0.15.false.false.unbreakable",
     "gregtech:gt.block.multitileentity.tnt.grass.pickaxe.0.0.15.false.false",
     "gregtech:gt.block.multitileentity.redstonelight.stone.pickaxe.0.0.15.false.false"
   ]
