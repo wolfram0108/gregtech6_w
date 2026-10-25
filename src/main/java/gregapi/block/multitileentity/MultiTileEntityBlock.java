@@ -567,8 +567,28 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final int lightDampeningOf(BlockEntity aTileEntity) {return lightDampening(lightOpacityOf(aTileEntity));}
 	@Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> aBuilder) {aBuilder.add(LIGHT_DAMPENING);}
 	@Override public int getLightBlock(BlockState aState, BlockGetter aWorld, BlockPos aPos) {return aState.getValue(LIGHT_DAMPENING);}
+	private static final java.util.concurrent.ConcurrentLinkedQueue<BlockEntity> LIGHT_SYNC = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	private static final int LIGHT_SYNC_PER_TICK = 500;
+	/** A TileEntity that comes to life (placed, or of a loaded chunk: a save written before the state carried the light holds the default in every block of the family)
+	 *  and differs from its answer waits for the server tick, since a chunk is still being assembled while its block entities announce themselves. */
+	public static void queueLightSync(BlockEntity aTileEntity) {
+		if (aTileEntity instanceof gregapi.tileentity.base.TileEntityLoaderStub) return; // a stub awaits its class and does not know its answer yet
+		BlockState tState = aTileEntity.getBlockState();
+		if (tState.getBlock() instanceof MultiTileEntityBlock tBlock && tState.getValue(LIGHT_DAMPENING) != tBlock.lightDampeningOf(aTileEntity)) LIGHT_SYNC.add(aTileEntity);
+	}
+	/** Once per server tick: a bounded number of the queued ones are brought to their answer, so that a base of thousands does not stall a tick. */
+	public static void syncLightQueued() {
+		for (int n = 0; n < LIGHT_SYNC_PER_TICK; n++) {
+			BlockEntity tTileEntity = LIGHT_SYNC.poll();
+			if (tTileEntity == null) return;
+			Level tWorld = tTileEntity.getLevel();
+			if (tTileEntity.isRemoved() || tWorld == null || tWorld.isClientSide() || !tWorld.hasChunkAt(tTileEntity.getBlockPos())) continue;
+			if (tWorld.getBlockState(tTileEntity.getBlockPos()).getBlock() instanceof MultiTileEntityBlock tBlock) tBlock.syncLight(tWorld, tTileEntity.getBlockPos(), tTileEntity);
+		}
+	}
 	/** Brings the state of the standing block to its TileEntity's answer. Clients are told; neighbours are not, and the TileEntity stays (same block, onPlace and onRemove skip it). */
 	public final void syncLight(LevelAccessor aWorld, BlockPos aPos, BlockEntity aTileEntity) {
+		if (aTileEntity instanceof gregapi.tileentity.base.TileEntityLoaderStub) return;
 		BlockState tState = aWorld.getBlockState(aPos);
 		if (tState.getBlock() != this) return;
 		int tWanted = lightDampeningOf(aTileEntity);
