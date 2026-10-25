@@ -423,7 +423,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 			if (aEvent.phase == net.minecraftforge.event.TickEvent.Phase.START) { // Forge keeps the START/END phase field, unlike neo which splits ServerTickEvent into Pre/Post (checked, ServerTickEvent.java)
 				gt6ChunkFinishTick();
-				try {gregapi.block.multitileentity.MultiTileEntityBlock.syncLightQueued();} catch (Throwable e) {e.printStackTrace(ERR);}
+				try {gregapi.block.multitileentity.MultiTileEntityBlock.syncQueued();} catch (Throwable e) {e.printStackTrace(ERR);}
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {

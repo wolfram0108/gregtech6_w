@@ -54,6 +54,7 @@ public class Loader_Others implements Runnable {
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "wood"          , Material.wood                 , SoundType.WOOD   , TOOL_axe          , 0, 0, 15, F, F);
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "leaves"        , Material.leaves               , SoundType.GRASS  , TOOL_axe          , 0, 0, 15, F, F);
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "rock"          , Material.rock                 , SoundType.STONE  , TOOL_pickaxe      , 0, 0, 15, F, F);
+		MultiTileEntityBlock.getOrCreateUnbreakable(MD.GT.mID, "rock", Material.rock, SoundType.STONE, TOOL_pickaxe, 0, 0, 15, F, F); // the twin of the group above, for the blocks whose TileEntity answers a negative hardness (the fluid spring)
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "cloth"         , Material.cloth                , SoundType.WOOL  , TOOL_shears       , 0, 0, 15, F, F);
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "tnt"           , Material.tnt                  , SoundType.GRASS  , TOOL_pickaxe      , 0, 0, 15, F, F);
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "redstoneLight" , Material.redstoneLight        , SoundType.METAL  , TOOL_pickaxe      , 0, 0, 15, F, F).setMapColor(Material.iron.getMaterialMapColor());

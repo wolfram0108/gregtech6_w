@@ -114,8 +114,8 @@ public abstract class TileEntityBase03TicksAndSync extends TileEntityBase02Adjac
 	}
 
 	/** The engine's light thread reads the light a block absorbs from its state, so the answer of this TileEntity travels there whenever its look changes. */
-	public void updateLightOpacity() {
-		if (level != null && !level.isClientSide() && level.getBlockState(worldPosition).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock tBlock) tBlock.syncLight(level, worldPosition, this);
+	public void updateBlockState() {
+		if (level != null && !level.isClientSide() && level.getBlockState(worldPosition).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock tBlock) tBlock.syncState(level, worldPosition, this);
 	}
 
 	@Override public void onCoordinateChange() {super.onCoordinateChange(); updateClientData();}
@@ -152,7 +152,7 @@ public abstract class TileEntityBase03TicksAndSync extends TileEntityBase02Adjac
 			if (!isDead()) super.updateEntity();
 			if (!isDead()) onTick(mTimer, tIsServerSide);
 			if (!isDead() && tIsServerSide && mTimer > 2 && (mSendClientData || onTickCheck(mTimer))) {
-				if (mSendClientData) updateLightOpacity();
+				if (mSendClientData) updateBlockState();
 				sendClientData(mSendClientData, null);
 				mSendClientData = F;
 				onTickChecked(mTimer);

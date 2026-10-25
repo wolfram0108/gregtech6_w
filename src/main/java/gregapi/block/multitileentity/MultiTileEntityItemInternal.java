@@ -247,7 +247,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements gt6mirror.
 					}
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				// The engine's light thread reads the light the block absorbs from its state; the TileEntity's answer, as onPlaced left it, goes there.
-				aMTEContainer.mBlock.syncLight(aWorld, new BlockPos(aX, aY, aZ), aMTEContainer.mTileEntity);
+				aMTEContainer.mBlock.syncState(aWorld, new BlockPos(aX, aY, aZ), aMTEContainer.mTileEntity);
 				try {
 					if (aMTEContainer.mTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData) {
 						if (((IMTE_HasMultiBlockMachineRelevantData)aMTEContainer.mTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, aMTEContainer.mBlock, aMTEContainer.mBlockMetaData, F);
