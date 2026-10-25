@@ -42,7 +42,7 @@ import java.util.Map;
 public final class ModData implements ICondition<ITagDataContainer<?>> {
 	public static final Map<String, ModData> MODS = new HashMap<>();
 
-	/** The mods whose objects take part in unification neither as the source of a replacement nor as its target: the objects of Railcraft Reborn can not be replaced, so GT6 takes them as its own. */
+	/** The mods whose objects unification never replaces by another object: the objects of Railcraft Reborn can not be replaced, so GT6 takes them as its own, and where the target tables name them (plates, coke, ores) they are what GT6's own items turn into. */
 	public static final List<ModData> NO_UNIFICATION = new ArrayList<>();
 	
 	public boolean mLoaded;
@@ -64,7 +64,7 @@ public final class ModData implements ICondition<ITagDataContainer<?>> {
 		return this;
 	}
 
-	/** Marks the mod so that unification neither replaces its objects nor names them as the target of a replacement; the objects stay GT6's own by their data and by their names. */
+	/** Marks the mod so that unification never replaces its objects; they stay GT6's own by their data and by their names, and they may be the target of a replacement. */
 	public ModData setNoUnification() {
 		if (!NO_UNIFICATION.contains(this)) NO_UNIFICATION.add(this);
 		return this;
