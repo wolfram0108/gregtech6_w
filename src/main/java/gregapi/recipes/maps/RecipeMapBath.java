@@ -121,6 +121,19 @@ public class RecipeMapBath extends RecipeMap {
 					return null;
 				}
 			}
+			// Reborn's glass and posts exist per colour only: the bath of any colour into any other is found here, as 1.7.10 found it by the wildcard meta.
+			int tRCColour = gregapi.compat.RailcraftNames.colour(aInput);
+			if (tRCColour >= 0) {
+				for (byte tDyeIndex = 0; tDyeIndex < 16; tDyeIndex++) for (FluidStack tDye : DYE_FLUIDS[tDyeIndex]) if (FL.equal(tDye, aFluids[0])) {
+					ItemStack tDyed = tDyeIndex == tRCColour ? null : gregapi.compat.RailcraftNames.recoloured(aInput, tDyeIndex);
+					return ST.invalid(tDyed) ? null : new Recipe(F, F, F, ST.array(ST.amount(1, aInput)), ST.array(tDyed), null, null, FL.array(FL.mul(tDye, 1, 16, T)), ZL_FS, 16, 0, 0);
+				}
+				if (FL.equal(MT.Cl.fluid(U, T), aFluids[0])) {
+					int tBase = gregapi.compat.RailcraftNames.bleached(aInput);
+					ItemStack tBleached = tBase == tRCColour ? null : gregapi.compat.RailcraftNames.recoloured(aInput, tBase);
+					return ST.invalid(tBleached) ? null : new Recipe(F, F, F, ST.array(ST.amount(1, aInput)), ST.array(tBleached), null, null, FL.array(MT.Cl.fluid(U20, T)), ZL_FS, 16, 0, 0);
+				}
+			}
 			if (ST.armor(aInput)) for (byte tColor = 0; tColor < 16; tColor++) for (FluidStack aDye : DYE_FLUIDS[tColor]) if (FL.equal(aDye, aFluids[0])) {
 				ItemStack tOutput = CR.getany(aTileEntity==null?DW:aTileEntity.getWorld(), ST.array(aInput, NI, NI, NI, NI, NI, NI, NI, ST.make(Items.INK_SAC, 1, tColor)));
 				if (ST.invalid(tOutput)) return null;
@@ -190,7 +203,7 @@ public class RecipeMapBath extends RecipeMap {
 	@Override
 	public boolean containsInput(ItemStack aStack, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {
 		PlankEntry aEntry = WoodDictionary.PLANKS_ANY.get(aStack);
-		return (aEntry != null && ANY.WoodUntreated.mToThis.contains(aEntry.mMaterialPlank)) || (aStack != null && (ST.armor(aStack) || (aStack.getItem() instanceof IItemColorableRGB && (((IItemColorableRGB)aStack.getItem()).canRecolorItem(aStack) || ((IItemColorableRGB)aStack.getItem()).canDecolorItem(aStack))))) || (ST.food(aStack) > 0 && FL.getFluid(aStack, T) == null) || super.containsInput(aStack, aTileEntity, aSpecialSlot);
+		return (aEntry != null && ANY.WoodUntreated.mToThis.contains(aEntry.mMaterialPlank)) || gregapi.compat.RailcraftNames.colour(aStack) >= 0 || (aStack != null && (ST.armor(aStack) || (aStack.getItem() instanceof IItemColorableRGB && (((IItemColorableRGB)aStack.getItem()).canRecolorItem(aStack) || ((IItemColorableRGB)aStack.getItem()).canDecolorItem(aStack))))) || (ST.food(aStack) > 0 && FL.getFluid(aStack, T) == null) || super.containsInput(aStack, aTileEntity, aSpecialSlot);
 	}
 	@Override public boolean containsInput(FluidStack aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aFluid != null && aFluid.getFluid() != null && (super.containsInput(aFluid, aTileEntity, aSpecialSlot) || FluidsGT.BATH.contains(FL.regName(aFluid.getFluid())));}
 	@Override public boolean containsInput(Fluid aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aFluid != null && (super.containsInput(aFluid, aTileEntity, aSpecialSlot) || FluidsGT.BATH.contains(FL.regName(aFluid)));}

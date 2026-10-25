@@ -73,7 +73,6 @@ import gt6mirror.ic2.api.recipe.IMachineRecipeManager;
 import gt6mirror.ic2.api.recipe.IMachineRecipeManagerExt;
 import gt6mirror.ic2.api.recipe.IRecipeInput;
 import gt6mirror.ic2.api.recipe.RecipeOutput;
-import gt6mirror.mods.railcraft.common.items.enchantment.RailcraftEnchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -2221,12 +2220,11 @@ public class UT {
 		}
 		
 		
-		// F10 seam: RailcraftEnchantments.destruction/wrecking/implosion — the compat-mirror interface
-		// (mods/railcraft/.../RailcraftEnchantments.java) is currently an empty stub with no members (foreign zone,
-		// not F8) — the symbol will appear when the owner of the F10 mirror adds the fields. The call is left 1:1.
-		public static int getEnchantmentLevelDestruction   (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.destruction, aStack) : 0;}
-		public static int getEnchantmentLevelWrecking      (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.wrecking   , aStack) : 0;}
-		public static int getEnchantmentLevelImplosion     (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.implosion  , aStack) : 0;}
+		// Railcraft Reborn 1.20.1 registers its enchantments as objects of the engine registry under its mod id: ask the registry by id, so no Reborn class is needed.
+		private static Enchantment railcraftEnchantment(String aName) {return net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(ModIDs.RC, aName));}
+		public static int getEnchantmentLevelDestruction   (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("destruction"), aStack) : 0;}
+		public static int getEnchantmentLevelWrecking      (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("wrecking")   , aStack) : 0;}
+		public static int getEnchantmentLevelImplosion     (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(railcraftEnchantment("implosion")  , aStack) : 0;}
 		// 1.20.1: "fortune"/"looting" — ready-made Enchantment objects again (Enchantments.BLOCK_FORTUNE/MOB_LOOTING,
 		// forge-1201-decompiled …/Enchantments.java:27,32), no registry/Holder needed — the original's form 1:1
 		// (gt6-original …/UT.java:2350). Fully-qualified class name (no import) — the simple name "Enchantments" in this

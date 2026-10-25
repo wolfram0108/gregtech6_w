@@ -87,7 +87,7 @@ public class RM {
 	, Calciner                  = new RecipeMap                     (null, "gt.recipe.calciner"                     , "Calciner"                        , null, 0, 1, RES_PATH_GUI+"machines/Calciner"                  ,/*IN-OUT-MIN-ITEM=*/ 3, 3, 0,/*IN-OUT-MIN-FLUID=*/ 3, 3, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
 	, ImplosionCompressor       = new RecipeMap                     (null, "gt.recipe.implosioncompressor"          , "Implosion Compressor"            , null, 0, 1, RES_PATH_GUI+"machines/ImplosionCompressor"       ,/*IN-OUT-MIN-ITEM=*/ 3, 3, 3,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
 	, Compressor                = new RecipeMap                     (null, "gt.recipe.compressor"                   , "Compressor"                      , null, 0, 1, RES_PATH_GUI+"machines/Compressor"                ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
-	, Injector                  = new RecipeMap                     (null, "gt.recipe.injector"                     , "Injector"                        , null, 0, 1, RES_PATH_GUI+"machines/Injector"                  ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 0,/*IN-OUT-MIN-FLUID=*/ 2, 1, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Injector                  = new RecipeMapInjector             (null, "gt.recipe.injector"                     , "Injector"                        , null, 0, 1, RES_PATH_GUI+"machines/Injector"                  ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 0,/*IN-OUT-MIN-FLUID=*/ 2, 1, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
 	, Loom                      = new RecipeMap                     (null, "gt.recipe.loom"                         , "Loom"                            , null, 0, 1, RES_PATH_GUI+"machines/Loom"                      ,/*IN-OUT-MIN-ITEM=*/ 6, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
 	, Laminator                 = new RecipeMap                     (null, "gt.recipe.laminator"                    , "Laminator"                       , null, 0, 1, RES_PATH_GUI+"machines/Laminator"                 ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 2,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
 	, Autoclave                 = new RecipeMap                     (null, "gt.recipe.autoclave"                    , "Autoclave"                       , null, 0, 1, RES_PATH_GUI+"machines/Autoclave"                 ,/*IN-OUT-MIN-ITEM=*/ 2, 3, 2,/*IN-OUT-MIN-FLUID=*/ 1, 1, 1,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
@@ -919,16 +919,6 @@ public class RM {
 						te_sawmill(32000, ST.copy(aInput), ST.copy(aOutput1), ST.copy(aOutput2), aChance2<=0?10:aChance2);
 				}
 			} else {
-				if (!OP.log.contains(aInput) && ConfigsGT.RECIPES.get(ConfigCategories.Machines.rockcrushing, aInput, ST.block(aInput) != NB)) {
-					try {
-						if (ST.block(aInput) != Blocks.OBSIDIAN && ST.block(aInput) != Blocks.GRAVEL) {
-							gt6mirror.mods.railcraft.api.crafting.IRockCrusherRecipe tRecipe = gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.rockCrusher.createNewRecipe(ST.amount(1, aInput), ST.meta_(aInput) != W, F);
-							tRecipe.addOutput(ST.copy(aOutput1), 1.0F/aInput.getCount());
-							if (aOutput2 != null) tRecipe.addOutput(ST.copy(aOutput2), (0.01F*(aChance2<=0?10:aChance2))/aInput.getCount());
-							if (aOutput3 != null) tRecipe.addOutput(ST.copy(aOutput3), (0.01F*(aChance3<=0?10:aChance3))/aInput.getCount());
-						}
-					} catch(Throwable e) {/*Do nothing*/}
-				}
 				if (ConfigsGT.RECIPES.get(ConfigCategories.Machines.pulverization, aInput, T)) {
 					if (aOutput2 == null)
 						te_pulverizer(32000, ST.copy(aInput), ST.copy(aOutput1));

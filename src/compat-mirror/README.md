@@ -75,7 +75,8 @@ GregTech6 местами **реализует интерфейсы чужих м
 | `openblocks.api.IPaintableBlock` | `MultiTileEntityBlockWithCompat` | ⬜ |
 
 Плюс прямые упоминания чужих типов в сигнатурах/полях ядра (ic2.api.recipe/crops/energy.event,
-forestry.api.genetics, thaumcraft.api, railcraft, cofh) — добираются тем же приёмом при выходе на них.
+forestry.api.genetics, thaumcraft.api, cofh) — добираются тем же приёмом при выходе на них. Railcraft подключён (Reborn): его зеркала
+снятые, от всего API осталась заготовка `provided/mods/railcraft/api/item/Crowbar.java`.
 
 ## `provided/` — заготовки модов, которые есть в игре настоящими jar
 
