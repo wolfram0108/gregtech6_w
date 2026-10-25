@@ -148,6 +148,8 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		if (WD.block(aWorld, aX, aY, aZ) != aMTEContainer.mBlock) {sPlaceAbort2.incrementAndGet(); try {aWorld.getChunk(aX >> 4, aZ >> 4).removeBlockEntity(new BlockPos(aX, aY, aZ));} catch (Throwable e) {/**/} WD.set(aWorld, aX, aY, aZ, NB, 0, 0); return F;}
 		// And finally properly set the TileEntity for real!
 		WD.te (aWorld, aX, aY, aZ, aMTEContainer.mTileEntity, aCauseBlockUpdates);
+		// The engine's light thread reads the light the block absorbs from its state; the TileEntity's answer goes there now that it stands.
+		aMTEContainer.mBlock.syncLight(aWorld, new BlockPos(aX, aY, aZ), aMTEContainer.mTileEntity);
 		// Yep, all this just to set one Block and its TileEntity properly...
 		// Cross-chunk tile-entity persistence is registered centrally in WD.te, the single attachment point for MTE tile entities.
 		
