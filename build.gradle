@@ -317,6 +317,8 @@ def devRunMods = [
 if (project.hasProperty('gt6probes')) devRunMods << 'sodium-neoforge-0.9.1-mc26.1.2.jar'
 // The quest book sends item data through its own Json5 packer; only the stands and yards that judge that path load it.
 if (project.hasProperty('gt6probes')) devRunMods.addAll(["ftb-library-neoforge-${ftblibrary_version}.jar", "ftb-teams-neoforge-${ftbteams_version}.jar", "ftb-quests-neoforge-${ftbquests_version}.jar"])
+// Railcraft Reborn registers its items under names the 1.7.10 unification rows do not know; only the stands that judge that load it.
+if (project.hasProperty('gt6probes')) devRunMods << "railcraft-reborn-${railcraft_version}.jar"
 // json5-java is nested in the Library jar (META-INF/jarjar), so javac cannot see it there; a copy is compile-only, never on the run classpath.
 def probeCompileMods = (devRunMods + ["exmachina-${exmachina_version}.jar", "json5-java-${json5_version}.jar"]).collect { new File(localMods, it) }
 

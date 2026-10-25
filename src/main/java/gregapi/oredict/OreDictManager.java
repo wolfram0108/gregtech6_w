@@ -520,7 +520,7 @@ public final class OreDictManager {
 	}
 	
 	public boolean isBlacklisted(ItemStack aStack) {
-		return sNoUnificationSet.contains(aStack, T);
+		return sNoUnificationSet.contains(aStack, T) || ModData.noUnification(aStack);
 	}
 	
 	public boolean addTarget(OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack) {
