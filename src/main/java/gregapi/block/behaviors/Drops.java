@@ -80,7 +80,8 @@ public class Drops {
 	
 	public ArrayList<ItemStack> getDrops(PrefixBlock aBlock, Level aWorld, int aX, int aY, int aZ, short aMetaData, BlockEntity aTileEntity, int aFortune, boolean aSilkTouch) {
 		ArrayListNoNulls<ItemStack> rList = ST.arraylist();
-		rList.add(ST.update(ST.make(item(aFortune>0?aSilkTouch?mDropFortune:mDropSilkFortune:aSilkTouch?mDropSilkTouch:mDropNormal), mPreferSilk&&aSilkTouch?1:mFortunable?1+RNGSUS.nextInt(aFortune+1):1, aMetaData, aTileEntity instanceof PrefixBlockTileEntity?((PrefixBlockTileEntity)aTileEntity).mItemNBT:null)));
+		// The drop is a stack made right now: where Railcraft has the twin of the ore block or the raw ore, the twin is what drops, and no GT6 form of it is ever seen.
+		rList.add(gregapi.util.OM.atSource(ST.update(ST.make(item(aFortune>0?aSilkTouch?mDropFortune:mDropSilkFortune:aSilkTouch?mDropSilkTouch:mDropNormal), mPreferSilk&&aSilkTouch?1:mFortunable?1+RNGSUS.nextInt(aFortune+1):1, aMetaData, aTileEntity instanceof PrefixBlockTileEntity?((PrefixBlockTileEntity)aTileEntity).mItemNBT:null))));
 		return rList;
 	}
 

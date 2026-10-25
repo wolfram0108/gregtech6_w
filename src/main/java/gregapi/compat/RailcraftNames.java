@@ -193,6 +193,68 @@ public final class RailcraftNames {
 		TABLE.map("tool.signal.label", "railcraft:signal_label");
 	}
 
+	/** Reborn's metals, dusts, raw ores and storage blocks that share a convention tag with a GT6 material (data/c/tags/item of 26.1.2, data/forge/tags/items of
+	 *  1.20.1 in reference/mods/Railcraft-Reborn). Unification cannot change them, so they stand where GT6's own forms would stand: prefix, GT6 material by its
+	 *  internal name, id in Reborn. The original named Railcraft only for the 15 target rows; the rest of the overlap is decided by the same rule. */
+	private static final String[][] DICTIONARY = {
+	  {"blockSolid", "Brass", "brass_block"}
+	, {"blockSolid", "Bronze", "bronze_block"}
+	, {"blockSolid", "Invar", "invar_block"}
+	, {"blockSolid", "Lead", "lead_block"}
+	, {"blockSolid", "Nickel", "nickel_block"}
+	, {"blockSolid", "Silver", "silver_block"}
+	, {"blockSolid", "Steel", "steel_block"}
+	, {"blockSolid", "Tin", "tin_block"}
+	, {"blockSolid", "Zinc", "zinc_block"}
+	, {"dust", "Charcoal", "charcoal_dust"}
+	, {"dust", "Coal", "coal_dust"}
+	, {"dust", "EnderPearl", "ender_dust"}
+	, {"dust", "Obsidian", "obsidian_dust"}
+	, {"dust", "Sulfur", "sulfur_dust"}
+	, {"ingot", "Brass", "brass_ingot"}
+	, {"ingot", "Bronze", "bronze_ingot"}
+	, {"ingot", "Invar", "invar_ingot"}
+	, {"ingot", "Lead", "lead_ingot"}
+	, {"ingot", "Nickel", "nickel_ingot"}
+	, {"ingot", "Silver", "silver_ingot"}
+	, {"ingot", "Steel", "steel_ingot"}
+	, {"ingot", "Tin", "tin_ingot"}
+	, {"ingot", "Zinc", "zinc_ingot"}
+	, {"nugget", "Brass", "brass_nugget"}
+	, {"nugget", "Bronze", "bronze_nugget"}
+	, {"nugget", "Invar", "invar_nugget"}
+	, {"nugget", "Lead", "lead_nugget"}
+	, {"nugget", "Nickel", "nickel_nugget"}
+	, {"nugget", "Silver", "silver_nugget"}
+	, {"nugget", "Steel", "steel_nugget"}
+	, {"nugget", "Tin", "tin_nugget"}
+	, {"nugget", "Zinc", "zinc_nugget"}
+	, {"oreRaw", "Lead", "lead_raw"}
+	, {"oreRaw", "Nickel", "nickel_raw"}
+	, {"oreRaw", "Silver", "silver_raw"}
+	, {"oreRaw", "Tin", "tin_raw"}
+	, {"oreRaw", "Zinc", "zinc_raw"}
+	, {"plate", "Brass", "brass_plate"}
+	, {"plate", "Bronze", "bronze_plate"}
+	, {"plate", "Gold", "gold_plate"}
+	, {"plate", "Invar", "invar_plate"}
+	, {"plate", "Nickel", "nickel_plate"}
+	, {"plate", "Silver", "silver_plate"}
+	, {"plate", "Zinc", "zinc_plate"}
+	};
+
+	/** Makes those objects of Reborn the targets of unification, after every other table has spoken; a version of Reborn without one of them skips it. */
+	public static void setDictionaryTargets() {
+		if (!MD.RC.mLoaded) return;
+		for (String[] tRow : DICTIONARY) {
+			gregapi.oredict.OreDictPrefix tPrefix = gregapi.oredict.OreDictPrefix.get(tRow[0]);
+			gregapi.oredict.OreDictMaterial tMaterial = gregapi.oredict.OreDictMaterial.get(tRow[1]);
+			net.minecraft.world.item.Item tItem = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.fromNamespaceAndPath(MD.RC.mID, tRow[2]));
+			if (tPrefix == null || tMaterial == null || tItem == null || tItem == net.minecraft.world.item.Items.AIR) continue;
+			gregapi.oredict.OreDictManager.INSTANCE.setTarget(tPrefix, tMaterial, new net.minecraft.world.item.ItemStack(tItem));
+		}
+	}
+
 	/** The colour of a Reborn strengthened glass or post, as the 1.7.10 colour id (0 black … 15 white); -1 for anything else. */
 	public static int colour(net.minecraft.world.item.ItemStack aStack) {
 		if (aStack == null || aStack.isEmpty() || !MD.RC.mLoaded) return -1;

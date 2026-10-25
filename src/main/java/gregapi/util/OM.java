@@ -51,6 +51,10 @@ public class OM {
 	public static ItemStack get_(ItemStack aStack) {
 		return OreDictManager.INSTANCE.getStack_(T, aStack);
 	}
+	/** For a source that makes a stack right now (a drop, a loot roll): see {@link OreDictManager#getStackAtSource}. */
+	public static ItemStack atSource(ItemStack aStack) {
+		return OreDictManager.INSTANCE.getStackAtSource(aStack);
+	}
 	
 	/** @Deprecated Well not really deprecated but I use aPrefix.mat(aMaterial, aStackSize) instead */
 	public static ItemStack get(OreDictPrefix aPrefix, OreDictMaterial aMaterial, long aStackSize) {
