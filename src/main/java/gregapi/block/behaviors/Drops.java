@@ -71,10 +71,7 @@ public class Drops {
 	
 	public ArrayList<ItemStack> getDrops(PrefixBlock aBlock, Level aWorld, int aX, int aY, int aZ, int aFortune, boolean aSilkTouch) {
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		// The material comes through the funnel (the ore map first, an entity only as the fallback): a standing ore keeps it in the map, and the entity
-		// the engine may have created there is a placeholder that does not know it.
-		short tMetaData = aBlock.getMetaDataValue(aWorld, aX, aY, aZ);
-		if (tMetaData != 0 || aTileEntity instanceof PrefixBlockTileEntity) return getDrops(aBlock, aWorld, aX, aY, aZ, tMetaData, aTileEntity, aFortune, aSilkTouch);
+		if (aTileEntity instanceof PrefixBlockTileEntity) return getDrops(aBlock, aWorld, aX, aY, aZ, aBlock.getMetaDataValue(aTileEntity), aTileEntity, aFortune, aSilkTouch);
 		return ST.arraylist();
 	}
 	

@@ -217,9 +217,8 @@ public class Loader_Ores implements Runnable {
 		rockset(MD.HBM, "tile.stone_gneiss"                       , 0, "hbm.gneiss"             , OP.oreGneiss              , MT.STONES.Gneiss);
 		rockset(MD.HBM, "tile.basalt_smooth"                      , 0, "hbm.basalt"             , OP.oreBasalt              , MT.STONES.Basalt);
 		
-		// Railcraft Reborn keeps its stones as blocks of their own (1.7.10: cube metas 6 and 7) and registers them before GT6's blocks are built, but after this phase: the rows name them when the registry is filled.
-		rocksetLate(MD.RC, () -> gregapi.compat.RailcraftNames.TABLE.block("cube", 6), "rc.abyssal" , OP.oreBasalt, MT.STONES.Basalt);
-		rocksetLate(MD.RC, () -> gregapi.compat.RailcraftNames.TABLE.block("cube", 7), "rc.quarried", OP.oreMarble, MT.STONES.Marble);
+		rockset(MD.RC, "cube"                                     , 6, "rc.abyssal"             , OP.oreBasalt              , MT.STONES.Basalt);
+		rockset(MD.RC, "cube"                                     , 7, "rc.quarried"            , OP.oreMarble              , MT.STONES.Marble);
 		
 		rockset(MD.SC2, "BlockSlate"     , 0, 0, "BlockSlate"     , 3, "sc2.blueslate"          , OP.oreSlate               , MT.STONES.Slate);
 		rockset(MD.SC2, "BlockSlate"     , 1, 1, "BlockSlate"     , 4, "sc2.redslate"           , OP.oreSlate               , MT.STONES.Slate);
@@ -481,43 +480,20 @@ public class Loader_Ores implements Runnable {
 			tHidden = T;
 		}
 		
-		final Block tRockNow = aRock, tCobbleNow = aCobble;
-		return rocksetCore(aMod, () -> tRockNow, aMetaA, aMetaB, () -> tCobbleNow, aMeta, aName, aPrefix, aDrops, aBaseHardness, aBaseResistance, aHarvestLevelMinimum, aGravity, aEnderDragonProof, aStoneOverrideable, tHidden);
-	}
-
-	/** A host rock of a mod that registers its blocks after this phase (Railcraft Reborn's stones): the ore blocks name it when the block registry is filled, the mod's own entry in the mod file orders it before GT6. */
-	public static boolean rocksetLate(ModData aMod, java.util.function.Supplier<Block> aRock, String aName, OreDictPrefix aPrefix, OreDictMaterial aDrops) {
-		if (!aMod.mLoaded) return rockset(aMod, NB, 0, aName, aPrefix, aDrops, 1, 1, 0, F, F, T);
-		return rocksetCore(aMod, aRock, 0, 0, aRock, 0, aName, aPrefix, aDrops, 1.0F, 1.0F, 0, F, F, T, F);
-	}
-
-	/** The material of an ore's host rock while the blocks are built, when the tags are not bound yet: the engine's own blocks are known by name, any other host is a rock by the meaning of the rock sets. The namespace is read from the block registry, since the items of the blocks are not registered yet. */
-	private static gregapi.block.Material materialOf(Block aHost) {
-		return "minecraft".equals(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aHost).getNamespace()) ? WD.getMaterial(aHost) : gregapi.block.Material.rock;
-	}
-
-	/** The host block of an ore when the registry is filled; stone when the mod did not register it, so that the ore still exists. */
-	private static Block hostOf(java.util.function.Supplier<Block> aHost) {
-		Block tHost = aHost.get();
-		return tHost == null || tHost == NB ? Blocks.STONE : tHost;
-	}
-
-	private static boolean rocksetCore(ModData aMod, java.util.function.Supplier<Block> aRockOf, int aMetaA, int aMetaB, java.util.function.Supplier<Block> aCobbleOf, int aMeta, String aName, OreDictPrefix aPrefix, OreDictMaterial aDrops, float aBaseHardness, float aBaseResistance, int aHarvestLevelMinimum, boolean aGravity, boolean aEnderDragonProof, boolean aStoneOverrideable, boolean tHidden) {
 		// 3 ore blocks are built via registerBlockLazy; captured params are final, blocks held in array h[].
 		// Null drops use PrefixBlock's passive default; deferItemInit sets real mDrops later, in original order.
-		final ModData fMod = aMod; final java.util.function.Supplier<Block> fRockOf = aRockOf, fCobbleOf = aCobbleOf; final OreDictPrefix fPrefix = aPrefix;
+		final ModData fMod = aMod; final Block fRock = aRock, fCobble = aCobble; final OreDictPrefix fPrefix = aPrefix;
 		final OreDictMaterial fDrops = aDrops; final String fName = aName;
 		final int fMetaA = aMetaA, fMetaB = aMetaB, fMeta = aMeta, fHarvestMin = aHarvestLevelMinimum;
 		final float fHard = aBaseHardness, fRes = aBaseResistance;
 		final boolean fHidden = tHidden, fGravity = aGravity, fEnder = aEnderDragonProof, fOverride = aStoneOverrideable;
 		final PrefixBlock[] h = new PrefixBlock[3];
-		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.normal."+fName, () -> {PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.normal."+fName, fPrefix    , null                                    , BlockTextureCopied.get(hostOf(fRockOf), fMetaA==W?0:fMetaA), materialOf(hostOf(fRockOf)), WD.soundType(hostOf(fRockOf)), TOOL_pickaxe, fHard  , fRes  ,  0, fHarvestMin, fGravity, fEnder, OreDictMaterial.MATERIAL_ARRAY); o.setHidden(fHidden); h[0]=o; return (net.minecraft.world.level.block.Block)o;});
-		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.broken."+fName, () -> {PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.broken."+fName, fPrefix    , null                                    , BlockTextureCopied.get(hostOf(fCobbleOf), fMeta ==W?0:fMeta ), materialOf(hostOf(fCobbleOf)), WD.soundType(hostOf(fCobbleOf)), TOOL_pickaxe, fHard/2, fRes/2, -1, fHarvestMin, T       , fEnder, OreDictMaterial.MATERIAL_ARRAY); o.setHidden(fHidden); h[1]=o; return (net.minecraft.world.level.block.Block)o;});
-		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.small." +fName, () -> {PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.small." +fName, OP.oreSmall, fMod.mLoaded ? new Drops_SmallOre(fDrops) : null, BlockTextureCopied.get(hostOf(fRockOf), fMetaA==W?0:fMetaA), materialOf(hostOf(fRockOf)), WD.soundType(hostOf(fRockOf)), TOOL_pickaxe, fHard  , fRes  , -1, fHarvestMin, fGravity, fEnder, OreDictMaterial.MATERIAL_ARRAY); o.setHidden(fHidden); h[2]=o; return (net.minecraft.world.level.block.Block)o;});
+		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.normal."+fName, () -> {PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.normal."+fName, fPrefix    , null                                    , BlockTextureCopied.get(fRock  , fMetaA==W?0:fMetaA), WD.getMaterial(fRock), WD.soundType(fRock), TOOL_pickaxe, fHard  , fRes  ,  0, fHarvestMin, fGravity, fEnder, OreDictMaterial.MATERIAL_ARRAY); o.setHidden(fHidden); h[0]=o; return (net.minecraft.world.level.block.Block)o;});
+		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.broken."+fName, () -> {PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.broken."+fName, fPrefix    , null                                    , BlockTextureCopied.get(fCobble, fMeta ==W?0:fMeta ), WD.getMaterial(fCobble), WD.soundType(fCobble), TOOL_pickaxe, fHard/2, fRes/2, -1, fHarvestMin, T       , fEnder, OreDictMaterial.MATERIAL_ARRAY); o.setHidden(fHidden); h[1]=o; return (net.minecraft.world.level.block.Block)o;});
+		GT_API.registerBlockLazy(MD.GT.mID, "gt.meta.ore.small." +fName, () -> {PrefixBlock_ o = new PrefixBlock_(MD.GT, "gt.meta.ore.small." +fName, OP.oreSmall, fMod.mLoaded ? new Drops_SmallOre(fDrops) : null, BlockTextureCopied.get(fRock  , fMetaA==W?0:fMetaA), WD.getMaterial(fRock), WD.soundType(fRock), TOOL_pickaxe, fHard  , fRes  , -1, fHarvestMin, fGravity, fEnder, OreDictMaterial.MATERIAL_ARRAY); o.setHidden(fHidden); h[2]=o; return (net.minecraft.world.level.block.Block)o;});
 
 		GT_API.deferItemInit(() -> {
 			PrefixBlock tOre1 = h[0], tOre2 = h[1], tOre3 = h[2];
-			final Block fRock = hostOf(fRockOf);
 			if (fMod.mLoaded) {
 				if (fOverride) {
 					BlocksGT.stoneOverridable.add(tOre1);

@@ -25,7 +25,6 @@ package gregapi.util;
 
 import gregapi.code.*;
 import gregapi.data.CS;
-import gregapi.data.MD;
 import gregapi.oredict.OreDictItemData;
 import gregapi.oredict.OreDictManager;
 import gregapi.recipes.AdvancedCraftingShaped;
@@ -649,13 +648,6 @@ public class CR {
 			if (tOre instanceof ShapedOreRecipe tShaped) tForge.put(tShaped.mSourceId, tOre); else if (tOre instanceof ShapelessOreRecipe tShapeless) tForge.put(tShapeless.mSourceId, tOre);
 		}
 		for (VanillaRecipe tRecipe : tRecipes.values()) {tRecipe.mForge = tForge.get(tRecipe.mId); VANILLA_VIEW_IDS.add(tRecipe.mId);}
-		// Mods that loaded before GT6 had their workbench recipes in the same live list in 1.7.10; the manager already holds theirs, so the view takes them from there.
-		net.minecraft.server.MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
-		if (tServer != null) for (net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> tHolder : tServer.getRecipeManager().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
-			String tNamespace = tHolder.id().identifier().getNamespace();
-			if ("minecraft".equals(tNamespace) || MD.GAPI.mID.equals(tNamespace) || MD.GT.mID.equals(tNamespace)) continue;
-			if (tHolder.value() instanceof ShapedRecipe || tHolder.value() instanceof ShapelessRecipe) {tRecipes.put("~" + tHolder.id().identifier(), new VanillaRecipe(tHolder.id(), tHolder.value())); VANILLA_VIEW_IDS.add(tHolder.id());}
-		}
 		VANILLA_VIEW = new ArrayList<>(tRecipes.values());
 		OUT.println("CR: vanilla crafting view opened with " + VANILLA_VIEW.size() + " recipes, " + tForge.size() + " of them as Forge's ore versions, " + tFailed[0] + " unreadable.");
 	}
@@ -879,12 +871,7 @@ public class CR {
 	 * Removes a Crafting Recipe after Post Init.
 	 * @param The output of the Recipe.
 	 */
-	public static void delate(ModData aMod, String aName, int aMetaData, int... aOtherMetaData) {
-		// The funnel answers per meta: a mod that renamed its items keeps this name's metas in different items, which the item of meta 0 would hide.
-		ItemStack tFirst = ST.make(aMod, aName, 1, aMetaData);
-		if (ST.valid(tFirst)) delate(tFirst);
-		for (int tMetaData : aOtherMetaData) {ItemStack tStack = ST.make(aMod, aName, 1, tMetaData); if (ST.valid(tStack)) delate(tStack);}
-	}
+	public static void delate(ModData aMod, String aName, int aMetaData, int... aOtherMetaData) {Item aItem = ST.item(aMod, aName); if (aItem == null) return; delate(ST.make(aItem, 1, aMetaData)); for (int tMetaData : aOtherMetaData) delate(ST.make(aItem, 1, tMetaData));}
 	
 	/** 1.7.10's remove(...) deleted a matching recipe from the live CraftingManager, including vanilla ones; since
 	 *  vanilla lives in the datapack now and GT6's buffer never held it, so this collects grids to suppress datapack matches. */

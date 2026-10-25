@@ -31,9 +31,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,9 +39,6 @@ import java.util.Map;
  */
 public final class ModData implements ICondition<ITagDataContainer<?>> {
 	public static final Map<String, ModData> MODS = new HashMap<>();
-
-	/** The mods whose objects unification never replaces by another object: the objects of Railcraft Reborn can not be replaced, so GT6 takes them as its own, and where the target tables name them (plates, coke, ores) they are what GT6's own items turn into. */
-	public static final List<ModData> NO_UNIFICATION = new ArrayList<>();
 	
 	public boolean mLoaded;
 	
@@ -62,18 +57,6 @@ public final class ModData implements ICondition<ITagDataContainer<?>> {
 	public ModData setLoaded(boolean aLoaded) {
 		mLoaded = aLoaded;
 		return this;
-	}
-
-	/** Marks the mod so that unification never replaces its objects; they stay GT6's own by their data and by their names, and they may be the target of a replacement. */
-	public ModData setNoUnification() {
-		if (!NO_UNIFICATION.contains(this)) NO_UNIFICATION.add(this);
-		return this;
-	}
-
-	/** Whether the stack is an object of a mod that unification must not touch. */
-	public static boolean noUnification(ItemStack aStack) {
-		for (ModData tMod : NO_UNIFICATION) if (tMod.owns(aStack)) return true;
-		return false;
 	}
 	
 	public boolean owns (BlockGetter aWorld, int aX, int aY, int aZ) {return mLoaded && owns_(ST.regName(WD.block(aWorld, aX, aY, aZ)));}

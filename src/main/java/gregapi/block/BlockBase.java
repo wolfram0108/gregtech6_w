@@ -242,11 +242,11 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// to GT6's own getDrops hook, reading metadata from the state snapshot since the block is already air by this point.
 	@Override protected List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
-		net.minecraft.core.BlockPos tPos = WD.lootBlockPos(aParams, aState);
-		if (tPos == null) return super.getDrops(aState, aParams);
+		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
+		if (tOrigin == null) return super.getDrops(aState, aParams);
 		// Explosion-drop gating goes through the single WD.explosionDropDenied center; no duplicate copies remain.
 		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList();
-		int tX = tPos.getX(), tY = tPos.getY(), tZ = tPos.getZ();
+		int tX = net.minecraft.util.Mth.floor(tOrigin.x), tY = net.minecraft.util.Mth.floor(tOrigin.y), tZ = net.minecraft.util.Mth.floor(tOrigin.z);
 		int tFortune = WD.lootFortune(aParams);
 		// Hay-bale variants used to drop the wrong variant because reading metadata from the world
 		// returned 0 for an already-air block; this reads it from the state snapshot instead, the same fix as above.

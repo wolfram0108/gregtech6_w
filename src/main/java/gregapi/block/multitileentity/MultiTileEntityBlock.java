@@ -659,9 +659,9 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList();
 		BlockEntity tBE = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY);
 		if (tBE == null) {
-			net.minecraft.core.BlockPos tPos = WD.lootBlockPos(aParams, aState);
-			if (tPos == null) return super.getDrops(aState, aParams);
-			tBE = WD.te(aParams.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ(), T);
+			net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
+			if (tOrigin == null) return super.getDrops(aState, aParams);
+			tBE = WD.te(aParams.getLevel(), net.minecraft.util.Mth.floor(tOrigin.x), net.minecraft.util.Mth.floor(tOrigin.y), net.minecraft.util.Mth.floor(tOrigin.z), T);
 		}
 		if (!(tBE instanceof IMTE_GetDrops tDrops)) return java.util.Collections.emptyList();
 		ArrayListNoNulls<ItemStack> rList = tDrops.getDrops(WD.lootFortune(aParams), WD.lootSilkTouch(aParams));

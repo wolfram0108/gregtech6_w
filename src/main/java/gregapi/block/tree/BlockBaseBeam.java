@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.SoundType;
 import static gregapi.data.CS.*;
 
 import gregapi.block.BlockBaseMeta;
+import gregapi.data.MD;
 import gregapi.data.OD;
 import gregapi.data.OP;
 import gregapi.render.IIconContainer;
@@ -35,6 +36,7 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
+import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import gregapi.block.Material;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.BlockItem;
@@ -50,6 +52,7 @@ public abstract class BlockBaseBeam extends BlockBaseMeta {
 	public BlockBaseBeam(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, Math.min(4, aMaxMeta), aIcons);
 		gregapi.GT_API.deferItemInit(() -> {for (int i = 0; i < 16; i++) OM.reg(ST.make(this, 1, i), OD.beamWood);});
+		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W)));
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 	}

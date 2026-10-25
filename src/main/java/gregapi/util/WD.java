@@ -1527,34 +1527,6 @@ public class WD {
 		return aBlock.defaultBlockState().canSurvive(aWorld, tPos);
 	}
 
-	/** CENTER of "which block is this loot call about". GT6 reads the loot context's ORIGIN as the coordinates of the broken block (the way the engine
-	 *  itself fills it for a player, an explosion or a piston), but Railcraft's tunnel bore fills ORIGIN with the position of the BORE and posts a
-	 *  BreakBlockEvent for the target right before the call. The listener (GT_API_Proxy) notes that target here; the answer below is the ORIGIN block
-	 *  unless a noted target of the very same state stands elsewhere and ORIGIN points at no such state. null = no ORIGIN at all.
-	 *  The note cannot leak: it is spent by the first answer that uses it, forgotten at every server tick (Pre and Post), replaced by the next event,
-	 *  never taken from a real player, and it is only trusted for the same level, the same game tick and a target that still stands in that state. */
-	private static Level sBreakLevel;
-	private static BlockPos sBreakPos;
-	private static BlockState sBreakState;
-	private static long sBreakTick;
-	public static void noteBreakTarget(LevelAccessor aLevel, BlockPos aPos, BlockState aState, net.minecraft.world.entity.player.Player aBreaker) {
-		forgetBreakTarget();
-		if (!(aLevel instanceof Level tLevel) || tLevel.isClientSide() || !(aBreaker instanceof net.neoforged.neoforge.common.util.FakePlayer)) return;
-		sBreakLevel = tLevel; sBreakPos = aPos.immutable(); sBreakState = aState; sBreakTick = tLevel.getGameTime();
-	}
-	public static void forgetBreakTarget() {sBreakLevel = null; sBreakPos = null; sBreakState = null;}
-	public static BlockPos lootBlockPos(net.minecraft.world.level.storage.loot.LootParams.Builder aParams, BlockState aState) {
-		Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
-		if (tOrigin == null) return null;
-		BlockPos rPos = BlockPos.containing(tOrigin);
-		ServerLevel tLevel = aParams.getLevel();
-		if (sBreakPos != null && sBreakLevel == tLevel && sBreakState == aState && sBreakTick == tLevel.getGameTime() && !sBreakPos.equals(rPos) && state(tLevel, sBreakPos) == aState && state(tLevel, rPos) != aState) {
-			rPos = sBreakPos;
-			forgetBreakTarget();
-		}
-		return rPos;
-	}
-
 	/** CENTER of the loot-context enchantments: 1.7.10 read fortune and silk touch off the player, the engine's loot
 	 *  context carries them on THIS_ENTITY (a living breaker) or on TOOL (a breaker without hands, e.g. an explosive). */
 	public static int lootFortune(net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {return lootEnchantment(aParams, net.minecraft.world.item.enchantment.Enchantments.FORTUNE);}
