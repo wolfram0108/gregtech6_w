@@ -35,14 +35,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import gregapi.api.Optional;
 import gregapi.block.BlockBaseMeta;
 import gregapi.data.CS.*;
-import gregapi.data.MD;
 import gregapi.data.OP;
 import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gt6mirror.micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock;
-import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 
 import gregapi.block.Material;
 import net.minecraft.world.item.CreativeModeTab;
@@ -78,7 +76,6 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
 		// setTickRandomly's old runtime-mutator call is replaced by overriding isRandomlyTicking below,
 		// since unlike setHardness/setResistance this override point actually exists on neo's Block.
-		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W)));
 	}
 

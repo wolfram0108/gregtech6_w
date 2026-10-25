@@ -53,7 +53,6 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gt6mirror.mekanism.api.MekanismAPI;
-import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.EntityBlock;
@@ -271,7 +270,6 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 			if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 		}
 		
-		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (MD.Mek.mLoaded) try {MekanismAPI.addBoxBlacklist(this, W);} catch(Throwable e) {e.printStackTrace(ERR);}
 		
 		if (mOpaque) VISUALLY_OPAQUE_BLOCKS.add(this);
@@ -739,11 +737,11 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// itself raises BlockDropsEvent → onBlockHarvestingEvent (unification/blockToSilk) — the 1.7.10 HarvestDropsEvent pipeline is intact.
 	@Override protected java.util.List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
-		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
-		if (tOrigin == null) return super.getDrops(aState, aParams);
+		net.minecraft.core.BlockPos tPos = WD.lootBlockPos(aParams, aState); // ORIGIN is the block for a player or an explosion, but the BORE for Railcraft's tunnel bore
+		if (tPos == null) return super.getDrops(aState, aParams);
 		// BUG-024: the explosion-drop gate — CENTER WD.explosionDropDenied (1.7.10 Explosion.doExplosionB / ExplosionGT:175; consolidation, copies eradicated).
 		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList();
-		int tX = net.minecraft.util.Mth.floor(tOrigin.x), tY = net.minecraft.util.Mth.floor(tOrigin.y), tZ = net.minecraft.util.Mth.floor(tOrigin.z);
+		int tX = tPos.getX(), tY = tPos.getY(), tZ = tPos.getZ();
 		int tFortune = WD.lootFortune(aParams); boolean tSilkTouch = WD.lootSilkTouch(aParams);
 		ArrayList<ItemStack> rDrops = mDrops.getDrops(this, tLevel, tX, tY, tZ, tFortune, tSilkTouch);
 		return rDrops == null ? java.util.Collections.emptyList() : rDrops;
