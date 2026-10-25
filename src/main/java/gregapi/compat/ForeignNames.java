@@ -59,7 +59,7 @@ public final class ForeignNames {
 	public ForeignNames carrier(ModData aCarrier) {mCarrier = aCarrier; return this;}
 
 	/** Every table the funnel knows. A new foreign mod joins by adding its table here. */
-	private static ForeignNames[] all() {return new ForeignNames[] {AE2Names.TABLE, BuildCraftNames.TABLE, EFRNames.TABLE};}
+	private static ForeignNames[] all() {return new ForeignNames[] {AE2Names.TABLE, BuildCraftNames.TABLE, EFRNames.TABLE, RailcraftNames.TABLE};}
 	// Built on first use: each table is a static field that itself constructs a ForeignNames, so an eager list
 	// here would read those fields while their classes are still initialising.
 	private static ForeignNames[] sAll = null;
@@ -94,6 +94,16 @@ public final class ForeignNames {
 	public String path(String aName, long aMeta) {
 		if (aName == null) return null;
 		return mSplit.contains(aName) ? mMapped.get(key(aName, aMeta)) : mMapped.get(aName);
+	}
+
+	/** The block of a «1.7.10 name + meta» pair from the block registry, which is filled before the item registry: a rock a later phase needs while the blocks are being built. NB when there is none. */
+	public net.minecraft.world.level.block.Block block(String aName, long aMeta) {
+		String tPath = path(aName, aMeta);
+		if (tPath == null) return NB;
+		int tColon = tPath.indexOf(':');
+		net.minecraft.resources.ResourceLocation tID = tColon < 0 ? new net.minecraft.resources.ResourceLocation(mModIDs[0], tPath) : new net.minecraft.resources.ResourceLocation(tPath);
+		net.minecraft.world.level.block.Block tBlock = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(tID);
+		return tBlock == null || tBlock == net.minecraft.world.level.block.Blocks.AIR ? NB : tBlock;
 	}
 
 	/** Whether the pair has a carrier today. The caller uses this to decide whether to register its entry. */

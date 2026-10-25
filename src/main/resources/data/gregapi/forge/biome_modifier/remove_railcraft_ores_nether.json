@@ -1,0 +1,13 @@
+{
+  "forge:conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "railcraft"
+    }
+  ],
+  "type": "forge:remove_features",
+  "biomes": "#minecraft:is_nether",
+  "features": [
+    "railcraft:firestone"
+  ]
+}

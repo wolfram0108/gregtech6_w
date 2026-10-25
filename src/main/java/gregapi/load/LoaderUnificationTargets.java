@@ -1362,5 +1362,8 @@ public class LoaderUnificationTargets implements Runnable {
 		}
 		OreDictManager.INSTANCE.setTarget(OP.stick          , MT.Wood                   , MD.TFCP.mLoaded?MD.TFCP:MD.TFC, "item.stick", 0);
 		OreDictManager.INSTANCE.setTarget(OP.stickLong      , MT.Wood                   , MD.TFCP.mLoaded?MD.TFCP:MD.TFC, "item.pole", 0);
+		
+		// Last, so that no other table names an object in place of Reborn's where Reborn has the twin of a GT6 form.
+		gregapi.compat.RailcraftNames.setDictionaryTargets();
 	}
 }

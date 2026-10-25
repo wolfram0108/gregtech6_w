@@ -1,0 +1,24 @@
+{
+  "forge:conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "railcraft"
+    }
+  ],
+  "type": "forge:remove_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": [
+    "railcraft:lead_ore",
+    "railcraft:nickel_ore_middle",
+    "railcraft:nickel_ore_small",
+    "railcraft:nickel_ore_upper",
+    "railcraft:saltpeter",
+    "railcraft:silver_ore",
+    "railcraft:silver_ore_lower",
+    "railcraft:sulfur_ore_lower",
+    "railcraft:sulfur_ore_upper",
+    "railcraft:tin_ore_large",
+    "railcraft:tin_ore_small",
+    "railcraft:zinc_ore"
+  ]
+}

@@ -2281,7 +2281,7 @@ public class CS {
 		, ABYSSAL           = "abyssalcraft"
 		, SOULFOREST        = "soulforest"
 		
-		, RC                = "Railcraft"
+		, RC                = "railcraft"
 		
 		, IE                = "ImmersiveEngineering"
 		

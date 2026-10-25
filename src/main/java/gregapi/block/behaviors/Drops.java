@@ -71,13 +71,17 @@ public class Drops {
 	
 	public ArrayList<ItemStack> getDrops(PrefixBlock aBlock, Level aWorld, int aX, int aY, int aZ, int aFortune, boolean aSilkTouch) {
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		if (aTileEntity instanceof PrefixBlockTileEntity) return getDrops(aBlock, aWorld, aX, aY, aZ, aBlock.getMetaDataValue(aTileEntity), aTileEntity, aFortune, aSilkTouch);
+		// The material comes through the funnel (the ore map first, an entity only as the fallback): a standing ore keeps it in the map, and the entity
+		// the engine may have created there is a placeholder that does not know it.
+		short tMetaData = aBlock.getMetaDataValue(aWorld, aX, aY, aZ);
+		if (tMetaData != 0 || aTileEntity instanceof PrefixBlockTileEntity) return getDrops(aBlock, aWorld, aX, aY, aZ, tMetaData, aTileEntity, aFortune, aSilkTouch);
 		return ST.arraylist();
 	}
 	
 	public ArrayList<ItemStack> getDrops(PrefixBlock aBlock, Level aWorld, int aX, int aY, int aZ, short aMetaData, BlockEntity aTileEntity, int aFortune, boolean aSilkTouch) {
 		ArrayListNoNulls<ItemStack> rList = ST.arraylist();
-		rList.add(ST.update(ST.make(item(aFortune>0?aSilkTouch?mDropFortune:mDropSilkFortune:aSilkTouch?mDropSilkTouch:mDropNormal), mPreferSilk&&aSilkTouch?1:mFortunable?1+RNGSUS.nextInt(aFortune+1):1, aMetaData, aTileEntity instanceof PrefixBlockTileEntity?((PrefixBlockTileEntity)aTileEntity).mItemNBT:null)));
+		// The drop is a stack made right now: where Railcraft has the twin of the ore block or the raw ore, the twin is what drops, and no GT6 form of it is ever seen.
+		rList.add(gregapi.util.OM.atSource(ST.update(ST.make(item(aFortune>0?aSilkTouch?mDropFortune:mDropSilkFortune:aSilkTouch?mDropSilkTouch:mDropNormal), mPreferSilk&&aSilkTouch?1:mFortunable?1+RNGSUS.nextInt(aFortune+1):1, aMetaData, aTileEntity instanceof PrefixBlockTileEntity?((PrefixBlockTileEntity)aTileEntity).mItemNBT:null))));
 		return rList;
 	}
 

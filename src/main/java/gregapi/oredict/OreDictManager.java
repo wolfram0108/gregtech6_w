@@ -519,7 +519,7 @@ public final class OreDictManager {
 	}
 	
 	public boolean isBlacklisted(ItemStack aStack) {
-		return sNoUnificationSet.contains(aStack, T);
+		return sNoUnificationSet.contains(aStack, T) || ModData.noUnification(aStack);
 	}
 	
 	public boolean addTarget(OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack) {
@@ -641,11 +641,21 @@ public final class OreDictManager {
 		if (ST.invalid(aStack)) return null;
 		return getStack_(aUseBlackList, aStack);
 	}
-	public ItemStack getStack_(boolean aUseBlackList, ItemStack aStack) {
+	public ItemStack getStack_(boolean aUseBlackList, ItemStack aStack) {return getStack_(aUseBlackList, aStack, F);}
+	/** The answer for a stack that is made right now (a drop, a loot roll), before anyone has seen it: a GT6 object that has an object of Railcraft
+	 *  as its twin is made as that object at once, so no GT6 form of it ever exists. */
+	public ItemStack getStackAtSource(ItemStack aStack) {
+		if (ST.invalid(aStack)) return aStack;
+		return getStack_(T, aStack, T);
+	}
+	public ItemStack getStack_(boolean aUseBlackList, ItemStack aStack, boolean aAtSource) {
 		OreDictItemData tAssociation = getAssociation_(aStack, F);
 		ItemStack rStack = null;
 		if (tAssociation == null || (aUseBlackList && tAssociation.mBlocked)) return ST.copy(aStack);
 		if (tAssociation.mUnificationTarget == null) tAssociation.mUnificationTarget = sName2StackMap.get(tAssociation.toString());
+		// An object of a mod unification must not touch takes the place of its GT6 twin where a stack is made (definitions while the game loads, sources of stacks),
+		// never afterwards: a running game does not turn an object that already exists into one.
+		if (!aAtSource && GAPI != null && GAPI.mStartedServerStarting > 0 && tAssociation.mUnificationTarget != null && ModData.noUnification(tAssociation.mUnificationTarget)) return ST.copy(aStack);
 		// Uses the logical size (ST.size), not the raw count, so a size-0 catalyst stack (its count=1 plus a marker)
 		// keeps that marker through unification instead of losing it to a plain getCount() of 1.
 		if (ST.invalid(rStack = ST.amount(ST.count(aStack), tAssociation.mUnificationTarget))) return ST.copy(aStack);
