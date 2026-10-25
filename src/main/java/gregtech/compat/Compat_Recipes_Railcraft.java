@@ -36,7 +36,6 @@ import gregapi.oredict.event.OreDictListenerEvent_Names;
 import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
@@ -49,7 +48,7 @@ public class Compat_Recipes_Railcraft extends CompatMods {
 	public Compat_Recipes_Railcraft(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
 	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing RC Recipes.");
-		long tBits = DEF_REV | DEL_OTHER_SHAPED_RECIPES | DEL_OTHER_NATIVE_RECIPES | ONLY_IF_HAS_OTHER_RECIPES;
+		long tBits = DEF_REV | DEL_OTHER_SHAPED_RECIPES | DEL_OTHER_NATIVE_RECIPES | ONLY_IF_HAS_OTHER_RECIPES | ONLY_IF_HAS_RESULT;
 		char tHammer = ' ', tFile = ' ', tWrench = ' ';
 		OreDictPrefix tIngot = OP.ingot;
 		
@@ -66,10 +65,13 @@ public class Compat_Recipes_Railcraft extends CompatMods {
 		CR.shaped(ST.make(MD.RC, "part.circuit", 1,  1), tBits, "dCW", "GAR", "WRL", 'W', ST.make(Blocks.GREEN_WOOL, 1, 0), 'L', OP.gem.dat(MT.Lapis), 'A', tIngot.dat(MT.Au), 'C', Items.REPEATER, 'R', OD.itemRedstone, 'G', OD.itemGlue);
 		CR.shaped(ST.make(MD.RC, "part.circuit", 1,  2), tBits, "dCW", "GAR", "WRL", 'W', ST.make(Blocks.YELLOW_WOOL, 1, 0), 'L', OP.gem.dat(MT.Lapis), 'A', tIngot.dat(MT.Au), 'C', Items.REPEATER, 'R', OD.itemRedstone, 'G', OD.itemGlue);
 		
-		CR.shapeless(ST.make(Blocks.TNT, 1, 0), DEF, new Object[] {ST.make(MD.RC, "cart.tnt.wood", 1, 0)});
-		RM.unbox(IL.Plank_Slab.get(5), ST.make(MD.RC, "cart.tnt.wood", 1, 0), ST.make(Blocks.TNT, 1, 0));
+		// Reborn has no TNT cart: with nothing to unpack, these two have no input.
+		if (ST.valid(ST.make(MD.RC, "cart.tnt.wood", 1, 0))) {
+			CR.shapeless(ST.make(Blocks.TNT, 1, 0), DEF, new Object[] {ST.make(MD.RC, "cart.tnt.wood", 1, 0)});
+			RM.unbox(IL.Plank_Slab.get(5), ST.make(MD.RC, "cart.tnt.wood", 1, 0), ST.make(Blocks.TNT, 1, 0));
+		}
 		
-		CR.shapeless(ST.make(MD.RC, "tool.notepad", 1, 0), tBits, new Object[] {OD.itemFeather, DYE_OREDICTS[DYE_INDEX_Black], OD.paperEmpty, ST.make(MD.RC, "tool.magnifying.glass", 1, 0)});
+		if (ST.valid(ST.make(MD.RC, "tool.notepad", 1, 0))) CR.shapeless(ST.make(MD.RC, "tool.notepad", 1, 0), tBits, new Object[] {OD.itemFeather, DYE_OREDICTS[DYE_INDEX_Black], OD.paperEmpty, ST.make(MD.RC, "tool.magnifying.glass", 1, 0)});
 		
 		CR.shapeless(ST.make(MD.RC, "part.gear", 1,  1), CR.DEF_NCC, new Object[] {OP.gearGt.dat(ANY.Fe   ), ST.make(MD.RC, "part.gear", 1, 3)});
 		CR.shapeless(ST.make(MD.RC, "part.gear", 1,  2), CR.DEF_NCC, new Object[] {OP.gearGt.dat(ANY.Steel), ST.make(MD.RC, "part.gear", 1, 3)});
@@ -115,7 +117,7 @@ public class Compat_Recipes_Railcraft extends CompatMods {
 		CR.shaped(ST.make(MD.RC, "machine.alpha"          , 1,  8), tBits                                                 , "IPI"          , "PCP"              , "IPI"              , 'P', OD.craftingPiston                        , 'I', tIngot.dat(ANY.Fe), 'C', OD.craftingWorkBench);
 		CR.shaped(ST.make(MD.RC, "machine.alpha"          , 1,  9), tBits                                                 , " I "          , " T "              , " D "              , 'I', Blocks.IRON_BARS                         , 'T', ST.make(MD.RC, "machine.beta", 1, 4), 'D', Blocks.DISPENSER);
 		CR.shaped(ST.make(MD.RC, "machine.alpha"          , 1, 10), tBits                                                 , " I "          , "RTR"              , " D "              , 'I', Blocks.IRON_BARS                         , 'T', ST.make(MD.RC, "machine.beta", 1, 4), 'D', Blocks.DISPENSER, 'R', OD.itemRedstone);
-		CR.shaped(ST.make(MD.RC, "machine.alpha"          , 1, 10), DEF                                                   , "RTR"                                                    , 'R', OD.itemRedstone                          , 'T', ST.make(MD.RC, "machine.alpha", 1, 9));
+		if (ST.valid(ST.make(MD.RC, "machine.alpha", 1, 10))) CR.shaped(ST.make(MD.RC, "machine.alpha"          , 1, 10), DEF                                                   , "RTR"                                                    , 'R', OD.itemRedstone                          , 'T', ST.make(MD.RC, "machine.alpha", 1, 9));
 		CR.shaped(ST.make(MD.RC, "machine.alpha"          , 1, 11), tBits                                                 , "PCP"          , "CSC"              , "PCP"              , 'P', OD.plankAnyWood                          , 'S', OP.plate.dat(ANY.Steel), 'C', Items.GOLDEN_CARROT);
 		CR.shaped(ST.make(MD.RC, "machine.alpha"          , 1, 13), tBits                                                 , "IOI"          , "GEG"              , "IOI"              , 'I', tIngot.dat(MT.Au)                        , 'G', DYE_OREDICTS[DYE_INDEX_Cyan], 'E', OP.gem.dat(MT.EnderPearl), 'O', OP.blockSolid.dat(MT.Obsidian));
 		CR.shaped(ST.make(MD.RC, "machine.alpha"          , 6, 14), tBits                                                 , "PPP"          , "ISI"              , "PPP"              , 'P', OD.plankAnyWood                          , 'I', tIngot.dat(ANY.Fe), 'S', OD.itemGlue);
@@ -135,7 +137,7 @@ public class Compat_Recipes_Railcraft extends CompatMods {
 		CR.shaped(ST.make(MD.RC, "borehead.diamond"       , 1,  0), tBits                                                 , "SSS"          , "SBS"              , "SSS"              , 'B', OP.blockGem.dat(ANY.Diamond)             , 'S', tIngot.dat(ANY.Steel));
 		
 		CR.shaped(ST.make(MD.RC, "cart.loco.steam.solid"  , 1,  0), tBits | DEL_IF_NO_DYES | DEL_OTHER_RECIPES_IF_SAME_NBT, "TTF"          , "TTF"              , "BCC"              , 'C', Items.MINECART                           , 'T', ST.make(MD.RC, "machine.beta", 1, 4), 'F', ST.make(MD.RC, "machine.beta", 1, 5), 'B', Blocks.IRON_BARS);
-		CR.shaped(ST.make(MD.RC, "cart.loco.electric"     , 1,  0), tBits | DEL_IF_NO_DYES | DEL_OTHER_RECIPES_IF_SAME_NBT, "LP"+tWrench   , "PEP"              , "GCG"              , 'C', Items.MINECART                           , 'E', ST.make(MD.RC, "machine.epsilon", 1, 0), 'G', ST.make(MD.RC, "part.gear", 1, 2), 'L', Blocks.REDSTONE_LAMP, 'P', OP.plate.dat(ANY.Steel));
+		if (ST.valid(ST.make(MD.RC, "machine.epsilon", 1, 0))) CR.shaped(ST.make(MD.RC, "cart.loco.electric"     , 1,  0), tBits | DEL_IF_NO_DYES | DEL_OTHER_RECIPES_IF_SAME_NBT, "LP"+tWrench   , "PEP"              , "GCG"              , 'C', Items.MINECART                           , 'E', ST.make(MD.RC, "machine.epsilon", 1, 0), 'G', ST.make(MD.RC, "part.gear", 1, 2), 'L', Blocks.REDSTONE_LAMP, 'P', OP.plate.dat(ANY.Steel));
 		CR.shaped(ST.make(MD.RC, "cart.bore"              , 1,  0), tBits | DEL_IF_NO_DYES | DEL_OTHER_RECIPES_IF_SAME_NBT, "BCB"          , "FCF"              , tHammer+"A"+tWrench, 'C', Items.MINECART                           , 'A', Items.CHEST_MINECART, 'F', OD.craftingFurnace, 'B', OP.blockSolid.dat(ANY.Steel));
 		
 		if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.harderrecipes, "railcraft_admin_anchor_recipe", F)) {
@@ -152,43 +154,13 @@ public class Compat_Recipes_Railcraft extends CompatMods {
 		
 		RM.Drying.addRecipe1(T, 16,  16, IL.RC_Rebar.get(1), FL.Concrete.make(L), FL.DistW.make(8), IL.RC_Concrete.get(2));
 		
-		RM.Injector.addRecipe1(T, 16, 4096, IL.RC_Firestone_Refined.getWithMeta(1, 5000), FL.Coolant_IC2_Hot.make(20000000), FL.Coolant_IC2  .make(20000000), IL.RC_Firestone_Refined.get(1));
-		RM.Injector.addRecipe1(T, 16, 8192, IL.RC_Firestone_Cracked.getWithMeta(1, 5000), FL.Coolant_IC2_Hot.make(20000000), FL.Coolant_IC2  .make(20000000), IL.RC_Firestone_Cracked.get(1));
-		RM.Injector.addRecipe1(T, 16, 4096, IL.RC_Firestone_Refined.getWithMeta(1, 4999), FL.Coolant_IC2_Hot.make(19996000), FL.Coolant_IC2  .make(19996000), IL.RC_Firestone_Refined.get(1));
-		RM.Injector.addRecipe1(T, 16, 8192, IL.RC_Firestone_Cracked.getWithMeta(1, 4999), FL.Coolant_IC2_Hot.make(19996000), FL.Coolant_IC2  .make(19996000), IL.RC_Firestone_Cracked.get(1));
-		RM.Injector.addRecipe1(T, 16, 2048, IL.RC_Firestone_Refined.getWithMeta(1, 5000), FL.Lava           .make( 5000000), FL.Lava_Pahoehoe.make( 5000000), IL.RC_Firestone_Refined.get(1));
-		RM.Injector.addRecipe1(T, 16, 4096, IL.RC_Firestone_Cracked.getWithMeta(1, 5000), FL.Lava           .make( 5000000), FL.Lava_Pahoehoe.make( 5000000), IL.RC_Firestone_Cracked.get(1));
-		RM.Injector.addRecipe1(T, 16, 2048, IL.RC_Firestone_Refined.getWithMeta(1, 4999), FL.Lava           .make( 4999000), FL.Lava_Pahoehoe.make( 4999000), IL.RC_Firestone_Refined.get(1));
-		RM.Injector.addRecipe1(T, 16, 4096, IL.RC_Firestone_Cracked.getWithMeta(1, 4999), FL.Lava           .make( 4999000), FL.Lava_Pahoehoe.make( 4999000), IL.RC_Firestone_Cracked.get(1));
-		if (FL.Lava_Volcanic.exists()) {
-		RM.Injector.addRecipe1(T, 16,  128, IL.RC_Firestone_Refined.getWithMeta(1, 5000), FL.Lava_Volcanic  .make(  312500), FL.Lava_Pahoehoe.make(  312500), IL.RC_Firestone_Refined.get(1));
-		RM.Injector.addRecipe1(T, 16,  256, IL.RC_Firestone_Cracked.getWithMeta(1, 5000), FL.Lava_Volcanic  .make(  312500), FL.Lava_Pahoehoe.make(  312500), IL.RC_Firestone_Cracked.get(1));
-		RM.Injector.addRecipe1(T, 16,  128, IL.RC_Firestone_Refined.getWithMeta(1, 4999), FL.Lava_Volcanic  .make(  312500), FL.Lava_Pahoehoe.make(  312500), IL.RC_Firestone_Refined.get(1));
-		RM.Injector.addRecipe1(T, 16,  256, IL.RC_Firestone_Cracked.getWithMeta(1, 4999), FL.Lava_Volcanic  .make(  312500), FL.Lava_Pahoehoe.make(  312500), IL.RC_Firestone_Cracked.get(1));
-		}
-		
-		
-		for (OreDictPrefix tPrefix : OreDictPrefix.VALUES) if (tPrefix.contains(TD.Prefix.ORE)) tPrefix.addListener(new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			if (ST.isGT(aEvent.mStack)) return;
-			Block tBlock = ST.block(aEvent.mStack);
-			if (tBlock != NB) try {
-				short tMeta = ST.meta(aEvent.mStack);
-				EntityTunnelBore.addMineableBlock(tBlock, tMeta >= 16 ? -1 : tMeta);
-			} catch(Throwable e) {e.printStackTrace(ERR);}
-		}});
+		// The recharge of the firestones (lava, volcanic lava, hot IC2 coolant) depends on the damage of the stack: RecipeMapInjector finds it.
 		
 		
 		new OreDictListenerEvent_Names() {@Override public void addAllListeners() {
-		addListener(new Object[] {OP.stone, OP.cobblestone, OP.treeSapling, OP.treeLeaves, OP.tree, OP.log, OP.plank, OP.beam}, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			if (ST.isGT(aEvent.mStack)) return;
-			Block tBlock = ST.block(aEvent.mStack);
-			if (tBlock != NB) try {
-				short tMeta = ST.meta(aEvent.mStack);
-				EntityTunnelBore.addMineableBlock(tBlock, tMeta >= 16 ? -1 : tMeta);
-			} catch(Throwable e) {e.printStackTrace(ERR);}
-		}});
 		addListener(OD.itemClay, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.Mixer.addRecipe2(T, 16, 16, aEvent.mStack, OM.dust(MT.Bone, U*3), ST.make(MD.RC, "part.bleached.clay", 1, 0));
+			net.minecraft.world.item.ItemStack tBleachedClay = ST.make(MD.RC, "part.bleached.clay", 1, 0);
+			if (ST.valid(tBleachedClay)) RM.Mixer.addRecipe2(T, 16, 16, aEvent.mStack, OM.dust(MT.Bone, U*3), tBleachedClay);
 		}});
 		addListener(DYE_OREDICTS_LENS[DYE_INDEX_Cyan], new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.LaserEngraver.addRecipe2(T, 16, 2048, OP.gem.mat(MT.Firestone, 1), ST.amount(0, aEvent.mStack), IL.RC_Firestone_Cut.get(1));
@@ -196,18 +168,13 @@ public class Compat_Recipes_Railcraft extends CompatMods {
 		}};
 		
 		
+		// Reborn has no colour wildcard and no unpainted post: these rows dye the base items (white glass, the black post its rolling machine makes), and RecipeMapBath finds the same bath for a post or glass of any other colour.
 		for (byte i = 0; i < 16; i++) for (FluidStack tDye : DYE_FLUIDS[i]) {
-			RM.Bath.addRecipe1(T, 0, 16, ST.make(MD.RC, "glass"              , 1, W), FL.mul(tDye, 1, 16, T), NF, ST.make(MD.RC, "glass"              , 1, 15-i));
-			RM.Bath.addRecipe1(T, 0, 16, IL.RC_Post_Metal                    .get(1), FL.mul(tDye, 1, 16, T), NF, ST.make(MD.RC, "post.metal"         , 1, i));
-			RM.Bath.addRecipe1(T, 0, 16, ST.make(MD.RC, "post.metal"         , 1, W), FL.mul(tDye, 1, 16, T), NF, ST.make(MD.RC, "post.metal"         , 1, i));
-			RM.Bath.addRecipe1(T, 0, 16, IL.RC_Platform_Metal                .get(1), FL.mul(tDye, 1, 16, T), NF, ST.make(MD.RC, "post.metal.platform", 1, i));
-			RM.Bath.addRecipe1(T, 0, 16, ST.make(MD.RC, "post.metal.platform", 1, W), FL.mul(tDye, 1, 16, T), NF, ST.make(MD.RC, "post.metal.platform", 1, i));
+			if (i != DYE_INDEX_White) RM.Bath.addRecipe1(T, 0, 16, ST.make(MD.RC, "glass", 1, 0), FL.mul(tDye, 1, 16, T), NF, ST.make(MD.RC, "glass", 1, 15-i));
+			if (i != DYE_INDEX_Black) RM.Bath.addRecipe1(T, 0, 16, IL.RC_Post_Metal.get(1), FL.mul(tDye, 1, 16, T), NF, ST.make(MD.RC, "post.metal", 1, i));
 		}
-		RM.Bath.addRecipe1(T, 0, 16, ST.make(MD.RC, "glass"              , 1, W), MT.Cl.fluid(U20, T), NF, ST.make(MD.RC, "glass", 1, 0));
-		RM.Bath.addRecipe1(T, 0, 16, ST.make(MD.RC, "post.metal"         , 1, W), MT.Cl.fluid(U20, T), NF, IL.RC_Post_Metal.get(1));
-		RM.Bath.addRecipe1(T, 0, 16, ST.make(MD.RC, "post.metal.platform", 1, W), MT.Cl.fluid(U20, T), NF, IL.RC_Platform_Metal.get(1));
 		
-		for (OreDictMaterial tMat : ANY.Fe.mToThis) if (tMat != MT.Enori) {
+		if (IL.RC_Platform_Metal.exists()) for (OreDictMaterial tMat : ANY.Fe.mToThis) if (tMat != MT.Enori) {
 		RM.Press.addRecipe2(F, 16, 64, IL.RC_Post_Metal.get(1), OP.plate         .mat(tMat, 4), IL.RC_Platform_Metal.get(4));
 		RM.Press.addRecipe2(F, 16, 64, IL.RC_Post_Metal.get(1), OP.plateDouble   .mat(tMat, 2), IL.RC_Platform_Metal.get(4));
 		RM.Press.addRecipe2(F, 16, 64, IL.RC_Post_Metal.get(1), OP.plateQuadruple.mat(tMat, 1), IL.RC_Platform_Metal.get(4));

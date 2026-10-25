@@ -402,6 +402,8 @@ public class GT_API extends Abstract_Mod {
 					if (!(tHolder.value() instanceof net.minecraft.world.item.crafting.CraftingRecipe tCraft)) continue;
 					if (tHolder.value() instanceof gregapi.recipes.GT6CraftingDispatcher) continue;
 					if (gregapi.util.CR.VANILLA_VIEW_IDS.contains(tHolder.id())) continue;
+					// A special recipe of another mod computes its result from the grid (a cart taken apart, a rotor repaired): like CLASSES_SPECIAL in 1.7.10 it is not the recipe of an item to remove by output.
+					if (tCraft.isSpecial() && !"minecraft".equals(tHolder.id().identifier().getNamespace())) continue;
 					try {
 						net.minecraft.world.item.ItemStack tResult = tCraft.assemble(net.minecraft.world.item.crafting.CraftingInput.EMPTY);
 						if (gregapi.util.ST.valid(tResult) && gregapi.util.ST.equal(tResult, tOut, T)) tRemove.add(tHolder.id());

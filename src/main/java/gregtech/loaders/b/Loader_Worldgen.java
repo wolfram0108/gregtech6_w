@@ -283,7 +283,8 @@ public class Loader_Worldgen implements Runnable {
 		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.Chalk, ST.block(MD.EB, "enhancedbiomes.tile.stoneEB"), 6, ST.block(MD.EB, "enhancedbiomes.tile.stoneCobbleEB"), 6));
 		
 		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, ST.block(MD.CHSL, "marble")));
-		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, ST.block(MD.RC, "cube"), 7));
+		// Railcraft Reborn's quarried stone is a block of its own (1.7.10: cube, meta 7), named through the Railcraft table with that meta.
+		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, ST.block(ST.make(MD.RC, "cube", 1, 7))));
 		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, ST.block(MD.PR_EXPLORATION, "projectred.exploration.stone")));
 		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, ST.block(MD.BP, "marble")));
 		StoneLayer.LAYERS.add(new StoneLayer(BlocksGT.Marble, MT.STONES.Marble, ST.block(MD.EB, "enhancedbiomes.tile.stoneEB"), 7, ST.block(MD.EB, "enhancedbiomes.tile.stoneCobbleEB"), 7));
