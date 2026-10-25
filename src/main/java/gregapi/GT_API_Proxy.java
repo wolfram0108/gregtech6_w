@@ -362,6 +362,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	@Override
 	public void onProxyAfterServerStopping(Abstract_Mod aMod, ServerStoppingEvent aEvent) {
 		checkSaveLocation(null, T);
+		WD.forgetBreakTarget();
 		MultiTileEntityRegistry.onServerStop();
 	}
 
@@ -418,6 +419,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 			// Making sure it is being free'd up in order to prevent exploits or Garbage Collection mishaps.
 			LAST_BROKEN_TILEENTITY.set(null);
+			WD.forgetBreakTarget(); // the same discipline for the target of a bore: it lives for one tick at most
 
 			if (aEvent.phase == net.minecraftforge.event.TickEvent.Phase.START) { // Forge keeps the START/END phase field, unlike neo which splits ServerTickEvent into Pre/Post (checked, ServerTickEvent.java)
 				gt6ChunkFinishTick();
@@ -444,12 +446,6 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					for (gt6mirror.ic2.api.recipe.RecipeOutput tRecipe : gt6mirror.ic2.api.recipe.Recipes.oreWashing          .getRecipes().values()) for (ItemStack tStack : tRecipe.items) tStacks.add(tStack);
 					} catch(Throwable e) {e.printStackTrace(ERR);}
 					
-					if (MD.RC.mLoaded) {
-					try {for (Object  tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.blastFurnace  .getRecipes   ()) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
-					try {for (Object  tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.cokeOven      .getRecipes   ()) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
-					try {for (Object  tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.rockCrusher   .getRecipes   ()) for (Map.Entry<ItemStack, Float> tEntry : (List<Map.Entry<ItemStack, Float>>)UT.Reflection.getFieldContent(tRecipe, "outputs")) tStacks.add(tEntry.getKey());} catch(Throwable e) {e.printStackTrace(ERR);}
-					try {for (net.minecraft.world.item.crafting.Recipe tRecipe : gt6mirror.mods.railcraft.api.crafting.RailcraftCraftingManager.rollingMachine.getRecipeList()) if (tRecipe != null) tStacks.add((ItemStack)UT.Reflection.getFieldContent(tRecipe, "output"));} catch(Throwable e) {e.printStackTrace(ERR);}
-					}
 					
 					if (MD.TE.mLoaded && ALWAYS_FALSE) {
 						List<Map> tMaps = new ArrayListNoNulls<>();
@@ -1668,6 +1664,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				}
 			}
 		}
+	}
+
+	// Railcraft's tunnel bore posts this event for its target right before it asks the block for drops with ORIGIN = the bore (TunnelBore.mineBlock);
+	// the center WD.lootBlockPos turns the noted target back into the position of the block. LOWEST: a canceled event never gets here.
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onBreakBlockNoteTarget(net.minecraftforge.event.level.BlockEvent.BreakEvent aEvent) {
+		WD.noteBreakTarget(aEvent.getLevel(), aEvent.getPos(), aEvent.getState(), aEvent.getPlayer());
 	}
 
 	// Branch 1.20.1: BlockEvent.BreakEvent is present and carries setExpToDrop — i.e. the 1.7.10 original's form is back
