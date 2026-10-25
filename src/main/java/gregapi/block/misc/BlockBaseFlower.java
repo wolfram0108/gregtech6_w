@@ -30,11 +30,13 @@ import gregapi.block.IBlockBase;
 import gregapi.block.ItemBlockBase;
 import gregapi.block.Material;
 import gregapi.compat.galacticraft.IBlockSealable;
+import gregapi.data.MD;
 import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gt6mirror.micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock;
+import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FlowerBlock;
 import net.minecraft.world.level.block.BonemealableBlock;
@@ -93,6 +95,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		// Only the BlockItem is registered here; the block itself registers lazily at its call site.
 		final Class<? extends net.minecraft.world.item.BlockItem> tItemClass = aItemClass==null?gregapi.block.ItemBlockBase.class:aItemClass;
 		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GT, mNameInternal, () -> (net.minecraft.world.item.BlockItem)gregapi.util.UT.Reflection.callConstructor(tItemClass, 0, null, gregapi.data.CS.T, this));
+		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W)));
 	}
 	

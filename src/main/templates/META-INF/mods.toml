@@ -151,35 +151,6 @@ config="gregapi.mixins.json"
     ordering="NONE"
     side="BOTH"
 
-# Railcraft Reborn: its stones host GT6 ore blocks that copy them while the block registry is filled, so the mod must come first in the order; declared on all four of our mods, as for ae2.
-[[dependencies.${mod_id}]]
-    modId="railcraft"
-    mandatory=false
-    versionRange="[1.1.0,)"
-    ordering="AFTER"
-    side="BOTH"
-
-[[dependencies.gregapi]]
-    modId="railcraft"
-    mandatory=false
-    versionRange="[1.1.0,)"
-    ordering="AFTER"
-    side="BOTH"
-
-[[dependencies.gregapi_post]]
-    modId="railcraft"
-    mandatory=false
-    versionRange="[1.1.0,)"
-    ordering="AFTER"
-    side="BOTH"
-
-[[dependencies.gregtech]]
-    modId="railcraft"
-    mandatory=false
-    versionRange="[1.1.0,)"
-    ordering="AFTER"
-    side="BOTH"
-
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares
 # that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't
 # stop your mod loading on the server for example.

@@ -117,10 +117,9 @@ public class Loader_Tools implements Runnable {
 		
 		// MultiItem is built via a supplier at RegisterEvent: Item's ctor needs an unfrozen registry.
 		// addTool/NEI/recipes below use sMetaTool and build stacks, so they run in deferItemInit.
-		// With BuildCraft or Railcraft present the tool is built from a compat class that declares their interface (wrench, crowbar); with both, from the one that declares both.
+		// With BuildCraft present the tool is built from its compat class, which declares BuildCraft's wrench interface.
 		GT_API.registerItemLazy(MD.GT.mID, "gt.metatool.01", () -> {
-			String tToolClass = MD.BC.mLoaded ? (MD.RC.mLoaded ? "gregapi.compat.railcraft.MultiItemToolWithCompatBCRC" : "gregapi.compat.buildcraft.MultiItemToolWithCompatBC") : MD.RC.mLoaded ? "gregapi.compat.railcraft.MultiItemToolWithCompatRC" : null;
-			MultiItemToolWithCompat tTool = tToolClass != null ? (MultiItemToolWithCompat)UT.Reflection.callConstructor(tToolClass, 0, null, T, MD.GT.mID, "gt.metatool.01") : null;
+			MultiItemToolWithCompat tTool = MD.BC.mLoaded ? (MultiItemToolWithCompat)UT.Reflection.callConstructor("gregapi.compat.buildcraft.MultiItemToolWithCompatBC", 0, null, T, MD.GT.mID, "gt.metatool.01") : null;
 			return ToolsGT.sMetaTool = (tTool != null ? tTool : new MultiItemToolWithCompat(MD.GT.mID, "gt.metatool.01"));
 		});
 		gregapi.GT_API.deferItemInit(() -> {

@@ -76,7 +76,7 @@ public class MD {
 	, ABYSSAL           = new ModData(ModIDs.ABYSSAL            , "AbyssalCraft")
 	, SOULFOREST        = new ModData(ModIDs.SOULFOREST         , "Soul Forest")
 	
-	, RC                = new ModData(ModIDs.RC                 , "Railcraft").setNoUnification()
+	, RC                = new ModData(ModIDs.RC                 , "Railcraft")
 	
 	, IE                = new ModData(ModIDs.IE                 , "Immersive Engineering")
 	

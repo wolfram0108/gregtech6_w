@@ -159,10 +159,6 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 			new gregapi.data.GT6ConventionTags(aOutput, aEvent.getLookupProvider()));
 		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6ConventionTags.Blocks>) aOutput ->
 			new gregapi.data.GT6ConventionTags.Blocks(aOutput, aEvent.getLookupProvider()));
-		// Railcraft's tunnel bore: the blocks that 13 GT6 classes offered through EntityTunnelBore.addMineableBlock in 1.7.10 go into Reborn's block tag
-		// railcraft:tunnel_bore_mineable_blocks (gregapi/data/GT6BoreTags.java). Same datagen point.
-		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6BoreTags>) aOutput ->
-			new gregapi.data.GT6BoreTags(aOutput, aEvent.getLookupProvider(), aEvent.getExistingFileHelper()));
 	}
 
 	/** Central subscription point, called once from the same mod bus that item/block registration already uses. */

@@ -56,9 +56,9 @@ public class GT6BlockDropsModifier extends LootModifier {
 	protected ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> aLoot, LootContext aContext) {
 		BlockState tState = aContext.getParamOrNull(LootContextParams.BLOCK_STATE);
 		if (tState == null) return aLoot;
-		BlockPos tPos = gregapi.util.WD.lootBlockPos(aContext.getParamOrNull(LootContextParams.ORIGIN), aContext.getLevel(), tState);
-		if (tPos == null) return aLoot;
-		gregapi.GT_API_Proxy.processBlockDrops(aLoot, aContext.getLevel(), tPos, tState, aContext.getParamOrNull(LootContextParams.THIS_ENTITY));
+		net.minecraft.world.phys.Vec3 tOrigin = aContext.getParamOrNull(LootContextParams.ORIGIN);
+		if (tOrigin == null) return aLoot;
+		gregapi.GT_API_Proxy.processBlockDrops(aLoot, aContext.getLevel(), BlockPos.containing(tOrigin), tState, aContext.getParamOrNull(LootContextParams.THIS_ENTITY));
 		return aLoot;
 	}
 

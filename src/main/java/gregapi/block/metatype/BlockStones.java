@@ -41,6 +41,7 @@ import gregapi.oredict.event.IOreDictListenerEvent;
 import gregapi.render.BlockTextureCopied;
 import gregapi.render.IIconContainer;
 import gregapi.util.*;
+import gt6mirror.mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -210,6 +211,12 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		
 		mMaterial.mTextureSolid  = BlockTextureCopied.get(this, SIDE_TOP, STONE);
 		mMaterial.mTextureSmooth = BlockTextureCopied.get(this, SIDE_TOP, SMOTH);
+		
+		if (MD.RC.mLoaded) try {
+			EntityTunnelBore.addMineableBlock(this, COBBL);
+			EntityTunnelBore.addMineableBlock(this, STONE);
+			EntityTunnelBore.addMineableBlock(this, MCOBL);
+		} catch(Throwable e) {e.printStackTrace(ERR);}
 		
 		if (COMPAT_FR != null) for (int i = 0; i < maxMeta(); i++) COMPAT_FR.addToBackpacks(SPAWNABLE[i]?"digger":"builder", ST.make(this, 1, i));
 		});
