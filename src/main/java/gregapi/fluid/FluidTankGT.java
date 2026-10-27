@@ -343,8 +343,10 @@ public class FluidTankGT implements IFluidTank {
 	public FluidTankGT setPreventDraining() {return setPreventDraining(T);}
 	/** Always keeps at least 0 Liters of Fluid instead of setting it to null */
 	public FluidTankGT setPreventDraining(boolean aPrevent) {mPreventDraining = aPrevent; return this;}
-	/** Whether the Tank voids any Overflow, so that it is no storage. */
+	/** Whether the Tank voids any Overflow above its limit. */
 	public boolean voidsExcess() {return mVoidExcess;}
+	/** Whether the Tank takes whatever it is given and voids it, with no limit of its own: a drain, which stores nothing. A Tank that voids only above a limit is a storage. */
+	public boolean isDrain() {return mVoidExcess && mCapacity == Long.MAX_VALUE && mCapacityBy == null && mAdjustableCapacity == null;}
 	/** Voids any Overlow */
 	public FluidTankGT setVoidExcess() {return setVoidExcess(T);}
 	/** Voids any Overlow */
