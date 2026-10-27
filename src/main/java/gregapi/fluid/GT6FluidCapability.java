@@ -74,8 +74,9 @@ public final class GT6FluidCapability {
 			return aTank >= 0 && aTank < tInfo.length && tInfo[aTank] != null && tInfo[aTank].fluid != null ? tInfo[aTank].fluid : FluidStack.EMPTY;
 		}
 
-		/** What a slot can hold as storage, as far as an int carries it; none for a slot that is no storage, so that a tooltip does not show it as a tank with a limit that is not there. */
-		@Override public int getTankCapacity(int aTank) {return (int)Math.min(Integer.MAX_VALUE, storageCapacity(info(), aTank));}
+		/** What a tank that holds a fluid holds, as far as an int carries it. An empty tank has no single limit before the fluid is known, and the call carries no fluid,
+		 *  so it gives none (a tooltip lists the tanks that hold something); a slot that is no storage gives none either, so that a tooltip does not show a limit that is not there. */
+		@Override public int getTankCapacity(int aTank) {return getFluidInTank(aTank).isEmpty() ? 0 : (int)Math.min(Integer.MAX_VALUE, storageCapacity(info(), aTank));}
 
 		@Override public boolean isFluidValid(int aTank, FluidStack aFluid) {
 			if (aFluid == null || aFluid.isEmpty()) return false;
