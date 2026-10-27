@@ -31,14 +31,22 @@ import net.neoforged.neoforge.fluids.IFluidTank;
 public final class FluidTankInfo {
 	public final FluidStack fluid;
 	public final int capacity;
+	/** The capacity without the cut to int, for the channels that carry a long; and whether the tank only voids what it gets, so it is no storage. */
+	public final long capacityLong;
+	public final boolean voids;
 
 	public FluidTankInfo(FluidStack aFluid, int aCapacity) {
 		fluid = aFluid;
 		capacity = aCapacity;
+		capacityLong = aCapacity;
+		voids = false;
 	}
 
 	/** neo's IFluidTank kept getFluid()/getCapacity(), so this constructor carries over 1:1. */
 	public FluidTankInfo(IFluidTank aTank) {
-		this(aTank.getFluid(), aTank.getCapacity());
+		fluid = aTank.getFluid();
+		capacity = aTank.getCapacity();
+		capacityLong = aTank instanceof FluidTankGT tTank ? tTank.capacity() : aTank.getCapacity();
+		voids = aTank instanceof FluidTankGT tTank && tTank.voidsExcess();
 	}
 }

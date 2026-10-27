@@ -67,7 +67,10 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 	protected long mEnergy = 0, mInput = 32, mActiveData = 0, mNextCheck = 0;
 	protected byte mActiveState = 0, mExplosionPrevention = 0, mDir = 0;
 	protected TagData mEnergyType = TD.Energy.RU;
-	protected FluidTankGT mTank = new FluidTankGT();
+	/** The tank holds what one cell of the world gave and nothing else, so the most it holds of a Fluid is that cell: a GT6 fluid block gives its quanta times its level (16 at most), the engine's sources a bucket. */
+	protected FluidTankGT mTank = new FluidTankGT(0).setCapacityBy(MultiTileEntityPump::drainLimit);
+
+	private static long drainLimit(String aFluid) {return FL.BLOCKS.get(aFluid) instanceof gregapi.block.fluid.BlockBaseFluid tFluidBlock ? tFluidBlock.mAmountPerQuanta * 16L : 1000;}
 	
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {

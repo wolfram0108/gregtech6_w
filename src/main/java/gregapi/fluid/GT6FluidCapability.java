@@ -158,6 +158,12 @@ public class GT6FluidCapability {
 		return new SidedTankView(aTileEntity, aSide);
 	}
 
+	/** The capacity of a slot as storage: none for a slot that is no storage, the dummy of a block that takes fluid for a process or a tank that voids what it gets. */
+	public static long storageCapacity(gregapi.fluid.FluidTankInfo[] aInfo, int aIndex) {
+		if (aIndex < 0 || aIndex >= aInfo.length || aInfo[aIndex] == null || aInfo == gregapi.data.CS.L1_FLUIDTANKINFO_DUMMY || aInfo[aIndex].voids) return 0;
+		return aInfo[aIndex].capacityLong;
+	}
+
 	/** A side of a GT6 tile entity as 1.7.10's IFluidHandler showed it, and as the 1.20.1 branch's SidedTankView does: read
 	 *  through getTankInfo, filled and drained only through the TE's own canFill/fill/drain, at the root commit (PendingMoves). */
 	private static final class SidedTankView implements ResourceHandler<FluidResource> {
@@ -180,7 +186,15 @@ public class GT6FluidCapability {
 		@Override public int size() {return Math.max(1, info().length);}
 		@Override public FluidResource getResource(int aIndex) {return FluidResource.of(stack(aIndex));}
 		@Override public long getAmountAsLong(int aIndex) {return stack(aIndex).getAmount();}
-		@Override public long getCapacityAsLong(int aIndex, FluidResource aResource) {gregapi.fluid.FluidTankInfo[] tInfo = info(); return aIndex >= 0 && aIndex < tInfo.length && tInfo[aIndex] != null ? tInfo[aIndex].capacity : 0;}
+		/** What a slot can hold of the resource. A slot that is no storage holds what the block takes of the resource and nothing for a question without one,
+		 *  so that a tooltip does not show it as a tank with a limit that is not there. */
+		@Override public long getCapacityAsLong(int aIndex, FluidResource aResource) {
+			gregapi.fluid.FluidTankInfo[] tInfo = info();
+			if (aIndex < 0 || aIndex >= tInfo.length || tInfo[aIndex] == null) return 0;
+			long tStorage = storageCapacity(tInfo, aIndex);
+			if (tStorage > 0 || aResource == null || aResource.isEmpty()) return tStorage;
+			try {return Math.max(0, mTileEntity.fill(mSide, aResource.toStack(Integer.MAX_VALUE), false));} catch (Throwable e) {return 0;}
+		}
 		@Override public boolean isValid(int aIndex, FluidResource aResource) {
 			if (aResource == null || aResource.isEmpty()) return false;
 			try {return mTileEntity.canFill(mSide, aResource.getFluid());} catch (Throwable e) {return false;}

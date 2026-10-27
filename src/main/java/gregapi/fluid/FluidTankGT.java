@@ -343,6 +343,8 @@ public class FluidTankGT implements IFluidTank {
 	public FluidTankGT setPreventDraining() {return setPreventDraining(T);}
 	/** Always keeps at least 0 Liters of Fluid instead of setting it to null */
 	public FluidTankGT setPreventDraining(boolean aPrevent) {mPreventDraining = aPrevent; return this;}
+	/** Whether the Tank voids any Overflow, so that it is no storage. */
+	public boolean voidsExcess() {return mVoidExcess;}
 	/** Voids any Overlow */
 	public FluidTankGT setVoidExcess() {return setVoidExcess(T);}
 	/** Voids any Overlow */

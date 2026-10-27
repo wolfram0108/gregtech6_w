@@ -74,6 +74,7 @@ public class MultiTileEntityLargeHeatExchanger extends TileEntityBase10MultiBloc
 		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShortOr(NBT_EFFICIENCY, (short)0));
 		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_EMITTED, ""));
 		mTanks[0].setCapacity(mRate * 10);
+		mTanks[1].setCapacity(mRate * 20).setCapacityBy(tFluid -> mRate * 20 - 1 + mRecipes.maxBurnerOutput(tFluid, mRate, mEfficiency));
 		mTanks[0].readFromNBT(aNBT, NBT_TANK+".0");
 		mTanks[1].readFromNBT(aNBT, NBT_TANK+".1");
 	}
