@@ -34,13 +34,18 @@ public final class FluidTankInfo {
 	/** The capacity without the cut to int, for the channels that carry a long; and whether the tank only voids what it gets, so it is no storage. */
 	public final long capacityLong;
 	public final boolean voids;
+	private final IFluidTank mTank;
 
 	public FluidTankInfo(FluidStack aFluid, int aCapacity) {
 		fluid = aFluid;
 		capacity = aCapacity;
 		capacityLong = aCapacity;
 		voids = false;
+		mTank = null;
 	}
+
+	/** What the tank holds of a Fluid: a tank of GT6 knows it by its own rule, and an empty one has no single limit before the Fluid is known. */
+	public long capacityFor(net.minecraft.world.level.material.Fluid aFluid) {return mTank instanceof FluidTankGT tTank ? tTank.capacity(aFluid) : capacityLong;}
 
 	/** neo's IFluidTank kept getFluid()/getCapacity(), so this constructor carries over 1:1. */
 	public FluidTankInfo(IFluidTank aTank) {
@@ -48,5 +53,6 @@ public final class FluidTankInfo {
 		capacity = aTank.getCapacity();
 		capacityLong = aTank instanceof FluidTankGT tTank ? tTank.capacity() : aTank.getCapacity();
 		voids = aTank instanceof FluidTankGT tTank && tTank.voidsExcess();
+		mTank = aTank;
 	}
 }

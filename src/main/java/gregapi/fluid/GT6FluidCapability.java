@@ -186,14 +186,20 @@ public class GT6FluidCapability {
 		@Override public int size() {return Math.max(1, info().length);}
 		@Override public FluidResource getResource(int aIndex) {return FluidResource.of(stack(aIndex));}
 		@Override public long getAmountAsLong(int aIndex) {return stack(aIndex).getAmount();}
-		/** What a slot can hold of the resource. A slot that is no storage holds what the block takes of the resource and nothing for a question without one,
-		 *  so that a tooltip does not show it as a tank with a limit that is not there. */
+		/** What a slot can hold of the resource. A tank that holds a fluid holds its own capacity. An empty tank has no single limit before the fluid is known, so it
+		 *  gives none to a question without a fluid (a tooltip lists the tanks that hold something) and the exact limit of the fluid to a question with one. A slot that
+		 *  is no storage holds what the block takes of the resource and nothing for a question without one. */
 		@Override public long getCapacityAsLong(int aIndex, FluidResource aResource) {
 			gregapi.fluid.FluidTankInfo[] tInfo = info();
 			if (aIndex < 0 || aIndex >= tInfo.length || tInfo[aIndex] == null) return 0;
+			boolean tAskedWithoutFluid = aResource == null || aResource.isEmpty();
 			long tStorage = storageCapacity(tInfo, aIndex);
-			if (tStorage > 0 || aResource == null || aResource.isEmpty()) return tStorage;
-			try {return Math.max(0, mTileEntity.fill(mSide, aResource.toStack(Integer.MAX_VALUE), false));} catch (Throwable e) {return 0;}
+			if (tStorage <= 0) {
+				if (tAskedWithoutFluid) return 0;
+				try {return Math.max(0, mTileEntity.fill(mSide, aResource.toStack(Integer.MAX_VALUE), false));} catch (Throwable e) {return 0;}
+			}
+			if (!stack(aIndex).isEmpty()) return tStorage;
+			return tAskedWithoutFluid ? 0 : tInfo[aIndex].capacityFor(aResource.getFluid());
 		}
 		@Override public boolean isValid(int aIndex, FluidResource aResource) {
 			if (aResource == null || aResource.isEmpty()) return false;
