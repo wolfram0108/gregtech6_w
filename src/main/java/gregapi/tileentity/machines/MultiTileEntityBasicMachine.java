@@ -165,7 +165,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 		mTanksInput = new FluidTankGT[mRecipes.mInputFluidCount];
 		for (int i = 0; i < mTanksInput.length; i++) mTanksInput[i] = new FluidTankGT(tCapacity).setCapacity(mRecipes, mParallel * 2L).readFromNBT(aNBT, NBT_TANK+".in."+i);
 		mTanksOutput = new FluidTankGT[mRecipes.mOutputFluidCount];
-		for (int i = 0; i < mTanksOutput.length; i++) mTanksOutput[i] = new FluidTankGT().readFromNBT(aNBT, NBT_TANK+".out."+i);
+		for (int i = 0; i < mTanksOutput.length; i++) mTanksOutput[i] = new FluidTankGT(OUTPUT_TANK_FLOOR).setCapacityBy(this::outputTankLimit).readFromNBT(aNBT, NBT_TANK+".out."+i);
 		
 		mOutputFluids = new FluidStack[mRecipes.mOutputFluidCount];
 		for (int i = 0; i < mOutputFluids.length; i++) mOutputFluids[i] = FL.load(aNBT, NBT_TANK_OUT+"."+i);
@@ -623,6 +623,15 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	
 	// Stuff to Override
 	
+	/** What an Output Tank holds at least before the Machine stops starting Recipes that put the same Fluid into it. */
+	public static final long OUTPUT_TANK_FLOOR = 16000;
+
+	/** The amount of a Fluid in an Output Tank from which on the Machine starts no Recipe that outputs aOutput of it at a time. */
+	public long outputTankStop(long aOutput) {return Math.max(OUTPUT_TANK_FLOOR, 1 + aOutput * mParallel);}
+
+	/** The most an Output Tank can hold of the Fluid: a Recipe starts below the stop and then adds one batch of up to mParallel times its output. */
+	public long outputTankLimit(String aFluid) {long tOutput = mRecipes.maxOutputTankSize(aFluid); return outputTankStop(tOutput) - 1 + tOutput * mParallel;}
+
 	public int canOutput(Recipe aRecipe) {
 		int rMaxTimes = mParallel;
 		
@@ -662,7 +671,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 				if (aRecipe.mFluidOutputs[j] == null) {
 					tRequiredEmptyTanks--;
 				} else for (int i = 0; i < mTanksOutput.length; i++) if (mTanksOutput[i].contains(aRecipe.mFluidOutputs[j])) {
-					if (mTanksOutput[i].has(Math.max(16000, 1+aRecipe.mFluidOutputs[j].getAmount()*mParallel)) && !FluidsGT.VOID_OVERFLOW.contains(FL.regName(aRecipe.mFluidOutputs[j].getFluid()))) return 0;
+					if (mTanksOutput[i].has(outputTankStop(aRecipe.mFluidOutputs[j].getAmount())) && !FluidsGT.VOID_OVERFLOW.contains(FL.regName(aRecipe.mFluidOutputs[j].getFluid()))) return 0;
 					tRequiredEmptyTanks--;
 					break;
 				}

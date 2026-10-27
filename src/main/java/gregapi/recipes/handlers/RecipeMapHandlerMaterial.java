@@ -123,6 +123,8 @@ public class RecipeMapHandlerMaterial extends RecipeMapHandler {
 		}
 		if (mFluidOutputPerUnit != null) {
 			aMap.mMaxFluidOutputSize = Math.max(mFluidOutputPerUnit.getAmount() * 16, aMap.mMaxFluidOutputSize);
+			Long tSize = aMap.mMaxOutputTankSizes.get(FL.regName(mFluidOutputPerUnit.getFluid()));
+			if (tSize == null || tSize < mFluidOutputPerUnit.getAmount() * 16L) aMap.mMaxOutputTankSizes.put(FL.regName(mFluidOutputPerUnit.getFluid()), mFluidOutputPerUnit.getAmount() * 16L);
 		}
 		return T;
 	}
