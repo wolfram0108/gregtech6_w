@@ -434,6 +434,9 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		return ZL_FT;
 	}
 
+	/** How far from a part its controller may stand, horizontally: no structure of the mod or its addon reaches farther (a twelve layers tower has a 3x3 footprint). */
+	private static final int CONTROLLER_REACH = 16;
+
 	/** THE CLIENT RECOVERS THE BINDING ITSELF — using the same trick it uses to recover the MTEs themselves from the ID packet.
 	 *
 	 *  <p>The part-to-controller binding ({@code mTargetPos}) lives only in NBT and does NOT travel over the network: in 1.7.10 this
@@ -443,22 +446,22 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	 *  world: the server returns 5000 mb both from the valve and from the wall parts).
 	 *
 	 *  <p>Extending the part's network protocol just for the tooltip was avoided: its byte channel is taken by the design, and
-	 *  the int channel by the paint. Instead the client looks for the controller itself within the STRUCTURE'S POSSIBLE bounds (a 5x5x5 cube
-	 *  around the part — the largest GT6 multiblocks are exactly that size) and asks each candidate's {@code isInsideStructure}
+	 *  the int channel by the paint. Instead the client takes the controllers among the block entities of the loaded chunks around the part
+	 *  (within {@link #CONTROLLER_REACH}, however high the part stands above its controller) and asks each candidate's {@code isInsideStructure}
 	 *  — i.e. the controller itself makes the decision, the scan only offers candidates. What's found is stored in
 	 *  {@code mTargetPos}, after which the regular {@code getTarget} works, and there will be no repeated scan. */
 	private ITileEntityMultiBlockController findControllerClientSide() {
 		if (level == null) return null;
 		BlockPos tSelf = getBlockPos();
-		for (int dx = -2; dx <= 2; dx++) for (int dy = -2; dy <= 2; dy++) for (int dz = -2; dz <= 2; dz++) {
-			if (dx == 0 && dy == 0 && dz == 0) continue;
-			BlockPos tPos = tSelf.offset(dx, dy, dz);
-			BlockEntity tBE = WD.te(level, tPos, T); // T = do not load the chunk just for a tooltip
-			if (tBE instanceof ITileEntityMultiBlockController tController && !((BlockEntity)tController).isRemoved()
-			 && tController.isInsideStructure(tSelf.getX(), tSelf.getY(), tSelf.getZ())) {
-				mTarget = tController;
-				mTargetPos = tPos;
-				return tController;
+		for (int cx = (tSelf.getX() - CONTROLLER_REACH) >> 4; cx <= (tSelf.getX() + CONTROLLER_REACH) >> 4; cx++) for (int cz = (tSelf.getZ() - CONTROLLER_REACH) >> 4; cz <= (tSelf.getZ() + CONTROLLER_REACH) >> 4; cz++) {
+			net.minecraft.world.level.chunk.LevelChunk tChunk = level.getChunkSource().getChunkNow(cx, cz); // null: not loaded, and no chunk is loaded just for a tooltip
+			if (tChunk == null) continue;
+			for (BlockEntity tBE : tChunk.getBlockEntities().values()) {
+				if (tBE instanceof ITileEntityMultiBlockController tController && !tBE.isRemoved() && tController.isInsideStructure(tSelf.getX(), tSelf.getY(), tSelf.getZ())) {
+					mTarget = tController;
+					mTargetPos = tBE.getBlockPos();
+					return tController;
+				}
 			}
 		}
 		return null;
