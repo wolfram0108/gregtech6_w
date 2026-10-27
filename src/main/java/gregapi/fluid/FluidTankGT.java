@@ -54,6 +54,8 @@ public class FluidTankGT implements IFluidTank {
 	/** HashMap of adjustable Tank Sizes based on Fluids if needed. */
 	private Map<String, Long> mAdjustableCapacity = null;
 	private long mAdjustableMultiplier = 1;
+	/** The Capacity per Fluid when the owner of the Tank knows it by a rule instead of a table. */
+	private java.util.function.ToLongFunction<String> mCapacityBy = null;
 	/** Gives you a Tank Index in case there is multiple Tanks on a TileEntity that cares. */
 	public int mIndex = 0;
 
@@ -349,6 +351,8 @@ public class FluidTankGT implements IFluidTank {
 	public FluidTankGT setCapacity(RecipeMap aMap, long aCapacityMultiplier) {mAdjustableCapacity = aMap.mMinInputTankSizes; mAdjustableMultiplier = aCapacityMultiplier; return this;}
 	/** Sets Tank capacity Map, should it be needed. */
 	public FluidTankGT setCapacity(Map<String, Long> aMap, long aCapacityMultiplier) {mAdjustableCapacity = aMap; mAdjustableMultiplier = aCapacityMultiplier; return this;}
+	/** Sets the capacity of the Tank per Fluid by a rule; it never drops below the base capacity or what the Tank holds. */
+	public FluidTankGT setCapacityBy(java.util.function.ToLongFunction<String> aCapacityBy) {mCapacityBy = aCapacityBy; return this;}
 	/** Adds a custom capacity to the Tank capacity Map. */
 	public FluidTankGT setCapacity(FluidStack aFluid) {return setCapacity(aFluid.getFluid(), aFluid.getAmount());}
 	/** Adds a custom capacity to the Tank capacity Map. */
@@ -375,14 +379,15 @@ public class FluidTankGT implements IFluidTank {
 	public long amount() {return isEmpty() ? 0 : mAmount;}
 	public long amount(long aMax) {return isEmpty() || aMax <= 0 ? 0 : Math.min(mAmount, aMax);}
 
-	public long capacity (                 ) {return mAdjustableCapacity == null ? mCapacity : capacity_(mFluid);}
-	public long capacity (FluidStack aFluid) {return mAdjustableCapacity == null ? mCapacity : capacity_(aFluid);}
-	public long capacity (Fluid      aFluid) {return mAdjustableCapacity == null ? mCapacity : capacity_(aFluid);}
-	public long capacity (String     aFluid) {return mAdjustableCapacity == null ? mCapacity : capacity_(aFluid);}
+	public long capacity (                 ) {return mAdjustableCapacity == null && mCapacityBy == null ? mCapacity : capacity_(mFluid);}
+	public long capacity (FluidStack aFluid) {return mAdjustableCapacity == null && mCapacityBy == null ? mCapacity : capacity_(aFluid);}
+	public long capacity (Fluid      aFluid) {return mAdjustableCapacity == null && mCapacityBy == null ? mCapacity : capacity_(aFluid);}
+	public long capacity (String     aFluid) {return mAdjustableCapacity == null && mCapacityBy == null ? mCapacity : capacity_(aFluid);}
 	public long capacity_(FluidStack aFluid) {return aFluid == null ? mCapacity : capacity_(aFluid.getFluid());}
 	public long capacity_(Fluid      aFluid) {return aFluid == null ? mCapacity : capacity_(FluidGT.nameOf(aFluid));}
 	public long capacity_(String     aFluid) {
 		if (aFluid == null) return mCapacity;
+		if (mCapacityBy != null) return Math.max(mCapacityBy.applyAsLong(aFluid), Math.max(mAmount, mCapacity));
 		Long tSize = mAdjustableCapacity.get(aFluid);
 		return tSize == null ? Math.max(mAmount, mCapacity) : Math.max(tSize * mAdjustableMultiplier, Math.max(mAmount, mCapacity));
 	}

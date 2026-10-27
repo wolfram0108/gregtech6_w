@@ -70,6 +70,8 @@ public class Recipe {
 		public final Map<String, Collection<Recipe>> mRecipeFluidMap = new HashMap<>();
 		/** HashMap of Minimum Tank Sizes based on the Input Fluids */
 		public final Map<String, Long> mMinInputTankSizes = new HashMap<>();
+		/** HashMap of the largest single Output a Recipe can put into an Output Tank, based on the Output Fluids */
+		public final Map<String, Long> mMaxOutputTankSizes = new HashMap<>();
 		/** The List of all Recipes */
 		public final Collection<Recipe> mRecipeList;
 		/** Used to detect if MineTweaker fucked with the Recipe List without also fixing the HashMaps. */
@@ -450,6 +452,9 @@ public class Recipe {
 			}
 			for (FluidStack aFluid : aRecipe.mFluidOutputs) if (aFluid != null) {
 				mMaxFluidOutputSize = Math.max(mMaxFluidOutputSize, aFluid.getAmount());
+				String aFluidName = FL.regName(aFluid.getFluid());
+				Long tSize = mMaxOutputTankSizes.get(aFluidName);
+				if (tSize == null || tSize < aFluid.getAmount()) mMaxOutputTankSizes.put(aFluidName, (long)aFluid.getAmount());
 			}
 			return addToItemMap(aRecipe);
 		}
@@ -469,6 +474,8 @@ public class Recipe {
 		/** The tank size this Map needs regardless of its Recipes, usually because of the way it is constructed. */
 		public void setBaseFluidInputSize(int aSize) {mMaxFluidInputBase = aSize; if (mMaxFluidInputSize < aSize) mMaxFluidInputSize = aSize;}
 		/** The tank size this Map needs regardless of its Recipes, usually because of the way it is constructed. */
+		/** The largest amount one Recipe of this Map can put into an Output Tank as the given Fluid: the registered Recipes and Handlers, never below the base the Map needs regardless of its Recipes. */
+		public long maxOutputTankSize(String aFluid) {Long tSize = mMaxOutputTankSizes.get(aFluid); return Math.max(mMaxFluidOutputBase, tSize == null ? 0 : tSize);}
 		public void setBaseFluidOutputSize(int aSize) {mMaxFluidOutputBase = aSize; if (mMaxFluidOutputSize < aSize) mMaxFluidOutputSize = aSize;}
 		
 		/** Rebuilds the fluid tank sizes from what the Map holds now: the base its construction needs, the Recipes left
@@ -479,6 +486,7 @@ public class Recipe {
 			mMaxFluidInputSize  = mMaxFluidInputBase;
 			mMaxFluidOutputSize = mMaxFluidOutputBase;
 			mMinInputTankSizes.clear();
+			mMaxOutputTankSizes.clear();
 			for (Recipe tRecipe : mRecipeList) {
 				for (FluidStack aFluid : tRecipe.mFluidInputs) if (aFluid != null) {
 					if (mMaxFluidInputSize < aFluid.getAmount()) mMaxFluidInputSize = aFluid.getAmount();
@@ -486,7 +494,12 @@ public class Recipe {
 					Long tSize = mMinInputTankSizes.get(aFluidName);
 					if (tSize == null || tSize < aFluid.getAmount()) mMinInputTankSizes.put(aFluidName, (long)aFluid.getAmount());
 				}
-				for (FluidStack aFluid : tRecipe.mFluidOutputs) if (aFluid != null && mMaxFluidOutputSize < aFluid.getAmount()) mMaxFluidOutputSize = aFluid.getAmount();
+				for (FluidStack aFluid : tRecipe.mFluidOutputs) if (aFluid != null) {
+					if (mMaxFluidOutputSize < aFluid.getAmount()) mMaxFluidOutputSize = aFluid.getAmount();
+					String aFluidName = FL.regName(aFluid.getFluid());
+					Long tSize = mMaxOutputTankSizes.get(aFluidName);
+					if (tSize == null || tSize < aFluid.getAmount()) mMaxOutputTankSizes.put(aFluidName, (long)aFluid.getAmount());
+				}
 			}
 			for (IRecipeMapHandler tHandler : mRecipeMapHandlers) tHandler.onAddedToMap(this);
 			mFluidSizesStale = F;
