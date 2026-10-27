@@ -292,7 +292,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	}
 	@Override
 	public ItemStack getStackInSlot(int aSlot) {
-		ITileEntityMultiBlockController tTileEntity = getTarget(T);
+		ITileEntityMultiBlockController tTileEntity = getTargetForRead();
 		if (tTileEntity instanceof IMultiBlockInventory) return ((IMultiBlockInventory)tTileEntity).getStackInSlot(this, aSlot);
 		return null;
 	}
@@ -304,7 +304,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	}
 	@Override
 	public int getSizeInventory() {
-		ITileEntityMultiBlockController tTileEntity = getTarget(T);
+		ITileEntityMultiBlockController tTileEntity = getTargetForRead();
 		if (tTileEntity instanceof IMultiBlockInventory) return ((IMultiBlockInventory)tTileEntity).getSizeInventory(this);
 		return 0;
 	}
@@ -348,7 +348,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	@Override
 	public int[] getAccessibleSlotsFromSide2(byte aSide) {
 		if ((mMode & NO_ITEM) == NO_ITEM) return ZL_INTEGER;
-		ITileEntityMultiBlockController tTileEntity = getTarget(T);
+		ITileEntityMultiBlockController tTileEntity = getTargetForRead();
 		if (tTileEntity instanceof IMultiBlockInventory) return ((IMultiBlockInventory)tTileEntity).getAccessibleSlotsFromSide(this, aSide);
 		return ZL_INTEGER;
 	}
@@ -416,7 +416,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	}
 	@Override
 	public FluidTankInfo[] getTankInfo(Direction aDirection) {
-		ITileEntityMultiBlockController tTileEntity = getTarget(T);
+		ITileEntityMultiBlockController tTileEntity = getTargetForRead();
 		if (tTileEntity instanceof IMultiBlockFluidHandler) return ((IMultiBlockFluidHandler)tTileEntity).getTankInfo(this, UT.Code.side(aDirection));
 		return ZL_FLUIDTANKINFO;
 	}
@@ -429,8 +429,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	 *  because the part's own {@code IFluidHandler} with its delegating methods stuck out to the outside. */
 	@Override
 	protected net.neoforged.neoforge.fluids.IFluidTank[] getFluidTanks2(byte aSide) {
-		ITileEntityMultiBlockController tTileEntity = getTarget(T);
-		if (tTileEntity == null && isClientSide()) tTileEntity = findControllerClientSide();
+		ITileEntityMultiBlockController tTileEntity = getTargetForRead();
 		if (tTileEntity instanceof IMultiBlockFluidHandler) return ((IMultiBlockFluidHandler)tTileEntity).getFluidTanks(this, aSide);
 		return ZL_FT;
 	}
@@ -465,6 +464,14 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		return null;
 	}
 	
+	/** The controller for a READ of what the part holds, as a tooltip or a foreign mod's capability lookup asks it: the server has the stored binding, the client's copy
+	 *  has none and finds the controller itself. One way for every such read, because Jade asks the client's copy first and queries the server only if that one answers. */
+	private ITileEntityMultiBlockController getTargetForRead() {
+		ITileEntityMultiBlockController tTileEntity = getTarget(T);
+		if (tTileEntity == null && isClientSide()) tTileEntity = findControllerClientSide();
+		return tTileEntity;
+	}
+
 	@Override
 	public int funnelFill(byte aSide, FluidStack aFluid, boolean aDoFill) {
 		ITileEntityMultiBlockController tTileEntity = getTarget(T);
