@@ -31,14 +31,22 @@ import net.minecraftforge.fluids.IFluidTank;
 public final class FluidTankInfo {
 	public final FluidStack fluid;
 	public final int capacity;
+	/** The capacity without the cut to int, and whether the tank only voids what it gets, so it is no storage. */
+	public final long capacityLong;
+	public final boolean voids;
 
 	public FluidTankInfo(FluidStack aFluid, int aCapacity) {
 		fluid = aFluid;
 		capacity = aCapacity;
+		capacityLong = aCapacity;
+		voids = false;
 	}
 
 	/** Forge 1.20.1 kept IFluidTank.getFluid()/getCapacity() verbatim, so this constructor stays 1:1 with 1.7.10. */
 	public FluidTankInfo(IFluidTank aTank) {
-		this(aTank.getFluid(), aTank.getCapacity());
+		fluid = aTank.getFluid();
+		capacity = aTank.getCapacity();
+		capacityLong = aTank instanceof FluidTankGT tTank ? tTank.capacity() : aTank.getCapacity();
+		voids = aTank instanceof FluidTankGT tTank && tTank.voidsExcess();
 	}
 }

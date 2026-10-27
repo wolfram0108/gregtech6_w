@@ -47,6 +47,12 @@ public final class GT6FluidCapability {
 		return new SidedTankView(aTileEntity, aSide);
 	}
 
+	/** The capacity of a slot as storage: none for a slot that is no storage, the dummy of a block that takes fluid for a process or a tank that voids what it gets. */
+	public static long storageCapacity(gregapi.fluid.FluidTankInfo[] aInfo, int aIndex) {
+		if (aIndex < 0 || aIndex >= aInfo.length || aInfo[aIndex] == null || aInfo == gregapi.data.CS.L1_FLUIDTANKINFO_DUMMY || aInfo[aIndex].voids) return 0;
+		return aInfo[aIndex].capacityLong;
+	}
+
 	/** This is the literal 1.20.1 equivalent of the 1.7.10 TE itself; exceptions are swallowed for the same reason as hasTanks. */
 	private static final class SidedTankView implements IFluidHandler {
 		private final TileEntityBase01Root mTileEntity;
@@ -68,10 +74,8 @@ public final class GT6FluidCapability {
 			return aTank >= 0 && aTank < tInfo.length && tInfo[aTank] != null && tInfo[aTank].fluid != null ? tInfo[aTank].fluid : FluidStack.EMPTY;
 		}
 
-		@Override public int getTankCapacity(int aTank) {
-			gregapi.fluid.FluidTankInfo[] tInfo = info();
-			return aTank >= 0 && aTank < tInfo.length && tInfo[aTank] != null ? tInfo[aTank].capacity : 0;
-		}
+		/** What a slot can hold as storage, as far as an int carries it; none for a slot that is no storage, so that a tooltip does not show it as a tank with a limit that is not there. */
+		@Override public int getTankCapacity(int aTank) {return (int)Math.min(Integer.MAX_VALUE, storageCapacity(info(), aTank));}
 
 		@Override public boolean isFluidValid(int aTank, FluidStack aFluid) {
 			if (aFluid == null || aFluid.isEmpty()) return false;

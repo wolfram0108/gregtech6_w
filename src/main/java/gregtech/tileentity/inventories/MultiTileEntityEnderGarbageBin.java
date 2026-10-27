@@ -94,7 +94,7 @@ public class MultiTileEntityEnderGarbageBin extends TileEntityBase07Paintable im
 	
 	@Override
 	protected IFluidTank[] getFluidTanks2(byte aSide) {
-		return new FluidTankGT().AS_ARRAY;
+		return new FluidTankGT().setVoidExcess().AS_ARRAY;
 	}
 	
 	@Override

@@ -476,6 +476,16 @@ public class Recipe {
 		/** The tank size this Map needs regardless of its Recipes, usually because of the way it is constructed. */
 		/** The largest amount one Recipe of this Map can put into an Output Tank as the given Fluid: the registered Recipes and Handlers, never below the base the Map needs regardless of its Recipes. */
 		public long maxOutputTankSize(String aFluid) {Long tSize = mMaxOutputTankSizes.get(aFluid); return Math.max(mMaxFluidOutputBase, tSize == null ? 0 : tSize);}
+		/** The most one pass of a fuel burner puts of the Fluid into its output tank: it repeats the Recipe in one tick while its energy buffer is below twice its rate, as long as its input tank (ten times the rate) lasts. */
+		public long maxBurnerOutput(String aFluid, long aRate, long aEfficiency) {
+			long rMax = 0;
+			for (Recipe tRecipe : mRecipeList) if (tRecipe.mFluidOutputs.length > 0 && tRecipe.mFluidOutputs[0] != null && aFluid.equals(FL.regName(tRecipe.mFluidOutputs[0].getFluid()))) {
+				long tEnergy = Math.max(1, gregapi.util.UT.Code.units(tRecipe.getAbsoluteTotalPower(), 10000, aEfficiency, F));
+				long tInput = tRecipe.mFluidInputs.length > 0 && tRecipe.mFluidInputs[0] != null ? Math.max(1, tRecipe.mFluidInputs[0].getAmount()) : 1;
+				rMax = Math.max(rMax, Math.max(1, Math.min((2 * aRate + tEnergy - 1) / tEnergy, 10 * aRate / tInput)) * tRecipe.mFluidOutputs[0].getAmount());
+			}
+			return rMax;
+		}
 		public void setBaseFluidOutputSize(int aSize) {mMaxFluidOutputBase = aSize; if (mMaxFluidOutputSize < aSize) mMaxFluidOutputSize = aSize;}
 		
 		/** Rebuilds the fluid tank sizes from what the Map holds now: the base its construction needs, the Recipes left
