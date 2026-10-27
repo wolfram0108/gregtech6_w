@@ -630,7 +630,12 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	public long outputTankStop(long aOutput) {return Math.max(OUTPUT_TANK_FLOOR, 1 + aOutput * mParallel);}
 
 	/** The most an Output Tank can hold of the Fluid: a Recipe starts below the stop and then adds one batch of up to mParallel times its output. */
-	public long outputTankLimit(String aFluid) {long tOutput = mRecipes.maxOutputTankSize(aFluid); return outputTankStop(tOutput) - 1 + tOutput * mParallel;}
+	public long outputTankLimit(String aFluid) {
+		long tOutput = mRecipes.maxOutputTankSize(aFluid);
+		// A Recipe made at run time (a drained Container, an Injector's) is in no table of the map, and the stop rule starts it by its own output: the batch in progress lifts the limit to what it hands over.
+		for (FluidStack tBatch : mOutputFluids) if (tBatch != null && aFluid.equals(FL.regName(tBatch.getFluid()))) tOutput = Math.max(tOutput, tBatch.getAmount());
+		return outputTankStop(tOutput) - 1 + tOutput * mParallel;
+	}
 
 	public int canOutput(Recipe aRecipe) {
 		int rMaxTimes = mParallel;

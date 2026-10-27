@@ -31,7 +31,7 @@ import net.minecraftforge.fluids.IFluidTank;
 public final class FluidTankInfo {
 	public final FluidStack fluid;
 	public final int capacity;
-	/** The capacity without the cut to int, and whether the tank only voids what it gets, so it is no storage. */
+	/** The capacity without the cut to int, and whether the tank is a drain that takes everything and voids it with no limit, so it is no storage. */
 	public final long capacityLong;
 	public final boolean voids;
 
@@ -47,6 +47,6 @@ public final class FluidTankInfo {
 		fluid = aTank.getFluid();
 		capacity = aTank.getCapacity();
 		capacityLong = aTank instanceof FluidTankGT tTank ? tTank.capacity() : aTank.getCapacity();
-		voids = aTank instanceof FluidTankGT tTank && tTank.voidsExcess();
+		voids = aTank instanceof FluidTankGT tTank && tTank.isDrain();
 	}
 }
