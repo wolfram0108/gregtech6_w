@@ -426,7 +426,10 @@ dependencies {
     // Production jars call the engine by SRG names, so dev runs load them through the SRG-to-named remap.
     // A mistyped file name would otherwise start the game without the mod and without a word.
     if (localMods.isDirectory()) devRunMods.findAll { !it.jar.isFile() }.each { logger.lifecycle("[mods] absent from ${localMods.name}, runs go without it: ${it.jar.name}") }
-    devRunMods.findAll { it.jar.isFile() }.each { modLocalRuntime it.notation }
+    // Data generation sees GT6 alone: the dev mods' own data providers (BuildCraft, AE2) would run with ours, and BuildCraft's fail and write into src/generated.
+    if (!gradle.startParameter.taskNames.any { it == 'runData' || it.endsWith(':runData') }) {
+        devRunMods.findAll { it.jar.isFile() }.each { modLocalRuntime it.notation }
+    }
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
