@@ -901,9 +901,14 @@ public class GT_API extends Abstract_Mod {
 			}
 		}
 
+		/** The namespaces getResource/listResources answer for (ModIDs.isGregNamespace): the engine asks a pack only about the ones it names,
+		 *  so an addon on the GT API (gt6u) would otherwise get no placeholder models. */
 		@Override
 		public java.util.Set<String> getNamespaces(net.minecraft.server.packs.PackType aType) {
-			return aType == net.minecraft.server.packs.PackType.CLIENT_RESOURCES ? java.util.Set.of(ModIDs.GT, ModIDs.GAPI) : java.util.Set.of();
+			if (aType != net.minecraft.server.packs.PackType.CLIENT_RESOURCES) return java.util.Set.of();
+			java.util.Set<String> rNamespaces = new java.util.LinkedHashSet<>(java.util.List.of(ModIDs.GT, ModIDs.GAPI));
+			for (gregapi.api.Abstract_Mod tMod : gregapi.api.Abstract_Mod.MODS_USING_GT_API) if (ModIDs.isContentNamespace(tMod.getModID())) rNamespaces.add(tMod.getModID());
+			return rNamespaces;
 		}
 
 		@Override
