@@ -57,13 +57,29 @@ public class LanguageHandler {
 	/** Keys whose GT6 English an addon on the GT API rewrote: a translation of GT6's text no longer says what the key now says, and the
 	 *  addon (GT6U) showed its English in every language; a rewrite by GT6 itself marks nothing. */
 	private static final java.util.Set<String> REWRITTEN = java.util.concurrent.ConcurrentHashMap.newKeySet();
-	/** The English of a rewritten key, in either form (key or key.name); null for any other key. */
+	/** The English of a rewritten key, in either form (key or key.name); null for any other key and for a key the addon ships a text for. */
 	private static String rewrittenEnglish(String aKey) {
-		if (REWRITTEN.isEmpty()) return null;
+		if (REWRITTEN.isEmpty() || isRedirected(aKey)) return null;
 		if (REWRITTEN.contains(aKey)) return BACKUPMAP.get(aKey);
 		if (aKey.endsWith(".name") && REWRITTEN.contains(aKey = aKey.substring(0, aKey.length() - 5))) return BACKUPMAP.get(aKey);
 		return null;
 	}
+	/** The infix of a key an addon writes its own text under: «<mod>.rewrite.<key>» is what that addon says for «<key>», in the player's language. */
+	private static final String REWRITE = ".rewrite.";
+	/** True when an addon ships its own text for aKey: the engine answers it with that text, not with GT6's and not with the addon's English. */
+	private static boolean isRedirected(String aKey) {GT6Language tOverlay = mEngineOverlay; return tOverlay != null && tOverlay.redirect(aKey) != null;}
+	/** The texts addons ship for GT6's keys, found in the finished engine table: key -> text. */
+	private static java.util.Map<String, String> redirects(Language aLanguage) {
+		java.util.Map<String, String> rRedirects = new HashMap<>();
+		for (Entry<String, String> tEntry : aLanguage.getLanguageData().entrySet()) {
+			int tAt = tEntry.getKey().indexOf(REWRITE);
+			if (tAt <= 0) continue;
+			String tMod = tEntry.getKey().substring(0, tAt);
+			if (!ModIDs.GT.equals(tMod) && ModIDs.isContentNamespace(tMod)) rRedirects.put(tEntry.getKey().substring(tAt + REWRITE.length()), tEntry.getValue());
+		}
+		return rRedirects;
+	}
+
 	/** A new English for aKey: an addon replacing an English already there marks the key for good, so no later default can flip it back. */
 	private static void english(String aKey, String aEnglish) {
 		String tOld = BACKUPMAP.get(aKey);
@@ -164,11 +180,20 @@ public class LanguageHandler {
 		private final Language mDelegate;
 		private final java.util.concurrent.ConcurrentHashMap<String, String> mOwn = new java.util.concurrent.ConcurrentHashMap<>();
 
-		GT6Language(Language aDelegate) {mDelegate = aDelegate;}
+		private final java.util.Map<String, String> mRedirect;
+
+		GT6Language(Language aDelegate) {mDelegate = aDelegate; mRedirect = redirects(aDelegate);}
+
+		/** The text an addon ships for aKey (either form), or null. */
+		String redirect(String aKey) {
+			String rText = mRedirect.get(aKey);
+			return rText != null || !aKey.endsWith(".name") ? rText : mRedirect.get(aKey.substring(0, aKey.length() - 5));
+		}
 
 		/** @return how many key forms were added (the engine did not know them). */
 		int own(String aKey, String aEnglish) {
 			int rAdded = 0;
+			if (redirect(aKey) != null) return 0; // an addon's own text answers it, see getOrDefault
 			// A rewritten key is ours over the engine's and takes its latest English: the engine's translation says GT6's old text.
 			String tRewritten = rewrittenEnglish(aKey);
 			if (tRewritten != null) {
@@ -184,15 +209,17 @@ public class LanguageHandler {
 		}
 
 		@Override public String getOrDefault(String aKey, String aDefault) {
+			String rRedirect = redirect(aKey);
+			if (rRedirect != null) return rRedirect;
 			if (rewrittenEnglish(aKey) != null) {String rOwn = mOwn.get(aKey); if (rOwn != null) return rOwn;}
 			if (mDelegate.has(aKey)) return mDelegate.getOrDefault(aKey, aDefault);
 			String rOwn = mOwn.get(aKey);
 			return rOwn == null ? aDefault : rOwn;
 		}
-		@Override public boolean has(String aKey) {return mDelegate.has(aKey) || mOwn.containsKey(aKey);}
+		@Override public boolean has(String aKey) {return mDelegate.has(aKey) || mOwn.containsKey(aKey) || redirect(aKey) != null;}
 		@Override public boolean isDefaultRightToLeft() {return mDelegate.isDefaultRightToLeft();}
 		@Override public net.minecraft.util.FormattedCharSequence getVisualOrder(net.minecraft.network.chat.FormattedText aText) {return mDelegate.getVisualOrder(aText);}
-		@Override public net.minecraft.network.chat.Component getComponent(String aKey) {return mDelegate.getComponent(aKey);}
+		@Override public net.minecraft.network.chat.Component getComponent(String aKey) {return redirect(aKey) != null ? null : mDelegate.getComponent(aKey);}
 
 		/** Built once per content and reused: {@code I18n} asks for it on every language switch
 		 *  ({@code I18n.java:18}), and with ~100k keys rebuilding per call is unaffordable. Reset when a key is added. */
@@ -204,6 +231,7 @@ public class LanguageHandler {
 				java.util.Map<String, String> tData = new HashMap<>(mOwn);
 				tData.putAll(mDelegate.getLanguageData()); // The engine wins: its values override ours.
 				for (java.util.Map.Entry<String, String> tEntry : mOwn.entrySet()) if (rewrittenEnglish(tEntry.getKey()) != null) tData.put(tEntry.getKey(), tEntry.getValue()); // but not over a rewritten key
+				for (java.util.Map.Entry<String, String> tEntry : mRedirect.entrySet()) {tData.put(tEntry.getKey(), tEntry.getValue()); tData.put(tEntry.getKey() + ".name", tEntry.getValue());} // and an addon's own text is over both
 				mMerged = rMerged = java.util.Collections.unmodifiableMap(tData);
 			}
 			return rMerged;
