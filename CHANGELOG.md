@@ -54,6 +54,7 @@ that predate this branch describe work done on the shared code base before it wa
 - Vanilla tools wear on GT6 blocks as they did in 1.7.10.
 - The fluid spring of the world floor is unbreakable for pistons and other mods, and blocks light like bedrock.
 - Recipe config files are saved once items are initialised, as on the main branch.
+- Empty glass tubes can be melted in the Melter and the Smelter again.
 
 Thanks to [@gangzhengzhiwei](https://github.com/gangzhengzhiwei) and [@Insecedeath](https://github.com/Insecedeath) for the reports and contributions.
 
