@@ -495,14 +495,6 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	}
 	
 	// @Override
-	public void onProxyAfterInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
-		for (OreDictPrefix tPrefix : OreDictPrefix.VALUES) {
-			LH.add("oredict.prefix." + tPrefix.mNameInternal, tPrefix.mNameLocal);
-			tPrefix.mNameLocal = LH.get("oredict.prefix." + tPrefix.mNameInternal, tPrefix.mNameLocal);
-		}
-	}
-	
-	// @Override
 	public void onProxyAfterPostInit(Abstract_Mod aMod, FMLLoadCompleteEvent aEvent) {
 		// Initialising the List of Decorative Plank Icons
 		for (int i = 0; i < PlankData.PLANKS.length; i++) {

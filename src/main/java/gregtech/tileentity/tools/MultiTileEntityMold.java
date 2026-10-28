@@ -133,7 +133,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		if (mShape == 0)
 		aList.add(Chat.CYAN     + LH.get(LH.RECIPES_MOLD_SELECT));
 		else
-		aList.add(Chat.CYAN     + LH.get(LH.RECIPES_MOLD) + " " + getMoldRecipe(mShape).mNameLocal + Chat._WHITE + UT.Code.displayUnits(getMoldRequiredMaterialUnits()) + LH.tt(" Units"));
+		aList.add(Chat.CYAN     + LH.get(LH.RECIPES_MOLD) + " " + getMoldRecipe(mShape).getLocalPrefixName() + Chat._WHITE + UT.Code.displayUnits(getMoldRequiredMaterialUnits()) + LH.tt(" Units"));
 		aList.add(Chat.ORANGE   + LH.get(LH.NO_GUI_CLICK_TO_INTERACT)   + " (" + LH.get(LH.FACE_TOP) + ")");
 		if (mAcidProof) aList.add(Chat.ORANGE + LH.get(LH.TOOLTIP_ACIDPROOF));
 		aList.add(Chat.DRED     + LH.get(LH.HAZARD_MELTDOWN) + " (" + getMoldMaxTemperature() + " K)");
@@ -368,7 +368,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 				if (mShape == 0)
 				aChatReturn.add(Chat.CYAN       + LH.tt("Use a Chisel in order to select the Shape of the Mold"));
 				else
-				aChatReturn.add(Chat.CYAN       + LH.tt("This Mold produces ") + getMoldRecipe(mShape).mNameLocal);
+				aChatReturn.add(Chat.CYAN       + LH.tt("This Mold produces ") + getMoldRecipe(mShape).getLocalPrefixName());
 				if (SIDES_TOP[aSide]) {
 					byte tSide = UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ);
 					if (SIDES_HORIZONTAL[tSide]) aChatReturn.add(FACE_CONNECTED[tSide][mAutoPullDirections] ? LH.tt("Crucible Auto-Input: ON") : LH.tt("Crucible Auto-Input: OFF"));
