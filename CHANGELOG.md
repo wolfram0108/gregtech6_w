@@ -52,6 +52,7 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 - Food that leaves the bath keeps the effect of the potion it was bathed in.
 - Vanilla tools wear on GT6 blocks as they did in 1.7.10.
 - The fluid spring of the world floor is unbreakable for pistons and other mods, and blocks light like bedrock.
+- Empty glass tubes can be melted in the Melter and the Smelter again.
 
 Thanks to [@gangzhengzhiwei](https://github.com/gangzhengzhiwei) and [@Insecedeath](https://github.com/Insecedeath) for the reports and contributions.
 
