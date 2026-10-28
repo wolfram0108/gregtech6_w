@@ -174,6 +174,8 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	// @Override
 	public ItemStack getContainerItem(ItemStack aStack) {
 		if (ST.equal(aStack, mContainerItem, T)) return null;
+		// The prefix's container can be one of this item's own stacks (the empty glass tube): it has no tare of its own whichever call asks first, not only once the cache above is filled.
+		if (ST.equal(aStack, mPrefix.containerItem(), T)) return null;
 		// The crafting player isn't in this method's signature, but the engine makes it available via
 		// NeoForge's CommonHooks for the duration of this call, so it's read from there rather than invented.
 		if (mCraftingSound != null) {
