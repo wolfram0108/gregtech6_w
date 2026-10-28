@@ -1,0 +1,6 @@
+{
+ "pack.gregapi.ae2_generation.description": "GregTech 6 replaces AE2 world generation (meteorites) with its own industrial paths (ADAPT-019). Controlled by GregTech.cfg: ae2 / ReplaceMeteoriteGeneration.",
+ "pack.gregapi.ae2_generation.title": "GT6: AE2 generation replaced by GregTech",
+ "pack.gregapi.ae2_recipes.description": "GregTech 6 rewires AE2 recipes whose inputs it removed (ADAPT-020). Controlled by GregTech.cfg: ae2 / DisableAllQuartzToolRecipes.",
+ "pack.gregapi.ae2_recipes.title": "GT6: AE2 recipes rewired to GregTech inputs"
+}

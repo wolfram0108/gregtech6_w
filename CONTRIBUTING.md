@@ -70,6 +70,11 @@ is one of the most valuable reports this project can get — open an issue with 
 - Reference the issue if there is one.
 - Do not commit build output, logs, dumps, IDE files or anything else the build can regenerate.
 
+## Translations
+
+A translation is one JSON file per language and per mod, and needs no code. The English templates, a checker for a finished file and the rules for
+what must stay inside a text are in [`translations/`](translations/README.md).
+
 ## Licensing of contributions
 
 GregTech 6 is licensed under the **GNU Lesser General Public License v3 or later**, and this port
