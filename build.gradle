@@ -342,7 +342,10 @@ dependencies {
     def devRunJars = devRunMods.collect { new File(localMods, it) }
     // A mistyped file name would otherwise start the game without the mod and without a word.
     if (localMods.isDirectory()) devRunJars.findAll { !it.isFile() }.each { logger.lifecycle("[mods] absent from ${localMods.name}, runs go without it: ${it.name}") }
-    localRuntime files(devRunJars.findAll { it.isFile() })
+    // Data generation sees GT6 alone: the dev mods' own data providers (BuildCraft, AE2) would run with ours, and BuildCraft's fail and write into src/generated.
+    if (!gradle.startParameter.taskNames.any { it == 'runData' || it.endsWith(':runData') }) {
+        localRuntime files(devRunJars.findAll { it.isFile() })
+    }
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
