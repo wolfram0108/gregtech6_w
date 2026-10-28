@@ -361,6 +361,11 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		mNameLocal = aLocalName;
 		return this;
 	}
+
+	/** The name of the category in the player's language; the English one is the default of the key «oredict.prefix.<name>». Asked when shown: the language is not loaded yet when the prefixes are made. */
+	public String getLocalPrefixName() {
+		return gregapi.data.LH.get("oredict.prefix." + mNameInternal, mNameLocal);
+	}
 	
 	public OreDictPrefix ignoreMaterials(OreDictMaterial... aMaterials) {
 		if (aMaterials != null) for (OreDictMaterial aMaterial : aMaterials) if (aMaterial != null && !mIgnoredRegistrations.contains(aMaterial)) mIgnoredRegistrations.add(aMaterial);
