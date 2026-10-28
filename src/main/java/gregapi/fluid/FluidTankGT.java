@@ -321,6 +321,17 @@ public class FluidTankGT implements IFluidTank {
 	public boolean voidsExcess() {return mVoidExcess;}
 	/** Whether the Tank takes whatever it is given and voids it, with no limit of its own: a drain, which stores nothing. A Tank that voids only above a limit is a storage. */
 	public boolean isDrain() {return mVoidExcess && mCapacity == Long.MAX_VALUE && mCapacityBy == null && mAdjustableCapacity == null;}
+	/** The Tanks of a list that store something. A drain is left out: an outside reader of the list would take its Long.MAX_VALUE for a capacity. */
+	public static IFluidTank[] withoutDrains(IFluidTank[] aTanks) {
+		if (aTanks == null) return null;
+		int tDrains = 0;
+		for (IFluidTank tTank : aTanks) if (tTank instanceof FluidTankGT tGT && tGT.isDrain()) tDrains++;
+		if (tDrains == 0) return aTanks;
+		IFluidTank[] rTanks = new IFluidTank[aTanks.length - tDrains];
+		int i = 0;
+		for (IFluidTank tTank : aTanks) if (!(tTank instanceof FluidTankGT tGT && tGT.isDrain())) rTanks[i++] = tTank;
+		return rTanks;
+	}
 	/** Voids any Overlow */
 	public FluidTankGT setVoidExcess(boolean aVoidExcess) {mVoidExcess = aVoidExcess; return this;}
 	/** Sets Tank capacity Map, should it be needed. */
