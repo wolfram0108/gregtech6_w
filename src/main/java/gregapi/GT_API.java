@@ -432,9 +432,13 @@ public class GT_API extends Abstract_Mod {
 		// language is forge: tags, read by the bridge and fed into the same dictionary entry point.
 		try {gregapi.oredict.OreDictTags.importFromTags();} catch(Throwable e) {e.printStackTrace(ERR);}
 		// The loaders in this queue judge vanilla recipes as 1.7.10 did (CR.remove/remout/has/get); an empty queue needs no view.
-		if (!DEFERRED_ITEM_INIT.isEmpty()) gregapi.util.CR.openVanillaView(aRegistries);
+		boolean tDrained = !DEFERRED_ITEM_INIT.isEmpty();
+		if (tDrained) gregapi.util.CR.openVanillaView(aRegistries);
 		try {while (!DEFERRED_ITEM_INIT.isEmpty()) {Runnable tInit = DEFERRED_ITEM_INIT.remove(0); try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);}}}
 		finally {sDeferredItemInitRunning = false; sDeferredItemInitDone = true; gregapi.util.CR.closeVanillaView();}
+		// The phase-end save of 1.7.10: save on edit is held back in this window (Config.get), so the config keys these loaders read reach the files only here.
+		if (tDrained && GAPI != null) GAPI.loadRunnables("Saving Configs", sConfigs);
+		gregapi.recipes.Recipe.RecipeMap.logConfigDurationOverrides();
 	}
 
 	/** Some GT6 subsystems build the neo Block outside any DeferredRegister supplier and outside preInit,
@@ -1339,6 +1343,7 @@ public class GT_API extends Abstract_Mod {
 
 		RECIPE_DURATION_MULTIPLIER          = ConfigsGT.GREGTECH.get("recipes", "recipe_duration_multiplier"   , 1.0);
 		RECIPE_ENERGY_MULTIPLIER            = ConfigsGT.GREGTECH.get("recipes", "recipe_energy_multiplier"     , 1.0);
+		if (RECIPE_DURATION_MULTIPLIER != 1.0 || RECIPE_ENERGY_MULTIPLIER != 1.0) OUT.println("Recipe config: recipe_duration_multiplier=" + RECIPE_DURATION_MULTIPLIER + ", recipe_energy_multiplier=" + RECIPE_ENERGY_MULTIPLIER + " scale the machine recipes (1.0 leaves them as the loaders gave them)");
 		
 		if (FIRE_EXPLOSIONS      ) FIRE_BREAKING       = T;
 		if (RAIN_EXPLOSIONS      ) RAIN_BREAKING       = T;
