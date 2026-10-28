@@ -591,7 +591,7 @@ public class LoaderItemData implements Runnable {
 		for (net.minecraft.world.level.block.Block tGlass : gregapi.data.CS.Flattened.STAINED_GLASS     ) OM.reg(OD.blockGlass, ST.make(tGlass, 1, 0));
 		OM.reg(OD.blockGlassColorless               , ST.make(Blocks.GLASS, 1, W));
 		OM.reg(OD.blockGlassColorless               , ST.make(MD.CHSL, "glass", 1, W));
-		for (net.minecraft.world.level.block.Block tPane  : gregapi.data.CS.Flattened.STAINED_GLASS_PANE) OM.reg(OD.paneGlass , ST.make(tPane , 1, 0));
+		for (net.minecraft.world.level.block.Block tPane  : gregapi.data.CS.Flattened.STAINED_GLASS_PANE) OM.reg(OD.paneGlass , ST.make(tPane , 1, W));
 		OM.reg(OD.paneGlassColorless                , ST.make(Blocks.GLASS_PANE, 1, W));
 		OM.reg(OD.paneGlassColorless                , ST.make(MD.CHSL, "glass_pane", 1, W));
 		OM.reg(OD.paneGlass                         , ST.make(MD.CHSL, "stained_glass_pane_brown", 1, W));
@@ -749,7 +749,7 @@ public class LoaderItemData implements Runnable {
 		OM.reg(OD.craftingAnvil                     , ST.make(MD.RC, "anvil", 1, 0));
 		OM.reg(OD.craftingHardenedClay              , ST.make(Blocks.TERRACOTTA, 1, W));
 		// Same central-family approach as the glass entry above, for the 16 terracotta colors.
-		for (net.minecraft.world.level.block.Block tClay : gregapi.data.CS.Flattened.TERRACOTTA) OM.reg(OD.craftingHardenedClay, ST.make(tClay, 1, 0));
+		for (net.minecraft.world.level.block.Block tClay : gregapi.data.CS.Flattened.TERRACOTTA) OM.reg(OD.craftingHardenedClay, ST.make(tClay, 1, W));
 		OM.reg(OP.treeSapling                       , ST.make(MD.HaC, "pamalmondSapling", 1, W));
 		OM.reg(OP.treeSapling                       , ST.make(MD.HaC, "pamappleSapling", 1, W));
 		OM.reg(OP.treeSapling                       , ST.make(MD.HaC, "pamapricotSapling", 1, W));
@@ -2494,7 +2494,7 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.CLAY                          , 1, W), MT.Clay               ,  U * 4);
 		OM.data(ST.make(Blocks.TERRACOTTA                 , 1, W), MT.Ceramic            ,  U * 4);
 		// Same central CS.Flattened family as the glass/terracotta entries above.
-		for (net.minecraft.world.level.block.Block tClay : gregapi.data.CS.Flattened.TERRACOTTA) OM.data(ST.make(tClay, 1, 0), MT.Ceramic, U * 4);
+		for (net.minecraft.world.level.block.Block tClay : gregapi.data.CS.Flattened.TERRACOTTA) OM.data(ST.make(tClay, 1, W), MT.Ceramic, U * 4);
 		OM.data(ST.make(Blocks.FLOWER_POT                    , 1, W), MT.Brick              ,  U * 3);
 		OM.data(ST.make(Items.FLOWER_POT                     , 1, W), MT.Brick              ,  U * 3);
 		OM.data(ST.make(Blocks.BRICKS                   , 1, W), MT.Brick              ,  U * 4);
@@ -2546,7 +2546,7 @@ public class LoaderItemData implements Runnable {
 		// Same central CS.Flattened families as above, for stained glass and stained glass panes.
 		for (net.minecraft.world.level.block.Block tGlass : gregapi.data.CS.Flattened.STAINED_GLASS     ) OM.data(ST.make(tGlass, 1, 0), MT.Glass, U*9);
 		OM.data(ST.make(Blocks.GLASS                         , 1, W), MT.Glass              ,  U*9);
-		for (net.minecraft.world.level.block.Block tPane  : gregapi.data.CS.Flattened.STAINED_GLASS_PANE) OM.data(ST.make(tPane , 1, 0), MT.Glass, U);
+		for (net.minecraft.world.level.block.Block tPane  : gregapi.data.CS.Flattened.STAINED_GLASS_PANE) OM.data(ST.make(tPane , 1, W), MT.Glass, U);
 		OM.data(ST.make(Blocks.GLASS_PANE                    , 1, W), MT.Glass              ,  U);
 		OM.data(ST.make(Items.CLOCK                          , 1, W), MT.Au                 ,  U * 4, MT.Redstone, U);
 		OM.data(ST.make(Items.COMPASS                        , 1, W), ANY.Fe                ,  U * 4, MT.Redstone, U);
