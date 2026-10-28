@@ -28,6 +28,33 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 
 ## [Unreleased]
 
+## [6.0.0-alpha.17] — Railcraft Reborn, Jade tank limits and translations
+
+### Added
+
+- Railcraft Reborn is supported: its items take their materials from GT6, the GT6 crowbar is a Crowbar of Reborn, and GT6 ores generate in the stones of Reborn. ([#42](https://github.com/wolfram0108/gregtech6_w/issues/42))
+- Russian translation of the GT6U addon, including its generated manual pages.
+- Translation templates, a checker and rules for translators.
+- The game log names the recipe durations that a config file changes.
+
+### Changed
+
+- Simplified Chinese translation is taken from the community translation project. ([#37](https://github.com/wolfram0108/gregtech6_w/pull/37))
+
+### Fixed
+
+- Electric Mixer, Loom and Sifter efficiency follows the converter settings instead of a fixed 50 %. ([#38](https://github.com/wolfram0108/gregtech6_w/issues/38))
+- Hoppers, pipes and machines of GT6 take items from other mods' storages that offer them only through the item capability. ([#39](https://github.com/wolfram0108/gregtech6_w/issues/39))
+- Middle click on a slab placed in any orientation gives the standard slab item. ([#40](https://github.com/wolfram0108/gregtech6_w/issues/40))
+- GT6 items in quest books no longer crash the packer of FTB Library or disconnect the client. ([#41](https://github.com/wolfram0108/gregtech6_w/issues/41))
+- Jade and other mods show real limits for machine output tanks instead of an unlimited capacity, and no longer list trash bins and the Ender Garbage Dump as tanks. ([#43](https://github.com/wolfram0108/gregtech6_w/issues/43))
+- Jade shows the contents of every part of a multiblock, not only of its controller.
+- Food that leaves the bath keeps the effect of the potion it was bathed in.
+- Vanilla tools wear on GT6 blocks as they did in 1.7.10.
+- The fluid spring of the world floor is unbreakable for pistons and other mods, and blocks light like bedrock.
+
+Thanks to [@gangzhengzhiwei](https://github.com/gangzhengzhiwei) and [@Insecedeath](https://github.com/Insecedeath) for the reports and contributions.
+
 ## [6.0.0-alpha.16] — GT6U addon, restored flower pots and compatibility fixes
 
 ### Added
