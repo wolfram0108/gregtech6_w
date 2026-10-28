@@ -29,6 +29,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
+import gregapi.fluid.FluidTankGT;
 import gregapi.fluid.FluidTankInfo;
 
 import gregapi.api.Optional;
@@ -810,7 +811,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	protected IFluidTank getFluidTankDrainable(MultiTileEntityMultiBlockPart aPart, byte aSide, FluidStack aFluidToDrain) {return getFluidTankDrainable(SIDE_ANY, aFluidToDrain);}
 	/** public, not protected, since a multiblock wall exposes its controller's tanks through this method
 	 *  to outside callers, who no longer see a raw IFluidHandler directly. */
-	public IFluidTank[] getFluidTanks(MultiTileEntityMultiBlockPart aPart, byte aSide) {return getFluidTanks(SIDE_ANY);}
+	public IFluidTank[] getFluidTanks(MultiTileEntityMultiBlockPart aPart, byte aSide) {return FluidTankGT.withoutDrains(getFluidTanks(SIDE_ANY));}
 	
 	public int fill(MultiTileEntityMultiBlockPart aPart, byte aDirection, FluidStack aFluid, boolean aDoFill) {
 		if (aFluid == null || aFluid.getAmount() <= 0) return 0;
