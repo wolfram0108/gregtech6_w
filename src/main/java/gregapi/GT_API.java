@@ -542,6 +542,7 @@ public class GT_API extends Abstract_Mod {
 		// The phase-end save that follows GT6's Init and PostInit loaders in 1.7.10: save on edit is held back in this window
 		// (Config.get), so the config keys these loaders read reach the files only here.
 		if (tDrained && GAPI != null) GAPI.loadRunnables("Saving Configs", sConfigs);
+		gregapi.recipes.Recipe.RecipeMap.logConfigDurationOverrides();
 	}
 
 	/** F12-followup (block-split, MTE): some GT6 subsystems (MultiTileEntityRegistry/MultiTileEntityBlock) BUILD a
@@ -1447,6 +1448,7 @@ public class GT_API extends Abstract_Mod {
 
 		RECIPE_DURATION_MULTIPLIER          = ConfigsGT.GREGTECH.get("recipes", "recipe_duration_multiplier"   , 1.0);
 		RECIPE_ENERGY_MULTIPLIER            = ConfigsGT.GREGTECH.get("recipes", "recipe_energy_multiplier"     , 1.0);
+		if (RECIPE_DURATION_MULTIPLIER != 1.0 || RECIPE_ENERGY_MULTIPLIER != 1.0) OUT.println("Recipe config: recipe_duration_multiplier=" + RECIPE_DURATION_MULTIPLIER + ", recipe_energy_multiplier=" + RECIPE_ENERGY_MULTIPLIER + " scale the machine recipes (1.0 leaves them as the loaders gave them)");
 		
 		if (FIRE_EXPLOSIONS      ) FIRE_BREAKING       = T;
 		if (RAIN_EXPLOSIONS      ) RAIN_BREAKING       = T;

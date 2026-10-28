@@ -102,6 +102,13 @@ public class Recipe {
 		private boolean mFluidSizesStale = F;
 		/** The Config File corresponding to this Recipe Handler. Will be initialised by GT_API. */
 		public Config mConfigFile = null;
+		/** How many Recipes of this Map got a duration from the config file that differs from the one their loader gave them. */
+		public int mConfigDurationOverrides = 0, mConfigDurationOverridesLogged = 0;
+
+		/** One line per Map whose Recipes take their duration from the config file (again only when the count grew): odd times in a report then lead to their file at once. */
+		public static void logConfigDurationOverrides() {
+			for (RecipeMap tMap : RECIPE_MAPS.values()) if (tMap.mConfigDurationOverrides > tMap.mConfigDurationOverridesLogged && (tMap.mConfigDurationOverridesLogged = tMap.mConfigDurationOverrides) > 0) OUT.println("Recipe config: " + tMap.mConfigDurationOverrides + " of " + tMap.mRecipeList.size() + " recipes of '" + tMap.mNameInternal + "' take their duration from the config file, not from the code");
+		}
 		
 		/**
 		 * Initialises a new type of Recipe Handler.
@@ -373,7 +380,10 @@ public class Recipe {
 				if (aRecipe.mInputs.length > 0) tConfigName += ST.configNames(aRecipe.mInputs);
 				if (aRecipe.mFluidInputs.length > 0) tConfigName += FL.configNames(aRecipe.mFluidInputs);
 				if (UT.Code.stringValid(tConfigName)) {
-					aRecipe.mDuration = mConfigFile.get(mNameLocalUnderscored, tConfigName, aRecipe.mEnabled?aRecipe.mDuration:0);
+					long tOwn = aRecipe.mEnabled?aRecipe.mDuration:0;
+					aRecipe.mDuration = mConfigFile.get(mNameLocalUnderscored, tConfigName, tOwn);
+					// A value in the file wins over the code; the first one of a Map is named, so the file of an odd time shows in the log.
+					if (aRecipe.mDuration != tOwn && mConfigDurationOverrides++ == 0) OUT.println("Recipe config: " + mConfigFile.mConfig.getConfigFile().getAbsolutePath() + " replaces durations of '" + mNameInternal + "' recipes: " + tConfigName + " is " + aRecipe.mDuration + " there, the recipe's own is " + tOwn);
 					aRecipe.mEnabled = (aRecipe.mDuration > 0);
 				}
 			}
