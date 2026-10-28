@@ -1,0 +1,8 @@
+Templates of branch b1201, built from commit c07f1f88 on 2026-10-28 by workspace/tools/lang-ru/build_lang_templates.py.
+
+gregtech6.en.json  102156 keys: 99279 from the game's own list of English texts, 75 found in the source with an English default, 551 tooltips, 2215 material names, 30 category names
+gregapi.en.json         9 keys
+gt6u.en.json         1372 keys: 1240 the addon adds, 26 of its material names, 96 texts of GT6 keys the addon changes (gt6u.rewrite.<key>)
+
+A template is exact for this commit. When the English of the mod changes, a key can appear, disappear or (for gt.tt.* keys, whose name
+is made from the English text) change; build the templates again and run check_lang.py on a translation to see what moved.
