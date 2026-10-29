@@ -56,6 +56,7 @@ public final class GT6CraftingDispatcher extends CustomRecipe {
 
 	static {
 		SERIALIZERS.register("gt6_crafting_dispatcher", () -> SERIALIZER);
+		SERIALIZERS.register("gt6_crafting_display", () -> GT6CraftingDisplay.SERIALIZER); // Display-only JEI card, never crafts.
 		SERIALIZERS.register("gt6_smoking_dispatcher", () -> GT6SmokingDispatcher.SERIALIZER);
 		SERIALIZERS.register("gt6_blasting_dispatcher", () -> GT6BlastingDispatcher.SERIALIZER);
 		SERIALIZERS.register("gt6_smelting_dispatcher", () -> GT6SmeltingDispatcher.SERIALIZER); // The furnace shares this same central registry point.
