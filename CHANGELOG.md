@@ -28,6 +28,14 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 
 ## [Unreleased]
 
+### Added
+
+- Each kind of energy converter now has its own efficiency setting in the config file, including large turbines, lasers, coolers and rotation engines.
+
+### Changed
+
+- Flux dynamos have their own efficiency setting instead of sharing one with the other flux machines.
+
 ## [6.0.0-alpha.17] — Railcraft Reborn, Jade tank limits and translations
 
 ### Added
