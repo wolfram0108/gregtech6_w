@@ -40,7 +40,6 @@ import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,8 +64,9 @@ import static gregapi.data.CS.*;
  *
  * <p>GT6 crafting recipes (F11 buffer {@code CR.BUFFER}/{@code ICraftingRecipeGT}, the
  * {@code CustomRecipe} dispatcher, decisions/F11-crafting-recipe.md, section 10) — the same {@code CR.list()},
- * its own category {@link GT6_JEI_CraftingCategory} (see its javadoc: why not the built-in
- * {@code RecipeTypes.CRAFTING}, and how it reuses the native JEI {@code ICraftingGridHelper}).</p>
+ * shown as ordinary crafting recipes of JEI's native crafting category: {@link GT6_JEI_CraftingRecipes} turns
+ * them into display-only crafting recipe entries, and the vanilla originals of the F4 role-C replacements are
+ * hidden by id, so the player sees one page per recipe as in 1.7.10 (issue #45).</p>
  */
 @JeiPlugin
 public final class GT6_JEI_Plugin implements IModPlugin {
@@ -80,8 +80,8 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	 *  the JEI compatibility center (see the class docstring), so we don't add a second holder. */
 	public static volatile mezz.jei.api.runtime.IJeiRuntime sRuntime = null;
 
-	/** Crafting showcase guard: what was shown and what was hidden AT THE MOMENT categories were built (the
-	 *  moment matters — the showcase is built once and remembers cell contents, see GT6_JEI_CraftingCategory). */
+	/** Crafting showcase guard: how many buffer recipes the viewer shows and how many it hides by the 1.7.10 rule,
+	 *  counted once when the categories are registered. */
 	public static int sShownAtRegistration = -1, sHiddenAtRegistration = -1;
 
 	public static final List<String> sHiddenExamples = new ArrayList<>();
@@ -99,8 +99,8 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		try {tRuntime.getRecipesGui().showTypes(java.util.List.of(tType)); return T;}
 		catch (Throwable e) {ERR.println("JEI: could not open category '" + aNameNEI + "'"); e.printStackTrace(ERR); return F;}
 	}
-	/** Crafting recipes in JEI: the F11 buffer {@code CR.list()}, filtered down to {@link ShapedOreRecipe}/{@link ShapelessOreRecipe} descendants
-	 *  (1:1 with what NEI used to show — see the {@link GT6_JEI_CraftingCategory} javadoc), computed ONCE in {@link #registerCategories}. */
+	/** Crafting recipes in JEI: the F11 buffer {@code CR.list()}, filtered down to the four shown types (1:1 with what
+	 *  NEI used to show — see {@link GT6_JEI_CraftingRecipes}), computed ONCE in {@link #registerCategories}. */
 	private List<ICraftingRecipeGT> mCraftingRecipes = Collections.emptyList();
 	/** JEI's ingredient manager, handed over at recipe registration; the crafting lookup keys items with it. */
 	private volatile mezz.jei.api.runtime.IIngredientManager mIngredients = null;
@@ -166,12 +166,9 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		// the list, but that categories were actually built and there is something to open.
 		gregapi.data.CS.NEI = T;
 
-		// Crafting recipes in JEI: the GT6 crafting table (F11 buffer) gets its own category, see the GT6_JEI_CraftingCategory javadoc.
-		// BUG-099 (user requirement "recipes must be 100% present in the showcase"): BOTH of GT6's own standalone types
-		// are added alongside Shaped/Shapeless — AdvancedCrafting1ToY (one item, the product is chosen by CELL) and
-		// AdvancedCraftingXToY (X prefix items → Y output). Even 1.7.10's NEI never showed these: it only knew how to
-		// draw shaped/shapeless, while these implement ICraftingRecipeGT directly. Here the showcase GOES BEYOND
-		// the original — it also shows the layout, i.e. which cell to place what in, otherwise the mechanic can't be seen at all.
+		// Crafting recipes in JEI: GT6's buffer becomes ordinary crafting recipes of the native category (issue #45).
+		// In 1.7.10 they were IRecipes of the one CraftingManager, so NEI drew them in its own crafting handler; a
+		// parallel GT6 category showed the same table twice and kept foreign crafting integrations from seeing them.
 		try {
 			List<ICraftingRecipeGT> tCraftingList = new ArrayList<>();
 			int tHidden = 0;
@@ -180,9 +177,9 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 				if (tRecipe instanceof ShapedOreRecipe || tRecipe instanceof ShapelessOreRecipe
 				 || tRecipe instanceof gregapi.recipes.AdvancedCrafting1ToY || tRecipe instanceof gregapi.recipes.AdvancedCraftingXToY) {
 					// The show rule isn't ours, it's 1.7.10's: the showcase of that time never drew a recipe with an
-					// EMPTY variant list in a cell (see GT6_JEI_CraftingCategory.showable). The mechanic is untouched:
+					// EMPTY variant list in a cell (see GT6_JEI_CraftingRecipes.showable). The mechanic is untouched:
 					// the recipe stays in CR.BUFFER and on the crafting table, only its display is hidden.
-					if (!GT6_JEI_CraftingCategory.showable(tRecipe)) {
+					if (!GT6_JEI_CraftingRecipes.showable(tRecipe)) {
 						tHidden++;
 						if (sHiddenExamples.size() < 12) try {
 							ItemStack tOut = tRecipe.getRecipeOutput();
@@ -195,13 +192,10 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			}
 			sShownAtRegistration = tCraftingList.size();
 			sHiddenAtRegistration = tHidden;
+			mCraftingRecipes = tCraftingList;
 			OUT.println("[GT6-JEI] crafting table: showing " + tCraftingList.size() + " recipes, hidden as in NEI 1.7.10 (nothing to draw the cell with) — " + tHidden);
-			if (!tCraftingList.isEmpty()) {
-				mCraftingRecipes = tCraftingList;
-				tCategories.add(new GT6_JEI_CraftingCategory(tGuiHelper));
-			}
 		} catch (Throwable e) {
-			ERR.println("JEI: GT6 crafting-table category failed to register, skipping.");
+			ERR.println("JEI: GT6 crafting recipes failed to register, skipping.");
 			e.printStackTrace(ERR);
 		}
 
@@ -286,6 +280,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	@Override
 	public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime aRuntime) {
 		hideNativeArtifacts(aRuntime.getRecipeManager());
+		hideReplacedVanilla(aRuntime.getRecipeManager());
 		sRuntime = aRuntime; // BUG-056: the only door to the recipe screen, see showRecipeCategory
 	}
 
@@ -305,9 +300,11 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 
 		if (!mCraftingRecipes.isEmpty()) {
 			try {
-				aRegistration.addSimpleRecipeManagerPlugin(GT6_JEI_CraftingCategory.TYPE, new CraftingLookup(mCraftingRecipes, () -> mIngredients));
+				// The native crafting type is shared with the engine's own recipes: JEI asks every plugin per lookup, so
+				// GT6 answers where its recipes are and the vanilla ones keep coming from JEI's own index.
+				aRegistration.addSimpleRecipeManagerPlugin(mezz.jei.api.constants.RecipeTypes.CRAFTING, new CraftingLookup(mCraftingRecipes, () -> mIngredients));
 			} catch (Throwable e) {
-				ERR.println("JEI: GT6 crafting-table recipes failed to register their lookup, skipping.");
+				ERR.println("JEI: GT6 crafting recipes failed to register their lookup, skipping.");
 				e.printStackTrace(ERR);
 			}
 		}
@@ -320,11 +317,12 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	}
 
 	/** Crafting recipes answered per lookup, keyed by JEI's own recipe uid so a lookup matches exactly what its index would. */
-	private static final class CraftingLookup implements mezz.jei.api.recipe.advanced.ISimpleRecipeManagerPlugin<ICraftingRecipeGT> {
+	private static final class CraftingLookup implements mezz.jei.api.recipe.advanced.ISimpleRecipeManagerPlugin<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> {
 		private final List<ICraftingRecipeGT> mRecipes;
 		private final java.util.function.Supplier<mezz.jei.api.runtime.IIngredientManager> mIngredients;
 		private mezz.jei.api.ingredients.IIngredientHelper<ItemStack> mHelper = null;
-		private Map<Object, List<ICraftingRecipeGT>> mByInput = null, mByOutput = null;
+		private Map<Object, List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>>> mByInput = null, mByOutput = null;
+		private List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> mAll = null;
 		CraftingLookup(List<ICraftingRecipeGT> aRecipes, java.util.function.Supplier<mezz.jei.api.runtime.IIngredientManager> aIngredients) {mRecipes = aRecipes; mIngredients = aIngredients;}
 
 		private Object uid(ItemStack aStack) {
@@ -334,43 +332,46 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		}
 
 		private synchronized void index() {
-			if (mByOutput != null) return;
+			if (mAll != null) return;
 			long tStart = System.nanoTime();
-			Map<Object, List<ICraftingRecipeGT>> tIn = new java.util.HashMap<>(), tOut = new java.util.HashMap<>();
-			List<ItemStack> tInputs = new ArrayList<>(), tOutputs = new ArrayList<>();
-			for (ICraftingRecipeGT tRecipe : mRecipes) {
-				tInputs.clear(); tOutputs.clear();
-				try {GT6_JEI_CraftingCategory.slotStacks(tRecipe, tInputs, tOutputs);} catch (Throwable e) {continue;}
-				put(tIn , tInputs , tRecipe);
-				put(tOut, tOutputs, tRecipe);
+			Map<Object, List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>>> tIn = new java.util.HashMap<>(), tOut = new java.util.HashMap<>();
+			List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> tAll = new ArrayList<>();
+			for (int i = 0; i < mRecipes.size(); i++) {
+				List<GT6_JEI_CraftingRecipes.Adapter> tAdapters;
+				try {tAdapters = GT6_JEI_CraftingRecipes.adapters(mRecipes.get(i), i);} catch (Throwable e) {continue;}
+				for (GT6_JEI_CraftingRecipes.Adapter tAdapter : tAdapters) {
+					tAll.add(tAdapter.holder());
+					put(tIn , tAdapter.inputs(), tAdapter.holder());
+					put(tOut, List.of(tAdapter.output()), tAdapter.holder());
+				}
 			}
-			mByInput = tIn; mByOutput = tOut;
-			OUT.println("[GT6-JEI] crafting table lookup indexed on first use: " + mRecipes.size() + " recipes, " + tIn.size() + " input keys, " + tOut.size() + " output keys, " + (System.nanoTime() - tStart) / 1000000 + " ms");
+			mAll = tAll; mByInput = tIn; mByOutput = tOut;
+			OUT.println("[GT6-JEI] crafting table lookup indexed on first use: " + mRecipes.size() + " recipes -> " + tAll.size() + " cards, " + tIn.size() + " input keys, " + tOut.size() + " output keys, " + (System.nanoTime() - tStart) / 1000000 + " ms");
 		}
 
-		private void put(Map<Object, List<ICraftingRecipeGT>> aIndex, List<ItemStack> aStacks, ICraftingRecipeGT aRecipe) {
+		private void put(Map<Object, List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>>> aIndex, List<ItemStack> aStacks, net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> aHolder) {
 			java.util.Set<Object> tSeen = new java.util.HashSet<>();
 			for (ItemStack tStack : aStacks) {
 				Object tKey = uid(tStack);
-				if (tSeen.add(tKey)) aIndex.computeIfAbsent(tKey, k -> new ArrayList<>()).add(aRecipe);
+				if (tSeen.add(tKey)) aIndex.computeIfAbsent(tKey, k -> new ArrayList<>()).add(aHolder);
 			}
 		}
 
-		private List<ICraftingRecipeGT> find(boolean aInput, mezz.jei.api.ingredients.ITypedIngredient<?> aFocus) {
+		private List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> find(boolean aInput, mezz.jei.api.ingredients.ITypedIngredient<?> aFocus) {
 			ItemStack tStack = focusStack(aFocus);
 			if (tStack == null) return Collections.emptyList();
 			try {
 				index();
-				List<ICraftingRecipeGT> rList = (aInput ? mByInput : mByOutput).get(uid(tStack));
+				List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> rList = (aInput ? mByInput : mByOutput).get(uid(tStack));
 				return rList == null ? Collections.emptyList() : rList;
 			} catch (Throwable e) {e.printStackTrace(ERR); return Collections.emptyList();}
 		}
 
 		@Override public boolean isHandledInput (mezz.jei.api.ingredients.ITypedIngredient<?> aInput ) {return focusStack(aInput ) != null;}
 		@Override public boolean isHandledOutput(mezz.jei.api.ingredients.ITypedIngredient<?> aOutput) {return focusStack(aOutput) != null;}
-		@Override public List<ICraftingRecipeGT> getRecipesForInput (mezz.jei.api.ingredients.ITypedIngredient<?> aInput ) {return find(T, aInput );}
-		@Override public List<ICraftingRecipeGT> getRecipesForOutput(mezz.jei.api.ingredients.ITypedIngredient<?> aOutput) {return find(F, aOutput);}
-		@Override public List<ICraftingRecipeGT> getAllRecipes() {return mRecipes;}
+		@Override public List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> getRecipesForInput (mezz.jei.api.ingredients.ITypedIngredient<?> aInput ) {return find(T, aInput );}
+		@Override public List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> getRecipesForOutput(mezz.jei.api.ingredients.ITypedIngredient<?> aOutput) {return find(F, aOutput);}
+		@Override public List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> getAllRecipes() {index(); return mAll;}
 	}
 
 	/** Procedural furnace pairs queried on demand from the same reader servicing the machine. */
@@ -512,13 +513,22 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			}
 		}
 
-		if (!mCraftingRecipes.isEmpty()) {
-			try {
-				aRegistration.addCraftingStation(GT6_JEI_CraftingCategory.TYPE, Blocks.CRAFTING_TABLE);
-			} catch (Throwable e) {
-				ERR.println("JEI: GT6 crafting-table category failed to register its catalyst, skipping.");
-				e.printStackTrace(ERR);
-			}
+	}
+
+	/** One page per replaced vanilla recipe, as in 1.7.10: Forge replaced the recipe in the one CraftingManager, here the
+	 *  GT6 ore version is a separate card, so the superseded datapack original is hidden by its own id. */
+	private void hideReplacedVanilla(mezz.jei.api.recipe.IRecipeManager aManager) {
+		if (mCraftingRecipes == null || mCraftingRecipes.isEmpty()) return;
+		try {
+			java.util.Set<net.minecraft.resources.Identifier> tReplaced = GT6_JEI_CraftingRecipes.replacedSources(mCraftingRecipes);
+			if (tReplaced.isEmpty()) return;
+			java.util.List<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> tHit = aManager.createRecipeLookup(mezz.jei.api.constants.RecipeTypes.CRAFTING).includeHidden().get()
+				.filter(tHolder -> tReplaced.contains(tHolder.id().identifier())).toList();
+			if (!tHit.isEmpty()) aManager.hideRecipes(mezz.jei.api.constants.RecipeTypes.CRAFTING, tHit);
+			OUT.println("[GT6-JEI] replaced vanilla recipes hidden (one page per recipe, as in 1.7.10): " + tHit.size() + " of " + tReplaced.size());
+		} catch (Throwable e) {
+			ERR.println("JEI: could not hide the replaced vanilla recipes (the player will see two pages for them).");
+			e.printStackTrace(ERR);
 		}
 	}
 }

@@ -27,6 +27,7 @@
 package mezz.jei.api.constants;
 
 public final class RecipeTypes {
+	public static final mezz.jei.api.recipe.types.IRecipeHolderType<net.minecraft.world.item.crafting.CraftingRecipe> CRAFTING = null;
 	public static final mezz.jei.api.recipe.types.IRecipeHolderType<net.minecraft.world.item.crafting.SmeltingRecipe> SMELTING = null;
 	public static final mezz.jei.api.recipe.types.IRecipeHolderType<net.minecraft.world.item.crafting.SmokingRecipe> SMOKING = null;
 	public static final mezz.jei.api.recipe.types.IRecipeHolderType<net.minecraft.world.item.crafting.BlastingRecipe> BLASTING = null;
