@@ -256,18 +256,15 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		return FL.stillIcon(aFluid);
 	}
 
-	// Tint (1:1 Fluid.getColor): GT6 fluids — mRGBa from the F5 center (FluidGT); vanilla water — NORMAL_WATER_COLOR
-	// (OverworldBiomes.java:28, the gray water_still without tint would be colorless); lava carries color in its texture.
-	// CHANNEL IS ALIVE — caller: the GT6ItemModel.itemColor:224 center (reflection by signature (ItemStack,int)) tints
-	// the pass's quads with it. The registry cannot see reflection via grep — the previous "analyzed" label was false (2026-07-30).
+	// Tint (1:1 a fluid's colour): the engine's fluid tint source is the only rule (FL.tint), the mod keeps none of
+	// its own - a GT6 fluid is registered there with its own colour, vanilla water with the engine's water tint.
+	// CHANNEL IS ALIVE - caller: the GT6ItemModel.itemColor:224 center (reflection by signature (ItemStack,int)) tints
+	// the pass's quads with it. The registry cannot see reflection via grep - the previous "analyzed" label was false (2026-07-30).
 	// @Override
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		net.minecraft.world.level.material.Fluid tFluid = FL.fluid(ST.meta_(aStack));
 		if (tFluid == null) return 16777215;
-		gregapi.fluid.FluidGT tGT = gregapi.fluid.FluidGT.of(tFluid);
-		if (tGT != null) return UT.Code.getRGBInt(tGT.getRGBa());
-		if (tFluid.isSame(net.minecraft.world.level.material.Fluids.WATER)) return 4159204;
-		return 16777215;
+		return UT.Code.getRGBInt(FL.tint(FL.make(tFluid, 1000)));
 	}
 	
 	// @Override

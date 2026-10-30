@@ -39,15 +39,16 @@ import net.neoforged.neoforge.fluids.IFluidTank;
 public class BlockTextureFluid implements ITexture {
 	private final boolean mAllowAlpha;
 	private final int mLuminosity;
-	private final Identifier mIcon;
+	private final FluidStack mStack;
+	private Identifier mIcon;
+	private short[] mRGBa;
 
-	/**
-	 *  DO NOT MANIPULATE THE VALUES INSIDE THIS ARRAY!!!
-	 *
-	 *  Just set this variable to another different Array instead.
-	 *  Otherwise some coloured things will get Problems.
-	 */
-	public short[] mRGBa;
+	/** Lazily resolved: the engine's tint source exists only after the fluid models are registered, which is later
+	 *  than the block/item construction that creates these textures. */
+	public short[] getRGBa() {
+		if (mRGBa == null) mRGBa = FL.tint(mStack);
+		return mRGBa;
+	}
 
 	public static BlockTextureFluid get(IFluidTank aTank, boolean aAllowAlpha) {
 		return CODE_CLIENT?new BlockTextureFluid(aTank.getFluid(), aAllowAlpha):null;
@@ -72,29 +73,11 @@ public class BlockTextureFluid implements ITexture {
 	}
 
 	public BlockTextureFluid(FluidStack aFluid, boolean aAllowAlpha) {
-		// Fluid data (luminosity, icon, color) comes from the central FluidGT registry, not re-derived here per-fluid like 1.7.10.
+		// Sprite and tint come from the engine's fluid model (FL centre); only luminosity, absent from that model,
+		// is taken from the GT6 fluid, with the lava value as the one vanilla exception.
 		FluidGT tGT = (aFluid == null) ? null : FluidGT.of(aFluid.getFluid());
-		Identifier tIcon;
-		if (aFluid == null) {
-			mLuminosity = 0;
-			mRGBa = UNCOLOURED;
-			tIcon = null;
-		} else if (tGT == null) {
-			// Restores the 1:1 'fluid's own icon' branch via the central FL.stillIcon; without it mIcon stayed null and vanilla
-			// water/lava were invisible in every tank. Water tint matches ItemFluidDisplay: an untinted grey water_still is colorless.
-			mLuminosity = aFluid.getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA) ? 15 * 16 : 0;
-			mRGBa = aFluid.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER) ? gregapi.util.UT.Code.getRGBaArray(0xFF3F76E4) : UNCOLOURED;
-			tIcon = FL.stillIcon(aFluid.getFluid());
-		} else {
-			mLuminosity = tGT.getLuminosity() * 16; // *16, as in the original (0..15 -> brightness scale 0..240).
-			mRGBa = tGT.getRGBa();
-			// A GT6 fluid with no texture of its own falls back to the central water_still sprite, tinted by mRGBa.
-			tIcon = FL.stillIcon(aFluid.getFluid());
-		}
-		// When a declared texture has no atlas sprite (seawater etc., missing even in 1.7.10 resources), the resolver
-		// would skip the quad and hide the fluid entirely; fall back to water_still tinted by mRGBa instead.
-		if (tIcon != null && GT6QuadBuilder.resolveSprite(tIcon) == null) tIcon = Identifier.withDefaultNamespace("block/water_still");
-		mIcon = tIcon;
+		mLuminosity = tGT != null ? tGT.getLuminosity() * 16 : (aFluid != null && aFluid.getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA) ? 15 * 16 : 0);
+		mStack = aFluid;
 		mAllowAlpha = aAllowAlpha;
 	}
 
@@ -112,46 +95,51 @@ public class BlockTextureFluid implements ITexture {
 		this(aFluid, F);
 	}
 
+	/** Resolved on demand: the engine's fluid model set is built after the textures that are created at startup. */
 	private Identifier getIcon(int aSide) {
+		if (mIcon == null && mStack != null) {
+			Identifier tIcon = FL.stillIcon(mStack.getFluid());
+			if (tIcon == null || GT6QuadBuilder.resolveSprite(tIcon) == null) tIcon = Identifier.withDefaultNamespace("block/water_still");
+			mIcon = tIcon;
+		}
 		return mIcon;
 	}
 
-	/** Fluid icon for the fluid mesh ({@link RendererBlockFluid}): a GT6 fluid has one texture, still==flowing,
-	 *  matching Forge's 1.7.10 Fluid.setIcons(still). */
-	public Identifier icon() {return mIcon;}
+	/** Fluid icon for the fluid mesh ({@link RendererBlockFluid}): the engine's model gives one sprite for both states. */
+	public Identifier icon() {return getIcon(0);}
 
 	@Override
 	public void renderXPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-		ITexture.Util.renderSide(SIDE_X_POS, getIcon(5), mRGBa, mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
+		ITexture.Util.renderSide(SIDE_X_POS, getIcon(5), getRGBa(), mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
 	}
 
 	@Override
 	public void renderXNeg(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-		ITexture.Util.renderSide(SIDE_X_NEG, getIcon(4), mRGBa, mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
+		ITexture.Util.renderSide(SIDE_X_NEG, getIcon(4), getRGBa(), mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
 	}
 
 	@Override
 	public void renderYPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-		ITexture.Util.renderSide(SIDE_Y_POS, getIcon(1), mRGBa, mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
+		ITexture.Util.renderSide(SIDE_Y_POS, getIcon(1), getRGBa(), mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
 	}
 
 	@Override
 	public void renderYNeg(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-		ITexture.Util.renderSide(SIDE_Y_NEG, getIcon(0), mRGBa, mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
+		ITexture.Util.renderSide(SIDE_Y_NEG, getIcon(0), getRGBa(), mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
 	}
 
 	@Override
 	public void renderZPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-		ITexture.Util.renderSide(SIDE_Z_POS, getIcon(3), mRGBa, mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
+		ITexture.Util.renderSide(SIDE_Z_POS, getIcon(3), getRGBa(), mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
 	}
 
 	@Override
 	public void renderZNeg(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-		ITexture.Util.renderSide(SIDE_Z_NEG, getIcon(2), mRGBa, mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
+		ITexture.Util.renderSide(SIDE_Z_NEG, getIcon(2), getRGBa(), mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
 	}
 
 	@Override
 	public boolean isValidTexture() {
-		return mIcon != null;
+		return getIcon(0) != null;
 	}
 }

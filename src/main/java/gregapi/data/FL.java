@@ -1213,14 +1213,41 @@ public enum FL implements gregapi.fluid.IFluidName {
 		return NI;
 	}
 
-	/** Single resolver for a fluid's still icon: a GT6 fluid uses its own texture, vanilla lava uses the
-	 *  engine's canonical sprite, and everything else (including GT6 seawater) falls back to water_still. */
+	/** Single resolver for a fluid's still icon: the engine's own fluid model is the source of the sprite
+	 *  (GT6 fluids are registered there too), the old GT6/water fallbacks cover the pre-model window. */
 	public static Identifier stillIcon(Fluid aFluid) {
 		if (aFluid == null) return null;
+		if (CODE_CLIENT) try {Identifier tIcon = ClientModel.stillIcon(aFluid); if (tIcon != null) return tIcon;} catch (Throwable e) {/* fallback below */}
 		FluidGT tGT = FluidGT.of(aFluid);
 		if (tGT != null && tGT.mTexture != null) return tGT.mTexture.getIcon(0);
 		if (aFluid.isSame(Fluids.LAVA)) return Identifier.withDefaultNamespace("block/lava_still");
 		return Identifier.withDefaultNamespace("block/water_still");
+	}
+
+	/** Single resolver for a fluid's tint: the engine's fluid tint source decides it (GT6 fluids are registered
+	 *  there with their own colour), so the mod keeps no colour rule of its own. */
+	public static short[] tint(FluidStack aFluid) {
+		if (aFluid == null) return UNCOLOURED;
+		if (CODE_CLIENT) try {return ClientModel.tint(aFluid);} catch (Throwable e) {/* fallback below */}
+		return UNCOLOURED;
+	}
+
+	/** Client-only holder: the fluid model set does not exist on a dedicated server, and it loads after the
+	 *  blocks/items that build their textures, so every query here is made on demand rather than at construction. */
+	static final class ClientModel {
+		static net.minecraft.client.renderer.block.FluidModel model(Fluid aFluid) {
+			return net.minecraft.client.Minecraft.getInstance().getModelManager().getFluidStateModelSet().get(aFluid.defaultFluidState());
+		}
+		static Identifier stillIcon(Fluid aFluid) {
+			net.minecraft.client.renderer.block.FluidModel tModel = model(aFluid);
+			return tModel == null ? null : tModel.stillMaterial().sprite().contents().name();
+		}
+		static short[] tint(FluidStack aFluid) {
+			net.minecraft.client.renderer.block.FluidModel tModel = model(aFluid.getFluid());
+			net.neoforged.neoforge.client.fluid.FluidTintSource tTint = tModel == null ? null : tModel.fluidTintSource();
+			int tColour = tTint == null ? -1 : tTint.colorAsStack(aFluid);
+			return tColour == -1 ? UNCOLOURED : UT.Code.getRGBaArray(tColour);
+		}
 	}
 
 	/** Loads a FluidStack properly. */
