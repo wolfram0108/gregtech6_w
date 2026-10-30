@@ -374,6 +374,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// invokestatic technique from a common class used by MTE item extensions). Centralization 1:1 — one factory for
 	// the whole mod, like GT6BlockModel/GT6ItemModel. Falls back to water on a null icon.
 	public static void bindFluidClientExtensions(gregapi.fluid.FluidGT aFluid, java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions> aConsumer) {
+		// GT6's Water is the engine's water, so it keeps no appearance of its own: the same sprite and tint as
+		// vanilla water make every water surface (crucible, tank, cell, world block) look alike.
+		if (aFluid.getFluid() == gregapi.data.FL.Water.fluid()) {aConsumer.accept(net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions.of(net.minecraft.world.level.material.Fluids.WATER)); return;}
 		aConsumer.accept(new net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions() {
 			private net.minecraft.resources.ResourceLocation texture() {
 				try { if (aFluid.mTexture != null) { net.minecraft.resources.ResourceLocation t = aFluid.mTexture.getIcon(0); if (t != null) return t; } } catch (Throwable e) {/* invalid icon -> fallback to water */}

@@ -40,14 +40,11 @@ public class BlockTextureFluid implements ITexture {
 	private final boolean mAllowAlpha;
 	private final int mLuminosity;
 	private final FluidStack mStack;
-	private ResourceLocation mIcon;
-	private short[] mRGBa;
 
-	/** Lazily resolved: the engine's fluid type extensions are bound during client setup, later than the block/item
-	 *  construction that creates these textures. */
+	/** Never cached: the client fluid extension is bound after the textures that are created at startup, so an
+	 *  answer taken early would freeze to white for the rest of the session. */
 	public short[] getRGBa() {
-		if (mRGBa == null) mRGBa = FL.tint(mStack);
-		return mRGBa;
+		return FL.tint(mStack);
 	}
 
 	public static BlockTextureFluid get(IFluidTank aTank, boolean aAllowAlpha) {
@@ -95,14 +92,11 @@ public class BlockTextureFluid implements ITexture {
 		this(aFluid, F);
 	}
 
-	/** Resolved on demand: the client fluid extension is bound after the textures that are created at startup. */
+	/** Asked from the fluid extension on every build for the same reason as the tint: no early answer is kept. */
 	private ResourceLocation getIcon(int aSide) {
-		if (mIcon == null && mStack != null) {
-			ResourceLocation tIcon = FL.stillIcon(mStack.getFluid());
-			if (tIcon == null || GT6QuadBuilder.resolveSprite(tIcon) == null) tIcon = new ResourceLocation("minecraft", "block/water_still");
-			mIcon = tIcon;
-		}
-		return mIcon;
+		if (mStack == null) return null;
+		ResourceLocation tIcon = FL.stillIcon(mStack.getFluid());
+		return tIcon == null || GT6QuadBuilder.resolveSprite(tIcon) == null ? new ResourceLocation("minecraft", "block/water_still") : tIcon;
 	}
 
 	/** Fluid icon for the fluid mesh ({@link RendererBlockFluid}): a GT6 fluid has one texture, still==flowing,

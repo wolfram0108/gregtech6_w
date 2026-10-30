@@ -78,9 +78,7 @@ public class MultiTileEntityBathingPotWood extends MultiTileEntityBathingPot {
 			if (mDisplay == 0 || SIDE_TOP != aSide) return null;
 			if (mDisplay < -1) {
 				Fluid tFluid = FL.fluid(-mDisplay-2);
-				gregapi.fluid.FluidGT tGT = gregapi.fluid.FluidGT.of(tFluid);
-				if (tGT == null) return BlockTextureFluid.get(net.minecraft.world.level.material.Fluids.WATER);
-				return BlockTextureDefault.get(tGT.mTexture, tGT.getRGBa());
+				return tFluid == null ? null : BlockTextureFluid.get(FL.make(tFluid, 1000));
 			}
 			if (UT.Code.exists(mDisplay, OreDictMaterial.MATERIAL_ARRAY)) return OreDictMaterial.MATERIAL_ARRAY[mDisplay].getTextureDust();
 			return BlockTextureDefault.get(MT.NULL, OP.blockDust, CA_GRAY_128, F);
