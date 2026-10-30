@@ -239,6 +239,29 @@ public class GT6BlockModel implements BakedModel {
 		return tQB.build();
 	}
 
+	/** A horizontal quad that leaves its carrier block (a crucible's melt, a multiblock's surface) takes the light of
+	 *  the cell it lies in: the carrier's cell inside a structure is dark, while the open cell above is lit. Side faces
+	 *  keep the engine's per-face light, so walls are untouched. */
+	private static void lightSurface(GT6QuadBuilder aQB, int aFrom, net.minecraft.world.level.BlockGetter aLevel, int aX, int aY, int aZ) {
+		if (!(aLevel instanceof net.minecraft.world.level.BlockAndTintGetter tLight)) return;
+		java.util.List<net.minecraft.client.renderer.block.model.BakedQuad> tQuads = aQB.quads();
+		for (int k = aFrom; k < tQuads.size(); k++) {
+			net.minecraft.client.renderer.block.model.BakedQuad tQuad = tQuads.get(k);
+			int[] tVertices = tQuad.getVertices();
+			if (tVertices.length < 32) continue;
+			if (((tVertices[7] >> 8) & 0xFF) < 100) continue;            // packed normal of the first vertex: y is the middle byte
+			float tX = 0, tY = 0, tZ = 0;
+			for (int v = 0; v < 4; v++) {
+				tX += Float.intBitsToFloat(tVertices[v * 8    ]);
+				tY += Float.intBitsToFloat(tVertices[v * 8 + 1]);
+				tZ += Float.intBitsToFloat(tVertices[v * 8 + 2]);
+			}
+			net.minecraft.core.BlockPos tCell = new net.minecraft.core.BlockPos(aX + (int)Math.floor(tX / 4F), aY + (int)Math.floor(tY / 4F), aZ + (int)Math.floor(tZ / 4F));
+			if (tCell.getY() == aY) continue;
+			net.minecraftforge.client.model.QuadTransformers.applyingLightmap(tLight.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, tCell), tLight.getBrightness(net.minecraft.world.level.LightLayer.SKY, tCell)).processInPlace(tQuad);
+		}
+	}
+
 	/** Render-object branch (getRenderPasses -> setBlockBounds -> getTexture -> quads), shared between the baked
 	 *  collectParts path and the live-BE MultiTileEntityBER path; renderBlock=true means the object drew itself already. */
 	public static void buildRendererQuads(GT6QuadBuilder aQB, IRenderedBlockObject aRenderer, Block aBlock, net.minecraft.world.level.BlockGetter aLevel, int aX, int aY, int aZ) {
@@ -256,7 +279,9 @@ public class GT6BlockModel implements BakedModel {
 			if (aRenderer.setBlockBounds(aBlock, i, tSides)) {tNeedsToSetBounds = true;}
 			else {if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); tNeedsToSetBounds = false;}
 			applyBounds(aQB, aBlock);
+			int tFrom = aQB.quads().size();
 			for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, aRenderer.getTexture(aBlock, i, s, tSides), aX, aY, aZ);
+			lightSurface(aQB, tFrom, aLevel, aX, aY, aZ);
 		}
 		if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); // anti-leak for the shared block (1:1 :158).
 	}
