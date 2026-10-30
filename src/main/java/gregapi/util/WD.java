@@ -1474,9 +1474,6 @@ public class WD {
 		// not instead of it: mQuadCacheEpoch=MIN_VALUE never matches the current epoch, so the cache hit
 		// won't go through regardless of its own section's stamp.
 		if (((Level)aWorld).isClientSide()) {
-			// The MTE look lives in the SECTION MESH, and on a client sendBlockUpdated does nothing: without this the
-			// section keeps the geometry baked before the change (an empty crucible stayed drawn as its fallback).
-			((Level)aWorld).setBlocksDirty(tUpdPos, tUpdState, tUpdState);
 			BlockEntity tUpdTE = ((Level)aWorld).getBlockEntity(tUpdPos);
 			if (tUpdTE instanceof gregapi.tileentity.base.TileEntityBase01Root tUpdRoot) tUpdRoot.mQuadCacheEpoch = Long.MIN_VALUE;
 		}
