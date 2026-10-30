@@ -398,7 +398,7 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 			if (mDisplay == 0 || SIDE_TOP != aSide) return null;
 			if (mDisplay < -1) {
 				Fluid tFluid = FL.fluid(-mDisplay-2);
-				return tFluid == null ? BlockTextureFluid.get(net.minecraft.world.level.material.Fluids.WATER) : BlockTextureFluid.get(FL.make(tFluid, 1000));
+				return tFluid == null ? null : BlockTextureFluid.get(FL.make(tFluid, 1000));
 			}
 			if (UT.Code.exists(mDisplay, OreDictMaterial.MATERIAL_ARRAY)) return OreDictMaterial.MATERIAL_ARRAY[mDisplay].getTextureDust();
 			return BlockTextureDefault.get(MT.NULL, OP.blockDust, CA_GRAY_128, F);

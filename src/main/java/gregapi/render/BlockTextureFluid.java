@@ -40,14 +40,11 @@ public class BlockTextureFluid implements ITexture {
 	private final boolean mAllowAlpha;
 	private final int mLuminosity;
 	private final FluidStack mStack;
-	private Identifier mIcon;
-	private short[] mRGBa;
 
-	/** Lazily resolved: the engine's tint source exists only after the fluid models are registered, which is later
-	 *  than the block/item construction that creates these textures. */
+	/** Never cached: the engine bakes item and block models before its fluid model set exists, so an answer taken
+	 *  early would freeze to white for the rest of the session. */
 	public short[] getRGBa() {
-		if (mRGBa == null) mRGBa = FL.tint(mStack);
-		return mRGBa;
+		return FL.tint(mStack);
 	}
 
 	public static BlockTextureFluid get(IFluidTank aTank, boolean aAllowAlpha) {
@@ -95,14 +92,11 @@ public class BlockTextureFluid implements ITexture {
 		this(aFluid, F);
 	}
 
-	/** Resolved on demand: the engine's fluid model set is built after the textures that are created at startup. */
+	/** Asked from the fluid model on every build for the same reason as the tint: no early answer is kept. */
 	private Identifier getIcon(int aSide) {
-		if (mIcon == null && mStack != null) {
-			Identifier tIcon = FL.stillIcon(mStack.getFluid());
-			if (tIcon == null || GT6QuadBuilder.resolveSprite(tIcon) == null) tIcon = Identifier.withDefaultNamespace("block/water_still");
-			mIcon = tIcon;
-		}
-		return mIcon;
+		if (mStack == null) return null;
+		Identifier tIcon = FL.stillIcon(mStack.getFluid());
+		return tIcon == null || GT6QuadBuilder.resolveSprite(tIcon) == null ? Identifier.withDefaultNamespace("block/water_still") : tIcon;
 	}
 
 	/** Fluid icon for the fluid mesh ({@link RendererBlockFluid}): the engine's model gives one sprite for both states. */
