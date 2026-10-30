@@ -336,13 +336,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	private void onRegisterFluidModels(net.neoforged.neoforge.client.event.RegisterFluidModelsEvent aEvent) {
 		net.minecraft.client.resources.model.sprite.Material tWaterStill = new net.minecraft.client.resources.model.sprite.Material(net.minecraft.resources.Identifier.withDefaultNamespace("block/water_still"));
 		net.minecraft.client.resources.model.sprite.Material tWaterFlow  = new net.minecraft.client.resources.model.sprite.Material(net.minecraft.resources.Identifier.withDefaultNamespace("block/water_flow"));
-		// GT6's Water is the engine's water, so it keeps no appearance of its own: the same sprite and tint as
-		// vanilla water make every water surface (crucible, tank, cell, world block) look alike.
-		net.minecraft.client.renderer.block.FluidModel.Unbaked tWaterModel = new net.minecraft.client.renderer.block.FluidModel.Unbaked(tWaterStill, tWaterFlow, new net.minecraft.client.resources.model.sprite.Material(net.minecraft.resources.Identifier.withDefaultNamespace("block/water_overlay")), net.neoforged.neoforge.client.fluid.FluidTintSources.water());
 		int tCount = 0;
 		for (gregapi.fluid.FluidGT tF : gregapi.fluid.FluidGT.BY_NAME.values()) {
 			try {
-				if (tF.getFluid() == gregapi.data.FL.Water.fluid()) {aEvent.register(tWaterModel, tF.getFluid(), tF.getFlowingFluid()); tCount++; continue;}
 				net.minecraft.resources.Identifier tTex = null;
 				try { if (tF.mTexture != null) tTex = tF.mTexture.getIcon(0); } catch (Throwable e) {/* invalid icon → fallback to water */}
 				net.minecraft.client.resources.model.sprite.Material tStill = tTex != null ? new net.minecraft.client.resources.model.sprite.Material(tTex) : tWaterStill;
