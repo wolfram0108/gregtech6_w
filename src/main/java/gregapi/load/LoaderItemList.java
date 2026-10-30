@@ -29,6 +29,7 @@ import gregapi.old.Textures;
 import gregapi.oredict.OreDictItemData;
 import gregapi.oredict.OreDictManager;
 import gregapi.render.BlockTextureCopied;
+import gregapi.render.BlockTextureFluid;
 import gregapi.render.IconContainerCopied;
 import gregapi.util.CR;
 import gregapi.util.OM;
@@ -720,7 +721,9 @@ public class LoaderItemList implements Runnable {
 		
 		
 		MT.H2O.mTextureDust   = MT.Steam.mTextureDust   = MT.FreshWater.mTextureDust   = MT.DistWater.mTextureDust   = MT.Ice.mTextureDust   = MT.Snow.mTextureDust   = MT.Snow.mTextureSolid = BlockTextureCopied.get(Blocks.SNOW);
-		MT.H2O.mTextureMolten = MT.Steam.mTextureMolten = MT.FreshWater.mTextureMolten = MT.DistWater.mTextureMolten = MT.Ice.mTextureMolten = MT.Snow.mTextureMolten = BlockTextureCopied.get(Blocks.WATER);
+		// The surface of these liquids is water itself: the fluid centre renders it (sprite + engine tint), so the
+		// family must not copy the vanilla block texture, which carries no colour of its own in this engine.
+		MT.H2O.mTextureMolten = MT.Steam.mTextureMolten = MT.FreshWater.mTextureMolten = MT.DistWater.mTextureMolten = MT.Ice.mTextureMolten = MT.Snow.mTextureMolten = BlockTextureFluid.get(net.minecraft.world.level.material.Fluids.WATER);
 		MT.H2O.mTextureSolid  = MT.Steam.mTextureSolid  = MT.FreshWater.mTextureSolid  = MT.DistWater.mTextureSolid  = MT.Ice.mTextureSolid  = BlockTextureCopied.get(Blocks.PACKED_ICE);
 		MT.Glowstone.mTextureSolid  = MT.Glowstone.mTextureGem = MT.Glowstone.mTextureMolten = BlockTextureCopied.get(Blocks.GLOWSTONE);
 		

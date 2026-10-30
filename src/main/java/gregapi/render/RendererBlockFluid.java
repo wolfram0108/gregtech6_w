@@ -79,7 +79,7 @@ public class RendererBlockFluid {
 	public static void collectFluidQuads(GT6QuadBuilder aQB, BlockGetter aWorld, int aX, int aY, int aZ, BlockBaseFluid aFluid) {
 		if (!(aFluid.renderTexture() instanceof BlockTextureFluid tTex) || !tTex.isValidTexture()) return;
 		ResourceLocation tIcon = tTex.icon();
-		short[] tRGBa = tTex.mRGBa;
+		short[] tRGBa = tTex.getRGBa();
 		int aDir = aFluid.dir();
 
 		boolean renderTop = WD.block(aWorld, aX, aY - aDir, aZ) != aFluid;

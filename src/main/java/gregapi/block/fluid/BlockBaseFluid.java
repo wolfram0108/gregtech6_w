@@ -417,7 +417,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	 *  still asks the shared center so "which texture" stays defined in one place. */
 	@Override public net.minecraft.resources.ResourceLocation getIcon(int aSide, int aMeta) {return renderTexture() instanceof gregapi.render.BlockTextureFluid tTex ? tTex.icon() : null;}
 	/** Both tints come from the same center that colors the block in the renderer, avoiding a second source of truth. */
-	@Override public int getRenderColor(int aMeta) {return renderTexture() instanceof gregapi.render.BlockTextureFluid tTex && tTex.mRGBa != null ? gregapi.util.UT.Code.getRGBInt(tTex.mRGBa) : 0x00ffffff;}
+	@Override public int getRenderColor(int aMeta) {return renderTexture() instanceof gregapi.render.BlockTextureFluid tTex ? gregapi.util.UT.Code.getRGBInt(tTex.getRGBa()) : 0x00ffffff;}
 	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return getRenderColor(0);}
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}

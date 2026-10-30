@@ -268,10 +268,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		net.minecraft.world.level.material.Fluid tFluid = FL.fluid(ST.meta_(aStack));
 		if (tFluid == null) return 16777215;
-		gregapi.fluid.FluidGT tGT = gregapi.fluid.FluidGT.of(tFluid);
-		if (tGT != null) return UT.Code.getRGBInt(tGT.getRGBa());
-		if (tFluid.isSame(net.minecraft.world.level.material.Fluids.WATER)) return 4159204;
-		return 16777215;
+		return UT.Code.getRGBInt(FL.tint(FL.make(tFluid, 1000)));
 	}
 	
 	// @Override

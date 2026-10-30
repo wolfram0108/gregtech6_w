@@ -1218,10 +1218,32 @@ public enum FL implements gregapi.fluid.IFluidName {
 	 *  engine's canonical sprite, and everything else (including GT6 seawater) falls back to water_still. */
 	public static ResourceLocation stillIcon(Fluid aFluid) {
 		if (aFluid == null) return null;
+		if (CODE_CLIENT) try {ResourceLocation tIcon = ClientModel.stillIcon(aFluid); if (tIcon != null) return tIcon;} catch (Throwable e) {/* fallback below */}
 		FluidGT tGT = FluidGT.of(aFluid);
 		if (tGT != null && tGT.mTexture != null) return tGT.mTexture.getIcon(0);
 		if (aFluid.isSame(Fluids.LAVA)) return new ResourceLocation("minecraft", "block/lava_still");
 		return new ResourceLocation("minecraft", "block/water_still");
+	}
+
+	/** Single resolver for a fluid's tint: the engine's client extension decides it (GT6 fluids are bound there
+	 *  with their own colour), so the mod keeps no colour rule of its own. */
+	public static short[] tint(FluidStack aFluid) {
+		if (aFluid == null) return UNCOLOURED;
+		if (CODE_CLIENT) try {return ClientModel.tint(aFluid);} catch (Throwable e) {/* fallback below */}
+		return UNCOLOURED;
+	}
+
+	/** Client-only holder: the fluid type extensions do not exist on a dedicated server, and item icons/block
+	 *  textures are built before the client binds them, so every query is made on demand. */
+	static final class ClientModel {
+		static net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions of(Fluid aFluid) {
+			return net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions.of(aFluid);
+		}
+		static ResourceLocation stillIcon(Fluid aFluid) {return of(aFluid).getStillTexture();}
+		static short[] tint(FluidStack aFluid) {
+			int tColour = of(aFluid.getFluid()).getTintColor(aFluid);
+			return tColour == -1 ? UNCOLOURED : UT.Code.getRGBaArray(tColour);
+		}
 	}
 
 	/** Loads a FluidStack properly. */
