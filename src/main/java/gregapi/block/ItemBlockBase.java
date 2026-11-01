@@ -157,4 +157,13 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	public int getItemStackLimit(ItemStack aStack) {return mPlaceable.getItemStackLimit(aStack);}
 	public int getMetadata(int aMeta) {return aMeta;}
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {return mPlaceable.onItemRightClick(aStack, aWorld, aPlayer);}
+	// neo Item.use is the channel for a right-click in the air (1.7.10 onItemRightClick). The block-item root had
+	// no bridge here while ItemBase and MultiTileEntityItemInternal already had one, so the block's own hook had
+	// no caller: the lily pad could not be placed onto a water surface (water has no outline, the click is a MISS).
+	@Override public net.minecraft.world.InteractionResultHolder<ItemStack> use(Level aWorld, Player aPlayer, net.minecraft.world.InteractionHand aHand) {
+		ItemStack tStack = aPlayer.getItemInHand(aHand);
+		ItemStack tResult = onItemRightClick(tStack, aWorld, aPlayer);
+		if (tResult != tStack) {aPlayer.setItemInHand(aHand, ST.nn(tResult)); return net.minecraft.world.InteractionResultHolder.success(tResult);}
+		return super.use(aWorld, aPlayer, aHand);
+	}
 }
