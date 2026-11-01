@@ -121,12 +121,16 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	/** 1.7.10's render dispatcher used getRenderType()==0 for a standard cube and a PILLAR value for
 	 *  log/beam/bale blocks, which GT6BlockModel still reads to rotate UVs along the stacking axis. */
 	public int getRenderType() {return 0;}
-	/** 1.7.10 mutated light emission directly; neo's lightLevel function is set at construction but
-	 *  evaluated lazily after registration, by which point a subclass's setLightLevel has already run. */
+	/** 1.7.10 stored the light level in a mutable field that getLightValue() returned. Neo bakes Properties.lightLevel into
+	 *  every state at BLOCK construction, before a subclass can call setLightLevel after super(), so a baked value can only
+	 *  ever be zero here; the engine's live question is getLightEmission(state, level, pos), answered by getLightValue(). */
 	protected float mLightLevel = 0.0F;
 	public void setLightLevel(float aLightLevel) {mLightLevel = aLightLevel;}
-	/** Bridges to neo's lightLevel function, reading the instance's mLightLevel via state.getBlock() at initCache time. */
-	private static int lightOf(net.minecraft.world.level.block.state.BlockState aState) {return aState.getBlock() instanceof BlockBase b ? (int)(15.0F * b.mLightLevel) : 0;}
+	/** The 1.7.10 channel itself, exactly as Block.getLightValue() was: subclasses that declare their own value (Glowtus)
+	 *  override this method, and the engine bridge below reads it, so one value feeds both paths. */
+	public int getLightValue() {return (int)(15.0F * mLightLevel);}
+	/** The only channel the light engine reads (BlockLightEngine): a per-position question, asked after construction. */
+	@Override public int getLightEmission(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {return getLightValue();}
 
 	/** Stored on the block itself because neo removed WD.getMaterial(Block). */
 	protected final Material mMaterial;
@@ -141,7 +145,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public static float bakedHardness(float aGT6Hardness) {return aGT6Hardness < 0 ? -1.0F : aGT6Hardness == 0 ? 0.0F : BAKED_HARDNESS;}
 
 	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aNameInternal, Material aMaterial, SoundType aSoundType, float aBakedHardness) {
-		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).lightLevel(BlockBase::lightOf);
+		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType);
 		p = p.destroyTime(aBakedHardness);
 		if (aMaterial != null && !aMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();
 		p = mapColorOf(p, aMaterial);
