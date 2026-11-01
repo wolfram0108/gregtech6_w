@@ -81,7 +81,7 @@ public class LoaderModernItemData {
 		OM.dat2(ST.make(Items.NETHERITE_SHOVEL             , 1, 0), ANY.Diamond , OP.toolHeadShovel .mAmount, OM.stack(ANY.Wood, U ), OM.stack(MT.Netherite, U));
 		OM.dat2(ST.make(Items.NETHERITE_AXE                , 1, 0), ANY.Diamond , OP.toolHeadAxe    .mAmount, OM.stack(ANY.Wood, U ), OM.stack(MT.Netherite, U));
 		OM.dat2(ST.make(Items.NETHERITE_HOE                , 1, 0), ANY.Diamond , OP.toolHeadHoe    .mAmount, OM.stack(ANY.Wood, U ), OM.stack(MT.Netherite, U));
-		OM.dat2(ST.make(Items.NETHERITE_SPEAR              , 1, 0), ANY.Diamond , U * 2, OM.stack(ANY.Wood, U), OM.stack(MT.Netherite, U));
+		OM.dat2(ST.make(Items.NETHERITE_SPEAR              , 1, 0), ANY.Diamond , U, OM.stack(ANY.Wood, U), OM.stack(MT.Netherite, U));
 
 		// Armor with durability scaling.
 		OM.dat2(ST.make(Items.NETHERITE_HELMET             , 1, 0), ANY.Diamond , U * 5, OM.stack(MT.Netherite, U));
@@ -89,8 +89,8 @@ public class LoaderModernItemData {
 		OM.dat2(ST.make(Items.NETHERITE_LEGGINGS           , 1, 0), ANY.Diamond , U * 7, OM.stack(MT.Netherite, U));
 		OM.dat2(ST.make(Items.NETHERITE_BOOTS              , 1, 0), ANY.Diamond , U * 4, OM.stack(MT.Netherite, U));
 
-		// Netherite utility block.
-		OM.data(ST.make(Blocks.LODESTONE                   , 1, W), MT.Netherite, U, ANY.Stone, U * 8);
+		// Netherite utility block. 26.1.2 recipe: 8 stone bricks (9 U each) + 1 iron ingot.
+		OM.data(ST.make(Blocks.LODESTONE                   , 1, W), ANY.Fe      , U, ANY.Stone, U * 72);
 	}
 
 	/** Modern copper tools, armor, blocks and utilities. */
@@ -101,7 +101,7 @@ public class LoaderModernItemData {
 		OM.dat2(ST.make(Items.COPPER_SHOVEL                , 1, 0), MT.Cu       , OP.toolHeadShovel .mAmount, ANY.Wood, U );
 		OM.dat2(ST.make(Items.COPPER_AXE                   , 1, 0), MT.Cu       , OP.toolHeadAxe    .mAmount, ANY.Wood, U );
 		OM.dat2(ST.make(Items.COPPER_HOE                   , 1, 0), MT.Cu       , OP.toolHeadHoe    .mAmount, ANY.Wood, U );
-		OM.dat2(ST.make(Items.COPPER_SPEAR                 , 1, 0), MT.Cu       , U * 2, ANY.Wood, U);
+		OM.dat2(ST.make(Items.COPPER_SPEAR                 , 1, 0), MT.Cu       , U, ANY.Wood, U);
 
 		// Armor with durability scaling.
 		OM.dat2(ST.make(Items.COPPER_HELMET                , 1, 0), MT.Cu       , U * 5);
@@ -119,26 +119,26 @@ public class LoaderModernItemData {
 		OM.data(ST.make(Blocks.COPPER_TRAPDOOR             , 1, W), MT.Cu       , U * 4);
 		OM.data(ST.make(Blocks.COPPER_GRATE                , 1, W), MT.Cu       , U * 9);
 		OM.data(ST.make(Blocks.CHISELED_COPPER             , 1, W), MT.Cu       , U * 4);
-		OM.data(ST.make(Blocks.COPPER_BULB                 , 1, W), MT.Cu       , U * 27 / 4, MT.Blaze, U, MT.Redstone, U);
+		OM.data(ST.make(Blocks.COPPER_BULB                 , 1, W), MT.Cu       , U * 27 / 4, MT.Blaze, U2 / 4, MT.Redstone, U / 4);
 	}
 
 	/** Rails and transportation items (16 rails / 6 powered rails batches). */
 	private static void registerRailsAndTransport() {
 		OM.data(ST.make(Blocks.RAIL                        , 1, W), ANY.Fe      , 6 * U / 16, ANY.Wood, U2 / 16);
 		OM.data(ST.make(Blocks.POWERED_RAIL                , 1, W), MT.Au       , U, MT.Redstone, U / 6, ANY.Wood, U2 / 6);
-		OM.data(ST.make(Blocks.DETECTOR_RAIL               , 1, W), ANY.Fe      , U, MT.Redstone, U / 6, ANY.Stone, U2 / 6);
-		OM.data(ST.make(Blocks.ACTIVATOR_RAIL              , 1, W), ANY.Fe      , U, MT.Redstone, U / 6, ANY.Wood, U / 6);
+		OM.data(ST.make(Blocks.DETECTOR_RAIL               , 1, W), ANY.Fe      , U, MT.Redstone, U / 6, ANY.Stone, U / 3);
+		OM.data(ST.make(Blocks.ACTIVATOR_RAIL              , 1, W), ANY.Fe      , U, MT.Redstone, U / 6, ANY.Wood, U4);
 	}
 
 	/** Redstone automation devices, comparators, repeaters, observers, and modern crafters. */
 	private static void registerRedstoneAndAutomation() {
 		OM.data(ST.make(Blocks.SMITHING_TABLE              , 1, W), ANY.Fe      , U * 2, ANY.Wood, U * 4);
-		OM.data(ST.make(Blocks.COMPARATOR                  , 1, W), ANY.Stone   , U * 3, MT.Redstone, U * 3, MT.NetherQuartz, U);
-		OM.data(ST.make(Blocks.REPEATER                    , 1, W), ANY.Stone   , U * 3, MT.Redstone, U * 3);
-		OM.data(ST.make(Blocks.OBSERVER                    , 1, W), ANY.Stone   , U * 6, MT.Redstone, U * 2, MT.NetherQuartz, U);
+		OM.data(ST.make(Blocks.COMPARATOR                  , 1, W), ANY.Stone   , U * 27, ANY.Wood, U * 3 / 2, MT.Redstone, U * 3, MT.NetherQuartz, U);
+		OM.data(ST.make(Blocks.REPEATER                    , 1, W), ANY.Stone   , U * 27, ANY.Wood, U, MT.Redstone, U * 3);
+		OM.data(ST.make(Blocks.OBSERVER                    , 1, W), ANY.Stone   , U * 54, MT.Redstone, U * 2, MT.NetherQuartz, U);
 		OM.data(ST.make(Blocks.TARGET                      , 1, W), MT.Redstone , U * 4, MT.Wheat, U * 9);
-		OM.data(ST.make(Blocks.LECTERN                     , 1, W), ANY.Wood    , U * 2, MT.Paper, U * 9);
-		OM.data(ST.make(Blocks.CRAFTER                     , 1, W), ANY.Fe      , U * 6, MT.Redstone, U * 3, ANY.Stone, U * 4, ANY.Wood, U * 3);
+		OM.data(ST.make(Blocks.LECTERN                     , 1, W), ANY.Wood    , U * 8, MT.Paper, U * 9);
+		OM.data(ST.make(Blocks.CRAFTER                     , 1, W), ANY.Fe      , U * 5, MT.Redstone, U * 3, ANY.Stone, U * 7, ANY.Wood, U * 4);
 		OM.data(ST.make(Blocks.CALIBRATED_SCULK_SENSOR     , 1, W), MT.Amethyst , U * 3);
 	}
 
