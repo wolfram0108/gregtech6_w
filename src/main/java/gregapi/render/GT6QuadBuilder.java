@@ -324,8 +324,11 @@ public final class GT6QuadBuilder {
 		TextureAtlasSprite tSprite = sprite(aIcon);
 		if (tSprite == null) return;
 		// Cross planes go straight into the always-visible bucket, so they never need the boundary-plane cull check.
-		addCrossPlane(new float[][]{{0,0,0},{1,0,1},{1,1,1},{0,1,0}}, tSprite, aRGBa); // diagonal SW->NE
-		addCrossPlane(new float[][]{{1,0,0},{0,0,1},{0,1,1},{1,1,0}}, tSprite, aRGBa); // diagonal SE->NW
+		// Half-width 0.45, as 1.7.10's RenderBlocks.drawCrossedSquares (0.05..0.95 in X/Z, height 1.0) and vanilla's
+		// block/cross model; the full-block diagonal stretched every plant sprite 11 % wider than the original.
+		final float lo = 0.05F, hi = 0.95F;
+		addCrossPlane(new float[][]{{lo,0,lo},{hi,0,hi},{hi,1,hi},{lo,1,lo}}, tSprite, aRGBa); // diagonal SW->NE
+		addCrossPlane(new float[][]{{hi,0,lo},{lo,0,hi},{lo,1,hi},{hi,1,lo}}, tSprite, aRGBa); // diagonal SE->NW
 	}
 	private void addCrossPlane(float[][] aCorners, TextureAtlasSprite aSprite, short[] aRGBa) {
 		for (boolean tReverse : new boolean[]{false, true}) { // front + back = plane visible from both sides
