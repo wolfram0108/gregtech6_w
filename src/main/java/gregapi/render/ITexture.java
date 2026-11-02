@@ -85,7 +85,7 @@ public interface ITexture {
 		// Reuses GT6's per-side texture logic (BlockTextureDefault supplies icon+RGBa per side).
 		/** Side = 5 (X_POS/EAST). */
 		public static boolean renderXPos(ResourceLocation aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_X_POS, aIcon, aRGBa, aAllowAlpha, emission(aBrightness), aEnableAO);
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_X_POS, aIcon, aRGBa, aAllowAlpha, emission(aBrightness), aEnableAO, aChangedBlockBounds);
 			return aIcon != null;
 		}
 		/** Side = 4 (X_NEG/WEST). */
@@ -110,7 +110,7 @@ public interface ITexture {
 		}
 		/** Side = 2 (Z_NEG/NORTH). */
 		public static boolean renderZNeg(ResourceLocation aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
-			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Z_NEG, aIcon, aRGBa, aAllowAlpha, emission(aBrightness), aEnableAO);
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Z_NEG, aIcon, aRGBa, aAllowAlpha, emission(aBrightness), aEnableAO, aChangedBlockBounds);
 			return aIcon != null;
 		}
 	}

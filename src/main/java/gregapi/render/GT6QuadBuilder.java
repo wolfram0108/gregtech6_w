@@ -102,7 +102,7 @@ public final class GT6QuadBuilder {
 	}
 
 	/** GT6 side-byte to neo Direction mapping: 0=DOWN, 1=UP, 2=NORTH, 3=SOUTH, 4=WEST, 5=EAST. */
-	public void putFace(byte aSide, ResourceLocation aIcon, short[] aRGBa) {putFace(aSide, aIcon, aRGBa, false, 0, true);}
+	public void putFace(byte aSide, ResourceLocation aIcon, short[] aRGBa) {putFace(aSide, aIcon, aRGBa, false, 0, true, false);}
 
 	/** Vertex color {r, g, b, a}: alpha only where the texture allows it, as on 1.7.10's flat path (its AO path was always opaque);
 	 *  an allowed zero still reads as opaque, since GT6 colors are often RGB-ints with an empty alpha byte. */
@@ -114,11 +114,17 @@ public final class GT6QuadBuilder {
 	/** aAllowAlpha lets the color's alpha reach the vertex as 1.7.10's flag of that name did; aEmission is the face's own
 	 *  block light (1.7.10 drew such faces at a fixed lightmap value), aAO=false takes the face out of ambient occlusion. */
 	public void putFace(byte aSide, ResourceLocation aIcon, short[] aRGBa, boolean aAllowAlpha, int aEmission, boolean aAO) {
+		putFace(aSide, aIcon, aRGBa, aAllowAlpha, aEmission, aAO, false);
+	}
+
+	/** aChangedBounds: the render pass declared its own bounds, which 1.7.10 takes as "not a full block" and mirrors on
+	 *  the two faces GT6 marks "stupidly mirrored" (RendererBlockTextured.flipTexture = !aFullBlock). */
+	public void putFace(byte aSide, ResourceLocation aIcon, short[] aRGBa, boolean aAllowAlpha, int aEmission, boolean aAO, boolean aChangedBounds) {
 		if (aIcon == null || aSide < 0 || aSide > 5) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
 		if (tSprite == null) return;
 		Direction tDir = Direction.from3DDataValue(aSide);
-		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa, aAllowAlpha, aEmission, aAO);
+		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa, aAllowAlpha, aEmission, aAO, aChangedBounds);
 		if (tQuad == null) return;
 		// A face on the cell-boundary plane is cull-aware (engine asks the neighbor); a face inside the cell
 		// (slab top, pipe side) is always visible.
@@ -229,9 +235,10 @@ public final class GT6QuadBuilder {
 	static final int[] EMIT_ORDER = {1, 0, 3, 2};
 
 	/** Face from the current bounds with UV clipped to them and tint from RGBa, following AE2's QuartzGlassModel pattern. */
-	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa, boolean aAllowAlpha, int aEmission, boolean aAO) {
+	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa, boolean aAllowAlpha, int aEmission, boolean aAO, boolean aChangedBounds) {
 		int[] tColor = rgba(aRGBa, aAllowAlpha);
 		float[][] c = corners(aDir, mBounds);
+		if (aChangedBounds) mirrorChangedBounds(aDir, c, mBounds);
 		if (mUVRotate[aDir.get3DDataValue()] == 1) rotateUV1(aDir, c, mBounds);
 		org.joml.Vector3f n = aDir.step();
 		QuadBakingVertexConsumer.Buffered tBuilder = new QuadBakingVertexConsumer.Buffered();
@@ -425,6 +432,16 @@ public final class GT6QuadBuilder {
 	}
 	private static void uv(float[][] c, int i, float u, float v) {c[i][3] = u; c[i][4] = v;}
 
+	/** 1.7.10's mirror of the two faces GT6 calls "stupidly mirrored" (its own comment, CS.SIDE_Z_NEG/SIDE_X_POS):
+	 *  a non-full block takes their U from 1-coordinate, because vanilla itself mirrors those two faces. The whole-sprite
+	 *  fallback for bounds outside the cube wins over the mirror, exactly as in RenderBlocks (the clamp is applied after). */
+	private static void mirrorChangedBounds(Direction aDir, float[][] c, float[] b) {
+		int tAxis = aDir == Direction.NORTH ? 0 : aDir == Direction.EAST ? 2 : -1;
+		if (tAxis < 0) return;
+		if (b[tAxis] < 0 || b[3 + tAxis] > 1) return;
+		for (float[] tVertex : c) tVertex[3] = (1 - tVertex[tAxis]) * 16;
+	}
+
 	/** 4 corners of a face from the block bounds, UV clipped to them; a full 0..1 cube reduces to the old fixed UV. */
 	private static float[][] corners(Direction aDir, float[] b) {
 		float x0 = b[0], y0 = b[1], z0 = b[2], x1 = b[3], y1 = b[4], z1 = b[5];
@@ -435,8 +452,11 @@ public final class GT6QuadBuilder {
 		if (y0 < 0 || y1 > 1) {ty0 = 0; ty1 = 1;}
 		if (z0 < 0 || z1 > 1) {tz0 = 0; tz1 = 1;}
 		float u0x = tx0*16, u1x = tx1*16, u0z = tz0*16, u1z = tz1*16, v0y = (1-ty0)*16, v1y = (1-ty1)*16;
+		// The bottom has its own 1.7.10 function (ITexture.renderFixedNegativeYFacing): V comes from 1-z, which is why GT6's
+		// change log lists the bottom texture as fixed; outside the cube that function keeps the unmirrored whole sprite.
+		float v0z = (z0 < 0 || z1 > 1) ? tz0*16 : (1-tz0)*16, v1z = (z0 < 0 || z1 > 1) ? tz1*16 : (1-tz1)*16;
 		switch (aDir) {
-		case DOWN:  return new float[][]{{x0,y0,z0, u0x,u0z},{x0,y0,z1, u0x,u1z},{x1,y0,z1, u1x,u1z},{x1,y0,z0, u1x,u0z}};
+		case DOWN:  return new float[][]{{x0,y0,z0, u0x,v0z},{x0,y0,z1, u0x,v1z},{x1,y0,z1, u1x,v1z},{x1,y0,z0, u1x,v0z}};
 		case UP:    return new float[][]{{x0,y1,z1, u0x,u1z},{x0,y1,z0, u0x,u0z},{x1,y1,z0, u1x,u0z},{x1,y1,z1, u1x,u1z}};
 		case NORTH: return new float[][]{{x1,y0,z0, u0x,v0y},{x1,y1,z0, u0x,v1y},{x0,y1,z0, u1x,v1y},{x0,y0,z0, u1x,v0y}};
 		case SOUTH: return new float[][]{{x0,y0,z1, u0x,v0y},{x0,y1,z1, u0x,v1y},{x1,y1,z1, u1x,v1y},{x1,y0,z1, u1x,v0y}};
