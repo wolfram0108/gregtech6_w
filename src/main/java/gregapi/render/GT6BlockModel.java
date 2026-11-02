@@ -154,7 +154,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 				if (tRB.setBlockBounds(i, aLevel, tX, tY, tZ, tSides)) {tNeedsToSetBounds = true;}
 				else {if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(tBlock, 0, 0, 0, 1, 1, 1); tNeedsToSetBounds = false;}
 				applyBounds(tQB, tBlock);
-				for (byte s = 0; s < 6; s++) face(tQB, tBlock, s, tRB.getTexture(i, s, tSides, aLevel, tX, tY, tZ), tX, tY, tZ);
+				for (byte s = 0; s < 6; s++) face(tQB, tBlock, s, tRB.getTexture(i, s, tSides, aLevel, tX, tY, tZ), tX, tY, tZ, tNeedsToSetBounds);
 			}
 			if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(tBlock, 0, 0, 0, 1, 1, 1); // anti-leak for the shared block (1:1 :132).
 			tQB.clearUVRotate(); // 1:1 renderBlockLog: reset uvRotate* after renderStandardBlock.
@@ -183,7 +183,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 			if (aRenderer.setBlockBounds(aBlock, i, tSides)) {tNeedsToSetBounds = true;}
 			else {if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); tNeedsToSetBounds = false;}
 			applyBounds(aQB, aBlock);
-			for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, aRenderer.getTexture(aBlock, i, s, tSides), aX, aY, aZ);
+			for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, aRenderer.getTexture(aBlock, i, s, tSides), aX, aY, aZ, tNeedsToSetBounds);
 		}
 		if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); // anti-leak for the shared block (1:1 :158).
 	}
@@ -215,7 +215,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 				if (tRenderer.setBlockBounds(aBlock, i, tSides)) {tNeedsToSetBounds = true;}
 				else {if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); tNeedsToSetBounds = false;}
 				applyBounds(aQB, aBlock);
-				for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, tRenderer.getTexture(aBlock, i, s, tSides), 0, 0, 0);
+				for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, tRenderer.getTexture(aBlock, i, s, tSides), 0, 0, 0, tNeedsToSetBounds);
 			}
 		} else {
 			for (int i = 0, j = tRB.getRenderPasses(aStack); i < j; i++) {
@@ -223,7 +223,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 				if (tRB.setBlockBounds(i, aStack)) {tNeedsToSetBounds = true;}
 				else {if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); tNeedsToSetBounds = false;}
 				applyBounds(aQB, aBlock);
-				for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, tRB.getTexture(i, s, aStack), 0, 0, 0);
+				for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, tRB.getTexture(i, s, aStack), 0, 0, 0, tNeedsToSetBounds);
 			}
 		}
 		if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); // 1:1 :92
@@ -243,16 +243,17 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 		aQB.setBounds(aBlock instanceof gregapi.block.IBlock tI ? tI.getRenderBounds() : null);
 	}
 
-	/** One per-side call into ITexture, which accumulates the resulting face into GT6QuadBuilder. */
-	private static void face(GT6QuadBuilder aQB, Block aBlock, byte aSide, ITexture aTex, int aX, int aY, int aZ) {
+	/** One per-side call into ITexture, which accumulates the resulting face into GT6QuadBuilder. aChangedBounds carries
+	 *  1.7.10's "not a full block" flag (its aFullBlock) down to the two faces that are mirrored for such passes. */
+	private static void face(GT6QuadBuilder aQB, Block aBlock, byte aSide, ITexture aTex, int aX, int aY, int aZ, boolean aChangedBounds) {
 		if (aTex == null || !aTex.isValidTexture()) return;
 		switch (aSide) {
-		case 0: aTex.renderYNeg(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
-		case 1: aTex.renderYPos(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
-		case 2: aTex.renderZNeg(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
-		case 3: aTex.renderZPos(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
-		case 4: aTex.renderXNeg(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
-		case 5: aTex.renderXPos(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, false); break;
+		case 0: aTex.renderYNeg(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, aChangedBounds); break;
+		case 1: aTex.renderYPos(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, aChangedBounds); break;
+		case 2: aTex.renderZNeg(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, aChangedBounds); break;
+		case 3: aTex.renderZPos(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, aChangedBounds); break;
+		case 4: aTex.renderXNeg(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, aChangedBounds); break;
+		case 5: aTex.renderXPos(aQB, aBlock, aX, aY, aZ, ITexture.Util.WORLD_BRIGHTNESS, aChangedBounds); break;
 		}
 	}
 
