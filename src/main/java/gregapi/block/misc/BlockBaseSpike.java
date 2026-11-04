@@ -115,6 +115,14 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 	}
 	
+	// neo asks entityInside where 1.7.10 called onEntityCollidedWithBlock(World,x,y,z,Entity); the bridge lives in the only
+	// common ancestor of all five spikes, so their damage bodies stay exactly as the original wrote them.
+	@Override protected void entityInside(BlockState aState, Level aWorld, net.minecraft.core.BlockPos aPos, Entity aEntity, net.minecraft.world.entity.InsideBlockEffectApplier aEffectApplier, boolean aIsPrecise) {
+		onEntityCollidedWithBlock(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aEntity);
+	}
+
+	public abstract void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity aEntity);
+
 	// neo's movement vector is immutable, so this calls setDeltaMovement instead of mutating fields directly, with the same
 	// effect.
 	@Override public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {if ((WD.meta(aWorld, aX, aY, aZ) & 7) != SIDE_UP) {Vec3 tMotion = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(tMotion.x * 0.1, tMotion.y, tMotion.z * 0.1);}}
