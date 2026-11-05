@@ -20,8 +20,7 @@ Minecraft 1.7.10 — на Minecraft 26.1.2 / NeoForge.**
 | `1.20.1` | [`1.20.1`](https://github.com/wolfram0108/gregtech6_w/tree/1.20.1) | NeoForge `1.20.1-47.1.106` | 17 | [![Release](https://img.shields.io/github/v/release/wolfram0108/gregtech6_w?include_prereleases&filter=*1.20.1*&label=release)](https://github.com/wolfram0108/gregtech6_w/releases?q=1.20.1) |
 
 **Вы смотрите ветку `main`.** Ветка `1.20.1` — бэкпорт: тот же мод и тот же генератор, собранные
-против более старого движка. Ветки никогда не сливаются; исправление, которое касается обеих,
-вносится в обе.
+против более старого движка.
 
 Что изменилось между версиями — [CHANGELOG.md](CHANGELOG.md).
 
