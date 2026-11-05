@@ -18,6 +18,9 @@ This document says plainly what works, what could work, and what will not.
 | **Applied Energistics 2** | `26.1.10-beta` | GT6 stays the industrial layer and AE2 keeps the network, storage, autocrafting and spatial storage; AE2 machines that merely repeat a GregTech one lose their own recipes, energy crosses the border both ways, and the GregTech wrench turns and dismantles AE2 blocks |
 | **BuildCraft** | `2026.2.0-br2` | GT6 machines take BuildCraft's wrench, gates and triggers and connect to its pipes, engines and lasers; BuildCraft oil goes through GT6's processing and GT6 Fuel burns in BuildCraft engines |
 | **More Red** | `26.1.2.3` | Its redstone logic joins GT6's progression: the parts it keeps are built from GT6 components, its red alloy is GT6's Red Alloy, its signal networks see the redstone GT6 blocks emit, and its windcatchers drive GT6 axles; its machines, pipes and tools give way to GT6's own |
+| **Railcraft Reborn** | `26.1.2-1.4.6` | Its items are unified with GT6 materials: ores come from GT6 only, its ingots and parts receive GregTech materials, and 44 ore-dictionary pairs are bridged; the GT6 crowbar works as a Reborn crowbar, the Reborn bore sees GT6 blocks through a block tag, and enchantment keys match |
+| **FTB Quests** | `26.1.2.9` | GT6 items carrying Byte or Short values in their data pass through FTB Library's packer, so quest icons, tasks and rewards no longer disconnect the client (Issue #41) |
+| **GTQualityNeo** | `0.2.3` | Its display reads GT6 tanks through the public tank list and shows the correct fluid amounts; drain tanks with `Long.MAX_VALUE` capacity are no longer exposed to foreign readers (Issue #43) |
 
 ## What the original integrated with
 
@@ -54,7 +57,7 @@ was GregTech 6 itself, and cross-mod work is a separate undertaking that has not
 | Botania | 219 | ⏳ modern version exists | not wired up |
 | Thaumcraft | 216 | ◻ not assessed |  |
 | HEXCraft | 213 | ◻ not assessed |  |
-| Railcraft | 213 | ⏳ modern version exists | not wired up |
+| Railcraft | 213 | ✅ integrated | see **Working today** — the Reborn layer, not the 1.7.10 one |
 | The Aether | 212 | ◻ not assessed |  |
 | Steamcraft 2 | 211 | ◻ not assessed |  |
 | Atum | 195 | ◻ not assessed |  |
