@@ -28,6 +28,8 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 
 ## [Unreleased]
 
+## [6.0.0-alpha.18] — Spike damage, liquid colors and JEI crafting
+
 ### Added
 
 - Each kind of energy converter now has its own efficiency setting in the config file, including large turbines, lasers, coolers and rotation engines.
@@ -35,6 +37,19 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 ### Changed
 
 - Flux dynamos have their own efficiency setting instead of sharing one with the other flux machines.
+
+### Fixed
+
+- GT6 recipes now appear in JEI's crafting category only, so a crafting table has one page and AE2 encodes GT6 crafting as crafting. ([#45](https://github.com/wolfram0108/gregtech6_w/issues/45))
+- Liquids now take their color from the game's fluid model, so water looks blue in the crucible, the bath, tanks and the world. ([#46](https://github.com/wolfram0108/gregtech6_w/issues/46))
+- Glow Lotus can be placed on water again. ([#48](https://github.com/wolfram0108/gregtech6_w/issues/48))
+- GT saplings and flowers are no longer stretched flat; their cross is as narrow as in 1.7.10. ([#49](https://github.com/wolfram0108/gregtech6_w/issues/49))
+- Vanilla lodestone and other modern items now show the material their own recipe gives them. ([#50](https://github.com/wolfram0108/gregtech6_w/issues/50))
+- Glowing glass of all 16 colors and Glowtus emit light again. ([#51](https://github.com/wolfram0108/gregtech6_w/issues/51))
+- Mirrored side textures on pipes and cables are fixed, and the bottom of a block takes the 1.7.10 layout. ([#52](https://github.com/wolfram0108/gregtech6_w/issues/52))
+- Spikes in dungeons deal damage to mobs and other entities again. ([#53](https://github.com/wolfram0108/gregtech6_w/issues/53))
+
+Thanks to [@Insecedeath](https://github.com/Insecedeath) and [@LixFen](https://github.com/LixFen) for the reports and contributions.
 
 ## [6.0.0-alpha.17] — Railcraft Reborn, Jade tank limits and translations
 
