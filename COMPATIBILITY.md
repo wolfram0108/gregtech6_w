@@ -18,6 +18,8 @@ This document says plainly what works, what could work, and what will not.
 | **JourneyMap** (and the vanilla map) | `1.20.1-6.0.2+forge` | GT6 blocks, ores, machines and fluids resolve to the correct map colour, checked by asking the real mod the same question it asks itself; oil and gas declare no engine fluid on this branch, so the vanilla map reads their block colour directly — both paths verified |
 | **BuildCraft: Community Edition** | `7.99.25` | GT6 machines take BuildCraft's wrench, gates and triggers and connect to its pipes, engines and lasers; BuildCraft oil goes through GT6's processing and GT6 Fuel burns in BuildCraft engines |
 | **More Red** | `4.0.0.4` | Its redstone logic joins GT6's progression: the parts it keeps are built from GT6 components, its red alloy is GT6's Red Alloy, and its wires bond to GT6 wires and machines; its soldering recipes give way to GT6's crafting |
+| **Railcraft Reborn** | `1.20.1-1.1.11` | Its items are unified with GT6 materials: ores come from GT6 only, its ingots and parts receive GregTech materials, and 44 ore-dictionary pairs are bridged; the GT6 crowbar works as a Reborn crowbar, the Reborn bore sees GT6 blocks through a block tag, and enchantment keys match |
+| **FTB Quests** | `2001.4.22` | GT6 items work as quest icons, tasks and rewards; this version needs no separate fix — its packer carries a plain `CompoundTag`, not Json5 |
 
 
 ## Lighting of GregTech blocks on this version
@@ -70,7 +72,7 @@ was GregTech 6 itself, and cross-mod work is a separate undertaking that has not
 | Botania | 219 | ⏳ modern version exists | not wired up |
 | Thaumcraft | 216 | ◻ not assessed |  |
 | HEXCraft | 213 | ◻ not assessed |  |
-| Railcraft | 213 | ⏳ modern version exists | not wired up |
+| Railcraft | 213 | ✅ integrated | see **Working today** — the Reborn layer, not the 1.7.10 one |
 | The Aether | 212 | ◻ not assessed |  |
 | Steamcraft 2 | 211 | ◻ not assessed |  |
 | Atum | 195 | ◻ not assessed |  |
