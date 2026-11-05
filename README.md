@@ -20,8 +20,7 @@ Minecraft 1.7.10 — to Minecraft 1.20.1 / NeoForge.**
 | `1.20.1` | [`1.20.1`](https://github.com/wolfram0108/gregtech6_w/tree/1.20.1) | NeoForge `1.20.1-47.1.106` | 17 | [![Release](https://img.shields.io/github/v/release/wolfram0108/gregtech6_w?include_prereleases&filter=*1.20.1*&label=release)](https://github.com/wolfram0108/gregtech6_w/releases?q=1.20.1) |
 
 **You are reading the `1.20.1` branch — a backport.** It is the same mod and the same generator, built
-against the older engine. The branches are never merged; a fix that belongs to both is applied to both.
-The `main` branch targets Minecraft `26.1.2`.
+against the older engine. The `main` branch targets Minecraft `26.1.2`.
 
 What changed between versions — [CHANGELOG.md](CHANGELOG.md).
 
