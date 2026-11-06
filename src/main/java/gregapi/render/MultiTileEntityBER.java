@@ -181,7 +181,7 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 			aBE.mRenderAABB = new net.minecraft.world.phys.AABB(tPos);
 			GT6QuadBuilder tQB = new GT6QuadBuilder();
 			try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* one MTE's render logic must not crash the frame */}
-			tQuads = tQB.isEmpty() ? null : tQB.quads();
+			tQuads = tQB.isEmpty() ? null : tQB.breakingQuads();
 			// Clip box is set to what this block entity actually drew, shifting the quads' local coordinates into world space.
 			float[] tDrawn = tQB.drawnBounds();
 			if (tDrawn != null) aBE.mRenderAABB = new net.minecraft.world.phys.AABB(

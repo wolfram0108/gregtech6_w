@@ -29,6 +29,10 @@ that predate this branch describe work done on the shared code base before it wa
 
 ## [Unreleased]
 
+### Fixed
+
+- Broken machines no longer darken while being mined: their cracks are drawn once per surface instead of once per texture layer.
+
 ## [6.0.0-1.20.1-alpha.14] — Spike damage, liquid colors and JEI crafting
 
 ### Added

@@ -152,6 +152,33 @@ public final class GT6QuadBuilder {
 
 	public QuadSet build() {return new QuadSet(mCulled, mUnculled);}
 	public List<BakedQuad> quads() {return mAll;}
+	/** Breaking decals replace the sprite, so coincident texture layers must become just one surface.
+	 *  Keep winding and direction: the back of a two-sided face is still a distinct visible surface. */
+	public List<BakedQuad> breakingQuads() {
+		List<BakedQuad> rQuads = new ArrayList<>();
+		java.util.Set<BreakingFace> tSeen = new java.util.HashSet<>();
+		for (BakedQuad tQuad : mAll) if (tSeen.add(BreakingFace.of(tQuad))) rQuads.add(tQuad);
+		return List.copyOf(rQuads);
+	}
+
+	private record BreakingFace(Direction direction, org.joml.Vector3f p0, org.joml.Vector3f p1, org.joml.Vector3f p2, org.joml.Vector3f p3) {
+		static BreakingFace of(BakedQuad aQuad) {
+			// Cyclic vertex shifts describe the same oriented face. Choose a stable first vertex without
+			// sorting the remaining vertices, which would erase winding for two-sided geometry.
+			int[] tV = aQuad.getVertices();
+			org.joml.Vector3f[] tP = new org.joml.Vector3f[4];
+			for (int i = 0; i < 4; i++) tP[i] = new org.joml.Vector3f(
+				Float.intBitsToFloat(tV[i * 8]), Float.intBitsToFloat(tV[i * 8 + 1]), Float.intBitsToFloat(tV[i * 8 + 2]));
+			int tFirst = 0;
+			for (int i = 1; i < 4; i++) if (compare(tP[i], tP[tFirst]) < 0) tFirst = i;
+			return new BreakingFace(aQuad.getDirection(), tP[tFirst], tP[(tFirst + 1) % 4], tP[(tFirst + 2) % 4], tP[(tFirst + 3) % 4]);
+		}
+		private static int compare(org.joml.Vector3f a, org.joml.Vector3f b) {
+			int r = Float.compare(a.x, b.x);
+			if (r == 0) r = Float.compare(a.y, b.y);
+			return r == 0 ? Float.compare(a.z, b.z) : r;
+		}
+	}
 	public boolean isEmpty() {return mAll.isEmpty();}
 
 	private static TextureAtlasSprite sprite(ResourceLocation aIcon) {return resolveSprite(aIcon);}
