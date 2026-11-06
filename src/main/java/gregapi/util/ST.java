@@ -1313,13 +1313,11 @@ public class ST {
 		return T;
 	}
 	
-	/**
-	 * The component remainder of a stack, asked as a machine asks it: the remainder of another mod's item may wear the item only for the player who crafts
-	 * (Railcraft Reborn's firestones hurt the stack in getCraftingRemainder only when CommonHooks.getCraftingPlayer() is a ServerPlayer), and a machine has
-	 * none, so the engine's own fake player stands in for the duration of the question and the item wears as getContainerItem made it wear in 1.7.10.
-	 */
+	/** Обычные остатки спрашиваем без игрока. Только огненные камни Railcraft требуют ServerPlayer,
+	 * чтобы расходовать заряд в машине так же, как при ручном крафте. */
 	private static net.minecraft.world.item.ItemStackTemplate remainderOf(ItemStack aStack) {
 		Item tItem = item_(aStack);
+		if (!IL.RC_Firestone_Refined.equal(aStack, T, T) && !IL.RC_Firestone_Cracked.equal(aStack, T, T)) return tItem.getCraftingRemainder(aStack);
 		net.minecraft.server.MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
 		if (net.neoforged.neoforge.common.CommonHooks.getCraftingPlayer() != null || tServer == null || !tServer.isSameThread()) return tItem.getCraftingRemainder(aStack);
 		net.neoforged.neoforge.common.CommonHooks.setCraftingPlayer(net.neoforged.neoforge.common.util.FakePlayerFactory.getMinecraft(tServer.overworld()));
