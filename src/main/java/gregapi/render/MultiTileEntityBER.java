@@ -28,7 +28,6 @@ import java.util.List;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 
-import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -185,7 +184,7 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 			} else {
 				GT6QuadBuilder tQB = new GT6QuadBuilder();
 				try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* one MTE's render logic must not crash the frame */}
-				if (!tQB.isEmpty()) aState.mQuads = tQB.quads();
+				if (!tQB.isEmpty()) aState.mQuads = tQB.breakingQuads();
 				// Clip box is set to what this block entity actually drew, shifting the quads' local coordinates into world space.
 				float[] tDrawn = tQB.drawnBounds();
 				if (tDrawn != null) aBE.mRenderAABB = new net.minecraft.world.phys.AABB(
@@ -211,12 +210,9 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 		if (tQuads != null && !tQuads.isEmpty()) {
 			final QuadInstance tQI = new QuadInstance(); // color=-1 (white, doesn't retint the baked quad's own color); light comes from the block's position.
 			tQI.setLightCoords(aState.lightCoords);
-			// GT6QuadBuilder's quads are already in local 0..1 block coordinates, like a baked model, and the
-			// PoseStack at submit time is already positioned at the block.
-			aNodes.submitCustomGeometry(aPoseStack, Sheets.cutoutBlockSheet(), (tPose, tBuffer) -> {
-				for (BakedQuad tQuad : tQuads) tBuffer.putBakedQuad(tPose, tQuad, tQI);
-			});
-			// submitCustomGeometry has no built-in crumbling support, so the same live quads are re-emitted through
+			// The textured geometry already lives in the section mesh; submitting it here again causes coplanar
+			// surfaces with different lighting. Only emit the breaking overlay from these live quads.
+			// submitCustomGeometry has no built-in crumbling support, so the live quads are emitted through
 			// SheetedDecalTextureGenerator so crack decals land on the actual surface, instead of a flat block face.
 			// (LevelRenderer:939-945 → extractRenderState → BlockEntityRenderState.breakProgress).
 			final net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay tBreak = aState.breakProgress;
