@@ -1313,8 +1313,13 @@ public class ST {
 		return T;
 	}
 	
-	/** Обычные остатки спрашиваем без игрока. Только огненные камни Railcraft требуют ServerPlayer,
-	 * чтобы расходовать заряд в машине так же, как при ручном крафте. */
+	/** The component remainder of a stack, asked as a machine asks it. In 1.7.10 getContainerItem had no player at all,
+	 *  so an ordinary item is asked here without one. Railcraft Reborn's firestones are the exception: their own
+	 *  getCraftingRemainder wears the stack only when CommonHooks.getCraftingPlayer() is a ServerPlayer
+	 *  (RefinedFirestoneItem:84, CrackedFirestoneItem:36), and a machine has none, so the engine's own fake player
+	 *  stands in for the duration of the question and the firestone wears as getContainerItem made it wear in 1.7.10
+	 *  (Issue #42). An ordinary item needs none of that, and the stand-in itself breaks under a networking library that
+	 *  rejects NeoForge's fake player (PR #54). */
 	private static net.minecraft.world.item.ItemStackTemplate remainderOf(ItemStack aStack) {
 		Item tItem = item_(aStack);
 		if (!IL.RC_Firestone_Refined.equal(aStack, T, T) && !IL.RC_Firestone_Cracked.equal(aStack, T, T)) return tItem.getCraftingRemainder(aStack);

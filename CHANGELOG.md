@@ -30,7 +30,7 @@ middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release seri
 
 ### Fixed
 
-- Ordinary crafting remainder queries no longer create fake players, preventing interrupted food registration with Forgified Fabric Networking API.
+- Ordinary items report their crafting remainder without a stand-in player, so a networking library that rejects that player can no longer break food and recipe registration.
 
 ## [6.0.0-alpha.18] — Spike damage, liquid colors and JEI crafting
 
