@@ -73,7 +73,8 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 
 	/** The flower's ore-indicator variant lives in a synced BlockState property rather than a tile
 	 *  entity, routed through WD.set/WD.meta, and GT6BlockModel reads it to draw the cross model. */
-	public static final net.minecraft.world.level.block.state.properties.IntegerProperty META = net.minecraft.world.level.block.state.properties.IntegerProperty.create("meta", 0, 15);
+	// StateHolder matches properties by identity; use the same instance as the shared metadata bridge.
+	public static final net.minecraft.world.level.block.state.properties.IntegerProperty META = gregapi.block.BlockBaseMeta.META;
 	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<Block, BlockState> aBuilder) {super.createBlockStateDefinition(aBuilder); aBuilder.add(META);}
 	/** The Material bridge isn't extended to classes outside BlockBase, so this keeps its own
 	 *  mMaterial/getMaterial() instead of a new shared abstraction. */
