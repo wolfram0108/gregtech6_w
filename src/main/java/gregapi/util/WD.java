@@ -1226,6 +1226,12 @@ public class WD {
 	public static boolean oxygen(Level aWorld, int aX, int aY, int aZ) {
 		return  !MD.GC.mLoaded || !dimGC(aWorld) || OxygenUtil.checkTorchHasOxygen(aWorld, NB, aX, aY, aZ); // F10: aWorld.provider instanceof IGalacticraftWorldProvider -> the dimGC center (WorldProvider removed).
 	}
+	/** Worldgen readers (WorldGenRegion) are not a Level, but carry one; reach it instead of dropping the oxygen rule. */
+	public static boolean oxygen(LevelAccessor aWorld, int aX, int aY, int aZ) {
+		if (aWorld instanceof Level tLevel) return oxygen(tLevel, aX, aY, aZ);
+		if (aWorld instanceof net.minecraft.world.level.ServerLevelAccessor tAccessor) return oxygen(tAccessor.getLevel(), aX, aY, aZ);
+		return T;
+	}
 	public static boolean collectable_air(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		return (!MD.GC.mLoaded || !dimGC(aWorld)) && !hasCollide(aWorld, aX, aY, aZ) && !liquid(aWorld, aX, aY, aZ); // F10: aWorld.provider instanceof IGalacticraftWorldProvider -> the dimGC center.
 	}
