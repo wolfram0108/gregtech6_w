@@ -201,7 +201,10 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	// Wires two neo hooks to the same 1.7.10 removal rule: canSurvive (called on neighbor updates, reading canBlockStay) and
 	// randomTick (catching oxygen changes with no neighbor update at all), matching where the original was attached.
 	@Override public boolean canSurvive(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.LevelReader aWorld, BlockPos aPos) {
-		return aWorld instanceof Level tLevel ? canBlockStay(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()) : super.canSurvive(aState, aWorld, aPos);
+		if (aWorld instanceof Level tLevel) return canBlockStay(tLevel, aPos.getX(), aPos.getY(), aPos.getZ());
+		// WorldGenRegion has no Level of its own; the oxygen rule of canBlockStay still has to hold there.
+		if (aWorld instanceof net.minecraft.world.level.LevelAccessor tAccessor && !WD.oxygen(tAccessor, aPos.getX(), aPos.getY(), aPos.getZ())) return F;
+		return super.canSurvive(aState, aWorld, aPos);
 	}
 	@Override public boolean isRandomlyTicking(net.minecraft.world.level.block.state.BlockState aState) {return T;}
 	@Override public void randomTick(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
