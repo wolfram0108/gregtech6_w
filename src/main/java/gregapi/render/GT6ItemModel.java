@@ -125,6 +125,10 @@ public class GT6ItemModel implements BakedModel {
 			// (meta 0) is drawn directly instead, like the vanilla rail item.
 			return buildRailItem(tRail);
 		}
+		if (tItem instanceof net.minecraft.world.item.BlockItem tPlantBI && tPlantBI.getBlock() instanceof IRenderedCross) {
+			// Saplings/flowers use their flat icon as items, as in 1.7.10; crossed planes are world geometry only.
+			return buildFlatItem(aStack, tItem);
+		}
 		if (tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof IRenderedBlock) {
 			return buildBlockInventory(aStack, tBI.getBlock());
 		}
@@ -280,12 +284,19 @@ public class GT6ItemModel implements BakedModel {
 	}
 	/** Per-pass item icon via GT6's getIcon(stack,pass), falling back to getIconIndex/getIconFromDamage for pass 0. */
 	private static ResourceLocation iconForPass(Object aItem, ItemStack aStack, int aPass) {
+		if (aItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof IRenderedCross tCross) {
+			return aPass == 0 ? tCross.getCrossIcon(null, gregapi.util.ST.meta_(aStack), 0, 0) : null;
+		}
 		try { java.lang.reflect.Method m = cachedMethod(aItem.getClass(), "getIcon", ItemStack.class, int.class); if (m != null) { Object o = m.invoke(aItem, aStack, aPass); if (o instanceof ResourceLocation id) return id; } } catch (Throwable e) {}
 		if (aPass == 0) { ResourceLocation r = tryIcon(aItem, "getIconIndex", ItemStack.class, aStack); if (r == null) r = tryIcon(aItem, "getIconFromDamage", int.class, aStack.getDamageValue()); return r; }
 		return null;
 	}
 	/** GT6's getColorFromItemStack(stack,pass) returns 0xRRGGBB: material tint on pass 0, white on every other pass. */
 	private static int itemColor(Object aItem, ItemStack aStack, int aPass) {
+		if (aItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof IRenderedCross tCross) {
+			short[] tRGBa = tCross.getCrossRGBa(null, gregapi.util.ST.meta_(aStack), 0, 0);
+			return tRGBa == null ? 0xFFFFFF : (tRGBa[0] << 16) | (tRGBa[1] << 8) | tRGBa[2];
+		}
 		try { java.lang.reflect.Method m = cachedMethod(aItem.getClass(), "getColorFromItemStack", ItemStack.class, int.class); if (m != null) { Object c = m.invoke(aItem, aStack, aPass); if (c instanceof Integer ci) return ci; } } catch (Throwable e) {}
 		return 0xFFFFFF;
 	}
