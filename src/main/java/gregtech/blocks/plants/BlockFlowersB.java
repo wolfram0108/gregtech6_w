@@ -144,7 +144,13 @@ public class BlockFlowersB extends BlockBaseFlower implements Runnable {
 	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {
 		return WD.oxygen(aWorld, aX, aY, aZ) && WD.canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, Blocks.CACTUS);
 	}
-	
+
+	// WorldGenRegion uses FlowerBlock's survival path instead of the Level-only canBlockStay bridge.
+	@Override
+	protected boolean mayPlaceOn(net.minecraft.world.level.block.state.BlockState aSoil, BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {
+		return aWorld instanceof net.minecraft.world.level.LevelAccessor tWorld && WD.canSustainPlant(tWorld, aPos.getX(), aPos.getY(), aPos.getZ(), Direction.UP, Blocks.CACTUS);
+	}
+
 	// F10: the real net.minecraftforge.common.IPlantable signature (BlockGetter,BlockPos) — overrides
 	// BlockBaseFlower.getPlantType (which is now also an @Override of the real interface, inherited from FlowerBlock).
 	@Override
