@@ -47,3 +47,12 @@ GT6U (at lowercase paths, because the modern engine requires lowercase resource 
 
 GT6U's TerraFirmaCraft 1.7.10 integration (that mod does not exist for this Minecraft version)
 and its achievements (the port has none) are not part of this addon.
+
+
+4. Translations
+---------------
+
+assets/gt6u/lang/zh_cn.json      Simplified Chinese — contributed by LixFen
+                                 (https://github.com/LixFen) in
+                                 https://github.com/wolfram0108/gregtech6_w/pull/59,
+                                 ported from the GT6U community Chinese translation.
