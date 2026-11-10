@@ -285,7 +285,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 			}
 			Slot tSlot = (Slot)slots.get(aSlotIndex);
 			if (tSlot != null) {
-				ItemStack tStack = getCarried();
+				ItemStack tStack = ST.ni(getCarried());
 				if (tStack == null) {
 					tStack = tSlot.getItem();
 					if (aMouseclick == 0) {
