@@ -42,8 +42,7 @@ import net.minecraft.world.phys.Vec3;
  * Blocks can have this marker Interface too, since it is just an empty marker.
  */
 public interface IItemGT {
-	/** 1.7.10's runtime mutators setMaxDamage/setHasSubtypes are gone; this default is a no-op for GT items,
-	 *  since durability now comes from Properties and subtypes from data components; ItemBase overrides it. */
+	/** Старые сеттеры не меняют свойства Item движка; ItemBase хранит нужные своему API поля отдельно. */
 	default Object setMaxDamage(int aMaxDamage) {return this;}
 	default Object setHasSubtypes(boolean aHasSubtypes) {return this;}
 

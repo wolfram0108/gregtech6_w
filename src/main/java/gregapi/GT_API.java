@@ -188,13 +188,6 @@ public class GT_API extends Abstract_Mod {
 	public static final DeferredRegister.Items  ITEMS  = DeferredRegister.createItems (ModIDs.GAPI);
 	public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(ModIDs.GAPI);
 
-	/** F12-followup (subtype-meta): GT6 1.7.10 stores the item's SUBTYPE in the damage value (getItemDamage 0..32767) — meta items
-	 *  (PrefixItem/MultiItem, maxDamage=0) hold thousands of subtypes on one Item via meta. neo clamps setDamageValue to
-	 *  [0,maxDamage] (IItemExtension.setDamage) → with maxDamage=0 ALL meta collapses to 0 (all material stacks become
-	 *  identical → unification/recipes/MTE break). DAMAGE cannot be reused: it also serves as durability for real items
-	 *  (maxDamage>0). The centralized adaptation is a SEPARATE subtype component; {@code ST.meta_} get/set goes through it,
-	 *  bypassing the clamp. Persistent (NBT ItemStack.CODEC) + network-synced. Set only when meta!=0 (meta-0 = no component,
-	 *  stacks with vanilla). */
 	/** F12-followup (MTE-type-timing): a single placeholder BlockEntityType for the whole MTE hierarchy. Creating a BlockEntityType calls
 	 *  createIntrusiveHolder → only valid on RegisterEvent<BlockEntityType> (registry unfrozen). We register it with the supplier
 	 *  {@code TileEntityBase01Root.createType} (it creates+caches MTE_TYPE); previously <clinit> created it lazily on
@@ -269,6 +262,7 @@ public class GT_API extends Abstract_Mod {
 	}
 
 	public static final DeferredRegister<net.minecraft.core.component.DataComponentType<?>> COMPONENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE, ModIDs.GAPI);
+	/** Остаточный канал для предметов без IMetaItem; перенесённые семейства его не используют. */
 	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<Integer>> SUBTYPE =
 		COMPONENTS.register("subtype", () -> net.minecraft.core.component.DataComponentType.<Integer>builder()
 			.persistent(com.mojang.serialization.Codec.INT)
@@ -796,6 +790,8 @@ public class GT_API extends Abstract_Mod {
 		// F12-followup (block-split, MTE): drains DEFERRED_BLOCK_INIT on RegisterEvent<Block> (registry unfrozen) — the single
 		// point for subsystems whose block construction can't be expressed as a single registerBlockLazy (see deferBlockInit).
 		aModBus.addListener(GT_API::onRegisterEvent);
+		aModBus.addListener(net.neoforged.bus.api.EventPriority.LOWEST, gregapi.item.prefixitem.PrefixItem::registerVariants);
+		aModBus.addListener(net.neoforged.bus.api.EventPriority.LOWEST, gregapi.item.multiitem.MultiItemRandom::registerVariants);
 		// F6: the central worldgen adapter (Feature/PlacedFeature/BiomeModifier) — the same mod bus,
 		// a single subscription point (decisions/F6-worldgen.md, gregapi/worldgen/GT6WorldgenFeature.java).
 		gregapi.worldgen.GT6WorldgenFeature.register(aModBus);
@@ -892,10 +888,9 @@ public class GT_API extends Abstract_Mod {
 		// A SECOND ROOT, its own key: rewiring AE2 recipes whose input we took away. So far there's only one —
 		// the Network Tool: suppressing both quartz WRENCH recipes (the DisableAllQuartzToolRecipes node) also killed
 		// its crafting recipe (tools/network_tool.json requires #ae2:quartz_wrench), and it's an ME mechanic that must
-		// keep working. The override swaps the input for GREG's wrench key via the neoforge:components component
-		// ingredient (NeoForgeMod:367): item gregtech:gt.metatool.01 plus the component gregapi:subtype = 16 (ToolsGT.WRENCH, CS:2135).
-		// The match is PARTIAL (strict defaults to false, DataComponentIngredient:43): the stack's other components aren't
-		// compared, so a wrench of ANY material matches, while the sword (subtype 0) does not.
+		// keep working.
+		// Эксперимент: отдельный Item gregtech:gt.metatool.01-16 принимает гаечный ключ из любого материала;
+		// subtype больше не участвует в выборе этого ингредиента.
 		// A separate pack, not a file merged into the first one: the keys are independent — turning off the
 		// tool-recipe suppression returns both the quartz recipes and the native one, without touching the meteorites.
 		if (AE2_KILL_QUARTZ_TOOLS) aEvent.addPackFinders(

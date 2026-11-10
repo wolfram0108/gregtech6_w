@@ -119,7 +119,7 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 						}
 						return rRecipe;
 					}
-					if ((tScanned.getItem() == ItemsGT.BOOKS || OD.bookWritten.is_(tScanned) || IL.Paper_Printed_Pages.equal(tScanned, F, T) || IL.Paper_Printed_Pages_Many.equal(tScanned, F, T)) && UT.Code.stringValid(UT.NBT.getBookTitle(tScanned))) {
+					if ((Flattened.headItemOf(tScanned.getItem()) == ItemsGT.BOOKS || OD.bookWritten.is_(tScanned) || IL.Paper_Printed_Pages.equal(tScanned, F, T) || IL.Paper_Printed_Pages_Many.equal(tScanned, F, T)) && UT.Code.stringValid(UT.NBT.getBookTitle(tScanned))) {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 512, 16, 0);
 						if (!ST.hasNBT(rRecipe.mOutputs[0])) ST.setNBT(rRecipe.mOutputs[0], UT.NBT.make());
 						ST.nbtPut(rRecipe.mOutputs[0], NBT_USB_DATA, ItemNBT.get(tScanned).copy());

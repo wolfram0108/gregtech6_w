@@ -62,6 +62,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 	public final Class<? extends EntityProjectile> mEntityClass;
 	public final float mSpeedMultiplier, mPrecision;
 	public final boolean mStabbing, mIsBullet;
+	private final boolean mDispensable;
 	
 	public PrefixItemProjectile(ModData aMod, String aNameInternal, OreDictPrefix aPrefix, TagData aProjectileType, Class<? extends EntityProjectile> aEntityClass, float aSpeedMultiplier, float aPrecision, boolean aDispensable, boolean aStabbing, boolean aIsBullet, OreDictMaterial... aMaterialList) {
 		this(aMod.mID, aMod.mID, aNameInternal, aPrefix, aProjectileType, aEntityClass, aSpeedMultiplier, aPrecision, aDispensable, aStabbing, aIsBullet, aMaterialList);
@@ -75,8 +76,23 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		mSpeedMultiplier = aSpeedMultiplier;
 		mStabbing = aStabbing;
 		mIsBullet = aIsBullet;
+		mDispensable = aDispensable;
 		if (aDispensable) DispenserBlock.registerBehavior(this, new MetaItemDispense()); // was dispenseBehaviorRegistry.putObject (DispenserBlock.java:61)
 	}
+
+	private PrefixItemProjectile(PrefixItemProjectile aFamily, short aMeta) {
+		super(aFamily, aMeta);
+		mProjectileType = aFamily.mProjectileType;
+		mEntityClass = aFamily.mEntityClass;
+		mPrecision = aFamily.mPrecision;
+		mSpeedMultiplier = aFamily.mSpeedMultiplier;
+		mStabbing = aFamily.mStabbing;
+		mIsBullet = aFamily.mIsBullet;
+		mDispensable = aFamily.mDispensable;
+		mLootingMultiplier = aFamily.mLootingMultiplier;
+		if (mDispensable) DispenserBlock.registerBehavior(this, new MetaItemDispense());
+	}
+	@Override protected PrefixItem createVariant(short aMeta) {return new PrefixItemProjectile(this, aMeta);}
 	
 	@Override
 	@SuppressWarnings("unchecked")

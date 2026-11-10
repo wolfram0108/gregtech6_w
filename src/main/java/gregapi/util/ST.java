@@ -37,6 +37,7 @@ import gregapi.item.IItemGTContainerTool;
 import gregapi.item.IItemProjectile;
 import gregapi.item.IItemUpdatable;
 import gregapi.item.multiitem.MultiItemRandom;
+import gregapi.item.IMetaItem;
 import gregapi.item.multiitem.food.IFoodStat;
 import gregapi.oredict.OreDictItemData;
 import gregapi.oredict.OreDictManager;
@@ -118,7 +119,7 @@ public class ST {
 	public static boolean equal_(ItemStack aStack, Block aBlock                            ) {return block_(aStack) == aBlock;}
 	public static boolean equal (ItemStack aStack, Item  aItem                 , long aMeta) {return aStack != null && aItem  != null && equal_(aStack, aItem , aMeta);}
 	public static boolean equal (ItemStack aStack, Block aBlock                , long aMeta) {return aStack != null && aBlock != null && equal_(aStack, aBlock, aMeta);}
-	public static boolean equal_(ItemStack aStack, Item  aItem                 , long aMeta) {return equal(meta_(aStack), aMeta) && item_ (aStack) == aItem ;}
+	public static boolean equal_(ItemStack aStack, Item  aItem                 , long aMeta) {return equal(meta_(aStack), aMeta) && equalItem(aStack, aItem, aMeta);}
 	public static boolean equal_(ItemStack aStack, Block aBlock                , long aMeta) {return equal(meta_(aStack), aMeta) && block_(aStack) == aBlock;}
 	public static boolean equal (ItemStack aStack, ModData aModID, String aItem            ) {return equal(aStack, findItem(aModID.mID, aItem));}
 	public static boolean equal (ItemStack aStack, ModData aModID, String aItem, long aMeta) {return equal(aStack, findItem(aModID.mID, aItem), aMeta);}
@@ -129,7 +130,11 @@ public class ST {
 	public static boolean equal_(ItemStack aStack, Block aBlock                            , boolean aAllowNBT) {return block_(aStack) == aBlock && aAllowNBT == ItemNBT.has(aStack);}
 	public static boolean equal (ItemStack aStack, Item  aItem                 , long aMeta, boolean aAllowNBT) {return aStack != null && aItem  != null && equal_(aStack, aItem , aMeta, aAllowNBT);}
 	public static boolean equal (ItemStack aStack, Block aBlock                , long aMeta, boolean aAllowNBT) {return aStack != null && aBlock != null && equal_(aStack, aBlock, aMeta, aAllowNBT);}
-	public static boolean equal_(ItemStack aStack, Item  aItem                 , long aMeta, boolean aAllowNBT) {return equal(meta_(aStack), aMeta) && item_ (aStack) == aItem  && aAllowNBT == ItemNBT.has(aStack);}
+	public static boolean equal_(ItemStack aStack, Item  aItem                 , long aMeta, boolean aAllowNBT) {return equal(meta_(aStack), aMeta) && equalItem(aStack, aItem, aMeta) && aAllowNBT == ItemNBT.has(aStack);}
+	private static boolean equalItem(ItemStack aStack, Item aItem, long aMeta) {
+		if (aItem instanceof IMetaItem tItem) return item_(aStack) == tItem.itemForMeta((short)aMeta) || aMeta == W && CS.Flattened.sameFamily(item_(aStack), aItem);
+		return item_(aStack) == aItem;
+	}
 	public static boolean equal_(ItemStack aStack, Block aBlock                , long aMeta, boolean aAllowNBT) {return equal(meta_(aStack), aMeta) && block_(aStack) == aBlock && aAllowNBT == ItemNBT.has(aStack);}
 	public static boolean equal (ItemStack aStack, ModData aModID, String aItem            , boolean aAllowNBT) {return equal(aStack, findItem(aModID.mID, aItem), aAllowNBT);}
 	public static boolean equal (ItemStack aStack, ModData aModID, String aItem, long aMeta, boolean aAllowNBT) {return equal(aStack, findItem(aModID.mID, aItem), aMeta, aAllowNBT);}
@@ -179,7 +184,8 @@ public class ST {
 	public static ItemStack ni(ItemStack aStack) {return (aStack == null || aStack == ItemStack.EMPTY) ? null : aStack;}
 
 	public static short id (Item      aItem ) {return aItem  == null ? 0 : id_(aItem);}
-	public static short id_(Item      aItem ) {return (short)Item.getId(aItem);}
+	/** Старые пакеты GT передают пару family-id/meta; полный ID движка берётся через Item.getId. */
+	public static short id_(Item      aItem ) {return (short)Item.getId(aItem instanceof IMetaItem tMeta ? tMeta.metaFamily() : aItem);}
 	public static short id (Block     aBlock) {return aBlock == null ? 0 : id_(aBlock);}
 	public static short id_(Block     aBlock) {return aBlock == NB   ? 0 : (short)BuiltInRegistries.BLOCK.getId(aBlock);}
 	public static short id (ItemStack aStack) {return aStack == null ? 0 : id(item_(aStack));}
@@ -190,7 +196,7 @@ public class ST {
 	public static Item item_(Block aBlock) {return aBlock == NB   ? null : Item.byBlock(aBlock);}
 	public static Item item (ItemStack aStack) {return aStack == null ? null : item_(aStack);}
 	public static Item item_(ItemStack aStack) {return aStack.getItem();}
-	public static Item item (long aID) {return aID > 0 && aID < 65536 ? item_(aID) : null;}
+	public static Item item (long aID) {return aID > 0 && aID <= Integer.MAX_VALUE ? item_(aID) : null;}
 	public static Item item_(long aID) {return Item.byId((int)aID);}
 	
 	public static Block block (ModData aModID, String aBlock) {return block(make(aModID, aBlock, 1, 0));}
@@ -203,11 +209,23 @@ public class ST {
 	public static Block block_(long aID) {return BuiltInRegistries.BLOCK.byId((int)aID);}
 	
 	public static short     meta (ItemStack aStack) {return aStack == null ? 0 : meta_(aStack);}
-	// F12-followup (subtype-meta): the GT6 subtype is stored in the GT_API.SUBTYPE component (not the damage value —
-	// that clamps to [0,maxDamage], and meta items have maxDamage=0 -> collapses to 0). meta-0 = component absent (default 0, a vanilla-created stack).
-	public static short     meta_(ItemStack aStack) {return gregapi.GT_API.SUBTYPE_TYPE != null ? (short)(int)aStack.getOrDefault(gregapi.GT_API.SUBTYPE_TYPE, 0) : 0;}
+	// Выделенный Item хранит номер типа; корень многовариантного семейства означает wildcard без компонента.
+	// SUBTYPE остаётся только у ещё не перенесённых предметов.
+	public static boolean usesSubtypeComponent(Item aItem) {return !(aItem instanceof IMetaItem);}
+	public static short     meta_(ItemStack aStack) {return aStack.getItem() instanceof IMetaItem tItem ? tItem.fixedMeta() >= 0 ? tItem.fixedMeta() : W : gregapi.GT_API.SUBTYPE_TYPE != null ? (short)(int)aStack.getOrDefault(gregapi.GT_API.SUBTYPE_TYPE, 0) : 0;}
 	public static ItemStack meta (ItemStack aStack, long aMeta) {return aStack == null ? null : meta_(aStack, aMeta);}
-	public static ItemStack meta_(ItemStack aStack, long aMeta) {int tMeta = (short)aMeta; if (gregapi.GT_API.SUBTYPE_TYPE != null) {if (tMeta != 0) aStack.set(gregapi.GT_API.SUBTYPE_TYPE, tMeta); else aStack.remove(gregapi.GT_API.SUBTYPE_TYPE);} return aStack;}
+	public static ItemStack meta_(ItemStack aStack, long aMeta) {
+		int tMeta = (short)aMeta;
+		if (aStack.getItem() instanceof IMetaItem tItem) {
+			Item tTarget = tItem.itemForMeta((short)tMeta);
+			if (((IMetaItem)tTarget).fixedMeta() < 0 && tMeta != W) throw new IllegalArgumentException("Unregistered meta item: " + regName(tItem.metaFamily()) + "-" + tMeta);
+			if (tTarget != aStack.getItem()) setItem(aStack, tTarget);
+			if (gregapi.GT_API.SUBTYPE_TYPE != null) aStack.remove(gregapi.GT_API.SUBTYPE_TYPE);
+			return aStack;
+		}
+		if (gregapi.GT_API.SUBTYPE_TYPE != null) {if (tMeta != 0) aStack.set(gregapi.GT_API.SUBTYPE_TYPE, tMeta); else aStack.remove(gregapi.GT_API.SUBTYPE_TYPE);}
+		return aStack;
+	}
 
 	/**
 	 * BUG-079, the ONLY answer to "what makes an item a SEPARATE item for an external display".
@@ -223,15 +241,24 @@ public class ST {
 	 * {@code gt6jeicraft} probe). A copy of the policy drifts from the original on the exceptions — lesson of BUG-070.</p>
 	 */
 	public static boolean identityIncludesNBT(net.minecraft.world.item.Item aItem) {
+		if (aItem instanceof IMetaItem tItem && tItem.fixedMeta() < 0) return F;
 		return !(aItem instanceof gregapi.item.multiitem.MultiItem tMulti) || tMulti.identityIncludesNBT();
 	}
+	/** Компоненты идентичности для JEI: отдельным Item не нужен SUBTYPE, семейства служат только запросами. */
+	public static net.minecraft.core.component.DataComponentType<?>[] identityComponents(Item aItem) {
+		if (aItem instanceof IMetaItem tItem && tItem.fixedMeta() < 0) return new net.minecraft.core.component.DataComponentType<?>[0];
+		boolean tData = identityIncludesNBT(aItem);
+		if (usesSubtypeComponent(aItem)) return tData ? new net.minecraft.core.component.DataComponentType<?>[] {gregapi.GT_API.SUBTYPE_TYPE, gregapi.GT_API.DATA_TYPE} : new net.minecraft.core.component.DataComponentType<?>[] {gregapi.GT_API.SUBTYPE_TYPE};
+		return tData ? new net.minecraft.core.component.DataComponentType<?>[] {gregapi.GT_API.DATA_TYPE} : new net.minecraft.core.component.DataComponentType<?>[0];
+	}
 
-	/** Identity key of a stack for an external display: item + meta, plus NBT — but only when it is part of identity
+	/** Identity key for an external display: registry ID, remaining legacy meta, and NBT only when it is part of identity
 	 *  ({@link #identityIncludesNBT}). The display matches an item against a recipe output with this same key. */
 	public static String identityKey(ItemStack aStack) {
 		if (aStack == null || aStack.getItem() == null) return "null";
 		var tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem());
-		String rKey = (tKey == null ? "" : tKey.toString()) + ":" + meta_(aStack);
+		String rKey = (tKey == null ? "" : tKey.toString());
+		if (usesSubtypeComponent(aStack.getItem())) rKey += ":" + meta_(aStack);
 		if (!identityIncludesNBT(aStack.getItem())) return rKey;
 		net.minecraft.nbt.CompoundTag tNBT = gregapi.code.ItemNBT.get(aStack);
 		return rKey + "|" + (tNBT == null ? "-" : tNBT.toString());
@@ -313,7 +340,7 @@ public class ST {
 	public static int toInt(ItemStack aStack, long aMeta) {return aStack != null ? toInt(item_(aStack), aMeta) : 0;}
 	
 	public static ItemStack toStack(int aStack) {return make(toItem(aStack), 1, toMeta(aStack));}
-	public static Block     toBlock(int aStack) {return block(aStack&(~0>>>16));}
+	public static Block     toBlock(int aStack) {return block(toItem(aStack));}
 	public static Item      toItem (int aStack) {return item(aStack&(~0>>>16));}
 	public static short     toMeta (int aStack) {return (short)(aStack>>>16);}
 	
@@ -542,7 +569,7 @@ public class ST {
 	 *  {@code DeferredRegister.findItemStack(...)}). null when the item is not registered — as in the original. */
 	public static ItemStack findItemStack(String aModID, String aName, int aSize) {
 		Item tItem = findItem(aModID, aName);
-		return tItem == null ? null : make_(tItem, aSize, 0);
+		return tItem == null ? null : tItem instanceof IMetaItem tMeta && tMeta.fixedMeta() < 0 ? new ItemStack(tItem, aSize) : make_(tItem, aSize, 0);
 	}
 
 	public static ItemStack set(ItemStack aSetStack, ItemStack aToStack) {
@@ -562,6 +589,7 @@ public class ST {
 		if (valid(aStack) && aItem != null) {
 			net.minecraft.core.component.DataComponentMap tPrevious = aStack.getComponents();
 			var tComponents = net.minecraft.core.component.PatchedDataComponentMap.fromPatch(aItem.components(), aStack.getComponentsPatch());
+			if (aItem instanceof IMetaItem && gregapi.GT_API.SUBTYPE_TYPE != null) tComponents.remove(gregapi.GT_API.SUBTYPE_TYPE);
 			if (UT.Reflection.setField(aStack, "components", tComponents) != null) {
 				if (UT.Reflection.setField(aStack, "item", aItem.builtInRegistryHolder()) == null)
 					UT.Reflection.setField(aStack, "components", tPrevious);
@@ -676,16 +704,9 @@ public class ST {
 	public static ItemStack[] array(ItemStack... aStacks) {return aStacks;}
 	public static ItemStack[] array(int aLength) {return new ItemStack[aLength];}
 	
-	// F1-meta: neo's ItemStack(ItemLike,int,int) 3-arg ctor with a meta was removed (flattening) — meta is stored
-	// in the DAMAGE component (the same F1 model as the meta_:188 setDamageValue center). 2-arg ctor + setDamageValue.
-	// F4-flatten (DEFERRED-LEDGER "block-flatten"): for a VANILLA thing, 1.7.10's subtype lived in the meta (dye:1 = red
-	// dye, stained_glass:14 = red glass), while the 1.13 engine split families into separate items. A vanilla thing
-	// does not read the SUBTYPE component -> without a resolve, the output is always the FIRST family member with a
-	// dead meta (evidence from a dump: a bath "glass+red dye" -> white_stained_glass:14). The map center is
-	// CS.Flattened (rationale and boundaries live there); here is the single substitution point for things in a
-	// stack, so all 477 caller sites are fixed at once and stay verbatim-1:1. Meta is NOT set on the variant: it is
-	// already expressed by the item itself. Non-family things (GT meta items, tools with durability, wildcard W) go the old way.
-	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {Item  tFlat = CS.Flattened.item (aItem , aMeta); if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize)); ItemStack tPotion = legacyPotion(aItem, aSize, aMeta); if (tPotion != null) return tPotion; ItemStack rStack = new ItemStack(aItem , UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
+	// Семейство и номер выбирают зарегистрированный Item; wildcard представлен корнем семейства.
+	// Для ванильных семейств используется та же таблица Flattened, для ещё не перенесённых типов — компонент.
+	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {Item  tFlat = CS.Flattened.item (aItem , aMeta); if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize)); if (aItem instanceof IMetaItem) return null; ItemStack tPotion = legacyPotion(aItem, aSize, aMeta); if (tPotion != null) return tPotion; ItemStack rStack = new ItemStack(aItem , UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
 
 	// BUG-118 §2, META MODEL: the bridge "1.7.10 legacy potion meta -> neo PotionContents" — the same bridge family
 	// as CS.Flattened above, except in neo the potion's kind is expressed by a COMPONENT, not a separate item
@@ -728,7 +749,7 @@ public class ST {
 		default: return null;
 		}
 	}
-	public static ItemStack make_(Block aBlock, long aSize, long aMeta) {Block tFlat = CS.Flattened.block(aBlock, aMeta); if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize)); ItemStack rStack = new ItemStack(aBlock, UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
+	public static ItemStack make_(Block aBlock, long aSize, long aMeta) {Block tFlat = CS.Flattened.block(aBlock, aMeta); if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize)); return make_(aBlock.asItem(), aSize, aMeta);}
 	public static ItemStack make(ModData aModID, String aItem, long aSize) {
 		gregapi.compat.ForeignNames tTable = gregapi.compat.ForeignNames.table(aModID, aItem);
 		if (tTable != null) return tTable.make(aModID, aItem, aSize, 0);

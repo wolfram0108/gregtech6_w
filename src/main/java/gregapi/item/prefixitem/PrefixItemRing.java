@@ -42,6 +42,8 @@ public class PrefixItemRing extends PrefixItemBauble {
 	public PrefixItemRing(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterial... aMaterialList) {
 		super(aModIDOwner, aModIDTextures, aNameInternal, aPrefix, aMaterialList);
 	}
+	private PrefixItemRing(PrefixItemRing aFamily, short aMeta) {super(aFamily, aMeta);}
+	@Override protected PrefixItem createVariant(short aMeta) {return new PrefixItemRing(this, aMeta);}
 	
 	@Optional.Method(modid = ModIDs.BAUBLES)
 	public BaubleType getBaubleType(ItemStack aStack) {return BaubleType.RING;}

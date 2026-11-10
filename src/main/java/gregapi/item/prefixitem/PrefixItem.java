@@ -52,7 +52,11 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemBeaconPayment, IItemSmeltingExperience, IPrefixItem, IItemGT, IItemNoGTOverride {
+public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemBeaconPayment, IItemSmeltingExperience, IPrefixItem, IItemGT, IItemNoGTOverride, IMetaItem {
+	private static final List<PrefixItem> FAMILIES = new java.util.ArrayList<>();
+	private final PrefixItem mPrefixFamily;
+	private final short mFixedMeta;
+	private final java.util.Map<Short, PrefixItem> mFlattenedItems;
 	public final String mNameInternal;
 	public final OreDictPrefix mPrefix;
 	public final OreDictMaterial[] mMaterialList;
@@ -75,6 +79,10 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	public PrefixItem(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterial... aMaterialList) {
 		// setId is required in Properties or construction fails; the key matches registerItemLazy's name at the call site.
 		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		mPrefixFamily = this;
+		mFixedMeta = -1;
+		mFlattenedItems = new java.util.HashMap<>();
+		FAMILIES.add(this);
 		mPrefix = aPrefix;
 		mPrefix.mRegisteredPrefixItems.add(this);
 		mNameInternal = aNameInternal;
@@ -82,7 +90,6 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 		if (mMaterialList[0] != MT.Empty) throw new IllegalArgumentException("The first element of the custom Material List has to be MT.Empty for technical reasons!");
 		
 		setMaxDamage(0);
-		setHasSubtypes(T);
 		// Self-registration is removed: construction now happens on RegisterEvent via GT_API.registerItemLazy, since
 		// Item.<init> needs an unfrozen registry; the mPrefix membership add stays in the constructor, running at that point.
 
@@ -104,6 +111,37 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 		// Execute before all the other things. This is to ensure that PrefixItems are created before MultiItems.
 		GAPI.mBeforeInit.add(0, this);
 	}
+
+	/** Вариант разделяет матрицу материалов с семейством и не повторяет его регистрацию. */
+	protected PrefixItem(PrefixItem aFamily, short aMeta) {
+		super(new Item.Properties().setId(variantKey(aFamily, aMeta)));
+		mPrefixFamily = aFamily.mPrefixFamily;
+		mFixedMeta = aMeta;
+		mFlattenedItems = aFamily.mFlattenedItems;
+		mFlattenedItems.put(aMeta, this);
+		mNameInternal = aFamily.mNameInternal;
+		mPrefix = aFamily.mPrefix;
+		mMaterialList = aFamily.mMaterialList;
+	}
+
+	private static net.minecraft.resources.ResourceKey<Item> variantKey(PrefixItem aFamily, short aMeta) {
+		var tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aFamily);
+		return net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, Identifier.fromNamespaceAndPath(tID.getNamespace(), tID.getPath() + "-" + aMeta));
+	}
+	protected PrefixItem createVariant(short aMeta) {return new PrefixItem(this, aMeta);}
+	@Override public short fixedMeta() {return mFixedMeta;}
+	@Override public PrefixItem metaFamily() {return mPrefixFamily;}
+	@Override public PrefixItem itemForMeta(short aMeta) {return mFlattenedItems.getOrDefault(aMeta, mPrefixFamily);}
+
+	/** После DeferredRegister всех пространств имён, пока реестр Item ещё открыт. */
+	public static void registerVariants(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
+		if (!aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.ITEM)) return;
+		for (PrefixItem tFamily : FAMILIES) for (int i = 0; i < tFamily.mMaterialList.length && i < W; i++) {
+			if (!tFamily.mPrefix.isGeneratingItem(tFamily.mMaterialList[i])) continue;
+			short tMeta = (short)i;
+			aEvent.register(net.minecraft.core.registries.Registries.ITEM, variantKey(tFamily, tMeta).identifier(), () -> tFamily.createVariant(tMeta));
+		}
+	}
 	
 	/** This ensures, that all Materials are registered at the time this Item registers to the OreDictionary. */
 	// The body does ST.make/OreDict registration, which needs components bound only at server-start, so it is
@@ -122,9 +160,9 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
-		if ((SHOW_HIDDEN_PREFIXES || !mPrefix.contains(TD.Creative.HIDDEN))) for (int i = 0; i < mMaterialList.length; i++) if (mPrefix.isGeneratingItem(mMaterialList[i])) if (SHOW_HIDDEN_MATERIALS || !mMaterialList[i].mHidden) {
-			ItemStack tStack = OM.get_(ST.make(this, 1, i));
-			if (tStack.getItem() == this) {
+		if ((SHOW_HIDDEN_PREFIXES || !mPrefix.contains(TD.Creative.HIDDEN))) for (int i = mFixedMeta >= 0 ? mFixedMeta : 0, tEnd = mFixedMeta >= 0 ? mFixedMeta + 1 : mMaterialList.length; i < tEnd; i++) if (mPrefix.isGeneratingItem(mMaterialList[i])) if (SHOW_HIDDEN_MATERIALS || !mMaterialList[i].mHidden) {
+			ItemStack tStack = OM.get_(ST.make(mPrefixFamily, 1, i));
+			if (tStack.getItem() instanceof PrefixItem tItem && tItem.mPrefixFamily == mPrefixFamily) {
 				updateItemStack(tStack);
 				if (ST.meta_(tStack) == i) aList.add(tStack);
 			}
@@ -173,6 +211,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	
 	// @Override
 	public ItemStack getContainerItem(ItemStack aStack) {
+		if (mPrefixFamily != this) return mPrefixFamily.getContainerItem(aStack);
 		if (ST.equal(aStack, mContainerItem, T)) return null;
 		// The prefix's container can be one of this item's own stacks (the empty glass tube): it has no tare of its own whichever call asks first, not only once the cache above is filled.
 		if (ST.equal(aStack, mPrefix.containerItem(), T)) return null;
@@ -203,8 +242,8 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 		int aMeta = ST.meta_(aStack);
 		if (UT.Code.exists(aMeta, mMaterialList)) {
 			OreDictMaterial aMaterial = mMaterialList[aMeta];
-			if (aMeta != aMaterial.mTargetRegistration.mID) ST.meta_(aStack, aMaterial.mTargetRegistration.mID);
 			if (!mPrefix.isGeneratingItem(aMaterial.mTargetRegistration)) ST.set(aStack, mPrefix.mat(aMaterial.mTargetRegistration, 1), F, F);
+			else if (aMeta != aMaterial.mTargetRegistration.mID) ST.meta_(aStack, aMaterial.mTargetRegistration.mID);
 		}
 	}
 	

@@ -54,6 +54,7 @@ public abstract class PrefixItemBauble extends PrefixItem implements IBauble, IW
 	public PrefixItemBauble(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterial... aMaterialList) {
 		super(aModIDOwner, aModIDTextures, aNameInternal, aPrefix, aMaterialList);
 	}
+	protected PrefixItemBauble(PrefixItemBauble aFamily, short aMeta) {super(aFamily, aMeta);}
 	
 	// @Override
 	public int getWarp(ItemStack aStack, Player aPlayer) {

@@ -1966,6 +1966,7 @@ public class CS {
 		 *  1.7.10 wildcard item now needs "family head + wildcard"; built lazily since the item registry loads later. */
 		public static Item headItemOf(Item aItem) {
 			if (aItem == null) return null;
+			if (aItem instanceof gregapi.item.IMetaItem tItem) return tItem.metaFamily();
 			java.util.Map<Item, Item> tHeads = HEADS;
 			if (tHeads == null) {
 				tHeads = new java.util.IdentityHashMap<>();
@@ -1990,6 +1991,11 @@ public class CS {
 		}
 		/** null has the same meaning as {@link #block}: item not in this family, or meta out of range. */
 		public static Item item(Item aItem, long aMeta) {
+			if (aItem instanceof gregapi.item.IMetaItem tItem) {
+				if (tItem.fixedMeta() >= 0) return aItem;
+				Item tVariant = tItem.itemForMeta((short)aMeta);
+				return ((gregapi.item.IMetaItem)tVariant).fixedMeta() >= 0 || aMeta == W ? tVariant : null;
+			}
 			if (aMeta <= 0 || aMeta == W) return null;
 			for (Item[] tFamily : ITEM_FAMILIES) if (tFamily[0] == aItem) return aMeta < tFamily.length ? tFamily[(int)aMeta] : null;
 			return null;

@@ -746,7 +746,7 @@ public class RM {
 	}
 	
 	public static boolean food_can(ItemStack aStack, int aFoodValue, String aCannedName, IItemContainer... aCans) {
-		if (ST.invalid(aStack) || aStack.getItem() == ItemsGT.CANS || IL.IC2_Food_Can_Filled.equal(aStack, T, T)) return F;
+		if (ST.invalid(aStack) || Flattened.headItemOf(aStack.getItem()) == ItemsGT.CANS || IL.IC2_Food_Can_Filled.equal(aStack, T, T)) return F;
 		if (aFoodValue > 0) switch(aFoodValue / 2) {
 		case  0: case  1:                            return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(1), aCans[0].getWithName(1, aCannedName), ST.container(aStack, T));
 		case  2:                                     return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(1), aCans[1].getWithName(1, aCannedName), ST.container(aStack, T));

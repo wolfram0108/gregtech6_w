@@ -42,6 +42,8 @@ public class PrefixItemChain extends PrefixItemBauble {
 	public PrefixItemChain(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterial... aMaterialList) {
 		super(aModIDOwner, aModIDTextures, aNameInternal, aPrefix, aMaterialList);
 	}
+	private PrefixItemChain(PrefixItemChain aFamily, short aMeta) {super(aFamily, aMeta);}
+	@Override protected PrefixItem createVariant(short aMeta) {return new PrefixItemChain(this, aMeta);}
 	
 	@Optional.Method(modid = ModIDs.BAUBLES)
 	public BaubleType getBaubleType(ItemStack aStack) {return BaubleType.AMULET;}

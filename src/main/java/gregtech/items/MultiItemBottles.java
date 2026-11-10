@@ -40,6 +40,8 @@ import net.minecraft.world.level.Level;
 import static gregapi.data.CS.*;
 
 public class MultiItemBottles extends MultiItemRandomWithCompat implements IItemRottable {
+	private MultiItemBottles(MultiItemBottles aFamily, short aMeta) {super(aFamily, aMeta);}
+	@Override protected gregapi.item.multiitem.MultiItemRandom createVariant(short aMeta) {return new MultiItemBottles(this, aMeta);}
 	public MultiItemBottles(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
 		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Bottles", this, (short)1600); // F16 creative tab: own GT tab (icon+displayItems), registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>. 1:1.
@@ -436,9 +438,9 @@ public class MultiItemBottles extends MultiItemRandomWithCompat implements IItem
 		
 		switch(aMeta) {
 		case    5: case    6: case    7: case 1102: case 1601: case 1700: return aStack;
-		case    0: case    1: case    2: case    3: case    4: return ST.make(this, aStack.getCount(), 5, ItemNBT.get(aStack));
-		case 1100: case 1200: return    ST.make(this, aStack.getCount(), 1102, ItemNBT.get(aStack));
-		default: return aMeta < 30000 ? ST.make(this, aStack.getCount(), 1601, ItemNBT.get(aStack)) : aStack;
+		case    0: case    1: case    2: case    3: case    4: return ST.make(metaFamily(), aStack.getCount(), 5, ItemNBT.get(aStack));
+		case 1100: case 1200: return    ST.make(metaFamily(), aStack.getCount(), 1102, ItemNBT.get(aStack));
+		default: return aMeta < 30000 ? ST.make(metaFamily(), aStack.getCount(), 1601, ItemNBT.get(aStack)) : aStack;
 		}
 	}
 	

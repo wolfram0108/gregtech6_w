@@ -72,8 +72,7 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	protected boolean mFull3D = false;
 	public ItemBase setFull3D() {mFull3D = true; return this;}
 	public boolean isFull3D() {return mFull3D;}
-	/** The subtype flag has real consumers here and in MultiItem's unoverridden getUnlocalizedName(ItemStack),
-	 *  so it cannot be a no-op without silently losing the subtype suffix from item names. */
+	/** Флаг остался для ещё не перенесённых предметов; IMetaItem использует собственную нумерацию. */
 	protected boolean mHasSubtypes = F;
 	public ItemBase setHasSubtypes(boolean aHasSubtypes) {mHasSubtypes = aHasSubtypes; return this;}
 	public boolean getHasSubtypes() {return mHasSubtypes;}
@@ -160,13 +159,12 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	public final Item setUnlocalizedName(String aName) {return this;}
 	@Override public String toString() {return mName;}
 	public final String getUnlocalizedName() {return mName;}
-	public String getUnlocalizedName(ItemStack aStack) {return getHasSubtypes()?mName+"."+ST.meta_(aStack):mName;}
+	public String getUnlocalizedName(ItemStack aStack) {return this instanceof IMetaItem tItem ? ((ItemBase)tItem.metaFamily()).getUnlocalizedName()+"."+ST.meta_(aStack) : getHasSubtypes()?mName+"."+ST.meta_(aStack):mName;}
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
 	// neo resolves the display name through getName(ItemStack), not the 1.7.10 getItemStackDisplayName; without
 	// this bridge to the GT6 name it would fall back to vanilla lang and show raw keys.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
-	// The GT6 code still calls getDamage expecting a subtype, but neo's default reads the DAMAGE component (0 for
-	// meta items); a non-damageable stack is restored to reporting its subtype meta, real tools use the vanilla path.
+	// Старый API спрашивает номер типа через getDamage; ST.meta_ берёт его из Item либо из оставшегося компонента.
 	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : ST.meta_(aStack);}
 	public final boolean getShareTag() {return T;} // just to be sure.
 	// IIconRegister is gone in neo, so the Identifier is built directly from the same modID:name path instead.

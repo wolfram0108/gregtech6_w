@@ -110,27 +110,23 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		return PLUGIN_UID;
 	}
 
-	/** F1-jei: JEI tells item variants apart only by DECLARED components (registerFromDataComponentTypes);
-	 *  without a SUBTYPE declaration all procedural variants (1.7.10 itemDamage) collapse into one item
-	 *  (log evidence: "289 duplicate items", the ingredient list is empty for the mod). Declare SUBTYPE for every gt item. */
+	/** Отдельные Item различаются реестром; оставшиеся компоненты идентичности определяет ST. */
 	@Override
 	public void registerItemSubtypes(mezz.jei.api.registration.ISubtypeRegistration aRegistration) {
-		if (gregapi.GT_API.SUBTYPE_TYPE == null) return;
-		net.minecraft.core.component.DataComponentType<?> tSubtype = gregapi.GT_API.SUBTYPE_TYPE;
-		int tCount = 0, tMetaOnly = 0;
+		if (gregapi.GT_API.DATA_TYPE == null) return;
+		int tLegacy = 0, tDataOnly = 0, tRegistryOnly = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null) continue;
 			if (!ModIDs.isGregNamespace(tKey.getNamespace())) continue;
-			// SUBTYPE (1.7.10 meta) + DATA (F8 ItemNBT center: coins/batteries/chests differ by NBT material,
-			// not meta — 1.7.10 NEI told them apart by NBT; without declaring it — "389 duplicate items" for Coins)
 			try {
-				// the identity rule isn't ours: we ask the ST center (BUG-079), the showcase keeps no copy of its own
-				if (gregapi.util.ST.identityIncludesNBT(tItem)) {aRegistration.registerFromDataComponentTypes(tItem, tSubtype, gregapi.GT_API.DATA_TYPE); tCount++;}
-				else {aRegistration.registerFromDataComponentTypes(tItem, tSubtype); tMetaOnly++;}
+				var tComponents = gregapi.util.ST.identityComponents(tItem);
+				if (tComponents.length == 0) {tRegistryOnly++; continue;}
+				aRegistration.registerFromDataComponentTypes(tItem, tComponents);
+				if (gregapi.util.ST.usesSubtypeComponent(tItem)) tLegacy++; else tDataOnly++;
 			} catch (Throwable e) {/**/}
 		}
-		OUT.println("[GT6-JEI] SUBTYPE+DATA subtypes declared for " + tCount + " items, SUBTYPE only for " + tMetaOnly + " (tools).");
+		OUT.println("[GT6-JEI] legacy=" + tLegacy + ", data-only=" + tDataOnly + ", registry-only=" + tRegistryOnly);
 	}
 
 

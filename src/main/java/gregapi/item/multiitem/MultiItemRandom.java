@@ -70,23 +70,74 @@ import static gregapi.data.CS.*;
  * 
  * For Custom Items.
  */
-public abstract class MultiItemRandom extends MultiItem implements Runnable {
-	public final BitSet mEnabledItems = new BitSet(32767);
-	public final BitSet mVisibleItems = new BitSet(32767);
-	public final Identifier[][] mIconList = new Identifier[32767][1];
+public abstract class MultiItemRandom extends MultiItem implements Runnable, gregapi.item.IMetaItem {
+	private static final List<MultiItemRandom> FAMILIES = new ArrayListNoNulls<>();
+	private final MultiItemRandom mRandomFamily;
+	private final short mFixedMeta;
+	private final HashMap<Short, MultiItemRandom> mFlattenedItems;
+	public final BitSet mEnabledItems;
+	public final BitSet mDeclaredItems;
+	public final BitSet mVisibleItems;
+	public final Identifier[][] mIconList;
 	
-	public final HashMap<Short, IFoodStat> mFoodStats = new HashMap<>();
-	public final HashMap<Short, IItemEnergy> mElectricStats = new HashMap<>();
-	public final HashMap<Short, Short> mBurnValues = new HashMap<>();
+	public final HashMap<Short, IFoodStat> mFoodStats;
+	public final HashMap<Short, IItemEnergy> mElectricStats;
+	public final HashMap<Short, Short> mBurnValues;
 	
 	/**
 	 * Creates the Item using these Parameters.
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
 	 */
 	public MultiItemRandom(String aModID, String aUnlocalized) {
-		super(aModID, aUnlocalized);
+		this(aModID, aUnlocalized, null, (short)-1);
 		// Execute after all the other things. This is to ensure that MultiItems are created after PrefixItems.
 		GAPI.mBeforeInit.add(this);
+		FAMILIES.add(this);
+	}
+
+	protected MultiItemRandom(MultiItemRandom aFamily, short aMeta) {
+		this(aFamily.mModID, aFamily.getUnlocalizedName() + "-" + aMeta, aFamily, aMeta);
+	}
+	private MultiItemRandom(String aModID, String aName, MultiItemRandom aFamily, short aMeta) {
+		super(aModID, aName, aFamily);
+		mRandomFamily = aFamily == null ? this : aFamily.mRandomFamily;
+		mFixedMeta = aMeta;
+		mFlattenedItems = aFamily == null ? new HashMap<>() : aFamily.mFlattenedItems;
+		mEnabledItems = aFamily == null ? new BitSet(32767) : aFamily.mEnabledItems;
+		mDeclaredItems = aFamily == null ? new BitSet(32767) : aFamily.mDeclaredItems;
+		mVisibleItems = aFamily == null ? new BitSet(32767) : aFamily.mVisibleItems;
+		mIconList = aFamily == null ? new Identifier[32767][1] : aFamily.mIconList;
+		mFoodStats = aFamily == null ? new HashMap<>() : aFamily.mFoodStats;
+		mElectricStats = aFamily == null ? new HashMap<>() : aFamily.mElectricStats;
+		mBurnValues = aFamily == null ? new HashMap<>() : aFamily.mBurnValues;
+		if (aFamily != null) mFlattenedItems.put(aMeta, this);
+	}
+	@Override public short fixedMeta() {return mFixedMeta;}
+	@Override public MultiItemRandom metaFamily() {return mRandomFamily;}
+	@Override public MultiItemRandom itemForMeta(short aMeta) {return mFlattenedItems.getOrDefault(aMeta, mRandomFamily);}
+	@Override public ItemStack make(long aMeta) {return ST.make(mRandomFamily, 1, aMeta);}
+	@Override public ItemStack make(long aAmount, long aMeta) {return ST.make(mRandomFamily, aAmount, aMeta);}
+	protected MultiItemRandom createVariant(short aMeta) {throw new UnsupportedOperationException(getClass().getName());}
+
+	/** Только номера типов объявляются заранее; addItems сохраняет исходный порядок и побочные эффекты. */
+	public static void registerVariants(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
+		if (!aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.ITEM)) return;
+		try (var tStream = MultiItemRandom.class.getResourceAsStream("/gregapi/multiitem-types.json")) {
+			var tCatalog = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(tStream, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+			for (MultiItemRandom tFamily : FAMILIES) {
+				var tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tFamily);
+				if (!tCatalog.has(tID.toString())) continue;
+				for (String tRange : tCatalog.get(tID.toString()).getAsString().split(",")) {
+					String[] tEnds = tRange.split("-");
+					int tFirst = Integer.parseInt(tEnds[0]), tLast = Integer.parseInt(tEnds[tEnds.length - 1]);
+					for (int i = tFirst; i <= tLast; i++) {
+						short tMeta = (short)i;
+						Identifier tName = Identifier.fromNamespaceAndPath(tID.getNamespace(), tID.getPath() + "-" + tMeta);
+						aEvent.register(net.minecraft.core.registries.Registries.ITEM, tName, () -> tFamily.createVariant(tMeta));
+					}
+				}
+			}
+		} catch (java.io.IOException e) {throw new java.io.UncheckedIOException(e);}
 	}
 	
 	/**
@@ -115,11 +166,11 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	
 	protected short mLastID = W;
 	public ItemStack last() {return last(1);}
-	public ItemStack last(int aAmount) {return ST.make(this, aAmount, mLastID);}
+	public ItemStack last(int aAmount) {return ST.make(metaFamily(), aAmount, mRandomFamily.mLastID);}
 	public ItemStack prev() {return prev(1);}
-	public ItemStack prev(int aAmount) {return ST.make(this, aAmount, mLastID-1);}
+	public ItemStack prev(int aAmount) {return ST.make(metaFamily(), aAmount, mRandomFamily.mLastID-1);}
 	public ItemStack next() {return next(1);}
-	public ItemStack next(int aAmount) {return ST.make(this, aAmount, mLastID+1);}
+	public ItemStack next(int aAmount) {return ST.make(metaFamily(), aAmount, mRandomFamily.mLastID+1);}
 	
 	/**
 	 * This adds a Custom Item.
@@ -133,6 +184,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	public final ItemStack addItem(int aID, String aEnglish, String aToolTip, Object... aRandomData) {
 		if (aToolTip == null) aToolTip = "";
 		if (mAllowedToAddItems && aID >= 0 && aID < 32767 && aID != W) {
+			mDeclaredItems.set(aID);
 			mLastID = (short)aID;
 			ItemStack aStack = ST.make(this, 1, aID);
 			if (UT.Code.stringValid(aEnglish)) {
@@ -353,18 +405,18 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item aItem, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
-		if (aItem == this) for (int i = 0, j = mEnabledItems.length(); i < j; i++) if (mVisibleItems.get(i) || (SHOW_HIDDEN_ITEMS && mEnabledItems.get(i))) {
+		if (aItem == this) for (int i = mFixedMeta >= 0 ? mFixedMeta : 0, j = mFixedMeta >= 0 ? mFixedMeta + 1 : mEnabledItems.length(); i < j; i++) if (mVisibleItems.get(i) || (SHOW_HIDDEN_ITEMS && mEnabledItems.get(i))) {
 			IItemEnergy tStats = mElectricStats.get((short)i);
 			if (tStats == null || tStats instanceof EnergyStatDebug) {
-				ItemStack tStack = ST.make(this, 1, i);
+				ItemStack tStack = ST.make(metaFamily(), 1, i);
 				isItemStackUsable(tStack);
 				aList.add(tStack);
 			} else {
 				ItemStack
-				tStack = ST.make(this, 1, i);
+				tStack = ST.make(metaFamily(), 1, i);
 				isItemStackUsable(tStack);
 				aList.add(tStack);
-				tStack = ST.make(this, 1, i);
+				tStack = ST.make(metaFamily(), 1, i);
 				for (TagData tEnergyType : tStats.getEnergyTypes(tStack)) tStats.setEnergyStored(tEnergyType, tStack, tStats.getEnergyCapacity(tEnergyType, tStack));
 				isItemStackUsable(tStack);
 				aList.add(tStack);
@@ -376,6 +428,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	@Override
 	// IIconRegister is gone in neo, so the Identifier is built directly from the same path instead.
 	public void registerIcons(Object aIconRegister) {
+		if (mFixedMeta >= 0) return;
 		for (short aMeta = 0, tMaxMeta = (short)mEnabledItems.length(); aMeta < tMaxMeta; aMeta++) if (mEnabledItems.get(aMeta)) {
 			for (byte k = 1; k < mIconList[aMeta].length; k++) {
 				mIconList[aMeta][k] = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta + "/" + k);
@@ -387,7 +440,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	// registerIcons(IIconRegister) is never called in neo, so the icon list stayed null and items failed to
 	// render; it now fills lazily on first request, and subclasses reading it must trigger that fill themselves.
 	protected boolean mIconsRegistered = F;
-	protected void ensureIconsRegistered() {if (!mIconsRegistered) {mIconsRegistered = T; registerIcons(null);}}
+	protected void ensureIconsRegistered() {if (mRandomFamily != this) {mRandomFamily.ensureIconsRegistered(); return;} if (!mIconsRegistered) {mIconsRegistered = T; registerIcons(null);}}
 
 	// @Override
 	public Identifier getIconIndex(ItemStack aStack) {

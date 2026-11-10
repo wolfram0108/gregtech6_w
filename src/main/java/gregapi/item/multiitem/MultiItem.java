@@ -65,17 +65,24 @@ import static gregapi.data.CS.*;
 , @Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.item.IItemElectric", modid = ModIDs.GC)
 })
 public abstract class MultiItem extends ItemBase implements IItemEnergy {
-	public final HashMap<Short, ArrayList<IBehavior<MultiItem>>> mItemBehaviors = new HashMap<>();
+	public final HashMap<Short, ArrayList<IBehavior<MultiItem>>> mItemBehaviors;
 	
-	public final HashMap<Short, Long[]> mFluidContainerStats = new HashMap<>();
+	public final HashMap<Short, Long[]> mFluidContainerStats;
 	
 	/**
 	 * Creates the Item using these Parameters.
 	 * @param aUnlocalized The Unlocalized Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
 	 */
 	public MultiItem(String aModID, String aUnlocalized) {
+		this(aModID, aUnlocalized, null);
+	}
+
+	/** Отдельные Item одного семейства используют общие таблицы поведения. */
+	protected MultiItem(String aModID, String aUnlocalized, MultiItem aFamily) {
 		super(aModID, aUnlocalized, "Generated Item", null);
-		setHasSubtypes(T);
+		mItemBehaviors = aFamily == null ? new HashMap<>() : aFamily.mItemBehaviors;
+		mFluidContainerStats = aFamily == null ? new HashMap<>() : aFamily.mFluidContainerStats;
+		setHasSubtypes(!(this instanceof gregapi.item.IMetaItem));
 		setMaxDamage(0);
 	}
 	

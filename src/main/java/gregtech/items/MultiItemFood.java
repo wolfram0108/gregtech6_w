@@ -50,6 +50,8 @@ import static gregapi.data.CS.*;
 /** Potion/MobEffect static instances are gone entirely in neo, so the numeric ids below are literal 1.7.10 values checked
  *  against the oracle decompile; UT.Entities.applyPotion maps each through VANILLA_POTION_IDS to a real effect. */
 public class MultiItemFood extends MultiItemRandomWithCompat implements IItemRottable {
+	private MultiItemFood(MultiItemFood aFamily, short aMeta) {super(aFamily, aMeta);}
+	@Override protected gregapi.item.multiitem.MultiItemRandom createVariant(short aMeta) {return new MultiItemFood(this, aMeta);}
 	public MultiItemFood(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
 		// Its own creative tab, registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>, 1:1 with the original.
@@ -983,13 +985,13 @@ public class MultiItemFood extends MultiItemRandomWithCompat implements IItemRot
 		if (UT.Code.inside(31000, 31999, aMeta)) return aStack;
 		
 		switch(aMeta) {
-		case 12000: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
-		case 12001: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
-		case 12002: return ST.make(this, aStack.getCount(), 12003, ItemNBT.get(aStack));
-		case 12004: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
-		case 12005: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
-		case 12006: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
-		case 12007: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
+		case 12000: return ST.make(metaFamily(), aStack.getCount(), 12002, ItemNBT.get(aStack));
+		case 12001: return ST.make(metaFamily(), aStack.getCount(), 12002, ItemNBT.get(aStack));
+		case 12002: return ST.make(metaFamily(), aStack.getCount(), 12003, ItemNBT.get(aStack));
+		case 12004: return ST.make(metaFamily(), aStack.getCount(), 12002, ItemNBT.get(aStack));
+		case 12005: return ST.make(metaFamily(), aStack.getCount(), 12002, ItemNBT.get(aStack));
+		case 12006: return ST.make(metaFamily(), aStack.getCount(), 12002, ItemNBT.get(aStack));
+		case 12007: return ST.make(metaFamily(), aStack.getCount(), 12002, ItemNBT.get(aStack));
 		case 32700: return (IL.ENVM_Rotten_Food.exists()?IL.ENVM_Rotten_Food:IL.Remains_Plant).get(aStack.getCount());
 		case 32701: return (IL.ENVM_Rotten_Food.exists()?IL.ENVM_Rotten_Food:IL.Remains_Plant).get(aStack.getCount());
 		case 32105: case 32107: return OP.ingot.mat(MT.MeatRotten, aStack.getCount());

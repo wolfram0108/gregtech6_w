@@ -59,6 +59,8 @@ import static gregapi.data.CS.*;
 import static gregapi.data.OP.chunkGt;
 
 public class MultiItemRandomTools extends MultiItemRandomWithCompat implements IItemRottable {
+	private MultiItemRandomTools(MultiItemRandomTools aFamily, short aMeta) {super(aFamily, aMeta);}
+	@Override protected gregapi.item.multiitem.MultiItemRandom createVariant(short aMeta) {return new MultiItemRandomTools(this, aMeta);}
 	public MultiItemRandomTools(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
 		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Equipment", this, (short)5008); // F16 creative tab: own GT tab (icon+displayItems), registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>. 1:1.
@@ -718,16 +720,16 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 	@Override
 	public ItemStack getRotten(ItemStack aStack) {
 		switch(ST.meta_(aStack)) {
-		case 2002: return ST.make(this, aStack.getCount(), 2011, ItemNBT.get(aStack));
-		case 2102: return ST.make(this, aStack.getCount(), 2111, ItemNBT.get(aStack));
-		case 2202: return ST.make(this, aStack.getCount(), 2211, ItemNBT.get(aStack));
-		case 2302: return ST.make(this, aStack.getCount(), 2311, ItemNBT.get(aStack));
-		case 2402: return ST.make(this, aStack.getCount(), 2411, ItemNBT.get(aStack));
-		case 2502: return ST.make(this, aStack.getCount(), 2511, ItemNBT.get(aStack));
-		case 2602: return ST.make(this, aStack.getCount(), 2611, ItemNBT.get(aStack));
-		case 2702: return ST.make(this, aStack.getCount(), 2711, ItemNBT.get(aStack));
-		case 2802: return ST.make(this, aStack.getCount(), 2811, ItemNBT.get(aStack));
-		case 2902: return ST.make(this, aStack.getCount(), 2911, ItemNBT.get(aStack));
+		case 2002: return ST.make(metaFamily(), aStack.getCount(), 2011, ItemNBT.get(aStack));
+		case 2102: return ST.make(metaFamily(), aStack.getCount(), 2111, ItemNBT.get(aStack));
+		case 2202: return ST.make(metaFamily(), aStack.getCount(), 2211, ItemNBT.get(aStack));
+		case 2302: return ST.make(metaFamily(), aStack.getCount(), 2311, ItemNBT.get(aStack));
+		case 2402: return ST.make(metaFamily(), aStack.getCount(), 2411, ItemNBT.get(aStack));
+		case 2502: return ST.make(metaFamily(), aStack.getCount(), 2511, ItemNBT.get(aStack));
+		case 2602: return ST.make(metaFamily(), aStack.getCount(), 2611, ItemNBT.get(aStack));
+		case 2702: return ST.make(metaFamily(), aStack.getCount(), 2711, ItemNBT.get(aStack));
+		case 2802: return ST.make(metaFamily(), aStack.getCount(), 2811, ItemNBT.get(aStack));
+		case 2902: return ST.make(metaFamily(), aStack.getCount(), 2911, ItemNBT.get(aStack));
 		}
 		return aStack;
 	}

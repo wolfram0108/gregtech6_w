@@ -78,8 +78,11 @@ import static gregapi.data.CS.*;
  * This is an example on how you can create a Tool ItemStack, in this case a Bismuth Wrench:
  * gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(CS.ToolIDs.WRENCH, 1, MT.Bismuth, MT.Bismuth, null);
  */
-public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGTContainerTool {
-	public final HashMap<Short, IToolStats> mToolStats = new HashMap<>();
+public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGTContainerTool, gregapi.item.IMetaItem {
+	public final HashMap<Short, IToolStats> mToolStats;
+	private final MultiItemTool mToolFamily;
+	private final short mFixedMeta;
+	private final HashMap<Short, MultiItemTool> mFlattenedTools;
 	
 	public static BlockPos LAST_TOOL_COORDS_BEFORE_DAMAGE = null;
 	
@@ -88,7 +91,17 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
 	 */
 	public MultiItemTool(String aModID, String aUnlocalized) {
-		super(aModID, aUnlocalized);
+		this(aModID, aUnlocalized, null, (short)-1);
+	}
+
+	/** Эксперимент: тип инструмента задаётся Item, таблицы остаются у семейства. */
+	public MultiItemTool(String aModID, String aUnlocalized, MultiItemTool aFamily, short aMeta) {
+		super(aModID, aUnlocalized, aFamily);
+		mToolFamily = aFamily == null ? this : aFamily.mToolFamily;
+		mFixedMeta = aMeta;
+		mToolStats = aFamily == null ? new HashMap<>() : aFamily.mToolStats;
+		mFlattenedTools = aFamily == null ? new HashMap<>() : aFamily.mFlattenedTools;
+		if (aFamily != null) mFlattenedTools.put(aMeta, this);
 		// BUG-021: stack=1 is NOT implied by durability declaratively — GT6 tools track durability via their own
 		// NBT (getToolDamage/doDamage), not Properties.durability; restored 1:1 (original :88) via the hard getItemStackLimit=1 (:~754) reached through the MultiItem.getMaxStackSize bridge.
 		setMaxStackSize(1);
@@ -104,6 +117,12 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		*/
 	}
 	
+	public short fixedMeta() {return mFixedMeta;}
+	public MultiItemTool metaFamily() {return mToolFamily;}
+	public MultiItemTool itemForMeta(short aMeta) {return mFlattenedTools.getOrDefault(aMeta, mToolFamily);}
+	@Override public ItemStack make(long aMetaData) {return ST.make(mToolFamily, 1, aMetaData);}
+	@Override public ItemStack make(long aAmount, long aMetaData) {return ST.make(mToolFamily, aAmount, aMetaData);}
+
 	/**
 	 * This adds a Custom Item to the ending Range.
 	 * @param aID The Id of the assigned Tool Class [0 - 32765] (only even Numbers allowed! Uneven ID's are empty electric Items)
@@ -123,7 +142,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 			mToolStats.put((short) aID   , aToolStats);
 			mToolStats.put((short)(aID+1), aToolStats);
 			aToolStats.onStatsAddedToTool(this, aID);
-			ItemStack rStack = ST.make(this, 1, aID);
+			ItemStack rStack = ST.make(mToolFamily, 1, aID);
 			List<TC_AspectStack> tAspects = new ArrayListNoNulls<>();
 			for (Object tRandomParameter : aRandomParameters) {
 				if (tRandomParameter instanceof TC_AspectStack)
@@ -179,7 +198,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	 * @param aSecondaryMaterial Secondary (Rod/Handle) Material of this Tool
 	 */
 	public final ItemStack getToolWithStats(int aToolID, int aAmount, OreDictMaterial aPrimaryMaterial, OreDictMaterial aSecondaryMaterial, long aMaxCharge, long aVoltage, long aCharge) {
-		ItemStack rStack = ST.make(this, aAmount, aToolID);
+		ItemStack rStack = ST.make(mToolFamily, aAmount, aToolID);
 		IToolStats tToolStats = getToolStats(rStack);
 		if (tToolStats != null) {
 			CompoundTag tMainNBT = UT.NBT.make(), tToolNBT = UT.NBT.make();
@@ -330,7 +349,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	// calls it reflectively from the GT tab's displayItems generator (see CreativeTabsGT). Not a stub.
 	@SuppressWarnings("unchecked")
 	public final void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
-		for (int i = 0; i < 32766; i+=2) if (getToolStats(ST.make(this, 1, i)) != null) {
+		if (mFixedMeta >= 0) {aList.add(ST.make(this, 1, mFixedMeta)); return;}
+		for (int i = 0; i < 32766; i+=2) if (mToolStats.containsKey((short)i)) {
 			ItemStack tStack = ST.make(this, 1, i);
 			isItemStackUsable(tStack);
 			aList.add(tStack);
@@ -403,7 +423,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (aNBT != null) {
 			aNBT = aNBT.getCompoundOrEmpty("GT.ToolStats");
 			if (!aNBT.isEmpty()) {
-				if (aNBT.getBooleanOr("e", F)) return EnergyStat.makeTool(TD.Energy.EU, aNBT.getLongOr("f", 0L), aNBT.getLongOr("g", 0L), 64, ST.make(this, 1, getUnusableMeta(aStack)), ST.make(this, 1, getUsableMeta(aStack)), ST.make(this, 1, getUsableMeta(aStack)));
+				if (aNBT.getBooleanOr("e", F)) return EnergyStat.makeTool(TD.Energy.EU, aNBT.getLongOr("f", 0L), aNBT.getLongOr("g", 0L), 64, make(getUnusableMeta(aStack)), make(getUsableMeta(aStack)), make(getUsableMeta(aStack)));
 			}
 		}
 		return null;
@@ -776,7 +796,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 
 	public Identifier getIconIndex(ItemStack aStack) {return getIcon(aStack, 0);}
 	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {return getIconFromDamage(aMetaData);}
-	public Identifier getIconFromDamage(int aMetaData) {return getIconIndex(ST.make(this, 1, aMetaData));}
+	public Identifier getIconFromDamage(int aMetaData) {return getIconIndex(make(aMetaData));}
 	public Identifier getIcon(ItemStack aStack, int aRenderPass) {return getIcon(aStack, aRenderPass, null, null, 0);}
 	public Identifier getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {
 		IToolStats tStats = getToolStatsInternal(aStack);

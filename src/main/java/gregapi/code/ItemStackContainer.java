@@ -38,21 +38,22 @@ public class ItemStackContainer {
 	public final Block mBlock;
 	public final byte mStackSize;
 	public final short mMetaData;
+	private static Item canonicalItem(Item aItem, long aMeta) {return aItem instanceof gregapi.item.IMetaItem tMeta ? aMeta == W ? tMeta.metaFamily() : tMeta.itemForMeta((short)aMeta) : aItem;}
 	
 	public ItemStackContainer(Item aItem, long aStackSize, long aMetaData) {
-		mItem = aItem;
+		mItem = canonicalItem(aItem, aMetaData);
 		mBlock = ST.block(mItem);
 		mStackSize = (byte)aStackSize;
 		mMetaData = (short)aMetaData;
 	}
 	public ItemStackContainer(Block aBlock, long aStackSize, long aMetaData) {
 		mBlock = aBlock;
-		mItem = ST.item(mBlock);
+		mItem = canonicalItem(ST.item(mBlock), aMetaData);
 		mStackSize = (byte)aStackSize;
 		mMetaData = (short)aMetaData;
 	}
 	public ItemStackContainer(long aID, long aStackSize, long aMetaData) {
-		mItem = ST.item(aID);
+		mItem = canonicalItem(ST.item(aID), aMetaData);
 		mBlock = ST.block(mItem);
 		mStackSize = (byte)aStackSize;
 		mMetaData = (short)aMetaData;
@@ -64,7 +65,7 @@ public class ItemStackContainer {
 			mStackSize = 0;
 			mMetaData = 0;
 		} else {
-			mItem = ST.item_(aStack);
+			mItem = canonicalItem(ST.item_(aStack), ST.meta_(aStack));
 			mBlock = ST.block_(mItem);
 			mStackSize = (byte)aStack.getCount();
 			mMetaData = ST.meta_(aStack);
@@ -77,7 +78,7 @@ public class ItemStackContainer {
 			mStackSize = 0;
 			mMetaData = 0;
 		} else {
-			mItem = ST.item_(aStack);
+			mItem = canonicalItem(ST.item_(aStack), aMetaData);
 			mBlock = ST.block_(mItem);
 			mStackSize = (byte)aStack.getCount();
 			mMetaData = (short)aMetaData;
@@ -90,7 +91,7 @@ public class ItemStackContainer {
 			mStackSize = 0;
 			mMetaData = 0;
 		} else {
-			mItem = ST.item_(aStack);
+			mItem = canonicalItem(ST.item_(aStack), aMetaData);
 			mBlock = ST.block_(mItem);
 			mStackSize = (byte)aStackSize;
 			mMetaData = (short)aMetaData;

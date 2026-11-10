@@ -42,6 +42,8 @@ import gt6mirror.net.minecraftforge.fluids.FluidContainerRegistry.FluidContainer
 import static gregapi.data.CS.*;
 
 public class MultiItemTechnological extends MultiItemRandomWithCompat {
+	private MultiItemTechnological(MultiItemTechnological aFamily, short aMeta) {super(aFamily, aMeta);}
+	@Override protected gregapi.item.multiitem.MultiItemRandom createVariant(short aMeta) {return new MultiItemTechnological(this, aMeta);}
 	public MultiItemTechnological(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
 		// Its own creative tab, registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>, 1:1 with the original.

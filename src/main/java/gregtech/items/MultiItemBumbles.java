@@ -61,6 +61,8 @@ import java.util.Random;
 import static gregapi.data.CS.*;
 
 public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItemBumbleBee {
+	private MultiItemBumbles(MultiItemBumbles aFamily, short aMeta) {super(aFamily, aMeta);}
+	@Override protected gregapi.item.multiitem.MultiItemRandom createVariant(short aMeta) {return new MultiItemBumbles(this, aMeta);}
 	public MultiItemBumbles(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
 		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Bumblebees", this, (short)2); // F16 creative-tab: its own GT tab (icon+displayItems), registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>. 1:1.
@@ -369,71 +371,71 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	@Override
 	public ItemStack bumbleCombine(ItemStack aBumbleBeeA, short aMetaDataA, ItemStack aBumbleBeeB, short aMetaDataB, byte aBumbleType, Random aRandom) {
 		// Special Case to give even chances to Addon Bumbles.
-		if (aBumbleBeeB.getItem() != ItemsGT.BUMBLEBEES) return ((IItemBumbleBee)aBumbleBeeB.getItem()).bumbleCombine(aBumbleBeeA, aMetaDataA, aBumbleBeeB, aMetaDataB, aBumbleType, aRandom);
-		if (aBumbleBeeA.getItem() != ItemsGT.BUMBLEBEES) return ((IItemBumbleBee)aBumbleBeeA.getItem()).bumbleCombine(aBumbleBeeA, aMetaDataA, aBumbleBeeB, aMetaDataB, aBumbleType, aRandom);
+		if (Flattened.headItemOf(aBumbleBeeB.getItem()) != ItemsGT.BUMBLEBEES) return ((IItemBumbleBee)aBumbleBeeB.getItem()).bumbleCombine(aBumbleBeeA, aMetaDataA, aBumbleBeeB, aMetaDataB, aBumbleType, aRandom);
+		if (Flattened.headItemOf(aBumbleBeeA.getItem()) != ItemsGT.BUMBLEBEES) return ((IItemBumbleBee)aBumbleBeeA.getItem()).bumbleCombine(aBumbleBeeA, aMetaDataA, aBumbleBeeB, aMetaDataB, aBumbleType, aRandom);
 		// The Normal Case if the other Bumble does not match. Should not be possible to call this one in my own class anymore though, because above.
-		if (aBumbleBeeB.getItem() != this) return ST.copyAmountAndMeta(1, (aMetaDataA/10)*10+aBumbleType, aBumbleBeeA);
-		if (aBumbleBeeA.getItem() != this) return ST.copyAmountAndMeta(1, (aMetaDataB/10)*10+aBumbleType, aBumbleBeeB);
+		if (Flattened.headItemOf(aBumbleBeeB.getItem()) != metaFamily()) return ST.copyAmountAndMeta(1, (aMetaDataA/10)*10+aBumbleType, aBumbleBeeA);
+		if (Flattened.headItemOf(aBumbleBeeA.getItem()) != metaFamily()) return ST.copyAmountAndMeta(1, (aMetaDataB/10)*10+aBumbleType, aBumbleBeeB);
 		// And all the GT6 Bumblebee breeding cases.
 		switch(aMetaDataA / 10) {
 		case    3:
 			switch(aMetaDataB / 10) {
-			case   13: return ST.make(this, 1, 10100+aBumbleType);
-			case   53: return ST.make(this, 1, 10000+aBumbleType);
-			case   93: return ST.make(this, 1, 10200+aBumbleType);
+			case   13: return ST.make(metaFamily(), 1, 10100+aBumbleType);
+			case   53: return ST.make(metaFamily(), 1, 10000+aBumbleType);
+			case   93: return ST.make(metaFamily(), 1, 10200+aBumbleType);
 			}
 			break;
 		case   13:
 			switch(aMetaDataB / 10) {
-			case    3: return ST.make(this, 1, 10100+aBumbleType);
-			case   53: return ST.make(this, 1, 10400+aBumbleType);
+			case    3: return ST.make(metaFamily(), 1, 10100+aBumbleType);
+			case   53: return ST.make(metaFamily(), 1, 10400+aBumbleType);
 			}
 			break;
 		case   33:
 			switch(aMetaDataB / 10) {
-			case   43: return ST.make(this, 1, 10300+aBumbleType);
-			case 1053: return ST.make(this, 1, 20000+aBumbleType);
+			case   43: return ST.make(metaFamily(), 1, 10300+aBumbleType);
+			case 1053: return ST.make(metaFamily(), 1, 20000+aBumbleType);
 			}
 			break;
 		case   43:
 			switch(aMetaDataB / 10) {
-			case   33: return ST.make(this, 1, 10300+aBumbleType);
-			case 1053: return ST.make(this, 1, 20200+aBumbleType);
+			case   33: return ST.make(metaFamily(), 1, 10300+aBumbleType);
+			case 1053: return ST.make(metaFamily(), 1, 20200+aBumbleType);
 			}
 			break;
 		case   53:
 			switch(aMetaDataB / 10) {
-			case    3: return ST.make(this, 1, 10000+aBumbleType);
-			case   13: return ST.make(this, 1, 10400+aBumbleType);
-			case 1053: return ST.make(this, 1, 20300+aBumbleType);
+			case    3: return ST.make(metaFamily(), 1, 10000+aBumbleType);
+			case   13: return ST.make(metaFamily(), 1, 10400+aBumbleType);
+			case 1053: return ST.make(metaFamily(), 1, 20300+aBumbleType);
 			}
 			break;
 		case   63:
 			switch(aMetaDataB / 10) {
-			case   93: return ST.make(this, 1, 10500+aBumbleType);
+			case   93: return ST.make(metaFamily(), 1, 10500+aBumbleType);
 			}
 			break;
 		case   73:
 			switch(aMetaDataB / 10) {
-			case 1053: return ST.make(this, 1, 20100+aBumbleType);
+			case 1053: return ST.make(metaFamily(), 1, 20100+aBumbleType);
 			}
 			break;
 		case   93:
 			switch(aMetaDataB / 10) {
-			case    3: return ST.make(this, 1, 10200+aBumbleType);
-			case   63: return ST.make(this, 1, 10500+aBumbleType);
+			case    3: return ST.make(metaFamily(), 1, 10200+aBumbleType);
+			case   63: return ST.make(metaFamily(), 1, 10500+aBumbleType);
 			}
 			break;
 		case 1053:
 			switch(aMetaDataB / 10) {
-			case   33: return ST.make(this, 1, 20000+aBumbleType);
-			case   43: return ST.make(this, 1, 20200+aBumbleType);
-			case   53: return ST.make(this, 1, 20300+aBumbleType);
-			case   73: return ST.make(this, 1, 20100+aBumbleType);
+			case   33: return ST.make(metaFamily(), 1, 20000+aBumbleType);
+			case   43: return ST.make(metaFamily(), 1, 20200+aBumbleType);
+			case   53: return ST.make(metaFamily(), 1, 20300+aBumbleType);
+			case   73: return ST.make(metaFamily(), 1, 20100+aBumbleType);
 			}
 			break;
 		}
-		return ST.make(this, 1, (aMetaDataA/10)*10+aBumbleType);
+		return ST.make(metaFamily(), 1, (aMetaDataA/10)*10+aBumbleType);
 	}
 	
 	@Override
@@ -564,27 +566,27 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	@Override public ItemStack bumbleScan (ItemStack aBumbleBee) {ItemStack rStack = ST.copy(aBumbleBee); short aMeta = ST.meta_(rStack); if (aMeta % 10 < 5) ST.meta_(rStack, aMeta + 5); return rStack;}
 	@Override public ItemStack bumbleKill (ItemStack aBumbleBee) {ItemStack rStack = ST.copy(aBumbleBee); short aMeta = ST.meta_(rStack); if (aMeta % 5 != 4) ST.meta_(rStack, (aMeta / 5) * 5 + 4); return rStack;}
 	@Override public ItemStack bumbleCrown(ItemStack aBumbleBee) {ItemStack rStack = ST.copy(aBumbleBee); short aMeta = ST.meta_(rStack); if (aMeta % 5 != 2) ST.meta_(rStack, (aMeta / 5) * 5 + 2); return rStack;}
-	@Override public boolean bumbleEqual(ItemStack aBumbleBeeA, short aMetaDataA, ItemStack aBumbleBeeB, short aMetaDataB) {return aBumbleBeeA.getItem() == aBumbleBeeB.getItem() && aMetaDataA / 10 == aMetaDataB / 10;}
+	@Override public boolean bumbleEqual(ItemStack aBumbleBeeA, short aMetaDataA, ItemStack aBumbleBeeB, short aMetaDataB) {return (aBumbleBeeA.getItem() == aBumbleBeeB.getItem() || Flattened.sameFamily(aBumbleBeeA.getItem(), aBumbleBeeB.getItem())) && aMetaDataA / 10 == aMetaDataB / 10;}
 	@Override public byte bumbleType(ItemStack aBumbleBee) {return (byte)(ST.meta_(aBumbleBee) % 10);}
 	
-	@Override public ItemStack bumbleDrone      (ItemStack aBumbleBee, short aMetaData) {return ST.make(this, 1, (aMetaData / 10) * 10);}
-	@Override public ItemStack bumblePrincess   (ItemStack aBumbleBee, short aMetaData) {return ST.make(this, 1, (aMetaData / 10) * 10 + 1);}
-	@Override public ItemStack bumbleQueen      (ItemStack aBumbleBee, short aMetaData) {return ST.make(this, 1, (aMetaData / 10) * 10 + 2);}
-	@Override public ItemStack bumbleDead       (ItemStack aBumbleBee, short aMetaData) {return ST.make(this, 1, (aMetaData / 10) * 10 + 4);}
-	@Override public ItemStack bumbleDrone_     (ItemStack aBumbleBee, short aMetaData) {return ST.make(this, 1, (aMetaData / 10) * 10 + 5);}
-	@Override public ItemStack bumblePrincess_  (ItemStack aBumbleBee, short aMetaData) {return ST.make(this, 1, (aMetaData / 10) * 10 + 6);}
-	@Override public ItemStack bumbleQueen_     (ItemStack aBumbleBee, short aMetaData) {return ST.make(this, 1, (aMetaData / 10) * 10 + 7);}
-	@Override public ItemStack bumbleDead_      (ItemStack aBumbleBee, short aMetaData) {return ST.make(this, 1, (aMetaData / 10) * 10 + 9);}
+	@Override public ItemStack bumbleDrone      (ItemStack aBumbleBee, short aMetaData) {return ST.make(metaFamily(), 1, (aMetaData / 10) * 10);}
+	@Override public ItemStack bumblePrincess   (ItemStack aBumbleBee, short aMetaData) {return ST.make(metaFamily(), 1, (aMetaData / 10) * 10 + 1);}
+	@Override public ItemStack bumbleQueen      (ItemStack aBumbleBee, short aMetaData) {return ST.make(metaFamily(), 1, (aMetaData / 10) * 10 + 2);}
+	@Override public ItemStack bumbleDead       (ItemStack aBumbleBee, short aMetaData) {return ST.make(metaFamily(), 1, (aMetaData / 10) * 10 + 4);}
+	@Override public ItemStack bumbleDrone_     (ItemStack aBumbleBee, short aMetaData) {return ST.make(metaFamily(), 1, (aMetaData / 10) * 10 + 5);}
+	@Override public ItemStack bumblePrincess_  (ItemStack aBumbleBee, short aMetaData) {return ST.make(metaFamily(), 1, (aMetaData / 10) * 10 + 6);}
+	@Override public ItemStack bumbleQueen_     (ItemStack aBumbleBee, short aMetaData) {return ST.make(metaFamily(), 1, (aMetaData / 10) * 10 + 7);}
+	@Override public ItemStack bumbleDead_      (ItemStack aBumbleBee, short aMetaData) {return ST.make(metaFamily(), 1, (aMetaData / 10) * 10 + 9);}
 	
 	@Override public int getDefaultStackLimit(ItemStack aStack) {return 64;}
 	
 	public void make(int aSpeciesID, String aName, String aTooltip) {
 		for (int i : new int[] {0, 1, 4}) {
 		for (String tFluid : FluidsGT.HONEY) if (FL.exists(tFluid))
-		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(this, 1, aSpeciesID+i), OP.plateTiny.mat(MT.Paper, 1)), ST.array(ST.make(this, 1, aSpeciesID+i+5)), null, null, FL.array(FL.make(tFluid, 10)), null, 64, 16, 0);
-		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(this, 1, aSpeciesID+i), OP.plateTiny.mat(MT.Paper, 1)), ST.array(ST.make(this, 1, aSpeciesID+i+5)), null, null, FL.array(FL.Honeydew.make(10)), null, 64, 16, 0);
-		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(this, 1, aSpeciesID+i+5, "Was already scanned, auto-skipping")), ST.array(ST.make(this, 1, aSpeciesID+i+5, "Just passed to the Output")), null, null, null, null,  1, 16, 0);
-		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(this, 1, aSpeciesID+i+5, "Was already scanned, auto-skipping")), ST.array(ST.make(this, 1, aSpeciesID+i+5, "Just passed to the Output")), null, null, null, null,  1, 16, 0);
+		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(metaFamily(), 1, aSpeciesID+i), OP.plateTiny.mat(MT.Paper, 1)), ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5)), null, null, FL.array(FL.make(tFluid, 10)), null, 64, 16, 0);
+		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(metaFamily(), 1, aSpeciesID+i), OP.plateTiny.mat(MT.Paper, 1)), ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5)), null, null, FL.array(FL.Honeydew.make(10)), null, 64, 16, 0);
+		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5, "Was already scanned, auto-skipping")), ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5, "Just passed to the Output")), null, null, null, null,  1, 16, 0);
+		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5, "Was already scanned, auto-skipping")), ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5, "Just passed to the Output")), null, null, null, null,  1, 16, 0);
 		}
 		
 		addItem(aSpeciesID+0, aName + " Drone"              , aTooltip, "gt:bumbledrone"    , TC.stack(TC.BESTIA , 1));
@@ -596,13 +598,13 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		addItem(aSpeciesID+7, aName + " Queen (Scanned)"    , aTooltip, "gt:bumblequeen"    , TC.stack(TC.BESTIA , 2), TC.stack(TC.COGNITIO, 1), new OreDictItemData(MT.Paper, U9), TD.Creative.HIDDEN);
 		addItem(aSpeciesID+9, aName + " (Dead & Scanned)"   , aTooltip, "gt:bumbledead"     , TC.stack(TC.MORTUUS, 1), TC.stack(TC.COGNITIO, 1), new OreDictItemData(MT.Paper, U9), TD.Creative.HIDDEN);
 		
-		ItemsGT.addNEIRedirect(ST.make(this, 1, aSpeciesID+0), ST.make(this, 1, aSpeciesID+2));
-		ItemsGT.addNEIRedirect(ST.make(this, 1, aSpeciesID+1), ST.make(this, 1, aSpeciesID+2));
-		ItemsGT.addNEIRedirect(ST.make(this, 1, aSpeciesID+4), ST.make(this, 1, aSpeciesID+2));
+		ItemsGT.addNEIRedirect(ST.make(metaFamily(), 1, aSpeciesID+0), ST.make(metaFamily(), 1, aSpeciesID+2));
+		ItemsGT.addNEIRedirect(ST.make(metaFamily(), 1, aSpeciesID+1), ST.make(metaFamily(), 1, aSpeciesID+2));
+		ItemsGT.addNEIRedirect(ST.make(metaFamily(), 1, aSpeciesID+4), ST.make(metaFamily(), 1, aSpeciesID+2));
 		
-		ItemsGT.addNEIRedirect(ST.make(this, 1, aSpeciesID+5), ST.make(this, 1, aSpeciesID+7));
-		ItemsGT.addNEIRedirect(ST.make(this, 1, aSpeciesID+6), ST.make(this, 1, aSpeciesID+7));
-		ItemsGT.addNEIRedirect(ST.make(this, 1, aSpeciesID+9), ST.make(this, 1, aSpeciesID+7));
+		ItemsGT.addNEIRedirect(ST.make(metaFamily(), 1, aSpeciesID+5), ST.make(metaFamily(), 1, aSpeciesID+7));
+		ItemsGT.addNEIRedirect(ST.make(metaFamily(), 1, aSpeciesID+6), ST.make(metaFamily(), 1, aSpeciesID+7));
+		ItemsGT.addNEIRedirect(ST.make(metaFamily(), 1, aSpeciesID+9), ST.make(metaFamily(), 1, aSpeciesID+7));
 		
 		ItemStack[] tOutputs = new ItemStack[bumbleProductCount(NI, (short)(aSpeciesID+2))];
 		long[] tChances = new long[tOutputs.length];
@@ -611,7 +613,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 			tChances[i] = bumbleProductChance(NI, (short)(aSpeciesID+2), i);
 		}
 		
-		RM.BumbleQueens.addFakeRecipe(F, ST.array(ST.make(this, 1, aSpeciesID+2), ST.make(this, 1, aSpeciesID+7)), tOutputs, null, tChances, null, null, 0, 0, 0);
+		RM.BumbleQueens.addFakeRecipe(F, ST.array(ST.make(metaFamily(), 1, aSpeciesID+2), ST.make(metaFamily(), 1, aSpeciesID+7)), tOutputs, null, tChances, null, null, 0, 0, 0);
 	}
 	
 	public static boolean checkFlowers(Level aWorld, int aX, int aY, int aZ) {
@@ -667,6 +669,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	@Override
 	// F3 superseded-render (GT6BlockModel/ItemModel pipeline; the old getIcon/immediate-mode is dead, 0 neo calls): was aIconRegister.registerIcon(...) (IIconRegister removed) — we build the Identifier directly from the same path.
 	public void registerIcons(Object aIconRegister) {
+		if (fixedMeta() >= 0) return;
 		PRINCESS    = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_princess");
 		QUEEN       = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_queen");
 		SCANNED     = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_scanned");
@@ -679,6 +682,8 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 
 	@Override
 	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
+		if (metaFamily() != this) return ((MultiItemBumbles)metaFamily()).getIconFromDamageForRenderPass(aMetaData, aRenderPass);
+		ensureIconsRegistered();
 		if (aRenderPass == 0) return getIconFromDamage(aMetaData);
 		if (aRenderPass == 1) {
 			switch(aMetaData % 10) {

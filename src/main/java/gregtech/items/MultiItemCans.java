@@ -41,6 +41,8 @@ import net.minecraft.world.level.Level;
 import static gregapi.data.CS.*;
 
 public class MultiItemCans extends MultiItemRandomWithCompat implements IItemRottable {
+	private MultiItemCans(MultiItemCans aFamily, short aMeta) {super(aFamily, aMeta);}
+	@Override protected gregapi.item.multiitem.MultiItemRandom createVariant(short aMeta) {return new MultiItemCans(this, aMeta);}
 	public MultiItemCans(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
 		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Cans", this, (short)74); // F16 creative tab: own GT tab (icon+displayItems), registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>. 1:1.
@@ -133,7 +135,7 @@ public class MultiItemCans extends MultiItemRandomWithCompat implements IItemRot
 	@Override
 	public ItemStack getRotten(ItemStack aStack) {
 		short tMeta = ST.meta_(aStack);
-		return tMeta < 20 || tMeta >= 32000 ? aStack : ST.make(this, aStack.getCount(), 10+(tMeta%10), ItemNBT.get(aStack));
+		return tMeta < 20 || tMeta >= 32000 ? aStack : ST.make(metaFamily(), aStack.getCount(), 10+(tMeta%10), ItemNBT.get(aStack));
 	}
 	
 	@Override public ItemStack getRotten(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {return getRotten(aStack);}

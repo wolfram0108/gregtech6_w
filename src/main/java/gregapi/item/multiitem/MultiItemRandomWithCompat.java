@@ -53,6 +53,7 @@ public abstract class MultiItemRandomWithCompat extends MultiItemRandom implemen
 	public MultiItemRandomWithCompat(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
 	}
+	protected MultiItemRandomWithCompat(MultiItemRandom aFamily, short aMeta) {super(aFamily, aMeta);}
 	
 	@Override @Optional.Method(modid = ModIDs.APC)
 	public gt6mirror.squeek.applecore.api.food.FoodValues getFoodValues(ItemStack aStack) {

@@ -43,6 +43,8 @@ import java.util.List;
 import static gregapi.data.CS.*;
 
 public class MultiItemBooks extends MultiItemRandomWithCompat {
+	private MultiItemBooks(MultiItemBooks aFamily, short aMeta) {super(aFamily, aMeta);}
+	@Override protected gregapi.item.multiitem.MultiItemRandom createVariant(short aMeta) {return new MultiItemBooks(this, aMeta);}
 	public MultiItemBooks(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
 		// F12-followup (item-split): OM.reg(ST.make) — ItemStack -> components only available at server-start -> deferItemInit.
