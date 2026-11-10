@@ -46,12 +46,9 @@ import gregapi.oredict.OreDictTags;
  * {@code c:} (the same approach as {@link GT6HarvestTags} for harvesting and {@link GT6ItemTags} for ammunition:
  * GT6 already has the data, only the channel the engine reads it through changes).
  *
- * <p><b>Why groups only, no material.</b> The tag hangs off a REGISTRY ENTRY, and per the F1 decision (model B)
- * GT6 has ONE {@code Item} per prefix — the material lives as a stack component ({@code PrefixItem.java:118}).
- * So {@code c:ingots} ("this is an ingot") about our {@code gt.meta.ingot} is EXACTLY true, while
- * {@code c:ingots/tin} would be a lie about every other material of the same item. Per-material tags are covered
- * by the bridge a different way — through Greg's own unification (see {@link OreDictTags}); inventing them
- * here is forbidden.
+ * <p>Экспортер публикует группы форм. Материальные варианты теперь имеют отдельные
+ * зарегистрированные Item; отсутствие отдельных тегов материалов больше не связано
+ * с ограничением компонента типа.
  *
  * <p><b>A transfer, not a list.</b> The provider walks the registries and asks each GT6 item/block for ITS
  * OWN prefix ({@code IPrefixItem.getPrefix}, {@code PrefixBlock.mPrefix}) — the very same one the ore

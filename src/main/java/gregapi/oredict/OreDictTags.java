@@ -68,25 +68,10 @@ import gregapi.util.UT;
  * broadcasting {@code OreRegisterEvent}, name parsing, {@code setTarget_} (unification), {@code triggerVisibility},
  * the {@code LoaderOreDictReRegistrations} re-registrations. There is not a single new semantic branch here.
  *
- * <p><b>2. Outbound (limited by the engine).</b> A tag is hung on a REGISTRY ENTRY ({@code Item}), while under the F1
- * decision (model B) GT6 has ONE {@code Item} per prefix, with the material living in a stack component
- * ({@code PrefixItem.java:118} {@code ST.make(this, 1, i)}, {@code ST.java:206} {@code meta_} = the
- * {@code SUBTYPE} component). So a per-material tag like {@code c:ingots/tin} has NOTHING to hang on: tagging
- * {@code gt.meta.ingot} would declare an iridium ingot to be tin. So outbound we give exactly what can be
- * expressed HONESTLY:
- * <ul>
- * <li>MATERIAL-AGNOSTIC groups ({@code c:ingots}, {@code c:dusts}, {@code c:gems}, {@code c:nuggets},
- *     {@code c:rods}, {@code c:ores}, {@code c:storage_blocks}, {@code c:raw_materials}) — for these
- *     "one Item per prefix" is an EXACT statement, not an approximation; they are emitted by the datagen provider
- *     {@code gregapi.data.GT6ConventionTags}, which reads the table FROM HERE;</li>
- * <li>per-material tags fall out ON THEIR OWN, through Gregorius's own unification: the moment the inbound side
- *     feeds a foreign/vanilla item under the name {@code ingotCopper}, {@code setTarget_} makes IT
- *     the material's unification target — so the item the player finds in the world is exactly that one, already
- *     sitting in {@code c:ingots/copper} thanks to its own owner's data. That is exactly how GT6 worked in 1.7.10
- *     (copper/iron/certus were foreign items).</li>
- * </ul>
- * The remainder (a material nobody but GT6 has) cannot be expressed by a per-material tag — this is an
- * engine-forced F1-b boundary, not a forgotten branch.
+ * <p><b>2. Выходные теги.</b> Экспортер пока публикует группы материалов через
+ * {@code gregapi.data.GT6ConventionTags}. После разделения PrefixItem каждый материал имеет
+ * собственный Item: ограничение старого компонента типа больше не действует. Генерация
+ * отдельных тегов материалов должна опираться на зарегистрированные варианты.
  *
  * <p><b>The naming rule lives here, and only here.</b> A GT6 name is {@code prefix.mNameInternal +
  * material.mNameInternal} ({@code OreDictManager.java:527,752} — verbatim 1:1 with the original
@@ -292,10 +277,8 @@ public class OreDictTags {
 	 * {@code WorldLoader.java:80} ({@code updateComponentsAndStaticRegistryTags}) runs BEFORE
 	 * {@code MinecraftServer.loadLevel} ({@code MinecraftServer.java:403-411}), inside which {@code LevelEvent.Load} fires.
 	 *
-	 * <p>GT6's own items are NOT fed from tags: their material lives in a stack component, while a tag only gives a
-	 * bare registry entry — a stack with meta-0 would mean {@code MT.Empty} and lie to the dictionary. GT6's own
-	 * items arrive through their own channel ({@code PrefixItem.runDeferred}). Filtering uses the GT6 criterion
-	 * {@code ST.isGT} ({@code ST.java:143}).
+	 * <p>Собственные предметы GT6 регистрируют материалы через PrefixItem.runDeferred.
+	 * Повторный импорт их тегов не нужен; фильтр использует ST.isGT.
 	 *
 	 * <p>Vanilla items registered by {@link OreDictionary#initVanillaEntries}, and tag bridge only accepts
 	 * foreign mods. Names and rock prefixes of vanilla declared by dictionary prior to tag import: repeat
@@ -339,7 +322,7 @@ public class OreDictTags {
 		sImportedEntries = tEntries;
 		sSkippedVanilla = tSkippedMC;
 		CS.OUT.println("GT6 F1-b tag bridge (inbound): convention tags recognized " + tTags + ", entries fed into the dictionary " + tEntries
-			+ ", GT6 items skipped (material lives in the component, arrive via their own channel) " + tSkippedGT
+			+ ", GT6 items skipped (registered through their own dictionary channel) " + tSkippedGT
 			+ ", vanilla items skipped (carried by role B OreDictionary.initVanillaEntries) " + tSkippedMC + "; by group " + tByGroup);
 		return tEntries;
 	}

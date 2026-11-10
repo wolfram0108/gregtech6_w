@@ -100,7 +100,7 @@ a family of local workarounds:
 
 | Removed in the modern engine | Replacement |
 |---|---|
-| item metadata | one item per shape + a material data component |
+| item metadata | independent registered items for GT variants; component-free family query items for wildcards |
 | coremod bytecode transformation | mixins over the same methods the original patched, plus access transformers |
 | immediate-mode rendering | baked models driven by GT6's own texture layer; connection-dependent shapes via model data |
 | Forge's ore dictionary | GT6's own registry — it already maintained a richer layer above Forge's |
