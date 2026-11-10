@@ -234,12 +234,9 @@ public class CompatTC extends CompatBase implements ICompatTC {
 		if (aPlayer == null || ST.invalid(aStack)) return F;
 		boolean rReturn = F;
 		ScanResult tScan;
-		if (ST.meta(aStack) == W) {
-			if (!ScanManager.hasBeenScanned(aPlayer, tScan = new ScanResult((byte)2, ST.id(aStack), 0, ST.entity(aPlayer, ST.make(ST.item(aStack), 1, 0)), ""))) rReturn |= ScanManager.completeScan(aPlayer, tScan, "@");
-			if (ST.item(aStack) instanceof gregapi.item.ItemBase && ((gregapi.item.ItemBase)ST.item(aStack)).getHasSubtypes()) for (int i = 1; i < 16; i++) // getHasSubtypes() answers from GT6's own ItemBase (MultiItem extends it), since neo Item has no meta-subtypes.
-			if (!ScanManager.hasBeenScanned(aPlayer, tScan = new ScanResult((byte)2, ST.id(aStack), i, ST.entity(aPlayer, ST.make(ST.item(aStack), 1, i)), ""))) rReturn |= ScanManager.completeScan(aPlayer, tScan, "@");
-		} else {
-			if (!ScanManager.hasBeenScanned(aPlayer, tScan = new ScanResult((byte)2, ST.id(aStack), ST.meta(aStack), ST.entity(aPlayer, ST.copy_(aStack)), ""))) rReturn |= ScanManager.completeScan(aPlayer, tScan, "@");
+
+		for (ItemStack tStack : ST.variants(aStack)) {
+			if (!ScanManager.hasBeenScanned(aPlayer, tScan = new ScanResult((byte)2, ST.id(tStack), ST.meta(tStack), ST.entity(aPlayer, ST.copy_(tStack)), ""))) rReturn |= ScanManager.completeScan(aPlayer, tScan, "@");
 		}
 		return rReturn;
 	}

@@ -1773,7 +1773,6 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		while (aDrops.hasNext()) {
 			ItemStack aDrop = aDrops.next();
 			if (ST.invalid(aDrop) || ItemsGT.ILLEGAL_DROPS.contains(aDrop, T)) {aDrops.remove(); continue;}
-			if (ST.item_(aDrop) == Items.GOLD_NUGGET) ST.meta_(aDrop, 0);
 			if (FORCE_GRAVEL_NO_FLINT && aBlock == Blocks.GRAVEL && ST.item_(aDrop) == Items.FLINT) ST.set(aDrop, ST.make(Blocks.GRAVEL, 1, 0), T, F);
 		}
 
@@ -1881,8 +1880,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			ItemStack aStack = ST.update(OM.get(((ItemEntity)aEvent.getEntity()).getItem()), aEvent.getEntity());
 			if (ST.valid(aStack) && aStack.getCount() > 0) {
 				Item aItem = ST.item_(aStack);
-				if (ST.meta_(aStack) == W || aItem == Items.GOLD_NUGGET) ST.meta(aStack, 0);
-				if (ST.meta_(aStack) == 0 && aItem == IL.TF_Mushgloom.item()) ST.meta(aStack, 9);
+				if (ST.meta_(aStack) == W) {aStack = ST.validMeta_(aStack); if (aStack == null) {aEvent.setCanceled(true); return;} aItem = aStack.getItem();}
 				// Check if this is likely a badly implemented Mob Drop from a Mo'Creatures Mob.
 				try {
 					Class<?> tMoCClass = Class.forName("drzhark.mocreatures.entity.IMoCEntity");

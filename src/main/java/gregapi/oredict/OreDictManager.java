@@ -391,7 +391,7 @@ public final class OreDictManager {
 		
 		// Fixing Thaumcraft checking for the wrong OreDict when chopping Wood with Golems. Oh and it doesn't check Wildcard either, so I'm gonna need to split that too.
 		// Also there is a huge Issue within Thaumcraft itself that makes the whole OreDict check impossible, I fixed that in CompatTC.
-		if (aEvent.Name.startsWith("log") && ST.block(aEvent.Ore) != NB) if (ST.meta_(aEvent.Ore) == W) for (int i = 0; i < 16; i++) registerOreSafe("woodLog", ST.copyMeta(i, aEvent.Ore)); else registerOreSafe("woodLog", aEvent.Ore);
+		if (aEvent.Name.startsWith("log") && ST.block(aEvent.Ore) != NB) if (ST.meta_(aEvent.Ore) == W) for (ItemStack tVariant : ST.variants(aEvent.Ore)) registerOreSafe("woodLog", tVariant); else registerOreSafe("woodLog", aEvent.Ore);
 		
 		//ORD.println(aModID + " → " + aRegName + " → " + aEvent.Name);
 		
@@ -786,7 +786,7 @@ public final class OreDictManager {
 		return addAssociation_(aPrefix, aMaterial, aStack);
 	}
 	public boolean addAssociation_(OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack) {
-		if (ST.meta_(aStack) == W) for (byte i = 0; i < 16; i++) setItemData_(ST.copyAmountAndMeta(1, i, aStack), new OreDictItemData(aPrefix, aMaterial));
+		if (ST.meta_(aStack) == W) for (ItemStack tVariant : ST.variants(aStack)) setItemData_(ST.amount(1, tVariant), new OreDictItemData(aPrefix, aMaterial));
 		// An MTE entry's own crafting recipe derives a prefixless mass for the entry before this explicit prefix mass arrives
 		// (CR.shaped keeps what the shape is made of). The prefix mass is the entry's: 6.14.17 has a GT6U pipe's item data
 		// under its prefix, not under the shape. So the derived data and the Recipes it made give way first, as an edit of
@@ -886,7 +886,7 @@ public final class OreDictManager {
 				tList = OreDictionary.getOres(aName, F);
 				for (ItemStack tStack : tList) {
 					if (ST.meta_(tStack) == W && ST.block(tStack) != NB) {
-						for (int i = 0; i < 16; i++) rList.add(ST.make(tStack.getItem(), 1, i));
+						rList.addAll(ST.variants(tStack));
 					} else {
 						rList.add(tStack);
 					}
