@@ -95,7 +95,19 @@ public class MultiTileEntityFilterPrefix extends MultiTileEntityExtender impleme
 				mCycle = null;
 			} else {
 				mCycle = ST.make(UT.Code.select(null, mFilter.mRegisteredItems.toArray(ZL_ISC)), mFilter.mNameInternal, null);
-				if (mCycle != null && ST.meta_(mCycle) == W) ST.meta_(mCycle, 0);
+				if (mCycle != null && ST.meta_(mCycle) == W) {
+					if (mCycle.getItem() instanceof gregapi.item.IMetaItem tFamily) {
+						// У семейства может не быть meta 0; показываем реально зарегистрированный материал.
+						ItemStack tRepresentative = null;
+						for (var tMaterial : mFilter.mRegisteredMaterials) {
+							if (tFamily.itemForMeta(tMaterial.mID) instanceof gregapi.item.IMetaItem tVariant && tVariant.fixedMeta() >= 0) {
+								tRepresentative = ST.copyMeta(tVariant.fixedMeta(), mCycle);
+								break;
+							}
+						}
+						mCycle = tRepresentative;
+					} else ST.meta_(mCycle, 0);
+				}
 			}
 		}
 	}
@@ -262,7 +274,7 @@ public class MultiTileEntityFilterPrefix extends MultiTileEntityExtender impleme
 			if (aSlotIndex < 0 || aSlotIndex >= mTileEntity.getSizeInventoryGUI()) {super.clicked(aSlotIndex, aMouseclick, aType, aPlayer); return;}
 			
 			ItemStack tStack = getCarried();
-			if (tStack == null) {
+			if (ST.invalid(tStack)) {
 				((MultiTileEntityFilterPrefix)mTileEntity).mFilter = null;
 			} else {
 				OreDictItemData tData = OM.anyassociation_(tStack);

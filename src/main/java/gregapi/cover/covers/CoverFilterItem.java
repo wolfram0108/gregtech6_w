@@ -97,16 +97,16 @@ public class CoverFilterItem extends AbstractCoverAttachment {
 			if (ST.valid(tStack)) {
 				ItemStack tFilter = ST.load(aData.mNBTs[aCoverSide], "gt.filter.item");
 				if (ST.invalid(tFilter)) {
-					aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", ST.make(ST.item_(tStack), 1, ST.meta_(tStack)));
+					aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", ST.amount(1, tStack));
 					UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);
 					UT.Entities.sendchat(aPlayer, LH.tt("Filters for: ") + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
 				} else if (ST.equal(tFilter, tStack, T)) {
 					if (ST.meta_(tFilter) == W) {
-						aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", ST.make(ST.item_(tStack), 1, ST.meta_(tStack)));
+						aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", ST.amount(1, tStack));
 						UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);
 						UT.Entities.sendchat(aPlayer, LH.tt("Filters for: ") + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.CYAN + ST.meta_(tStack));
 					} else {
-						aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", ST.make(ST.item_(tStack), 1, W));
+						aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", ST.copyAmountAndMeta(1, W, tStack));
 						UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);
 						UT.Entities.sendchat(aPlayer, LH.tt("Filters for: ") + LH.Chat.CYAN + ST.regName(tStack) + LH.Chat.GRAY + " ; " + LH.Chat.GREEN + LH.tt("Wildcard"));
 					}
