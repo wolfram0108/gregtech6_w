@@ -242,6 +242,7 @@ public class ST {
 	 */
 	public static boolean identityIncludesNBT(net.minecraft.world.item.Item aItem) {
 		if (aItem instanceof IMetaItem tItem && tItem.fixedMeta() < 0) return F;
+		if (aItem instanceof gregapi.item.ItemIntegratedCircuit) return F;
 		return !(aItem instanceof gregapi.item.multiitem.MultiItem tMulti) || tMulti.identityIncludesNBT();
 	}
 	/** Компоненты идентичности для JEI: отдельным Item не нужен SUBTYPE, семейства служат только запросами. */

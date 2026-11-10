@@ -149,7 +149,7 @@ public class ItemContainer implements IItemContainer {
 	@Override
 	public boolean equal(Object aStack, boolean aWildcard, boolean aIgnoreNBT) {
 		ensureMaterialized(); // F12-lazy
-		return mStack != null && (aWildcard ? ST.item((ItemStack)aStack) == ST.item_(mStack) : ST.equal((ItemStack)aStack, mStack, aIgnoreNBT));
+		return mStack != null && (aWildcard ? ST.item((ItemStack)aStack) == ST.item_(mStack) || gregapi.data.CS.Flattened.sameFamily(ST.item((ItemStack)aStack), ST.item_(mStack)) : ST.equal((ItemStack)aStack, mStack, aIgnoreNBT));
 	}
 	
 	@Override

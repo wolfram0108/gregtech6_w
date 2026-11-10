@@ -47,16 +47,37 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public class ItemIntegratedCircuit extends ItemBase {
+public class ItemIntegratedCircuit extends ItemBase implements IMetaItem {
+	private static ItemIntegratedCircuit FAMILY;
+	private final ItemIntegratedCircuit mFamily;
+	private final short mFixedMeta;
+	private final java.util.Map<Short, ItemIntegratedCircuit> mVariants;
 	public ItemIntegratedCircuit() {
-		super(MD.GAPI.mID, "gt.integrated_circuit", "Selector Tag", "");
-		setHasSubtypes(T);
+		this(null, (short)-1);
+	}
+	private ItemIntegratedCircuit(ItemIntegratedCircuit aFamily, short aMeta) {
+		super(MD.GAPI.mID, "gt.integrated_circuit" + (aFamily == null ? "" : "-" + aMeta), "Selector Tag", "");
+		mFamily = aFamily == null ? this : aFamily;
+		mFixedMeta = aMeta;
+		mVariants = aFamily == null ? new java.util.HashMap<>() : aFamily.mVariants;
+		if (aFamily == null) FAMILY = this; else mVariants.put(aMeta, this);
 		setMaxDamage(0);
 		
 		LH.add(mName + ".configuration", "Configuration: ");
 		// Stack-init (OreDict data, recipes, cover registry) is moved into initDeferred, run post-freeze, because
 		// construction happens on RegisterEvent when components are not yet bound and ST.make would fail.
-		gregapi.GT_API.deferItemInit(this::initDeferred);
+		if (aFamily == null) gregapi.GT_API.deferItemInit(this::initDeferred);
+	}
+
+	@Override public short fixedMeta() {return mFixedMeta;}
+	@Override public ItemIntegratedCircuit metaFamily() {return mFamily;}
+	@Override public ItemIntegratedCircuit itemForMeta(short aMeta) {return mVariants.getOrDefault(aMeta, mFamily);}
+	public static void registerVariants(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
+		if (!aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.ITEM) || FAMILY == null) return;
+		for (short i = 0; i < 25; i++) {
+			short tMeta = i;
+			aEvent.register(net.minecraft.core.registries.Registries.ITEM, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "gt.integrated_circuit-" + i), () -> new ItemIntegratedCircuit(FAMILY, tMeta));
+		}
 	}
 
 	private void initDeferred() {
@@ -102,6 +123,7 @@ public class ItemIntegratedCircuit extends ItemBase {
 	// registerIcons is never called in neo, so the icon map stayed null and the item failed to render;
 	// it is now filled lazily on first icon request using the same registerIcons scan.
 	public Identifier getIconFromDamage(int aMeta) {
+		if (mFamily != this) return mFamily.getIconFromDamage(aMeta);
 		if (!mIconsRegistered) registerIcons(null);
 		return mIcons[aMeta & 255];
 	}
@@ -114,13 +136,13 @@ public class ItemIntegratedCircuit extends ItemBase {
 	
 	@Override
 	public String getUnlocalizedName(ItemStack aStack) {
-		return mName;
+		return mFamily.mName;
 	}
 	
 	// @Override
 	@SuppressWarnings("unchecked")
 	public final void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
-		aList.add(ST.make(this, 1, 0));
+		if (mFixedMeta >= 0) aList.add(new ItemStack(this));
 	}
 	
 	@Override
