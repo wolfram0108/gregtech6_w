@@ -76,7 +76,6 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable, gre
 	private final short mFixedMeta;
 	private final HashMap<Short, MultiItemRandom> mFlattenedItems;
 	public final BitSet mEnabledItems;
-	public final BitSet mDeclaredItems;
 	public final BitSet mVisibleItems;
 	public final Identifier[][] mIconList;
 	
@@ -104,7 +103,6 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable, gre
 		mFixedMeta = aMeta;
 		mFlattenedItems = aFamily == null ? new HashMap<>() : aFamily.mFlattenedItems;
 		mEnabledItems = aFamily == null ? new BitSet(32767) : aFamily.mEnabledItems;
-		mDeclaredItems = aFamily == null ? new BitSet(32767) : aFamily.mDeclaredItems;
 		mVisibleItems = aFamily == null ? new BitSet(32767) : aFamily.mVisibleItems;
 		mIconList = aFamily == null ? new Identifier[32767][1] : aFamily.mIconList;
 		mFoodStats = aFamily == null ? new HashMap<>() : aFamily.mFoodStats;
@@ -185,7 +183,6 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable, gre
 	public final ItemStack addItem(int aID, String aEnglish, String aToolTip, Object... aRandomData) {
 		if (aToolTip == null) aToolTip = "";
 		if (mAllowedToAddItems && aID >= 0 && aID < 32767 && aID != W) {
-			mDeclaredItems.set(aID);
 			mLastID = (short)aID;
 			ItemStack aStack = ST.make(this, 1, aID);
 			if (UT.Code.stringValid(aEnglish)) {

@@ -114,7 +114,6 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	@Override
 	public void registerItemSubtypes(mezz.jei.api.registration.ISubtypeRegistration aRegistration) {
 		if (gregapi.GT_API.DATA_TYPE == null) return;
-		int tDataOnly = 0, tRegistryOnly = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null) continue;
@@ -122,16 +121,13 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			try {
 				if (tItem instanceof gregapi.item.ItemFluidDisplay) {
 					aRegistration.registerSubtypeInterpreter(tItem, (aStack, aContext) -> gregapi.util.ST.identityKey(aStack));
-					tDataOnly++;
 					continue;
 				}
 				var tComponents = gregapi.util.ST.identityComponents(tItem);
-				if (tComponents.length == 0) {tRegistryOnly++; continue;}
+				if (tComponents.length == 0) continue;
 				aRegistration.registerFromDataComponentTypes(tItem, tComponents);
-				tDataOnly++;
 			} catch (Throwable e) {/**/}
 		}
-		OUT.println("[GT6-JEI] data-only=" + tDataOnly + ", registry-only=" + tRegistryOnly);
 	}
 
 
