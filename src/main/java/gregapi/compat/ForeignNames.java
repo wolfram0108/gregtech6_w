@@ -117,8 +117,8 @@ public final class ForeignNames {
 		return rReason != null ? rReason : "meta " + aMeta + " of «" + aName + "» is unknown to the centre (GT6 never asks for it)";
 	}
 
-	/** A foreign stack from its 1.7.10 name, through ST.findItem only; a split name's subtype is the item itself, so its
-	 *  meta is not stamped (W, "any", survives), other names keep their meta as the plain path does. */
+	/** Старые имена и номера разрешаются в современные Item и родные компоненты.
+	 * Неизвестный ненулевой номер не создаёт искусственный вариант предмета. */
 	public ItemStack make(ModData aMod, String aName, long aSize, long aMeta) {
 		if (aMod == null || !(mCarrier == null ? aMod : mCarrier).mLoaded || !GAPI_POST.mStartedPreInit) return null;
 		String tPath = path(aName, aMeta);
@@ -128,7 +128,7 @@ public final class ForeignNames {
 		if (tItem == null) return null;
 		ItemStack rStack = ST.make_(tItem, aSize, mSplit.contains(aName) && aMeta != W ? 0 : aMeta);
 		Consumer<ItemStack> tStamp = mStamps.get(key(aName, aMeta));
-		if (tStamp != null) tStamp.accept(rStack);
+		if (rStack != null && tStamp != null) tStamp.accept(rStack);
 		return rStack;
 	}
 }

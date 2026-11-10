@@ -72,10 +72,7 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	protected boolean mFull3D = false;
 	public ItemBase setFull3D() {mFull3D = true; return this;}
 	public boolean isFull3D() {return mFull3D;}
-	/** Флаг остался для ещё не перенесённых предметов; IMetaItem использует собственную нумерацию. */
-	protected boolean mHasSubtypes = F;
-	public ItemBase setHasSubtypes(boolean aHasSubtypes) {mHasSubtypes = aHasSubtypes; return this;}
-	public boolean getHasSubtypes() {return mHasSubtypes;}
+
 
 	// The engine no longer routes right-click through the old onItemUseFirst/onBlockActivated/onItemUse chain,
 	// orphaning MultiItem's tool behaviors; this bridges them back through IItemGT.bridgeUseOn*.
@@ -123,7 +120,7 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
 		try {
-			if (getMaxDamage(aStack) > 0 && !getHasSubtypes()) aList.add((aStack.getMaxDamage() - getDamage(aStack)) + " / " + aStack.getMaxDamage());
+			if (getMaxDamage(aStack) > 0) aList.add((aStack.getMaxDamage() - getDamage(aStack)) + " / " + aStack.getMaxDamage());
 			if (mTooltip != null) aList.add(LanguageHandler.translate(mTooltip, mTooltip));
 			addAdditionalToolTips(aList, aStack, aF3_H);
 		} catch(Throwable e) {
@@ -159,12 +156,12 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	public final Item setUnlocalizedName(String aName) {return this;}
 	@Override public String toString() {return mName;}
 	public final String getUnlocalizedName() {return mName;}
-	public String getUnlocalizedName(ItemStack aStack) {return this instanceof IMetaItem tItem ? ((ItemBase)tItem.metaFamily()).getUnlocalizedName()+"."+ST.meta_(aStack) : getHasSubtypes()?mName+"."+ST.meta_(aStack):mName;}
+	public String getUnlocalizedName(ItemStack aStack) {return this instanceof IMetaItem tItem ? ((ItemBase)tItem.metaFamily()).getUnlocalizedName()+"."+ST.meta_(aStack) : mName;}
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
 	// neo resolves the display name through getName(ItemStack), not the 1.7.10 getItemStackDisplayName; without
 	// this bridge to the GT6 name it would fall back to vanilla lang and show raw keys.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
-	// Старый API спрашивает номер типа через getDamage; ST.meta_ берёт его из Item либо из оставшегося компонента.
+	// Старый API спрашивает номер типа через getDamage; ST.meta_ берёт его из зарегистрированного Item.
 	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : ST.meta_(aStack);}
 	public final boolean getShareTag() {return T;} // just to be sure.
 	// IIconRegister is gone in neo, so the Identifier is built directly from the same modID:name path instead.

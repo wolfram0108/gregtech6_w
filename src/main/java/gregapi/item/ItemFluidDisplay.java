@@ -382,7 +382,6 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		if (aFluid == null || aFluid == net.minecraft.world.level.material.Fluids.EMPTY) tData.remove("f");
 		else tData.putString("f", net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(aFluid).toString());
 		ItemNBT.set(aStack, tData);
-		if (GT_API.SUBTYPE_TYPE != null) aStack.remove(GT_API.SUBTYPE_TYPE);
 	}
 	@Override
 	public void updateItemStack(ItemStack aStack) {

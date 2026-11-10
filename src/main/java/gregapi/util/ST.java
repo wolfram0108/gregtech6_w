@@ -124,9 +124,15 @@ public class ST {
 			ItemStack tExpected = legacyPotion(aItem, 1, aMeta);
 			return tExpected != null && aStack.getItem() == tExpected.getItem() && java.util.Objects.equals(aStack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS), tExpected.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS));
 		}
+
+		if (aItem instanceof gregapi.item.ItemFluidDisplay) return aStack.getItem() == aItem && equal(meta_(aStack), aMeta);
+		if (!(aItem instanceof IMetaItem)) {
+			ItemStack tExpected = make_(aItem, 1, aMeta);
+			return tExpected != null && equal_(aStack, tExpected, T);
+		}
 		return equal(meta_(aStack), aMeta) && equalItem(aStack, aItem, aMeta);
 	}
-	public static boolean equal_(ItemStack aStack, Block aBlock                , long aMeta) {return equal(meta_(aStack), aMeta) && block_(aStack) == aBlock;}
+	public static boolean equal_(ItemStack aStack, Block aBlock                , long aMeta) {return equal_(aStack, item_(aBlock), aMeta);}
 	public static boolean equal (ItemStack aStack, ModData aModID, String aItem            ) {return equal(aStack, findItem(aModID.mID, aItem));}
 	public static boolean equal (ItemStack aStack, ModData aModID, String aItem, long aMeta) {return equal(aStack, findItem(aModID.mID, aItem), aMeta);}
 	
@@ -141,7 +147,7 @@ public class ST {
 		if (aItem instanceof IMetaItem tItem) return item_(aStack) == tItem.itemForMeta((short)aMeta) || aMeta == W && CS.Flattened.sameFamily(item_(aStack), aItem);
 		return item_(aStack) == aItem;
 	}
-	public static boolean equal_(ItemStack aStack, Block aBlock                , long aMeta, boolean aAllowNBT) {return equal(meta_(aStack), aMeta) && block_(aStack) == aBlock && aAllowNBT == ItemNBT.has(aStack);}
+	public static boolean equal_(ItemStack aStack, Block aBlock                , long aMeta, boolean aAllowNBT) {return equal_(aStack, aBlock, aMeta) && aAllowNBT == ItemNBT.has(aStack);}
 	public static boolean equal (ItemStack aStack, ModData aModID, String aItem            , boolean aAllowNBT) {return equal(aStack, findItem(aModID.mID, aItem), aAllowNBT);}
 	public static boolean equal (ItemStack aStack, ModData aModID, String aItem, long aMeta, boolean aAllowNBT) {return equal(aStack, findItem(aModID.mID, aItem), aMeta, aAllowNBT);}
 	
@@ -208,7 +214,7 @@ public class ST {
 	public static Block block (ModData aModID, String aBlock) {return block(make(aModID, aBlock, 1, 0));}
 	public static Block block (ModData aModID, String aBlock, Block aReplacement) {Block rBlock = block(aModID, aBlock); return rBlock == NB ? aReplacement : rBlock;}
 	public static Block block (Item aItem) {return aItem != null ? block_(aItem) : NB;}
-	public static Block block_(Item aItem) {return Block.byItem(aItem);}
+	public static Block block_(Item aItem) {return Block.byItem(aItem instanceof gregapi.item.NativeFamilyQuery tQuery ? tQuery.variants.getFirst() : aItem);}
 	public static Block block (ItemStack aStack) {return aStack != null ? block(item_(aStack)) : NB;}
 	public static Block block_(ItemStack aStack) {return block_(item_(aStack));}
 	public static Block block (long aID) {return aID > 0 && aID < 65536 ? block_(aID) : NB;}
@@ -216,21 +222,18 @@ public class ST {
 	
 	public static short     meta (ItemStack aStack) {return aStack == null ? 0 : meta_(aStack);}
 	// Выделенный Item хранит номер типа; корень многовариантного семейства означает wildcard без компонента.
-	// SUBTYPE остаётся только у ещё не перенесённых предметов.
-	public static boolean usesSubtypeComponent(Item aItem) {return !(aItem instanceof IMetaItem) && !(aItem instanceof gregapi.item.ItemFluidDisplay) && !isPotion(aItem);}
 	public static short     meta_(ItemStack aStack) {
 		if (aStack.getItem() instanceof gregapi.item.ItemFluidDisplay) {var tFluid = gregapi.item.ItemFluidDisplay.fluidType(aStack); return tFluid == null ? W : FL.id(tFluid);}
 		if (isPotion(aStack.getItem())) return potionMeta(aStack);
-		return aStack.getItem() instanceof IMetaItem tItem ? tItem.fixedMeta() >= 0 ? tItem.fixedMeta() : W : gregapi.GT_API.SUBTYPE_TYPE != null ? (short)(int)aStack.getOrDefault(gregapi.GT_API.SUBTYPE_TYPE, 0) : 0;}
+		if (aStack.getItem() instanceof gregapi.item.NativeFamilyQuery) return W;
+		return aStack.getItem() instanceof IMetaItem tItem ? tItem.fixedMeta() >= 0 ? tItem.fixedMeta() : W : 0;}
 	public static ItemStack meta (ItemStack aStack, long aMeta) {return aStack == null ? null : meta_(aStack, aMeta);}
 	public static ItemStack meta_(ItemStack aStack, long aMeta) {
 		int tMeta = (short)aMeta;
-		if (!usesSubtypeComponent(aStack.getItem()) && gregapi.GT_API.SUBTYPE_TYPE != null) aStack.remove(gregapi.GT_API.SUBTYPE_TYPE);
 		if (aStack.getItem() instanceof IMetaItem tItem) {
 			Item tTarget = tItem.itemForMeta((short)tMeta);
 			if (((IMetaItem)tTarget).fixedMeta() < 0 && tMeta != W) throw new IllegalArgumentException("Unregistered meta item: " + regName(tItem.metaFamily()) + "-" + tMeta);
 			if (tTarget != aStack.getItem()) setItem(aStack, tTarget);
-			if (gregapi.GT_API.SUBTYPE_TYPE != null) aStack.remove(gregapi.GT_API.SUBTYPE_TYPE);
 			return aStack;
 		}
 		if (aStack.getItem() instanceof gregapi.item.ItemFluidDisplay) {
@@ -245,7 +248,14 @@ public class ST {
 			} else aStack.remove(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
 			return aStack;
 		}
-		if (gregapi.GT_API.SUBTYPE_TYPE != null) {if (tMeta != 0) aStack.set(gregapi.GT_API.SUBTYPE_TYPE, tMeta); else aStack.remove(gregapi.GT_API.SUBTYPE_TYPE);}
+
+		var tQuery = gregapi.item.NativeFamilyQuery.of(aStack.getItem());
+		if (tQuery != null) {
+			Item tTarget = tMeta == W ? tQuery : tQuery.variant(tMeta);
+			if (tTarget == null) throw new IllegalArgumentException("Unregistered native variant: " + regName(aStack) + "-" + tMeta);
+			return setItem(aStack, tTarget);
+		}
+		if (tMeta != 0 && tMeta != W) throw new IllegalArgumentException("Item has no legacy variants: " + regName(aStack) + "-" + tMeta);
 		return aStack;
 	}
 
@@ -263,20 +273,19 @@ public class ST {
 	 * {@code gt6jeicraft} probe). A copy of the policy drifts from the original on the exceptions — lesson of BUG-070.</p>
 	 */
 	public static boolean identityIncludesNBT(net.minecraft.world.item.Item aItem) {
-		if (aItem instanceof IMetaItem tItem && tItem.fixedMeta() < 0) return F;
+		if (aItem instanceof gregapi.item.NativeFamilyQuery || aItem instanceof IMetaItem tItem && tItem.fixedMeta() < 0) return F;
 		if (aItem instanceof gregapi.item.ItemIntegratedCircuit) return F;
 		return !(aItem instanceof gregapi.item.multiitem.MultiItem tMulti) || tMulti.identityIncludesNBT();
 	}
-	/** Компоненты идентичности для JEI: отдельным Item не нужен SUBTYPE, семейства служат только запросами. */
+	/** Компоненты идентичности для JEI: отдельные Item различаются реестром, семейства служат только запросами. */
 	public static net.minecraft.core.component.DataComponentType<?>[] identityComponents(Item aItem) {
-		if (aItem instanceof IMetaItem tItem && tItem.fixedMeta() < 0) return new net.minecraft.core.component.DataComponentType<?>[0];
+		if (aItem instanceof gregapi.item.NativeFamilyQuery || aItem instanceof IMetaItem tItem && tItem.fixedMeta() < 0) return new net.minecraft.core.component.DataComponentType<?>[0];
 		if (isPotion(aItem)) return new net.minecraft.core.component.DataComponentType<?>[] {net.minecraft.core.component.DataComponents.POTION_CONTENTS};
 		boolean tData = identityIncludesNBT(aItem);
-		if (usesSubtypeComponent(aItem)) return tData ? new net.minecraft.core.component.DataComponentType<?>[] {gregapi.GT_API.SUBTYPE_TYPE, gregapi.GT_API.DATA_TYPE} : new net.minecraft.core.component.DataComponentType<?>[] {gregapi.GT_API.SUBTYPE_TYPE};
 		return tData ? new net.minecraft.core.component.DataComponentType<?>[] {gregapi.GT_API.DATA_TYPE} : new net.minecraft.core.component.DataComponentType<?>[0];
 	}
 
-	/** Identity key for an external display: registry ID, remaining legacy meta, and NBT only when it is part of identity
+	/** Identity key for an external display: registry ID, native contents, and NBT only when it is part of identity
 	 *  ({@link #identityIncludesNBT}). The display matches an item against a recipe output with this same key. */
 	public static String identityKey(ItemStack aStack) {
 		if (aStack == null || aStack.getItem() == null) return "null";
@@ -287,7 +296,6 @@ public class ST {
 			return rKey + "|" + (tFluid == null ? "" : BuiltInRegistries.FLUID.getKey(tFluid));
 		}
 		if (isPotion(aStack.getItem())) rKey += "|" + aStack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
-		if (usesSubtypeComponent(aStack.getItem())) rKey += ":" + meta_(aStack);
 		if (!identityIncludesNBT(aStack.getItem())) return rKey;
 		net.minecraft.nbt.CompoundTag tNBT = gregapi.code.ItemNBT.get(aStack);
 		return rKey + "|" + (tNBT == null ? "-" : tNBT.toString());
@@ -372,6 +380,11 @@ public class ST {
 	/** Разворачивает wildcard перенесённого семейства в реальные Item, сохраняя количество и данные шаблона. */
 	public static List<ItemStack> variants(ItemStack aStack) {
 		if (invalid(aStack)) return java.util.List.of();
+		if (aStack.getItem() instanceof gregapi.item.NativeFamilyQuery tQuery) {
+			List<ItemStack> rStacks = new ArrayList<>();
+			for (Item tItem : tQuery.variants) rStacks.add(setItem(copy_(aStack), tItem));
+			return rStacks;
+		}
 		if (aStack.getItem() instanceof IMetaItem tFamily && tFamily.fixedMeta() < 0) {
 			List<ItemStack> rStacks = new ArrayList<>();
 			for (Item tItem : tFamily.metaVariants()) rStacks.add(copyMeta(((IMetaItem)tItem).fixedMeta(), aStack));
@@ -637,7 +650,6 @@ public class ST {
 		if (valid(aStack) && aItem != null) {
 			net.minecraft.core.component.DataComponentMap tPrevious = aStack.getComponents();
 			var tComponents = net.minecraft.core.component.PatchedDataComponentMap.fromPatch(aItem.components(), aStack.getComponentsPatch());
-			if (!usesSubtypeComponent(aItem) && gregapi.GT_API.SUBTYPE_TYPE != null) tComponents.remove(gregapi.GT_API.SUBTYPE_TYPE);
 			if (UT.Reflection.setField(aStack, "components", tComponents) != null) {
 				if (UT.Reflection.setField(aStack, "item", aItem.builtInRegistryHolder()) == null)
 					UT.Reflection.setField(aStack, "components", tPrevious);
@@ -753,8 +765,19 @@ public class ST {
 	public static ItemStack[] array(int aLength) {return new ItemStack[aLength];}
 	
 	// Семейство и номер выбирают зарегистрированный Item; wildcard представлен корнем семейства.
-	// Для ванильных семейств используется та же таблица Flattened, для ещё не перенесённых типов — компонент.
-	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {Item  tFlat = CS.Flattened.item (aItem , aMeta); if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize)); if (aItem instanceof IMetaItem) return null; ItemStack tPotion = legacyPotion(aItem, aSize, aMeta); if (tPotion != null) return tPotion; ItemStack rStack = new ItemStack(aItem , UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
+	// Ванильные семейства разрешаются через Flattened; неизвестные варианты не создаются.
+	public static ItemStack make_(Item aItem, long aSize, long aMeta) {
+		if (aItem instanceof gregapi.item.ItemFluidDisplay) return meta_(new ItemStack(aItem, UT.Code.bindInt(aSize)), aMeta);
+		if (aItem instanceof gregapi.item.NativeFamilyQuery tQuery) {Item tVariant = aMeta == W ? tQuery : tQuery.variant((short)aMeta); return tVariant == null ? null : new ItemStack(tVariant, UT.Code.bindInt(aSize));}
+		if (aMeta == W && !(aItem instanceof IMetaItem)) {var tQuery = gregapi.item.NativeFamilyQuery.of(aItem); if (tQuery != null) return new ItemStack(tQuery, UT.Code.bindInt(aSize));}
+		Item tFlat = CS.Flattened.item(aItem, aMeta);
+		if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize));
+		if (aItem instanceof IMetaItem) return null;
+		ItemStack tPotion = legacyPotion(aItem, aSize, aMeta);
+		if (tPotion != null) return tPotion;
+		if (isPotion(aItem) || aMeta == 0 || aMeta == W) return new ItemStack(aItem, UT.Code.bindInt(aSize));
+		return null;
+	}
 
 	// BUG-118 §2, META MODEL: the bridge "1.7.10 legacy potion meta -> neo PotionContents" — the same bridge family
 	// as CS.Flattened above, except in neo the potion's kind is expressed by a COMPONENT, not a separate item
@@ -764,7 +787,7 @@ public class ST {
 	// potion containers of Loader_Fluids).
 	// Идентичность хранится только в POTION_CONTENTS; старый номер вычисляется из него для GT-вызовов.
 	// A combination with no neo variant degrades to the base kind (strong fire resistance etc. was
-	// never registered in 1.7.10 either); an unknown meta -> null = the old componentless path, we invent nothing.
+	// never registered in 1.7.10 either); an unknown meta -> null; the caller keeps the native potion default.
 	private static ItemStack legacyPotion(Item aItem, long aSize, long aMeta) {
 		if (aItem != Items.POTION && aItem != Items.SPLASH_POTION && aItem != Items.LINGERING_POTION) return null;
 		net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> tKind = legacyPotionKind(aMeta);
@@ -836,12 +859,12 @@ public class ST {
 	
 	private static final Map<String, ItemStack> sIC2ItemMap = new HashMap<>();
 	
-	public static ItemStack mkic(String aItem                , long aSize, long aMeta                                   ) {return     meta(mkic(aItem, aSize), aMeta);}
+	public static ItemStack mkic(String aItem                , long aSize, long aMeta                                   ) {ItemStack tStack = mkic(aItem, aSize); return tStack == null ? null : make_(tStack.getItem(), aSize, aMeta);}
 	public static ItemStack mkic(String aItem                , long aSize            , ItemStack aReplacement           ) {return get(     mkic(aItem, aSize)        , aReplacement);}
-	public static ItemStack mkic(String aItem                , long aSize, long aMeta, Object    aReplacement           ) {return get(meta(mkic(aItem, aSize), aMeta), aReplacement);}
+	public static ItemStack mkic(String aItem                , long aSize, long aMeta, Object    aReplacement           ) {return get(mkic(aItem, aSize, aMeta), aReplacement);}
 	// The single point where a foreign 1.7.10 item name becomes a stack; mods that renamed their items since (AE2, BuildCraft)
 	// answer through their table in gregapi.compat.ForeignNames, every other name keeps the plain path.
-	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {gregapi.compat.ForeignNames tTable = gregapi.compat.ForeignNames.table(aModID, aItem); if (tTable != null) return tTable.make(aModID, aItem, aSize, aMeta); return     meta(make(aModID, aItem, aSize), aMeta);}
+	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta                                   ) {gregapi.compat.ForeignNames tTable = gregapi.compat.ForeignNames.table(aModID, aItem); if (tTable != null) return tTable.make(aModID, aItem, aSize, aMeta); ItemStack tStack = make(aModID, aItem, aSize); return tStack == null ? null : make_(tStack.getItem(), aSize, aMeta);}
 	public static ItemStack make(ModData aModID, String aItem, long aSize, long aMeta, Object    aReplacement           ) {return get(make(aModID, aItem, aSize, aMeta), aReplacement);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta                                   ) {return make(item(aItemID), aSize, aMeta);}
 	public static ItemStack make(long   aItemID              , long aSize, long aMeta              , CompoundTag aNBT) {return make(item(aItemID), aSize, aMeta, aNBT);}
@@ -1598,6 +1621,7 @@ public class ST {
 	public static final java.util.Set<Block>             HIDDEN_BLOCKS = new java.util.HashSet<>();
 	public static boolean hidden(ItemStack aStack) {
 		if (aStack == null || aStack.isEmpty()) return F;
+		if (aStack.getItem() instanceof gregapi.item.NativeFamilyQuery) return T;
 		if (HIDDEN_ITEMS.contains(aStack, T)) return T;
 		return aStack.getItem() instanceof net.minecraft.world.item.BlockItem tBI && HIDDEN_BLOCKS.contains(tBI.getBlock());
 	}

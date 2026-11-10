@@ -82,7 +82,6 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		super(aModID, aUnlocalized, "Generated Item", null);
 		mItemBehaviors = aFamily == null ? new HashMap<>() : aFamily.mItemBehaviors;
 		mFluidContainerStats = aFamily == null ? new HashMap<>() : aFamily.mFluidContainerStats;
-		setHasSubtypes(!(this instanceof gregapi.item.IMetaItem));
 		setMaxDamage(0);
 	}
 	

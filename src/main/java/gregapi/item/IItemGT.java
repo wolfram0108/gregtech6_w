@@ -44,7 +44,6 @@ import net.minecraft.world.phys.Vec3;
 public interface IItemGT {
 	/** Старые сеттеры не меняют свойства Item движка; ItemBase хранит нужные своему API поля отдельно. */
 	default Object setMaxDamage(int aMaxDamage) {return this;}
-	default Object setHasSubtypes(boolean aHasSubtypes) {return this;}
 
 	// F-useOn: in 1.7.10 block placement entered through ItemBlock.onItemUse, which GregTech overrode; here
 	// the entry point is Item.useOn(UseOnContext) and onItemUse is never called, so the unpacking of the

@@ -262,12 +262,6 @@ public class GT_API extends Abstract_Mod {
 	}
 
 	public static final DeferredRegister<net.minecraft.core.component.DataComponentType<?>> COMPONENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE, ModIDs.GAPI);
-	/** Остаточный канал для предметов без IMetaItem; перенесённые семейства его не используют. */
-	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<Integer>> SUBTYPE =
-		COMPONENTS.register("subtype", () -> net.minecraft.core.component.DataComponentType.<Integer>builder()
-			.persistent(com.mojang.serialization.Codec.INT)
-			.networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.VAR_INT)
-			.build());
 
 	/** F-size0-catalyst: GT6 uses a stack of size 0 as a catalyst ("input is required but not consumed": extruder-shape/mold).
 	 *  1.7.10 held stackSize=0 with the item preserved; neo's count<=0 → isEmpty → getItem=AIR, copy→EMPTY (item is lost).
@@ -288,9 +282,8 @@ public class GT_API extends Abstract_Mod {
 			.networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.COMPOUND_TAG.map(net.minecraft.world.item.component.CustomData::of, net.minecraft.world.item.component.CustomData::copyTag))
 			.build());
 
-	/** SUBTYPE, ZEROSIZE and DATA resolved once, when their registration binds them ({@link #onRegisterEvent}); null before that.
+	/** ZEROSIZE and DATA resolved once, when their registration binds them ({@link #onRegisterEvent}); null before that.
 	 *  Item-meta and size reads run in every recipe comparison, and a DeferredHolder lookup there cost most of their time. */
-	public static net.minecraft.core.component.DataComponentType<Integer> SUBTYPE_TYPE = null;
 	public static net.minecraft.core.component.DataComponentType<net.minecraft.util.Unit> ZEROSIZE_TYPE = null;
 	public static net.minecraft.core.component.DataComponentType<net.minecraft.world.item.component.CustomData> DATA_TYPE = null;
 
@@ -587,7 +580,7 @@ public class GT_API extends Abstract_Mod {
 		gregapi.api.Abstract_Mod.finishPreInits();
 		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.BLOCK)) runDeferredBlockInit(aEvent);
 		// This listener runs after COMPONENTS' own (added earlier on the same bus), so both holders are bound here.
-		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE)) {SUBTYPE_TYPE = SUBTYPE.get(); ZEROSIZE_TYPE = ZEROSIZE.get(); DATA_TYPE = DATA.get();}
+		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE)) {ZEROSIZE_TYPE = ZEROSIZE.get(); DATA_TYPE = DATA.get();}
 	}
 
 	/**
@@ -783,13 +776,14 @@ public class GT_API extends Abstract_Mod {
 		sModBus = aModBus;
 		ITEMS .register(aModBus);
 		BLOCKS.register(aModBus);
-		COMPONENTS.register(aModBus); // F12-followup (subtype-meta): registers the subtype component on the mod bus (RegisterEvent<DataComponentType>)
+		COMPONENTS.register(aModBus);
 		BLOCK_ENTITIES.register(aModBus); // F12-followup (MTE-type-timing): placeholder MTE_TYPE on RegisterEvent<BlockEntityType> (before freeze)
 		ENTITIES.register(aModBus); // F12-entity: EntityType for the falling meta-block (replaces EntityRegistry.registerModEntity, the 1.7.10 original, GT_API.java:722)
 		SOUND_EVENTS.register(aModBus); // BUG-113: the mod's own sounds (sounds.json alone was enough in 1.7.10, neo needs a registered SoundEvent)
 		// F12-followup (block-split, MTE): drains DEFERRED_BLOCK_INIT on RegisterEvent<Block> (registry unfrozen) — the single
 		// point for subsystems whose block construction can't be expressed as a single registerBlockLazy (see deferBlockInit).
 		aModBus.addListener(GT_API::onRegisterEvent);
+		aModBus.addListener(net.neoforged.bus.api.EventPriority.LOWEST, gregapi.data.CS.Flattened::registerQueries);
 		aModBus.addListener(net.neoforged.bus.api.EventPriority.LOWEST, gregapi.item.prefixitem.PrefixItem::registerVariants);
 		aModBus.addListener(net.neoforged.bus.api.EventPriority.LOWEST, gregapi.item.multiitem.MultiItemRandom::registerVariants);
 		aModBus.addListener(net.neoforged.bus.api.EventPriority.LOWEST, gregapi.block.MetaBlockItem::registerVariants);

@@ -38,7 +38,14 @@ public class ItemStackContainer {
 	public final Block mBlock;
 	public final byte mStackSize;
 	public final short mMetaData;
-	private static Item canonicalItem(Item aItem, long aMeta) {return aItem instanceof gregapi.item.IMetaItem tMeta ? aMeta == W ? tMeta.metaFamily() : tMeta.itemForMeta((short)aMeta) : aItem;}
+	private static Item canonicalItem(Item aItem, long aMeta) {
+		if (aItem instanceof gregapi.item.IMetaItem tMeta) return aMeta == W ? tMeta.metaFamily() : tMeta.itemForMeta((short)aMeta);
+		if (aItem == null || aMeta == 0 || aItem instanceof gregapi.item.ItemFluidDisplay) return aItem;
+		if (aItem instanceof gregapi.item.NativeFamilyQuery tQuery) return aMeta == W ? tQuery : tQuery.variant((int)aMeta);
+		if (aMeta == W) {var tQuery = gregapi.item.NativeFamilyQuery.of(aItem); return tQuery == null ? aItem : tQuery;}
+		return Flattened.item(aItem, aMeta);
+	}
+	private static short canonicalMeta(Item aItem, long aMeta) {return aItem instanceof gregapi.item.IMetaItem || aItem instanceof gregapi.item.ItemFluidDisplay ? (short)aMeta : aItem instanceof gregapi.item.NativeFamilyQuery ? W : 0;}
 	
 	private final net.minecraft.world.item.alchemy.PotionContents mPotionContents;
 	private static net.minecraft.world.item.alchemy.PotionContents potionContents(ItemStack aStack) {
@@ -50,7 +57,7 @@ public class ItemStackContainer {
 		mItem = tPotion == null ? canonicalItem(aItem, aMetaData) : tPotion.getItem();
 		mBlock = ST.block(mItem);
 		mStackSize = (byte)aStackSize;
-		mMetaData = tPotion == null ? (short)aMetaData : ST.meta_(tPotion);
+		mMetaData = tPotion == null ? canonicalMeta(mItem, aMetaData) : ST.meta_(tPotion);
 		mPotionContents = tPotion == null ? null : potionContents(tPotion);
 	}
 	public ItemStackContainer(Block aBlock, long aStackSize, long aMetaData) {this(ST.item(aBlock), aStackSize, aMetaData);}
@@ -59,10 +66,10 @@ public class ItemStackContainer {
 	public ItemStackContainer(ItemStack aStack, long aMetaData) {this(aStack, aStack == null ? 0 : aStack.getCount(), aMetaData);}
 	public ItemStackContainer(ItemStack aStack, long aStackSize, long aMetaData) {
 		ItemStack tPotion = aStack != null && ST.isPotion(aStack.getItem()) ? ST.meta_(aStack) == aMetaData ? aStack : ST.make(aStack.getItem(), 1, aMetaData) : null;
-		mItem = aStack == null ? null : canonicalItem(tPotion == null ? aStack.getItem() : tPotion.getItem(), aMetaData);
+		mItem = aStack == null ? null : tPotion == null ? canonicalItem(aStack.getItem(), aMetaData) : tPotion.getItem();
 		mBlock = ST.block(mItem);
 		mStackSize = aStack == null ? 0 : (byte)aStackSize;
-		mMetaData = aStack == null ? 0 : tPotion == null ? (short)aMetaData : ST.meta_(tPotion);
+		mMetaData = aStack == null ? 0 : tPotion == null ? canonicalMeta(mItem, aMetaData) : ST.meta_(tPotion);
 		mPotionContents = tPotion == null ? null : potionContents(tPotion);
 	}
 

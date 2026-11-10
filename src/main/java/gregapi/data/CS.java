@@ -1966,6 +1966,7 @@ public class CS {
 		 *  1.7.10 wildcard item now needs "family head + wildcard"; built lazily since the item registry loads later. */
 		public static Item headItemOf(Item aItem) {
 			if (aItem == null) return null;
+			if (aItem instanceof gregapi.item.NativeFamilyQuery tQuery) return tQuery.variants.getFirst();
 			if (aItem instanceof gregapi.item.IMetaItem tItem) return tItem.metaFamily();
 			java.util.Map<Item, Item> tHeads = HEADS;
 			if (tHeads == null) {
@@ -1983,6 +1984,13 @@ public class CS {
 		}
 		private static java.util.Map<Item, Item> HEADS = null;
 
+		/** Регистрируется до вариантов GT, чтобы запросы помещались в короткий пакет GT. */
+		public static void registerQueries(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
+			if (!aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.ITEM)) return;
+			for (Item[][] tFamilies : new Item[][][] {ITEM_FAMILIES, WILDCARD_ONLY_ITEM_FAMILIES}) for (Item[] tFamily : tFamilies) gregapi.item.NativeFamilyQuery.register(aEvent, tFamily);
+			for (Block[][] tFamilies : new Block[][][] {WORLD_FAMILIES, STACK_ONLY_FAMILIES, WILDCARD_ONLY_BLOCK_FAMILIES}) for (Block[] tFamily : tFamilies) gregapi.item.NativeFamilyQuery.register(aEvent, java.util.Arrays.stream(tFamily).map(Block::asItem).toArray(Item[]::new));
+		}
+
 		/** Reverse lookup: the 1.7.10 meta for a family member, or -1 if the block is not in any family. */
 		public static int metaOf(Block aBlock) {
 			for (Block[] tFamily : WORLD_FAMILIES     ) for (int i = 0; i < tFamily.length; i++) if (tFamily[i] == aBlock) return i;
@@ -1998,6 +2006,8 @@ public class CS {
 			}
 			if (aMeta <= 0 || aMeta == W) return null;
 			for (Item[] tFamily : ITEM_FAMILIES) if (tFamily[0] == aItem) return aMeta < tFamily.length ? tFamily[(int)aMeta] : null;
+			var tQuery = gregapi.item.NativeFamilyQuery.of(aItem);
+			if (tQuery != null) return tQuery.variant((int)aMeta);
 			return null;
 		}
 	}
