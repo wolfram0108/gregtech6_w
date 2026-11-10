@@ -364,7 +364,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 
 	/** The input half of NEI_RecipeMap.handleItemTooltip (:669-673): a size-0 input is not consumed, and says so. */
 	private static void input(IRecipeLayoutBuilder aBuilder, int aX, int aY, ItemStack aStack) {
-		IRecipeSlotBuilder tSlot = aBuilder.addInputSlot(aX, aY).addItemStack(shown(aStack));
+		IRecipeSlotBuilder tSlot = aBuilder.addInputSlot(aX, aY).addItemStacks(ST.variants(shown(aStack)));
 		if (ST.size(aStack) == 0 && !gregapi.data.IL.Display_Fluid.equal(aStack, T, T))
 			tSlot.addRichTooltipCallback((aSlotView, aTooltip) -> aTooltip.add(Component.literal(LH.Chat.BLINKING_CYAN + LH.tt("Does not get consumed in the process"))));
 	}
@@ -373,7 +373,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 	private static int out(IRecipeLayoutBuilder aBuilder, Recipe aRecipe, int aIndex, int aX, int aY) {
 		ItemStack tStack = aRecipe.getOutput(aIndex);
 		if (tStack != null) {
-			IRecipeSlotBuilder tSlot = aBuilder.addOutputSlot(aX, aY).addItemStack(tStack);
+			IRecipeSlotBuilder tSlot = aBuilder.addOutputSlot(aX, aY).addItemStacks(ST.variants(tStack));
 			int tChance = aRecipe.getOutputChance(aIndex), tMax = aRecipe.getMaxChance(aIndex);
 			if (tChance > 0 && tChance != tMax) {
 				long tPercent = UT.Code.units(tChance, tMax, 10000, F);

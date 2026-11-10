@@ -156,8 +156,8 @@ public final class GT6_JEI_CraftingRecipes {
 		List<List<ItemStack>> rCells = new ArrayList<>(aCells.length);
 		for (Object tCell : aCells) {
 			List<ItemStack> tStacks = new ArrayList<>();
-			if (tCell instanceof ItemStack tStack) {if (ST.valid(tStack)) tStacks.add(ST.copy(tStack));}
-			else if (tCell instanceof List<?> tList) for (Object tAlt : tList) if (tAlt instanceof ItemStack tStack && ST.valid(tStack)) tStacks.add(ST.copy(tStack));
+			if (tCell instanceof ItemStack tStack) {if (ST.valid(tStack)) tStacks.addAll(ST.variants(tStack));}
+			else if (tCell instanceof List<?> tList) for (Object tAlt : tList) if (tAlt instanceof ItemStack tStack && ST.valid(tStack)) tStacks.addAll(ST.variants(tStack));
 			rCells.add(tStacks);
 		}
 		return rCells;
