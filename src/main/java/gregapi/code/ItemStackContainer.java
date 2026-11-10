@@ -40,71 +40,44 @@ public class ItemStackContainer {
 	public final short mMetaData;
 	private static Item canonicalItem(Item aItem, long aMeta) {return aItem instanceof gregapi.item.IMetaItem tMeta ? aMeta == W ? tMeta.metaFamily() : tMeta.itemForMeta((short)aMeta) : aItem;}
 	
+	private final net.minecraft.world.item.alchemy.PotionContents mPotionContents;
+	private static net.minecraft.world.item.alchemy.PotionContents potionContents(ItemStack aStack) {
+		var tContents = aStack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
+		return net.minecraft.world.item.alchemy.PotionContents.EMPTY.equals(tContents) ? null : tContents;
+	}
 	public ItemStackContainer(Item aItem, long aStackSize, long aMetaData) {
-		mItem = canonicalItem(aItem, aMetaData);
+		ItemStack tPotion = ST.isPotion(aItem) ? ST.make(aItem, 1, aMetaData) : null;
+		mItem = tPotion == null ? canonicalItem(aItem, aMetaData) : tPotion.getItem();
 		mBlock = ST.block(mItem);
 		mStackSize = (byte)aStackSize;
-		mMetaData = (short)aMetaData;
+		mMetaData = tPotion == null ? (short)aMetaData : ST.meta_(tPotion);
+		mPotionContents = tPotion == null ? null : potionContents(tPotion);
 	}
-	public ItemStackContainer(Block aBlock, long aStackSize, long aMetaData) {
-		mBlock = aBlock;
-		mItem = canonicalItem(ST.item(mBlock), aMetaData);
-		mStackSize = (byte)aStackSize;
-		mMetaData = (short)aMetaData;
-	}
-	public ItemStackContainer(long aID, long aStackSize, long aMetaData) {
-		mItem = canonicalItem(ST.item(aID), aMetaData);
-		mBlock = ST.block(mItem);
-		mStackSize = (byte)aStackSize;
-		mMetaData = (short)aMetaData;
-	}
-	public ItemStackContainer(ItemStack aStack) {
-		if (aStack == null) {
-			mItem = null;
-			mBlock = NB;
-			mStackSize = 0;
-			mMetaData = 0;
-		} else {
-			mItem = canonicalItem(ST.item_(aStack), ST.meta_(aStack));
-			mBlock = ST.block_(mItem);
-			mStackSize = (byte)aStack.getCount();
-			mMetaData = ST.meta_(aStack);
-		}
-	}
-	public ItemStackContainer(ItemStack aStack, long aMetaData) {
-		if (aStack == null) {
-			mItem = null;
-			mBlock = NB;
-			mStackSize = 0;
-			mMetaData = 0;
-		} else {
-			mItem = canonicalItem(ST.item_(aStack), aMetaData);
-			mBlock = ST.block_(mItem);
-			mStackSize = (byte)aStack.getCount();
-			mMetaData = (short)aMetaData;
-		}
-	}
+	public ItemStackContainer(Block aBlock, long aStackSize, long aMetaData) {this(ST.item(aBlock), aStackSize, aMetaData);}
+	public ItemStackContainer(long aID, long aStackSize, long aMetaData) {this(ST.item(aID), aStackSize, aMetaData);}
+	public ItemStackContainer(ItemStack aStack) {this(aStack, aStack == null ? 0 : aStack.getCount(), ST.meta(aStack));}
+	public ItemStackContainer(ItemStack aStack, long aMetaData) {this(aStack, aStack == null ? 0 : aStack.getCount(), aMetaData);}
 	public ItemStackContainer(ItemStack aStack, long aStackSize, long aMetaData) {
-		if (aStack == null) {
-			mItem = null;
-			mBlock = NB;
-			mStackSize = 0;
-			mMetaData = 0;
-		} else {
-			mItem = canonicalItem(ST.item_(aStack), aMetaData);
-			mBlock = ST.block_(mItem);
-			mStackSize = (byte)aStackSize;
-			mMetaData = (short)aMetaData;
-		}
+		ItemStack tPotion = aStack != null && ST.isPotion(aStack.getItem()) ? ST.meta_(aStack) == aMetaData ? aStack : ST.make(aStack.getItem(), 1, aMetaData) : null;
+		mItem = aStack == null ? null : canonicalItem(tPotion == null ? aStack.getItem() : tPotion.getItem(), aMetaData);
+		mBlock = ST.block(mItem);
+		mStackSize = aStack == null ? 0 : (byte)aStackSize;
+		mMetaData = aStack == null ? 0 : tPotion == null ? (short)aMetaData : ST.meta_(tPotion);
+		mPotionContents = tPotion == null ? null : potionContents(tPotion);
 	}
+
 	public ItemStackContainer(int aHashCode) {
 		this(ST.toItem(aHashCode), 0, ST.toMeta(aHashCode));
 	}
 	
-	public ItemStack toStack() {return mItem == null ? null : ST.make(mItem, 1, mMetaData);}
-	public boolean isStackEqual(ItemStack aStack) {return ST.equal(aStack, mItem, mMetaData);}
-	public boolean isStackEqual(ItemStackContainer aStack) {return aStack.mItem == mItem && ST.equal(aStack.mMetaData, mMetaData);}
+	public ItemStack toStack() {
+		ItemStack rStack = mItem == null ? null : ST.make(mItem, 1, mMetaData);
+		if (rStack != null && mPotionContents != null) rStack.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, mPotionContents);
+		return rStack;
+	}
+	public boolean isStackEqual(ItemStack aStack) {return mPotionContents == null ? ST.equal(aStack, mItem, mMetaData) : ST.equal(aStack, toStack(), T);}
+	public boolean isStackEqual(ItemStackContainer aStack) {return (aStack.mItem == mItem || (mMetaData == W || aStack.mMetaData == W) && Flattened.sameFamily(mItem, aStack.mItem)) && ST.equal(aStack.mMetaData, mMetaData) && (mMetaData == W || aStack.mMetaData == W || java.util.Objects.equals(mPotionContents, aStack.mPotionContents));}
 	
-	@Override public boolean equals(Object aStack) {return aStack == this || (aStack instanceof ItemStackContainer && ((ItemStackContainer)aStack).mItem == mItem && ((ItemStackContainer)aStack).mMetaData == mMetaData);}
-	@Override public int hashCode() {return ST.toInt(mItem, mMetaData);}
+	@Override public boolean equals(Object aStack) {return aStack == this || (aStack instanceof ItemStackContainer && ((ItemStackContainer)aStack).mItem == mItem && ((ItemStackContainer)aStack).mMetaData == mMetaData && java.util.Objects.equals(((ItemStackContainer)aStack).mPotionContents, mPotionContents));}
+	@Override public int hashCode() {return mPotionContents == null ? ST.toInt(mItem, mMetaData) : 31 * ST.toInt(mItem, mMetaData) + mPotionContents.hashCode();}
 }

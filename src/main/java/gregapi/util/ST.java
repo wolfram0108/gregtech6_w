@@ -110,7 +110,7 @@ public class ST {
 	// item" comparison failed: the machine accepted only the variant literally named (white). The rule "wildcard +
 	// member of the same family = match" is kept by the CS.Flattened map center; the path is cheap — it only kicks in
 	// when the items are DIFFERENT and one of the stacks has meta W (rare in a hot comparison).
-	public static boolean equal_(ItemStack aStack1, ItemStack aStack2, boolean aIgnoreNBT) {return (item_(aStack1) == item_(aStack2) ? equal(meta_(aStack1), meta_(aStack2)) : equalWildcardFamily(aStack1, aStack2)) && (aIgnoreNBT || (((nbt_(aStack1) == null) == (nbt_(aStack2) == null)) && (nbt_(aStack1) == null || nbt_(aStack1).equals(nbt_(aStack2)))));}
+	public static boolean equal_(ItemStack aStack1, ItemStack aStack2, boolean aIgnoreNBT) {return (item_(aStack1) == item_(aStack2) ? equal(meta_(aStack1), meta_(aStack2)) : equalWildcardFamily(aStack1, aStack2)) && (!isPotion(item_(aStack1)) || meta_(aStack1) == W || meta_(aStack2) == W || java.util.Objects.equals(aStack1.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS), aStack2.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS))) && (aIgnoreNBT || (((nbt_(aStack1) == null) == (nbt_(aStack2) == null)) && (nbt_(aStack1) == null || nbt_(aStack1).equals(nbt_(aStack2)))));}
 	private static boolean equalWildcardFamily(ItemStack aStack1, ItemStack aStack2) {return (meta_(aStack1) == W || meta_(aStack2) == W) && CS.Flattened.sameFamily(item_(aStack1), item_(aStack2));}
 	
 	public static boolean equal (ItemStack aStack, Item  aItem                             ) {return aStack != null && aItem  != null && equal_(aStack, aItem );}
@@ -119,7 +119,13 @@ public class ST {
 	public static boolean equal_(ItemStack aStack, Block aBlock                            ) {return block_(aStack) == aBlock;}
 	public static boolean equal (ItemStack aStack, Item  aItem                 , long aMeta) {return aStack != null && aItem  != null && equal_(aStack, aItem , aMeta);}
 	public static boolean equal (ItemStack aStack, Block aBlock                , long aMeta) {return aStack != null && aBlock != null && equal_(aStack, aBlock, aMeta);}
-	public static boolean equal_(ItemStack aStack, Item  aItem                 , long aMeta) {return equal(meta_(aStack), aMeta) && equalItem(aStack, aItem, aMeta);}
+	public static boolean equal_(ItemStack aStack, Item  aItem                 , long aMeta) {
+		if (isPotion(aItem) && aMeta != W && meta_(aStack) != W) {
+			ItemStack tExpected = legacyPotion(aItem, 1, aMeta);
+			return tExpected != null && aStack.getItem() == tExpected.getItem() && java.util.Objects.equals(aStack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS), tExpected.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS));
+		}
+		return equal(meta_(aStack), aMeta) && equalItem(aStack, aItem, aMeta);
+	}
 	public static boolean equal_(ItemStack aStack, Block aBlock                , long aMeta) {return equal(meta_(aStack), aMeta) && block_(aStack) == aBlock;}
 	public static boolean equal (ItemStack aStack, ModData aModID, String aItem            ) {return equal(aStack, findItem(aModID.mID, aItem));}
 	public static boolean equal (ItemStack aStack, ModData aModID, String aItem, long aMeta) {return equal(aStack, findItem(aModID.mID, aItem), aMeta);}
@@ -130,7 +136,7 @@ public class ST {
 	public static boolean equal_(ItemStack aStack, Block aBlock                            , boolean aAllowNBT) {return block_(aStack) == aBlock && aAllowNBT == ItemNBT.has(aStack);}
 	public static boolean equal (ItemStack aStack, Item  aItem                 , long aMeta, boolean aAllowNBT) {return aStack != null && aItem  != null && equal_(aStack, aItem , aMeta, aAllowNBT);}
 	public static boolean equal (ItemStack aStack, Block aBlock                , long aMeta, boolean aAllowNBT) {return aStack != null && aBlock != null && equal_(aStack, aBlock, aMeta, aAllowNBT);}
-	public static boolean equal_(ItemStack aStack, Item  aItem                 , long aMeta, boolean aAllowNBT) {return equal(meta_(aStack), aMeta) && equalItem(aStack, aItem, aMeta) && aAllowNBT == ItemNBT.has(aStack);}
+	public static boolean equal_(ItemStack aStack, Item  aItem                 , long aMeta, boolean aAllowNBT) {return equal_(aStack, aItem, aMeta) && aAllowNBT == ItemNBT.has(aStack);}
 	private static boolean equalItem(ItemStack aStack, Item aItem, long aMeta) {
 		if (aItem instanceof IMetaItem tItem) return item_(aStack) == tItem.itemForMeta((short)aMeta) || aMeta == W && CS.Flattened.sameFamily(item_(aStack), aItem);
 		return item_(aStack) == aItem;
@@ -142,7 +148,7 @@ public class ST {
 	public static boolean equal (long aMeta1, long aMeta2) {return aMeta1 == aMeta2 || aMeta1 == W || aMeta2 == W;}
 	
 	public static boolean equalTools (ItemStack aStack1, ItemStack aStack2, boolean aIgnoreNBT) {return aStack1 != null && aStack2 != null && equalTools_(aStack1, aStack2, aIgnoreNBT);}
-	public static boolean equalTools_(ItemStack aStack1, ItemStack aStack2, boolean aIgnoreNBT) {return item_(aStack1) == item_(aStack2) && equal(meta_(aStack1), meta_(aStack2)) && (aIgnoreNBT || item_(aStack1) instanceof IItemGTContainerTool || (((nbt_(aStack1) == null) == (nbt_(aStack2) == null)) && (nbt_(aStack1) == null || nbt_(aStack1).equals(nbt_(aStack2)))));}
+	public static boolean equalTools_(ItemStack aStack1, ItemStack aStack2, boolean aIgnoreNBT) {return equal_(aStack1, aStack2, aIgnoreNBT || item_(aStack1) instanceof IItemGTContainerTool);}
 	
 	public static boolean identical (ItemStack aStack1, ItemStack aStack2) {return aStack1 == aStack2 || (aStack1 != null && aStack2 != null && identical_(aStack1, aStack2));}
 	public static boolean identical_(ItemStack aStack1, ItemStack aStack2) {return aStack1.getCount() == aStack2.getCount() && equal_(aStack1, aStack2, F);}
@@ -211,16 +217,32 @@ public class ST {
 	public static short     meta (ItemStack aStack) {return aStack == null ? 0 : meta_(aStack);}
 	// Выделенный Item хранит номер типа; корень многовариантного семейства означает wildcard без компонента.
 	// SUBTYPE остаётся только у ещё не перенесённых предметов.
-	public static boolean usesSubtypeComponent(Item aItem) {return !(aItem instanceof IMetaItem);}
-	public static short     meta_(ItemStack aStack) {return aStack.getItem() instanceof IMetaItem tItem ? tItem.fixedMeta() >= 0 ? tItem.fixedMeta() : W : gregapi.GT_API.SUBTYPE_TYPE != null ? (short)(int)aStack.getOrDefault(gregapi.GT_API.SUBTYPE_TYPE, 0) : 0;}
+	public static boolean usesSubtypeComponent(Item aItem) {return !(aItem instanceof IMetaItem) && !(aItem instanceof gregapi.item.ItemFluidDisplay) && !isPotion(aItem);}
+	public static short     meta_(ItemStack aStack) {
+		if (aStack.getItem() instanceof gregapi.item.ItemFluidDisplay) {var tFluid = gregapi.item.ItemFluidDisplay.fluidType(aStack); return tFluid == null ? W : FL.id(tFluid);}
+		if (isPotion(aStack.getItem())) return potionMeta(aStack);
+		return aStack.getItem() instanceof IMetaItem tItem ? tItem.fixedMeta() >= 0 ? tItem.fixedMeta() : W : gregapi.GT_API.SUBTYPE_TYPE != null ? (short)(int)aStack.getOrDefault(gregapi.GT_API.SUBTYPE_TYPE, 0) : 0;}
 	public static ItemStack meta (ItemStack aStack, long aMeta) {return aStack == null ? null : meta_(aStack, aMeta);}
 	public static ItemStack meta_(ItemStack aStack, long aMeta) {
 		int tMeta = (short)aMeta;
+		if (!usesSubtypeComponent(aStack.getItem()) && gregapi.GT_API.SUBTYPE_TYPE != null) aStack.remove(gregapi.GT_API.SUBTYPE_TYPE);
 		if (aStack.getItem() instanceof IMetaItem tItem) {
 			Item tTarget = tItem.itemForMeta((short)tMeta);
 			if (((IMetaItem)tTarget).fixedMeta() < 0 && tMeta != W) throw new IllegalArgumentException("Unregistered meta item: " + regName(tItem.metaFamily()) + "-" + tMeta);
 			if (tTarget != aStack.getItem()) setItem(aStack, tTarget);
 			if (gregapi.GT_API.SUBTYPE_TYPE != null) aStack.remove(gregapi.GT_API.SUBTYPE_TYPE);
+			return aStack;
+		}
+		if (aStack.getItem() instanceof gregapi.item.ItemFluidDisplay) {
+			gregapi.item.ItemFluidDisplay.setFluidType(aStack, FL.fluid(tMeta));
+			return aStack;
+		}
+		if (isPotion(aStack.getItem())) {
+			ItemStack tPotion = legacyPotion(aStack.getItem(), aStack.getCount(), tMeta);
+			if (tPotion != null) {
+				if (tPotion.getItem() != aStack.getItem()) setItem(aStack, tPotion.getItem());
+				aStack.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, tPotion.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS));
+			} else aStack.remove(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
 			return aStack;
 		}
 		if (gregapi.GT_API.SUBTYPE_TYPE != null) {if (tMeta != 0) aStack.set(gregapi.GT_API.SUBTYPE_TYPE, tMeta); else aStack.remove(gregapi.GT_API.SUBTYPE_TYPE);}
@@ -248,6 +270,7 @@ public class ST {
 	/** Компоненты идентичности для JEI: отдельным Item не нужен SUBTYPE, семейства служат только запросами. */
 	public static net.minecraft.core.component.DataComponentType<?>[] identityComponents(Item aItem) {
 		if (aItem instanceof IMetaItem tItem && tItem.fixedMeta() < 0) return new net.minecraft.core.component.DataComponentType<?>[0];
+		if (isPotion(aItem)) return new net.minecraft.core.component.DataComponentType<?>[] {net.minecraft.core.component.DataComponents.POTION_CONTENTS};
 		boolean tData = identityIncludesNBT(aItem);
 		if (usesSubtypeComponent(aItem)) return tData ? new net.minecraft.core.component.DataComponentType<?>[] {gregapi.GT_API.SUBTYPE_TYPE, gregapi.GT_API.DATA_TYPE} : new net.minecraft.core.component.DataComponentType<?>[] {gregapi.GT_API.SUBTYPE_TYPE};
 		return tData ? new net.minecraft.core.component.DataComponentType<?>[] {gregapi.GT_API.DATA_TYPE} : new net.minecraft.core.component.DataComponentType<?>[0];
@@ -259,6 +282,11 @@ public class ST {
 		if (aStack == null || aStack.getItem() == null) return "null";
 		var tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem());
 		String rKey = (tKey == null ? "" : tKey.toString());
+		if (aStack.getItem() instanceof gregapi.item.ItemFluidDisplay) {
+			var tFluid = gregapi.item.ItemFluidDisplay.fluidType(aStack);
+			return rKey + "|" + (tFluid == null ? "" : BuiltInRegistries.FLUID.getKey(tFluid));
+		}
+		if (isPotion(aStack.getItem())) rKey += "|" + aStack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
 		if (usesSubtypeComponent(aStack.getItem())) rKey += ":" + meta_(aStack);
 		if (!identityIncludesNBT(aStack.getItem())) return rKey;
 		net.minecraft.nbt.CompoundTag tNBT = gregapi.code.ItemNBT.get(aStack);
@@ -590,7 +618,7 @@ public class ST {
 		if (valid(aStack) && aItem != null) {
 			net.minecraft.core.component.DataComponentMap tPrevious = aStack.getComponents();
 			var tComponents = net.minecraft.core.component.PatchedDataComponentMap.fromPatch(aItem.components(), aStack.getComponentsPatch());
-			if (aItem instanceof IMetaItem && gregapi.GT_API.SUBTYPE_TYPE != null) tComponents.remove(gregapi.GT_API.SUBTYPE_TYPE);
+			if (!usesSubtypeComponent(aItem) && gregapi.GT_API.SUBTYPE_TYPE != null) tComponents.remove(gregapi.GT_API.SUBTYPE_TYPE);
 			if (UT.Reflection.setField(aStack, "components", tComponents) != null) {
 				if (UT.Reflection.setField(aStack, "item", aItem.builtInRegistryHolder()) == null)
 					UT.Reflection.setField(aStack, "components", tPrevious);
@@ -714,8 +742,9 @@ public class ST {
 	// (splash — by an item: SPLASH_POTION). In 1.7.10 the kind was encoded in the meta (low 4 bits — type per
 	// PotionHelper, 0x20 strong, 0x40 extended, 0x2000 drinkable, 0x4000 splash); without the bridge a stack from
 	// ST.make was a faceless "Uncraftable Potion" — no color, no name, no effect when drunk the vanilla way (all 96
-	// potion containers of Loader_Fluids). The SUBTYPE meta is kept as before — stack identity in maps and recipes
-	// is unchanged. A combination with no neo variant degrades to the base kind (strong fire resistance etc. was
+	// potion containers of Loader_Fluids).
+	// Идентичность хранится только в POTION_CONTENTS; старый номер вычисляется из него для GT-вызовов.
+	// A combination with no neo variant degrades to the base kind (strong fire resistance etc. was
 	// never registered in 1.7.10 either); an unknown meta -> null = the old componentless path, we invent nothing.
 	private static ItemStack legacyPotion(Item aItem, long aSize, long aMeta) {
 		if (aItem != Items.POTION && aItem != Items.SPLASH_POTION && aItem != Items.LINGERING_POTION) return null;
@@ -725,8 +754,21 @@ public class ST {
 		// the splash meta bit does not change the item — lingering never had it in its metas
 		ItemStack rStack = new ItemStack(aItem == Items.POTION && (aMeta & 0x4000) != 0 ? Items.SPLASH_POTION : aItem, UT.Code.bindInt(aSize));
 		rStack.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, new net.minecraft.world.item.alchemy.PotionContents(tKind));
-		meta_(rStack, UT.Code.bindShort(aMeta));
 		return rStack;
+	}
+	public static boolean isPotion(Item aItem) {return aItem == Items.POTION || aItem == Items.SPLASH_POTION || aItem == Items.LINGERING_POTION;}
+	/** Канонический старый номер вычисляется из ванильного содержимого, а не сохраняется в компоненте. */
+	private static short potionMeta(ItemStack aStack) {
+		var tContents = aStack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
+		if (tContents == null || tContents.equals(net.minecraft.world.item.alchemy.PotionContents.EMPTY)) return W;
+		var tKind = tContents.potion().orElse(null);
+		if (tKind == null) return 0;
+		for (int tMeta : new int[] {0, 16, 32, 64}) if (tKind.equals(legacyPotionKind(tMeta))) return (short)tMeta;
+		for (int tFlags : new int[] {0, 32, 64}) for (int i = 1; i <= 14; i++) {
+			int tMeta = 8192 | tFlags | i;
+			if (tKind.equals(legacyPotionKind(tMeta))) return (short)((aStack.getItem() == Items.SPLASH_POTION ? 16384 : 8192) | tFlags | i);
+		}
+		return 0;
 	}
 	private static net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> legacyPotionKind(long aMeta) {
 		boolean tStrong = (aMeta & 0x20) != 0, tLong = (aMeta & 0x40) != 0;
@@ -1904,6 +1946,10 @@ public class ST {
 		// because it would delete certain Tags on load, making stuff like unscanned Forestry Bees unstackable.
 		// But update_() will still delete a completely empty NBT later on.
 		ItemNBT.set(rStack, aNBT.getCompound("tag").orElse(null));
+		if (isPotion(rStack.getItem()) && aNBT.contains("minecraft:potion_contents")) {
+			var tContents = net.minecraft.world.item.alchemy.PotionContents.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, aNBT.get("minecraft:potion_contents")).getOrThrow();
+			rStack.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, tContents);
+		}
 		// Does anyone even migrate IC2exp Items anymore? This is only used when updating from IC2-Non-Exp to IC2-Exp.
 	//  if (item_(rStack).getClass().getName().startsWith("ic2.core.migration")) item_(rStack).onUpdate(rStack, DW, null, 0, F); // I do not think this could possibly happen anymore
 		return update_(OM.get_(rStack));
@@ -2036,6 +2082,10 @@ public class ST {
 		if (tLogicalCount <= 0) rNBT.putInt("Count", 0); else UT.NBT.setNumber(rNBT, "Count", tLogicalCount);
 		UT.NBT.setNumber(rNBT, "Damage", meta_(aStack));
 		if (ItemNBT.has(aStack)) rNBT.put("tag", ItemNBT.get(aStack));
+		if (isPotion(aStack.getItem())) {
+			var tContents = aStack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
+			if (tContents != null) rNBT.put("minecraft:potion_contents", net.minecraft.world.item.alchemy.PotionContents.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, tContents).getOrThrow());
+		}
 		OreDictItemData tData = OM.anyassociation_(aStack);
 		if (tData != null) rNBT.putString("od", tData.toString());
 		return rNBT;

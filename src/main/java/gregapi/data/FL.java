@@ -696,11 +696,10 @@ public enum FL implements gregapi.fluid.IFluidName {
 	public static ItemStack display(FluidTankGT aTank, boolean aUseStackSize, boolean aLimitStackSize) {return display(aTank.getFluid(), aTank.amount(), aUseStackSize, aLimitStackSize);}
 	public static ItemStack display(FluidStack aFluid, long aAmount, boolean aUseStackSize, boolean aLimitStackSize) {return display(aFluid, aAmount, aUseStackSize, aLimitStackSize, T);}
 	public static ItemStack display(FluidStack aFluid, long aAmount, boolean aUseStackSize, boolean aLimitStackSize, boolean aUseBucketSize) {
-		short aID = id(aFluid);
-		if (aID < 0) return null;
-		ItemStack rStack = IL.Display_Fluid.getWithMeta(Math.max(1, aUseStackSize ? aUseBucketSize ? aLimitStackSize ? UT.Code.bind7(aAmount / 1000) : aAmount / 1000 : aLimitStackSize ? UT.Code.bind7(aAmount) : aAmount : 1), aID);
+		if (!valid(aFluid)) return null;
+		ItemStack rStack = IL.Display_Fluid.get(Math.max(1, aUseStackSize ? aUseBucketSize ? aLimitStackSize ? UT.Code.bind7(aAmount / 1000) : aAmount / 1000 : aLimitStackSize ? UT.Code.bind7(aAmount) : aAmount : 1));
 		if (rStack == null) return null;
-		CompoundTag tNBT = NBT.makeString("f", regName(aFluid));
+		CompoundTag tNBT = NBT.makeString("f", BuiltInRegistries.FLUID.getKey(aFluid.getFluid()).toString());
 		if (aAmount != 0) NBT.setNumber(tNBT, "a", aAmount);
 		NBT.setNumber(tNBT, "h", temperature(aFluid));
 		NBT.setBoolean(tNBT, "s", gas(aFluid));

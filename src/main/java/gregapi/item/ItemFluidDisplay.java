@@ -86,7 +86,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	
 	// @Override
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ) {
-		if (!aWorld.isClientSide() && UT.Entities.hasInfiniteItems(aPlayer)) for (byte tSide : ALL_SIDES_VALID) if (FL.fill(WD.te(aWorld, aX, aY, aZ, tSide, T), FL.make(FL.fluid(ST.meta_(aStack)), Integer.MAX_VALUE), T) > 0) return T;
+		if (!aWorld.isClientSide() && UT.Entities.hasInfiniteItems(aPlayer)) for (byte tSide : ALL_SIDES_VALID) if (FL.fill(WD.te(aWorld, aX, aY, aZ, tSide, T), FL.make(fluidType(aStack), Integer.MAX_VALUE), T) > 0) return T;
 		return !aWorld.isClientSide();
 	}
 	// F-useOn bridge: neo calls onItemUseFirst(ItemStack,UseOnContext), not the 1.7.10 onItemUseFirst(x,y,z,side,hit) —
@@ -99,7 +99,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
-		Fluid aFluid = FL.fluid(ST.meta_(aStack));
+		Fluid aFluid = fluidType(aStack);
 		if (aFluid == null) {
 			aList.add(LH.Chat.BLINKING_RED + LH.tt("CLIENTSIDE FLUID IS NULL!!!"));
 		} else if (FL.Error.is(aFluid)) {
@@ -247,7 +247,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 
 	// getIconIndex(ItemStack) is checked by resolveIcon FIRST — read the meta via the native channel ST.meta_ (not damage).
 	public net.minecraft.resources.Identifier getIconIndex(ItemStack aStack) {
-		return stillIcon(FL.fluid(ST.meta_(aStack)));
+		return stillIcon(fluidType(aStack));
 	}
 
 	private static net.minecraft.resources.Identifier stillIcon(net.minecraft.world.level.material.Fluid aFluid) {
@@ -262,7 +262,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	// the pass's quads with it. The registry cannot see reflection via grep - the previous "analyzed" label was false (2026-07-30).
 	// @Override
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
-		net.minecraft.world.level.material.Fluid tFluid = FL.fluid(ST.meta_(aStack));
+		net.minecraft.world.level.material.Fluid tFluid = fluidType(aStack);
 		if (tFluid == null) return 16777215;
 		return UT.Code.getRGBInt(FL.tint(FL.make(tFluid, 1000)));
 	}
@@ -277,14 +277,14 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	// point with the original.
 	// @Override
 	public String getUnlocalizedName(ItemStack aStack) {
-		if (aStack != null) return FL.name(FL.fluid(ST.meta_(aStack)), F);
+		if (aStack != null) return FL.name(fluidType(aStack), F);
 		return "";
 	}
 	
 	// @Override
 	public String getItemStackDisplayName(ItemStack aStack) {
 		if (aStack == null) return "";
-		Fluid tFluid = FL.fluid(ST.meta_(aStack));
+		Fluid tFluid = fluidType(aStack);
 		return tFluid == null ? "INVALID FLUID ID!!!" : FL.name(tFluid, T);
 	}
 
@@ -305,7 +305,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	
 	// @Override
 	public boolean hasEffect(ItemStack aStack, int aRenderPass) {
-		Fluid aFluid = FL.fluid(ST.meta_(aStack));
+		Fluid aFluid = fluidType(aStack);
 		return aFluid != null && FluidsGT.ENCHANTED_EFFECT.contains(FL.regName(aFluid));
 	}
 
@@ -369,23 +369,26 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 		return F;
 	}
 	
+	/** Имя жидкости — единственный источник типа; числовой ID нужен лишь старым вызовам. */
+	public static Fluid fluidType(ItemStack aStack) {
+		CompoundTag tData = ItemNBT.get(aStack);
+		if (tData == null) return null;
+		String tName = tData.getString("f").orElse("");
+		return tName.isEmpty() ? null : FL.fluid_(FluidsGT.FLUID_RENAMINGS.getOrDefault(tName, tName));
+	}
+	public static void setFluidType(ItemStack aStack, Fluid aFluid) {
+		CompoundTag tData = ItemNBT.get(aStack);
+		if (tData == null) tData = new CompoundTag();
+		if (aFluid == null || aFluid == net.minecraft.world.level.material.Fluids.EMPTY) tData.remove("f");
+		else tData.putString("f", net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(aFluid).toString());
+		ItemNBT.set(aStack, tData);
+		if (GT_API.SUBTYPE_TYPE != null) aStack.remove(GT_API.SUBTYPE_TYPE);
+	}
 	@Override
 	public void updateItemStack(ItemStack aStack) {
-		CompoundTag aNBT = ItemNBT.get(aStack);
-		if (aNBT != null && aNBT.contains("f")) {
-			String aName = aNBT.getString("f").orElse("");
-			if (UT.Code.stringInvalid(aName)) return;
-			String tName = FluidsGT.FLUID_RENAMINGS.get(aName);
-			if (UT.Code.stringValid(tName)) aName = tName;
-			Fluid tFluid = FL.fluid_(aName);
-			// F5: 1.7.10 Fluid.getID() was removed -> FL.id(Fluid) (FL.java:673, the same center helper already
-			// used across the whole tree; about registry-id instability across runs — FL.java:736, inherited 1:1).
-			if (tFluid != null) ST.meta_(aStack, FL.id(tFluid));
-			return;
-		}
-		Fluid tFluid = FL.fluid(ST.meta_(aStack));
-		if (tFluid == null) ST.meta_(aStack, W); else {ItemNBT.set(aStack, UT.NBT.makeString("f", FL.regName(tFluid)));}
+		setFluidType(aStack, fluidType(aStack));
 	}
+
 	@Override
 	public void updateItemStack(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {
 		updateItemStack(aStack);
@@ -393,7 +396,7 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	
 	@Override
 	public FluidStack getFluid(ItemStack aStack) {
-		Fluid tFluid = FL.fluid(ST.meta_(aStack));
+		Fluid tFluid = fluidType(aStack);
 		if (tFluid == null) return null;
 		FluidStack rFluid = null;
 		CompoundTag aNBT = ItemNBT.get(aStack);

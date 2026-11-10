@@ -120,6 +120,11 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			if (tKey == null) continue;
 			if (!ModIDs.isGregNamespace(tKey.getNamespace())) continue;
 			try {
+				if (tItem instanceof gregapi.item.ItemFluidDisplay) {
+					aRegistration.registerSubtypeInterpreter(tItem, (aStack, aContext) -> gregapi.util.ST.identityKey(aStack));
+					tDataOnly++;
+					continue;
+				}
 				var tComponents = gregapi.util.ST.identityComponents(tItem);
 				if (tComponents.length == 0) {tRegistryOnly++; continue;}
 				aRegistration.registerFromDataComponentTypes(tItem, tComponents);

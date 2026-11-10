@@ -72,7 +72,7 @@ public class PacketItemStackChat implements IPacket {
 		aData.writeShort(ST.id(mStack));
 		aData.writeByte(mStack.getCount());
 		aData.writeShort(ST.meta_(mStack));
-		CompoundTag tNBT = ItemNBT.get(mStack); // Reads the tag through the central ItemNBT bridge instead of a local get/copy of CUSTOM_DATA.
+		CompoundTag tNBT = ST.isPotion(mStack.getItem()) ? ST.save(mStack) : ItemNBT.get(mStack); // Reads the tag through the central ItemNBT bridge instead of a local get/copy of CUSTOM_DATA.
 		if (tNBT == null) aData.writeShort(-1); else {
 			try {
 				ByteArrayOutputStream tBuffer = new ByteArrayOutputStream();
@@ -87,7 +87,11 @@ public class PacketItemStackChat implements IPacket {
 
 	@Override
 	public IPacket decode(ByteArrayDataInput aData) {
-		return new PacketItemStackChat(ST.make(aData.readShort(), aData.readByte(), aData.readShort(), readNBTTagCompoundFromBuffer(aData)));
+		ItemStack tStack = ST.make(aData.readShort(), aData.readByte(), aData.readShort());
+		CompoundTag tNBT = readNBTTagCompoundFromBuffer(aData);
+		if (ST.isPotion(tStack.getItem())) return new PacketItemStackChat(ST.load(tNBT));
+		ItemNBT.set(tStack, tNBT);
+		return new PacketItemStackChat(tStack);
 	}
 
 	public CompoundTag readNBTTagCompoundFromBuffer(ByteArrayDataInput aData) {

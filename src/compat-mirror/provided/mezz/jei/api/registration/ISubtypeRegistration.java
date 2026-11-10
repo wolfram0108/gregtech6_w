@@ -27,5 +27,6 @@
 package mezz.jei.api.registration;
 
 public interface ISubtypeRegistration {
+	void registerSubtypeInterpreter(net.minecraft.world.item.Item aItem, mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter<net.minecraft.world.item.ItemStack> aInterpreter);
 	void registerFromDataComponentTypes(net.minecraft.world.item.Item a0, net.minecraft.core.component.DataComponentType<?>... a1);
 }
