@@ -62,7 +62,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.InteractionResult;
@@ -96,20 +95,19 @@ import static gregapi.data.CS.*;
 // (net/minecraftforge/fluids/IFluidContainerItem.java) — the implements list is 1:1 with the original again
 // (:88), the getFluid/getCapacity/fill/drain delegates below are brought back to life (per-stack state is carried by the stack's NBT:
 // TileEntityBase08FluidContainer.fill/drain write writeItemNBT back into the stack themselves).
-public class MultiTileEntityItemInternal extends BlockItem implements gt6mirror.squeek.applecore.api.food.IEdible, IItemReactorRod, IItemUpdatable, IItemColorableRGB, IOreDictItemDataOverrideItem, IItemGT, IItemNoGTOverride, IFluidContainerItem, ISpecialElectricItem, IElectricItemManager, IItemEnergy, IItemElectric, IItemRottable, IFlowerPlaceable {
+public class MultiTileEntityItemInternal extends gregapi.block.MetaBlockItem implements gt6mirror.squeek.applecore.api.food.IEdible, IItemReactorRod, IItemUpdatable, IItemColorableRGB, IOreDictItemDataOverrideItem, IItemGT, IItemNoGTOverride, IFluidContainerItem, ISpecialElectricItem, IElectricItemManager, IItemEnergy, IItemElectric, IItemRottable, IFlowerPlaceable {
 	public final MultiTileEntityBlockInternal mBlock;
 
 	public MultiTileEntityItemInternal(Block aBlock) {
 		// F12-followup (item-split): id in Properties from the block's key (BlockItem shares its id with the block; construction happens on RegisterEvent<Item>).
 		super(aBlock, new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock))));
 		setMaxDamage(0);
-		setHasSubtypes(T);
 		mBlock = (MultiTileEntityBlockInternal)aBlock;
 	}
+	private MultiTileEntityItemInternal(MultiTileEntityItemInternal aFamily, short aMeta) {super(aFamily, aMeta); mBlock = aFamily.mBlock;}
+	@Override protected gregapi.block.MetaBlockItem createVariant(short aMeta) {return new MultiTileEntityItemInternal(this, aMeta);}
 	
-	// F1 contract (1.7.10 itemDamage==meta): the verbatim GT6 code (getUnlocalizedName etc.) calls getDamage for the SUBTYPE
-	// (machine ID); the neo default (IItemExtension) reads the DAMAGE component = 0 for meta items → all names/data get ID 0.
-	// Restoring the root contract: a non-damageable stack → subtype meta (the F1 center ST.meta_). Same as on other roots of the hierarchy.
+	// Старый API читает номер типа через getDamage; номер теперь задаётся отдельным Item.
 	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : gregapi.util.ST.meta_(aStack);}
 
 	// LOCALIZATION-display: neo takes the name via getName(ItemStack) — bridge into the GT6 name (LH via getItemStackDisplayName);
@@ -181,9 +179,9 @@ public class MultiTileEntityItemInternal extends BlockItem implements gt6mirror.
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {
 		if (aTab instanceof CreativeTab) {
-			for (MultiTileEntityClassContainer tClass : mBlock.mMultiTileEntityRegistry.mRegistrations) if (!tClass.mHidden || SHOW_HIDDEN_ITEMS) if (((CreativeTab)aTab).mMetaData == tClass.mCreativeTabID) if (!(tClass.mCanonicalTileEntity instanceof IMTE_GetSubItems) || ((IMTE_GetSubItems)tClass.mCanonicalTileEntity).getSubItems(mBlock, aItem, aTab, aList, tClass.mID)) aList.add(mBlock.mMultiTileEntityRegistry.getItem(tClass.mID));
+			for (MultiTileEntityClassContainer tClass : mBlock.mMultiTileEntityRegistry.mRegistrations) if ((fixedMeta() < 0 || tClass.mID == fixedMeta()) && (!tClass.mHidden || SHOW_HIDDEN_ITEMS)) if (((CreativeTab)aTab).mMetaData == tClass.mCreativeTabID) if (!(tClass.mCanonicalTileEntity instanceof IMTE_GetSubItems) || ((IMTE_GetSubItems)tClass.mCanonicalTileEntity).getSubItems(mBlock, aItem, aTab, aList, tClass.mID)) aList.add(mBlock.mMultiTileEntityRegistry.getItem(tClass.mID));
 		} else {
-			for (MultiTileEntityClassContainer tClass : mBlock.mMultiTileEntityRegistry.mRegistrations) if (!tClass.mHidden || SHOW_HIDDEN_ITEMS) if (!(tClass.mCanonicalTileEntity instanceof IMTE_GetSubItems) || ((IMTE_GetSubItems)tClass.mCanonicalTileEntity).getSubItems(mBlock, aItem, aTab, aList, tClass.mID)) aList.add(mBlock.mMultiTileEntityRegistry.getItem(tClass.mID));
+			for (MultiTileEntityClassContainer tClass : mBlock.mMultiTileEntityRegistry.mRegistrations) if ((fixedMeta() < 0 || tClass.mID == fixedMeta()) && (!tClass.mHidden || SHOW_HIDDEN_ITEMS)) if (!(tClass.mCanonicalTileEntity instanceof IMTE_GetSubItems) || ((IMTE_GetSubItems)tClass.mCanonicalTileEntity).getSubItems(mBlock, aItem, aTab, aList, tClass.mID)) aList.add(mBlock.mMultiTileEntityRegistry.getItem(tClass.mID));
 		}
 	}
 	

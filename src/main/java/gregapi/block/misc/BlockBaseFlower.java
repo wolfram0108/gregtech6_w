@@ -186,6 +186,10 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	
 	// Bridged separately here since this hierarchy sits on vanilla FlowerBlock and has none of BlockBase's drop bridges;
 	// without it, flowers removed by decay or lost support dropped nothing at all, since GT6 has no loot tables.
+	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, boolean aIncludeData, Player aPlayer) {
+		return ST.make(this, 1, damageDropped(WD.meta(aState)));
+	}
+
 	@Override protected java.util.List<ItemStack> getDrops(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
 		if (tOrigin == null) return super.getDrops(aState, aParams);

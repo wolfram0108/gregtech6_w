@@ -34,7 +34,6 @@ import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -46,7 +45,7 @@ import java.util.List;
 
 import static gregapi.data.CS.*;
 
-public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
+public class ItemBlockBase extends MetaBlockItem implements IBlock, IItemGT {
 	public final IBlockBase mPlaceable;
 
 	public ItemBlockBase(Block aBlock) {
@@ -55,8 +54,9 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 		super(aBlock, new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock))));
 		mPlaceable = (IBlockBase)aBlock;
 		setMaxDamage(0);
-		setHasSubtypes(T);
 	}
+	protected ItemBlockBase(ItemBlockBase aFamily, short aMeta) {super(aFamily, aMeta); mPlaceable = aFamily.mPlaceable;}
+	@Override protected MetaBlockItem createVariant(short aMeta) {return new ItemBlockBase(this, aMeta);}
 
 	// F-bounds: ItemBlockBase is a wrapper over Block (mPlaceable/getBlock()), it holds no geometry of its own ->
 	// routes to the WD.setBlockBounds CENTER (already exists, gregapi/util/WD.java:122), the same approach used
@@ -147,8 +147,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
 	// LOCALIZATION-display: neo getName(ItemStack) → the GT6 name (LH.get); otherwise the raw key from vanilla lang.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
-	// F1 contract (1.7.10 itemDamage==meta): verbatim GT6 code calls getDamage to get the block's subtype; neo's default reads
-	// the DAMAGE component (0 for meta items). Restored at the root (like ItemBase/MTE): non-damageable → ST.meta_.
+	// Старый API читает номер типа через getDamage; номер теперь задаётся отдельным Item.
 	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : ST.meta_(aStack);}
 	public boolean placeBlockAt(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMetaData) {return WD.set(aWorld, aX, aY, aZ, getBlock(), aMetaData, 3);}
 	// BUG-021 v2: a bridge from neo's per-stack channel to the 1.7.10 hook below — without it the ENTIRE block hierarchy (BlockBase/slabs/planks/

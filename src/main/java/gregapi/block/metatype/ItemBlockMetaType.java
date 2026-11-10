@@ -44,6 +44,8 @@ public class ItemBlockMetaType extends ItemBlockBase implements IItemUpdatable {
 	public ItemBlockMetaType(Block aBlock) {
 		super(aBlock);
 	}
+	private ItemBlockMetaType(ItemBlockMetaType aFamily, short aMeta) {super(aFamily, aMeta);}
+	@Override protected gregapi.block.MetaBlockItem createVariant(short aMeta) {return new ItemBlockMetaType(this, aMeta);}
 	
 	@Override
 	public boolean placeBlockAt(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMetaData) {

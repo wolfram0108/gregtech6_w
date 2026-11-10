@@ -792,6 +792,7 @@ public class GT_API extends Abstract_Mod {
 		aModBus.addListener(GT_API::onRegisterEvent);
 		aModBus.addListener(net.neoforged.bus.api.EventPriority.LOWEST, gregapi.item.prefixitem.PrefixItem::registerVariants);
 		aModBus.addListener(net.neoforged.bus.api.EventPriority.LOWEST, gregapi.item.multiitem.MultiItemRandom::registerVariants);
+		aModBus.addListener(net.neoforged.bus.api.EventPriority.LOWEST, gregapi.block.MetaBlockItem::registerVariants);
 		// F6: the central worldgen adapter (Feature/PlacedFeature/BiomeModifier) — the same mod bus,
 		// a single subscription point (decisions/F6-worldgen.md, gregapi/worldgen/GT6WorldgenFeature.java).
 		gregapi.worldgen.GT6WorldgenFeature.register(aModBus);

@@ -42,7 +42,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.InteractionResult;
@@ -62,14 +61,13 @@ import static gregapi.data.CS.*;
 @Optional.InterfaceList(value = {
   @Optional.Interface(iface = "vazkii.botania.api.item.IFlowerPlaceable", modid = ModIDs.BOTA)
 })
-public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefixItem, IItemGT, IItemNoGTOverride, IFlowerPlaceable {
+public class PrefixBlockItem extends gregapi.block.MetaBlockItem implements IItemUpdatable, IPrefixItem, IItemGT, IItemNoGTOverride, IFlowerPlaceable {
 	public final PrefixBlock mBlock;
 	
 	public PrefixBlockItem(Block aBlock) {
 		// F12-followup (item-split): id in Properties from the block's key (BlockItem shares id with the block; construction on RegisterEvent<Item>).
 		super(aBlock, new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock))));
 		setMaxDamage(0);
-		setHasSubtypes(T);
 		mBlock = (PrefixBlock)aBlock;
 		mBlock.mPrefix.mRegisteredPrefixItems.add(this);
 		
@@ -83,11 +81,14 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		}
 	}
 	
+	private PrefixBlockItem(PrefixBlockItem aFamily, short aMeta) {super(aFamily, aMeta); mBlock = aFamily.mBlock;}
+	@Override protected gregapi.block.MetaBlockItem createVariant(short aMeta) {return new PrefixBlockItem(this, aMeta);}
+
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
-		if (!mBlock.mHidden && (SHOW_HIDDEN_PREFIXES || !mBlock.mPrefix.contains(TD.Creative.HIDDEN)) && (SHOW_ORE_BLOCK_PREFIXES || mBlock == BlocksGT.ore || !mBlock.mPrefix.contains(TD.Prefix.ORE) || mBlock.mPrefix.contains(TD.Prefix.STORAGE_BASED))) for (int i = 0; i < mBlock.mMaterialList.length; i++) if (mBlock.mPrefix.isGeneratingItem(mBlock.mMaterialList[i])) if (SHOW_HIDDEN_MATERIALS || !mBlock.mMaterialList[i].mHidden) {
-			ItemStack tStack = ST.make(this, 1, i);
+		if (!mBlock.mHidden && (SHOW_HIDDEN_PREFIXES || !mBlock.mPrefix.contains(TD.Creative.HIDDEN)) && (SHOW_ORE_BLOCK_PREFIXES || mBlock == BlocksGT.ore || !mBlock.mPrefix.contains(TD.Prefix.ORE) || mBlock.mPrefix.contains(TD.Prefix.STORAGE_BASED))) for (int i = fixedMeta() >= 0 ? fixedMeta() : 0, tEnd = fixedMeta() >= 0 ? fixedMeta() + 1 : mBlock.mMaterialList.length; i < tEnd; i++) if (mBlock.mPrefix.isGeneratingItem(mBlock.mMaterialList[i])) if (SHOW_HIDDEN_MATERIALS || !mBlock.mMaterialList[i].mHidden) {
+			ItemStack tStack = ST.make(metaFamily(), 1, i);
 			updateItemStack(tStack);
 			if (ST.meta_(tStack) == i) aList.add(tStack);
 		}
