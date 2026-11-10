@@ -132,6 +132,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IItemB
 	@Override public short fixedMeta() {return mFixedMeta;}
 	@Override public PrefixItem metaFamily() {return mPrefixFamily;}
 	@Override public PrefixItem itemForMeta(short aMeta) {return mFlattenedItems.getOrDefault(aMeta, mPrefixFamily);}
+	@Override public java.util.Collection<? extends Item> metaVariants() {return mFlattenedItems.values();}
 
 	/** После DeferredRegister всех пространств имён, пока реестр Item ещё открыт. */
 	public static void registerVariants(net.neoforged.neoforge.registries.RegisterEvent aEvent) {

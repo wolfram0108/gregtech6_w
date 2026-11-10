@@ -115,6 +115,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable, gre
 	@Override public short fixedMeta() {return mFixedMeta;}
 	@Override public MultiItemRandom metaFamily() {return mRandomFamily;}
 	@Override public MultiItemRandom itemForMeta(short aMeta) {return mFlattenedItems.getOrDefault(aMeta, mRandomFamily);}
+	@Override public java.util.Collection<? extends Item> metaVariants() {return mFlattenedItems.values();}
 	@Override public ItemStack make(long aMeta) {return ST.make(mRandomFamily, 1, aMeta);}
 	@Override public ItemStack make(long aAmount, long aMeta) {return ST.make(mRandomFamily, aAmount, aMeta);}
 	protected MultiItemRandom createVariant(short aMeta) {throw new UnsupportedOperationException(getClass().getName());}

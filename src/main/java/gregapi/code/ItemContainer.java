@@ -110,7 +110,7 @@ public class ItemContainer implements IItemContainer {
 			return this;
 		}
 		mStack = ST.amount(1, aStack);
-		if (ST.meta_(mStack) == W) ST.meta_(mStack, 0);
+		if (ST.meta_(mStack) == W) mStack = ST.validMeta_(mStack);
 		if (aData != null && !OM.reg(aData.toString(), ST.amount(1, aStack))) OM.data(ST.amount(1, aStack), aData);
 		for (Object tOreDict : aOreDict) OM.reg(tOreDict, ST.amount(1, aStack));
 		return this;
@@ -182,7 +182,10 @@ public class ItemContainer implements IItemContainer {
 		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + mName + "' has not been set to an Item at this time!");
 		if (ST.invalid(mStack)) return ST.copyFirst(aReplacements);
-		return ST.copyAmountAndMeta(aAmount, 0, OM.get_(mStack));
+		ItemStack rStack = ST.amount(aAmount, OM.get_(mStack));
+		if (rStack.getItem() instanceof gregapi.item.multiitem.MultiItemTool) gregapi.item.multiitem.MultiItemTool.setToolDamage(rStack, 0);
+		else if (rStack.getMaxDamage() > 0) rStack.setDamageValue(0);
+		return rStack;
 	}
 	
 	@Override
@@ -190,7 +193,10 @@ public class ItemContainer implements IItemContainer {
 		ensureMaterialized(); // Materializes the deferred item before mStack is read.
 		if (mHasNotBeenSet && Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI) ERR.println("The Enum '" + mName + "' has not been set to an Item at this time!");
 		if (ST.invalid(mStack)) return ST.copyFirst(aReplacements);
-		return ST.copyAmountAndMeta(aAmount, mStack.getMaxDamage()-1, OM.get_(mStack));
+		ItemStack rStack = ST.amount(aAmount, OM.get_(mStack));
+		if (rStack.getItem() instanceof gregapi.item.multiitem.MultiItemTool) gregapi.item.multiitem.MultiItemTool.setToolDamage(rStack, gregapi.item.multiitem.MultiItemTool.getToolMaxDamage(rStack)-1);
+		else if (rStack.getMaxDamage() > 0) rStack.setDamageValue(rStack.getMaxDamage()-1);
+		return rStack;
 	}
 	
 	@Override

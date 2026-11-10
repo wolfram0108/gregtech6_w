@@ -120,6 +120,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public short fixedMeta() {return mFixedMeta;}
 	public MultiItemTool metaFamily() {return mToolFamily;}
 	public MultiItemTool itemForMeta(short aMeta) {return mFlattenedTools.getOrDefault(aMeta, mToolFamily);}
+	@Override public java.util.Collection<? extends Item> metaVariants() {return mFlattenedTools.values();}
 	@Override public ItemStack make(long aMetaData) {return ST.make(mToolFamily, 1, aMetaData);}
 	@Override public ItemStack make(long aAmount, long aMetaData) {return ST.make(mToolFamily, aAmount, aMetaData);}
 

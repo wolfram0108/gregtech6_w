@@ -358,9 +358,28 @@ public class ST {
 	public static ItemStack div_(long aDivider, ItemStack aStack) {return amount_(aStack.getCount() / aDivider, aStack);}
 	
 	public static ItemStack validMeta (long aSize, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : validMeta_(aSize, aStack);}
-	public static ItemStack validMeta_(long aSize, ItemStack aStack) {return size_(aSize, validMeta_(aStack));}
+	public static ItemStack validMeta_(long aSize, ItemStack aStack) {return size(aSize, validMeta_(aStack));}
 	public static ItemStack validMeta (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : validMeta_(aStack);}
-	public static ItemStack validMeta_(ItemStack aStack) {return meta_(aStack) == W ? meta_(copy_(aStack), 0) : copy_(aStack);}
+	public static ItemStack validMeta_(ItemStack aStack) {
+		if (meta_(aStack) != W) return copy_(aStack);
+		if (aStack.getItem() instanceof IMetaItem tFamily) {
+			Item tFirst = null;
+			for (Item tItem : tFamily.metaVariants()) if (tFirst == null || ((IMetaItem)tItem).fixedMeta() < ((IMetaItem)tFirst).fixedMeta()) tFirst = tItem;
+			return tFirst == null ? null : meta_(copy_(aStack), ((IMetaItem)tFirst).fixedMeta());
+		}
+		return meta_(copy_(aStack), 0);
+	}
+	/** Разворачивает wildcard перенесённого семейства в реальные Item, сохраняя количество и данные шаблона. */
+	public static List<ItemStack> variants(ItemStack aStack) {
+		if (invalid(aStack)) return java.util.List.of();
+		if (aStack.getItem() instanceof IMetaItem tFamily && tFamily.fixedMeta() < 0) {
+			List<ItemStack> rStacks = new ArrayList<>();
+			for (Item tItem : tFamily.metaVariants()) rStacks.add(copyMeta(((IMetaItem)tItem).fixedMeta(), aStack));
+			rStacks.sort(java.util.Comparator.comparingInt(ST::meta_));
+			return rStacks;
+		}
+		return java.util.List.of(copy_(aStack));
+	}
 	
 	public static Block nullair(Block aBlock) {return aBlock != NB ? aBlock : null;}
 	

@@ -72,6 +72,7 @@ public class ItemIntegratedCircuit extends ItemBase implements IMetaItem {
 	@Override public short fixedMeta() {return mFixedMeta;}
 	@Override public ItemIntegratedCircuit metaFamily() {return mFamily;}
 	@Override public ItemIntegratedCircuit itemForMeta(short aMeta) {return mVariants.getOrDefault(aMeta, mFamily);}
+	@Override public java.util.Collection<? extends Item> metaVariants() {return mVariants.values();}
 	public static void registerVariants(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
 		if (!aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.ITEM) || FAMILY == null) return;
 		for (short i = 0; i < 25; i++) {

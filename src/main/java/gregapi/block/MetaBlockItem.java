@@ -47,6 +47,7 @@ public abstract class MetaBlockItem extends BlockItem implements IMetaItem {
 	@Override public short fixedMeta() {return mFixedMeta;}
 	@Override public MetaBlockItem metaFamily() {return mFamily;}
 	@Override public MetaBlockItem itemForMeta(short aMeta) {return mVariants.getOrDefault(aMeta, mFamily);}
+	@Override public java.util.Collection<? extends Item> metaVariants() {return mVariants.values();}
 	protected abstract MetaBlockItem createVariant(short aMeta);
 
 	/** Вариант не подменяет корневой Item в отображении Block -> Item. */

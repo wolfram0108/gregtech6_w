@@ -424,7 +424,7 @@ public class CR {
 				int x = -1;
 				for (char chr : shape.toCharArray()) {
 					tRecipe[++x] = tItemStackMap.get(chr);
-					if (tRecipe[x] != null && ST.meta_(tRecipe[x]) == W) ST.meta_(tRecipe[x], 0);
+					if (tRecipe[x] != null) tRecipe[x] = ST.validMeta_(tRecipe[x]);
 				}
 				tThereWasARecipe = remove(tRecipe) != null || tThereWasARecipe;
 			}

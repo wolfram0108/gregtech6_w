@@ -7,4 +7,6 @@ public interface IMetaItem {
 	short fixedMeta();
 	Item metaFamily();
 	Item itemForMeta(short aMeta);
+	/** Зарегистрированные варианты семейства; коллекция предназначена только для чтения. */
+	java.util.Collection<? extends Item> metaVariants();
 }
