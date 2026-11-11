@@ -45,7 +45,7 @@ public class Loader_Others implements Runnable {
 		// Registry and material blocks construct the neo Block, which is only possible during RegisterEvent (registry unfrozen).
 		// Wrapped in deferBlockInit; Loader_MultiTileEntities calls getOrCreate again later and gets the same cached blocks.
 		gregapi.GT_API.deferBlockInit(() -> {
-		new MultiTileEntityRegistry("gt.multitileentity");
+		new MultiTileEntityRegistry("gt.multitileentity").setItemDefinitions(gregtech.loaders.b.Loader_MultiTileEntities::defineItems);
 
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "iron"          , Material.iron                 , SoundType.METAL  , TOOL_pickaxe      , 0, 0, 15, F, F);
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "iron"          , Material.iron                 , SoundType.METAL  , TOOL_shovel       , 0, 0, 15, F, F);

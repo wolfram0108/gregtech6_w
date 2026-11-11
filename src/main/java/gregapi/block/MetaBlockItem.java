@@ -57,25 +57,18 @@ public abstract class MetaBlockItem extends BlockItem implements IMetaItem {
 
 	public static void registerVariants(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
 		if (!aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.ITEM)) return;
-		try (var tStream = MetaBlockItem.class.getResourceAsStream("/gregapi/machineitem-types.json")) {
-			var tMachines = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(tStream, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
-			for (var tFamily : FAMILIES) {
-				if (tFamily.fixedMeta() >= 0) continue;
-				if (tFamily instanceof PrefixBlockItem tPrefix) {
-					for (int i = 0; i < tPrefix.mBlock.mMaterialList.length && i < W; i++) if (tPrefix.mBlock.mPrefix.isGeneratingItem(tPrefix.mBlock.mMaterialList[i])) register(aEvent, tFamily, (short)i);
-				} else if (tFamily instanceof MultiTileEntityItemInternal) {
-					var tID = BuiltInRegistries.ITEM.getKey(tFamily);
-					if (!tMachines.has(tID.toString())) continue;
-					for (String tRange : tMachines.get(tID.toString()).getAsString().split(",")) {
-						String[] tEnds = tRange.split("-");
-						for (int i = Integer.parseInt(tEnds[0]), tLast = Integer.parseInt(tEnds[tEnds.length - 1]); i <= tLast; i++) register(aEvent, tFamily, (short)i);
-					}
-				} else if (tFamily instanceof ItemBlockBase tSimple) {
-					for (short i = 0; i < tSimple.mPlaceable.maxMeta(); i++) register(aEvent, tFamily, i);
-				}
+		for (var tFamily : FAMILIES) {
+			if (tFamily.fixedMeta() >= 0) continue;
+			if (tFamily instanceof PrefixBlockItem tPrefix) {
+				for (int i = 0; i < tPrefix.mBlock.mMaterialList.length && i < W; i++) if (tPrefix.mBlock.mPrefix.isGeneratingItem(tPrefix.mBlock.mMaterialList[i])) register(aEvent, tFamily, (short)i);
+			} else if (tFamily instanceof MultiTileEntityItemInternal tMachine) {
+				tMachine.mBlock.mMultiTileEntityRegistry.itemDefinitions().types().forEach(tType -> register(aEvent, tFamily, (short)tType));
+			} else if (tFamily instanceof ItemBlockBase tSimple) {
+				for (short i = 0; i < tSimple.mPlaceable.maxMeta(); i++) register(aEvent, tFamily, i);
 			}
-		} catch (java.io.IOException e) {throw new java.io.UncheckedIOException(e);}
+		}
 	}
+
 	private static void register(net.neoforged.neoforge.registries.RegisterEvent aEvent, MetaBlockItem aFamily, short aMeta) {
 		aEvent.register(net.minecraft.core.registries.Registries.ITEM, variantKey(aFamily, aMeta).identifier(), () -> aFamily.createVariant(aMeta));
 	}

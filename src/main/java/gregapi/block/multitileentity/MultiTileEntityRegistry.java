@@ -82,6 +82,14 @@ import static gregapi.data.CS.*;
  * ================================================================================================================================================
  */
 public class MultiTileEntityRegistry {
+	private java.util.function.Supplier<gregapi.item.ItemTypeDefinitions> mItemDefinitionSource;
+	private gregapi.item.ItemTypeDefinitions mItemDefinitions;
+	public MultiTileEntityRegistry setItemDefinitions(java.util.function.Supplier<gregapi.item.ItemTypeDefinitions> aSource) {mItemDefinitionSource = aSource; return this;}
+	public gregapi.item.ItemTypeDefinitions itemDefinitions() {
+		if (mItemDefinitions == null) mItemDefinitions = mItemDefinitionSource == null ? new gregapi.item.ItemTypeDefinitions() : mItemDefinitionSource.get();
+		return mItemDefinitions;
+	}
+
 	private static final HashMap<String, MultiTileEntityRegistry> NAMED_REGISTRIES = new HashMap<>();
 	private static final HashSetNoNulls<Class<?>> sRegisteredTileEntities = new HashSetNoNulls<>();
 	private static final HashSetNoNulls<String> sRegisteredTileEntityClassNames = new HashSetNoNulls<>();
