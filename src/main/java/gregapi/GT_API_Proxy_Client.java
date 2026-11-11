@@ -43,6 +43,7 @@ import gregapi.block.prefixblock.PrefixBlockFallingEntity;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.ItemNBT;
 import gregapi.code.ObjectStack;
+import gregapi.compat.RailcraftNames;
 import gregapi.cover.CoverRegistry;
 import gregapi.cover.ICover;
 import gregapi.data.*;
@@ -592,8 +593,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				if (aBlock == Blocks.COARSE_DIRT) {
 					aToolTip.set(0, aToolTip.get(0).replaceAll("Dirt", "Coarse Dirt"));
 				}
-				if (MD.RC.mLoaded && "Railcraft:part.plate".equalsIgnoreCase(aRegName)) {
-					switch(aMeta) {
+				int tRCPlate = RailcraftNames.partPlateMeta(aEvent.getItemStack());
+				if (tRCPlate >= 0) {
+					switch(tRCPlate) {
 					case 0: aToolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateIron")); break;
 					case 1: aToolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateSteel")); break;
 					case 2: aToolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateTinAlloy")); break;

@@ -326,6 +326,10 @@ public class OreDictTags {
 						if (MD.MC.owns(tItem)) {tSkippedMC++; continue;}
 						// AE2 decorative storage carries four units, not the nine implied by legacy storage prefixes.
 						if ("storage_blocks".equals(tGroup) && MD.AE.owns(tItem)) continue;
+						// 1.7.10 GT6 read Railcraft's part.plate meta 2 as a TIN ALLOY plate (LoaderUnificationTargets:731), and Railcraft
+						// declared no plate in the ore dictionary at all; Reborn tags its only tin plate as c:plates/tin, and that tag must
+						// not take the material from the explicit target. Same kind of exception as the two above. (Issue #60)
+						if ("plates/tin".equals(tID.getPath()) && MD.RC.owns(tItem)) continue;
 						ItemStack tStack = ST.make(tItem, 1, 0);
 						if (ST.invalid(tStack)) continue;
 						OreDictionary.registerOre(tOreName, tStack);
