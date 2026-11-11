@@ -257,6 +257,16 @@ public final class RailcraftNames {
 		}
 	}
 
+	/** The 1.7.10 {@code part.plate} meta this Reborn stack stands for, or -1. The 1.7.10 tooltip override keyed on the old
+	 *  registry name (GT_API_Proxy_Client:244-251); Reborn names the plates anew, so the client asks this table instead. */
+	public static int partPlateMeta(net.minecraft.world.item.ItemStack aStack) {
+		if (aStack == null || aStack.isEmpty() || !MD.RC.mLoaded) return -1;
+		net.minecraft.resources.ResourceLocation tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem());
+		if (tID == null || !MD.RC.mID.equals(tID.getNamespace())) return -1;
+		for (int i = 0; i <= 4; i++) if (String.valueOf(tID).equals(TABLE.path("part.plate", i))) return i;
+		return -1;
+	}
+
 	/** The colour of a Reborn strengthened glass or post, as the 1.7.10 colour id (0 black … 15 white); -1 for anything else. */
 	public static int colour(net.minecraft.world.item.ItemStack aStack) {
 		if (aStack == null || aStack.isEmpty() || !MD.RC.mLoaded) return -1;
