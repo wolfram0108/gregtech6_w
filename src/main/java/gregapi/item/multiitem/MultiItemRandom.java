@@ -72,6 +72,9 @@ import static gregapi.data.CS.*;
  */
 public abstract class MultiItemRandom extends MultiItem implements Runnable, gregapi.item.IMetaItem {
 	private static final List<MultiItemRandom> FAMILIES = new ArrayListNoNulls<>();
+	private gregapi.item.ItemTypeDefinitions mItemDefinitions;
+	/** Объявление не создаёт стеки: номера и отложенная инициализация находятся в одном месте. */
+	protected void defineItems(gregapi.item.ItemTypeDefinitions aItems) {aItems.then(this::addItems);}
 	private final MultiItemRandom mRandomFamily;
 	private final short mFixedMeta;
 	private final HashMap<Short, MultiItemRandom> mFlattenedItems;
@@ -118,39 +121,32 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable, gre
 	@Override public ItemStack make(long aAmount, long aMeta) {return ST.make(mRandomFamily, aAmount, aMeta);}
 	protected MultiItemRandom createVariant(short aMeta) {throw new UnsupportedOperationException(getClass().getName());}
 
-	/** Только номера типов объявляются заранее; addItems сохраняет исходный порядок и побочные эффекты. */
+	/** Регистрация читает только номера; побочные эффекты выполняются позже. */
 	public static void registerVariants(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
 		if (!aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.ITEM)) return;
-		try (var tStream = MultiItemRandom.class.getResourceAsStream("/gregapi/multiitem-types.json")) {
-			var tCatalog = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(tStream, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
-			for (MultiItemRandom tFamily : FAMILIES) {
-				var tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tFamily);
-				if (!tCatalog.has(tID.toString())) continue;
-				for (String tRange : tCatalog.get(tID.toString()).getAsString().split(",")) {
-					String[] tEnds = tRange.split("-");
-					int tFirst = Integer.parseInt(tEnds[0]), tLast = Integer.parseInt(tEnds[tEnds.length - 1]);
-					for (int i = tFirst; i <= tLast; i++) {
-						short tMeta = (short)i;
-						Identifier tName = Identifier.fromNamespaceAndPath(tID.getNamespace(), tID.getPath() + "-" + tMeta);
-						aEvent.register(net.minecraft.core.registries.Registries.ITEM, tName, () -> tFamily.createVariant(tMeta));
-					}
-				}
-			}
-		} catch (java.io.IOException e) {throw new java.io.UncheckedIOException(e);}
+		for (MultiItemRandom tFamily : FAMILIES) {
+			var tID = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tFamily);
+			tFamily.mItemDefinitions = new gregapi.item.ItemTypeDefinitions();
+			tFamily.defineItems(tFamily.mItemDefinitions);
+			tFamily.mItemDefinitions.types().forEach(tType -> {
+				short tMeta = (short)tType;
+				Identifier tName = Identifier.fromNamespaceAndPath(tID.getNamespace(), tID.getPath() + "-" + tMeta);
+				aEvent.register(net.minecraft.core.registries.Registries.ITEM, tName, () -> tFamily.createVariant(tMeta));
+			});
+		}
 	}
-	
-	/**
-	 * Add your Items here, and not within the Constructor.
-	 * This gets called after all the PrefixItems and PrefixBlocks have been registered to the OreDict, what is during the @Init-Phase of the regular API.
-	 */
-	public abstract void addItems();
+
+	/** Старый поздний обработчик для ещё не переведённых подклассов; номера вариантов объявляются в defineItems. */
+	public void addItems() {}
 	
 	private boolean mAllowedToAddItems = F;
 	
-	// addItems() calls ST.make/OM.reg, which need components bound only at server-start; run() itself fires on
-	// @Init, so the work is deferred into runDeferredItemInit the same way PrefixItem.run defers its own init.
+	// Создание стеков и регистрация рецептов ждут привязки компонентов при запуске сервера.
 	@Override
-	public final void run() {gregapi.GT_API.deferItemInit(() -> {mAllowedToAddItems = T; addItems();});}
+	public final void run() {gregapi.GT_API.deferItemInit(() -> {
+		mAllowedToAddItems = T;
+		mItemDefinitions.initialize();
+	});}
 	
 	@Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {

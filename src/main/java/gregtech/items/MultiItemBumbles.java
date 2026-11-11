@@ -70,116 +70,116 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	}
 	
 	@Override
-	public void addItems() {
-		make(    0, "Wild Bumblebee"            , "");
-		make(   10, "Captive Bumblebee"         , "Is used to enprisonment");
-		make(   20, "Common Bumblebee"          , "Works hard for its Family");
-		make(   30, "Cultivated Bumblebee"      , "Drinks Wine while watching Oprah");
+	protected void defineItems(gregapi.item.ItemTypeDefinitions aItems) {
+		defineSpecies(aItems,     0, "Wild Bumblebee"            , "");
+		defineSpecies(aItems,    10, "Captive Bumblebee"         , "Is used to enprisonment");
+		defineSpecies(aItems,    20, "Common Bumblebee"          , "Works hard for its Family");
+		defineSpecies(aItems,    30, "Cultivated Bumblebee"      , "Drinks Wine while watching Oprah");
 		
-		make(  100, "Surfing Bumblebee"         , "Too chill to work regularily");
-		make(  110, "Swimming Bumblebee"        , "");
-		make(  120, "Diving Bumblebee"          , "Not gonna jump into Green Water");
-		make(  130, "Subnautic Bumblebee"       , "Its Wings became Air Tanks");
+		defineSpecies(aItems,   100, "Surfing Bumblebee"         , "Too chill to work regularily");
+		defineSpecies(aItems,   110, "Swimming Bumblebee"        , "");
+		defineSpecies(aItems,   120, "Diving Bumblebee"          , "Not gonna jump into Green Water");
+		defineSpecies(aItems,   130, "Subnautic Bumblebee"       , "Its Wings became Air Tanks");
 		
-		make(  200, "Apprentice Bumblebee"      , "");
-		make(  210, "Magician Bumblebee"        , "");
-		make(  220, "Wizard Bumblebee"          , "");
-		make(  230, "Dumblebee"                 , "");
+		defineSpecies(aItems,   200, "Apprentice Bumblebee"      , "");
+		defineSpecies(aItems,   210, "Magician Bumblebee"        , "");
+		defineSpecies(aItems,   220, "Wizard Bumblebee"          , "");
+		defineSpecies(aItems,   230, "Dumblebee"                 , "");
 		
-		make(  300, "Nether Bumblebee"          , "");
-		make(  310, "Hellish Bumblebee"         , "");
-		make(  320, "Impish Bumblebee"          , "");
-		make(  330, "Demonic Bumblebee"         , "");
+		defineSpecies(aItems,   300, "Nether Bumblebee"          , "");
+		defineSpecies(aItems,   310, "Hellish Bumblebee"         , "");
+		defineSpecies(aItems,   320, "Impish Bumblebee"          , "");
+		defineSpecies(aItems,   330, "Demonic Bumblebee"         , "");
 		
-		make(  400, "End Bumblebee"             , "The End is nigh!");
-		make(  410, "Void Bumblebee"            , "Voids parts of its work for no reason");
-		make(  420, "Alienated Bumblebee"       , "Doesn't feel comfortable with Society");
-		make(  430, "Nihilistic Bumblebee"      , "Who cares? Nothing matters.");
+		defineSpecies(aItems,   400, "End Bumblebee"             , "The End is nigh!");
+		defineSpecies(aItems,   410, "Void Bumblebee"            , "Voids parts of its work for no reason");
+		defineSpecies(aItems,   420, "Alienated Bumblebee"       , "Doesn't feel comfortable with Society");
+		defineSpecies(aItems,   430, "Nihilistic Bumblebee"      , "Who cares? Nothing matters.");
 		
-		make(  500, "Stoned Bumblebee"          , "Duuuude");//Forgot to remove one reference last year. I need a new thing for the Stoner Bumble to say...
-		make(  510, "Rocking Bumblebee"         , "");
-		make(  520, "Hard Rock Bumblebee"       , "");
-		make(  530, "Bumbelvis"                 , "Has left the Building");
+		defineSpecies(aItems,   500, "Stoned Bumblebee"          , "Duuuude");//Forgot to remove one reference last year. I need a new thing for the Stoner Bumble to say...
+		defineSpecies(aItems,   510, "Rocking Bumblebee"         , "");
+		defineSpecies(aItems,   520, "Hard Rock Bumblebee"       , "");
+		defineSpecies(aItems,   530, "Bumbelvis"                 , "Has left the Building");
 		
-		make(  600, "Jungle Bumblebee"          , "");
-		make(  610, "Jungle Bumblebee (T2)"     , "");//TODO Change Bumble Texture and Name
-		make(  620, "Jungle Bumblebee (T3)"     , "");//TODO Change Bumble Texture and Name
-		make(  630, "Bumblezan"                 , "BuzzIAH!-IAH!");//TODO Change Bumble Texture
+		defineSpecies(aItems,   600, "Jungle Bumblebee"          , "");
+		defineSpecies(aItems,   610, "Jungle Bumblebee (T2)"     , "");//TODO Change Bumble Texture and Name
+		defineSpecies(aItems,   620, "Jungle Bumblebee (T3)"     , "");//TODO Change Bumble Texture and Name
+		defineSpecies(aItems,   630, "Bumblezan"                 , "BuzzIAH!-IAH!");//TODO Change Bumble Texture
 		
-		make(  700, "Frosty Bumblebee"          , "");
-		make(  710, "North Pole Bumblebee"      , "");
-		make(  720, "Bumble Elf"                , "");
-		make(  730, "Bumble Claus"              , "Ho Ho Ho!");
+		defineSpecies(aItems,   700, "Frosty Bumblebee"          , "");
+		defineSpecies(aItems,   710, "North Pole Bumblebee"      , "");
+		defineSpecies(aItems,   720, "Bumble Elf"                , "");
+		defineSpecies(aItems,   730, "Bumble Claus"              , "Ho Ho Ho!");
 		
-		make(  800, "Bumbleshroom"              , "");
-		make(  810, "Bumble Toad"               , "");
-		make(  820, "Bumble Bro"                , "It's a me! Bumblio!");
-		make(  830, "Bumble Peach"              , "Is in another Castle!");
+		defineSpecies(aItems,   800, "Bumbleshroom"              , "");
+		defineSpecies(aItems,   810, "Bumble Toad"               , "");
+		defineSpecies(aItems,   820, "Bumble Bro"                , "It's a me! Bumblio!");
+		defineSpecies(aItems,   830, "Bumble Peach"              , "Is in another Castle!");
 		
-		make(  900, "Sandy Bumblebee"           , "");
-		make(  910, "Sandy Bumblebee (T2)"      , "");//TODO Change Bumble Texture and Name
-		make(  920, "Sandy Bumblebee (T3)"      , "");//TODO Change Bumble Texture and Name
-		make(  930, "Bumbobee"                  , "Shop at Sahara!");
+		defineSpecies(aItems,   900, "Sandy Bumblebee"           , "");
+		defineSpecies(aItems,   910, "Sandy Bumblebee (T2)"      , "");//TODO Change Bumble Texture and Name
+		defineSpecies(aItems,   920, "Sandy Bumblebee (T3)"      , "");//TODO Change Bumble Texture and Name
+		defineSpecies(aItems,   930, "Bumbobee"                  , "Shop at Sahara!");
 		
 		// Normal + Rocky = Clay
-		make(10000, "Creative Bumblebee"        , "Interested in Pottery");
-		make(10010, "Builder Bumblebee"         , "Also known as Bumblebob the Builder");
-		make(10020, "Masonic Bumblebee"         , "Is free to build Brick Walls");
-		make(10030, "Illuminumblebee"           , "Nothing suspicious around here");
+		defineSpecies(aItems, 10000, "Creative Bumblebee"        , "Interested in Pottery");
+		defineSpecies(aItems, 10010, "Builder Bumblebee"         , "Also known as Bumblebob the Builder");
+		defineSpecies(aItems, 10020, "Masonic Bumblebee"         , "Is free to build Brick Walls");
+		defineSpecies(aItems, 10030, "Illuminumblebee"           , "Nothing suspicious around here");
 		
 		// Normal + Water = Sticky
-		make(10100, "Industrial Bumblebee"      , "Revolutionises Comb Production");
-		make(10110, "Overseer Bumblebee"        , "Effectively orders around the Workforce");
-		make(10120, "Bumble Tycoon"             , "Taking over the Bumblebeesiness");
-		make(10130, "Monopolistic Bumblebee"    , "Owns everything and everyone");
+		defineSpecies(aItems, 10100, "Industrial Bumblebee"      , "Revolutionises Comb Production");
+		defineSpecies(aItems, 10110, "Overseer Bumblebee"        , "Effectively orders around the Workforce");
+		defineSpecies(aItems, 10120, "Bumble Tycoon"             , "Taking over the Bumblebeesiness");
+		defineSpecies(aItems, 10130, "Monopolistic Bumblebee"    , "Owns everything and everyone");
 		
 		// Normal + Sandy = Royal
-		make(10200, "Bumbleknight"              , "For the King of Bumble Castle!");
-		make(10210, "Colonial Bumblebee"        , "For the Queen of Bumbleland!");
-		make(10220, "Royal Bumblebee"           , "Member of the Royal Family");
-		make(10230, "Bumblemonarch"             , "Ruling over the Bumblecountry");
+		defineSpecies(aItems, 10200, "Bumbleknight"              , "For the King of Bumble Castle!");
+		defineSpecies(aItems, 10210, "Colonial Bumblebee"        , "For the Queen of Bumbleland!");
+		defineSpecies(aItems, 10220, "Royal Bumblebee"           , "Member of the Royal Family");
+		defineSpecies(aItems, 10230, "Bumblemonarch"             , "Ruling over the Bumblecountry");
 		
 		// Nether + End = Satanic
-		make(10300, "Bumblegoth"                , "Hangs around in dark places");
-		make(10310, "Occult Bumblebee"          , "Practices occult Rituals");
-		make(10320, "Antichristumblebee"        , "Screw Bumblebeesus!");
-		make(10330, "Satanic Bumblebee"         , "Heil Bumblesatan!");
+		defineSpecies(aItems, 10300, "Bumblegoth"                , "Hangs around in dark places");
+		defineSpecies(aItems, 10310, "Occult Bumblebee"          , "Practices occult Rituals");
+		defineSpecies(aItems, 10320, "Antichristumblebee"        , "Screw Bumblebeesus!");
+		defineSpecies(aItems, 10330, "Satanic Bumblebee"         , "Heil Bumblesatan!");
 		
 		// Rock + Water = Amnesic / Lubricant
-		make(10400, "Forgetful Bumblebee"       , "What was I supposed to do again? It slipped my mind.");
-		make(10410, "Amnesic Bumblebee"         , "Who are you? And who am I even?");
-		make(10420, "Bumbleheimers"             , "Could you get me some Honey? Thanks. Could you get me some Honey?");
-		make(10430, "Bumble in Black"           , "You did not see anything unusual. I did not wiggle my Butt.");
+		defineSpecies(aItems, 10400, "Forgetful Bumblebee"       , "What was I supposed to do again? It slipped my mind.");
+		defineSpecies(aItems, 10410, "Amnesic Bumblebee"         , "Who are you? And who am I even?");
+		defineSpecies(aItems, 10420, "Bumbleheimers"             , "Could you get me some Honey? Thanks. Could you get me some Honey?");
+		defineSpecies(aItems, 10430, "Bumble in Black"           , "You did not see anything unusual. I did not wiggle my Butt.");
 		
 		// Jungle + Sandy = Soldier (Damages anything, even Skeletons, makes Bone Combs)
-		make(10500, "Private Bumble"            , "Reporting for Duty!");
-		make(10510, "Lt. Bumbleson"             , "Yes Sir!");
-		make(10520, "Colonel Bumble O'Beeill"   , "Leading the Team");
-		make(10530, "General Bumblemond"        , "In charge of the Bumblyene Mountain Base");
+		defineSpecies(aItems, 10500, "Private Bumble"            , "Reporting for Duty!");
+		defineSpecies(aItems, 10510, "Lt. Bumbleson"             , "Yes Sir!");
+		defineSpecies(aItems, 10520, "Colonel Bumble O'Beeill"   , "Leading the Team");
+		defineSpecies(aItems, 10530, "General Bumblemond"        , "In charge of the Bumblyene Mountain Base");
 		
 		// Nether + Military = Pyro
-		make(20000, "Blazing Bumblebee"         , "");
-		make(20010, "Flaming Bumblebee"         , "");//TODO Change Bumble Texture
-		make(20020, "Bumbletrantor"             , "The Last Stormbumble");//TODO Change Bumble Texture
-		make(20030, "Pyro Bumble"               , "Likes Unicorns, Rainbows and Candy");//TODO Change Bumble Texture
+		defineSpecies(aItems, 20000, "Blazing Bumblebee"         , "");
+		defineSpecies(aItems, 20010, "Flaming Bumblebee"         , "");//TODO Change Bumble Texture
+		defineSpecies(aItems, 20020, "Bumbletrantor"             , "The Last Stormbumble");//TODO Change Bumble Texture
+		defineSpecies(aItems, 20030, "Pyro Bumble"               , "Likes Unicorns, Rainbows and Candy");//TODO Change Bumble Texture
 		
 		// Frosty + Military = Cryo
-		make(20100, "Blizzful Bumblebee"        , "");
-		make(20110, "Freezing Bumblebee"        , "");//TODO Change Bumble Texture
-		make(20120, "Mr. Bumblefreeze"          , "Ice to meet you!");//TODO Change Bumble Texture
-		make(20130, "Cryo Bumble"               , "Delivered Pizza to I.C.Wiener");//TODO Change Bumble Texture
+		defineSpecies(aItems, 20100, "Blizzful Bumblebee"        , "");
+		defineSpecies(aItems, 20110, "Freezing Bumblebee"        , "");//TODO Change Bumble Texture
+		defineSpecies(aItems, 20120, "Mr. Bumblefreeze"          , "Ice to meet you!");//TODO Change Bumble Texture
+		defineSpecies(aItems, 20130, "Cryo Bumble"               , "Delivered Pizza to I.C.Wiener");//TODO Change Bumble Texture
 		
 		// End + Military = Aero
-		make(20200, "Blitzing Bumblebee"        , "");
-		make(20210, "Storming Bumblebee"        , "");//TODO Change Bumble Texture
-		make(20220, "Bumbleaang"                , "The Last Bumblebender");//TODO Change Bumble Texture
-		make(20230, "Aero Bumble"               , "According to the Laws of Fluid Dynamics, this Bumblebee CAN Fly!");//TODO Change Bumble Texture
+		defineSpecies(aItems, 20200, "Blitzing Bumblebee"        , "");
+		defineSpecies(aItems, 20210, "Storming Bumblebee"        , "");//TODO Change Bumble Texture
+		defineSpecies(aItems, 20220, "Bumbleaang"                , "The Last Bumblebender");//TODO Change Bumble Texture
+		defineSpecies(aItems, 20230, "Aero Bumble"               , "According to the Laws of Fluid Dynamics, this Bumblebee CAN Fly!");//TODO Change Bumble Texture
 		
 		// Rocky + Military = Tera
-		make(20300, "Basalzed Bumblebee"        , "");
-		make(20310, "Quakeing Bumblebee"        , "With a mighty White Beard!");
-		make(20320, "Earth Bound Bumblebee"     , "PK Bumble!");
-		make(20330, "Tera Bumble"               , "By your Powers combined, I am Captain Bumblebee!");
+		defineSpecies(aItems, 20300, "Basalzed Bumblebee"        , "");
+		defineSpecies(aItems, 20310, "Quakeing Bumblebee"        , "With a mighty White Beard!");
+		defineSpecies(aItems, 20320, "Earth Bound Bumblebee"     , "PK Bumble!");
+		defineSpecies(aItems, 20330, "Tera Bumble"               , "By your Powers combined, I am Captain Bumblebee!");
 		
 		// Jungle + Water = Swamp
 		// Rocky  + Sandy = Red Sand?
@@ -580,23 +580,26 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	
 	@Override public int getDefaultStackLimit(ItemStack aStack) {return 64;}
 	
-	public void make(int aSpeciesID, String aName, String aTooltip) {
-		for (int i : new int[] {0, 1, 4}) {
+	private void defineSpecies(gregapi.item.ItemTypeDefinitions aItems, int aSpeciesID, String aName, String aTooltip) {
+		aItems.then(() -> {
+			for (int i : new int[] {0, 1, 4}) {
 		for (String tFluid : FluidsGT.HONEY) if (FL.exists(tFluid))
 		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(metaFamily(), 1, aSpeciesID+i), OP.plateTiny.mat(MT.Paper, 1)), ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5)), null, null, FL.array(FL.make(tFluid, 10)), null, 64, 16, 0);
 		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(metaFamily(), 1, aSpeciesID+i), OP.plateTiny.mat(MT.Paper, 1)), ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5)), null, null, FL.array(FL.Honeydew.make(10)), null, 64, 16, 0);
 		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5, "Was already scanned, auto-skipping")), ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5, "Just passed to the Output")), null, null, null, null,  1, 16, 0);
 		RM.Bumblelyzer.addFakeRecipe(F, ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5, "Was already scanned, auto-skipping")), ST.array(ST.make(metaFamily(), 1, aSpeciesID+i+5, "Just passed to the Output")), null, null, null, null,  1, 16, 0);
 		}
+		});
 		
-		addItem(aSpeciesID+0, aName + " Drone"              , aTooltip, "gt:bumbledrone"    , TC.stack(TC.BESTIA , 1));
-		addItem(aSpeciesID+1, aName + " Princess"           , aTooltip, "gt:bumbleprincess" , TC.stack(TC.BESTIA , 2));
-		addItem(aSpeciesID+2, aName + " Queen"              , aTooltip, "gt:bumblequeen"    , TC.stack(TC.BESTIA , 2), TD.Creative.HIDDEN);
-		addItem(aSpeciesID+4, aName + " (Dead)"             , aTooltip, "gt:bumbledead"     , TC.stack(TC.MORTUUS, 1), TD.Creative.HIDDEN);
-		addItem(aSpeciesID+5, aName + " Drone (Scanned)"    , aTooltip, "gt:bumbledrone"    , TC.stack(TC.BESTIA , 1), TC.stack(TC.COGNITIO, 1), new OreDictItemData(MT.Paper, U9));
-		addItem(aSpeciesID+6, aName + " Princess (Scanned)" , aTooltip, "gt:bumbleprincess" , TC.stack(TC.BESTIA , 2), TC.stack(TC.COGNITIO, 1), new OreDictItemData(MT.Paper, U9));
-		addItem(aSpeciesID+7, aName + " Queen (Scanned)"    , aTooltip, "gt:bumblequeen"    , TC.stack(TC.BESTIA , 2), TC.stack(TC.COGNITIO, 1), new OreDictItemData(MT.Paper, U9), TD.Creative.HIDDEN);
-		addItem(aSpeciesID+9, aName + " (Dead & Scanned)"   , aTooltip, "gt:bumbledead"     , TC.stack(TC.MORTUUS, 1), TC.stack(TC.COGNITIO, 1), new OreDictItemData(MT.Paper, U9), TD.Creative.HIDDEN);
+		aItems.add(aSpeciesID+0, aID -> {addItem(aID, aName + " Drone"              , aTooltip, "gt:bumbledrone"    , TC.stack(TC.BESTIA , 1));});
+		aItems.add(aSpeciesID+1, aID -> {addItem(aID, aName + " Princess"           , aTooltip, "gt:bumbleprincess" , TC.stack(TC.BESTIA , 2));});
+		aItems.add(aSpeciesID+2, aID -> {addItem(aID, aName + " Queen"              , aTooltip, "gt:bumblequeen"    , TC.stack(TC.BESTIA , 2), TD.Creative.HIDDEN);});
+		aItems.add(aSpeciesID+4, aID -> {addItem(aID, aName + " (Dead)"             , aTooltip, "gt:bumbledead"     , TC.stack(TC.MORTUUS, 1), TD.Creative.HIDDEN);});
+		aItems.add(aSpeciesID+5, aID -> {addItem(aID, aName + " Drone (Scanned)"    , aTooltip, "gt:bumbledrone"    , TC.stack(TC.BESTIA , 1), TC.stack(TC.COGNITIO, 1), new OreDictItemData(MT.Paper, U9));});
+		aItems.add(aSpeciesID+6, aID -> {addItem(aID, aName + " Princess (Scanned)" , aTooltip, "gt:bumbleprincess" , TC.stack(TC.BESTIA , 2), TC.stack(TC.COGNITIO, 1), new OreDictItemData(MT.Paper, U9));});
+		aItems.add(aSpeciesID+7, aID -> {addItem(aID, aName + " Queen (Scanned)"    , aTooltip, "gt:bumblequeen"    , TC.stack(TC.BESTIA , 2), TC.stack(TC.COGNITIO, 1), new OreDictItemData(MT.Paper, U9), TD.Creative.HIDDEN);});
+		aItems.add(aSpeciesID+9, aID -> {
+			addItem(aID, aName + " (Dead & Scanned)"   , aTooltip, "gt:bumbledead"     , TC.stack(TC.MORTUUS, 1), TC.stack(TC.COGNITIO, 1), new OreDictItemData(MT.Paper, U9), TD.Creative.HIDDEN);
 		
 		ItemsGT.addNEIRedirect(ST.make(metaFamily(), 1, aSpeciesID+0), ST.make(metaFamily(), 1, aSpeciesID+2));
 		ItemsGT.addNEIRedirect(ST.make(metaFamily(), 1, aSpeciesID+1), ST.make(metaFamily(), 1, aSpeciesID+2));
@@ -605,15 +608,18 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		ItemsGT.addNEIRedirect(ST.make(metaFamily(), 1, aSpeciesID+5), ST.make(metaFamily(), 1, aSpeciesID+7));
 		ItemsGT.addNEIRedirect(ST.make(metaFamily(), 1, aSpeciesID+6), ST.make(metaFamily(), 1, aSpeciesID+7));
 		ItemsGT.addNEIRedirect(ST.make(metaFamily(), 1, aSpeciesID+9), ST.make(metaFamily(), 1, aSpeciesID+7));
+		});
 		
 		ItemStack[] tOutputs = new ItemStack[bumbleProductCount(NI, (short)(aSpeciesID+2))];
 		long[] tChances = new long[tOutputs.length];
-		for (int i = 0; i < tOutputs.length; i++) {
+		aItems.then(() -> {
+			for (int i = 0; i < tOutputs.length; i++) {
 			tOutputs[i] = bumbleProductStack(NI, (short)(aSpeciesID+2), 1, i);
 			tChances[i] = bumbleProductChance(NI, (short)(aSpeciesID+2), i);
 		}
 		
 		RM.BumbleQueens.addFakeRecipe(F, ST.array(ST.make(metaFamily(), 1, aSpeciesID+2), ST.make(metaFamily(), 1, aSpeciesID+7)), tOutputs, null, tChances, null, null, 0, 0, 0);
+		});
 	}
 	
 	public static boolean checkFlowers(Level aWorld, int aX, int aY, int aZ) {

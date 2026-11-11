@@ -53,26 +53,29 @@ public class MultiItemBooks extends MultiItemRandomWithCompat {
 		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Books", this, (short)32000); // F16 creative-tab: its own GT tab (icon+displayItems), registered by CreativeTabsGT on RegisterEvent<CreativeModeTab>. 1:1.
 	}
 	
-	@Override
-	public void addItems() {
+	protected void defineItems(gregapi.item.ItemTypeDefinitions aItems) {
 		for (int i = 0; i < 11; i++) {
-			BooksGT.BOOK_REGISTER.put(addItem(     i, "Book"       , "", OD.bookWrittenSmall, TC.stack(TC.COGNITIO, 2), TICKS_PER_SMELT  , new OreDictItemData(MT.Paper, U * 3)), (byte)(i>8?39+i:i==8?1:3+i)); BooksGT.BOOKS_NORMAL.add(last());
-			BooksGT.BOOK_REGISTER.put(addItem(1000+i, "Large Book" , "", OD.bookWrittenBig  , TC.stack(TC.COGNITIO, 4), TICKS_PER_SMELT*2, new OreDictItemData(MT.Paper, U * 6)), (byte)(i>8?39+i:i==8?1:3+i)); BooksGT.BOOKS_NORMAL.add(last());
+			final int tIndex = i;
+			aItems.addAll(new int[] {tIndex, 1000+tIndex}, aIDs -> {
+			BooksGT.BOOK_REGISTER.put(addItem(     aIDs[0], "Book"       , "", OD.bookWrittenSmall, TC.stack(TC.COGNITIO, 2), TICKS_PER_SMELT  , new OreDictItemData(MT.Paper, U * 3)), (byte)(tIndex>8?39+tIndex:tIndex==8?1:3+tIndex)); BooksGT.BOOKS_NORMAL.add(last());
+			BooksGT.BOOK_REGISTER.put(addItem(aIDs[1], "Large Book" , "", OD.bookWrittenBig  , TC.stack(TC.COGNITIO, 4), TICKS_PER_SMELT*2, new OreDictItemData(MT.Paper, U * 6)), (byte)(tIndex>8?39+tIndex:tIndex==8?1:3+tIndex)); BooksGT.BOOKS_NORMAL.add(last());
+		});
 		}
 		
-		BooksGT.BOOK_REGISTER.put(addItem(32000, "Book"                     , "With a Bronze Emblem on it"        , OD.bookWrittenSmall, TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 2), TICKS_PER_SMELT  , new OreDictItemData(MT.Paper, U * 3, MT.Bronze, U9)), (byte)12); BooksGT.BOOKS_NORMAL.add(last());
-		BooksGT.BOOK_REGISTER.put(addItem(32001, "Large Book"               , "With a Bronze Emblem on it"        , OD.bookWrittenBig  , TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 4), TICKS_PER_SMELT*2, new OreDictItemData(MT.Paper, U * 6, MT.Bronze, U9)), (byte)12); BooksGT.BOOKS_NORMAL.add(last());
+		aItems.add(32000, aID -> {BooksGT.BOOK_REGISTER.put(addItem(aID, "Book"                     , "With a Bronze Emblem on it"        , OD.bookWrittenSmall, TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 2), TICKS_PER_SMELT  , new OreDictItemData(MT.Paper, U * 3, MT.Bronze, U9)), (byte)12); BooksGT.BOOKS_NORMAL.add(last());});
+		aItems.add(32001, aID -> {BooksGT.BOOK_REGISTER.put(addItem(aID, "Large Book"               , "With a Bronze Emblem on it"        , OD.bookWrittenBig  , TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 4), TICKS_PER_SMELT*2, new OreDictItemData(MT.Paper, U * 6, MT.Bronze, U9)), (byte)12); BooksGT.BOOKS_NORMAL.add(last());});
 		
-		BooksGT.BOOK_REGISTER.put(addItem(32002, "Material Dictionary"      , "Book about a Material"             , OD.bookWrittenSmall, TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 2), TICKS_PER_SMELT  , new OreDictItemData(MT.Paper, U * 3)), (byte)11); BooksGT.BOOKS_NORMAL.add(last());
-		BooksGT.BOOK_REGISTER.put(addItem(32003, "Material Dictionary"      , "Book about a Material"             , OD.bookWrittenBig  , TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 4), TICKS_PER_SMELT*2, new OreDictItemData(MT.Paper, U * 6)), (byte)11); BooksGT.BOOKS_NORMAL.add(last());
+		aItems.add(32002, aID -> {BooksGT.BOOK_REGISTER.put(addItem(aID, "Material Dictionary"      , "Book about a Material"             , OD.bookWrittenSmall, TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 2), TICKS_PER_SMELT  , new OreDictItemData(MT.Paper, U * 3)), (byte)11); BooksGT.BOOKS_NORMAL.add(last());});
+		aItems.add(32003, aID -> {BooksGT.BOOK_REGISTER.put(addItem(aID, "Material Dictionary"      , "Book about a Material"             , OD.bookWrittenBig  , TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 4), TICKS_PER_SMELT*2, new OreDictItemData(MT.Paper, U * 6)), (byte)11); BooksGT.BOOKS_NORMAL.add(last());});
 		
-		BooksGT.BOOK_REGISTER.put(addItem(32004, "Book"                     , "With a Radiation Symbol on it"     , OD.bookWrittenSmall, TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 4), TICKS_PER_SMELT*2, new OreDictItemData(MT.Paper, U * 3, MT.Tc, U9)), (byte)10); BooksGT.BOOKS_NORMAL.add(last());
-		BooksGT.BOOK_REGISTER.put(addItem(32005, "Large Book"               , "With a Radiation Symbol on it"     , OD.bookWrittenBig  , TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 4), TICKS_PER_SMELT*2, new OreDictItemData(MT.Paper, U * 6, MT.Tc, U9)), (byte)10); BooksGT.BOOKS_NORMAL.add(last());
+		aItems.add(32004, aID -> {BooksGT.BOOK_REGISTER.put(addItem(aID, "Book"                     , "With a Radiation Symbol on it"     , OD.bookWrittenSmall, TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 4), TICKS_PER_SMELT*2, new OreDictItemData(MT.Paper, U * 3, MT.Tc, U9)), (byte)10); BooksGT.BOOKS_NORMAL.add(last());});
+		aItems.add(32005, aID -> {BooksGT.BOOK_REGISTER.put(addItem(aID, "Large Book"               , "With a Radiation Symbol on it"     , OD.bookWrittenBig  , TD.Creative.HIDDEN, TC.stack(TC.COGNITIO, 4), TICKS_PER_SMELT*2, new OreDictItemData(MT.Paper, U * 6, MT.Tc, U9)), (byte)10); BooksGT.BOOKS_NORMAL.add(last());});
 		
-		BooksGT.BOOK_REGISTER.put(addItem(32700, "Aspectonomicon"           , "Aspects and the Items they are on" , TC.stack(TC.COGNITIO, 9), TICKS_PER_SMELT, new OreDictItemData(MT.Paper, U * 9), new Behavior_Unlock_Item_Aspects(MD.MC, MD.EtFu, MD.NeLi, MD.EnLi, MD.NePl, MD.GaSu, MD.GaNe, MD.GaEn, MD.WdSt, MD.TFC, MD.TFCP, MD.HaC, MD.GrC, MD.GrC_Apples, MD.GrC_Bamboo, MD.GrC_Bees, MD.GrC_Cellar, MD.GrC_Fish, MD.GrC_Hops, MD.GrC_Grapes, MD.GrC_Milk, MD.GrC_Rice, MD.Salt, MD.BoP, MD.EB, MD.EBXL, MD.BWM, MD.BbLC, MD.SD, MD.BTRS, MD.JABBA, MD.CARP, MD.CHSL, MD.ZTONES)), (byte)13); BooksGT.BOOKS_ENCHANTED.add(last()); IL.Book_Aspectonomicon.set(last());
+		aItems.add(32700, aID -> {BooksGT.BOOK_REGISTER.put(addItem(aID, "Aspectonomicon"           , "Aspects and the Items they are on" , TC.stack(TC.COGNITIO, 9), TICKS_PER_SMELT, new OreDictItemData(MT.Paper, U * 9), new Behavior_Unlock_Item_Aspects(MD.MC, MD.EtFu, MD.NeLi, MD.EnLi, MD.NePl, MD.GaSu, MD.GaNe, MD.GaEn, MD.WdSt, MD.TFC, MD.TFCP, MD.HaC, MD.GrC, MD.GrC_Apples, MD.GrC_Bamboo, MD.GrC_Bees, MD.GrC_Cellar, MD.GrC_Fish, MD.GrC_Hops, MD.GrC_Grapes, MD.GrC_Milk, MD.GrC_Rice, MD.Salt, MD.BoP, MD.EB, MD.EBXL, MD.BWM, MD.BbLC, MD.SD, MD.BTRS, MD.JABBA, MD.CARP, MD.CHSL, MD.ZTONES)), (byte)13); BooksGT.BOOKS_ENCHANTED.add(last()); IL.Book_Aspectonomicon.set(last());});
 		
-		BooksGT.BOOK_REGISTER.put(addItem(32765, "Dusty Guide Book"         , "Loot: Some random Manual or so"    , TC.stack(TC.COGNITIO, 3), TICKS_PER_SMELT, new OreDictItemData(MT.Paper, U * 3), new Behavior_Drop_Loot("gt.books"   )), (byte)53); BooksGT.BOOKS_NORMAL.add(last()); IL.Book_Loot_Guide.set(last());
-		BooksGT.BOOK_REGISTER.put(addItem(32766, "Dusty Material Dictionary", "Loot: Book about a random Material", TC.stack(TC.COGNITIO, 3), TICKS_PER_SMELT, new OreDictItemData(MT.Paper, U * 3), new Behavior_Drop_Loot("gt.matdicts")), (byte)11); BooksGT.BOOKS_NORMAL.add(last()); IL.Book_Loot_MatDict.set(last());
+		aItems.add(32765, aID -> {BooksGT.BOOK_REGISTER.put(addItem(aID, "Dusty Guide Book"         , "Loot: Some random Manual or so"    , TC.stack(TC.COGNITIO, 3), TICKS_PER_SMELT, new OreDictItemData(MT.Paper, U * 3), new Behavior_Drop_Loot("gt.books"   )), (byte)53); BooksGT.BOOKS_NORMAL.add(last()); IL.Book_Loot_Guide.set(last());});
+		aItems.add(32766, aID -> {
+			BooksGT.BOOK_REGISTER.put(addItem(aID, "Dusty Material Dictionary", "Loot: Book about a random Material", TC.stack(TC.COGNITIO, 3), TICKS_PER_SMELT, new OreDictItemData(MT.Paper, U * 3), new Behavior_Drop_Loot("gt.matdicts")), (byte)11); BooksGT.BOOKS_NORMAL.add(last()); IL.Book_Loot_MatDict.set(last());
 		
 		
 		RM.generify(ST.make(this, 1, W), ST.make(Items.WRITTEN_BOOK, 1, 0));
@@ -174,6 +177,7 @@ public class MultiItemBooks extends MultiItemRandomWithCompat {
 		CR.shapeless(ST.make(this, 1,  1008), CR.DEF_NCC, new Object[] {OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.craftingLeather, DYE_OREDICTS[DYE_INDEX_Brown]});
 		CR.shapeless(ST.make(this, 1,  1009), CR.DEF_NCC, new Object[] {OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.craftingLeather, DYE_OREDICTS[DYE_INDEX_Orange]});
 		CR.shapeless(ST.make(this, 1,  1010), CR.DEF_NCC, new Object[] {OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.paperEmpty, OD.craftingLeather, DYE_OREDICTS[DYE_INDEX_Purple]});
+		});
 	}
 	
 	@Override
