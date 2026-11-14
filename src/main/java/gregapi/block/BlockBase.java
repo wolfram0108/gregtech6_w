@@ -329,7 +329,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// BlockPlaceContext, so their old defaults are reproduced here as plain GT6 helpers instead.
 	public boolean canReplace(Level aWorld, int aX, int aY, int aZ, int aSide, ItemStack aStack) {return T;}
 	public byte onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, byte aMeta) {return (byte)onBlockPlaced(aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, (int)aMeta);}
-	/** Исходные переопределения GT6 принимают int, поэтому byte-адаптер должен вызывать этот виртуальный метод. */
+	/** GT6's original overrides take int metadata, so the byte adapter has to dispatch through this virtual method. */
 	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return aMeta;}
 	public boolean isSideSolid(int aMeta, byte aSide) {return T;}
 	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {/**/}
