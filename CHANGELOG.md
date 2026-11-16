@@ -15,23 +15,32 @@ This project carries the version of the mod it ports, not its own count:
 └───────── major: tracks GregTech 6 itself
 ```
 
-`alpha` means: playable end to end, verified against the original where a machine can decide it, and
-**not** stable. Saves are not guaranteed to survive between alpha builds. `beta` will mean feature
-complete with save compatibility maintained; a release without a suffix will mean the port is done.
-
 Each release is tagged `v<version>`; the tag and the version in the build must agree, and CI refuses
 to publish if they do not.
 
 **Two game versions, one repository.** The `main` branch targets Minecraft 26.1.2 and is versioned
-`6.0.0-alpha.N`. This branch targets Minecraft 1.20.1 and carries the game version in the middle of
-its own version — `6.0.0-1.20.1-alpha.N` — so the two release series never collide. Entries below
-that predate this branch describe work done on the shared code base before it was split off.
+`6.0.0-<stage>.N`: `alpha` up to `6.0.0-alpha.18`, `beta` from `6.0.0-beta.1`. This branch targets
+Minecraft 1.20.1 and carries the game version in the middle of its own version —
+`6.0.0-1.20.1-<stage>.N`, `alpha` up to `6.0.0-1.20.1-alpha.14`, `beta` from `6.0.0-1.20.1-beta.1` — so
+the two release series never collide. Entries below that predate this branch describe work done on the
+shared code base before it was split off.
 
-## [Unreleased]
+## [6.0.0-1.20.1-beta.1] — Plant, translation and placement fixes
+
+### Added
+
+- The GT6U addon now ships a Simplified Chinese translation. ([#59](https://github.com/wolfram0108/gregtech6_w/pull/59))
 
 ### Fixed
 
-- Broken machines no longer darken while being mined: their cracks are drawn once per surface instead of once per texture layer.
+- Broken machines no longer darken while being mined: their cracks are drawn once per surface instead of once per texture layer. ([#55](https://github.com/wolfram0108/gregtech6_w/pull/55))
+- Flower indicator variants keep their own appearance, and desert flowers keep generating on sand. ([#56](https://github.com/wolfram0108/gregtech6_w/pull/56))
+- Saplings and flowers have flat inventory icons again, as in 1.7.10. ([#58](https://github.com/wolfram0108/gregtech6_w/pull/58))
+- Railcraft Reborn's tin plate is named and processed as a tin alloy plate again, as in 1.7.10. ([#60](https://github.com/wolfram0108/gregtech6_w/issues/60))
+- Logs, beams, bales and spikes placed on a wall keep the axis of that wall. ([#62](https://github.com/wolfram0108/gregtech6_w/pull/62))
+- Recipe category names in JEI follow the game language instead of always showing English. ([#27](https://github.com/wolfram0108/gregtech6_w/pull/27))
+
+Thanks to [@LixFen](https://github.com/LixFen) and [@KitraMGP](https://github.com/KitraMGP) for the reports and contributions.
 
 ## [6.0.0-1.20.1-alpha.14] — Spike damage, liquid colors and JEI crafting
 
