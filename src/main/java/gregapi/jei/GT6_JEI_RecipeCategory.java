@@ -69,7 +69,8 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 	private final IDrawable mBackNEI, mBackGui;
 
 	public GT6_JEI_RecipeCategory(RecipeMap aMap, RecipeType<Recipe> aType, IGuiHelper aGuiHelper) {
-		super(aType, Component.literal(aMap.mNameLocal), icon(aMap, aGuiHelper), WIDTH, HEIGHT);
+		// Resolve the title in the active language; retain the original English as fallback.
+		super(aType, Component.translatableWithFallback(aMap.mNameInternal, aMap.mNameLocal), icon(aMap, aGuiHelper), WIDTH, HEIGHT);
 		mMap = aMap;
 		IDrawable tNEI = null, tGui = null;
 		try {
