@@ -15,23 +15,31 @@ This project carries the version of the mod it ports, not its own count:
 └───────── major: tracks GregTech 6 itself
 ```
 
-`alpha` means: playable end to end, verified against the original where a machine can decide it, and
-**not** stable. Saves are not guaranteed to survive between alpha builds. `beta` will mean feature
-complete with save compatibility maintained; a release without a suffix will mean the port is done.
-
 Each release is tagged `v<version>`; the tag and the version in the build must agree, and CI refuses
 to publish if they do not.
 
 **Two game versions, one repository.** This branch (`main`) targets Minecraft 26.1.2 and is versioned
-`6.0.0-alpha.N`. The `1.20.1` branch is a backport to that older game version and carries it in the
-middle of its own version — `6.0.0-1.20.1-alpha.N` — so the two release series never collide.
+`6.0.0-<stage>.N`: `alpha` up to `6.0.0-alpha.18`, `beta` from `6.0.0-beta.1`. The `1.20.1` branch is a
+backport to that older game version and carries it in the middle of its own version —
+`6.0.0-1.20.1-<stage>.N`, `alpha` up to `6.0.0-1.20.1-alpha.14`, `beta` from `6.0.0-1.20.1-beta.1` — so
+the two release series never collide.
 
-## [Unreleased]
+## [6.0.0-beta.1] — Plant, translation and placement fixes
+
+### Added
+
+- The GT6U addon now ships a Simplified Chinese translation. ([#59](https://github.com/wolfram0108/gregtech6_w/pull/59))
 
 ### Fixed
 
-- Broken machines no longer flicker or darken while being mined, and their cracks are drawn once per surface instead of once per texture layer.
-- Ordinary items report their crafting remainder without a stand-in player, so a networking library that rejects that player can no longer break food and recipe registration.
+- Broken machines no longer flicker or darken while being mined, and their cracks are drawn once per surface instead of once per texture layer. ([#55](https://github.com/wolfram0108/gregtech6_w/pull/55))
+- Ordinary items report their crafting remainder without a stand-in player, so a networking library that rejects that player can no longer break food and recipe registration. ([#54](https://github.com/wolfram0108/gregtech6_w/pull/54))
+- Flower indicator variants keep their own appearance, and desert flowers survive world generation on sand. ([#56](https://github.com/wolfram0108/gregtech6_w/pull/56))
+- Saplings and flowers have flat inventory icons again, as in 1.7.10. ([#58](https://github.com/wolfram0108/gregtech6_w/pull/58))
+- Railcraft Reborn's tin plate is named and processed as a tin alloy plate again, as in 1.7.10. ([#60](https://github.com/wolfram0108/gregtech6_w/issues/60))
+- Logs, beams, bales and spikes placed on a wall keep the axis of that wall. ([#62](https://github.com/wolfram0108/gregtech6_w/pull/62))
+
+Thanks to [@LixFen](https://github.com/LixFen) for the reports and contributions.
 
 ## [6.0.0-alpha.18] — Spike damage, liquid colors and JEI crafting
 
